@@ -1,0 +1,69 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Patron profile and address details",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "address": { "type": "string" },
+        "city": { "type": "string" },
+        "tier": { "type": "string" },
+        "loyaltyPoints": { "type": "number" }
+      }
+    },
+    "ActiveReward": {
+      "title": "ActiveReward",
+      "description": "User active discount or reward coupon",
+      "type": "object",
+      "properties": {
+        "rewardId": { "type": "string" },
+        "title": { "type": "string" },
+        "status": { "type": "string", "enum": ["ACTIVE", "USED", "EXPIRED"] },
+        "code": { "type": "string" },
+        "claimedAt": { "type": "number" }
+      }
+    },
+    "LoyaltyTransaction": {
+      "title": "LoyaltyTransaction",
+      "description": "Record of earned or spent points",
+      "type": "object",
+      "properties": {
+        "points": { "type": "number" },
+        "type": { "type": "string" },
+        "description": { "type": "string" },
+        "createdAt": { "type": "number" }
+      }
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Placed order details",
+      "type": "object",
+      "properties": {
+        "orderId": { "type": "string" },
+        "uid": { "type": "string" },
+        "status": { "type": "string" },
+        "total": { "type": "number" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User patron profile and points"
+    },
+    "/users/{userId}/activeRewards/{rewardId}": {
+      "schema": "ActiveReward",
+      "description": "Active unlocked rewards"
+    },
+    "/users/{userId}/loyaltyTransactions/{transactionId}": {
+      "schema": "LoyaltyTransaction",
+      "description": "Audit trail for points"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Placed order records"
+    }
+  }
+}

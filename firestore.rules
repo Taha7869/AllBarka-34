@@ -1,0 +1,74 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper to verify authenticated owner
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // User profile: only safe customer contact fields editable by client
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      
+      allow create: if isOwner(userId) 
+        && request.resource.data.keys().hasOnly(['name', 'phone', 'address', 'city', 'createdAt', 'updatedAt']);
+        
+      allow update: if isOwner(userId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'phone', 'address', 'city', 'updatedAt'])
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['loyaltyPoints', 'role', 'admin', 'wholesaleEligible', 'patronStatus', 'tier']));
+        
+      allow delete: if false;
+
+      // Loyalty transactions and active rewards: read-only for patron; writes restricted strictly to server
+      match /loyaltyTransactions/{txId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
+
+      match /activeRewards/{rewardId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
+
+      // Customer favorites and saved bag: client writable for owner
+      match /favorites/{favId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+    
+    // Orders collection:
+    // Read: authenticated patron owner can read their own order documents
+    // Writes: client creation, update, and delete are strictly DENIED (orders created server-side only)
+    match /orders/{orderId} {
+      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow write: if false;
+    }
+
+    // Coupons and discounts: server-side evaluation only
+    match /coupons/{couponId} {
+      allow read, write: if false;
+    }
+
+    // Public catalog & content (read-only for clients, immutable)
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /content/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Default deny all other paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

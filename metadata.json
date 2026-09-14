@@ -1,0 +1,10 @@
+{
+  "name": "AllBarka Dry Fruits",
+  "description": "High-end professional e-commerce landing page for AllBarka Dry Fruits based in Lahore, featuring premium sourcing, delivery options, and an AI Concierge with Google Search & Maps Grounding.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
