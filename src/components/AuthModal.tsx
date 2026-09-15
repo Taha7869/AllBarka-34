@@ -54,7 +54,6 @@ export default function AuthModal({
     }
   }, [isOpen, initialMode]);
 
-  if (!isOpen) return null;
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -268,6 +267,7 @@ export default function AuthModal({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
+  if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 select-none">
       <motion.div
