@@ -128,7 +128,7 @@ if (process.env.GOOGLE_SHEETS_ID && process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && 
 }
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT || 3000);
 
 app.use(express.json());
 
@@ -933,11 +933,13 @@ Behavior Guidelines:
 // Vite Middleware & Static Asset pipeline integration
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
+    console.time('[dev] Vite middleware');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa'
     });
     app.use(vite.middlewares);
+    console.timeEnd('[dev] Vite middleware');
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
@@ -951,4 +953,7 @@ async function startServer() {
   });
 }
 
-startServer();
+startServer().catch((error) => {
+  console.error('[AllBarka] startup failed:', error.message);
+  process.exitCode = 1;
+});
