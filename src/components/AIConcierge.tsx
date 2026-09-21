@@ -151,7 +151,7 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            className={`fixed z-30 transition-all duration-300 pb-[env(safe-area-inset-bottom)] ${hasCartBar ? 'bottom-[80px] sm:bottom-[90px] right-4 sm:right-6' : 'bottom-5 sm:bottom-6 right-4 sm:right-6'}`}
+            className={`fixed z-30 transition-all duration-300 pb-[env(safe-area-inset-bottom)] ${hasCartBar ? 'bottom-24 sm:bottom-[90px] right-4 sm:right-6' : 'bottom-5 sm:bottom-6 right-4 sm:right-6'}`}
           >
             {/* Soft Gold Glowing Pulse Rings */}
             <div className="absolute inset-0 rounded-full bg-[var(--color-gold,#B8935F)]/25 blur-md animate-ping pointer-events-none" style={{ animationDuration: '3s' }} />

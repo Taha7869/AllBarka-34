@@ -7,6 +7,7 @@ import { getProductImage } from '../data/products';
 import { useTheme } from '../contexts/ThemeContext';
 import { useCart } from '../contexts/CartContext';
 import { acquireScrollLock } from '../utils/scrollLock';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface QuickViewModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ export default function QuickViewModal({
 }: QuickViewModalProps) {
   const { resolvedTheme } = useTheme();
   const { addToCart } = useCart();
+  const { t } = useLanguage();
   const [selectedWeight, setSelectedWeight] = useState('500g');
   const [wholesaleQty, setWholesaleQty] = useState(3);
   const [packagingType, setPackagingType] = useState<'pouch' | 'tin'>('pouch');
@@ -133,7 +135,9 @@ export default function QuickViewModal({
           ) : (
             <img
               src={getProductImage(product)}
-              alt={product.name}
+              alt={t(`imageAlt.${product.id}`, product.name)}
+              width={960}
+              height={960}
               referrerPolicy="no-referrer"
               onError={() => setImageError(true)}
               className="w-full h-full object-cover select-none pointer-events-none transition-transform duration-700 hover:scale-105"
@@ -154,7 +158,7 @@ export default function QuickViewModal({
           {/* Fresh Stock Badge */}
           <div className="absolute bottom-4 left-4 z-20 flex items-center gap-1.5 bg-[var(--color-surface)]/95 backdrop-blur-md px-3 py-1.5 rounded-full border border-[var(--color-border)] shadow-sm text-[var(--color-ink)]">
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-gold)] animate-pulse" />
-            <span className="text-[9.5px] font-bold uppercase tracking-wider">Lahore Fresh Stock</span>
+            <span className="text-[9.5px] font-bold uppercase tracking-wider">{t('trust.fresh', 'Lahore Fresh Stock')}</span>
           </div>
         </div>
 
@@ -179,7 +183,7 @@ export default function QuickViewModal({
             {product.tasteProfile && (
               <div className="p-2.5 rounded-xl bg-[var(--color-cream,#FAF9F5)] border border-[var(--color-gold,#C7982F)]/25 text-[11px] text-[var(--color-ink,#29231D)]">
                 <span className="font-bold text-[var(--color-gold,#C7982F)] uppercase tracking-wider text-[9px] block mb-0.5">
-                  Taste Profile
+                  {t('tasteProfile', 'Taste Profile')}
                 </span>
                 <span>{product.tasteProfile}</span>
               </div>
@@ -188,7 +192,7 @@ export default function QuickViewModal({
             {product.contents && (
               <div className="p-2.5 rounded-xl bg-[var(--color-cream,#FAF9F5)] border border-[var(--color-gold,#C7982F)]/25 text-[11px] text-[var(--color-ink,#29231D)]">
                 <span className="font-bold text-[var(--color-gold,#C7982F)] uppercase tracking-wider text-[9px] block mb-0.5">
-                  Pack Contents
+                  {t('packContents', 'Pack Contents')}
                 </span>
                 <span>{product.contents}</span>
               </div>
@@ -198,7 +202,7 @@ export default function QuickViewModal({
             <div className="space-y-2.5 pt-1">
               <div className="flex items-center justify-between">
                 <label className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-widest flex items-center gap-1.5">
-                  <Scale size={12} className="text-[var(--color-gold)]" /> {isWholesale ? 'Wholesale Quantity' : 'Select Pack Size'}
+                  <Scale size={12} className="text-[var(--color-gold)]" /> {isWholesale ? t('wholesaleQty', 'Wholesale Quantity') : t('selectWeight', 'Select Pack Size')}
                 </label>
                 {isWholesale && (
                   <span className="text-[9px] bg-[var(--color-emerald)] text-[var(--color-gold)] px-2 py-0.5 rounded-full uppercase font-black tracking-wider border border-[var(--color-gold)]/30">
@@ -296,8 +300,8 @@ export default function QuickViewModal({
 
           {/* Pricing & Add to cart footer */}
           <div className="mt-6 pt-5 border-t border-[var(--color-border)] flex flex-col sm:flex-row items-center gap-4 text-left">
-            <div className="w-full sm:w-auto">
-              <span className="text-[9.5px] uppercase font-bold text-[var(--color-text-secondary,#635B52)] tracking-widest block">Investment</span>
+            <div className="w-full sm:w-auto shrink-0">
+              <span className="text-[9.5px] uppercase font-bold text-[var(--color-text-secondary,#635B52)] tracking-widest block">{t('price', 'Price')}</span>
               <span className="text-2xl sm:text-2.5xl font-serif font-bold text-[var(--color-text-price,#29231D)]">
                 Rs. {unitPrice?.toLocaleString()}
               </span>
@@ -312,28 +316,26 @@ export default function QuickViewModal({
               >
                 {addedToast ? (
                   <>
-                    <Check size={16} className="text-white" />
-                    <span>Added to Cart</span>
+                    <Check size={16} className="text-white shrink-0" />
+                    <span>{t('addedToCart', 'Added to Cart')}</span>
                   </>
                 ) : (
                   <>
-                    <ShoppingCart size={16} className="text-white" />
-                    <span>Add to Cart</span>
+                    <ShoppingCart size={16} className="text-white shrink-0" />
+                    <span>{t('addToCart', 'Add to Cart')}</span>
                   </>
                 )}
               </button>
 
               <button
                 type="button"
-                onClick={() => setIsLiked(!isLiked)}
-                aria-label="Save to favorites"
-                className={`p-3.5 rounded-2xl border transition-all duration-200 flex items-center justify-center cursor-pointer ${
-                  isLiked 
-                    ? 'text-rose-600 bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900 shadow-sm' 
-                    : 'text-[var(--color-ink)] bg-[var(--color-surface)] border-[var(--color-border)] hover:text-rose-600 hover:border-[var(--color-gold)] shadow-sm'
-                }`}
+                onClick={() => {
+                  onClose();
+                  window.location.href = `/product/${product.id}`;
+                }}
+                className="flex-1 font-bold uppercase tracking-widest py-3.5 px-6 rounded-2xl bg-[var(--color-surface)] hover:bg-[var(--color-base)] text-[var(--color-ink)] shadow-sm border border-[var(--color-border)] hover:border-[var(--color-gold)] active:scale-95 transform transition-all duration-200 cursor-pointer text-xs flex items-center justify-center text-center leading-tight whitespace-nowrap"
               >
-                <Heart size={16} fill={isLiked ? 'currentColor' : 'none'} />
+                {t('viewFullDetails', 'View Full Details')}
               </button>
             </div>
           </div>

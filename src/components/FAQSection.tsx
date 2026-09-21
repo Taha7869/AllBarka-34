@@ -88,10 +88,10 @@ export function FAQSection() {
                 <button
                   type="button"
                   onClick={() => handleToggle(index)}
-                  className="w-full p-5 sm:p-6 flex items-center justify-between gap-4 text-left cursor-pointer transition-colors focus:outline-none"
+                  className="w-full p-4 sm:p-6 flex items-start sm:items-center justify-between gap-3 sm:gap-4 text-left cursor-pointer transition-colors focus:outline-none"
                   aria-expanded={isOpen}
                 >
-                  <div className="flex items-center gap-3.5 sm:gap-4 flex-1">
+                  <div className="flex min-w-0 items-start sm:items-center gap-3 sm:gap-4 flex-1">
                     {/* Numbering / Icon Tag */}
                     <div
                       className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 border transition-colors ${
@@ -103,14 +103,14 @@ export function FAQSection() {
                       <span className="font-serif text-xs sm:text-sm">0{index + 1}</span>
                     </div>
 
-                    <div className="space-y-1">
+                    <div className="min-w-0 space-y-1">
                       {faq.badge && (
                         <span className="text-[9.5px] font-black uppercase tracking-wider text-[var(--color-gold)] block">
                           {faq.badge}
                         </span>
                       )}
                       <h3
-                        className={`text-sm sm:text-base md:text-lg font-serif font-bold transition-colors ${
+                        className={`text-sm sm:text-base md:text-lg font-serif font-bold transition-colors break-words ${
                           isOpen ? 'text-[var(--color-ink)]' : 'text-[var(--color-ink)]/90'
                         }`}
                       >
@@ -142,11 +142,11 @@ export function FAQSection() {
                       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                       className="overflow-hidden"
                     >
-                      <div className="px-5 pb-6 sm:px-6 sm:pb-7 pt-1 border-t border-[var(--color-border)] text-left">
-                        <div className="p-4 sm:p-5 rounded-2xl bg-[var(--color-base)] border border-[var(--color-border)] text-xs sm:text-sm md:text-[14.5px] text-[var(--color-ink)] font-medium leading-relaxed sm:leading-loose">
+                      <div className="px-4 pb-5 sm:px-6 sm:pb-7 pt-1 border-t border-[var(--color-border)] text-left">
+                        <div className="p-3.5 sm:p-5 rounded-2xl bg-[var(--color-base)] border border-[var(--color-border)] text-xs sm:text-sm md:text-[14.5px] text-[var(--color-ink)] font-medium leading-relaxed sm:leading-loose break-words">
                           <p>{faq.answer}</p>
                           
-                          <div className="mt-3 pt-3 border-t border-[var(--color-border)] flex items-center gap-2 text-[11px] font-semibold text-[var(--color-gold)]">
+                          <div className="mt-3 pt-3 border-t border-[var(--color-border)] flex flex-wrap items-center gap-2 text-[11px] font-semibold text-[var(--color-gold)]">
                             <CheckCircle2 size={13} className="text-[var(--color-gold)]" />
                             <span>Verified AllBarka Standard</span>
                           </div>

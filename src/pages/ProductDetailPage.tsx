@@ -3,16 +3,18 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { PRODUCTS, getProductImage } from '../data/products';
 import { Product, CartItem } from '../types';
-import Breadcrumbs from '../components/Breadcrumbs';
 import ProductDetailAccordion from '../components/ProductDetailAccordion';
 import SEO from '../components/SEO';
-import { ShoppingBag, ShieldCheck, Check, Sparkles, ArrowRight, Truck, Award, AlertCircle, Info } from 'lucide-react';
+import { ShoppingBag, ShieldCheck, Check, Sparkles, ArrowRight, Truck, Award, AlertCircle, Info, Heart, Share2 } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
+import TrustBadges from '../components/TrustBadges';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { addToCart, setIsCartOpen } = useCart();
+  const { t } = useLanguage();
   
   const product = PRODUCTS.find((p) => p.id === id);
   const [selectedWeightIndex, setSelectedWeightIndex] = useState(0);
@@ -136,11 +138,6 @@ export default function ProductDetailPage() {
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Consistent Breadcrumbs */}
-        <div className="mb-6 sm:mb-8">
-          <Breadcrumbs />
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-start">
           
           {/* Left: Product Visual Showcase */}
@@ -156,7 +153,9 @@ export default function ProductDetailPage() {
             ) : (
               <img
                 src={getProductImage(product)}
-                alt={product.name}
+                alt={t(`imageAlt.${product.id}`, product.name)}
+                width={960}
+                height={960}
                 referrerPolicy="no-referrer"
                 onError={() => setImageError(true)}
                 className="w-full h-full object-cover rounded-2xl group-hover:scale-105 transition-transform duration-500 ease-out"
@@ -225,7 +224,7 @@ export default function ProductDetailPage() {
                 </span>
               )}
               <span className="text-xs font-semibold text-[#0E7A53] dark:text-[#28A745] bg-[#0E7A53]/10 px-2.5 py-1 rounded-full">
-                Fresh Batch
+                {t('inStock', 'In Stock')}
               </span>
             </div>
 
@@ -233,7 +232,7 @@ export default function ProductDetailPage() {
             <div className="mb-6">
               <div className="flex justify-between items-center mb-3">
                 <span className="text-xs font-bold text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)] uppercase tracking-widest">
-                  Select Weight / Portion
+                  {t('weightSelector', 'Select Weight / Portion')}
                 </span>
                 {isWholesaleEligible && (
                   <label className="flex items-center gap-2 cursor-pointer group select-none min-h-[36px]">
@@ -280,51 +279,71 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Quantity & Add to Cart (minimum 44px tap targets) */}
-            <div className="flex flex-col sm:flex-row gap-3 mb-8">
-              <div className="flex items-center justify-center bg-white dark:bg-[#1C2422] border border-[var(--color-accent,#C7982F)]/35 rounded-xl h-12 px-2 shrink-0">
+            <div className="flex flex-col gap-3 mb-8">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex items-center justify-center bg-white dark:bg-[#1C2422] border border-[var(--color-accent,#C7982F)]/35 rounded-xl h-12 px-2 shrink-0">
+                  <button 
+                    type="button"
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="w-10 h-10 flex items-center justify-center text-[var(--color-text-primary,#29231D)] dark:text-white hover:text-[var(--color-accent,#C7982F)] transition-colors cursor-pointer text-lg font-bold"
+                    aria-label="Decrease quantity"
+                  >
+                    -
+                  </button>
+                  <span className="w-10 text-center text-sm font-bold text-[var(--color-text-primary,#29231D)] dark:text-white">
+                    {quantity}
+                  </span>
+                  <button 
+                    type="button"
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="w-10 h-10 flex items-center justify-center text-[var(--color-text-primary,#29231D)] dark:text-white hover:text-[var(--color-accent,#C7982F)] transition-colors cursor-pointer text-lg font-bold"
+                    aria-label="Increase quantity"
+                  >
+                    +
+                  </button>
+                </div>
+
                 <button 
                   type="button"
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-10 h-10 flex items-center justify-center text-[var(--color-text-primary,#29231D)] dark:text-white hover:text-[var(--color-accent,#C7982F)] transition-colors cursor-pointer text-lg font-bold"
-                  aria-label="Decrease quantity"
+                  onClick={handleAddToCart}
+                  disabled={isAdded}
+                  className={`flex-1 min-h-[48px] rounded-xl flex items-center justify-center gap-2.5 text-xs font-bold uppercase tracking-widest transition-all cursor-pointer shadow-sm ${
+                    isAdded 
+                      ? 'bg-[var(--color-accent,#C7982F)] text-[var(--color-text-on-gold,#121615)] shadow-md scale-[1.01]' 
+                      : 'bg-[var(--color-primary,#042821)] text-[var(--color-text-on-emerald,#FFFCF7)] hover:bg-[#03201A] border border-[var(--color-accent,#C7982F)]/40 hover:border-[var(--color-accent,#C7982F)]'
+                  }`}
                 >
-                  -
-                </button>
-                <span className="w-10 text-center text-sm font-bold text-[var(--color-text-primary,#29231D)] dark:text-white">
-                  {quantity}
-                </span>
-                <button 
-                  type="button"
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="w-10 h-10 flex items-center justify-center text-[var(--color-text-primary,#29231D)] dark:text-white hover:text-[var(--color-accent,#C7982F)] transition-colors cursor-pointer text-lg font-bold"
-                  aria-label="Increase quantity"
-                >
-                  +
+                  {isAdded ? (
+                    <>
+                      <Check size={16} className="text-emerald-300" />
+                      <span>Added to Cart</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingBag size={16} className="text-[var(--color-accent,#C7982F)]" />
+                      <span>Add to Cart — Rs. {(priceToUse * quantity)?.toLocaleString()}</span>
+                    </>
+                  )}
                 </button>
               </div>
-
-              <button 
-                type="button"
-                onClick={handleAddToCart}
-                disabled={isAdded}
-                className={`flex-1 min-h-[48px] rounded-xl flex items-center justify-center gap-2.5 text-xs font-bold uppercase tracking-widest transition-all cursor-pointer shadow-sm ${
-                  isAdded 
-                    ? 'bg-[var(--color-accent,#C7982F)] text-[var(--color-text-on-gold,#121615)] shadow-md scale-[1.01]' 
-                    : 'bg-[var(--color-primary,#042821)] text-[var(--color-text-on-emerald,#FFFCF7)] hover:bg-[#03201A] border border-[var(--color-accent,#C7982F)]/40 hover:border-[var(--color-accent,#C7982F)]'
-                }`}
-              >
-                {isAdded ? (
-                  <>
-                    <Check size={16} className="text-emerald-300" />
-                    <span>Added to Cart</span>
-                  </>
-                ) : (
-                  <>
-                    <ShoppingBag size={16} className="text-[var(--color-accent,#C7982F)]" />
-                    <span>Add to Cart — Rs. {(priceToUse * quantity)?.toLocaleString()}</span>
-                  </>
-                )}
-              </button>
+              
+              {/* Internal Actions: Wishlist & Share */}
+              <div className="flex items-center gap-3">
+                <button 
+                  type="button" 
+                  className="flex-1 h-11 flex items-center justify-center gap-2 rounded-xl border border-[#29231D]/20 dark:border-[#F6F1EA]/20 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#635B52] dark:text-[#A8A199] hover:text-[#E4405F] hover:border-[#E4405F]/50 transition-colors shadow-sm focus-ring cursor-pointer"
+                >
+                  <Heart size={15} />
+                  <span>{t('wishlist', 'Wishlist')}</span>
+                </button>
+                <button 
+                  type="button" 
+                  className="flex-1 h-11 flex items-center justify-center gap-2 rounded-xl border border-[#29231D]/20 dark:border-[#F6F1EA]/20 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#635B52] dark:text-[#A8A199] hover:text-[#1E3A2B] dark:hover:text-[#FDFBF7] hover:border-[#1E3A2B] dark:hover:border-[#FDFBF7] transition-colors shadow-sm focus-ring cursor-pointer"
+                >
+                  <Share2 size={15} />
+                  <span>{t('shareItem', 'Share Item')}</span>
+                </button>
+              </div>
             </div>
 
             {/* Quick Guarantees Strip */}
@@ -340,7 +359,19 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Accordions for Sourcing, Storage, and Packaging */}
-            <ProductDetailAccordion product={product} />
+            <div className="mb-10">
+              <ProductDetailAccordion product={product} />
+            </div>
+
+            <div className="mt-8 border-t border-[var(--color-accent,#C7982F)]/20 pt-8">
+              <div className="flex items-center gap-2 mb-4">
+                <ShieldCheck size={20} className="text-[#C5A059]" />
+                <h3 className="font-serif font-bold text-lg text-[var(--color-ink,#29231D)] dark:text-[#FFFCF7]">
+                  {t('freshGuarantee', 'The AllBarka Guarantee')}
+                </h3>
+              </div>
+              <TrustBadges variant="grid" />
+            </div>
 
           </div>
         </div>
@@ -380,7 +411,9 @@ export default function ProductDetailPage() {
                       <div className="w-full aspect-square rounded-xl bg-[#FAF9F5] border border-[var(--color-gold,#C7982F)]/15 overflow-hidden flex items-center justify-center p-3 mb-3 relative">
                         <img
                           src={getProductImage(rel)}
-                          alt={rel.name}
+                          alt={t(`imageAlt.${rel.id}`, rel.name)}
+                          width={960}
+                          height={960}
                           className="w-full h-full object-cover rounded-lg group-hover:scale-105 transition-transform duration-500"
                           loading="lazy"
                         />

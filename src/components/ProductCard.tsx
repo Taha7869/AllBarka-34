@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { ShoppingBag, Check, Eye } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Eye, ShoppingBag } from 'lucide-react';
 import { Product } from '../types';
-import { useCart } from '../contexts/CartContext';
 import { getProductImage } from '../data/products';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useCart } from '../contexts/CartContext';
 
 interface ProductCardProps {
   product: Product;
@@ -18,49 +20,18 @@ export default function ProductCard({
   onAddToCart,
   onQuickView,
 }: ProductCardProps) {
+  const { t } = useLanguage();
   const { addToCart } = useCart();
   const weights = Object.keys(product.prices || {});
   const [selectedWeight, setSelectedWeight] = useState(weights[0] || '250g');
-  const [isAdded, setIsAdded] = useState(false);
 
   const unitPrice = isWholesale
     ? (product.wholesale || Object.values(product.prices)[0] || 0)
     : (product.prices[selectedWeight] || Object.values(product.prices)[0] || 0);
 
-  const handleBuy = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onAddToCart) {
-      onAddToCart(product.id, selectedWeight);
-    } else {
-      addToCart({
-        id: `${product.id}-${selectedWeight}`,
-        productId: product.id,
-        name: product.name,
-        slug: product.id,
-        image: product.image || getProductImage(product),
-        selectedWeight,
-        unitPrice,
-        price: unitPrice,
-        quantity: 1,
-        wholesale: isWholesale,
-      });
-    }
-    setIsAdded(true);
-    setTimeout(() => setIsAdded(false), 1600);
-  };
-
   return (
-    <article
-      onClick={() => onQuickView && onQuickView(product)}
-      className="group/card bg-[var(--color-surface,#FFFCF7)] dark:bg-[var(--color-surface,#1A201E)] border border-[var(--color-border)] dark:border-[var(--color-border)] hover:border-[var(--color-accent,#C7982F)] dark:hover:border-[var(--color-accent,#D4A843)] rounded-3xl p-5 flex flex-col justify-between h-full transition-all duration-300 shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] hover:-translate-y-1 cursor-pointer select-none text-left relative focus-ring"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onQuickView && onQuickView(product);
-        }
-      }}
-      aria-label={`View details for ${product.name}`}
+    <div
+      className="group/card bg-[var(--color-surface,#FFFCF7)] dark:bg-[var(--color-surface,#1A201E)] border border-[var(--color-border)] dark:border-[var(--color-border)] hover:border-[var(--color-accent,#C7982F)] dark:hover:border-[var(--color-accent,#D4A843)] rounded-3xl p-5 flex flex-col justify-between h-full transition-all duration-300 shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] relative"
     >
       {/* Top Meta Line: Dark bronze labels on light backgrounds (WCAG AA compliant) */}
       <div className="flex items-center justify-between gap-2 mb-3">
@@ -75,29 +46,27 @@ export default function ProductCard({
       </div>
 
       {/* Image Plate */}
-      <div className="w-full aspect-[4/3] rounded-2xl bg-[var(--color-surface-subtle,#FAF9F5)] dark:bg-[var(--color-surface-elevated,#222A28)] border border-[var(--color-border)] dark:border-[var(--color-border)] overflow-hidden flex items-center justify-center p-3 relative group shadow-2xs">
+      <Link to={`/product/${product.id}`} className="block w-full aspect-[4/3] rounded-2xl bg-[var(--color-surface-subtle,#FAF9F5)] dark:bg-[var(--color-surface-elevated,#222A28)] border border-[var(--color-border)] dark:border-[var(--color-border)] overflow-hidden flex items-center justify-center p-3 relative group shadow-2xs focus-ring">
         <img
-          src={product.image || `/images/${product.imageName}`}
-          alt={product.name}
+          src={getProductImage(product)}
+          alt={t(`imageAlt.${product.id}`, product.name)}
+          width={960}
+          height={960}
           onError={(e) => {
             (e.target as HTMLImageElement).src = '/images/product-placeholder.svg';
           }}
           className="w-full h-full object-contain group-hover/card:scale-105 transition-transform duration-500 ease-out"
           loading="lazy"
         />
-        <div className="absolute inset-0 bg-[#042821]/20 backdrop-blur-[2px] opacity-0 group-hover/card:opacity-100 transition-opacity duration-200 flex items-center justify-center pointer-events-none">
-          <span className="px-3.5 py-1.5 rounded-full text-[9px] font-sans font-bold uppercase tracking-widest bg-[var(--color-primary,#042821)] text-[var(--color-text-on-emerald,#FFFCF7)] border border-[var(--color-accent,#C7982F)]/50 shadow-md flex items-center gap-1.5">
-            <Eye size={11} className="text-[var(--color-accent,#C7982F)]" />
-            <span>Quick Look</span>
-          </span>
-        </div>
-      </div>
+      </Link>
 
       {/* Product Details */}
       <div className="pt-4 pb-2 space-y-1.5 flex-1 text-left">
-        <h3 className="text-lg font-serif font-bold text-[var(--color-text-primary,#29231D)] leading-snug line-clamp-1">
-          {product.name}
-        </h3>
+        <Link to={`/product/${product.id}`} className="block focus-ring rounded-sm w-fit">
+          <h3 className="text-lg font-serif font-bold text-[var(--color-text-primary,#29231D)] leading-snug line-clamp-1 hover:text-[#C7982F] transition-colors">
+            {product.name}
+          </h3>
+        </Link>
         <p className="text-xs text-[var(--color-text-secondary,#635B52)] line-clamp-2 leading-relaxed font-sans">
           {product.desc}
         </p>
@@ -117,8 +86,8 @@ export default function ProductCard({
               }}
               className={`flex-1 min-w-[54px] min-h-[38px] py-1.5 px-2 rounded-xl text-[10px] font-sans font-semibold tracking-wider uppercase border transition-all duration-200 cursor-pointer focus-ring flex items-center justify-center ${
                 selectedWeight === w
-                  ? 'bg-[var(--color-primary,#042821)] text-[var(--color-accent,#C7982F)] border-[var(--color-primary,#042821)] dark:bg-[var(--color-primary,#0E4A3B)] dark:text-[var(--color-accent,#D4A843)] dark:border-[var(--color-primary,#0E4A3B)] shadow-xs'
-                  : 'bg-[var(--color-base,#F6F1EA)] text-[var(--color-text-primary,#29231D)] border-[var(--color-border)] hover:border-[var(--color-accent,#C7982F)] dark:bg-[var(--color-surface-elevated,#222A28)] dark:text-[var(--color-text-primary,#F6F1EA)] dark:border-[var(--color-border)] dark:hover:border-[var(--color-accent,#D4A843)]'
+                  ? 'bg-[#1E3A2B] text-[#C7982F] border-[#1E3A2B] shadow-xs'
+                  : 'bg-[var(--color-base,#FDFBF7)] text-[var(--color-text-primary,#29231D)] border-[var(--color-border)] hover:border-[var(--color-accent,#C7982F)] dark:bg-[var(--color-surface-elevated,#222A28)] dark:text-[var(--color-text-primary,#F6F1EA)] dark:border-[var(--color-border)] dark:hover:border-[var(--color-accent,#D4A843)]'
               }`}
               aria-pressed={selectedWeight === w}
             >
@@ -128,42 +97,48 @@ export default function ProductCard({
         </div>
 
         {/* Pricing & Add to Cart */}
-        <div className="flex items-center justify-between gap-2 pt-1">
-          <div className="flex flex-col text-left">
-            <span className="text-[8.5px] uppercase tracking-widest text-[var(--color-text-secondary,#635B52)] font-sans font-medium">
-              Investment
-            </span>
-            <span className="text-base sm:text-lg font-serif font-bold text-[var(--color-text-price,#29231D)]">
-              Rs. {unitPrice?.toLocaleString()}
-            </span>
+        <div className="flex flex-col gap-2 pt-1">
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col text-left">
+              <span className="text-[8.5px] uppercase tracking-widest text-[var(--color-text-secondary,#635B52)] font-sans font-medium">
+                {t('price', 'Price')}
+              </span>
+              <span className="text-base sm:text-lg font-serif font-bold text-[var(--color-text-price,#29231D)]">
+                Rs. {unitPrice?.toLocaleString()}
+              </span>
+            </div>
           </div>
 
-          {/* Primary Action Button: Deep Emerald with Champagne Gold details (Min 44px touch height) */}
-          <button
-            type="button"
-            onClick={handleBuy}
-            className={`min-w-[120px] min-h-[44px] px-4 py-2.5 rounded-full text-[10.5px] font-sans font-bold uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-1.5 shadow-xs cursor-pointer active:scale-95 focus-ring ${
-              isAdded
-                ? 'bg-emerald-800 text-[var(--color-text-on-emerald,#FFFCF7)] border border-emerald-700'
-                : 'bg-[var(--color-primary,#042821)] hover:bg-[#03201A] dark:bg-[var(--color-primary,#0E4A3B)] dark:hover:bg-[#165B4A] text-[var(--color-text-on-emerald,#FFFCF7)] border border-[var(--color-accent,#C7982F)]/40 hover:border-[var(--color-accent,#C7982F)]'
-            }`}
-            aria-label={isAdded ? 'Added to order' : `Add ${product.name} to box`}
-          >
-            {isAdded ? (
-              <>
-                <Check size={13} className="text-emerald-300" />
-                <span>Added</span>
-              </>
-            ) : (
-              <>
-                <ShoppingBag size={13} className="text-[var(--color-accent,#C7982F)] dark:text-[var(--color-accent,#D4A843)]" />
-                <span>Add to Box</span>
-              </>
-            )}
-          </button>
+          <div className="pt-1 border-t border-[var(--color-border)] w-full flex items-center justify-between gap-1.5">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onAddToCart) {
+                  onAddToCart(product.id, selectedWeight);
+                } else {
+                  addToCart(product, selectedWeight, 1);
+                }
+              }}
+              className="flex-1 min-h-[40px] py-1 px-3 rounded-full bg-[#1E3A2B] hover:bg-[#14281E] text-[#FDFBF7] border border-[#C5A059]/40 hover:border-[#C5A059] text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer shadow-xs active:scale-[0.98]"
+            >
+              <ShoppingBag size={13} strokeWidth={2} className="text-[#C5A059]" />
+              <span>{t('addToCart', 'Add to Cart')}</span>
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onQuickView) onQuickView(product);
+              }}
+              className="min-w-[40px] h-[40px] rounded-full border border-[var(--color-border)] bg-[var(--color-surface,#FFFCF7)] dark:bg-[var(--color-surface,#1A201E)] flex items-center justify-center text-[var(--color-text-secondary,#635B52)] hover:text-[#C5A059] hover:border-[#C5A059] transition-colors shadow-xs cursor-pointer focus-ring"
+              aria-label="Quick View"
+            >
+              <Eye size={16} strokeWidth={2.2} />
+            </button>
+          </div>
         </div>
       </div>
-    </article>
+    </div>
   );
 }
-

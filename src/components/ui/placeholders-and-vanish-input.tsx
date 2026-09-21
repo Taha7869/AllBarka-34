@@ -237,7 +237,7 @@ export function PlaceholdersAndVanishInput({
     <form
       onSubmit={handleSubmit}
       className={cn(
-        "relative w-full max-w-2xl mx-auto h-13 sm:h-14 rounded-full overflow-hidden shadow-lg bg-[#FFFCF7] border border-[#C7982F]/50 transition-all duration-300 focus-within:border-[#C7982F] focus-within:ring-2 focus-within:ring-[#C7982F]/30",
+        "relative w-full max-w-2xl mx-auto h-13 sm:h-14 rounded-full overflow-hidden shadow-lg bg-[var(--color-surface-elevated)] border border-[var(--color-accent)]/50 transition-all duration-300 focus-within:border-[var(--color-accent)] focus-within:ring-2 focus-within:ring-[var(--color-accent)]/30",
         className
       )}
     >
@@ -270,7 +270,7 @@ export function PlaceholdersAndVanishInput({
           if (onChange) onChange(e);
         }}
         className={cn(
-          "w-full h-full bg-transparent ps-5 sm:ps-7 pe-14 text-sm sm:text-base font-medium text-[#29231D] placeholder:text-[#806326]/60 focus:outline-none z-10 relative selection:bg-[#C7982F]/25 selection:text-[#042821] caret-[#042821]",
+          "w-full h-full bg-transparent ps-5 sm:ps-7 pe-14 text-sm sm:text-base font-medium text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)] focus:outline-none z-10 relative selection:bg-[var(--color-accent)]/25 selection:text-[var(--color-text-primary)] caret-[var(--color-accent)]",
           animating && "text-transparent"
         )}
       />
@@ -285,7 +285,7 @@ export function PlaceholdersAndVanishInput({
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: -9, opacity: 0 }}
               transition={{ duration: 0.28, ease: "easeOut" }}
-              className="absolute text-xs sm:text-sm md:text-base font-medium text-[#806326] truncate select-none text-left"
+              className="absolute max-w-[calc(100%-1rem)] text-xs sm:text-sm md:text-base font-medium text-[var(--color-text-secondary)] truncate select-none text-left"
             >
               {placeholders[currentPlaceholder]}
             </motion.p>
@@ -300,8 +300,8 @@ export function PlaceholdersAndVanishInput({
         className={cn(
           "absolute end-2 sm:end-2.5 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all duration-300",
           value.trim() && !animating
-            ? "bg-[#042821] text-[#E4C783] hover:bg-[#C7982F] hover:text-[#042821] shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
-            : "bg-[#F6F1EA] text-[#806326]/40 border border-[#C7982F]/20 cursor-default"
+            ? "bg-[var(--color-primary)] text-[var(--color-primary-fg)] hover:bg-[var(--color-accent)] hover:text-[var(--color-text-on-gold)] shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
+            : "bg-[var(--color-surface-subtle)] text-[var(--color-accent-text)] border border-[var(--color-accent)]/25 cursor-default"
         )}
         aria-label={label}
       >
@@ -326,4 +326,3 @@ export function PlaceholdersAndVanishInput({
 }
 
 export default PlaceholdersAndVanishInput;
-

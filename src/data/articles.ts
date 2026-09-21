@@ -41,7 +41,7 @@ export const JOURNAL_ARTICLES: JournalArticle[] = [
       name: 'AllBarka Sourcing & Quality Team',
       role: 'Quality Assurance, Lahore Roastery',
     },
-    image: '/images/products/deal-2.jpg',
+    image: '/images/generated/almond-cashew-duo-catalog-v1.webp',
     tags: ['Buying Guide', 'Pack Sizes', 'Wholesale', 'Freshness'],
     relatedProductIds: ['badam', 'kaju', 'pista', 'deal-2'],
     sections: [
@@ -96,7 +96,7 @@ export const JOURNAL_ARTICLES: JournalArticle[] = [
       name: 'AllBarka Sourcing & Quality Team',
       role: 'Cold-Chain & Preservation Cell',
     },
-    image: '/images/products/akhroot.jpg',
+    image: '/images/generated/walnut-halves-catalog-v1.webp',
     tags: ['Storage Science', 'Walnuts', 'Freshness', 'Climate Tips'],
     relatedProductIds: ['akhroot', 'pista', 'badam', 'khubani'],
     sections: [
@@ -144,7 +144,7 @@ export const JOURNAL_ARTICLES: JournalArticle[] = [
       name: 'AllBarka Culinary & Sourcing Team',
       role: 'Hospitality & Taste Curators',
     },
-    image: '/images/products/pista.jpg',
+    image: '/images/generated/pistachios-catalog-v1.webp',
     tags: ['Tea Pairings', 'Kashmiri Chai', 'Nimko', 'Lahori Culture'],
     relatedProductIds: ['pista', 'kaju', 'nimko', 'chanay'],
     sections: [
@@ -188,7 +188,7 @@ export const JOURNAL_ARTICLES: JournalArticle[] = [
       name: 'AllBarka Culinary & Sourcing Team',
       role: 'Recipe & Kitchen Studio',
     },
-    image: '/images/products/alubukhara.jpg',
+    image: '/images/generated/dried-plums-catalog-v1.webp',
     tags: ['Recipes', 'Biryani', 'Smoothie Bowls', 'Daily Nutrition'],
     relatedProductIds: ['alubukhara', 'badam', 'chia_seeds', 'pumpkin_seeds'],
     sections: [
@@ -232,7 +232,7 @@ export const JOURNAL_ARTICLES: JournalArticle[] = [
       name: 'AllBarka Food Safety & Quality Board',
       role: 'Compliance & Hygiene Division',
     },
-    image: '/images/products/kaju.jpg',
+    image: '/images/generated/cashews-catalog-v1.webp',
     tags: ['Allergens', 'Food Safety', 'Transparency', 'Health'],
     relatedProductIds: ['kaju', 'badam', 'pista', 'chia_seeds'],
     sections: [
@@ -280,7 +280,7 @@ export const JOURNAL_ARTICLES: JournalArticle[] = [
       name: 'AllBarka Hospitality & Gifting Atelier',
       role: 'Corporate & Celebration Concierge',
     },
-    image: '/images/products/deal-1.jpg',
+    image: '/images/generated/walnut-pistachio-duo-catalog-v1.webp',
     tags: ['Gifting', 'Corporate Gifts', 'Hampers', 'Hospitality'],
     relatedProductIds: ['deal-1', 'deal-2', 'pista', 'kaju'],
     sections: [

@@ -16,14 +16,15 @@ import {
 } from 'lucide-react';
 import { JOURNAL_ARTICLES, getArticleBySlug, JournalArticle } from '../data/articles';
 import { PRODUCTS, getProductImage } from '../data/products';
-import Breadcrumbs from '../components/Breadcrumbs';
 import SEO from '../components/SEO';
 import { useCart } from '../contexts/CartContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function JournalPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { addToCart, setIsCartOpen } = useCart();
+  const { t } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
@@ -144,8 +145,6 @@ export default function JournalPage() {
           }}
         />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-          <Breadcrumbs />
-
           {/* Navigation Bar */}
           <div className="flex items-center justify-between">
             <Link
@@ -214,6 +213,8 @@ export default function JournalPage() {
             <img
               src={currentArticle.image}
               alt={currentArticle.title}
+              width={960}
+              height={960}
               className="w-full h-full object-cover"
             />
           </div>
@@ -295,7 +296,9 @@ export default function JournalPage() {
                         <div className="aspect-square rounded-xl overflow-hidden bg-[var(--color-base,#F6F1EA)] border border-[var(--color-gold,#C7982F)]/20 p-2">
                           <img
                             src={getProductImage(p)}
-                            alt={p.name}
+                            alt={t(`imageAlt.${p.id}`, p.name)}
+                            width={960}
+                            height={960}
                             className="w-full h-full object-cover rounded-lg group-hover:scale-105 transition-transform duration-300"
                           />
                         </div>
@@ -371,8 +374,6 @@ export default function JournalPage() {
         canonicalPath="/journal"
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        <Breadcrumbs />
-
         {/* Header Hero Banner */}
         <div className="text-center max-w-3xl mx-auto space-y-3">
           <span className="text-xs font-bold uppercase tracking-[0.25em] text-[var(--color-gold,#C7982F)] block">
@@ -427,6 +428,8 @@ export default function JournalPage() {
                 <img
                   src={featuredArticle.image}
                   alt={featuredArticle.title}
+                  width={960}
+                  height={960}
                   className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
                 />
               </div>
@@ -480,6 +483,8 @@ export default function JournalPage() {
                   <img
                     src={article.image}
                     alt={article.title}
+                    width={960}
+                    height={960}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                 </Link>

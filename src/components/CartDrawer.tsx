@@ -18,6 +18,7 @@ import type { CartItem } from '../types';
 import { PRODUCTS, getProductImage } from '../data/products';
 import { useCart, parsePrice, formatPrice, FREE_SHIPPING_THRESHOLD } from '../contexts/CartContext';
 import { acquireScrollLock } from '../utils/scrollLock';
+import { useLanguage } from '../contexts/LanguageContext';
 
 function SafeCartImage({
   src,
@@ -45,6 +46,8 @@ function SafeCartImage({
       src={src}
       className={className}
       alt={alt}
+      width={960}
+      height={960}
       loading="lazy"
       onError={() => setError(true)}
     />
@@ -75,6 +78,7 @@ export default function CartDrawer({
   onAddToCart: propsOnAddToCart,
 }: CartDrawerProps) {
   const navigate = useNavigate();
+  const { t, isRtl } = useLanguage();
   const context = useCart();
   const drawerHeadingId = useId();
 
@@ -173,31 +177,44 @@ export default function CartDrawer({
     (prod) => !cartItems.some((item) => item.productId === prod.id || item.id.startsWith(prod.id))
   ).slice(0, 3);
 
-  // 1-Click WhatsApp Quick Checkout
+  // 1-Click WhatsApp Quick Checkout — encodes full cart summary for guest checkout
   const handleWhatsAppCheckout = () => {
-    const itemsText = cartItems
-      .map(
-        (item) =>
-          `• *${item.name}* (${item.selectedWeight}) x${item.quantity} = Rs. ${(
-            parsePrice(item.unitPrice || item.price) * item.quantity
-          ).toLocaleString()}`
-      )
-      .join('\n');
+    if (cartItems.length === 0) return;
+    const shippingCost = isFreeUnlocked ? 0 : 150;
+    const estimatedTotal = subtotal + shippingCost;
 
-    const message = `Assalam-o-Alaikum AllBarka Boutique!\nI would like to place an order from your online store:\n\n*Cart Summary:*\n${itemsText}\n\n*Subtotal:* ${formatPrice(
-      subtotal
-    )}\n*Shipping:* ${isFreeUnlocked ? 'FREE Shipping (Order >= Rs. 3,000)' : 'Standard (Rs. 150)'}\n*Preferred Payment:* ${
-      selectedPayment === 'cod' ? 'Cash on Delivery (COD)' : 'Direct Bank / Raast / NayaPay'
-    }\n\nPlease confirm order confirmation and dispatch schedule.`;
+    // Build line-by-line cart summary
+    const lines = cartItems.map((item) => {
+      const itemUnit = parsePrice(item.unitPrice || item.price);
+      const itemTotal = itemUnit * item.quantity;
+      return `• ${item.name} (${item.selectedWeight}) × ${item.quantity} = Rs. ${itemTotal.toLocaleString()}`;
+    });
 
-    const url = `https://wa.me/923160666083?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
+    const shippingLine = isFreeUnlocked
+      ? `Shipping: FREE (order over Rs. 3,000)`
+      : `Shipping: Rs. ${shippingCost}`;
+
+    const messageLines = [
+      'Assalam-o-Alaikum AllBarka! 🌿',
+      'I would like to place the following order:',
+      '',
+      ...lines,
+      '',
+      `Subtotal: Rs. ${subtotal.toLocaleString()}`,
+      shippingLine,
+      `*Total: Rs. ${estimatedTotal.toLocaleString()}*`,
+      '',
+      'Please confirm availability and share payment/delivery details. Shukriya! 🙏',
+    ];
+
+    const encoded = encodeURIComponent(messageLines.join('\n'));
+    window.open(`https://wa.me/923299455065?text=${encoded}`, '_blank', 'noopener,noreferrer');
   };
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[9990] flex justify-end overflow-hidden">
+        <div className={`fixed inset-0 z-[9990] flex overflow-hidden ${isRtl ? 'justify-start' : 'justify-end'}`}>
           {/* Overlay Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -211,14 +228,15 @@ export default function CartDrawer({
 
           {/* Slideout Drawer Container: Full screen on <640px and max-w-md on desktop */}
           <motion.aside
-            initial={{ x: '100%' }}
+            initial={{ x: isRtl ? '-100%' : '100%' }}
             animate={{ x: 0 }}
-            exit={{ x: '100%' }}
+            exit={{ x: isRtl ? '-100%' : '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 280 }}
             role="dialog"
             aria-modal="true"
             aria-labelledby={drawerHeadingId}
-            className="w-full sm:max-w-md bg-[#F6F1EA] dark:bg-[#121615] h-full relative z-10 shadow-[0_0_50px_rgba(0,0,0,0.35)] flex flex-col overflow-hidden text-[#29231D] dark:text-[#F6F1EA] border-l border-[#C7982F]/25 pb-[env(safe-area-inset-bottom)]"
+            dir={isRtl ? 'rtl' : 'ltr'}
+            className={`w-full sm:max-w-md bg-[#F6F1EA] dark:bg-[#121615] h-full relative z-10 shadow-[0_0_50px_rgba(0,0,0,0.35)] flex flex-col overflow-hidden text-[#29231D] dark:text-[#F6F1EA] ${isRtl ? 'border-r' : 'border-l'} border-[#C7982F]/25 pb-[env(safe-area-inset-bottom)]`}
           >
             {/* ── 1. Top Fixed Header ── */}
             <div className="bg-[#FFFCF7] dark:bg-[#1A201E] border-b border-[#C7982F]/25 px-4 sm:px-5 py-4 flex items-center justify-between shrink-0 shadow-xs">
@@ -321,7 +339,7 @@ export default function CartDrawer({
                     const itemUnitPrice = parsePrice(item.unitPrice || item.price);
                     const itemTotalPrice = itemUnitPrice * item.quantity;
                     const matchedProduct = PRODUCTS.find((p) => p.id === item.productId || p.id === item.id);
-                    const imageSource = item.image || (matchedProduct ? getProductImage(matchedProduct) : '');
+                    const imageSource = matchedProduct ? getProductImage(matchedProduct) : item.image || '';
 
                     return (
                       <div
@@ -330,7 +348,7 @@ export default function CartDrawer({
                       >
                         <SafeCartImage
                           src={imageSource}
-                          alt={item.name}
+                          alt={t(`imageAlt.${item.productId || item.slug}`, item.name)}
                           className="w-16 h-16 object-cover rounded-xl shrink-0 bg-[#F6F1EA] dark:bg-[#222A28] border border-[#29231D]/8 dark:border-[#F6F1EA]/10"
                           fallbackText={item.name}
                         />
@@ -429,7 +447,7 @@ export default function CartDrawer({
                           <div className="w-full relative aspect-4/3 rounded-lg overflow-hidden bg-[#F6F1EA] dark:bg-[#222A28] shrink-0 border border-[#29231D]/8 dark:border-[#F6F1EA]/8">
                             <SafeCartImage
                               src={getProductImage(prod)}
-                              alt={prod.name}
+                              alt={t(`imageAlt.${prod.id}`, prod.name)}
                               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                               fallbackText={prod.name}
                             />
@@ -525,21 +543,21 @@ export default function CartDrawer({
                 <button
                   type="button"
                   onClick={handleProceedToCheckout}
-                  className="w-full min-h-[48px] py-3.5 px-5 rounded-full bg-[#042821] hover:bg-[#03201A] dark:bg-[#0E4A3B] dark:hover:bg-[#165B4A] text-[#FFFCF7] text-xs font-bold uppercase tracking-widest transition-all shadow-md active:scale-98 flex items-center justify-center gap-2.5 border border-[#C7982F]/40 cursor-pointer focus-ring"
+                  className="w-full min-h-[48px] py-3.5 px-5 rounded-full bg-[#1E3A2B] hover:bg-[#14281E] text-[#FDFBF7] text-xs font-bold uppercase tracking-widest transition-all shadow-md active:scale-98 flex items-center justify-center gap-2.5 border border-[#C7982F]/40 cursor-pointer focus-ring"
                 >
-                  <ShieldCheck size={16} className="text-[#C7982F]" />
-                  <span>Proceed to Checkout</span>
-                  <ArrowRight size={15} className="text-[#C7982F]" />
+                  <ShoppingBag size={16} className="text-[#C7982F]" />
+                  <span>{t('proceedToCheckout', 'Proceed to Checkout')}</span>
+                  <ArrowRight size={15} className="text-[#FDFBF7]" />
                 </button>
 
-                {/* 1-Click WhatsApp Quick Checkout */}
+                {/* Secondary WhatsApp Quick Order */}
                 <button
                   type="button"
                   onClick={handleWhatsAppCheckout}
-                  className="w-full min-h-[44px] py-2.5 px-4 rounded-full bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#1E7E34] dark:text-[#25D366] text-[11px] font-bold uppercase tracking-wider transition-all border border-[#25D366]/35 flex items-center justify-center gap-2 cursor-pointer active:scale-98 focus-ring"
+                  className="w-full min-h-[44px] py-3 px-5 rounded-full bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#1E3A2B] dark:text-[#E4C783] text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2.5 border border-[#25D366]/40 cursor-pointer focus-ring"
                 >
-                  <MessageCircle size={16} className="text-[#25D366]" />
-                  <span>1-Click WhatsApp Quick Order</span>
+                  <MessageCircle size={15} className="text-[#25D366]" />
+                  <span>Order via WhatsApp</span>
                 </button>
               </div>
             )}

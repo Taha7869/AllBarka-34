@@ -8,7 +8,8 @@
   --font-urdu: "Noto Nastaliq Urdu", "Amiri", serif;
   --font-arabic: "Amiri", "Scheherazade New", serif;
 
-  --color-base: var(--color-base);
+  /* Keep --color-base as a runtime token only. Registering it with Tailwind
+     replaces the core font-size utility `.text-base` with a color utility. */
   --color-surface: var(--color-surface);
   --color-surface-elevated: var(--color-surface-elevated);
   --color-surface-subtle: var(--color-surface-subtle);
@@ -30,7 +31,7 @@
 
 :root {
   /* Master Palette — Light Theme (Cream, Ivory, Champagne Gold, Deep Emerald) */
-  --color-base: #F6F1EA;              /* Dominant warm cream canvas */
+  --color-base: #FDFBF7;              /* Dominant off-white canvas */
   --color-surface: #FFFCF7;           /* Ivory cards, forms, modals */
   --color-surface-elevated: #FFFFFF;  /* Clean elevated surface */
   --color-surface-subtle: #FAF9F5;    /* Subtle tinted surface */
@@ -40,8 +41,8 @@
   --color-accent-hover: #B58724;
   --color-accent-text: #806326;       /* Dark bronze labels on light backgrounds (WCAG AA 4.6+:1) */
   
-  --color-primary: #042821;           /* Main actions & deep-emerald sections */
-  --color-primary-hover: #03201A;
+  --color-primary: #1E3A2B;           /* Main actions & deep-forest sections */
+  --color-primary-hover: #14281E;
   --color-primary-fg: #FFFCF7;        /* Ivory text on primary actions */
   
   /* Dedicated Semantic Text Tokens (WCAG AAA compliant on light canvas/surfaces) */
@@ -61,8 +62,8 @@
   --color-gold: #C7982F;
   --color-gold-muted: #806326;
   --color-gold-light: #D4B483;
-  --color-emerald: #042821;
-  --color-emerald-dark: #03201A;
+  --color-emerald: #1E3A2B;
+  --color-emerald-dark: #14281E;
   --color-cream: #FAF9F5;
   
   --shadow-card: 0 4px 20px -4px rgba(41, 35, 29, 0.06), 0 2px 6px -1px rgba(41, 35, 29, 0.03);
@@ -130,7 +131,6 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-serif);
   font-weight: 600;
   letter-spacing: -0.015em;
-  color: var(--color-ink);
 }
 
 /* Subtle Paper Texture Canvas (Barely visible ~2.5% opacity, away from form inputs and dense copy) */
@@ -445,12 +445,10 @@ h1, h2, h3, h4, h5, h6 {
 @layer base {
   html {
     scroll-behavior: smooth;
-    overflow-x: hidden;
     width: 100%;
   }
 
   body {
-    overflow-x: hidden;
     width: 100%;
     -webkit-tap-highlight-color: transparent;
   }
@@ -503,4 +501,3 @@ html[dir="rtl"] h6 {
   direction: ltr !important;
   unicode-bidi: embed;
 }
-

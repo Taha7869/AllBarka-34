@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
+import { useLanguage, type LanguageCode } from '../contexts/LanguageContext';
 import { CartItem, Product } from '../types';
 
 import ScrollProgressBar from '../components/ScrollProgressBar';
@@ -29,7 +30,7 @@ const AIConcierge = React.lazy(() => import('../components/AIConcierge'));
 const CustomHamperBuilderModal = React.lazy(() => import('../components/CustomHamperBuilderModal'));
 
 import LahoreExpressTimer from '../components/LahoreExpressTimer';
-import { Menu, X, ShoppingBag, User, Gift } from 'lucide-react';
+import { Menu, X, ShoppingBag, User, Gift, Languages, ChevronDown } from 'lucide-react';
 import { AllBarkaHeaderLogo } from '../components/AllBarkaLogo';
 import MobileHeaderBrand from '../components/MobileHeaderBrand';
 import Breadcrumbs from '../components/Breadcrumbs';
@@ -43,6 +44,7 @@ export default function RootLayout() {
 
   const location = useLocation();
   const { currentUser, patronProfile, logout } = useAuth();
+  const { language, setLanguage } = useLanguage();
   
   const mobileMenuTriggerRef = React.useRef<HTMLButtonElement>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -180,7 +182,7 @@ export default function RootLayout() {
 
 
   return (
-    <div className="min-h-screen w-full max-w-full overflow-x-hidden relative flex flex-col font-sans bg-[var(--color-base)] text-[var(--color-ink)] selection:bg-[var(--color-gold)]/30 selection:text-[var(--color-ink)]">
+    <div className="min-h-screen w-full max-w-full relative flex flex-col font-sans bg-[var(--color-base)] text-[var(--color-ink)] selection:bg-[var(--color-gold)]/30 selection:text-[var(--color-ink)]">
       <ScrollProgressBar />
       <ToastManager />
       <GradualBlur preset="header" strength={1.5} opacity={0.9} />
@@ -235,6 +237,24 @@ export default function RootLayout() {
                 <Gift size={15} className="text-[#C7982F]" />
                 <span className="hidden lg:inline">Custom Hamper</span>
               </button>
+
+              {/* Language selector (Desktop only; mobile uses MobileMenu) */}
+              <div className="relative hidden lg:flex items-center min-h-[44px] rounded-xl border border-[#29231D]/10 dark:border-[#C7982F]/25 bg-[#F6F1EA]/60 dark:bg-[#1A201E]/60 text-[#042821] dark:text-[#FFFCF7] focus-within:ring-2 focus-within:ring-[#C7982F]/35">
+                <Languages size={16} className="absolute start-2.5 text-[#C7982F] pointer-events-none" aria-hidden="true" />
+                <label htmlFor="desktop-language-select" className="sr-only">Language</label>
+                <select
+                  id="desktop-language-select"
+                  value={language}
+                  onChange={(event) => setLanguage(event.target.value as LanguageCode)}
+                  className="h-[42px] w-[112px] appearance-none cursor-pointer rounded-xl bg-transparent ps-8 pe-7 text-xs font-semibold focus:outline-none"
+                  aria-label="Language"
+                >
+                  <option value="en">English</option>
+                  <option value="ur">اردو</option>
+                  <option value="ar">العربية</option>
+                </select>
+                <ChevronDown size={13} className="absolute end-2.5 text-[#C7982F] pointer-events-none" aria-hidden="true" />
+              </div>
 
               {/* Theme Toggle (Mobile & Desktop) */}
               <ThemeToggle className="min-w-[44px] min-h-[44px] border-[#29231D]/10 dark:border-[#C7982F]/25 bg-[#F6F1EA]/60 dark:bg-[#1A201E]/60 hover:bg-[#C7982F]/15 text-[#042821] dark:text-[#FFFCF7]" />
@@ -338,7 +358,7 @@ export default function RootLayout() {
       </main>
 
       <Footer />
-      <BackToTop hide={isAnyModalOrDrawerOpen} />
+      <BackToTop hide={isAnyModalOrDrawerOpen} hasCartBar={totalItemsCount > 0 && location.pathname !== '/checkout' && location.pathname !== '/cart'} />
       
       <StickyCartBottomBar 
         hide={isAnyModalOrDrawerOpen}
@@ -359,7 +379,7 @@ export default function RootLayout() {
         <PatronLoungeModal isOpen={patronLoungeOpen} onClose={() => setPatronLoungeOpen(false)} />
         <InfoPagesModal isOpen={infoModalOpen} initialTab={infoModalTab} onClose={() => setInfoModalOpen(false)} />
         <PolicyPagesModal isOpen={policyModalOpen} initialTab={policyModalTab} onClose={() => setPolicyModalOpen(false)} />
-        <AIConcierge hide={isAnyModalOrDrawerOpen && !aiConciergeOpen} onOpenChange={setAiConciergeOpen} />
+        <AIConcierge hide={isAnyModalOrDrawerOpen && !aiConciergeOpen} hasCartBar={totalItemsCount > 0 && location.pathname !== '/checkout' && location.pathname !== '/cart'} onOpenChange={setAiConciergeOpen} />
       </React.Suspense>
     </div>
   );

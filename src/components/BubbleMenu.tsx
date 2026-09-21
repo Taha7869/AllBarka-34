@@ -1,16 +1,35 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 
+interface MenuItem {
+  id: string;
+  label: string;
+  path: string;
+  dropdownItems?: { id: string; label: string; path: string }[];
+}
+
 interface BubbleMenuProps {
-  items?: { id: string; label: string; path: string }[];
+  items?: MenuItem[];
   activeItem?: string;
   onItemClick?: (item: { id: string; label: string; path: string }) => void;
   className?: string;
 }
 
-const DEFAULT_ITEMS = [
+const DEFAULT_ITEMS: MenuItem[] = [
   { id: 'Home', label: 'Home', path: '/' },
-  { id: 'Shop', label: 'Shop', path: '/shop' },
+  { 
+    id: 'Shop', 
+    label: 'Shop', 
+    path: '/shop',
+    dropdownItems: [
+      { id: 'all', label: 'All Products', path: '/shop' },
+      { id: 'nuts', label: 'Dry Fruits & Nuts', path: '/shop/nuts' },
+      { id: 'seeds', label: 'Seeds & Superfoods', path: '/shop/seeds' },
+      { id: 'snacks', label: 'Premium Snacks', path: '/shop/snacks' },
+      { id: 'oils', label: 'Cold-Pressed Oils', path: '/shop/oils' },
+      { id: 'organics', label: 'Pure Organic Essentials', path: '/shop/organics' },
+    ]
+  },
   { id: 'Gift Boxes', label: 'Gift Boxes', path: '/shop/combos' },
   { id: 'Contact', label: 'Contact', path: '/pages/contact' }
 ];
@@ -33,18 +52,21 @@ export default function BubbleMenu({
         const isHovered = hoveredItem === item.id;
 
         return (
-          <button
+          <div
             key={item.id}
-            type="button"
-            onClick={() => onItemClick && onItemClick(item)}
+            className="relative"
             onMouseEnter={() => setHoveredItem(item.id)}
             onMouseLeave={() => setHoveredItem(null)}
-            className={`px-3.5 py-1.5 rounded-full text-[11.5px] font-sans font-medium tracking-[0.08em] uppercase relative z-10 transition-colors duration-200 cursor-pointer focus-ring outline-none ${
-              isActive
-                ? 'text-[#042821] dark:text-[#FFFCF7] font-semibold'
-                : 'text-[#29231D]/80 dark:text-[#F6F1EA]/75 hover:text-[#042821] dark:hover:text-[#FFFCF7]'
-            }`}
           >
+            <button
+              type="button"
+              onClick={() => onItemClick && onItemClick(item)}
+              className={`px-3.5 py-1.5 rounded-full text-[11.5px] font-sans font-medium tracking-[0.08em] uppercase relative z-10 transition-colors duration-200 cursor-pointer focus-ring outline-none block ${
+                isActive
+                  ? 'text-[#042821] dark:text-[#FFFCF7] font-semibold'
+                  : 'text-[#29231D]/80 dark:text-[#F6F1EA]/75 hover:text-[#042821] dark:hover:text-[#FFFCF7]'
+              }`}
+            >
             {/* Hover Floating Bubble */}
             {isHovered && !isActive && (
               <motion.div
@@ -72,7 +94,25 @@ export default function BubbleMenu({
             )}
 
             <span>{item.label}</span>
-          </button>
+            </button>
+
+            {/* Dropdown Menu */}
+            {item.dropdownItems && isHovered && (
+              <div
+                className="absolute top-full left-1/2 -translate-x-1/2 mt-2 py-2 min-w-[200px] bg-[#FFFCF7] dark:bg-[#1A201E] border border-[#C7982F]/25 rounded-2xl shadow-xl z-50 flex flex-col items-stretch overflow-hidden"
+              >
+                {item.dropdownItems.map((dropItem) => (
+                  <button
+                    key={dropItem.id}
+                    onClick={(e) => { e.stopPropagation(); onItemClick && onItemClick(dropItem); setHoveredItem(null); }}
+                    className="px-4 py-2.5 text-left text-xs font-semibold text-[#042821] dark:text-[#FFFCF7] hover:bg-[#C7982F]/15 transition-colors cursor-pointer w-full focus-ring outline-none"
+                  >
+                    {dropItem.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         );
       })}
     </nav>

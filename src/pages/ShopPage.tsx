@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { useParams, useSearchParams, useLocation, useOutletContext } from 'react-router-dom';
 import CategoryPLP from '../components/CategoryPLP';
-import Breadcrumbs from '../components/Breadcrumbs';
 import SEO from '../components/SEO';
 import { resolveCategorySlug, getCategoryMeta } from '../config/categories';
 import { Product } from '../types';
@@ -43,7 +42,6 @@ export default function ShopPage() {
         canonicalPath={location.pathname}
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
-        <Breadcrumbs />
         <CategoryPLP
           initialCategory={resolvedCategory}
           searchFilter={searchQuery}

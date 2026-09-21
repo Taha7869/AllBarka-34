@@ -6,6 +6,10 @@ export const STORE_CONFIG = {
   companyName: 'AllBarka',
   storeName: 'AllBarka',
   location: 'Lahore, Pakistan',
+  social: {
+    instagramUrl: 'https://instagram.com/allbarka.pk',
+    facebookUrl: 'https://facebook.com/allbarka.pk'
+  },
   orderPrefix: 'AB-',
   shipping: {
     standardRate: 150,

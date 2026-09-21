@@ -323,7 +323,7 @@ export default function MobileMenu({
                     onClick={() => handleDestination('/shop', 'Shop')}
                     className="w-full min-h-[44px] flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-[#042821] dark:text-[#FFFCF7] hover:bg-[#C7982F]/10 transition-colors text-left cursor-pointer"
                   >
-                    <span>{t('allProducts', 'All Boutique Products')}</span>
+                    <span>{t('allProducts', 'All Products')}</span>
                     <ChevronRight size={14} className="text-[#C7982F]/70 rtl:rotate-180" />
                   </button>
 
@@ -332,25 +332,43 @@ export default function MobileMenu({
                     onClick={() => handleDestination('/shop/nuts', 'Shop')}
                     className="w-full min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-xs text-[#29231D]/85 dark:text-[#F6F1EA]/85 hover:bg-[#C7982F]/10 transition-colors text-left cursor-pointer"
                   >
-                    <span>{t('dryFruits', 'Royal Dry Fruits & Nuts')}</span>
+                    <span>{t('nuts', 'Dry Fruits & Nuts')}</span>
                     <ChevronRight size={13} className="text-[#C7982F]/50 rtl:rotate-180" />
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => handleDestination('/shop/berries', 'Shop')}
+                    onClick={() => handleDestination('/shop/seeds', 'Shop')}
                     className="w-full min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-xs text-[#29231D]/85 dark:text-[#F6F1EA]/85 hover:bg-[#C7982F]/10 transition-colors text-left cursor-pointer"
                   >
-                    <span>{t('berries', 'Berries & Superfood Seeds')}</span>
+                    <span>{t('seeds', 'Seeds & Superfoods')}</span>
                     <ChevronRight size={13} className="text-[#C7982F]/50 rtl:rotate-180" />
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => handleDestination('/shop/spices', 'Shop')}
+                    onClick={() => handleDestination('/shop/snacks', 'Shop')}
                     className="w-full min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-xs text-[#29231D]/85 dark:text-[#F6F1EA]/85 hover:bg-[#C7982F]/10 transition-colors text-left cursor-pointer"
                   >
-                    <span>{t('spices', 'Spices & Kashmiri Saffron')}</span>
+                    <span>{t('snacks', 'Premium Snacks')}</span>
+                    <ChevronRight size={13} className="text-[#C7982F]/50 rtl:rotate-180" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDestination('/shop/oils', 'Shop')}
+                    className="w-full min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-xs text-[#29231D]/85 dark:text-[#F6F1EA]/85 hover:bg-[#C7982F]/10 transition-colors text-left cursor-pointer"
+                  >
+                    <span>{t('oils', 'Cold-Pressed Oils')}</span>
+                    <ChevronRight size={13} className="text-[#C7982F]/50 rtl:rotate-180" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDestination('/shop/organics', 'Shop')}
+                    className="w-full min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-xs text-[#29231D]/85 dark:text-[#F6F1EA]/85 hover:bg-[#C7982F]/10 transition-colors text-left cursor-pointer"
+                  >
+                    <span>{t('organics', 'Pure Organic Essentials')}</span>
                     <ChevronRight size={13} className="text-[#C7982F]/50 rtl:rotate-180" />
                   </button>
 
@@ -361,7 +379,7 @@ export default function MobileMenu({
                   >
                     <span className="flex items-center gap-1.5 font-semibold text-[#806326] dark:text-[#C7982F]">
                       <Sparkles size={13} className="text-[#C7982F]" />
-                      {t('combos', 'Royal Gift Boxes & Hampers')}
+                      {t('combos', 'Gift Boxes & Combos')}
                     </span>
                     <ChevronRight size={13} className="text-[#C7982F]/50 rtl:rotate-180" />
                   </button>

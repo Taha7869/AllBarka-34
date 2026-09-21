@@ -9,10 +9,13 @@ import {
   ShoppingBag,
   Sparkles,
   Check,
-  RotateCcw
+  RotateCcw,
+  Heart
 } from 'lucide-react';
 import { Product } from '../types';
 import { PRODUCTS, getProductImage } from '../data/products';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useCart } from '../contexts/CartContext';
 
 export interface CategoryPLPProps {
   searchFilter?: string;
@@ -42,31 +45,45 @@ export interface CategoryDefinition {
 export const CATEGORIES_DATA: CategoryDefinition[] = [
   {
     id: 'all',
-    name: 'All Items',
+    name: 'All Products',
     subtitle: 'Every Curated Harvest In One Place',
     description: 'Explore our complete spectrum of luxury dry fruits, roasted nuts, superfood seeds, and seasonal gift sets.',
     originNotes: 'Strictly grade-A harvests with verified freshness and vacuum-sealed aroma retention.'
   },
   {
     id: 'nuts',
-    name: 'Premium Nuts',
+    name: 'Dry Fruits & Nuts',
     subtitle: 'Single-Estate Hand-Selected Kernels',
-    description: 'Crisp, nutrient-dense royal walnuts, Persian pistachios, and jumbo cashews roasted in small artisanal batches.',
-    originNotes: 'Sourced directly from certified heritage orchards across Skardu, Kerman, and Kandahar.'
-  },
-  {
-    id: 'dried-fruits',
-    name: 'Artisanal Dried Fruits',
-    subtitle: 'Naturally Sun-Cured Heritage Delicacies',
-    description: 'Succulent apricots, sweet emerald raisins, tart ruby plums, and soft Medina dates preserved with zero chemical additives.',
-    originNotes: 'Slow-dried under high-altitude alpine sunshine to preserve natural enzymes and rich aromatic sugars.'
+    description: 'Crisp, nutrient-dense royal walnuts, Persian pistachios, hand-sorted dried fruits, and jumbo cashews.',
+    originNotes: 'Sourced directly from certified heritage orchards across Skardu, Kerman, and globally.'
   },
   {
     id: 'seeds',
-    name: 'Superfood Seeds',
+    name: 'Seeds & Superfoods',
     subtitle: 'Raw Nutrient-Dense Botanical Treasures',
     description: 'Pure organic chia, roasted pumpkin seeds, and crunchy botanical seeds packed with essential minerals and omega fatty acids.',
     originNotes: 'Carefully sifted and triple-cleaned to deliver immaculate crunch and purity.'
+  },
+  {
+    id: 'snacks',
+    name: 'Premium Snacks',
+    subtitle: 'Crisp Lahori Roasts & Spiced Chickpeas',
+    description: 'Authentic roasted yellow chanay, crunchy salted peanuts, and artisanal Lahori nimko crafted with time-honored recipes.',
+    originNotes: 'Lightly roasted with Himalayan rock salt for clean, guilt-free daily indulgence.'
+  },
+  {
+    id: 'oils',
+    name: 'Cold-Pressed Oils',
+    subtitle: 'First Extraction, Zero Heat',
+    description: 'Single-press cold-extracted oils preserving maximum nutrients, antioxidants, and natural aroma — for cooking, hair care, and skin wellness.',
+    originNotes: 'Sourced from certified organic cold-press facilities using glass-bottled UV-protective packaging.'
+  },
+  {
+    id: 'organics',
+    name: 'Pure Organic Essentials',
+    subtitle: 'Heritage Staples',
+    description: 'Authentic traditional desi ghee, raw mountain honey, heritage panjeeri, premium saffron, and unrefined desi shakkar.',
+    originNotes: 'Prepared in small batches from heritage dairies, wild apiaries, and spice orchards of Pakistan.'
   },
   {
     id: 'combos',
@@ -74,13 +91,6 @@ export const CATEGORIES_DATA: CategoryDefinition[] = [
     subtitle: 'Bespoke Curations & Heritage Pairings',
     description: 'Masterfully curated gift assortments and multi-nut packs presented in bespoke luxury vacuum canisters.',
     originNotes: 'Hand-assembled in Lahore for special celebrations, weddings, and executive gifting.'
-  },
-  {
-    id: 'snacks',
-    name: 'Savory Snacks',
-    subtitle: 'Crisp Lahori Roasts & Spiced Chickpeas',
-    description: 'Authentic roasted yellow chanay, crunchy salted peanuts, and artisanal Lahori nimko crafted with time-honored recipes.',
-    originNotes: 'Lightly roasted with Himalayan rock salt for clean, guilt-free daily indulgence.'
   }
 ];
 
@@ -123,7 +133,9 @@ export default function CategoryPLP({
   isModal = false,
   onClose
 }: CategoryPLPProps) {
+  const { t } = useLanguage();
   const navigate = useNavigate();
+  const { addToCart } = useCart();
   // Category & Sorting State
   
   const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
@@ -146,7 +158,7 @@ export default function CategoryPLP({
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // Filter States
-  const [priceMax, setPriceMax] = useState<number>(6000);
+  const [priceMax, setPriceMax] = useState<number>(10000);
   const [selectedOrigin, setSelectedOrigin] = useState<string>('all');
   const [onlyDiscounted, setOnlyDiscounted] = useState<boolean>(isWholesale);
   const [searchFilter, setSearchFilter] = useState<string>(propSearchFilter || '');
@@ -235,7 +247,7 @@ export default function CategoryPLP({
 
   // Reset Filters
   const handleResetFilters = () => {
-    setPriceMax(6000);
+    setPriceMax(10000);
     setSelectedOrigin('all');
     setOnlyDiscounted(false);
     setSearchFilter('');
@@ -245,8 +257,22 @@ export default function CategoryPLP({
   const activeFiltersCount =
     (selectedOrigin !== 'all' ? 1 : 0) +
     (onlyDiscounted ? 1 : 0) +
-    (priceMax < 6000 ? 1 : 0) +
+    (priceMax < 10000 ? 1 : 0) +
     (searchFilter.trim() ? 1 : 0);
+
+  // Per-card selected size state for WhatsApp ordering (keyed by product id)
+  const [cardSelectedSizes, setCardSelectedSizes] = React.useState<Record<string, string>>({});
+
+  const getCardSize = (productId: string, weights: string[]) =>
+    cardSelectedSizes[productId] || weights[0] || '100ml';
+
+  const setCardSize = (productId: string, size: string) =>
+    setCardSelectedSizes((prev) => ({ ...prev, [productId]: size }));
+
+  const handleWhatsAppOrder = (product: Product, size: string, price: number) => {
+    const text = `Assalam-o-Alaikum AllBarka! 🌿%0AI want to order:%0A*${product.name}*%0ASize: *${size}*%0APrice: *Rs. ${price.toLocaleString()}*%0A%0APlease confirm availability and delivery details.`;
+    window.open(`https://wa.me/923299455065?text=${text}`, '_blank', 'noopener,noreferrer');
+  };
 
   return (
     <div
@@ -290,32 +316,6 @@ export default function CategoryPLP({
           {activeCategoryMeta.description}
         </p>
 
-        {/* Category Switcher Tabs */}
-        <div className="flex flex-wrap items-center justify-center gap-2 pt-3">
-          {CATEGORIES_DATA.map((cat) => {
-            const isSelected = selectedCategory === cat.id;
-            const count = cat.id === 'all' 
-              ? PRODUCTS.length 
-              : PRODUCTS.filter((p) => p.category === cat.id).length;
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => handleCategorySwitch(cat.id)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
-                  isSelected
-                    ? 'bg-[var(--color-primary,#042821)] text-[var(--color-text-on-emerald,#FFFCF7)] border border-[var(--color-primary,#042821)] shadow-xs'
-                    : 'bg-[var(--color-surface,#FFFCF7)] dark:bg-[var(--color-surface-elevated,#222A28)] text-[var(--color-text-secondary,#635B52)] dark:text-[var(--color-text-secondary,#B4C0BC)] border border-[var(--color-border)] hover:border-[var(--color-accent,#C7982F)]'
-                }`}
-              >
-                <span>{cat.name.replace('Traditional ', '').replace('Artisanal ', '').replace('The Full ', '')}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isSelected ? 'bg-white/20 text-white' : 'bg-[var(--color-gold,#B8935F)]/15 text-[var(--color-ink,#1F120F)]'}`}>
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
       </header>
 
       {/* ─────────────────────────────────────────────────────────────
@@ -353,17 +353,44 @@ export default function CategoryPLP({
           </span>
         </div>
 
-        {/* Right: Sort By Dropdown */}
-        <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
-          <label htmlFor="plp-sort-select" className="text-xs uppercase tracking-wider text-[var(--color-ink,#1F120F)]/70 font-semibold shrink-0">
-            Sort by:
-          </label>
-          <div className="relative">
+        {/* Right: Category and Sort Dropdowns */}
+        <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3 w-full sm:w-auto">
+          <div className="flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-center">
+            <label htmlFor="plp-category-select" className="text-xs uppercase tracking-wider text-[var(--color-ink,#1F120F)]/70 font-semibold shrink-0">
+              Category
+            </label>
+            <div className="relative min-w-0">
+              <select
+                id="plp-category-select"
+                value={selectedCategory}
+                onChange={(e) => handleCategorySwitch(e.target.value)}
+                className="w-full appearance-none bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/35 text-[var(--color-ink,#1F120F)] text-xs sm:text-sm font-semibold rounded-full ps-4 pe-9 py-2 focus:outline-none focus:border-[var(--color-gold,#B8935F)] focus:ring-2 focus:ring-[var(--color-gold,#B8935F)]/20 cursor-pointer shadow-xs transition-colors"
+              >
+                {CATEGORIES_DATA.map((cat) => {
+                  const count = cat.id === 'all'
+                    ? PRODUCTS.length
+                    : PRODUCTS.filter((product) => product.category === cat.id).length;
+                  return <option key={cat.id} value={cat.id}>{cat.name} ({count})</option>;
+                })}
+              </select>
+              <ChevronDown
+                size={14}
+                className="absolute end-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--color-gold,#B8935F)]"
+                aria-hidden="true"
+              />
+            </div>
+          </div>
+
+          <div className="flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-center">
+            <label htmlFor="plp-sort-select" className="text-xs uppercase tracking-wider text-[var(--color-ink,#1F120F)]/70 font-semibold shrink-0">
+              Sort
+            </label>
+            <div className="relative min-w-0">
             <select
               id="plp-sort-select"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="appearance-none bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/35 text-[var(--color-ink,#1F120F)] text-xs sm:text-sm font-semibold rounded-full pl-4 pr-9 py-2 focus:outline-none focus:border-[var(--color-gold,#B8935F)] cursor-pointer shadow-xs transition-colors"
+              className="w-full appearance-none bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/35 text-[var(--color-ink,#1F120F)] text-xs sm:text-sm font-semibold rounded-full ps-4 pe-9 py-2 focus:outline-none focus:border-[var(--color-gold,#B8935F)] focus:ring-2 focus:ring-[var(--color-gold,#B8935F)]/20 cursor-pointer shadow-xs transition-colors"
             >
               <option value="featured">Featured Curations</option>
               <option value="price-asc">Price: Low to High</option>
@@ -372,8 +399,10 @@ export default function CategoryPLP({
             </select>
             <ChevronDown
               size={14}
-              className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--color-gold,#B8935F)]"
+              className="absolute end-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--color-gold,#B8935F)]"
+              aria-hidden="true"
             />
+          </div>
           </div>
         </div>
       </section>
@@ -402,7 +431,7 @@ export default function CategoryPLP({
                   <input
                     type="range"
                     min="300"
-                    max="6000"
+                    max="10000"
                     step="100"
                     value={priceMax}
                     onChange={(e) => setPriceMax(Number(e.target.value))}
@@ -410,7 +439,7 @@ export default function CategoryPLP({
                   />
                   <div className="flex justify-between text-[10px] text-[var(--color-ink,#1F120F)]/50 font-medium">
                     <span>Rs. 300</span>
-                    <span>Rs. 6,000+</span>
+                    <span>Rs. 10,000+</span>
                   </div>
                 </div>
 
@@ -507,7 +536,9 @@ export default function CategoryPLP({
                 <div className="w-full aspect-square bg-[var(--color-surface-subtle,#FAF9F5)] dark:bg-[var(--color-surface-elevated,#222A28)] rounded-2xl p-4 flex items-center justify-center relative overflow-hidden border border-[var(--color-border)] dark:border-[var(--color-border)] group-hover/card:border-[var(--color-accent,#C7982F)]/40 transition-colors shadow-2xs">
                   <img
                     src={getProductImage(product)}
-                    alt={product.name}
+                    alt={t(`imageAlt.${product.id}`, product.name)}
+                    width={960}
+                    height={960}
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = '/images/product-placeholder.svg';
                     }}
@@ -524,7 +555,7 @@ export default function CategoryPLP({
                   </div>
                 </div>
 
-                {/* Product Details with High-Contrast Text (WCAG AAA compliant) */}
+                {/* Product Details with High-Contrast Text */}
                 <div className="w-full flex flex-col items-center text-center mt-4 space-y-1.5">
                   <span className="text-[9px] uppercase font-bold tracking-[0.2em] text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)]">
                     {product.origin ? `Harvest • ${product.origin}` : 'Artisanal Selection'}
@@ -532,12 +563,36 @@ export default function CategoryPLP({
                   <h3 className="text-base sm:text-lg font-serif font-bold text-[var(--color-text-primary,#29231D)] leading-snug line-clamp-2">
                     {product.name}
                   </h3>
-                  <span className="text-[11px] text-[var(--color-text-secondary,#635B52)] font-medium">
-                    {firstWeight} standard pack
-                  </span>
-                  <div className="flex items-baseline justify-center gap-2 pt-1">
-                    <span className="text-base sm:text-lg font-serif font-bold text-[var(--color-text-price,#29231D)]">
-                      Rs. {basePrice?.toLocaleString()}
+                </div>
+
+                {/* Inline Size/Weight Selector + WhatsApp Order — per card */}
+                <div className="w-full mt-3 space-y-2.5">
+                  {/* Size Pills */}
+                  <div className="flex flex-wrap gap-1.5 justify-center" role="group" aria-label="Available sizes">
+                    {Object.keys(product.prices).map((size) => {
+                      const isActive = getCardSize(product.id, Object.keys(product.prices)) === size;
+                      return (
+                        <button
+                          key={size}
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setCardSize(product.id, size); }}
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all duration-150 cursor-pointer ${
+                            isActive
+                              ? 'bg-[#1E3A2B] text-[#C7982F] border-[#1E3A2B]'
+                              : 'bg-[var(--color-surface-subtle,#FAF9F5)] dark:bg-[var(--color-surface-elevated,#222A28)] text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)] border-[var(--color-border)] hover:border-[var(--color-accent,#C7982F)]'
+                          }`}
+                          aria-pressed={isActive}
+                        >
+                          {size}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Live Price Display */}
+                  <div className="flex items-baseline justify-center gap-1">
+                    <span className="text-base sm:text-lg font-serif font-bold text-[var(--color-text-price,#29231D)] dark:text-[var(--color-text-price,#F6F1EA)]">
+                      Rs. {(product.prices[getCardSize(product.id, Object.keys(product.prices))] || 0).toLocaleString()}
                     </span>
                     {hasWholesaleDiscount && isWholesale && (
                       <span className="text-xs text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] font-bold">
@@ -545,21 +600,36 @@ export default function CategoryPLP({
                       </span>
                     )}
                   </div>
-                </div>
 
-                {/* Add to Bag Action (Stops propagation so it doesn't open Quick View) */}
-                <div className="w-full mt-4 pt-3 border-t border-[var(--color-border)]">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (onAddToCart) onAddToCart(product.id, firstWeight);
-                    }}
-                    className="w-full py-2.5 px-4 rounded-full bg-[var(--color-surface-subtle,#FAF9F5)] dark:bg-[var(--color-surface-elevated,#222A28)] hover:bg-[var(--color-primary,#042821)] dark:hover:bg-[var(--color-accent,#D4A843)] text-[var(--color-text-primary,#29231D)] hover:text-[var(--color-text-on-emerald,#FFFCF7)] dark:hover:text-[var(--color-text-on-gold,#121615)] border border-[var(--color-accent,#C7982F)]/40 hover:border-[var(--color-accent,#C7982F)] text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer shadow-xs active:scale-[0.98]"
-                  >
-                    <ShoppingBag size={13} className="text-[var(--color-accent,#C7982F)]" />
-                    <span>Add to Bag</span>
-                  </button>
+                  {/* Add to Cart & Wishlist Action Row */}
+                  <div className="pt-2 border-t border-[var(--color-border)] w-full flex items-center justify-between gap-1.5 mt-1">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const selectedSize = getCardSize(product.id, Object.keys(product.prices));
+                        const selectedPrice = product.prices[selectedSize] || Object.values(product.prices)[0] || 0;
+                        if (onAddToCart) {
+                          onAddToCart(product.id, selectedSize);
+                        } else {
+                          addToCart(product, selectedSize, 1, selectedPrice);
+                        }
+                      }}
+                      className="flex-1 min-h-[40px] py-1 px-3 rounded-full bg-[#1E3A2B] hover:bg-[#14281E] text-[#FDFBF7] border border-[#C5A059]/40 hover:border-[#C5A059] text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer shadow-xs active:scale-[0.98]"
+                    >
+                      <ShoppingBag size={13} strokeWidth={2} className="text-[#C5A059]" />
+                      <span>Add to Cart</span>
+                    </button>
+                    
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); /* Wishlist Hook Injection */ }}
+                      className="min-w-[40px] h-[40px] rounded-full border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-secondary,#635B52)] hover:text-[#E4405F] hover:border-[#E4405F]/50 transition-colors shadow-xs cursor-pointer focus-ring"
+                      aria-label="Add to Wishlist"
+                    >
+                      <Heart size={16} strokeWidth={2.2} />
+                    </button>
+                  </div>
                 </div>
               </motion.article>
             );

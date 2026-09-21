@@ -13,6 +13,7 @@ import {
   AlertCircle,
   Mail
 } from 'lucide-react';
+import { FaFacebookF } from 'react-icons/fa';
 import { AllBarkaCrestVector } from './AllBarkaLogo';
 import { STORE_CONFIG } from '../config/store';
 
@@ -246,13 +247,22 @@ export default function Footer() {
                 <MessageCircle size={16} />
               </a>
               <a
-                href="https://instagram.com/allbarka.pk"
+                href={STORE_CONFIG.social.instagramUrl}
                 target="_blank"
                 rel="noreferrer"
                 aria-label="Follow on Instagram"
-                className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#B4C0BC] hover:text-[#042821] hover:bg-[#C7982F] hover:border-[#C7982F] transition-all"
+                className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#B4C0BC] hover:text-[#042821] hover:bg-[#C7982F] hover:border-[#C7982F] focus-visible:ring-2 focus-visible:ring-[#C7982F] transition-all"
               >
                 <Instagram size={16} />
+              </a>
+              <a
+                href={STORE_CONFIG.social.facebookUrl}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Follow AllBarka on Facebook"
+                className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#B4C0BC] hover:text-[#042821] hover:bg-[#C7982F] hover:border-[#C7982F] focus-visible:ring-2 focus-visible:ring-[#C7982F] transition-all"
+              >
+                <FaFacebookF size={15} />
               </a>
             </div>
           </div>
@@ -435,7 +445,7 @@ export default function Footer() {
           </div>
 
           {/* Mobile Newsletter Form */}
-          <div className="p-5 rounded-2xl bg-white/5 border border-[#C7982F]/20 space-y-3">
+          <div className="min-w-0 p-4 sm:p-5 rounded-2xl bg-white/5 border border-[#C7982F]/20 space-y-3">
             <span className="text-[11px] font-serif font-bold uppercase tracking-[0.2em] text-[#C7982F] block">
               Private Reserve Updates
             </span>
@@ -482,7 +492,7 @@ export default function Footer() {
                       onChange={(e) => setConsent(e.target.checked)}
                       className="mt-0.5 rounded border-white/30 text-[#C7982F] focus:ring-[#C7982F] h-3.5 w-3.5 cursor-pointer accent-[#C7982F]"
                     />
-                    <span>I agree to receive seasonal harvest notices and private tasting invitations.</span>
+                    <span className="min-w-0 break-words">I agree to receive seasonal harvest notices and private tasting invitations.</span>
                   </label>
                   <p className="text-[10px] text-[#7E8C87] pl-5">
                     Subscribers receive harvest bulletins & festive allocations. Never shared.
@@ -543,26 +553,41 @@ export default function Footer() {
             })}
           </div>
 
-          {/* Two Equal-Width Social Action Buttons */}
-          <div className="grid grid-cols-2 gap-3 pt-2">
+          {/* Social Action Buttons */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-2">
             <a
               href="https://wa.me/923160666083"
               target="_blank"
               rel="noreferrer"
-              className="min-h-[48px] flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-white/15 bg-white/5 text-xs font-bold text-white hover:bg-[#C7982F] hover:text-[#042821] hover:border-[#C7982F] transition-all"
+              aria-label="Contact AllBarka on WhatsApp"
+              className="min-w-0 min-h-[48px] flex items-center justify-center gap-1.5 py-3 px-2 rounded-xl border border-white/15 bg-white/5 text-[11px] sm:text-xs font-bold text-white hover:bg-[#C7982F] hover:text-[#042821] hover:border-[#C7982F] focus-visible:ring-2 focus-visible:ring-[#C7982F] transition-all"
             >
               <MessageCircle size={16} className="text-[#25D366]" />
               <span>WhatsApp</span>
             </a>
 
             <a
-              href="https://instagram.com/allbarka.pk"
+              href={STORE_CONFIG.social.instagramUrl}
               target="_blank"
               rel="noreferrer"
-              className="min-h-[48px] flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-white/15 bg-white/5 text-xs font-bold text-white hover:bg-[#C7982F] hover:text-[#042821] hover:border-[#C7982F] transition-all"
+              aria-label="Follow AllBarka on Instagram"
+              className="min-w-0 min-h-[48px] flex items-center justify-center gap-1.5 py-3 px-2 rounded-xl border border-white/15 bg-white/5 text-[11px] sm:text-xs font-bold text-white hover:bg-[#C7982F] hover:text-[#042821] hover:border-[#C7982F] focus-visible:ring-2 focus-visible:ring-[#C7982F] transition-all"
             >
               <Instagram size={16} className="text-[#E4405F]" />
               <span>Instagram</span>
+            </a>
+
+            <a
+              href={STORE_CONFIG.social.facebookUrl}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Follow AllBarka on Facebook"
+              className="min-w-0 min-h-[48px] flex items-center justify-center gap-1.5 py-3 px-2 rounded-xl border border-white/15 bg-white/5 text-[11px] sm:text-xs font-bold text-white hover:bg-[#C7982F] hover:text-[#042821] hover:border-[#C7982F] focus-visible:ring-2 focus-visible:ring-[#C7982F] transition-all"
+            >
+              <span className="text-[#1877F2] flex shrink-0" aria-hidden="true">
+                <FaFacebookF size={15} />
+              </span>
+              <span>Facebook</span>
             </a>
           </div>
 
@@ -573,7 +598,7 @@ export default function Footer() {
           <p className="order-2 md:order-1 text-center md:text-left">
             © 2026 AllBarka Dry Fruits & Confections. Lahore, Pakistan. All rights reserved.
           </p>
-          <ul className="order-1 md:order-2 flex flex-wrap items-center justify-center gap-6">
+          <ul className="order-1 md:order-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-3 sm:gap-6 text-center">
             <li>
               <Link to="/policies/shipping" className="hover:text-[#C7982F] transition-colors">
                 Delivery Terms

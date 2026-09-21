@@ -2,10 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, useMotionValue, useSpring, useTransform, useReducedMotion, type Variants } from 'motion/react';
-import heroWebp from '../assets/images/dryfruit_flatlay_hero.webp';
-import heroWebpMobile from '../assets/images/dryfruit_flatlay_hero_mobile.webp';
 import { AllBarkaFullLogo } from './AllBarkaLogo';
-import HeroOrbit from './HeroOrbit';
 import CategoryQuickPills, { CategoryPillItem } from './CategoryQuickPills';
 import PlaceholdersAndVanishInput from "./ui/placeholders-and-vanish-input";
 import { useLanguage } from '../contexts/LanguageContext';
@@ -142,11 +139,13 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
       >
         {/* Optimized responsive dry fruits flat-lay poster image */}
         <picture className="h-full w-full">
-          <source media="(max-width: 768px)" srcSet={heroWebpMobile} type="image/webp" />
-          <source srcSet={heroWebp} type="image/webp" />
+          <source media="(max-width: 768px)" srcSet="/images/generated/hero-dry-fruits-mobile-v1.webp" type="image/webp" />
+          <source srcSet="/images/generated/hero-dry-fruits-wide-v1.webp" type="image/webp" />
           <img
-            src={heroWebp}
-            alt="AllBarka luxury single-origin dry fruits, pistachios, cashews, and walnuts collection"
+            src="/images/generated/hero-dry-fruits-wide-v1.webp"
+            alt={t('imageAlt.hero', 'Dry fruits arranged around a deep emerald surface')}
+            width={1920}
+            height={1080}
             referrerPolicy="no-referrer"
             loading="eager"
             fetchPriority="high"
@@ -178,9 +177,7 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
             variants={logoSpringVariants}
             className="will-change-transform mb-6 sm:mb-8 w-full flex items-center justify-center overflow-visible"
           >
-            <HeroOrbit>
-              <AllBarkaFullLogo size="md" variant="light" as="span" />
-            </HeroOrbit>
+            <AllBarkaFullLogo size="md" variant="light" as="span" />
           </motion.div>
 
           {/* Primary Page H1 with Explicit Ivory and Warm Gold for Emerald Hero Background */}
@@ -244,4 +241,3 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
 }
 
 export default AllBarkaHero;
-
