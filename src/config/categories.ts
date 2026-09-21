@@ -22,7 +22,7 @@ export const CANONICAL_CATEGORIES: Record<string, CategoryMeta> = {
     name: 'Oils',
     shortName: 'Oils',
     description: 'Single-press cold-extracted oils preserving maximum nutrients, antioxidants, and natural aroma — for cooking, hair, and skin wellness.',
-    bannerTitle: 'Pure Cold-Pressed Oils — First Extraction, Zero Heat',
+    bannerTitle: 'Cold-Pressed Oils — Single First Extraction',
     provenance: 'Certified Organic Cold-Press Facilities',
   },
   essentials: {
@@ -50,14 +50,6 @@ export const CANONICAL_CATEGORIES: Record<string, CategoryMeta> = {
     badge: 'Artisanal',
     provenance: 'Hand-Curated in Lahore',
   },
-  deals: {
-    id: 'deals',
-    name: 'Deals',
-    shortName: 'Deals',
-    description: 'Value-packed curated combos of our best-selling nuts and dried fruits.',
-    bannerTitle: 'Exclusive Value Assortments & Combos',
-    provenance: 'Curated in Lahore',
-  },
 };
 
 export const CATEGORY_ALIASES: Record<string, string> = {
@@ -72,7 +64,8 @@ export const CATEGORY_ALIASES: Record<string, string> = {
   seeds: 'snacks-seeds',
   berries: 'snacks-seeds',
   nimko: 'snacks-seeds',
-  combos: 'deals',
+  combos: 'gift-boxes',
+  deals: 'gift-boxes',
   gifting: 'gift-boxes',
   gifts: 'gift-boxes',
   oil: 'oils',

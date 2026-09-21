@@ -16,7 +16,7 @@ export default function ShopPage() {
   const isGiftingRoute = location.pathname.startsWith('/gifting');
 
   const rawCategory = isGiftingRoute
-    ? 'combos'
+    ? 'gift-boxes'
     : (paramCategory || searchParams.get('category') || 'all');
 
   const resolvedCategory = resolveCategorySlug(rawCategory) || 'all';

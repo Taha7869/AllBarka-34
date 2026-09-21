@@ -37,13 +37,6 @@ const categories = [
     image: '/images/generated/category-gifts-tile-v1.webp',
     altKey: 'imageAlt.categoryGifts',
     link: '/category/gift-boxes'
-  },
-  {
-    id: 'deals',
-    name: 'Deals',
-    image: '/images/generated/almond-cashew-duo-catalog-v1.webp',
-    altKey: 'imageAlt.categoryDealBoxes',
-    link: '/category/deals'
   }
 ];
 
@@ -69,7 +62,7 @@ export default function CategoryCarousel() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
           {categories.map((cat) => (
             <Link
               key={cat.id}

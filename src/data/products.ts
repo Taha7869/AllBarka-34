@@ -1,6 +1,7 @@
 import { Product, CustomerReview } from '../types';
 
 export const PRODUCT_IMAGE_PATHS: Record<string, string> = {
+  // ── Nuts & Dried Fruits (real catalog images exist) ──────────────────────
   pista: '/images/generated/pistachios-catalog-v1.webp',
   kaju: '/images/generated/cashews-catalog-v1.webp',
   badam: '/images/generated/almonds-catalog-v1.webp',
@@ -15,6 +16,26 @@ export const PRODUCT_IMAGE_PATHS: Record<string, string> = {
   chia_seeds: '/images/generated/chia-seeds-catalog-v1.webp',
   nimko: '/images/generated/lahori-nimko-catalog-v1.webp',
   chanay: '/images/generated/roasted-chanay-catalog-v1.webp',
+  // ── Cold-Pressed Oils (placeholder — photography pending) ───────────────
+  'oil-almond':      '/images/product-placeholder.svg',
+  'oil-blackseed':   '/images/product-placeholder.svg',
+  'oil-coconut':     '/images/product-placeholder.svg',
+  'oil-castor':      '/images/product-placeholder.svg',
+  'oil-apricot':     '/images/product-placeholder.svg',
+  'oil-sesame':      '/images/product-placeholder.svg',
+  'oil-flaxseed':    '/images/product-placeholder.svg',
+  'oil-walnut':      '/images/product-placeholder.svg',
+  'oil-olive':       '/images/product-placeholder.svg',
+  'oil-onionseed':   '/images/product-placeholder.svg',
+  'oil-mustard':     '/images/product-placeholder.svg',
+  'oil-hairblend':   '/images/product-placeholder.svg',
+  'oil-hairgrowth':  '/images/product-placeholder.svg',
+  // ── Desi Essentials (placeholder — photography pending) ─────────────────
+  'org-ghee':        '/images/product-placeholder.svg',
+  'org-honey':       '/images/product-placeholder.svg',
+  'org-panjeeri':    '/images/product-placeholder.svg',
+  'org-saffron':     '/images/product-placeholder.svg',
+  'org-shakkar':     '/images/product-placeholder.svg',
 };
 
 export const getProductImage = (p: { image?: string; imageName?: string; id: string }): string => {
@@ -113,7 +134,7 @@ export const PRODUCTS: Product[] = [
   {
     id: 'deal-1',
     name: 'The Classics (Walnut & Pista Duo)',
-    category: 'deals',
+    category: 'gift-boxes',
     health: 'HERITAGE DUO • LUXURY GIFTING',
     tag: 'Gift Pack',
     image: '/images/products/deal-1.jpg',
@@ -136,7 +157,7 @@ export const PRODUCTS: Product[] = [
   {
     id: 'deal-2',
     name: 'Work-Day Fuel (Almonds & Cashews)',
-    category: 'deals',
+    category: 'gift-boxes',
     health: 'ENERGY & FOCUS • DESK ESSENTIAL',
     tag: 'Wellness Pack',
     image: '/images/products/deal-2.jpg',

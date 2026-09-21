@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -8,13 +8,16 @@ import {
   Eye,
   ShoppingBag,
   Sparkles,
-  Check,
   RotateCcw,
-  Heart
 } from 'lucide-react';
 import { Product } from '../types';
 import { PRODUCTS, getProductImage } from '../data/products';
 import { useLanguage } from '../contexts/LanguageContext';
+import {
+  CANONICAL_CATEGORIES,
+  resolveCategorySlug,
+  getCategoryMeta,
+} from '../config/categories';
 import { useCart } from '../contexts/CartContext';
 
 export interface CategoryPLPProps {
@@ -34,64 +37,17 @@ export type SortOption =
   | 'name-asc'
   | 'harvest-newest';
 
-export interface CategoryDefinition {
-  id: string;
-  name: string;
-  subtitle: string;
-  description: string;
-  originNotes: string;
-}
+// Build the dropdown list from canonical config + 'all' entry.
+// This is the single source of truth for all category UI in this component.
+const ALL_CATEGORY_ENTRY = {
+  id: 'all',
+  name: 'All Products',
+  description: 'Explore our complete collection of luxury dry fruits, roasted nuts, cold-pressed oils, and curated gift sets.',
+};
 
-export const CATEGORIES_DATA: CategoryDefinition[] = [
-  {
-    id: 'all',
-    name: 'All Products',
-    subtitle: 'Every Curated Harvest In One Place',
-    description: 'Explore our complete spectrum of luxury dry fruits, roasted nuts, superfood seeds, and seasonal gift sets.',
-    originNotes: 'Strictly grade-A harvests with verified freshness and vacuum-sealed aroma retention.'
-  },
-  {
-    id: 'nuts',
-    name: 'Dry Fruits & Nuts',
-    subtitle: 'Single-Estate Hand-Selected Kernels',
-    description: 'Crisp, nutrient-dense royal walnuts, Persian pistachios, hand-sorted dried fruits, and jumbo cashews.',
-    originNotes: 'Sourced directly from certified heritage orchards across Skardu, Kerman, and globally.'
-  },
-  {
-    id: 'seeds',
-    name: 'Seeds & Superfoods',
-    subtitle: 'Raw Nutrient-Dense Botanical Treasures',
-    description: 'Pure organic chia, roasted pumpkin seeds, and crunchy botanical seeds packed with essential minerals and omega fatty acids.',
-    originNotes: 'Carefully sifted and triple-cleaned to deliver immaculate crunch and purity.'
-  },
-  {
-    id: 'snacks',
-    name: 'Premium Snacks',
-    subtitle: 'Crisp Lahori Roasts & Spiced Chickpeas',
-    description: 'Authentic roasted yellow chanay, crunchy salted peanuts, and artisanal Lahori nimko crafted with time-honored recipes.',
-    originNotes: 'Lightly roasted with Himalayan rock salt for clean, guilt-free daily indulgence.'
-  },
-  {
-    id: 'oils',
-    name: 'Cold-Pressed Oils',
-    subtitle: 'First Extraction, Zero Heat',
-    description: 'Single-press cold-extracted oils preserving maximum nutrients, antioxidants, and natural aroma — for cooking, hair care, and skin wellness.',
-    originNotes: 'Sourced from certified organic cold-press facilities using glass-bottled UV-protective packaging.'
-  },
-  {
-    id: 'organics',
-    name: 'Pure Organic Essentials',
-    subtitle: 'Heritage Staples',
-    description: 'Authentic traditional desi ghee, raw mountain honey, heritage panjeeri, premium saffron, and unrefined desi shakkar.',
-    originNotes: 'Prepared in small batches from heritage dairies, wild apiaries, and spice orchards of Pakistan.'
-  },
-  {
-    id: 'combos',
-    name: 'Gift Boxes & Combos',
-    subtitle: 'Bespoke Curations & Heritage Pairings',
-    description: 'Masterfully curated gift assortments and multi-nut packs presented in bespoke luxury vacuum canisters.',
-    originNotes: 'Hand-assembled in Lahore for special celebrations, weddings, and executive gifting.'
-  }
+const PLP_CATEGORIES = [
+  ALL_CATEGORY_ENTRY,
+  ...Object.values(CANONICAL_CATEGORIES),
 ];
 
 export function CategoryPLPSkeleton() {
@@ -138,11 +94,16 @@ export default function CategoryPLP({
   const { addToCart } = useCart();
   // Category & Sorting State
   
-  const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
-  
-  // Sync initialCategory when route changes
+  // Resolve incoming initialCategory through the alias table so legacy slugs work.
+  const resolvedInitial = useMemo(
+    () => resolveCategorySlug(initialCategory) || 'all',
+    [initialCategory]
+  );
+  const [selectedCategory, setSelectedCategory] = useState<string>(resolvedInitial);
+
+  // Sync when route changes (e.g. user navigates /category/seeds → snacks-seeds)
   React.useEffect(() => {
-    if (initialCategory) setSelectedCategory(initialCategory);
+    setSelectedCategory(resolveCategorySlug(initialCategory) || 'all');
   }, [initialCategory]);
 
   const handleCategorySelect = (id: string) => {
@@ -169,12 +130,10 @@ export default function CategoryPLP({
     }
   }, [propSearchFilter]);
 
-  // Active Category Details
+  // Active Category Details — from canonical config
   const activeCategoryMeta = useMemo(() => {
-    return (
-      CATEGORIES_DATA.find((c) => c.id === selectedCategory) ||
-      CATEGORIES_DATA[0]
-    );
+    if (selectedCategory === 'all') return ALL_CATEGORY_ENTRY;
+    return getCategoryMeta(selectedCategory);
   }, [selectedCategory]);
 
   // Handle Category Change with smooth simulated loading
@@ -199,9 +158,10 @@ export default function CategoryPLP({
   // Filter & Sort Products
   const filteredProducts = useMemo(() => {
     return PRODUCTS.filter((product) => {
-      // Category Match
-      if (selectedCategory !== 'all' && product.category !== selectedCategory) {
-        return false;
+      // Category Match — resolve aliases so /category/seeds → snacks-seeds products
+      if (selectedCategory !== 'all') {
+        // selectedCategory is already canonical (resolved on set); compare directly.
+        if (product.category !== selectedCategory) return false;
       }
 
       // Origin Match
@@ -218,7 +178,7 @@ export default function CategoryPLP({
       if (searchFilter.trim()) {
         const query = searchFilter.toLowerCase();
         const matchesName = product.name.toLowerCase().includes(query);
-        const matchesDesc = product.desc.toLowerCase().includes(query);
+        const matchesDesc = product.desc?.toLowerCase().includes(query);
         const matchesKeywords = product.keywords?.some((k) =>
           k.toLowerCase().includes(query)
         );
@@ -366,10 +326,10 @@ export default function CategoryPLP({
                 onChange={(e) => handleCategorySwitch(e.target.value)}
                 className="w-full appearance-none bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/35 text-[var(--color-ink,#1F120F)] text-xs sm:text-sm font-semibold rounded-full ps-4 pe-9 py-2 focus:outline-none focus:border-[var(--color-gold,#B8935F)] focus:ring-2 focus:ring-[var(--color-gold,#B8935F)]/20 cursor-pointer shadow-xs transition-colors"
               >
-                {CATEGORIES_DATA.map((cat) => {
+                {PLP_CATEGORIES.map((cat) => {
                   const count = cat.id === 'all'
                     ? PRODUCTS.length
-                    : PRODUCTS.filter((product) => product.category === cat.id).length;
+                    : PRODUCTS.filter((p) => p.category === cat.id).length;
                   return <option key={cat.id} value={cat.id}>{cat.name} ({count})</option>;
                 })}
               </select>
@@ -515,8 +475,7 @@ export default function CategoryPLP({
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                onClick={() => onQuickView && onQuickView(product)}
-                className="group/card bg-[var(--color-surface,#FFFCF7)] dark:bg-[var(--color-surface,#1A201E)] border border-[var(--color-border)] dark:border-[var(--color-border)] hover:border-[var(--color-accent,#C7982F)] dark:hover:border-[var(--color-accent,#D4A843)] rounded-3xl p-5 flex flex-col justify-between transition-all duration-300 shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] hover:-translate-y-1 relative cursor-pointer select-none"
+                className="group/card bg-[var(--color-surface,#FFFCF7)] dark:bg-[var(--color-surface,#1A201E)] border border-[var(--color-border)] dark:border-[var(--color-border)] hover:border-[var(--color-accent,#C7982F)] dark:hover:border-[var(--color-accent,#D4A843)] rounded-3xl p-5 flex flex-col justify-between transition-all duration-300 shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] hover:-translate-y-1 relative select-none"
               >
                 {/* Top Discount / Heritage Tag */}
                 <div className="absolute top-3.5 right-3.5 z-10 flex flex-col items-end gap-1 pointer-events-none">
@@ -532,8 +491,13 @@ export default function CategoryPLP({
                   )}
                 </div>
 
-                {/* Inner Image Zone */}
-                <div className="w-full aspect-square bg-[var(--color-surface-subtle,#FAF9F5)] dark:bg-[var(--color-surface-elevated,#222A28)] rounded-2xl p-4 flex items-center justify-center relative overflow-hidden border border-[var(--color-border)] dark:border-[var(--color-border)] group-hover/card:border-[var(--color-accent,#C7982F)]/40 transition-colors shadow-2xs">
+                {/* Inner Image Zone — clicking image/title navigates to Product Detail */}
+                <Link
+                  to={`/product/${product.id}`}
+                  className="block w-full aspect-square bg-[var(--color-surface-subtle,#FAF9F5)] dark:bg-[var(--color-surface-elevated,#222A28)] rounded-2xl p-4 flex items-center justify-center relative overflow-hidden border border-[var(--color-border)] dark:border-[var(--color-border)] group-hover/card:border-[var(--color-accent,#C7982F)]/40 transition-colors shadow-2xs focus-ring"
+                  aria-label={`View details for ${product.name}`}
+                  tabIndex={0}
+                >
                   <img
                     src={getProductImage(product)}
                     alt={t(`imageAlt.${product.id}`, product.name)}
@@ -545,27 +509,24 @@ export default function CategoryPLP({
                     className="w-full h-full object-contain filter drop-shadow-sm group-hover/card:scale-105 transition-transform duration-500"
                     loading="lazy"
                   />
+                </Link>
 
-                  {/* Floating Quick View Pill on Hover */}
-                  <div className="absolute inset-0 bg-black/15 backdrop-blur-[2px] opacity-0 group-hover/card:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-                    <span className="px-3.5 py-1.5 rounded-full text-[9.5px] font-black uppercase tracking-wider bg-[var(--color-primary,#042821)] text-[var(--color-text-on-emerald,#FFFCF7)] shadow-md flex items-center gap-1.5 border border-[var(--color-accent,#C7982F)]/50">
-                      <Eye size={12} className="text-[var(--color-accent,#C7982F)]" />
-                      <span>Quick View</span>
-                    </span>
-                  </div>
-                </div>
-
-                {/* Product Details with High-Contrast Text */}
+                {/* Product Name — links to Product Detail */}
                 <div className="w-full flex flex-col items-center text-center mt-4 space-y-1.5">
                   <span className="text-[9px] uppercase font-bold tracking-[0.2em] text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)]">
                     {product.origin ? `Harvest • ${product.origin}` : 'Artisanal Selection'}
                   </span>
-                  <h3 className="text-base sm:text-lg font-serif font-bold text-[var(--color-text-primary,#29231D)] leading-snug line-clamp-2">
-                    {product.name}
-                  </h3>
+                  <Link
+                    to={`/product/${product.id}`}
+                    className="w-full focus-ring rounded-sm"
+                  >
+                    <h3 className="text-base sm:text-lg font-serif font-bold text-[var(--color-text-primary,#29231D)] leading-snug line-clamp-2 hover:text-[#C7982F] transition-colors">
+                      {product.name}
+                    </h3>
+                  </Link>
                 </div>
 
-                {/* Inline Size/Weight Selector + WhatsApp Order — per card */}
+                {/* Size selector & actions */}
                 <div className="w-full mt-3 space-y-2.5">
                   {/* Size Pills */}
                   <div className="flex flex-wrap gap-1.5 justify-center" role="group" aria-label="Available sizes">
@@ -601,8 +562,8 @@ export default function CategoryPLP({
                     )}
                   </div>
 
-                  {/* Add to Cart & Wishlist Action Row */}
-                  <div className="pt-2 border-t border-[var(--color-border)] w-full flex items-center justify-between gap-1.5 mt-1">
+                  {/* Add to Cart + Quick View Action Row */}
+                  <div className="pt-2 border-t border-[var(--color-border)] w-full flex items-center gap-1.5 mt-1">
                     <button
                       type="button"
                       onClick={(e) => {
@@ -618,17 +579,25 @@ export default function CategoryPLP({
                       className="flex-1 min-h-[40px] py-1 px-3 rounded-full bg-[#1E3A2B] hover:bg-[#14281E] text-[#FDFBF7] border border-[#C5A059]/40 hover:border-[#C5A059] text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer shadow-xs active:scale-[0.98]"
                     >
                       <ShoppingBag size={13} strokeWidth={2} className="text-[#C5A059]" />
-                      <span>Add to Cart</span>
+                      <span>{t('addToCart', 'Add to Cart')}</span>
                     </button>
-                    
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); /* Wishlist Hook Injection */ }}
-                      className="min-w-[40px] h-[40px] rounded-full border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-secondary,#635B52)] hover:text-[#E4405F] hover:border-[#E4405F]/50 transition-colors shadow-xs cursor-pointer focus-ring"
-                      aria-label="Add to Wishlist"
-                    >
-                      <Heart size={16} strokeWidth={2.2} />
-                    </button>
+
+                    {/* Explicit Quick View button — does NOT navigate to Product Detail */}
+                    {onQuickView && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          onQuickView(product);
+                        }}
+                        className="min-w-[40px] h-[40px] rounded-full border border-[var(--color-border)] bg-[var(--color-surface,#FFFCF7)] dark:bg-[var(--color-surface,#1A201E)] flex items-center justify-center text-[var(--color-text-secondary,#635B52)] hover:text-[#C5A059] hover:border-[#C5A059] transition-colors shadow-xs cursor-pointer focus-ring"
+                        aria-label={t('quickView', 'Quick View')}
+                        title={t('quickView', 'Quick View')}
+                      >
+                        <Eye size={16} strokeWidth={2.2} />
+                      </button>
+                    )}
                   </div>
                 </div>
               </motion.article>

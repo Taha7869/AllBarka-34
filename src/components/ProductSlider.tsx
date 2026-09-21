@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, ArrowRight, Sparkles } from 'lucide-react';
 import ProductCard from './ProductCard';
 import { Product } from '../types';
+import { PRODUCTS } from '../data/products';
 import { useDragScroll } from '../hooks/useDragScroll';
 
 interface ProductSliderProps {
@@ -54,7 +55,7 @@ export default function ProductSlider({
               to="/shop"
               className="hidden sm:inline-flex items-center gap-1 text-xs font-black uppercase tracking-widest text-[var(--color-gold)] hover:text-[var(--color-emerald)] transition-colors mr-2"
             >
-              <span>View All ({products.length})</span>
+              <span>View All ({PRODUCTS.length})</span>
               <ArrowRight size={13} />
             </Link>
 
@@ -105,7 +106,7 @@ export default function ProductSlider({
             to="/shop"
             className="inline-flex items-center justify-center w-full py-3 rounded-full bg-[var(--color-base)] border border-[var(--color-border)] text-xs font-black uppercase tracking-widest text-[var(--color-ink)]"
           >
-            <span>Explore All Products</span>
+            <span>View All Products ({PRODUCTS.length})</span>
             <ArrowRight size={13} className="ml-1.5 text-[var(--color-gold)]" />
           </Link>
         </div>
