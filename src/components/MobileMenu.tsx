@@ -190,7 +190,7 @@ export default function MobileMenu({
               {/* 1. Account / Login (or signed-in patron profile) */}
               <div>
                 <span className="text-[10px] font-sans font-bold uppercase tracking-[0.22em] text-[#806326] dark:text-[#C7982F] block mb-2 px-1">
-                  {currentUser ? 'Patron Profile' : 'Patron Lounge'}
+                  {currentUser ? t('patronProfile', 'Patron Profile') : t('patronLounge', 'Patron Lounge')}
                 </span>
                 <button
                   type="button"
@@ -203,10 +203,10 @@ export default function MobileMenu({
                     </div>
                     <div className="truncate">
                       <div className="text-xs font-bold text-[#042821] dark:text-[#FFFCF7] truncate">
-                        {currentUser ? (patronProfile?.name || 'Patron Account') : t('vipLogin', 'Patron VIP Lounge')}
+                        {currentUser ? (patronProfile?.name || t('patronAccount', 'Patron Account')) : t('vipLogin', 'Patron VIP Lounge')}
                       </div>
                       <div className="text-[10px] text-[#806326] dark:text-[#C7982F] truncate">
-                        {currentUser ? 'View loyalty perks & tier' : 'Sign in for faster checkout'}
+                        {currentUser ? t('loyaltyPerks', 'View loyalty perks & tier') : t('signInPrompt', 'Sign in for faster checkout')}
                       </div>
                     </div>
                   </div>
@@ -217,7 +217,7 @@ export default function MobileMenu({
               {/* 2. Cart with live item count & working link */}
               <div>
                 <span className="text-[10px] font-sans font-bold uppercase tracking-[0.22em] text-[#806326] dark:text-[#C7982F] block mb-2 px-1">
-                  Shopping Bag
+                  {t('shoppingBag', 'Shopping Bag')}
                 </span>
                 <button
                   type="button"
@@ -226,7 +226,7 @@ export default function MobileMenu({
                 >
                   <span className="flex items-center gap-2.5 text-xs font-bold text-[#042821] dark:text-[#FFFCF7]">
                     <ShoppingBag size={16} className="text-[#C7982F]" />
-                    {t('cart', 'Review Cart & Checkout')}
+                    {t('reviewCart', 'Review Cart & Checkout')}
                   </span>
                   <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-[#C7982F] text-[#042821]">
                     {cartCount}
@@ -237,7 +237,7 @@ export default function MobileMenu({
               {/* 3. Language selector: English, اردو, العربية */}
               <div className="border-t border-[#29231D]/8 dark:border-[#F6F1EA]/8 pt-4">
                 <span className="text-[10px] font-sans font-bold uppercase tracking-[0.22em] text-[#806326] dark:text-[#C7982F] block mb-2 px-1">
-                  Language / زبان / اللغة
+                  {t('languageSelector', 'Language / زبان / اللغة')}
                 </span>
                 <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-[#F6F1EA] dark:bg-[#222A28] border border-[#29231D]/8 dark:border-[#F6F1EA]/10">
                   {(['en', 'ur', 'ar'] as LanguageCode[]).map((lang) => {
@@ -268,7 +268,7 @@ export default function MobileMenu({
               {/* 4. Theme selector: Light, Dark, Auto */}
               <div>
                 <span className="text-[10px] font-sans font-bold uppercase tracking-[0.22em] text-[#806326] dark:text-[#C7982F] block mb-2 px-1">
-                  Appearance Mode
+                  {t('appearanceMode', 'Appearance Mode')}
                 </span>
                 <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-[#F6F1EA] dark:bg-[#222A28] border border-[#29231D]/8 dark:border-[#F6F1EA]/10">
                   <button
@@ -315,7 +315,7 @@ export default function MobileMenu({
               {/* 5. Our Collections links */}
               <div className="border-t border-[#29231D]/8 dark:border-[#F6F1EA]/8 pt-4">
                 <span className="text-[10px] font-sans font-bold uppercase tracking-[0.22em] text-[#806326] dark:text-[#C7982F] block mb-2 px-1">
-                  Our Collections
+                  {t('ourCollections', 'Our Collections')}
                 </span>
                 <div className="space-y-1">
                   <button
@@ -401,7 +401,7 @@ export default function MobileMenu({
               {/* 6. Social buttons: WhatsApp and Instagram */}
               <div className="border-t border-[#29231D]/8 dark:border-[#F6F1EA]/8 pt-4 pb-4">
                 <span className="text-[10px] font-sans font-bold uppercase tracking-[0.22em] text-[#806326] dark:text-[#C7982F] block mb-2 px-1">
-                  Connect With Us
+                  {t('connectWithUs', 'Connect With Us')}
                 </span>
                 <div className="flex gap-2">
                   <a

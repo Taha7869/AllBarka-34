@@ -126,16 +126,17 @@ export default function ProductCard({
               <span>{t('addToCart', 'Add to Cart')}</span>
             </button>
             <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onQuickView) onQuickView(product);
-              }}
-              className="min-w-[40px] h-[40px] rounded-full border border-[var(--color-border)] bg-[var(--color-surface,#FFFCF7)] dark:bg-[var(--color-surface,#1A201E)] flex items-center justify-center text-[var(--color-text-secondary,#635B52)] hover:text-[#C5A059] hover:border-[#C5A059] transition-colors shadow-xs cursor-pointer focus-ring"
-              aria-label="Quick View"
-            >
-              <Eye size={16} strokeWidth={2.2} />
-            </button>
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onQuickView) onQuickView(product);
+                }}
+                className="flex items-center min-w-[40px] h-[40px] rounded-full border border-[var(--color-border)] bg-[var(--color-surface,#FFFCF7)] dark:bg-[var(--color-surface,#1A201E)] flex items-center justify-center text-[var(--color-text-secondary,#635B52)] hover:text-[#C5A059] hover:border-[#C5A059] transition-colors shadow-xs cursor-pointer focus-ring"
+                aria-label={t('quickView', 'Quick View')}
+              >
+                <Eye size={16} strokeWidth={2.2} />
+                <span className="ms-1 text-xs">{t('quickView')}</span>
+              </button>
           </div>
         </div>
       </div>

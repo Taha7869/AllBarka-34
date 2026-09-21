@@ -1,5 +1,5 @@
 "use client";
-
+import { useLanguage } from '../../contexts/LanguageContext';
 import React, { useEffect, useState } from "react";
 import { 
   Star, 
@@ -47,6 +47,7 @@ export const InfiniteMovingCards = ({
   className?: string;
   onReviewSelect?: (item: MovingReviewItem) => void;
 }) => {
+  const { t, isRtl } = useLanguage();
   const containerRef = React.useRef<HTMLDivElement>(null);
   const scrollerRef = React.useRef<HTMLDivElement>(null);
 
@@ -161,7 +162,8 @@ export const InfiniteMovingCards = ({
                 key={item.id || idx}
                 data-review-index={idx}
                 // AllBarka Signature Whitish/Cream Luxury Card with Gold Border & Rounded-3xl
-                className="w-[360px] sm:w-[420px] md:w-[460px] rounded-3xl bg-[#FAF9F5] border-2 border-[#D4AF6A]/50 p-6 md:p-8 shadow-[0_8px_25px_rgba(43,27,20,0.06),0_0_15px_rgba(212,175,106,0.12)] relative flex flex-col justify-between shrink-0 text-left select-none cursor-pointer transition-all duration-300 hover:border-[#D4AF6A] hover:scale-[1.015] hover:shadow-[0_12px_35px_rgba(43,27,20,0.12),0_0_25px_rgba(212,175,106,0.25)] group text-[#2B1B17]"
+                dir={isRtl ? 'rtl' : 'ltr'}
+                className="w-[360px] sm:w-[420px] md:w-[460px] rounded-3xl bg-[#FAF9F5] border-2 border-[#D4AF6A]/50 p-6 md:p-8 shadow-[0_8px_25px_rgba(43,27,20,0.06),0_0_15px_rgba(212,175,106,0.12)] relative flex flex-col justify-between shrink-0 text-start select-none cursor-pointer transition-all duration-300 hover:border-[#D4AF6A] hover:scale-[1.015] hover:shadow-[0_12px_35px_rgba(43,27,20,0.12),0_0_25px_rgba(212,175,106,0.25)] group text-[#2B1B17]"
               >
                 {/* Review of the Month Ribbon */}
                 {item.isReviewOfTheMonth && (
@@ -236,7 +238,7 @@ export const InfiniteMovingCards = ({
                     <div className="flex items-center justify-between text-[10.5px] text-[#2B1B17]/75 pt-1">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <ShoppingBag size={11} className="text-[#D4AF6A] shrink-0" />
-                        <span className="text-[#2B1B17]/50 shrink-0">Purchased:</span>
+                        <span className="text-[9.5px] font-semibold text-[#2B1B17]/75 pt-1">{t('quickView')}</span>
                         <span className="font-semibold text-[#2B1B17] truncate">{item.purchasedItem}</span>
                       </div>
                       <span className="text-[9.5px] text-[#8C6B1B] group-hover:text-[#2B1B17] font-bold shrink-0 pl-2">

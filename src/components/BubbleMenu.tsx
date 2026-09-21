@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface MenuItem {
   id: string;
@@ -15,31 +16,35 @@ interface BubbleMenuProps {
   className?: string;
 }
 
-const DEFAULT_ITEMS: MenuItem[] = [
-  { id: 'Home', label: 'Home', path: '/' },
-  { 
-    id: 'Shop', 
-    label: 'Shop', 
-    path: '/shop',
-    dropdownItems: [
-      { id: 'all', label: 'All Products', path: '/shop' },
-      { id: 'nuts', label: 'Dry Fruits & Nuts', path: '/shop/nuts' },
-      { id: 'seeds', label: 'Seeds & Superfoods', path: '/shop/seeds' },
-      { id: 'snacks', label: 'Premium Snacks', path: '/shop/snacks' },
-      { id: 'oils', label: 'Cold-Pressed Oils', path: '/shop/oils' },
-      { id: 'organics', label: 'Pure Organic Essentials', path: '/shop/organics' },
-    ]
-  },
-  { id: 'Gift Boxes', label: 'Gift Boxes', path: '/shop/combos' },
-  { id: 'Contact', label: 'Contact', path: '/pages/contact' }
-];
+// Default menu items will be generated inside the component using the translation function
 
 export default function BubbleMenu({
-  items = DEFAULT_ITEMS,
+  items,
   activeItem = 'Home',
   onItemClick,
   className = ''
 }: BubbleMenuProps) {
+  const { t } = useLanguage();
+  const defaultItems: MenuItem[] = [
+    { id: 'Home', label: t('home', 'Home'), path: '/' },
+    {
+      id: 'Shop',
+      label: t('shop', 'Shop'),
+      path: '/shop',
+      dropdownItems: [
+        { id: 'all', label: t('allProducts', 'All Products'), path: '/shop' },
+        { id: 'nuts', label: t('dryFruits', 'Dry Fruits & Nuts'), path: '/shop/nuts' },
+        { id: 'seeds', label: t('berries', 'Seeds & Superfoods'), path: '/shop/seeds' },
+        { id: 'snacks', label: t('snacks', 'Premium Snacks'), path: '/shop/snacks' },
+        { id: 'oils', label: t('categoryOils', 'Cold-Pressed Oils'), path: '/shop/oils' },
+        { id: 'organics', label: t('categoryEssentials', 'Pure Organic Essentials'), path: '/shop/organics' },
+      ],
+    },
+    { id: 'Gift Boxes', label: t('giftBoxes', 'Gift Boxes'), path: '/shop/combos' },
+    { id: 'Contact', label: t('contact', 'Contact'), path: '/pages/contact' },
+  ];
+  const menuItems = items && items.length ? items : defaultItems;
+
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
   return (
@@ -47,7 +52,7 @@ export default function BubbleMenu({
       aria-label="Main Navigation"
       className={`rounded-full px-2 py-1 flex items-center gap-1 backdrop-blur-md transition-colors duration-300 select-none pointer-events-auto border border-[#C7982F]/25 bg-[#FFFCF7]/85 dark:bg-[#1A201E]/85 shadow-[0_2px_12px_rgba(41,35,29,0.04)] dark:shadow-[0_2px_12px_rgba(0,0,0,0.25)] ${className}`}
     >
-      {items.map((item) => {
+      {menuItems.map((item) => {
         const isActive = activeItem === item.id || activeItem === item.label;
         const isHovered = hoveredItem === item.id;
 
