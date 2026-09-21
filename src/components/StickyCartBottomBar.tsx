@@ -5,6 +5,8 @@ import { useLocation } from 'react-router-dom';
 import type { CartItem } from '../types';
 import { useCart, parsePrice } from '../contexts/CartContext';
 
+import { buildAutomatedOrderWhatsAppUrl } from '../config/contacts';
+
 interface StickyCartBottomBarProps {
   cartItems?: CartItem[];
   onOpenCart?: () => void;
@@ -28,6 +30,27 @@ export const StickyCartBottomBar: React.FC<StickyCartBottomBarProps> = ({
   const isCheckoutOrCartPage = location.pathname === '/checkout' || location.pathname === '/cart';
   const isVisible = totalCount > 0 && !hide && !isCheckoutOrCartPage;
 
+  const handleQuickWhatsAppOrder = () => {
+    if (cartItems.length === 0) {
+      onOpenCart();
+      return;
+    }
+    const lines = cartItems.map((item) => {
+      const unit = parsePrice(item.unitPrice || item.price);
+      return `• ${item.name} (${item.selectedWeight}) × ${item.quantity} = Rs. ${(unit * item.quantity).toLocaleString()}`;
+    });
+    const msg = [
+      'Assalam-o-Alaikum AllBarka! 🌿',
+      'I would like to place the following order:',
+      '',
+      ...lines,
+      '',
+      `Subtotal: Rs. ${totalPrice.toLocaleString()}`,
+      'Please confirm availability and share payment/delivery details. Shukriya! 🙏'
+    ].join('\n');
+    window.open(buildAutomatedOrderWhatsAppUrl(msg), '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <AnimatePresence>
       {isVisible && (
@@ -42,7 +65,7 @@ export const StickyCartBottomBar: React.FC<StickyCartBottomBarProps> = ({
           {/* Card Container in Whitish Cream Luxury Theme */}
           <div className="pointer-events-auto bg-[#FAF9F5]/98 backdrop-blur-xl border-2 border-[#D4AF6A] rounded-2xl sm:rounded-full p-2 sm:pl-5 shadow-[0_12px_40px_rgba(43,27,20,0.25),0_0_24px_rgba(212,175,106,0.3)] flex items-center justify-between gap-2 sm:gap-3 select-none text-left">
             {/* Left: Item count & total price */}
-            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 pl-1">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 pl-1 cursor-pointer" onClick={onOpenCart}>
               <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white border border-[#D4AF6A]/60 flex items-center justify-center shrink-0 shadow-xs text-[#2B1B17]">
                 <ShoppingBag size={15} className="text-[#D4AF6A]" />
               </div>
@@ -69,9 +92,7 @@ export const StickyCartBottomBar: React.FC<StickyCartBottomBarProps> = ({
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
               id="sticky-cart-checkout-btn"
-              onClick={() => {
-                window.open('https://wa.me/923299455065?text=I%20want%20to%20order%20the%20product', '_blank', 'noopener,noreferrer');
-              }}
+              onClick={handleQuickWhatsAppOrder}
               type="button"
               className="group shrink-0 px-3 sm:px-6 py-2.5 rounded-xl sm:rounded-full bg-[#1E3A2B] hover:bg-[#14281E] text-[#FDFBF7] border border-[#D4AF6A]/70 font-black text-[10px] sm:text-xs uppercase tracking-wide sm:tracking-wider shadow-[0_4px_18px_rgba(43,27,20,0.3)] hover:shadow-[0_6px_22px_rgba(212,175,106,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center gap-1.5 cursor-pointer"
             >

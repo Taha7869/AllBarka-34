@@ -16,6 +16,7 @@ import {
 import { FaFacebookF } from 'react-icons/fa';
 import { AllBarkaCrestVector } from './AllBarkaLogo';
 import { STORE_CONFIG } from '../config/store';
+import { CONTACT_CONFIG, buildHumanSupportWhatsAppUrl } from '../config/contacts';
 
 interface AccordionSection {
   title: string;
@@ -225,12 +226,13 @@ export default function Footer() {
               <div className="flex items-center gap-2.5">
                 <MessageCircle className="h-4 w-4 text-[#25D366] shrink-0" />
                 <a
-                  href={`https://wa.me/${STORE_CONFIG.whatsappBusinessNumber}`}
+                  href={buildHumanSupportWhatsAppUrl()}
                   target="_blank"
                   rel="noreferrer"
                   className="hover:text-[#C7982F] transition-colors font-medium"
+                  dir="ltr"
                 >
-                  WhatsApp: +92 316 0666083
+                  WhatsApp: {CONTACT_CONFIG.humanSupportWhatsApp.formatted}
                 </a>
               </div>
             </div>
@@ -238,7 +240,7 @@ export default function Footer() {
             {/* Social Icons */}
             <div className="flex items-center gap-3 pt-2">
               <a
-                href="https://wa.me/923160666083"
+                href={buildHumanSupportWhatsAppUrl()}
                 target="_blank"
                 rel="noreferrer"
                 aria-label="Contact via WhatsApp"
@@ -337,7 +339,7 @@ export default function Footer() {
                 Need bespoke corporate hampers or seasonal gifting curation? Our Lahore concierge is at your service.
               </p>
               <a
-                href={`https://wa.me/${STORE_CONFIG.whatsappBusinessNumber}?text=${encodeURIComponent('Assalam-o-Alaikum, I would like to inquire about bespoke boutique hampers.')}`}
+                href={buildHumanSupportWhatsAppUrl('Assalam-o-Alaikum, I would like to inquire about bespoke boutique hampers.')}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-white hover:text-[#C7982F] transition-colors mt-1"
@@ -556,7 +558,7 @@ export default function Footer() {
           {/* Social Action Buttons */}
           <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-2">
             <a
-              href="https://wa.me/923160666083"
+              href={buildHumanSupportWhatsAppUrl()}
               target="_blank"
               rel="noreferrer"
               aria-label="Contact AllBarka on WhatsApp"

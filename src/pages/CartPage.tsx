@@ -6,6 +6,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { PRODUCTS, getProductImage } from '../data/products';
 import SEO from '../components/SEO';
 import TrustBadges from '../components/TrustBadges';
+import { buildAutomatedOrderWhatsAppUrl } from '../config/contacts';
 
 export default function CartPage() {
   const navigate = useNavigate();
@@ -47,8 +48,7 @@ export default function CartPage() {
       '',
       'Please confirm availability and share payment/delivery details. Shukriya! 🙏',
     ];
-    const encoded = encodeURIComponent(messageLines.join('\n'));
-    window.open(`https://wa.me/923299455065?text=${encoded}`, '_blank', 'noopener,noreferrer');
+    window.open(buildAutomatedOrderWhatsAppUrl(messageLines.join('\n')), '_blank', 'noopener,noreferrer');
   };
 
   if (cartItems.length === 0) {

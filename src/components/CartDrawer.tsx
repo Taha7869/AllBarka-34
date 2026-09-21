@@ -17,6 +17,7 @@ import {
 import type { CartItem } from '../types';
 import { PRODUCTS, getProductImage } from '../data/products';
 import { useCart, parsePrice, formatPrice, FREE_SHIPPING_THRESHOLD } from '../contexts/CartContext';
+import { buildAutomatedOrderWhatsAppUrl } from '../config/contacts';
 import { acquireScrollLock } from '../utils/scrollLock';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -208,7 +209,7 @@ export default function CartDrawer({
     ];
 
     const encoded = encodeURIComponent(messageLines.join('\n'));
-    window.open(`https://wa.me/923299455065?text=${encoded}`, '_blank', 'noopener,noreferrer');
+    window.open(buildAutomatedOrderWhatsAppUrl(messageLines.join('\n')), '_blank', 'noopener,noreferrer');
   };
 
   return (

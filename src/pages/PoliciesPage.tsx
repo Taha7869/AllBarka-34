@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { acquireScrollLock } from '../utils/scrollLock';
 import SEO from '../components/SEO';
+import { CONTACT_CONFIG, buildHumanSupportWhatsAppUrl, buildCustomerEmailUrl } from '../config/contacts';
 
 export type PolicyTab = 'shipping' | 'refund' | 'privacy' | 'terms';
 
@@ -310,7 +311,7 @@ export function PolicyPagesModal({
                     Instant Replacement or Full 100% Refund
                   </h3>
                   <p className="text-sm sm:text-base text-[var(--color-ink,#29231D)] font-normal leading-relaxed">
-                    If any batch received fails to meet your standard of freshness, kernel aroma, or crunch, notify our WhatsApp concierge (+92 316 0666083) within 48 hours of delivery. We will immediately dispatch a fresh replacement batch or process a full refund to your bank account or digital wallet (JazzCash / EasyPaisa)—with zero tedious paperwork required.
+                    If any batch received fails to meet your standard of freshness, kernel aroma, or crunch, notify our WhatsApp concierge ({CONTACT_CONFIG.humanSupportWhatsApp.formatted}) within 48 hours of delivery. We will immediately dispatch a fresh replacement batch or process a full refund to your bank account or digital wallet (JazzCash / EasyPaisa)—with zero tedious paperwork required.
                   </p>
                   <div className="p-4 rounded-2xl bg-[var(--color-base,#F6F1EA)] border border-[var(--color-gold,#C7982F)]/40 flex items-center gap-3 text-xs font-semibold text-[var(--color-ink,#29231D)] shadow-xs">
                     <CheckCircle2 size={16} className="text-[var(--color-gold,#C7982F)] shrink-0" />
@@ -378,7 +379,7 @@ export function PolicyPagesModal({
                     Right to Modify or Delete Contact Records
                   </h3>
                   <p className="text-xs sm:text-sm text-[var(--color-ink,#29231D)]/70 leading-relaxed">
-                    Patrons may at any time request the viewing, modification, or permanent deletion of their order history and contact phone records by messaging our WhatsApp concierge or emailing care@allbarka.com.
+                    Patrons may at any time request the viewing, modification, or permanent deletion of their order history and contact phone records by messaging our WhatsApp concierge or emailing {CONTACT_CONFIG.customerEmail}.
                   </p>
                 </div>
               </motion.div>
@@ -497,11 +498,11 @@ export function PolicyPagesModal({
           <div className="p-6 rounded-2xl sm:rounded-3xl bg-[var(--color-surface,#FFFCF7)] border border-[var(--color-gold,#C7982F)]/25 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
             <div className="flex items-center gap-2 text-xs font-bold text-[var(--color-ink,#29231D)]/70">
               <Sparkles size={14} className="text-[var(--color-gold,#C7982F)]" />
-              <span>AllBarka Luxury Boutique, Lahore, Pakistan • Concierge: 0316-0666083</span>
+              <span>AllBarka Luxury Boutique, Lahore, Pakistan • Concierge: {CONTACT_CONFIG.humanSupportWhatsApp.formatted}</span>
             </div>
 
             <a
-              href="https://wa.me/923160666083"
+              href={buildHumanSupportWhatsAppUrl()}
               target="_blank"
               rel="noreferrer"
               className="px-4 py-2 rounded-full border border-[var(--color-gold,#C7982F)]/40 bg-[var(--color-surface,#FFFCF7)] text-[var(--color-ink,#29231D)] hover:bg-[var(--color-base,#F6F1EA)] hover:text-[var(--color-gold,#C7982F)] text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all shadow-xs"

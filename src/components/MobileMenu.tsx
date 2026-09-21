@@ -19,6 +19,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage, type LanguageCode } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { acquireScrollLock } from '../utils/scrollLock';
+import { buildHumanSupportWhatsAppUrl } from '../config/contacts';
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -405,7 +406,7 @@ export default function MobileMenu({
                 </span>
                 <div className="flex gap-2">
                   <a
-                    href="https://wa.me/923160666083"
+                    href={buildHumanSupportWhatsAppUrl()}
                     target="_blank"
                     rel="noreferrer"
                     className="flex-1 min-h-[44px] flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-[#29231D]/12 dark:border-[#F6F1EA]/15 bg-[#F6F1EA] dark:bg-[#222A28] text-xs font-bold text-[#042821] dark:text-[#FFFCF7] hover:bg-[#FFFCF7] transition-all"

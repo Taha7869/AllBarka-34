@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, Sparkles, HelpCircle, ShieldCheck, CheckCircle2 } from 'lucide-react';
 
+import { buildHumanSupportWhatsAppUrl } from '../config/contacts';
+
 interface FAQItem {
   id: string;
   question: string;
@@ -177,7 +179,7 @@ export function FAQSection() {
           </div>
 
           <a
-            href="https://wa.me/923160666083"
+            href={buildHumanSupportWhatsAppUrl()}
             target="_blank"
             rel="noreferrer"
             className="px-5 py-2.5 rounded-full bg-[var(--color-emerald)] text-[var(--color-gold)] border border-[var(--color-gold)]/60 hover:bg-[var(--color-gold)] hover:text-[var(--color-emerald)] text-xs font-black uppercase tracking-wider transition-all duration-200 active:scale-95 shadow-sm shrink-0 cursor-pointer"

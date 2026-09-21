@@ -21,6 +21,7 @@ import {
 import { AllBarkaCrestVector } from '../components/AllBarkaLogo';
 import { acquireScrollLock } from '../utils/scrollLock';
 import BoutiqueContactForm from '../components/BoutiqueContactForm';
+import { buildHumanSupportWhatsAppUrl } from '../config/contacts';
 
 export type InfoPageTab = 
   | 'our-story'
@@ -490,7 +491,7 @@ export default function InfoPagesModal({
 
             <div className="flex items-center gap-2.5 w-full sm:w-auto">
               <a
-                href="https://wa.me/923160666083"
+                href={buildHumanSupportWhatsAppUrl()}
                 target="_blank"
                 rel="noreferrer"
                 className="flex-1 sm:flex-none px-4 py-2.5 rounded-full border border-[var(--color-gold,#B8935F)]/40 bg-[var(--color-surface,#FFFFFF)] text-[var(--color-ink,#1A1A1A)] hover:bg-[var(--color-cream,#FAF9F5)] hover:text-[var(--color-gold,#B8935F)] text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-xs"
@@ -703,7 +704,7 @@ export default function InfoPagesModal({
 
           <div className="flex items-center gap-2.5 w-full sm:w-auto">
             <a
-              href="https://wa.me/923160666083"
+              href={buildHumanSupportWhatsAppUrl()}
               target="_blank"
               rel="noreferrer"
               className="flex-1 sm:flex-none px-4 py-2.5 rounded-full border border-[var(--color-gold,#B8935F)]/40 bg-[var(--color-surface,#FFFFFF)] text-[var(--color-ink,#1A1A1A)] hover:bg-[var(--color-cream,#FAF9F5)] hover:text-[var(--color-gold,#B8935F)] text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer shadow-xs"

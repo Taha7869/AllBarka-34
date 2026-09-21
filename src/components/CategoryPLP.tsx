@@ -19,6 +19,7 @@ import {
   getCategoryMeta,
 } from '../config/categories';
 import { useCart } from '../contexts/CartContext';
+import { buildAutomatedOrderWhatsAppUrl } from '../config/contacts';
 
 export interface CategoryPLPProps {
   searchFilter?: string;
@@ -230,8 +231,8 @@ export default function CategoryPLP({
     setCardSelectedSizes((prev) => ({ ...prev, [productId]: size }));
 
   const handleWhatsAppOrder = (product: Product, size: string, price: number) => {
-    const text = `Assalam-o-Alaikum AllBarka! 🌿%0AI want to order:%0A*${product.name}*%0ASize: *${size}*%0APrice: *Rs. ${price.toLocaleString()}*%0A%0APlease confirm availability and delivery details.`;
-    window.open(`https://wa.me/923299455065?text=${text}`, '_blank', 'noopener,noreferrer');
+    const text = `Assalam-o-Alaikum AllBarka! 🌿\nI want to order:\n*${product.name}*\nSize: *${size}*\nPrice: *Rs. ${price.toLocaleString()}*\n\nPlease confirm availability and delivery details. Shukriya! 🙏`;
+    window.open(buildAutomatedOrderWhatsAppUrl(text), '_blank', 'noopener,noreferrer');
   };
 
   return (

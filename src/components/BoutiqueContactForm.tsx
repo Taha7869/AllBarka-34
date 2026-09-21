@@ -10,7 +10,7 @@ import {
   AlertCircle,
   Sparkles
 } from 'lucide-react';
-import { STORE_CONFIG } from '../config/store';
+import { CONTACT_CONFIG, buildHumanSupportWhatsAppUrl, buildCustomerEmailUrl } from '../config/contacts';
 
 export default function BoutiqueContactForm() {
   const [name, setName] = useState('');
@@ -84,7 +84,7 @@ export default function BoutiqueContactForm() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         {/* WhatsApp Concierge */}
         <a
-          href="https://wa.me/923160666083?text=Assalam-o-Alaikum%20AllBarka%2C%20I%20would%20like%20to%20inquire%20about%20your%20gourmet%20dry%20fruits."
+          href={buildHumanSupportWhatsAppUrl('Assalam-o-Alaikum AllBarka, I would like to inquire about your gourmet dry fruits.')}
           target="_blank"
           rel="noreferrer"
           className="p-4 rounded-2xl bg-[var(--color-cream,#FAF9F5)] border border-[var(--color-gold,#B8935F)]/30 hover:border-[var(--color-gold,#B8935F)] hover:shadow-md transition-all group block"
@@ -98,8 +98,8 @@ export default function BoutiqueContactForm() {
           <h4 className="font-serif font-bold text-sm text-[var(--color-ink,#1A1A1A)] group-hover:text-[var(--color-gold,#B8935F)] transition-colors">
             WhatsApp Direct
           </h4>
-          <p className="text-xs text-[var(--color-ink-muted,#5A5A5A)] mt-1 font-medium">
-            0316 0666083
+          <p className="text-xs text-[var(--color-ink-muted,#5A5A5A)] mt-1 font-medium" dir="ltr">
+            {CONTACT_CONFIG.humanSupportWhatsApp.formatted}
           </p>
           <span className="text-[10.5px] text-emerald-700 font-semibold mt-2 inline-block">
             ● Online for orders & inquiries
@@ -108,7 +108,7 @@ export default function BoutiqueContactForm() {
 
         {/* Direct Telephone */}
         <a
-          href="tel:+923160666083"
+          href={`tel:${CONTACT_CONFIG.humanSupportWhatsApp.formatted.replace(/\s+/g, '')}`}
           className="p-4 rounded-2xl bg-[var(--color-cream,#FAF9F5)] border border-[var(--color-gold,#B8935F)]/30 hover:border-[var(--color-gold,#B8935F)] hover:shadow-md transition-all group block"
         >
           <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center mb-2.5">
@@ -120,8 +120,8 @@ export default function BoutiqueContactForm() {
           <h4 className="font-serif font-bold text-sm text-[var(--color-ink,#1A1A1A)] group-hover:text-[var(--color-gold,#B8935F)] transition-colors">
             Order Hotline
           </h4>
-          <p className="text-xs text-[var(--color-ink-muted,#5A5A5A)] mt-1 font-medium">
-            +92 316 0666083
+          <p className="text-xs text-[var(--color-ink-muted,#5A5A5A)] mt-1 font-medium" dir="ltr">
+            {CONTACT_CONFIG.humanSupportWhatsApp.formatted}
           </p>
           <span className="text-[10.5px] text-[var(--color-ink-muted,#5A5A5A)] mt-2 inline-block">
             Mon–Sun: 9 AM – 9 PM
@@ -130,7 +130,7 @@ export default function BoutiqueContactForm() {
 
         {/* Email Concierge */}
         <a
-          href="mailto:care@allbarka.com"
+          href={buildCustomerEmailUrl('Inquiry for AllBarka Boutique')}
           className="p-4 rounded-2xl bg-[var(--color-cream,#FAF9F5)] border border-[var(--color-gold,#B8935F)]/30 hover:border-[var(--color-gold,#B8935F)] hover:shadow-md transition-all group block"
         >
           <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center mb-2.5">
@@ -142,8 +142,8 @@ export default function BoutiqueContactForm() {
           <h4 className="font-serif font-bold text-sm text-[var(--color-ink,#1A1A1A)] group-hover:text-[var(--color-gold,#B8935F)] transition-colors">
             Patron Care Email
           </h4>
-          <p className="text-xs text-[var(--color-ink-muted,#5A5A5A)] mt-1 font-medium">
-            care@allbarka.com
+          <p className="text-xs text-[var(--color-ink-muted,#5A5A5A)] mt-1 font-medium truncate" dir="ltr">
+            {CONTACT_CONFIG.customerEmail}
           </p>
           <span className="text-[10.5px] text-[var(--color-ink-muted,#5A5A5A)] mt-2 inline-block">
             Response within 2–4 hours
@@ -159,10 +159,10 @@ export default function BoutiqueContactForm() {
             Lahore Boutique
           </span>
           <h4 className="font-serif font-bold text-sm text-[var(--color-ink,#1A1A1A)]">
-            Allama Iqbal Town
+            DHA Phase 6 & Gulberg III
           </h4>
           <p className="text-xs text-[var(--color-ink-muted,#5A5A5A)] mt-1 font-medium leading-relaxed">
-            Neelum Block, Lahore, Punjab
+            Lahore, Punjab, Pakistan
           </p>
           <span className="text-[10.5px] text-[var(--color-ink-muted,#5A5A5A)] mt-2 inline-block">
             Daily 9:00 AM – 9:00 PM
@@ -203,7 +203,7 @@ export default function BoutiqueContactForm() {
             </p>
             <div className="pt-2 flex flex-wrap gap-2">
               <a
-                href={`https://wa.me/923160666083?text=Assalam-o-Alaikum%20AllBarka%2C%20I%20just%20submitted%20inquiry%20ticket%20${ticketId}.`}
+                href={buildHumanSupportWhatsAppUrl(`Assalam-o-Alaikum AllBarka, I just submitted inquiry ticket ${ticketId}.`)}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider transition-colors"

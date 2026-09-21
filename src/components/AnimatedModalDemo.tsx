@@ -22,6 +22,7 @@ import {
   Percent 
 } from "lucide-react";
 import { cn } from "../lib/utils";
+import { buildHumanSupportWhatsAppUrl } from "../config/contacts";
 
 interface AnimatedModalDemoProps {
   triggerVariant?: "hero" | "header" | "banner" | "custom";
@@ -215,7 +216,7 @@ export function AnimatedModalDemo({
 
             <LiquidMetalWrapper className="w-full sm:w-auto rounded-xl">
               <a
-                href={`https://wa.me/${STORE_CONFIG.whatsappBusinessNumber}?text=Assalam-o-Alaikum!%20I%20would%20like%20to%20inquire%20about%20AllBarka%20boutique%20perks%20and%20book%20a%20same-day%20delivery%20slot%20in%20Lahore.`}
+                href={buildHumanSupportWhatsAppUrl('Assalam-o-Alaikum! I would like to inquire about AllBarka boutique perks and book a same-day delivery slot in Lahore.')}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full px-5 py-2.5 rounded-xl bg-[var(--color-emerald)] text-[var(--color-base)] text-xs font-black shadow-xs hover:bg-[var(--color-emerald-dark)] active:scale-95 transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"

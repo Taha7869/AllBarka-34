@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { CheckCircle, ShoppingBag, MessageCircle, ArrowRight, Package, MapPin, Clock } from 'lucide-react';
 import { STORE_CONFIG } from '../config/store';
+import { CONTACT_CONFIG, buildHumanSupportWhatsAppUrl, buildAutomatedOrderWhatsAppUrl } from '../config/contacts';
 import { formatPKR } from '../lib/pricing';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -118,7 +119,7 @@ export default function OrderSuccessPage() {
             Browse Collections
           </button>
           <a
-            href={`https://wa.me/${STORE_CONFIG.whatsappBusinessNumber}?text=${encodeURIComponent('Assalam-o-Alaikum, I would like to inquire about my AllBarka order status.')}`}
+            href={buildHumanSupportWhatsAppUrl('Assalam-o-Alaikum, I would like to inquire about my AllBarka order status.')}
             target="_blank"
             rel="noopener noreferrer"
             className="px-8 py-3.5 rounded-full border border-[var(--color-gold,#C7982F)]/40 text-[var(--color-ink,#29231D)] font-bold text-xs uppercase tracking-[0.2em] hover:bg-[var(--color-gold,#C7982F)]/10 transition-all text-center flex items-center justify-center gap-2"
@@ -134,7 +135,7 @@ export default function OrderSuccessPage() {
   const whatsappText = order.whatsappMessage
     ? order.whatsappMessage
     : `Assalam-o-Alaikum AllBarka, inquiring about Order ID: ${order.orderId}`;
-  const whatsappUrl = `https://wa.me/${STORE_CONFIG.whatsappBusinessNumber}?text=${encodeURIComponent(whatsappText)}`;
+  const whatsappUrl = buildAutomatedOrderWhatsAppUrl(whatsappText);
 
   return (
     <div className="w-full min-h-[70vh] py-12 px-4 sm:px-6 flex justify-center items-start">

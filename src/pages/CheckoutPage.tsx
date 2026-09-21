@@ -38,6 +38,7 @@ import { calculateFinalTotal } from '../lib/pricing';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart, parsePrice, formatPrice } from '../contexts/CartContext';
 import { STORE_CONFIG } from '../config/store';
+import { buildAutomatedOrderWhatsAppUrl } from '../config/contacts';
 import { placeOrder } from '../lib/order';
 
 // Popular Lahore Neighborhoods for Rapid Delivery Pinning
@@ -381,9 +382,9 @@ const handleInputChange = (field: string, value: any) => {
       }
 
       const orderId = orderResult.orderId!;
-      const whatsappUrl = orderResult.whatsappMessage
-        ? `https://wa.me/${STORE_CONFIG.whatsappBusinessNumber}?text=${encodeURIComponent(orderResult.whatsappMessage)}`
-        : `https://wa.me/${STORE_CONFIG.whatsappBusinessNumber}?text=${encodeURIComponent(`AllBarka Order ${orderId}`)}`;
+      const whatsappUrl = buildAutomatedOrderWhatsAppUrl(
+        orderResult.whatsappMessage || `AllBarka Order ${orderId}`
+      );
 
       if (orderResult.claimToken) {
         sessionStorage.setItem("pendingClaimToken", orderResult.claimToken);

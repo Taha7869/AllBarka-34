@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../../lib/utils";
+import { buildAutomatedOrderWhatsAppUrl } from "../../config/contacts";
 
 export interface MovingReviewItem {
   id?: string;
@@ -399,9 +400,9 @@ export const InfiniteMovingCards = ({
                   </button>
 
                   <a
-                    href={`https://wa.me/923160666083?text=${encodeURIComponent(
+                    href={buildAutomatedOrderWhatsAppUrl(
                       `Assalam-o-Alaikum! I read ${selectedReview.name}'s review about ${selectedReview.purchasedItem || "AllBarka dry fruits"}. I would like to place an order.`
-                    )}`}
+                    )}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-[#2B1B17] to-[#3D2721] hover:from-[#3D2721] hover:to-[#2B1B17] text-[#FFFDD0] border border-[#D4AF6A]/60 text-xs font-black transition-all text-center flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
