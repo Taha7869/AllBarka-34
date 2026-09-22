@@ -73,11 +73,17 @@ export default function AuthModal({
       case 'auth/invalid-email':
         return 'Please enter a valid email address.';
       case 'auth/operation-not-allowed':
-        return 'This login method is disabled in the Firebase Console. Please enable it in Authentication > Sign-in method.';
+        return 'This sign-in method is disabled in the Firebase Console. Please enable it in Authentication > Sign-in method.';
+      case 'auth/popup-blocked':
+        return 'Sign-in popup was blocked by your browser. Please allow popups for this boutique domain.';
+      case 'auth/unauthorized-domain':
+        return 'This domain is not authorized in Firebase Console (Authentication > Settings > Authorized domains).';
+      case 'auth/account-exists-with-different-credential':
+        return 'An account already exists with this email using a different sign-in method.';
       case 'auth/network-request-failed':
         return 'Network error. Please check your internet connection.';
       default:
-        return 'An unexpected error occurred. Please try again.';
+        return 'An unexpected authentication error occurred. Please try again.';
     }
   };
 

@@ -1,28 +1,31 @@
-# ALLBARKA LUXURY BOUTIQUE — FINAL FRONTEND HANDOFF & CODEX CONTINUATION GUIDE
+# ALLBARKA LUXURY BOUTIQUE — FINAL BACKEND HARDENING & CODEX CONTINUATION GUIDE
 
-## Latest Checkpoint — Comprehensive Frontend QA & Verification Pass Completed (2026-09-22)
+## Production Target: `AllBarka-Live` (`allbarka-live`) / Firestore Database: `(default)`
+
+## Latest Checkpoint — Comprehensive Backend Hardening & Verification Pass Completed (2026-09-22)
 
 ### Completed Work & Automated Verification Summary
 1. **Full Test Matrix & Automated Verification**:
    - `npm run typecheck`: **PASS (0 errors)** (`tsc --noEmit`).
-   - `npm run build`: **PASS (Exit code 0)** (`dist/server.cjs` compiled via Vite).
-   - **Automated Browser Regression Suite**: Tested across viewports 360px, 390px, 768px, 1024px, 1440px with **0 layout overflow errors**.
+   - `npm run build`: **PASS (Exit code 0)** (`dist/server.cjs` compiled via Vite & Esbuild).
+   - **Server Startup & Live Endpoint Verification**: `node dist/server.cjs` booted cleanly on port 3001; `/api/commerce/readiness` and `/api/health` verified live.
 
-2. **Localization & RTL System**:
-   - EN, UR (نستعلیق), and AR (العربية) translation dictionaries and `dir="rtl"` layout switching verified.
-   - Price & number LTR isolation tags (`<bdi dir="ltr">`) preserved numerical formatting in RTL modes.
-   - `localStorage` persistence (`allbarka_language`) verified across browser reloads.
+2. **Production Firebase Configuration (`AllBarka-Live`)**:
+   - Refactored `server.ts` Firebase Admin setup to dynamically load `FIREBASE_PROJECT_ID` (`allbarka-live`), `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY` with newline conversion and zero credential logging.
+   - Initialized default database via `getFirestore(adminApp)` (or custom `FIRESTORE_DATABASE_ID` if specified).
+   - Updated `src/lib/firebase.ts` and `firebase-applet-config.json` to target `allbarka-live` and `(default)` database driven by environment variables (`VITE_FIREBASE_PROJECT_ID`).
+   - Purged all legacy `primal-circuit-ck76w` and named database hardcoding.
 
-3. **Cart & Shopping Flow**:
-   - Slide-over Cart Drawer, quantity increment/decrement, subtotal calculation, free shipping milestone progress (`Rs. 3,000`), and cart item persistence (`allbarka_cart_v1`) verified.
+3. **Order Safety & Transaction Idempotency**:
+   - `db` containment safety gate returns 503 `PERSISTENCE_PENDING` when offline, preserving customer cart and avoiding fake order acceptances.
+   - Transaction idempotency in `createDurableOrder`: duplicate submission returns cached order (`isDuplicate: true`), modified payload returns 409 `IDEMPOTENCY_PAYLOAD_MISMATCH`.
 
-4. **Product Detail Page (PDP) & Quick View**:
-   - Deep single product view (`/product/:id`) with image gallery, weight variants, Wholesale tier toggle, Wishlist, Share, accordions, and TrustBadges section verified.
-   - `QuickViewModal` overlay verified to open and close smoothly without page redirects.
+4. **n8n Order Notification Service**:
+   - Created `src/services/n8nOrderNotification.ts` providing isolated, 5-second timeout-protected dispatch with optional HMAC signature via `N8N_WEBHOOK_SECRET`.
+   - Non-blocking execution: n8n timeout or error will never roll back or fail a saved Firestore order.
 
-5. **Category System & Contact Centralization**:
-   - All 32 products mapped across 5 canonical categories (`nuts`, `oils`, `essentials`, `snacks-seeds`, `gift-boxes`). Zero empty categories.
-   - Single source of truth contacts (`src/config/contacts.ts`): Order actions -> `+92 329 9455065`, Support actions -> `+92 316 0666083`.
+5. **Google Auth & Error Mapping Audit**:
+   - Audited `AuthModal.tsx` Google sign-in flow. Added friendly error handlers for `auth/popup-blocked`, `auth/unauthorized-domain`, `auth/account-exists-with-different-credential`, and `auth/operation-not-allowed`.
 
 ---
 
@@ -310,9 +313,9 @@ Choose one explicitly scoped follow-up: reconcile verified packaging options and
 
 Review and resolve the three React Hooks dependency warnings, then rerun `npm run lint:hooks`. Keep the database connection implementation and the three recorded visual defects for their explicitly scoped follow-up passes.
 
-**Timestamp:** 2026-09-14  
-**Development App URL:** https://ais-dev-cscaeecng72ukas5eqeuqw-709435379155.asia-east1.run.app  
-**Shared App URL:** https://ais-pre-cscaeecng72ukas5eqeuqw-709435379155.asia-east1.run.app  
+**Timestamp:** 2026-09-14
+**Development App URL:** https://ais-dev-cscaeecng72ukas5eqeuqw-709435379155.asia-east1.run.app
+**Shared App URL:** https://ais-pre-cscaeecng72ukas5eqeuqw-709435379155.asia-east1.run.app
 
 ---
 

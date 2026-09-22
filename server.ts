@@ -5,11 +5,13 @@ import { GoogleGenAI } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import { JWT } from 'google-auth-library';
-import { initializeApp, applicationDefault } from 'firebase-admin/app';
+import { initializeApp, cert, applicationDefault } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { PRODUCTS } from './src/data/products';
 import { STORE_CONFIG } from './src/config/store';
+import { CONTACT_CONFIG, buildAutomatedOrderWhatsAppUrl, buildHumanSupportWhatsAppUrl } from './src/config/contacts';
+import { sendOrderToN8n } from './src/services/n8nOrderNotification';
 import { REWARDS } from './src/data/rewards';
 import { validateAndPriceOrder, validateCustomerDetails, ValidationError } from './src/lib/orderValidation';
 import crypto from 'crypto';
@@ -28,19 +30,49 @@ import { claimWelcomeVoucher } from './src/lib/welcomeCouponService';
 // Load environment variables
 dotenv.config();
 
-// Initialize Firebase Admin
+// Initialize Firebase Admin (Production or Emulator)
 let db: any = null;
 let adminAuth: any = null;
+
 try {
-  const adminApp = initializeApp({ credential: applicationDefault(), projectId: "primal-circuit-ck76w" });
-  adminAuth = getAuth(adminApp);
-  console.log("Server-side Firebase Admin Auth initialized.");
-  if (process.env.FIRESTORE_EMULATOR_HOST) {
-    db = getFirestore(adminApp, 'ai-studio-allbarkadryfruit-399bea9d-c3e1-40fd-99d8-34c767a5b8b0');
-    console.log("Firestore connected via emulator host.");
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+
+  let credentialOptions: any = null;
+
+  if (clientEmail && privateKey) {
+    credentialOptions = cert({
+      projectId: projectId || undefined,
+      clientEmail: clientEmail.trim(),
+      privateKey: privateKey.replace(/\\n/g, '\n'),
+    });
+  } else {
+    credentialOptions = applicationDefault();
   }
-} catch (e) {
-  console.error("Firebase Admin initialization failed:", e);
+
+  const appOptions: any = { credential: credentialOptions };
+  if (projectId) {
+    appOptions.projectId = projectId;
+  }
+
+  const adminApp = initializeApp(appOptions);
+  adminAuth = getAuth(adminApp);
+  console.log('[Firebase Admin] Authentication service initialized successfully.');
+
+  if (process.env.FIRESTORE_EMULATOR_HOST) {
+    const dbId = process.env.FIRESTORE_DATABASE_ID || '(default)';
+    db = getFirestore(adminApp, dbId);
+    console.log(`[Firestore] Connected via emulator host (${process.env.FIRESTORE_EMULATOR_HOST}).`);
+  } else if (process.env.FIREBASE_PROJECT_ID || process.env.FIREBASE_CLIENT_EMAIL || process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    const dbId = process.env.FIRESTORE_DATABASE_ID;
+    db = dbId && dbId !== '(default)' ? getFirestore(adminApp, dbId) : getFirestore(adminApp);
+    console.log('[Firestore] Live production database initialized successfully.');
+  } else {
+    console.warn('[Firestore] Server-only Firebase credentials (FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY) not provided. Durable persistence running in contained offline state.');
+  }
+} catch (e: any) {
+  console.error('[Firebase Admin] Initialization deferred:', e?.message || e);
 }
 
 // Security & Authentication Middlewares
@@ -243,7 +275,7 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
         supportAction: {
           type: 'whatsapp',
           label: 'Place Order via WhatsApp Concierge',
-          whatsappUrl: `https://wa.me/${STORE_CONFIG.whatsappBusinessNumber}?text=${encodeURIComponent(receiptMessage)}`
+          whatsappUrl: buildAutomatedOrderWhatsAppUrl(receiptMessage)
         },
         totals: validatedOrder.summary,
         items: validatedOrder.items
@@ -258,6 +290,24 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
       expectedFinalTotal
     });
 
+    let n8nNotificationStatus = null;
+    if (!result.isDuplicate) {
+      try {
+        n8nNotificationStatus = await sendOrderToN8n({
+          orderId: result.orderId,
+          customer: validateCustomerDetails(req.body),
+          totals: result.totals,
+          items: result.items,
+          paymentMethod: req.body.paymentMethod || 'cod',
+          createdAt: new Date().toISOString(),
+          whatsappMessage: result.whatsappMessage
+        });
+      } catch (n8nErr) {
+        console.warn('[n8n Dispatch] Non-blocking notification error:', n8nErr);
+        n8nNotificationStatus = { sent: false, status: 'FAILED' as const, reason: 'Dispatch exception' };
+      }
+    }
+
     res.json({
       success: true,
       orderId: result.orderId,
@@ -266,6 +316,7 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
       totals: result.totals,
       items: result.items,
       isDuplicate: result.isDuplicate,
+      n8nNotification: n8nNotificationStatus
     });
   } catch (error: any) {
     if (error.code === 'IDEMPOTENCY_PAYLOAD_MISMATCH') {
@@ -514,16 +565,16 @@ app.get('/api/loyalty/profile', requireAuth, async (req, res) => {
             activeRewards: []
           });
         }
-        
+
         const userDoc = await db.collection("users").doc(uid).get();
         const loyaltyPoints = userDoc.exists ? (userDoc.data()?.loyaltyPoints || 0) : 0;
-        
+
         const txSnap = await db.collection("users").doc(uid).collection("loyaltyTransactions").orderBy("createdAt", "desc").limit(10).get();
         const transactions = txSnap.docs.map((d: any) => d.data());
-        
+
         const arSnap = await db.collection("users").doc(uid).collection("activeRewards").where("status", "==", "ACTIVE").get();
         const activeRewards = arSnap.docs.map((d: any) => d.data());
-        
+
         res.json({
             loyaltyPoints,
             transactions,
@@ -545,10 +596,10 @@ app.post('/api/loyalty/redeem', requireAuth, async (req, res) => {
         const { rewardId } = req.body;
         if (!rewardId) return res.status(400).json({ error: "Missing rewardId", code: 'MISSING_REWARD' });
         if (!db) return res.status(503).json({ error: "Loyalty redemption database is currently undergoing maintenance.", code: 'DB_UNAVAILABLE' });
-        
+
         const reward = REWARDS.find(r => r.rewardId === rewardId);
         if (!reward || !reward.active) return res.status(400).json({ error: "Invalid reward", code: 'INVALID_REWARD' });
-        
+
         let activeRewardData: any = null;
         await db.runTransaction(async (t: any) => {
             const userRef = db.collection("users").doc(uid);
@@ -556,15 +607,15 @@ app.post('/api/loyalty/redeem', requireAuth, async (req, res) => {
             if (!userDoc.exists) throw new Error("User not found");
             const currentPoints = userDoc.data()?.loyaltyPoints || 0;
             if (currentPoints < reward.pointsCost) throw new Error("Insufficient points");
-            
+
             const activeRewardsSnapshot = await t.get(userRef.collection("activeRewards").where("status", "==", "ACTIVE").limit(1));
             if (!activeRewardsSnapshot.empty) {
                 throw new Error("You already have an active reward. Please use it first.");
             }
-            
+
             const newPoints = currentPoints - reward.pointsCost;
             t.set(userRef, { loyaltyPoints: newPoints }, { merge: true });
-            
+
             const txId = crypto.randomUUID();
             const txRef = userRef.collection("loyaltyTransactions").doc(txId);
             t.set(txRef, {
@@ -575,7 +626,7 @@ app.post('/api/loyalty/redeem', requireAuth, async (req, res) => {
                 description: `Redeemed ${reward.name}`,
                 createdAt: Date.now()
             });
-            
+
             const arId = crypto.randomUUID();
             const arRef = userRef.collection("activeRewards").doc(arId);
             activeRewardData = {
@@ -587,7 +638,7 @@ app.post('/api/loyalty/redeem', requireAuth, async (req, res) => {
             };
             t.set(arRef, activeRewardData);
         });
-        
+
         res.json({ success: true, activeReward: activeRewardData });
     } catch(err: any) {
         res.status(400).json({ error: err.message, code: 'REDEEM_FAILED' });
@@ -835,7 +886,7 @@ Behavior Guidelines:
       });
 
       const lowerQuery = userText.toLowerCase();
-      const isMapsQuery = 
+      const isMapsQuery =
         lowerQuery.includes('where') ||
         lowerQuery.includes('location') ||
         lowerQuery.includes('address') ||
@@ -864,7 +915,7 @@ Behavior Guidelines:
       if (isMapsQuery) {
         toolUsed = 'googleMaps';
         config.tools = [{ googleMaps: {} }];
-        
+
         const lat = userLocation?.latitude || 31.5204;
         const lng = userLocation?.longitude || 74.3587;
         config.toolConfig = {
@@ -888,11 +939,11 @@ Behavior Guidelines:
       });
 
       const responseText = response.text || "Assalam-o-Alaikum! How may I assist your AllBarka gourmet selection today?";
-      
+
       // Extract Grounding Sources (Google Maps Places)
       const groundingSources: Array<{ title: string; uri: string; type: 'map'; snippet?: string }> = [];
       const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-      
+
       if (chunks && Array.isArray(chunks)) {
         for (const chunk of chunks) {
           if (chunk.maps?.uri) {
