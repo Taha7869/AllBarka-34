@@ -216,11 +216,11 @@ export default function ProductDetailPage() {
             {/* Price Row */}
             <div className="flex items-baseline gap-4 py-4 border-y border-[var(--color-accent,#C7982F)]/25 mb-6">
               <span className="text-3xl sm:text-4xl font-serif font-bold text-[var(--color-text-price,#29231D)] dark:text-[var(--color-text-price,#F6F1EA)]">
-                Rs. {priceToUse?.toLocaleString()}
+                <bdi dir="ltr">Rs. {priceToUse?.toLocaleString()}</bdi>
               </span>
               {originalPrice > priceToUse && (
                 <span className="text-base text-[var(--color-text-secondary,#635B52)]/50 dark:text-[#B4C0BC]/50 line-through">
-                  Rs. {originalPrice?.toLocaleString()}
+                  <bdi dir="ltr">Rs. {originalPrice?.toLocaleString()}</bdi>
                 </span>
               )}
               <span className="text-xs font-semibold text-[#0E7A53] dark:text-[#28A745] bg-[#0E7A53]/10 px-2.5 py-1 rounded-full">
@@ -321,7 +321,7 @@ export default function ProductDetailPage() {
                   ) : (
                     <>
                       <ShoppingBag size={16} className="text-[var(--color-accent,#C7982F)]" />
-                      <span>Add to Cart — Rs. {(priceToUse * quantity)?.toLocaleString()}</span>
+                      <span>{t('addToCartPrice', 'Add to Cart')} — <bdi dir="ltr">Rs. {(priceToUse * quantity)?.toLocaleString()}</bdi></span>
                     </>
                   )}
                 </button>

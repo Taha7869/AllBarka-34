@@ -518,24 +518,24 @@ export default function CartDrawer({
                 {/* Financial Summary */}
                 <div className="space-y-1.5 text-xs text-[#29231D] dark:text-[#F6F1EA] pt-0.5">
                   <div className="flex justify-between text-xs">
-                    <span className="font-medium text-[#635B52] dark:text-[#A8A199]">Subtotal</span>
+                    <span className="font-medium text-[#635B52] dark:text-[#A8A199]">{t('cartSubtotal', 'Subtotal')}</span>
                     <span className="font-bold text-[#29231D] dark:text-[#F6F1EA] font-mono">
-                      {formatPrice(subtotal)}
+                      <bdi dir="ltr">{formatPrice(subtotal)}</bdi>
                     </span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="font-medium text-[#635B52] dark:text-[#A8A199]">
-                      Shipping (Pakistan)
+                      {t('shippingFee', 'Shipping Fee')}
                     </span>
                     <span className="font-bold text-[#806326] dark:text-[#E4C783]">
-                      {isFreeUnlocked ? 'FREE Delivery' : 'Rs. 150 (Free over Rs. 3,000)'}
+                      {isFreeUnlocked ? t('freeShippingUnlocked', 'FREE Delivery') : <bdi dir="ltr">Rs. 150 (Free over Rs. 3,000)</bdi>}
                     </span>
                   </div>
                   <div className="h-px bg-[#29231D]/10 dark:bg-[#F6F1EA]/10 my-1" />
                   <div className="flex justify-between items-baseline font-serif font-bold text-[#29231D] dark:text-[#F6F1EA]">
-                    <span className="text-sm">Estimated Total</span>
+                    <span className="text-sm">{t('totalPayable', 'Estimated Total')}</span>
                     <span className="text-[#806326] dark:text-[#E4C783] text-lg font-mono">
-                      {formatPrice(subtotal + (isFreeUnlocked ? 0 : 150))}
+                      <bdi dir="ltr">{formatPrice(subtotal + (isFreeUnlocked ? 0 : 150))}</bdi>
                     </span>
                   </div>
                 </div>

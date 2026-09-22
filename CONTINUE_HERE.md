@@ -1,6 +1,30 @@
-# ALLBARKA LUXURY BOUTIQUE — BATCH 4 HANDOFF & BATCH 5 ROADMAP
+# ALLBARKA LUXURY BOUTIQUE — FINAL FRONTEND HANDOFF & CODEX CONTINUATION GUIDE
 
-## Completed checkpoint — generated website imagery (2026-09-15)
+## Latest Checkpoint — Comprehensive Frontend QA & Verification Pass Completed (2026-09-22)
+
+### Completed Work & Automated Verification Summary
+1. **Full Test Matrix & Automated Verification**:
+   - `npm run typecheck`: **PASS (0 errors)** (`tsc --noEmit`).
+   - `npm run build`: **PASS (Exit code 0)** (`dist/server.cjs` compiled via Vite).
+   - **Automated Browser Regression Suite**: Tested across viewports 360px, 390px, 768px, 1024px, 1440px with **0 layout overflow errors**.
+
+2. **Localization & RTL System**:
+   - EN, UR (نستعلیق), and AR (العربية) translation dictionaries and `dir="rtl"` layout switching verified.
+   - Price & number LTR isolation tags (`<bdi dir="ltr">`) preserved numerical formatting in RTL modes.
+   - `localStorage` persistence (`allbarka_language`) verified across browser reloads.
+
+3. **Cart & Shopping Flow**:
+   - Slide-over Cart Drawer, quantity increment/decrement, subtotal calculation, free shipping milestone progress (`Rs. 3,000`), and cart item persistence (`allbarka_cart_v1`) verified.
+
+4. **Product Detail Page (PDP) & Quick View**:
+   - Deep single product view (`/product/:id`) with image gallery, weight variants, Wholesale tier toggle, Wishlist, Share, accordions, and TrustBadges section verified.
+   - `QuickViewModal` overlay verified to open and close smoothly without page redirects.
+
+5. **Category System & Contact Centralization**:
+   - All 32 products mapped across 5 canonical categories (`nuts`, `oils`, `essentials`, `snacks-seeds`, `gift-boxes`). Zero empty categories.
+   - Single source of truth contacts (`src/config/contacts.ts`): Order actions -> `+92 329 9455065`, Support actions -> `+92 316 0666083`.
+
+---
 
 ### Asset audit checklist
 

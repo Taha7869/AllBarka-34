@@ -99,12 +99,12 @@ export default function ProductCard({
         {/* Pricing & Add to Cart */}
         <div className="flex flex-col gap-2 pt-1">
           <div className="flex items-center justify-between">
-            <div className="flex flex-col text-left">
+            <div className="flex flex-col text-start">
               <span className="text-[8.5px] uppercase tracking-widest text-[var(--color-text-secondary,#635B52)] font-sans font-medium">
                 {t('price', 'Price')}
               </span>
               <span className="text-base sm:text-lg font-serif font-bold text-[var(--color-text-price,#29231D)]">
-                Rs. {unitPrice?.toLocaleString()}
+                <bdi dir="ltr">Rs. {unitPrice?.toLocaleString()}</bdi>
               </span>
             </div>
           </div>

@@ -149,14 +149,25 @@ const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     'resealableJars': 'Resealable Freshness Jars',
     'directWhatsapp': 'Direct WhatsApp Dispatch',
     // CategoryPLP & ShopPage
-    'nuts': 'Dry Fruits & Nuts',
-    'seeds': 'Seeds & Superfoods',
-    'snacks': 'Premium Snacks',
-    'oils': 'Cold-Pressed Oils',
-    'organics': 'Pure Organic Essentials',
-    'giftingCategory': 'Luxury Gifting',
-    'wholesaleCategory': 'Wholesale Bulk',
-    'searchPlaceholder': 'Search dry fruits, saffron, gifts...'
+    nuts: 'Dry Fruits & Nuts',
+    seeds: 'Seeds & Superfoods',
+    snacks: 'Premium Snacks',
+    oils: 'Cold-Pressed Oils',
+    organics: 'Pure Organic Essentials',
+    giftingCategory: 'Luxury Gifting',
+    wholesaleCategory: 'Wholesale Bulk',
+    searchPlaceholder: 'Search dry fruits, saffron, gifts...',
+    // Checkout & Totals
+    giftWrap: 'Gift Packaging',
+    shippingFee: 'Shipping Fee',
+    expressShipping: 'Express Shipping',
+    standardShipping: 'Standard Shipping',
+    totalPayable: 'Total Payable',
+    cashOnDelivery: 'Cash on Delivery',
+    directBankTransfer: 'Direct Bank Transfer',
+    orderSummary: 'Order Summary',
+    viewDetails: 'View Details',
+    conciergeSupport: 'Concierge Support'
   },
   ur: {
     home: 'ہوم',
@@ -301,7 +312,18 @@ const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     'organics': 'خالص نامیاتی اشیاء',
     'giftingCategory': 'شاہی تحائف',
     'wholesaleCategory': 'تھوک و ہول سیل',
-    'searchPlaceholder': 'خشک میوہ جات، زعفران یا گفٹ باکس تلاش کریں...'
+    'searchPlaceholder': 'خشک میوہ جات، زعفران یا گفٹ باکس تلاش کریں...',
+    // Checkout & Totals
+    'giftWrap': 'تحفہ پیکنگ',
+    'shippingFee': 'ترسیل کا کرایہ',
+    'expressShipping': 'تیز ترین ترسیل',
+    'standardShipping': 'عام ترسیل',
+    'totalPayable': 'کل قابل ادا رقم',
+    'cashOnDelivery': 'کیش آن ڈیلیوری',
+    'directBankTransfer': 'ڈائریکٹ بینک ٹرانسفر',
+    'orderSummary': 'آرڈر کا خلاصہ',
+    'viewDetails': 'تفصیلات دیکھیں',
+    'conciergeSupport': 'شاہی مدد و دربان'
   },
   ar: {
     home: 'الرئيسية',
@@ -446,7 +468,18 @@ const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     'organics': 'المستلزمات العضوية الخالصة',
     'giftingCategory': 'الهدايا الفاخرة',
     'wholesaleCategory': 'مبيعات الجملة',
-    'searchPlaceholder': 'ابحث عن الفواكه المجففة، الزعفران، الهدايا...'
+    'searchPlaceholder': 'ابحث عن الفواكه المجففة، الزعفران، الهدايا...',
+    // Checkout & Totals
+    'giftWrap': 'تغليف الهدايا',
+    'shippingFee': 'رسوم الشحن',
+    'expressShipping': 'الشحن السريع',
+    'standardShipping': 'الشحن القياسي',
+    'totalPayable': 'إجمالي المبلغ المستحق',
+    'cashOnDelivery': 'الدفع عند الاستلام',
+    'directBankTransfer': 'تحويل بنكي مباشر',
+    'orderSummary': 'ملخص الطلب',
+    'viewDetails': 'عرض التفاصيل',
+    'conciergeSupport': 'دعم الكونسيرج'
   }
 };
 
