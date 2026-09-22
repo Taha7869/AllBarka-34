@@ -70,17 +70,17 @@ AllBarka is a high-end luxury boutique web application built with **React Router
 
 | Command / Test Suite | Result | Scope & Details |
 |---|---|---|
+| `npx tsx tests/run-backend-tests.mjs` | **PASS (12/12 Passed)** | Pricing, free shipping, customer phone validation, n8n disabled safety, 503 auth unavailable, 401 unauthorized, order uid binding, owner privacy isolation, sanitized order history (`/api/me/orders`), loyalty points awarded on `DELIVERED`, zero points on `CANCELLED`, points idempotency, cross-user rejection, and guest claim token enforcement. |
 | `npm run typecheck` | **PASS (Exit 0)** | 0 TypeScript compilation errors (`tsc --noEmit`). |
 | `npm run build` | **PASS (Exit 0)** | Production bundle compiled cleanly with Vite & Esbuild (`dist/server.cjs`). |
+| `git diff --check` | **PASS (Exit 0)** | 0 trailing whitespace or formatting warnings across project files. |
+| **Checkout Sign-In Flow** | **PASS** | Guest checkout "Sign In" button dispatches `open-auth-modal` (`handleOpenAuth('signin')`); pre-filled form fields, step position, and cart state preserved. |
+| **Patron Lounge Orders Display** | **PASS** | Date parsing handles `createdAt`/`createdAtMs`/`timestamp`; total reads `totals.total`/`total`; displays available and pending points badges. |
+| **Loyalty Points Idempotency** | **PASS** | Points awarded ONLY when status is set to `DELIVERED`; `pointsAwarded: true` marker prevents duplicate awards on repeated updates; reversed on `CANCELLED`. |
+| **Secure Tracking & Privacy** | **PASS** | `/api/orders/:orderId` enforces UID match for patrons or valid SHA-256 claim token for guests. Order ID alone without claim token returns 404/401. |
+| **Firebase Admin Auth Fail-Closed** | **PASS** | Server returns HTTP 503 `AUTH_SERVICE_UNAVAILABLE` when server-side credentials missing; 401 `UNAUTHORIZED` reserved for invalid/expired tokens. |
+| **Patron Order History (`/api/me/orders`)** | **PASS** | Protected endpoint using `requireAuth` & Bearer token; queries Firestore by verified `uid` & returns sanitized order summaries (`sanitizeOrderForCustomer`). |
 | **Server Startup & Readiness** | **PASS** | `node dist/server.cjs` booted successfully; `/api/commerce/readiness` and `/api/health` verified live. |
-| **Firebase Admin Security** | **PASS** | Production credential parsing with newline conversion & zero credential logging. |
-| **Durable Order Safety & Idempotency** | **PASS** | 503 gate active when offline; transaction idempotency & payload conflict protection enforced. |
-| **n8n Webhook Dispatch** | **PASS** | Isolated notification service with 5000ms timeout & non-blocking exception handling. |
-| **Google Auth & Error Mapping** | **PASS** | Real Firebase Auth with user-friendly popup-blocked, domain, and credential error handlers. |
-| **Category System & Mapping** | **PASS** | `nuts` (8), `oils` (13), `essentials` (5), `snacks-seeds` (4), `gift-boxes` (2) = 32 total items mapped. |
-| **Contact Routing Audit** | **PASS** | Order actions -> `923299455065`, Support/Concierge -> `923160666083`. |
-| **Responsive Viewports** | **PASS** | Tested at 360px, 390px, 768px, 1024px, 1440px with 0 horizontal overflow. |
-| **Multi-Language & RTL** | **PASS** | EN / UR / AR toggles update `dir="rtl"`, fonts, and keep price LTR tags (`<bdi dir="ltr">`) intact. |
 
 ---
 

@@ -1,5 +1,5 @@
 import { STORE_CONFIG } from '../config/store';
-import { CartItem } from '../types';
+import { CartItem } from '../types.ts';
 
 export interface OrderPayload {
   name: string;

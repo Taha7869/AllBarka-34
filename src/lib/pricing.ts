@@ -1,5 +1,5 @@
 import { STORE_CONFIG } from '../config/store';
-import { ShippingMethodId } from '../types';
+import { ShippingMethodId } from '../types.ts';
 
 export const GIFT_WRAP_FEE = 250;
 export const FREE_SHIPPING_THRESHOLD = STORE_CONFIG.shipping.freeThreshold; // 3000 PKR
@@ -63,15 +63,22 @@ export function calculateDiscount(subtotal: number, couponCode?: string | null):
   return 0;
 }
 
-export function calculateShipping(discountedSubtotal: number, methodId: ShippingMethodId): number {
+export function calculateShipping(
+  discountedSubtotal: number,
+  methodId: ShippingMethodId,
+  giftWrapFee: number = 0
+): number {
   if (discountedSubtotal <= 0) return 0;
-  if (methodId === 'standard') {
-    return discountedSubtotal >= FREE_SHIPPING_THRESHOLD ? 0 : STORE_CONFIG.shipping.standardRate;
+  if (methodId === 'sameday') {
+    const totalBeforeShipping = discountedSubtotal + giftWrapFee;
+    // Same-day fee: Rs. 500 when total <= 3000, Rs. 300 when total > 3000
+    // Same-day fees remain payable independently of standard free-shipping threshold
+    return totalBeforeShipping <= 3000 ? 500 : 300;
   }
   if (methodId === 'express') {
     return STORE_CONFIG.shipping.expressRate;
   }
-  return STORE_CONFIG.shipping.standardRate;
+  return discountedSubtotal >= FREE_SHIPPING_THRESHOLD ? 0 : STORE_CONFIG.shipping.standardRate;
 }
 
 /**
@@ -94,8 +101,8 @@ export function calculateOrderSummary({
   const couponDiscount = calculateDiscount(subtotal, couponCode);
   const discount = Math.min(subtotal, Math.max(couponDiscount, sanitizePrice(manualDiscount)));
   const discountedSubtotal = Math.max(0, subtotal - discount);
-  const shipping = calculateShipping(discountedSubtotal, shippingMethodId);
   const giftWrapFee = giftWrapping ? GIFT_WRAP_FEE : 0;
+  const shipping = calculateShipping(discountedSubtotal, shippingMethodId, giftWrapFee);
   const total = discountedSubtotal + shipping + giftWrapFee;
 
   return {

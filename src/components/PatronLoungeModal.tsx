@@ -23,21 +23,21 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
         try {
           const { REWARDS } = await import('../data/rewards');
           setRewards(REWARDS);
-          
+
           const [{ doc, getDoc, collection, query, orderBy, limit, getDocs, where }, { db }] = await Promise.all([
             import('firebase/firestore'),
             import('../lib/firebase')
           ]);
-          
+
           const userDoc = await getDoc(doc(db, "users", currentUser.uid));
           const loyaltyPoints = userDoc.exists() ? (userDoc.data()?.loyaltyPoints || 0) : 0;
-          
+
           const txSnap = await getDocs(query(collection(db, "users", currentUser.uid, "loyaltyTransactions"), orderBy("createdAt", "desc"), limit(10)));
           const transactions = txSnap.docs.map(d => d.data());
-          
+
           const arSnap = await getDocs(query(collection(db, "users", currentUser.uid, "activeRewards"), where("status", "==", "ACTIVE")));
           const activeRewards = arSnap.docs.map(d => d.data());
-          
+
           setLoyaltyData({ loyaltyPoints, transactions, activeRewards });
         } catch (e) {
           console.error('Failed to fetch loyalty:', e);
@@ -54,30 +54,30 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
       const { REWARDS } = await import('../data/rewards');
       const reward = REWARDS.find(r => r.rewardId === rewardId);
       if (!reward || !reward.active) throw new Error("Invalid reward");
-      
+
       const [{ doc, runTransaction, collection }, { db }] = await Promise.all([
         import('firebase/firestore'),
         import('../lib/firebase')
       ]);
-      
+
       let newActiveReward = null;
-      
+
       await runTransaction(db, async (t) => {
           const userRef = doc(db, "users", currentUser.uid);
           const userDoc = await t.get(userRef);
-          
+
           const currentPoints = userDoc.exists() ? (userDoc.data()?.loyaltyPoints || 0) : 0;
           if (currentPoints < reward.pointsCost) throw new Error("Insufficient points");
-          
+
           // Generate a pseudo-random ID since we can't easily import crypto or use doc() inside transaction for auto-id
           const txId = Date.now().toString() + Math.random().toString(36).substr(2, 5);
           const arId = Date.now().toString() + Math.random().toString(36).substr(2, 5);
-          
+
           const txRef = doc(db, "users", currentUser.uid, "loyaltyTransactions", txId);
           const arRef = doc(db, "users", currentUser.uid, "activeRewards", arId);
-          
+
           t.set(userRef, { loyaltyPoints: currentPoints - reward.pointsCost }, { merge: true });
-          
+
           t.set(txRef, {
               transactionId: txId,
               type: 'REDEEM',
@@ -86,7 +86,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
               description: `Redeemed ${reward.name}`,
               createdAt: Date.now()
           });
-          
+
           newActiveReward = {
               rewardId: reward.rewardId,
               claimedAt: Date.now(),
@@ -96,9 +96,9 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
           };
           t.set(arRef, newActiveReward);
       });
-      
+
       alert('Reward redeemed successfully! It will be applied to your next eligible order.');
-      
+
       // Refresh local state
       setLoyaltyData((prev: any) => ({
           ...prev,
@@ -113,7 +113,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
               createdAt: Date.now()
           }, ...(prev?.transactions || [])].slice(0, 10)
       }));
-      
+
     } catch(e: any) {
        console.error(e);
        alert(e.message || 'An error occurred.');
@@ -129,20 +129,39 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
       const fetchOrders = async () => {
         setLoadingOrders(true);
         try {
-          const [{ query, collection, where, getDocs }, { db }] = await Promise.all([
-            import('firebase/firestore'),
-            import('../lib/firebase')
-          ]);
-          const q = query(
-            collection(db, 'orders'),
-            where('uid', '==', currentUser.uid)
-            // Note: In production you might need an index for orderBy('timestamp', 'desc')
-          );
-          const snap = await getDocs(q);
-          const fetched = snap.docs.map(doc => doc.data());
-          // Client-side sort if no composite index
-          fetched.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-          setOrders(fetched);
+          let fetchedOrders: any[] = [];
+          try {
+            const idToken = await currentUser.getIdToken();
+            const res = await fetch('/api/me/orders', {
+              headers: {
+                'Authorization': `Bearer ${idToken}`
+              }
+            });
+            if (res.ok) {
+              const data = await res.json();
+              if (data.success && Array.isArray(data.orders)) {
+                fetchedOrders = data.orders;
+              }
+            }
+          } catch (apiErr) {
+            console.warn('Backend /api/me/orders fetch failed, attempting client Firestore fallback:', apiErr);
+          }
+
+          if (fetchedOrders.length === 0) {
+            const [{ query, collection, where, getDocs }, { db }] = await Promise.all([
+              import('firebase/firestore'),
+              import('../lib/firebase')
+            ]);
+            const q = query(
+              collection(db, 'orders'),
+              where('uid', '==', currentUser.uid)
+            );
+            const snap = await getDocs(q);
+            fetchedOrders = snap.docs.map(doc => doc.data());
+            fetchedOrders.sort((a, b) => new Date(b.createdAt || b.createdAtMs || 0).getTime() - new Date(a.createdAt || a.createdAtMs || 0).getTime());
+          }
+
+          setOrders(fetchedOrders);
         } catch (error) {
           console.error("Failed to fetch orders:", error);
         } finally {
@@ -164,13 +183,31 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
     switch (status) {
       case 'NEW': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'CONFIRMED': return 'bg-indigo-100 text-indigo-800 border-indigo-200';
-      case 'PACKED': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'OUT FOR DELIVERY': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'DELIVERED': return 'bg-green-100 text-green-800 border-green-200';
-      case 'CANCELLED': return 'bg-red-100 text-red-800 border-red-200';
+      case 'PACKED':
+      case 'PREPARING': return 'bg-amber-100 text-amber-800 border-amber-200';
+      case 'OUT_FOR_DELIVERY':
+      case 'OUT FOR DELIVERY':
+      case 'DISPATCHED': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'DELIVERED': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+      case 'CANCELLED': return 'bg-rose-100 text-rose-800 border-rose-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
+
+  const getFormattedDate = (order: any) => {
+    const raw = order.createdAt || order.createdAtMs || order.timestamp;
+    if (!raw) return 'Recently';
+    const d = new Date(raw);
+    if (isNaN(d.getTime())) return 'Recently';
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const pendingPoints = orders.reduce((sum, o) => {
+    if (o.status !== 'DELIVERED' && o.status !== 'CANCELLED') {
+      return sum + (o.earnedPoints || 0);
+    }
+    return sum;
+  }, 0);
 
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 sm:p-6 select-none">
@@ -215,7 +252,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto bg-[#FDFBF7] p-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
+
             {/* Sidebar: Profile */}
             <div className="lg:col-span-1 space-y-4">
               <div className="bg-white border border-[var(--color-gold,#B8935F)]/30 rounded-2xl p-5 shadow-sm">
@@ -228,7 +265,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                 <p className="text-xs font-bold text-[var(--color-gold,#B8935F)] uppercase tracking-wider mb-4">
                   {patronProfile?.patronStatus || 'VIP Patron'}
                 </p>
-                
+
                 <div className="space-y-3 pt-4 border-t border-[var(--color-gold,#B8935F)]/20">
                   <div className="flex items-center gap-3 text-sm text-[var(--color-ink,#1F120F)]/80">
                     <User size={16} className="text-[var(--color-gold,#B8935F)]" />
@@ -243,7 +280,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                 </div>
 
                 <div className="mt-6 pt-4 border-t border-[var(--color-gold,#B8935F)]/20">
-                  <button 
+                  <button
                     onClick={handleLogout}
                     className="w-full py-2.5 rounded-xl border border-[var(--color-ink,#1F120F)]/20 text-[var(--color-ink,#1F120F)] hover:bg-[var(--color-ink,#1F120F)]/5 text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2"
                   >
@@ -254,17 +291,23 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
               </div>
             </div>
 
-            
+
               {/* Patron Rewards Section */}
               <div className="bg-white border border-[var(--color-gold,#B8935F)]/30 rounded-2xl p-5 shadow-sm mt-4">
                 <h4 className="text-sm font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)] flex items-center gap-2 mb-4">
                   <Crown size={16} className="text-[var(--color-gold,#B8935F)]" />
                   Patron Rewards
                 </h4>
-                
-                <div className="mb-4">
-                  <p className="text-xs text-[var(--color-ink,#1F120F)]/60 font-bold uppercase tracking-wider mb-1">Available Points</p>
-                  <p className="text-3xl font-serif font-black text-[var(--color-gold,#B8935F)]">{loyaltyData?.loyaltyPoints || 0}</p>
+
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="p-3 bg-[var(--color-cream,#FAF9F5)] rounded-xl border border-[var(--color-gold,#B8935F)]/25">
+                    <p className="text-[10px] text-[var(--color-ink,#1F120F)]/60 font-bold uppercase tracking-wider mb-0.5">Available Points</p>
+                    <p className="text-2xl font-serif font-black text-[var(--color-gold,#B8935F)]">{loyaltyData?.loyaltyPoints || 0}</p>
+                  </div>
+                  <div className="p-3 bg-[var(--color-cream,#FAF9F5)] rounded-xl border border-[var(--color-gold,#B8935F)]/25">
+                    <p className="text-[10px] text-[var(--color-ink,#1F120F)]/60 font-bold uppercase tracking-wider mb-0.5">Pending Points</p>
+                    <p className="text-2xl font-serif font-black text-amber-700">+{pendingPoints}</p>
+                  </div>
                 </div>
 
                 {loyaltyData?.activeRewards && loyaltyData.activeRewards.length > 0 && (
@@ -342,75 +385,96 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {orders.map((order) => (
-                    <div key={order.orderId} className="bg-white border border-[var(--color-gold,#B8935F)]/30 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                      <div className="px-5 py-4 border-b border-[var(--color-gold,#B8935F)]/20 bg-[#FDFBF7]/50 flex flex-wrap items-center justify-between gap-4">
-                        <div>
-                          <p className="text-[10px] uppercase font-bold text-[var(--color-ink,#1F120F)]/60 mb-0.5">Order ID</p>
-                          <p className="font-mono text-sm font-bold text-[var(--color-ink,#1F120F)]">{order.orderId}</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] uppercase font-bold text-[var(--color-ink,#1F120F)]/60 mb-0.5">Placed On</p>
-                          <p className="text-sm font-medium text-[var(--color-ink,#1F120F)] flex items-center gap-1.5">
-                            <Calendar size={13} className="text-[var(--color-gold,#B8935F)]" />
-                            {new Date(order.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] uppercase font-bold text-[var(--color-ink,#1F120F)]/60 mb-0.5">Total</p>
-                          <p className="font-serif font-black text-[var(--color-ink,#1F120F)]">Rs. {order.total?.toLocaleString()}</p>
-                        </div>
-                        <div>
-                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${getStatusColor(order.status)}`}>
-                            {order.status}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="p-5">
-                        <div className="space-y-3">
-                          {order.items.map((item: any, idx: number) => (
-                            <div key={idx} className="flex justify-between items-center text-sm">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium text-[var(--color-ink,#1F120F)]">{item.name}</span>
-                                <span className="text-xs text-[var(--color-ink,#1F120F)]/60 border border-[var(--color-ink,#1F120F)]/10 rounded px-1.5 bg-gray-50">{item.selectedWeight}</span>
-                                <span className="text-xs font-bold text-[var(--color-gold,#B8935F)]">x{item.quantity}</span>
-                              </div>
-                              <span className="font-medium text-[var(--color-ink,#1F120F)]">Rs. {(item.price * item.quantity)?.toLocaleString()}</span>
-                            </div>
-                          ))}
+                  {orders.map((order) => {
+                    const totalAmt = order.totals?.total ?? order.total ?? 0;
+                    const subtotalAmt = order.totals?.subtotal ?? order.subtotal ?? 0;
+                    const discountAmt = order.totals?.discount ?? order.discount ?? 0;
+                    const shippingAmt = order.totals?.shipping ?? order.shipping ?? 0;
+                    const giftWrapAmt = order.gifting?.giftWrapFee ?? order.giftWrap ?? 0;
+                    const addressStr = order.customer?.address
+                      ? `${order.customer.address}, ${order.customer.city || 'Lahore'}`
+                      : (order.address || 'Lahore, Pakistan');
+                    const paymentMethodStr = order.paymentMethod === 'bank' ? 'Direct Bank Transfer' : 'Cash on Delivery (COD)';
+
+                    return (
+                      <div key={order.orderId} className="bg-white border border-[var(--color-gold,#B8935F)]/30 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                        <div className="px-5 py-4 border-b border-[var(--color-gold,#B8935F)]/20 bg-[#FDFBF7]/50 flex flex-wrap items-center justify-between gap-4">
+                          <div>
+                            <p className="text-[10px] uppercase font-bold text-[var(--color-ink,#1F120F)]/60 mb-0.5">Order ID</p>
+                            <p className="font-mono text-sm font-bold text-[var(--color-ink,#1F120F)]">{order.orderId}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] uppercase font-bold text-[var(--color-ink,#1F120F)]/60 mb-0.5">Placed On</p>
+                            <p className="text-sm font-medium text-[var(--color-ink,#1F120F)] flex items-center gap-1.5">
+                              <Calendar size={13} className="text-[var(--color-gold,#B8935F)]" />
+                              {getFormattedDate(order)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] uppercase font-bold text-[var(--color-ink,#1F120F)]/60 mb-0.5">Total</p>
+                            <p className="font-serif font-black text-[var(--color-ink,#1F120F)]">Rs. {totalAmt.toLocaleString('en-PK')}</p>
+                          </div>
+                          <div>
+                            <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${getStatusColor(order.status)}`}>
+                              {order.status}
+                            </span>
+                          </div>
                         </div>
 
-                        {(order.discount > 0 || order.shipping > 0 || order.giftWrap > 0) && (
-                          <div className="mt-4 pt-4 border-t border-dashed border-[var(--color-gold,#B8935F)]/30 space-y-1.5 text-xs">
-                            {order.discount > 0 && (
-                              <div className="flex justify-between text-[var(--color-gold,#B8935F)] font-medium">
-                                <span>Discount</span>
-                                <span>- Rs. {order.discount?.toLocaleString()}</span>
-                              </div>
-                            )}
-                            {order.shipping > 0 && (
-                              <div className="flex justify-between text-[var(--color-ink,#1F120F)]/70">
-                                <span>Shipping</span>
-                                <span>Rs. {order.shipping?.toLocaleString()}</span>
-                              </div>
-                            )}
-                            {order.giftWrap > 0 && (
-                              <div className="flex justify-between text-[var(--color-gold,#B8935F)] font-medium">
-                                <span>Gift Wrap</span>
-                                <span>Rs. {order.giftWrap?.toLocaleString()}</span>
-                              </div>
+                        <div className="p-5">
+                          <div className="mb-3 flex items-center justify-between text-xs text-[var(--color-ink,#1F120F)]/70">
+                            <span className="font-medium">Payment Method: <strong>{paymentMethodStr}</strong></span>
+                            {order.earnedPoints > 0 && (
+                              <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-full">
+                                {order.status === 'DELIVERED' ? `+${order.earnedPoints} Points Earned` : `+${order.earnedPoints} Points Pending Delivery`}
+                              </span>
                             )}
                           </div>
-                        )}
-                        
-                        <div className="mt-4 pt-3 border-t border-[var(--color-gold,#B8935F)]/20 flex items-start gap-2 text-xs text-[var(--color-ink,#1F120F)]/70">
-                          <MapPin size={14} className="text-[var(--color-gold,#B8935F)] shrink-0 mt-0.5" />
-                          <span className="leading-snug">{order.address}</span>
+
+                          <div className="space-y-3">
+                            {(order.items || []).map((item: any, idx: number) => (
+                              <div key={idx} className="flex justify-between items-center text-sm">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-[var(--color-ink,#1F120F)]">{item.name}</span>
+                                  <span className="text-xs text-[var(--color-ink,#1F120F)]/60 border border-[var(--color-ink,#1F120F)]/10 rounded px-1.5 bg-gray-50">{item.selectedWeight}</span>
+                                  <span className="text-xs font-bold text-[var(--color-gold,#B8935F)]">x{item.quantity}</span>
+                                </div>
+                                <span className="font-medium text-[var(--color-ink,#1F120F)]">Rs. {((item.price || 0) * (item.quantity || 1)).toLocaleString('en-PK')}</span>
+                              </div>
+                            ))}
+                          </div>
+
+                          {(discountAmt > 0 || shippingAmt > 0 || giftWrapAmt > 0) && (
+                            <div className="mt-4 pt-4 border-t border-dashed border-[var(--color-gold,#B8935F)]/30 space-y-1.5 text-xs">
+                              {discountAmt > 0 && (
+                                <div className="flex justify-between text-[var(--color-gold,#B8935F)] font-medium">
+                                  <span>Discount</span>
+                                  <span>- Rs. {discountAmt.toLocaleString('en-PK')}</span>
+                                </div>
+                              )}
+                              {shippingAmt > 0 && (
+                                <div className="flex justify-between text-[var(--color-ink,#1F120F)]/70">
+                                  <span>Shipping</span>
+                                  <span>Rs. {shippingAmt.toLocaleString('en-PK')}</span>
+                                </div>
+                              )}
+                              {giftWrapAmt > 0 && (
+                                <div className="flex justify-between text-[var(--color-gold,#B8935F)] font-medium">
+                                  <span>Gift Wrap</span>
+                                  <span>Rs. {giftWrapAmt.toLocaleString('en-PK')}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          <div className="mt-4 pt-3 border-t border-[var(--color-gold,#B8935F)]/20 flex items-start gap-2 text-xs text-[var(--color-ink,#1F120F)]/70">
+                            <MapPin size={14} className="text-[var(--color-gold,#B8935F)] shrink-0 mt-0.5" />
+                            <span className="leading-snug">{addressStr}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

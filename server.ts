@@ -33,46 +33,52 @@ dotenv.config();
 // Initialize Firebase Admin (Production or Emulator)
 let db: any = null;
 let adminAuth: any = null;
+let firebaseAdminAuthAvailable = false;
+let firebaseAdminMissingCredentialsMsg = 'Firebase Admin credentials (FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY) are not configured on the server. Please configure these environment variables.';
 
 try {
-  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const projectId = process.env.FIREBASE_PROJECT_ID || 'allbarka-live';
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
-  let credentialOptions: any = null;
-
   if (clientEmail && privateKey) {
-    credentialOptions = cert({
-      projectId: projectId || undefined,
+    const credentialOptions = cert({
+      projectId,
       clientEmail: clientEmail.trim(),
       privateKey: privateKey.replace(/\\n/g, '\n'),
     });
-  } else {
-    credentialOptions = applicationDefault();
-  }
 
-  const appOptions: any = { credential: credentialOptions };
-  if (projectId) {
-    appOptions.projectId = projectId;
-  }
+    const adminApp = initializeApp({ credential: credentialOptions, projectId });
+    adminAuth = getAuth(adminApp);
+    firebaseAdminAuthAvailable = true;
+    console.log(`[Firebase Admin] Authentication service initialized successfully for project '${projectId}'.`);
 
-  const adminApp = initializeApp(appOptions);
-  adminAuth = getAuth(adminApp);
-  console.log('[Firebase Admin] Authentication service initialized successfully.');
-
-  if (process.env.FIRESTORE_EMULATOR_HOST) {
+    if (process.env.FIRESTORE_EMULATOR_HOST) {
+      const dbId = process.env.FIRESTORE_DATABASE_ID || '(default)';
+      db = getFirestore(adminApp, dbId);
+      console.log(`[Firestore] Connected via emulator host (${process.env.FIRESTORE_EMULATOR_HOST}).`);
+    } else {
+      const dbId = process.env.FIRESTORE_DATABASE_ID;
+      db = dbId && dbId !== '(default)' ? getFirestore(adminApp, dbId) : getFirestore(adminApp);
+      console.log(`[Firestore] Live production database initialized successfully for project '${projectId}'.`);
+    }
+  } else if (process.env.FIRESTORE_EMULATOR_HOST) {
+    const adminApp = initializeApp({ projectId });
+    adminAuth = getAuth(adminApp);
+    firebaseAdminAuthAvailable = true;
     const dbId = process.env.FIRESTORE_DATABASE_ID || '(default)';
     db = getFirestore(adminApp, dbId);
     console.log(`[Firestore] Connected via emulator host (${process.env.FIRESTORE_EMULATOR_HOST}).`);
-  } else if (process.env.FIREBASE_PROJECT_ID || process.env.FIREBASE_CLIENT_EMAIL || process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-    const dbId = process.env.FIRESTORE_DATABASE_ID;
-    db = dbId && dbId !== '(default)' ? getFirestore(adminApp, dbId) : getFirestore(adminApp);
-    console.log('[Firestore] Live production database initialized successfully.');
   } else {
-    console.warn('[Firestore] Server-only Firebase credentials (FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY) not provided. Durable persistence running in contained offline state.');
+    adminAuth = null;
+    firebaseAdminAuthAvailable = false;
+    console.warn(`[Firebase Admin] ${firebaseAdminMissingCredentialsMsg}`);
   }
 } catch (e: any) {
-  console.error('[Firebase Admin] Initialization deferred:', e?.message || e);
+  adminAuth = null;
+  firebaseAdminAuthAvailable = false;
+  firebaseAdminMissingCredentialsMsg = `Firebase Admin initialization error: ${e?.message || e}`;
+  console.error('[Firebase Admin] Initialization failed:', e?.message || e);
 }
 
 // Security & Authentication Middlewares
@@ -95,9 +101,9 @@ async function authenticateOptionalUser(req: express.Request, res: express.Respo
       code: 'EMPTY_TOKEN'
     });
   }
-  if (!adminAuth) {
+  if (!firebaseAdminAuthAvailable || !adminAuth) {
     return res.status(503).json({
-      error: 'Authentication verification service is temporarily unavailable.',
+      error: firebaseAdminMissingCredentialsMsg,
       code: 'AUTH_SERVICE_UNAVAILABLE'
     });
   }
@@ -122,6 +128,7 @@ async function requireAuth(req: express.Request, res: express.Response, next: ex
     });
   }
   await authenticateOptionalUser(req, res, () => {
+    if (res.headersSent) return;
     if (!(req as any).user) {
       return res.status(401).json({
         error: 'Authentication credentials required.',
@@ -341,8 +348,8 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
   }
 });
 
-// 1.6 API: Authenticated Patron Orders List
-app.get('/api/orders/mine', requireAuth, async (req, res) => {
+// 1.6 API: Authenticated Patron Orders List (GET /api/me/orders & GET /api/orders/mine)
+const handleGetMyOrders = async (req: express.Request, res: express.Response) => {
   try {
     const uid = (req as any).user.uid;
     if (!db) {
@@ -351,13 +358,16 @@ app.get('/api/orders/mine', requireAuth, async (req, res) => {
 
     const snap = await db.collection('orders').where('uid', '==', uid).get();
     const orders = snap.docs.map((doc: any) => sanitizeOrderForCustomer(doc.data() as CanonicalOrder));
-    orders.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    orders.sort((a: any, b: any) => new Date(b.createdAt || b.createdAtMs || 0).getTime() - new Date(a.createdAt || a.createdAtMs || 0).getTime());
 
     res.json({ success: true, orders });
   } catch (error: any) {
     res.status(500).json({ error: error.message || 'Failed to fetch patron orders.', code: 'SERVER_ERROR' });
   }
-});
+};
+
+app.get('/api/me/orders', requireAuth, handleGetMyOrders);
+app.get('/api/orders/mine', requireAuth, handleGetMyOrders);
 
 // 1.7 API: Order Receipt Lookup (Owner, Admin, or Guest with Valid Claim Token)
 app.get('/api/orders/:orderId', authenticateOptionalUser, async (req, res) => {

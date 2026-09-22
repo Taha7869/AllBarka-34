@@ -51,7 +51,7 @@ export interface DeliveryOption {
   price: number;
 }
 
-export type ShippingMethodId = 'standard' | 'express' | 'overnight';
+export type ShippingMethodId = 'standard' | 'express' | 'sameday';
 
 export interface ShippingOption {
   id: ShippingMethodId;

@@ -1,6 +1,6 @@
 import { PRODUCTS } from '../data/products';
 import { calculateOrderSummary, PricingSummary } from './pricing';
-import { ShippingMethodId } from '../types';
+import { ShippingMethodId } from '../types.ts';
 
 export class ValidationError extends Error {
   code: string;
@@ -156,7 +156,7 @@ export function validateAndPriceOrder({
   }
 
   // Validate supported shipping method - NO silent fallback
-  const validShippingMethods: ShippingMethodId[] = ['standard', 'express'];
+  const validShippingMethods: ShippingMethodId[] = ['standard', 'express', 'sameday'];
   if (!shippingMethodId || !validShippingMethods.includes(shippingMethodId as ShippingMethodId)) {
     throw new ValidationError(
       `Unsupported shipping method "${shippingMethodId}". Allowed methods: ${validShippingMethods.join(', ')}.`,

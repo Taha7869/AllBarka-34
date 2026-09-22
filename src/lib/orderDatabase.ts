@@ -1,3 +1,4 @@
+import { calculateDeliverySchedule } from './deliveryCalendar';
 import crypto from 'crypto';
 import type { Firestore } from 'firebase-admin/firestore';
 import {
@@ -174,7 +175,13 @@ export async function createDurableOrder({
       }
     }
 
-    // --- STEP 2: WRITE PHASE ---
+    const deliverySchedule = calculateDeliverySchedule({
+      shippingMethodId: (payload.shippingMethodId as any) || 'standard',
+      city: customer.city,
+      orderSubtotalNet: validated.summary.discountedSubtotal + validated.summary.giftWrapFee,
+      orderTimestamp: nowMs,
+    });
+
     const canonicalOrder: CanonicalOrder = {
       schemaVersion: SCHEMA_VERSION,
       orderId,
@@ -203,6 +210,7 @@ export async function createDurableOrder({
         giftMessage: customer.giftMessage,
         giftWrapFee: validated.summary.giftWrapFee,
       },
+      deliverySchedule,
       items: validated.items,
       totals: validated.summary,
       couponCode: couponCode || null,
@@ -210,6 +218,7 @@ export async function createDurableOrder({
       rewardId: rewardId || null,
       rewardDiscount: 0,
       earnedPoints: validated.earnedPoints,
+      pointsAwarded: false,
     };
 
     const whatsappMessage = generateAuthoritativeWhatsAppMessage(canonicalOrder);
@@ -396,7 +405,7 @@ export async function updateAdminOrderStatus({
     throw new PersistenceUnavailableError();
   }
 
-  const validStatuses: OrderStatus[] = ['NEW', 'CONFIRMED', 'PREPARING', 'DISPATCHED', 'DELIVERED', 'CANCELLED'];
+  const validStatuses: OrderStatus[] = ['NEW', 'ORDER_RECEIVED', 'CONFIRMED', 'PREPARING', 'DISPATCHED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'];
   if (!validStatuses.includes(status)) {
     throw new ValidationError(`Invalid order status: ${status}`, 'INVALID_STATUS');
   }
@@ -406,6 +415,7 @@ export async function updateAdminOrderStatus({
   const nowIso = new Date(now).toISOString();
 
   return await db.runTransaction(async (transaction) => {
+    // READ PHASE
     const snap = await transaction.get(orderRef);
     if (!snap.exists) {
       throw new ValidationError('Order not found.', 'ORDER_NOT_FOUND');
@@ -424,6 +434,15 @@ export async function updateAdminOrderStatus({
       return order; // No change needed
     }
 
+    // Read user document BEFORE any writes if loyalty points will be modified
+    let userSnap: any = null;
+    let userRef: any = null;
+    if (order.uid && (order.earnedPoints || 0) > 0) {
+      userRef = db.collection('users').doc(order.uid);
+      userSnap = await transaction.get(userRef);
+    }
+
+    // WRITE PHASE
     const oldStatus = order.status;
     const auditRef = db.collection('orderAudits').doc(`${orderId}_${now}`);
     const auditData = {
@@ -437,9 +456,10 @@ export async function updateAdminOrderStatus({
       timestampIso: nowIso,
     };
 
-    // Loyalty Ledger Updates
-    if (status === 'DELIVERED' && order.uid && order.earnedPoints > 0) {
-      // Award loyalty points
+    // Loyalty Ledger Updates (Award points ONLY on DELIVERED, exactly once)
+    let pointsAwardedNew = order.pointsAwarded || false;
+    if (status === 'DELIVERED' && !order.pointsAwarded && order.uid && (order.earnedPoints || 0) > 0) {
+      // Award loyalty points exactly once
       const loyaltyRef = db.collection('users').doc(order.uid).collection('loyaltyTransactions').doc(`ORDER_${orderId}`);
       transaction.set(loyaltyRef, {
         points: order.earnedPoints,
@@ -449,12 +469,11 @@ export async function updateAdminOrderStatus({
         createdAt: now,
       });
 
-      const userRef = db.collection('users').doc(order.uid);
-      const userSnap = await transaction.get(userRef);
-      const currentPts = userSnap.exists ? (userSnap.data()?.loyaltyPoints || 0) : 0;
+      const currentPts = userSnap && userSnap.exists ? (userSnap.data()?.loyaltyPoints || 0) : 0;
       transaction.set(userRef, { loyaltyPoints: currentPts + order.earnedPoints }, { merge: true });
-    } else if (oldStatus === 'DELIVERED' && status === 'CANCELLED' && order.uid && order.earnedPoints > 0) {
-      // Reverse loyalty points
+      pointsAwardedNew = true;
+    } else if (status === 'CANCELLED' && order.pointsAwarded && order.uid && (order.earnedPoints || 0) > 0) {
+      // Reverse loyalty points if order was previously delivered and now cancelled
       const reverseRef = db.collection('users').doc(order.uid).collection('loyaltyTransactions').doc(`REV_${orderId}`);
       transaction.set(reverseRef, {
         points: -order.earnedPoints,
@@ -464,10 +483,9 @@ export async function updateAdminOrderStatus({
         createdAt: now,
       });
 
-      const userRef = db.collection('users').doc(order.uid);
-      const userSnap = await transaction.get(userRef);
-      const currentPts = userSnap.exists ? (userSnap.data()?.loyaltyPoints || 0) : 0;
+      const currentPts = userSnap && userSnap.exists ? (userSnap.data()?.loyaltyPoints || 0) : 0;
       transaction.set(userRef, { loyaltyPoints: Math.max(0, currentPts - order.earnedPoints) }, { merge: true });
+      pointsAwardedNew = false;
     }
 
     // Outbox Event
@@ -487,6 +505,7 @@ export async function updateAdminOrderStatus({
     transaction.set(auditRef, auditData);
     transaction.update(orderRef, {
       status,
+      pointsAwarded: pointsAwardedNew,
       updatedAt: nowIso,
       updatedAtMs: now,
     });
@@ -494,6 +513,7 @@ export async function updateAdminOrderStatus({
     return {
       ...order,
       status,
+      pointsAwarded: pointsAwardedNew,
       updatedAt: nowIso,
       updatedAtMs: now,
     };

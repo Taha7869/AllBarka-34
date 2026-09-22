@@ -193,7 +193,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
 
   // Map Picker State
 
-  
+
   const handleBlur = (field: string) => {
     let err = '';
     if (field === 'name') {
@@ -390,7 +390,7 @@ const handleInputChange = (field: string, value: any) => {
         sessionStorage.setItem("pendingClaimToken", orderResult.claimToken);
         sessionStorage.setItem("pendingOrderId", orderId);
       }
-      
+
       // Save order confirmation snapshot in session storage for resilient recovery
       try {
         sessionStorage.setItem("allbarka_order_success", JSON.stringify({
@@ -431,7 +431,7 @@ const handleInputChange = (field: string, value: any) => {
         claimToken: orderResult.claimToken || undefined,
         whatsappUrl
       });
-      
+
       setCurrentStep('success');
       onClearCart();
     } catch (err: any) {
@@ -542,7 +542,7 @@ const handleInputChange = (field: string, value: any) => {
             </button>
           </div>
         </div>
-        
+
         {/* 3. Form Content (24px container padding) */}
         <form
           id="checkoutForm"
@@ -614,15 +614,13 @@ const handleInputChange = (field: string, value: any) => {
                           </span>
                         </div>
                       </div>
-                      {onOpenAuth && (
-                        <button
-                          type="button"
-                          onClick={onOpenAuth}
-                          className="px-2.5 py-1 rounded-lg bg-[var(--color-cream,#FAF9F5)] hover:bg-[#B8935F] text-[var(--color-ink,#1F120F)] hover:text-white border border-[var(--color-gold,#B8935F)]/35 text-[10px] font-bold tracking-wider transition-colors shrink-0 cursor-pointer"
-                        >
-                          Sign In
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleOpenAuth('signin')}
+                        className="px-2.5 py-1 rounded-lg bg-[var(--color-cream,#FAF9F5)] hover:bg-[#B8935F] text-[var(--color-ink,#1F120F)] hover:text-white border border-[var(--color-gold,#B8935F)]/35 text-[10px] font-bold tracking-wider transition-colors shrink-0 cursor-pointer"
+                      >
+                        Sign In
+                      </button>
                     </div>
                   )}
 
@@ -1144,7 +1142,7 @@ const handleInputChange = (field: string, value: any) => {
                   <div className="mx-auto w-16 h-16 rounded-full bg-[var(--color-gold,#B8935F)]/15 border-2 border-[var(--color-gold,#B8935F)] flex items-center justify-center text-[var(--color-gold,#B8935F)] shadow-lg">
                     <CheckCircle size={32} />
                   </div>
-                  
+
                   <div>
                     <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--color-gold,#B8935F)] block mb-1">
                       AllBarka Reserve Order

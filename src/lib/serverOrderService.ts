@@ -8,7 +8,7 @@ import { REWARDS } from '../data/rewards';
 
 export const SCHEMA_VERSION = '2.0.0';
 
-export type OrderStatus = 'NEW' | 'CONFIRMED' | 'PREPARING' | 'DISPATCHED' | 'DELIVERED' | 'CANCELLED';
+export type OrderStatus = 'NEW' | 'ORDER_RECEIVED' | 'CONFIRMED' | 'PREPARING' | 'DISPATCHED' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'CANCELLED';
 export type PaymentStatus = 'UNPAID' | 'PAID' | 'REFUNDED';
 export type PaymentMethod = 'cod' | 'bank';
 
@@ -26,6 +26,8 @@ export interface CanonicalGiftingSnapshot {
   giftMessage?: string;
   giftWrapFee: number;
 }
+
+import { DeliveryScheduleResult } from './deliveryCalendar';
 
 export interface CanonicalOrder {
   schemaVersion: string; // '2.0.0'
@@ -46,6 +48,7 @@ export interface CanonicalOrder {
   claimedAt?: number | null;
   customer: CanonicalCustomerSnapshot;
   gifting: CanonicalGiftingSnapshot;
+  deliverySchedule?: DeliveryScheduleResult;
   items: ValidatedOrderItem[];
   totals: PricingSummary;
   couponCode?: string | null;
@@ -53,6 +56,7 @@ export interface CanonicalOrder {
   rewardId?: string | null;
   rewardDiscount?: number;
   earnedPoints: number;
+  pointsAwarded?: boolean;
   adminNotes?: string[];
 }
 
@@ -60,11 +64,13 @@ export interface SanitizedCustomerOrder {
   schemaVersion: string;
   orderId: string;
   createdAt: string;
+  createdAtMs?: number;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
   paymentMethod: PaymentMethod;
   customer: CanonicalCustomerSnapshot;
   gifting: CanonicalGiftingSnapshot;
+  deliverySchedule?: DeliveryScheduleResult;
   items: ValidatedOrderItem[];
   totals: PricingSummary;
   couponCode?: string | null;
@@ -72,6 +78,7 @@ export interface SanitizedCustomerOrder {
   rewardId?: string | null;
   rewardDiscount?: number;
   earnedPoints: number;
+  pointsAwarded?: boolean;
   claimedAt?: number | null;
   whatsappMessage?: string;
 }
@@ -110,6 +117,7 @@ export function sanitizeOrderForCustomer(order: CanonicalOrder, whatsappMessage?
     schemaVersion: order.schemaVersion,
     orderId: order.orderId,
     createdAt: order.createdAt,
+    createdAtMs: order.createdAtMs,
     status: order.status,
     paymentStatus: order.paymentStatus,
     paymentMethod: order.paymentMethod,
@@ -126,6 +134,7 @@ export function sanitizeOrderForCustomer(order: CanonicalOrder, whatsappMessage?
       giftMessage: order.gifting.giftMessage,
       giftWrapFee: order.gifting.giftWrapFee,
     },
+    deliverySchedule: order.deliverySchedule,
     items: order.items,
     totals: order.totals,
     couponCode: order.couponCode || null,
@@ -133,6 +142,7 @@ export function sanitizeOrderForCustomer(order: CanonicalOrder, whatsappMessage?
     rewardId: order.rewardId || null,
     rewardDiscount: order.rewardDiscount || 0,
     earnedPoints: order.earnedPoints || 0,
+    pointsAwarded: Boolean(order.pointsAwarded),
     claimedAt: order.claimedAt || null,
     whatsappMessage,
   };
