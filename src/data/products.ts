@@ -16,26 +16,26 @@ export const PRODUCT_IMAGE_PATHS: Record<string, string> = {
   chia_seeds: '/images/generated/chia-seeds-catalog-v1.webp',
   nimko: '/images/generated/lahori-nimko-catalog-v1.webp',
   chanay: '/images/generated/roasted-chanay-catalog-v1.webp',
-  // ── Cold-Pressed Oils (placeholder — photography pending) ───────────────
-  'oil-almond':      '/images/product-placeholder.svg',
-  'oil-blackseed':   '/images/product-placeholder.svg',
-  'oil-coconut':     '/images/product-placeholder.svg',
-  'oil-castor':      '/images/product-placeholder.svg',
-  'oil-apricot':     '/images/product-placeholder.svg',
-  'oil-sesame':      '/images/product-placeholder.svg',
-  'oil-flaxseed':    '/images/product-placeholder.svg',
-  'oil-walnut':      '/images/product-placeholder.svg',
-  'oil-olive':       '/images/product-placeholder.svg',
-  'oil-onionseed':   '/images/product-placeholder.svg',
-  'oil-mustard':     '/images/product-placeholder.svg',
-  'oil-hairblend':   '/images/product-placeholder.svg',
-  'oil-hairgrowth':  '/images/product-placeholder.svg',
-  // ── Desi Essentials (placeholder — photography pending) ─────────────────
-  'org-ghee':        '/images/product-placeholder.svg',
-  'org-honey':       '/images/product-placeholder.svg',
-  'org-panjeeri':    '/images/product-placeholder.svg',
-  'org-saffron':     '/images/product-placeholder.svg',
-  'org-shakkar':     '/images/product-placeholder.svg',
+  // ── Cold-Pressed Oils (editorial catalog imagery) ───────────────
+  'oil-almond':      '/images/generated/oil-almond-catalog-v1.webp',
+  'oil-blackseed':   '/images/generated/oil-blackseed-catalog-v1.webp',
+  'oil-coconut':     '/images/generated/oil-coconut-catalog-v1.webp',
+  'oil-castor':      '/images/generated/oil-castor-catalog-v1.webp',
+  'oil-apricot':     '/images/generated/oil-apricot-catalog-v1.webp',
+  'oil-sesame':      '/images/generated/oil-sesame-catalog-v1.webp',
+  'oil-flaxseed':    '/images/generated/oil-flaxseed-catalog-v1.webp',
+  'oil-walnut':      '/images/generated/oil-walnut-catalog-v1.webp',
+  'oil-olive':       '/images/generated/oil-olive-catalog-v1.webp',
+  'oil-onionseed':   '/images/generated/oil-onionseed-catalog-v1.webp',
+  'oil-mustard':     '/images/generated/oil-mustard-catalog-v1.webp',
+  'oil-hairblend':   '/images/generated/oil-hairblend-catalog-v1.webp',
+  'oil-hairgrowth':  '/images/generated/oil-hairgrowth-catalog-v1.webp',
+  // ── Desi Essentials (editorial catalog imagery) ─────────────────
+  'org-ghee':        '/images/generated/org-ghee-catalog-v1.webp',
+  'org-honey':       '/images/generated/org-honey-catalog-v1.webp',
+  'org-panjeeri':    '/images/generated/org-panjeeri-catalog-v1.webp',
+  'org-saffron':     '/images/generated/org-saffron-catalog-v1.webp',
+  'org-shakkar':     '/images/generated/org-shakkar-catalog-v1.webp',
 };
 
 export const getProductImage = (p: { image?: string; imageName?: string; id: string }): string => {
@@ -363,7 +363,7 @@ export const PRODUCTS: Product[] = [
     origin: 'Certified Organic Cold-Press Facility',
     harvest: 'First Cold-Press Extraction',
     storageTips: 'Store in a cool, dark place away from direct sunlight. Refrigerate after opening.',
-    packagingDetails: 'Dark amber glass bottle with UV protection to preserve oil integrity.',
+    packagingDetails: 'Clear food-grade plastic bottle with a white screw cap and AllBarka label.',
     keywords: ['almond oil', 'roghan badam', 'sweet almond', 'hair oil', 'skin oil', 'vitamin e oil']
   },
   {
@@ -381,7 +381,7 @@ export const PRODUCTS: Product[] = [
     origin: 'Ethiopian & Egyptian Nigella Farms',
     harvest: 'First Cold-Press Extraction',
     storageTips: 'Keep tightly sealed in a cool, dry place. Do not refrigerate — may solidify.',
-    packagingDetails: 'Dark glass UV-protective bottle with tamper-proof seal.',
+    packagingDetails: 'Clear food-grade plastic bottle with a white screw cap and AllBarka label.',
     keywords: ['kalonji oil', 'black seed oil', 'nigella sativa', 'kalonji', 'immune oil', 'prophetic medicine']
   },
   {
@@ -398,7 +398,7 @@ export const PRODUCTS: Product[] = [
     origin: 'Sri Lanka & Kerala Certified Cooperatives',
     harvest: 'Virgin First Cold-Press',
     storageTips: 'Solid below 24°C and liquid above. Both states are normal. Store away from sunlight.',
-    packagingDetails: 'Food-grade glass jar with airtight metal lid.',
+    packagingDetails: 'Clear food-grade plastic bottle with a white screw cap and AllBarka label.',
     keywords: ['coconut oil', 'nariyal oil', 'virgin coconut oil', 'cooking oil', 'hair oil']
   },
   {
@@ -415,7 +415,7 @@ export const PRODUCTS: Product[] = [
     origin: 'Rajasthan Certified Organic Farms',
     harvest: 'Cold-Press Extraction',
     storageTips: 'Store at room temperature. Viscous consistency is natural — does not indicate spoilage.',
-    packagingDetails: 'Dark amber glass bottle with precision dropper.',
+    packagingDetails: 'Clear food-grade plastic bottle with a white screw cap and AllBarka label.',
     keywords: ['castor oil', 'arind oil', 'hair growth oil', 'brow oil', 'lash oil', 'ricinoleic acid']
   },
   {
@@ -431,7 +431,7 @@ export const PRODUCTS: Product[] = [
     origin: 'Hunza Valley Cold-Press Facility',
     harvest: 'Stone-Pressed Extraction',
     storageTips: 'Keep sealed and away from heat. Shelf life 12 months once opened.',
-    packagingDetails: 'Amber glass bottle with UV protection.',
+    packagingDetails: 'Clear food-grade plastic bottle with a white screw cap and AllBarka label.',
     keywords: ['apricot oil', 'khubani oil', 'apricot kernel', 'carrier oil', 'skin oil']
   },
   {
@@ -447,7 +447,7 @@ export const PRODUCTS: Product[] = [
     origin: 'Punjab Sesame Heritage Farms',
     harvest: 'Cold-Pressed First Extraction',
     storageTips: 'Store in a cool, dark place. Does not require refrigeration.',
-    packagingDetails: 'Food-grade amber glass bottle.',
+    packagingDetails: 'Clear food-grade plastic bottle with a white screw cap and AllBarka label.',
     keywords: ['sesame oil', 'til oil', 'gingelly oil', 'til ka tail', 'cooking oil', 'hair oil']
   },
   {
@@ -463,7 +463,7 @@ export const PRODUCTS: Product[] = [
     origin: 'Canadian Flaxseed Co-operative',
     harvest: 'First Cold-Press Extraction',
     storageTips: 'Must be refrigerated after opening. Consume within 8 weeks. Light-sensitive.',
-    packagingDetails: 'Opaque UV-blocking dark bottle to prevent oxidation.',
+    packagingDetails: 'Clear food-grade plastic bottle with a white screw cap and AllBarka label.',
     keywords: ['flaxseed oil', 'linseed oil', 'alsi oil', 'omega 3 oil', 'alsi ka tail']
   },
   {
@@ -479,7 +479,7 @@ export const PRODUCTS: Product[] = [
     origin: 'Kashmiri Walnut Groves',
     harvest: 'Stone-Mill Cold Extraction',
     storageTips: 'Refrigerate after opening. Consume within 3 months. Do not use for high-heat cooking.',
-    packagingDetails: 'Amber glass bottle with cork-seal freshness.',
+    packagingDetails: 'Clear food-grade plastic bottle with a white screw cap and AllBarka label.',
     keywords: ['walnut oil', 'akhrot oil', 'brain oil', 'omega 3', 'gourmet oil']
   },
   {
@@ -497,7 +497,7 @@ export const PRODUCTS: Product[] = [
     origin: 'Mediterranean Estate Groves',
     harvest: 'Early Harvest Cold-Press',
     storageTips: 'Store away from heat and light. Ideal below 18°C. No refrigeration needed.',
-    packagingDetails: 'Dark green glass bottle with anti-drip pour spout.',
+    packagingDetails: 'Clear food-grade plastic bottle with a white screw cap and AllBarka label.',
     keywords: ['olive oil', 'zaitoon oil', 'extra virgin', 'EVOO', 'cooking oil', 'salad oil']
   },
   {
@@ -513,7 +513,7 @@ export const PRODUCTS: Product[] = [
     origin: 'Punjab Certified Processing Facility',
     harvest: 'Single-Pass Cold Extraction',
     storageTips: 'Store sealed at room temperature. Strong aroma is natural — indicates purity.',
-    packagingDetails: 'Dark amber glass bottle with sealed dropper.',
+    packagingDetails: 'Clear food-grade plastic bottle with a white screw cap and AllBarka label.',
     keywords: ['onion oil', 'pyaz oil', 'hair fall oil', 'scalp oil', 'onion seed']
   },
   {
@@ -530,7 +530,7 @@ export const PRODUCTS: Product[] = [
     origin: 'Punjab Mustard Seed Fields',
     harvest: 'First Cold-Press Extraction',
     storageTips: 'Store at room temperature away from sunlight. Traditional no-refrigeration oil.',
-    packagingDetails: 'Food-grade bottle with tamper-evident seal.',
+    packagingDetails: 'Clear food-grade plastic bottle with a white screw cap and AllBarka label.',
     keywords: ['mustard oil', 'sarson oil', 'sarson ka tail', 'cooking oil', 'massage oil', 'desi oil']
   },
   {
@@ -546,7 +546,7 @@ export const PRODUCTS: Product[] = [
     desc: 'AllBarka\'s bespoke blend of cold-pressed almond, castor, black seed, and coconut oils — a complete hair nourishment ritual in one bottle.',
     origin: 'Blended In-House, Lahore',
     storageTips: 'Store at room temperature. Shake gently before each use.',
-    packagingDetails: 'Premium amber glass bottle with AllBarka label.',
+    packagingDetails: 'Clear food-grade plastic bottle with a white screw cap and AllBarka label.',
     keywords: ['hair oil blend', 'special hair oil', 'mixed oil', 'hair growth', 'scalp treatment', 'hair care']
   },
   {
@@ -562,7 +562,7 @@ export const PRODUCTS: Product[] = [
     desc: 'Organic herbal growth oil infused with bhringraj, amla, and fenugreek extracts in a cold-pressed carrier base for maximum scalp absorption.',
     origin: 'Herbal Ayurvedic Extraction Facility',
     storageTips: 'Store at room temperature. Avoid direct sunlight. Use within 12 months.',
-    packagingDetails: 'Dark dropper bottle with tamper-proof cap.',
+    packagingDetails: 'Clear food-grade plastic bottle with a white screw cap and AllBarka label.',
     keywords: ['hair growth oil', 'bhringraj oil', 'amla oil', 'organic hair', 'herbal oil', 'scalp oil']
   },
 
