@@ -185,12 +185,18 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
       {/* ── Chat Concierge Sliding Drawer ─────────────────────────────── */}
       <AnimatePresence>
         {isOpen && (
+          <>
+          <motion.div
+            className="fixed inset-0 z-[190] bg-[#042821]/45 sm:bg-[#042821]/20"
+            aria-hidden="true"
+            onClick={() => setIsOpen(false)}
+          />
           <motion.div
             initial={{ opacity: 0, y: 30, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.95 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed bottom-[80px] sm:bottom-[90px] right-4 sm:right-6 z-50 origin-bottom-right w-[calc(100vw-2rem)] sm:w-[420px] h-[560px] max-h-[80vh] bg-[var(--color-surface,#FFFFFF)] border-2 border-[var(--color-gold,#B8935F)]/35 rounded-[28px] shadow-lg flex flex-col overflow-hidden text-[var(--color-ink,#1A1A1A)]"
+            className="fixed inset-x-3 bottom-3 sm:inset-x-auto sm:bottom-[90px] sm:right-6 z-[200] pointer-events-auto origin-bottom-right w-auto sm:w-[420px] h-[min(560px,calc(100dvh-1.5rem))] sm:max-h-[80vh] bg-[var(--color-surface,#FFFFFF)] border-2 border-[var(--color-gold,#B8935F)]/35 rounded-[28px] shadow-lg flex flex-col overflow-hidden text-[var(--color-ink,#1A1A1A)]"
           >
             {/* Header */}
             <div className="bg-[var(--color-base,#FDFCFA)] p-3.5 sm:p-4 text-[var(--color-ink,#1A1A1A)] flex items-center justify-between border-b border-[var(--color-gold,#B8935F)]/25 shrink-0">
@@ -325,6 +331,7 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
               </button>
             </form>
           </motion.div>
+        </>
         )}
       </AnimatePresence>
     </>
