@@ -19,6 +19,8 @@ jobs:
         with:
           submodules: true
           lfs: false
+      - name: Check types and AI guest trial
+        run: npm ci && npm run typecheck && npx tsx tests/ai-guest-trial.mjs
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
