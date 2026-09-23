@@ -12,8 +12,15 @@ export interface N8nNotificationResult {
  * This function is timeout-protected and isolated from order transaction processing.
  * An n8n notification failure will NEVER cause an order transaction rollback or error state.
  */
-export async function sendOrderToN8n(orderData: {
+export interface N8nOrderDelivery {
+  type: string;
+  priority: string;
+  promisedDeliveryDate: string;
+}
+
+export interface N8nOrderData {
   orderId: string;
+  customerUid?: string | null;
   customer: {
     name: string;
     phone: string;
@@ -21,6 +28,7 @@ export async function sendOrderToN8n(orderData: {
     city: string;
     deliverySlot?: string;
   };
+  delivery?: N8nOrderDelivery | null;
   totals: {
     subtotal: number;
     discount: number;
@@ -37,7 +45,14 @@ export async function sendOrderToN8n(orderData: {
   paymentMethod: string;
   createdAt: string;
   whatsappMessage?: string;
-}): Promise<N8nNotificationResult> {
+}
+
+/**
+ * Sends a server-side order event notification to n8n webhook if configured.
+ * This function is timeout-protected and isolated from order transaction processing.
+ * An n8n notification failure will NEVER cause an order transaction rollback or error state.
+ */
+export async function sendOrderToN8n(orderData: N8nOrderData): Promise<N8nNotificationResult> {
   const webhookUrl = process.env.N8N_ORDER_WEBHOOK_URL;
   const webhookSecret = process.env.N8N_WEBHOOK_SECRET;
 
@@ -61,11 +76,13 @@ export async function sendOrderToN8n(orderData: {
   };
 
   if (webhookSecret && webhookSecret.trim()) {
+    const trimmedSecret = webhookSecret.trim();
     const signature = crypto
-      .createHmac('sha256', webhookSecret.trim())
+      .createHmac('sha256', trimmedSecret)
       .update(payload)
       .digest('hex');
     headers['X-N8n-Signature'] = signature;
+    headers['X-AllBarka-Webhook-Secret'] = trimmedSecret;
   }
 
   const controller = new AbortController();

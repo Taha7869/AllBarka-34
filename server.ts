@@ -300,9 +300,21 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
     let n8nNotificationStatus = null;
     if (!result.isDuplicate) {
       try {
+        const deliveryInfo = result.deliverySchedule ? {
+          type: result.deliverySchedule.shippingMethodId,
+          priority: result.deliverySchedule.shippingMethodId === 'sameday'
+            ? 'SAME_DAY'
+            : result.deliverySchedule.shippingMethodId === 'express'
+            ? 'EXPRESS'
+            : 'STANDARD',
+          promisedDeliveryDate: result.deliverySchedule.scheduledDeliveryDate
+        } : null;
+
         n8nNotificationStatus = await sendOrderToN8n({
           orderId: result.orderId,
+          customerUid: result.uid ?? verifiedUid ?? null,
           customer: validateCustomerDetails(req.body),
+          delivery: deliveryInfo,
           totals: result.totals,
           items: result.items,
           paymentMethod: req.body.paymentMethod || 'cod',

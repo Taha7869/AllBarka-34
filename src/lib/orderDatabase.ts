@@ -71,6 +71,8 @@ export async function createDurableOrder({
   totals: PricingSummary;
   items: any[];
   isDuplicate?: boolean;
+  uid?: string | null;
+  deliverySchedule?: import('./deliveryCalendar').DeliveryScheduleResult;
 }> {
   if (!db) {
     throw new PersistenceUnavailableError();
@@ -140,6 +142,8 @@ export async function createDurableOrder({
         totals: intentData.response.totals,
         items: intentData.response.items,
         claimToken: intentData.response.claimToken || null,
+        uid: intentData.response.uid ?? uid ?? null,
+        deliverySchedule: intentData.response.deliverySchedule,
       };
     }
 
@@ -267,6 +271,8 @@ export async function createDurableOrder({
         totals: validated.summary,
         items: validated.items,
         claimToken: rawClaimToken,
+        uid: uid || null,
+        deliverySchedule,
       }
     };
     transaction.set(idempotencyRef, idempotencyRecord);
@@ -299,6 +305,8 @@ export async function createDurableOrder({
       totals: validated.summary,
       items: validated.items,
       claimToken: rawClaimToken,
+      uid: uid || null,
+      deliverySchedule,
     };
   });
 

@@ -86,6 +86,54 @@ try {
     assert.strictEqual(result.status, 'DISABLED');
   });
 
+  await test('n8n Dispatch: Sends X-AllBarka-Webhook-Secret and valid X-N8n-Signature HMAC header when secret is set', async () => {
+    const { default: crypto } = await import('node:crypto');
+    process.env.N8N_ORDER_WEBHOOK_URL = 'https://n8n.example.com/webhook/test-order';
+    process.env.N8N_WEBHOOK_SECRET = '  secret_n8n_key_456  ';
+
+    let capturedHeaders = null;
+    let capturedBody = null;
+    const originalFetch = globalThis.fetch;
+
+    globalThis.fetch = async (url, options) => {
+      capturedHeaders = options.headers;
+      capturedBody = options.body;
+      return { ok: true, status: 200 };
+    };
+
+    try {
+      const orderData = {
+        orderId: 'AB-TEST-N8N-01',
+        customerUid: 'patron_uid_789',
+        customer: { name: 'Ali', phone: '03001234567', address: 'DHA Phase 5', city: 'Lahore' },
+        delivery: { type: 'sameday', priority: 'SAME_DAY', promisedDeliveryDate: '2026-09-23' },
+        totals: { subtotal: 3000, discount: 0, shipping: 300, total: 3300 },
+        items: [{ id: pistaProduct.id, name: pistaProduct.name, selectedWeight: weight500g, quantity: 1, price: price500g }],
+        paymentMethod: 'cod',
+        createdAt: new Date().toISOString(),
+      };
+
+      const result = await sendOrderToN8n(orderData);
+
+      assert.strictEqual(result.sent, true);
+      assert.strictEqual(result.status, 'SUCCESS');
+      assert.strictEqual(capturedHeaders['X-AllBarka-Webhook-Secret'], 'secret_n8n_key_456');
+
+      const expectedHmac = crypto.createHmac('sha256', 'secret_n8n_key_456').update(capturedBody).digest('hex');
+      assert.strictEqual(capturedHeaders['X-N8n-Signature'], expectedHmac);
+
+      const parsedBody = JSON.parse(capturedBody);
+      assert.strictEqual(parsedBody.order.customerUid, 'patron_uid_789');
+      assert.strictEqual(parsedBody.order.delivery.type, 'sameday');
+      assert.strictEqual(parsedBody.order.delivery.priority, 'SAME_DAY');
+      assert.strictEqual(parsedBody.order.delivery.promisedDeliveryDate, '2026-09-23');
+    } finally {
+      globalThis.fetch = originalFetch;
+      delete process.env.N8N_ORDER_WEBHOOK_URL;
+      delete process.env.N8N_WEBHOOK_SECRET;
+    }
+  });
+
   // 3. Durable Order Persistence Safety Errors
   await test('Durable Safety: PersistenceUnavailableError has correct code', () => {
     const err = new PersistenceUnavailableError();
@@ -506,6 +554,63 @@ try {
     assert.strictEqual(res.sent, false, 'Webhook failure must be caught gracefully');
     assert.strictEqual(res.status, 'FAILED');
     delete process.env.N8N_ORDER_WEBHOOK_URL;
+  });
+
+  // 16. Authoritative Order Result Payload: customerUid and delivery derived from server
+  await test('n8n Webhook Payload: customerUid and delivery fields come from authoritative server order result', async () => {
+    const store = new Map();
+    const mockDb = {
+      collection(name) {
+        return {
+          doc(id) {
+            return {
+              id,
+              get: async () => ({ exists: store.has(id), data: () => store.get(id) }),
+              set: async (val) => { store.set(id, val); }
+            };
+          }
+        };
+      },
+      runTransaction: async (cb) => {
+        const txn = {
+          get: async (ref) => ref.get(),
+          set: (ref, val) => ref.set(val)
+        };
+        return cb(txn);
+      }
+    };
+
+    const payload = {
+      name: 'Taha',
+      phone: '03160666083',
+      address: 'DHA Phase 6',
+      city: 'Lahore',
+      paymentMethod: 'cod',
+      shippingMethodId: 'sameday',
+      items: [{ id: pistaProduct.id, selectedWeight: weight500g, quantity: 1 }],
+      delivery: { type: 'untrusted_hack', priority: 'LOW', promisedDeliveryDate: '1970-01-01' }
+    };
+
+    const result = await createDurableOrder({
+      db: mockDb,
+      payload,
+      uid: 'verified_patron_uid_888',
+      idempotencyKey: 'test-n8n-authoritative-payload-key'
+    });
+
+    assert.strictEqual(result.uid, 'verified_patron_uid_888');
+    assert.ok(result.deliverySchedule);
+    assert.strictEqual(result.deliverySchedule.shippingMethodId, 'sameday');
+
+    const deliveryInfo = result.deliverySchedule ? {
+      type: result.deliverySchedule.shippingMethodId,
+      priority: result.deliverySchedule.shippingMethodId === 'sameday' ? 'SAME_DAY' : 'STANDARD',
+      promisedDeliveryDate: result.deliverySchedule.scheduledDeliveryDate
+    } : null;
+
+    assert.strictEqual(deliveryInfo.type, 'sameday');
+    assert.strictEqual(deliveryInfo.priority, 'SAME_DAY');
+    assert.strictEqual(typeof deliveryInfo.promisedDeliveryDate, 'string');
   });
 
   console.log(`\n========================================`);

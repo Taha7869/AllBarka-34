@@ -106,6 +106,8 @@ export interface IdempotencyRecord {
     totals: PricingSummary;
     items: ValidatedOrderItem[];
     claimToken?: string | null;
+    uid?: string | null;
+    deliverySchedule?: DeliveryScheduleResult;
   };
 }
 
