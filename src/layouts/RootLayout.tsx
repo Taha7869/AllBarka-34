@@ -58,6 +58,7 @@ export default function RootLayout() {
     if (location.pathname === '/') return 'Home';
     if (location.pathname.startsWith('/shop/combos') || location.pathname.startsWith('/gifting')) return 'Gift Boxes';
     if (location.pathname.startsWith('/shop') || location.pathname.startsWith('/product') || location.pathname.startsWith('/category') || location.pathname.startsWith('/wholesale')) return 'Shop';
+    if (location.pathname.startsWith('/journal')) return 'Journal';
     if (location.pathname.startsWith('/pages/contact') || location.pathname === '/contact') return 'Contact';
     return 'Home';
   }, [location.pathname]);
