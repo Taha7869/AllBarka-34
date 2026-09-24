@@ -322,6 +322,7 @@ export default function RootLayout() {
         onClose={() => setMobileMenuOpen(false)} 
         cartCount={totalItemsCount}
         onOpenCart={() => setIsCartOpen(true)}
+        onOpenHamper={() => setHamperModalOpen(true)}
         triggerRef={mobileMenuTriggerRef}
         onNavItemClick={(item) => {
           if (item === 'Home') navigate('/');
