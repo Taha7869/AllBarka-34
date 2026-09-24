@@ -46,7 +46,7 @@ const BOX_OPTIONS: BoxOption[] = [
     subtitle: 'Hand-carved brass latches & polished natural timber grain',
     price: 1800,
     capacity: 'Fits 4 to 6 Gourmet Selections',
-    image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80',
+    image: '/images/generated/hamper-sheesham-chest-v1.webp',
     badge: 'Patron Favorite',
   },
   {
@@ -55,7 +55,7 @@ const BOX_OPTIONS: BoxOption[] = [
     subtitle: 'Plush velvet casing embossed with Champagne Gold foil seal',
     price: 1400,
     capacity: 'Fits 3 to 5 Gourmet Selections',
-    image: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=600&q=80',
+    image: '/images/generated/hamper-emerald-coffer-v1.webp',
     badge: 'Luxury Edition',
   },
   {
@@ -64,7 +64,7 @@ const BOX_OPTIONS: BoxOption[] = [
     subtitle: 'Airtight metallic container with commemorative floral filigree',
     price: 950,
     capacity: 'Fits 3 to 4 Gourmet Selections',
-    image: 'https://images.unsplash.com/photo-1577937927133-66ef06acdf18?auto=format&fit=crop&w=600&q=80',
+    image: '/images/generated/hamper-gold-tin-v1.webp',
   },
 ];
 
