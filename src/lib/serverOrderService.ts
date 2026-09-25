@@ -224,6 +224,7 @@ export function hashPayload(payload: any): string {
       id: String(it.productId || it.id || '').trim(),
       selectedWeight: String(it.selectedWeight || '250g').trim(),
       quantity: Number(it.quantity) || 1,
+      hamper: it.hamper ? { boxId: String(it.hamper.boxId || ''), selectionIds: [...(it.hamper.selectionIds || [])].sort(), recipientName: String(it.hamper.recipientName || ''), note: String(it.hamper.note || '') } : null,
     })).sort((a: any, b: any) => a.id.localeCompare(b.id)),
   };
 

@@ -41,6 +41,7 @@ export interface N8nOrderData {
     selectedWeight: string;
     quantity: number;
     price: number;
+    hamper?: { boxId: string; selectionIds: string[]; recipientName?: string; note?: string };
   }>;
   paymentMethod: string;
   createdAt: string;
@@ -82,7 +83,6 @@ export async function sendOrderToN8n(orderData: N8nOrderData): Promise<N8nNotifi
       .update(payload)
       .digest('hex');
     headers['X-N8n-Signature'] = signature;
-    headers['X-AllBarka-Webhook-Secret'] = trimmedSecret;
   }
 
   const controller = new AbortController();

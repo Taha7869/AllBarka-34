@@ -1,6 +1,7 @@
 import { PRODUCTS } from '../data/products';
 import { calculateOrderSummary, PricingSummary } from './pricing';
 import { ShippingMethodId } from '../types.ts';
+import { BOX_OPTIONS, DRY_FRUIT_CANDIDATES, type HamperConfiguration } from '../config/hampers';
 
 export class ValidationError extends Error {
   code: string;
@@ -19,6 +20,7 @@ export interface ValidatedOrderItem {
   quantity: number;
   price: number; // authoritative price per unit in PKR
   earnedPoints: number;
+  hamper?: HamperConfiguration;
 }
 
 export interface ValidatedOrder {
@@ -172,8 +174,46 @@ export function validateAndPriceOrder({
       throw new ValidationError(`Invalid item object at position ${idx + 1}.`, 'INVALID_ITEM');
     }
 
-    // Resolve canonical product ID
+    // Custom hamper is a structured product: never trust its browser-supplied price.
     const rawId = String(clientItem.productId || clientItem.id || '').trim();
+    if (rawId.startsWith('custom-hamper-') || clientItem.hamper) {
+      if (!/^custom-hamper-[A-Za-z0-9-]{1,80}$/.test(rawId) ||
+          !clientItem.hamper || typeof clientItem.hamper !== 'object') {
+        throw new ValidationError('Invalid custom hamper configuration.', 'INVALID_HAMPER');
+      }
+      const config = clientItem.hamper as HamperConfiguration;
+      const box = BOX_OPTIONS.find(option => option.id === config.boxId);
+      const ids = config.selectionIds;
+      if (!box || !Array.isArray(ids) || ids.length < box.minSelections ||
+          ids.length > box.maxSelections || new Set(ids).size !== ids.length) {
+        throw new ValidationError('Invalid hamper box or selection count.', 'INVALID_HAMPER');
+      }
+      const selections = ids.map(id => DRY_FRUIT_CANDIDATES.find(item => item.id === id));
+      if (selections.some(item => !item)) {
+        throw new ValidationError('Unknown hamper selection.', 'INVALID_HAMPER');
+      }
+      const qty = Number(clientItem.quantity);
+      if (!Number.isSafeInteger(qty) || qty < 1 || qty > 10) {
+        throw new ValidationError('Hamper quantity must be 1 to 10.', 'INVALID_QUANTITY');
+      }
+      const recipientName = typeof config.recipientName === 'string' ? config.recipientName.trim() : '';
+      const note = typeof config.note === 'string' ? config.note.trim() : '';
+      if (recipientName.length > 80 || note.length > 300) {
+        throw new ValidationError('Hamper card text is too long.', 'INVALID_HAMPER');
+      }
+      const price = box.price + selections.reduce((sum, selection) => sum + selection!.pricePer200g, 0);
+      return {
+        id: rawId,
+        productId: 'custom-hamper',
+        name: `Custom ${box.name}`,
+        selectedWeight: `${ids.length}x 200g Selections (${selections.map(item => item!.name).join(', ')})`,
+        quantity: qty,
+        price,
+        earnedPoints: 0,
+        hamper: { boxId: box.id, selectionIds: [...ids], recipientName, note },
+      };
+    }
+    // Resolve canonical product ID
     const strippedId = rawId.replace(/-(?:250g|500g|1kg|piece|box|pack|single|set)$/i, '');
     const product = PRODUCTS.find(
       p => p.id === clientItem.productId || p.id === rawId || p.id === strippedId
