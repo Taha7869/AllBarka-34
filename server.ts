@@ -2,7 +2,6 @@ import express from 'express';
 import path from 'path';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
-import { createServer as createViteServer } from 'vite';
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import { JWT } from 'google-auth-library';
 import { initializeApp, cert, applicationDefault } from 'firebase-admin/app';
@@ -166,7 +165,7 @@ if (process.env.GOOGLE_SHEETS_ID && process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && 
   doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEETS_ID, serviceAccountAuth);
 }
 
-const app = express();
+export const app = express();
 const PORT = Number(process.env.PORT || 3000);
 
 app.use(express.json());
@@ -1007,6 +1006,7 @@ Behavior Guidelines:
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
     console.time('[dev] Vite middleware');
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa'
@@ -1026,7 +1026,7 @@ async function startServer() {
   });
 }
 
-startServer().catch((error) => {
+if (process.env.ALLBARKA_SERVERLESS !== '1') startServer().catch((error) => {
   console.error('[AllBarka] startup failed:', error.message);
   process.exitCode = 1;
 });

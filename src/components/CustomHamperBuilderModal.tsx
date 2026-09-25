@@ -14,7 +14,7 @@ import {
   PenTool, 
   ShoppingBag 
 } from 'lucide-react';
-import { PRODUCTS, getProductImage } from '../data/products';
+import { BOX_OPTIONS, DRY_FRUIT_CANDIDATES, type HamperBox, type HamperConfiguration } from '../config/hampers';
 
 interface CustomHamperBuilderModalProps {
   isOpen: boolean;
@@ -26,59 +26,9 @@ interface CustomHamperBuilderModalProps {
     price: number;
     image: string;
     quantity: number;
+    hamper: HamperConfiguration;
   }) => void;
 }
-
-interface BoxOption {
-  id: string;
-  name: string;
-  subtitle: string;
-  price: number;
-  capacity: string;
-  image: string;
-  badge?: string;
-}
-
-const BOX_OPTIONS: BoxOption[] = [
-  {
-    id: 'box-wood',
-    name: 'Sheesham Artisan Wooden Chest',
-    subtitle: 'Hand-carved brass latches & polished natural timber grain',
-    price: 1800,
-    capacity: 'Fits 4 to 6 Gourmet Selections',
-    image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80',
-    badge: 'Patron Favorite',
-  },
-  {
-    id: 'box-velvet',
-    name: 'Royal Emerald Velvet Coffer',
-    subtitle: 'Plush velvet casing embossed with Champagne Gold foil seal',
-    price: 1400,
-    capacity: 'Fits 3 to 5 Gourmet Selections',
-    image: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=600&q=80',
-    badge: 'Luxury Edition',
-  },
-  {
-    id: 'box-tin',
-    name: 'Heritage Gold Keepsake Tin',
-    subtitle: 'Airtight metallic container with commemorative floral filigree',
-    price: 950,
-    capacity: 'Fits 3 to 4 Gourmet Selections',
-    image: 'https://images.unsplash.com/photo-1577937927133-66ef06acdf18?auto=format&fit=crop&w=600&q=80',
-  },
-];
-
-// Curated selection candidates for custom hamper
-const DRY_FRUIT_CANDIDATES = [
-  { id: 'prod-pista', name: 'Roasted Kerman Pistachios', pricePer200g: 950, origin: 'Kerman' },
-  { id: 'prod-kaju', name: 'Jumbo Roasted Cashews', pricePer200g: 880, origin: 'Mangalore' },
-  { id: 'prod-badam', name: 'California Nonpareil Almonds', pricePer200g: 750, origin: 'Central Valley' },
-  { id: 'prod-walnut', name: 'Wild Skardu Walnut Halves', pricePer200g: 650, origin: 'Gilgit-Baltistan' },
-  { id: 'prod-chilgoza', name: 'Royal Waziristan Chilgoza', pricePer200g: 2200, origin: 'South Waziristan' },
-  { id: 'prod-apricot', name: 'Sun-Dried Sweet Hunza Apricots', pricePer200g: 450, origin: 'Hunza Valley' },
-  { id: 'prod-figs', name: 'Turkish Golden Injeer (Figs)', pricePer200g: 780, origin: 'Aydin' },
-  { id: 'prod-kishmish', name: 'Afghan Green Kandahari Raisins', pricePer200g: 420, origin: 'Kandahar' },
-];
 
 export default function CustomHamperBuilderModal({
   isOpen,
@@ -86,8 +36,8 @@ export default function CustomHamperBuilderModal({
   onAddToCart,
 }: CustomHamperBuilderModalProps) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [selectedBox, setSelectedBox] = useState<BoxOption>(BOX_OPTIONS[0]);
-  const [selectedItems, setSelectedItems] = useState<string[]>(['prod-pista', 'prod-badam', 'prod-kaju']);
+  const [selectedBox, setSelectedBox] = useState<HamperBox>(BOX_OPTIONS[0]);
+  const [selectedItems, setSelectedItems] = useState<string[]>(['prod-pista', 'prod-badam', 'prod-kaju', 'prod-walnut']);
   const [customNote, setCustomNote] = useState('With warmest regards & sincere wishes.');
   const [recipientName, setRecipientName] = useState('');
   const [addedSuccess, setAddedSuccess] = useState(false);
@@ -96,12 +46,12 @@ export default function CustomHamperBuilderModal({
 
   const toggleItem = (itemId: string) => {
     if (selectedItems.includes(itemId)) {
-      if (selectedItems.length <= 3) {
+      if (selectedItems.length <= selectedBox.minSelections) {
         return; // Minimum 3 items required
       }
       setSelectedItems(selectedItems.filter((id) => id !== itemId));
     } else {
-      if (selectedItems.length >= 6) {
+      if (selectedItems.length >= selectedBox.maxSelections) {
         return; // Maximum 6 items allowed
       }
       setSelectedItems([...selectedItems, itemId]);
@@ -120,6 +70,7 @@ export default function CustomHamperBuilderModal({
   const totalPrice = calculateTotalPrice();
 
   const handleFinishAndAdd = () => {
+    if (selectedItems.length < selectedBox.minSelections || selectedItems.length > selectedBox.maxSelections) return;
     const selectedNames = selectedItems
       .map((id) => DRY_FRUIT_CANDIDATES.find((c) => c.id === id)?.name)
       .filter(Boolean)
@@ -132,6 +83,7 @@ export default function CustomHamperBuilderModal({
       price: totalPrice,
       image: selectedBox.image,
       quantity: 1,
+      hamper: { boxId: selectedBox.id, selectionIds: [...selectedItems], recipientName: recipientName.trim().slice(0, 80), note: customNote.trim().slice(0, 300) },
     };
 
     onAddToCart(hamperItem);
@@ -238,7 +190,7 @@ export default function CustomHamperBuilderModal({
                   return (
                     <div
                       key={box.id}
-                      onClick={() => setSelectedBox(box)}
+                      onClick={() => { setSelectedBox(box); setSelectedItems(prev => { const next = prev.slice(0, box.maxSelections); for (const candidate of DRY_FRUIT_CANDIDATES) { if (next.length >= box.minSelections) break; if (!next.includes(candidate.id)) next.push(candidate.id); } return next; }); }}
                       className={`relative rounded-2xl border p-3.5 flex flex-col justify-between cursor-pointer transition-all duration-200 ${
                         isSelected
                           ? 'border-[#C7982F] bg-[#C7982F]/10 dark:bg-[#C7982F]/15 ring-2 ring-[#C7982F]/50 shadow-md'
@@ -365,6 +317,7 @@ export default function CustomHamperBuilderModal({
                     type="text"
                     value={recipientName}
                     onChange={(e) => setRecipientName(e.target.value)}
+                    maxLength={80}
                     placeholder="e.g. Honorable Uncle & Family / M. Bilal"
                     className="w-full bg-white dark:bg-black/20 border border-[#29231D]/15 dark:border-[#F6F1EA]/15 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#C7982F]"
                   />
@@ -378,6 +331,7 @@ export default function CustomHamperBuilderModal({
                     rows={3}
                     value={customNote}
                     onChange={(e) => setCustomNote(e.target.value)}
+                    maxLength={300}
                     placeholder="Write your wishes or celebration note here..."
                     className="w-full bg-white dark:bg-black/20 border border-[#29231D]/15 dark:border-[#F6F1EA]/15 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#C7982F] resize-none"
                   />

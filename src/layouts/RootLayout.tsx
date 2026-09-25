@@ -1,3 +1,4 @@
+import type { HamperConfiguration } from '../config/hampers';
 import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
@@ -105,6 +106,7 @@ export default function RootLayout() {
     price: number;
     image: string;
     quantity: number;
+    hamper: HamperConfiguration;
   }) => {
     addToCart({
       id: hamperItem.id,
@@ -116,6 +118,7 @@ export default function RootLayout() {
       price: hamperItem.price,
       image: hamperItem.image,
       quantity: hamperItem.quantity,
+      hamper: hamperItem.hamper,
     });
     setIsCartPulsing(true);
     setTimeout(() => setIsCartPulsing(false), 800);
@@ -322,6 +325,7 @@ export default function RootLayout() {
         onClose={() => setMobileMenuOpen(false)} 
         cartCount={totalItemsCount}
         onOpenCart={() => setIsCartOpen(true)}
+        onOpenHamper={() => setHamperModalOpen(true)}
         triggerRef={mobileMenuTriggerRef}
         onNavItemClick={(item) => {
           if (item === 'Home') navigate('/');

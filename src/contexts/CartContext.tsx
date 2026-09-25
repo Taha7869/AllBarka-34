@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import type { CartItem, Product } from '../types';
+import type { HamperConfiguration } from '../config/hampers';
 import { PRODUCTS, getProductImage } from '../data/products';
 import { useToast } from '../components/ToastManager';
 
@@ -50,6 +51,7 @@ export type AddToCartInput =
       wholesale?: number | boolean;
       selectedWeight?: string;
       quantity?: number;
+      hamper?: HamperConfiguration;
     };
 
 export interface CartContextValue {
@@ -94,7 +96,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          return parsed.map((item: any) => {
+          return parsed.filter((item: any) => !String(item.productId || item.id || '').startsWith('custom-hamper-') || item.hamper).map((item: any) => {
             const rawWeight = item.selectedWeight || '250g';
             const rawProductId = item.productId || item.id?.split('-')[0] || item.id || 'item';
             const compositeId = `${rawProductId}-${rawWeight}`;
@@ -110,6 +112,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
               price: unitPrice,
               quantity: Math.max(1, Math.min(50, parseInt(item.quantity, 10) || 1)),
               wholesale: !!item.wholesale,
+              hamper: item.hamper,
             };
           });
         }
@@ -221,6 +224,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           price: unitPrice,
           quantity: cleanQty,
           wholesale: isWholesale,
+          hamper: (productOrItem as any).hamper,
         };
         return [...prev, newItem];
       });

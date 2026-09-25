@@ -26,6 +26,7 @@ interface MobileMenuProps {
   onClose: () => void;
   cartCount?: number;
   onOpenCart?: () => void;
+  onOpenHamper?: () => void;
   onNavItemClick?: (item: string) => void;
   triggerRef?: React.RefObject<HTMLButtonElement | null>;
 }
@@ -35,6 +36,7 @@ export default function MobileMenu({
   onClose, 
   cartCount = 0, 
   onOpenCart, 
+  onOpenHamper,
   onNavItemClick,
   triggerRef
 }: MobileMenuProps) {
@@ -234,6 +236,20 @@ export default function MobileMenu({
                   </span>
                 </button>
               </div>
+
+              <button
+                type="button"
+                onClick={() => { onClose(); onOpenHamper?.(); }}
+                className="w-full flex items-center gap-3 rounded-2xl border border-[#C7982F]/40 bg-[#C7982F]/10 p-3 text-left focus-ring cursor-pointer"
+                aria-label="Build Custom Luxury Hamper"
+              >
+                <img src="/images/generated/hamper-sheesham-chest-v1.webp" alt="" className="h-16 w-16 rounded-xl object-cover" />
+                <span className="flex-1 min-w-0">
+                  <span className="block text-sm font-bold text-[#042821] dark:text-[#FFFCF7]">Custom Luxury Hamper</span>
+                  <span className="block text-xs text-[#806326] dark:text-[#E4C783]">Build your gift</span>
+                </span>
+                <ChevronRight size={18} className="text-[#C7982F]" aria-hidden="true" />
+              </button>
 
               {/* 3. Language selector: English, اردو, العربية */}
               <div className="border-t border-[#29231D]/8 dark:border-[#F6F1EA]/8 pt-4">
