@@ -9,6 +9,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { ChatMessage } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 import { useDragScroll } from '../hooks/useDragScroll';
 
 interface AIConciergeProps {
@@ -18,6 +19,9 @@ interface AIConciergeProps {
 }
 
 export default function AIConcierge({ hasCartBar = false, hide = false, onOpenChange }: AIConciergeProps) {
+  const { currentUser } = useAuth();
+  const isGooglePatron = currentUser?.providerData.some(p => p.providerId === 'google.com') ?? false;
+  const [guestRemaining, setGuestRemaining] = useState<number | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
@@ -90,7 +94,7 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
   const handleSendMessage = async (e?: React.FormEvent, customText?: string) => {
     if (e) e.preventDefault();
     const textToSend = customText || inputText;
-    if (!textToSend.trim() || isLoading) return;
+    if (!textToSend.trim() || isLoading || (guestRemaining === 0 && !isGooglePatron)) return;
 
     const userMsg: ChatMessage = { role: 'user', text: textToSend };
     setMessages((prev) => [...prev, userMsg]);
@@ -98,9 +102,13 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
     setIsLoading(true);
 
     try {
+      const token = currentUser ? await currentUser.getIdToken() : null;
       const response = await fetch('/api/concierge/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({
           message: textToSend,
           location: userLocation,
@@ -108,11 +116,16 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
         })
       });
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-
       const data = await response.json();
+      if (response.status === 429 && data.code === 'AI_GUEST_TRIAL_EXHAUSTED') {
+        setGuestRemaining(0);
+        setMessages(prev => [...prev, { role: 'assistant', text: data.error }]);
+        return;
+      }
+      if (!response.ok) throw new Error(data.error || 'AI service unavailable');
+      if (typeof data.guestMessagesRemaining === 'number') {
+        setGuestRemaining(data.guestMessagesRemaining);
+      }
       const modelMsg: ChatMessage = {
         role: 'assistant',
         text: data.text || 'I apologize, I am temporarily unable to reach our boutique server. Please reach us directly via WhatsApp at 0316-0666083.',
@@ -306,6 +319,21 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
               ))}
             </div>
 
+            {!isGooglePatron && guestRemaining !== null && (
+              <div className="px-4 py-2 text-[11px] bg-[var(--color-cream,#FAF9F5)] border-t border-[var(--color-gold,#B8935F)]/20 flex items-center justify-between gap-3">
+                <span>{guestRemaining} free AI messages left in this trial</span>
+                {guestRemaining === 0 && (
+                  <button
+                    type="button"
+                    className="font-bold underline text-[var(--color-gold,#B8935F)]"
+                    onClick={() => window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { mode: 'signin' } }))}
+                  >
+                    Sign in with Google
+                  </button>
+                )}
+              </div>
+            )}
+
             {/* Input Form */}
             <form onSubmit={(e) => handleSendMessage(e)} className="p-3 bg-[var(--color-surface,#FFFFFF)] border-t border-[var(--color-gold,#B8935F)]/20 flex gap-2 shrink-0">
               <input
@@ -317,7 +345,7 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
               />
               <button
                 type="submit"
-                disabled={isLoading || !inputText.trim()}
+                disabled={isLoading || !inputText.trim() || (guestRemaining === 0 && !isGooglePatron)}
                 className="w-9 h-9 rounded-full bg-[var(--color-gold,#B8935F)] text-white flex items-center justify-center disabled:opacity-40 hover:bg-[var(--color-gold-light,#D4B483)] transition-colors cursor-pointer shrink-0 shadow-xs"
                 aria-label="Send message"
               >

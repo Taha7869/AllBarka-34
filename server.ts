@@ -12,6 +12,8 @@ import { PRODUCTS } from './src/data/products';
 import { STORE_CONFIG } from './src/config/store';
 import { CONTACT_CONFIG, buildAutomatedOrderWhatsAppUrl, buildHumanSupportWhatsAppUrl } from './src/config/contacts';
 import { sendOrderToN8n } from './src/services/n8nOrderNotification';
+import { askN8nConsultant } from './src/services/n8nAIConsultant';
+import { reserveGuestAiMessage, GuestTrialLimitError } from './src/lib/aiGuestTrial';
 import { REWARDS } from './src/data/rewards';
 import { validateAndPriceOrder, validateCustomerDetails, ValidationError } from './src/lib/orderValidation';
 import crypto from 'crypto';
@@ -168,6 +170,8 @@ if (process.env.GOOGLE_SHEETS_ID && process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && 
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
+// Set only for a known number of trusted reverse proxies in front of the API.
+app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS || 0));
 
 app.use(express.json());
 
@@ -855,13 +859,38 @@ function generateBoutiqueResponse(userText: string): { reply: string; groundingS
 }
 
 // 3. API: Luxury AI Concierge Assistant
-app.post(['/api/chat', '/api/concierge/chat'], async (req, res) => {
+app.post(['/api/chat', '/api/concierge/chat'], authenticateOptionalUser, async (req, res) => {
   const userText = req.body.userText || req.body.message || '';
   const userLocation = req.body.userLocation || req.body.location || null;
   const messages = req.body.messages || req.body.history || [];
 
-  if (!userText) {
-    return res.status(400).json({ error: 'No user input provided' });
+  if (typeof userText !== 'string' || !userText.trim() || userText.length > 1000) {
+    return res.status(400).json({ error: 'Please enter a message of up to 1000 characters.', code: 'INVALID_MESSAGE' });
+  }
+
+  const isGooglePatron = (req as any).user?.firebase?.sign_in_provider === 'google.com';
+  let guestMessagesRemaining: number | null = null;
+  if (!isGooglePatron) {
+    try {
+      guestMessagesRemaining = await reserveGuestAiMessage(
+        db,
+        req.ip || req.socket.remoteAddress || '',
+        String(req.headers['user-agent'] || ''),
+        process.env.AI_GUEST_HASH_SECRET || ''
+      );
+    } catch (error) {
+      if (error instanceof GuestTrialLimitError) {
+        return res.status(429).json({
+          error: error.message,
+          code: 'AI_GUEST_TRIAL_EXHAUSTED',
+          guestMessagesRemaining: 0
+        });
+      }
+      return res.status(503).json({
+        error: 'AI guest trial is temporarily unavailable. Please try again later.',
+        code: 'AI_GUEST_TRIAL_UNAVAILABLE'
+      });
+    }
   }
 
   // Generate instructions dynamically from the actual PRODUCTS array
@@ -890,7 +919,42 @@ Delivery & Ordering:
 Behavior Guidelines:
 - Keep answers polite, sophisticated, articulate, and helpful.
 - When answering location, maps, or route queries in Lahore, provide precise details.
+- Offer general food and product information only. Do not diagnose conditions, prescribe diets or treatment, or promise medical outcomes. For personal health questions, advise consulting a qualified clinician.
 - Include elegant, warm emojis where appropriate (✨, 🌰, 💎, 🚚, 🌿).`;
+
+  // Prefer the private n8n/Ollama workflow when configured. A home PC or
+  // temporary tunnel outage must never leave the customer waiting indefinitely.
+  if (process.env.N8N_AI_WEBHOOK_URL) {
+    try {
+      const answer = await askN8nConsultant({
+        message: userText.trim(),
+        history: Array.isArray(messages) ? messages.slice(-8).map((m: any) => ({
+          role: m?.role === 'user' ? 'user' : 'assistant',
+          text: String(m?.text || '').slice(0, 1000)
+        })) : [],
+        system: systemInstruction,
+      });
+      if (answer) {
+        return res.json({
+          text: answer,
+          reply: answer,
+          groundingSources: [],
+          modelUsed: 'n8n-ollama',
+          guestMessagesRemaining
+        });
+      }
+    } catch (error: any) {
+      console.warn('[AI Consultant] n8n unavailable:', error?.message || error);
+    }
+    const offline = generateBoutiqueResponse(userText);
+    return res.json({
+      text: offline.reply,
+      reply: offline.reply,
+      groundingSources: offline.groundingSources,
+      modelUsed: 'allbarka-offline',
+      guestMessagesRemaining
+    });
+  }
 
   // Format conversational context for Gemini API
   const history = (messages || []).map((msg: any) => ({
@@ -983,7 +1047,8 @@ Behavior Guidelines:
         reply: responseText,
         groundingSources: groundingSources,
         modelUsed: selectedModel,
-        toolUsed: toolUsed
+        toolUsed: toolUsed,
+        guestMessagesRemaining
       });
       return;
     }
@@ -999,7 +1064,8 @@ Behavior Guidelines:
     reply: fallback.reply,
     groundingSources: fallback.groundingSources,
     modelUsed: 'allbarka-sommelier',
-    toolUsed: fallback.groundingSources.length > 0 ? 'googleMaps' : 'none'
+    toolUsed: fallback.groundingSources.length > 0 ? 'googleMaps' : 'none',
+    guestMessagesRemaining
   });
 });
 
