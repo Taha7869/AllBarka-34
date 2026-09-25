@@ -3,11 +3,11 @@ import { ArrowUpRight } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const categories = [
-  { id: 'premium-nuts', name: 'Premium Assorted Nuts', luxuryName: 'Assorted Nuts', eyebrow: 'Hand-picked', image: '/assets/categories/premium_nuts.png', altKey: 'imageAlt.categoryNuts', link: '/shop/nuts', featured: true },
-  { id: 'organic-dried-fruits', name: 'Organic Dried Fruits', luxuryName: 'Dried Fruits', eyebrow: 'Sun-dried', image: '/assets/categories/organic_dried_fruits.png', altKey: 'imageAlt.categoryDriedFruits', link: '/shop/dried-fruits' },
-  { id: 'cold-pressed-oils', name: 'Cold Pressed Oils', luxuryName: 'Cold Pressed Oils', eyebrow: 'Pure extracted', image: '/assets/categories/cold_pressed_oils.png', altKey: 'imageAlt.categoryOils', link: '/shop/oils' },
-  { id: 'luxury-hampers', name: 'Luxury Hampers & Gifts', luxuryName: 'Hampers & Gifts', eyebrow: 'Made for giving', image: '/assets/categories/luxury_hampers.png', altKey: 'imageAlt.categoryGifts', link: '/gifting' },
-  { id: 'wholesale-tiers', name: 'Wholesale Tiers', luxuryName: 'Wholesale Tiers', eyebrow: 'Bulk supply', image: '/assets/categories/wholesale_tiers.png', altKey: 'imageAlt.categoryWholesale', link: '/wholesale' },
+  { id: 'all', name: 'All Items', luxuryName: 'Full Boutique', eyebrow: 'Full boutique', image: '/assets/categories/all_items.png', altKey: 'imageAlt.hero', link: '/shop', featured: true },
+  { id: 'deals', name: 'Deals & Bundles', luxuryName: 'Deals & Bundles', eyebrow: 'Better together', image: '/assets/categories/deals.png', altKey: 'imageAlt.categoryDeals', link: '/shop/combos' },
+  { id: 'nuts', name: 'Dry Fruits & Nuts', luxuryName: 'Dry Fruits', eyebrow: 'Hand-graded', image: '/assets/categories/dry_fruits.png', altKey: 'imageAlt.categoryDryFruits', link: '/shop/nuts' },
+  { id: 'snacks-seeds', name: 'Snacks & Seeds', luxuryName: 'Snacks', eyebrow: 'Everyday pantry', image: '/assets/categories/snacks.png', altKey: 'imageAlt.categorySnacks', link: '/shop/snacks-seeds' },
+  { id: 'gift-boxes', name: 'Gift Boxes', luxuryName: 'Gift Boxes', eyebrow: 'Made for giving', image: '/assets/categories/gifts.png', altKey: 'imageAlt.categoryGifts', link: '/gifting' },
 ];
 
 export default function CategoryCarousel() {

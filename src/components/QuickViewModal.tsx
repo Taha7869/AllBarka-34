@@ -151,6 +151,15 @@ export default function QuickViewModal({
           {/* Subtle Soft Vignette Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
 
+          {/* Reference image caption for hampers */}
+          {(product?.category === 'hampers' || product?.category === 'deals' || product?.id?.includes('hamper')) && (
+            <div className="absolute bottom-4 right-4 z-20 pointer-events-none text-right flex justify-end">
+              <p className="text-[8.5px] italic text-white/90 bg-black/40 backdrop-blur-md px-2 py-1 rounded shadow-sm inline-block">
+                Reference image — actual packaging may vary slightly.
+              </p>
+            </div>
+          )}
+
           {/* Premium Bundle Tag */}
           {isPremiumBundle && (
             <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 bg-[var(--color-emerald)] text-[var(--color-gold)] text-[9px] font-black uppercase px-3 py-1.5 rounded-full tracking-wider shadow-md border border-[var(--color-gold)]/40">

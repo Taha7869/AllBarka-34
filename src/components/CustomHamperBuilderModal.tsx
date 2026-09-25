@@ -251,7 +251,7 @@ export default function CustomHamperBuilderModal({
                         </span>
                       )}
 
-                      <div className="aspect-video w-full rounded-xl overflow-hidden mb-3 bg-[#F6F1EA] dark:bg-black/20">
+                      <div className="aspect-video w-full rounded-xl overflow-hidden mb-2 bg-[#F6F1EA] dark:bg-black/20">
                         <img
                           src={box.image}
                           alt={box.name}
@@ -262,6 +262,9 @@ export default function CustomHamperBuilderModal({
                           decoding="async"
                         />
                       </div>
+                      <p className="text-[8px] italic text-[#635B52]/70 dark:text-[#A8A199]/70 text-left mb-2 leading-tight">
+                        Reference image — actual packaging may vary slightly.
+                      </p>
 
                       <div className="space-y-1 text-left">
                         <h5 className="font-serif font-bold text-xs sm:text-sm">{box.name}</h5>

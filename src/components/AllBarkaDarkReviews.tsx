@@ -108,7 +108,7 @@ const allBarkaCustomerStories = [
     subBadge: "GIFT COMBO BUYER",
     description: (
       <p>
-        &quot;Packaging buhat pyari thi! Airtight jar ki wajah se dry fruits ki freshness bilkul बरकरार rahi. Work-day fuel pack office snacking ke liye absolute best hai.&quot;
+        &quot;Packaging buhat pyari thi! Airtight jar ki wajah se dry fruits ki freshness bilkul barqarar rahi. Work-day fuel pack office snacking ke liye absolute best hai.&quot;
       </p>
     ),
     purchaseInfo: "Purchased: The Classics Combo",

@@ -168,6 +168,15 @@ export default function ProductDetailPage() {
               />
             )}
 
+            {/* Reference image caption for hampers */}
+            {(product?.category === 'hampers' || product?.category === 'deals' || product?.id?.includes('hamper')) && (
+              <div className="absolute bottom-4 left-4 right-4 z-10 text-center pointer-events-none">
+                <p className="text-[9px] italic text-[#635B52] dark:text-[#A8A199] bg-white/70 dark:bg-black/40 backdrop-blur-sm px-2 py-1 rounded inline-block w-auto mx-auto shadow-sm">
+                  Reference image — actual packaging may vary slightly.
+                </p>
+              </div>
+            )}
+
             {/* Tag Badge */}
             {getLocalized(product, 'tag', language) && (
               <div className="absolute top-4 left-4 z-10">
