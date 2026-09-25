@@ -723,7 +723,6 @@ export const PRODUCTS: Product[] = [
     imageName: 'products/oil-almond.jpg',
     prices: { '60ml': 750, '100ml': 1200, '250ml': 2800 },
     wholesale: 2400,
-<<<<<<< HEAD
     desc_en: 'Pure cold-pressed sweet almond oil extracted without heat to preserve maximum Vitamin E, fatty acids, and skin-nourishing properties.',
     desc_ur: 'Pure cold-pressed sweet almond oil extracted without heat to preserve maximum Vitamin E, fatty acids, and skin-nourishing properties.',
     desc_ar: 'Pure cold-pressed sweet almond oil extracted without heat to preserve maximum Vitamin E, fatty acids, and skin-nourishing properties.',
@@ -742,14 +741,6 @@ export const PRODUCTS: Product[] = [
     packagingDetails_en: 'Dark amber glass bottle with UV protection to preserve oil integrity.',
     packagingDetails_ur: 'Dark amber glass bottle with UV protection to preserve oil integrity.',
     packagingDetails_ar: 'Dark amber glass bottle with UV protection to preserve oil integrity.',
-=======
-    desc: 'Pure cold-pressed sweet almond oil extracted without heat to preserve maximum Vitamin E, fatty acids, and skin-nourishing properties.',
-    tasteProfile: 'Light, delicate nutty aroma; non-greasy absorption.',
-    origin: 'Certified Organic Cold-Press Facility',
-    harvest: 'First Cold-Press Extraction',
-    storageTips: 'Store in a cool, dark place away from direct sunlight. Refrigerate after opening.',
-    packagingDetails: 'Clear food-grade plastic bottle with a white screw cap and AllBarka label.',
->>>>>>> 74c7ad5e66fc52baf414c5b95f4cb429a44b099d
     keywords: ['almond oil', 'roghan badam', 'sweet almond', 'hair oil', 'skin oil', 'vitamin e oil']
   },
   {
@@ -771,7 +762,6 @@ export const PRODUCTS: Product[] = [
     imageName: 'products/oil-blackseed.jpg',
     prices: { '60ml': 650, '100ml': 1000, '250ml': 2300 },
     wholesale: 1900,
-<<<<<<< HEAD
     desc_en: 'Cold-pressed Nigella sativa (kalonji) oil — rich in thymoquinone for immune support, anti-inflammation, and respiratory wellness.',
     desc_ur: 'Cold-pressed Nigella sativa (kalonji) oil — rich in thymoquinone for immune support, anti-inflammation, and respiratory wellness.',
     desc_ar: 'Cold-pressed Nigella sativa (kalonji) oil — rich in thymoquinone for immune support, anti-inflammation, and respiratory wellness.',
@@ -790,14 +780,6 @@ export const PRODUCTS: Product[] = [
     packagingDetails_en: 'Dark glass UV-protective bottle with tamper-proof seal.',
     packagingDetails_ur: 'Dark glass UV-protective bottle with tamper-proof seal.',
     packagingDetails_ar: 'Dark glass UV-protective bottle with tamper-proof seal.',
-=======
-    desc: 'Cold-pressed Nigella sativa (kalonji) oil — rich in thymoquinone for immune support, anti-inflammation, and respiratory wellness.',
-    tasteProfile: 'Intensely aromatic with a peppery, slightly bitter profile.',
-    origin: 'Ethiopian & Egyptian Nigella Farms',
-    harvest: 'First Cold-Press Extraction',
-    storageTips: 'Keep tightly sealed in a cool, dry place. Do not refrigerate — may solidify.',
-    packagingDetails: 'Clear food-grade plastic bottle with a white screw cap and AllBarka label.',
->>>>>>> 74c7ad5e66fc52baf414c5b95f4cb429a44b099d
     keywords: ['kalonji oil', 'black seed oil', 'nigella sativa', 'kalonji', 'immune oil', 'prophetic medicine']
   },
   {
@@ -819,7 +801,6 @@ export const PRODUCTS: Product[] = [
     imageName: 'products/oil-coconut.jpg',
     prices: { '100ml': 700, '250ml': 1600 },
     wholesale: 1350,
-<<<<<<< HEAD
     desc_en: 'Cold-pressed virgin coconut oil sourced from fresh mature coconuts, retaining natural lauric acid and tropical aroma.',
     desc_ur: 'Cold-pressed virgin coconut oil sourced from fresh mature coconuts, retaining natural lauric acid and tropical aroma.',
     desc_ar: 'Cold-pressed virgin coconut oil sourced from fresh mature coconuts, retaining natural lauric acid and tropical aroma.',
@@ -835,13 +816,6 @@ export const PRODUCTS: Product[] = [
     packagingDetails_en: 'Food-grade glass jar with airtight metal lid.',
     packagingDetails_ur: 'Food-grade glass jar with airtight metal lid.',
     packagingDetails_ar: 'Food-grade glass jar with airtight metal lid.',
-=======
-    desc: 'Cold-pressed virgin coconut oil sourced from fresh mature coconuts, retaining natural lauric acid and tropical aroma.',
-    origin: 'Sri Lanka & Kerala Certified Cooperatives',
-    harvest: 'Virgin First Cold-Press',
-    storageTips: 'Solid below 24°C and liquid above. Both states are normal. Store away from sunlight.',
-    packagingDetails: 'Clear food-grade plastic bottle with a white screw cap and AllBarka label.',
->>>>>>> 74c7ad5e66fc52baf414c5b95f4cb429a44b099d
     keywords: ['coconut oil', 'nariyal oil', 'virgin coconut oil', 'cooking oil', 'hair oil']
   },
   {
@@ -863,7 +837,6 @@ export const PRODUCTS: Product[] = [
     imageName: 'products/oil-castor.jpg',
     prices: { '100ml': 700, '250ml': 1600 },
     wholesale: 1350,
-<<<<<<< HEAD
     desc_en: 'Cold-pressed pure castor oil, thick and potent, celebrated for promoting hair growth, scalp health, and natural lash thickness.',
     desc_ur: 'Cold-pressed pure castor oil, thick and potent, celebrated for promoting hair growth, scalp health, and natural lash thickness.',
     desc_ar: 'Cold-pressed pure castor oil, thick and potent, celebrated for promoting hair growth, scalp health, and natural lash thickness.',
@@ -879,13 +852,6 @@ export const PRODUCTS: Product[] = [
     packagingDetails_en: 'Dark amber glass bottle with precision dropper.',
     packagingDetails_ur: 'Dark amber glass bottle with precision dropper.',
     packagingDetails_ar: 'Dark amber glass bottle with precision dropper.',
-=======
-    desc: 'Cold-pressed pure castor oil, thick and potent, celebrated for promoting hair growth, scalp health, and natural lash thickness.',
-    origin: 'Rajasthan Certified Organic Farms',
-    harvest: 'Cold-Press Extraction',
-    storageTips: 'Store at room temperature. Viscous consistency is natural — does not indicate spoilage.',
-    packagingDetails: 'Clear food-grade plastic bottle with a white screw cap and AllBarka label.',
->>>>>>> 74c7ad5e66fc52baf414c5b95f4cb429a44b099d
     keywords: ['castor oil', 'arind oil', 'hair growth oil', 'brow oil', 'lash oil', 'ricinoleic acid']
   },
   {
@@ -904,7 +870,6 @@ export const PRODUCTS: Product[] = [
     imageName: 'products/oil-apricot.jpg',
     prices: { '100ml': 700 },
     wholesale: 600,
-<<<<<<< HEAD
     desc_en: 'Light, fast-absorbing oil pressed from apricot kernels — ideal for sensitive skin, massage, and carrier base blending.',
     desc_ur: 'Light, fast-absorbing oil pressed from apricot kernels — ideal for sensitive skin, massage, and carrier base blending.',
     desc_ar: 'Light, fast-absorbing oil pressed from apricot kernels — ideal for sensitive skin, massage, and carrier base blending.',
@@ -920,13 +885,6 @@ export const PRODUCTS: Product[] = [
     packagingDetails_en: 'Amber glass bottle with UV protection.',
     packagingDetails_ur: 'Amber glass bottle with UV protection.',
     packagingDetails_ar: 'Amber glass bottle with UV protection.',
-=======
-    desc: 'Light, fast-absorbing oil pressed from apricot kernels — ideal for sensitive skin, massage, and carrier base blending.',
-    origin: 'Hunza Valley Cold-Press Facility',
-    harvest: 'Stone-Pressed Extraction',
-    storageTips: 'Keep sealed and away from heat. Shelf life 12 months once opened.',
-    packagingDetails: 'Clear food-grade plastic bottle with a white screw cap and AllBarka label.',
->>>>>>> 74c7ad5e66fc52baf414c5b95f4cb429a44b099d
     keywords: ['apricot oil', 'khubani oil', 'apricot kernel', 'carrier oil', 'skin oil']
   },
   {
@@ -945,7 +903,6 @@ export const PRODUCTS: Product[] = [
     imageName: 'products/oil-sesame.jpg',
     prices: { '100ml': 700 },
     wholesale: 600,
-<<<<<<< HEAD
     desc_en: 'Cold-pressed unrefined sesame oil with a rich nutty flavor, traditionally used in Ayurvedic oil-pulling and deep scalp massage.',
     desc_ur: 'Cold-pressed unrefined sesame oil with a rich nutty flavor, traditionally used in Ayurvedic oil-pulling and deep scalp massage.',
     desc_ar: 'Cold-pressed unrefined sesame oil with a rich nutty flavor, traditionally used in Ayurvedic oil-pulling and deep scalp massage.',
@@ -961,13 +918,6 @@ export const PRODUCTS: Product[] = [
     packagingDetails_en: 'Food-grade amber glass bottle.',
     packagingDetails_ur: 'Food-grade amber glass bottle.',
     packagingDetails_ar: 'Food-grade amber glass bottle.',
-=======
-    desc: 'Cold-pressed unrefined sesame oil with a rich nutty flavor, traditionally used in Ayurvedic oil-pulling and deep scalp massage.',
-    origin: 'Punjab Sesame Heritage Farms',
-    harvest: 'Cold-Pressed First Extraction',
-    storageTips: 'Store in a cool, dark place. Does not require refrigeration.',
-    packagingDetails: 'Clear food-grade plastic bottle with a white screw cap and AllBarka label.',
->>>>>>> 74c7ad5e66fc52baf414c5b95f4cb429a44b099d
     keywords: ['sesame oil', 'til oil', 'gingelly oil', 'til ka tail', 'cooking oil', 'hair oil']
   },
   {
@@ -986,7 +936,6 @@ export const PRODUCTS: Product[] = [
     imageName: 'products/oil-flaxseed.jpg',
     prices: { '100ml': 700 },
     wholesale: 600,
-<<<<<<< HEAD
     desc_en: 'Cold-pressed linseed (alsi) oil, one of the richest plant-based sources of omega-3 ALA fatty acids for heart and brain health.',
     desc_ur: 'Cold-pressed linseed (alsi) oil, one of the richest plant-based sources of omega-3 ALA fatty acids for heart and brain health.',
     desc_ar: 'Cold-pressed linseed (alsi) oil, one of the richest plant-based sources of omega-3 ALA fatty acids for heart and brain health.',
@@ -1002,13 +951,6 @@ export const PRODUCTS: Product[] = [
     packagingDetails_en: 'Opaque UV-blocking dark bottle to prevent oxidation.',
     packagingDetails_ur: 'Opaque UV-blocking dark bottle to prevent oxidation.',
     packagingDetails_ar: 'Opaque UV-blocking dark bottle to prevent oxidation.',
-=======
-    desc: 'Cold-pressed linseed (alsi) oil, one of the richest plant-based sources of omega-3 ALA fatty acids for heart and brain health.',
-    origin: 'Canadian Flaxseed Co-operative',
-    harvest: 'First Cold-Press Extraction',
-    storageTips: 'Must be refrigerated after opening. Consume within 8 weeks. Light-sensitive.',
-    packagingDetails: 'Clear food-grade plastic bottle with a white screw cap and AllBarka label.',
->>>>>>> 74c7ad5e66fc52baf414c5b95f4cb429a44b099d
     keywords: ['flaxseed oil', 'linseed oil', 'alsi oil', 'omega 3 oil', 'alsi ka tail']
   },
   {
@@ -1027,7 +969,6 @@ export const PRODUCTS: Product[] = [
     imageName: 'products/oil-walnut.jpg',
     prices: { '100ml': 700 },
     wholesale: 600,
-<<<<<<< HEAD
     desc_en: 'Delicate cold-pressed walnut oil with a rich, nutty flavor profile. A gourmet finishing oil and powerful source of plant omega-3.',
     desc_ur: 'Delicate cold-pressed walnut oil with a rich, nutty flavor profile. A gourmet finishing oil and powerful source of plant omega-3.',
     desc_ar: 'Delicate cold-pressed walnut oil with a rich, nutty flavor profile. A gourmet finishing oil and powerful source of plant omega-3.',
@@ -1043,13 +984,6 @@ export const PRODUCTS: Product[] = [
     packagingDetails_en: 'Amber glass bottle with cork-seal freshness.',
     packagingDetails_ur: 'Amber glass bottle with cork-seal freshness.',
     packagingDetails_ar: 'Amber glass bottle with cork-seal freshness.',
-=======
-    desc: 'Delicate cold-pressed walnut oil with a rich, nutty flavor profile. A gourmet finishing oil and powerful source of plant omega-3.',
-    origin: 'Kashmiri Walnut Groves',
-    harvest: 'Stone-Mill Cold Extraction',
-    storageTips: 'Refrigerate after opening. Consume within 3 months. Do not use for high-heat cooking.',
-    packagingDetails: 'Clear food-grade plastic bottle with a white screw cap and AllBarka label.',
->>>>>>> 74c7ad5e66fc52baf414c5b95f4cb429a44b099d
     keywords: ['walnut oil', 'akhrot oil', 'brain oil', 'omega 3', 'gourmet oil']
   },
   {
@@ -1071,7 +1005,6 @@ export const PRODUCTS: Product[] = [
     imageName: 'products/oil-olive.jpg',
     prices: { '100ml': 700, '250ml': 1650 },
     wholesale: 1400,
-<<<<<<< HEAD
     desc_en: 'First cold-pressed extra virgin olive oil from handpicked Mediterranean olives with a bold peppery finish and rich golden color.',
     desc_ur: 'First cold-pressed extra virgin olive oil from handpicked Mediterranean olives with a bold peppery finish and rich golden color.',
     desc_ar: 'First cold-pressed extra virgin olive oil from handpicked Mediterranean olives with a bold peppery finish and rich golden color.',
@@ -1090,14 +1023,6 @@ export const PRODUCTS: Product[] = [
     packagingDetails_en: 'Dark green glass bottle with anti-drip pour spout.',
     packagingDetails_ur: 'Dark green glass bottle with anti-drip pour spout.',
     packagingDetails_ar: 'Dark green glass bottle with anti-drip pour spout.',
-=======
-    desc: 'First cold-pressed extra virgin olive oil from handpicked Mediterranean olives with a bold peppery finish and rich golden color.',
-    tasteProfile: 'Fruity, peppery finish with grassy Mediterranean notes.',
-    origin: 'Mediterranean Estate Groves',
-    harvest: 'Early Harvest Cold-Press',
-    storageTips: 'Store away from heat and light. Ideal below 18°C. No refrigeration needed.',
-    packagingDetails: 'Clear food-grade plastic bottle with a white screw cap and AllBarka label.',
->>>>>>> 74c7ad5e66fc52baf414c5b95f4cb429a44b099d
     keywords: ['olive oil', 'zaitoon oil', 'extra virgin', 'EVOO', 'cooking oil', 'salad oil']
   },
   {
@@ -1116,7 +1041,6 @@ export const PRODUCTS: Product[] = [
     imageName: 'products/oil-onionseed.jpg',
     prices: { '100ml': 700 },
     wholesale: 600,
-<<<<<<< HEAD
     desc_en: 'Potent cold-pressed onion seed oil rich in sulfur compounds, traditionally used to combat hair fall and promote follicle regeneration.',
     desc_ur: 'Potent cold-pressed onion seed oil rich in sulfur compounds, traditionally used to combat hair fall and promote follicle regeneration.',
     desc_ar: 'Potent cold-pressed onion seed oil rich in sulfur compounds, traditionally used to combat hair fall and promote follicle regeneration.',
@@ -1132,13 +1056,6 @@ export const PRODUCTS: Product[] = [
     packagingDetails_en: 'Dark amber glass bottle with sealed dropper.',
     packagingDetails_ur: 'Dark amber glass bottle with sealed dropper.',
     packagingDetails_ar: 'Dark amber glass bottle with sealed dropper.',
-=======
-    desc: 'Potent cold-pressed onion seed oil rich in sulfur compounds, traditionally used to combat hair fall and promote follicle regeneration.',
-    origin: 'Punjab Certified Processing Facility',
-    harvest: 'Single-Pass Cold Extraction',
-    storageTips: 'Store sealed at room temperature. Strong aroma is natural — indicates purity.',
-    packagingDetails: 'Clear food-grade plastic bottle with a white screw cap and AllBarka label.',
->>>>>>> 74c7ad5e66fc52baf414c5b95f4cb429a44b099d
     keywords: ['onion oil', 'pyaz oil', 'hair fall oil', 'scalp oil', 'onion seed']
   },
   {
@@ -1157,7 +1074,6 @@ export const PRODUCTS: Product[] = [
     imageName: 'products/oil-mustard.jpg',
     prices: { '100ml': 700, '500ml': 1400 },
     wholesale: 1200,
-<<<<<<< HEAD
     desc_en: 'Pungent, traditional cold-pressed sarson oil with a bold warming character — an essential of Pakistani and Punjabi cooking heritage.',
     desc_ur: 'Pungent, traditional cold-pressed sarson oil with a bold warming character — an essential of Pakistani and Punjabi cooking heritage.',
     desc_ar: 'Pungent, traditional cold-pressed sarson oil with a bold warming character — an essential of Pakistani and Punjabi cooking heritage.',
@@ -1176,14 +1092,6 @@ export const PRODUCTS: Product[] = [
     packagingDetails_en: 'Food-grade bottle with tamper-evident seal.',
     packagingDetails_ur: 'Food-grade bottle with tamper-evident seal.',
     packagingDetails_ar: 'Food-grade bottle with tamper-evident seal.',
-=======
-    desc: 'Pungent, traditional cold-pressed sarson oil with a bold warming character — an essential of Pakistani and Punjabi cooking heritage.',
-    tasteProfile: 'Sharp, pungent peppery bite with earthy warming undertones.',
-    origin: 'Punjab Mustard Seed Fields',
-    harvest: 'First Cold-Press Extraction',
-    storageTips: 'Store at room temperature away from sunlight. Traditional no-refrigeration oil.',
-    packagingDetails: 'Clear food-grade plastic bottle with a white screw cap and AllBarka label.',
->>>>>>> 74c7ad5e66fc52baf414c5b95f4cb429a44b099d
     keywords: ['mustard oil', 'sarson oil', 'sarson ka tail', 'cooking oil', 'massage oil', 'desi oil']
   },
   {
@@ -1205,7 +1113,6 @@ export const PRODUCTS: Product[] = [
     imageName: 'products/oil-hairblend.jpg',
     prices: { '100ml': 700 },
     wholesale: 600,
-<<<<<<< HEAD
     desc_en: 'AllBarka\'s bespoke blend of cold-pressed almond, castor, black seed, and coconut oils — a complete hair nourishment ritual in one bottle.',
     desc_ur: 'AllBarka\'s bespoke blend of cold-pressed almond, castor, black seed, and coconut oils — a complete hair nourishment ritual in one bottle.',
     desc_ar: 'AllBarka\'s bespoke blend of cold-pressed almond, castor, black seed, and coconut oils — a complete hair nourishment ritual in one bottle.',
@@ -1218,12 +1125,6 @@ export const PRODUCTS: Product[] = [
     packagingDetails_en: 'Premium amber glass bottle with AllBarka label.',
     packagingDetails_ur: 'Premium amber glass bottle with AllBarka label.',
     packagingDetails_ar: 'Premium amber glass bottle with AllBarka label.',
-=======
-    desc: 'AllBarka\'s bespoke blend of cold-pressed almond, castor, black seed, and coconut oils — a complete hair nourishment ritual in one bottle.',
-    origin: 'Blended In-House, Lahore',
-    storageTips: 'Store at room temperature. Shake gently before each use.',
-    packagingDetails: 'Clear food-grade plastic bottle with a white screw cap and AllBarka label.',
->>>>>>> 74c7ad5e66fc52baf414c5b95f4cb429a44b099d
     keywords: ['hair oil blend', 'special hair oil', 'mixed oil', 'hair growth', 'scalp treatment', 'hair care']
   },
   {
@@ -1245,7 +1146,6 @@ export const PRODUCTS: Product[] = [
     imageName: 'products/oil-hairgrowth.jpg',
     prices: { '100ml': 700 },
     wholesale: 600,
-<<<<<<< HEAD
     desc_en: 'Organic herbal growth oil infused with bhringraj, amla, and fenugreek extracts in a cold-pressed carrier base for maximum scalp absorption.',
     desc_ur: 'Organic herbal growth oil infused with bhringraj, amla, and fenugreek extracts in a cold-pressed carrier base for maximum scalp absorption.',
     desc_ar: 'Organic herbal growth oil infused with bhringraj, amla, and fenugreek extracts in a cold-pressed carrier base for maximum scalp absorption.',
@@ -1258,12 +1158,6 @@ export const PRODUCTS: Product[] = [
     packagingDetails_en: 'Dark dropper bottle with tamper-proof cap.',
     packagingDetails_ur: 'Dark dropper bottle with tamper-proof cap.',
     packagingDetails_ar: 'Dark dropper bottle with tamper-proof cap.',
-=======
-    desc: 'Organic herbal growth oil infused with bhringraj, amla, and fenugreek extracts in a cold-pressed carrier base for maximum scalp absorption.',
-    origin: 'Herbal Ayurvedic Extraction Facility',
-    storageTips: 'Store at room temperature. Avoid direct sunlight. Use within 12 months.',
-    packagingDetails: 'Clear food-grade plastic bottle with a white screw cap and AllBarka label.',
->>>>>>> 74c7ad5e66fc52baf414c5b95f4cb429a44b099d
     keywords: ['hair growth oil', 'bhringraj oil', 'amla oil', 'organic hair', 'herbal oil', 'scalp oil']
   },
 
