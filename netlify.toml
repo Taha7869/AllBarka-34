@@ -2,9 +2,12 @@
   command = "npm run build:web"
   publish = "dist"
 
+[functions]
+  node_bundler = "esbuild"
+
 [[redirects]]
   from = "/api/*"
-  to = "https://allbarkabot.duckdns.org/api/:splat"
+  to = "/.netlify/functions/api/:splat"
   status = 200
   force = true
 
