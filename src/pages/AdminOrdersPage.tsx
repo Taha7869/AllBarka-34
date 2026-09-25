@@ -136,6 +136,7 @@ export default function AdminOrdersPage() {
     if (isAdmin) {
       fetchOrders();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin, page, statusFilter]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {

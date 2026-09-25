@@ -131,7 +131,9 @@ export default function RootLayout() {
     addToCart({
       id: `${product.id}-${weight}`,
       productId: product.id,
-      name: product.name,
+      name_en: product.name_en,
+      name_ur: product.name_ur,
+      name_ar: product.name_ar,
       slug: product.id,
       image: getProductImage(product),
       selectedWeight: weight,

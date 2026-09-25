@@ -1,3 +1,4 @@
+import { getLocalized } from '../utils/localize';
 import React, { useEffect, useState, useId, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
@@ -20,6 +21,8 @@ import { useCart, parsePrice, formatPrice, FREE_SHIPPING_THRESHOLD } from '../co
 import { buildAutomatedOrderWhatsAppUrl } from '../config/contacts';
 import { acquireScrollLock } from '../utils/scrollLock';
 import { useLanguage } from '../contexts/LanguageContext';
+
+const PREFERRED_PAYMENT_KEY = 'allbarka_preferred_payment';
 
 function SafeCartImage({
   src,
@@ -50,6 +53,7 @@ function SafeCartImage({
       width={960}
       height={960}
       loading="lazy"
+      decoding="async"
       onError={() => setError(true)}
     />
   );
@@ -79,7 +83,7 @@ export default function CartDrawer({
   onAddToCart: propsOnAddToCart,
 }: CartDrawerProps) {
   const navigate = useNavigate();
-  const { t, isRtl } = useLanguage();
+  const { t, isRtl , language } = useLanguage();
   const context = useCart();
   const drawerHeadingId = useId();
 
@@ -93,12 +97,18 @@ export default function CartDrawer({
   const freeProgress = context.freeShippingProgress;
   const isFreeUnlocked = context.isFreeShippingUnlocked;
 
-  const [selectedPayment, setSelectedPayment] = useState<string>(
-    propsPaymentMethod || 'cod'
-  );
+  const [selectedPayment, setSelectedPayment] = useState<string>(() => {
+    if (propsPaymentMethod) return propsPaymentMethod;
+    try {
+      const saved = sessionStorage.getItem(PREFERRED_PAYMENT_KEY);
+      if (saved === 'cod' || saved === 'bank') return saved;
+    } catch { /* private mode */ }
+    return 'cod';
+  });
 
   const handlePaymentChange = (method: string) => {
     setSelectedPayment(method);
+    try { sessionStorage.setItem(PREFERRED_PAYMENT_KEY, method); } catch { /* private mode */ }
     if (propsOnSetPaymentMethod) propsOnSetPaymentMethod(method);
   };
 
@@ -154,6 +164,7 @@ export default function CartDrawer({
   };
 
   const handleProceedToCheckout = () => {
+    try { sessionStorage.setItem(PREFERRED_PAYMENT_KEY, selectedPayment); } catch { /* private mode */ }
     if (isNavigatingRef.current) return;
     isNavigatingRef.current = true;
     closeDrawer();
@@ -188,7 +199,7 @@ export default function CartDrawer({
     const lines = cartItems.map((item) => {
       const itemUnit = parsePrice(item.unitPrice || item.price);
       const itemTotal = itemUnit * item.quantity;
-      return `• ${item.name} (${item.selectedWeight}) × ${item.quantity} = Rs. ${itemTotal.toLocaleString()}`;
+      return `• ${getLocalized(item, 'name', language)} (${item.selectedWeight}) × ${item.quantity} = Rs. ${itemTotal.toLocaleString()}`;
     });
 
     const shippingLine = isFreeUnlocked
@@ -349,14 +360,14 @@ export default function CartDrawer({
                       >
                         <SafeCartImage
                           src={imageSource}
-                          alt={t(`imageAlt.${item.productId || item.slug}`, item.name)}
+                          alt={t(`imageAlt.${item.productId || item.slug}`, getLocalized(item, 'name', language))}
                           className="w-16 h-16 object-cover rounded-xl shrink-0 bg-[#F6F1EA] dark:bg-[#222A28] border border-[#29231D]/8 dark:border-[#F6F1EA]/10"
-                          fallbackText={item.name}
+                          fallbackText={getLocalized(item, 'name', language)}
                         />
 
                         <div className="flex-1 min-w-0">
                           <h4 className="font-serif font-bold text-[#29231D] dark:text-[#F6F1EA] text-sm truncate leading-tight">
-                            {item.name}
+                            {getLocalized(item, 'name', language)}
                           </h4>
                           <div className="flex items-center gap-2 mt-1">
                             <span className="inline-block px-2 py-0.5 rounded-md bg-[#F6F1EA] dark:bg-[#222A28] border border-[#29231D]/10 dark:border-[#F6F1EA]/10 text-[#635B52] dark:text-[#A8A199] text-[9.5px] font-semibold uppercase tracking-wider">
@@ -379,8 +390,8 @@ export default function CartDrawer({
                             className="w-11 h-11 min-w-[44px] min-h-[44px] bg-[#FFFCF7] dark:bg-[#1A201E] text-[#29231D] dark:text-[#F6F1EA] flex items-center justify-center rounded-lg hover:bg-[#C7982F] hover:text-[#042821] transition-all active:scale-95 shadow-xs cursor-pointer border border-[#29231D]/10 dark:border-[#F6F1EA]/10 focus-ring"
                             aria-label={
                               item.quantity === 1
-                                ? `Remove ${item.name} from cart`
-                                : `Decrease quantity of ${item.name}`
+                                ? `Remove ${getLocalized(item, 'name', language)} from cart`
+                                : `Decrease quantity of ${getLocalized(item, 'name', language)}`
                             }
                           >
                             <Minus size={14} />
@@ -393,7 +404,7 @@ export default function CartDrawer({
                             value={item.quantity}
                             onChange={(e) => handleQuantityDirect(item, e.target.value)}
                             className="w-8 text-center bg-transparent font-mono text-sm font-bold text-[#29231D] dark:text-[#F6F1EA] focus:outline-hidden"
-                            aria-label={`Quantity for ${item.name}`}
+                            aria-label={`Quantity for ${getLocalized(item, 'name', language)}`}
                           />
 
                           <button
@@ -401,7 +412,7 @@ export default function CartDrawer({
                             onClick={() => handleQuantityDelta(item, 1)}
                             disabled={item.quantity >= 50}
                             className="w-11 h-11 min-w-[44px] min-h-[44px] bg-[#FFFCF7] dark:bg-[#1A201E] text-[#29231D] dark:text-[#F6F1EA] flex items-center justify-center rounded-lg hover:bg-[#C7982F] hover:text-[#042821] transition-all active:scale-95 shadow-xs cursor-pointer border border-[#29231D]/10 dark:border-[#F6F1EA]/10 disabled:opacity-40 disabled:cursor-not-allowed focus-ring"
-                            aria-label={`Increase quantity of ${item.name}`}
+                            aria-label={`Increase quantity of ${getLocalized(item, 'name', language)}`}
                           >
                             <Plus size={14} />
                           </button>
@@ -412,7 +423,7 @@ export default function CartDrawer({
                           type="button"
                           onClick={() => handleRemove(item)}
                           className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 rounded-xl transition-colors shrink-0 cursor-pointer focus-ring"
-                          aria-label={`Remove ${item.name} (${item.selectedWeight}) from cart`}
+                          aria-label={`Remove ${getLocalized(item, 'name', language)} (${item.selectedWeight}) from cart`}
                         >
                           <Trash2 size={16} />
                         </button>
@@ -448,14 +459,14 @@ export default function CartDrawer({
                           <div className="w-full relative aspect-4/3 rounded-lg overflow-hidden bg-[#F6F1EA] dark:bg-[#222A28] shrink-0 border border-[#29231D]/8 dark:border-[#F6F1EA]/8">
                             <SafeCartImage
                               src={getProductImage(prod)}
-                              alt={t(`imageAlt.${prod.id}`, prod.name)}
+                              alt={t(`imageAlt.${prod.id}`, getLocalized(prod, 'name', language))}
                               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                              fallbackText={prod.name}
+                              fallbackText={getLocalized(prod, 'name', language)}
                             />
                           </div>
                           <div className="w-full min-w-0">
                             <h4 className="font-serif font-bold text-[#29231D] dark:text-[#F6F1EA] text-xs truncate leading-tight">
-                              {prod.name}
+                              {getLocalized(prod, 'name', language)}
                             </h4>
                             <p className="text-[9px] text-[#806326] dark:text-[#E4C783] uppercase tracking-wider font-semibold">
                               {firstWeight}

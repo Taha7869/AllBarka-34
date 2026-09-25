@@ -102,7 +102,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return {
               id: compositeId,
               productId: rawProductId,
-              name: item.name || 'Artisanal Dry Fruit',
+              name_en: item.name_en || item.name || 'Artisanal Dry Fruit',
+              name_ur: item.name_ur || item.name || 'Artisanal Dry Fruit',
+              name_ar: item.name_ar || item.name || 'Artisanal Dry Fruit',
               slug: item.slug || rawProductId,
               image: item.image || '',
               selectedWeight: rawWeight,
@@ -191,7 +193,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const unitPrice = parsePrice(rawPrice);
       const effectiveQty = quantity !== undefined ? quantity : ((productOrItem as any).quantity || 1);
       const cleanQty = Math.max(1, Math.min(50, effectiveQty));
-      const imageSrc = (productOrItem as any).image || (fullProd.image ? fullProd.image : getProductImage(fullProd as Product));
+      const imageSrc = fullProd?.id ? getProductImage(fullProd as Product) : ((productOrItem as any).image || '');
       const isWholesale = typeof (productOrItem as any).wholesale === 'boolean'
         ? (productOrItem as any).wholesale
         : false;
@@ -213,7 +215,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const newItem: CartItem = {
           id: compositeId,
           productId: rawProdId,
-          name: fullProd.name || (productOrItem as any).name || 'Artisanal Selection',
+          name_en: fullProd.name_en || (productOrItem as any).name_en || (productOrItem as any).name || 'Artisanal Selection',
+          name_ur: fullProd.name_ur || (productOrItem as any).name_ur || (productOrItem as any).name || 'Artisanal Selection',
+          name_ar: fullProd.name_ar || (productOrItem as any).name_ar || (productOrItem as any).name || 'Artisanal Selection',
           slug: fullProd.id || rawProdId,
           image: imageSrc,
           selectedWeight,
@@ -226,7 +230,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       // Subtle toast notification & auto-open cart drawer
-      addToast(`${fullProd.name || 'Item'} (${selectedWeight}) added to your box`, 'success');
+      addToast(`${fullProd.name_en || 'Item'} (${selectedWeight}) added to your box`, 'success');
       setIsCartPulsing(true);
       setTimeout(() => setIsCartPulsing(false), 800);
       setIsCartOpen(true);

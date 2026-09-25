@@ -19,12 +19,13 @@ import { PRODUCTS, getProductImage } from '../data/products';
 import SEO from '../components/SEO';
 import { useCart } from '../contexts/CartContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { getLocalized } from '../utils/localize';
 
 export default function JournalPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { addToCart, setIsCartOpen } = useCart();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
@@ -59,7 +60,9 @@ export default function JournalPage() {
     addToCart({
       id: `${product.id}-${defaultWeight}`,
       productId: product.id,
-      name: product.name,
+      name_en: product.name_en,
+      name_ur: product.name_ur,
+      name_ar: product.name_ar,
       slug: product.id,
       image: getProductImage(product),
       selectedWeight: defaultWeight,
@@ -216,6 +219,7 @@ export default function JournalPage() {
               width={960}
               height={960}
               className="w-full h-full object-cover"
+            decoding="async"
             />
           </div>
 
@@ -296,14 +300,16 @@ export default function JournalPage() {
                         <div className="aspect-square rounded-xl overflow-hidden bg-[var(--color-base,#F6F1EA)] border border-[var(--color-gold,#C7982F)]/20 p-2">
                           <img
                             src={getProductImage(p)}
-                            alt={t(`imageAlt.${p.id}`, p.name)}
+                            alt={t(`imageAlt.${p.id}`, getLocalized(p, 'name', language))}
                             width={960}
                             height={960}
                             className="w-full h-full object-cover rounded-lg group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                          decoding="async"
                           />
                         </div>
                         <h4 className="text-xs font-bold font-serif text-[var(--color-ink,#29231D)] line-clamp-2">
-                          {p.name}
+                          {getLocalized(p, 'name', language)}
                         </h4>
                         <p className="text-xs font-bold text-[var(--color-emerald,#042821)]">
                           Rs. {firstPrice.toLocaleString()} <span className="text-[10px] text-[var(--color-ink,#29231D)]/60 font-normal">({firstWeight})</span>
@@ -431,6 +437,8 @@ export default function JournalPage() {
                   width={960}
                   height={960}
                   className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
+                loading="lazy"
+                decoding="async"
                 />
               </div>
 
@@ -486,6 +494,8 @@ export default function JournalPage() {
                     width={960}
                     height={960}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  loading="lazy"
+                  decoding="async"
                   />
                 </Link>
 

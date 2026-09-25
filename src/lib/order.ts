@@ -96,7 +96,7 @@ export async function placeOrder(payload: OrderPayload): Promise<OrderResponse> 
         items: payload.items.map(item => ({
           id: item.id,
           productId: item.productId,
-          name: item.name,
+          name: item.name_en,
           selectedWeight: item.selectedWeight,
           quantity: item.quantity,
           price: item.unitPrice ?? item.price,
@@ -223,7 +223,7 @@ export async function getOrderQuote(params: {
         items: params.items.map(item => ({
           id: item.id,
           productId: item.productId,
-          name: item.name,
+          name: item.name_en,
           selectedWeight: item.selectedWeight,
           quantity: item.quantity,
           price: item.unitPrice ?? item.price,

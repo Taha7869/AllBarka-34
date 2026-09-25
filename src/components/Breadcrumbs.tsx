@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { ChevronRight, Home } from 'lucide-react';
 import { PRODUCTS } from '../data/products';
 import { useLanguage } from '../contexts/LanguageContext';
+import { getLocalized } from '../utils/localize';
 
 export interface BreadcrumbItem {
   label: string;
@@ -66,7 +67,7 @@ export default function Breadcrumbs({ items: customItems, className = '' }: Brea
           path: `/shop?category=${product.category}`
         });
         result.push({
-          label: product.name,
+          label: getLocalized(product, 'name', language),
           isCurrent: true
         });
       } else {

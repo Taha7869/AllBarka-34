@@ -1,3 +1,4 @@
+import { getLocalized } from '../utils/localize';
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, MessageCircle, ShoppingCart } from 'lucide-react';
@@ -10,7 +11,7 @@ import { buildAutomatedOrderWhatsAppUrl } from '../config/contacts';
 
 export default function CartPage() {
   const navigate = useNavigate();
-  const { t, isRtl } = useLanguage();
+  const { t, isRtl , language } = useLanguage();
   const {
     cartItems,
     subtotal,
@@ -31,7 +32,7 @@ export default function CartPage() {
     const lines = cartItems.map((item) => {
       const itemUnit = parsePrice(item.unitPrice || item.price);
       const itemTotal = itemUnit * item.quantity;
-      return `• ${item.name} (${item.selectedWeight}) × ${item.quantity} = Rs. ${itemTotal.toLocaleString()}`;
+      return `• ${getLocalized(item, 'name', language)} (${item.selectedWeight}) × ${item.quantity} = Rs. ${itemTotal.toLocaleString()}`;
     });
     const shippingLine = isFreeShippingUnlocked
       ? 'Shipping: FREE (order over Rs. 3,000)'
@@ -139,8 +140,12 @@ export default function CartPage() {
                   <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-[#F6F1EA] dark:bg-[#222A28] border border-[#29231D]/8 shrink-0">
                     <img
                       src={imageSource}
-                      alt={item.name}
+                      alt={getLocalized(item, 'name', language)}
+                      width={96}
+                      height={96}
                       className="w-full h-full object-cover"
+                      loading="lazy"
+                      decoding="async"
                       onError={(e) => { (e.target as HTMLImageElement).src = '/images/product-placeholder.svg'; }}
                     />
                   </div>
@@ -148,7 +153,7 @@ export default function CartPage() {
                   {/* Details */}
                   <div className="flex-1 min-w-0">
                     <h3 className="font-serif font-bold text-[#29231D] dark:text-[#F6F1EA] text-sm sm:text-base line-clamp-1">
-                      {item.name}
+                      {getLocalized(item, 'name', language)}
                     </h3>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="inline-block px-2 py-0.5 rounded-md bg-[#F6F1EA] dark:bg-[#222A28] border border-[#29231D]/10 text-[#635B52] dark:text-[#A8A199] text-[9.5px] font-semibold uppercase tracking-wider">
@@ -166,7 +171,7 @@ export default function CartPage() {
                           type="button"
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
                           className="w-10 h-10 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg hover:bg-[#C7982F] hover:text-[#042821] transition-all cursor-pointer"
-                          aria-label={item.quantity === 1 ? `Remove ${item.name}` : `Decrease ${item.name}`}
+                          aria-label={item.quantity === 1 ? `Remove ${getLocalized(item, 'name', language)}` : `Decrease ${getLocalized(item, 'name', language)}`}
                         >
                           <Minus size={13} />
                         </button>
@@ -178,7 +183,7 @@ export default function CartPage() {
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
                           disabled={item.quantity >= 50}
                           className="w-10 h-10 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg hover:bg-[#C7982F] hover:text-[#042821] transition-all cursor-pointer disabled:opacity-40"
-                          aria-label={`Increase ${item.name}`}
+                          aria-label={`Increase ${getLocalized(item, 'name', language)}`}
                         >
                           <Plus size={13} />
                         </button>
@@ -192,7 +197,7 @@ export default function CartPage() {
                           type="button"
                           onClick={() => removeFromCart(item.id)}
                           className="w-9 h-9 flex items-center justify-center text-red-600 hover:text-red-700 dark:text-red-400 rounded-xl transition-colors cursor-pointer"
-                          aria-label={`Remove ${item.name}`}
+                          aria-label={`Remove ${getLocalized(item, 'name', language)}`}
                         >
                           <Trash2 size={15} />
                         </button>

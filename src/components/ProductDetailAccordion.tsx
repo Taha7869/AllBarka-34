@@ -1,3 +1,4 @@
+import { getLocalized } from '../utils/localize';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -16,6 +17,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { Product } from '../types';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ProductDetailAccordionProps {
   product: Product;
@@ -30,6 +32,7 @@ export default function ProductDetailAccordion({
   className = '',
   defaultOpenKey = 'storage'
 }: ProductDetailAccordionProps) {
+  const { language } = useLanguage();
   const [openSection, setOpenSection] = useState<string | null>(defaultOpenKey);
 
   const toggleSection = (key: string) => {
@@ -38,13 +41,13 @@ export default function ProductDetailAccordion({
 
   // Dynamic tailored details based on product type
   const getProductDetails = (p: Product) => {
-    let origin = p.origin || 'Premium High-Altitude Orchards';
-    let harvest = p.harvest || 'Peak Seasonal Crop';
+    let origin = getLocalized(p, 'origin', language) || 'Premium High-Altitude Orchards';
+    let harvest = getLocalized(p, 'harvest', language) || 'Peak Seasonal Crop';
     
-    let sourcing = p.sourcingDetails || 'Curated directly from verified regional growers. Each batch is inspected for density, oil richness, and whole-kernel integrity without chemical bleaching.';
-    let storage = p.storageTips || 'Store in an airtight container in a cool, dry cupboard. In summer or for storage over 45 days, refrigerate in glass jars to protect natural crispness.';
-    let packaging = p.packagingDetails || 'Multi-layer food-grade barrier pouch with zip-lock closure, protecting kernels from ambient humidity and light.';
-    let culinary = p.recipe || 'Enjoy as a wholesome raw snack or pair with traditional tea and desserts.';
+    let sourcing = getLocalized(p, 'sourcingDetails', language) || 'Curated directly from verified regional growers. Each batch is inspected for density, oil richness, and whole-kernel integrity without chemical bleaching.';
+    let storage = getLocalized(p, 'storageTips', language) || 'Store in an airtight container in a cool, dry cupboard. In summer or for storage over 45 days, refrigerate in glass jars to protect natural crispness.';
+    let packaging = getLocalized(p, 'packagingDetails', language) || 'Multi-layer food-grade barrier pouch with zip-lock closure, protecting kernels from ambient humidity and light.';
+    let culinary = getLocalized(p, 'recipe', language) || 'Enjoy as a wholesome raw snack or pair with traditional tea and desserts.';
 
     return { origin, harvest, sourcing, storage, packaging, culinary };
   };
@@ -268,7 +271,7 @@ export default function ProductDetailAccordion({
               >
                 <div className="p-4 pt-1 space-y-2 text-xs leading-relaxed text-[var(--color-ink-muted,#5A5A5A)]">
                   <p className="text-[var(--color-ink,#1A1A1A)]/90 font-medium">
-                    {product.allergenWarning || 'Packed in a facility that handles tree nuts, peanuts, sesame seeds, and dried fruits.'}
+                    {getLocalized(product, 'allergenWarning', language) || 'Packed in a facility that handles tree nuts, peanuts, sesame seeds, and dried fruits.'}
                   </p>
                   <p className="text-[11px] text-[var(--color-ink,#1A1A1A)]/70">
                     All lots are visually inspected and nitrogen sealed in our climate-controlled roastery in Lahore.

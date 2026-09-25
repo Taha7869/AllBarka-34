@@ -60,7 +60,7 @@ export const StickyCartBottomBar: React.FC<StickyCartBottomBarProps> = ({
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 80, opacity: 0 }}
           transition={{ duration: 0.25, ease: 'easeOut' }}
-          className="fixed bottom-3 sm:bottom-5 inset-x-0 z-30 max-w-xl mx-auto px-3 sm:px-4 pointer-events-none"
+          className="fixed bottom-3 sm:bottom-5 inset-x-0 z-30 max-w-xl mx-auto px-3 sm:px-4 pointer-events-none pb-[env(safe-area-inset-bottom)]"
         >
           {/* Card Container in Whitish Cream Luxury Theme */}
           <div className="pointer-events-auto bg-[#FAF9F5]/98 backdrop-blur-xl border-2 border-[#D4AF6A] rounded-2xl sm:rounded-full p-2 sm:pl-5 shadow-[0_12px_40px_rgba(43,27,20,0.25),0_0_24px_rgba(212,175,106,0.3)] flex items-center justify-between gap-2 sm:gap-3 select-none text-left">

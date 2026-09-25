@@ -255,7 +255,11 @@ export default function CustomHamperBuilderModal({
                         <img
                           src={box.image}
                           alt={box.name}
+                          width={640}
+                          height={360}
                           className="w-full h-full object-cover"
+                          loading="lazy"
+                          decoding="async"
                         />
                       </div>
 

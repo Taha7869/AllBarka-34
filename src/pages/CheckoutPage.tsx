@@ -1,3 +1,4 @@
+import { getLocalized } from '../utils/localize';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
@@ -40,8 +41,11 @@ import { useCart, parsePrice, formatPrice } from '../contexts/CartContext';
 import { STORE_CONFIG } from '../config/store';
 import { buildAutomatedOrderWhatsAppUrl } from '../config/contacts';
 import { placeOrder } from '../lib/order';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // Popular Lahore Neighborhoods for Rapid Delivery Pinning
+
+const PREFERRED_PAYMENT_KEY = 'allbarka_preferred_payment';
 
 export type CheckoutStep = 'details' | 'shipping' | 'payment' | 'success';
 
@@ -56,6 +60,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   const { cartItems, clearCart } = useCart();
   const { patronProfile, currentUser } = useAuth();
   const onOpenAuth = propsOnOpenAuth || (() => {});
+  const { language } = useLanguage();
 
   // 1. All Hooks declared unconditionally at the top (Rules of Hooks)
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('details');
@@ -72,7 +77,13 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   const selectedShippingMethod = 'standard';
   const [internalShippingMethod, setInternalShippingMethod] = useState<ShippingMethodId>(selectedShippingMethod);
   const activeShippingMethod = internalShippingMethod;
-  const [selectedPayment, setSelectedPayment] = useState<string>('cod');
+  const [selectedPayment, setSelectedPayment] = useState<string>(() => {
+    try {
+      const saved = sessionStorage.getItem(PREFERRED_PAYMENT_KEY);
+      if (saved === 'cod' || saved === 'bank') return saved;
+    } catch { /* private mode */ }
+    return 'cod';
+  });
 
   const [formData, setFormData] = useState({
     name: patronProfile?.name || '',
@@ -724,7 +735,7 @@ const handleInputChange = (field: string, value: any) => {
                       {cartItems.map((item, idx) => (
                         <div key={idx} className="flex justify-between items-center text-[11px] text-[var(--color-ink,#1F120F)]/80">
                           <span className="truncate max-w-[240px]">
-                            {item.name} <span className="text-[10px] text-[var(--color-gold,#B8935F)]">({item.selectedWeight})</span> x {item.quantity}
+                            {getLocalized(item, 'name', language)} <span className="text-[10px] text-[var(--color-gold,#B8935F)]">({item.selectedWeight})</span> x {item.quantity}
                           </span>
                           <span className="font-bold shrink-0">Rs. {(item.price * item.quantity)?.toLocaleString()}</span>
                         </div>
@@ -942,7 +953,10 @@ const handleInputChange = (field: string, value: any) => {
                     <div className="grid grid-cols-2 gap-2.5">
                       <button
                         type="button"
-                        onClick={() => setSelectedPayment('cod')}
+                        onClick={() => {
+                            setSelectedPayment('cod');
+                            try { sessionStorage.setItem(PREFERRED_PAYMENT_KEY, 'cod'); } catch { /* private mode */ }
+                          }}
                         className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
                           selectedPayment === 'cod'
                             ? 'bg-[var(--color-ink,#1F120F)] text-[var(--color-surface,#FDFBF7)] border-[var(--color-gold,#B8935F)] shadow-xs'
@@ -960,7 +974,10 @@ const handleInputChange = (field: string, value: any) => {
 
                       <button
                         type="button"
-                        onClick={() => setSelectedPayment('bank')}
+                        onClick={() => {
+                            setSelectedPayment('bank');
+                            try { sessionStorage.setItem(PREFERRED_PAYMENT_KEY, 'bank'); } catch { /* private mode */ }
+                          }}
                         className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
                           selectedPayment === 'bank'
                             ? 'bg-[var(--color-ink,#1F120F)] text-[var(--color-surface,#FDFBF7)] border-[var(--color-gold,#B8935F)] shadow-xs'
@@ -1180,7 +1197,7 @@ const handleInputChange = (field: string, value: any) => {
                         {orderItemsSnapshot.map((item, idx) => (
                           <div key={idx} className="flex justify-between items-center text-[11px] text-[var(--color-ink,#1F120F)]/85">
                             <span className="truncate max-w-[220px]">
-                              {item.name} <span className="text-[10px] font-medium text-[var(--color-gold,#B8935F)]">({item.selectedWeight})</span> x {item.quantity}
+                              {getLocalized(item, 'name', language)} <span className="text-[10px] font-medium text-[var(--color-gold,#B8935F)]">({item.selectedWeight})</span> x {item.quantity}
                             </span>
                             <span className="font-bold shrink-0">
                               Rs. {(parsePrice(item.unitPrice ?? item.price) * item.quantity).toLocaleString()}

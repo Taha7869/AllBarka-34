@@ -9,12 +9,13 @@ import { ShoppingBag, ShieldCheck, Check, Sparkles, ArrowRight, Truck, Award, Al
 import { useCart } from '../contexts/CartContext';
 import TrustBadges from '../components/TrustBadges';
 import { useLanguage } from '../contexts/LanguageContext';
+import { getLocalized } from '../utils/localize';
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { addToCart, setIsCartOpen } = useCart();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   
   const product = PRODUCTS.find((p) => p.id === id);
   const [selectedWeightIndex, setSelectedWeightIndex] = useState(0);
@@ -90,7 +91,9 @@ export default function ProductDetailPage() {
     addToCart({
       id: `${product.id}-${selectedWeight}`,
       productId: product.id,
-      name: product.name,
+      name_en: product.name_en,
+      name_ur: product.name_ur,
+      name_ar: product.name_ar,
       slug: product.id,
       image: getProductImage(product),
       selectedWeight: selectedWeight,
@@ -110,17 +113,19 @@ export default function ProductDetailPage() {
   return (
     <div className="w-full bg-[var(--color-base,#F6F1EA)] pt-6 sm:pt-10 pb-24 select-none">
       <SEO
-        title={product.name}
-        description={product.desc}
+        title={getLocalized(product, 'name', language)}
+        description={getLocalized(product, 'desc', language)}
         canonicalPath={`/product/${product.id}`}
         type="product"
         image={getProductImage(product)}
         structuredData={{
           '@context': 'https://schema.org',
           '@type': 'Product',
-          name: product.name,
+          name_en: product.name_en,
+      name_ur: product.name_ur,
+      name_ar: product.name_ar,
           image: `https://allbarka.com${getProductImage(product)}`,
-          description: product.desc,
+          description: getLocalized(product, 'desc', language),
           sku: product.id,
           brand: {
             '@type': 'Brand',
@@ -148,34 +153,35 @@ export default function ProductDetailPage() {
                   <Sparkles size={28} />
                 </div>
                 <span className="text-xs font-bold uppercase tracking-widest text-[var(--color-gold,#C7982F)]">AllBarka Reserve Lot</span>
-                <span className="text-lg font-serif font-bold text-[var(--color-ink,#29231D)] mt-1">{product.name}</span>
+                <span className="text-lg font-serif font-bold text-[var(--color-ink,#29231D)] mt-1">{getLocalized(product, 'name', language)}</span>
               </div>
             ) : (
               <img
                 src={getProductImage(product)}
-                alt={t(`imageAlt.${product.id}`, product.name)}
+                alt={t(`imageAlt.${product.id}`, getLocalized(product, 'name', language))}
                 width={960}
                 height={960}
                 referrerPolicy="no-referrer"
+                decoding="async"
                 onError={() => setImageError(true)}
                 className="w-full h-full object-cover rounded-2xl group-hover:scale-105 transition-transform duration-500 ease-out"
               />
             )}
 
             {/* Tag Badge */}
-            {product.tag && (
+            {getLocalized(product, 'tag', language) && (
               <div className="absolute top-4 left-4 z-10">
                 <span className="px-3.5 py-1.5 rounded-full text-[10px] font-sans font-bold uppercase tracking-widest bg-[var(--color-primary,#042821)] text-[var(--color-text-on-emerald,#FFFCF7)] border border-[var(--color-accent,#C7982F)]/50 shadow-md">
-                  {product.tag}
+                  {getLocalized(product, 'tag', language)}
                 </span>
               </div>
             )}
 
             {/* Origin Pill */}
-            {product.origin && (
+            {getLocalized(product, 'origin', language) && (
               <div className="absolute bottom-4 left-4 z-10">
                 <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/90 dark:bg-[#1A201E]/90 text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)] border border-[var(--color-accent,#C7982F)]/30 backdrop-blur-xs shadow-xs">
-                  {product.origin}
+                  {getLocalized(product, 'origin', language)}
                 </span>
               </div>
             )}
@@ -188,27 +194,27 @@ export default function ProductDetailPage() {
                 Single-Origin Batch • Hand-Sorted Lahore
               </span>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold text-[var(--color-primary,#042821)] dark:text-[var(--color-text-primary,#F6F1EA)] leading-tight mb-2">
-                {product.name}
+                {getLocalized(product, 'name', language)}
               </h1>
               <p className="text-sm text-[var(--color-text-secondary,#635B52)] dark:text-[var(--color-text-secondary,#B4C0BC)] font-normal leading-relaxed">
-                {product.desc}
+                {getLocalized(product, 'desc', language)}
               </p>
 
-              {product.tasteProfile && (
+              {getLocalized(product, 'tasteProfile', language) && (
                 <div className="mt-3 p-3 rounded-xl bg-[var(--color-surface,#FFFCF7)] dark:bg-[#1A201E] border border-[var(--color-accent,#C7982F)]/25 text-xs text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)]">
                   <span className="font-bold text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] uppercase tracking-wider text-[10px] block mb-0.5">
                     Taste Profile
                   </span>
-                  <span>{product.tasteProfile}</span>
+                  <span>{getLocalized(product, 'tasteProfile', language)}</span>
                 </div>
               )}
 
-              {product.contents && (
+              {getLocalized(product, 'contents', language) && (
                 <div className="mt-2.5 p-3 rounded-xl bg-[var(--color-surface,#FFFCF7)] dark:bg-[#1A201E] border border-[var(--color-accent,#C7982F)]/25 text-xs text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)]">
                   <span className="font-bold text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] uppercase tracking-wider text-[10px] block mb-0.5">
                     Pack Contents
                   </span>
-                  <span>{product.contents}</span>
+                  <span>{getLocalized(product, 'contents', language)}</span>
                 </div>
               )}
             </div>
@@ -411,11 +417,13 @@ export default function ProductDetailPage() {
                       <div className="w-full aspect-square rounded-xl bg-[#FAF9F5] border border-[var(--color-gold,#C7982F)]/15 overflow-hidden flex items-center justify-center p-3 mb-3 relative">
                         <img
                           src={getProductImage(rel)}
-                          alt={t(`imageAlt.${rel.id}`, rel.name)}
+                          alt={t(`imageAlt.${rel.id}`, getLocalized(rel, 'name', language))}
                           width={960}
                           height={960}
                           className="w-full h-full object-cover rounded-lg group-hover:scale-105 transition-transform duration-500"
                           loading="lazy"
+                          decoding="async"
+                          onError={(e) => { (e.target as HTMLImageElement).src = '/images/product-placeholder.svg'; }}
                         />
                         {rel.origin && (
                           <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-white/90 text-[var(--color-ink,#29231D)] border border-[var(--color-gold,#C7982F)]/30">
@@ -424,10 +432,10 @@ export default function ProductDetailPage() {
                         )}
                       </div>
                       <h3 className="text-sm font-serif font-bold text-[var(--color-ink,#29231D)] group-hover:text-[var(--color-gold,#C7982F)] transition-colors line-clamp-1">
-                        {rel.name}
+                        {getLocalized(rel, 'name', language)}
                       </h3>
                       <p className="text-[11px] text-[var(--color-ink,#29231D)]/60 line-clamp-1 mt-0.5">
-                        {rel.desc}
+                        {getLocalized(rel, 'desc', language)}
                       </p>
                     </div>
 

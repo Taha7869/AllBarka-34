@@ -8,6 +8,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useCart } from '../contexts/CartContext';
 import { acquireScrollLock } from '../utils/scrollLock';
 import { useLanguage } from '../contexts/LanguageContext';
+import { getLocalized } from '../utils/localize';
 
 interface QuickViewModalProps {
   isOpen: boolean;
@@ -26,7 +27,7 @@ export default function QuickViewModal({
 }: QuickViewModalProps) {
   const { resolvedTheme } = useTheme();
   const { addToCart } = useCart();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [selectedWeight, setSelectedWeight] = useState('500g');
   const [wholesaleQty, setWholesaleQty] = useState(3);
   const [packagingType, setPackagingType] = useState<'pouch' | 'tin'>('pouch');
@@ -78,7 +79,9 @@ export default function QuickViewModal({
       addToCart({
         id: `${product.id}-${finalWeight}`,
         productId: product.id,
-        name: product.name,
+        name_en: product.name_en,
+        name_ur: product.name_ur,
+        name_ar: product.name_ar,
         slug: product.id,
         image: getProductImage(product),
         selectedWeight: finalWeight,
@@ -130,15 +133,16 @@ export default function QuickViewModal({
                 <Sparkles size={24} className="fill-[var(--color-gold)]" />
               </div>
               <span className="text-[10px] uppercase tracking-widest font-extrabold text-[var(--color-gold)]">AllBarka Master Selection</span>
-              <span className="text-base font-serif font-bold text-[var(--color-ink)] mt-1 max-w-[85%] leading-snug">{product.name}</span>
+              <span className="text-base font-serif font-bold text-[var(--color-ink)] mt-1 max-w-[85%] leading-snug">{getLocalized(product, 'name', language)}</span>
             </div>
           ) : (
             <img
               src={getProductImage(product)}
-              alt={t(`imageAlt.${product.id}`, product.name)}
+              alt={t(`imageAlt.${product.id}`, getLocalized(product, 'name', language))}
               width={960}
               height={960}
               referrerPolicy="no-referrer"
+              decoding="async"
               onError={() => setImageError(true)}
               className="w-full h-full object-cover select-none pointer-events-none transition-transform duration-700 hover:scale-105"
             />
@@ -168,33 +172,33 @@ export default function QuickViewModal({
             {/* Top Meta info */}
             <div className="space-y-1">
               <span className="text-[var(--color-gold)] font-bold uppercase tracking-[0.2em] text-[9.5px] block">
-                {product.health}
+                {getLocalized(product, 'health', language)}
               </span>
               <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[var(--color-ink)] leading-tight">
-                {product.name}
+                {getLocalized(product, 'name', language)}
               </h2>
             </div>
 
             {/* Description */}
             <p className="text-xs sm:text-[13.5px] text-[var(--color-ink-muted)] leading-relaxed font-normal">
-              {product.desc}
+              {getLocalized(product, 'desc', language)}
             </p>
 
-            {product.tasteProfile && (
+            {getLocalized(product, 'tasteProfile', language) && (
               <div className="p-2.5 rounded-xl bg-[var(--color-cream,#FAF9F5)] border border-[var(--color-gold,#C7982F)]/25 text-[11px] text-[var(--color-ink,#29231D)]">
                 <span className="font-bold text-[var(--color-gold,#C7982F)] uppercase tracking-wider text-[9px] block mb-0.5">
                   {t('tasteProfile', 'Taste Profile')}
                 </span>
-                <span>{product.tasteProfile}</span>
+                <span>{getLocalized(product, 'tasteProfile', language)}</span>
               </div>
             )}
 
-            {product.contents && (
+            {getLocalized(product, 'contents', language) && (
               <div className="p-2.5 rounded-xl bg-[var(--color-cream,#FAF9F5)] border border-[var(--color-gold,#C7982F)]/25 text-[11px] text-[var(--color-ink,#29231D)]">
                 <span className="font-bold text-[var(--color-gold,#C7982F)] uppercase tracking-wider text-[9px] block mb-0.5">
                   {t('packContents', 'Pack Contents')}
                 </span>
-                <span>{product.contents}</span>
+                <span>{getLocalized(product, 'contents', language)}</span>
               </div>
             )}
 

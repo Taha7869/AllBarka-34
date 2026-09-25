@@ -1,0 +1,27 @@
+🧪 Running AllBarka Production Backend Test Suite...
+  ✅ PASS: Pricing Engine: 500g undefined total calculation (2500 + 150)
+  ✅ PASS: Pricing Engine: Free Shipping triggered on subtotal >= Rs. 3000 (1kg undefined)
+  ✅ PASS: Customer Validation: Rejects invalid phone numbers
+  ✅ PASS: n8n Dispatch: Returns DISABLED status when N8N_ORDER_WEBHOOK_URL is not set
+  ✅ PASS: n8n Dispatch: Sends X-AllBarka-Webhook-Secret and valid X-N8n-Signature HMAC header when secret is set
+  ✅ PASS: Durable Safety: PersistenceUnavailableError has correct code
+  ✅ PASS: Durable Safety: IdempotencyConflictError has correct code
+  ✅ PASS: Auth Safety: Missing Firebase Admin credentials return AUTH_SERVICE_UNAVAILABLE (503)
+  ✅ PASS: Auth Safety: Invalid token returns UNAUTHORIZED (401)
+  ✅ PASS: Order Security: Verified token uid is attached to saved order
+  ✅ PASS: Order Security: Customer cannot retrieve another customer order
+  ✅ PASS: Order Security: Order history endpoint filters strictly by authenticated uid and sanitizes response
+  ✅ PASS: Order Security: Duplicate order submission remains idempotent
+  ✅ PASS: Rewards Policy: Points awarded exactly once when admin changes status to DELIVERED
+  ✅ PASS: Rewards Policy: CANCELLED order receives no points
+  ✅ PASS: Guest Tracking: Order ID alone without valid claim token returns unauthorized
+  ✅ PASS: Delivery Schedule: Lahore order before 6:00 PM is eligible for same-day delivery
+  ✅ PASS: Delivery Schedule: Lahore order after 6:00 PM moves to next operating day
+  ✅ PASS: Delivery Schedule: Sunday order rolls to Monday delivery date
+  ✅ PASS: Webhook Safety: n8n notification error returns sent: false without throwing
+  ✅ PASS: n8n Webhook Payload: customerUid and delivery fields come from authoritative server order result
+
+========================================
+RESULTS: 21 PASSED, 0 FAILED.
+========================================
+

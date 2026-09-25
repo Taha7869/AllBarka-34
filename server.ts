@@ -870,7 +870,7 @@ app.post(['/api/chat', '/api/concierge/chat'], async (req, res) => {
     for (const [weight, price] of Object.entries(p.prices)) {
       priceStr += `${weight}: Rs. ${price}, `;
     }
-    return `- ${p.name}: ${priceStr} (Wholesale: Rs. ${p.wholesale})`;
+    return `- ${p.name_en}: ${priceStr} (Wholesale: Rs. ${p.wholesale})`;
   }).join('\n');
 
   const systemInstruction = `You are the elite AI Concierge & Gourmet Dry Fruits Sommelier representing '${STORE_CONFIG.storeName}', Lahore's premier luxury dry fruit, spices, and artisanal gifting boutique based in ${STORE_CONFIG.location}.

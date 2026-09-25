@@ -14,7 +14,7 @@ export function AllBarkaMovingReviews() {
     id: rev.id,
     quote: rev.review,
     headline: rev.headline,
-    name: rev.name,
+    name: rev.name_en,
     title: rev.location,
     location: rev.location,
     rating: `⭐ ${rev.rating}.0 / 5.0`,

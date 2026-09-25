@@ -6,36 +6,67 @@ export interface ProductBadge {
 
 export interface Product {
   id: string;
-  name: string;
+  name_en: string;
+  name_ur: string;
+  name_ar: string;
   category: string;
-  health: string;
-  tag?: string;
+  category_en?: string;
+  category_ur?: string;
+  category_ar?: string;
+  health_en?: string;
+  health_ur?: string;
+  health_ar?: string;
+  tag_en?: string;
+  tag_ur?: string;
+  tag_ar?: string;
   image: string;
   imageName: string;
   prices: Record<string, number>;
   price?: number; // legacy fallback
   isBundle?: boolean;
-  contents?: string;
+  contents_en?: string;
+  contents_ur?: string;
+  contents_ar?: string;
   wholesale: number;
-  desc: string;
-  recipe?: string;
-  origin?: string;
-  harvest?: string;
-  sourcingDetails?: string;
-  storageTips?: string;
-  packagingDetails?: string;
+  desc_en: string;
+  desc_ur: string;
+  desc_ar: string;
+  recipe_en?: string;
+  recipe_ur?: string;
+  recipe_ar?: string;
+  origin_en?: string;
+  origin_ur?: string;
+  origin_ar?: string;
+  harvest_en?: string;
+  harvest_ur?: string;
+  harvest_ar?: string;
+  sourcingDetails_en?: string;
+  sourcingDetails_ur?: string;
+  sourcingDetails_ar?: string;
+  storageTips_en?: string;
+  storageTips_ur?: string;
+  storageTips_ar?: string;
+  packagingDetails_en?: string;
+  packagingDetails_ur?: string;
+  packagingDetails_ar?: string;
   earnedPoints?: Record<string, number> | number;
   nutritionalHighlights?: string[];
   badges?: ProductBadge[];
   keywords?: string[];
-  allergenWarning?: string;
-  tasteProfile?: string;
+  allergenWarning_en?: string;
+  allergenWarning_ur?: string;
+  allergenWarning_ar?: string;
+  tasteProfile_en?: string;
+  tasteProfile_ur?: string;
+  tasteProfile_ar?: string;
 }
 
 export interface CartItem {
   id: string; // Unique composite ID: `${product.id}-${selectedWeight}`
   productId: string;
-  name: string;
+  name_en: string;
+  name_ur: string;
+  name_ar: string;
   slug: string;
   image: string;
   selectedWeight: string; // e.g. "250g", "500g", "1kg"
@@ -79,7 +110,9 @@ export interface ChatMessage {
 
 export interface CustomerReview {
   id: string;
-  name: string;
+  name_en: string;
+  name_ur: string;
+  name_ar: string;
   roleOrTitle?: string;
   avatarInitials: string;
   location: string;

@@ -13,6 +13,7 @@ import {
 import { Product } from '../types';
 import { PRODUCTS, getProductImage } from '../data/products';
 import { useLanguage } from '../contexts/LanguageContext';
+import { getLocalized } from '../utils/localize';
 import {
   CANONICAL_CATEGORIES,
   resolveCategorySlug,
@@ -90,7 +91,7 @@ export default function CategoryPLP({
   isModal = false,
   onClose
 }: CategoryPLPProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const { addToCart } = useCart();
   // Category & Sorting State
@@ -151,10 +152,11 @@ export default function CategoryPLP({
   const availableOrigins = useMemo(() => {
     const origins = new Set<string>();
     PRODUCTS.forEach((p) => {
-      if (p.origin) origins.add(p.origin);
+      const pOrigin = getLocalized(p, 'origin', language);
+      if (pOrigin) origins.add(pOrigin);
     });
     return ['all', ...Array.from(origins)];
-  }, []);
+  }, [language]);
 
   // Filter & Sort Products
   const filteredProducts = useMemo(() => {
@@ -166,20 +168,20 @@ export default function CategoryPLP({
       }
 
       // Origin Match
-      if (selectedOrigin !== 'all' && product.origin !== selectedOrigin) {
+      if (selectedOrigin !== 'all' && getLocalized(product, 'origin', language) !== selectedOrigin) {
         return false;
       }
 
       // Discount / Wholesale Only Match
-      if (onlyDiscounted && !product.wholesale && !product.tag) {
+      if (onlyDiscounted && !product.wholesale && !getLocalized(product, 'tag', language)) {
         return false;
       }
 
       // Search Filter
       if (searchFilter.trim()) {
         const query = searchFilter.toLowerCase();
-        const matchesName = product.name.toLowerCase().includes(query);
-        const matchesDesc = product.desc?.toLowerCase().includes(query);
+        const matchesName = getLocalized(product, 'name', language).toLowerCase().includes(query);
+        const matchesDesc = getLocalized(product, 'desc', language)?.toLowerCase().includes(query);
         const matchesKeywords = product.keywords?.some((k) =>
           k.toLowerCase().includes(query)
         );
@@ -201,10 +203,10 @@ export default function CategoryPLP({
 
       if (sortBy === 'price-asc') return priceA - priceB;
       if (sortBy === 'price-desc') return priceB - priceA;
-      if (sortBy === 'name-asc') return a.name.localeCompare(b.name);
+      if (sortBy === 'name-asc') return getLocalized(a, 'name', language).localeCompare(getLocalized(b, 'name', language));
       return 0; // featured default order
     });
-  }, [selectedCategory, selectedOrigin, onlyDiscounted, searchFilter, priceMax, sortBy]);
+  }, [selectedCategory, selectedOrigin, onlyDiscounted, searchFilter, priceMax, sortBy, language]);
 
   // Reset Filters
   const handleResetFilters = () => {
@@ -231,7 +233,7 @@ export default function CategoryPLP({
     setCardSelectedSizes((prev) => ({ ...prev, [productId]: size }));
 
   const handleWhatsAppOrder = (product: Product, size: string, price: number) => {
-    const text = `Assalam-o-Alaikum AllBarka! 🌿\nI want to order:\n*${product.name}*\nSize: *${size}*\nPrice: *Rs. ${price.toLocaleString()}*\n\nPlease confirm availability and delivery details. Shukriya! 🙏`;
+    const text = `Assalam-o-Alaikum AllBarka! 🌿\nI want to order:\n*${getLocalized(product, 'name', language)}*\nSize: *${size}*\nPrice: *Rs. ${price.toLocaleString()}*\n\nPlease confirm availability and delivery details. Shukriya! 🙏`;
     window.open(buildAutomatedOrderWhatsAppUrl(text), '_blank', 'noopener,noreferrer');
   };
 
@@ -382,7 +384,21 @@ export default function CategoryPLP({
             className="overflow-hidden mb-10"
           >
             <div className="bg-[var(--color-cream,#FAF9F5)] border border-[var(--color-gold,#B8935F)]/30 rounded-2xl p-6 shadow-xs">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* Search Keyword Filter */}
+                <div className="space-y-2">
+                  <label htmlFor="plp-search-input" className="block text-xs font-semibold uppercase tracking-wider text-[var(--color-ink,#1F120F)]">
+                    Search Products
+                  </label>
+                  <input
+                    id="plp-search-input"
+                    type="search"
+                    placeholder="Search almonds, spices..."
+                    value={searchFilter}
+                    onChange={(e) => setSearchFilter(e.target.value)}
+                    className="w-full bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/35 text-[var(--color-ink,#1F120F)] text-xs rounded-xl px-4 py-2.5 outline-none focus:border-[var(--color-gold,#B8935F)] shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)]"
+                  />
+                </div>
                 {/* Max Price Range */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[var(--color-ink,#1F120F)]">
@@ -467,7 +483,7 @@ export default function CategoryPLP({
             const firstWeight = weights[0] || '500g';
             const basePrice = product.prices[firstWeight] || product.price || 0;
             const hasWholesaleDiscount = product.wholesale && product.wholesale < basePrice;
-            const hasSpecialTag = product.tag;
+            const hasSpecialTag = getLocalized(product, 'tag', language);
 
             return (
               <motion.article
@@ -487,7 +503,7 @@ export default function CategoryPLP({
                   )}
                   {hasSpecialTag && (
                     <span className="px-2.5 py-0.5 rounded-full border border-[var(--color-accent,#C7982F)]/50 bg-[var(--color-surface,#FFFCF7)] dark:bg-[var(--color-surface-elevated,#222A28)] text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] text-[9.5px] font-black uppercase tracking-widest shadow-xs">
-                      {product.tag}
+                      {getLocalized(product, 'tag', language)}
                     </span>
                   )}
                 </div>
@@ -495,34 +511,35 @@ export default function CategoryPLP({
                 {/* Inner Image Zone — clicking image/title navigates to Product Detail */}
                 <Link
                   to={`/product/${product.id}`}
-                  className="block w-full aspect-square bg-[var(--color-surface-subtle,#FAF9F5)] dark:bg-[var(--color-surface-elevated,#222A28)] rounded-2xl p-4 flex items-center justify-center relative overflow-hidden border border-[var(--color-border)] dark:border-[var(--color-border)] group-hover/card:border-[var(--color-accent,#C7982F)]/40 transition-colors shadow-2xs focus-ring"
-                  aria-label={`View details for ${product.name}`}
+                  className="block w-full aspect-square bg-[var(--color-surface-subtle,#FAF9F5)] dark:bg-[var(--color-surface-elevated,#222A28)] rounded-2xl flex items-center justify-center relative overflow-hidden border border-[var(--color-border)] dark:border-[var(--color-border)] group-hover/card:border-[var(--color-accent,#C7982F)]/40 transition-colors shadow-2xs focus-ring"
+                  aria-label={`View details for ${getLocalized(product, 'name', language)}`}
                   tabIndex={0}
                 >
                   <img
                     src={getProductImage(product)}
-                    alt={t(`imageAlt.${product.id}`, product.name)}
+                    alt={t(`imageAlt.${product.id}`, getLocalized(product, 'name', language))}
                     width={960}
                     height={960}
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = '/images/product-placeholder.svg';
                     }}
-                    className="w-full h-full object-contain filter drop-shadow-sm group-hover/card:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-500"
                     loading="lazy"
+                  decoding="async"
                   />
                 </Link>
 
                 {/* Product Name — links to Product Detail */}
                 <div className="w-full flex flex-col items-center text-center mt-4 space-y-1.5">
                   <span className="text-[9px] uppercase font-bold tracking-[0.2em] text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)]">
-                    {product.origin ? `Harvest • ${product.origin}` : 'Artisanal Selection'}
+                    {getLocalized(product, 'origin', language) ? `Harvest • ${getLocalized(product, 'origin', language)}` : 'Artisanal Selection'}
                   </span>
                   <Link
                     to={`/product/${product.id}`}
                     className="w-full focus-ring rounded-sm"
                   >
                     <h3 className="text-base sm:text-lg font-serif font-bold text-[var(--color-text-primary,#29231D)] leading-snug line-clamp-2 hover:text-[#C7982F] transition-colors">
-                      {product.name}
+                      {getLocalized(product, 'name', language)}
                     </h3>
                   </Link>
                 </div>

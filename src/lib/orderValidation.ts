@@ -198,11 +198,11 @@ export function validateAndPriceOrder({
       authoritativeUnitPrice = product.price;
     } else if (allowedWeights.length > 0 && product.prices) {
       throw new ValidationError(
-        `Invalid weight "${weight}" for product "${product.name}". Allowed weights: ${allowedWeights.join(', ')}`,
+        `Invalid weight "${weight}" for product "${product.name_en}". Allowed weights: ${allowedWeights.join(', ')}`,
         'INVALID_WEIGHT'
       );
     } else {
-      throw new ValidationError(`Pricing unavailable for product "${product.name}".`, 'PRICING_UNAVAILABLE');
+      throw new ValidationError(`Pricing unavailable for product "${product.name_en}".`, 'PRICING_UNAVAILABLE');
     }
 
     // Validate quantity strictly: integer between 1 and 50 inclusive. Reject fractional, zero, negative or non-finite.
@@ -211,7 +211,7 @@ export function validateAndPriceOrder({
 
     if (!Number.isFinite(numQty) || !Number.isInteger(numQty) || numQty < 1 || numQty > 50) {
       throw new ValidationError(
-        `Invalid quantity for "${product.name}": must be an integer between 1 and 50 units.`,
+        `Invalid quantity for "${product.name_en}": must be an integer between 1 and 50 units.`,
         'INVALID_QUANTITY'
       );
     }
@@ -231,7 +231,7 @@ export function validateAndPriceOrder({
     return {
       id: `${product.id}-${weight}`,
       productId: product.id,
-      name: product.name,
+      name: product.name_en,
       selectedWeight: weight,
       quantity,
       price: authoritativeUnitPrice,

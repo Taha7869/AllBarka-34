@@ -5,6 +5,7 @@ import { Product } from '../types';
 import { getProductImage } from '../data/products';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCart } from '../contexts/CartContext';
+import { getLocalized } from '../utils/localize';
 
 interface ProductCardProps {
   product: Product;
@@ -20,7 +21,7 @@ export default function ProductCard({
   onAddToCart,
   onQuickView,
 }: ProductCardProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { addToCart } = useCart();
   const weights = Object.keys(product.prices || {});
   const [selectedWeight, setSelectedWeight] = useState(weights[0] || '250g');
@@ -36,11 +37,11 @@ export default function ProductCard({
       {/* Top Meta Line: Dark bronze labels on light backgrounds (WCAG AA compliant) */}
       <div className="flex items-center justify-between gap-2 mb-3">
         <span className="text-[10px] font-sans font-semibold uppercase tracking-[0.18em] text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)]">
-          {product.health || 'Single-Origin'}
+          {getLocalized(product, 'health', language) || 'Single-Origin'}
         </span>
-        {product.tag && (
+        {getLocalized(product, 'tag', language) && (
           <span className="px-2.5 py-0.5 rounded-full bg-[var(--color-base,#F6F1EA)] dark:bg-[var(--color-surface-elevated,#222A28)] border border-[var(--color-accent,#C7982F)]/35 dark:border-[var(--color-accent,#D4A843)]/35 text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] text-[9.5px] font-sans font-semibold uppercase tracking-wider">
-            {product.tag}
+            {getLocalized(product, 'tag', language)}
           </span>
         )}
       </div>
@@ -49,7 +50,7 @@ export default function ProductCard({
       <Link to={`/product/${product.id}`} className="block w-full aspect-[4/3] rounded-2xl bg-[var(--color-surface-subtle,#FAF9F5)] dark:bg-[var(--color-surface-elevated,#222A28)] border border-[var(--color-border)] dark:border-[var(--color-border)] overflow-hidden flex items-center justify-center p-3 relative group shadow-2xs focus-ring">
         <img
           src={getProductImage(product)}
-          alt={t(`imageAlt.${product.id}`, product.name)}
+          alt={t(`imageAlt.${product.id}`, getLocalized(product, 'name', language))}
           width={960}
           height={960}
           onError={(e) => {
@@ -57,6 +58,7 @@ export default function ProductCard({
           }}
           className="w-full h-full object-contain group-hover/card:scale-105 transition-transform duration-500 ease-out"
           loading="lazy"
+        decoding="async"
         />
       </Link>
 
@@ -64,11 +66,11 @@ export default function ProductCard({
       <div className="pt-4 pb-2 space-y-1.5 flex-1 text-left">
         <Link to={`/product/${product.id}`} className="block focus-ring rounded-sm w-fit">
           <h3 className="text-lg font-serif font-bold text-[var(--color-text-primary,#29231D)] leading-snug line-clamp-1 hover:text-[#C7982F] transition-colors">
-            {product.name}
+            {getLocalized(product, 'name', language)}
           </h3>
         </Link>
         <p className="text-xs text-[var(--color-text-secondary,#635B52)] line-clamp-2 leading-relaxed font-sans">
-          {product.desc}
+          {getLocalized(product, 'desc', language)}
         </p>
       </div>
 

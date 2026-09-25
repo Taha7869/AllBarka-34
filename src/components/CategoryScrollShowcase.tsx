@@ -131,6 +131,7 @@ export default function CategoryScrollShowcase() {
           src={cat.image} 
           alt={cat.title} 
           loading="lazy"
+          decoding="async"
           onLoad={measureLayout}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
         />

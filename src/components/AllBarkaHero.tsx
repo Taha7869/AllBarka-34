@@ -148,6 +148,7 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
             height={1080}
             referrerPolicy="no-referrer"
             loading="eager"
+            decoding="async"
             fetchPriority="high"
             className="h-full w-full object-cover object-center transform scale-105"
           />

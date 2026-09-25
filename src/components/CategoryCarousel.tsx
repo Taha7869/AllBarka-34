@@ -39,6 +39,7 @@ export default function CategoryCarousel() {
                 onError={(event) => { (event.currentTarget as HTMLImageElement).src = '/images/product-placeholder.svg'; }}
                 className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06] motion-reduce:transition-none"
                 loading={index < 2 ? 'eager' : 'lazy'}
+                decoding="async"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#042821]/95 via-[#042821]/24 to-transparent" />
               {index < 2 && (

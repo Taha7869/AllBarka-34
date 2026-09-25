@@ -18,6 +18,7 @@ const CircularText = ({
       scale: 1,
       transition: { ease: 'linear', duration: spinDuration, repeat: Infinity }
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spinDuration, text, onHover, controls]);
 
   const handleHoverStart = () => {

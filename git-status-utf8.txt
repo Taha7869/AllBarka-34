@@ -1,0 +1,48 @@
+On branch design/home-discovery-batch2
+Your branch is behind 'origin/design/home-discovery-batch2' by 5 commits, and can be fast-forwarded.
+  (use "git pull" to update your local branch)
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   src/components/AllBarkaHero.tsx
+	modified:   src/components/Breadcrumbs.tsx
+	modified:   src/components/CartDrawer.tsx
+	modified:   src/components/CategoryCarousel.tsx
+	modified:   src/components/CategoryPLP.tsx
+	modified:   src/components/CategoryParallax.tsx
+	modified:   src/components/CategoryScrollShowcase.tsx
+	modified:   src/components/CustomHamperBuilderModal.tsx
+	modified:   src/components/ProductCard.tsx
+	modified:   src/components/ProductDetailAccordion.tsx
+	modified:   src/components/QuickViewModal.tsx
+	modified:   src/components/StickyCartBottomBar.tsx
+	modified:   src/contexts/CartContext.tsx
+	modified:   src/data/products.ts
+	modified:   src/layouts/RootLayout.tsx
+	modified:   src/lib/order.ts
+	modified:   src/lib/orderValidation.ts
+	modified:   src/pages/CartPage.tsx
+	modified:   src/pages/CheckoutPage.tsx
+	modified:   src/pages/JournalPage.tsx
+	modified:   src/pages/ProductDetailPage.tsx
+	modified:   src/types.ts
+	modified:   vite.config.ts
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	backend.txt
+	error.txt
+	git-diff.txt
+	git-status-utf8.txt
+	git-status.txt
+	scripts/fix-broken-syntax.mjs
+	scripts/fix-typechecks2.mjs
+	scripts/patch-components.mjs
+	scripts/translate-products-v3.mjs
+	scripts/translate-products-v4.mjs
+	scripts/translate-products.mjs
+	src/utils/localize.ts
+	typecheck.txt
+
+no changes added to commit (use "git add" and/or "git commit -a")
