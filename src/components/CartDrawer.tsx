@@ -551,6 +551,17 @@ export default function CartDrawer({
                   </div>
                 </div>
 
+                {/* Loyalty / Auth Catch */}
+                <div className="flex items-center justify-between bg-[#F6F1EA] dark:bg-[#222A28] border border-[#C7982F]/30 p-2.5 rounded-xl">
+                  <span className="text-[10px] text-[#635B52] dark:text-[#A8A199] font-medium leading-tight">
+                    Log in to earn loyalty points<br className="sm:hidden" />
+                    <span dir="rtl" className="sm:ml-1 text-[11px] font-sans">لائلٹی پوائنٹس کمانے کے لیے لاگ ان کریں</span>
+                  </span>
+                  <button type="button" onClick={() => window.dispatchEvent(new CustomEvent('open-auth-modal'))} className="text-[10px] uppercase font-bold text-[#806326] dark:text-[#E4C783] hover:underline whitespace-nowrap cursor-pointer">
+                    Sign In
+                  </button>
+                </div>
+
                 {/* Primary Checkout CTA */}
                 <button
                   type="button"

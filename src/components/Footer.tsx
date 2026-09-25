@@ -597,9 +597,14 @@ export default function Footer() {
 
         {/* 4. Bottom Legal Row: Copyright, Delivery, Replacements, Privacy, Terms */}
         <div className="mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-[#8A9693]">
-          <p className="order-2 md:order-1 text-center md:text-left">
-            © 2026 AllBarka Dry Fruits & Confections. Lahore, Pakistan. All rights reserved.
-          </p>
+          <div className="order-2 md:order-1 text-center md:text-left space-y-1">
+            <p>
+              © 2026 AllBarka Dry Fruits & Confections. Lahore, Pakistan. All rights reserved.
+            </p>
+            <p className="text-[10px] text-[#A8B2AF]/70">
+              Your data is secure and never sold / <span dir="rtl" className="font-sans">آپ کا ڈیٹا محفوظ ہے — کبھی بیچا نہیں جاتا</span>
+            </p>
+          </div>
           <ul className="order-1 md:order-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-3 sm:gap-6 text-center">
             <li>
               <Link to="/policies/shipping" className="hover:text-[#C7982F] transition-colors">

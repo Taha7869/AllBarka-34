@@ -227,13 +227,13 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
         className="relative z-10 w-full max-w-4xl bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/35 rounded-[24px] shadow-[0_24px_60px_rgba(31,18,15,0.22),0_0_32px_rgba(184,147,95,0.15)] overflow-hidden flex flex-col max-h-[92vh]"
       >
         {/* Header */}
-        <div className="px-6 py-5 border-b border-[var(--color-gold,#B8935F)]/20 bg-white/80 backdrop-blur-md flex items-center justify-between shrink-0">
+        <div className="px-6 py-5 border-b border-[var(--color-gold,#B8935F)]/20 bg-white/80 dark:bg-[#1A201E]/80 backdrop-blur-md flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[var(--color-ink,#1F120F)] border border-[var(--color-gold,#B8935F)]/50 flex items-center justify-center text-[var(--color-gold,#B8935F)] shadow-xs">
               <Crown size={18} className="text-[var(--color-gold,#B8935F)]" />
             </div>
             <div>
-              <h3 className="font-serif font-bold text-lg text-[var(--color-ink,#1F120F)] leading-tight">
+              <h3 className="font-serif font-bold text-lg text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7] leading-tight">
                 Patron Lounge
               </h3>
               <p className="text-[9.5px] font-bold tracking-widest uppercase text-[var(--color-gold,#B8935F)] mt-0.5">
@@ -250,16 +250,16 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto bg-[#FDFBF7] p-6">
+        <div className="flex-1 overflow-y-auto bg-[#FDFBF7] dark:bg-[#0D1110] p-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
             {/* Sidebar: Profile */}
             <div className="lg:col-span-1 space-y-4">
-              <div className="bg-white border border-[var(--color-gold,#B8935F)]/30 rounded-2xl p-5 shadow-sm">
+              <div className="bg-white dark:bg-[#1A201E] border border-[var(--color-gold,#B8935F)]/30 rounded-2xl p-5 shadow-sm">
                 <div className="w-16 h-16 rounded-full bg-[var(--color-ink,#1F120F)] border-2 border-[var(--color-gold,#B8935F)] flex items-center justify-center text-[var(--color-gold,#B8935F)] mb-4 shadow-md">
                   <User size={28} />
                 </div>
-                <h4 className="text-xl font-serif font-black text-[var(--color-ink,#1F120F)]">
+                <h4 className="text-xl font-serif font-black text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">
                   {patronProfile?.name || 'Patron Member'}
                 </h4>
                 <p className="text-xs font-bold text-[var(--color-gold,#B8935F)] uppercase tracking-wider mb-4">
@@ -269,12 +269,12 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                 <div className="space-y-3 pt-4 border-t border-[var(--color-gold,#B8935F)]/20">
                   <div className="flex items-center gap-3 text-sm text-[var(--color-ink,#1F120F)]/80">
                     <User size={16} className="text-[var(--color-gold,#B8935F)]" />
-                    <span className="font-medium">{currentUser?.email}</span>
+                    <span className="font-medium" dir="ltr">{currentUser?.email}</span>
                   </div>
                   {patronProfile?.phone && (
                     <div className="flex items-center gap-3 text-sm text-[var(--color-ink,#1F120F)]/80">
                       <Phone size={16} className="text-[var(--color-gold,#B8935F)]" />
-                      <span className="font-medium">{patronProfile.phone}</span>
+                      <span className="font-medium" dir="ltr">{patronProfile.phone}</span>
                     </div>
                   )}
                 </div>
@@ -293,20 +293,20 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
 
 
               {/* Patron Rewards Section */}
-              <div className="bg-white border border-[var(--color-gold,#B8935F)]/30 rounded-2xl p-5 shadow-sm mt-4">
-                <h4 className="text-sm font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)] flex items-center gap-2 mb-4">
+              <div className="bg-white dark:bg-[#1A201E] border border-[var(--color-gold,#B8935F)]/30 rounded-2xl p-5 shadow-sm mt-4">
+                <h4 className="text-sm font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7] flex items-center gap-2 mb-4">
                   <Crown size={16} className="text-[var(--color-gold,#B8935F)]" />
                   Patron Rewards
                 </h4>
 
                 <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="p-3 bg-[var(--color-cream,#FAF9F5)] rounded-xl border border-[var(--color-gold,#B8935F)]/25">
-                    <p className="text-[10px] text-[var(--color-ink,#1F120F)]/60 font-bold uppercase tracking-wider mb-0.5">Available Points</p>
+                  <div className="p-3 bg-[var(--color-cream,#FAF9F5)] dark:bg-[#222A28] rounded-xl border border-[var(--color-gold,#B8935F)]/25">
+                    <p className="text-[10px] text-[var(--color-ink,#1F120F)]/60 dark:text-[#FDFBF7]/60 font-bold uppercase tracking-wider mb-0.5">Available Points</p>
                     <p className="text-2xl font-serif font-black text-[var(--color-gold,#B8935F)]">{loyaltyData?.loyaltyPoints || 0}</p>
                   </div>
-                  <div className="p-3 bg-[var(--color-cream,#FAF9F5)] rounded-xl border border-[var(--color-gold,#B8935F)]/25">
-                    <p className="text-[10px] text-[var(--color-ink,#1F120F)]/60 font-bold uppercase tracking-wider mb-0.5">Pending Points</p>
-                    <p className="text-2xl font-serif font-black text-amber-700">+{pendingPoints}</p>
+                  <div className="p-3 bg-[var(--color-cream,#FAF9F5)] dark:bg-[#222A28] rounded-xl border border-[var(--color-gold,#B8935F)]/25">
+                    <p className="text-[10px] text-[var(--color-ink,#1F120F)]/60 dark:text-[#FDFBF7]/60 font-bold uppercase tracking-wider mb-0.5">Pending Points</p>
+                    <p className="text-2xl font-serif font-black text-amber-700 dark:text-amber-500">+{pendingPoints}</p>
                   </div>
                 </div>
 
@@ -321,17 +321,17 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                 )}
 
                 <div className="space-y-3 mb-6">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-ink,#1F120F)]/70">Exchange Options</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-ink,#1F120F)]/70 dark:text-[#FDFBF7]/70">Exchange Options</p>
                   {rewards.filter((r: any) => r.active).map((reward: any) => {
                     const canAfford = (loyaltyData?.loyaltyPoints || 0) >= reward.pointsCost;
                     const hasActive = loyaltyData?.activeRewards && loyaltyData.activeRewards.length > 0;
                     return (
-                      <div key={reward.rewardId} className="border border-[var(--color-ink,#1F120F)]/10 rounded-xl p-3">
+                      <div key={reward.rewardId} className="border border-[var(--color-ink,#1F120F)]/10 dark:border-[#FDFBF7]/10 rounded-xl p-3">
                         <div className="flex justify-between items-start mb-1">
-                          <p className="text-xs font-bold text-[var(--color-ink,#1F120F)]">{reward.name}</p>
+                          <p className="text-xs font-bold text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">{reward.name}</p>
                           <span className="text-[10px] font-black text-[var(--color-gold,#B8935F)] bg-[var(--color-gold,#B8935F)]/10 px-1.5 py-0.5 rounded">{reward.pointsCost} pts</span>
                         </div>
-                        <p className="text-[10px] text-[var(--color-ink,#1F120F)]/60 leading-snug mb-2">{reward.description}</p>
+                        <p className="text-[10px] text-[var(--color-ink,#1F120F)]/60 dark:text-[#FDFBF7]/60 leading-snug mb-2">{reward.description}</p>
                         <button
                           onClick={() => handleRedeem(reward.rewardId)}
                           disabled={!canAfford || hasActive || redeeming === reward.rewardId}
@@ -346,7 +346,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
 
                 {loyaltyData?.transactions && loyaltyData.transactions.length > 0 && (
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-ink,#1F120F)]/70 mb-2">Recent Activity</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-ink,#1F120F)]/70 dark:text-[#FDFBF7]/70 mb-2">Recent Activity</p>
                     <div className="space-y-2">
                       {loyaltyData.transactions.slice(0, 3).map((tx: any) => (
                         <div key={tx.transactionId} className="flex justify-between items-center text-[10px]">
@@ -362,7 +362,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
               </div>
 {/* Main Content: Orders */}
             <div className="lg:col-span-2 space-y-4">
-              <h4 className="text-sm font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)] flex items-center gap-2 mb-2">
+              <h4 className="text-sm font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7] flex items-center gap-2 mb-2">
                 <Package size={16} className="text-[var(--color-gold,#B8935F)]" />
                 Order History
               </h4>
@@ -372,14 +372,14 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-gold,#B8935F)]"></div>
                 </div>
               ) : orders.length === 0 ? (
-                <div className="bg-white border border-[var(--color-gold,#B8935F)]/20 rounded-2xl p-8 text-center shadow-sm">
+                <div className="bg-white dark:bg-[#1A201E] border border-[var(--color-gold,#B8935F)]/20 rounded-2xl p-8 text-center shadow-sm">
                   <div className="w-16 h-16 rounded-full bg-[var(--color-gold,#B8935F)]/10 mx-auto flex items-center justify-center mb-4">
                     <Package size={24} className="text-[var(--color-gold,#B8935F)]" />
                   </div>
-                  <h5 className="font-serif font-black text-lg text-[var(--color-ink,#1F120F)] mb-2">
+                  <h5 className="font-serif font-black text-lg text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7] mb-2">
                     No orders yet
                   </h5>
-                  <p className="text-sm text-[var(--color-ink,#1F120F)]/60 max-w-xs mx-auto">
+                  <p className="text-sm text-[var(--color-ink,#1F120F)]/60 dark:text-[#FDFBF7]/60 max-w-xs mx-auto">
                     Your exclusive AllBarka selections will appear here securely.
                   </p>
                 </div>
@@ -397,11 +397,11 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                     const paymentMethodStr = order.paymentMethod === 'bank' ? 'Direct Bank Transfer' : 'Cash on Delivery (COD)';
 
                     return (
-                      <div key={order.orderId} className="bg-white border border-[var(--color-gold,#B8935F)]/30 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                        <div className="px-5 py-4 border-b border-[var(--color-gold,#B8935F)]/20 bg-[#FDFBF7]/50 flex flex-wrap items-center justify-between gap-4">
+                      <div key={order.orderId} className="bg-white dark:bg-[#1A201E] border border-[var(--color-gold,#B8935F)]/30 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                        <div className="px-5 py-4 border-b border-[var(--color-gold,#B8935F)]/20 bg-[#FDFBF7]/50 dark:bg-transparent flex flex-wrap items-center justify-between gap-4">
                           <div>
                             <p className="text-[10px] uppercase font-bold text-[var(--color-ink,#1F120F)]/60 mb-0.5">Order ID</p>
-                            <p className="font-mono text-sm font-bold text-[var(--color-ink,#1F120F)]">{order.orderId}</p>
+                            <p className="font-mono text-sm font-bold text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]" dir="ltr">{order.orderId}</p>
                           </div>
                           <div>
                             <p className="text-[10px] uppercase font-bold text-[var(--color-ink,#1F120F)]/60 mb-0.5">Placed On</p>
@@ -422,8 +422,8 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                         </div>
 
                         <div className="p-5">
-                          <div className="mb-3 flex items-center justify-between text-xs text-[var(--color-ink,#1F120F)]/70">
-                            <span className="font-medium">Payment Method: <strong>{paymentMethodStr}</strong></span>
+                          <div className="mb-3 flex items-center justify-between text-xs text-[var(--color-ink,#1F120F)]/70 dark:text-[#FDFBF7]/70">
+                            <span className="font-medium">Payment Method: <strong className="text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">{paymentMethodStr}</strong></span>
                             {order.earnedPoints > 0 && (
                               <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-full">
                                 {order.status === 'DELIVERED' ? `+${order.earnedPoints} Points Earned` : `+${order.earnedPoints} Points Pending Delivery`}
@@ -435,11 +435,11 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                             {(order.items || []).map((item: any, idx: number) => (
                               <div key={idx} className="flex justify-between items-center text-sm">
                                 <div className="flex items-center gap-2">
-                                  <span className="font-medium text-[var(--color-ink,#1F120F)]">{item.name}</span>
-                                  <span className="text-xs text-[var(--color-ink,#1F120F)]/60 border border-[var(--color-ink,#1F120F)]/10 rounded px-1.5 bg-gray-50">{item.selectedWeight}</span>
+                                  <span className="font-medium text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">{item.name}</span>
+                                  <span className="text-xs text-[var(--color-ink,#1F120F)]/60 dark:text-[#FDFBF7]/70 border border-[var(--color-ink,#1F120F)]/10 dark:border-[#FDFBF7]/10 rounded px-1.5 bg-gray-50 dark:bg-gray-800">{item.selectedWeight}</span>
                                   <span className="text-xs font-bold text-[var(--color-gold,#B8935F)]">x{item.quantity}</span>
                                 </div>
-                                <span className="font-medium text-[var(--color-ink,#1F120F)]">Rs. {((item.price || 0) * (item.quantity || 1)).toLocaleString('en-PK')}</span>
+                                <span className="font-medium text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">Rs. {((item.price || 0) * (item.quantity || 1)).toLocaleString('en-PK')}</span>
                               </div>
                             ))}
                           </div>

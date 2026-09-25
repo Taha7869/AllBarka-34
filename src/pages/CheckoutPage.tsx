@@ -1,5 +1,6 @@
 import { getLocalized } from '../utils/localize';
 import React, { useState, useEffect } from 'react';
+import { validatePromo } from '../lib/promoCodes';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -39,7 +40,7 @@ import { calculateFinalTotal } from '../lib/pricing';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart, parsePrice, formatPrice } from '../contexts/CartContext';
 import { STORE_CONFIG } from '../config/store';
-import { buildAutomatedOrderWhatsAppUrl } from '../config/contacts';
+import { buildAutomatedOrderWhatsAppUrl, buildHumanSupportWhatsAppUrl } from '../config/contacts';
 import { placeOrder } from '../lib/order';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -101,6 +102,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
   const [couponSuccessMsg, setCouponSuccessMsg] = useState<string | null>(null);
   const [couponErrorMsg, setCouponErrorMsg] = useState<string | null>(null);
+  const [isCompassionMode, setIsCompassionMode] = useState(false);
   const [activeReward, setActiveReward] = useState<any>(null);
   const [rewardDetails, setRewardDetails] = useState<any>(null);
 
@@ -295,18 +297,38 @@ const handleInputChange = (field: string, value: any) => {
   const handleApplyCoupon = () => {
     setCouponErrorMsg(null);
     setCouponSuccessMsg(null);
-    if (!couponCode.trim()) {
+    const codeStr = couponCode.trim().toUpperCase();
+    if (!codeStr) {
       setCouponErrorMsg('Please enter a valid coupon code.');
       return;
     }
 
+    if (codeStr === 'CANCER' || codeStr === 'کینسر') {
+      setIsCompassionMode(true);
+      setDiscountAmt(0);
+      setFormData(prev => ({ ...prev, giftWrapping: false }));
+      setCouponSuccessMsg('Hum aapki sehat ke liye dua karte hain. (Care flow activated)');
+      return;
+    }
+
+    setIsCompassionMode(false);
     setIsValidatingCoupon(true);
     setTimeout(() => {
       setIsValidatingCoupon(false);
-      if (couponCode.toUpperCase().trim() === 'ALLBARKA10') {
-        const discount = subtotal * 0.10;
-        setDiscountAmt(discount);
-        setCouponSuccessMsg('Complimentary 10% boutique discount applied.');
+      const promo = validatePromo(codeStr);
+      if (promo) {
+        if (promo.type === 'PERCENTAGE_CAP') {
+          const discount = Math.min(subtotal * ((promo.discountValue || 10) / 100), promo.maxDiscount || Infinity);
+          setDiscountAmt(discount);
+          setCouponSuccessMsg(`Complimentary ${promo.discountValue}% discount applied. Maximum discount Rs. ${promo.maxDiscount}.`);
+        } else if (promo.type === 'FREE_SHIPPING') {
+          setDiscountAmt(0);
+          setCouponSuccessMsg('Free shipping applied.');
+        } else if (promo.type === 'FREE_GIFT_WRAP') {
+          setDiscountAmt(0);
+          setFormData(prev => ({ ...prev, giftWrapping: true }));
+          setCouponSuccessMsg('Free luxury gift wrap added.');
+        }
       } else {
         setDiscountAmt(0);
         setCouponErrorMsg('Code not recognized or expired for this harvest season.');
@@ -316,11 +338,12 @@ const handleInputChange = (field: string, value: any) => {
 
 
 
+  const promoObj = validatePromo(couponCode);
   const GIFT_WRAP_FEE = 250;
   const subtotal = cartItems.reduce((acc, item) => acc + (parsePrice(item.unitPrice ?? item.price) * item.quantity), 0);
-  const currentShippingFee = calculateShippingFee(activeShippingMethod, subtotal);
+  const currentShippingFee = promoObj?.type === 'FREE_SHIPPING' ? 0 : calculateShippingFee(activeShippingMethod, subtotal);
   const selectedMethodObj = SHIPPING_METHODS.find(m => m.id === activeShippingMethod) || SHIPPING_METHODS[0];
-  const giftFeeTotal = formData.giftWrapping ? GIFT_WRAP_FEE : 0;
+  const giftFeeTotal = formData.giftWrapping ? (promoObj?.type === 'FREE_GIFT_WRAP' ? 0 : GIFT_WRAP_FEE) : 0;
   const finalPayable = Math.max(0, subtotal - discountAmt) + currentShippingFee + giftFeeTotal;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -393,9 +416,8 @@ const handleInputChange = (field: string, value: any) => {
       }
 
       const orderId = orderResult.orderId!;
-      const whatsappUrl = buildAutomatedOrderWhatsAppUrl(
-        orderResult.whatsappMessage || `AllBarka Order ${orderId}`
-      );
+      const customWhatsappText = `ALLBARKA NEW ORDER\nID: ${orderId}\nName: ${formData.name}\nPhone: ${formData.phone}\nAddress: ${formData.address}, ${formData.city}\nItems:\n${cartItems.map(i => `- ${getLocalized(i, 'name', language)} (${i.selectedWeight}) x ${i.quantity}`).join('\n')}\nTotal: Rs. ${finalPayable}`;
+      const whatsappUrl = buildAutomatedOrderWhatsAppUrl(customWhatsappText);
 
       if (orderResult.claimToken) {
         sessionStorage.setItem("pendingClaimToken", orderResult.claimToken);
@@ -685,6 +707,7 @@ const handleInputChange = (field: string, value: any) => {
                       <input
                         id="checkout-field-phone"
                         type="tel"
+                        dir="ltr"
                         value={formData.phone || ''}
                         onChange={(e) => handleInputChange('phone', e.target.value)}
                         onBlur={() => handleBlur('phone')}
@@ -960,7 +983,7 @@ const handleInputChange = (field: string, value: any) => {
                         className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
                           selectedPayment === 'cod'
                             ? 'bg-[var(--color-ink,#1F120F)] text-[var(--color-surface,#FDFBF7)] border-[var(--color-gold,#B8935F)] shadow-xs'
-                            : 'bg-white text-[var(--color-ink,#1F120F)] border-[var(--color-gold,#B8935F)]/25 hover:border-[var(--color-gold,#B8935F)]/50'
+                            : 'bg-white text-[var(--color-ink,#1F120F)] dark:bg-[#1A201E] dark:text-[#FDFBF7] border-[var(--color-gold,#B8935F)]/25 hover:border-[var(--color-gold,#B8935F)]/50'
                         }`}
                       >
                         <div className="flex items-center gap-2 mb-1">
@@ -981,7 +1004,7 @@ const handleInputChange = (field: string, value: any) => {
                         className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
                           selectedPayment === 'bank'
                             ? 'bg-[var(--color-ink,#1F120F)] text-[var(--color-surface,#FDFBF7)] border-[var(--color-gold,#B8935F)] shadow-xs'
-                            : 'bg-white text-[var(--color-ink,#1F120F)] border-[var(--color-gold,#B8935F)]/25 hover:border-[var(--color-gold,#B8935F)]/50'
+                            : 'bg-white text-[var(--color-ink,#1F120F)] dark:bg-[#1A201E] dark:text-[#FDFBF7] border-[var(--color-gold,#B8935F)]/25 hover:border-[var(--color-gold,#B8935F)]/50'
                         }`}
                       >
                         <div className="flex items-center gap-2 mb-1">
@@ -1011,7 +1034,7 @@ const handleInputChange = (field: string, value: any) => {
                           setCouponSuccessMsg(null);
                         }}
                         placeholder="Enter ALLBARKA10"
-                        className="flex-1 bg-white border border-[var(--color-gold,#B8935F)]/30 rounded-xl py-2.5 px-3.5 text-base sm:text-sm min-h-[44px] font-semibold focus:outline-none focus:border-[var(--color-gold,#B8935F)] text-[var(--color-ink,#1F120F)] uppercase placeholder:normal-case placeholder:text-[var(--color-ink,#1F120F)]/30"
+                        className="flex-1 bg-white dark:bg-[#1A201E] border border-[var(--color-gold,#B8935F)]/30 rounded-xl py-2.5 px-3.5 text-base sm:text-sm min-h-[44px] font-semibold focus:outline-none focus:border-[var(--color-gold,#B8935F)] text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7] uppercase placeholder:normal-case placeholder:text-[var(--color-ink,#1F120F)]/30 dark:placeholder:text-[#FDFBF7]/30"
                       />
                       <button
                         type="button"
@@ -1033,7 +1056,7 @@ const handleInputChange = (field: string, value: any) => {
                       </p>
                     )}
                     {couponErrorMsg && (
-                      <p className="text-[10px] text-rose-600 font-semibold flex items-center gap-1">
+                      <p className="text-[10px] text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-1">
                         <AlertCircle size={12} className="shrink-0" />
                         <span>{couponErrorMsg}</span>
                       </p>
@@ -1041,50 +1064,76 @@ const handleInputChange = (field: string, value: any) => {
                   </div>
 
                   {/* Summary Review Card: 16px inner padding */}
-                  <div className="p-4 rounded-2xl bg-white border border-[var(--color-gold,#B8935F)]/25 space-y-2 text-xs shadow-2xs">
-                    <div className="flex justify-between items-center pb-2 border-b border-[var(--color-gold,#B8935F)]/20">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-[var(--color-ink,#1F120F)]">
-                        Valuation Breakdown
-                      </span>
-                      <span className="text-[10px] font-serif font-bold text-[var(--color-gold,#B8935F)]">
-                        {cartItems.length} items
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between text-[11px] text-[var(--color-ink,#1F120F)]/80">
-                      <span>Harvest Items Subtotal</span>
-                      <span className="font-bold text-[var(--color-ink,#1F120F)]">
-                        Rs. {subtotal?.toLocaleString()}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between text-[11px] text-[var(--color-ink,#1F120F)]/80">
-                      <span>Shipping ({selectedMethodObj.title})</span>
-                      <span className={`font-bold ${currentShippingFee === 0 ? 'text-[var(--color-gold,#B8935F)] font-black' : 'text-[var(--color-ink,#1F120F)]'}`}>
-                        {currentShippingFee === 0 ? 'FREE' : `Rs. ${currentShippingFee?.toLocaleString()}`}
-                      </span>
-                    </div>
-
-                    {formData.giftWrapping && (
-                      <div className="flex justify-between text-[11px] text-[var(--color-gold,#B8935F)] font-bold">
-                        <span>Luxury Gift Box & Handwritten Card</span>
-                        <span>+Rs. {GIFT_WRAP_FEE}</span>
+                  <div className="p-4 rounded-2xl bg-white dark:bg-[#1A201E] border border-[var(--color-gold,#B8935F)]/25 space-y-2 text-xs shadow-2xs">
+                    {isCompassionMode ? (
+                      <div className="py-2 text-center text-[var(--color-emerald-dark,#042821)] dark:text-[#42f5bf] space-y-3">
+                        <p className="font-serif font-black text-sm">
+                          Hum aapki sehat ke liye dua karte hain.
+                        </p>
+                        <p className="text-[11.5px] leading-relaxed max-w-[280px] mx-auto opacity-90">
+                          Hamari team WhatsApp par aap se rabta karegi aur aap ke liye special pricing share karegi.
+                        </p>
+                        <div className="bg-[var(--color-emerald-dark,#042821)]/5 dark:bg-[#42f5bf]/10 p-3 rounded-xl border border-[var(--color-emerald-dark,#042821)]/10 text-left mt-3">
+                          <p className="text-[10px] font-black uppercase tracking-wider mb-2 opacity-80">Reserved Items</p>
+                          <div className="space-y-1.5">
+                            {cartItems.map((item, idx) => (
+                              <div key={idx} className="flex justify-between items-center text-[11px]">
+                                <span className="truncate max-w-[240px] font-medium text-[var(--color-ink,#1F120F)] dark:text-white">
+                                  {getLocalized(item, 'name', language)} <span className="text-[10px] font-bold">({item.selectedWeight})</span>
+                                </span>
+                                <span className="font-bold">x {item.quantity}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       </div>
-                    )}
+                    ) : (
+                      <>
+                        <div className="flex justify-between items-center pb-2 border-b border-[var(--color-gold,#B8935F)]/20">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">
+                            Valuation Breakdown
+                          </span>
+                          <span className="text-[10px] font-serif font-bold text-[var(--color-gold,#B8935F)]">
+                            {cartItems.length} items
+                          </span>
+                        </div>
 
-                    {discountAmt > 0 && (
-                      <div className="flex justify-between text-[11px] text-[var(--color-gold,#B8935F)] font-bold">
-                        <span>Promo Code Discount (10%)</span>
-                        <span>- Rs. {discountAmt?.toLocaleString()}</span>
-                      </div>
-                    )}
+                        <div className="flex justify-between text-[11px] text-[var(--color-ink,#1F120F)]/80 dark:text-[#FDFBF7]/80">
+                          <span>Harvest Items Subtotal</span>
+                          <span className="font-bold text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">
+                            Rs. {subtotal?.toLocaleString()}
+                          </span>
+                        </div>
 
-                    <div className="pt-2 border-t border-[var(--color-gold,#B8935F)]/20 flex justify-between items-baseline">
-                      <span className="text-xs font-serif font-black text-[var(--color-ink,#1F120F)]">Total Payable</span>
-                      <span className="text-base font-serif font-black text-[var(--color-ink,#1F120F)]">
-                        Rs. {finalPayable?.toLocaleString()}
-                      </span>
-                    </div>
+                        <div className="flex justify-between text-[11px] text-[var(--color-ink,#1F120F)]/80 dark:text-[#FDFBF7]/80">
+                          <span>Shipping ({selectedMethodObj.title})</span>
+                          <span className={`font-bold ${currentShippingFee === 0 ? 'text-[var(--color-gold,#B8935F)] font-black' : 'text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]'}`}>
+                            {currentShippingFee === 0 ? 'FREE' : `Rs. ${currentShippingFee?.toLocaleString()}`}
+                          </span>
+                        </div>
+
+                        {formData.giftWrapping && (
+                          <div className="flex justify-between text-[11px] text-[var(--color-gold,#B8935F)] font-bold">
+                            <span>Luxury Gift Box & Handwritten Card</span>
+                            <span>{giftFeeTotal === 0 ? 'FREE' : `+Rs. ${GIFT_WRAP_FEE}`}</span>
+                          </div>
+                        )}
+
+                        {discountAmt > 0 && (
+                          <div className="flex justify-between text-[11px] text-[var(--color-gold,#B8935F)] font-bold">
+                            <span>Promo Code Discount ({validatePromo(couponCode)?.discountValue}%)</span>
+                            <span>- Rs. {discountAmt?.toLocaleString()}</span>
+                          </div>
+                        )}
+
+                        <div className="pt-2 border-t border-[var(--color-gold,#B8935F)]/20 flex justify-between items-baseline">
+                          <span className="text-xs font-serif font-black text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">Total Payable</span>
+                          <span className="text-base font-serif font-black text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">
+                            Rs. {finalPayable?.toLocaleString()}
+                          </span>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {/* Recipient & Shipping Snapshot */}
@@ -1105,9 +1154,9 @@ const handleInputChange = (field: string, value: any) => {
 
                   {/* Submission Error Banner */}
                   {submissionError && (
-                    <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex flex-col gap-2.5 text-left">
+                    <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/40 text-rose-800 dark:text-rose-300 text-xs flex flex-col gap-2.5 text-left">
                       <div className="flex items-start gap-2">
-                        <AlertCircle size={16} className="shrink-0 text-rose-600 mt-0.5" />
+                        <AlertCircle size={16} className="shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
                         <div className="flex-1">
                           <p className="font-bold">Order Placement Notice</p>
                           <p className="text-[11px] mt-0.5 leading-relaxed">{submissionError}</p>
@@ -1132,19 +1181,33 @@ const handleInputChange = (field: string, value: any) => {
                     <button
                       type="button"
                       onClick={() => setCurrentStep('shipping')}
-                      className="px-4 py-3 rounded-full bg-white border border-[var(--color-gold,#B8935F)]/30 text-[var(--color-ink,#1F120F)] text-xs font-bold flex items-center gap-1.5 hover:bg-[var(--color-gold,#B8935F)]/10 cursor-pointer"
+                      className="px-4 py-3 rounded-full bg-[var(--color-cream,#FAF9F5)] sm:bg-white border border-[var(--color-gold,#B8935F)]/30 text-[var(--color-ink,#1F120F)] text-[var(--color-ink,#1F120F)] dark:text-[var(--color-ink,#1F120F)] text-xs font-bold flex items-center gap-1.5 hover:bg-[var(--color-gold,#B8935F)]/10 cursor-pointer"
                     >
                       <ArrowLeft size={14} />
                       <span>Back</span>
                     </button>
-                    <button
-                      type="submit"
-                      disabled={isSubmittingOrder}
-                      className="flex-1 py-3.5 rounded-full bg-[var(--color-ink,#1F120F)] text-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)] text-xs font-black uppercase tracking-widest hover:bg-[var(--color-ink,#1F120F)]/90 hover:shadow-[0_4px_20px_rgba(184,147,95,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
-                    >
-                      <CheckCircle size={16} className="text-[var(--color-gold,#B8935F)]" />
-                      <span>{isSubmittingOrder ? 'Placing Order...' : 'Confirm & Place Order'}</span>
-                    </button>
+                    {isCompassionMode ? (
+                      <a
+                        href={buildHumanSupportWhatsAppUrl(
+                          `ALLBARKA SUPPORT\nName: ${formData.name}\nPhone: ${formData.phone}\nAddress: ${formData.address}, ${formData.city}\nItems:\n${cartItems.map(i => `- ${getLocalized(i, 'name', language)} (${i.selectedWeight}) x ${i.quantity}`).join('\n')}`
+                        )}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 py-3.5 rounded-full bg-[#25D366] text-white border border-[#25D366] text-xs font-black uppercase tracking-widest hover:bg-[#1EBE5D] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-98"
+                      >
+                        <MessageCircle size={16} />
+                        <span>Support Contact (No DB Order)</span>
+                      </a>
+                    ) : (
+                      <button
+                        type="submit"
+                        disabled={isSubmittingOrder}
+                        className="flex-1 py-3.5 rounded-full bg-[var(--color-ink,#1F120F)] text-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)] text-xs font-black uppercase tracking-widest hover:bg-[var(--color-ink,#1F120F)]/90 hover:shadow-[0_4px_20px_rgba(184,147,95,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
+                      >
+                        <CheckCircle size={16} className="text-[var(--color-gold,#B8935F)]" />
+                        <span>{isSubmittingOrder ? 'Placing Order...' : 'Confirm & Place Order'}</span>
+                      </button>
+                    )}
                   </div>
                 </motion.div>
               )}
