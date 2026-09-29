@@ -15,7 +15,7 @@ export default function SEO({
   description = 'Hand-sorted, unbleached, orchard-fresh dry fruits, roasted pistachios, Chilean walnuts and luxury gift hampers delivered in Lahore and nationwide.',
   canonicalPath,
   type = 'website',
-  image = '/images/og-image.jpg',
+  image = '/images/generated/og-image.jpg',
   structuredData,
 }: SEOProps) {
   const location = useLocation();

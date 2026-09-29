@@ -23,6 +23,20 @@ export default function ProductDetailPage() {
   const [isWholesale, setIsWholesale] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [activeGalleryIdx, setActiveGalleryIdx] = useState(0);
+
+  // Second lifestyle image for gift/hamper/deal products
+  const GIFT_GALLERY_IMAGES = [
+    { src: '/images/generated/gift-box-2.webp', alt: 'Open luxury gift box revealing assorted dry fruits in gold-lined compartments' },
+    { src: '/images/generated/gift-box-1.webp', alt: 'Closed deep-emerald luxury gift box with gold silk ribbon' },
+    { src: '/images/generated/gift-box-3.webp', alt: 'Macro close-up of gold ribbon knot on emerald gift box' },
+    { src: '/images/generated/gift-box-4.webp', alt: 'Elegant gift box presented with warm bokeh background' },
+  ];
+  const isGiftProduct = product?.category === 'hampers' || product?.category === 'deals' || product?.category === 'combos' || product?.id?.includes('hamper') || product?.id?.includes('gift') || product?.id?.includes('deal');
+  const galleryImages = isGiftProduct ? [
+    { src: getProductImage(product!), alt: t(`imageAlt.${product?.id}`, getLocalized(product!, 'name', language)) },
+    ...GIFT_GALLERY_IMAGES
+  ] : [];
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -30,6 +44,7 @@ export default function ProductDetailPage() {
     setQuantity(1);
     setIsWholesale(false);
     setImageError(false);
+    setActiveGalleryIdx(0);
   }, [id]);
 
   // Related products from active 14-product catalogue
@@ -146,52 +161,83 @@ export default function ProductDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-start">
           
           {/* Left: Product Visual Showcase */}
-          <div className="relative aspect-square rounded-3xl overflow-hidden bg-[var(--color-surface,#FFFCF7)] border border-[var(--color-gold,#C7982F)]/30 shadow-sm flex items-center justify-center p-6 group">
-            {imageError ? (
-              <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-[#FAF9F5] to-[#EFE7D8]">
-                <div className="w-16 h-16 rounded-2xl bg-[var(--color-gold,#C7982F)]/20 border border-[var(--color-gold,#C7982F)]/40 flex items-center justify-center text-[var(--color-gold,#C7982F)] mb-4">
-                  <Sparkles size={28} />
+          <div className="flex flex-col gap-3">
+            <div className="relative aspect-square rounded-3xl overflow-hidden bg-[var(--color-surface,#FFFCF7)] border border-[var(--color-gold,#C7982F)]/30 shadow-sm flex items-center justify-center p-6 group">
+              {imageError ? (
+                <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-[#FAF9F5] to-[#EFE7D8]">
+                  <div className="w-16 h-16 rounded-2xl bg-[var(--color-gold,#C7982F)]/20 border border-[var(--color-gold,#C7982F)]/40 flex items-center justify-center text-[var(--color-gold,#C7982F)] mb-4">
+                    <Sparkles size={28} />
+                  </div>
+                  <span className="text-xs font-bold uppercase tracking-widest text-[var(--color-gold,#C7982F)]">AllBarka Reserve Lot</span>
+                  <span className="text-lg font-serif font-bold text-[var(--color-ink,#29231D)] mt-1">{getLocalized(product, 'name', language)}</span>
                 </div>
-                <span className="text-xs font-bold uppercase tracking-widest text-[var(--color-gold,#C7982F)]">AllBarka Reserve Lot</span>
-                <span className="text-lg font-serif font-bold text-[var(--color-ink,#29231D)] mt-1">{getLocalized(product, 'name', language)}</span>
-              </div>
-            ) : (
-              <img
-                src={getProductImage(product)}
-                alt={t(`imageAlt.${product.id}`, getLocalized(product, 'name', language))}
-                width={960}
-                height={960}
-                referrerPolicy="no-referrer"
-                decoding="async"
-                onError={() => setImageError(true)}
-                className="w-full h-full object-cover rounded-2xl group-hover:scale-105 transition-transform duration-500 ease-out"
-              />
-            )}
+              ) : (
+                <img
+                  src={isGiftProduct && galleryImages[activeGalleryIdx] ? galleryImages[activeGalleryIdx].src : getProductImage(product)}
+                  alt={isGiftProduct && galleryImages[activeGalleryIdx] ? galleryImages[activeGalleryIdx].alt : t(`imageAlt.${product.id}`, getLocalized(product, 'name', language))}
+                  width={960}
+                  height={960}
+                  referrerPolicy="no-referrer"
+                  decoding="async"
+                  onError={() => setImageError(true)}
+                  className="w-full h-full object-cover rounded-2xl group-hover:scale-105 transition-transform duration-500 ease-out"
+                />
+              )}
 
-            {/* Reference image caption for hampers */}
-            {(product?.category === 'hampers' || product?.category === 'deals' || product?.id?.includes('hamper')) && (
-              <div className="absolute bottom-4 left-4 right-4 z-10 text-center pointer-events-none">
-                <p className="text-[9px] italic text-[#635B52] dark:text-[#A8A199] bg-white/70 dark:bg-black/40 backdrop-blur-sm px-2 py-1 rounded inline-block w-auto mx-auto shadow-sm">
-                  Reference image — actual packaging may vary slightly.
-                </p>
-              </div>
-            )}
+              {/* Reference image caption for hampers */}
+              {isGiftProduct && (
+                <div className="absolute bottom-4 left-4 right-4 z-10 text-center pointer-events-none">
+                  <p className="text-[9px] italic text-[#635B52] dark:text-[#A8A199] bg-white/70 dark:bg-black/40 backdrop-blur-sm px-2 py-1 rounded inline-block w-auto mx-auto shadow-sm">
+                    Reference image — actual packaging may vary slightly.
+                  </p>
+                </div>
+              )}
 
-            {/* Tag Badge */}
-            {getLocalized(product, 'tag', language) && (
-              <div className="absolute top-4 left-4 z-10">
-                <span className="px-3.5 py-1.5 rounded-full text-[10px] font-sans font-bold uppercase tracking-widest bg-[var(--color-primary,#042821)] text-[var(--color-text-on-emerald,#FFFCF7)] border border-[var(--color-accent,#C7982F)]/50 shadow-md">
-                  {getLocalized(product, 'tag', language)}
-                </span>
-              </div>
-            )}
+              {/* Tag Badge */}
+              {getLocalized(product, 'tag', language) && (
+                <div className="absolute top-4 left-4 z-10">
+                  <span className="px-3.5 py-1.5 rounded-full text-[10px] font-sans font-bold uppercase tracking-widest bg-[var(--color-primary,#042821)] text-[var(--color-text-on-emerald,#FFFCF7)] border border-[var(--color-accent,#C7982F)]/50 shadow-md">
+                    {getLocalized(product, 'tag', language)}
+                  </span>
+                </div>
+              )}
 
-            {/* Origin Pill */}
-            {getLocalized(product, 'origin', language) && (
-              <div className="absolute bottom-4 left-4 z-10">
-                <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/90 dark:bg-[#1A201E]/90 text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)] border border-[var(--color-accent,#C7982F)]/30 backdrop-blur-xs shadow-xs">
-                  {getLocalized(product, 'origin', language)}
-                </span>
+              {/* Origin Pill */}
+              {getLocalized(product, 'origin', language) && !isGiftProduct && (
+                <div className="absolute bottom-4 left-4 z-10">
+                  <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/90 dark:bg-[#1A201E]/90 text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)] border border-[var(--color-accent,#C7982F)]/30 backdrop-blur-xs shadow-xs">
+                    {getLocalized(product, 'origin', language)}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Gift image gallery thumbnails */}
+            {isGiftProduct && galleryImages.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {galleryImages.map((img, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setActiveGalleryIdx(idx)}
+                    className={`shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
+                      activeGalleryIdx === idx
+                        ? 'border-[#C7982F] shadow-sm'
+                        : 'border-[var(--color-border)] opacity-60 hover:opacity-100 hover:border-[#C7982F]/50'
+                    }`}
+                    aria-label={`View image ${idx + 1}`}
+                  >
+                    <img
+                      src={img.src}
+                      alt={img.alt}
+                      width={64}
+                      height={64}
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
               </div>
             )}
           </div>

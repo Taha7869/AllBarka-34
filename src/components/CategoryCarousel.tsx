@@ -4,10 +4,12 @@ import { useLanguage } from '../contexts/LanguageContext';
 
 const categories = [
   { id: 'all', name: 'All Items', luxuryName: 'Full Boutique', eyebrow: 'Full boutique', image: '/assets/categories/all_items.png', altKey: 'imageAlt.hero', link: '/shop', featured: true },
-  { id: 'deals', name: 'Deals & Bundles', luxuryName: 'Deals & Bundles', eyebrow: 'Better together', image: '/assets/categories/deals.png', altKey: 'imageAlt.categoryDeals', link: '/shop/combos' },
+  { id: 'deals', name: 'Deals & Bundles', luxuryName: 'Deals & Bundles', eyebrow: 'Better together', image: '/assets/categories/deals.png', altKey: 'imageAlt.categoryDealBoxes', link: '/shop/combos' },
   { id: 'nuts', name: 'Dry Fruits & Nuts', luxuryName: 'Dry Fruits', eyebrow: 'Hand-graded', image: '/assets/categories/dry_fruits.png', altKey: 'imageAlt.categoryDryFruits', link: '/shop/nuts' },
   { id: 'snacks-seeds', name: 'Snacks & Seeds', luxuryName: 'Snacks', eyebrow: 'Everyday pantry', image: '/assets/categories/snacks.png', altKey: 'imageAlt.categorySnacks', link: '/shop/snacks-seeds' },
   { id: 'gift-boxes', name: 'Gift Boxes', luxuryName: 'Gift Boxes', eyebrow: 'Made for giving', image: '/assets/categories/gifts.png', altKey: 'imageAlt.categoryGifts', link: '/gifting' },
+  { id: 'oils', name: 'Cold-Pressed Oils', luxuryName: 'Cold-Pressed Oils', eyebrow: 'Pure extraction', image: '/assets/categories/oils.webp', altKey: 'imageAlt.categoryOils', link: '/shop/oils' },
+  { id: 'essentials', name: 'Desi Essentials', luxuryName: 'Desi Essentials', eyebrow: 'From the pantry', image: '/assets/categories/essentials.webp', altKey: 'imageAlt.categoryEssentials', link: '/shop/organics' },
 ];
 
 export default function CategoryCarousel() {
@@ -20,7 +22,7 @@ export default function CategoryCarousel() {
           <div className="max-w-xl">
             <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.28em] text-[var(--color-gold)]">The AllBarka Pantry</span>
             <h2 className="font-serif text-3xl font-semibold leading-tight text-[var(--color-ink)] sm:text-4xl">Begin with what you crave</h2>
-            <p className="mt-2 max-w-lg text-xs leading-relaxed text-[var(--color-ink-muted)] sm:text-sm">Browse the complete boutique, seasonal value bundles, hand-graded dry fruits, savoury snacks, and thoughtful gifts.</p>
+            <p className="mt-2 max-w-lg text-xs leading-relaxed text-[var(--color-ink-muted)] sm:text-sm">Browse the complete boutique, seasonal value bundles, hand-graded dry fruits, savoury snacks, cold-pressed oils, and thoughtful gifts.</p>
           </div>
           <Link to="/shop" className="focus-ring hidden min-h-11 shrink-0 items-center gap-2 rounded-full border border-[var(--color-gold)]/35 bg-[var(--color-surface)] px-5 text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-ink)] transition-colors hover:border-[var(--color-gold)] hover:text-[var(--color-gold)] sm:inline-flex">
             Explore all <ArrowUpRight size={15} aria-hidden="true" />
@@ -32,16 +34,22 @@ export default function CategoryCarousel() {
             <Link
               key={category.id}
               to={category.link}
-              className={`group relative min-h-[220px] overflow-hidden rounded-[1.5rem] border border-[var(--color-border-accent)] bg-[var(--color-surface)] shadow-[0_12px_32px_rgba(41,35,29,0.06)] focus-ring sm:min-h-[280px] lg:min-h-0 lg:flex-1 lg:hover:flex-[1.8] lg:duration-500 lg:transition-[flex] lg:ease-[cubic-bezier(0.25,1,0.5,1)] ${category.featured ? 'col-span-2 lg:col-span-1' : ''}`}
+              className={`group relative min-h-[220px] overflow-hidden rounded-[1.5rem] border border-[var(--color-border-accent)] bg-[var(--color-surface)] shadow-[0_12px_32px_rgba(41,35,29,0.06)] focus-ring sm:min-h-[280px] lg:min-h-0 lg:flex-1 lg:hover:flex-[1.8] lg:duration-500 lg:transition-[flex] lg:ease-[cubic-bezier(0.25,1,0.5,1)] hover:border-[#C7982F]/60 hover:shadow-[0_0_0_1.5px_rgba(199,152,47,0.45),0_12px_32px_rgba(41,35,29,0.10)] transition-all duration-300 ${category.featured ? 'col-span-2 lg:col-span-1' : ''}`}
               aria-label={`Shop ${category.name}`}
             >
-              <img src={category.image} alt={t(category.altKey, category.name)} width={960} height={960}
+              <img
+                src={category.image}
+                alt={t(category.altKey, category.name)}
+                width={960}
+                height={960}
                 onError={(event) => { (event.currentTarget as HTMLImageElement).src = '/images/product-placeholder.svg'; }}
                 className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06] motion-reduce:transition-none"
                 loading={index < 2 ? 'eager' : 'lazy'}
                 decoding="async"
               />
+              {/* Dark emerald gradient overlay (bottom 40%) */}
               <div className="absolute inset-0 bg-gradient-to-t from-[#042821]/95 via-[#042821]/30 to-transparent" />
+              {/* Top badge for first 2 */}
               {index < 2 && (
                 <span className="absolute left-3 top-3 rounded-full border border-white/25 bg-[#042821]/72 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.18em] text-[#F6F1EA] backdrop-blur-md sm:left-4 sm:top-4 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-500">
                   {index === 0 ? 'Start here' : 'Popular value'}
@@ -67,3 +75,4 @@ export default function CategoryCarousel() {
     </section>
   );
 }
+
