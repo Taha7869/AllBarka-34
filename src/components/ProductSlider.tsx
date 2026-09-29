@@ -22,12 +22,17 @@ export default function ProductSlider({
   onAddToCart,
   onQuickView
 }: ProductSliderProps) {
+  const isReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   const [emblaRef, emblaApi] = useEmblaCarousel(
     { align: 'start', containScroll: 'trimSnaps', dragFree: true },
-    [Autoplay({ delay: 6000, stopOnInteraction: true, stopOnMouseEnter: true })]
+    isReducedMotion ? [] : [Autoplay({ delay: 6000, stopOnInteraction: true, stopOnMouseEnter: true })]
   );
+
   const [canScrollPrev, setCanScrollPrev] = useState(false);
   const [canScrollNext, setCanScrollNext] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
 
   const scrollPrev = useCallback(() => {
     if (emblaApi) emblaApi.scrollPrev();
@@ -37,18 +42,37 @@ export default function ProductSlider({
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
 
+  const scrollTo = useCallback((index: number) => {
+    if (emblaApi) emblaApi.scrollTo(index);
+  }, [emblaApi]);
+
   const onSelect = useCallback(() => {
     if (!emblaApi) return;
+    setSelectedIndex(emblaApi.selectedScrollSnap());
     setCanScrollPrev(emblaApi.canScrollPrev());
     setCanScrollNext(emblaApi.canScrollNext());
   }, [emblaApi]);
 
   useEffect(() => {
     if (!emblaApi) return;
+    setScrollSnaps(emblaApi.scrollSnapList());
     onSelect();
     emblaApi.on('select', onSelect);
-    emblaApi.on('reInit', onSelect);
+    emblaApi.on('reInit', () => {
+      setScrollSnaps(emblaApi.scrollSnapList());
+      onSelect();
+    });
   }, [emblaApi, onSelect]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      scrollPrev();
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      scrollNext();
+    }
+  };
 
   return (
     <section className="w-full py-16 bg-[var(--color-surface)] border-y border-[var(--color-border)] select-none">
@@ -81,13 +105,19 @@ export default function ProductSlider({
         </div>
 
         {/* Sliding Products Row inside Embla Wrapper */}
-        <div className="group relative">
+        <div 
+          className="group relative focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-gold)] rounded-2xl"
+          tabIndex={0}
+          onKeyDown={handleKeyDown}
+          role="region"
+          aria-label={`${title} Carousel`}
+        >
           <div className="overflow-hidden" ref={emblaRef}>
             <div className="flex touch-pan-y backface-hidden" style={{ touchAction: 'pan-y pinch-zoom' }}>
               {products.map((product) => (
                 <div
                   key={product.id}
-                  className="min-w-0 flex-none pl-4 sm:pl-6 first:pl-0 w-[calc(100%/1.15)] sm:w-[calc(100%/2.5)] lg:w-[calc(100%/4)] h-full transition-opacity duration-300"
+                  className="min-w-0 flex-none pl-4 sm:pl-6 first:pl-0 w-[calc(100%/1.15)] sm:w-[calc(100%/2.5)] lg:w-[calc(100%/4)] h-full transition-opacity duration-300 motion-reduce:transition-none motion-reduce:transform-none"
                 >
                   <ProductCard
                     product={product}
@@ -101,15 +131,23 @@ export default function ProductSlider({
             </div>
           </div>
           
-          {/* Edge fades */}
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-[var(--color-surface)] to-transparent" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[var(--color-surface)] to-transparent" />
+          {/* Edge fades - Ivory gradient (hides when scrolled fully to that side) */}
+          <div 
+            className={`pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-[var(--color-surface)] sm:from-[var(--brand-ivory,#FDFBF7)] to-transparent transition-opacity duration-300 z-10 ${
+              canScrollPrev ? 'opacity-100' : 'opacity-0'
+            }`} 
+          />
+          <div 
+            className={`pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[var(--color-surface)] sm:from-[var(--brand-ivory,#FDFBF7)] to-transparent transition-opacity duration-300 z-10 ${
+              canScrollNext ? 'opacity-100' : 'opacity-0'
+            }`} 
+          />
 
           {/* Custom Nav Arrows (visible on hover for desktop) */}
           <button
             type="button"
             onClick={scrollPrev}
-            className={`absolute z-10 left-[-20px] top-1/2 -translate-y-1/2 w-11 h-11 rounded-full border border-[var(--color-gold)]/40 bg-[var(--color-surface)] text-[var(--color-gold)] hover:bg-[var(--color-gold)] hover:text-[var(--color-surface)] items-center justify-center transition-all duration-300 cursor-pointer shadow-md opacity-0 hidden sm:flex group-hover:opacity-100 ${!canScrollPrev ? 'hidden sm:hidden pointer-events-none' : ''}`}
+            className={`absolute z-20 left-[-20px] top-1/2 -translate-y-1/2 w-11 h-11 rounded-full border border-[var(--color-gold)]/40 bg-[var(--color-surface)] text-[var(--color-gold)] hover:bg-[var(--color-gold)] hover:text-[var(--color-surface)] items-center justify-center transition-all duration-300 cursor-pointer shadow-md opacity-0 hidden sm:flex group-hover:opacity-100 ${!canScrollPrev ? 'hidden sm:hidden pointer-events-none' : ''}`}
             aria-label="Previous Products"
           >
             <ChevronLeft size={22} className="ml-[-1px]" />
@@ -118,12 +156,32 @@ export default function ProductSlider({
           <button
             type="button"
             onClick={scrollNext}
-            className={`absolute z-10 right-[-20px] top-1/2 -translate-y-1/2 w-11 h-11 rounded-full border border-[var(--color-gold)]/40 bg-[var(--color-surface)] text-[var(--color-gold)] hover:bg-[var(--color-gold)] hover:text-[var(--color-surface)] items-center justify-center transition-all duration-300 cursor-pointer shadow-md opacity-0 hidden sm:flex group-hover:opacity-100 ${!canScrollNext ? 'hidden sm:hidden pointer-events-none' : ''}`}
+            className={`absolute z-20 right-[-20px] top-1/2 -translate-y-1/2 w-11 h-11 rounded-full border border-[var(--color-gold)]/40 bg-[var(--color-surface)] text-[var(--color-gold)] hover:bg-[var(--color-surface)] hover:text-[var(--color-surface)] items-center justify-center transition-all duration-300 cursor-pointer shadow-md opacity-0 hidden sm:flex group-hover:opacity-100 ${!canScrollNext ? 'hidden sm:hidden pointer-events-none' : ''}`}
             aria-label="Next Products"
           >
             <ChevronRight size={22} className="mr-[-1px]" />
           </button>
         </div>
+
+        {/* Progress Dots */}
+        {scrollSnaps.length > 1 && (
+          <div className="flex justify-center items-center gap-2 mt-6" role="tablist" aria-label="Product Slider Pagination">
+            {scrollSnaps.map((_, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => scrollTo(index)}
+                aria-label={`Go to slide group ${index + 1}`}
+                aria-selected={index === selectedIndex}
+                className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                  index === selectedIndex
+                    ? 'w-6 bg-[var(--color-gold)] shadow-xs'
+                    : 'w-2 bg-[var(--color-gold)]/30 hover:bg-[var(--color-gold)]/60'
+                }`}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Mobile View All Button */}
         <div className="mt-8 text-center sm:hidden">

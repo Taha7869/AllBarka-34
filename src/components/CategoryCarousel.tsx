@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -17,14 +17,49 @@ const categories = [
 
 export default function CategoryCarousel() {
   const { t } = useLanguage();
+  const isReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  const [emblaRef] = useEmblaCarousel(
+  const [emblaRef, emblaApi] = useEmblaCarousel(
     { align: 'start', containScroll: 'trimSnaps', dragFree: true },
-    [Autoplay({ delay: 5000, stopOnInteraction: true, playOnInit: false, stopOnMouseEnter: true })] // Respect reduced motion handled by CSS if needed, but we can detect it if required. Autoplay generally stops on interaction. Wait, no playOnInit if media query matches. We will just let drag handle it cleanly.
+    isReducedMotion ? [] : [Autoplay({ delay: 5000, stopOnInteraction: true, playOnInit: false, stopOnMouseEnter: true })]
   );
 
+  const [canScrollPrev, setCanScrollPrev] = useState(false);
+  const [canScrollNext, setCanScrollNext] = useState(false);
+
+  const scrollPrev = useCallback(() => {
+    if (emblaApi) emblaApi.scrollPrev();
+  }, [emblaApi]);
+
+  const scrollNext = useCallback(() => {
+    if (emblaApi) emblaApi.scrollNext();
+  }, [emblaApi]);
+
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setCanScrollPrev(emblaApi.canScrollPrev());
+    setCanScrollNext(emblaApi.canScrollNext());
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    onSelect();
+    emblaApi.on('select', onSelect);
+    emblaApi.on('reInit', onSelect);
+  }, [emblaApi, onSelect]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      scrollPrev();
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      scrollNext();
+    }
+  };
+
   return (
-    <section className="w-full border-b border-[var(--color-border)] bg-[var(--color-base)] py-12 sm:py-16">
+    <section className="w-full border-b border-[var(--color-border)] bg-[var(--color-base)] py-12 sm:py-16 select-none">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-7 flex items-end justify-between gap-5 sm:mb-9 text-left">
           <div className="max-w-xl">
@@ -37,14 +72,20 @@ export default function CategoryCarousel() {
           </Link>
         </div>
 
-        <div className="relative">
+        <div 
+          className="relative focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-gold)] rounded-2xl"
+          tabIndex={0}
+          onKeyDown={handleKeyDown}
+          role="region"
+          aria-label="Category Carousel"
+        >
           <div className="overflow-hidden cursor-grab active:cursor-grabbing" ref={emblaRef}>
             <div className="flex backface-hidden touch-pan-y" style={{ touchAction: 'pan-y pinch-zoom' }}>
               {categories.map((category, index) => (
-                <div key={category.id} className="min-w-0 flex-none pl-4 first:pl-0 w-[calc(100%/1.8)] sm:w-[calc(100%/3.5)] lg:w-[calc(100%/5)]">
+                <div key={category.id} className="min-w-0 flex-none pl-4 first:pl-0 w-[calc(100%/1.8)] sm:w-[calc(100%/3.5)] lg:w-[calc(100%/5)] motion-reduce:transition-none motion-reduce:transform-none">
                   <Link
                     to={category.link}
-                    className="group relative block w-full h-[280px] lg:h-[380px] overflow-hidden rounded-[1.5rem] border border-[var(--color-border-accent)] bg-[var(--color-surface)] shadow-[0_12px_32px_rgba(41,35,29,0.06)] focus-ring hover:border-[#C7982F]/60 hover:shadow-[0_0_0_1.5px_rgba(199,152,47,0.45),0_12px_32px_rgba(41,35,29,0.10)] transition-all duration-300 pointer-events-auto select-none"
+                    className="group relative block w-full h-[280px] lg:h-[380px] overflow-hidden rounded-[1.5rem] border border-[var(--color-border-accent)] bg-[var(--color-surface)] shadow-[0_12px_32px_rgba(41,35,29,0.06)] focus-ring hover:border-[#C7982F]/60 hover:shadow-[0_0_0_1.5px_rgba(199,152,47,0.45),0_12px_32px_rgba(41,35,29,0.10)] transition-all duration-300 pointer-events-auto select-none motion-reduce:transition-none motion-reduce:transform-none"
                     aria-label={`Shop ${category.name}`}
                     draggable={false}
                   >
@@ -53,7 +94,7 @@ export default function CategoryCarousel() {
                       alt={t(category.altKey, category.name)}
                       draggable={false}
                       onError={(event) => { (event.currentTarget as HTMLImageElement).src = '/images/product-placeholder.svg'; }}
-                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06] motion-reduce:transition-none"
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06] motion-reduce:transition-none motion-reduce:transform-none"
                       loading={index < 2 ? 'eager' : 'lazy'}
                       decoding="async"
                     />
@@ -69,7 +110,7 @@ export default function CategoryCarousel() {
                         <span className="mb-1 block text-[9px] font-bold uppercase tracking-[0.2em] text-[var(--color-gold)] sm:text-[10px] drop-shadow-sm">{category.eyebrow}</span>
                         <h3 className="font-serif text-lg font-semibold leading-tight text-[var(--color-surface)] sm:text-xl block truncate drop-shadow-md">{category.luxuryName}</h3>
                       </div>
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--color-surface)]/25 bg-[var(--color-surface)]/10 text-[var(--color-surface)] backdrop-blur-md transition-all group-hover:border-[var(--color-gold)] group-hover:bg-[var(--color-gold)] group-hover:text-[var(--color-emerald)] shadow-sm">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--color-surface)]/25 bg-[var(--color-surface)]/10 text-[var(--color-surface)] backdrop-blur-md transition-all group-hover:border-[var(--color-gold)] group-hover:bg-[var(--color-gold)] group-hover:text-[var(--color-emerald)] shadow-sm motion-reduce:transition-none motion-reduce:transform-none">
                         <ArrowUpRight size={16} aria-hidden="true" />
                       </span>
                     </div>
@@ -79,9 +120,17 @@ export default function CategoryCarousel() {
             </div>
           </div>
           
-          {/* Edge fades */}
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-[var(--color-base)] to-transparent" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[var(--color-base)] to-transparent" />
+          {/* Edge fades - Ivory gradient (hides when scrolled fully to that side) */}
+          <div 
+            className={`pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-[var(--color-base)] sm:from-[var(--brand-ivory,#FDFBF7)] to-transparent transition-opacity duration-300 z-10 ${
+              canScrollPrev ? 'opacity-100' : 'opacity-0'
+            }`} 
+          />
+          <div 
+            className={`pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[var(--color-base)] sm:from-[var(--brand-ivory,#FDFBF7)] to-transparent transition-opacity duration-300 z-10 ${
+              canScrollNext ? 'opacity-100' : 'opacity-0'
+            }`} 
+          />
         </div>
 
         <div className="mt-8 text-center sm:hidden">
