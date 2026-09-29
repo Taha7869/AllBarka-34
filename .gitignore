@@ -23,3 +23,12 @@ credentials*.json
 .cache/
 *.tsbuildinfo
 .local-setup/
+
+# Temporary generated output text dumps
+*-utf8.txt
+*_output.txt
+backend.txt
+error.txt
+git-*.txt
+typecheck*.txt
+ts_errors.txt
