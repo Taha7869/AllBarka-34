@@ -1,4 +1,6 @@
 import express from 'express';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import path from 'path';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
@@ -170,10 +172,34 @@ if (process.env.GOOGLE_SHEETS_ID && process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && 
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
-// Set only for a known number of trusted reverse proxies in front of the API.
-app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS || 0));
+app.set('trust proxy', 1);
+
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://*.firebaseapp.com", "https://*.googleapis.com", "https://*.gstatic.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      connectSrc: ["'self'", "https://*.firebaseio.com", "https://*.googleapis.com", "https://*.cloudfunctions.net", "https://*.firebaseapp.com"],
+      imgSrc: ["'self'", "data:", "https://*"],
+    }
+  }
+}));
 
 app.use(express.json());
+
+const apiRateLimitResponse = { error: "Too many requests, please try again shortly" };
+const chatLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, message: apiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
+const contactLimiter = rateLimit({ windowMs: 60 * 1000, max: 5, message: apiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
+const ordersLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, message: apiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
+
+app.use('/api/chat', chatLimiter);
+app.use('/api/concierge', chatLimiter);
+app.use('/api/ai', chatLimiter);
+app.post('/api/contact', contactLimiter);
+app.post('/api/newsletter/subscribe', contactLimiter);
+app.post('/api/orders', ordersLimiter);
 
 // Initialize Gemini client if API key is present
 let ai: GoogleGenAI | null = null;
