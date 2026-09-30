@@ -167,7 +167,10 @@ const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     directBankTransfer: 'Direct Bank Transfer',
     orderSummary: 'Order Summary',
     viewDetails: 'View Details',
-    conciergeSupport: 'Concierge Support'
+    conciergeSupport: 'Concierge Support',
+    'hero.rotating.1': 'Royal',
+    'hero.rotating.2': 'Pure',
+    'hero.rotating.3': 'Premium'
   },
   ur: {
     home: 'ہوم',
@@ -323,7 +326,10 @@ const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     'directBankTransfer': 'ڈائریکٹ بینک ٹرانسفر',
     'orderSummary': 'آرڈر کا خلاصہ',
     'viewDetails': 'تفصیلات دیکھیں',
-    'conciergeSupport': 'شاہی مدد و دربان'
+    'conciergeSupport': 'شاہی مدد و دربان',
+    'hero.rotating.1': 'شاہی',
+    'hero.rotating.2': 'خالص',
+    'hero.rotating.3': 'اعلیٰ'
   },
   ar: {
     home: 'الرئيسية',
@@ -479,7 +485,10 @@ const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     'directBankTransfer': 'تحويل بنكي مباشر',
     'orderSummary': 'ملخص الطلب',
     'viewDetails': 'عرض التفاصيل',
-    'conciergeSupport': 'دعم الكونسيرج'
+    'conciergeSupport': 'دعم الكونسيرج',
+    'hero.rotating.1': 'ملكي',
+    'hero.rotating.2': 'خالص',
+    'hero.rotating.3': 'فاخر'
   }
 };
 

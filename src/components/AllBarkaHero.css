@@ -1,0 +1,96 @@
+/*
+ * AllBarkaHero.css
+ * Ken Burns zoom animation and gold dust particles.
+ * All animations respect prefers-reduced-motion.
+ */
+
+/* ─── Ken Burns slow zoom ────────────────────────────────────────────────── */
+@keyframes kenBurns {
+  from { transform: scale(1.0); }
+  to   { transform: scale(1.06); }
+}
+
+.hero-ken-burns {
+  animation: kenBurns 18s ease-in-out infinite alternate;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-ken-burns {
+    animation: none;
+    transform: scale(1);
+  }
+}
+
+/* ─── CTA button shine sweep ─────────────────────────────────────────────── */
+@keyframes buttonShine {
+  0%   { left: -120%; opacity: 0.8; }
+  100% { left: 120%;  opacity: 0; }
+}
+
+.hero-cta-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-cta-shine::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 243, 196, 0.3) 50%,
+    transparent 100%
+  );
+  transform: skewX(-20deg);
+  pointer-events: none;
+  transition: none;
+}
+
+.hero-cta-shine:hover::after {
+  animation: buttonShine 0.7s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-cta-shine::after {
+    display: none;
+  }
+}
+
+/* ─── Gold dust particles ────────────────────────────────────────────────── */
+@keyframes goldFloat {
+  0%   { transform: translateY(0px)   translateX(0px)   rotate(0deg);   opacity: 0; }
+  10%  { opacity: var(--dust-opacity, 0.55); }
+  90%  { opacity: var(--dust-opacity, 0.55); }
+  100% { transform: translateY(-60px) translateX(var(--dust-drift, 12px)) rotate(180deg); opacity: 0; }
+}
+
+.gold-dust-particle {
+  position: absolute;
+  width: var(--dust-size, 4px);
+  height: var(--dust-size, 4px);
+  border-radius: 50%;
+  background: radial-gradient(circle, #E4C783 0%, #C7982F 60%, transparent 100%);
+  pointer-events: none;
+  animation: goldFloat var(--dust-duration, 6s) ease-in-out var(--dust-delay, 0s) infinite;
+  z-index: 10;
+}
+
+/* Hide gold dust below 768px */
+@media (max-width: 767px) {
+  .gold-dust-particle {
+    display: none !important;
+  }
+}
+
+/* Hide gold dust when user prefers reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .gold-dust-particle {
+    display: none !important;
+  }
+}
