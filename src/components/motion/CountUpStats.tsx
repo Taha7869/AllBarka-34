@@ -14,6 +14,7 @@ interface StatConfig {
   duration: number;
 }
 
+// TODO: replace with real business numbers before launch
 const STATS: StatConfig[] = [
   { labelKey: 'stats.customers',  value: 5000,  suffix: '+',  duration: 1800 },
   { labelKey: 'stats.products',   value: 60,    suffix: '+',  duration: 1400 },
