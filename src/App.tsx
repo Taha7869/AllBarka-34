@@ -51,9 +51,12 @@ function PoliciesPageRoute() {
   );
 }
 
+import LuxuryPreloader from './components/LuxuryPreloader';
+
 export default function App() {
   return (
     <ErrorBoundary>
+      <LuxuryPreloader />
       <BrowserRouter>
         <React.Suspense fallback={<PageLoadingFallback />}>
           <Routes>

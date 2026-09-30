@@ -157,7 +157,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      setIsScrolled(window.scrollY > 24);
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
@@ -184,9 +184,25 @@ export default function RootLayout() {
   }, [isAnyModalOrDrawerOpen]);
 
 
+  // We add AnimatePresence page transitions, but respect prefers-reduced-motion
+  const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  
+  const pageTransitionVariants = {
+    initial: { opacity: 0, y: 10 },
+    enter: { 
+      opacity: 1, 
+      y: 0, 
+      transition: { duration: 0.25, ease: 'easeOut' }
+    },
+    exit: { 
+      opacity: 0, 
+      y: -5,
+      transition: { duration: 0.15, ease: 'easeIn' }
+    }
+  };
+
   return (
     <div className="min-h-screen w-full max-w-full relative flex flex-col font-sans bg-[var(--color-base)] text-[var(--color-ink)] selection:bg-[var(--color-gold)]/30 selection:text-[var(--color-ink)]">
-      <ScrollProgressBar />
       <ToastManager />
       <GradualBlur preset="header" strength={1.5} opacity={0.9} />
       
@@ -196,14 +212,15 @@ export default function RootLayout() {
       {/* Header Navigation */}
       <header 
         id="main-navigation-header"
-        className={`sticky top-0 left-0 right-0 z-[100] w-full transition-all duration-300 border-b border-[#29231D]/10 dark:border-[#C7982F]/20 bg-[#FFFCF7]/95 dark:bg-[#121615]/95 backdrop-blur-md ${
+        className={`sticky top-0 left-0 right-0 z-[100] w-full transition-all duration-300 ${
           isScrolled 
-            ? 'shadow-[0_4px_20px_rgba(41,35,29,0.06)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.35)]' 
-            : 'shadow-none'
+            ? 'h-[60px] sm:h-[68px] bg-[var(--color-surface)]/85 dark:bg-[var(--color-base)]/85 backdrop-blur-xl shadow-[var(--shadow-card)] border-b border-[var(--color-border)]'
+            : 'h-[68px] sm:h-20 bg-[var(--color-base)]/95 dark:bg-[var(--color-base)]/95 backdrop-blur-md shadow-none border-b border-transparent'
         }`}
       >
-        <div className="w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-[60px] sm:h-20 gap-2 sm:gap-4 w-full">
+        <ScrollProgressBar showGlow={false} />
+        <div className="w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 h-full flex flex-col justify-center">
+          <div className="flex justify-between items-center gap-2 sm:gap-4 w-full h-full">
             
             {/* Leading Brand Mark: Desktop shows full logo, Mobile shows crest + animated intro */}
             <div className="flex items-center shrink-0">
@@ -352,8 +369,25 @@ export default function RootLayout() {
               </div>
             }
           >
-            <div className="w-full flex flex-col items-center">
-              <Outlet context={{ cartItems, addToCart, handleAddToCart, setCartOpen: setIsCartOpen, setSelectedQuickViewProduct, setHamperModalOpen }} />
+            <div className="w-full flex justify-center">
+              <AnimatePresence mode="wait">
+                {prefersReducedMotion ? (
+                  <div key={location.pathname} className="w-full flex-col flex items-center">
+                    <Outlet context={{ cartItems, addToCart, handleAddToCart, setCartOpen: setIsCartOpen, setSelectedQuickViewProduct, setHamperModalOpen }} />
+                  </div>
+                ) : (
+                  <motion.div
+                    key={location.pathname}
+                    variants={pageTransitionVariants}
+                    initial="initial"
+                    animate="enter"
+                    exit="exit"
+                    className="w-full flex-col flex items-center origin-top bg-[var(--color-base)]"
+                  >
+                    <Outlet context={{ cartItems, addToCart, handleAddToCart, setCartOpen: setIsCartOpen, setSelectedQuickViewProduct, setHamperModalOpen }} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </React.Suspense>
         </ErrorBoundary>

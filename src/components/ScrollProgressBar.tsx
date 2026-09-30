@@ -1,24 +1,23 @@
 import React from 'react';
-import { motion, useScroll, useSpring } from 'motion/react';
+import { motion, useScroll, useSpring, useReducedMotion } from 'motion/react';
 
 export interface ScrollProgressBarProps {
-  /** Height of the progress bar in pixels or Tailwind classes */
   className?: string;
-  /** Whether to show the subtle gold-leaf ambient glow */
   showGlow?: boolean;
 }
 
 /**
  * ScrollProgressBar
  * Monitors document page scroll position and displays a thin, elegant
- * gold-leaf progress bar at the very top of the viewport using the locked
- * AllBarka 'brand-gold' (#D4AF37) luxury token.
+ * gold-leaf progress bar. Now positioned absolutely at the bottom 
+ * of its container (usually the sticky header) for the navbar hairline effect.
  */
 export const ScrollProgressBar: React.FC<ScrollProgressBarProps> = ({
   className = '',
   showGlow = true,
 }) => {
   const { scrollYProgress } = useScroll();
+  const shouldReduceMotion = useReducedMotion();
 
   // Smooth luxury spring physics for buttery scroll interpolation
   const scaleX = useSpring(scrollYProgress, {
@@ -27,15 +26,15 @@ export const ScrollProgressBar: React.FC<ScrollProgressBarProps> = ({
     restDelta: 0.001,
   });
 
+  if (shouldReduceMotion) return null;
+
   return (
     <div
       id="scroll-progress-bar-container"
-      className={`fixed top-0 left-0 right-0 z-[100000] pointer-events-none ${className}`}
+      className={`absolute bottom-0 left-0 right-0 z-[100] pointer-events-none ${className}`}
       aria-hidden="true"
     >
-      {/* Background Track (Ultra-subtle dark walnut / gold hairline) */}
       <div className="h-[1.5px] w-full bg-transparent overflow-hidden">
-        {/* Dynamic Gold-Leaf Progress Bar */}
         <motion.div
           id="scroll-progress-bar"
           style={{ scaleX }}
