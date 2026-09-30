@@ -41,7 +41,7 @@ export default function MobileMenu({
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const { language, setLanguage, isRtl, t } = useLanguage();
-  const { currentUser, patronProfile } = useAuth();
+  const { currentUser, patronProfile, logout } = useAuth();
   
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -213,6 +213,18 @@ export default function MobileMenu({
                   </div>
                   <ChevronRight size={14} className="text-[#C7982F] shrink-0 rtl:rotate-180" />
                 </button>
+                {currentUser && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                        logout();
+                        onClose();
+                    }}
+                    className="w-full mt-2 min-h-[44px] flex items-center justify-center p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 text-red-700 dark:text-red-400 font-bold transition-all text-left cursor-pointer text-xs"
+                  >
+                    {t('sign_out', 'Sign Out')}
+                  </button>
+                )}
               </div>
 
               {/* 2. Cart with live item count & working link */}

@@ -1,4 +1,5 @@
 import express from 'express';
+import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
@@ -87,40 +88,41 @@ try {
 
 // Security & Authentication Middlewares
 async function authenticateOptionalUser(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const sessionCookie = req.cookies.__session || '';
   const authHeader = req.headers.authorization;
-  if (!authHeader) {
+  
+  if (!sessionCookie && !authHeader) {
     (req as any).user = null;
     return next();
   }
-  if (!authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({
-      error: 'Invalid Authorization header format. Expected Bearer <token>.',
-      code: 'INVALID_AUTH_HEADER'
-    });
-  }
-  const token = authHeader.substring(7).trim();
-  if (!token) {
-    return res.status(401).json({
-      error: 'Empty Bearer token provided.',
-      code: 'EMPTY_TOKEN'
-    });
-  }
+
   if (!firebaseAdminAuthAvailable || !adminAuth) {
     return res.status(503).json({
       error: firebaseAdminMissingCredentialsMsg,
       code: 'AUTH_SERVICE_UNAVAILABLE'
     });
   }
+
   try {
-    const decodedToken = await adminAuth.verifyIdToken(token);
-    (req as any).user = decodedToken;
-    next();
+    if (sessionCookie) {
+      const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true);
+      (req as any).user = decodedClaims;
+      return next();
+    } else if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7).trim();
+      const decodedClaims = await adminAuth.verifyIdToken(token);
+      (req as any).user = decodedClaims;
+      return next();
+    }
   } catch (err: any) {
     return res.status(401).json({
       error: 'Invalid or expired patron credentials. Please sign in again.',
       code: 'UNAUTHORIZED'
     });
   }
+  
+  (req as any).user = null;
+  return next();
 }
 
 async function requireAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
@@ -188,6 +190,57 @@ app.use(helmet({
 }));
 
 app.use(express.json());
+app.use(cookieParser());
+
+// Auth & Session Endpoints
+app.post('/api/auth/request-otp-allowance', async (req, res) => {
+  try {
+    const { phone } = req.body;
+    if (!phone) return res.status(400).json({ error: 'Phone required' });
+    if (!db) return res.json({ allowed: true }); // local dev fallback
+
+    const now = Date.now();
+    const tenMinsAgo = now - 10 * 60 * 1000;
+    const snap = await db.collection('otp_requests')
+      .where('phone', '==', phone)
+      .where('timestamp', '>', tenMinsAgo)
+      .get();
+      
+    if (snap.size >= 3) {
+      return res.status(429).json({ error: 'Too many OTP requests. Please wait 10 minutes.' });
+    }
+    
+    await db.collection('otp_requests').add({ phone, timestamp: now });
+    res.json({ allowed: true });
+  } catch(e) {
+    res.status(500).json({ error: 'Server error measuring allowance' });
+  }
+});
+
+app.post('/api/auth/sessionLogin', async (req, res) => {
+  try {
+    const { idToken } = req.body;
+    if (!idToken || !adminAuth) {
+      return res.status(401).send('UNAUTHORIZED_REQUEST');
+    }
+
+    const expiresIn = 60 * 60 * 24 * 7 * 1000; // 7 days
+    const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
+    const isProd = process.env.NODE_ENV === 'production';
+    const options = { maxAge: expiresIn, httpOnly: true, secure: isProd, sameSite: 'lax' as const };
+    
+    res.cookie('__session', sessionCookie, options);
+    res.json({ status: 'success' });
+  } catch (error) {
+    console.error('Session Login Error:', error);
+    res.status(401).send('UNAUTHORIZED_REQUEST');
+  }
+});
+
+app.post('/api/auth/sessionLogout', (req, res) => {
+  res.clearCookie('__session');
+  res.json({ status: 'success' });
+});
 
 const apiRateLimitResponse = { error: "Too many requests, please try again shortly" };
 const chatLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, message: apiRateLimitResponse, standardHeaders: true, legacyHeaders: false });

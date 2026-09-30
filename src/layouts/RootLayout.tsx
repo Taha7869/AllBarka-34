@@ -280,19 +280,32 @@ export default function RootLayout() {
               <ThemeToggle className="min-w-[44px] min-h-[44px] border-[#29231D]/10 dark:border-[#C7982F]/25 bg-[#F6F1EA]/60 dark:bg-[#1A201E]/60 hover:bg-[#C7982F]/15 text-[#042821] dark:text-[#FFFCF7]" />
 
               {/* Patron VIP Lounge / Login (Desktop only) */}
-              <button 
-                type="button"
-                onClick={() => currentUser ? setPatronLoungeOpen(true) : setAuthModalOpen(true)}
-                className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 border border-[#29231D]/10 dark:border-[#C7982F]/25 bg-[#F6F1EA]/60 dark:bg-[#1A201E]/60 hover:bg-[#C7982F]/15 text-[#042821] dark:text-[#FFFCF7] focus-ring cursor-pointer"
-                aria-label={currentUser ? 'Open VIP patron lounge' : 'Patron login'}
-              >
-                <div className="bg-[#C7982F]/15 p-1 rounded-lg">
-                  <User size={16} className="text-[#C7982F]" />
-                </div>
-                <span className="text-xs font-semibold tracking-wide whitespace-nowrap">
-                  {currentUser ? (patronProfile?.name?.split(' ')[0] || 'VIP Patron') : 'Patron Login'}
-                </span>
-              </button>
+              <div className="hidden sm:flex items-center gap-1.5">
+                <button 
+                  type="button"
+                  onClick={() => currentUser ? setPatronLoungeOpen(true) : setAuthModalOpen(true)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 border border-[#29231D]/10 dark:border-[#C7982F]/25 bg-[#F6F1EA]/60 dark:bg-[#1A201E]/60 hover:bg-[#C7982F]/15 text-[#042821] dark:text-[#FFFCF7] focus-ring cursor-pointer"
+                  aria-label={currentUser ? 'Open VIP patron lounge' : 'Patron login'}
+                >
+                  <div className="bg-[#C7982F]/15 p-1 rounded-lg">
+                    <User size={16} className="text-[#C7982F]" />
+                  </div>
+                  <span className="text-xs font-semibold tracking-wide whitespace-nowrap">
+                    {currentUser ? (patronProfile?.name?.split(' ')[0] || 'VIP Patron') : 'Patron Login'}
+                  </span>
+                </button>
+                
+                {currentUser && (
+                  <button
+                    type="button"
+                    onClick={logout}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl transition-all duration-200 border border-red-200 dark:border-red-900/30 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-700 dark:text-red-400 focus-ring cursor-pointer"
+                    aria-label="Sign out"
+                  >
+                    <span className="text-[11px] font-bold tracking-wide uppercase">Logout</span>
+                  </button>
+                )}
+              </div>
 
               {/* Cart Button */}
               <button 

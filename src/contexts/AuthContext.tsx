@@ -111,6 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         import('firebase/auth'),
         import('../lib/firebase')
       ]);
+      await fetch('/api/auth/sessionLogout', { method: 'POST' });
       await signOut(auth);
       setCurrentUser(null);
       setPatronProfile(null);
