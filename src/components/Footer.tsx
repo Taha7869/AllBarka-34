@@ -77,7 +77,7 @@ export default function Footer() {
     <div className="w-full flex flex-col">
       <TrustBadges />
       
-      <footer className="w-full bg-[var(--color-primary)] text-[var(--color-primary-fg)] border-t border-[var(--color-accent)]/30 relative overflow-hidden select-none">
+      <footer aria-label="AllBarka footer" className="w-full bg-[var(--color-primary)] text-[var(--color-primary-fg)] border-t border-[var(--color-accent)]/30 relative overflow-hidden select-none">
         {/* Restrained ambient gold radial glow */}
         <div
           aria-hidden="true"
@@ -85,22 +85,24 @@ export default function Footer() {
         />
 
         {/* The Newsletter Card overlays the footer border */}
-        <NewsletterCard />
+        <div className="[&_h3]:text-[var(--color-gold)]">
+          <NewsletterCard />
+        </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-12 relative z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-12 relative z-10">
           
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-10 xl:gap-14 items-start text-start">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-start text-start">
             {/* Column 1: Brand & Story */}
-            <div className="space-y-6">
-              <Link to="/" className="inline-flex items-center gap-3 group">
+            <div className="space-y-6 col-span-2 md:col-span-1">
+              <Link to="/" className="inline-flex items-center gap-3 group transition-colors hover:text-[var(--color-gold)]">
                 <div className="w-10 h-10 flex items-center justify-center">
                   <AllBarkaCrestVector />
                 </div>
                 <div>
-                  <span className="text-2xl font-serif font-bold text-white tracking-wide block group-hover:text-[var(--color-accent)] transition-colors">
+                  <span className="text-2xl font-serif font-bold text-white tracking-wide block group-hover:text-[var(--color-gold)] transition-colors">
                     AllBarka
                   </span>
-                  <span className="text-[10px] uppercase tracking-[0.25em] text-[var(--color-accent)] block font-semibold">
+                  <span className="text-[10px] uppercase tracking-[0.25em] text-[var(--color-gold)] block font-semibold">
                     LUXURY HARVESTS
                   </span>
                 </div>
@@ -111,7 +113,7 @@ export default function Footer() {
             </div>
 
             {/* Column 2 & 3: Desktop Links / Mobile Accordion */}
-            <div className="lg:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-10">
+            <div className="col-span-2 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-10">
               {/* Desktop view */}
               <div className="hidden lg:block space-y-5">
                 <h3 className="text-xs font-serif font-bold uppercase tracking-[0.2em] text-[var(--color-accent)] border-b border-[var(--color-accent)]/20 pb-2">
@@ -120,7 +122,7 @@ export default function Footer() {
                 <ul className="space-y-3 text-xs">
                   {QUICK_LINKS.links.map((link, idx) => (
                     <li key={idx}>
-                      <Link to={link.href} className="text-[#B4C0BC] hover:text-white transition-colors">
+                      <Link to={link.href} className="text-[#B4C0BC] hover:text-[var(--color-gold)] transition-colors">
                         {link.name}
                       </Link>
                     </li>
@@ -135,7 +137,7 @@ export default function Footer() {
                 <ul className="space-y-3 text-xs">
                   {CUSTOMER_SERVICE.links.map((link, idx) => (
                     <li key={idx}>
-                      <Link to={link.href} className="text-[#B4C0BC] hover:text-white transition-colors">
+                      <Link to={link.href} className="text-[#B4C0BC] hover:text-[var(--color-gold)] transition-colors">
                         {link.name}
                       </Link>
                     </li>
@@ -151,7 +153,7 @@ export default function Footer() {
             </div>
 
             {/* Column 4: Contact Info & Socials */}
-            <div className="space-y-5">
+            <div className="space-y-5 col-span-2 md:col-span-1">
               <h3 className="text-xs font-serif font-bold uppercase tracking-[0.2em] text-[var(--color-accent)] border-b border-[var(--color-accent)]/20 pb-2 hidden lg:block">
                 {t('connectWithUs', 'Connect With Us')}
               </h3>
@@ -167,7 +169,7 @@ export default function Footer() {
                     href={buildHumanSupportWhatsAppUrl()}
                     target="_blank"
                     rel="noreferrer"
-                    className="hover:text-[var(--color-accent)] transition-colors font-medium"
+                    className="hover:text-[var(--color-gold)] transition-colors font-medium"
                     dir="ltr" // WhatsApp numbers should remain LTR
                   >
                     WhatsApp: {CONTACT_CONFIG.humanSupportWhatsApp.formatted}
@@ -198,6 +200,14 @@ export default function Footer() {
             </div>
           </div>
 
+          {/* Trust Strip */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs text-zinc-400 border-t border-zinc-800 pt-6 mt-10 text-center font-medium">
+            <span>✓ Ethically Sourced</span>
+            <span>✓ Encrypted Payments</span>
+            <span>✓ Same-day in Lahore</span>
+            <span>✓ Hassle-free Replacement</span>
+          </div>
+
           {/* Copyright & Payment Badges Row */}
           <div className="mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-[var(--color-primary-fg)]/50">
             
@@ -205,9 +215,9 @@ export default function Footer() {
               <p>
                 © {new Date().getFullYear()} AllBarka Dry Fruits & Confections. {t('allRightsReserved', 'All rights reserved.')}
               </p>
-              <div className="flex items-center justify-center md:justify-start gap-4 mt-2 font-sans font-medium text-[9px] uppercase tracking-wider text-[var(--color-primary-fg)]/40 hover:text-[var(--color-primary-fg)]/60 transition-colors">
-                <Link to="/policies/privacy">Privacy</Link>
-                <Link to="/policies/terms">Terms</Link>
+              <div className="flex items-center justify-center md:justify-start gap-4 mt-2 font-sans font-medium text-[9px] uppercase tracking-wider text-[var(--color-primary-fg)]/40 child-hover:text-[var(--color-gold)] transition-colors">
+                <Link to="/policies/privacy" className="hover:text-[var(--color-gold)] transition-colors">Privacy</Link>
+                <Link to="/policies/terms" className="hover:text-[var(--color-gold)] transition-colors">Terms</Link>
               </div>
             </div>
             

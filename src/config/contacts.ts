@@ -41,6 +41,14 @@ export function buildHumanSupportWhatsAppUrl(textMessage?: string): string {
 }
 
 /**
+ * Auth support WhatsApp URL — shown when phone auth is rate-limited or quota-exceeded.
+ * Never change this URL without explicit instruction.
+ */
+export const WHATSAPP_SUPPORT_URL =
+  "https://wa.me/92316066083?text=" +
+  encodeURIComponent("Assalam o Alaikum! Mujhe AllBarka se madad chahiye.");
+
+/**
  * Builds a mailto link for customer email inquiries
  */
 export function buildCustomerEmailUrl(subject?: string, body?: string): string {

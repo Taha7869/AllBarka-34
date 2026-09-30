@@ -39,7 +39,7 @@ export default function NewsletterCard() {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mb-16 relative z-10 -mt-10 sm:-mt-16">
+    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-2 relative z-10">
       <div className="bg-[var(--color-primary)] rounded-3xl p-6 sm:p-10 border border-[var(--color-accent)]/30 shadow-[0_20px_40px_rgba(4,40,33,0.15)] relative overflow-hidden text-center text-[var(--color-primary-fg)]">
         
         {/* Decorative elements */}

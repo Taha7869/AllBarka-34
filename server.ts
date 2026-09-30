@@ -161,6 +161,45 @@ async function requireAdmin(req: express.Request, res: express.Response, next: e
 // In-memory claims for Guest -> Account linking (Order ID -> Claim Token)
 const orderClaims = new Map<string, string>();
 
+// ── OTP Rate Limiter ─────────────────────────────────────────────────────────
+// Sliding 10-minute window, keyed per phone number.
+// TEST_PHONE_NUMBERS (comma-separated env var) bypass the limiter entirely.
+const OTP_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+const OTP_MAX_REQUESTS = 3;
+const otpRequestMap = new Map<string, number[]>(); // phone -> sorted timestamps
+
+const testPhoneNumbers = new Set(
+  (process.env.TEST_PHONE_NUMBERS || '')
+    .split(',')
+    .map(p => p.trim())
+    .filter(Boolean)
+);
+
+function checkOtpAllowance(phone: string): { allowed: boolean; waitMinutes?: number } {
+  if (testPhoneNumbers.has(phone)) return { allowed: true };
+
+  const now = Date.now();
+  const cutoff = now - OTP_WINDOW_MS;
+
+  // Get/init and prune stale timestamps
+  const timestamps = (otpRequestMap.get(phone) || []).filter(ts => ts > cutoff);
+
+  if (timestamps.length >= OTP_MAX_REQUESTS) {
+    // Earliest entry in the window determines when the window expires
+    const earliest = timestamps[0];
+    const waitMs = earliest + OTP_WINDOW_MS - now;
+    const waitMinutes = Math.max(1, Math.ceil(waitMs / 60000));
+    // Persist pruned list (no new entry added when blocked)
+    otpRequestMap.set(phone, timestamps);
+    return { allowed: false, waitMinutes };
+  }
+
+  timestamps.push(now);
+  otpRequestMap.set(phone, timestamps);
+  return { allowed: true };
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 // Initialize Google Sheets Service Account Auth
 let doc: GoogleSpreadsheet | null = null;
 if (process.env.GOOGLE_SHEETS_ID && process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
@@ -193,28 +232,27 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Auth & Session Endpoints
-app.post('/api/auth/request-otp-allowance', async (req, res) => {
-  try {
-    const { phone } = req.body;
-    if (!phone) return res.status(400).json({ error: 'Phone required' });
-    if (!db) return res.json({ allowed: true }); // local dev fallback
 
-    const now = Date.now();
-    const tenMinsAgo = now - 10 * 60 * 1000;
-    const snap = await db.collection('otp_requests')
-      .where('phone', '==', phone)
-      .where('timestamp', '>', tenMinsAgo)
-      .get();
-      
-    if (snap.size >= 3) {
-      return res.status(429).json({ error: 'Too many OTP requests. Please wait 10 minutes.' });
-    }
-    
-    await db.collection('otp_requests').add({ phone, timestamp: now });
-    res.json({ allowed: true });
-  } catch(e) {
-    res.status(500).json({ error: 'Server error measuring allowance' });
+// GET /api/auth/config — returns feature flags for the client (no secrets exposed)
+app.get('/api/auth/config', (_req, res) => {
+  res.json({
+    phoneAuthEnabled: process.env.PHONE_AUTH_ENABLED !== 'false',
+  });
+});
+
+app.post('/api/auth/request-otp-allowance', (req, res) => {
+  const { phone } = req.body;
+  if (!phone || typeof phone !== 'string') {
+    return res.status(400).json({ error: 'Phone required' });
   }
+  const result = checkOtpAllowance(phone.trim());
+  if (!result.allowed) {
+    return res.status(429).json({
+      error: `Too many OTP requests. Please wait ${result.waitMinutes} minutes.`,
+      waitMinutes: result.waitMinutes,
+    });
+  }
+  res.json({ allowed: true });
 });
 
 app.post('/api/auth/sessionLogin', async (req, res) => {

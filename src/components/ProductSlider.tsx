@@ -79,7 +79,7 @@ export default function ProductSlider({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 text-left">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 text-start">
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--color-base)] border border-[var(--color-gold)]/30 text-[var(--color-gold)] text-[10px] font-black uppercase tracking-widest mb-2">
               <Sparkles size={11} />
@@ -93,7 +93,7 @@ export default function ProductSlider({
             </p>
           </div>
 
-          <div className="hidden flex items-center gap-3 self-end sm:flex">
+          <div className="hidden sm:flex items-center gap-3 self-end">
             <Link
               to="/shop"
               className="inline-flex items-center gap-1 text-xs font-black uppercase tracking-widest text-[var(--color-gold)] hover:text-[var(--color-emerald)] transition-colors mr-2"
@@ -113,11 +113,11 @@ export default function ProductSlider({
           aria-label={`${title} Carousel`}
         >
           <div className="overflow-hidden" ref={emblaRef}>
-            <div className="flex touch-pan-y backface-hidden" style={{ touchAction: 'pan-y pinch-zoom' }}>
+            <div className="flex touch-pan-y backface-hidden overflow-x-auto snap-x snap-mandatory -mx-4 px-4" style={{ touchAction: 'pan-y pinch-zoom' }}>
               {products.map((product) => (
                 <div
                   key={product.id}
-                  className="min-w-0 flex-none pl-4 sm:pl-6 first:pl-0 w-[calc(100%/1.15)] sm:w-[calc(100%/2.5)] lg:w-[calc(100%/4)] h-full transition-opacity duration-300 motion-reduce:transition-none motion-reduce:transform-none"
+                  className="min-w-0 flex-none pl-4 sm:pl-6 first:pl-0 w-[calc(100%/1.15)] sm:w-[calc(100%/2.5)] lg:w-[calc(100%/4)] h-full transition-opacity duration-300 motion-reduce:transition-none motion-reduce:transform-none snap-start shrink-0 w-[280px] sm:w-[320px]"
                 >
                   <ProductCard
                     product={product}

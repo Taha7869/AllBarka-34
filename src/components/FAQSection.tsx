@@ -116,7 +116,9 @@ export function FAQSection() {
                           isOpen ? 'text-[var(--color-ink)]' : 'text-[var(--color-ink)]/90'
                         }`}
                       >
-                        {faq.question}
+                        {/* bdi isolates direction of English text so '?' renders at the
+                            correct end regardless of the document's RTL/LTR direction */}
+                        <bdi>{faq.question}</bdi>
                       </h3>
                     </div>
                   </div>
@@ -144,7 +146,7 @@ export function FAQSection() {
                       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                       className="overflow-hidden"
                     >
-                      <div className="px-4 pb-5 sm:px-6 sm:pb-7 pt-1 border-t border-[var(--color-border)] text-left">
+                      <div className="px-4 pb-5 sm:px-6 sm:pb-7 pt-1 border-t border-[var(--color-border)] text-start">
                         <div className="p-3.5 sm:p-5 rounded-2xl bg-[var(--color-base)] border border-[var(--color-border)] text-xs sm:text-sm md:text-[14.5px] text-[var(--color-ink)] font-medium leading-relaxed sm:leading-loose break-words">
                           <p>{faq.answer}</p>
                           
@@ -163,7 +165,7 @@ export function FAQSection() {
         </div>
 
         {/* ── Footer Support Banner ─────────────────────────────────────── */}
-        <div className="mt-10 p-5 sm:p-6 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-gold)]/40 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left shadow-md">
+        <div className="mt-10 p-5 sm:p-6 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-gold)]/40 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-start shadow-md">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[var(--color-base)] border border-[var(--color-border)] text-[var(--color-gold)] flex items-center justify-center shrink-0">
               <ShieldCheck size={20} />

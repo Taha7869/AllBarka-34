@@ -30,7 +30,7 @@ export default function LogoLoop({
   const items = [...logos, ...logos, ...logos, ...logos];
 
   return (
-    <div className="relative w-full overflow-hidden py-4 select-none">
+    <div className="relative w-full overflow-hidden whitespace-nowrap py-4 select-none">
       {/* Optional Fade Out Edges for Luxury Seamless Flow */}
       {fadeOut && (
         <>
