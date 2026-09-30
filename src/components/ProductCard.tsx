@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, ShoppingBag } from 'lucide-react';
+import { motion, useReducedMotion } from 'motion/react';
 import { Product } from '../types';
 import { getProductImage } from '../data/products';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCart } from '../contexts/CartContext';
 import { getLocalized } from '../utils/localize';
+import MagneticButton from './motion/MagneticButton';
 
 interface ProductCardProps {
   product: Product;
@@ -23,6 +25,7 @@ export default function ProductCard({
 }: ProductCardProps) {
   const { t, language } = useLanguage();
   const { addToCart } = useCart();
+  const shouldReduceMotion = useReducedMotion();
   const weights = Object.keys(product.prices || {});
   const [selectedWeight, setSelectedWeight] = useState(weights[0] || '250g');
 
@@ -30,11 +33,39 @@ export default function ProductCard({
     ? (product.wholesale || Object.values(product.prices)[0] || 0)
     : (product.prices[selectedWeight] || Object.values(product.prices)[0] || 0);
 
+  // ── Spotlight mouse tracking ────────────────────────────────────────────────
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    e.currentTarget.style.setProperty('--mouse-x', `${x}%`);
+    e.currentTarget.style.setProperty('--mouse-y', `${y}%`);
+  }, []);
+
+  // ── Hover lift variants ─────────────────────────────────────────────────────
+  const cardVariants = {
+    rest: {
+      y: 0,
+      boxShadow: 'var(--shadow-card, 0 4px 20px -4px rgba(41,35,29,0.06))',
+    },
+    hover: shouldReduceMotion
+      ? {}
+      : {
+          y: -4,
+          boxShadow: 'var(--shadow-card-hover, 0 16px 36px -8px rgba(41,35,29,0.12))',
+        },
+  };
+
   return (
-    <div
-      className="group/card bg-[var(--color-surface,#FFFCF7)] dark:bg-[var(--color-surface,#1A201E)] border border-[var(--color-border)] dark:border-[var(--color-border)] hover:border-[var(--color-accent,#C7982F)] dark:hover:border-[var(--color-accent,#D4A843)] rounded-3xl p-5 flex flex-col justify-between h-full transition-all duration-300 shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] relative"
+    <motion.div
+      className="spotlight-card group/card bg-[var(--color-surface,#FFFCF7)] dark:bg-[var(--color-surface,#1A201E)] border border-[var(--color-border)] dark:border-[var(--color-border)] hover:border-[var(--color-accent,#C7982F)] dark:hover:border-[var(--color-accent,#D4A843)] rounded-3xl p-5 flex flex-col justify-between h-full transition-colors duration-300 relative"
+      variants={cardVariants}
+      initial="rest"
+      whileHover="hover"
+      transition={{ type: 'spring', stiffness: 340, damping: 28, mass: 0.6 }}
+      onMouseMove={handleMouseMove}
     >
-      {/* Top Meta Line: Dark bronze labels on light backgrounds (WCAG AA compliant) */}
+      {/* Top Meta Line */}
       <div className="flex items-center justify-between gap-2 mb-3">
         <span className="text-[10px] font-sans font-semibold uppercase tracking-[0.18em] text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)]">
           {getLocalized(product, 'health', language) || 'Single-Origin'}
@@ -46,8 +77,11 @@ export default function ProductCard({
         )}
       </div>
 
-      {/* Image Plate */}
-      <Link to={`/product/${product.id}`} className="block w-full aspect-[4/3] rounded-2xl bg-[var(--color-surface-subtle,#FAF9F5)] dark:bg-[var(--color-surface-elevated,#222A28)] border border-[var(--color-border)] dark:border-[var(--color-border)] overflow-hidden flex items-center justify-center p-3 relative group shadow-2xs focus-ring">
+      {/* Image Plate — zoom on card hover */}
+      <Link
+        to={`/product/${product.id}`}
+        className="block w-full aspect-[4/3] rounded-2xl bg-[var(--color-surface-subtle,#FAF9F5)] dark:bg-[var(--color-surface-elevated,#222A28)] border border-[var(--color-border)] dark:border-[var(--color-border)] overflow-hidden flex items-center justify-center p-3 relative group shadow-2xs focus-ring"
+      >
         <img
           src={getProductImage(product)}
           alt={t(`imageAlt.${product.id}`, getLocalized(product, 'name', language))}
@@ -58,7 +92,7 @@ export default function ProductCard({
           }}
           className="w-full h-full object-contain group-hover/card:scale-105 transition-transform duration-500 ease-out"
           loading="lazy"
-        decoding="async"
+          decoding="async"
         />
       </Link>
 
@@ -112,8 +146,9 @@ export default function ProductCard({
           </div>
 
           <div className="pt-1 border-t border-[var(--color-border)] w-full flex items-center justify-between gap-1.5">
-            <button
-              type="button"
+            {/* Magnetic Add-to-Cart */}
+            <MagneticButton
+              strength={5}
               onClick={(e) => {
                 e.stopPropagation();
                 if (onAddToCart) {
@@ -122,26 +157,26 @@ export default function ProductCard({
                   addToCart(product, selectedWeight, 1);
                 }
               }}
-              className="flex-1 min-h-[40px] py-1 px-3 rounded-full bg-[#1E3A2B] hover:bg-[#14281E] text-[#FDFBF7] border border-[#C5A059]/40 hover:border-[#C5A059] text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer shadow-xs active:scale-[0.98]"
+              className="flex-1 min-h-[40px] py-1 px-3 rounded-full bg-[#1E3A2B] hover:bg-[#14281E] text-[#FDFBF7] border border-[#C5A059]/40 hover:border-[#C5A059] text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors duration-200 cursor-pointer shadow-xs active:scale-[0.98] hero-cta-shine"
             >
               <ShoppingBag size={13} strokeWidth={2} className="text-[#C5A059]" />
               <span>{t('addToCart', 'Add to Cart')}</span>
-            </button>
+            </MagneticButton>
             <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (onQuickView) onQuickView(product);
-                }}
-                className="flex items-center min-w-[40px] h-[40px] rounded-full border border-[var(--color-border)] bg-[var(--color-surface,#FFFCF7)] dark:bg-[var(--color-surface,#1A201E)] flex items-center justify-center text-[var(--color-text-secondary,#635B52)] hover:text-[#C5A059] hover:border-[#C5A059] transition-colors shadow-xs cursor-pointer focus-ring"
-                aria-label={t('quickView', 'Quick View')}
-              >
-                <Eye size={16} strokeWidth={2.2} />
-                <span className="ms-1 text-xs">{t('quickView')}</span>
-              </button>
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onQuickView) onQuickView(product);
+              }}
+              className="flex items-center min-w-[40px] h-[40px] rounded-full border border-[var(--color-border)] bg-[var(--color-surface,#FFFCF7)] dark:bg-[var(--color-surface,#1A201E)] flex items-center justify-center text-[var(--color-text-secondary,#635B52)] hover:text-[#C5A059] hover:border-[#C5A059] transition-colors shadow-xs cursor-pointer focus-ring"
+              aria-label={t('quickView', 'Quick View')}
+            >
+              <Eye size={16} strokeWidth={2.2} />
+              <span className="ms-1 text-xs">{t('quickView')}</span>
+            </button>
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

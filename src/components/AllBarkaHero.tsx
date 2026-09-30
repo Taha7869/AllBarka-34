@@ -10,6 +10,7 @@ import { BorderBeam } from './ui/border-beam';
 import RotatingText from './motion/RotatingText';
 import SplitText from './motion/SplitText';
 import ShinyText from './motion/ShinyText';
+import MagneticButton from './motion/MagneticButton';
 import './AllBarkaHero.css';
 
 interface AllBarkaHeroProps {
@@ -234,20 +235,24 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
             variants={itemVariants}
             className="mt-7 flex flex-wrap items-center justify-center gap-3 sm:gap-4 will-change-transform"
           >
-            <a
+            <MagneticButton
+              as="a"
               href="/shop"
               id="hero-cta-shop"
+              strength={6}
               className="hero-cta-shine inline-flex items-center justify-center gap-2 px-7 py-3 rounded-full text-sm font-semibold tracking-wide bg-[#C7982F] text-[#1E3A2B] border-2 border-[#C7982F] transition-all duration-250 hover:bg-[#B58724] hover:border-[#B58724] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C7982F] focus-visible:outline-offset-2 min-h-[44px]"
             >
               {t('allProducts', 'Shop Now')}
-            </a>
-            <a
+            </MagneticButton>
+            <MagneticButton
+              as="a"
               href="/gifting"
               id="hero-cta-gifts"
+              strength={6}
               className="hero-cta-shine inline-flex items-center justify-center gap-2 px-7 py-3 rounded-full text-sm font-semibold tracking-wide bg-transparent text-[#E4C783] border-2 border-[#C7982F]/60 backdrop-blur-sm transition-all duration-250 hover:border-[#C7982F] hover:text-[#FFFCF7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C7982F] focus-visible:outline-offset-2 min-h-[44px]"
             >
               {t('gifting', 'Gift Sets')}
-            </a>
+            </MagneticButton>
           </motion.div>
 
           {/* Search Input */}

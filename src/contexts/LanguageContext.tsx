@@ -170,7 +170,11 @@ const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     conciergeSupport: 'Concierge Support',
     'hero.rotating.1': 'Royal',
     'hero.rotating.2': 'Pure',
-    'hero.rotating.3': 'Premium'
+    'hero.rotating.3': 'Premium',
+    'stats.customers': 'Happy Customers',
+    'stats.products': 'Premium Products',
+    'stats.cities': 'Cities Served',
+    'stats.years': 'Years of Trust'
   },
   ur: {
     home: 'ہوم',
@@ -329,7 +333,11 @@ const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     'conciergeSupport': 'شاہی مدد و دربان',
     'hero.rotating.1': 'شاہی',
     'hero.rotating.2': 'خالص',
-    'hero.rotating.3': 'اعلیٰ'
+    'hero.rotating.3': 'اعلیٰ',
+    'stats.customers': 'خوش گاہک',
+    'stats.products': 'اعلیٰ مصنوعات',
+    'stats.cities': 'شہر جہاں خدمت',
+    'stats.years': 'سالوں کا اعتماد'
   },
   ar: {
     home: 'الرئيسية',
@@ -488,7 +496,11 @@ const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     'conciergeSupport': 'دعم الكونسيرج',
     'hero.rotating.1': 'ملكي',
     'hero.rotating.2': 'خالص',
-    'hero.rotating.3': 'فاخر'
+    'hero.rotating.3': 'فاخر',
+    'stats.customers': 'عملاء سعداء',
+    'stats.products': 'منتجات فاخرة',
+    'stats.cities': 'مدن مخدومة',
+    'stats.years': 'سنوات من الثقة'
   }
 };
 

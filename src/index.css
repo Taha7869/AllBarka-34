@@ -502,3 +502,111 @@ html[dir="rtl"] h6 {
   direction: ltr !important;
   unicode-bidi: embed;
 }
+
+/* ─── Section Dividers ───────────────────────────────────────────────────────
+   Emerald-to-gold gradient hairline with a centered diamond ornament.
+   RTL-safe: uses pure absolute positioning, no logical properties.             */
+.section-divider {
+  position: relative;
+  height: 1px;
+  margin: 0 auto;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(30, 58, 43, 0.6) 15%,
+    rgba(199, 152, 47, 0.55) 50%,
+    rgba(30, 58, 43, 0.6) 85%,
+    transparent 100%
+  );
+}
+
+.section-divider::after {
+  content: '◆';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 7px;
+  color: #C7982F;
+  background: var(--section-divider-bg, var(--color-base, #FDFBF7));
+  padding: 0 6px;
+  line-height: 1;
+}
+
+/* Dark-mode diamond bg matches dark canvas */
+.dark .section-divider::after,
+[data-theme="dark"] .section-divider::after {
+  background: var(--color-base, #121615);
+}
+
+/* Divider variant on emerald sections */
+.section-divider-on-emerald {
+  position: relative;
+  height: 1px;
+  margin: 0 auto;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(199, 152, 47, 0.25) 25%,
+    rgba(228, 199, 131, 0.6) 50%,
+    rgba(199, 152, 47, 0.25) 75%,
+    transparent 100%
+  );
+}
+
+.section-divider-on-emerald::after {
+  content: '◆';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 7px;
+  color: #E4C783;
+  background: #1E3A2B;
+  padding: 0 6px;
+  line-height: 1;
+}
+
+/* ─── Spotlight Card ─────────────────────────────────────────────────────────
+   Radial gold glow follows mouse via --mouse-x / --mouse-y CSS custom props.
+   Overlay opacity transitions 0→1 on hover.
+   Touch devices: overlay never shown (handled via pointer media query).        */
+
+.spotlight-card {
+  position: relative;
+  isolation: isolate;
+}
+
+.spotlight-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  background: radial-gradient(
+    280px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(199, 152, 47, 0.12) 0%,
+    rgba(199, 152, 47, 0.04) 50%,
+    transparent 100%
+  );
+}
+
+/* Only show on devices that support hover (not touch) */
+@media (hover: hover) and (pointer: fine) {
+  .spotlight-card:hover::before {
+    opacity: 1;
+  }
+}
+
+/* Spotlight disabled on prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .spotlight-card::before {
+    display: none;
+  }
+}
+
