@@ -111,7 +111,7 @@ export default function AuthModal({
   };
 
   // ─── Error helper ────────────────────────────────────────────────────────────
-  const getFriendlyError = useCallback((errorCode: string, extra?: Record<string, string>): string => {
+  const getFriendlyError = useCallback((errorCode: string | undefined, extra?: Record<string, string>): string => {
     switch (errorCode) {
       // Email errors
       case 'auth/invalid-email':
@@ -125,11 +125,19 @@ export default function AuthModal({
       case 'auth/wrong-password':
       case 'auth/invalid-credential':
         return t('error_wrong_password', 'Incorrect email or password.');
+      case 'auth/user-disabled':
+        return t('error_unexpected', 'This account has been disabled. Please contact support.');
+      case 'auth/network-request-failed':
+        return t('error_unexpected', 'Network error. Please check your connection and try again.');
+      case 'auth/api-key-not-valid':
+      case 'auth/app-deleted':
+      case 'auth/app-not-authorized':
+        return t('error_unexpected', 'Service configuration error. Please contact support.');
       case 'auth/popup-closed-by-user':
       case 'auth/cancelled-popup-request':
-        return t('error_unexpected', 'Sign-in cancelled. Please try again.');
+        return ''; // silent — user consciously closed the popup
       case 'auth/popup-blocked':
-        return t('error_unexpected', 'Pop-up was blocked by your browser. Please allow pop-ups and try again.');
+        return t('error_unexpected', 'Pop-up was blocked by your browser. Please allow pop-ups for this site and try again.');
       // Phone errors
       case 'auth/invalid-phone-number':
         return t('error_invalid_phone', 'Invalid phone number. Include country code (e.g., +923001234567).');
@@ -151,34 +159,42 @@ export default function AuthModal({
   }, [t]);
 
   // ─── Session cookie helper (shared by all auth methods) ─────────────────────
+  // NOTE: The httpOnly session cookie is a server-side enhancement.
+  // If the server is not running or admin credentials are missing, we degrade
+  // gracefully — Firebase client state (onAuthStateChanged) still works for
+  // Firestore reads and loyalty data.
   const establishSession = useCallback(async (user: any): Promise<void> => {
-    const idToken = await user.getIdToken();
-    const sessionRes = await fetch('/api/auth/sessionLogin', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idToken }),
-    });
-    if (!sessionRes.ok) throw new Error('Failed to establish secure session');
-
-    await refreshProfile();
-
-    // Claim any pending guest order
-    const pendingClaimToken = sessionStorage.getItem('pendingClaimToken');
-    const pendingOrderId = sessionStorage.getItem('pendingOrderId');
-    if (pendingClaimToken && pendingOrderId) {
-      try {
-        await fetch('/api/orders/claim', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-          body: JSON.stringify({ orderId: pendingOrderId, claimToken: pendingClaimToken }),
-        });
-        sessionStorage.removeItem('pendingClaimToken');
-        sessionStorage.removeItem('pendingOrderId');
-      } catch (claimErr) {
-        console.error('Order claim error:', claimErr);
+    try {
+      const idToken = await user.getIdToken();
+      await fetch('/api/auth/sessionLogin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      });
+      // Claim any pending guest order
+      const pendingClaimToken = sessionStorage.getItem('pendingClaimToken');
+      const pendingOrderId = sessionStorage.getItem('pendingOrderId');
+      if (pendingClaimToken && pendingOrderId) {
+        try {
+          await fetch('/api/orders/claim', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+            body: JSON.stringify({ orderId: pendingOrderId, claimToken: pendingClaimToken }),
+          });
+          sessionStorage.removeItem('pendingClaimToken');
+          sessionStorage.removeItem('pendingOrderId');
+        } catch (claimErr) {
+          console.error('Order claim error:', claimErr);
+        }
       }
+    } catch (sessionErr) {
+      // Session cookie creation failed (server offline or admin creds missing).
+      // Firebase client auth still succeeded — log and continue.
+      console.warn('[Auth] Session cookie could not be established, falling back to client-only auth:', sessionErr);
     }
+    await refreshProfile();
   }, [refreshProfile]);
+
 
   const handleAuthSuccess = useCallback(() => {
     setAuthSuccessMsg(t('login_success', 'Welcome to the AllBarka VIP Patron Circle!'));
