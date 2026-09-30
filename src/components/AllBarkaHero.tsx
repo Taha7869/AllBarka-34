@@ -205,8 +205,10 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
           {/* Primary H1 with SplitText staggered entrance */}
           <motion.div variants={itemVariants} className="w-full text-center will-change-transform">
             <h1
-              className={`font-serif text-[#FFFCF7] tracking-wide text-2xl sm:text-4xl md:text-5xl overflow-visible ${
-                isRtl ? 'leading-[2] sm:leading-[2.1]' : 'leading-tight'
+              className={`font-serif text-[#FFFCF7] tracking-wide overflow-visible ${
+                isRtl
+                  ? 'text-xl sm:text-2xl md:text-4xl leading-[2] sm:leading-[2.1] break-words'
+                  : 'text-2xl sm:text-4xl md:text-5xl leading-tight'
               }`}
               dir={isRtl ? 'rtl' : 'ltr'}
             >

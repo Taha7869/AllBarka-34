@@ -113,11 +113,11 @@ export default function ProductSlider({
           aria-label={`${title} Carousel`}
         >
           <div className="overflow-hidden" ref={emblaRef}>
-            <div className="flex touch-pan-y backface-hidden" style={{ touchAction: 'pan-y pinch-zoom' }}>
+            <div className="flex touch-pan-y backface-hidden overflow-x-auto snap-x snap-mandatory -mx-4 px-4" style={{ touchAction: 'pan-y pinch-zoom' }}>
               {products.map((product) => (
                 <div
                   key={product.id}
-                  className="min-w-0 flex-none pl-4 sm:pl-6 first:pl-0 w-[calc(100%/1.15)] sm:w-[calc(100%/2.5)] lg:w-[calc(100%/4)] h-full transition-opacity duration-300 motion-reduce:transition-none motion-reduce:transform-none"
+                  className="min-w-0 flex-none pl-4 sm:pl-6 first:pl-0 w-[calc(100%/1.15)] sm:w-[calc(100%/2.5)] lg:w-[calc(100%/4)] h-full transition-opacity duration-300 motion-reduce:transition-none motion-reduce:transform-none snap-start shrink-0 w-[280px] sm:w-[320px]"
                 >
                   <ProductCard
                     product={product}
