@@ -6,6 +6,7 @@ import { Product } from '../types';
 import { PRODUCTS } from '../data/products';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ProductSliderProps {
   title?: string;
@@ -22,6 +23,7 @@ export default function ProductSlider({
   onAddToCart,
   onQuickView
 }: ProductSliderProps) {
+  const { t, isRtl } = useLanguage();
   const isReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const [emblaRef, emblaApi] = useEmblaCarousel(
@@ -83,13 +85,13 @@ export default function ProductSlider({
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--color-base)] border border-[var(--color-gold)]/30 text-[var(--color-gold)] text-[10px] font-black uppercase tracking-widest mb-2">
               <Sparkles size={11} />
-              <span>Curated Selection</span>
+              <span>{t('slider.curated')}</span>
             </div>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-black text-[var(--color-ink)]">
-              {title}
+              {title === 'Boutique Bestsellers' ? t('slider.title') : title}
             </h2>
             <p className="text-xs sm:text-sm text-[var(--color-ink-muted)] mt-1 max-w-lg leading-relaxed font-normal">
-              {subtitle}
+              {title === 'Boutique Bestsellers' ? t('slider.subtitle') : subtitle}
             </p>
           </div>
 
@@ -98,7 +100,7 @@ export default function ProductSlider({
               to="/shop"
               className="inline-flex items-center gap-1 text-xs font-black uppercase tracking-widest text-[var(--color-gold)] hover:text-[var(--color-emerald)] transition-colors mr-2"
             >
-              <span>View All ({PRODUCTS.length})</span>
+              <span>{t('slider.viewAll')} ({PRODUCTS.length})</span>
               <ArrowRight size={13} />
             </Link>
           </div>
@@ -112,20 +114,20 @@ export default function ProductSlider({
           role="region"
           aria-label={`${title} Carousel`}
         >
-          <div className="overflow-hidden" ref={emblaRef}>
+          <div className="overflow-hidden" ref={emblaRef} dir="ltr">
             <div className="flex touch-pan-y backface-hidden" style={{ touchAction: 'pan-y pinch-zoom' }}>
               {products.map((product) => (
                 <div
                   key={product.id}
                   className="min-w-0 flex-none pl-4 sm:pl-6 first:pl-0 w-[calc(100%/1.15)] sm:w-[calc(100%/2.5)] lg:w-[calc(100%/4)] h-full transition-opacity duration-300 motion-reduce:transition-none motion-reduce:transform-none"
                 >
-                  <ProductCard
+                  <div dir={isRtl ? 'rtl' : 'ltr'} className="h-full"><ProductCard
                     product={product}
                     isWholesale={false}
                     onAddToCart={onAddToCart}
                     onQuickView={onQuickView}
                     viewMode="grid"
-                  />
+                  /></div>
                 </div>
               ))}
             </div>
@@ -189,7 +191,7 @@ export default function ProductSlider({
             to="/shop"
             className="inline-flex items-center justify-center w-full py-3 rounded-full bg-[var(--color-base)] border border-[var(--color-border)] text-xs font-black uppercase tracking-widest text-[var(--color-ink)]"
           >
-            <span>View All Products ({PRODUCTS.length})</span>
+            <span>{t('slider.viewAll')} ({PRODUCTS.length})</span>
             <ArrowRight size={13} className="ml-1.5 text-[var(--color-gold)]" />
           </Link>
         </div>

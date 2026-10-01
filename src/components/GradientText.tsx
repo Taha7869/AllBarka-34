@@ -1,4 +1,5 @@
 import React from 'react';
+import { useReducedMotion } from 'motion/react';
 
 interface GradientTextProps {
   children: React.ReactNode;
@@ -13,6 +14,7 @@ export default function GradientText({
   animationSpeed = 8,
   className = ""
 }: GradientTextProps) {
+  const reduceMotion = useReducedMotion();
   const gradientString = `linear-gradient(to right, ${colors.join(', ')})`;
 
   return (
@@ -23,7 +25,7 @@ export default function GradientText({
         backgroundSize: '200% auto',
         WebkitBackgroundClip: 'text',
         WebkitTextFillColor: 'transparent',
-        animation: `gradient-flow ${animationSpeed}s linear infinite`,
+        animation: reduceMotion ? 'none' : `gradient-flow ${animationSpeed}s linear infinite`,
       }}
     >
       {children}

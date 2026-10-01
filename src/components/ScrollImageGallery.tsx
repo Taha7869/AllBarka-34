@@ -75,11 +75,11 @@ const ScrollImageCard: React.FC<ScrollImageCardProps> = ({ item }) => {
   return (
     <section
       ref={cardRef}
-      className="img-container h-screen min-h-[550px] snap-start flex justify-center items-center relative overflow-visible px-4 select-none"
+      className="img-container min-h-[max(550px,100svh)] snap-start flex justify-center items-center relative overflow-visible px-2 sm:px-4 select-none"
     >
       <motion.div
         style={{ opacity, scale, y }}
-        className="relative w-[290px] sm:w-[340px] md:w-[380px] h-[400px] sm:h-[460px] md:h-[500px] m-5 bg-[#2B1B17] rounded-3xl border-2 border-[#D4AF6A]/40 shadow-[0_20px_60px_rgba(0,0,0,0.8),0_0_30px_rgba(212,175,106,0.15)] overflow-hidden group"
+        className="relative w-[min(84vw,290px)] sm:w-[340px] md:w-[380px] h-[400px] sm:h-[460px] md:h-[500px] mx-2 sm:mx-5 bg-[#2B1B17] rounded-3xl border-2 border-[#D4AF6A]/40 shadow-[0_20px_60px_rgba(0,0,0,0.8),0_0_30px_rgba(212,175,106,0.15)] overflow-hidden group"
       >
         {/* Background Image */}
         <img

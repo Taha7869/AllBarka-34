@@ -59,7 +59,7 @@ export default function CategoryCarousel() {
   };
 
   return (
-    <section className="w-full border-b border-[var(--color-border)] bg-[var(--color-base)] py-12 sm:py-16 select-none">
+    <section dir="ltr" className="w-full border-b border-[var(--color-border)] bg-[var(--color-base)] py-12 sm:py-16 select-none">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-7 flex items-end justify-between gap-5 sm:mb-9 text-left">
           <div className="max-w-xl">

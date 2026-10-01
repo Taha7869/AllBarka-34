@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ShoppingBag, ArrowRight, Sparkles } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
@@ -19,6 +19,14 @@ export const StickyCartBottomBar: React.FC<StickyCartBottomBarProps> = ({
   hide = false,
 }) => {
   const location = useLocation();
+  const [footerVisible, setFooterVisible] = useState(false);
+  useEffect(() => {
+    const footer = document.getElementById('site-footer');
+    if (!footer) return;
+    const observer = new IntersectionObserver(([entry]) => setFooterVisible(entry.isIntersecting), { rootMargin: '0px 0px 80px 0px' });
+    observer.observe(footer);
+    return () => observer.disconnect();
+  }, [location.pathname]);
   const { cartItems: contextCartItems, setIsCartOpen, totalItemsCount, subtotal } = useCart();
   
   const cartItems = propCartItems ?? contextCartItems;
@@ -28,7 +36,7 @@ export const StickyCartBottomBar: React.FC<StickyCartBottomBarProps> = ({
 
   // Auto-hide when on checkout, cart page, or when any modal/drawer is open
   const isCheckoutOrCartPage = location.pathname === '/checkout' || location.pathname === '/cart';
-  const isVisible = totalCount > 0 && !hide && !isCheckoutOrCartPage;
+  const isVisible = totalCount > 0 && !hide && !isCheckoutOrCartPage && !footerVisible;
 
   const handleQuickWhatsAppOrder = () => {
     if (cartItems.length === 0) {
@@ -37,7 +45,7 @@ export const StickyCartBottomBar: React.FC<StickyCartBottomBarProps> = ({
     }
     const lines = cartItems.map((item) => {
       const unit = parsePrice(item.unitPrice || item.price);
-      return `• ${item.name} (${item.selectedWeight}) × ${item.quantity} = Rs. ${(unit * item.quantity).toLocaleString()}`;
+      return `• ${item.name_en} (${item.selectedWeight}) × ${item.quantity} = Rs. ${(unit * item.quantity).toLocaleString()}`;
     });
     const msg = [
       'Assalam-o-Alaikum AllBarka! 🌿',

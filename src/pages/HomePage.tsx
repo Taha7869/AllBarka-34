@@ -1,5 +1,5 @@
-import React from 'react';
-import { useNavigate, useOutletContext } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate, useOutletContext } from 'react-router-dom';
 import { PRODUCTS } from '../data/products';
 import { Product } from '../types';
 import Hero from '../components/Hero';
@@ -9,10 +9,10 @@ import AllBarkaMovingReviews from '../components/AllBarkaMovingReviews';
 import FAQSection from '../components/FAQSection';
 import CountUpStats from '../components/motion/CountUpStats';
 import ScrollReveal from '../components/motion/ScrollReveal';
+import WordScrollReveal from '../components/motion/WordScrollReveal';
 import MagneticButton from '../components/motion/MagneticButton';
-import SplitText from '../components/motion/SplitText';
 import { useLanguage } from '../contexts/LanguageContext';
-import { ShieldCheck, ThermometerSnowflake, Truck, ArrowUpRight } from 'lucide-react';
+import { ShieldCheck, ThermometerSnowflake, Truck, ArrowUpRight, Play } from 'lucide-react';
 
 interface OutletContextType {
   setCartOpen: (open: boolean) => void;
@@ -28,7 +28,8 @@ const servicePillars = [
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const { isRtl } = useLanguage();
+  const { t } = useLanguage();
+  const [giftFilmPlaying, setGiftFilmPlaying] = useState(false);
   const { setCartOpen, setSelectedQuickViewProduct, handleAddToCart } = useOutletContext<OutletContextType>();
 
   const handleSearch = (query: string) => navigate(`/shop?search=${encodeURIComponent(query)}`);
@@ -40,7 +41,7 @@ export default function HomePage() {
       <Hero
         onOpenCart={() => setCartOpen(true)}
         onSearch={handleSearch}
-        onSelectCategory={(category) => navigate(category === 'all' ? '/shop' : `/shop/${category}`)}
+        onSelectCategory={(category, query) => navigate(`${category === 'all' ? '/shop' : `/shop/${category}`}${query ? `?search=${encodeURIComponent(query)}` : ''}`)}
       />
 
       {/* ── Section Divider ──────────────────────────────────────────────── */}
@@ -82,25 +83,56 @@ export default function HomePage() {
         <div className="section-divider" />
       </div>
 
+      <section className="boutique-gifting">
+        <div className="boutique-gifting-inner">
+          <div className="boutique-gifting-media">
+            {giftFilmPlaying ? (
+              <video
+                autoPlay
+                muted
+                controls
+                playsInline
+                preload="metadata"
+                poster="/images/generated/higgsfield-gifting-v1.jpg"
+                onEnded={() => setGiftFilmPlaying(false)}
+                onError={() => setGiftFilmPlaying(false)}
+                aria-label={t('boutique.giftFilm')}
+              >
+                <source src="/videos/allbarka-gifting-motion.mp4" type="video/mp4" />
+              </video>
+            ) : (
+              <>
+                <img src="/images/generated/higgsfield-gifting-v1.jpg" width={2048} height={1152} loading="lazy" decoding="async" alt={t('boutique.giftAlt')} />
+                <button type="button" className="boutique-gifting-play focus-ring" onClick={() => setGiftFilmPlaying(true)} aria-label={t('boutique.giftFilm')}>
+                  <Play size={20} fill="currentColor" aria-hidden="true" />
+                  <span>{t('boutique.giftFilm')}</span>
+                </button>
+              </>
+            )}
+          </div>
+          <div>
+            <p className="boutique-eyebrow">{t('boutique.giftEyebrow')}</p>
+            <h2>{t('boutique.giftTitle')}</h2>
+            <p>{t('boutique.giftCopy')}</p>
+            <Link to="/gifting" className="boutique-button boutique-button-gold focus-ring">{t('boutique.gifting')} <ArrowUpRight size={17} /></Link>
+          </div>
+        </div>
+      </section>
+
       {/* ── Service Pillars (dark emerald section) ───────────────────────── */}
-      <section className="w-full overflow-hidden bg-[#042821] py-16 text-[#FFFCF7] sm:py-20">
+      <section dir="ltr" className="w-full overflow-hidden bg-[#042821] py-16 text-[#FFFCF7] sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
           {/* Section divider on emerald */}
           <div className="section-divider-on-emerald mb-10" aria-hidden="true" />
 
-          <div className="mb-10 grid gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
+          <div className="mb-10 grid gap-5 text-left lg:grid-cols-[1fr_auto] lg:items-end">
             <ScrollReveal className="max-w-2xl" index={0}>
               <span className="mb-3 block text-[10px] font-bold uppercase tracking-[0.3em] text-[#E4C783]">
                 From source to doorstep
               </span>
               <h2 className="font-serif text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl">
-                <SplitText
-                  text="Quiet luxury, backed by everyday care"
-                  isRtl={isRtl}
-                  delay={100}
-                  className="text-[#FFFCF7]"
-                />
+                <WordScrollReveal text="Quiet luxury, backed by everyday care" />
               </h2>
               <p className="mt-4 max-w-xl text-sm leading-relaxed text-[#F6F1EA]/72">
                 Premium should feel effortless: honest sourcing, freshness-first handling, and a delivery experience designed around Lahore.
@@ -118,7 +150,7 @@ export default function HomePage() {
             </ScrollReveal>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-3 md:gap-4">
+          <div className="grid gap-3 text-left md:grid-cols-3 md:gap-4">
             {servicePillars.map(({ icon: Icon, number, title, copy }, i) => (
               <ScrollReveal key={number} index={i}>
                 <article className="group rounded-[1.5rem] border border-white/10 bg-white/[0.055] p-5 backdrop-blur-sm transition-colors hover:border-[#C7982F]/55 hover:bg-white/[0.08] sm:p-6 h-full">

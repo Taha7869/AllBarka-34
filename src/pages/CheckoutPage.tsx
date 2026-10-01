@@ -61,7 +61,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   const { cartItems, clearCart } = useCart();
   const { patronProfile, currentUser } = useAuth();
   const onOpenAuth = propsOnOpenAuth || (() => {});
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
 
   // 1. All Hooks declared unconditionally at the top (Rules of Hooks)
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('details');
@@ -477,7 +477,7 @@ const handleInputChange = (field: string, value: any) => {
   };
 
   return (
-    <div className="w-full flex justify-center py-12 px-4 sm:px-6 select-none relative z-10">
+    <div className="boutique-checkout w-full max-w-6xl mx-auto grid lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] items-start gap-8 py-10 px-4 sm:px-6 relative z-10">
 
       {/* Main Checkout Modal Container: 24px Outer Padding without restrictive max-h */}
       <motion.div
@@ -485,12 +485,12 @@ const handleInputChange = (field: string, value: any) => {
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.96, opacity: 0, y: 16 }}
         transition={{ duration: 0.28, ease: 'easeOut' }}
-        className="bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/35 max-w-lg w-full rounded-[24px] sm:rounded-[28px] shadow-[0_24px_70px_rgba(31,18,15,0.3),0_0_30px_rgba(184,147,95,0.15)] relative overflow-hidden z-10 flex flex-col"
+        className="bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/35 w-full rounded-2xl shadow-sm relative overflow-hidden z-10 flex flex-col"
       >
         <div className="absolute top-0 right-0 w-44 h-44 bg-[var(--color-gold,#B8935F)]/10 rounded-full blur-3xl pointer-events-none" />
 
         {/* 1. Header (24px padding on sides) */}
-        <div className="px-6 py-4.5 border-b border-[var(--color-gold,#B8935F)]/20 bg-white/85 backdrop-blur-md flex items-center justify-between shrink-0">
+        <div className="px-4 sm:px-6 py-4.5 border-b border-[var(--color-gold,#B8935F)]/20 bg-white/85 backdrop-blur-md flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[var(--color-ink,#1F120F)] border border-[var(--color-gold,#B8935F)]/60 flex items-center justify-center text-[var(--color-gold,#B8935F)] shadow-xs shrink-0">
               <ShoppingBag size={18} className="text-[var(--color-gold,#B8935F)]" />
@@ -520,7 +520,7 @@ const handleInputChange = (field: string, value: any) => {
             <button
               type="button"
               onClick={() => setCurrentStep('details')}
-              className={`flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 py-1.5 sm:py-2 px-2 sm:px-2.5 rounded-xl border text-center sm:text-left transition-all cursor-pointer ${
+              className={`flex min-h-11 items-center justify-center sm:justify-start gap-1.5 sm:gap-2 py-1.5 sm:py-2 px-1 sm:px-2.5 rounded-xl border text-center sm:text-left transition-all cursor-pointer ${
                 currentStep === 'details'
                   ? 'bg-[#1F120F] text-[#FDFBF7] border-[#B8935F] shadow-xs'
                   : 'bg-white/80 text-[#1F120F]/70 border-[#B8935F]/20 hover:border-[#B8935F]/40'
@@ -538,7 +538,7 @@ const handleInputChange = (field: string, value: any) => {
             <button
               type="button"
               onClick={() => { if (validateStep1(true)) setCurrentStep('shipping'); }}
-              className={`flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 py-1.5 sm:py-2 px-2 sm:px-2.5 rounded-xl border text-center sm:text-left transition-all cursor-pointer ${
+              className={`flex min-h-11 items-center justify-center sm:justify-start gap-1.5 sm:gap-2 py-1.5 sm:py-2 px-1 sm:px-2.5 rounded-xl border text-center sm:text-left transition-all cursor-pointer ${
                 currentStep === 'shipping'
                   ? 'bg-[#1F120F] text-[#FDFBF7] border-[#B8935F] shadow-xs'
                   : 'bg-white/80 text-[#1F120F]/70 border-[#B8935F]/20 hover:border-[#B8935F]/40'
@@ -560,7 +560,7 @@ const handleInputChange = (field: string, value: any) => {
                 if (!validateStep2(true)) { setCurrentStep('shipping'); return; }
                 setCurrentStep('payment');
               }}
-              className={`flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 py-1.5 sm:py-2 px-2 sm:px-2.5 rounded-xl border text-center sm:text-left transition-all cursor-pointer ${
+              className={`flex min-h-11 items-center justify-center sm:justify-start gap-1.5 sm:gap-2 py-1.5 sm:py-2 px-1 sm:px-2.5 rounded-xl border text-center sm:text-left transition-all cursor-pointer ${
                 currentStep === 'payment'
                   ? 'bg-[#1F120F] text-[#FDFBF7] border-[#B8935F] shadow-xs'
                   : 'bg-white/80 text-[#1F120F]/70 border-[#B8935F]/20 hover:border-[#B8935F]/40'
@@ -580,7 +580,7 @@ const handleInputChange = (field: string, value: any) => {
         <form
           id="checkoutForm"
           onSubmit={handleSubmit}
-          className="flex-1 overflow-y-auto min-h-0 px-6 py-5 pb-10 space-y-4 [scrollbar-width:thin]"
+          className="flex-1 overflow-y-auto min-h-0 px-4 sm:px-6 py-5 pb-10 space-y-4 [scrollbar-width:thin]"
         >
           {/* Skeleton State on Submitting Order */}
           {isSubmittingOrder && (
@@ -973,7 +973,7 @@ const handleInputChange = (field: string, value: any) => {
                     <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)]/80">
                       Payment Protocol *
                     </label>
-                    <div className="grid grid-cols-2 gap-2.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       <button
                         type="button"
                         onClick={() => {
@@ -1359,7 +1359,7 @@ const handleInputChange = (field: string, value: any) => {
 
         {/* 4. Bottom Security Reassurance (Hide on Success) */}
         {currentStep !== 'success' && (
-          <div className="px-6 py-2.5 border-t border-[var(--color-gold,#B8935F)]/20 bg-white/70 flex items-center justify-between text-[9.5px] text-[var(--color-ink,#1F120F)]/65 shrink-0">
+          <div className="px-4 sm:px-6 py-2.5 border-t border-[var(--color-gold,#B8935F)]/20 bg-white/70 flex flex-wrap items-center justify-between gap-1.5 text-[9.5px] text-[var(--color-ink,#1F120F)]/65 shrink-0">
             <span className="flex items-center gap-1.5">
               <Lock size={12} className="text-[var(--color-gold,#B8935F)]" />
               Review your details before ordering
@@ -1371,6 +1371,24 @@ const handleInputChange = (field: string, value: any) => {
           </div>
         )}
       </motion.div>
+      {currentStep !== 'success' && <aside className="boutique-order-summary" aria-label={t('boutique.order')}>
+        <h2>{t('boutique.order')}</h2>
+        <div className="boutique-order-items">
+          {cartItems.map(item => <div key={item.id} className="boutique-order-item">
+            <img src={item.image} alt={getLocalized(item, 'name', language)} width={64} height={64} />
+            <div><strong>{getLocalized(item, 'name', language)}</strong><small>{item.selectedWeight} × {item.quantity}</small></div>
+            <bdi>Rs. {(parsePrice(item.unitPrice ?? item.price) * item.quantity).toLocaleString()}</bdi>
+          </div>)}
+        </div>
+        <dl>
+          <div><dt>{t('subtotal', 'Subtotal')}</dt><dd>Rs. {subtotal.toLocaleString()}</dd></div>
+          <div><dt>{t('boutique.shipping')}</dt><dd>Rs. {currentShippingFee.toLocaleString()}</dd></div>
+          {discountAmt > 0 && <div><dt>{t('boutique.discount')}</dt><dd>− Rs. {discountAmt.toLocaleString()}</dd></div>}
+          {giftFeeTotal > 0 && <div><dt>{t('boutique.wrapping')}</dt><dd>Rs. {giftFeeTotal.toLocaleString()}</dd></div>}
+          <div className="boutique-order-total"><dt>{t('total', 'Total')}</dt><dd>Rs. {finalPayable.toLocaleString()}</dd></div>
+        </dl>
+        <p>{t('boutique.orderNote')}</p>
+      </aside>}
     </div>
   );
 }

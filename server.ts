@@ -3,9 +3,9 @@ import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
+import { readFileSync } from 'node:fs';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
-import { createServer as createViteServer } from 'vite';
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import { JWT } from 'google-auth-library';
 import { initializeApp, cert, applicationDefault } from 'firebase-admin/app';
@@ -174,15 +174,19 @@ if (process.env.GOOGLE_SHEETS_ID && process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && 
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
-app.set('trust proxy', 1);
+const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS || 0);
+if (!Number.isInteger(trustProxyHops) || trustProxyHops < 0) {
+  throw new Error('TRUST_PROXY_HOPS must be a non-negative integer.');
+}
+app.set('trust proxy', trustProxyHops);
 
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://*.firebaseapp.com", "https://*.googleapis.com", "https://*.gstatic.com"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://api.fontshare.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdn.fontshare.com"],
       connectSrc: ["'self'", "https://*.firebaseio.com", "https://*.googleapis.com", "https://*.cloudfunctions.net", "https://*.firebaseapp.com"],
       imgSrc: ["'self'", "data:", "https://*"],
     }
@@ -811,8 +815,8 @@ app.post('/api/newsletter/subscribe', async (req, res) => {
 
     const normalized = isEmail ? target.toLowerCase() : target.replace(/[\s-]/g, '');
 
-    // Persist to Firestore if available
-    if (db) {
+    if (!db) return res.status(503).json({ error: 'Newsletter is temporarily unavailable.', code: 'PERSISTENCE_UNAVAILABLE' });
+    {
       try {
         const subDoc = db.collection('subscribers').doc(Buffer.from(normalized).toString('base64url'));
         await subDoc.set({
@@ -824,7 +828,8 @@ app.post('/api/newsletter/subscribe', async (req, res) => {
           tags: ['harvest-alerts', 'seasonal-reserves']
         }, { merge: true });
       } catch (dbErr) {
-        console.warn('Firestore subscription fallback:', dbErr);
+        console.warn('Firestore subscription failed:', dbErr);
+        return res.status(503).json({ error: 'Newsletter is temporarily unavailable.', code: 'PERSISTENCE_UNAVAILABLE' });
       }
     }
 
@@ -1150,8 +1155,11 @@ Behavior Guidelines:
 
 // Vite Middleware & Static Asset pipeline integration
 async function startServer() {
+  // API failures must never fall through to the SPA document.
+  app.use('/api', (_req, res) => res.status(404).json({ error: 'API endpoint not found', code: 'NOT_FOUND' }));
   if (process.env.NODE_ENV !== 'production') {
     console.time('[dev] Vite middleware');
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa'
@@ -1160,9 +1168,34 @@ async function startServer() {
     console.timeEnd('[dev] Vite middleware');
   } else {
     const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
+    const publicOrigin = new URL(process.env.APP_URL || (process.env.RAILWAY_PUBLIC_DOMAIN
+      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : `http://localhost:${PORT}`)).origin;
+    const html = readFileSync(path.join(distPath, 'index.html'), 'utf8')
+      .replaceAll('https://allbarka.com', publicOrigin)
+      .replaceAll('content="/images/generated/og-image.jpg"', `content="${publicOrigin}/images/generated/og-image.jpg"`);
+    app.get('/robots.txt', (_req, res) => res.type('text/plain').send(
+      `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /checkout\nDisallow: /cart\nDisallow: /success\nDisallow: /admin\nSitemap: ${publicOrigin}/sitemap.xml\n`
+    ));
+    app.get('/sitemap.xml', (_req, res) => {
+      const routes = ['/', '/shop', '/gifting', '/wholesale', '/journal', '/faq', '/contact',
+        ...PRODUCTS.map(product => `/product/${encodeURIComponent(product.id)}`)];
+      res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${routes.map(route => `<url><loc>${publicOrigin}${route}</loc></url>`).join('')}</urlset>`);
+    });
+    app.get('/index.html', (_req, res) => {
+      res.setHeader('Cache-Control', 'no-cache');
+      res.type('html').send(html);
+    });
+    app.use(express.static(distPath, {
+      index: false,
+      setHeaders(res, filePath) {
+        res.setHeader('Cache-Control', filePath.startsWith(path.join(distPath, 'assets') + path.sep)
+          ? 'public, max-age=31536000, immutable' : 'public, max-age=3600');
+      },
+    }));
     app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+      if (path.extname(req.path)) return res.status(404).type('text/plain').send('Not found');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.type('html').send(html);
     });
   }
 

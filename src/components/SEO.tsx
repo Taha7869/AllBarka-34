@@ -20,7 +20,8 @@ export default function SEO({
 }: SEOProps) {
   const location = useLocation();
   const currentPath = canonicalPath || location.pathname;
-  const canonicalUrl = `https://allbarka.com${currentPath.startsWith('/') ? currentPath : `/${currentPath}`}`;
+  const siteOrigin = window.location.origin;
+  const canonicalUrl = `${siteOrigin}${currentPath.startsWith('/') ? currentPath : `/${currentPath}`}`;
   const fullTitle = title 
     ? `${title} — AllBarka Dry Fruits Lahore` 
     : 'AllBarka Dry Fruits | Luxury Dry Fruits, Nuts & Gifts Boutique Lahore';
@@ -59,7 +60,7 @@ export default function SEO({
 
     const ogImage = document.querySelector('meta[property="og:image"]');
     if (ogImage && image) {
-      const fullImageUrl = image.startsWith('http') ? image : `https://allbarka.com${image}`;
+      const fullImageUrl = new URL(image, siteOrigin).href;
       ogImage.setAttribute('content', fullImageUrl);
     }
 
@@ -82,7 +83,7 @@ export default function SEO({
       const el = document.getElementById('route-structured-data');
       if (el) el.remove();
     };
-  }, [fullTitle, description, canonicalUrl, image, structuredData]);
+  }, [fullTitle, description, canonicalUrl, image, structuredData, siteOrigin]);
 
   return null;
 }

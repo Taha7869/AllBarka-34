@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   X,
@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import CodeSlots from './CodeSlots';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -30,7 +31,6 @@ export default function AuthModal({
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [phone, setPhone] = useState('+92');
   const [otp, setOtp] = useState<string[]>(Array(6).fill(''));
-  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const [isLoading, setIsLoading] = useState(false);
   const [authSuccessMsg, setAuthSuccessMsg] = useState<string | null>(null);
@@ -220,36 +220,6 @@ export default function AuthModal({
     }
   };
 
-  const handleOtpChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    if (!/^[0-9]*$/.test(val)) return;
-    
-    const newOtp = [...otp];
-    newOtp[index] = val.slice(-1);
-    setOtp(newOtp);
-    setAuthErrorMsg(null);
-
-    if (val && index < 5) otpRefs.current[index + 1]?.focus();
-  };
-
-  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      otpRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handleOtpPaste = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const paste = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6).split('');
-    if (paste.length > 0) {
-      const newOtp = [...otp];
-      paste.forEach((char, i) => (newOtp[i] = char));
-      setOtp(newOtp);
-      const nextIndex = Math.min(paste.length, 5);
-      otpRefs.current[nextIndex]?.focus();
-    }
-  };
-
   if (!isOpen) return null;
 
   return (
@@ -408,24 +378,7 @@ export default function AuthModal({
                 </div>
 
                 <form onSubmit={handleVerifyOtp} className="space-y-6">
-                  <div dir="ltr" className="flex justify-center gap-1.5 sm:gap-2">
-                    {otp.map((d, index) => (
-                      <input
-                        key={index}
-                        type="text"
-                        inputMode="numeric"
-                        autoComplete="one-time-code"
-                        pattern="\d*"
-                        maxLength={1}
-                        value={d}
-                        ref={(el) => (otpRefs.current[index] = el)}
-                        onChange={(e) => handleOtpChange(index, e)}
-                        onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                        onPaste={handleOtpPaste}
-                        className="w-10 h-12 sm:w-12 sm:h-14 text-center text-xl font-bold bg-white border border-[var(--color-gold,#B8935F)]/30 rounded-xl focus:outline-none focus:border-[var(--color-gold,#B8935F)] focus:ring-1 focus:ring-[var(--color-gold,#B8935F)] text-[var(--color-ink,#1F120F)] shadow-2xs"
-                      />
-                    ))}
-                  </div>
+                  <CodeSlots value={otp.join('')} onChange={(value) => { setOtp(value.split('')); setAuthErrorMsg(null); }} label={t('enter_code_sent_to', 'Enter the 6-digit code sent to your phone')} />
 
                   <button
                     type="submit"

@@ -97,7 +97,8 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
         isRtl,
         (chunk: string) => {
           setStreamingText(prev => prev + chunk);
-        }
+        },
+        await currentUser?.getIdToken()
       );
 
       // On finish, push streaming text to messages and reset stream state

@@ -42,7 +42,7 @@ export default function LahoreExpressTimer({ className = '', onOpenSchedule }: L
   const format2 = (n: number) => n.toString().padStart(2, '0');
 
   return (
-    <div 
+    <div dir="ltr"
       className={`w-full bg-[#042821] text-[#EDE8DE] border-b border-[#D4AF37]/30 py-2 px-3 sm:px-4 text-[11px] sm:text-xs select-none transition-colors ${className}`}
     >
       <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">

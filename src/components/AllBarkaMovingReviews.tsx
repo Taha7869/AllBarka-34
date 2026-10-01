@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { CheckCircle2, Star, ShieldCheck, CircleCheck } from "lucide-react";
+import { CheckCircle2, ShieldCheck, CircleCheck } from "lucide-react";
+import PeekRating from './PeekRating';
 import { InfiniteMovingCards, MovingReviewItem } from "./ui/infinite-moving-cards";
 import { REVIEWS } from "../data/products";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -17,7 +18,7 @@ export function AllBarkaMovingReviews() {
     name: rev.name_en,
     title: rev.location,
     location: rev.location,
-    rating: `⭐ ${rev.rating}.0 / 5.0`,
+    rating: rev.rating,
     purchasedItem: rev.purchasedItem,
     verifiedSource: rev.verifiedSource,
     avatarInitials: rev.avatarInitials,
@@ -48,12 +49,7 @@ export function AllBarkaMovingReviews() {
           {/* Grounded Trust Bar */}
           <div className="pt-2 flex flex-wrap items-center justify-center gap-2 text-xs">
             <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-ink)] shadow-xs">
-              <div className="flex gap-0.5 text-[var(--color-gold)]">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} size={11} fill="currentColor" className="text-[var(--color-gold)]" />
-                ))}
-              </div>
-              <span className="font-bold text-[var(--color-ink)] pl-0.5">4.9 / 5.0</span>
+              <PeekRating value={4.9} size={12} className="text-[var(--color-gold)]" />
               <span className="text-[var(--color-ink-muted)] text-[11px] font-semibold">• {t('100plusReviews', '100+ Lahore Reviews')}</span>
             </div>
 

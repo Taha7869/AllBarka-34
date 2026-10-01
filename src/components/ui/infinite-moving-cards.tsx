@@ -2,7 +2,6 @@
 import { useLanguage } from '../../contexts/LanguageContext';
 import React, { useEffect, useState } from "react";
 import { 
-  Star, 
   MapPin, 
   Check, 
   ShoppingBag, 
@@ -18,6 +17,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../../lib/utils";
 import { buildAutomatedOrderWhatsAppUrl } from "../../config/contacts";
+import PeekRating from '../PeekRating';
 
 export interface MovingReviewItem {
   id?: string;
@@ -153,10 +153,7 @@ export const InfiniteMovingCards = ({
           )}
         >
           {items.map((item, idx) => {
-            const formattedRating =
-              typeof item.rating === "number"
-                ? `⭐ ${item.rating}.0 / 5.0`
-                : item.rating || "⭐ 5.0 / 5.0";
+            const numericRating = typeof item.rating === 'number' ? item.rating : 5;
             const locationDisplay = item.location || item.title || "Lahore, Pakistan";
 
             return (
@@ -165,7 +162,7 @@ export const InfiniteMovingCards = ({
                 data-review-index={idx}
                 // AllBarka Signature Whitish/Cream Luxury Card with Gold Border & Rounded-3xl
                 dir={isRtl ? 'rtl' : 'ltr'}
-                className="w-[360px] sm:w-[420px] md:w-[460px] rounded-3xl bg-[#FAF9F5] border-2 border-[#D4AF6A]/50 p-6 md:p-8 shadow-[0_8px_25px_rgba(43,27,20,0.06),0_0_15px_rgba(212,175,106,0.12)] relative flex flex-col justify-between shrink-0 text-start select-none cursor-pointer transition-all duration-300 hover:border-[#D4AF6A] hover:scale-[1.015] hover:shadow-[0_12px_35px_rgba(43,27,20,0.12),0_0_25px_rgba(212,175,106,0.25)] group text-[#2B1B17]"
+                className="w-[min(85vw,360px)] sm:w-[420px] md:w-[460px] rounded-3xl bg-[#FAF9F5] border-2 border-[#D4AF6A]/50 p-4 sm:p-6 md:p-8 shadow-[0_8px_25px_rgba(43,27,20,0.06),0_0_15px_rgba(212,175,106,0.12)] relative flex flex-col justify-between shrink-0 text-start select-none cursor-pointer transition-all duration-300 hover:border-[#D4AF6A] hover:scale-[1.015] hover:shadow-[0_12px_35px_rgba(43,27,20,0.12),0_0_25px_rgba(212,175,106,0.25)] group text-[#2B1B17]"
               >
                 {/* Review of the Month Ribbon */}
                 {item.isReviewOfTheMonth && (
@@ -179,7 +176,7 @@ export const InfiniteMovingCards = ({
                   {/* Top Rating & Badges */}
                   <div className="flex items-center justify-between gap-2 mb-4">
                     <span className="text-[#8C6B1B] text-xs font-black px-3 py-1 rounded-full bg-[#D4AF6A]/15 border border-[#D4AF6A]/40 shadow-2xs inline-flex items-center gap-1">
-                      {formattedRating}
+                      <PeekRating value={numericRating} size={13} />
                     </span>
                     <span className="text-[11px] font-semibold text-[#2B1B17]/70 flex items-center gap-1">
                       <MapPin size={11} className="text-[#D4AF6A] shrink-0" />
@@ -300,9 +297,7 @@ export const InfiniteMovingCards = ({
                 {/* Rating & Location Tag */}
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-[#8C6B1B] text-xs font-black px-3.5 py-1.5 rounded-full bg-[#D4AF6A]/15 border border-[#D4AF6A]/40 shadow-2xs inline-flex items-center gap-1.5">
-                    {typeof selectedReview.rating === "number"
-                      ? `⭐ ${selectedReview.rating}.0 / 5.0 RATING`
-                      : selectedReview.rating}
+                    <PeekRating value={typeof selectedReview.rating === 'number' ? selectedReview.rating : 5} size={15} />
                   </span>
 
                   <span className="text-xs font-semibold text-[#2B1B17]/80 px-3 py-1.5 rounded-full bg-white border border-[#D4AF6A]/30 flex items-center gap-1.5">

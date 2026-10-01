@@ -46,7 +46,7 @@ export default function BubbleMenu({
 
   return (
     <nav
-      aria-label="Main Navigation"
+      aria-label={t('nav.main')}
       className={'pointer-events-auto flex items-center gap-1 rounded-full border border-[#C7982F]/25 bg-[#FFFCF7]/85 px-2 py-1 shadow-[0_2px_12px_rgba(41,35,29,0.04)] backdrop-blur-md transition-colors duration-300 dark:bg-[#1A201E]/85 dark:shadow-[0_2px_12px_rgba(0,0,0,0.25)] ' + className}
     >
       {menuItems.map((item) => {
@@ -74,7 +74,7 @@ export default function BubbleMenu({
 
             {item.dropdownItems && isHovered && (
               <div className="absolute left-1/2 top-full z-50 mt-2 flex min-w-[220px] -translate-x-1/2 flex-col items-stretch overflow-hidden rounded-2xl border border-[#C7982F]/25 bg-[#FFFCF7] py-2 shadow-xl dark:bg-[#1A201E]">
-                <span className="px-4 pb-2 pt-1 text-[9px] font-bold uppercase tracking-[0.22em] text-[#806326] dark:text-[#E4C783]">Browse the boutique</span>
+                <span className="px-4 pb-2 pt-1 text-[9px] font-bold uppercase tracking-[0.22em] text-[#806326] dark:text-[#E4C783]">{t('nav.browse')}</span>
                 {item.dropdownItems.map((dropItem) => (
                   <button
                     key={dropItem.id}

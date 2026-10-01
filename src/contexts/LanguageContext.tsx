@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 
+import { boutiqueTranslations } from './boutiqueTranslations';
+
 export type LanguageCode = 'en' | 'ur' | 'ar';
 
 export interface LanguageContextValue {
@@ -133,7 +135,11 @@ const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     'quantity': 'Quantity',
     'addToCartPrice': 'Add to Cart',
     'wishlist': 'Wishlist',
+    'savedProduct': 'Saved',
     'shareItem': 'Share Item',
+    'shareCopied': 'Link copied',
+    'shareFailed': 'Could not share',
+    'wholesaleTier': 'Wholesale Tier',
     'selectWeight': 'Select Size',
     'tasteProfile': 'Taste Profile',
     'packContents': 'Pack Contents',
@@ -308,7 +314,11 @@ const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     'quantity': 'تعداد',
     'addToCartPrice': 'ٹوکری میں شامل کریں',
     'wishlist': 'پسندیدہ',
+    'savedProduct': 'محفوظ ہو گیا',
     'shareItem': 'شئیر کریں',
+    'shareCopied': 'لنک کاپی ہو گیا',
+    'shareFailed': 'شیئر نہیں ہو سکا',
+    'wholesaleTier': 'ہول سیل قیمت',
     'selectWeight': 'سائز منتخب کریں',
     'tasteProfile': 'ذائقہ کا خاکہ',
     'packContents': 'پیک کے مشتملات',
@@ -482,7 +492,11 @@ const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     'quantity': 'الكمية',
     'addToCartPrice': 'أضف إلى السلة',
     'wishlist': 'المفضلة',
+    'savedProduct': 'تم الحفظ',
     'shareItem': 'مشاركة',
+    'shareCopied': 'تم نسخ الرابط',
+    'shareFailed': 'تعذرت المشاركة',
+    'wholesaleTier': 'سعر الجملة',
     'selectWeight': 'اختر الحجم',
     'tasteProfile': 'ملف الطعم',
     'packContents': 'محتويات العبوة',
@@ -579,7 +593,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [language, isRtl]);
 
   const t = useCallback((key: string, defaultText = ''): string => {
-    return TRANSLATIONS[language]?.[key] || TRANSLATIONS.en[key] || defaultText || key;
+    return boutiqueTranslations[language]?.[key] || TRANSLATIONS[language]?.[key] || TRANSLATIONS.en[key] || defaultText || key;
   }, [language]);
 
   const value = useMemo(() => ({

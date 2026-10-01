@@ -1,3 +1,4 @@
+import ProductImageGallery from './ProductImageGallery';
 import { useNavigate, Link } from 'react-router-dom';
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -492,7 +493,12 @@ export default function CategoryPLP({
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                className="group/card bg-[var(--color-surface,#FFFCF7)] dark:bg-[var(--color-surface,#1A201E)] border border-[var(--color-border)] dark:border-[var(--color-border)] hover:border-[var(--color-accent,#C7982F)] dark:hover:border-[var(--color-accent,#D4A843)] rounded-3xl p-5 flex flex-col justify-between transition-all duration-300 shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] hover:-translate-y-1 relative select-none"
+                className="boutique-product-card group/card cursor-pointer bg-[var(--color-surface,#FFFCF7)] dark:bg-[var(--color-surface,#1A201E)] border border-[var(--color-border)] dark:border-[var(--color-border)] hover:border-[var(--color-accent,#C7982F)] dark:hover:border-[var(--color-accent,#D4A843)] rounded-3xl p-5 flex flex-col justify-between transition-all duration-300 shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] hover:-translate-y-1 relative select-none"
+                onClick={(event) => {
+                  if (!(event.target as HTMLElement).closest('a, button, input, select, textarea, [role="button"]')) {
+                    navigate(`/product/${product.id}`);
+                  }
+                }}
               >
                 {/* Top Discount / Heritage Tag */}
                 <div className="absolute top-3.5 right-3.5 z-10 flex flex-col items-end gap-1 pointer-events-none">
@@ -509,25 +515,7 @@ export default function CategoryPLP({
                 </div>
 
                 {/* Inner Image Zone — clicking image/title navigates to Product Detail */}
-                <Link
-                  to={`/product/${product.id}`}
-                  className="block w-full aspect-square bg-[var(--color-surface-subtle,#FAF9F5)] dark:bg-[var(--color-surface-elevated,#222A28)] rounded-2xl flex items-center justify-center relative overflow-hidden border border-[var(--color-border)] dark:border-[var(--color-border)] group-hover/card:border-[var(--color-accent,#C7982F)]/40 transition-colors shadow-2xs focus-ring"
-                  aria-label={`View details for ${getLocalized(product, 'name', language)}`}
-                  tabIndex={0}
-                >
-                  <img
-                    src={getProductImage(product)}
-                    alt={t(`imageAlt.${product.id}`, getLocalized(product, 'name', language))}
-                    width={960}
-                    height={960}
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/images/product-placeholder.svg';
-                    }}
-                    className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                  decoding="async"
-                  />
-                </Link>
+      <ProductImageGallery product={product} />
 
                 {/* Product Name — links to Product Detail */}
                 <div className="w-full flex flex-col items-center text-center mt-4 space-y-1.5">
@@ -594,7 +582,7 @@ export default function CategoryPLP({
                           addToCart(product, selectedSize, 1, selectedPrice);
                         }
                       }}
-                      className="flex-1 min-h-[40px] py-1 px-3 rounded-full bg-[#1E3A2B] hover:bg-[#14281E] text-[#FDFBF7] border border-[#C5A059]/40 hover:border-[#C5A059] text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer shadow-xs active:scale-[0.98]"
+                      className="flex-1 min-h-[44px] py-1 px-3 rounded-full bg-[#1E3A2B] hover:bg-[#14281E] text-[#FDFBF7] border border-[#C5A059]/40 hover:border-[#C5A059] text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer shadow-xs active:scale-[0.98]"
                     >
                       <ShoppingBag size={13} strokeWidth={2} className="text-[#C5A059]" />
                       <span>{t('addToCart', 'Add to Cart')}</span>
@@ -609,7 +597,7 @@ export default function CategoryPLP({
                           e.preventDefault();
                           onQuickView(product);
                         }}
-                        className="min-w-[40px] h-[40px] rounded-full border border-[var(--color-border)] bg-[var(--color-surface,#FFFCF7)] dark:bg-[var(--color-surface,#1A201E)] flex items-center justify-center text-[var(--color-text-secondary,#635B52)] hover:text-[#C5A059] hover:border-[#C5A059] transition-colors shadow-xs cursor-pointer focus-ring"
+                        className="min-w-[44px] h-[44px] rounded-full border border-[var(--color-border)] bg-[var(--color-surface,#FFFCF7)] dark:bg-[var(--color-surface,#1A201E)] flex items-center justify-center text-[var(--color-text-secondary,#635B52)] hover:text-[#C5A059] hover:border-[#C5A059] transition-colors shadow-xs cursor-pointer focus-ring"
                         aria-label={t('quickView', 'Quick View')}
                         title={t('quickView', 'Quick View')}
                       >

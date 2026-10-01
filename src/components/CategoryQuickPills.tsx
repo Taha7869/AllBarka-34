@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { useDragScroll } from '../hooks/useDragScroll';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export interface CategoryPillItem {
   id: string;
@@ -33,11 +34,11 @@ export const CATEGORY_PILLS: CategoryPillItem[] = [
     searchTerm: 'walnut'
   },
   {
-    id: 'figs',
-    label: 'Dried Figs (Anjeer)',
-    emoji: '🍇',
-    categoryFilter: 'dried-fruits',
-    searchTerm: 'fig'
+    id: 'oils',
+    label: 'Cold-Pressed Oils',
+    emoji: '🫒',
+    categoryFilter: 'oils',
+    searchTerm: ''
   },
   {
     id: 'gift-boxes',
@@ -66,6 +67,7 @@ export default function CategoryQuickPills({
   onSelectCategory,
   className = ''
 }: CategoryQuickPillsProps) {
+  const { t } = useLanguage();
   const scrollContainerRef = useDragScroll<HTMLDivElement>();
 
   const handlePillClick = (item: CategoryPillItem) => {
@@ -111,7 +113,7 @@ export default function CategoryQuickPills({
                 }`}
               >
                 <span className="text-sm sm:text-base leading-none drop-shadow-xs">{item.emoji}</span>
-                <span className="tracking-wide">{item.label}</span>
+                <span className="tracking-wide">{t(`boutique.pill.${item.id}`, item.label)}</span>
               </motion.button>
             );
           })}

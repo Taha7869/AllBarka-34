@@ -1,5 +1,6 @@
+import ProductImageGallery from './ProductImageGallery';
 import React, { useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Eye, ShoppingBag } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import { Product } from '../types';
@@ -25,6 +26,7 @@ export default function ProductCard({
 }: ProductCardProps) {
   const { t, language } = useLanguage();
   const { addToCart } = useCart();
+  const navigate = useNavigate();
   const shouldReduceMotion = useReducedMotion();
   const weights = Object.keys(product.prices || {});
   const [selectedWeight, setSelectedWeight] = useState(weights[0] || '250g');
@@ -58,53 +60,42 @@ export default function ProductCard({
 
   return (
     <motion.div
-      className="spotlight-card group/card bg-[var(--color-surface,#FFFCF7)] dark:bg-[var(--color-surface,#1A201E)] border border-[var(--color-border)] dark:border-[var(--color-border)] hover:border-[var(--color-accent,#C7982F)] dark:hover:border-[var(--color-accent,#D4A843)] rounded-3xl p-5 flex flex-col justify-between h-full transition-colors duration-300 relative"
+      className="boutique-product-card group/card cursor-pointer bg-[var(--color-surface,#FFFCF7)] dark:bg-[var(--color-surface,#1A201E)] border border-[var(--color-border)] dark:border-[var(--color-border)] hover:border-[var(--color-accent,#C7982F)] dark:hover:border-[var(--color-accent,#D4A843)] rounded-3xl p-5 flex flex-col justify-between h-full transition-colors duration-300 relative"
+      onClick={(event) => {
+        if (!(event.target as HTMLElement).closest('a, button, input, select, textarea, [role="button"]')) {
+          navigate(`/product/${product.id}`);
+        }
+      }}
       variants={cardVariants}
       initial="rest"
       whileHover="hover"
       transition={{ type: 'spring', stiffness: 340, damping: 28, mass: 0.6 }}
-      onMouseMove={handleMouseMove}
+
     >
       {/* Top Meta Line */}
       <div className="flex items-center justify-between gap-2 mb-3">
         <span className="text-[10px] font-sans font-semibold uppercase tracking-[0.18em] text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)]">
-          {getLocalized(product, 'health', language) || 'Single-Origin'}
+          {language === 'en' ? (getLocalized(product, 'health', language) || 'Single-Origin') : t('slider.quality')}
         </span>
         {getLocalized(product, 'tag', language) && (
           <span className="px-2.5 py-0.5 rounded-full bg-[var(--color-base,#F6F1EA)] dark:bg-[var(--color-surface-elevated,#222A28)] border border-[var(--color-accent,#C7982F)]/35 dark:border-[var(--color-accent,#D4A843)]/35 text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] text-[9.5px] font-sans font-semibold uppercase tracking-wider">
-            {getLocalized(product, 'tag', language)}
+            {getLocalized(product, 'tag', language) === 'Bestseller' && language !== 'en' ? t('slider.bestseller') : getLocalized(product, 'tag', language)}
           </span>
         )}
       </div>
 
       {/* Image Plate — zoom on card hover */}
-      <Link
-        to={`/product/${product.id}`}
-        className="block w-full aspect-[4/3] rounded-2xl bg-[var(--color-surface-subtle,#FAF9F5)] dark:bg-[var(--color-surface-elevated,#222A28)] border border-[var(--color-border)] dark:border-[var(--color-border)] overflow-hidden flex items-center justify-center p-3 relative group shadow-2xs focus-ring"
-      >
-        <img
-          src={getProductImage(product)}
-          alt={t(`imageAlt.${product.id}`, getLocalized(product, 'name', language))}
-          width={960}
-          height={960}
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = '/images/product-placeholder.svg';
-          }}
-          className="w-full h-full object-contain group-hover/card:scale-105 transition-transform duration-500 ease-out"
-          loading="lazy"
-          decoding="async"
-        />
-      </Link>
+      <ProductImageGallery product={product} />
 
       {/* Product Details */}
-      <div className="pt-4 pb-2 space-y-1.5 flex-1 text-left">
+      <div className="pt-4 pb-2 space-y-1.5 flex-1 text-start">
         <Link to={`/product/${product.id}`} className="block focus-ring rounded-sm w-fit">
-          <h3 className="text-lg font-serif font-bold text-[var(--color-text-primary,#29231D)] leading-snug line-clamp-1 hover:text-[#C7982F] transition-colors">
+          <h3 className="text-lg font-serif font-bold text-[var(--color-text-primary,#29231D)] leading-snug line-clamp-2 hover:text-[#C7982F] transition-colors">
             {getLocalized(product, 'name', language)}
           </h3>
         </Link>
         <p className="text-xs text-[var(--color-text-secondary,#635B52)] line-clamp-2 leading-relaxed font-sans">
-          {getLocalized(product, 'desc', language)}
+          {language !== 'en' && getLocalized(product, 'desc', language) === product.desc_en ? t('slider.cardCopy') : getLocalized(product, 'desc', language)}
         </p>
       </div>
 
@@ -120,7 +111,7 @@ export default function ProductCard({
                 e.stopPropagation();
                 setSelectedWeight(w);
               }}
-              className={`flex-1 min-w-[54px] min-h-[38px] py-1.5 px-2 rounded-xl text-[10px] font-sans font-semibold tracking-wider uppercase border transition-all duration-200 cursor-pointer focus-ring flex items-center justify-center ${
+              className={`flex-1 min-w-[54px] min-h-[44px] py-1.5 px-2 rounded-xl text-[10px] font-sans font-semibold tracking-wider uppercase border transition-all duration-200 cursor-pointer focus-ring flex items-center justify-center ${
                 selectedWeight === w
                   ? 'bg-[#1E3A2B] text-[#C7982F] border-[#1E3A2B] shadow-xs'
                   : 'bg-[var(--color-base,#FDFBF7)] text-[var(--color-text-primary,#29231D)] border-[var(--color-border)] hover:border-[var(--color-accent,#C7982F)] dark:bg-[var(--color-surface-elevated,#222A28)] dark:text-[var(--color-text-primary,#F6F1EA)] dark:border-[var(--color-border)] dark:hover:border-[var(--color-accent,#D4A843)]'
@@ -157,7 +148,7 @@ export default function ProductCard({
                   addToCart(product, selectedWeight, 1);
                 }
               }}
-              className="flex-1 min-h-[40px] py-1 px-3 rounded-full bg-[#1E3A2B] hover:bg-[#14281E] text-[#FDFBF7] border border-[#C5A059]/40 hover:border-[#C5A059] text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors duration-200 cursor-pointer shadow-xs active:scale-[0.98] hero-cta-shine"
+              className="flex-1 min-h-[44px] py-1 px-3 rounded-full bg-[#1E3A2B] hover:bg-[#14281E] text-[#FDFBF7] border border-[#C5A059]/40 hover:border-[#C5A059] text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors duration-200 cursor-pointer shadow-xs active:scale-[0.98] hero-cta-shine"
             >
               <ShoppingBag size={13} strokeWidth={2} className="text-[#C5A059]" />
               <span>{t('addToCart', 'Add to Cart')}</span>
@@ -168,7 +159,7 @@ export default function ProductCard({
                 e.stopPropagation();
                 if (onQuickView) onQuickView(product);
               }}
-              className="flex items-center min-w-[40px] h-[40px] rounded-full border border-[var(--color-border)] bg-[var(--color-surface,#FFFCF7)] dark:bg-[var(--color-surface,#1A201E)] flex items-center justify-center text-[var(--color-text-secondary,#635B52)] hover:text-[#C5A059] hover:border-[#C5A059] transition-colors shadow-xs cursor-pointer focus-ring"
+              className="flex items-center min-w-[44px] h-[44px] rounded-full border border-[var(--color-border)] bg-[var(--color-surface,#FFFCF7)] dark:bg-[var(--color-surface,#1A201E)] flex items-center justify-center text-[var(--color-text-secondary,#635B52)] hover:text-[#C5A059] hover:border-[#C5A059] transition-colors shadow-xs cursor-pointer focus-ring"
               aria-label={t('quickView', 'Quick View')}
             >
               <Eye size={16} strokeWidth={2.2} />

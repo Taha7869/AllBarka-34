@@ -24,8 +24,32 @@ export type ChatMessage = {
 export async function chatWithOllama(
   messages: ChatMessage[],
   isUrdu: boolean,
-  onChunk: (text: string) => void
+  onChunk: (text: string) => void,
+  authToken?: string
 ): Promise<void> {
+  // Hosted visitors use the existing authenticated server API. Local Ollama is opt-in.
+  if (import.meta.env.VITE_AI_PROVIDER !== 'ollama') {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+    try {
+      const lastMessage = messages.at(-1);
+      const response = await fetch('/api/concierge/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}) },
+        body: JSON.stringify({
+          userText: lastMessage?.content || '',
+          messages: messages.slice(0, -1).map(message => ({ role: message.role, text: message.content })),
+        }),
+        signal: controller.signal,
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Concierge unavailable');
+      const reply = result.text || result.reply;
+      if (typeof reply !== 'string' || !reply.trim()) throw new Error('Empty concierge response');
+      onChunk(reply);
+      return;
+    } finally { clearTimeout(timeout); }
+  }
   const systemPrompt: ChatMessage = {
     role: 'system',
     content: `You are AllBarka's luxury dry-fruits concierge. Answer briefly (max 60 words), recommend only from the provided product catalog, never invent products, never give medical claims, match the user's language (${isUrdu ? 'Urdu' : 'English'}).

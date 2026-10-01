@@ -2,14 +2,19 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { PRODUCTS, getProductImage } from '../data/products';
+import { getProductImages } from '../data/productImages';
 import { Product, CartItem } from '../types';
 import ProductDetailAccordion from '../components/ProductDetailAccordion';
 import SEO from '../components/SEO';
-import { ShoppingBag, ShieldCheck, Check, Sparkles, ArrowRight, Truck, Award, AlertCircle, Info, Heart, Share2 } from 'lucide-react';
+import { ShoppingBag, ShieldCheck, Check, Sparkles, ArrowRight, Truck, Award, AlertCircle, Info, Share2 } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import TrustBadges from '../components/TrustBadges';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getLocalized } from '../utils/localize';
+import PulseHeart from '../components/PulseHeart';
+import SquishSwitch from '../components/SquishSwitch';
+
+const SAVED_PRODUCTS_KEY = 'allbarka_saved_products';
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -24,19 +29,11 @@ export default function ProductDetailPage() {
   const [isAdded, setIsAdded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [activeGalleryIdx, setActiveGalleryIdx] = useState(0);
+  const [isSaved, setIsSaved] = useState(false);
+  const [shareStatus, setShareStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
 
-  // Second lifestyle image for gift/hamper/deal products
-  const GIFT_GALLERY_IMAGES = [
-    { src: '/images/generated/gift-box-2.webp', alt: 'Open luxury gift box revealing assorted dry fruits in gold-lined compartments' },
-    { src: '/images/generated/gift-box-1.webp', alt: 'Closed deep-emerald luxury gift box with gold silk ribbon' },
-    { src: '/images/generated/gift-box-3.webp', alt: 'Macro close-up of gold ribbon knot on emerald gift box' },
-    { src: '/images/generated/gift-box-4.webp', alt: 'Elegant gift box presented with warm bokeh background' },
-  ];
   const isGiftProduct = product?.category === 'hampers' || product?.category === 'deals' || product?.category === 'combos' || product?.id?.includes('hamper') || product?.id?.includes('gift') || product?.id?.includes('deal');
-  const galleryImages = isGiftProduct ? [
-    { src: getProductImage(product!), alt: t(`imageAlt.${product?.id}`, getLocalized(product!, 'name', language)) },
-    ...GIFT_GALLERY_IMAGES
-  ] : [];
+  const galleryImages = product ? getProductImages(product).map(src => ({ src, alt: t(`imageAlt.${product.id}`, getLocalized(product, 'name', language)) })) : [];
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -45,7 +42,45 @@ export default function ProductDetailPage() {
     setIsWholesale(false);
     setImageError(false);
     setActiveGalleryIdx(0);
+    setShareStatus('idle');
+    try {
+      const saved = JSON.parse(localStorage.getItem(SAVED_PRODUCTS_KEY) || '[]');
+      setIsSaved(Array.isArray(saved) && saved.includes(id));
+    } catch {
+      setIsSaved(false);
+    }
   }, [id]);
+
+  const handleSave = (next: boolean) => {
+    if (!id) return;
+    setIsSaved(next);
+    try {
+      const saved = JSON.parse(localStorage.getItem(SAVED_PRODUCTS_KEY) || '[]');
+      const ids = new Set<string>(Array.isArray(saved) ? saved.filter((item): item is string => typeof item === 'string') : []);
+      if (next) ids.add(id);
+      else ids.delete(id);
+      localStorage.setItem(SAVED_PRODUCTS_KEY, JSON.stringify([...ids]));
+    } catch {
+      // The toggle remains usable even when browser storage is unavailable.
+    }
+  };
+
+  const handleShare = async () => {
+    if (!product) return;
+    const url = window.location.href;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: getLocalized(product, 'name', language), url });
+        setShareStatus('idle');
+      } else {
+        await navigator.clipboard.writeText(url);
+        setShareStatus('copied');
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+      setShareStatus('failed');
+    }
+  };
 
   // Related products from active 14-product catalogue
   const relatedProducts = useMemo(() => {
@@ -161,7 +196,7 @@ export default function ProductDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-start">
           
           {/* Left: Product Visual Showcase */}
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 lg:sticky lg:top-28">
             <div className="relative aspect-square rounded-3xl overflow-hidden bg-[var(--color-surface,#FFFCF7)] border border-[var(--color-gold,#C7982F)]/30 shadow-sm flex items-center justify-center p-6 group">
               {imageError ? (
                 <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-[#FAF9F5] to-[#EFE7D8]">
@@ -173,8 +208,8 @@ export default function ProductDetailPage() {
                 </div>
               ) : (
                 <img
-                  src={isGiftProduct && galleryImages[activeGalleryIdx] ? galleryImages[activeGalleryIdx].src : getProductImage(product)}
-                  alt={isGiftProduct && galleryImages[activeGalleryIdx] ? galleryImages[activeGalleryIdx].alt : t(`imageAlt.${product.id}`, getLocalized(product, 'name', language))}
+                  src={galleryImages[activeGalleryIdx]?.src || getProductImage(product)}
+                  alt={galleryImages[activeGalleryIdx]?.alt || t(`imageAlt.${product.id}`, getLocalized(product, 'name', language))}
                   width={960}
                   height={960}
                   referrerPolicy="no-referrer"
@@ -213,13 +248,13 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Gift image gallery thumbnails */}
-            {isGiftProduct && galleryImages.length > 1 && (
+            {galleryImages.length > 1 && (
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {galleryImages.map((img, idx) => (
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => setActiveGalleryIdx(idx)}
+                    onClick={() => { setImageError(false); setActiveGalleryIdx(idx); }}
                     className={`shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
                       activeGalleryIdx === idx
                         ? 'border-[#C7982F] shadow-sm'
@@ -275,7 +310,7 @@ export default function ProductDetailPage() {
             </div>
             
             {/* Price Row */}
-            <div className="flex items-baseline gap-4 py-4 border-y border-[var(--color-accent,#C7982F)]/25 mb-6">
+            <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2 py-4 border-y border-[var(--color-accent,#C7982F)]/25 mb-6">
               <span className="text-3xl sm:text-4xl font-serif font-bold text-[var(--color-text-price,#29231D)] dark:text-[var(--color-text-price,#F6F1EA)]">
                 <bdi dir="ltr">Rs. {priceToUse?.toLocaleString()}</bdi>
               </span>
@@ -291,25 +326,12 @@ export default function ProductDetailPage() {
 
             {/* Weight Selector */}
             <div className="mb-6">
-              <div className="flex justify-between items-center mb-3">
+              <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
                 <span className="text-xs font-bold text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)] uppercase tracking-widest">
                   {t('weightSelector', 'Select Weight / Portion')}
                 </span>
                 {isWholesaleEligible && (
-                  <label className="flex items-center gap-2 cursor-pointer group select-none min-h-[36px]">
-                    <input
-                      type="checkbox"
-                      checked={isWholesale}
-                      onChange={(e) => setIsWholesale(e.target.checked)}
-                      className="sr-only"
-                    />
-                    <div className={`w-8 h-4 rounded-full transition-colors relative ${isWholesale ? 'bg-[var(--color-accent,#C7982F)]' : 'bg-gray-300 dark:bg-gray-700'}`}>
-                      <div className={`absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform ${isWholesale ? 'translate-x-4' : ''}`} />
-                    </div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-text-secondary,#635B52)] dark:text-[var(--color-text-secondary,#B4C0BC)] group-hover:text-[var(--color-accent,#C7982F)] transition-colors">
-                      Wholesale Tier
-                    </span>
-                  </label>
+                  <SquishSwitch checked={isWholesale} onChange={setIsWholesale} label={t('wholesaleTier', 'Wholesale Tier')} />
                 )}
               </div>
 
@@ -389,20 +411,15 @@ export default function ProductDetailPage() {
               </div>
               
               {/* Internal Actions: Wishlist & Share */}
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col min-[390px]:flex-row items-stretch gap-3">
+                <PulseHeart liked={isSaved} onChange={handleSave} label={t('wishlist', 'Wishlist')} savedLabel={t('savedProduct', 'Saved')} className="flex-1" />
                 <button 
                   type="button" 
-                  className="flex-1 h-11 flex items-center justify-center gap-2 rounded-xl border border-[#29231D]/20 dark:border-[#F6F1EA]/20 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#635B52] dark:text-[#A8A199] hover:text-[#E4405F] hover:border-[#E4405F]/50 transition-colors shadow-sm focus-ring cursor-pointer"
-                >
-                  <Heart size={15} />
-                  <span>{t('wishlist', 'Wishlist')}</span>
-                </button>
-                <button 
-                  type="button" 
+                  onClick={handleShare}
                   className="flex-1 h-11 flex items-center justify-center gap-2 rounded-xl border border-[#29231D]/20 dark:border-[#F6F1EA]/20 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#635B52] dark:text-[#A8A199] hover:text-[#1E3A2B] dark:hover:text-[#FDFBF7] hover:border-[#1E3A2B] dark:hover:border-[#FDFBF7] transition-colors shadow-sm focus-ring cursor-pointer"
                 >
                   <Share2 size={15} />
-                  <span>{t('shareItem', 'Share Item')}</span>
+                  <span>{shareStatus === 'copied' ? t('shareCopied', 'Link copied') : shareStatus === 'failed' ? t('shareFailed', 'Could not share') : t('shareItem', 'Share Item')}</span>
                 </button>
               </div>
             </div>
@@ -431,7 +448,7 @@ export default function ProductDetailPage() {
                   {t('freshGuarantee', 'The AllBarka Guarantee')}
                 </h3>
               </div>
-              <TrustBadges variant="grid" />
+              <TrustBadges />
             </div>
 
           </div>
@@ -480,9 +497,9 @@ export default function ProductDetailPage() {
                           decoding="async"
                           onError={(e) => { (e.target as HTMLImageElement).src = '/images/product-placeholder.svg'; }}
                         />
-                        {rel.origin && (
+                        {getLocalized(rel, 'origin', language) && (
                           <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-white/90 text-[var(--color-ink,#29231D)] border border-[var(--color-gold,#C7982F)]/30">
-                            {rel.origin}
+                            {getLocalized(rel, 'origin', language)}
                           </span>
                         )}
                       </div>

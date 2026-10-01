@@ -44,7 +44,7 @@ export default function RootLayout() {
 
   const location = useLocation();
   const { currentUser, patronProfile, logout } = useAuth();
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
   
   const mobileMenuTriggerRef = React.useRef<HTMLButtonElement>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -192,12 +192,12 @@ export default function RootLayout() {
     enter: { 
       opacity: 1, 
       y: 0, 
-      transition: { duration: 0.25, ease: 'easeOut' }
+      transition: { duration: 0.25, ease: 'easeOut' as const }
     },
     exit: { 
       opacity: 0, 
       y: -5,
-      transition: { duration: 0.15, ease: 'easeIn' }
+      transition: { duration: 0.15, ease: 'easeIn' as const }
     }
   };
 
@@ -212,6 +212,7 @@ export default function RootLayout() {
       {/* Header Navigation */}
       <header 
         id="main-navigation-header"
+        dir="ltr"
         className={`sticky top-0 left-0 right-0 z-[100] w-full transition-all duration-300 ${
           isScrolled 
             ? 'h-[60px] sm:h-[68px] bg-[var(--color-surface)]/85 dark:bg-[var(--color-base)]/85 backdrop-blur-xl shadow-[var(--shadow-card)] border-b border-[var(--color-border)]'
@@ -252,22 +253,22 @@ export default function RootLayout() {
                 type="button"
                 onClick={() => setHamperModalOpen(true)}
                 className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl transition-all duration-200 border border-[#C7982F]/30 bg-[#C7982F]/10 hover:bg-[#C7982F]/20 text-[#806326] dark:text-[#E4C783] text-xs font-semibold tracking-wide cursor-pointer focus-ring"
-                aria-label="Build Custom Luxury Gift Hamper"
+                aria-label={t('nav.customHamper')}
               >
                 <Gift size={15} className="text-[#C7982F]" />
-                <span className="hidden lg:inline">Custom Hamper</span>
+                <span className="hidden lg:inline">{t('nav.customHamper')}</span>
               </button>
 
               {/* Language selector (Desktop only; mobile uses MobileMenu) */}
               <div className="relative hidden lg:flex items-center min-h-[44px] rounded-xl border border-[#29231D]/10 dark:border-[#C7982F]/25 bg-[#F6F1EA]/60 dark:bg-[#1A201E]/60 text-[#042821] dark:text-[#FFFCF7] focus-within:ring-2 focus-within:ring-[#C7982F]/35">
                 <Languages size={16} className="absolute start-2.5 text-[#C7982F] pointer-events-none" aria-hidden="true" />
-                <label htmlFor="desktop-language-select" className="sr-only">Language</label>
+                <label htmlFor="desktop-language-select" className="sr-only">{t('nav.language')}</label>
                 <select
                   id="desktop-language-select"
                   value={language}
                   onChange={(event) => setLanguage(event.target.value as LanguageCode)}
                   className="h-[42px] w-[112px] appearance-none cursor-pointer rounded-xl bg-transparent ps-8 pe-7 text-xs font-semibold focus:outline-none"
-                  aria-label="Language"
+                  aria-label={t('nav.language')}
                 >
                   <option value="en">English</option>
                   <option value="ur">اردو</option>
@@ -285,13 +286,13 @@ export default function RootLayout() {
                   type="button"
                   onClick={() => currentUser ? setPatronLoungeOpen(true) : setAuthModalOpen(true)}
                   className="flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 border border-[#29231D]/10 dark:border-[#C7982F]/25 bg-[#F6F1EA]/60 dark:bg-[#1A201E]/60 hover:bg-[#C7982F]/15 text-[#042821] dark:text-[#FFFCF7] focus-ring cursor-pointer"
-                  aria-label={currentUser ? 'Open VIP patron lounge' : 'Patron login'}
+                  aria-label={currentUser ? t('patronLounge') : t('vipLogin')}
                 >
                   <div className="bg-[#C7982F]/15 p-1 rounded-lg">
                     <User size={16} className="text-[#C7982F]" />
                   </div>
                   <span className="text-xs font-semibold tracking-wide whitespace-nowrap">
-                    {currentUser ? (patronProfile?.name?.split(' ')[0] || 'VIP Patron') : 'Patron Login'}
+                    {currentUser ? (patronProfile?.name?.split(' ')[0] || t('patronLounge')) : t('nav.patron')}
                   </span>
                 </button>
                 
@@ -300,9 +301,9 @@ export default function RootLayout() {
                     type="button"
                     onClick={logout}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-xl transition-all duration-200 border border-red-200 dark:border-red-900/30 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-700 dark:text-red-400 focus-ring cursor-pointer"
-                    aria-label="Sign out"
+                    aria-label={t('nav.logout')}
                   >
-                    <span className="text-[11px] font-bold tracking-wide uppercase">Logout</span>
+                    <span className="text-[11px] font-bold tracking-wide uppercase">{t('nav.logout')}</span>
                   </button>
                 )}
               </div>
@@ -315,7 +316,7 @@ export default function RootLayout() {
                 className={`relative min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center transition-all duration-200 border border-[#29231D]/10 dark:border-[#C7982F]/25 bg-[#F6F1EA]/60 dark:bg-[#1A201E]/60 hover:bg-[#C7982F]/15 text-[#042821] dark:text-[#FFFCF7] focus-ring cursor-pointer ${
                   isCartPulsing ? 'scale-105 bg-[#C7982F]/25 border-[#C7982F]' : ''
                 }`}
-                aria-label={`Shopping bag with ${totalItemsCount} items`}
+                aria-label={`${t('shoppingBag')}: ${totalItemsCount}`}
               >
                 <ShoppingBag size={19} strokeWidth={2.2} />
                 <AnimatePresence>
@@ -339,7 +340,7 @@ export default function RootLayout() {
                 type="button"
                 onClick={() => setMobileMenuOpen(true)} 
                 className="lg:hidden min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-[#29231D] dark:text-[#FFFCF7] hover:bg-[#C7982F]/15 border border-[#29231D]/10 dark:border-[#C7982F]/25 transition-colors focus-ring cursor-pointer"
-                aria-label="Open Navigation Menu"
+                aria-label={t('nav.openMenu')}
                 aria-expanded={mobileMenuOpen}
                 aria-controls="mobile-navigation-menu"
               >

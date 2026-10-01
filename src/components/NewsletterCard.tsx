@@ -15,27 +15,25 @@ export default function NewsletterCard() {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email.trim() || !emailRegex.test(email.trim())) {
-      setNewsletterError('Please provide a valid email address.');
+      setNewsletterError(t('footer.emailInvalid'));
       setNewsletterStatus('error');
       return;
     }
 
     setNewsletterStatus('submitting');
     
-    // TODO: replace with real business API call before launch
-    setTimeout(() => {
-      try {
-        const existing = JSON.parse(localStorage.getItem('allbarka_newsletter') || '[]');
-        if (!existing.includes(email.trim().toLowerCase())) {
-          existing.push(email.trim().toLowerCase());
-          localStorage.setItem('allbarka_newsletter', JSON.stringify(existing));
-        }
-        setNewsletterStatus('success');
-      } catch (err) {
-        setNewsletterStatus('error');
-        setNewsletterError('Failed to subscribe.');
-      }
-    }, 800);
+    try {
+      const response = await fetch('/api/newsletter/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), consent: true }),
+      });
+      if (!response.ok) throw new Error(t('footer.emailUnavailable'));
+      setNewsletterStatus('success');
+    } catch (error) {
+      setNewsletterStatus('error');
+      setNewsletterError(error instanceof Error ? error.message : t('footer.emailFailed'));
+    }
   };
 
   return (
@@ -91,7 +89,8 @@ export default function NewsletterCard() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email address"
+                    placeholder={t('footer.emailPlaceholder')}
+                    aria-label={t('footer.emailPlaceholder')}
                     className="flex-1 rounded-xl bg-white/5 border border-white/20 px-4 py-3 text-sm text-[var(--color-primary-fg)] placeholder:text-white/40 focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] transition-all"
                   />
                   <button

@@ -112,7 +112,7 @@ export default function QuickViewModal({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.94, y: 15 }}
         transition={{ type: 'spring', damping: 28, stiffness: 350 }}
-        className="relative bg-[var(--color-surface)] rounded-[28px] sm:rounded-[36px] w-full max-w-4xl overflow-hidden shadow-2xl border border-[var(--color-border)] z-10 flex flex-col md:flex-row max-h-[92vh] md:max-h-[88vh] text-[var(--color-ink)]"
+        className="relative bg-[var(--color-surface)] rounded-[28px] sm:rounded-[36px] w-full max-w-4xl overflow-hidden shadow-2xl border border-[var(--color-border)] z-10 flex flex-col md:flex-row max-h-[92svh] md:max-h-[88vh] text-[var(--color-ink)]"
         id="quickview-modal-container"
       >
         {/* Close Button top-right */}
@@ -126,7 +126,7 @@ export default function QuickViewModal({
         </button>
 
         {/* Left Side: Product Visual Showcase */}
-        <div className="relative w-full md:w-5/12 aspect-square md:aspect-auto md:h-full min-h-[260px] md:min-h-[480px] overflow-hidden bg-[var(--color-base)] shrink-0 border-b md:border-b-0 md:border-r border-[var(--color-border)]">
+        <div className="relative w-full md:w-5/12 aspect-[4/3] sm:aspect-square md:aspect-auto md:h-full max-h-[36svh] md:max-h-none min-h-[180px] md:min-h-[480px] overflow-hidden bg-[var(--color-base)] shrink-0 border-b md:border-b-0 md:border-r border-[var(--color-border)]">
           {imageError ? (
             <div className="w-full h-full absolute inset-0 bg-gradient-to-br from-[var(--color-base)] to-[var(--color-surface)] flex flex-col items-center justify-center p-6 text-center select-none text-[var(--color-ink)]">
               <div className="w-14 h-14 rounded-2xl bg-[var(--color-gold)]/20 border border-[var(--color-gold)]/40 flex items-center justify-center text-[var(--color-gold)] mb-3 shadow-md">

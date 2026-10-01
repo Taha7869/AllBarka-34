@@ -44,7 +44,7 @@ export function FAQSection() {
   };
 
   return (
-    <section id="faq" className="py-20 sm:py-24 bg-[var(--color-base)] text-[var(--color-ink)] relative overflow-hidden select-none border-t border-[var(--color-border)]">
+    <section id="faq" dir="ltr" className="py-20 sm:py-24 bg-[var(--color-base)] text-[var(--color-ink)] relative overflow-hidden select-none border-t border-[var(--color-border)]">
       {/* ── Background Ambient Radial Glows ───────────────────────────────── */}
       <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[var(--color-gold)]/[0.08] rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-[var(--color-gold)]/[0.04] rounded-full blur-3xl pointer-events-none" />

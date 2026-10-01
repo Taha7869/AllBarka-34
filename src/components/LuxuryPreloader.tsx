@@ -14,16 +14,18 @@ export default function LuxuryPreloader() {
 
   useEffect(() => {
     if (shouldReduceMotion) {
+      setIsVisible(false);
       return; 
     }
 
     const searchParams = new URLSearchParams(window.location.search);
     const forceShow = searchParams.get('preload') === '1';
-    const hasSeen = sessionStorage.getItem('allbarka_preloaded');
+    let hasSeen: string | null = null;
+    try { hasSeen = sessionStorage.getItem('allbarka_preloaded'); } catch { /* Storage may be unavailable. */ }
 
     if (!hasSeen || forceShow) {
       setIsVisible(true);
-      sessionStorage.setItem('allbarka_preloaded', 'true');
+      try { sessionStorage.setItem('allbarka_preloaded', 'true'); } catch { /* Continue without persistence. */ }
       document.body.style.overflow = 'hidden';
 
       const timer = setTimeout(() => {
@@ -35,6 +37,8 @@ export default function LuxuryPreloader() {
         clearTimeout(timer);
         document.body.style.overflow = '';
       };
+    } else {
+      setIsVisible(false);
     }
   }, [shouldReduceMotion]);
 

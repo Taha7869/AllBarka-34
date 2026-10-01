@@ -33,7 +33,7 @@ export default function ToastManager() {
   }, []);
 
   return (
-    <div className="fixed top-20 right-4 sm:top-24 sm:right-6 z-[200] flex flex-col gap-2 pointer-events-none">
+    <div className="fixed top-20 inset-x-3 sm:inset-x-auto sm:right-6 sm:top-24 z-[200] flex flex-col gap-2 pointer-events-none">
       <AnimatePresence>
         {toasts.map(toast => (
           <motion.div
@@ -42,7 +42,7 @@ export default function ToastManager() {
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
             transition={{ ease: [0.16, 1, 0.3, 1], duration: 0.4 }}
-            className="pointer-events-auto bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/40 p-3 sm:px-4 rounded-xl shadow-lg flex items-center gap-3 min-w-[280px]"
+            className="pointer-events-auto bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/40 p-3 sm:px-4 rounded-xl shadow-lg flex items-center gap-3 w-full sm:w-auto sm:min-w-[280px]"
           >
             {toast.type === 'success' ? (
               <CheckCircle size={18} className="text-emerald-600 shrink-0" />

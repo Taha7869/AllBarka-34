@@ -35,7 +35,7 @@ export const BackToTop: React.FC<BackToTopProps> = ({
 
   const springTransition = shouldReduceMotion 
     ? { duration: 0.01 }
-    : { type: 'spring', stiffness: 280, damping: 24 };
+    : { type: 'spring' as const, stiffness: 280, damping: 24 };
 
   const variants = {
     hidden: { opacity: 0, scale: 0.8 },

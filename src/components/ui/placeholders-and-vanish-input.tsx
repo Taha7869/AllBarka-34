@@ -24,6 +24,8 @@ export function PlaceholdersAndVanishInput({
   onSubmit,
   value: controlledValue,
   className,
+  suggestionsId,
+  suggestionsOpen,
 }: {
   id?: string;
   label?: string;
@@ -33,6 +35,8 @@ export function PlaceholdersAndVanishInput({
   onSubmit?: (e: React.FormEvent<HTMLFormElement>) => void;
   value?: string;
   className?: string;
+  suggestionsId?: string;
+  suggestionsOpen?: boolean;
 }) {
   const generatedId = useId();
   const inputId = externalId || `search-input-${generatedId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
@@ -258,6 +262,11 @@ export function PlaceholdersAndVanishInput({
         id={inputId}
         ref={inputRef}
         type="text"
+        autoComplete="off"
+        role={suggestionsId ? 'combobox' : undefined}
+        aria-autocomplete={suggestionsId ? 'list' : undefined}
+        aria-controls={suggestionsId}
+        aria-expanded={suggestionsId ? Boolean(suggestionsOpen) : undefined}
         value={value}
         placeholder={isFocused ? placeholder : ""}
         onFocus={() => setIsFocused(true)}

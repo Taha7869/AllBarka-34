@@ -267,7 +267,7 @@ export default function CartPage() {
 
         {/* Trust Badges */}
         <div className="mt-12 pt-8 border-t border-[#C7982F]/20">
-          <TrustBadges variant="strip" />
+          <TrustBadges />
         </div>
       </div>
     </div>
