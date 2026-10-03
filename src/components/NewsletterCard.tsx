@@ -1,3 +1,4 @@
+import { apiUrl } from '../lib/apiUrl';
 import React, { useId, useState } from 'react';
 import { useVisualRefinementLanguage } from '../hooks/useVisualRefinementLanguage';
 import { CheckCircle2, ArrowRight, AlertCircle } from 'lucide-react';
@@ -31,7 +32,7 @@ export default function NewsletterCard() {
     setNewsletterStatus('submitting');
     
     try {
-      const response = await fetch('/api/newsletter/subscribe', {
+      const response = await fetch(apiUrl('/api/newsletter/subscribe'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim(), consent: true }),

@@ -1,3 +1,4 @@
+import { apiUrl } from './apiUrl';
 import { STORE_CONFIG } from '../config/store';
 import { CartItem } from '../types.ts';
 
@@ -79,7 +80,7 @@ export async function placeOrder(payload: OrderPayload): Promise<OrderResponse> 
       headers['Authorization'] = `Bearer ${payload.authToken}`;
     }
 
-    const response = await fetch('/api/orders', {
+    const response = await fetch(apiUrl('/api/orders'), {
       method: 'POST',
       headers,
       body: JSON.stringify({
@@ -111,14 +112,12 @@ export async function placeOrder(payload: OrderPayload): Promise<OrderResponse> 
       signal: controller.signal,
     });
 
-    clearTimeout(timeoutId);
-
     const contentType = response.headers.get('content-type') || '';
     if (!contentType.includes('application/json')) {
       throw new Error('Server returned an unexpected non-JSON response. Please try again or contact concierge.');
     }
 
-    const data = await response.json().catch(() => null);
+    const data = await response.json();
 
     if (!data || typeof data !== 'object') {
       throw new Error('Malformed response received from server.');
@@ -192,6 +191,7 @@ export async function placeOrder(payload: OrderPayload): Promise<OrderResponse> 
       error: err.message || 'Network error while placing order. Your box is safely preserved.',
     };
   } finally {
+    clearTimeout(timeoutId);
     isOrderInFlight = false;
   }
 }
@@ -220,7 +220,7 @@ export async function getOrderQuote(params: {
       headers['Authorization'] = `Bearer ${params.authToken}`;
     }
 
-    const res = await fetch('/api/orders/quote', {
+    const res = await fetch(apiUrl('/api/orders/quote'), {
       method: 'POST',
       headers,
       body: JSON.stringify({
@@ -277,7 +277,7 @@ export async function claimOrder(params: {
   authToken: string;
 }): Promise<{ success: boolean; message?: string; error?: string }> {
   try {
-    const res = await fetch('/api/orders/claim', {
+    const res = await fetch(apiUrl('/api/orders/claim'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -317,7 +317,7 @@ export async function getOrderDetails(params: {
       headers['X-Guest-Claim-Token'] = params.claimToken;
     }
 
-    const res = await fetch(`/api/orders/${encodeURIComponent(params.orderId)}`, {
+    const res = await fetch(apiUrl(`/api/orders/${encodeURIComponent(params.orderId)}`), {
       headers,
     });
 

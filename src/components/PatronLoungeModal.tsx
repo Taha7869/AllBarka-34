@@ -1,3 +1,4 @@
+import { apiUrl } from '../lib/apiUrl';
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { X, User, Package, MapPin, Phone, Crown, LogOut, Clock, Calendar, CheckCircle2, RotateCcw, ShoppingBag, AlertCircle, ShieldCheck, Bell } from 'lucide-react';
@@ -163,7 +164,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
     (async () => {
       try {
         const idToken = await currentUser.getIdToken();
-        const response = await fetch('/api/me/orders', {
+        const response = await fetch(apiUrl('/api/me/orders'), {
           headers: { Authorization: `Bearer ${idToken}` }, signal: controller.signal,
         });
         if (!response.ok) throw new Error('Orders unavailable');

@@ -1,3 +1,4 @@
+import { apiUrl } from './apiUrl';
 export class UpdateRequestError extends Error { constructor(public code: string) { super(code); } }
 export async function updatesRequest<T>(getToken: () => Promise<string>, path: string, options: { body?: Record<string, unknown>; signal?: AbortSignal } = {}): Promise<T> {
   if (!/^\/api\/updates(?:\/|$)/.test(path)) throw new UpdateRequestError('INVALID_PATH');
@@ -13,7 +14,7 @@ export async function updatesRequest<T>(getToken: () => Promise<string>, path: s
   try {
     if (controller.signal.aborted) throw new UpdateRequestError('REQUEST_FAILED');
     const token = await Promise.race([getToken(), aborted]);
-    const response = await Promise.race([fetch(path, { method: options.body ? 'POST' : 'GET', credentials: 'omit', cache: 'no-store',
+    const response = await Promise.race([fetch(apiUrl(path), { method: options.body ? 'POST' : 'GET', credentials: 'omit', cache: 'no-store',
       headers: { Authorization: `Bearer ${token}`, ...(options.body ? { 'Content-Type': 'application/json' } : {}) },
       body: options.body ? JSON.stringify(options.body) : undefined, signal: controller.signal }), aborted]);
     const data = await Promise.race([response.json(), aborted]);

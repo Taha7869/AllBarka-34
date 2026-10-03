@@ -1,3 +1,4 @@
+import { apiUrl } from './apiUrl';
 import type { User } from 'firebase/auth';
 import type { PatronProfile } from '../contexts/AuthContext';
 
@@ -135,7 +136,7 @@ export async function completeEmailSignIn(user: User, enteredName = ''): Promise
     optionalAuthService(async signal => {
       const idToken = await user.getIdToken();
       if (signal.aborted) return;
-      await fetch('/api/auth/sessionLogin', { method: 'POST', credentials: 'same-origin',
+      await fetch(apiUrl('/api/auth/sessionLogin'), { method: 'POST', credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken }), signal });
     }),
     claimPendingOrder(user),
