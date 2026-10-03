@@ -543,7 +543,10 @@ try {
 
   // 15. Webhook Failure Safety: Order notification failure never rolls back order creation
   await test('Webhook Safety: n8n notification error returns sent: false without throwing', async () => {
-    process.env.N8N_ORDER_WEBHOOK_URL = 'https://httpbin.org/status/500';
+    process.env.N8N_ORDER_WEBHOOK_URL = 'https://n8n.example.test/webhook/orders';
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async () => ({ ok: false, status: 500 });
+    try {
     const res = await sendOrderToN8n({
       orderId: 'ORD-FAIL-SAFE',
       customer: { name: 'Test Patron', phone: '03001234567', address: 'Lahore', city: 'Lahore' },
@@ -555,7 +558,10 @@ try {
 
     assert.strictEqual(res.sent, false, 'Webhook failure must be caught gracefully');
     assert.strictEqual(res.status, 'FAILED');
-    delete process.env.N8N_ORDER_WEBHOOK_URL;
+    } finally {
+      globalThis.fetch = originalFetch;
+      delete process.env.N8N_ORDER_WEBHOOK_URL;
+    }
   });
 
   // 16. Authoritative Order Result Payload: customerUid and delivery derived from server

@@ -1,3 +1,4 @@
+import { apiUrl } from './apiUrl';
 export class AdminRequestError extends Error {
   constructor(public code: string, public status = 0) {
     super(code);
@@ -28,7 +29,7 @@ export async function adminRequest<T>(
     // Include authentication in the deadline; do not let a stalled token refresh hang the panel.
     const token = await Promise.race([Promise.resolve().then(getToken), aborted]);
     if (controller.signal.aborted) throw new AdminRequestError('REQUEST_TIMEOUT');
-    const response = await Promise.race([fetch(path, {
+    const response = await Promise.race([fetch(apiUrl(path), {
       method: options.body ? 'POST' : 'GET',
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/json', ...(options.body ? { 'Content-Type': 'application/json' } : {}) },
       body: options.body ? JSON.stringify(options.body) : undefined,

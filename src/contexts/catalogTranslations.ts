@@ -1,5 +1,8 @@
 export const catalogTranslations: Record<string, Record<string, string>> = {
   en: {
+    "checkout.signInAgain": "Your account session could not be verified. Sign in again before placing this order.",
+    "checkout.quoteChanged": "Prices changed. The total is being checked again; review it before confirming your order.",
+    "concierge.disclaimer": "AI-generated guidance. Confirm order details with our team; personal health questions need a qualified clinician.",
     "slider.play": "Play product slideshow",
     "slider.pause": "Pause product slideshow",
     "slider.position": "Product group {current} of {total}",
@@ -122,6 +125,9 @@ export const catalogTranslations: Record<string, Record<string, string>> = {
     'account.orders': 'Your orders', 'account.refresh': 'Refresh orders', 'account.error': 'We couldn’t load your orders. Please try again.', 'account.retry': 'Try again', 'account.received': 'Received', 'account.preparing': 'Preparing', 'account.dispatch': 'On the way', 'account.delivered': 'Delivered', 'account.cancelled': 'Cancelled', 'account.reorder': 'Shop these items again', 'account.currentPrice': 'Items are added at current catalogue prices.', 'account.reorderMissing': 'Some items are no longer available in this size.', 'account.browse': 'Explore the boutique',
   },
   ur: {
+    "checkout.signInAgain": "آپ کے اکاؤنٹ سیشن کی تصدیق نہیں ہو سکی۔ آرڈر دینے سے پہلے دوبارہ سائن ان کریں۔",
+    "checkout.quoteChanged": "قیمت تبدیل ہو گئی ہے۔ رقم دوبارہ چیک کی جا رہی ہے؛ آرڈر کی تصدیق سے پہلے نئی رقم دیکھ لیں۔",
+    "concierge.disclaimer": "یہ رہنمائی AI سے تیار ہوئی ہے۔ آرڈر کی تفصیلات ہماری ٹیم سے اور ذاتی صحت کے سوالات مستند معالج سے تصدیق کریں۔",
     "slider.play": "مصنوعات کی سلائیڈز چلائیں",
     "slider.pause": "مصنوعات کی سلائیڈز روکیں",
     "slider.position": "مصنوعات کا گروپ {current} از {total}",
@@ -244,6 +250,9 @@ export const catalogTranslations: Record<string, Record<string, string>> = {
     'account.orders': 'آپ کے آرڈرز', 'account.refresh': 'آرڈرز تازہ کریں', 'account.error': 'آرڈرز لوڈ نہیں ہو سکے۔ دوبارہ کوشش کریں۔', 'account.retry': 'دوبارہ کوشش', 'account.received': 'موصول', 'account.preparing': 'تیاری جاری', 'account.dispatch': 'راستے میں', 'account.delivered': 'پہنچا دیا گیا', 'account.cancelled': 'منسوخ', 'account.reorder': 'یہ مصنوعات دوبارہ خریدیں', 'account.currentPrice': 'مصنوعات موجودہ قیمتوں پر شامل ہوں گی۔', 'account.reorderMissing': 'کچھ مصنوعات اس مقدار میں دستیاب نہیں۔', 'account.browse': 'مصنوعات دیکھیں',
   },
   ar: {
+    "checkout.signInAgain": "تعذر التحقق من جلسة حسابك. سجّل الدخول مجددًا قبل تقديم الطلب.",
+    "checkout.quoteChanged": "تغيرت الأسعار. نتحقق من الإجمالي مجددًا؛ راجعه قبل تأكيد طلبك.",
+    "concierge.disclaimer": "إرشادات مولّدة بالذكاء الاصطناعي. أكد تفاصيل الطلب مع فريقنا، واستشر مختصًا للأسئلة الصحية الشخصية.",
     "slider.play": "تشغيل عرض المنتجات",
     "slider.pause": "إيقاف عرض المنتجات",
     "slider.position": "مجموعة المنتجات {current} من {total}",

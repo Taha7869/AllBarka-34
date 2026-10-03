@@ -1,3 +1,4 @@
+import { apiUrl } from './apiUrl';
 import { ProductMediaError, validateProductMedia, type ProductMediaRecord } from './productMedia';
 
 export async function requestProductMedia(
@@ -18,7 +19,7 @@ export async function requestProductMedia(
     if (controller.signal.aborted) throw new ProductMediaError('MEDIA_REQUEST_CANCELLED', 0);
     if (typeof navigator !== 'undefined' && navigator.onLine === false) throw new ProductMediaError('MEDIA_OFFLINE', 0);
     const token = await Promise.race([Promise.resolve().then(getToken), aborted]);
-    const response = await Promise.race([fetch(`/api/admin/product-media/${encodeURIComponent(productId)}`, {
+    const response = await Promise.race([fetch(apiUrl(`/api/admin/product-media/${encodeURIComponent(productId)}`), {
       method: options.patch ? 'PATCH' : 'GET', signal: controller.signal, credentials: 'omit', cache: 'no-store',
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/json', ...(options.patch ? { 'Content-Type': 'application/json' } : {}) },
       body: options.patch ? JSON.stringify(options.patch) : undefined,

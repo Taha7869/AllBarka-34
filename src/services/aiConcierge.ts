@@ -1,3 +1,4 @@
+import { apiUrl } from '../lib/apiUrl';
 import { PRODUCTS } from '../data/products';
 import type { LanguageCode } from '../contexts/LanguageContext';
 
@@ -39,18 +40,19 @@ export async function chatWithOllama(
     if (signal?.aborted) controller.abort();
     try {
       const lastMessage = messages.at(-1);
-      const response = await fetch('/api/concierge/chat', {
+      const response = await fetch(apiUrl('/api/concierge/chat'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}) },
         body: JSON.stringify({
           userText: lastMessage?.content || '',
           language,
-          messages: messages.slice(0, -1).map(message => ({ role: message.role, text: message.content })),
+          messages: messages.slice(0, -1).filter(message => message.role !== 'system').slice(-4).map(message => ({ role: message.role, text: message.content })),
         }),
         signal: controller.signal,
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Concierge unavailable');
+      if (result.modelUsed === 'allbarka-offline') throw new Error('AI assistant temporarily unavailable');
       const reply = result.text || result.reply;
       if (typeof reply !== 'string' || !reply.trim()) throw new Error('Empty concierge response');
       onChunk(reply);

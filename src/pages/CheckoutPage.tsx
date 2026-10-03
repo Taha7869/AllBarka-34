@@ -125,9 +125,11 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   const [activeReward, setActiveReward] = useState<any>(null);
   const [rewardDetails, setRewardDetails] = useState<any>(null);
 
-  const quoteKey = JSON.stringify({ items: cartItems.map(item => [item.productId, item.selectedWeight, item.quantity, item.unitPrice, item.hamperConfiguration]), city: formData.city, shipping: activeShippingMethod, wrapping: formData.giftWrapping, coupon: appliedCoupon });
+  const quoteKey = JSON.stringify({ items: cartItems.map(item => [item.productId, item.selectedWeight, item.quantity, item.unitPrice, item.hamperConfiguration]), city: formData.city, shipping: activeShippingMethod, wrapping: formData.giftWrapping, coupon: appliedCoupon, uid: currentUser?.uid || null });
   useEffect(() => { setShippingCity(formData.city); }, [formData.city, setShippingCity]);
   useEffect(() => {
+    // A failed refresh or identity change must never keep an old quote verified.
+    setQuote(null);
     if (!online || !cartItems.length) { setQuoteLoading(false); return; }
     if (formData.city.trim().length < 2 || isPlaceholderCity(formData.city)) { setQuoteLoading(false); setQuoteError(t('shipping.enterCity')); return; }
     let active = true;
@@ -406,6 +408,7 @@ const handleInputChange = (field: string, value: any) => {
           authToken = await currentUser.getIdToken();
         } catch (tokenErr) {
           console.warn('Could not acquire patron ID token:', tokenErr);
+          throw new Error(t('checkout.signInAgain'));
         }
       }
 
@@ -439,6 +442,11 @@ const handleInputChange = (field: string, value: any) => {
       if (!orderResult.success) {
         setSubmissionError(orderResult.error || 'Unable to complete order placement.');
         setSupportAction(orderResult.supportAction || null);
+        if (orderResult.code === 'QUOTE_CHANGED') {
+          setQuote(null);
+          setQuoteRefresh(value => value + 1);
+          setSubmissionError(t('checkout.quoteChanged'));
+        }
         return;
       }
 

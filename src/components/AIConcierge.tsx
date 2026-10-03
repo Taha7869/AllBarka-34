@@ -346,6 +346,9 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
                 <Send size={16} />
               </button>
             </form>
+            <p dir="auto" className="px-4 pb-3 text-[10px] leading-relaxed text-[var(--color-ink-muted,#5A5A5A)]">
+              {t('concierge.disclaimer')}
+            </p>
           </motion.div>
         )}
       </AnimatePresence>

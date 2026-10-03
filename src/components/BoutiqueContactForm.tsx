@@ -1,3 +1,4 @@
+import { apiUrl } from '../lib/apiUrl';
 import React, { useState } from 'react';
 import {
   MessageCircle,
@@ -44,7 +45,7 @@ export default function BoutiqueContactForm() {
 
     setStatus('submitting');
     try {
-      const res = await fetch('/api/contact', {
+      const res = await fetch(apiUrl('/api/contact'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

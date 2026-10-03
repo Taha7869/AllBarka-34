@@ -22,7 +22,9 @@
     "test:advanced": "tsx --test tests/cart-input.test.ts tests/advanced-tools.test.ts tests/checkout-reliability.test.ts tests/cart-shipping.test.tsx",
     "test:admin": "tsx --test tests/admin-client.test.ts tests/admin-catalog.test.ts tests/admin-presentation.test.ts tests/admin-operations.test.ts",
     "test:experience": "tsx --test tests/selection-guide.test.ts tests/product-photo-viewer.test.tsx tests/catalog-filter-draft.test.ts tests/email-auth.test.ts tests/google-auth.test.ts",
-    "test:refinements": "tsx --test tests/visual-refinements.test.tsx tests/circular-carousel.test.tsx tests/pantry-motion.test.tsx tests/product-media.test.ts tests/product-media-render.test.tsx tests/store-updates.test.ts"
+    "test:refinements": "tsx --test tests/visual-refinements.test.tsx tests/circular-carousel.test.tsx tests/pantry-motion.test.tsx tests/product-media.test.ts tests/product-media-render.test.tsx tests/store-updates.test.ts",
+    "verify:static-config": "node scripts/verify-static-config.mjs",
+    "test:launch": "node --import tsx --test tests/launch-integration.test.ts tests/n8n-ai.test.ts tests/n8n-website-workflow.test.ts"
   },
   "dependencies": {
     "@google/genai": "1.52.0",
