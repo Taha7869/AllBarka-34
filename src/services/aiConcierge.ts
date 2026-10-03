@@ -1,16 +1,18 @@
 import { PRODUCTS } from '../data/products';
+import type { LanguageCode } from '../contexts/LanguageContext';
 
 const OLLAMA_URL = 'http://localhost:11434/api/chat';
 const MODEL = 'gemma3:4b';
-const TIMEOUT_MS = 8000;
+const TIMEOUT_MS = 30000;
+const LANGUAGE_NAMES: Record<LanguageCode, string> = { en: 'English', ur: 'Urdu', ar: 'Arabic' };
 
 let catalogCache: string | null = null;
 
 function getCatalogContext(): string {
   if (catalogCache) return catalogCache;
   const lines = PRODUCTS.map(p => {
-    const defaultPrice = Object.values(p.prices)[0];
-    return `- ${p.name_en} (${p.category}): Rs. ${defaultPrice} | ${p.desc_en}`;
+    const prices = Object.entries(p.prices).map(([portion, price]) => `${portion}: Rs. ${price}`).join(', ');
+    return `- ${p.name_en} (${p.category}): ${prices} | ${p.desc_en}`;
   });
   catalogCache = lines.join('\n');
   return catalogCache;
@@ -23,14 +25,18 @@ export type ChatMessage = {
 
 export async function chatWithOllama(
   messages: ChatMessage[],
-  isUrdu: boolean,
+  language: LanguageCode,
   onChunk: (text: string) => void,
-  authToken?: string
+  authToken?: string,
+  signal?: AbortSignal
 ): Promise<void> {
   // Hosted visitors use the existing authenticated server API. Local Ollama is opt-in.
   if (import.meta.env.VITE_AI_PROVIDER !== 'ollama') {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30000);
+    const abort = () => controller.abort();
+    signal?.addEventListener('abort', abort, { once: true });
+    if (signal?.aborted) controller.abort();
     try {
       const lastMessage = messages.at(-1);
       const response = await fetch('/api/concierge/chat', {
@@ -38,6 +44,7 @@ export async function chatWithOllama(
         headers: { 'Content-Type': 'application/json', ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}) },
         body: JSON.stringify({
           userText: lastMessage?.content || '',
+          language,
           messages: messages.slice(0, -1).map(message => ({ role: message.role, text: message.content })),
         }),
         signal: controller.signal,
@@ -48,11 +55,14 @@ export async function chatWithOllama(
       if (typeof reply !== 'string' || !reply.trim()) throw new Error('Empty concierge response');
       onChunk(reply);
       return;
-    } finally { clearTimeout(timeout); }
+    } finally {
+      clearTimeout(timeout);
+      signal?.removeEventListener('abort', abort);
+    }
   }
   const systemPrompt: ChatMessage = {
     role: 'system',
-    content: `You are AllBarka's luxury dry-fruits concierge. Answer briefly (max 60 words), recommend only from the provided product catalog, never invent products, never give medical claims, match the user's language (${isUrdu ? 'Urdu' : 'English'}).
+    content: `You are AllBarka's luxury dry-fruits concierge. Answer briefly (max 60 words), recommend only from the provided product catalog, never invent products, never give medical claims, reply in ${LANGUAGE_NAMES[language]}.
     
 Catalog:
 ${getCatalogContext()}`
@@ -66,6 +76,9 @@ ${getCatalogContext()}`
 
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const abort = () => controller.abort();
+  signal?.addEventListener('abort', abort, { once: true });
+  if (signal?.aborted) controller.abort();
 
   try {
     const response = await fetch(OLLAMA_URL, {
@@ -75,8 +88,6 @@ ${getCatalogContext()}`
       signal: controller.signal
     });
     
-    clearTimeout(id);
-
     if (!response.ok) {
       throw new Error(`Ollama error: ${response.status} ${response.statusText}`);
     }
@@ -87,28 +98,44 @@ ${getCatalogContext()}`
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder('utf-8');
+    let pending = '';
+    let receivedReply = false;
+    const consumeLine = (line: string) => {
+      if (!line.trim()) return;
+      const parsed = JSON.parse(line) as { error?: string; message?: { content?: string } };
+      if (parsed.error) throw new Error(parsed.error);
+      if (typeof parsed.message?.content === 'string' && parsed.message.content) {
+        receivedReply = true;
+        onChunk(parsed.message.content);
+      }
+    };
 
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      
-      const chunk = decoder.decode(value, { stream: true });
-      const lines = chunk.split('\n').filter(Boolean);
-      for (const line of lines) {
-        try {
-          const parsed = JSON.parse(line);
-          if (parsed.message?.content) {
-            onChunk(parsed.message.content);
-          }
-        } catch (e) {
-          // ignore parsing error for partial chunks if any
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        pending += done ? decoder.decode() : decoder.decode(value, { stream: true });
+        let newline = pending.indexOf('\n');
+        while (newline !== -1) {
+          consumeLine(pending.slice(0, newline));
+          pending = pending.slice(newline + 1);
+          newline = pending.indexOf('\n');
+        }
+        if (done) {
+          consumeLine(pending);
+          break;
         }
       }
+      if (!receivedReply) throw new Error('Empty concierge response');
+    } finally {
+      reader.releaseLock();
     }
   } catch (error) {
-    if ((error as any).name === 'AbortError') {
+    if (error instanceof Error && error.name === 'AbortError') {
       throw new Error('Connection to concierge timed out.');
     }
     throw error;
+  } finally {
+    clearTimeout(id);
+    signal?.removeEventListener('abort', abort);
   }
 }

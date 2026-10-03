@@ -1,4 +1,5 @@
 import { getLocalized } from '../utils/localize';
+import { hamperPackingLines } from '../lib/hamperCatalog';
 import React, { useEffect, useState, useId, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
@@ -16,7 +17,8 @@ import {
   ArrowRight
 } from 'lucide-react';
 import type { CartItem } from '../types';
-import { PRODUCTS, getProductImage } from '../data/products';
+import { PRODUCTS } from '../data/products';
+import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { useCart, parsePrice, formatPrice, FREE_SHIPPING_THRESHOLD } from '../contexts/CartContext';
 import { buildAutomatedOrderWhatsAppUrl } from '../config/contacts';
 import { acquireScrollLock } from '../utils/scrollLock';
@@ -36,6 +38,7 @@ function SafeCartImage({
   fallbackText: string;
 }) {
   const [error, setError] = useState(false);
+  useEffect(() => { setError(false); }, [src]);
   if (error || !src) {
     return (
       <div
@@ -84,6 +87,7 @@ export default function CartDrawer({
 }: CartDrawerProps) {
   const navigate = useNavigate();
   const { t, isRtl , language } = useLanguage();
+  const mediaCover = useProductMediaCover();
   const context = useCart();
   const drawerHeadingId = useId();
 
@@ -96,6 +100,7 @@ export default function CartDrawer({
   const remainingForFree = context.remainingForFreeShipping;
   const freeProgress = context.freeShippingProgress;
   const isFreeUnlocked = context.isFreeShippingUnlocked;
+  const { shippingCity, setShippingCity, estimatedShipping } = context;
 
   const [selectedPayment, setSelectedPayment] = useState<string>(() => {
     if (propsPaymentMethod) return propsPaymentMethod;
@@ -192,19 +197,17 @@ export default function CartDrawer({
   // 1-Click WhatsApp Quick Checkout — encodes full cart summary for guest checkout
   const handleWhatsAppCheckout = () => {
     if (cartItems.length === 0) return;
-    const shippingCost = isFreeUnlocked ? 0 : 150;
-    const estimatedTotal = subtotal + shippingCost;
+    const shippingCost = estimatedShipping;
+    const estimatedTotal = shippingCost === null ? null : subtotal + shippingCost;
 
     // Build line-by-line cart summary
     const lines = cartItems.map((item) => {
       const itemUnit = parsePrice(item.unitPrice || item.price);
       const itemTotal = itemUnit * item.quantity;
-      return `• ${getLocalized(item, 'name', language)} (${item.selectedWeight}) × ${item.quantity} = Rs. ${itemTotal.toLocaleString()}`;
+      return [`• ${getLocalized(item, 'name', language)} (${item.selectedWeight}) × ${item.quantity} = Rs. ${itemTotal.toLocaleString()}`, ...hamperPackingLines(item.hamperConfiguration, language)].join('\n');
     });
 
-    const shippingLine = isFreeUnlocked
-      ? `Shipping: FREE (order over Rs. 3,000)`
-      : `Shipping: Rs. ${shippingCost}`;
+    const shippingLine = `Delivery to ${shippingCity}: ${shippingCost === null ? 'confirmation required' : `Rs. ${shippingCost}`} (estimate)`;
 
     const messageLines = [
       'Assalam-o-Alaikum AllBarka! 🌿',
@@ -214,12 +217,11 @@ export default function CartDrawer({
       '',
       `Subtotal: Rs. ${subtotal.toLocaleString()}`,
       shippingLine,
-      `*Total: Rs. ${estimatedTotal.toLocaleString()}*`,
+      estimatedTotal === null ? 'Please confirm the delivery charge and final total.' : `*Estimated total: Rs. ${estimatedTotal.toLocaleString()}*`,
       '',
       'Please confirm availability and share payment/delivery details. Shukriya! 🙏',
     ];
 
-    const encoded = encodeURIComponent(messageLines.join('\n'));
     window.open(buildAutomatedOrderWhatsAppUrl(messageLines.join('\n')), '_blank', 'noopener,noreferrer');
   };
 
@@ -286,7 +288,7 @@ export default function CartDrawer({
             </div>
 
             {/* ── Free Delivery Status Bar ── */}
-            {cartItems.length > 0 && (
+            {cartItems.length > 0 && shippingCity === 'Lahore' && (
               <div className="bg-[#FFFCF7]/90 dark:bg-[#1A201E]/90 border-b border-[#29231D]/10 dark:border-[#F6F1EA]/10 px-4 sm:px-5 py-3 shrink-0">
                 <div className="flex items-center justify-between text-xs font-medium text-[#29231D] dark:text-[#F6F1EA] mb-2">
                   <span className="flex items-center gap-1.5 font-semibold text-[11px] sm:text-xs">
@@ -294,15 +296,11 @@ export default function CartDrawer({
                     {isFreeUnlocked ? (
                       <span className="text-[#042821] dark:text-[#E4C783] font-bold flex items-center gap-1">
                         <Sparkles size={12} className="text-[#C7982F]" />
-                        FREE Shipping Unlocked across Pakistan!
+                        {t('freeShippingUnlocked')}
                       </span>
                     ) : (
                       <span>
-                        Add{' '}
-                        <strong className="text-[#806326] dark:text-[#E4C783] font-bold">
-                          {formatPrice(remainingForFree)}
-                        </strong>{' '}
-                        more to unlock FREE Shipping
+                        {t('freeShippingHint').replace('{amount}', remainingForFree.toLocaleString())}
                       </span>
                     )}
                   </span>
@@ -351,7 +349,7 @@ export default function CartDrawer({
                     const itemUnitPrice = parsePrice(item.unitPrice || item.price);
                     const itemTotalPrice = itemUnitPrice * item.quantity;
                     const matchedProduct = PRODUCTS.find((p) => p.id === item.productId || p.id === item.id);
-                    const imageSource = matchedProduct ? getProductImage(matchedProduct) : item.image || '';
+                    const imageSource = mediaCover(matchedProduct, item.image || '');
 
                     return (
                       <div
@@ -458,7 +456,7 @@ export default function CartDrawer({
                         >
                           <div className="w-full relative aspect-4/3 rounded-lg overflow-hidden bg-[#F6F1EA] dark:bg-[#222A28] shrink-0 border border-[#29231D]/8 dark:border-[#F6F1EA]/8">
                             <SafeCartImage
-                              src={getProductImage(prod)}
+                              src={mediaCover(prod)}
                               alt={t(`imageAlt.${prod.id}`, getLocalized(prod, 'name', language))}
                               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                               fallbackText={getLocalized(prod, 'name', language)}
@@ -491,6 +489,8 @@ export default function CartDrawer({
                 </div>
               )}
             </div>
+
+            <button type="button" onClick={() => { closeDrawer(); navigate('/cart'); }} className="focus-ring min-h-11 shrink-0 border-t border-[var(--color-border)] px-5 py-2 text-sm font-semibold text-[var(--color-accent-text)] underline underline-offset-4">{t('cart.boxTools')}</button>
 
             {/* ── 3. Sticky Bottom Summary ── */}
             {cartItems.length > 0 && (
@@ -527,6 +527,14 @@ export default function CartDrawer({
                 </div>
 
                 {/* Financial Summary */}
+                <label className="block space-y-2 text-xs font-semibold">
+                  <span>{t('shipping.destination')}</span>
+                  <select className="focus-ring min-h-11 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] px-3" value={shippingCity === 'Lahore' ? 'Lahore' : 'Other City'} onChange={event => setShippingCity(event.target.value)}>
+                    <option value="Lahore">{t('shipping.lahore')}</option>
+                    <option value="Other City">{t('shipping.outside')}</option>
+                  </select>
+                </label>
+                <p className="text-[11px] leading-relaxed text-[var(--color-text-secondary)]">{t(shippingCity === 'Lahore' ? 'shipping.lahoreRule' : 'shipping.nationwideRule')}</p>
                 <div className="space-y-1.5 text-xs text-[#29231D] dark:text-[#F6F1EA] pt-0.5">
                   <div className="flex justify-between text-xs">
                     <span className="font-medium text-[#635B52] dark:text-[#A8A199]">{t('cartSubtotal', 'Subtotal')}</span>
@@ -539,14 +547,14 @@ export default function CartDrawer({
                       {t('shippingFee', 'Shipping Fee')}
                     </span>
                     <span className="font-bold text-[#806326] dark:text-[#E4C783]">
-                      {isFreeUnlocked ? t('freeShippingUnlocked', 'FREE Delivery') : <bdi dir="ltr">Rs. 150 (Free over Rs. 3,000)</bdi>}
+                      {estimatedShipping === null ? t('shipping.pending') : estimatedShipping === 0 ? t('shipping.free') : <bdi dir="ltr">{formatPrice(estimatedShipping)}</bdi>}
                     </span>
                   </div>
                   <div className="h-px bg-[#29231D]/10 dark:bg-[#F6F1EA]/10 my-1" />
                   <div className="flex justify-between items-baseline font-serif font-bold text-[#29231D] dark:text-[#F6F1EA]">
                     <span className="text-sm">{t('totalPayable', 'Estimated Total')}</span>
                     <span className="text-[#806326] dark:text-[#E4C783] text-lg font-mono">
-                      <bdi dir="ltr">{formatPrice(subtotal + (isFreeUnlocked ? 0 : 150))}</bdi>
+                      <bdi dir="ltr">{estimatedShipping === null ? t('shipping.pending') : formatPrice(subtotal + estimatedShipping)}</bdi>
                     </span>
                   </div>
                 </div>

@@ -1,20 +1,25 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useCatalogActivity } from '../hooks/useCatalogActivity';
+import { unitPrice } from '../lib/catalogActivity';
+import { useSavedProducts } from '../hooks/useSavedProducts';
+import React, { lazy, Suspense, useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { PRODUCTS, getProductImage } from '../data/products';
-import { getProductImages } from '../data/productImages';
+import { useProductMedia, useProductMediaCover } from '../contexts/ProductMediaContext';
+import { clampPhotoIndex } from '../lib/productPhotoViewer';
+import ProductVideo from '../components/ProductVideo';
 import { Product, CartItem } from '../types';
 import ProductDetailAccordion from '../components/ProductDetailAccordion';
 import SEO from '../components/SEO';
-import { ShoppingBag, ShieldCheck, Check, Sparkles, ArrowRight, Truck, Award, AlertCircle, Info, Share2 } from 'lucide-react';
+import { ShoppingBag, ShieldCheck, Check, Sparkles, ArrowRight, Truck, Award, AlertCircle, Info, Share2, Maximize2 } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import TrustBadges from '../components/TrustBadges';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getLocalized } from '../utils/localize';
 import PulseHeart from '../components/PulseHeart';
-import SquishSwitch from '../components/SquishSwitch';
+import { buildHumanSupportWhatsAppUrl } from '../config/contacts';
 
-const SAVED_PRODUCTS_KEY = 'allbarka_saved_products';
+const ProductPhotoViewer = lazy(() => import('../components/ProductPhotoViewer'));
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -23,47 +28,38 @@ export default function ProductDetailPage() {
   const { t, language } = useLanguage();
   
   const product = PRODUCTS.find((p) => p.id === id);
+  const productMedia = useProductMedia(product);
+  const mediaCover = useProductMediaCover();
   const [selectedWeightIndex, setSelectedWeightIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
-  const [isWholesale, setIsWholesale] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [activeGalleryIdx, setActiveGalleryIdx] = useState(0);
-  const [isSaved, setIsSaved] = useState(false);
+  const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
+  const photoViewerOpener = useRef<HTMLButtonElement | null>(null);
+  const { savedIds, setSaved } = useSavedProducts();
+  const { view } = useCatalogActivity();
+  const isSaved = !!id && savedIds.includes(id);
   const [shareStatus, setShareStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
 
   const isGiftProduct = product?.category === 'hampers' || product?.category === 'deals' || product?.category === 'combos' || product?.id?.includes('hamper') || product?.id?.includes('gift') || product?.id?.includes('deal');
-  const galleryImages = product ? getProductImages(product).map(src => ({ src, alt: t(`imageAlt.${product.id}`, getLocalized(product, 'name', language)) })) : [];
+  const galleryImages = useMemo(() => product ? productMedia.images.map(src => ({ src, alt: t(`imageAlt.${product.id}`, getLocalized(product, 'name', language)) })) : [], [product, productMedia.images, language, t]);
+  const galleryKey = productMedia.images.join('\u0000');
+  const activeGalleryIndex = clampPhotoIndex(activeGalleryIdx, galleryImages.length);
+  useEffect(() => { setActiveGalleryIdx(current => clampPhotoIndex(current, productMedia.images.length)); setImageError(false); }, [galleryKey, productMedia.images.length]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    if (id) view(id);
     setSelectedWeightIndex(0);
     setQuantity(1);
-    setIsWholesale(false);
     setImageError(false);
     setActiveGalleryIdx(0);
+    setPhotoViewerOpen(false);
     setShareStatus('idle');
-    try {
-      const saved = JSON.parse(localStorage.getItem(SAVED_PRODUCTS_KEY) || '[]');
-      setIsSaved(Array.isArray(saved) && saved.includes(id));
-    } catch {
-      setIsSaved(false);
-    }
-  }, [id]);
+  }, [id, view]);
 
-  const handleSave = (next: boolean) => {
-    if (!id) return;
-    setIsSaved(next);
-    try {
-      const saved = JSON.parse(localStorage.getItem(SAVED_PRODUCTS_KEY) || '[]');
-      const ids = new Set<string>(Array.isArray(saved) ? saved.filter((item): item is string => typeof item === 'string') : []);
-      if (next) ids.add(id);
-      else ids.delete(id);
-      localStorage.setItem(SAVED_PRODUCTS_KEY, JSON.stringify([...ids]));
-    } catch {
-      // The toggle remains usable even when browser storage is unavailable.
-    }
-  };
+  const handleSave = (next: boolean) => { if (id) setSaved(id, next); };
 
   const handleShare = async () => {
     if (!product) return;
@@ -82,7 +78,7 @@ export default function ProductDetailPage() {
     }
   };
 
-  // Related products from active 14-product catalogue
+  // Related selections from the current catalogue
   const relatedProducts = useMemo(() => {
     if (!product) return [];
     const sameCategory = PRODUCTS.filter((p) => p.id !== product.id && p.category === product.category);
@@ -127,15 +123,8 @@ export default function ProductDetailPage() {
 
   const weights = Object.keys(product.prices);
   const selectedWeight = weights[selectedWeightIndex] || weights[0];
-  const isWholesaleEligible = 
-    selectedWeight.toLowerCase().includes('1kg') || 
-    selectedWeight.toLowerCase().includes('kg') || 
-    selectedWeight.includes('1000g');
-  const priceToUse = (isWholesale && isWholesaleEligible && product.wholesale) 
-    ? product.wholesale 
-    : product.prices[selectedWeight];
-  
-  const originalPrice = Math.round(priceToUse * 1.15);
+  const priceToUse = product.prices[selectedWeight];
+  const unit = unitPrice(priceToUse, selectedWeight);
 
   const handleAddToCart = () => {
     addToCart({
@@ -150,7 +139,7 @@ export default function ProductDetailPage() {
       unitPrice: priceToUse,
       price: priceToUse,
       quantity: quantity,
-      wholesale: isWholesale,
+      wholesale: false,
     });
 
     setIsAdded(true);
@@ -160,21 +149,21 @@ export default function ProductDetailPage() {
     }, 400);
   };
 
+  const siteOrigin = typeof window === 'undefined' ? 'https://allbarka.com' : window.location.origin;
+
   return (
-    <div className="w-full bg-[var(--color-base,#F6F1EA)] pt-6 sm:pt-10 pb-24 select-none">
+    <div dir="ltr" className="w-full bg-[var(--color-base,#F6F1EA)] pt-6 sm:pt-10 pb-24 select-none">
       <SEO
         title={getLocalized(product, 'name', language)}
         description={getLocalized(product, 'desc', language)}
         canonicalPath={`/product/${product.id}`}
         type="product"
-        image={getProductImage(product)}
+        image={productMedia.images[0]}
         structuredData={{
           '@context': 'https://schema.org',
           '@type': 'Product',
-          name_en: product.name_en,
-      name_ur: product.name_ur,
-      name_ar: product.name_ar,
-          image: `https://allbarka.com${getProductImage(product)}`,
+          name: getLocalized(product, 'name', language),
+          image: productMedia.images.map(src => new URL(src, siteOrigin).href),
           description: getLocalized(product, 'desc', language),
           sku: product.id,
           brand: {
@@ -183,7 +172,7 @@ export default function ProductDetailPage() {
           },
           offers: {
             '@type': 'Offer',
-            url: `https://allbarka.com/product/${product.id}`,
+            url: `${siteOrigin}/product/${product.id}`,
             priceCurrency: 'PKR',
             price: priceToUse,
             availability: 'https://schema.org/InStock',
@@ -208,8 +197,8 @@ export default function ProductDetailPage() {
                 </div>
               ) : (
                 <img
-                  src={galleryImages[activeGalleryIdx]?.src || getProductImage(product)}
-                  alt={galleryImages[activeGalleryIdx]?.alt || t(`imageAlt.${product.id}`, getLocalized(product, 'name', language))}
+                  src={galleryImages[activeGalleryIndex]?.src || productMedia.images[0]}
+                  alt={galleryImages[activeGalleryIndex]?.alt || t(`imageAlt.${product.id}`, getLocalized(product, 'name', language))}
                   width={960}
                   height={960}
                   referrerPolicy="no-referrer"
@@ -247,20 +236,23 @@ export default function ProductDetailPage() {
               )}
             </div>
 
+            <button type="button" aria-haspopup="dialog" aria-expanded={photoViewerOpen} onClick={event => { photoViewerOpener.current = event.currentTarget; setPhotoViewerOpen(true); }} className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 self-start rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-5 text-xs font-semibold text-[var(--color-accent-text)]" dir="ltr"><Maximize2 size={16} aria-hidden="true" /><span dir="auto">{t('gallery.viewPhotos')}</span><bdi className="text-[var(--color-text-secondary)]">({galleryImages.length})</bdi></button>
+
             {/* Gift image gallery thumbnails */}
             {galleryImages.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-1">
+              <div className="flex gap-2 overflow-x-auto pb-1" dir="ltr" role="group" aria-label={t('gallery.photos')}>
                 {galleryImages.map((img, idx) => (
                   <button
                     key={idx}
                     type="button"
                     onClick={() => { setImageError(false); setActiveGalleryIdx(idx); }}
                     className={`shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
-                      activeGalleryIdx === idx
+                      activeGalleryIndex === idx
                         ? 'border-[#C7982F] shadow-sm'
                         : 'border-[var(--color-border)] opacity-60 hover:opacity-100 hover:border-[#C7982F]/50'
                     }`}
-                    aria-label={`View image ${idx + 1}`}
+                    aria-label={t('viewer.select').replace('{number}', String(idx + 1))}
+                    aria-pressed={activeGalleryIndex === idx}
                   >
                     <img
                       src={img.src}
@@ -275,6 +267,7 @@ export default function ProductDetailPage() {
                 ))}
               </div>
             )}
+            <ProductVideo videoUrl={productMedia.videoUrl} poster={productMedia.videoPoster || productMedia.images[0]} productName={getLocalized(product, 'name', language)} />
           </div>
 
           {/* Right: Product Purchase Details */}
@@ -283,28 +276,28 @@ export default function ProductDetailPage() {
               <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] block mb-1.5">
                 Single-Origin Batch • Hand-Sorted Lahore
               </span>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold text-[var(--color-primary,#042821)] dark:text-[var(--color-text-primary,#F6F1EA)] leading-tight mb-2">
+              <h1 dir="auto" className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold text-[var(--color-primary,#042821)] dark:text-[var(--color-text-primary,#F6F1EA)] leading-tight mb-2">
                 {getLocalized(product, 'name', language)}
               </h1>
-              <p className="text-sm text-[var(--color-text-secondary,#635B52)] dark:text-[var(--color-text-secondary,#B4C0BC)] font-normal leading-relaxed">
+              <p dir="auto" className="text-sm text-[var(--color-text-secondary,#635B52)] dark:text-[var(--color-text-secondary,#B4C0BC)] font-normal leading-relaxed">
                 {getLocalized(product, 'desc', language)}
               </p>
 
               {getLocalized(product, 'tasteProfile', language) && (
                 <div className="mt-3 p-3 rounded-xl bg-[var(--color-surface,#FFFCF7)] dark:bg-[#1A201E] border border-[var(--color-accent,#C7982F)]/25 text-xs text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)]">
                   <span className="font-bold text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] uppercase tracking-wider text-[10px] block mb-0.5">
-                    Taste Profile
+                    {t('tasteProfile')}
                   </span>
-                  <span>{getLocalized(product, 'tasteProfile', language)}</span>
+                  <span dir="auto">{getLocalized(product, 'tasteProfile', language)}</span>
                 </div>
               )}
 
               {getLocalized(product, 'contents', language) && (
                 <div className="mt-2.5 p-3 rounded-xl bg-[var(--color-surface,#FFFCF7)] dark:bg-[#1A201E] border border-[var(--color-accent,#C7982F)]/25 text-xs text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)]">
                   <span className="font-bold text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] uppercase tracking-wider text-[10px] block mb-0.5">
-                    Pack Contents
+                    {t('packContents')}
                   </span>
-                  <span>{getLocalized(product, 'contents', language)}</span>
+                  <span dir="auto">{getLocalized(product, 'contents', language)}</span>
                 </div>
               )}
             </div>
@@ -314,25 +307,19 @@ export default function ProductDetailPage() {
               <span className="text-3xl sm:text-4xl font-serif font-bold text-[var(--color-text-price,#29231D)] dark:text-[var(--color-text-price,#F6F1EA)]">
                 <bdi dir="ltr">Rs. {priceToUse?.toLocaleString()}</bdi>
               </span>
-              {originalPrice > priceToUse && (
-                <span className="text-base text-[var(--color-text-secondary,#635B52)]/50 dark:text-[#B4C0BC]/50 line-through">
-                  <bdi dir="ltr">Rs. {originalPrice?.toLocaleString()}</bdi>
-                </span>
-              )}
               <span className="text-xs font-semibold text-[#0E7A53] dark:text-[#28A745] bg-[#0E7A53]/10 px-2.5 py-1 rounded-full">
                 {t('inStock', 'In Stock')}
               </span>
             </div>
 
+            {unit && <p className="mb-5 text-xs text-[var(--color-text-secondary)]"><bdi>Rs. {unit.amount.toLocaleString()} / {unit.unit}</bdi></p>}
             {/* Weight Selector */}
             <div className="mb-6">
               <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
                 <span className="text-xs font-bold text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)] uppercase tracking-widest">
                   {t('weightSelector', 'Select Weight / Portion')}
                 </span>
-                {isWholesaleEligible && (
-                  <SquishSwitch checked={isWholesale} onChange={setIsWholesale} label={t('wholesaleTier', 'Wholesale Tier')} />
-                )}
+                {product.wholesale > 0 && <a href={buildHumanSupportWhatsAppUrl(`Wholesale enquiry: ${product.name_en}`)} target="_blank" rel="noreferrer" className="focus-ring inline-flex min-h-11 items-center text-xs font-semibold text-[var(--color-accent-text)] underline underline-offset-4">{t('shop.wholesaleEnquiry')}</a>}
               </div>
 
               <div className="flex flex-wrap gap-2.5">
@@ -342,12 +329,7 @@ export default function ProductDetailPage() {
                     <button
                       key={idx}
                       type="button"
-                      onClick={() => {
-                        setSelectedWeightIndex(idx);
-                        if (!w.toLowerCase().includes('kg') && !w.includes('1000g')) {
-                          setIsWholesale(false);
-                        }
-                      }}
+                      onClick={() => setSelectedWeightIndex(idx)}
                       className={`min-h-[44px] min-w-[70px] px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer ${
                         isSelected 
                           ? 'bg-[var(--color-primary,#042821)] border-[var(--color-primary,#042821)] text-[var(--color-text-on-emerald,#FFFCF7)] shadow-sm' 
@@ -368,8 +350,8 @@ export default function ProductDetailPage() {
                   <button 
                     type="button"
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-10 h-10 flex items-center justify-center text-[var(--color-text-primary,#29231D)] dark:text-white hover:text-[var(--color-accent,#C7982F)] transition-colors cursor-pointer text-lg font-bold"
-                    aria-label="Decrease quantity"
+                    className="w-11 h-11 flex items-center justify-center text-[var(--color-text-primary,#29231D)] dark:text-white hover:text-[var(--color-accent,#C7982F)] transition-colors cursor-pointer text-lg font-bold"
+                    aria-label={t('cart.decrease')}
                   >
                     -
                   </button>
@@ -378,9 +360,9 @@ export default function ProductDetailPage() {
                   </span>
                   <button 
                     type="button"
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="w-10 h-10 flex items-center justify-center text-[var(--color-text-primary,#29231D)] dark:text-white hover:text-[var(--color-accent,#C7982F)] transition-colors cursor-pointer text-lg font-bold"
-                    aria-label="Increase quantity"
+                    onClick={() => setQuantity(Math.min(50, quantity + 1))}
+                    className="w-11 h-11 flex items-center justify-center text-[var(--color-text-primary,#29231D)] dark:text-white hover:text-[var(--color-accent,#C7982F)] transition-colors cursor-pointer text-lg font-bold"
+                    aria-label={t('cart.increase')}
                   >
                     +
                   </button>
@@ -399,7 +381,7 @@ export default function ProductDetailPage() {
                   {isAdded ? (
                     <>
                       <Check size={16} className="text-emerald-300" />
-                      <span>Added to Cart</span>
+                      <span>{t('addedToCart')}</span>
                     </>
                   ) : (
                     <>
@@ -428,11 +410,11 @@ export default function ProductDetailPage() {
             <div className="grid grid-cols-2 gap-3 mb-8 p-3.5 rounded-2xl bg-[var(--color-surface,#FFFCF7)] dark:bg-[#1A201E] border border-[var(--color-accent,#C7982F)]/25">
               <div className="flex items-center gap-2 text-xs font-medium text-[var(--color-text-secondary,#635B52)] dark:text-[var(--color-text-secondary,#B4C0BC)]">
                 <Truck size={15} className="text-[var(--color-accent,#C7982F)] shrink-0" />
-                <span>Lahore Same-Day Dispatch</span>
+                <span>{t('boutique.delivery')}</span>
               </div>
               <div className="flex items-center gap-2 text-xs font-medium text-[var(--color-text-secondary,#635B52)] dark:text-[var(--color-text-secondary,#B4C0BC)]">
                 <ShieldCheck size={15} className="text-[var(--color-accent,#C7982F)] shrink-0" />
-                <span>Nitrogen Barrier Sealed</span>
+                <span>{t('trust.fresh')}</span>
               </div>
             </div>
 
@@ -470,7 +452,7 @@ export default function ProductDetailPage() {
                 to="/shop"
                 className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] hover:text-[var(--color-accent,#C7982F)] transition-colors"
               >
-                <span>View Full Harvest</span>
+                <span>{t('viewFullHarvest')}</span>
                 <ArrowRight size={14} />
               </Link>
             </div>
@@ -480,15 +462,15 @@ export default function ProductDetailPage() {
                 const firstWeight = Object.keys(rel.prices)[0];
                 const price = rel.prices[firstWeight];
                 return (
-                  <div
+                  <Link
                     key={rel.id}
-                    onClick={() => navigate(`/product/${rel.id}`)}
+                    to={`/product/${rel.id}`}
                     className="group bg-[var(--color-surface,#FFFCF7)] border border-[var(--color-gold,#C7982F)]/25 hover:border-[var(--color-gold,#C7982F)] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 hover:shadow-md cursor-pointer text-left"
                   >
                     <div>
                       <div className="w-full aspect-square rounded-xl bg-[#FAF9F5] border border-[var(--color-gold,#C7982F)]/15 overflow-hidden flex items-center justify-center p-3 mb-3 relative">
                         <img
-                          src={getProductImage(rel)}
+                          src={mediaCover(rel)}
                           alt={t(`imageAlt.${rel.id}`, getLocalized(rel, 'name', language))}
                           width={960}
                           height={960}
@@ -503,10 +485,10 @@ export default function ProductDetailPage() {
                           </span>
                         )}
                       </div>
-                      <h3 className="text-sm font-serif font-bold text-[var(--color-ink,#29231D)] group-hover:text-[var(--color-gold,#C7982F)] transition-colors line-clamp-1">
+                      <h3 dir="auto" className="text-sm font-serif font-bold text-[var(--color-ink,#29231D)] group-hover:text-[var(--color-gold,#C7982F)] transition-colors line-clamp-1">
                         {getLocalized(rel, 'name', language)}
                       </h3>
-                      <p className="text-[11px] text-[var(--color-ink,#29231D)]/60 line-clamp-1 mt-0.5">
+                      <p dir="auto" className="text-[11px] text-[var(--color-ink,#29231D)]/60 line-clamp-1 mt-0.5">
                         {getLocalized(rel, 'desc', language)}
                       </p>
                     </div>
@@ -516,11 +498,11 @@ export default function ProductDetailPage() {
                         Rs. {price?.toLocaleString()}
                       </span>
                       <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-gold,#C7982F)] group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
-                        View
+                        {t('viewDetails')}
                         <ArrowRight size={11} />
                       </span>
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>
@@ -528,6 +510,7 @@ export default function ProductDetailPage() {
         )}
 
       </div>
+      {photoViewerOpen && <Suspense fallback={<span className="sr-only" role="status">{t('viewer.loading')}</span>}><ProductPhotoViewer key={product.id} images={galleryImages} productName={getLocalized(product, 'name', language)} initialIndex={activeGalleryIndex} restoreFocusTo={photoViewerOpener.current} onClose={() => setPhotoViewerOpen(false)} onIndexChange={index => { setActiveGalleryIdx(index); setImageError(false); }} /></Suspense>}
     </div>
   );
 }

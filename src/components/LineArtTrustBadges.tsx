@@ -41,7 +41,7 @@ export default function LineArtTrustBadges() {
         type="button"
         onClick={() => openInfoTab('lahore-boutique')}
         className="group relative p-3.5 rounded-2xl bg-[#0A2518]/80 border border-brand-gold/25 backdrop-blur-md text-center shadow-lg hover:border-brand-gold/60 transition-all duration-300 overflow-hidden cursor-pointer active:scale-95 text-left"
-        title="View Lahore Boutique & Dispatch Protocol"
+        title="View AllBarka Boutique & Dispatch Protocol"
       >
         <div className="absolute inset-0 bg-gradient-to-tr from-brand-gold/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         <svg

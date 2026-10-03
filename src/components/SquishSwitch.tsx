@@ -18,7 +18,7 @@ export default function SquishSwitch({ checked, onChange, label }: SquishSwitchP
       onClick={() => onChange(!checked)}
       className="group inline-flex min-h-11 items-center gap-2.5 rounded-full px-1 focus-ring"
     >
-      <span className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border p-[3px] transition-colors motion-reduce:transition-none ${checked ? 'border-[#B88A24] bg-[#C7982F]' : 'border-[var(--color-border)] bg-[var(--color-surface-elevated,#DDD8D0)]'}`}>
+      <span dir="ltr" className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border p-[3px] transition-colors motion-reduce:transition-none ${checked ? 'border-[#B88A24] bg-[#C7982F]' : 'border-[var(--color-border)] bg-[var(--color-surface-elevated,#DDD8D0)]'}`}>
         <motion.span
           className="block h-5 w-5 rounded-full bg-white shadow-sm"
           initial={false}

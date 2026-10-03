@@ -18,6 +18,7 @@ import { validateAndPriceOrder, validateCustomerDetails, ValidationError } from 
 import { STORE_COUPONS, calculateCouponDiscount, CouponRecord } from './couponEngine';
 import { PricingSummary } from './pricing';
 import { STORE_CONFIG } from '../config/store';
+import { validateShippingRewardDestination } from './shippingPolicy';
 
 export class PersistenceUnavailableError extends Error {
   code = 'PERSISTENCE_UNAVAILABLE';
@@ -86,6 +87,7 @@ export async function createDurableOrder({
     discountCode: payload.discountCode,
     giftWrapping: payload.giftWrapping,
     isWholesale: Boolean(payload.isWholesale),
+    city: customer.city,
   });
 
   // 2. Quote Consistency Check
@@ -177,12 +179,15 @@ export async function createDurableOrder({
       if (rewardData?.status !== 'ACTIVE') {
         throw new ValidationError(`Selected reward is no longer active or has already been used.`, 'REWARD_ALREADY_USED');
       }
+      validateShippingRewardDestination(rewardData, customer.city);
     }
 
     const deliverySchedule = calculateDeliverySchedule({
       shippingMethodId: (payload.shippingMethodId as any) || 'standard',
       city: customer.city,
-      orderSubtotalNet: validated.summary.discountedSubtotal + validated.summary.giftWrapFee,
+      orderSubtotalNet: validated.summary.discountedSubtotal,
+      giftWrapFee: validated.summary.giftWrapFee,
+      shippingWeightGrams: validated.summary.shippingWeightGrams,
       orderTimestamp: nowMs,
     });
 
@@ -398,6 +403,7 @@ export async function updateAdminOrderStatus({
   status,
   reason,
   expectedStatus,
+  expectedUpdatedAt,
   actorUid,
   actorEmail
 }: {
@@ -406,6 +412,7 @@ export async function updateAdminOrderStatus({
   status: OrderStatus;
   reason?: string;
   expectedStatus?: OrderStatus;
+  expectedUpdatedAt?: string;
   actorUid: string;
   actorEmail?: string;
 }): Promise<CanonicalOrder> {
@@ -419,8 +426,6 @@ export async function updateAdminOrderStatus({
   }
 
   const orderRef = db.collection('orders').doc(orderId);
-  const now = Date.now();
-  const nowIso = new Date(now).toISOString();
 
   return await db.runTransaction(async (transaction) => {
     // READ PHASE
@@ -438,6 +443,10 @@ export async function updateAdminOrderStatus({
       );
     }
 
+    if (expectedUpdatedAt !== undefined && (order.updatedAt || order.createdAt) !== expectedUpdatedAt) {
+      throw new ValidationError('This order was modified by another session. Please refresh.', 'ORDER_CONFLICT');
+    }
+
     if (order.status === status) {
       return order; // No change needed
     }
@@ -451,6 +460,11 @@ export async function updateAdminOrderStatus({
     }
 
     // WRITE PHASE
+    // Every status mutation advances the same revision used by notes/payment, even within one millisecond.
+    // Compute inside the transaction so Firestore retries obtain a fresh authoritative revision.
+    const previousTime = Number.isFinite(order.updatedAtMs) ? order.updatedAtMs : Date.parse(order.updatedAt || order.createdAt) || 0;
+    const now = Math.max(Date.now(), previousTime + 1);
+    const nowIso = new Date(now).toISOString();
     const oldStatus = order.status;
     const auditRef = db.collection('orderAudits').doc(`${orderId}_${now}`);
     const auditData = {

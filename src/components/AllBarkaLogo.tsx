@@ -252,7 +252,7 @@ export function AllBarkaHeaderLogo({ className = '' }: { className?: string }) {
           </span>
           <span className="text-[7px] text-[#C7982F]/70 leading-none">·</span>
           <span className="text-[7.5px] sm:text-[8px] font-sans font-semibold uppercase tracking-[0.16em] text-[#806326] dark:text-[#C7982F]/90 leading-none whitespace-nowrap">
-            LAHORE
+            PAKISTAN
           </span>
         </div>
       </div>
@@ -352,7 +352,7 @@ export function AllBarkaFullLogo({
         <div className="flex items-center gap-1.5 sm:gap-2">
           <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-[#D4A843]" />
           <span className={`font-black uppercase ${sizeClasses.city} ${cityClass} leading-none whitespace-nowrap`}>
-            LAHORE
+            PAKISTAN
           </span>
           <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-[#D4A843]" />
         </div>

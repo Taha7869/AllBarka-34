@@ -25,7 +25,7 @@ export default function ShopPage() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [resolvedCategory, searchQuery, location.pathname]);
+  }, [resolvedCategory, location.pathname]);
 
   const seoTitle = useMemo(() => {
     if (isWholesaleRoute) return 'Wholesale Dry Fruits & Bulk Reserve';

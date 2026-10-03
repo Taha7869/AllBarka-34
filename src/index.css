@@ -477,8 +477,31 @@ html[dir="rtl"] {
   letter-spacing: normal !important;
 }
 
+html[lang="ur"], html[lang="ur"] [dir="rtl"] {
+  --localized-body-font: var(--font-urdu), var(--font-sans);
+  --localized-heading-font: var(--font-urdu), var(--font-serif);
+}
+
+html[lang="ar"], html[lang="ar"] [dir="rtl"] {
+  --localized-body-font: var(--font-arabic), var(--font-sans);
+  --localized-heading-font: var(--font-arabic), var(--font-serif);
+}
+
+/* Direction scopes inherit their own typography, including RTL product cards
+   inside LTR carousels and English editorial sections inside an RTL page. */
+html[dir="rtl"] [dir="ltr"] {
+  --localized-body-font: var(--font-sans);
+  --localized-heading-font: var(--font-serif);
+  font-family: var(--localized-body-font);
+  line-height: 1.5;
+}
+
+html[dir="rtl"] body, html[dir="rtl"] [dir="rtl"] {
+  font-family: var(--localized-body-font);
+  line-height: 1.75;
+}
+
 html[dir="rtl"] body {
-  font-family: var(--font-urdu), var(--font-arabic), var(--font-sans);
   line-height: 1.75;
 }
 
@@ -488,7 +511,10 @@ html[dir="rtl"] h3,
 html[dir="rtl"] h4,
 html[dir="rtl"] h5,
 html[dir="rtl"] h6 {
-  font-family: var(--font-urdu), var(--font-arabic), var(--font-serif);
+  font-family: var(--localized-heading-font, var(--font-serif));
+}
+
+html[dir="rtl"] :is(h1, h2, h3, h4, h5, h6):not([dir="ltr"] *) {
   line-height: 1.4;
   letter-spacing: normal !important;
 }
@@ -610,3 +636,9 @@ html[dir="rtl"] h6 {
   }
 }
 
+
+/* Mixed-language copy follows its actual script without moving its container. */
+html[dir="rtl"] [dir="auto"]:dir(ltr) { --localized-body-font:var(--font-sans); --localized-heading-font:var(--font-serif); font-family:var(--localized-body-font); }
+html[lang="ur"] [dir="auto"]:dir(rtl) { --localized-body-font:var(--font-urdu),var(--font-sans); --localized-heading-font:var(--font-urdu),var(--font-serif); font-family:var(--localized-body-font); }
+html[lang="ar"] [dir="auto"]:dir(rtl) { --localized-body-font:var(--font-arabic),var(--font-sans); --localized-heading-font:var(--font-arabic),var(--font-serif); font-family:var(--localized-body-font); }
+html[dir="rtl"] :is(h1,h2,h3,h4,h5,h6)[dir="auto"] { font-family:var(--localized-heading-font,var(--font-serif)); }

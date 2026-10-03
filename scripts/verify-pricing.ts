@@ -59,6 +59,7 @@ console.log('✓ Fixture 5 (Gift Wrapping +250): Pass (Total: ' + formatPKR(f5.t
 
 // Fixture 6: Composite Cart Item ID resolution & Forged Price Immunity
 const f6 = validateAndPriceOrder({
+  city: 'Lahore',
   items: [
     {
       id: 'pista-250g', // composite id
@@ -79,6 +80,7 @@ console.log('✓ Fixture 6 (Composite ID & Forged Price Defense): Pass (Subtotal
 let caughtInvalidWeight = false;
 try {
   validateAndPriceOrder({
+    city: 'Lahore',
     items: [{ id: 'pista', selectedWeight: '10kg_invalid', quantity: 1 }],
     shippingMethodId: 'standard',
   });
@@ -93,6 +95,7 @@ console.log('✓ Fixture 7 (Invalid Weight Rejection): Pass');
 let caughtMaxQty = false;
 try {
   validateAndPriceOrder({
+    city: 'Lahore',
     items: [{ id: 'pista', selectedWeight: '250g', quantity: 999 }],
     shippingMethodId: 'standard',
   });
@@ -107,6 +110,7 @@ console.log('✓ Fixture 8 (Quantity > 50 Rejection): Pass');
 let caughtMissingProd = false;
 try {
   validateAndPriceOrder({
+    city: 'Lahore',
     items: [{ id: 'non-existent-snack-999', selectedWeight: '250g', quantity: 1 }],
     shippingMethodId: 'standard',
   });

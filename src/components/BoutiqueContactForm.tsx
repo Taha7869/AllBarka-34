@@ -71,7 +71,7 @@ export default function BoutiqueContactForm() {
       const fallbackId = `AB-${Date.now().toString(36).toUpperCase()}`;
       setStatus('success');
       setTicketId(fallbackId);
-      setFeedback('Thank you. Your inquiry has been registered with our Lahore boutique concierge.');
+      setFeedback('Thank you. Your inquiry has been registered with our AllBarka boutique concierge.');
       setName('');
       setContact('');
       setMessage('');
@@ -156,7 +156,7 @@ export default function BoutiqueContactForm() {
             <MapPin size={18} />
           </div>
           <span className="text-[10px] font-black uppercase tracking-widest text-[var(--color-gold,#B8935F)] block">
-            Lahore Boutique
+            AllBarka Boutique
           </span>
           <h4 className="font-serif font-bold text-sm text-[var(--color-ink,#1A1A1A)]">
             DHA Phase 6 & Gulberg III

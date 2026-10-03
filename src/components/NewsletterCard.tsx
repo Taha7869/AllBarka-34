@@ -1,16 +1,24 @@
-import React, { useState } from 'react';
-import { useLanguage } from '../contexts/LanguageContext';
-import { Mail, CheckCircle2, ArrowRight, AlertCircle } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import React, { useId, useState } from 'react';
+import { useVisualRefinementLanguage } from '../hooks/useVisualRefinementLanguage';
+import { CheckCircle2, ArrowRight, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+import { AllBarkaCrestVector } from './AllBarkaLogo';
 
 export default function NewsletterCard() {
-  const { t } = useLanguage();
+  const { t, language, isRtl } = useVisualRefinementLanguage();
+  const instanceId = useId();
+  const titleId = `${instanceId}-reserve-title`;
+  const emailId = `${instanceId}-reserve-email`;
+  const consentId = `${instanceId}-reserve-consent`;
+  const errorId = `${instanceId}-reserve-error`;
+  const reduceMotion = useReducedMotion();
   const [email, setEmail] = useState('');
   const [newsletterStatus, setNewsletterStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [newsletterError, setNewsletterError] = useState<string | null>(null);
 
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (newsletterStatus === 'submitting') return;
     setNewsletterError(null);
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -37,83 +45,90 @@ export default function NewsletterCard() {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mb-16 relative z-10 -mt-10 sm:-mt-16">
-      <div className="bg-[var(--color-primary)] rounded-3xl p-6 sm:p-10 border border-[var(--color-accent)]/30 shadow-[0_20px_40px_rgba(4,40,33,0.15)] relative overflow-hidden text-center text-[var(--color-primary-fg)]">
-        
-        {/* Decorative elements */}
-        <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-[0.03]">
-          <div className="absolute -top-40 right-1/4 h-96 w-96 bg-[var(--color-accent)] blur-3xl rounded-full" />
+    <div className="newsletter-reserve-wrap">
+      <section className="newsletter-reserve" lang={language} dir={isRtl ? 'rtl' : 'ltr'} aria-labelledby={titleId}>
+        <div className="newsletter-reserve__face">
+          <span className="newsletter-reserve__engraving" aria-hidden="true"><AllBarkaCrestVector /></span>
+          <div className="newsletter-reserve__masthead"><span className="newsletter-reserve__eyebrow">{t('reserve.eyebrow')}</span></div>
+          <div className="newsletter-reserve__medallion" aria-hidden="true"><span><AllBarkaCrestVector /></span></div>
+          <h3 id={titleId} className="newsletter-reserve__title"><span>{t('reserve.titleLead')}</span>{' '}<em>{t('reserve.titleAccent')}</em></h3>
+          <p className="newsletter-reserve__description">{t('reserve.description')}</p>
+          <div className="newsletter-reserve__ornament" aria-hidden="true"><i /><span>✦</span><i /></div>
         </div>
-
-        <div className="relative z-10 flex flex-col items-center">
-          <div className="w-12 h-12 bg-white/5 border border-[var(--color-accent)]/20 rounded-2xl flex items-center justify-center text-[var(--color-accent)] mb-5">
-            <Mail size={24} />
-          </div>
-          
-          <h3 className="font-serif text-2xl font-bold tracking-wide mb-3">
-            {t('newsletterTitle', 'Private Reserve / AllBarka Updates')}
-          </h3>
-          <p className="text-sm text-[var(--color-primary-fg)]/80 max-w-lg mx-auto mb-8">
-            {t('newsletterDesc', 'Receive privileged notices regarding fresh seasonal harvests, wild Skardu arrivals, and exclusive patron privileges.')}
-          </p>
-
+        <div className="newsletter-reserve__paper">
+          <span className="newsletter-reserve__paper-corner newsletter-reserve__paper-corner--start" aria-hidden="true" />
+          <span className="newsletter-reserve__paper-corner newsletter-reserve__paper-corner--end" aria-hidden="true" />
+          <p className="newsletter-reserve__invitation">{t('reserve.invitation')}</p>
           <AnimatePresence mode="wait">
             {newsletterStatus === 'success' ? (
               <motion.div
                 key="success"
-                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                initial={reduceMotion ? false : { opacity: 0, scale: 0.95, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                className="bg-white/10 border border-emerald-400/40 text-emerald-100 rounded-2xl p-6 flex flex-col items-center max-w-md w-full gap-3"
+                transition={{ duration: reduceMotion ? 0 : 0.25 }}
+                role="status"
+                className="newsletter-reserve__success"
               >
                 <motion.div 
-                  initial={{ scale: 0 }} 
-                  animate={{ scale: 1 }} 
-                  transition={{ type: 'spring', damping: 15, delay: 0.1 }}
+                  initial={reduceMotion ? false : { scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={reduceMotion ? { duration: 0 } : { type: 'spring', damping: 15, delay: 0.1 }}
                 >
-                  <CheckCircle2 size={32} className="text-emerald-400" />
+                  <CheckCircle2 size={26} aria-hidden="true" />
                 </motion.div>
                 <div className="font-semibold">{t('newsletterSuccess', 'Enrolled in AllBarka Private Reserve.')}</div>
               </motion.div>
             ) : (
               <motion.form
                 key="form"
-                initial={{ opacity: 0 }}
+                initial={reduceMotion ? false : { opacity: 0 }}
                 animate={{ opacity: 1 }}
-                exit={{ opacity: 0, y: -10 }}
+                exit={{ opacity: 0, y: reduceMotion ? 0 : -10 }}
+                transition={{ duration: reduceMotion ? 0 : 0.2 }}
                 onSubmit={handleNewsletterSubmit}
-                className="w-full max-w-md mx-auto space-y-4"
+                className="newsletter-reserve__form"
+                aria-busy={newsletterStatus === 'submitting'}
               >
-                <div className="flex flex-col sm:flex-row gap-3">
+                <label className="newsletter-reserve__label" htmlFor={emailId}>{t('reserve.email')}</label>
+                <div className="newsletter-reserve__fields">
                   <input
+                    id={emailId}
                     type="email"
+                    dir="ltr"
+                    autoComplete="email"
                     required
+                    maxLength={254}
+                    disabled={newsletterStatus === 'submitting'}
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => { setEmail(e.target.value); if (newsletterError) { setNewsletterError(null); setNewsletterStatus('idle'); } }}
                     placeholder={t('footer.emailPlaceholder')}
-                    aria-label={t('footer.emailPlaceholder')}
-                    className="flex-1 rounded-xl bg-white/5 border border-white/20 px-4 py-3 text-sm text-[var(--color-primary-fg)] placeholder:text-white/40 focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] transition-all"
+                    aria-invalid={newsletterStatus === 'error' ? true : undefined}
+                    aria-describedby={newsletterError ? `${consentId} ${errorId}` : consentId}
+                    className="newsletter-reserve__input"
                   />
                   <button
                     type="submit"
                     disabled={newsletterStatus === 'submitting'}
-                    className="min-h-[48px] px-6 rounded-xl bg-[var(--color-accent)] text-[var(--color-ink)] font-bold text-sm hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                    className="newsletter-reserve__submit focus-ring"
                   >
-                    <span>{newsletterStatus === 'submitting' ? t('subscribing', 'Submitting...') : t('subscribe', 'Subscribe')}</span>
-                    <ArrowRight size={16} />
+                    <span>{newsletterStatus === 'submitting' ? t('subscribing') : t('reserve.join')}</span>
+                    <ArrowRight size={17} aria-hidden="true" />
                   </button>
                 </div>
 
                 {newsletterError && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-center gap-1.5 text-xs text-red-300 bg-red-900/40 py-2 px-3 rounded-lg border border-red-500/20">
-                    <AlertCircle size={14} />
+                  <motion.div id={errorId} initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduceMotion ? 0 : 0.2 }} role="alert" className="newsletter-reserve__error">
+                    <AlertCircle size={16} aria-hidden="true" />
                     <span>{newsletterError}</span>
                   </motion.div>
                 )}
+                <p id={consentId} className="newsletter-reserve__consent">{t('reserve.consent')}</p>
               </motion.form>
             )}
           </AnimatePresence>
+          <div className="newsletter-reserve__footnote"><span>{t('reserve.notes')}</span></div>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

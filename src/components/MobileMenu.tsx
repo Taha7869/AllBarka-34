@@ -1,10 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence, type Variants } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion, type Variants } from 'motion/react';
 import { 
   X, 
   ShoppingBag, 
-  Crown, 
+  Crown,
+  Bell,
   Sparkles, 
   BookOpen, 
   MessageCircle, 
@@ -42,6 +43,7 @@ export default function MobileMenu({
   const { theme, setTheme } = useTheme();
   const { language, setLanguage, isRtl, t } = useLanguage();
   const { currentUser, patronProfile, logout } = useAuth();
+  const reduceMotion = useReducedMotion();
   
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -58,6 +60,18 @@ export default function MobileMenu({
       if (e.key === 'Escape') {
         onClose();
         triggerRef?.current?.focus();
+      } else if (e.key === 'Tab') {
+        const controls = containerRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), [tabindex="0"]');
+        if (!controls?.length) return;
+        const first = controls[0];
+        const last = controls[controls.length - 1];
+        if (e.shiftKey && (document.activeElement === first || !containerRef.current?.contains(document.activeElement))) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && (document.activeElement === last || !containerRef.current?.contains(document.activeElement))) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     };
 
@@ -104,18 +118,18 @@ export default function MobileMenu({
   };
 
   const backdropVariants: Variants = {
-    closed: { opacity: 0 },
-    open: { opacity: 1, transition: { duration: 0.25 } }
+    closed: { opacity: 0, transition: { duration: reduceMotion ? 0 : 0.25 } },
+    open: { opacity: 1, transition: { duration: reduceMotion ? 0 : 0.25 } }
   };
 
   const drawerVariants: Variants = {
     closed: { 
-      x: isRtl ? '100%' : '-100%', 
-      transition: { duration: 0.3, ease: [0.32, 0.72, 0, 1] } 
+      x: reduceMotion ? 0 : isRtl ? '100%' : '-100%',
+      transition: { duration: reduceMotion ? 0 : 0.3, ease: [0.32, 0.72, 0, 1] }
     },
     open: { 
       x: 0, 
-      transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] } 
+      transition: { duration: reduceMotion ? 0 : 0.35, ease: [0.16, 1, 0.3, 1] }
     }
   };
 
@@ -126,8 +140,8 @@ export default function MobileMenu({
           id="mobile-navigation-menu"
           role="dialog"
           aria-modal="true"
-          aria-label="Navigation Menu"
-          className="fixed inset-0 z-[120] flex lg:hidden"
+          aria-label={t('nav.main')}
+          className="fixed inset-0 z-[120] flex xl:hidden"
         >
           {/* Backdrop */}
           <motion.div
@@ -172,7 +186,7 @@ export default function MobileMenu({
                 type="button"
                 onClick={onClose}
                 className="w-11 h-11 rounded-full flex items-center justify-center text-[#29231D] dark:text-[#F6F1EA] hover:bg-[#C7982F]/15 border border-[#29231D]/10 dark:border-[#F6F1EA]/12 transition-colors focus-ring cursor-pointer"
-                aria-label="Close Navigation Menu"
+                aria-label={t('nav.closeMenu')}
               >
                 <X size={18} strokeWidth={2} />
               </button>
@@ -212,6 +226,9 @@ export default function MobileMenu({
                     </div>
                   </div>
                   <ChevronRight size={14} className="text-[#C7982F] shrink-0 rtl:rotate-180" />
+                </button>
+                <button type="button" onClick={() => { onClose(); requestAnimationFrame(() => window.dispatchEvent(new CustomEvent('open-store-updates'))); }} className="focus-ring mt-2 flex min-h-11 w-full items-center gap-2.5 rounded-xl border border-[#C7982F]/25 px-4 py-3 text-left text-xs font-semibold">
+                  <Bell size={16} className="text-[#C7982F]" aria-hidden="true" /><span dir="auto">{t('updates.open')}</span>
                 </button>
                 {currentUser && (
                   <button
@@ -265,6 +282,9 @@ export default function MobileMenu({
                         key={lang}
                         type="button"
                         onClick={() => setLanguage(lang)}
+                        lang={lang}
+                        dir={lang === 'en' ? 'ltr' : 'rtl'}
+                        aria-pressed={isSelected}
                         className={`min-h-[44px] py-2 px-2 rounded-lg text-xs font-semibold transition-all text-center cursor-pointer ${
                           isSelected
                             ? 'bg-[#042821] text-[#FFFCF7] dark:bg-[#C7982F] dark:text-[#042821] shadow-xs'
@@ -287,32 +307,35 @@ export default function MobileMenu({
                   <button
                     type="button"
                     onClick={() => setTheme('light')}
+                    aria-pressed={theme === 'light'}
                     className={`min-h-[44px] flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                       theme === 'light'
                         ? 'bg-[#FFFCF7] text-[#042821] border border-[#C7982F]/40 shadow-xs'
-                        : 'text-[#29231D]/70 dark:text-[#F6F1EA]/70 hover:text-[#042821]'
+                        : 'text-[#29231D]/70 dark:text-[#F6F1EA]/70 hover:text-[#042821] dark:hover:text-[#FFFCF7]'
                     }`}
                   >
                     <Sun size={14} className="text-[#C7982F]" />
-                    <span>Light</span>
+                    <span>{t('nav.light')}</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setTheme('dark')}
+                    aria-pressed={theme === 'dark'}
                     className={`min-h-[44px] flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                       theme === 'dark'
                         ? 'bg-[#121615] text-[#FFFCF7] border border-[#C7982F]/40 shadow-xs'
-                        : 'text-[#29231D]/70 dark:text-[#F6F1EA]/70 hover:text-[#FFFCF7]'
+                        : 'text-[#29231D]/70 dark:text-[#F6F1EA]/70 hover:text-[#042821] dark:hover:text-[#FFFCF7]'
                     }`}
                   >
                     <Moon size={14} className="text-[#C7982F]" />
-                    <span>Dark</span>
+                    <span>{t('nav.dark')}</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setTheme('system')}
+                    aria-pressed={theme === 'system'}
                     className={`min-h-[44px] flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                       theme === 'system'
                         ? 'bg-[#042821] text-[#FFFCF7] dark:bg-[#C7982F] dark:text-[#042821] shadow-xs'
@@ -320,7 +343,7 @@ export default function MobileMenu({
                     }`}
                   >
                     <Laptop size={14} />
-                    <span>Auto</span>
+                    <span>{t('nav.auto')}</span>
                   </button>
                 </div>
               </div>

@@ -27,8 +27,10 @@ WCAG AA minimum 4.5:1 contrast for body copy
 Dark mode must ALWAYS keep working
 Respect prefers-reduced-motion in every animation
 Business Rules (DO NOT CHANGE without explicit instruction)
-Standard shipping Rs. 150; FREE when discounted subtotal >= Rs. 3,000
-Express shipping Rs. 350 (priority courier)
+Lahore standard shipping Rs.150; FREE when discounted subtotal >= Rs.3,000.
+Outside Lahore all delivery methods use actual canonical order weight x Rs.250/kg, minimum Rs.250. Never grant free delivery outside Lahore. Do not round up to whole kilograms (1.2kg = Rs.300).
+Oil billing convention: 1ml counts as 1g for the delivery tariff, as confirmed by the owner; this is not a physical density assertion.
+Lahore express shipping Rs.350 (priority courier).
 Server strictly recalculates prices, coupons (e.g. ALLBARKA10 = 10%), and shipping
 Reviews: neighborhood tags only (DHA Phase 6, Gulberg III, Model Town), no relative dates
 Languages: English, Urdu (RTL), Arabic (RTL) via LanguageContext

@@ -5,12 +5,23 @@ import { STORE_COUPONS, calculateCouponDiscount, CouponRecord } from './couponEn
 import { PricingSummary } from './pricing';
 import { STORE_CONFIG } from '../config/store';
 import { REWARDS } from '../data/rewards';
+import { CUSTOM_HAMPER_PRODUCT_ID, resolveHamper } from './hamperCatalog';
+import { PRODUCTS } from '../data/products';
 
 export const SCHEMA_VERSION = '2.0.0';
 
 export type OrderStatus = 'NEW' | 'ORDER_RECEIVED' | 'CONFIRMED' | 'PREPARING' | 'DISPATCHED' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'CANCELLED';
 export type PaymentStatus = 'UNPAID' | 'PAID' | 'REFUNDED';
 export type PaymentMethod = 'cod' | 'bank';
+
+export interface AdminNoteEntry {
+  id: string;
+  text: string;
+  actorUid: string;
+  actorEmail: string;
+  timestamp: number;
+  timestampIso: string;
+}
 
 export interface CanonicalCustomerSnapshot {
   name: string;
@@ -58,6 +69,7 @@ export interface CanonicalOrder {
   earnedPoints: number;
   pointsAwarded?: boolean;
   adminNotes?: string[];
+  adminNoteEntries?: AdminNoteEntry[];
 }
 
 export interface SanitizedCustomerOrder {
@@ -161,7 +173,7 @@ export function generateAuthoritativeWhatsAppMessage(order: CanonicalOrder): str
   });
 
   const lines: string[] = [
-    `*ALLBARKA GOURMET BOUTIQUE — ORDER CONFIRMATION*`,
+    `*ALLBARKA — ORDER CONFIRMATION*`,
     `Ref: #${order.orderId}`,
     `Date: ${dateStr}`,
     `Customer: ${order.customer.name}`,
@@ -174,6 +186,13 @@ export function generateAuthoritativeWhatsAppMessage(order: CanonicalOrder): str
 
   order.items.forEach(it => {
     lines.push(`• ${it.name} (${it.selectedWeight}) × ${it.quantity} — Rs. ${(it.price * it.quantity).toLocaleString('en-PK')}`);
+    if (it.hamperConfiguration) {
+      const configuration = it.hamperConfiguration;
+      const selections = configuration.selections.map(id => PRODUCTS.find(product => product.id === id)?.name_en || id);
+      lines.push(`  Hamper contents: ${selections.join(', ')} (200g each).`);
+      if (configuration.recipientName) lines.push(`  Gift card recipient: ${configuration.recipientName}`);
+      if (configuration.giftMessage) lines.push(`  Gift card message: ${configuration.giftMessage}`);
+    }
   });
 
   if (order.gifting.giftWrapping) {
@@ -191,7 +210,10 @@ export function generateAuthoritativeWhatsAppMessage(order: CanonicalOrder): str
   }
   lines.push(`Delivery Fee: Rs. ${order.totals.shipping.toLocaleString('en-PK')}${order.totals.shipping === 0 ? ' (Complimentary Threshold Waived)' : ''}`);
   lines.push(`*Total Payable: Rs. ${order.totals.total.toLocaleString('en-PK')}*`);
-  lines.push(`Payment Method: ${order.paymentMethod === 'cod' ? 'Cash on Delivery (Lahore)' : 'Direct Bank Transfer'}`);
+  if (order.totals.shippingRegion === 'nationwide' && typeof order.totals.shippingWeightGrams === 'number') {
+    lines.push(`Delivery billing weight: ${(order.totals.shippingWeightGrams / 1000).toLocaleString('en-PK')}kg (Rs. ${STORE_CONFIG.shipping.nationwidePerKg}/kg; minimum Rs. ${STORE_CONFIG.shipping.nationwideMinimum}).`);
+  }
+  lines.push(`Payment Method: ${order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Direct Bank Transfer'}`);
 
   if (order.customer.instructions) {
     lines.push(``);
@@ -199,7 +221,7 @@ export function generateAuthoritativeWhatsAppMessage(order: CanonicalOrder): str
   }
 
   lines.push(``);
-  lines.push(`Thank you for choosing AllBarka. Your order has been registered in our Lahore kitchen and will be thermal vacuum-sealed just before dispatch.`);
+  lines.push(`Thank you for choosing AllBarka. Our team will prepare your selections for dispatch.`);
 
   return lines.join('\n');
 }
@@ -224,6 +246,8 @@ export function hashPayload(payload: any): string {
       id: String(it.productId || it.id || '').trim(),
       selectedWeight: String(it.selectedWeight || '250g').trim(),
       quantity: Number(it.quantity) || 1,
+      ...(String(it.productId || it.id || '').trim() === CUSTOM_HAMPER_PRODUCT_ID
+        ? { hamperConfiguration: resolveHamper(it.hamperConfiguration)?.configuration || null } : {}),
     })).sort((a: any, b: any) => a.id.localeCompare(b.id)),
   };
 

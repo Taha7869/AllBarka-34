@@ -1,10 +1,10 @@
 import ProductImageGallery from './ProductImageGallery';
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, ShoppingBag } from 'lucide-react';
+import { Eye, ShoppingBag, Heart } from 'lucide-react';
+import { useSavedProducts } from '../hooks/useSavedProducts';
 import { motion, useReducedMotion } from 'motion/react';
 import { Product } from '../types';
-import { getProductImage } from '../data/products';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCart } from '../contexts/CartContext';
 import { getLocalized } from '../utils/localize';
@@ -26,23 +26,17 @@ export default function ProductCard({
 }: ProductCardProps) {
   const { t, language } = useLanguage();
   const { addToCart } = useCart();
+  const { savedIds, setSaved } = useSavedProducts();
+  const saved = savedIds.includes(product.id);
   const navigate = useNavigate();
   const shouldReduceMotion = useReducedMotion();
   const weights = Object.keys(product.prices || {});
   const [selectedWeight, setSelectedWeight] = useState(weights[0] || '250g');
+  const titleTypography = language === 'ur' ? 'font-urdu text-[20px]' : language === 'ar' ? 'font-arabic text-[23px]' : 'font-serif text-[21px] leading-[1.25]';
 
   const unitPrice = isWholesale
     ? (product.wholesale || Object.values(product.prices)[0] || 0)
     : (product.prices[selectedWeight] || Object.values(product.prices)[0] || 0);
-
-  // ── Spotlight mouse tracking ────────────────────────────────────────────────
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    e.currentTarget.style.setProperty('--mouse-x', `${x}%`);
-    e.currentTarget.style.setProperty('--mouse-y', `${y}%`);
-  }, []);
 
   // ── Hover lift variants ─────────────────────────────────────────────────────
   const cardVariants = {
@@ -53,14 +47,15 @@ export default function ProductCard({
     hover: shouldReduceMotion
       ? {}
       : {
-          y: -4,
+          y: -3,
           boxShadow: 'var(--shadow-card-hover, 0 16px 36px -8px rgba(41,35,29,0.12))',
         },
   };
 
   return (
     <motion.div
-      className="boutique-product-card group/card cursor-pointer bg-[var(--color-surface,#FFFCF7)] dark:bg-[var(--color-surface,#1A201E)] border border-[var(--color-border)] dark:border-[var(--color-border)] hover:border-[var(--color-accent,#C7982F)] dark:hover:border-[var(--color-accent,#D4A843)] rounded-3xl p-5 flex flex-col justify-between h-full transition-colors duration-300 relative"
+      dir="ltr"
+      className="boutique-product-card group/card relative flex h-full cursor-pointer flex-col bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-border-accent)] rounded-3xl p-5 transition-colors duration-300 motion-reduce:transition-none"
       onClick={(event) => {
         if (!(event.target as HTMLElement).closest('a, button, input, select, textarea, [role="button"]')) {
           navigate(`/product/${product.id}`);
@@ -73,36 +68,37 @@ export default function ProductCard({
 
     >
       {/* Top Meta Line */}
-      <div className="flex items-center justify-between gap-2 mb-3">
-        <span className="text-[10px] font-sans font-semibold uppercase tracking-[0.18em] text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)]">
+      <div className="mb-1 flex min-h-11 items-center gap-2">
+        <span dir="auto" className="min-w-0 flex-1 truncate text-[9px] font-sans font-medium uppercase tracking-[0.12em] text-[var(--color-accent-text)]">
           {language === 'en' ? (getLocalized(product, 'health', language) || 'Single-Origin') : t('slider.quality')}
         </span>
         {getLocalized(product, 'tag', language) && (
-          <span className="px-2.5 py-0.5 rounded-full bg-[var(--color-base,#F6F1EA)] dark:bg-[var(--color-surface-elevated,#222A28)] border border-[var(--color-accent,#C7982F)]/35 dark:border-[var(--color-accent,#D4A843)]/35 text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] text-[9.5px] font-sans font-semibold uppercase tracking-wider">
+          <span dir="auto" className="max-w-[42%] truncate rounded-full border border-[var(--color-border-accent)] bg-[var(--color-base)] px-2.5 py-1 text-[8px] font-sans font-medium uppercase tracking-[0.08em] text-[var(--color-accent-text)]">
             {getLocalized(product, 'tag', language) === 'Bestseller' && language !== 'en' ? t('slider.bestseller') : getLocalized(product, 'tag', language)}
           </span>
         )}
+        <button type="button" onClick={() => setSaved(product.id, !saved)} aria-pressed={saved} aria-label={`${saved ? t('shop.unsave') : t('shop.save')}: ${getLocalized(product, 'name', language)}`} className="focus-ring flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[var(--color-accent-text)] transition-colors hover:bg-[var(--color-accent)]/10"><Heart size={17} strokeWidth={1.6} fill={saved ? 'currentColor' : 'none'} /></button>
       </div>
 
       {/* Image Plate — zoom on card hover */}
       <ProductImageGallery product={product} />
 
       {/* Product Details */}
-      <div className="pt-4 pb-2 space-y-1.5 flex-1 text-start">
-        <Link to={`/product/${product.id}`} className="block focus-ring rounded-sm w-fit">
-          <h3 className="text-lg font-serif font-bold text-[var(--color-text-primary,#29231D)] leading-snug line-clamp-2 hover:text-[#C7982F] transition-colors">
+      <div dir={language === 'en' ? 'ltr' : 'rtl'} className="min-w-0 flex-1 space-y-2 pb-5 pt-1 text-start">
+        <Link to={`/product/${product.id}`} className="block max-w-full focus-ring rounded-sm w-fit">
+          <h3 lang={language} className={`whitespace-normal break-words [overflow-wrap:anywhere] font-medium text-[var(--color-text-primary)] transition-colors hover:text-[var(--color-accent-text)] ${titleTypography}`}>
             {getLocalized(product, 'name', language)}
           </h3>
         </Link>
-        <p className="text-xs text-[var(--color-text-secondary,#635B52)] line-clamp-2 leading-relaxed font-sans">
+        <p className="line-clamp-2 text-xs leading-6 text-[var(--color-text-secondary)]">
           {language !== 'en' && getLocalized(product, 'desc', language) === product.desc_en ? t('slider.cardCopy') : getLocalized(product, 'desc', language)}
         </p>
       </div>
 
       {/* Weights & Action Area */}
-      <div className="pt-3 border-t border-dashed border-[var(--color-border)] dark:border-[var(--color-border)] space-y-3 mt-auto">
+      <div className="mt-auto space-y-4 border-t border-[var(--color-border)] pt-4">
         {/* Weight Selector */}
-        <div className="flex gap-1.5 w-full flex-wrap" role="group" aria-label="Available portion sizes">
+        <div className="flex w-full flex-wrap gap-1.5" role="group" aria-label={t('shop.portion')}>
           {weights.map((w) => (
             <button
               key={w}
@@ -111,10 +107,10 @@ export default function ProductCard({
                 e.stopPropagation();
                 setSelectedWeight(w);
               }}
-              className={`flex-1 min-w-[54px] min-h-[44px] py-1.5 px-2 rounded-xl text-[10px] font-sans font-semibold tracking-wider uppercase border transition-all duration-200 cursor-pointer focus-ring flex items-center justify-center ${
+              className={`focus-ring flex min-h-[44px] min-w-[54px] flex-1 cursor-pointer items-center justify-center rounded-lg border px-2 py-1.5 text-[10px] font-sans font-medium uppercase tracking-[0.05em] transition-colors duration-200 ${
                 selectedWeight === w
-                  ? 'bg-[#1E3A2B] text-[#C7982F] border-[#1E3A2B] shadow-xs'
-                  : 'bg-[var(--color-base,#FDFBF7)] text-[var(--color-text-primary,#29231D)] border-[var(--color-border)] hover:border-[var(--color-accent,#C7982F)] dark:bg-[var(--color-surface-elevated,#222A28)] dark:text-[var(--color-text-primary,#F6F1EA)] dark:border-[var(--color-border)] dark:hover:border-[var(--color-accent,#D4A843)]'
+                  ? 'border-[#1E3A2B] bg-[#1E3A2B] text-[#FFFCF7] dark:border-[#C7982F]/50'
+                  : 'border-[var(--color-border)] bg-[var(--color-base)] text-[var(--color-text-primary)] hover:border-[var(--color-accent)]'
               }`}
               aria-pressed={selectedWeight === w}
             >
@@ -124,22 +120,23 @@ export default function ProductCard({
         </div>
 
         {/* Pricing & Add to Cart */}
-        <div className="flex flex-col gap-2 pt-1">
-          <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3">
+          <div className="flex items-end justify-between gap-2">
             <div className="flex flex-col text-start">
-              <span className="text-[8.5px] uppercase tracking-widest text-[var(--color-text-secondary,#635B52)] font-sans font-medium">
+              <span dir="auto" className="text-[9px] font-sans font-medium uppercase tracking-[0.12em] text-[var(--color-text-secondary)]">
                 {t('price', 'Price')}
               </span>
-              <span className="text-base sm:text-lg font-serif font-bold text-[var(--color-text-price,#29231D)]">
+              <span className="font-serif text-2xl font-medium leading-tight tracking-tight text-[var(--color-text-price)]">
                 <bdi dir="ltr">Rs. {unitPrice?.toLocaleString()}</bdi>
               </span>
             </div>
+            {onQuickView && <button type="button" onClick={(e) => { e.stopPropagation(); onQuickView(product); }} className="focus-ring inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-lg px-2 text-[10px] font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-base)] hover:text-[var(--color-accent-text)]" aria-label={`${t('quickView')}: ${getLocalized(product, 'name', language)}`}><Eye size={15} strokeWidth={1.7} /><span dir="auto">{t('quickView')}</span></button>}
           </div>
 
-          <div className="pt-1 border-t border-[var(--color-border)] w-full flex items-center justify-between gap-1.5">
+          <div className="w-full">
             {/* Magnetic Add-to-Cart */}
             <MagneticButton
-              strength={5}
+              strength={3}
               onClick={(e) => {
                 e.stopPropagation();
                 if (onAddToCart) {
@@ -148,23 +145,11 @@ export default function ProductCard({
                   addToCart(product, selectedWeight, 1);
                 }
               }}
-              className="flex-1 min-h-[44px] py-1 px-3 rounded-full bg-[#1E3A2B] hover:bg-[#14281E] text-[#FDFBF7] border border-[#C5A059]/40 hover:border-[#C5A059] text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors duration-200 cursor-pointer shadow-xs active:scale-[0.98] hero-cta-shine"
+              className="focus-ring flex min-h-[46px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#C7982F]/35 bg-[#1E3A2B] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#FFFCF7] transition-colors duration-200 hover:border-[#C7982F]/70 hover:bg-[#14281E] motion-safe:active:scale-[0.99]"
             >
-              <ShoppingBag size={13} strokeWidth={2} className="text-[#C5A059]" />
-              <span>{t('addToCart', 'Add to Cart')}</span>
+              <ShoppingBag size={14} strokeWidth={1.7} className="text-[#E4C783]" />
+              <span dir="auto">{t('addToCart', 'Add to Cart')}</span>
             </MagneticButton>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onQuickView) onQuickView(product);
-              }}
-              className="flex items-center min-w-[44px] h-[44px] rounded-full border border-[var(--color-border)] bg-[var(--color-surface,#FFFCF7)] dark:bg-[var(--color-surface,#1A201E)] flex items-center justify-center text-[var(--color-text-secondary,#635B52)] hover:text-[#C5A059] hover:border-[#C5A059] transition-colors shadow-xs cursor-pointer focus-ring"
-              aria-label={t('quickView', 'Quick View')}
-            >
-              <Eye size={16} strokeWidth={2.2} />
-              <span className="ms-1 text-xs">{t('quickView')}</span>
-            </button>
           </div>
         </div>
       </div>

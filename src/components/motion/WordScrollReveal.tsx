@@ -18,9 +18,9 @@ export default function WordScrollReveal({ text }: WordScrollRevealProps) {
           key={`${word}-${index}`}
           aria-hidden="true"
           className="inline-block"
-          initial={reduceMotion ? false : { opacity: 0.3, y: 9, filter: 'blur(3px)' }}
-          animate={reduceMotion || inView ? { opacity: 1, y: 0, filter: 'blur(0px)' } : undefined}
-          transition={{ duration: 0.55, delay: reduceMotion ? 0 : index * 0.065, ease: [0.22, 1, 0.36, 1] }}
+          initial={reduceMotion ? false : { opacity: 0.7 }}
+          animate={reduceMotion || inView ? { opacity: 1 } : undefined}
+          transition={{ duration: reduceMotion ? 0 : 0.55, delay: reduceMotion ? 0 : index * 0.065, ease: [0.22, 1, 0.36, 1] }}
         >
           {word}{index < words.length - 1 ? '\u00a0' : ''}
         </motion.span>

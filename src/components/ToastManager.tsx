@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { X, CheckCircle, Info } from 'lucide-react';
 
 export interface ToastMessage {
@@ -9,13 +10,15 @@ export interface ToastMessage {
 }
 
 export function useToast() {
-  const addToast = (message: string, type: 'success' | 'info' | 'error' = 'success') => {
+  const addToast = useCallback((message: string, type: 'success' | 'info' | 'error' = 'success') => {
     window.dispatchEvent(new CustomEvent('ab-toast', { detail: { message, type } }));
-  };
+  }, []);
   return { addToast };
 }
 
 export default function ToastManager() {
+  const reduceMotion = useReducedMotion();
+  const { t } = useLanguage();
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   useEffect(() => {
@@ -38,10 +41,11 @@ export default function ToastManager() {
         {toasts.map(toast => (
           <motion.div
             key={toast.id}
-            initial={{ opacity: 0, x: 50, scale: 0.9 }}
+            initial={reduceMotion ? false : { opacity: 0, x: 50, scale: 0.9 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
-            transition={{ ease: [0.16, 1, 0.3, 1], duration: 0.4 }}
+            exit={{ opacity: 0, scale: reduceMotion ? 1 : 0.9, transition: { duration: reduceMotion ? 0 : 0.2 } }}
+            transition={{ ease: [0.16, 1, 0.3, 1], duration: reduceMotion ? 0 : 0.4 }}
+            role={toast.type === 'error' ? 'alert' : 'status'}
             className="pointer-events-auto bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/40 p-3 sm:px-4 rounded-xl shadow-lg flex items-center gap-3 w-full sm:w-auto sm:min-w-[280px]"
           >
             {toast.type === 'success' ? (
@@ -49,10 +53,11 @@ export default function ToastManager() {
             ) : (
               <Info size={18} className="text-[var(--color-gold,#B8935F)] shrink-0" />
             )}
-            <span className="text-xs sm:text-sm font-semibold text-[var(--color-ink,#1F120F)] flex-1">{toast.message}</span>
+            <span dir="auto" className="text-xs sm:text-sm font-semibold text-[var(--color-ink,#1F120F)] flex-1">{toast.message}</span>
             <button
               onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))}
-              className="text-[var(--color-ink-muted,#5A5A5A)] hover:text-[var(--color-ink,#1A1A1A)] cursor-pointer"
+              aria-label={t('close')}
+              className="focus-ring flex h-11 w-11 shrink-0 items-center justify-center text-[var(--color-ink-muted,#5A5A5A)] hover:text-[var(--color-ink,#1A1A1A)] cursor-pointer"
             >
               <X size={14} />
             </button>

@@ -122,3 +122,102 @@ This document is auto-generated and lists every component, page, context, hook, 
 | `utils/localize.ts` | **getLocalized** | Utility | - | Breadcrumbs.tsx, CartDrawer.tsx, CategoryPLP.tsx, ProductCard.tsx, ProductDetailAccordion.tsx, QuickViewModal.tsx, CartPage.tsx, CheckoutPage.tsx, JournalPage.tsx, ProductDetailPage.tsx |
 | `utils/scrollLock.ts` | **acquireScrollLock** | Utility | - | CartDrawer.tsx, InfoPagesModal.tsx, MobileMenu.tsx, PolicyPagesModal.tsx, QuickViewModal.tsx, animated-modal.tsx, RootLayout.tsx, InfoPage.tsx, PoliciesPage.tsx |
 | `utils/scrollLock.ts` | **resetScrollLock** | Utility | - | *Unused* |
+
+## October 2026 additions
+
+| File Path | Name | Category | Included By |
+|-----------|------|----------|-------------|
+| `components/AddressBook.tsx` | AddressBook | Component | CheckoutPage |
+| `components/CartTools.tsx` | CartTools | Component | CartPage |
+| `components/CatalogTools.tsx` | CatalogTools | Component | CategoryPLP |
+| `hooks/useCatalogActivity.ts` | useCatalogActivity | Hook | CatalogTools, CategoryPLP, ProductDetailPage |
+| `hooks/useOnlineStatus.ts` | useOnlineStatus | Hook | CheckoutPage |
+| `hooks/useSavedProducts.ts` | useSavedProducts | Hook | Catalogue cards, QuickViewModal, ProductDetailPage |
+| `lib/cartInput.ts` | Cart identity/quantity/portion/price resolution | Utility | CartContext |
+| `lib/savedCarts.ts` | Validated saved/shared boxes | Utility | CartTools |
+| `lib/catalogActivity.ts` | Compare/history/unit prices | Utility | Catalogue and product detail |
+| `lib/catalogLinks.ts` | Catalogue sharing | Utility | Catalogue/cart tools |
+| `lib/checkoutPreferences.ts` | Draft/address validation | Utility | CheckoutPage, AddressBook |
+| `lib/conciergeFallback.ts` | Multilingual catalogue responses | Utility | server |
+
+GradientText is now used by AllBarkaHero. SquishSwitch is used by CategoryPLP.
+
+`lib/checkoutAttempt.ts` handles safe retry intent recovery; `lib/checkoutReceipt.ts` keeps confirmation prices and totals authoritative. Both are used by CheckoutPage.
+
+## Administration workspace
+
+`pages/AdminOrdersPage.tsx` now hosts overview, order operations, accessible order details and packing previews. The storefront header stays shared; storefront footer and floating shopping controls are hidden on admin routes.
+
+| File Path | Name | Category | Included By |
+|-----------|------|----------|-------------|
+| `components/AdminCatalogPanel.tsx` | AdminCatalogPanel | Component | AdminOrdersPage |
+| `hooks/useAdminLanguage.ts` | useAdminLanguage | Hook | AdminOrdersPage, AdminCatalogPanel |
+| `contexts/adminTranslations.ts` | Complete English/Urdu/Arabic admin dictionary | Data | useAdminLanguage (lazy admin route) |
+| `lib/adminClient.ts` | Authenticated bounded requests | Utility | AdminOrdersPage |
+| `lib/adminPresentation.ts` | Safe CSV/date/currency/phone formatting | Utility | AdminOrdersPage |
+| `lib/adminCatalog.ts` | Canonical catalogue inspection and bounded image checks | Utility | AdminCatalogPanel |
+| `lib/adminOperations.ts` | Server filtering, metrics, notes and payment audit transactions | Server utility | server.ts |
+
+`styles/admin.css` defines responsive/dark administration surfaces, focus controls and print-only packing sheets. Verified admin accounts also receive a workspace link inside PatronLoungeModal.
+
+## Research-informed storefront refinement — 3 October 2026
+
+| File Path | Name | Category | Included By |
+|-----------|------|----------|-------------|
+| `components/SelectionGuide.tsx` | SelectionGuide | Lazy native dialog | AllBarkaHero |
+| `lib/selectionGuide.ts` | Actual portions and budget matching | Utility | SelectionGuide |
+| `contexts/trendTranslations.ts` | Editorial, guide and photo-viewer copy | Data | LanguageContext |
+| `components/ProductPhotoViewer.tsx` | ProductPhotoViewer | Lazy fullscreen viewer | ProductDetailPage |
+| `lib/productPhotoViewer.ts` | Bounded photo index/zoom/swipe state | Utility | ProductPhotoViewer |
+| `components/CatalogFilterSheet.tsx` | CatalogFilterSheet | Mobile staged filters | CategoryPLP |
+| `lib/catalogFilterDraft.ts` | Detached draft/apply/matching rules | Utility | CategoryPLP, CatalogFilterSheet |
+| `hooks/useCatalogFilterLanguage.ts` | Localized filter sheet copy | Hook | CategoryPLP, CatalogFilterSheet |
+| `contexts/catalogFilterTranslations.ts` | Filter labels in three languages | Data | useCatalogFilterLanguage |
+| `lib/emailAuthentication.ts` | Email authentication and guest order recovery | Utility | AuthModal |
+| `lib/serverAuthentication.ts` | Explicit token identity before session fallback | Server utility | server.ts |
+| `contexts/authTranslations.ts` | Email/Google entry, sign-in/signup/reset copy | Data | LanguageContext |
+
+Existing AuthModal now uses Firebase email/password and Google sign-in. Contact and delivery telephone fields retain their purpose. `styles/editorial.css` is home-scoped; guide/viewer styles load with their lazy components. `styles/catalog-filters.css` is imported in main.tsx for mobile catalogue controls.
+
+AuthModal begins with separate Continue with email and Continue with Google buttons. Email sign-in, explicit account creation and password reset have their own form screens; method switching clears password fields. See [AUTHENTICATION.md](AUTHENTICATION.md).
+
+`lib/pantryMotion.ts` bounds the existing CategoryCarousel's continuous looping pace and shallow circular projection. Swipe and arrows provide a temporary reading interval; keyboard focus and hover hold motion while reading. Hidden/offscreen rails and reduced-motion preferences disable automatic movement. The seven original collection links and layout order remain unchanged. Pantry, boutique and collection ribbon have no visible pause buttons. `tests/pantry-motion.test.tsx` is included in `test:refinements`.
+
+`lib/googleAuthentication.ts` prepares the Firebase Google popup before a customer clicks, maps actionable provider errors and shares the existing profile/session/order recovery flow. Optional session and guest recovery requests have a bounded deadline. `tests/google-auth.test.ts` covers verified identity, configuration guards, cancellation/conflicts, recovery and language parity. No phone authentication or automatic redirect flow is exposed.
+
+## Boutique motion, media and account updates — 3 October 2026
+
+| File Path | Name | Category | Included By |
+|-----------|------|----------|-------------|
+| `components/CircularCarousel.tsx` | CircularCarousel | Interactive catalogue carousel | ProductSlider, Boutique Bestsellers only |
+| `lib/circularCatalogue.ts` | Complete catalogue and bounded card projection | Utility | ProductSlider, CircularCarousel |
+| `hooks/useCircularCarouselLanguage.ts` | Circular carousel language hook | Hook | CircularCarousel |
+| `contexts/circularCarouselTranslations.ts` | Carousel controls in three languages | Data | useCircularCarouselLanguage |
+| `components/CollectionLogoLoop.tsx` | CollectionLogoLoop | Linked collection ribbon | HomePage assurances strip; reuses LogoLoop |
+| `hooks/useVisualRefinementLanguage.ts` | Header/gallery/ribbon language hook | Hook | MobileHeaderBrand, ProductImageGallery, CollectionLogoLoop |
+| `contexts/visualRefinementTranslations.ts` | Header/gallery/ribbon copy | Data | useVisualRefinementLanguage |
+| `contexts/ProductMediaContext.tsx` | ProductMediaProvider/useProductMedia/useProductMediaCover | Context | main.tsx, product galleries and catalogue cover consumers |
+| `data/product-media.json` | All 32 product photo/video slots | Data | productMedia utility |
+| `lib/productMedia.ts` | Manifest precedence and media validation | Utility | ProductMediaContext, media editor/router |
+| `lib/productMediaRouter.ts` | Public overrides and revision-checked admin editor | Server utility | server.ts |
+| `lib/productMediaClient.ts` | Authenticated bounded media requests | Utility | AdminProductMediaEditor |
+| `components/AdminProductMediaEditor.tsx` | AdminProductMediaEditor | Per-product gallery/video editor | AdminCatalogPanel |
+| `components/ProductVideo.tsx` | ProductVideo | Optional user-played product film | ProductDetailPage, QuickViewModal |
+| `hooks/useProductMediaLanguage.ts` | Media editor/video language hook | Hook | AdminProductMediaEditor, ProductVideo |
+| `contexts/productMediaTranslations.ts` | Media copy in three languages | Data | useProductMediaLanguage |
+| `components/BellToggle.tsx` | BellToggle | Controlled accessible notification preference | StoreUpdatesDialog |
+| `components/StoreUpdatesDialog.tsx` | StoreUpdatesDialog | Lazy account update inbox | RootLayout; menu/footer/patron entry points |
+| `components/AdminUpdatesPanel.tsx` | AdminUpdatesPanel | Multilingual update publisher/history | AdminOrdersPage updates tab |
+| `lib/storeUpdates.ts` | Validated updates, opt-in and read markers | Utility/server service | Updates dialogs and router |
+| `lib/storeUpdatesRouter.ts` | Authenticated customer/admin update routes | Server utility | server.ts |
+| `lib/updatesClient.ts` | Bounded account requests | Utility | StoreUpdatesDialog |
+| `contexts/updateTranslations.ts` | Customer/admin update copy in three languages | Data | LanguageContext |
+
+Existing ProductImageGallery uses a single numeric photo counter and retains arrows/swipe. MobileHeaderBrand keeps its crest and wordmark visible. `styles/visual-refinements.css`, `styles/circular-carousel.css` and `styles/store-updates.css` are imported in main.tsx. New motion uses existing libraries and respects reduced motion. Product media editing changes presentation only. Account updates remain account-only; external delivery through n8n/Gemini is a separate integration.
+
+## Shipping, hampers and illuminated surfaces — 3 October 2026
+
+- `lib/shippingPolicy.ts` shares canonical billing weights, destination validation and Lahore/national tariffs across the cart, quote API, order persistence and delivery calendar.
+- `lib/hamperCatalog.ts` is the shared packaging/contents registry and configuration resolver. The existing CustomHamperBuilderModal emits this configuration; CartContext, server validation, admin packing and WhatsApp checkout preserve it.
+- `contexts/shippingTranslations.ts` supplies destination, tariff and payment-confirmation copy in all three languages.
+- `styles/luminous.css` adds non-interactive gold light and borders to existing surfaces, with a finite crest ripple and reduced-motion fallback. It is imported last in main.tsx.

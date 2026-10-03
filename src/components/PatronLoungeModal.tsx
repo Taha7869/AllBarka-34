@@ -1,7 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { X, User, Package, MapPin, Phone, Crown, LogOut, Clock, Calendar, CheckCircle2 } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+import { X, User, Package, MapPin, Phone, Crown, LogOut, Clock, Calendar, CheckCircle2, RotateCcw, ShoppingBag, AlertCircle, ShieldCheck, Bell } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useCart } from '../contexts/CartContext';
+import { PRODUCTS } from '../data/products';
+import { getReorderItems, orderProgress } from '../lib/orderPresentation';
+import { Link } from 'react-router-dom';
+import { acquireScrollLock } from '../utils/scrollLock';
 
 interface PatronLoungeModalProps {
   isOpen: boolean;
@@ -10,19 +16,41 @@ interface PatronLoungeModalProps {
 
 export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModalProps) {
   const { currentUser, patronProfile, logout } = useAuth();
+  const { t } = useLanguage();
+  const { addToCart, openCart } = useCart();
+  const reduceMotion = useReducedMotion();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose);
+  useEffect(() => { closeRef.current = onClose; }, [onClose]);
+  const [ordersError, setOrdersError] = useState(false);
+  const [ordersRevision, setOrdersRevision] = useState(0);
   const [orders, setOrders] = useState<any[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [loyaltyData, setLoyaltyData] = useState<any>(null);
   const [rewards, setRewards] = useState<any[]>([]);
   const [redeeming, setRedeeming] = useState<string | null>(null);
+  const [showAdminWorkspace, setShowAdminWorkspace] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setShowAdminWorkspace(false);
+    if (isOpen && currentUser) {
+      currentUser.getIdTokenResult().then(result => {
+        if (active) setShowAdminWorkspace(result.claims.admin === true || result.claims.role === 'admin');
+      }).catch(() => {});
+    }
+    return () => { active = false; };
+  }, [currentUser, isOpen]);
 
 
   useEffect(() => {
+    let active = true;
+    setLoyaltyData(null);
     if (isOpen && currentUser) {
       const fetchLoyalty = async () => {
         try {
           const { REWARDS } = await import('../data/rewards');
-          setRewards(REWARDS);
+          if (active) setRewards(REWARDS);
 
           const [{ doc, getDoc, collection, query, orderBy, limit, getDocs, where }, { db }] = await Promise.all([
             import('firebase/firestore'),
@@ -38,13 +66,14 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
           const arSnap = await getDocs(query(collection(db, "users", currentUser.uid, "activeRewards"), where("status", "==", "ACTIVE")));
           const activeRewards = arSnap.docs.map(d => d.data());
 
-          setLoyaltyData({ loyaltyPoints, transactions, activeRewards });
+          if (active) setLoyaltyData({ loyaltyPoints, transactions, activeRewards });
         } catch (e) {
           console.error('Failed to fetch loyalty:', e);
         }
       };
       fetchLoyalty();
     }
+    return () => { active = false; };
   }, [isOpen, currentUser]);
 
   const handleRedeem = async (rewardId: string) => {
@@ -125,52 +154,56 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
 
 
   useEffect(() => {
-    if (isOpen && currentUser) {
-      const fetchOrders = async () => {
-        setLoadingOrders(true);
-        try {
-          let fetchedOrders: any[] = [];
-          try {
-            const idToken = await currentUser.getIdToken();
-            const res = await fetch('/api/me/orders', {
-              headers: {
-                'Authorization': `Bearer ${idToken}`
-              }
-            });
-            if (res.ok) {
-              const data = await res.json();
-              if (data.success && Array.isArray(data.orders)) {
-                fetchedOrders = data.orders;
-              }
-            }
-          } catch (apiErr) {
-            console.warn('Backend /api/me/orders fetch failed, attempting client Firestore fallback:', apiErr);
-          }
+    setOrders([]);
+    setOrdersError(false);
+    if (!isOpen || !currentUser) return;
+    const controller = new AbortController();
+    let active = true;
+    setLoadingOrders(true);
+    (async () => {
+      try {
+        const idToken = await currentUser.getIdToken();
+        const response = await fetch('/api/me/orders', {
+          headers: { Authorization: `Bearer ${idToken}` }, signal: controller.signal,
+        });
+        if (!response.ok) throw new Error('Orders unavailable');
+        const data = await response.json();
+        if (!data.success || !Array.isArray(data.orders)) throw new Error('Invalid order response');
+        if (active) setOrders(data.orders);
+      } catch {
+        if (active) setOrdersError(true);
+      } finally {
+        if (active) setLoadingOrders(false);
+      }
+    })();
+    return () => { active = false; controller.abort(); };
+  }, [isOpen, currentUser, ordersRevision]);
 
-          if (fetchedOrders.length === 0) {
-            const [{ query, collection, where, getDocs }, { db }] = await Promise.all([
-              import('firebase/firestore'),
-              import('../lib/firebase')
-            ]);
-            const q = query(
-              collection(db, 'orders'),
-              where('uid', '==', currentUser.uid)
-            );
-            const snap = await getDocs(q);
-            fetchedOrders = snap.docs.map(doc => doc.data());
-            fetchedOrders.sort((a, b) => new Date(b.createdAt || b.createdAtMs || 0).getTime() - new Date(a.createdAt || a.createdAtMs || 0).getTime());
-          }
+  useEffect(() => {
+    if (!isOpen) return;
+    const previous = document.activeElement as HTMLElement | null;
+    const releaseLock = acquireScrollLock();
+    dialogRef.current?.focus();
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeRef.current();
+      if (event.key !== 'Tab') return;
+      const items = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('a[href],button:not([disabled]),input,select,[tabindex="0"]') || []).filter(item => item.getClientRects().length);
+      if (!items.length) { event.preventDefault(); return; }
+      const first = items[0], last = items[items.length - 1];
+      if (event.shiftKey && (document.activeElement === first || document.activeElement === dialogRef.current)) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && (document.activeElement === last || document.activeElement === dialogRef.current)) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => { releaseLock(); document.removeEventListener('keydown', handleKey); previous?.focus(); };
+  }, [isOpen]);
 
-          setOrders(fetchedOrders);
-        } catch (error) {
-          console.error("Failed to fetch orders:", error);
-        } finally {
-          setLoadingOrders(false);
-        }
-      };
-      fetchOrders();
-    }
-  }, [isOpen, currentUser]);
+  const reorder = (order: any) => {
+    const items = getReorderItems(order.items || [], PRODUCTS);
+    if (!items.length) return;
+    items.forEach(({ product, weight, quantity }) => addToCart(product, weight, quantity, undefined, { silent: true, openCart: false }));
+    onClose();
+    openCart();
+  };
 
   if (!isOpen) return null;
 
@@ -220,10 +253,11 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
       />
 
       <motion.div
-        initial={{ opacity: 0, y: 16, scale: 0.96 }}
+        ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="patron-title" tabIndex={-1}
+        initial={reduceMotion ? false : { opacity: 0, y: 16, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 12, scale: 0.96 }}
-        transition={{ duration: 0.28, ease: 'easeOut' }}
+        transition={{ duration: reduceMotion ? 0 : 0.28, ease: 'easeOut' }}
         className="relative z-10 w-full max-w-4xl bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/35 rounded-[24px] shadow-[0_24px_60px_rgba(31,18,15,0.22),0_0_32px_rgba(184,147,95,0.15)] overflow-hidden flex flex-col max-h-[92vh]"
       >
         {/* Header */}
@@ -233,7 +267,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
               <Crown size={18} className="text-[var(--color-gold,#B8935F)]" />
             </div>
             <div>
-              <h3 className="font-serif font-bold text-lg text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7] leading-tight">
+              <h3 id="patron-title" className="font-serif font-bold text-lg text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7] leading-tight">
                 Patron Lounge
               </h3>
               <p className="text-[9.5px] font-bold tracking-widest uppercase text-[var(--color-gold,#B8935F)] mt-0.5">
@@ -243,7 +277,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-[var(--color-ink,#1F120F)]/5 hover:bg-[var(--color-ink,#1F120F)]/10 text-[var(--color-ink,#1F120F)] flex items-center justify-center transition-colors cursor-pointer"
+            aria-label={t('close')} className="w-11 h-11 rounded-full bg-[var(--color-ink,#1F120F)]/5 hover:bg-[var(--color-ink,#1F120F)]/10 text-[var(--color-ink,#1F120F)] flex items-center justify-center transition-colors cursor-pointer"
           >
             <X size={16} />
           </button>
@@ -280,6 +314,8 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                 </div>
 
                 <div className="mt-6 pt-4 border-t border-[var(--color-gold,#B8935F)]/20">
+                  <button type="button" className="focus-ring mb-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[var(--color-border-accent)] px-3 text-xs font-semibold" onClick={() => { onClose(); requestAnimationFrame(() => window.dispatchEvent(new CustomEvent('open-store-updates'))); }}><Bell size={16}/><span dir="auto">{t('updates.open')}</span></button>
+                  {showAdminWorkspace && <Link to="/admin/orders" onClick={onClose} dir="ltr" className="focus-ring mb-3 flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[var(--color-border-accent)] bg-[var(--color-primary)] px-3 text-xs font-semibold text-[var(--color-primary-fg)]"><ShieldCheck size={16} /><span dir="auto">{t('admin.workspace')}</span></Link>}
                   <button
                     onClick={handleLogout}
                     className="w-full py-2.5 rounded-xl border border-[var(--color-ink,#1F120F)]/20 text-[var(--color-ink,#1F120F)] hover:bg-[var(--color-ink,#1F120F)]/5 text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2"
@@ -364,10 +400,11 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
             <div className="lg:col-span-2 space-y-4">
               <h4 className="text-sm font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7] flex items-center gap-2 mb-2">
                 <Package size={16} className="text-[var(--color-gold,#B8935F)]" />
-                Order History
+                {t('account.orders')}
               </h4>
 
-              {loadingOrders ? (
+              <button type="button" disabled={loadingOrders} onClick={() => setOrdersRevision(value => value + 1)} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--color-border)] px-4 text-xs disabled:opacity-50"><RotateCcw size={14} />{t('account.refresh')}</button>
+              {ordersError ? <div role="alert" className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-6 text-sm"><AlertCircle size={22} className="mb-3" /><p>{t('account.error')}</p><button type="button" onClick={() => setOrdersRevision(value => value + 1)} className="mt-3 min-h-11 underline">{t('account.retry')}</button></div> : loadingOrders ? (
                 <div className="py-12 flex items-center justify-center text-[var(--color-gold,#B8935F)]">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-gold,#B8935F)]"></div>
                 </div>
@@ -380,12 +417,15 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                     No orders yet
                   </h5>
                   <p className="text-sm text-[var(--color-ink,#1F120F)]/60 dark:text-[#FDFBF7]/60 max-w-xs mx-auto">
-                    Your exclusive AllBarka selections will appear here securely.
+                    {t('account.browse')}
                   </p>
+                  <Link to="/shop" onClick={onClose} className="mt-4 inline-flex min-h-11 items-center rounded-full bg-[#1e3a2b] px-5 text-xs text-white">{t('account.browse')}</Link>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {orders.map((order) => {
+                    const progress = orderProgress(order.status || '');
+                    const reorderItems = getReorderItems(order.items || [], PRODUCTS);
                     const totalAmt = order.totals?.total ?? order.total ?? 0;
                     const subtotalAmt = order.totals?.subtotal ?? order.subtotal ?? 0;
                     const discountAmt = order.totals?.discount ?? order.discount ?? 0;
@@ -422,6 +462,8 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                         </div>
 
                         <div className="p-5">
+                          {progress >= 0 && <ol className="mb-6 grid grid-cols-4 gap-2" aria-label={t('account.orders')}>{['received', 'preparing', 'dispatch', 'delivered'].map((stage, index) => <li key={stage} aria-current={index === progress ? 'step' : undefined} className="min-w-0"><div className={`mb-2 h-1 rounded-full ${index <= progress ? 'bg-[#c7982f]' : 'bg-[var(--color-border)]'}`} /><span className={`text-[10px] ${index <= progress ? 'font-bold text-[var(--color-accent-text)]' : 'text-[var(--color-text-secondary)]'}`}>{t(`account.${stage}`)}</span></li>)}</ol>}
+                          <div className="mb-5 rounded-xl border border-[var(--color-border)] p-3"><button type="button" disabled={!reorderItems.length} onClick={() => reorder(order)} className="flex min-h-11 items-center gap-2 text-xs font-semibold disabled:opacity-40"><ShoppingBag size={15} />{t('account.reorder')}</button><p className="text-[10px] leading-5 text-[var(--color-text-secondary)]">{t('account.currentPrice')}{reorderItems.length !== (order.items || []).length && ` ${t('account.reorderMissing')}`}</p></div>
                           <div className="mb-3 flex items-center justify-between text-xs text-[var(--color-ink,#1F120F)]/70 dark:text-[#FDFBF7]/70">
                             <span className="font-medium">Payment Method: <strong className="text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">{paymentMethodStr}</strong></span>
                             {order.earnedPoints > 0 && (
@@ -433,8 +475,8 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
 
                           <div className="space-y-3">
                             {(order.items || []).map((item: any, idx: number) => (
-                              <div key={idx} className="flex justify-between items-center text-sm">
-                                <div className="flex items-center gap-2">
+                              <div key={idx} className="flex flex-wrap justify-between items-center gap-2 text-sm">
+                                <div className="flex min-w-0 flex-wrap items-center gap-2">
                                   <span className="font-medium text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">{item.name}</span>
                                   <span className="text-xs text-[var(--color-ink,#1F120F)]/60 dark:text-[#FDFBF7]/70 border border-[var(--color-ink,#1F120F)]/10 dark:border-[#FDFBF7]/10 rounded px-1.5 bg-gray-50 dark:bg-gray-800">{item.selectedWeight}</span>
                                   <span className="text-xs font-bold text-[var(--color-gold,#B8935F)]">x{item.quantity}</span>

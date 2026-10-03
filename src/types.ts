@@ -1,3 +1,5 @@
+import type { HamperConfiguration } from './lib/hamperCatalog';
+
 export interface ProductBadge {
   icon: string;
   title: string;
@@ -74,6 +76,7 @@ export interface CartItem {
   price: number; // Sanitized clean number in PKR (backward compatibility alias)
   quantity: number;
   wholesale?: boolean;
+  hamperConfiguration?: HamperConfiguration;
 }
 
 export interface DeliveryOption {

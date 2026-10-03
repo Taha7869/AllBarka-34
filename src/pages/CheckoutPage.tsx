@@ -1,8 +1,13 @@
 import { getLocalized } from '../utils/localize';
 import React, { useState, useEffect } from 'react';
-import { validatePromo } from '../lib/promoCodes';
+import { calculateOrderSummary, GIFT_WRAP_FEE, type PricingSummary } from '../lib/pricing';
+import { readCheckoutDraft, CHECKOUT_DRAFT_KEY } from '../lib/checkoutPreferences';
+import { acceptedCheckoutReceipt } from '../lib/checkoutReceipt';
+import { checkoutFingerprint, clearCheckoutAttempt, persistCheckoutAttempt, readCheckoutAttempt, resolveCheckoutAttempt, writeCheckoutSession, type CheckoutAttempt } from '../lib/checkoutAttempt';
+import AddressBook from '../components/AddressBook';
+import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
   X,
   CheckCircle,
@@ -41,12 +46,16 @@ import { useAuth } from '../contexts/AuthContext';
 import { useCart, parsePrice, formatPrice } from '../contexts/CartContext';
 import { STORE_CONFIG } from '../config/store';
 import { buildAutomatedOrderWhatsAppUrl, buildHumanSupportWhatsAppUrl } from '../config/contacts';
-import { placeOrder } from '../lib/order';
+import { placeOrder, getOrderQuote, type OrderPayload } from '../lib/order';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useProductMediaCover } from '../contexts/ProductMediaContext';
+import { PRODUCTS } from '../data/products';
 
 // Popular Lahore Neighborhoods for Rapid Delivery Pinning
 
 const PREFERRED_PAYMENT_KEY = 'allbarka_preferred_payment';
+const DELIVERY_CITIES = ['Lahore', 'Karachi', 'Islamabad', 'Rawalpindi', 'Faisalabad', 'Peshawar', 'Multan'];
+const isPlaceholderCity = (city: string) => /^(other city|outside lahore|nationwide)$/i.test(city.trim());
 
 export type CheckoutStep = 'details' | 'shipping' | 'payment' | 'success';
 
@@ -58,10 +67,16 @@ interface CheckoutPageProps {
 
 export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth: propsOnOpenAuth }: CheckoutPageProps = {}) {
   const navigate = useNavigate();
-  const { cartItems, clearCart } = useCart();
+  const { cartItems, clearCart, shippingCity, setShippingCity } = useCart();
   const { patronProfile, currentUser } = useAuth();
   const onOpenAuth = propsOnOpenAuth || (() => {});
   const { language, t } = useLanguage();
+  const mediaCover = useProductMediaCover();
+  const online = useOnlineStatus();
+  const reduceMotion = useReducedMotion();
+  const [restoredDraft] = useState(readCheckoutDraft);
+  const [draftNotice, setDraftNotice] = useState(!!restoredDraft);
+  const checkoutAttemptRef = React.useRef<CheckoutAttempt | null>(null);
 
   // 1. All Hooks declared unconditionally at the top (Rules of Hooks)
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('details');
@@ -76,35 +91,62 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   const [orderSuccessResult, setOrderSuccessResult] = useState<{ orderId: string; whatsappUrl: string; claimToken?: string } | null>(null);
 
   const selectedShippingMethod = 'standard';
-  const [internalShippingMethod, setInternalShippingMethod] = useState<ShippingMethodId>(selectedShippingMethod);
+  const [internalShippingMethod, setInternalShippingMethod] = useState<ShippingMethodId>(restoredDraft?.shipping || selectedShippingMethod);
   const activeShippingMethod = internalShippingMethod;
   const [selectedPayment, setSelectedPayment] = useState<string>(() => {
     try {
-      const saved = sessionStorage.getItem(PREFERRED_PAYMENT_KEY);
+      const saved = restoredDraft?.payment || sessionStorage.getItem(PREFERRED_PAYMENT_KEY);
       if (saved === 'cod' || saved === 'bank') return saved;
     } catch { /* private mode */ }
     return 'cod';
   });
 
-  const [formData, setFormData] = useState({
-    name: patronProfile?.name || '',
-    phone: patronProfile?.phone || '',
-    address: '',
-    city: 'Lahore',
-    deliverySlot: 'Fastest Dispatch',
-    giftWrapping: false,
-    giftMessage: '',
-    instructions: ''
-  });
+  const [formData, setFormData] = useState(() => ({
+    name: restoredDraft?.customer.name || patronProfile?.name || '',
+    phone: restoredDraft?.customer.phone || patronProfile?.phone || '',
+    address: restoredDraft?.customer.address || '',
+    city: isPlaceholderCity(shippingCity) ? '' : shippingCity,
+    deliverySlot: restoredDraft?.customer.deliverySlot || 'Fastest Dispatch',
+    giftWrapping: restoredDraft?.customer.giftWrapping || false,
+    giftMessage: restoredDraft?.customer.giftMessage || '',
+    instructions: restoredDraft?.customer.instructions || ''
+  }));
 
-  const [couponCode, setCouponCode] = useState('');
-  const [discountAmt, setDiscountAmt] = useState(0);
+  const [couponCode, setCouponCode] = useState(restoredDraft?.coupon || '');
+  const [appliedCoupon, setAppliedCoupon] = useState(restoredDraft?.coupon || '');
+  const [quote, setQuote] = useState<{ key: string; totals: PricingSummary } | null>(null);
+  const [quoteError, setQuoteError] = useState('');
+  const [quoteLoading, setQuoteLoading] = useState(false);
+  const [quoteRefresh, setQuoteRefresh] = useState(0);
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
   const [couponSuccessMsg, setCouponSuccessMsg] = useState<string | null>(null);
   const [couponErrorMsg, setCouponErrorMsg] = useState<string | null>(null);
   const [isCompassionMode, setIsCompassionMode] = useState(false);
   const [activeReward, setActiveReward] = useState<any>(null);
   const [rewardDetails, setRewardDetails] = useState<any>(null);
+
+  const quoteKey = JSON.stringify({ items: cartItems.map(item => [item.productId, item.selectedWeight, item.quantity, item.unitPrice, item.hamperConfiguration]), city: formData.city, shipping: activeShippingMethod, wrapping: formData.giftWrapping, coupon: appliedCoupon });
+  useEffect(() => { setShippingCity(formData.city); }, [formData.city, setShippingCity]);
+  useEffect(() => {
+    if (!online || !cartItems.length) { setQuoteLoading(false); return; }
+    if (formData.city.trim().length < 2 || isPlaceholderCity(formData.city)) { setQuoteLoading(false); setQuoteError(t('shipping.enterCity')); return; }
+    let active = true;
+    setQuoteLoading(true); setQuoteError('');
+    const timer = setTimeout(async () => {
+      const authToken = await currentUser?.getIdToken().catch(() => undefined);
+      const result = await getOrderQuote({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping, discountCode: appliedCoupon, authToken });
+      if (!active) return;
+      if (result.success && result.totals) { setQuote({ key: quoteKey, totals: result.totals }); }
+      else setQuoteError(result.code === 'TIMEOUT' ? t('checkout.quoteTimeout', 'The price check timed out. Please retry.') : result.error || t('checkout.quoteFailed'));
+      setQuoteLoading(false);
+    }, 250);
+    return () => { active = false; clearTimeout(timer); };
+  }, [quoteKey, quoteRefresh, online, currentUser, activeShippingMethod, appliedCoupon, cartItems, formData.giftWrapping, formData.city, t]);
+  useEffect(() => {
+    if (currentStep === 'success' || orderSuccessResult) return;
+    if (!formData.name && !formData.phone && !formData.address && !formData.giftMessage && !formData.instructions) return;
+    try { sessionStorage.setItem(CHECKOUT_DRAFT_KEY, JSON.stringify({ customer: formData, shipping: activeShippingMethod, coupon: appliedCoupon, payment: selectedPayment, updatedAt: Date.now() })); } catch { /* browsing remains available */ }
+  }, [formData, activeShippingMethod, appliedCoupon, selectedPayment, currentStep, orderSuccessResult]);
 
   // Inline Validation Errors
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -128,8 +170,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
         ...prev,
         name: prev.name.trim() ? prev.name : (patronProfile.name || ''),
         phone: prev.phone.trim() ? prev.phone : (patronProfile.phone || ''),
-        address: prev.address.trim() ? prev.address : (patronProfile.address || ''),
-        city: prev.city.trim() ? prev.city : (patronProfile.city || 'Lahore')
+        address: prev.address.trim() ? prev.address : (patronProfile.address || '')
       }));
     }
   }, [patronProfile]);
@@ -273,6 +314,10 @@ const handleInputChange = (field: string, value: any) => {
       errs.address = 'Please enter a complete delivery address with house, street, or sector details.';
       firstErrorId = 'checkout-field-address';
     }
+    if (formData.city.trim().length < 2 || isPlaceholderCity(formData.city)) {
+      errs.city = t('shipping.enterCity');
+      if (!firstErrorId) firstErrorId = 'checkout-field-city';
+    }
     setErrors(errs);
 
     if (firstErrorId && autoScroll) {
@@ -294,57 +339,32 @@ const handleInputChange = (field: string, value: any) => {
     }
   };
 
-  const handleApplyCoupon = () => {
-    setCouponErrorMsg(null);
-    setCouponSuccessMsg(null);
-    const codeStr = couponCode.trim().toUpperCase();
-    if (!codeStr) {
-      setCouponErrorMsg('Please enter a valid coupon code.');
-      return;
-    }
-
-    if (codeStr === 'CANCER' || codeStr === 'کینسر') {
-      setIsCompassionMode(true);
-      setDiscountAmt(0);
-      setFormData(prev => ({ ...prev, giftWrapping: false }));
-      setCouponSuccessMsg('Hum aapki sehat ke liye dua karte hain. (Care flow activated)');
-      return;
-    }
-
-    setIsCompassionMode(false);
-    setIsValidatingCoupon(true);
-    setTimeout(() => {
-      setIsValidatingCoupon(false);
-      const promo = validatePromo(codeStr);
-      if (promo) {
-        if (promo.type === 'PERCENTAGE_CAP') {
-          const discount = Math.min(subtotal * ((promo.discountValue || 10) / 100), promo.maxDiscount || Infinity);
-          setDiscountAmt(discount);
-          setCouponSuccessMsg(`Complimentary ${promo.discountValue}% discount applied. Maximum discount Rs. ${promo.maxDiscount}.`);
-        } else if (promo.type === 'FREE_SHIPPING') {
-          setDiscountAmt(0);
-          setCouponSuccessMsg('Free shipping applied.');
-        } else if (promo.type === 'FREE_GIFT_WRAP') {
-          setDiscountAmt(0);
-          setFormData(prev => ({ ...prev, giftWrapping: true }));
-          setCouponSuccessMsg('Free luxury gift wrap added.');
-        }
-      } else {
-        setDiscountAmt(0);
-        setCouponErrorMsg('Code not recognized or expired for this harvest season.');
-      }
-    }, 600);
+  const handleApplyCoupon = async () => {
+    setCouponErrorMsg(null); setCouponSuccessMsg(null);
+    const code = couponCode.trim().toUpperCase();
+    if (!code) { setAppliedCoupon(''); setCouponErrorMsg(t('checkout.enterCoupon')); return; }
+    if (code === 'CANCER' || code === 'کینسر') { setIsCompassionMode(true); setAppliedCoupon(''); setFormData(previous => ({ ...previous, giftWrapping: false })); return; }
+    setIsCompassionMode(false); setIsValidatingCoupon(true);
+    const authToken = await currentUser?.getIdToken().catch(() => undefined);
+    const result = await getOrderQuote({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping, discountCode: code, authToken });
+    setIsValidatingCoupon(false);
+    if (result.success && result.totals && result.totals.discount > 0) { setAppliedCoupon(code); setCouponSuccessMsg(t('checkout.couponApplied')); }
+    else { setAppliedCoupon(''); setCouponErrorMsg(result.code === 'TIMEOUT' ? t('checkout.quoteTimeout', 'The price check timed out. Please retry.') : result.error || t('checkout.couponNoEffect')); }
   };
 
-
-
-  const promoObj = validatePromo(couponCode);
-  const GIFT_WRAP_FEE = 250;
-  const subtotal = cartItems.reduce((acc, item) => acc + (parsePrice(item.unitPrice ?? item.price) * item.quantity), 0);
-  const currentShippingFee = promoObj?.type === 'FREE_SHIPPING' ? 0 : calculateShippingFee(activeShippingMethod, subtotal);
-  const selectedMethodObj = SHIPPING_METHODS.find(m => m.id === activeShippingMethod) || SHIPPING_METHODS[0];
-  const giftFeeTotal = formData.giftWrapping ? (promoObj?.type === 'FREE_GIFT_WRAP' ? 0 : GIFT_WRAP_FEE) : 0;
-  const finalPayable = Math.max(0, subtotal - discountAmt) + currentShippingFee + giftFeeTotal;
+  const localSummary = (() => {
+    try { return calculateOrderSummary({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping, couponCode: appliedCoupon }); }
+    catch { return null; }
+  })();
+  const verifiedQuote = quote?.key === quoteKey ? quote.totals : null;
+  const hasEstimate = !!(verifiedQuote || localSummary);
+  const summary = verifiedQuote || localSummary || { subtotal: cartItems.reduce((sum, item) => sum + parsePrice(item.unitPrice ?? item.price) * item.quantity, 0), discount: 0, discountedSubtotal: 0, shipping: 0, giftWrapFee: 0, total: 0 };
+  const subtotal = summary.subtotal;
+  const discountAmt = summary.discount;
+  const currentShippingFee = summary.shipping;
+  const selectedMethodObj = SHIPPING_METHODS.find(method => method.id === activeShippingMethod) || SHIPPING_METHODS[0];
+  const giftFeeTotal = summary.giftWrapFee;
+  const finalPayable = summary.total;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -361,6 +381,7 @@ const handleInputChange = (field: string, value: any) => {
       return;
     }
 
+    if (!online || !verifiedQuote || quoteLoading) { setSubmissionError(t('checkout.waitQuote')); return; }
     if (isSubmittingRef.current) return;
     isSubmittingRef.current = true;
     setIsSubmittingOrder(true);
@@ -388,7 +409,7 @@ const handleInputChange = (field: string, value: any) => {
         }
       }
 
-      const orderResult = await placeOrder({
+      const orderPayload: OrderPayload = {
         name: formData.name,
         phone: formData.phone,
         address: formData.address,
@@ -403,11 +424,17 @@ const handleInputChange = (field: string, value: any) => {
           price: parsePrice(item.unitPrice ?? item.price)
         })),
         shippingMethodId: activeShippingMethod,
-        discountCode: couponCode,
+        discountCode: appliedCoupon,
         isWholesale,
         expectedFinalTotal: finalPayable,
         authToken
-      });
+      };
+      const fingerprint = await checkoutFingerprint(orderPayload);
+      const attempt = resolveCheckoutAttempt(fingerprint, checkoutAttemptRef.current || readCheckoutAttempt(), () =>
+        typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `ik_${Date.now()}_${Math.random().toString(36).slice(2)}`);
+      checkoutAttemptRef.current = attempt;
+      persistCheckoutAttempt(attempt);
+      const orderResult = await placeOrder({ ...orderPayload, idempotencyKey: attempt.key });
 
       if (!orderResult.success) {
         setSubmissionError(orderResult.error || 'Unable to complete order placement.');
@@ -415,13 +442,16 @@ const handleInputChange = (field: string, value: any) => {
         return;
       }
 
+      try { sessionStorage.removeItem(CHECKOUT_DRAFT_KEY); } catch { /* storage unavailable */ }
       const orderId = orderResult.orderId!;
-      const customWhatsappText = `ALLBARKA NEW ORDER\nID: ${orderId}\nName: ${formData.name}\nPhone: ${formData.phone}\nAddress: ${formData.address}, ${formData.city}\nItems:\n${cartItems.map(i => `- ${getLocalized(i, 'name', language)} (${i.selectedWeight}) x ${i.quantity}`).join('\n')}\nTotal: Rs. ${finalPayable}`;
-      const whatsappUrl = buildAutomatedOrderWhatsAppUrl(customWhatsappText);
+      const receipt = acceptedCheckoutReceipt(itemsSnapshot, totalsSnapshot, orderResult);
+      setOrderItemsSnapshot(receipt.items);
+      setSavedTotals(receipt.totals);
+      const whatsappUrl = buildAutomatedOrderWhatsAppUrl(orderResult.whatsappMessage!);
 
       if (orderResult.claimToken) {
-        sessionStorage.setItem("pendingClaimToken", orderResult.claimToken);
-        sessionStorage.setItem("pendingOrderId", orderId);
+        writeCheckoutSession('pendingClaimToken', orderResult.claimToken);
+        writeCheckoutSession('pendingOrderId', orderId);
       }
 
       // Save order confirmation snapshot in session storage for resilient recovery
@@ -430,8 +460,9 @@ const handleInputChange = (field: string, value: any) => {
           orderId,
           whatsappUrl,
           claimToken: orderResult.claimToken,
-          items: itemsSnapshot,
-          totals: totalsSnapshot,
+          items: receipt.items,
+          totals: receipt.totals,
+          whatsappMessage: orderResult.whatsappMessage,
           customer: {
             name: formData.name,
             phone: formData.phone,
@@ -443,6 +474,12 @@ const handleInputChange = (field: string, value: any) => {
       } catch (storageErr) {
         console.warn("Could not write order success snapshot to sessionStorage:", storageErr);
       }
+
+      setOrderSuccessResult({ orderId, claimToken: orderResult.claimToken || undefined, whatsappUrl });
+      setCurrentStep('success');
+      onClearCart();
+      checkoutAttemptRef.current = null;
+      clearCheckoutAttempt();
 
       if (currentUser) {
         try {
@@ -459,14 +496,6 @@ const handleInputChange = (field: string, value: any) => {
         }
       }
 
-      setOrderSuccessResult({
-        orderId,
-        claimToken: orderResult.claimToken || undefined,
-        whatsappUrl
-      });
-
-      setCurrentStep('success');
-      onClearCart();
     } catch (err: any) {
       console.error('Order placement failed:', err);
       setSubmissionError(err.message || 'Unable to place order. Please check your connection and try again.');
@@ -481,10 +510,10 @@ const handleInputChange = (field: string, value: any) => {
 
       {/* Main Checkout Modal Container: 24px Outer Padding without restrictive max-h */}
       <motion.div
-        initial={{ scale: 0.96, opacity: 0, y: 16 }}
+        initial={false}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.96, opacity: 0, y: 16 }}
-        transition={{ duration: 0.28, ease: 'easeOut' }}
+        transition={{ duration: reduceMotion ? 0 : 0.28, ease: 'easeOut' }}
         className="bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/35 w-full rounded-2xl shadow-sm relative overflow-hidden z-10 flex flex-col"
       >
         <div className="absolute top-0 right-0 w-44 h-44 bg-[var(--color-gold,#B8935F)]/10 rounded-full blur-3xl pointer-events-none" />
@@ -582,6 +611,10 @@ const handleInputChange = (field: string, value: any) => {
           onSubmit={handleSubmit}
           className="flex-1 overflow-y-auto min-h-0 px-4 sm:px-6 py-5 pb-10 space-y-4 [scrollbar-width:thin]"
         >
+          {draftNotice && <div role="status" className="rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] p-3 text-xs"><p>{t('checkout.draftRestored')}</p><button type="button" onClick={() => { setFormData({ name: '', phone: '', address: '', city: 'Lahore', deliverySlot: 'Fastest Dispatch', giftWrapping: false, giftMessage: '', instructions: '' }); setCouponCode(''); setAppliedCoupon(''); setDraftNotice(false); try { sessionStorage.removeItem(CHECKOUT_DRAFT_KEY); } catch { /* private mode */ } }} className="focus-ring mt-2 min-h-11 underline underline-offset-4">{t('checkout.clearDraft')}</button></div>}
+          {!online && <p role="status" className="rounded-xl border border-[var(--color-border)] p-3 text-sm">{t('checkout.offline')}</p>}
+          {(currentStep === 'details' || currentStep === 'shipping') && <AddressBook customer={formData} onSelect={value => setFormData(previous => ({ ...previous, ...value }))} />}
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] p-3 text-xs"><p role="status" aria-live="polite">{quoteLoading ? t('checkout.checkingQuote') : quoteError || (verifiedQuote ? t('checkout.quoteVerified') : t('checkout.waitQuote'))}</p><button type="button" disabled={!online || quoteLoading} onClick={() => setQuoteRefresh(value => value + 1)} className="focus-ring min-h-11 underline underline-offset-4 disabled:opacity-40">{t('checkout.refreshQuote')}</button>{quoteError && <a href={buildHumanSupportWhatsAppUrl()} target="_blank" rel="noreferrer" className="focus-ring ms-4 inline-flex min-h-11 items-center underline underline-offset-4">{t('footer.connect')}</a>}</div>
           {/* Skeleton State on Submitting Order */}
           {isSubmittingOrder && (
             <div className="p-4 rounded-2xl bg-white border border-[var(--color-gold,#B8935F)]/30 space-y-3">
@@ -600,10 +633,10 @@ const handleInputChange = (field: string, value: any) => {
               {currentStep === 'details' && (
                 <motion.div
                   key="step-details"
-                  initial={{ opacity: 0, x: -10 }}
+                  initial={reduceMotion ? false : { opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 10 }}
-                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  exit={reduceMotion ? undefined : { opacity: 0, x: 10 }}
+                  transition={{ duration: reduceMotion ? 0 : 0.3, ease: [0.16, 1, 0.3, 1] }}
                   className="space-y-4"
                 >
                   {/* Auth Status Banner: VIP Patron vs Guest */}
@@ -737,6 +770,8 @@ const handleInputChange = (field: string, value: any) => {
                       Special Delivery Instructions (Optional)
                     </label>
                     <textarea
+                      maxLength={300}
+                      dir="auto"
                       value={formData.instructions || ''}
                       onChange={(e) => handleInputChange('instructions', e.target.value)}
                       placeholder="e.g. Please call before arrival or leave with gate security."
@@ -782,10 +817,10 @@ const handleInputChange = (field: string, value: any) => {
               {currentStep === 'shipping' && (
                 <motion.div
                   key="step-shipping"
-                  initial={{ opacity: 0, x: -10 }}
+                  initial={reduceMotion ? false : { opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 10 }}
-                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  exit={reduceMotion ? undefined : { opacity: 0, x: 10 }}
+                  transition={{ duration: reduceMotion ? 0 : 0.3, ease: [0.16, 1, 0.3, 1] }}
                   className="space-y-4"
                 >
                   {/* Shipping Address with Locate on Map */}
@@ -827,23 +862,30 @@ const handleInputChange = (field: string, value: any) => {
 
                   {/* Destination City */}
                   <div className="space-y-1.5">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)]/80">
-                      Destination City
+                    <label htmlFor="checkout-field-city" className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)]/80">
+                      {t('shipping.destination')}
                     </label>
                     <select
-                      value={formData.city || ''}
-                      onChange={(e) => handleInputChange('city', e.target.value)}
+                      id="checkout-field-city"
+                      value={DELIVERY_CITIES.includes(formData.city) ? formData.city : 'Other City'}
+                      onChange={(e) => { if (e.target.value === 'Other City') { setShippingCity('Other City'); handleInputChange('city', ''); } else handleInputChange('city', e.target.value); }}
                       className="w-full bg-white border border-[var(--color-gold,#B8935F)]/30 rounded-xl py-3 px-3.5 text-base sm:text-sm min-h-[44px] font-bold text-[var(--color-ink,#1F120F)] focus:outline-none focus:border-[var(--color-gold,#B8935F)] shadow-2xs cursor-pointer"
                     >
-                      <option value="Lahore">Lahore (Same-Day / Direct Dispatch)</option>
+                      <option value="Lahore">{t('shipping.lahore')}</option>
                       <option value="Karachi">Karachi</option>
                       <option value="Islamabad">Islamabad</option>
                       <option value="Rawalpindi">Rawalpindi</option>
                       <option value="Faisalabad">Faisalabad</option>
                       <option value="Peshawar">Peshawar</option>
                       <option value="Multan">Multan</option>
-                      <option value="Other City">Other City (Nationwide Air Express)</option>
+                      <option value="Other City">{t('shipping.outside')}</option>
                     </select>
+                    {!DELIVERY_CITIES.includes(formData.city) && <label className="block space-y-2 pt-2 text-xs font-semibold">
+                      <span>{t('shipping.actualCity')}</span>
+                      <input type="text" name="city" autoComplete="address-level2" maxLength={60} value={formData.city} onChange={event => handleInputChange('city', event.target.value)} className="focus-ring min-h-11 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-base" />
+                    </label>}
+                    {errors.city && <p role="alert" className="text-xs text-rose-600">{errors.city}</p>}
+                    <p className="text-xs leading-relaxed">{t(formData.city === 'Lahore' ? 'shipping.lahoreRule' : 'shipping.nationwideRule')}</p>
                   </div>
 
                   {/* Luxury Shipping Method Selector */}
@@ -851,7 +893,9 @@ const handleInputChange = (field: string, value: any) => {
                     <ShippingMethodSelector
                       selected={activeShippingMethod}
                       onSelect={handleShippingChange}
-                      subtotal={subtotal}
+                      subtotal={summary.discountedSubtotal}
+                      city={formData.city}
+                      items={cartItems}
                     />
                   </div>
 
@@ -925,8 +969,11 @@ const handleInputChange = (field: string, value: any) => {
                         <label className="block text-[9.5px] font-black text-[var(--color-ink,#1F120F)]/75 uppercase tracking-widest mb-1">
                           Custom Message on Card
                         </label>
+                    <div className="mb-2 flex flex-wrap gap-2">{['birthday', 'thanks', 'celebration'].map(key => <button type="button" key={key} onClick={() => handleInputChange('giftMessage', t(`gift.${key}Message`))} className="focus-ring min-h-11 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs">{t(`gift.${key}`)}</button>)}</div>
                         <input
                           type="text"
+                          maxLength={300}
+                          dir="auto"
                           value={formData.giftMessage || ''}
                           onChange={(e) => handleInputChange('giftMessage', e.target.value)}
                           placeholder="e.g. Wishing you health and abundant prosperity! - From Ahmad"
@@ -962,10 +1009,10 @@ const handleInputChange = (field: string, value: any) => {
               {currentStep === 'payment' && (
                 <motion.div
                   key="step-payment"
-                  initial={{ opacity: 0, x: -10 }}
+                  initial={reduceMotion ? false : { opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 10 }}
-                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  exit={reduceMotion ? undefined : { opacity: 0, x: 10 }}
+                  transition={{ duration: reduceMotion ? 0 : 0.3, ease: [0.16, 1, 0.3, 1] }}
                   className="space-y-4"
                 >
                   {/* Payment Protocol Selector */}
@@ -1012,7 +1059,7 @@ const handleInputChange = (field: string, value: any) => {
                           <span className="text-xs font-black uppercase tracking-wider">Direct Bank Transfer</span>
                         </div>
                         <p className={`text-[10px] leading-snug ${selectedPayment === 'bank' ? 'text-[var(--color-surface,#FDFBF7)]/70' : 'text-[var(--color-ink,#1F120F)]/60'}`}>
-                          Meezan / HBL / Raast account details generated on receipt.
+                          {t('payment.bankDescription')}
                         </p>
                       </button>
                     </div>
@@ -1108,7 +1155,7 @@ const handleInputChange = (field: string, value: any) => {
                         <div className="flex justify-between text-[11px] text-[var(--color-ink,#1F120F)]/80 dark:text-[#FDFBF7]/80">
                           <span>Shipping ({selectedMethodObj.title})</span>
                           <span className={`font-bold ${currentShippingFee === 0 ? 'text-[var(--color-gold,#B8935F)] font-black' : 'text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]'}`}>
-                            {currentShippingFee === 0 ? 'FREE' : `Rs. ${currentShippingFee?.toLocaleString()}`}
+                            {!hasEstimate ? t('shipping.pending') : currentShippingFee === 0 ? t('shipping.free') : `Rs. ${currentShippingFee?.toLocaleString()}`}
                           </span>
                         </div>
 
@@ -1121,7 +1168,7 @@ const handleInputChange = (field: string, value: any) => {
 
                         {discountAmt > 0 && (
                           <div className="flex justify-between text-[11px] text-[var(--color-gold,#B8935F)] font-bold">
-                            <span>Promo Code Discount ({validatePromo(couponCode)?.discountValue}%)</span>
+                            <span>{t('checkout.discount')}</span>
                             <span>- Rs. {discountAmt?.toLocaleString()}</span>
                           </div>
                         )}
@@ -1129,7 +1176,7 @@ const handleInputChange = (field: string, value: any) => {
                         <div className="pt-2 border-t border-[var(--color-gold,#B8935F)]/20 flex justify-between items-baseline">
                           <span className="text-xs font-serif font-black text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">Total Payable</span>
                           <span className="text-base font-serif font-black text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">
-                            Rs. {finalPayable?.toLocaleString()}
+                            {hasEstimate ? `Rs. ${finalPayable.toLocaleString()}` : t('shipping.pending')}
                           </span>
                         </div>
                       </>
@@ -1201,7 +1248,7 @@ const handleInputChange = (field: string, value: any) => {
                     ) : (
                       <button
                         type="submit"
-                        disabled={isSubmittingOrder}
+                        disabled={isSubmittingOrder || isValidatingCoupon || !online || quoteLoading || !verifiedQuote}
                         className="flex-1 py-3.5 rounded-full bg-[var(--color-ink,#1F120F)] text-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)] text-xs font-black uppercase tracking-widest hover:bg-[var(--color-ink,#1F120F)]/90 hover:shadow-[0_4px_20px_rgba(184,147,95,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
                       >
                         <CheckCircle size={16} className="text-[var(--color-gold,#B8935F)]" />
@@ -1285,16 +1332,13 @@ const handleInputChange = (field: string, value: any) => {
                     <div className="bg-[#FAF9F5] border border-[#C7982F]/40 rounded-2xl p-4 text-left text-xs space-y-1.5 shadow-2xs">
                       <div className="flex items-center gap-1.5 text-[var(--color-gold,#B8935F)] font-bold text-xs uppercase tracking-wider">
                         <Building2 size={14} />
-                        <span>Meezan Bank / Raast Transfer Details</span>
+                        <span>{t('payment.transferDetails')}</span>
                       </div>
                       <div className="text-[11px] text-[var(--color-ink,#1F120F)]/80 space-y-0.5 pt-1">
-                        <p><strong>Bank:</strong> Meezan Bank Ltd (Islamic Banking)</p>
-                        <p><strong>Account Title:</strong> AllBarka Gourmet Boutique</p>
-                        <p><strong>Account Number:</strong> 0214-0106789123</p>
-                        <p><strong>Raast ID:</strong> 03160666083</p>
+                        <p>{t('payment.confirmInstructions')}</p>
                       </div>
                       <p className="text-[10px] text-[var(--color-ink,#1F120F)]/60 pt-1">
-                        Please share the payment screenshot with our concierge via WhatsApp below for instant order release.
+                        {t('payment.shareReceipt')}
                       </p>
                     </div>
                   )}
@@ -1375,17 +1419,17 @@ const handleInputChange = (field: string, value: any) => {
         <h2>{t('boutique.order')}</h2>
         <div className="boutique-order-items">
           {cartItems.map(item => <div key={item.id} className="boutique-order-item">
-            <img src={item.image} alt={getLocalized(item, 'name', language)} width={64} height={64} />
+            <img src={mediaCover(PRODUCTS.find(product => product.id === item.productId || product.id === item.id), item.image)} alt={getLocalized(item, 'name', language)} width={64} height={64} />
             <div><strong>{getLocalized(item, 'name', language)}</strong><small>{item.selectedWeight} × {item.quantity}</small></div>
             <bdi>Rs. {(parsePrice(item.unitPrice ?? item.price) * item.quantity).toLocaleString()}</bdi>
           </div>)}
         </div>
         <dl>
           <div><dt>{t('subtotal', 'Subtotal')}</dt><dd>Rs. {subtotal.toLocaleString()}</dd></div>
-          <div><dt>{t('boutique.shipping')}</dt><dd>Rs. {currentShippingFee.toLocaleString()}</dd></div>
+          <div><dt>{t('boutique.shipping')}</dt><dd>{hasEstimate ? `Rs. ${currentShippingFee.toLocaleString()}` : t('shipping.pending')}</dd></div>
           {discountAmt > 0 && <div><dt>{t('boutique.discount')}</dt><dd>− Rs. {discountAmt.toLocaleString()}</dd></div>}
           {giftFeeTotal > 0 && <div><dt>{t('boutique.wrapping')}</dt><dd>Rs. {giftFeeTotal.toLocaleString()}</dd></div>}
-          <div className="boutique-order-total"><dt>{t('total', 'Total')}</dt><dd>Rs. {finalPayable.toLocaleString()}</dd></div>
+          <div className="boutique-order-total"><dt>{t('total', 'Total')}</dt><dd>{hasEstimate ? `Rs. ${finalPayable.toLocaleString()}` : t('shipping.pending')}</dd></div>
         </dl>
         <p>{t('boutique.orderNote')}</p>
       </aside>}

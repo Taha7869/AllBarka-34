@@ -1,474 +1,142 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { 
-  X, 
-  Gift, 
-  Sparkles, 
-  Check, 
-  Plus, 
-  Minus, 
-  PackageCheck, 
-  ArrowRight, 
-  Scale, 
-  Layers, 
-  PenTool, 
-  ShoppingBag 
-} from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
+import { X, Gift, Check, ArrowRight, ShoppingBag } from 'lucide-react';
 import { PRODUCTS, getProductImage } from '../data/products';
+import { useLanguage } from '../contexts/LanguageContext';
+import { getLocalized } from '../utils/localize';
+import { acquireScrollLock } from '../utils/scrollLock';
+import { CUSTOM_HAMPER_PRODUCT_ID, HAMPER_BOXES, HAMPER_SELECTION_IDS, HAMPER_PORTION_GRAMS, hamperCartKey, hamperSelectionPrice, resolveHamper, type HamperConfiguration } from '../lib/hamperCatalog';
+
+export interface CustomHamperCartInput {
+  id: string;
+  productId: typeof CUSTOM_HAMPER_PRODUCT_ID;
+  slug: string;
+  name_en: string;
+  name_ur: string;
+  name_ar: string;
+  selectedWeight: string;
+  unitPrice: number;
+  price: number;
+  image: string;
+  quantity: number;
+  hamperConfiguration: HamperConfiguration;
+}
 
 interface CustomHamperBuilderModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddToCart: (customHamperItem: {
-    id: string;
-    name: string;
-    selectedWeight: string;
-    price: number;
-    image: string;
-    quantity: number;
-  }) => void;
+  onAddToCart: (item: CustomHamperCartInput) => void;
 }
 
-interface BoxOption {
-  id: string;
-  name: string;
-  subtitle: string;
-  price: number;
-  capacity: string;
-  image: string;
-  badge?: string;
-}
+const copy = [
+  ['title', 'Custom Luxury Hamper', 'اپنی مرضی کا خصوصی گفٹ ہیمپر', 'صندوق هدايا فاخر حسب الطلب'],
+  ['intro', 'Choose a coffer, select your favourites and add a personal message.', 'ڈبہ منتخب کریں، پسندیدہ میوہ جات چنیں اور اپنا پیغام لکھیں۔', 'اختر الصندوق ومنتجاتك المفضلة وأضف رسالة شخصية.'],
+  ['close', 'Close hamper builder', 'ہیمپر بنانے کا صفحہ بند کریں', 'إغلاق تصميم صندوق الهدايا'],
+  ['packaging', 'Choose coffer', 'ڈبہ منتخب کریں', 'اختر الصندوق'],
+  ['harvests', 'Select harvests', 'میوہ جات منتخب کریں', 'اختر المحاصيل'],
+  ['card', 'Personal card', 'ذاتی پیغام', 'البطاقة الشخصية'],
+  ['packagingTitle', 'The presentation is yours to choose.', 'پیشکش کا انداز آپ منتخب کریں۔', 'اختر طريقة تقديم هديتك.'],
+  ['packagingNote', 'The coffer price is included in your hamper total.', 'ڈبے کی قیمت ہیمپر کی مجموعی قیمت میں شامل ہے۔', 'سعر الصندوق مشمول في إجمالي الهدية.'],
+  ['capacity', '{min}–{max} selections', '{min} تا {max} انتخاب', 'من {min} إلى {max} اختيارات'],
+  ['reference', 'Reference image; actual packaging may vary.', 'نمونہ تصویر؛ اصل پیکنگ میں معمولی فرق ہو سکتا ہے۔', 'صورة مرجعية؛ قد تختلف العبوة الفعلية.'],
+  ['selectionTitle', 'Choose your favourites.', 'اپنی پسند کے میوہ جات چنیں۔', 'اختر منتجاتك المفضلة.'],
+  ['selectionNote', 'Each selection contains 200g of the named product.', 'ہر انتخاب میں منتخب مصنوعات کی 200 گرام مقدار شامل ہے۔', 'كل اختيار يحتوي على 200 غرام من المنتج المحدد.'],
+  ['selected', '{count} selected', '{count} منتخب', '{count} مختار'],
+  ['selectionInvalid', 'Choose {min}–{max} different products for this coffer.', 'اس ڈبے کے لیے {min} تا {max} مختلف مصنوعات چنیں۔', 'اختر من {min} إلى {max} منتجات مختلفة لهذا الصندوق.'],
+  ['cardTitle', 'A note to make it personal.', 'ایک پیغام جو تحفے کو خاص بنا دے۔', 'رسالة تجعل الهدية شخصية.'],
+  ['recipient', 'Recipient name (optional)', 'وصول کنندہ کا نام (اختیاری)', 'اسم المستلم (اختياري)'],
+  ['recipientPlaceholder', 'Who is this gift for?', 'یہ تحفہ کس کے لیے ہے؟', 'لمن هذه الهدية؟'],
+  ['message', 'Gift message (optional)', 'تحفے کا پیغام (اختیاری)', 'رسالة الهدية (اختياري)'],
+  ['messagePlaceholder', 'Write your wishes here…', 'اپنی نیک خواہشات یہاں لکھیں…', 'اكتب أمنياتك هنا…'],
+  ['summary', 'Your hamper', 'آپ کا ہیمپر', 'صندوق هديتك'],
+  ['contents', 'Contents', 'مشمولات', 'المحتويات'],
+  ['netWeight', 'Product net weight', 'مصنوعات کا خالص وزن', 'الوزن الصافي للمنتجات'],
+  ['total', 'Hamper total', 'ہیمپر کی مجموعی قیمت', 'إجمالي الصندوق'],
+  ['back', 'Back', 'واپس', 'السابق'],
+  ['continue', 'Continue', 'آگے بڑھیں', 'متابعة'],
+  ['add', 'Add hamper to bag', 'ہیمپر شاپنگ بیگ میں شامل کریں', 'أضف الصندوق إلى الحقيبة'],
+] as const;
+const translations = {
+  en: Object.fromEntries(copy.map(([key, en]) => [key, en])),
+  ur: Object.fromEntries(copy.map(([key, , ur]) => [key, ur])),
+  ar: Object.fromEntries(copy.map(([key, , , ar]) => [key, ar])),
+};
 
-const BOX_OPTIONS: BoxOption[] = [
-  {
-    id: 'box-wood',
-    name: 'Sheesham Artisan Wooden Chest',
-    subtitle: 'Hand-carved brass latches & polished natural timber grain',
-    price: 1800,
-    capacity: 'Fits 4 to 6 Gourmet Selections',
-    image: '/images/generated/hamper-sheesham-chest-v1.webp',
-    badge: 'Patron Favorite',
-  },
-  {
-    id: 'box-velvet',
-    name: 'Royal Emerald Velvet Coffer',
-    subtitle: 'Plush velvet casing embossed with Champagne Gold foil seal',
-    price: 1400,
-    capacity: 'Fits 3 to 5 Gourmet Selections',
-    image: '/images/generated/hamper-emerald-coffer-v1.webp',
-    badge: 'Luxury Edition',
-  },
-  {
-    id: 'box-tin',
-    name: 'Heritage Gold Keepsake Tin',
-    subtitle: 'Airtight metallic container with commemorative floral filigree',
-    price: 950,
-    capacity: 'Fits 3 to 4 Gourmet Selections',
-    image: '/images/generated/hamper-gold-tin-v1.webp',
-  },
-];
-
-// Curated selection candidates for custom hamper
-const DRY_FRUIT_CANDIDATES = [
-  { id: 'prod-pista', name: 'Roasted Kerman Pistachios', pricePer200g: 950, origin: 'Kerman' },
-  { id: 'prod-kaju', name: 'Jumbo Roasted Cashews', pricePer200g: 880, origin: 'Mangalore' },
-  { id: 'prod-badam', name: 'California Nonpareil Almonds', pricePer200g: 750, origin: 'Central Valley' },
-  { id: 'prod-walnut', name: 'Wild Skardu Walnut Halves', pricePer200g: 650, origin: 'Gilgit-Baltistan' },
-  { id: 'prod-chilgoza', name: 'Royal Waziristan Chilgoza', pricePer200g: 2200, origin: 'South Waziristan' },
-  { id: 'prod-apricot', name: 'Sun-Dried Sweet Hunza Apricots', pricePer200g: 450, origin: 'Hunza Valley' },
-  { id: 'prod-figs', name: 'Turkish Golden Injeer (Figs)', pricePer200g: 780, origin: 'Aydin' },
-  { id: 'prod-kishmish', name: 'Afghan Green Kandahari Raisins', pricePer200g: 420, origin: 'Kandahar' },
-];
-
-export default function CustomHamperBuilderModal({
-  isOpen,
-  onClose,
-  onAddToCart,
-}: CustomHamperBuilderModalProps) {
+export default function CustomHamperBuilderModal({ isOpen, onClose, onAddToCart }: CustomHamperBuilderModalProps) {
+  const { language, isRtl, t: storefrontTranslation } = useLanguage();
+  const t = (key: string) => translations[language][key] || storefrontTranslation(key);
+  const reducedMotion = useReducedMotion();
+  const dialogRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [selectedBox, setSelectedBox] = useState<BoxOption>(BOX_OPTIONS[0]);
-  const [selectedItems, setSelectedItems] = useState<string[]>(['prod-pista', 'prod-badam', 'prod-kaju']);
-  const [customNote, setCustomNote] = useState('With warmest regards & sincere wishes.');
+  const [boxId, setBoxId] = useState<HamperConfiguration['boxId']>('box-wood');
+  const [selectedItems, setSelectedItems] = useState<string[]>(['pista', 'kaju', 'badam', 'akhroot']);
   const [recipientName, setRecipientName] = useState('');
-  const [addedSuccess, setAddedSuccess] = useState(false);
+  const [giftMessage, setGiftMessage] = useState('');
+  const box = HAMPER_BOXES.find(option => option.id === boxId)!;
+  const candidates = HAMPER_SELECTION_IDS.flatMap(id => {
+    const product = PRODUCTS.find(candidate => candidate.id === id);
+    return product && hamperSelectionPrice(product) !== null ? [product] : [];
+  });
+  const configuration: HamperConfiguration = { version: 1, boxId, selections: selectedItems, recipientName, giftMessage };
+  const resolved = resolveHamper(configuration);
+  const selectionValid = selectedItems.length >= box.minSelections && selectedItems.length <= box.maxSelections;
+  const totalPrice = box.price + selectedItems.reduce((sum, id) => {
+    const product = candidates.find(candidate => candidate.id === id);
+    return sum + (product ? hamperSelectionPrice(product) || 0 : 0);
+  }, 0);
+  const capacity = t('capacity').replace('{min}', String(box.minSelections)).replace('{max}', String(box.maxSelections));
+  const invalidMessage = t('selectionInvalid').replace('{min}', String(box.minSelections)).replace('{max}', String(box.maxSelections));
+  const nameTypography = language === 'ur' ? 'font-urdu' : language === 'ar' ? 'font-arabic' : 'font-serif';
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const release = acquireScrollLock();
+    dialogRef.current?.focus();
+    const keydown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); onClose(); }
+      if (event.key !== 'Tab') return;
+      const controls = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),textarea:not(:disabled),[tabindex="0"]') || []);
+      const first = controls[0], last = controls[controls.length - 1];
+      if (!first) { event.preventDefault(); dialogRef.current?.focus(); return; }
+      if (event.shiftKey && (document.activeElement === first || document.activeElement === dialogRef.current)) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && (document.activeElement === last || document.activeElement === dialogRef.current)) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', keydown);
+    return () => { document.removeEventListener('keydown', keydown); release(); if (previous?.isConnected) previous.focus(); };
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
-
-  const toggleItem = (itemId: string) => {
-    if (selectedItems.includes(itemId)) {
-      if (selectedItems.length <= 3) {
-        return; // Minimum 3 items required
-      }
-      setSelectedItems(selectedItems.filter((id) => id !== itemId));
-    } else {
-      if (selectedItems.length >= 6) {
-        return; // Maximum 6 items allowed
-      }
-      setSelectedItems([...selectedItems, itemId]);
-    }
+  const toggleItem = (id: string) => setSelectedItems(previous => previous.includes(id) ? previous.filter(value => value !== id) : previous.length < box.maxSelections ? [...previous, id] : previous);
+  const finish = () => {
+    if (!resolved) return;
+    onAddToCart({ id: hamperCartKey(resolved.configuration), productId: CUSTOM_HAMPER_PRODUCT_ID, slug: CUSTOM_HAMPER_PRODUCT_ID,
+      name_en: resolved.name_en, name_ur: resolved.name_ur, name_ar: resolved.name_ar, selectedWeight: resolved.portion,
+      unitPrice: resolved.unitPrice, price: resolved.unitPrice, image: resolved.image, quantity: 1, hamperConfiguration: resolved.configuration });
+    onClose();
   };
 
-  const calculateTotalPrice = () => {
-    const boxCost = selectedBox.price;
-    const itemsCost = selectedItems.reduce((acc, id) => {
-      const item = DRY_FRUIT_CANDIDATES.find((c) => c.id === id);
-      return acc + (item ? item.pricePer200g : 0);
-    }, 0);
-    return boxCost + itemsCost;
-  };
-
-  const totalPrice = calculateTotalPrice();
-
-  const handleFinishAndAdd = () => {
-    const selectedNames = selectedItems
-      .map((id) => DRY_FRUIT_CANDIDATES.find((c) => c.id === id)?.name)
-      .filter(Boolean)
-      .join(', ');
-
-    const hamperItem = {
-      id: `custom-hamper-${Date.now()}`,
-      name: `Custom ${selectedBox.name}`,
-      selectedWeight: `${selectedItems.length}x 200g Selections (${selectedNames})`,
-      price: totalPrice,
-      image: selectedBox.image,
-      quantity: 1,
-    };
-
-    onAddToCart(hamperItem);
-    setAddedSuccess(true);
-    setTimeout(() => {
-      setAddedSuccess(false);
-      onClose();
-    }, 1200);
-  };
-
-  return (
-    <div className="fixed inset-0 z-[10005] flex items-center justify-center p-3 sm:p-4 select-none">
-      {/* Backdrop */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={onClose}
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-      />
-
-      {/* Modal Container */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.94, y: 15 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.94, y: 15 }}
-        transition={{ type: 'spring', damping: 28, stiffness: 350 }}
-        className="relative bg-[#FFFCF7] dark:bg-[#151B19] rounded-[28px] sm:rounded-[36px] w-full max-w-3xl overflow-hidden shadow-2xl border border-[#C7982F]/35 z-10 flex flex-col max-h-[92vh] text-[#29231D] dark:text-[#F6F1EA]"
-      >
-        {/* Header Bar */}
-        <div className="px-6 py-4 border-b border-[#29231D]/10 dark:border-[#F6F1EA]/10 flex items-center justify-between bg-[#F6F1EA]/60 dark:bg-[#0E1513]/60 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-[#C7982F]/20 text-[#806326] dark:text-[#E4C783] flex items-center justify-center">
-              <Gift size={16} />
-            </div>
-            <div>
-              <h3 className="font-serif font-bold text-base sm:text-lg leading-tight">
-                Custom Luxury Hamper Builder
-              </h3>
-              <p className="text-[10px] sm:text-xs text-[#635B52] dark:text-[#A8A199]">
-                Curate a bespoke gift chest with hand-sorted orchard harvests
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full bg-white/80 dark:bg-white/10 hover:bg-white text-[#29231D] dark:text-[#F6F1EA] border border-[#29231D]/10 transition-colors cursor-pointer"
-            aria-label="Close Hamper Builder"
-          >
-            <X size={16} />
-          </button>
-        </div>
-
-        {/* Step Tabs */}
-        <div className="grid grid-cols-3 border-b border-[#29231D]/10 dark:border-[#F6F1EA]/10 bg-[#FFFCF7] dark:bg-[#1A201E] text-center text-xs font-serif font-bold shrink-0">
-          <button
-            onClick={() => setStep(1)}
-            className={`py-3 px-2 flex items-center justify-center gap-1.5 transition-colors cursor-pointer border-b-2 ${
-              step === 1
-                ? 'border-[#C7982F] text-[#806326] dark:text-[#E4C783] bg-[#C7982F]/5'
-                : 'border-transparent text-[#635B52] dark:text-[#A8A199]'
-            }`}
-          >
-            <span>1. Choose Coffer</span>
-          </button>
-          <button
-            onClick={() => setStep(2)}
-            className={`py-3 px-2 flex items-center justify-center gap-1.5 transition-colors cursor-pointer border-b-2 ${
-              step === 2
-                ? 'border-[#C7982F] text-[#806326] dark:text-[#E4C783] bg-[#C7982F]/5'
-                : 'border-transparent text-[#635B52] dark:text-[#A8A199]'
-            }`}
-          >
-            <span>2. Select Harvests ({selectedItems.length}/6)</span>
-          </button>
-          <button
-            onClick={() => setStep(3)}
-            className={`py-3 px-2 flex items-center justify-center gap-1.5 transition-colors cursor-pointer border-b-2 ${
-              step === 3
-                ? 'border-[#C7982F] text-[#806326] dark:text-[#E4C783] bg-[#C7982F]/5'
-                : 'border-transparent text-[#635B52] dark:text-[#A8A199]'
-            }`}
-          >
-            <span>3. Personalized Card</span>
-          </button>
-        </div>
-
-        {/* Scrollable Content Body */}
-        <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-6">
-          {/* STEP 1: BOX SELECTION */}
-          {step === 1 && (
-            <div className="space-y-4">
-              <div className="text-left">
-                <h4 className="text-sm font-serif font-bold">Select Your Packaging Style</h4>
-                <p className="text-xs text-[#635B52] dark:text-[#A8A199]">
-                  Each luxury box is lined with protective food-grade barrier cushioning.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                {BOX_OPTIONS.map((box) => {
-                  const isSelected = selectedBox.id === box.id;
-                  return (
-                    <div
-                      key={box.id}
-                      onClick={() => setSelectedBox(box)}
-                      className={`relative rounded-2xl border p-3.5 flex flex-col justify-between cursor-pointer transition-all duration-200 ${
-                        isSelected
-                          ? 'border-[#C7982F] bg-[#C7982F]/10 dark:bg-[#C7982F]/15 ring-2 ring-[#C7982F]/50 shadow-md'
-                          : 'border-[#29231D]/10 dark:border-[#F6F1EA]/10 bg-white/60 dark:bg-white/5 hover:border-[#C7982F]/60'
-                      }`}
-                    >
-                      {box.badge && (
-                        <span className="absolute top-2 right-2 bg-[#042821] text-[#E4C783] text-[8.5px] font-black uppercase px-2 py-0.5 rounded-full tracking-wider">
-                          {box.badge}
-                        </span>
-                      )}
-
-                      <div className="aspect-video w-full rounded-xl overflow-hidden mb-2 bg-[#F6F1EA] dark:bg-black/20">
-                        <img
-                          src={box.image}
-                          alt={box.name}
-                          width={640}
-                          height={360}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      </div>
-                      <p className="text-[8px] italic text-[#635B52]/70 dark:text-[#A8A199]/70 text-left mb-2 leading-tight">
-                        Reference image — actual packaging may vary slightly.
-                      </p>
-
-                      <div className="space-y-1 text-left">
-                        <h5 className="font-serif font-bold text-xs sm:text-sm">{box.name}</h5>
-                        <p className="text-[10px] text-[#635B52] dark:text-[#A8A199] leading-snug">
-                          {box.subtitle}
-                        </p>
-                        <p className="text-[10px] font-semibold text-[#806326] dark:text-[#E4C783]">
-                          {box.capacity}
-                        </p>
-                      </div>
-
-                      <div className="pt-3 border-t border-[#29231D]/10 dark:border-[#F6F1EA]/10 mt-3 flex items-center justify-between">
-                        <span className="font-serif font-bold text-xs sm:text-sm text-[#806326] dark:text-[#E4C783]">
-                          Rs. {box.price.toLocaleString()}
-                        </span>
-                        <div
-                          className={`w-5 h-5 rounded-full flex items-center justify-center border transition-colors ${
-                            isSelected
-                              ? 'bg-[#C7982F] border-[#C7982F] text-white'
-                              : 'border-[#29231D]/30 dark:border-[#F6F1EA]/30'
-                          }`}
-                        >
-                          {isSelected && <Check size={12} />}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* STEP 2: DRY FRUITS SELECTION */}
-          {step === 2 && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between text-left">
-                <div>
-                  <h4 className="text-sm font-serif font-bold">Pick 3 to 6 Signature Harvests</h4>
-                  <p className="text-xs text-[#635B52] dark:text-[#A8A199]">
-                    Each portion is vacuum-sealed in a 200g gold-foil preserve pouch.
-                  </p>
-                </div>
-                <span className="text-xs font-bold font-mono px-3 py-1 rounded-full bg-[#042821] text-[#E4C783]">
-                  {selectedItems.length} of 6 Selected
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {DRY_FRUIT_CANDIDATES.map((item) => {
-                  const isSelected = selectedItems.includes(item.id);
-                  return (
-                    <div
-                      key={item.id}
-                      onClick={() => toggleItem(item.id)}
-                      className={`p-3 rounded-2xl border flex items-center justify-between cursor-pointer transition-all duration-200 ${
-                        isSelected
-                          ? 'border-[#C7982F] bg-[#C7982F]/10 dark:bg-[#C7982F]/15 shadow-sm'
-                          : 'border-[#29231D]/10 dark:border-[#F6F1EA]/10 bg-white/60 dark:bg-white/5 hover:border-[#C7982F]/40'
-                      }`}
-                    >
-                      <div className="text-left space-y-0.5">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-serif font-bold text-xs">{item.name}</span>
-                        </div>
-                        <p className="text-[10px] text-[#635B52] dark:text-[#A8A199]">
-                          Origin: {item.origin} · 200g Sealed
-                        </p>
-                        <span className="text-[11px] font-bold text-[#806326] dark:text-[#E4C783]">
-                          Rs. {item.pricePer200g.toLocaleString()}
-                        </span>
-                      </div>
-
-                      <div
-                        className={`w-6 h-6 rounded-full flex items-center justify-center border transition-all ${
-                          isSelected
-                            ? 'bg-[#042821] dark:bg-[#0E4A3B] border-[#042821] text-[#E4C783]'
-                            : 'border-[#29231D]/30 dark:border-[#F6F1EA]/30 text-transparent'
-                        }`}
-                      >
-                        <Check size={13} className={isSelected ? 'opacity-100' : 'opacity-0'} />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* STEP 3: PERSONALIZED GREETING CARD */}
-          {step === 3 && (
-            <div className="space-y-5 text-left">
-              <div>
-                <h4 className="text-sm font-serif font-bold">Complimentary Calligraphy Greeting Card</h4>
-                <p className="text-xs text-[#635B52] dark:text-[#A8A199]">
-                  Inscribed on textured ivory cardstock with embossed AllBarka wax seal.
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <div>
-                  <label className="text-[11px] font-semibold text-[#635B52] dark:text-[#A8A199] uppercase tracking-wider block mb-1">
-                    Recipient Name / Title
-                  </label>
-                  <input
-                    type="text"
-                    value={recipientName}
-                    onChange={(e) => setRecipientName(e.target.value)}
-                    placeholder="e.g. Honorable Uncle & Family / M. Bilal"
-                    className="w-full bg-white dark:bg-black/20 border border-[#29231D]/15 dark:border-[#F6F1EA]/15 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#C7982F]"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-semibold text-[#635B52] dark:text-[#A8A199] uppercase tracking-wider block mb-1">
-                    Personalized Gift Message
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={customNote}
-                    onChange={(e) => setCustomNote(e.target.value)}
-                    placeholder="Write your wishes or celebration note here..."
-                    className="w-full bg-white dark:bg-black/20 border border-[#29231D]/15 dark:border-[#F6F1EA]/15 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#C7982F] resize-none"
-                  />
-                </div>
-              </div>
-
-              {/* Box Preview Summary */}
-              <div className="p-4 rounded-2xl bg-[#042821] text-[#EDE8DE] border border-[#D4AF37]/30 space-y-2 text-xs">
-                <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                  <span className="font-serif font-bold text-[#E4C783]">Hamper Configuration Summary</span>
-                  <span className="text-[10px] font-mono text-white/70">Ready for Dispatch</span>
-                </div>
-                <p>
-                  <strong>Box Style:</strong> {selectedBox.name} (Rs. {selectedBox.price.toLocaleString()})
-                </p>
-                <p>
-                  <strong>Dry Fruits ({selectedItems.length}):</strong>{' '}
-                  {selectedItems
-                    .map((id) => DRY_FRUIT_CANDIDATES.find((c) => c.id === id)?.name)
-                    .join(', ')}
-                </p>
-                {recipientName && (
-                  <p>
-                    <strong>Presented to:</strong> {recipientName}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Bottom Footer Actions */}
-        <div className="p-4 sm:p-5 border-t border-[#29231D]/10 dark:border-[#F6F1EA]/10 bg-[#FFFCF7] dark:bg-[#1A201E] flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0">
-          <div className="text-left w-full sm:w-auto">
-            <span className="text-[9.5px] uppercase tracking-widest text-[#635B52] dark:text-[#A8A199] block">
-              Estimated Total Investment
-            </span>
-            <span className="text-xl sm:text-2xl font-serif font-bold text-[#806326] dark:text-[#E4C783]">
-              Rs. {totalPrice.toLocaleString()}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2.5 w-full sm:w-auto">
-            {step > 1 && (
-              <button
-                type="button"
-                onClick={() => setStep((s) => (s - 1) as any)}
-                className="px-4 py-2.5 rounded-full border border-[#29231D]/20 dark:border-[#F6F1EA]/20 text-xs font-bold uppercase tracking-wider hover:bg-black/5 cursor-pointer"
-              >
-                Back
-              </button>
-            )}
-
-            {step < 3 ? (
-              <button
-                type="button"
-                onClick={() => setStep((s) => (s + 1) as any)}
-                className="flex-1 sm:flex-initial px-6 py-2.5 rounded-full bg-[#042821] hover:bg-[#03201A] dark:bg-[#0E4A3B] text-[#FFFCF7] text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer shadow-sm border border-[#C7982F]/40"
-              >
-                <span>Continue</span>
-                <ArrowRight size={14} className="text-[#C7982F]" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleFinishAndAdd}
-                className="flex-1 sm:flex-initial px-6 py-2.5 rounded-full bg-[#C7982F] hover:bg-[#B38926] text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-95 transition-all"
-              >
-                {addedSuccess ? (
-                  <>
-                    <Check size={16} />
-                    <span>Hamper Added!</span>
-                  </>
-                ) : (
-                  <>
-                    <ShoppingBag size={16} />
-                    <span>Add Custom Hamper to Bag</span>
-                  </>
-                )}
-              </button>
-            )}
-          </div>
-        </div>
-      </motion.div>
-    </div>
-  );
+  return <div className="fixed inset-0 z-[10005] flex items-center justify-center p-3 sm:p-4" dir="ltr">
+    <motion.div aria-hidden="true" initial={reducedMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reducedMotion ? 0 : .2 }} onClick={onClose} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+    <motion.div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="hamper-builder-title" tabIndex={-1}
+      initial={reducedMotion ? false : { opacity: 0, scale: .97, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: reducedMotion ? 0 : .2 }}
+      className="relative z-10 flex max-h-[92svh] w-full max-w-3xl flex-col overflow-hidden rounded-[28px] border border-[var(--color-border-accent)] bg-[var(--color-surface)] text-[var(--color-ink)] shadow-2xl">
+      <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--color-border)] bg-[var(--color-base)] px-5 py-4">
+        <div className="flex min-w-0 items-center gap-3"><Gift size={22} className="shrink-0 text-[var(--color-accent-text)]"/><div dir="auto"><h3 id="hamper-builder-title" className="font-serif text-lg leading-snug">{t('title')}</h3><p className="mt-1 text-[11px] leading-5 text-[var(--color-text-secondary)]">{t('intro')}</p></div></div>
+        <button type="button" onClick={onClose} aria-label={t('close')} className="focus-ring grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[var(--color-border)]"><X size={18}/></button>
+      </div>
+      <div className="grid shrink-0 grid-cols-3 border-b border-[var(--color-border)]">{([1, 2, 3] as const).map(value => <button type="button" key={value} aria-current={step === value ? 'step' : undefined} disabled={value === 3 && !selectionValid} onClick={() => setStep(value)} className={`focus-ring min-h-12 border-b-2 px-2 py-3 text-[11px] font-medium disabled:opacity-40 ${step === value ? 'border-[var(--color-gold)] bg-[#c7982f]/5 text-[var(--color-accent-text)]' : 'border-transparent text-[var(--color-text-secondary)]'}`}><span dir="auto">{value}. {t(value === 1 ? 'packaging' : value === 2 ? 'harvests' : 'card')}</span></button>)}</div>
+      <div className="min-h-0 flex-1 overflow-y-auto p-5 sm:p-6">
+        {step === 1 && <div><h4 dir="auto" className="font-serif text-xl">{t('packagingTitle')}</h4><p dir="auto" className="mb-5 mt-2 text-xs leading-6 text-[var(--color-text-secondary)]">{t('packagingNote')}</p><div className="grid gap-4 sm:grid-cols-3">{HAMPER_BOXES.map(option => <button type="button" key={option.id} aria-pressed={boxId === option.id} onClick={() => setBoxId(option.id)} className={`focus-ring flex flex-col rounded-2xl border p-3.5 text-start transition-colors motion-reduce:transition-none ${boxId === option.id ? 'border-[var(--color-gold)] bg-[#c7982f]/10' : 'border-[var(--color-border)] hover:border-[var(--color-gold)]'}`}>
+          <img src={option.image} alt={getLocalized(option, 'name', language)} width={640} height={360} loading="lazy" className="mb-3 aspect-video w-full rounded-xl object-cover"/><span dir="auto" className={`text-sm ${nameTypography}`}>{getLocalized(option, 'name', language)}</span><span dir="auto" className="mt-2 text-[10px] leading-5 text-[var(--color-text-secondary)]">{t('capacity').replace('{min}', String(option.minSelections)).replace('{max}', String(option.maxSelections))}</span><span className="mt-auto flex items-center justify-between gap-2 border-t border-[var(--color-border)] pt-3 text-sm text-[var(--color-accent-text)]"><bdi>Rs. {option.price.toLocaleString()}</bdi>{boxId === option.id && <Check size={17}/>}</span>
+        </button>)}</div><p dir="auto" className="mt-4 text-[10px] leading-5 text-[var(--color-text-secondary)]">{t('reference')}</p></div>}
+        {step === 2 && <div><div className="mb-5 flex flex-wrap items-start justify-between gap-3"><div dir="auto"><h4 className="font-serif text-xl">{t('selectionTitle')}</h4><p className="mt-2 text-xs leading-6 text-[var(--color-text-secondary)]">{t('selectionNote')}</p><p className="text-xs leading-6 text-[var(--color-accent-text)]">{capacity}</p></div><span dir="auto" className="rounded-full bg-[#1e3a2b] px-3 py-2 text-xs text-[#fff8e9]">{t('selected').replace('{count}', String(selectedItems.length))}</span></div><div className="grid gap-3 sm:grid-cols-2">{candidates.map(product => {
+          const selected = selectedItems.includes(product.id);
+          return <button type="button" key={product.id} aria-pressed={selected} disabled={!selected && selectedItems.length >= box.maxSelections} onClick={() => toggleItem(product.id)} className={`focus-ring flex min-h-24 items-center gap-3 rounded-2xl border p-3 text-start disabled:opacity-40 ${selected ? 'border-[var(--color-gold)] bg-[#c7982f]/10' : 'border-[var(--color-border)]'}`}><img src={getProductImage(product)} alt="" width={64} height={64} loading="lazy" className="h-16 w-16 shrink-0 rounded-xl object-cover"/><span className="min-w-0 flex-1"><span dir="auto" className={`block whitespace-normal break-words text-sm ${nameTypography}`}>{getLocalized(product, 'name', language)}</span><span className="mt-1 block text-[11px] text-[var(--color-accent-text)]"><bdi>200g · Rs. {hamperSelectionPrice(product)?.toLocaleString()}</bdi></span></span><span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border ${selected ? 'border-[#1e3a2b] bg-[#1e3a2b] text-[#e4c783]' : 'border-[var(--color-border)]'}`}>{selected && <Check size={14}/>}</span></button>;
+        })}</div>{!selectionValid && <p role="status" dir="auto" className="mt-4 text-xs leading-6 text-[var(--color-accent-text)]">{invalidMessage}</p>}</div>}
+        {step === 3 && <div dir={isRtl ? 'rtl' : 'ltr'} className="space-y-5"><h4 className="font-serif text-xl">{t('cardTitle')}</h4><div><label htmlFor="hamper-recipient" className="mb-2 block text-xs font-medium">{t('recipient')}</label><input id="hamper-recipient" type="text" value={recipientName} maxLength={100} autoComplete="off" onChange={event => setRecipientName(event.target.value)} placeholder={t('recipientPlaceholder')} className="min-h-12 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] px-4 text-base focus-visible:outline-[var(--color-gold)]"/></div><div><label htmlFor="hamper-message" className="mb-2 block text-xs font-medium">{t('message')}</label><textarea id="hamper-message" value={giftMessage} maxLength={500} rows={3} onChange={event => setGiftMessage(event.target.value)} placeholder={t('messagePlaceholder')} className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] p-4 text-base focus-visible:outline-[var(--color-gold)]"/></div><div className="rounded-2xl border border-[#c7982f]/40 bg-[#12382a] p-5 text-[#fff8e9]"><h5 className="font-serif text-lg text-[#e4c783]">{t('summary')}</h5><p className="mt-3 text-sm">{getLocalized(box, 'name', language)}</p><p className="mt-3 text-xs leading-6"><strong>{t('contents')}: </strong>{selectedItems.map(id => getLocalized(PRODUCTS.find(product => product.id === id), 'name', language)).join('، ')}</p><p className="mt-3 text-xs">{t('netWeight')}: <bdi>{selectedItems.length * HAMPER_PORTION_GRAMS}g</bdi></p></div></div>}
+      </div>
+      <div className="flex shrink-0 flex-col gap-4 border-t border-[var(--color-border)] bg-[var(--color-base)] p-4 sm:flex-row sm:items-center sm:justify-between"><div dir="auto"><span className="block text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-secondary)]">{t('total')}</span><strong className="font-serif text-2xl text-[var(--color-accent-text)]"><bdi>Rs. {totalPrice.toLocaleString()}</bdi></strong></div><div className="flex gap-3">{step > 1 && <button type="button" onClick={() => setStep(step === 3 ? 2 : 1)} className="focus-ring min-h-12 rounded-full border border-[var(--color-border)] px-5 text-xs font-medium">{t('back')}</button>}<button type="button" disabled={step === 2 ? !selectionValid : step === 3 ? !resolved : false} onClick={step === 3 ? finish : () => setStep(step === 1 ? 2 : 3)} className="focus-ring flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full border border-[#c7982f]/40 bg-[#1e3a2b] px-6 text-xs font-semibold text-[#fff8e9] disabled:opacity-40">{step === 3 ? <ShoppingBag size={16}/> : null}<span dir="auto">{t(step === 3 ? 'add' : 'continue')}</span>{step < 3 && <ArrowRight size={16} className="text-[#e4c783]"/>}</button></div></div>
+    </motion.div>
+  </div>;
 }

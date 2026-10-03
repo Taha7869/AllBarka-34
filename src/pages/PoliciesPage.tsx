@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { acquireScrollLock } from '../utils/scrollLock';
 import SEO from '../components/SEO';
+import { useLanguage } from '../contexts/LanguageContext';
 import { CONTACT_CONFIG, buildHumanSupportWhatsAppUrl, buildCustomerEmailUrl } from '../config/contacts';
 
 export type PolicyTab = 'shipping' | 'refund' | 'privacy' | 'terms';
@@ -44,6 +45,7 @@ export function PolicyPagesModal({
   initialTab = 'shipping',
   asPage = false
 }: PolicyPagesModalProps) {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<PolicyTab | 'unknown'>(() => normalizePolicyTab(initialTab));
 
   // Sync initial tab when reopened or route changed
@@ -86,7 +88,7 @@ export function PolicyPagesModal({
   const policyMeta: Record<PolicyTab, { title: string; desc: string }> = {
     shipping: {
       title: 'Shipping & Delivery Policy',
-      desc: 'AllBarka delivery guidelines: Rs. 150 standard delivery across Pakistan, free over Rs. 3,000, Rs. 350 priority express, and same-day dispatch in Lahore.'
+      desc: 'Lahore standard delivery Rs.150, free from Rs.3,000 after discounts. Outside Lahore: actual order weight at Rs.250/kg, minimum Rs.250.'
     },
     refund: {
       title: 'Returns & Freshness Guarantee',
@@ -261,20 +263,20 @@ export function PolicyPagesModal({
                     Shipping Tariffs & Complimentary Policy
                   </span>
                   <h3 className="text-lg sm:text-xl font-serif font-bold text-[var(--color-emerald,#042821)]">
-                    Transparent Flat Rates Across Pakistan
+                    Delivery Rates by Destination
                   </h3>
                   
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="p-4 rounded-2xl bg-[var(--color-base,#F6F1EA)] border border-[var(--color-gold,#C7982F)]/30 space-y-1.5">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-gold,#C7982F)]">Standard Shipping</span>
-                      <p className="text-lg font-serif font-bold text-[var(--color-emerald,#042821)]">Rs. 150 <span className="text-xs font-sans font-normal text-[var(--color-ink,#29231D)]/60">(Free over Rs. 3,000)</span></p>
-                      <p className="text-xs text-[var(--color-ink,#29231D)]/70">Delivered within 2–4 business days across all nationwide courier hubs.</p>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-gold,#C7982F)]">{t('shipping.lahore')}</span>
+                      <p className="text-sm leading-relaxed text-[var(--color-ink,#29231D)]">{t('shipping.lahoreRule')}</p>
+                      <p className="text-xs text-[var(--color-ink,#29231D)]/70">Priority dispatch: Rs.350. Same-day availability is confirmed for your address.</p>
                     </div>
 
                     <div className="p-4 rounded-2xl bg-[var(--color-base,#F6F1EA)] border border-[var(--color-gold,#C7982F)]/30 space-y-1.5">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-gold,#C7982F)]">Express Courier Dispatch</span>
-                      <p className="text-lg font-serif font-bold text-[var(--color-emerald,#042821)]">Rs. 350</p>
-                      <p className="text-xs text-[var(--color-ink,#29231D)]/70">Priority processing and expedited air transit (24–36 hours).</p>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-gold,#C7982F)]">{t('shipping.outside')}</span>
+                      <p className="text-sm leading-relaxed text-[var(--color-ink,#29231D)]">{t('shipping.nationwideRule')}</p>
+                      <p className="text-xs text-[var(--color-ink,#29231D)]/70">1.2kg = Rs.300; under 1kg = Rs.250. {t('shipping.days')}</p>
                     </div>
                   </div>
                 </div>
@@ -654,7 +656,7 @@ export function PolicyPagesModal({
               <div className="space-y-2">
                 <h4 className="text-base font-bold font-serif text-[var(--color-emerald,#042821)]">Complimentary Threshold</h4>
                 <p className="text-xs sm:text-sm text-[var(--color-ink,#29231D)]/70 leading-relaxed">
-                  Orders over Rs. 3,000 qualify for free standard shipping across Pakistan. Orders below carry a flat Rs. 150 standard fee (or Rs. 350 express).
+                  {t('shipping.lahoreRule')} {t('shipping.nationwideRule')}
                 </p>
               </div>
             </motion.div>

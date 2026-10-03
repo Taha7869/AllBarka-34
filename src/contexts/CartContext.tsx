@@ -4,8 +4,14 @@ import { PRODUCTS, getProductImage } from '../data/products';
 import { useToast } from '../components/ToastManager';
 
 import { STORE_CONFIG } from '../config/store';
+import { resolveCartIdentity, resolveCartPortion, resolveCartQuantity, resolveCartUnitPrice } from '../lib/cartInput';
+import { useLanguage } from './LanguageContext';
+import { calculateOrderSummary, isLahoreCity } from '../lib/pricing';
+import { readCheckoutDraft } from '../lib/checkoutPreferences';
+import { resolveHamper, hamperCartKey, type HamperConfiguration } from '../lib/hamperCatalog';
 
 const CART_STORAGE_KEY = 'allbarka_cart_v1';
+const DELIVERY_CITY_KEY = 'allbarka_delivery_city';
 export const FREE_SHIPPING_THRESHOLD = STORE_CONFIG.shipping.freeThreshold;
 
 /**
@@ -15,7 +21,7 @@ export const FREE_SHIPPING_THRESHOLD = STORE_CONFIG.shipping.freeThreshold;
  */
 export function parsePrice(val: string | number | undefined | null): number {
   if (typeof val === 'number') {
-    return isNaN(val) || val < 0 ? 0 : Math.round(val);
+    return !Number.isFinite(val) || val < 0 ? 0 : Math.round(val);
   }
   if (!val) return 0;
   const str = String(val).replace(/(?:Rs\.?|PKR|\$)/gi, '').trim();
@@ -23,7 +29,7 @@ export function parsePrice(val: string | number | undefined | null): number {
   const match = noCommas.match(/-?\d+(?:\.\d+)?/);
   if (!match) return 0;
   const parsed = parseFloat(match[0]);
-  return isNaN(parsed) || parsed < 0 ? 0 : Math.round(parsed);
+  return !Number.isFinite(parsed) || parsed < 0 ? 0 : Math.round(parsed);
 }
 
 /**
@@ -50,6 +56,7 @@ export type AddToCartInput =
       wholesale?: number | boolean;
       selectedWeight?: string;
       quantity?: number;
+      hamperConfiguration?: HamperConfiguration;
     };
 
 export interface CartContextValue {
@@ -61,6 +68,9 @@ export interface CartContextValue {
   remainingForFreeShipping: number;
   isFreeShippingUnlocked: boolean;
   freeShippingProgress: number;
+  shippingCity: string;
+  setShippingCity: (city: string) => void;
+  estimatedShipping: number | null;
   isCartOpen: boolean;
   isCartPulsing: boolean;
   setIsCartOpen: (open: boolean) => void;
@@ -70,7 +80,8 @@ export interface CartContextValue {
     product: AddToCartInput,
     weight?: string,
     quantity?: number,
-    customUnitPrice?: number
+    customUnitPrice?: number,
+    options?: { silent?: boolean; openCart?: boolean }
   ) => void;
   removeFromCart: (cartItemId: string) => void;
   updateQuantity: (cartItemId: string, newQty: number) => void;
@@ -83,8 +94,18 @@ const CartContext = createContext<CartContextValue | null>(null);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { addToast } = useToast();
+  const { t, language } = useLanguage();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCartPulsing, setIsCartPulsing] = useState(false);
+  const [shippingCity, updateShippingCity] = useState(() => {
+    try { return localStorage.getItem(DELIVERY_CITY_KEY) || readCheckoutDraft()?.customer.city || 'Lahore'; } catch { return 'Lahore'; }
+  });
+  const setShippingCity = useCallback((city: string) => {
+    const normalized = city.trim().slice(0, 60);
+    if (!normalized) return;
+    updateShippingCity(normalized);
+    try { localStorage.setItem(DELIVERY_CITY_KEY, normalized); } catch { /* private mode */ }
+  }, []);
 
   // Initialize cart from localStorage
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
@@ -94,25 +115,31 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          return parsed.map((item: any) => {
-            const rawWeight = item.selectedWeight || '250g';
-            const rawProductId = item.productId || item.id?.split('-')[0] || item.id || 'item';
-            const compositeId = `${rawProductId}-${rawWeight}`;
-            const unitPrice = parsePrice(item.unitPrice || item.price || 0);
-            return {
+          return parsed.flatMap((item: any) => {
+            if (!item || typeof item !== 'object') return [];
+            const identity = resolveCartIdentity(item, PRODUCTS);
+            if (!identity) return [];
+            const hamper = identity.productId === 'custom-hamper' ? resolveHamper(item.hamperConfiguration) : null;
+            const rawWeight = hamper?.portion || resolveCartPortion(identity.product, item.selectedWeight || identity.portion);
+            if (!rawWeight) return [];
+            const rawProductId = identity.productId;
+            const compositeId = hamper ? hamperCartKey(hamper.configuration) : `${rawProductId}-${rawWeight}`;
+            const unitPrice = hamper?.unitPrice ?? resolveCartUnitPrice(identity.product, rawWeight, item.unitPrice ?? item.price ?? 0);
+            return [{
               id: compositeId,
               productId: rawProductId,
-              name_en: item.name_en || item.name || 'Artisanal Dry Fruit',
-              name_ur: item.name_ur || item.name || 'Artisanal Dry Fruit',
-              name_ar: item.name_ar || item.name || 'Artisanal Dry Fruit',
-              slug: item.slug || rawProductId,
-              image: item.image || '',
+              name_en: hamper?.name_en || identity.product?.name_en || item.name_en || item.name || 'Artisanal Dry Fruit',
+              name_ur: hamper?.name_ur || identity.product?.name_ur || item.name_ur || item.name || 'Artisanal Dry Fruit',
+              name_ar: hamper?.name_ar || identity.product?.name_ar || item.name_ar || item.name || 'Artisanal Dry Fruit',
+              slug: identity.product?.id || item.slug || rawProductId,
+              image: hamper?.image || (identity.product ? getProductImage(identity.product) : (item.image || '')),
               selectedWeight: rawWeight,
               unitPrice: unitPrice,
               price: unitPrice,
-              quantity: Math.max(1, Math.min(50, parseInt(item.quantity, 10) || 1)),
-              wholesale: !!item.wholesale,
-            };
+              quantity: resolveCartQuantity(item.quantity),
+              wholesale: identity.product ? false : !!item.wholesale,
+              ...(hamper ? { hamperConfiguration: hamper.configuration } : {}),
+            }];
           });
         }
       }
@@ -147,7 +174,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
   }, [subtotal]);
 
-  const isFreeShippingUnlocked = subtotal >= FREE_SHIPPING_THRESHOLD;
+  const isFreeShippingUnlocked = isLahoreCity(shippingCity) && subtotal >= FREE_SHIPPING_THRESHOLD;
+  const estimatedShipping = useMemo(() => {
+    try { return calculateOrderSummary({ items: cartItems, city: shippingCity }).shipping; }
+    catch { return null; } // A selection requiring a quote must never crash the bag.
+  }, [cartItems, shippingCity]);
 
   const freeShippingProgress = useMemo(() => {
     return Math.min(100, Math.round((subtotal / FREE_SHIPPING_THRESHOLD) * 100));
@@ -166,14 +197,21 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     (
       productOrItem: AddToCartInput,
       weight?: string,
-      quantity = 1,
-      customUnitPrice?: number
+      quantity?: number,
+      customUnitPrice?: number,
+      options?: { silent?: boolean; openCart?: boolean }
     ) => {
-      const rawProdId = (productOrItem as any).productId || (productOrItem as any).id?.split('-')[0] || (productOrItem as any).id;
-      const fullProd = PRODUCTS.find((p) => p.id === rawProdId) || (productOrItem as any);
-      const availableWeights = fullProd.prices ? Object.keys(fullProd.prices) : ['250g'];
-      const selectedWeight = weight || (productOrItem as any).selectedWeight || availableWeights[0] || '250g';
-      const compositeId = `${rawProdId}-${selectedWeight}`;
+      const identity = resolveCartIdentity(productOrItem, PRODUCTS);
+      if (!identity) return;
+      const rawProdId = identity.productId;
+      const hamper = rawProdId === 'custom-hamper' ? resolveHamper((productOrItem as CartItem).hamperConfiguration) : null;
+      const fullProd = hamper ? { ...hamper, id: 'custom-hamper' } : identity.product || (productOrItem as any);
+      const selectedWeight = hamper?.portion || resolveCartPortion(identity.product, weight || (productOrItem as any).selectedWeight || identity.portion);
+      if (!selectedWeight) {
+        addToast(t('cart.portionUnavailable', 'This portion is unavailable. Please choose another size.'), 'error');
+        return;
+      }
+      const compositeId = hamper ? hamperCartKey(hamper.configuration) : `${rawProdId}-${selectedWeight}`;
 
       // Calculate sanitized price
       let rawPrice = customUnitPrice;
@@ -184,17 +222,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           rawPrice = (productOrItem as any).price;
         } else if (fullProd.prices && fullProd.prices[selectedWeight] !== undefined) {
           rawPrice = fullProd.prices[selectedWeight];
-        } else if (typeof fullProd.wholesale === 'number') {
-          rawPrice = fullProd.wholesale;
         } else {
           rawPrice = 0;
         }
       }
-      const unitPrice = parsePrice(rawPrice);
-      const effectiveQty = quantity !== undefined ? quantity : ((productOrItem as any).quantity || 1);
-      const cleanQty = Math.max(1, Math.min(50, effectiveQty));
-      const imageSrc = fullProd?.id ? getProductImage(fullProd as Product) : ((productOrItem as any).image || '');
-      const isWholesale = typeof (productOrItem as any).wholesale === 'boolean'
+      const unitPrice = hamper?.unitPrice ?? resolveCartUnitPrice(identity.product, selectedWeight, rawPrice);
+      const cleanQty = resolveCartQuantity((productOrItem as any).quantity, quantity);
+      const imageSrc = hamper?.image || (identity.product ? getProductImage(identity.product) : ((productOrItem as any).image || ''));
+      const isWholesale = !identity.product && typeof (productOrItem as any).wholesale === 'boolean'
         ? (productOrItem as any).wholesale
         : false;
 
@@ -225,17 +260,20 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           price: unitPrice,
           quantity: cleanQty,
           wholesale: isWholesale,
+          ...(hamper ? { hamperConfiguration: hamper.configuration } : {}),
         };
         return [...prev, newItem];
       });
 
       // Subtle toast notification & auto-open cart drawer
-      addToast(`${fullProd.name_en || 'Item'} (${selectedWeight}) added to your box`, 'success');
-      setIsCartPulsing(true);
-      setTimeout(() => setIsCartPulsing(false), 800);
-      setIsCartOpen(true);
+      if (!options?.silent) addToast(`${fullProd[`name_${language}`] || fullProd.name_en || 'Item'} (${selectedWeight}) — ${t('cart.addedToast')}`, 'success');
+      if (options?.openCart !== false) {
+        setIsCartPulsing(true);
+        setTimeout(() => setIsCartPulsing(false), 800);
+        setIsCartOpen(true);
+      }
     },
-    [addToast]
+    [addToast, t, language]
   );
 
   /**
@@ -255,7 +293,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (newQty <= 0) {
         return prev.filter((item) => item.id !== cartItemId && `${item.productId}-${item.selectedWeight}` !== cartItemId);
       }
-      const clampedQty = Math.max(1, Math.min(50, newQty));
+      if (!Number.isFinite(newQty)) return prev;
+      const clampedQty = Math.max(1, Math.min(50, Math.floor(newQty)));
       return prev.map((item) => {
         if (item.id === cartItemId || `${item.productId}-${item.selectedWeight}` === cartItemId) {
           return { ...item, quantity: clampedQty };
@@ -286,6 +325,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     remainingForFreeShipping,
     isFreeShippingUnlocked,
     freeShippingProgress,
+    shippingCity,
+    setShippingCity,
+    estimatedShipping,
     isCartOpen,
     isCartPulsing,
     setIsCartOpen,
@@ -303,6 +345,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     remainingForFreeShipping,
     isFreeShippingUnlocked,
     freeShippingProgress,
+    shippingCity,
+    setShippingCity,
+    estimatedShipping,
     isCartOpen,
     isCartPulsing,
     openCart,

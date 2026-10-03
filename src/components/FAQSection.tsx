@@ -173,7 +173,7 @@ export function FAQSection() {
                 Have a bespoke inquiry or bulk request?
               </h4>
               <p className="text-[11px] text-[var(--color-ink-muted)]">
-                Our Lahore boutique sommelier is available on WhatsApp daily (09 AM - 09 PM).
+                Our AllBarka boutique sommelier is available on WhatsApp daily (09 AM - 09 PM).
               </p>
             </div>
           </div>

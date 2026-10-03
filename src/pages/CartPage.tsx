@@ -4,14 +4,18 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, MessageCircle, ShoppingCart } from 'lucide-react';
 import { useCart, formatPrice, parsePrice } from '../contexts/CartContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { PRODUCTS, getProductImage } from '../data/products';
+import { PRODUCTS } from '../data/products';
+import { useProductMediaCover } from '../contexts/ProductMediaContext';
+import CartTools from '../components/CartTools';
 import SEO from '../components/SEO';
 import TrustBadges from '../components/TrustBadges';
 import { buildAutomatedOrderWhatsAppUrl } from '../config/contacts';
+import { hamperPackingLines } from '../lib/hamperCatalog';
 
 export default function CartPage() {
   const navigate = useNavigate();
   const { t, isRtl , language } = useLanguage();
+  const mediaCover = useProductMediaCover();
   const {
     cartItems,
     subtotal,
@@ -22,21 +26,22 @@ export default function CartPage() {
     updateQuantity,
     removeFromCart,
     clearCart,
+    shippingCity,
+    setShippingCity,
+    estimatedShipping,
   } = useCart();
 
-  const shippingCost = isFreeShippingUnlocked ? 0 : 150;
-  const estimatedTotal = subtotal + shippingCost;
+  const shippingCost = estimatedShipping;
+  const estimatedTotal = shippingCost === null ? null : subtotal + shippingCost;
 
   const handleWhatsAppCheckout = () => {
     if (cartItems.length === 0) return;
     const lines = cartItems.map((item) => {
       const itemUnit = parsePrice(item.unitPrice || item.price);
       const itemTotal = itemUnit * item.quantity;
-      return `• ${getLocalized(item, 'name', language)} (${item.selectedWeight}) × ${item.quantity} = Rs. ${itemTotal.toLocaleString()}`;
+      return [`• ${getLocalized(item, 'name', language)} (${item.selectedWeight}) × ${item.quantity} = Rs. ${itemTotal.toLocaleString()}`, ...hamperPackingLines(item.hamperConfiguration, language)].join('\n');
     });
-    const shippingLine = isFreeShippingUnlocked
-      ? 'Shipping: FREE (order over Rs. 3,000)'
-      : `Shipping: Rs. ${shippingCost}`;
+    const shippingLine = `Delivery to ${shippingCity}: ${shippingCost === null ? 'confirmation required' : `Rs. ${shippingCost}`} (estimate)`;
     const messageLines = [
       'Assalam-o-Alaikum AllBarka! 🌿',
       'I would like to place the following order:',
@@ -45,7 +50,7 @@ export default function CartPage() {
       '',
       `Subtotal: Rs. ${subtotal.toLocaleString()}`,
       shippingLine,
-      `*Total: Rs. ${estimatedTotal.toLocaleString()}*`,
+      estimatedTotal === null ? 'Please confirm the delivery charge and final total.' : `*Estimated total: Rs. ${estimatedTotal.toLocaleString()}*`,
       '',
       'Please confirm availability and share payment/delivery details. Shukriya! 🙏',
     ];
@@ -57,6 +62,7 @@ export default function CartPage() {
       <div className="min-h-screen bg-[var(--color-base,#F6F1EA)] flex items-center justify-center px-4 py-16">
         <SEO title="Your Cart — AllBarka" description="View and manage your AllBarka cart" canonicalPath="/cart" />
         <div className="max-w-md w-full text-center space-y-6">
+          <CartTools />
           <div className="w-24 h-24 rounded-full bg-[#FFFCF7] border border-[#C7982F]/30 flex items-center justify-center text-[#C7982F] mx-auto shadow-sm">
             <ShoppingCart size={40} />
           </div>
@@ -104,12 +110,21 @@ export default function CartPage() {
           </button>
         </div>
 
+        <CartTools />
+        <div className="mb-5 rounded-2xl border border-[#C7982F]/25 bg-[var(--color-surface)] p-4">
+          <label htmlFor="cart-delivery-city" className="mb-2 block text-xs font-semibold">{t('shipping.destination')}</label>
+          <select id="cart-delivery-city" className="focus-ring min-h-11 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] px-3 text-sm" value={shippingCity === 'Lahore' ? 'Lahore' : 'Other City'} onChange={event => setShippingCity(event.target.value)}>
+            <option value="Lahore">{t('shipping.lahore')}</option>
+            <option value="Other City">{t('shipping.outside')}</option>
+          </select>
+          <p className="mt-3 text-xs leading-relaxed text-[var(--color-text-secondary)]">{t(shippingCity === 'Lahore' ? 'shipping.lahoreRule' : 'shipping.nationwideRule')}</p>
+        </div>
         {/* Free Shipping Progress */}
-        {!isFreeShippingUnlocked && (
+        {shippingCity === 'Lahore' && !isFreeShippingUnlocked && (
           <div className="mb-6 p-4 rounded-2xl bg-[#FFFCF7] dark:bg-[#1A201E] border border-[#C7982F]/25">
             <div className="flex justify-between text-xs mb-2">
               <span className="text-[#29231D] dark:text-[#F6F1EA] font-medium">
-                Add <strong className="text-[#806326] dark:text-[#E4C783]">{formatPrice(remainingForFreeShipping)}</strong> more for FREE shipping
+                {t('freeShippingHint').replace('{amount}', remainingForFreeShipping.toLocaleString())}
               </span>
               <span className="text-[#806326] dark:text-[#E4C783] font-bold">{freeShippingProgress}%</span>
             </div>
@@ -129,7 +144,7 @@ export default function CartPage() {
               const itemUnit = parsePrice(item.unitPrice || item.price);
               const itemTotal = itemUnit * item.quantity;
               const matchedProduct = PRODUCTS.find((p) => p.id === item.productId || p.id === item.id);
-              const imageSource = matchedProduct ? getProductImage(matchedProduct) : item.image || '';
+              const imageSource = mediaCover(matchedProduct, item.image || '');
 
               return (
                 <div
@@ -224,13 +239,13 @@ export default function CartPage() {
                 <div className="flex justify-between">
                   <span className="text-[#635B52] dark:text-[#A8A199]">Shipping</span>
                   <span className="font-bold text-[#806326] dark:text-[#E4C783]">
-                    {isFreeShippingUnlocked ? 'FREE' : 'Rs. 150'}
+                    {shippingCost === null ? t('shipping.pending') : shippingCost === 0 ? t('shipping.free') : formatPrice(shippingCost)}
                   </span>
                 </div>
                 <div className="h-px bg-[#29231D]/10 dark:bg-[#F6F1EA]/10" />
                 <div className="flex justify-between items-baseline font-serif font-bold">
                   <span className="text-[#29231D] dark:text-[#F6F1EA]">Estimated Total</span>
-                  <span className="text-[#806326] dark:text-[#E4C783] text-lg font-mono">{formatPrice(estimatedTotal)}</span>
+                  <span className="text-[#806326] dark:text-[#E4C783] text-lg font-mono">{estimatedTotal === null ? t('shipping.pending') : formatPrice(estimatedTotal)}</span>
                 </div>
               </div>
 

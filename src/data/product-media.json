@@ -1,0 +1,244 @@
+{
+  "pista": {
+    "images": [
+      "/images/generated/pistachios-catalog-v1.webp",
+      "/images/generated/pista-secondary-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "kaju": {
+    "images": [
+      "/images/generated/cashews-catalog-v1.webp",
+      "/images/generated/kaju-secondary-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "badam": {
+    "images": [
+      "/images/generated/almonds-catalog-v1.webp",
+      "/images/generated/badam-secondary-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "akhroot": {
+    "images": [
+      "/images/generated/walnut-halves-catalog-v1.webp",
+      "/images/generated/akhroot-secondary-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "deal-1": {
+    "images": [
+      "/images/generated/walnut-pistachio-duo-catalog-v1.webp",
+      "/images/generated/deal-1-secondary-v1.webp",
+      "/images/generated/walnut-halves-catalog-v1.webp",
+      "/images/generated/pistachios-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "deal-2": {
+    "images": [
+      "/images/generated/almond-cashew-duo-catalog-v1.webp",
+      "/images/generated/deal-2-secondary-v1.webp",
+      "/images/generated/almonds-catalog-v1.webp",
+      "/images/generated/cashews-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "khubani": {
+    "images": [
+      "/images/generated/dried-apricots-catalog-v1.webp",
+      "/images/generated/khubani-secondary-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "alubukhara": {
+    "images": [
+      "/images/generated/dried-plums-catalog-v1.webp",
+      "/images/generated/alubukhara-secondary-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "kishmish": {
+    "images": [
+      "/images/generated/green-raisins-catalog-v1.webp",
+      "/images/generated/kishmish-secondary-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "khajoor": {
+    "images": [
+      "/images/generated/dark-dates-catalog-v1.webp",
+      "/images/generated/khajoor-secondary-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "pumpkin_seeds": {
+    "images": [
+      "/images/generated/pumpkin-seeds-catalog-v1.webp",
+      "/images/generated/pumpkin_seeds-secondary-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "chia_seeds": {
+    "images": [
+      "/images/generated/chia-seeds-catalog-v1.webp",
+      "/images/generated/chia_seeds-secondary-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "nimko": {
+    "images": [
+      "/images/generated/lahori-nimko-catalog-v1.webp",
+      "/images/generated/nimko-secondary-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "chanay": {
+    "images": [
+      "/images/generated/roasted-chanay-catalog-v1.webp",
+      "/images/generated/chanay-secondary-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "oil-almond": {
+    "images": [
+      "/images/generated/oil-almond-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "oil-blackseed": {
+    "images": [
+      "/images/generated/oil-blackseed-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "oil-coconut": {
+    "images": [
+      "/images/generated/oil-coconut-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "oil-castor": {
+    "images": [
+      "/images/generated/oil-castor-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "oil-apricot": {
+    "images": [
+      "/images/generated/oil-apricot-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "oil-sesame": {
+    "images": [
+      "/images/generated/oil-sesame-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "oil-flaxseed": {
+    "images": [
+      "/images/generated/oil-flaxseed-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "oil-walnut": {
+    "images": [
+      "/images/generated/oil-walnut-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "oil-olive": {
+    "images": [
+      "/images/generated/oil-olive-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "oil-onionseed": {
+    "images": [
+      "/images/generated/oil-onionseed-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "oil-mustard": {
+    "images": [
+      "/images/generated/oil-mustard-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "oil-hairblend": {
+    "images": [
+      "/images/generated/oil-hairblend-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "oil-hairgrowth": {
+    "images": [
+      "/images/generated/oil-hairgrowth-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "org-ghee": {
+    "images": [
+      "/images/generated/org-ghee-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "org-honey": {
+    "images": [
+      "/images/generated/org-honey-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "org-panjeeri": {
+    "images": [
+      "/images/generated/org-panjeeri-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "org-saffron": {
+    "images": [
+      "/images/generated/org-saffron-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "org-shakkar": {
+    "images": [
+      "/images/generated/org-shakkar-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  }
+}

@@ -11,6 +11,7 @@ import { JWT } from 'google-auth-library';
 import { initializeApp, cert, applicationDefault } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
+import { conciergeFallback, type ConciergeLanguage } from './src/lib/conciergeFallback';
 import { PRODUCTS } from './src/data/products';
 import { STORE_CONFIG } from './src/config/store';
 import { CONTACT_CONFIG, buildAutomatedOrderWhatsAppUrl, buildHumanSupportWhatsAppUrl } from './src/config/contacts';
@@ -19,6 +20,7 @@ import { askN8nConsultant } from './src/services/n8nAIConsultant';
 import { reserveGuestAiMessage, GuestTrialLimitError } from './src/lib/aiGuestTrial';
 import { REWARDS } from './src/data/rewards';
 import { validateAndPriceOrder, validateCustomerDetails, ValidationError } from './src/lib/orderValidation';
+import { validateShippingRewardDestination } from './src/lib/shippingPolicy';
 import crypto from 'crypto';
 import {
   createDurableOrder,
@@ -31,6 +33,14 @@ import {
 import { STORE_COUPONS, calculateCouponDiscount } from './src/lib/couponEngine';
 import { sanitizeOrderForCustomer, CanonicalOrder } from './src/lib/serverOrderService';
 import { claimWelcomeVoucher } from './src/lib/welcomeCouponService';
+import { authenticatePatronCredentials } from './src/lib/serverAuthentication';
+import { createProductMediaRouter } from './src/lib/productMediaRouter';
+import { createStoreUpdatesRouter } from './src/lib/storeUpdatesRouter';
+import {
+  AdminOperationError, hasAdminClaim, validateAdminOrderId, validateAdminStatusInput,
+  parseAdminOrderFilters, listAdminOrders, getAdminOrder, sanitizeOrderForAdmin,
+  addAdminOrderNote, updateAdminOrderPayment,
+} from './src/lib/adminOperations';
 
 // Load environment variables
 dotenv.config();
@@ -91,7 +101,7 @@ async function authenticateOptionalUser(req: express.Request, res: express.Respo
   const sessionCookie = req.cookies.__session || '';
   const authHeader = req.headers.authorization;
   
-  if (!sessionCookie && !authHeader) {
+  if (!sessionCookie && authHeader === undefined) {
     (req as any).user = null;
     return next();
   }
@@ -104,16 +114,11 @@ async function authenticateOptionalUser(req: express.Request, res: express.Respo
   }
 
   try {
-    if (sessionCookie) {
-      const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true);
-      (req as any).user = decodedClaims;
-      return next();
-    } else if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7).trim();
-      const decodedClaims = await adminAuth.verifyIdToken(token);
-      (req as any).user = decodedClaims;
-      return next();
-    }
+    (req as any).user = await authenticatePatronCredentials(authHeader, sessionCookie, {
+      verifyIdToken: token => adminAuth.verifyIdToken(token),
+      verifySessionCookie: (cookie, checkRevoked) => adminAuth.verifySessionCookie(cookie, checkRevoked),
+    });
+    return next();
   } catch (err: any) {
     return res.status(401).json({
       error: 'Invalid or expired patron credentials. Please sign in again.',
@@ -121,8 +126,6 @@ async function authenticateOptionalUser(req: express.Request, res: express.Respo
     });
   }
   
-  (req as any).user = null;
-  return next();
 }
 
 async function requireAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
@@ -148,7 +151,7 @@ async function requireAuth(req: express.Request, res: express.Response, next: ex
 async function requireAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
   await requireAuth(req, res, () => {
     const user = (req as any).user;
-    if (!user || (!user.admin && user.role !== 'admin')) {
+    if (!hasAdminClaim(user)) {
       return res.status(403).json({
         error: 'Forbidden. Authoritative admin privileges required.',
         code: 'FORBIDDEN_ADMIN'
@@ -181,46 +184,28 @@ if (!Number.isInteger(trustProxyHops) || trustProxyHops < 0) {
 app.set('trust proxy', trustProxyHops);
 
 app.use(helmet({
+  // Firebase Google sign-in needs to communicate with its OAuth popup.
+  crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://*.firebaseapp.com", "https://*.googleapis.com", "https://*.gstatic.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://apis.google.com", "https://*.firebaseapp.com", "https://*.googleapis.com", "https://*.gstatic.com"],
+      frameSrc: ["'self'", "https://allbarka-live.firebaseapp.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://api.fontshare.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdn.fontshare.com"],
       connectSrc: ["'self'", "https://*.firebaseio.com", "https://*.googleapis.com", "https://*.cloudfunctions.net", "https://*.firebaseapp.com"],
       imgSrc: ["'self'", "data:", "https://*"],
+      mediaSrc: ["'self'", "https:"],
     }
   }
 }));
 
 app.use(express.json());
 app.use(cookieParser());
+app.use(createProductMediaRouter({ getDb: () => db, requireAdmin }));
+app.use(createStoreUpdatesRouter({ getDb: () => db, requireAuth, requireAdmin }));
 
 // Auth & Session Endpoints
-app.post('/api/auth/request-otp-allowance', async (req, res) => {
-  try {
-    const { phone } = req.body;
-    if (!phone) return res.status(400).json({ error: 'Phone required' });
-    if (!db) return res.json({ allowed: true }); // local dev fallback
-
-    const now = Date.now();
-    const tenMinsAgo = now - 10 * 60 * 1000;
-    const snap = await db.collection('otp_requests')
-      .where('phone', '==', phone)
-      .where('timestamp', '>', tenMinsAgo)
-      .get();
-      
-    if (snap.size >= 3) {
-      return res.status(429).json({ error: 'Too many OTP requests. Please wait 10 minutes.' });
-    }
-    
-    await db.collection('otp_requests').add({ phone, timestamp: now });
-    res.json({ allowed: true });
-  } catch(e) {
-    res.status(500).json({ error: 'Server error measuring allowance' });
-  }
-});
-
 app.post('/api/auth/sessionLogin', async (req, res) => {
   try {
     const { idToken } = req.body;
@@ -298,18 +283,29 @@ app.get('/api/commerce/readiness', (req, res) => {
 });
 
 // 1.3 API: Authoritative Order Quote Calculation
-app.post('/api/orders/quote', authenticateOptionalUser, (req, res) => {
+app.post('/api/orders/quote', authenticateOptionalUser, async (req, res) => {
   try {
-    const { items, shippingMethodId, discountCode, rewardId, giftWrapping, isWholesale } = req.body;
+    const { items, city, shippingMethodId, discountCode, rewardId, giftWrapping, isWholesale } = req.body;
     const authenticatedUser = (req as any).user;
 
     const validatedOrder = validateAndPriceOrder({
       items,
+      city,
       shippingMethodId,
       discountCode,
       giftWrapping: Boolean(giftWrapping),
       isWholesale: Boolean(isWholesale && authenticatedUser?.wholesaleEligible),
     });
+
+    if (rewardId) {
+      if (!authenticatedUser?.uid) throw new ValidationError('Please sign in to use a patron reward.', 'REWARD_REQUIRES_AUTH');
+      if (!db) return res.status(503).json({ error: 'Reward verification is unavailable until the order database is configured.', code: 'PERSISTENCE_UNAVAILABLE' });
+      const rewardSnap = await db.collection('users').doc(authenticatedUser.uid).collection('activeRewards').doc(String(rewardId).trim()).get();
+      if (!rewardSnap.exists) throw new ValidationError('Selected reward does not exist for this patron.', 'REWARD_NOT_FOUND');
+      const reward = rewardSnap.data();
+      if (reward?.status !== 'ACTIVE') throw new ValidationError('Selected reward is no longer active or has already been used.', 'REWARD_ALREADY_USED');
+      validateShippingRewardDestination(reward, city);
+    }
 
     res.json({
       success: true,
@@ -347,6 +343,7 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
       const customer = validateCustomerDetails(req.body);
       const validatedOrder = validateAndPriceOrder({
         items: req.body.items,
+        city: customer.city,
         shippingMethodId: req.body.shippingMethodId,
         discountCode: req.body.discountCode,
         giftWrapping: Boolean(req.body.giftWrapping),
@@ -486,7 +483,7 @@ app.get('/api/orders/:orderId', authenticateOptionalUser, async (req, res) => {
 
     const order = doc.data() as CanonicalOrder;
     const isOwner = user && order.uid && user.uid === order.uid;
-    const isAdmin = user && (user.admin || user.role === 'admin');
+    const isAdmin = hasAdminClaim(user);
     let isGuestAuthorized = false;
 
     if (guestClaimToken && order.claimTokenHash) {
@@ -563,11 +560,26 @@ app.post('/api/coupons/welcome/claim', requireAuth, async (req, res) => {
   }
 });
 
+function adminOperationFailure(res: express.Response, error: any) {
+  if (error instanceof AdminOperationError) {
+    return res.status(error.httpStatus).json({ error: error.message, code: error.code });
+  }
+  if (error instanceof PersistenceUnavailableError || error?.code === 14) {
+    return res.status(503).json({ error: 'Durable database unavailable.', code: 'DB_UNAVAILABLE' });
+  }
+  if (error?.name === 'ValidationError') {
+    const status = error.code === 'ORDER_NOT_FOUND' ? 404 : ['STATUS_CONFLICT', 'ORDER_CONFLICT'].includes(error.code) ? 409 : 400;
+    return res.status(status).json({ error: error.message, code: error.code });
+  }
+  console.error('[Admin orders] operation failed:', error?.message || error);
+  return res.status(500).json({ error: 'The order operation failed. Please retry.', code: 'SERVER_ERROR' });
+}
+
 // Admin-only: Order status updater with optimistic concurrency & audit trail
 app.post('/api/admin/orders/:orderId/status', requireAdmin, async (req, res) => {
   try {
-    const { orderId } = req.params;
-    const { status, reason, expectedStatus } = req.body;
+    const orderId = validateAdminOrderId(req.params.orderId);
+    const { status, reason, expectedStatus, expectedUpdatedAt } = validateAdminStatusInput(req.body);
     const user = (req as any).user;
 
     if (!db) {
@@ -580,87 +592,59 @@ app.post('/api/admin/orders/:orderId/status', requireAdmin, async (req, res) => 
       status,
       reason,
       expectedStatus,
+      expectedUpdatedAt,
       actorUid: user.uid,
       actorEmail: user.email || 'admin',
     });
 
-    res.json({ success: true, order: updated });
+    res.json({ success: true, order: sanitizeOrderForAdmin(updated) });
   } catch (e: any) {
-    if (e.name === 'ValidationError') {
-      const code = e.code === 'STATUS_CONFLICT' ? 409 : 400;
-      return res.status(code).json({ error: e.message, code: e.code });
-    }
-    res.status(500).json({ error: e.message || 'Status transition failed.', code: 'SERVER_ERROR' });
+    adminOperationFailure(res, e);
   }
 });
 
-// Admin-only: Order list with pagination, search, status filter
+// Register export before the dynamic order ID route. The frontend handles CSV formatting.
+app.get('/api/admin/orders/export', requireAdmin, async (req, res) => {
+  try {
+    res.setHeader('Cache-Control', 'no-store');
+    res.json(await listAdminOrders(db, parseAdminOrderFilters(req.query), true));
+  } catch (error) { adminOperationFailure(res, error); }
+});
+
+// Admin-only: newest-order bounded scan, matching-filter metrics, and pagination.
 app.get('/api/admin/orders', requireAdmin, async (req, res) => {
   try {
-    if (!db) {
-      return res.json({ orders: [], totalPages: 1, totalCount: 0 });
-    }
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 15));
-    const statusFilter = req.query.status as string;
-    const search = (req.query.search as string)?.trim();
-
-    let query: any = db.collection('orders');
-    if (statusFilter && statusFilter !== 'ALL') {
-      query = query.where('status', '==', statusFilter);
-    }
-
-    const snap = await query.get();
-    let allOrders = snap.docs.map((d: any) => d.data() as CanonicalOrder);
-
-    if (search) {
-      const lower = search.toLowerCase();
-      allOrders = allOrders.filter(o =>
-        o.orderId.toLowerCase().includes(lower) ||
-        o.customer.phone.includes(search) ||
-        o.customer.name.toLowerCase().includes(lower)
-      );
-    }
-
-    allOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-    const totalCount = allOrders.length;
-    const totalPages = Math.ceil(totalCount / limit) || 1;
-    const paged = allOrders.slice((page - 1) * limit, page * limit);
-
-    res.json({
-      orders: paged,
-      page,
-      limit,
-      totalCount,
-      totalPages,
-    });
-  } catch (e: any) {
-    res.status(500).json({ error: e.message || 'Failed to list admin orders.', code: 'SERVER_ERROR' });
-  }
+    res.setHeader('Cache-Control', 'no-store');
+    res.json(await listAdminOrders(db, parseAdminOrderFilters(req.query)));
+  } catch (error) { adminOperationFailure(res, error); }
 });
 
 // Admin-only: Single order details with audit trail
 app.get('/api/admin/orders/:orderId', requireAdmin, async (req, res) => {
   try {
-    const { orderId } = req.params;
-    if (!db) {
-      return res.status(404).json({ error: 'Order not found.', code: 'ORDER_NOT_FOUND' });
-    }
-    const doc = await db.collection('orders').doc(orderId).get();
-    if (!doc.exists) {
-      return res.status(404).json({ error: 'Order not found.', code: 'ORDER_NOT_FOUND' });
-    }
-    const order = doc.data() as CanonicalOrder;
+    res.setHeader('Cache-Control', 'no-store');
+    res.json({ success: true, ...await getAdminOrder(db, req.params.orderId) });
+  } catch (error) { adminOperationFailure(res, error); }
+});
 
-    const auditsSnap = await db.collection('orderAudits').where('orderId', '==', orderId).get();
-    const audits = auditsSnap.docs.map((d: any) => d.data());
-    audits.sort((a: any, b: any) => b.timestamp - a.timestamp);
+app.post('/api/admin/orders/:orderId/notes', requireAdmin, async (req, res) => {
+  try {
+    const user = (req as any).user;
+    const order = await addAdminOrderNote({ db, orderId: req.params.orderId, note: req.body?.note,
+      expectedUpdatedAt: req.body?.expectedUpdatedAt, actorUid: user.uid, actorEmail: user.email });
+    res.json({ success: true, order });
+  } catch (error) { adminOperationFailure(res, error); }
+});
 
-    res.json({ success: true, order, audits });
-  } catch (e: any) {
-    res.status(500).json({ error: e.message || 'Failed to fetch order.', code: 'SERVER_ERROR' });
-  }
+app.post('/api/admin/orders/:orderId/payment', requireAdmin, async (req, res) => {
+  try {
+    const user = (req as any).user;
+    const order = await updateAdminOrderPayment({ db, orderId: req.params.orderId,
+      paymentStatus: req.body?.paymentStatus, expectedPaymentStatus: req.body?.expectedPaymentStatus,
+      reason: req.body?.reason, expectedUpdatedAt: req.body?.expectedUpdatedAt,
+      actorUid: user.uid, actorEmail: user.email });
+    res.json({ success: true, order });
+  } catch (error) { adminOperationFailure(res, error); }
 });
 
 // Authenticated customer loyalty profile
@@ -887,64 +871,10 @@ app.post('/api/contact', async (req, res) => {
   }
 });
 
-// 2. Fallback Sommelier Response Generator
-function generateBoutiqueResponse(userText: string): { reply: string; groundingSources: Array<{ title: string; uri: string; type: 'map' }> } {
-  const lowerText = userText.toLowerCase();
-  let reply = "";
-  const groundingSources: Array<{ title: string; uri: string; type: 'map' }> = [];
-
-  if (
-    lowerText.includes('where') ||
-    lowerText.includes('location') ||
-    lowerText.includes('address') ||
-    lowerText.includes('store') ||
-    lowerText.includes('shop') ||
-    lowerText.includes('branch')
-  ) {
-    reply = "📍 **AllBarka Flagship Boutique** is located at **Neelum Block, Allama Iqbal Town, Lahore**.\n\nWe provide rapid express delivery across all Lahore sectors including DHA Phase 1–8, Gulberg I–III, Model Town, Cantt, Bahria Town, and Johar Town. You can also pin your address directly in the cart drawer!";
-    groundingSources.push({
-      title: 'AllBarka Boutique (Allama Iqbal Town, Lahore)',
-      uri: 'https://maps.google.com/?q=31.5085,74.2882',
-      type: 'map'
-    });
-  } else if (
-    lowerText.includes('dha') ||
-    lowerText.includes('bahria') ||
-    lowerText.includes('delivery') ||
-    lowerText.includes('shipping') ||
-    lowerText.includes('rider') ||
-    lowerText.includes('free')
-  ) {
-    reply = "🚚 **Delivery Terms & Speed**:\n• **Standard Lahore Delivery**: Rs. 150 (delivered within 24–48 hours in sealed vacuum pouches).\n• **FREE Delivery**: Automatically unlocked on all orders of **Rs. 3000 or above**!\n• **Coverage**: DHA (Phase 1–8), Gulberg, Model Town, Cantt, Bahria Town, Johar Town, Wapda Town & all surrounding sectors.";
-    groundingSources.push({
-      title: 'Lahore Express Delivery Coverage',
-      uri: 'https://maps.google.com/?q=31.5204,74.3587',
-      type: 'map'
-    });
-  } else if (lowerText.includes('pista') || lowerText.includes('pistachio')) {
-    reply = "🌰 **Premium Pistachios (Pista)**:\nOur jumbo Iranian/Kerman pistachios are lightly roasted, crisply salted, and hand-sorted with a 99% open-shell guarantee.\n\n• **250g**: Rs. 1,000\n• **500g**: Rs. 2,000\n• **1kg**: Rs. 4,000 *(Wholesale price: Rs. 3,800)*";
-  } else if (lowerText.includes('kaju') || lowerText.includes('cashew')) {
-    reply = "💎 **Luxury Cashews (Kaju)**:\nJumbo W240 grade, rich in natural buttery sweetness, golden and vacuum-sealed for peak crunchiness.\n\n• **250g**: Rs. 915\n• **500g**: Rs. 1,825\n• **1kg**: Rs. 3,650 *(Wholesale price: Rs. 3,450)*";
-  } else if (lowerText.includes('badam') || lowerText.includes('almond')) {
-    reply = "✨ **Golden Almonds (Badam)**:\nSweet, premium American/Giri almonds loaded with natural oils, vitamin E, and crisp texture.\n\n• **250g**: Rs. 775\n• **500g**: Rs. 1,550\n• **1kg**: Rs. 3,100 *(Wholesale price: Rs. 2,900)*";
-  } else if (lowerText.includes('walnut') || lowerText.includes('akhrot')) {
-    reply = "🧠 **Chilean Walnuts (Akhrot)**:\nHand-cracked, golden halves packed with high Omega-3 fatty acids and crisp, fresh sweetness with zero bitterness.\n\n• **250g**: Rs. 325\n• **500g**: Rs. 650\n• **1kg**: Rs. 1,300 *(Wholesale price: Rs. 1,200)*";
-  } else if (lowerText.includes('combo') || lowerText.includes('deal') || lowerText.includes('bundle') || lowerText.includes('gift')) {
-    reply = "🎁 **AllBarka Exclusive Deals & Luxury Combos**:\n\n1. **'The Classics' Combo**: 500g Chilean Walnuts + 500g Salted Pista — **Rs. 2,800** *(Save Rs. 200)*\n2. **'Work-Day Fuel' Combo**: 500g Golden Almonds + 500g Luxury Cashews — **Rs. 3,500** *(Save Rs. 200)*\n3. **'The Ultimate Snack Deal'**: 500g Premium Nimko + 500g Savory Mix — **Rs. 1,800**\n\nAll combos arrive in velvet-trimmed gift presentation packaging!";
-  } else if (lowerText.includes('date') || lowerText.includes('khajoor') || lowerText.includes('plum') || lowerText.includes('alubukhara') || lowerText.includes('kishmish') || lowerText.includes('raisin')) {
-    reply = "🌿 **Artisanal Pantry & Sun-Dried Fruits**:\n• **Kali Khajoor (Fresh Dates)**: Rs. 240 / 250g | Rs. 475 / 500g\n• **Dried Plums (Alubukhara)**: Rs. 415 / 250g | Rs. 825 / 500g\n• **Green Raisins (Kishmish)**: Rs. 365 / 250g | Rs. 725 / 500g\n• **Dried Apricots (Khubani)**: Rs. 300 / 250g | Rs. 600 / 500g";
-  } else if (lowerText.includes('contact') || lowerText.includes('whatsapp') || lowerText.includes('phone') || lowerText.includes('order')) {
-    reply = "📱 **Ordering & Customer Support**:\n• **WhatsApp Direct**: +92 316 0666083\n• **Checkout**: Add items to your cart, click 'Checkout with Cash on Delivery / WhatsApp', and our team will dispatch your order promptly!";
-  } else {
-    reply = "Assalam-o-Alaikum! Welcome to **AllBarka Luxury Dry Fruits**. I am delighted to assist you with our hand-sorted Cashews, Pistachios, Chilean Walnuts, Golden Almonds, custom gift bundles, or express delivery across Lahore. How may I serve you today? ✨";
-  }
-
-  return { reply, groundingSources };
-}
-
 // 3. API: Luxury AI Concierge Assistant
 app.post(['/api/chat', '/api/concierge/chat'], authenticateOptionalUser, async (req, res) => {
   const userText = req.body.userText || req.body.message || '';
+  const language: ConciergeLanguage = ['ur', 'ar'].includes(req.body.language) ? req.body.language : 'en';
   const userLocation = req.body.userLocation || req.body.location || null;
   const messages = req.body.messages || req.body.history || [];
 
@@ -986,8 +916,8 @@ app.post(['/api/chat', '/api/concierge/chat'], authenticateOptionalUser, async (
     return `- ${p.name_en}: ${priceStr} (Wholesale: Rs. ${p.wholesale})`;
   }).join('\n');
 
-  const systemInstruction = `You are the elite AI Concierge & Gourmet Dry Fruits Sommelier representing '${STORE_CONFIG.storeName}', Lahore's premier luxury dry fruit, spices, and artisanal gifting boutique based in ${STORE_CONFIG.location}.
-We source only the absolute highest specification, hand-sorted, and vacuum-sealed dry fruits directly from trusted orchards.
+  const systemInstruction = `You are the AI Concierge & Gourmet Dry Fruits Sommelier representing '${STORE_CONFIG.storeName}', a premium dry fruit, spices, and artisanal gifting store based in ${STORE_CONFIG.location}.
+Use the supplied catalogue for product descriptions and portion prices. Packaging and sourcing can vary by selection.
 
 Only provide product prices and store policy information present in the supplied canonical catalog/configuration below. Never invent or approximate prices, availability, shipping fees, or policies.
 
@@ -996,13 +926,18 @@ ${catalogContext}
 
 Delivery & Ordering:
 - Standard Delivery across all major Lahore neighborhoods is Rs. ${STORE_CONFIG.shipping.standardRate}.
-- FREE Express Delivery on orders above Rs. ${STORE_CONFIG.shipping.freeThreshold}!
-- WhatsApp Direct Order: +${STORE_CONFIG.whatsappBusinessNumber}.
+- Standard delivery is free ONLY within Lahore when the merchandise subtotal after discounts reaches Rs. ${STORE_CONFIG.shipping.freeThreshold}; gift wrapping does not count toward this threshold. Lahore express delivery is Rs. ${STORE_CONFIG.shipping.expressRate}.
+- Outside Lahore, every delivery method is billed at Rs. ${STORE_CONFIG.shipping.nationwidePerKg} per kilogram with a minimum charge of Rs. ${STORE_CONFIG.shipping.nationwideMinimum}. Fractional kilograms are proportional (1.2kg costs Rs. 300). There is no free shipping outside Lahore, including coupons or rewards.
+- Shipping billing weight comes from canonical selected portions and quantities. Oils follow the merchant's billing convention: numeric ml is billed as the same numeric grams (100ml is billed as 100g); no container uplift. This is not a physical density claim. Ask for the delivery city and exact portions, and use checkout's authoritative quote if anything is uncertain.
+- WhatsApp for customer support: ${CONTACT_CONFIG.humanSupportWhatsApp.formatted}. Automated order WhatsApp: ${CONTACT_CONFIG.automatedOrdersWhatsApp.formatted}.
+- Boutique service address: ${CONTACT_CONFIG.boutiqueAddress}. Ask customers to confirm their visit with our team; never invent a street address, branch, coordinate or opening time.
+- Wholesale figures are reference information for approved accounts only. Refer wholesale enquiries to our team; never promise eligibility or apply an unapproved discount.
 - Customers can add items to their cart and checkout via WhatsApp or cash on delivery.
 
 Behavior Guidelines:
+- Reply in ${language === 'ar' ? 'Arabic' : language === 'ur' ? 'Urdu' : 'English'}.
 - Keep answers polite, sophisticated, articulate, and helpful.
-- When answering location, maps, or route queries in Lahore, provide precise details.
+- For routes and distances, use returned map sources when available. If the exact place cannot be verified, say so and offer the support contact.
 - Offer general food and product information only. Do not diagnose conditions, prescribe diets or treatment, or promise medical outcomes. For personal health questions, advise consulting a qualified clinician.
 - Include elegant, warm emojis where appropriate (✨, 🌰, 💎, 🚚, 🌿).`;
 
@@ -1030,7 +965,7 @@ Behavior Guidelines:
     } catch (error: any) {
       console.warn('[AI Consultant] n8n unavailable:', error?.message || error);
     }
-    const offline = generateBoutiqueResponse(userText);
+    const offline = conciergeFallback(userText, language);
     return res.json({
       text: offline.reply,
       reply: offline.reply,
@@ -1041,9 +976,9 @@ Behavior Guidelines:
   }
 
   // Format conversational context for Gemini API
-  const history = (messages || []).map((msg: any) => ({
-    role: msg.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: msg.text }]
+  const history = (Array.isArray(messages) ? messages.slice(-10) : []).map((msg: any) => ({
+    role: msg?.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: String(msg?.text || '').slice(0, 1000) }]
   }));
 
   try {
@@ -1108,7 +1043,7 @@ Behavior Guidelines:
         config: config
       });
 
-      const responseText = response.text || "Assalam-o-Alaikum! How may I assist your AllBarka gourmet selection today?";
+      const responseText = response.text || conciergeFallback(userText, language).reply;
 
       // Extract Grounding Sources (Google Maps Places)
       const groundingSources: Array<{ title: string; uri: string; type: 'map'; snippet?: string }> = [];
@@ -1138,11 +1073,11 @@ Behavior Guidelines:
     }
   } catch (error: any) {
     console.warn('Gemini API call encountered an issue, transitioning to concierge engine:', error?.message || error);
-    // Proceed seamlessly to generateBoutiqueResponse below so the user receives a flawless reply without 500 error
+    // Use the catalogue-backed fallback below when the model is unavailable.
   }
 
   // Graceful, rich fallback response
-  const fallback = generateBoutiqueResponse(userText);
+  const fallback = conciergeFallback(userText, language);
   res.json({
     text: fallback.reply,
     reply: fallback.reply,
@@ -1194,6 +1129,7 @@ async function startServer() {
     }));
     app.get('*', (req, res) => {
       if (path.extname(req.path)) return res.status(404).type('text/plain').send('Not found');
+      if (req.path.startsWith('/admin/')) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
       res.setHeader('Cache-Control', 'no-cache');
       res.type('html').send(html);
     });

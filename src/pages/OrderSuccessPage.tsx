@@ -5,6 +5,7 @@ import { STORE_CONFIG } from '../config/store';
 import { CONTACT_CONFIG, buildHumanSupportWhatsAppUrl, buildAutomatedOrderWhatsAppUrl } from '../config/contacts';
 import { formatPKR } from '../lib/pricing';
 import { useLanguage } from '../contexts/LanguageContext';
+import { getLocalized } from '../utils/localize';
 
 export interface OrderSuccessSnapshot {
   orderId: string;
@@ -32,7 +33,7 @@ export interface OrderSuccessSnapshot {
 export default function OrderSuccessPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { t, isRtl } = useLanguage();
+  const { t, isRtl, language } = useLanguage();
   const [order, setOrder] = useState<OrderSuccessSnapshot | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -65,7 +66,7 @@ export default function OrderSuccessPage() {
             city: parsed.city || parsed.customer?.city || 'Lahore',
             deliverySlot: parsed.deliverySlot || parsed.customer?.deliverySlot || 'Fastest Dispatch',
             items: (parsed.items || []).map((it: any) => ({
-              name: it.name,
+              name: getLocalized(it, 'name', language),
               selectedWeight: it.selectedWeight,
               quantity: it.quantity,
               price: it.price || it.unitPrice || 0,
@@ -87,7 +88,7 @@ export default function OrderSuccessPage() {
     }
 
     setIsLoaded(true);
-  }, [location.state]);
+  }, [location.state, language]);
 
   if (!isLoaded) {
     return (

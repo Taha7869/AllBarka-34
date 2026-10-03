@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, MessageCircle, Instagram, ShieldCheck, Truck, Sparkles, ArrowRight } from 'lucide-react';
+import { MapPin, MessageCircle, Instagram, ShieldCheck, Truck, Sparkles, ArrowRight, Bell } from 'lucide-react';
 import { FaFacebookF } from 'react-icons/fa';
 import { useLanguage } from '../contexts/LanguageContext';
 import { AllBarkaCrestVector } from './AllBarkaLogo';
@@ -35,14 +35,14 @@ export default function Footer() {
           <p>{t('footer.statementCopy')}</p>
           <Link to="/gifting" className="site-footer-editorial-link">{t('footer.gifts')} <ArrowRight size={17}/></Link>
         </div>
-        <div className="site-footer-newsletter"><NewsletterCard /></div>
+        <div className="site-footer-newsletter"><NewsletterCard /><button type="button" className="footer-updates-entry focus-ring" onClick={() => window.dispatchEvent(new CustomEvent('open-store-updates'))}><Bell size={17}/><span dir="auto">{t('updates.open')}</span></button></div>
       </div>
       <div className="site-footer-rule" aria-hidden="true"><span>✦</span></div>
       <div className="site-footer-grid">
         <div className="site-footer-brand">
           <Link to="/" className="site-footer-logo"><AllBarkaCrestVector /><span><strong>AllBarka</strong><small>LUXURY HARVESTS</small></span></Link>
           <p>{t('footerStory')}</p>
-          <div className="site-footer-contact"><MapPin size={16}/><span>Gulberg III & DHA Phase 5, Lahore, Pakistan</span></div>
+          <div className="site-footer-contact"><MapPin size={16}/><span dir="ltr">{CONTACT_CONFIG.boutiqueAddress}</span></div>
           <a className="site-footer-contact" href={buildHumanSupportWhatsAppUrl()} target="_blank" rel="noreferrer"><MessageCircle size={16}/><span dir="ltr">WhatsApp: {CONTACT_CONFIG.humanSupportWhatsApp.formatted}</span></a>
           <div className="site-footer-social"><a href={buildHumanSupportWhatsAppUrl()} target="_blank" rel="noreferrer" aria-label="WhatsApp"><MessageCircle size={17}/></a><a href={STORE_CONFIG.social.instagramUrl} target="_blank" rel="noreferrer" aria-label="Instagram"><Instagram size={17}/></a><a href={STORE_CONFIG.social.facebookUrl} target="_blank" rel="noreferrer" aria-label="Facebook"><FaFacebookF size={16}/></a></div>
         </div>

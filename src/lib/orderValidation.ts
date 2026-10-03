@@ -1,15 +1,10 @@
 import { PRODUCTS } from '../data/products';
 import { calculateOrderSummary, PricingSummary } from './pricing';
 import { ShippingMethodId } from '../types.ts';
-
-export class ValidationError extends Error {
-  code: string;
-  constructor(message: string, code: string = 'VALIDATION_ERROR') {
-    super(message);
-    this.name = 'ValidationError';
-    this.code = code;
-  }
-}
+import { validateShippingCity } from './shippingPolicy';
+import { ValidationError } from './validationError';
+export { ValidationError } from './validationError';
+import { CUSTOM_HAMPER_PRODUCT_ID, hamperCartKey, resolveHamper, type HamperConfiguration } from './hamperCatalog';
 
 export interface ValidatedOrderItem {
   id: string; // composite cart item id, e.g. "pista-250g"
@@ -19,6 +14,7 @@ export interface ValidatedOrderItem {
   quantity: number;
   price: number; // authoritative price per unit in PKR
   earnedPoints: number;
+  hamperConfiguration?: HamperConfiguration;
 }
 
 export interface ValidatedOrder {
@@ -98,13 +94,7 @@ export function validateCustomerDetails(input: Partial<CustomerInput>): Customer
     throw new ValidationError('Delivery address exceeds maximum allowed length (300 characters).', 'ADDRESS_TOO_LONG');
   }
 
-  const city = typeof input.city === 'string' ? input.city.trim() : 'Lahore';
-  if (!city || city.length < 2) {
-    throw new ValidationError('Please enter a valid city name.', 'INVALID_CITY');
-  }
-  if (city.length > 60) {
-    throw new ValidationError('City name exceeds maximum allowed length (60 characters).', 'CITY_TOO_LONG');
-  }
+  const city = validateShippingCity(input.city);
 
   const paymentMethod = typeof input.paymentMethod === 'string' ? input.paymentMethod.trim().toLowerCase() : '';
   const allowedPayments = ['cod', 'bank'];
@@ -141,12 +131,14 @@ export function validateAndPriceOrder({
   discountCode,
   giftWrapping = false,
   isWholesale = false,
+  city,
 }: {
   items: any[];
   shippingMethodId: string;
   discountCode?: string | null;
   giftWrapping?: boolean;
   isWholesale?: boolean;
+  city: string;
 }): ValidatedOrder {
   if (!Array.isArray(items) || items.length === 0) {
     throw new ValidationError('Order must contain at least one item.', 'EMPTY_CART');
@@ -164,6 +156,7 @@ export function validateAndPriceOrder({
     );
   }
   const resolvedShipping = shippingMethodId as ShippingMethodId;
+  const destination = validateShippingCity(city);
 
   let totalEarnedPoints = 0;
 
@@ -174,6 +167,19 @@ export function validateAndPriceOrder({
 
     // Resolve canonical product ID
     const rawId = String(clientItem.productId || clientItem.id || '').trim();
+    if (rawId === CUSTOM_HAMPER_PRODUCT_ID) {
+      const hamper = resolveHamper(clientItem.hamperConfiguration);
+      if (!hamper) throw new ValidationError('Please rebuild this hamper with a supported box and valid harvest selections.', 'INVALID_HAMPER_CONFIGURATION');
+      const quantity = typeof clientItem.quantity === 'number' ? clientItem.quantity : Number(clientItem.quantity);
+      if (!Number.isInteger(quantity) || quantity < 1 || quantity > 50) {
+        throw new ValidationError('Invalid quantity for this hamper: must be an integer between 1 and 50 units.', 'INVALID_QUANTITY');
+      }
+      return {
+        id: hamperCartKey(hamper.configuration), productId: CUSTOM_HAMPER_PRODUCT_ID,
+        name: hamper.name_en, selectedWeight: hamper.portion, quantity,
+        price: hamper.unitPrice, earnedPoints: 0, hamperConfiguration: hamper.configuration,
+      };
+    }
     const strippedId = rawId.replace(/-(?:250g|500g|1kg|piece|box|pack|single|set)$/i, '');
     const product = PRODUCTS.find(
       p => p.id === clientItem.productId || p.id === rawId || p.id === strippedId
@@ -188,6 +194,12 @@ export function validateAndPriceOrder({
 
     const weight = String(clientItem.selectedWeight || '250g').trim();
     const allowedWeights = product.prices ? Object.keys(product.prices) : [];
+    if (allowedWeights.length > 0 && !Object.hasOwn(product.prices, weight)) {
+      throw new ValidationError(
+        `Invalid weight "${weight}" for product "${product.name_en}". Allowed weights: ${allowedWeights.join(', ')}`,
+        'INVALID_WEIGHT'
+      );
+    }
 
     let authoritativeUnitPrice = 0;
     if (isWholesale && product.wholesale) {
@@ -240,10 +252,11 @@ export function validateAndPriceOrder({
   });
 
   const summary = calculateOrderSummary({
-    items: validatedItems.map(i => ({ unitPrice: i.price, quantity: i.quantity })),
+    items: validatedItems.map(i => ({ unitPrice: i.price, quantity: i.quantity, productId: i.productId, selectedWeight: i.selectedWeight, hamperConfiguration: i.hamperConfiguration })),
     shippingMethodId: resolvedShipping,
     couponCode: discountCode,
     giftWrapping,
+    city: destination,
   });
 
   return {

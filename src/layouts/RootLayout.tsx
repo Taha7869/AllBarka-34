@@ -18,6 +18,7 @@ import StickyCartBottomBar from '../components/StickyCartBottomBar';
 import ThemeToggle from '../components/ThemeToggle';
 import type { InfoPageTab } from '../components/InfoPagesModal';
 import type { PolicyTab } from '../components/PolicyPagesModal';
+import type { CustomHamperCartInput } from '../components/CustomHamperBuilderModal';
 
 // Code-split heavy modals and overlays
 const QuickViewModal = React.lazy(() => import('../components/QuickViewModal'));
@@ -28,6 +29,7 @@ const InfoPagesModal = React.lazy(() => import('../components/InfoPagesModal'));
 const PolicyPagesModal = React.lazy(() => import('../components/PolicyPagesModal'));
 const AIConcierge = React.lazy(() => import('../components/AIConcierge'));
 const CustomHamperBuilderModal = React.lazy(() => import('../components/CustomHamperBuilderModal'));
+const StoreUpdatesDialog = React.lazy(() => import('../components/StoreUpdatesDialog'));
 
 import LahoreExpressTimer from '../components/LahoreExpressTimer';
 import { Menu, X, ShoppingBag, User, Gift, Languages, ChevronDown } from 'lucide-react';
@@ -37,12 +39,15 @@ import Breadcrumbs from '../components/Breadcrumbs';
 import { PRODUCTS, getProductImage } from '../data/products';
 import { acquireScrollLock } from '../utils/scrollLock';
 import ErrorBoundary from '../components/ErrorBoundary';
+import { useOnlineStatus } from '../hooks/useOnlineStatus';
 
 
 export default function RootLayout() {
   const navigate = useNavigate();
+  const online = useOnlineStatus();
 
   const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin/');
   const { currentUser, patronProfile, logout } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   
@@ -68,6 +73,7 @@ export default function RootLayout() {
   const [authInitialMode, setAuthInitialMode] = useState<'signin' | 'signup' | 'forgot_password'>('signin');
   const [authChoiceModalOpen, setAuthChoiceModalOpen] = useState(false);
   const [patronLoungeOpen, setPatronLoungeOpen] = useState(false);
+  const [updatesOpen, setUpdatesOpen] = useState(false);
   const [selectedQuickViewProduct, setSelectedQuickViewProduct] = useState<Product | null>(null);
 
   // Global listeners for modals
@@ -82,11 +88,14 @@ export default function RootLayout() {
       setAuthModalOpen(true);
     };
     const handleOpenLounge = () => setPatronLoungeOpen(true);
+    const handleOpenUpdates = () => setUpdatesOpen(true);
     window.addEventListener('open-auth-modal', handleOpenAuth);
     window.addEventListener('open-patron-lounge', handleOpenLounge);
+    window.addEventListener('open-store-updates', handleOpenUpdates);
     return () => {
       window.removeEventListener('open-auth-modal', handleOpenAuth);
       window.removeEventListener('open-patron-lounge', handleOpenLounge);
+      window.removeEventListener('open-store-updates', handleOpenUpdates);
     };
   }, []);
   
@@ -99,25 +108,19 @@ export default function RootLayout() {
   const [aiConciergeOpen, setAiConciergeOpen] = useState(false);
   const [hamperModalOpen, setHamperModalOpen] = useState(false);
 
-  const handleAddCustomHamper = (hamperItem: {
-    id: string;
-    name: string;
-    selectedWeight: string;
-    price: number;
-    image: string;
-    quantity: number;
-  }) => {
-    addToCart({
-      id: hamperItem.id,
-      productId: hamperItem.id,
-      slug: 'custom-hamper',
-      name: hamperItem.name,
-      selectedWeight: hamperItem.selectedWeight,
-      unitPrice: hamperItem.price,
-      price: hamperItem.price,
-      image: hamperItem.image,
-      quantity: hamperItem.quantity,
+  // Defer each overlay until first use, then retain it so drafts survive closing.
+  const [loadedOverlays, setLoadedOverlays] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    const open = { quick: !!selectedQuickViewProduct, hamper: hamperModalOpen, auth: authModalOpen,
+      checkout: authChoiceModalOpen, patron: patronLoungeOpen, info: infoModalOpen, policy: policyModalOpen, updates: updatesOpen };
+    setLoadedOverlays(previous => {
+      const newlyOpened = Object.keys(open).filter(key => open[key as keyof typeof open] && !previous[key]);
+      return newlyOpened.length ? { ...previous, ...Object.fromEntries(newlyOpened.map(key => [key, true])) } : previous;
     });
+  }, [selectedQuickViewProduct, hamperModalOpen, authModalOpen, authChoiceModalOpen, patronLoungeOpen, infoModalOpen, policyModalOpen, updatesOpen]);
+
+  const handleAddCustomHamper = (hamperItem: CustomHamperCartInput) => {
+    addToCart(hamperItem);
     setIsCartPulsing(true);
     setTimeout(() => setIsCartPulsing(false), 800);
   };
@@ -126,7 +129,8 @@ export default function RootLayout() {
     const product = PRODUCTS.find((p) => p.id === productId);
     if (!product) return;
 
-    const unitPrice = product.prices[weight] || Object.values(product.prices)[0] || 0;
+    const unitPrice = product.prices[weight];
+    if (!unitPrice || unitPrice <= 0) return;
 
     addToCart({
       id: `${product.id}-${weight}`,
@@ -145,6 +149,17 @@ export default function RootLayout() {
     setIsCartPulsing(true);
     setTimeout(() => setIsCartPulsing(false), 800);
   };
+
+  useEffect(() => {
+    const focusSearch = (event: KeyboardEvent) => {
+      if (event.key !== '/' || event.ctrlKey || event.altKey || event.metaKey) return;
+      if ((event.target instanceof Element && event.target.closest('input,textarea,select,[contenteditable="true"]')) || document.querySelector('[aria-modal="true"]')) return;
+      const search = document.querySelector<HTMLInputElement>('#hero-search-input, #category-plp-container input[type="search"]');
+      if (search) { event.preventDefault(); search.focus(); search.scrollIntoView({ block: 'center', behavior: 'instant' }); }
+    };
+    window.addEventListener('keydown', focusSearch);
+    return () => window.removeEventListener('keydown', focusSearch);
+  }, []);
 
   const handleInitiateCheckout = () => {
     setIsCartOpen(false);
@@ -169,6 +184,7 @@ export default function RootLayout() {
     authModalOpen || 
     authChoiceModalOpen || 
     patronLoungeOpen || 
+    updatesOpen ||
     selectedQuickViewProduct !== null || 
     infoModalOpen || 
     policyModalOpen || 
@@ -204,10 +220,10 @@ export default function RootLayout() {
   return (
     <div className="min-h-screen w-full max-w-full relative flex flex-col font-sans bg-[var(--color-base)] text-[var(--color-ink)] selection:bg-[var(--color-gold)]/30 selection:text-[var(--color-ink)]">
       <ToastManager />
-      <GradualBlur preset="header" strength={1.5} opacity={0.9} />
+      {!isAdminRoute && <GradualBlur preset="header" strength={1.5} opacity={0.9} />}
       
       {/* Lahore Same-Day Express Timer Bar */}
-      <LahoreExpressTimer onOpenSchedule={() => { setPolicyModalTab('shipping'); setPolicyModalOpen(true); }} />
+      {!isAdminRoute && <LahoreExpressTimer onOpenSchedule={() => { setPolicyModalTab('shipping'); setPolicyModalOpen(true); }} />}
 
       {/* Header Navigation */}
       <header 
@@ -219,7 +235,8 @@ export default function RootLayout() {
             : 'h-[68px] sm:h-20 bg-[var(--color-base)]/95 dark:bg-[var(--color-base)]/95 backdrop-blur-md shadow-none border-b border-transparent'
         }`}
       >
-        <ScrollProgressBar showGlow={false} />
+        {!online && <div role="status" className="fixed inset-x-0 top-0 z-[20000] border-b border-[#c7982f] bg-[#092e23] px-4 py-2 text-center text-xs text-[#fff8e9]">{t('checkout.offline')}</div>}
+      {!isAdminRoute && <ScrollProgressBar showGlow={false} />}
         <div className="w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 h-full flex flex-col justify-center">
           <div className="flex justify-between items-center gap-2 sm:gap-4 w-full h-full">
             
@@ -239,7 +256,7 @@ export default function RootLayout() {
             </div>
             
             {/* Center Navigation (Desktop Only) */}
-            <div className="hidden lg:flex flex-1 justify-center px-4">
+            <div className="hidden xl:flex flex-1 justify-center px-4">
               <BubbleMenu 
                 activeItem={activeNavItem} 
                 onItemClick={(item) => navigate(item.path)} 
@@ -339,7 +356,7 @@ export default function RootLayout() {
                 id="mobile-menu-trigger-btn"
                 type="button"
                 onClick={() => setMobileMenuOpen(true)} 
-                className="lg:hidden min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-[#29231D] dark:text-[#FFFCF7] hover:bg-[#C7982F]/15 border border-[#29231D]/10 dark:border-[#C7982F]/25 transition-colors focus-ring cursor-pointer"
+                className="xl:hidden min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-[#29231D] dark:text-[#FFFCF7] hover:bg-[#C7982F]/15 border border-[#29231D]/10 dark:border-[#C7982F]/25 transition-colors focus-ring cursor-pointer"
                 aria-label={t('nav.openMenu')}
                 aria-expanded={mobileMenuOpen}
                 aria-controls="mobile-navigation-menu"
@@ -368,9 +385,9 @@ export default function RootLayout() {
 
       <main className="flex-1 w-full relative z-10 flex flex-col items-center">
         {/* Shared Breadcrumb Navigation for all subpages (hidden on homepage) */}
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {!isAdminRoute && <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <Breadcrumbs />
-        </div>
+        </div>}
         
         <ErrorBoundary>
           <React.Suspense
@@ -384,8 +401,7 @@ export default function RootLayout() {
             }
           >
             <div className="w-full flex justify-center">
-              <AnimatePresence mode="wait">
-                {prefersReducedMotion ? (
+                {prefersReducedMotion || location.pathname === '/checkout' || location.pathname === '/cart' ? (
                   <div key={location.pathname} className="w-full flex-col flex items-center">
                     <Outlet context={{ cartItems, addToCart, handleAddToCart, setCartOpen: setIsCartOpen, setSelectedQuickViewProduct, setHamperModalOpen }} />
                   </div>
@@ -395,24 +411,22 @@ export default function RootLayout() {
                     variants={pageTransitionVariants}
                     initial="initial"
                     animate="enter"
-                    exit="exit"
                     className="w-full flex-col flex items-center origin-top bg-[var(--color-base)]"
                   >
                     <Outlet context={{ cartItems, addToCart, handleAddToCart, setCartOpen: setIsCartOpen, setSelectedQuickViewProduct, setHamperModalOpen }} />
                   </motion.div>
                 )}
-              </AnimatePresence>
             </div>
           </React.Suspense>
         </ErrorBoundary>
 
       </main>
 
-      <Footer />
-      <BackToTop hide={isAnyModalOrDrawerOpen} hasCartBar={totalItemsCount > 0 && location.pathname !== '/checkout' && location.pathname !== '/cart'} />
+      {!isAdminRoute && <Footer />}
+      <BackToTop hide={isAdminRoute || isAnyModalOrDrawerOpen} hasCartBar={totalItemsCount > 0 && location.pathname !== '/checkout' && location.pathname !== '/cart'} />
       
       <StickyCartBottomBar 
-        hide={isAnyModalOrDrawerOpen}
+        hide={isAdminRoute || isAnyModalOrDrawerOpen}
       />
       
       {/* Drawer & Modals */}
@@ -422,15 +436,18 @@ export default function RootLayout() {
         onCheckout={handleInitiateCheckout}
       />
       {/* Lazy Overlays & Modals */}
+      <React.Suspense fallback={authModalOpen ? <div className="fixed inset-0 z-[20000] flex items-center justify-center bg-[#042821]/60 p-4 backdrop-blur-sm"><div className="flex items-center gap-5 rounded-2xl border border-[var(--color-border-accent)] bg-[var(--color-surface)] p-5 text-[var(--color-text-primary)]"><p role="status" dir="auto">{t('auth.working')}</p><button type="button" className="focus-ring grid h-11 w-11 place-items-center rounded-full border border-[var(--color-border)]" aria-label={t('close')} onClick={() => setAuthModalOpen(false)}><X size={18} /></button></div></div> : null}>
+        {(authModalOpen || loadedOverlays.auth) && <AuthModal isOpen={authModalOpen} initialMode={authInitialMode} onClose={() => setAuthModalOpen(false)} />}
+      </React.Suspense>
       <React.Suspense fallback={null}>
-        <QuickViewModal product={selectedQuickViewProduct} isWholesale={false} isOpen={!!selectedQuickViewProduct} onClose={() => setSelectedQuickViewProduct(null)} onAddToCart={handleAddToCart} />
-        <CustomHamperBuilderModal isOpen={hamperModalOpen} onClose={() => setHamperModalOpen(false)} onAddToCart={handleAddCustomHamper} />
-        <AuthModal isOpen={authModalOpen} initialMode={authInitialMode} onClose={() => setAuthModalOpen(false)} />
-        <CheckoutAuthChoiceModal isOpen={authChoiceModalOpen} onClose={() => setAuthChoiceModalOpen(false)} onSignIn={() => { setAuthChoiceModalOpen(false); setAuthModalOpen(true); }} onContinueAsGuest={() => { setAuthChoiceModalOpen(false); navigate('/checkout'); }} />
-        <PatronLoungeModal isOpen={patronLoungeOpen} onClose={() => setPatronLoungeOpen(false)} />
-        <InfoPagesModal isOpen={infoModalOpen} initialTab={infoModalTab} onClose={() => setInfoModalOpen(false)} />
-        <PolicyPagesModal isOpen={policyModalOpen} initialTab={policyModalTab} onClose={() => setPolicyModalOpen(false)} />
-        <AIConcierge hide={isAnyModalOrDrawerOpen && !aiConciergeOpen} hasCartBar={totalItemsCount > 0 && location.pathname !== '/checkout' && location.pathname !== '/cart'} onOpenChange={setAiConciergeOpen} />
+        {(!!selectedQuickViewProduct || loadedOverlays.quick) && <QuickViewModal product={selectedQuickViewProduct} isOpen={!!selectedQuickViewProduct} onClose={() => setSelectedQuickViewProduct(null)} onAddToCart={handleAddToCart} />}
+        {(hamperModalOpen || loadedOverlays.hamper) && <CustomHamperBuilderModal isOpen={hamperModalOpen} onClose={() => setHamperModalOpen(false)} onAddToCart={handleAddCustomHamper} />}
+        {(authChoiceModalOpen || loadedOverlays.checkout) && <CheckoutAuthChoiceModal isOpen={authChoiceModalOpen} onClose={() => setAuthChoiceModalOpen(false)} onSignIn={() => { setAuthChoiceModalOpen(false); setAuthModalOpen(true); }} onContinueAsGuest={() => { setAuthChoiceModalOpen(false); navigate('/checkout'); }} />}
+        {(patronLoungeOpen || loadedOverlays.patron) && <PatronLoungeModal isOpen={patronLoungeOpen} onClose={() => setPatronLoungeOpen(false)} />}
+        {(updatesOpen || loadedOverlays.updates) && <StoreUpdatesDialog isOpen={updatesOpen} onClose={() => setUpdatesOpen(false)} onSignIn={() => { setUpdatesOpen(false); setAuthInitialMode('signin'); setAuthModalOpen(true); }} />}
+        {(infoModalOpen || loadedOverlays.info) && <InfoPagesModal isOpen={infoModalOpen} initialTab={infoModalTab} onClose={() => setInfoModalOpen(false)} />}
+        {(policyModalOpen || loadedOverlays.policy) && <PolicyPagesModal isOpen={policyModalOpen} initialTab={policyModalTab} onClose={() => setPolicyModalOpen(false)} />}
+        {!isAdminRoute && <AIConcierge hide={isAnyModalOrDrawerOpen && !aiConciergeOpen} hasCartBar={totalItemsCount > 0 && location.pathname !== '/checkout' && location.pathname !== '/cart'} onOpenChange={setAiConciergeOpen} />}
       </React.Suspense>
     </div>
   );

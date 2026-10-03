@@ -1,74 +1,111 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useReducedMotion } from 'motion/react';
+
+export interface LogoItem {
+  node?: React.ReactNode;
+  src?: string;
+  alt?: string;
+  title: string;
+  href?: string;
+}
 
 interface LogoLoopProps {
-  logos?: string[];
+  logos: LogoItem[];
   direction?: 'left' | 'right';
   fadeOut?: boolean;
   fadeOutColor?: string;
-  speed?: number; // duration in seconds
+  /** Pixels per second, matching the supplied React Bits component. */
+  speed?: number;
+  logoHeight?: number;
+  gap?: number;
+  paused?: boolean;
+  ariaLabel: string;
+  className?: string;
+  renderItem?: (item: LogoItem, key: string, duplicate: boolean) => React.ReactNode;
 }
 
-export default function LogoLoop({
-  logos = [
-    "Visa",
-    "Mastercard",
-    "Raast Instant Pay",
-    "HBL Pay",
-    "Bank Alfalah (Alfa)",
-    "Trax Logistics",
-    "Leopards Courier",
-    "Cash on Delivery",
-    "Meezan Bank",
-    "Faysal Bank"
-  ],
-  direction = 'left',
-  fadeOut = true,
-  fadeOutColor = "#FFFFFF",
-  speed = 28
-}: LogoLoopProps) {
-  // Duplicate logos list to ensure perfect infinite looping without empty gaps
-  const items = [...logos, ...logos, ...logos, ...logos];
+/** A measured, seamless collection ribbon with one keyboard-accessible sequence. */
+export default function LogoLoop({ logos, direction = 'left', fadeOut = true, fadeOutColor,
+  speed = 26, logoHeight = 28, gap = 36, paused = false, ariaLabel, className = '', renderItem }: LogoLoopProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const sequenceRef = useRef<HTMLUListElement>(null);
+  const reduceMotion = useReducedMotion();
+  const [sequenceWidth, setSequenceWidth] = useState(0);
+  const [copyCount, setCopyCount] = useState(2);
+  const [visible, setVisible] = useState(false);
+  const [documentVisible, setDocumentVisible] = useState(true);
+  const [focused, setFocused] = useState(false);
+  const [hovered, setHovered] = useState(false);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    const sequence = sequenceRef.current;
+    if (!container || !sequence) return;
+    const measure = () => {
+      const width = sequence.getBoundingClientRect().width;
+      if (width <= 0) return;
+      setSequenceWidth(width);
+      setCopyCount(Math.min(12, Math.max(2, Math.ceil(container.clientWidth / width) + 2)));
+    };
+    measure();
+    const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    resizeObserver?.observe(container);
+    resizeObserver?.observe(sequence);
+    window.addEventListener('resize', measure);
+    sequence.addEventListener('load', measure, true);
+    return () => { resizeObserver?.disconnect(); window.removeEventListener('resize', measure); sequence.removeEventListener('load', measure, true); };
+  }, [logos, gap, logoHeight]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    if (typeof IntersectionObserver === 'undefined') { setVisible(true); return; }
+    const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting));
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const onVisibility = () => setDocumentVisible(document.visibilityState !== 'hidden');
+    onVisibility();
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, []);
+
+  const stationary = !!reduceMotion || focused || speed === 0;
+  const style = {
+    '--logoloop-gap': `${gap}px`, '--logoloop-height': `${logoHeight}px`,
+    '--logoloop-distance': `${sequenceWidth}px`,
+    '--logoloop-duration': `${Math.max(1, sequenceWidth / Math.max(1, Math.abs(speed)))}s`,
+    '--logoloop-direction': direction === 'right' ? 'reverse' : 'normal',
+    '--logoloop-state': paused || hovered || !visible || !documentVisible || stationary ? 'paused' : 'running',
+    ...(fadeOutColor ? { '--logoloop-fade': fadeOutColor } : {}),
+  } as React.CSSProperties;
 
   return (
-    <div className="relative w-full overflow-hidden py-4 select-none">
-      {/* Optional Fade Out Edges for Luxury Seamless Flow */}
-      {fadeOut && (
-        <>
-          <div
-            className="absolute left-0 top-0 bottom-0 w-16 sm:w-32 z-10 pointer-events-none"
-            style={{
-              background: `linear-gradient(to right, ${fadeOutColor}, transparent)`
-            }}
-          />
-          <div
-            className="absolute right-0 top-0 bottom-0 w-16 sm:w-32 z-10 pointer-events-none"
-            style={{
-              background: `linear-gradient(to left, ${fadeOutColor}, transparent)`
-            }}
-          />
-        </>
-      )}
-
-      {/* Scrolling Marquee Container */}
-      <div className="flex w-max items-center">
-        <div
-          className="flex gap-4 sm:gap-6 whitespace-nowrap px-6 items-center"
-          style={{
-            animation: `marquee-${direction} ${speed}s linear infinite`
-          }}
-        >
-          {items.map((logo, index) => (
-            <div
-              key={index}
-              className="group flex items-center gap-2.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl bg-[var(--color-cream,#FAF9F5)] border border-[var(--color-gold,#B8935F)]/35 hover:border-[var(--color-gold,#B8935F)] shadow-xs hover:shadow-md transition-all duration-300 hover:scale-105"
-            >
-              <span className="text-[var(--color-gold,#B8935F)] text-sm font-serif">⚜</span>
-              <span className="text-[var(--color-ink,#1A1A1A)] text-xs sm:text-sm font-serif font-black tracking-wider uppercase group-hover:text-[var(--color-gold,#B8935F)] transition-colors">
-                {logo}
-              </span>
-            </div>
-          ))}
-        </div>
+    <div ref={containerRef} dir="ltr" className={`logoloop ${fadeOut ? 'logoloop--fade' : ''} ${stationary ? 'logoloop--static' : ''} ${className}`}
+      style={style} role="region" aria-label={ariaLabel}
+      onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
+      onFocusCapture={() => setFocused(true)} onBlurCapture={event => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          event.currentTarget.scrollLeft = 0;
+          setFocused(false);
+        }
+      }}>
+      <div className="logoloop__track">
+        {Array.from({ length: stationary ? 1 : copyCount }, (_, copyIndex) => (
+          <ul key={copyIndex} className="logoloop__list" aria-hidden={copyIndex > 0 ? true : undefined} ref={copyIndex === 0 ? sequenceRef : undefined}>
+            {logos.map((item, itemIndex) => {
+              const key = `${copyIndex}-${itemIndex}`;
+              const duplicate = copyIndex > 0;
+              const content = item.node ?? <img src={item.src} alt={duplicate ? '' : (item.alt ?? item.title)} height={logoHeight} loading="lazy" decoding="async" draggable={false} />;
+              return <li className="logoloop__item" key={key}>{renderItem ? renderItem(item, key, duplicate)
+                : item.href ? <a className="logoloop__link" href={item.href} aria-label={item.title} tabIndex={duplicate ? -1 : undefined}>
+                  <span className="logoloop__node" aria-hidden="true">{content}</span>
+                </a> : <span className="logoloop__node">{content}</span>}</li>;
+            })}
+          </ul>
+        ))}
       </div>
     </div>
   );

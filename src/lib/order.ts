@@ -100,6 +100,7 @@ export async function placeOrder(payload: OrderPayload): Promise<OrderResponse> 
           selectedWeight: item.selectedWeight,
           quantity: item.quantity,
           price: item.unitPrice ?? item.price,
+          hamperConfiguration: item.hamperConfiguration,
         })),
         shippingMethodId: payload.shippingMethodId,
         discountCode: payload.discountCode || null,
@@ -200,13 +201,16 @@ export async function placeOrder(payload: OrderPayload): Promise<OrderResponse> 
  */
 export async function getOrderQuote(params: {
   items: CartItem[];
+  city: string;
   shippingMethodId: string;
   discountCode?: string | null;
   rewardId?: string | null;
   giftWrapping?: boolean;
   isWholesale?: boolean;
   authToken?: string | null;
-}): Promise<{ success: boolean; totals?: any; items?: any[]; earnedPoints?: number; error?: string }> {
+}): Promise<{ success: boolean; totals?: any; items?: any[]; earnedPoints?: number; error?: string; code?: string }> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 12000);
   try {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -227,18 +231,28 @@ export async function getOrderQuote(params: {
           selectedWeight: item.selectedWeight,
           quantity: item.quantity,
           price: item.unitPrice ?? item.price,
+          hamperConfiguration: item.hamperConfiguration,
         })),
+        city: params.city,
         shippingMethodId: params.shippingMethodId,
         discountCode: params.discountCode || null,
         rewardId: params.rewardId || null,
         giftWrapping: Boolean(params.giftWrapping),
         isWholesale: Boolean(params.isWholesale),
       }),
+      signal: controller.signal,
     });
 
-    const data = await res.json().catch(() => ({}));
+    const data = await res.json();
+    if (!data || typeof data !== 'object') return { success: false, code: 'INVALID_QUOTE', error: 'The price check returned an invalid response. Please retry.' };
     if (!res.ok) {
-      return { success: false, error: data.error || 'Failed to calculate quote' };
+      return { success: false, code: data.code || `HTTP_${res.status}`, error: data.error || 'Failed to calculate quote' };
+    }
+    const totals = data.totals;
+    if (data.success !== true || !totals || !['subtotal', 'discount', 'discountedSubtotal', 'shipping', 'giftWrapFee', 'total'].every(key => typeof totals[key] === 'number' && Number.isFinite(totals[key]) && totals[key] >= 0)
+      || totals.discount > totals.subtotal || Math.abs(totals.subtotal - totals.discount - totals.discountedSubtotal) > 1
+      || Math.abs(totals.discountedSubtotal + totals.shipping + totals.giftWrapFee - totals.total) > 1) {
+      return { success: false, code: 'INVALID_QUOTE', error: 'The price check returned inconsistent totals. Please retry.' };
     }
     return {
       success: true,
@@ -247,7 +261,10 @@ export async function getOrderQuote(params: {
       earnedPoints: data.earnedPoints,
     };
   } catch (e: any) {
-    return { success: false, error: e.message || 'Quote service unreachable' };
+    if (e?.name === 'AbortError') return { success: false, code: 'TIMEOUT', error: 'The price check timed out. Please retry.' };
+    return { success: false, code: 'NETWORK_ERROR', error: e.message || 'Quote service unreachable' };
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 

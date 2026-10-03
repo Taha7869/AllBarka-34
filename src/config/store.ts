@@ -29,7 +29,9 @@ export const STORE_CONFIG = {
   shipping: {
     standardRate: 150,
     freeThreshold: 3000,
-    expressRate: 350
+    expressRate: 350,
+    nationwideMinimum: 250,
+    nationwidePerKg: 250
   }
 };
 

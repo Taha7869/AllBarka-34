@@ -9,6 +9,7 @@ import { useLanguage } from "../contexts/LanguageContext";
 
 export function AllBarkaMovingReviews() {
   const { t } = useLanguage();
+  const average = REVIEWS.length ? REVIEWS.reduce((sum, review) => sum + review.rating, 0) / REVIEWS.length : 0;
 
   // Map authentic Lahore reviews into MovingReviewItem format
   const marqueeItems: MovingReviewItem[] = REVIEWS.map((rev) => ({
@@ -49,8 +50,8 @@ export function AllBarkaMovingReviews() {
           {/* Grounded Trust Bar */}
           <div className="pt-2 flex flex-wrap items-center justify-center gap-2 text-xs">
             <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-ink)] shadow-xs">
-              <PeekRating value={4.9} size={12} className="text-[var(--color-gold)]" />
-              <span className="text-[var(--color-ink-muted)] text-[11px] font-semibold">• {t('100plusReviews', '100+ Lahore Reviews')}</span>
+              <PeekRating value={average} size={12} className="text-[var(--color-gold)]" />
+              <span className="text-[var(--color-ink-muted)] text-[11px] font-semibold">• {REVIEWS.length} {t('shop.reviewCount', 'published reviews')}</span>
             </div>
 
             <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-ink-muted)] text-[11px] font-semibold shadow-xs">

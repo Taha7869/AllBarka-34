@@ -10,9 +10,9 @@ Before deploying, run `npm run typecheck`, `npm run build`, `npm run test:backen
 
 1. Push this updated source to your GitHub repository, then connect that repository to a Railway service.
 2. Add the environment variables below before building. Generate a public Railway domain and set APP_URL to its HTTPS URL. Set NODE_ENV=production.
-3. Add the Railway/custom domain to Firebase Authentication → Settings → Authorized domains. Enable the sign-in providers you use, including Phone for OTP. Keep your existing Firestore rules and admin permissions.
+3. Add the Railway/custom domain to Firebase Authentication → Settings → Authorized domains. Enable Email/Password and Google. Keep Phone disabled, in line with the customer's requested login methods. Keep your existing Firestore rules and admin permissions. See [AUTHENTICATION.md](AUTHENTICATION.md) for the customer flows and exact web configuration steps.
 4. Deploy and open `/api/commerce/readiness`. `durablePersistenceReady` and `authActive` must both be true before accepting customer orders. `/api/health` only confirms the process is running.
-5. Verify one authorized test order, receipt recovery, login/OTP and the patron account using your own test account, then make the storefront available to customers.
+5. Verify one authorized test order, receipt recovery, email/Google login and the patron account using your own test account, then make the storefront available to customers.
 
 ## Required server variables
 
@@ -38,6 +38,6 @@ The footer newsletter submits to the existing `/api/newsletter/subscribe` endpoi
 
 ## What this update preserves
 
-Product catalogue and sizes, prices, server price validation, coupons, shipping rules, cart, quick view, three-step checkout, gift options, auth/OTP, patron lounge, rewards, admin orders, Urdu/Arabic, dark mode, and concierge remain in the source. Live Firebase/OTP/payment/order processing needs the existing production configuration; a local visual preview does not verify those integrations.
+Product catalogue and sizes, prices, server price validation, coupons, shipping rules, cart, quick view, three-step checkout, gift options, email/Google authentication, patron lounge, rewards, admin orders, Urdu/Arabic, dark mode, and concierge remain in the source. Live Firebase authentication, payment and order processing need the existing production configuration; a local visual preview does not verify those integrations.
 
 Reference: https://docs.railway.com/config-as-code/reference and https://docs.railway.com/builds/build-and-start-commands

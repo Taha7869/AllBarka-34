@@ -98,19 +98,22 @@
 /* Centered heritage hero: the existing still-life image keeps its clear center for copy. */
 .heritage-hero {
   position: relative;
+  width: 100%;
+  min-width: 0;
   isolation: isolate;
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: min(760px, calc(100svh - 110px));
   padding: 92px 20px 60px;
-  overflow: hidden;
+  overflow: visible;
+  z-index: 2;
   background: #0b3025;
   color: #fffaf0;
 }
 .heritage-hero-background,
 .heritage-hero-wash { position: absolute; inset: 0; pointer-events: none; }
-.heritage-hero-background { z-index: -2; }
+.heritage-hero-background { z-index: -2; overflow: hidden; }
 .heritage-hero-background img {
   width: 100%; height: 100%; object-fit: cover;
   animation: kenBurns 20s ease-in-out infinite alternate;
@@ -124,11 +127,11 @@
   display: flex; flex-direction: column; align-items: center;
   width: min(100%, 1000px); text-align: center;
 }
-.heritage-hero-brand { margin-bottom: 46px; }
+.heritage-hero-brand { margin-bottom: 32px; }
 .heritage-hero-title {
   max-width: 900px;
   font-family: var(--font-display, Georgia, serif);
-  font-size: clamp(2.45rem, 4.5vw, 4.05rem);
+  font-size: clamp(2.45rem, 5vw, 4.6rem);
   line-height: 1.13; font-weight: 600; letter-spacing: -.035em;
   text-wrap: balance;
   text-shadow: 0 2px 20px rgba(0, 0, 0, .25);
@@ -140,7 +143,7 @@
   color: #f5f0e5; text-wrap: pretty;
 }
 .heritage-hero-search-wrap { position: relative; z-index: 5; width: min(100%, 590px); margin-top: 32px; }
-.heritage-hero-suggestions { text-align: start; }
+.heritage-hero-suggestions { text-align: start; max-height: min(390px, 55svh); overflow-y: auto; overscroll-behavior: contain; }
 .heritage-hero-pills { width: min(100%, 860px); margin-top: 25px; }
 .heritage-hero-language {
   position: absolute; z-index: 6; top: 19px; inset-inline-end: 24px;
@@ -151,7 +154,7 @@
   backdrop-filter: blur(10px);
 }
 .heritage-hero-language-button {
-  min-width: 48px; min-height: 40px; padding: 5px 11px;
+  min-width: 48px; min-height: 44px; padding: 5px 11px;
   border-radius: 999px; color: #fff8e9; font-size: .77rem; font-weight: 600;
   transition: background .2s, color .2s;
 }
@@ -167,7 +170,7 @@
   .heritage-hero-wash { background: rgba(3, 32, 25, .58); }
   .heritage-hero-language { top: 14px; inset-inline-end: 50%; transform: translateX(50%); }
   [dir="rtl"] .heritage-hero-language { transform: translateX(-50%); }
-  .heritage-hero-language-button { min-height: 42px; padding-inline: 9px; }
+  .heritage-hero-language-button { min-height: 44px; padding-inline: 9px; }
   .heritage-hero-brand { margin-bottom: 28px; }
   .heritage-hero-title { font-size: clamp(2.15rem, 9vw, 3.3rem); line-height: 1.15; }
   .heritage-hero-description { max-width: 34ch; margin-top: 18px; font-size: .92rem; }

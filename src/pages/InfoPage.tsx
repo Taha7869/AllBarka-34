@@ -93,7 +93,7 @@ const PAGES: Record<InfoPageTab, PageData> = {
     id: 'lahore-boutique',
     category: 'discover',
     categoryLabel: '✦ Discover AllBarka',
-    navTitle: 'Lahore Boutique',
+    navTitle: 'AllBarka Boutique',
     badge: 'Local Roots',
     headline: 'Rooted in the Heart of Lahore.',
     content: `AllBarka was born out of Lahore’s timeless appreciation for hospitality, rich feasts, and meaningful gifting. We understand that in our city, sharing dry fruits is an act of warmth and tradition. Operating from our temperature-controlled facility in Lahore, we handle every batch with pristine precision before it reaches your home. Whether you're assembling a bespoke wedding gift tray in Gulberg or ordering daily vitality essentials in DHA, we bring world-class boutique service right to your doorstep.`,

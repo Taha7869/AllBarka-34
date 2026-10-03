@@ -26,6 +26,7 @@ async function runBackendTests() {
   // 1. Test Order Validation & Pricing Engine
   test('Order Validation: Prices valid dry fruit cart correctly', () => {
     const validated = validateAndPriceOrder({
+      city: 'Lahore',
       items: [
         { id: 'pista', selectedWeight: '500g', quantity: 1 }
       ],
@@ -38,6 +39,7 @@ async function runBackendTests() {
 
   test('Order Validation: Free shipping threshold at >= Rs. 3000', () => {
     const validated = validateAndPriceOrder({
+      city: 'Lahore',
       items: [
         { id: 'pista', selectedWeight: '1kg', quantity: 1 }
       ],

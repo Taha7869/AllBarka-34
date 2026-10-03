@@ -9,12 +9,14 @@
  * - Same-Day Fee:
  *     - Rs. 500 when authoritative order total (before shipping) <= Rs. 3,000.
  *     - Rs. 300 when authoritative order total (before shipping) > Rs. 3,000.
- * - Standard Shipping: Rs. 150 (Free if order subtotal >= Rs. 3,000).
- * - Express Shipping: Rs. 350 (Priority Dispatch).
+ * - Lahore Standard: Rs. 150 (Free if discounted merchandise subtotal >= Rs. 3,000).
+ * - Lahore Express: Rs. 350 (Priority Dispatch).
+ * - Outside Lahore: Rs. 250 per billed kilogram, minimum Rs. 250, for all methods.
  * - Sunday / Post-Cutoff Rollover:
  *     - Orders after 6:00 PM on Saturday or anytime Sunday are scheduled for Monday.
  *     - Orders after 6:00 PM Monday-Friday are scheduled for the next operating day.
  */
+import { calculateShipping, isLahoreCity } from './shippingPolicy';
 
 export interface KarachiTimeParts {
   year: number;
@@ -128,15 +130,19 @@ export function calculateDeliverySchedule({
   shippingMethodId = 'standard',
   city = 'Lahore',
   orderSubtotalNet = 0,
+  giftWrapFee = 0,
+  shippingWeightGrams,
   orderTimestamp = new Date(),
 }: {
   shippingMethodId?: 'standard' | 'express' | 'sameday';
   city?: string;
   orderSubtotalNet?: number;
+  giftWrapFee?: number;
+  shippingWeightGrams?: number | null;
   orderTimestamp?: Date | number | string;
 }): DeliveryScheduleResult {
   const kt = getKarachiTime(orderTimestamp);
-  const isLahore = city.trim().toLowerCase() === 'lahore';
+  const isLahore = isLahoreCity(city);
   const isOperatingDay = kt.dayOfWeek >= 1 && kt.dayOfWeek <= 6; // Mon-Sat
   // Cutoff is 6:00 PM (18:00). 18:00 is eligible; 18:01 is past cutoff.
   const isBeforeCutoff = isOperatingDay && (kt.hour < 18 || (kt.hour === 18 && kt.minute === 0));
@@ -182,17 +188,7 @@ export function calculateDeliverySchedule({
     }
   }
 
-  // Calculate Shipping Fee
-  let shippingFee = 0;
-  if (shippingMethodId === 'sameday') {
-    // Same-day fee: Rs. 500 if orderSubtotalNet <= 3000, Rs. 300 if orderSubtotalNet > 3000
-    shippingFee = orderSubtotalNet <= 3000 ? 500 : 300;
-  } else if (shippingMethodId === 'express') {
-    shippingFee = 350;
-  } else {
-    // Standard shipping: Rs. 150 (Free if orderSubtotalNet >= 3000)
-    shippingFee = orderSubtotalNet >= 3000 ? 0 : 150;
-  }
+  const shippingFee = calculateShipping(orderSubtotalNet, shippingMethodId, giftWrapFee, city, shippingWeightGrams);
 
   const monthStr = scheduledMonth.toString().padStart(2, '0');
   const dayStr = scheduledDay.toString().padStart(2, '0');

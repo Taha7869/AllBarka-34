@@ -1,13 +1,18 @@
-import React, { useMemo, useState } from 'react';
+import { searchCatalog, startingPrice } from '../lib/catalogDiscovery';
+import React, { lazy, Suspense, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Languages, ArrowRight } from 'lucide-react';
+import { Languages, ArrowRight, Compass, ArrowDown } from 'lucide-react';
 import { useLanguage, type LanguageCode } from '../contexts/LanguageContext';
 import { AllBarkaFullLogo } from './AllBarkaLogo';
 import CategoryQuickPills from './CategoryQuickPills';
+import GradientText from './GradientText';
 import PlaceholdersAndVanishInput from './ui/placeholders-and-vanish-input';
-import { PRODUCTS, getProductImage } from '../data/products';
+import { PRODUCTS } from '../data/products';
+import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { getLocalized } from '../utils/localize';
 import './AllBarkaHero.css';
+
+const SelectionGuide = lazy(() => import('./SelectionGuide'));
 
 interface AllBarkaHeroProps {
   onOpenCart?: () => void;
@@ -23,17 +28,13 @@ const LANGUAGES: { code: LanguageCode; label: string }[] = [
 
 export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps = {}) {
   const { t, language, isRtl, setLanguage } = useLanguage();
+  const mediaCover = useProductMediaCover();
   const [query, setQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [selected, setSelected] = useState('all');
-  const suggestions = useMemo(() => {
-    const term = query.trim().toLocaleLowerCase();
-    if (!term) return [];
-    return PRODUCTS.filter(product =>
-      [product.name_en, product.name_ur, product.name_ar, product.category, ...product.keywords]
-        .some(value => value?.toLocaleLowerCase().includes(term))
-    ).slice(0, 5);
-  }, [query]);
+  const [guideOpen, setGuideOpen] = useState(false);
+  const guideOpener = useRef<HTMLButtonElement>(null);
+  const suggestions = useMemo(() => query.trim() ? searchCatalog(PRODUCTS, query).slice(0, 5) : [], [query]);
 
   const placeholders = [
     t('searchPlaceholder1'),
@@ -76,9 +77,13 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
         <AllBarkaFullLogo size="md" variant="light" as="span" className="heritage-hero-brand" />
         <h1 className="heritage-hero-title">
           {t('heroHeadlinePart1')}{' '}
-          <em>{t('heroHeadlinePart2')}</em>
+          <em><GradientText colors={['#e4c783', '#fff0bd', '#d7b263', '#fff0bd', '#e4c783']} animationSpeed={12}>{t('heroHeadlinePart2')}</GradientText></em>
         </h1>
         <p className="heritage-hero-description">{t('heroSubtitle')}</p>
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+          <Link to="/shop" className="focus-ring inline-flex min-h-12 items-center gap-3 rounded-full bg-[#e4c783] px-7 text-xs font-semibold text-[#092e23] transition-colors hover:bg-[#f1dca9]">{t('boutique.shop')}<ArrowRight size={16} /></Link>
+          <Link to="/gifting" className="focus-ring inline-flex min-h-12 items-center gap-3 rounded-full border border-[#e4c783]/50 px-6 text-xs font-semibold text-[#fff8e9] transition-colors hover:bg-white/10">{t('boutique.gifting')}</Link>
+        </div>
 
         <div
           className="heritage-hero-search-wrap"
@@ -88,9 +93,12 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
           }}
           onKeyDownCapture={event => {
             if (event.key === 'Escape') setSearchOpen(false);
-            if (event.key === 'ArrowDown' && suggestions.length && event.target instanceof HTMLInputElement) {
+            if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && suggestions.length) {
+              const links = Array.from(event.currentTarget.querySelectorAll<HTMLAnchorElement>('.boutique-suggestion'));
+              const index = links.indexOf(event.target as HTMLAnchorElement);
               event.preventDefault();
-              event.currentTarget.querySelector<HTMLAnchorElement>('.boutique-suggestion')?.focus();
+              if (event.key === 'ArrowUp' && index === 0) event.currentTarget.querySelector('input')?.focus();
+              else links[(index + (event.key === 'ArrowDown' ? 1 : -1) + links.length) % links.length]?.focus();
             }
           }}
         >
@@ -117,9 +125,9 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
                   onMouseDown={event => event.preventDefault()}
                   onClick={() => setSearchOpen(false)}
                 >
-                  <img src={getProductImage(product)} alt="" loading="lazy" />
+                  <img src={mediaCover(product)} alt="" loading="lazy" />
                   <span><strong>{getLocalized(product, 'name', language)}</strong><small>{getLocalized(product, 'category', language)}</small></span>
-                  <bdi dir="ltr">Rs. {Object.values(product.prices)[0]?.toLocaleString()}</bdi>
+                  <bdi dir="ltr">Rs. {startingPrice(product).toLocaleString()}</bdi>
                 </Link>
               )) : <p className="boutique-search-empty">{t('boutique.noResults')}</p>}
               <button type="button" className="boutique-search-all" onClick={() => onSearch?.(query.trim())}>
@@ -135,7 +143,10 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
             if (item.categoryFilter) onSelectCategory?.(item.categoryFilter, item.searchTerm);
           }} />
         </div>
+        <button ref={guideOpener} type="button" className="heritage-hero-guide focus-ring" onClick={() => setGuideOpen(true)} aria-haspopup="dialog"><Compass size={15} aria-hidden="true" />{t('guide.launch')}<ArrowRight size={14} aria-hidden="true" /></button>
+        <a href="#allbarka-pantry" className="heritage-hero-scroll focus-ring" aria-label={t('home.scroll')}><ArrowDown size={18} aria-hidden="true" /></a>
       </div>
+      {guideOpen && <Suspense fallback={<p className="heritage-hero-guide-loading" role="status">{t('guide.loading')}</p>}><SelectionGuide opener={guideOpener.current} onClose={() => setGuideOpen(false)} /></Suspense>}
     </section>
   );
 }

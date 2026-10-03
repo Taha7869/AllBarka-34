@@ -20,11 +20,11 @@ export default function SEO({
 }: SEOProps) {
   const location = useLocation();
   const currentPath = canonicalPath || location.pathname;
-  const siteOrigin = window.location.origin;
+  const siteOrigin = typeof window === 'undefined' ? 'https://allbarka.com' : window.location.origin;
   const canonicalUrl = `${siteOrigin}${currentPath.startsWith('/') ? currentPath : `/${currentPath}`}`;
   const fullTitle = title 
-    ? `${title} — AllBarka Dry Fruits Lahore` 
-    : 'AllBarka Dry Fruits | Luxury Dry Fruits, Nuts & Gifts Boutique Lahore';
+    ? `${title} — AllBarka Premium Dry Fruits`
+    : 'AllBarka | Premium Dry Fruits, Nuts & Gifts';
 
   useEffect(() => {
     // 1. Page Title

@@ -20,12 +20,14 @@ import SEO from '../components/SEO';
 import { useCart } from '../contexts/CartContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getLocalized } from '../utils/localize';
+import { useProductMediaCover } from '../contexts/ProductMediaContext';
 
 export default function JournalPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { addToCart, setIsCartOpen } = useCart();
   const { t, language } = useLanguage();
+  const mediaCover = useProductMediaCover();
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
@@ -299,7 +301,7 @@ export default function JournalPage() {
                       <Link to={`/product/${p.id}`} className="space-y-2.5 block">
                         <div className="aspect-square rounded-xl overflow-hidden bg-[var(--color-base,#F6F1EA)] border border-[var(--color-gold,#C7982F)]/20 p-2">
                           <img
-                            src={getProductImage(p)}
+                            src={mediaCover(p)}
                             alt={t(`imageAlt.${p.id}`, getLocalized(p, 'name', language))}
                             width={960}
                             height={960}

@@ -1,3 +1,8 @@
+import { catalogTranslations } from './catalogTranslations';
+import { trendTranslations } from './trendTranslations';
+import { authTranslations } from './authTranslations';
+import { updateTranslations } from './updateTranslations';
+import { shippingTranslations } from './shippingTranslations';
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 
 import { boutiqueTranslations } from './boutiqueTranslations';
@@ -15,6 +20,7 @@ const STORAGE_KEY = 'allbarka_language';
 
 const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
   en: {
+    'admin.workspace': 'AllBarka workspace',
     home: 'Home',
     shop: 'Shop',
     giftBoxes: 'Gift Boxes',
@@ -194,6 +200,7 @@ const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     'stats.years': 'Years of Trust'
   },
   ur: {
+    'admin.workspace': 'البرکہ انتظامی مرکز',
     home: 'ہوم',
     shop: 'دکان',
     giftBoxes: 'تحائف اور بکس',
@@ -372,6 +379,7 @@ const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     'stats.years': 'سالوں کا اعتماد'
   },
   ar: {
+    'admin.workspace': 'مساحة عمل البركة',
     home: 'الرئيسية',
     shop: 'المتجر',
     giftBoxes: 'صناديق الهدايا',
@@ -593,7 +601,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [language, isRtl]);
 
   const t = useCallback((key: string, defaultText = ''): string => {
-    return boutiqueTranslations[language]?.[key] || TRANSLATIONS[language]?.[key] || TRANSLATIONS.en[key] || defaultText || key;
+    return shippingTranslations[language]?.[key] || updateTranslations[language]?.[key] || authTranslations[language]?.[key] || trendTranslations[language]?.[key] || catalogTranslations[language]?.[key] || boutiqueTranslations[language]?.[key] || TRANSLATIONS[language]?.[key] || TRANSLATIONS.en[key] || defaultText || key;
   }, [language]);
 
   const value = useMemo(() => ({

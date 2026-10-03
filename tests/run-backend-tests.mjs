@@ -41,6 +41,7 @@ try {
   // 1. Order Validation & Pricing
   await test(`Pricing Engine: ${weight500g} ${pistaProduct.name} total calculation (${expectedSubtotal500g} + ${expectedShipping500g})`, () => {
     const validated = validateAndPriceOrder({
+      city: 'Lahore',
       items: [{ id: pistaProduct.id, selectedWeight: weight500g, quantity: 1 }],
       shippingMethodId: 'standard',
     });
@@ -51,6 +52,7 @@ try {
 
   await test(`Pricing Engine: Free Shipping triggered on subtotal >= Rs. 3000 (${weight1kg} ${pistaProduct.name})`, () => {
     const validated = validateAndPriceOrder({
+      city: 'Lahore',
       items: [{ id: pistaProduct.id, selectedWeight: weight1kg, quantity: 1 }],
       shippingMethodId: 'standard',
     });

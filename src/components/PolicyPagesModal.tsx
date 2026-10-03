@@ -201,10 +201,10 @@ export function PolicyPagesModal({
                   Shipping Tariffs & Complimentary Policy
                 </span>
                 <h3 className="text-lg sm:text-xl font-serif font-bold text-[var(--color-ink,#1A1A1A)]">
-                  Complimentary Shipping on Orders Over Rs. 3,000
+                  Complimentary Standard Delivery in Lahore from Rs.3,000
                 </h3>
                 <p className="text-xs sm:text-sm text-[var(--color-ink-muted,#5A5A5A)] leading-relaxed">
-                  To ensure an effortless boutique experience, all retail and wholesale orders exceeding Rs. 3,000 automatically qualify for complimentary doorstep shipping across Pakistan. Orders below this threshold carry a standard flat-rate delivery fee of Rs. 200.
+                  Lahore standard delivery is Rs.150 and free when merchandise after discounts reaches Rs.3,000. Outside Lahore, delivery is Rs.250 per kilogram of actual order weight, with a minimum Rs.250 even below 1kg. No free delivery applies outside Lahore.
                 </p>
               </div>
             </motion.div>

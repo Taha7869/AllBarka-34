@@ -1,587 +1,323 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import { ArrowDownToLine, ArrowUpRight, Bell, Check, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Copy, CreditCard, Eye, LayoutDashboard, LockKeyhole, Package, Printer, RefreshCw, Search, ShieldCheck, Truck, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useLanguage } from '../contexts/LanguageContext';
-import {
-  ShieldAlert,
-  Search,
-  Filter,
-  RefreshCw,
-  Clock,
-  Package,
-  CheckCircle2,
-  AlertTriangle,
-  XCircle,
-  Truck,
-  Eye,
-  ArrowUpDown,
-  Lock,
-  ChevronLeft,
-  ChevronRight
-} from 'lucide-react';
-import { formatPKR } from '../lib/pricing';
+import { useLanguage, type LanguageCode } from '../contexts/LanguageContext';
+import { useAdminLanguage } from '../hooks/useAdminLanguage';
+import { AllBarkaCrestVector } from '../components/AllBarkaLogo';
+import AdminCatalogPanel from '../components/AdminCatalogPanel';
+import AdminUpdatesPanel from '../components/AdminUpdatesPanel';
+import { adminRequest, AdminRequestError } from '../lib/adminClient';
+import { adminPhoneHref, createAdminCsv, formatAdminCurrency, formatAdminDate } from '../lib/adminPresentation';
+import { acquireScrollLock } from '../utils/scrollLock';
+import type { CanonicalOrder, OrderStatus, PaymentStatus } from '../lib/serverOrderService';
+import { PRODUCTS } from '../data/products';
+import { getLocalized } from '../utils/localize';
+import { resolveHamper } from '../lib/hamperCatalog';
+import '../styles/admin.css';
 
-export interface AdminOrderSummary {
-  orderId: string;
-  createdAt: string;
-  status: 'NEW' | 'CONFIRMED' | 'PREPARING' | 'DISPATCHED' | 'DELIVERED' | 'CANCELLED';
-  paymentStatus: 'UNPAID' | 'PAID' | 'REFUNDED';
-  paymentMethod: 'cod' | 'bank';
-  customer: {
-    name: string;
-    phone: string;
-    address: string;
-    city: string;
-  };
-  totals: {
-    subtotal: number;
-    discount: number;
-    shipping: number;
-    giftWrapFee: number;
-    total: number;
-  };
-  items: Array<{
-    name: string;
-    selectedWeight?: string;
-    quantity: number;
-    price: number;
-  }>;
-  claimedAt?: number | null;
-  adminNotes?: string[];
+const STATUSES: OrderStatus[] = ['NEW', 'ORDER_RECEIVED', 'CONFIRMED', 'PREPARING', 'DISPATCHED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'];
+const PAYMENTS: PaymentStatus[] = ['UNPAID', 'PAID', 'REFUNDED'];
+export type AdminOrderSummary = CanonicalOrder;
+type Audit = { timestamp?: number; timestampIso?: string; actorEmail?: string; reason?: string; previousStatus?: string; newStatus?: string; previousPaymentStatus?: string; newPaymentStatus?: string; action?: string; note?: string };
+type OrderDetail = { order: AdminOrderSummary; audits: Audit[] };
+type Ledger = {
+  orders: AdminOrderSummary[]; page: number; totalCount: number; totalPages: number; asOf: string; scannedCount: number; truncated: boolean;
+  metrics: { count: number; activeCount: number; deliveredCount: number; cancelledCount: number; orderValue: number; paidValue: number; unpaidValue: number; bankPendingCount: number; statusCounts: Partial<Record<OrderStatus, number>> };
+};
+type Tab = 'overview' | 'orders' | 'catalogue' | 'updates';
+type Mutation = { type: 'status' | 'payment'; target: string };
+
+function hamperPackingDetails(item: CanonicalOrder['items'][number], language: LanguageCode, t: (key: string) => string) {
+  if (item.productId !== 'custom-hamper') return null;
+  const hamper = resolveHamper(item.hamperConfiguration);
+  if (!hamper) return null;
+  const configuration = hamper.configuration;
+  return <div className="admin-hamper-details" dir="auto"><strong>{t('admin.hamper.contents')}</strong><ul>{configuration.selections.map(id => <li key={id}>{getLocalized(PRODUCTS.find(product => product.id === id), 'name', language)} <bdi>— 200g</bdi></li>)}</ul>
+    {configuration.recipientName && <p><strong>{t('admin.hamper.recipient')}: </strong>{configuration.recipientName}</p>}
+    {configuration.giftMessage && <p className="admin-hamper-message"><strong>{t('admin.detail.message')}: </strong>{configuration.giftMessage}</p>}
+  </div>;
+}
+
+function OrderBadge({ value, payment = false }: { value: string; payment?: boolean }) {
+  const { t } = useAdminLanguage();
+  const tone = ['DELIVERED', 'PAID'].includes(value) ? 'success' : ['CANCELLED', 'REFUNDED'].includes(value) ? 'muted' : ['DISPATCHED', 'OUT_FOR_DELIVERY'].includes(value) ? 'transit' : 'pending';
+  return <span className={`admin-badge admin-badge-${tone}`} dir="auto">{t(`admin.${payment ? 'payment' : 'status'}.${value}`, value)}</span>;
+}
+
+/** One focus-managed dialog for details and print; private records stay in memory. */
+function AdminDialog({ title, children, onClose, busy = false, packing = false }: { title: string; children: React.ReactNode; onClose: () => void; busy?: boolean; packing?: boolean }) {
+  const { t } = useAdminLanguage();
+  const ref = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  const closeRef = useRef(onClose);
+  const busyRef = useRef(busy);
+  closeRef.current = onClose; busyRef.current = busy;
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    const release = acquireScrollLock();
+    const root = document.getElementById('root');
+    const previousInert = root?.inert ?? false;
+    if (root) root.inert = true;
+    const frame = requestAnimationFrame(() => ref.current?.querySelector<HTMLElement>('button')?.focus());
+    const keydown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !busyRef.current) { event.preventDefault(); closeRef.current(); }
+      if (event.key !== 'Tab') return;
+      const controls = Array.from(ref.current?.querySelectorAll<HTMLElement>('button:not(:disabled),a[href],input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex="0"]') || []).filter(el => el.getClientRects().length);
+      const first = controls[0]; const last = controls.at(-1);
+      if (event.shiftKey && (document.activeElement === first || !ref.current?.contains(document.activeElement))) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && (document.activeElement === last || !ref.current?.contains(document.activeElement))) { event.preventDefault(); first?.focus(); }
+    };
+    document.addEventListener('keydown', keydown);
+    return () => { cancelAnimationFrame(frame); document.removeEventListener('keydown', keydown); release(); if (root) root.inert = previousInert; if (previous?.isConnected) previous.focus(); };
+  }, []);
+  return createPortal(<div className="admin-dialog-backdrop" data-admin-dialog data-admin-packing={packing ? 'true' : undefined} dir="ltr" onClick={event => { if (event.target === event.currentTarget && !busy) onClose(); }}>
+    <div ref={ref} role="dialog" aria-modal="true" aria-labelledby={titleId} className="admin-dialog-panel">
+      <header className="admin-dialog-header"><div><p className="admin-eyebrow">AllBarka</p><h2 id={titleId} dir="auto">{title}</h2></div><button type="button" className="admin-icon-button admin-dialog-close" aria-label={t('admin.close')} disabled={busy} onClick={onClose}><X size={20} /></button></header>
+      {children}
+    </div>
+  </div>, document.body);
+}
+
+function PackingPreview({ orders, onClose }: { orders: AdminOrderSummary[]; onClose: () => void }) {
+  const { t, language } = useAdminLanguage();
+  return <AdminDialog title={t('admin.packingTitle')} onClose={onClose} packing>
+    <div className="admin-print-actions"><p dir="auto">{t('admin.printHint')}</p><button type="button" className="admin-button admin-button-primary" onClick={() => window.print()}><Printer size={16} />{t('admin.printSelected')}</button></div>
+    <div className="admin-print-packet">{orders.map(order => <article className="admin-packing-sheet" key={order.orderId}>
+      <header><div><p className="admin-eyebrow">AllBarka · {t('admin.packing')}</p><h3>{order.orderId}</h3><p>{formatAdminDate(order.createdAt, language)}</p></div><OrderBadge value={order.status} /></header>
+      <div className="admin-packing-customer"><h4 dir="auto">{order.customer.name}</h4><p><bdi>{order.customer.phone}</bdi></p><p dir="auto">{order.customer.address}, {order.customer.city}</p><p dir="auto">{t('admin.detail.deliverySlot')}: {order.customer.deliverySlot || '—'}</p>{order.deliverySchedule?.scheduledDeliveryDate && <p>{t('admin.detail.deliveryDate')}: <bdi>{order.deliverySchedule.scheduledDeliveryDate}</bdi></p>}</div>
+      <table><thead><tr><th>{t('admin.table.items')}</th><th>{t('selectWeight')}</th><th>{t('quantity')}</th><th>{t('admin.table.total')}</th></tr></thead><tbody>{order.items.map((item, index) => <tr key={`${item.id}-${index}`}><td dir="auto">{item.name}{hamperPackingDetails(item, language, t)}</td><td><bdi>{item.selectedWeight}</bdi></td><td>□ {item.quantity}</td><td><bdi>{formatAdminCurrency(item.price * item.quantity)}</bdi></td></tr>)}</tbody></table>
+      {typeof order.totals.shippingWeightGrams === 'number' && <p dir="auto">{t('admin.detail.shippingWeight')}: <bdi>{order.totals.shippingWeightGrams / 1000}kg</bdi>{order.totals.shippingRegion && <> · {t(`admin.shippingRegion.${order.totals.shippingRegion}`)}</>}</p>}
+      {order.customer.instructions && <p className="admin-packing-note" dir="auto"><strong>{t('admin.detail.instructions')}: </strong>{order.customer.instructions}</p>}
+      <p dir="auto">{order.gifting?.giftWrapping ? t('admin.detail.giftWrap') : t('admin.detail.noGiftWrap')}</p>
+      {order.gifting?.giftMessage && <p className="admin-packing-note" dir="auto"><strong>{t('admin.detail.message')}: </strong>{order.gifting.giftMessage}</p>}
+      <footer><span dir="auto">{t(`admin.method.${order.paymentMethod}`)} · {t(`admin.payment.${order.paymentStatus}`)}</span><strong><bdi>{formatAdminCurrency(order.totals.total)}</bdi></strong></footer>
+    </article>)}</div>
+  </AdminDialog>;
 }
 
 export default function AdminOrdersPage() {
-  const { currentUser } = useAuth();
-  const { t } = useLanguage();
-
-  const [orders, setOrders] = useState<AdminOrderSummary[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [selectedOrder, setSelectedOrder] = useState<AdminOrderSummary | null>(null);
-  const [statusUpdating, setStatusUpdating] = useState(false);
-  const [statusReason, setStatusReason] = useState('');
-  const [targetStatus, setTargetStatus] = useState<string>('');
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const { currentUser, loading: authLoading } = useAuth();
+  const { t, language, setLanguage } = useAdminLanguage();
+  const { t: updateT } = useLanguage();
+  const [params, setParams] = useSearchParams();
+  const tab: Tab = ['catalogue', 'orders', 'updates'].includes(params.get('view') || '') ? params.get('view') as Tab : 'overview';
+  const status = STATUSES.includes(params.get('status') as OrderStatus) ? params.get('status')! : 'ALL';
+  const payment = PAYMENTS.includes(params.get('paymentStatus') as PaymentStatus) ? params.get('paymentStatus')! : 'ALL';
+  const method = ['cod', 'bank'].includes(params.get('paymentMethod') || '') ? params.get('paymentMethod')! : 'ALL';
+  const range = ['today', '7d', '30d'].includes(params.get('range') || '') ? params.get('range')! : 'all';
+  const queue = ['new', 'packing', 'transit', 'bank-pending'].includes(params.get('queue') || '') ? params.get('queue')! : 'all';
+  // Customer search terms stay in memory rather than the browser's address/history.
+  const [search, setSearch] = useState('');
+  const rawPage = Number(params.get('page') || '1');
+  const page = Number.isInteger(rawPage) && rawPage > 0 && rawPage <= 100000 ? rawPage : 1;
+  const [searchDraft, setSearchDraft] = useState(search);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [accessRefresh, setAccessRefresh] = useState(0);
+  const [accessError, setAccessError] = useState('');
+  const [ledger, setLedger] = useState<Ledger | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [refresh, setRefresh] = useState(0);
+  const [selection, setSelection] = useState<string[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [detail, setDetail] = useState<OrderDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState('');
+  const [detailRefresh, setDetailRefresh] = useState(0);
+  const [mutation, setMutation] = useState<Mutation | null>(null);
+  const [reason, setReason] = useState('');
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [feedback, setFeedback] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const [packingOrders, setPackingOrders] = useState<AdminOrderSummary[]>([]);
+  const alive = useRef(true);
+  const mutationController = useRef<AbortController | null>(null);
+  const exportController = useRef<AbortController | null>(null);
+  const sessionUid = useRef(currentUser?.uid);
+  sessionUid.current = currentUser?.uid;
+  const listQuery = new URLSearchParams({ page: String(page), limit: '20', status, paymentStatus: payment, paymentMethod: method, range, search, queue }).toString();
 
-  // Check admin status via token custom claims
+  useEffect(() => { alive.current = true; return () => { alive.current = false; mutationController.current?.abort(); exportController.current?.abort(); }; }, []);
+  useEffect(() => { setSearchDraft(search); }, [search]);
   useEffect(() => {
-    async function verifyAdminClaim() {
-      if (!currentUser) {
-        setIsAdmin(false);
-        setLoading(false);
-        return;
-      }
-      try {
-        const idTokenResult = await currentUser.getIdTokenResult();
-        const hasAdmin = Boolean(idTokenResult.claims.admin || idTokenResult.claims.role === 'admin');
-        setIsAdmin(hasAdmin);
-      } catch (e) {
-        setIsAdmin(false);
-      } finally {
-        setLoading(false);
-      }
-    }
-    verifyAdminClaim();
-  }, [currentUser]);
-
-  // Fetch orders from server API
-  const fetchOrders = async () => {
-    if (!currentUser) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const token = await currentUser.getIdToken();
-      const params = new URLSearchParams({
-        page: String(page),
-        limit: '15',
-      });
-      if (statusFilter !== 'ALL') {
-        params.append('status', statusFilter);
-      }
-      if (searchQuery.trim()) {
-        params.append('search', searchQuery.trim());
-      }
-
-      const res = await fetch(`/api/admin/orders?${params.toString()}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json',
-        }
-      });
-
-      if (!res.ok) {
-        if (res.status === 403) {
-          setIsAdmin(false);
-          throw new Error('You do not possess verified boutique administrative credentials.');
-        }
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || `HTTP error ${res.status}`);
-      }
-
-      const data = await res.json();
-      setOrders(data.orders || []);
-      setTotalPages(data.totalPages || 1);
-    } catch (err: any) {
-      setError(err.message || 'Unable to retrieve administrative orders ledger.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+    let active = true;
+    setIsAdmin(null); setAccessError(''); setLedger(null); setSelectedId(null); setPackingOrders([]); setSelection([]);
+    mutationController.current?.abort(); exportController.current?.abort(); setBusy(false); setExporting(false);
+    if (!currentUser) { setIsAdmin(false); return; }
+    let timeout: ReturnType<typeof setTimeout>;
+    Promise.race([currentUser.getIdTokenResult(accessRefresh > 0), new Promise<never>((_, reject) => {
+      timeout = setTimeout(() => reject(new AdminRequestError('REQUEST_TIMEOUT')), 12000);
+    })]).then(result => {
+      if (active) setIsAdmin(result.claims.admin === true || result.claims.role === 'admin');
+    }).catch(failure => { if (active) { setIsAdmin(false); setAccessError(failure instanceof AdminRequestError ? failure.code : 'REQUEST_FAILED'); } }).finally(() => clearTimeout(timeout));
+    return () => { active = false; clearTimeout(timeout); };
+  }, [currentUser, accessRefresh]);
   useEffect(() => {
-    if (isAdmin) {
-      fetchOrders();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAdmin, page, statusFilter]);
+    if (!currentUser || isAdmin !== true) return;
+    if (tab === 'catalogue' || tab === 'updates') { setLoading(false); return; }
+    const controller = new AbortController();
+    setLoading(true); setError(''); setSelection([]);
+    adminRequest<Ledger>(() => currentUser.getIdToken(), `/api/admin/orders?${listQuery}`, { signal: controller.signal }).then(data => {
+      if (!controller.signal.aborted) setLedger(data);
+    }).catch((failure: AdminRequestError) => {
+      if (!controller.signal.aborted) { setError(failure.code); setLedger(null); if (failure.status === 401 || failure.status === 403) setIsAdmin(false); }
+    }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => controller.abort();
+  }, [currentUser, isAdmin, listQuery, refresh, tab]);
+  useEffect(() => { setDetail(null); setDetailError(''); setFeedback(''); setMutation(null); setNote(''); setReason(''); }, [selectedId]);
+  useEffect(() => {
+    setDetailError('');
+    if (!selectedId || !currentUser || isAdmin !== true) return;
+    const controller = new AbortController();
+    setDetailLoading(true);
+    adminRequest<OrderDetail>(() => currentUser.getIdToken(), `/api/admin/orders/${encodeURIComponent(selectedId)}`, { signal: controller.signal }).then(data => {
+      if (!controller.signal.aborted) setDetail(data);
+    }).catch((failure: AdminRequestError) => {
+      if (!controller.signal.aborted) { setDetailError(failure.code); if (failure.status === 401 || failure.status === 403) setIsAdmin(false); }
+    }).finally(() => { if (!controller.signal.aborted) setDetailLoading(false); });
+    return () => controller.abort();
+  }, [selectedId, currentUser, isAdmin, detailRefresh]);
+  useEffect(() => {
+    // Protect indexing during client navigation too; the server also disallows /admin.
+    const previousTitle = document.title;
+    document.title = `${t('admin.workspace')} · AllBarka`;
+    const existing = document.querySelector<HTMLMetaElement>('meta[name="robots"]');
+    const meta = existing || document.createElement('meta'); const previous = existing?.content;
+    meta.name = 'robots'; meta.content = 'noindex, nofollow'; if (!existing) document.head.appendChild(meta);
+    return () => { document.title = previousTitle; if (!existing) meta.remove(); else meta.content = previous || ''; };
+  }, [t]);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPage(1);
-    fetchOrders();
+  const changeFilters = (changes: Record<string, string>) => {
+    const next = new URLSearchParams(params);
+    for (const [key, value] of Object.entries(changes)) { if (key === 'search') { setSearch(value.slice(0, 120)); next.delete(key); continue; } if (!value || value === 'ALL' || value === 'all') next.delete(key); else next.set(key, value); }
+    if (!Object.hasOwn(changes, 'page')) next.delete('page');
+    setParams(next, { replace: true }); setSelection([]); setFeedback('');
   };
-
-  const handleInitiateStatusChange = (newStatus: string) => {
-    setTargetStatus(newStatus);
-    setStatusReason('');
-    setShowConfirmModal(true);
-  };
-
-  const handleConfirmStatusChange = async () => {
-    if (!selectedOrder || !targetStatus || !currentUser) return;
-    setStatusUpdating(true);
+  const errorMessage = (code: string) => t(`admin.errors.${code}`, t('admin.errors.REQUEST_FAILED'));
+  const doMutation = async (body: Record<string, unknown>, endpoint: string) => {
+    if (!detail || !currentUser || busy) return;
+    const uid = currentUser.uid;
+    const id = detail.order.orderId;
+    const controller = new AbortController(); mutationController.current = controller;
+    setBusy(true); setDetailError(''); setFeedback('');
     try {
-      const token = await currentUser.getIdToken();
-      const res = await fetch(`/api/admin/orders/${selectedOrder.orderId}/status`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          status: targetStatus,
-          expectedStatus: selectedOrder.status,
-          reason: statusReason.trim() || 'Admin manual status transition'
-        })
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to update order status');
-      }
-
-      // Update local state
-      setSelectedOrder(prev => prev ? { ...prev, status: targetStatus as any } : null);
-      setOrders(prev => prev.map(o => o.orderId === selectedOrder.orderId ? { ...o, status: targetStatus as any } : o));
-      setShowConfirmModal(false);
-    } catch (err: any) {
-      alert(`Status transition failed: ${err.message}`);
-    } finally {
-      setStatusUpdating(false);
-    }
+      const data = await adminRequest<{ order: AdminOrderSummary }>(() => currentUser.getIdToken(), `/api/admin/orders/${encodeURIComponent(id)}/${endpoint}`, { body, signal: controller.signal });
+      if (!alive.current || controller.signal.aborted || sessionUid.current !== uid) return;
+      setDetail(previous => previous ? { ...previous, order: data.order } : previous);
+      if (endpoint === 'notes') setNote('');
+      else { setMutation(null); setReason(''); }
+      setFeedback(t('admin.detail.saved'));
+      setRefresh(value => value + 1); setDetailRefresh(value => value + 1);
+    } catch (failure) {
+      if (!alive.current || controller.signal.aborted || sessionUid.current !== uid) return;
+      const requestError = failure as AdminRequestError;
+      setDetailError(requestError.code);
+      if (requestError.status === 401 || requestError.status === 403) setIsAdmin(false);
+      // Keep failed drafts visible. Explicit refresh obtains the current server revision.
+    } finally { if (alive.current && !controller.signal.aborted && sessionUid.current === uid) setBusy(false); }
+  };
+  const exportOrders = async () => {
+    if (!currentUser || exporting) return;
+    const uid = currentUser.uid;
+    const controller = new AbortController(); exportController.current = controller;
+    setExporting(true); setFeedback('');
+    try {
+      const data = await adminRequest<{ orders: AdminOrderSummary[]; truncated: boolean }>(() => currentUser.getIdToken(), `/api/admin/orders/export?${listQuery}`, { signal: controller.signal });
+      if (!alive.current || controller.signal.aborted || sessionUid.current !== uid) return;
+      const headers = ['admin.table.order', 'admin.table.date', 'admin.status', 'admin.payment', 'admin.method', 'admin.table.customer', 'admin.csv.phone', 'admin.csv.address', 'admin.csv.city', 'admin.table.items', 'admin.detail.subtotal', 'admin.detail.discount', 'admin.detail.shipping', 'admin.detail.giftFee', 'admin.table.total'].map(key => t(key));
+      const csv = createAdminCsv(headers, data.orders.map(order => [order.orderId, order.createdAt, t(`admin.status.${order.status}`), t(`admin.payment.${order.paymentStatus}`), t(`admin.method.${order.paymentMethod}`), order.customer.name, order.customer.phone, order.customer.address, order.customer.city, order.items.map(item => `${item.name} (${item.selectedWeight}) × ${item.quantity}`).join(' | '), order.totals.subtotal, order.totals.discount, order.totals.shipping, order.totals.giftWrapFee, order.totals.total]));
+      const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+      const anchor = document.createElement('a'); anchor.href = url; anchor.download = `allbarka-orders-${new Date().toISOString().slice(0, 10)}.csv`; document.body.appendChild(anchor); anchor.click(); anchor.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setFeedback(data.truncated ? t('admin.scanLimited') : t('admin.exportComplete'));
+    } catch (failure) { if (!controller.signal.aborted && sessionUid.current === uid && alive.current) { const e = failure as AdminRequestError; setFeedback(errorMessage(e.code)); if (e.status === 401 || e.status === 403) setIsAdmin(false); } }
+    finally { if (!controller.signal.aborted && sessionUid.current === uid && alive.current) setExporting(false); }
+  };
+  const copyOrder = async () => {
+    if (!detail) return;
+    try { await navigator.clipboard.writeText(detail.order.orderId); setFeedback(t('admin.copied')); }
+    catch { setFeedback(t('admin.errors.REQUEST_FAILED')); }
   };
 
-  if (!currentUser) {
-    return (
-      <div className="min-h-[70vh] flex items-center justify-center p-6 bg-[#F6F1EA]">
-        <div className="max-w-md w-full p-8 rounded-2xl bg-[#FFFCF7] border border-[#C7982F]/20 text-center shadow-sm">
-          <div className="w-14 h-14 mx-auto rounded-full bg-[#C7982F]/10 flex items-center justify-center text-[#806326] mb-4">
-            <Lock size={26} />
-          </div>
-          <h1 className="font-serif text-2xl text-[#042821] font-semibold mb-2">Patron Sign-In Required</h1>
-          <p className="text-sm text-[#29231D]/80 leading-relaxed mb-6">
-            Please sign in with your verified AllBarka administrative credentials to access the orders ledger.
-          </p>
-          <button
-            onClick={() => window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { mode: 'signin' } }))}
-            className="w-full py-3 px-5 rounded-xl bg-[#042821] text-white font-medium text-sm hover:bg-[#06382e] transition-colors"
-          >
-            Sign In with Boutique ID
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const languageSelect = <label className="admin-language"><span className="sr-only">{t('languageSelector')}</span><select value={language} onChange={event => setLanguage(event.target.value as LanguageCode)}><option value="en">English</option><option value="ur">اردو</option><option value="ar">العربية</option></select></label>;
+  if (authLoading || isAdmin === null) return <div className="admin-access" dir="ltr"><RefreshCw size={24} className="admin-loading-spin" /><p role="status" dir="auto">{t('admin.checking')}</p></div>;
+  if (!currentUser || !isAdmin) return <div className="admin-access" dir="ltr"><section className="admin-access-card"><div className="admin-access-crest"><AllBarkaCrestVector /></div><p className="admin-eyebrow" dir="auto">{t('admin.operations')}</p><h1 dir="auto">{t('admin.workspace')}</h1><div className="admin-access-rule" /><LockKeyhole size={22} /><h2 dir="auto">{t(accessError ? 'admin.unavailable' : currentUser ? 'admin.accessRestricted' : 'admin.signIn')}</h2><p dir="auto">{accessError ? errorMessage(accessError) : t(currentUser ? 'admin.accessHint' : 'admin.signInHint')}</p>{currentUser && <p className="admin-account"><bdi>{currentUser.email || currentUser.phoneNumber}</bdi></p>}<button type="button" className="admin-button admin-button-primary" onClick={() => currentUser ? setAccessRefresh(value => value + 1) : window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { mode: 'signin' } }))}>{t(currentUser ? 'admin.refreshAccess' : 'admin.signIn')}</button><div className="admin-access-footer">{languageSelect}<Link className="admin-button" to="/">{t('admin.returnStore')}<ArrowUpRight size={16} /></Link></div></section></div>;
 
-  if (isAdmin === false) {
-    return (
-      <div className="min-h-[70vh] flex items-center justify-center p-6 bg-[#F6F1EA]">
-        <div className="max-w-md w-full p-8 rounded-2xl bg-[#FFFCF7] border border-rose-200 text-center shadow-sm">
-          <div className="w-14 h-14 mx-auto rounded-full bg-rose-50 flex items-center justify-center text-rose-600 mb-4">
-            <ShieldAlert size={28} />
-          </div>
-          <h1 className="font-serif text-2xl text-[#042821] font-semibold mb-2">Restricted Area</h1>
-          <p className="text-sm text-[#29231D]/80 leading-relaxed mb-6">
-            Your account ({currentUser.email || currentUser.phoneNumber}) is authenticated as a Patron, but lacks authoritative administrative privileges.
-          </p>
-          <p className="text-xs text-[#806326] mb-6">
-            To manage boutique dispatches, please have an operator grant the administrative role to your account.
-          </p>
-          <a
-            href="/"
-            className="inline-block py-2.5 px-6 rounded-xl bg-[#042821] text-white text-xs font-medium hover:bg-[#06382e] transition-colors"
-          >
-            Return to Boutique
-          </a>
-        </div>
-      </div>
-    );
-  }
+  const rows = ledger?.orders || [];
+  const metrics = ledger?.metrics;
+  const currentOrder = detail?.order;
+  const selectedRows = rows.filter(order => selection.includes(order.orderId));
+  const allSelected = rows.length > 0 && selection.length === rows.length;
+  const filters = <div className="admin-filters">
+    <form className="admin-search" onSubmit={event => { event.preventDefault(); changeFilters({ search: searchDraft.trim() }); }}><Search size={17} aria-hidden="true" /><label htmlFor="admin-order-search" className="sr-only">{t('admin.search')}</label><input id="admin-order-search" type="search" maxLength={120} dir="auto" value={searchDraft} onChange={event => setSearchDraft(event.target.value)} placeholder={t('admin.searchHint')} /><button type="submit" className="admin-icon-button" aria-label={t('admin.search')}><ArrowUpRight size={17} /></button></form>
+    {([
+      ['status', status, 'admin.status', [['ALL', 'admin.all'], ...STATUSES.map(value => [value, `admin.status.${value}`])]],
+      ['paymentStatus', payment, 'admin.payment', [['ALL', 'admin.all'], ...PAYMENTS.map(value => [value, `admin.payment.${value}`])]],
+      ['paymentMethod', method, 'admin.method', [['ALL', 'admin.all'], ['cod', 'admin.method.cod'], ['bank', 'admin.method.bank']]],
+      ['range', range, 'admin.range', [['all', 'admin.all'], ['today', 'admin.today'], ['7d', 'admin.sevenDays'], ['30d', 'admin.thirtyDays']]],
+    ] as [string, string, string, string[][]][]).map(([key, value, label, options]) => <label className="admin-filter" key={key}><span dir="auto">{t(label)}</span><select dir="auto" aria-label={t(label)} value={value} onChange={event => changeFilters({ [key]: event.target.value, queue: 'all' })}>{options.map(([option, text]) => <option value={option} key={option}>{t(text)}</option>)}</select></label>)}
+  </div>;
 
-  return (
-    <div className="min-h-screen bg-[#F6F1EA] py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#C7982F]/20">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse" />
-              <p className="text-[11px] uppercase tracking-widest text-[#806326] font-semibold">Lahore Operations</p>
-            </div>
-            <h1 className="font-serif text-2xl sm:text-3xl text-[#042821] font-bold mt-1">Orders Ledger & Dispatch</h1>
-          </div>
-          <button
-            onClick={() => fetchOrders()}
-            className="self-start sm:self-auto inline-flex items-center gap-2 py-2 px-4 rounded-xl bg-[#FFFCF7] border border-[#C7982F]/30 text-xs font-medium text-[#29231D] hover:bg-[#F0EAE1] transition-all shadow-2xs"
-          >
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-            <span>Refresh Ledger</span>
-          </button>
-        </div>
-
-        {/* Filter & Search Bar */}
-        <div className="p-4 rounded-2xl bg-[#FFFCF7] border border-[#C7982F]/15 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 shadow-2xs">
-          {/* Status Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
-            {['ALL', 'NEW', 'CONFIRMED', 'PREPARING', 'DISPATCHED', 'DELIVERED', 'CANCELLED'].map(st => (
-              <button
-                key={st}
-                onClick={() => { setStatusFilter(st); setPage(1); }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
-                  statusFilter === st
-                    ? 'bg-[#042821] text-white shadow-2xs'
-                    : 'bg-[#F6F1EA] text-[#29231D]/80 hover:bg-[#EBE3D7]'
-                }`}
-              >
-                {st}
-              </button>
-            ))}
-          </div>
-
-          {/* Search Form */}
-          <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
-            <div className="relative flex-1 md:w-64">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#806326]" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search Ref or Phone..."
-                className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-[#C7982F]/20 text-xs text-[#29231D] bg-[#F6F1EA] focus:outline-hidden focus:border-[#042821]"
-              />
-            </div>
-            <button
-              type="submit"
-              className="py-1.5 px-3 rounded-xl bg-[#042821] text-white text-xs font-medium hover:bg-[#06382e]"
-            >
-              Search
-            </button>
-          </form>
-        </div>
-
-        {/* Error Notification */}
-        {error && (
-          <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-3">
-            <AlertTriangle size={16} className="shrink-0 text-rose-600" />
-            <p className="flex-1">{error}</p>
-            <button onClick={() => fetchOrders()} className="underline font-semibold">Retry</button>
-          </div>
-        )}
-
-        {/* Orders Table */}
-        <div className="rounded-2xl bg-[#FFFCF7] border border-[#C7982F]/15 overflow-hidden shadow-2xs">
-          {loading ? (
-            <div className="py-20 flex flex-col items-center justify-center gap-3 text-[#806326]">
-              <div className="w-8 h-8 rounded-full border-2 border-[#C7982F]/20 border-t-[#C7982F] animate-spin" />
-              <p className="text-xs uppercase tracking-widest font-semibold">Querying Orders Ledger...</p>
-            </div>
-          ) : orders.length === 0 ? (
-            <div className="py-20 text-center px-4">
-              <Package size={36} className="mx-auto text-[#806326]/40 mb-3" />
-              <p className="font-serif text-lg text-[#042821] font-semibold">No Orders Found</p>
-              <p className="text-xs text-[#29231D]/60 mt-1 max-w-sm mx-auto">
-                No orders match the selected status filter or search parameters.
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="border-b border-[#C7982F]/15 bg-[#F6F1EA]/60 text-[#806326] uppercase font-semibold tracking-wider">
-                    <th className="py-3 px-4">Order Ref</th>
-                    <th className="py-3 px-4">Date</th>
-                    <th className="py-3 px-4">Patron</th>
-                    <th className="py-3 px-4">Destination</th>
-                    <th className="py-3 px-4">Total</th>
-                    <th className="py-3 px-4">Fulfillment</th>
-                    <th className="py-3 px-4">Payment</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#C7982F]/10">
-                  {orders.map(order => (
-                    <tr
-                      key={order.orderId}
-                      className="hover:bg-[#F6F1EA]/40 transition-colors cursor-pointer"
-                      onClick={() => setSelectedOrder(order)}
-                    >
-                      <td className="py-3.5 px-4 font-mono font-semibold text-[#042821]">
-                        #{order.orderId}
-                      </td>
-                      <td className="py-3.5 px-4 text-[#29231D]/70 whitespace-nowrap">
-                        {new Date(order.createdAt).toLocaleDateString('en-PK', { day: 'numeric', month: 'short' })}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <p className="font-medium text-[#29231D]">{order.customer.name}</p>
-                        <p className="text-[11px] text-[#29231D]/60 font-mono">{order.customer.phone}</p>
-                      </td>
-                      <td className="py-3.5 px-4 max-w-[180px] truncate text-[#29231D]/80">
-                        {order.customer.city} • {order.customer.address}
-                      </td>
-                      <td className="py-3.5 px-4 font-semibold text-[#042821] whitespace-nowrap">
-                        {formatPKR(order.totals.total)}
-                      </td>
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
-                          order.status === 'DELIVERED' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
-                          order.status === 'DISPATCHED' ? 'bg-sky-50 text-sky-800 border-sky-200' :
-                          order.status === 'PREPARING' ? 'bg-amber-50 text-amber-800 border-amber-200' :
-                          order.status === 'CONFIRMED' ? 'bg-indigo-50 text-indigo-800 border-indigo-200' :
-                          order.status === 'CANCELLED' ? 'bg-rose-50 text-rose-800 border-rose-200' :
-                          'bg-amber-50 text-amber-900 border-amber-300'
-                        }`}>
-                          {order.status}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                          order.paymentStatus === 'PAID'
-                            ? 'bg-emerald-100 text-emerald-900'
-                            : 'bg-zinc-100 text-zinc-800'
-                        }`}>
-                          {order.paymentMethod.toUpperCase()} • {order.paymentStatus}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setSelectedOrder(order); }}
-                          className="p-1.5 rounded-lg hover:bg-[#EBE3D7] text-[#806326] transition-colors"
-                          title="View Details"
-                        >
-                          <Eye size={15} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Pagination */}
-          <div className="p-3 border-t border-[#C7982F]/15 flex items-center justify-between text-xs text-[#29231D]/70 bg-[#F6F1EA]/40">
-            <p>Page {page} of {totalPages}</p>
-            <div className="flex items-center gap-1">
-              <button
-                disabled={page <= 1}
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                className="p-1.5 rounded-lg border border-[#C7982F]/20 disabled:opacity-30 hover:bg-[#EBE3D7]"
-              >
-                <ChevronLeft size={14} />
-              </button>
-              <button
-                disabled={page >= totalPages}
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                className="p-1.5 rounded-lg border border-[#C7982F]/20 disabled:opacity-30 hover:bg-[#EBE3D7]"
-              >
-                <ChevronRight size={14} />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Order Detail Modal */}
-      {selectedOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="max-w-2xl w-full max-h-[90vh] flex flex-col rounded-2xl bg-[#FFFCF7] border border-[#C7982F]/30 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            {/* Modal Header */}
-            <div className="p-5 border-b border-[#C7982F]/20 flex items-center justify-between bg-[#F6F1EA]">
-              <div>
-                <p className="text-[10px] uppercase font-bold tracking-widest text-[#806326]">Order Details</p>
-                <h2 className="font-mono text-lg font-bold text-[#042821]">#{selectedOrder.orderId}</h2>
-              </div>
-              <button
-                onClick={() => setSelectedOrder(null)}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-[#29231D]/70 hover:bg-[#EBE3D7] transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Modal Scrollable Body */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 text-xs text-[#29231D]">
-              {/* Customer & Delivery Block */}
-              <div className="p-4 rounded-xl bg-[#F6F1EA] border border-[#C7982F]/15 space-y-2">
-                <p className="font-semibold text-[#042821] text-sm">Recipient & Delivery Information</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <span className="text-[#806326] block">Customer Name:</span>
-                    <span className="font-medium text-sm">{selectedOrder.customer.name}</span>
-                  </div>
-                  <div>
-                    <span className="text-[#806326] block">Phone Contact:</span>
-                    <span className="font-mono font-medium">{selectedOrder.customer.phone}</span>
-                  </div>
-                  <div className="sm:col-span-2">
-                    <span className="text-[#806326] block">Delivery Address:</span>
-                    <span className="font-medium">{selectedOrder.customer.address}, {selectedOrder.customer.city}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Items Table */}
-              <div>
-                <p className="font-semibold text-[#042821] text-sm mb-2">Purchased Items</p>
-                <div className="border border-[#C7982F]/15 rounded-xl overflow-hidden divide-y divide-[#C7982F]/10">
-                  {selectedOrder.items.map((item, idx) => (
-                    <div key={idx} className="p-3 flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-[#29231D]">{item.name}</p>
-                        <p className="text-[11px] text-[#806326]">{item.selectedWeight || '250g'} × {item.quantity}</p>
-                      </div>
-                      <p className="font-semibold text-[#042821]">{formatPKR(item.price * item.quantity)}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Immutable Financial Breakdown */}
-              <div className="p-4 rounded-xl bg-[#F6F1EA] border border-[#C7982F]/15 space-y-1.5">
-                <div className="flex justify-between text-[#29231D]/80">
-                  <span>Merchandise Subtotal</span>
-                  <span>{formatPKR(selectedOrder.totals.subtotal)}</span>
-                </div>
-                {selectedOrder.totals.discount > 0 && (
-                  <div className="flex justify-between text-emerald-800">
-                    <span>Discount Applied</span>
-                    <span>-{formatPKR(selectedOrder.totals.discount)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-[#29231D]/80">
-                  <span>Delivery Fee</span>
-                  <span>{selectedOrder.totals.shipping === 0 ? 'Complimentary' : formatPKR(selectedOrder.totals.shipping)}</span>
-                </div>
-                {selectedOrder.totals.giftWrapFee > 0 && (
-                  <div className="flex justify-between text-[#29231D]/80">
-                    <span>Gift Packaging</span>
-                    <span>{formatPKR(selectedOrder.totals.giftWrapFee)}</span>
-                  </div>
-                )}
-                <div className="pt-2 border-t border-[#C7982F]/20 flex justify-between font-bold text-sm text-[#042821]">
-                  <span>Total Due</span>
-                  <span>{formatPKR(selectedOrder.totals.total)}</span>
-                </div>
-              </div>
-
-              {/* Fulfillment Controls */}
-              <div className="p-4 rounded-xl bg-[#FFFCF7] border border-[#C7982F]/25 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-sm text-[#042821]">Fulfillment Status:</span>
-                  <span className="font-mono uppercase font-bold text-xs text-[#806326]">{selectedOrder.status}</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {(['CONFIRMED', 'PREPARING', 'DISPATCHED', 'DELIVERED', 'CANCELLED'] as const).map(st => (
-                    <button
-                      key={st}
-                      disabled={selectedOrder.status === st}
-                      onClick={() => handleInitiateStatusChange(st)}
-                      className={`py-1.5 px-3 rounded-lg text-xs font-medium transition-all ${
-                        selectedOrder.status === st
-                          ? 'bg-[#042821] text-white opacity-50 cursor-not-allowed'
-                          : st === 'CANCELLED'
-                          ? 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'
-                          : 'bg-[#F6F1EA] text-[#042821] border border-[#C7982F]/20 hover:bg-[#EBE3D7]'
-                      }`}
-                    >
-                      Mark {st}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="p-4 border-t border-[#C7982F]/20 bg-[#F6F1EA] flex justify-end">
-              <button
-                onClick={() => setSelectedOrder(null)}
-                className="py-2 px-5 rounded-xl bg-[#042821] text-white text-xs font-medium hover:bg-[#06382e]"
-              >
-                Close Receipt
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Status Transition Confirmation Modal */}
-      {showConfirmModal && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs">
-          <div className="max-w-md w-full p-6 rounded-2xl bg-[#FFFCF7] border border-[#C7982F]/30 shadow-2xl space-y-4">
-            <h3 className="font-serif text-lg font-bold text-[#042821]">Confirm Status Transition</h3>
-            <p className="text-xs text-[#29231D]/80 leading-relaxed">
-              Transition order <span className="font-mono font-bold">#{selectedOrder?.orderId}</span> from{' '}
-              <span className="font-semibold text-[#806326]">{selectedOrder?.status}</span> to{' '}
-              <span className="font-semibold text-emerald-700">{targetStatus}</span>?
-            </p>
-
-            <div>
-              <label className="block text-xs font-medium text-[#806326] mb-1">
-                Reason / Audit Note {targetStatus === 'CANCELLED' && <span className="text-rose-600">*</span>}:
-              </label>
-              <textarea
-                value={statusReason}
-                onChange={e => setStatusReason(e.target.value)}
-                placeholder="State the operational reason for this status transition..."
-                className="w-full p-2.5 rounded-xl border border-[#C7982F]/20 text-xs text-[#29231D] bg-[#F6F1EA] focus:outline-hidden"
-                rows={2}
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowConfirmModal(false)}
-                className="py-2 px-4 rounded-xl border border-[#C7982F]/30 text-xs text-[#29231D] hover:bg-[#EBE3D7]"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={statusUpdating || (targetStatus === 'CANCELLED' && !statusReason.trim())}
-                onClick={handleConfirmStatusChange}
-                className="py-2 px-5 rounded-xl bg-[#042821] text-white text-xs font-medium hover:bg-[#06382e] disabled:opacity-40"
-              >
-                {statusUpdating ? 'Updating...' : 'Confirm Transition'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+  return <div className="admin-workspace" dir="ltr">
+    <aside className="admin-sidebar"><div className="admin-sidebar-brand"><AllBarkaCrestVector className="w-9 h-12" /><div><strong>AllBarka</strong><p dir="auto">{t('admin.operations')}</p></div></div>
+      <nav aria-label={t('admin.workspace')}>{([{ key: 'overview', icon: LayoutDashboard }, { key: 'orders', icon: ClipboardList }, { key: 'catalogue', icon: Package }, { key: 'updates', icon: Bell }] as const).map(({ key, icon: Icon }) => <button type="button" key={key} aria-current={tab === key ? 'page' : undefined} className={tab === key ? 'active' : ''} onClick={() => changeFilters({ view: key })}><Icon size={18} /><span dir="auto">{key === 'updates' ? updateT('updates.adminTitle') : t(`admin.${key}`)}</span>{key === 'orders' && metrics && <span className="admin-nav-count">{metrics.count}</span>}</button>)}</nav>
+      <div className="admin-sidebar-bottom"><ShieldCheck size={21} /><strong dir="auto">{t('admin.security')}</strong><p dir="auto">{t('admin.privacy')}</p><bdi>{currentUser.email || currentUser.phoneNumber}</bdi><Link to="/" className="admin-store-link"><span dir="auto">{t('admin.returnStore')}</span><ArrowUpRight size={16} /></Link></div>
+    </aside>
+    <div className="admin-main">
+      <header className="admin-page-heading"><div><p className="admin-eyebrow" dir="auto">{t('admin.workspace')}</p><h1 dir="auto">{tab === 'updates' ? updateT('updates.adminTitle') : t(`admin.${tab}`)}</h1><p dir="auto">{tab === 'updates' ? updateT('updates.adminHint') : t(tab === 'catalogue' ? 'admin.catalog.hint' : tab === 'orders' ? 'admin.ordersHint' : 'admin.overviewHint')}</p></div><div className="admin-heading-actions">{languageSelect}{tab !== 'catalogue' && tab !== 'updates' && <button type="button" className="admin-button" disabled={loading} onClick={() => setRefresh(value => value + 1)}><RefreshCw size={16} className={loading ? 'admin-loading-spin' : ''} /><span dir="auto">{t('admin.refresh')}</span></button>}</div></header>
+      {tab === 'catalogue' ? <AdminCatalogPanel /> : tab === 'updates' ? <AdminUpdatesPanel /> : <>
+        {filters}
+        <div className="admin-sync-line"><span dir="auto">{t('admin.filteredScope')}</span><span dir="auto">{ledger?.asOf ? t('admin.lastSynced').replace('{time}', formatAdminDate(ledger.asOf, language)) : '—'}</span></div>
+        {queue !== 'all' && <div className="admin-queue-filter"><span dir="auto">{t(`admin.queue.${queue === 'bank-pending' ? 'payments' : queue}`)}</span><button type="button" className="admin-icon-button" aria-label={t('admin.clearQueue')} onClick={() => changeFilters({ queue: 'all' })}><X size={15} /></button></div>}
+        {error && <div role="alert" className="admin-notice admin-notice-error"><span dir="auto">{errorMessage(error)}</span><button type="button" className="admin-button" onClick={() => setRefresh(value => value + 1)}>{t('admin.retry')}</button></div>}
+        {ledger?.truncated && <p className="admin-notice" role="status" dir="auto">{t('admin.scanLimited')}</p>}
+        <div className="admin-metrics" aria-busy={loading}>{[
+          { label: 'orderCount', value: metrics?.count, icon: ClipboardList, money: false },
+          { label: 'active', value: metrics?.activeCount, icon: Package, money: false },
+          { label: 'orderValue', value: metrics?.orderValue, icon: CreditCard, money: true },
+          { label: 'paid', value: metrics?.paidValue, icon: CheckCircle2, money: true },
+        ].map(({ label, value, icon: Icon, money }) => <section className={`admin-metric ${loading ? 'admin-metric-loading' : ''}`} key={label}><div><span dir="auto">{t(`admin.metrics.${label}`)}</span><Icon size={18} /></div><strong><bdi>{loading || value === undefined ? '—' : money ? formatAdminCurrency(value) : value.toLocaleString('en-PK')}</bdi></strong></section>)}</div>
+        <p className="admin-metrics-hint" dir="auto">{t('admin.metricsHint')}</p>
+        {tab === 'overview' && <>
+          <section className="admin-section admin-pipeline"><div className="admin-section-heading"><div><p className="admin-eyebrow" dir="auto">{t('admin.operations')}</p><h2 dir="auto">{t('admin.pipeline')}</h2></div><span className="admin-badge admin-badge-success"><ShieldCheck size={13} />{t('admin.security')}</span></div><div className="admin-pipeline-grid">{STATUSES.map((value, index) => <button type="button" key={value} onClick={() => changeFilters({ view: 'orders', status: value, queue: 'all' })} disabled={loading || !ledger}><span className="admin-stage-number">{String(index + 1).padStart(2, '0')}</span><strong>{loading || !metrics ? '—' : metrics.statusCounts[value] || 0}</strong><span dir="auto">{t(`admin.status.${value}`)}</span></button>)}</div></section>
+          <section className="admin-queues"><div className="admin-section-heading"><div><h2 dir="auto">{t('admin.queueHint')}</h2><p dir="auto">{t('admin.filteredScope')}</p></div></div><div className="admin-queue-grid">{[
+            { label: 'new', count: (metrics?.statusCounts.NEW || 0) + (metrics?.statusCounts.ORDER_RECEIVED || 0), status: 'NEW', icon: ClipboardList },
+            { label: 'packing', count: metrics?.statusCounts.PREPARING || 0, status: 'PREPARING', icon: Package },
+            { label: 'transit', count: (metrics?.statusCounts.DISPATCHED || 0) + (metrics?.statusCounts.OUT_FOR_DELIVERY || 0), status: 'DISPATCHED', icon: Truck },
+            { label: 'payments', count: metrics?.bankPendingCount || 0, status: 'ALL', icon: CreditCard },
+          ].map(({ label, count, icon: Icon }) => <button type="button" key={label} className="admin-queue" disabled={loading || !ledger} onClick={() => changeFilters({ view: 'orders', queue: label === 'payments' ? 'bank-pending' : label })}><Icon size={20} /><div><span dir="auto">{t(`admin.queue.${label}`)}</span><strong>{loading || !metrics ? '—' : count}</strong></div><ArrowUpRight size={17} /></button>)}</div></section>
+        </>}
+        <section className="admin-section admin-ledger" aria-busy={loading}><div className="admin-section-heading"><div><h2 dir="auto">{t('admin.orders')}</h2><p dir="auto">{ledger ? t('admin.showing').replace('{count}', String(ledger.totalCount)) : t(loading ? 'admin.checking' : 'admin.unavailable')}</p></div><button type="button" className="admin-button" onClick={exportOrders} disabled={loading || exporting || !rows.length}><ArrowDownToLine size={16} /><span dir="auto">{t(exporting ? 'admin.exporting' : 'admin.export')}</span></button></div>
+          <p className="admin-export-hint" dir="auto">{t('admin.exportWarning')}</p>
+          {!!selection.length && <div className="admin-selection-bar" role="status"><span dir="auto">{t('admin.selected').replace('{count}', String(selection.length))}</span><div><button type="button" className="admin-button" onClick={() => setPackingOrders(selectedRows)}><Printer size={16} />{t('admin.packing')}</button><button type="button" className="admin-button" onClick={() => setSelection([])}>{t('admin.clearSelection')}</button></div></div>}
+          {loading ? <div className="admin-ledger-loading" role="status"><RefreshCw className="admin-loading-spin" size={22} /><span dir="auto">{t('admin.checking')}</span></div> : !rows.length ? <div className="admin-empty"><Package size={30} /><h3 dir="auto">{t(error ? 'admin.unavailable' : 'admin.table.empty')}</h3><p dir="auto">{t(error ? 'admin.errors.REQUEST_FAILED' : 'admin.table.emptyHint')}</p></div> : <>
+            <div className="admin-table-wrap"><table className="admin-order-table"><caption className="sr-only">{t('admin.orders')}</caption><thead><tr><th><label className="admin-check-label"><input type="checkbox" checked={allSelected} onChange={event => setSelection(event.target.checked ? rows.map(order => order.orderId) : [])} aria-label={t('admin.selectPage')} /></label></th><th scope="col">{t('admin.table.order')}</th><th scope="col">{t('admin.table.customer')}</th><th scope="col">{t('admin.status')}</th><th scope="col">{t('admin.payment')}</th><th scope="col">{t('admin.table.total')}</th><th scope="col"><span className="sr-only">{t('admin.table.action')}</span></th></tr></thead><tbody>{rows.map(order => <tr key={order.orderId} data-selected={selection.includes(order.orderId)}><td><label className="admin-check-label"><input type="checkbox" aria-label={`${t('admin.table.order')} ${order.orderId}`} checked={selection.includes(order.orderId)} onChange={event => setSelection(previous => event.target.checked ? [...previous, order.orderId] : previous.filter(id => id !== order.orderId))} /></label></td><td><button type="button" className="admin-order-link" onClick={() => setSelectedId(order.orderId)}>{order.orderId}</button><small>{formatAdminDate(order.createdAt, language)}</small><small dir="auto">{order.items.reduce((sum, item) => sum + item.quantity, 0)} {t('admin.table.items')}</small></td><td><strong dir="auto">{order.customer.name}</strong><small dir="auto">{order.customer.city}</small><small><bdi>{order.customer.phone}</bdi></small></td><td><OrderBadge value={order.status} /></td><td><OrderBadge payment value={order.paymentStatus} /><small dir="auto">{t(`admin.method.${order.paymentMethod}`)}</small></td><td><bdi className="admin-table-amount">{formatAdminCurrency(order.totals.total)}</bdi></td><td><button type="button" className="admin-icon-button" aria-label={`${t('admin.table.action')} ${order.orderId}`} onClick={() => setSelectedId(order.orderId)}><Eye size={18} /></button></td></tr>)}</tbody></table></div>
+            <div className="admin-mobile-orders">{rows.map(order => <article key={order.orderId} className="admin-mobile-order"><div><label className="admin-check-label"><input type="checkbox" aria-label={`${t('admin.table.order')} ${order.orderId}`} checked={selection.includes(order.orderId)} onChange={event => setSelection(previous => event.target.checked ? [...previous, order.orderId] : previous.filter(id => id !== order.orderId))} /></label><button type="button" className="admin-order-link" onClick={() => setSelectedId(order.orderId)}>{order.orderId}</button><button type="button" className="admin-icon-button" aria-label={`${t('admin.table.action')} ${order.orderId}`} onClick={() => setSelectedId(order.orderId)}><ArrowUpRight size={18} /></button></div><h3 dir="auto">{order.customer.name}</h3><p dir="auto">{order.customer.city} · <bdi>{formatAdminDate(order.createdAt, language)}</bdi></p><footer><div><OrderBadge value={order.status} /><OrderBadge payment value={order.paymentStatus} /></div><strong><bdi>{formatAdminCurrency(order.totals.total)}</bdi></strong></footer></article>)}</div>
+          </>}
+          <footer className="admin-pagination"><span dir="auto">{ledger ? t('admin.page').replace('{page}', String(ledger.page)).replace('{total}', String(ledger.totalPages)) : '—'}</span><div><button type="button" aria-label={t('admin.previousPage')} className="admin-icon-button" disabled={loading || (ledger?.page || page) <= 1} onClick={() => changeFilters({ page: String((ledger?.page || page) - 1) })}><ChevronLeft size={18} /></button><button type="button" aria-label={t('admin.nextPage')} className="admin-icon-button" disabled={loading || !ledger || ledger.page >= ledger.totalPages} onClick={() => changeFilters({ page: String((ledger?.page || page) + 1) })}><ChevronRight size={18} /></button></div></footer>
+        </section>
+        {!!feedback && !selectedId && <p className="admin-notice" role="status" dir="auto">{feedback}</p>}
+      </>}
     </div>
-  );
+    {selectedId && <AdminDialog title={selectedId} onClose={() => setSelectedId(null)} busy={busy}>
+      <div className="admin-detail-body">
+        {detailError && <div role="alert" className="admin-notice admin-notice-error"><p dir="auto">{errorMessage(detailError)}</p><button type="button" disabled={busy} className="admin-button" onClick={() => setDetailRefresh(value => value + 1)}><RefreshCw size={15} />{t('admin.detail.retry')}</button></div>}
+        {detailLoading ? <p role="status" className="admin-ledger-loading" dir="auto">{t('admin.detail.loading')}</p> : currentOrder && <>
+          <div className="admin-detail-toolbar"><div><OrderBadge value={currentOrder.status} /><OrderBadge payment value={currentOrder.paymentStatus} /></div><div><button type="button" className="admin-button" onClick={copyOrder}><Copy size={15} />{t('admin.copy')}</button><button type="button" className="admin-button" disabled={busy} onClick={() => { setPackingOrders([currentOrder]); setSelectedId(null); }}><Printer size={15} />{t('admin.packing')}</button></div></div>
+          <div className="admin-detail-grid"><section className="admin-detail-card"><h3 dir="auto">{t('admin.detail.customer')}</h3><strong dir="auto">{currentOrder.customer.name}</strong>{adminPhoneHref(currentOrder.customer.phone) ? <a className="admin-phone" href={adminPhoneHref(currentOrder.customer.phone)!}><bdi>{currentOrder.customer.phone}</bdi><ArrowUpRight size={14} /></a> : <p><bdi>{currentOrder.customer.phone}</bdi></p>}<p dir="auto">{currentOrder.customer.address}</p><p dir="auto">{currentOrder.customer.city}</p></section><section className="admin-detail-card"><h3 dir="auto">{t('admin.detail.delivery')}</h3><p><span dir="auto">{t('admin.detail.deliveryDate')}</span><strong><bdi>{currentOrder.deliverySchedule?.scheduledDeliveryDate || '—'}</bdi></strong></p><p dir="auto">{currentOrder.customer.deliverySlot || '—'}</p>{currentOrder.customer.instructions && <div className="admin-detail-note" dir="auto">{currentOrder.customer.instructions}</div>}</section></div>
+          <section className="admin-detail-card"><h3 dir="auto">{t('admin.table.items')}</h3><div className="admin-detail-items">{currentOrder.items.map((item, index) => <div key={`${item.id}-${index}`}><div><strong dir="auto">{item.name}</strong><span><bdi>{item.selectedWeight} × {item.quantity}</bdi></span>{hamperPackingDetails(item, language, t)}</div><bdi>{formatAdminCurrency(item.price * item.quantity)}</bdi></div>)}</div><dl className="admin-total-breakdown">{(['subtotal', 'discount', 'shipping', 'giftWrapFee'] as const).map(key => <div key={key}><dt dir="auto">{t(`admin.detail.${key === 'giftWrapFee' ? 'giftFee' : key}`)}</dt><dd><bdi>{key === 'discount' ? '− ' : ''}{formatAdminCurrency(currentOrder.totals[key])}</bdi></dd></div>)}{typeof currentOrder.totals.shippingWeightGrams === 'number' && <div><dt dir="auto">{t('admin.detail.shippingWeight')}</dt><dd><bdi>{currentOrder.totals.shippingWeightGrams / 1000}kg</bdi></dd></div>}{currentOrder.totals.shippingRegion && <div><dt dir="auto">{t('admin.detail.shippingRegion')}</dt><dd dir="auto">{t(`admin.shippingRegion.${currentOrder.totals.shippingRegion}`)}</dd></div>}<div className="admin-total-final"><dt dir="auto">{t('admin.table.total')}</dt><dd><bdi>{formatAdminCurrency(currentOrder.totals.total)}</bdi></dd></div></dl></section>
+          {currentOrder.gifting?.giftWrapping && <section className="admin-detail-card"><h3 dir="auto">{t('admin.detail.gifting')}</h3><p dir="auto">{t('admin.detail.giftWrap')}</p>{currentOrder.gifting.giftMessage && <blockquote dir="auto">{currentOrder.gifting.giftMessage}</blockquote>}</section>}
+          <div className="admin-detail-grid"><section className="admin-detail-card"><h3 dir="auto">{t('admin.detail.changeStatus')}</h3><label className="admin-field"><span className="sr-only">{t('admin.status')}</span><select dir="auto" disabled={busy} value={mutation?.type === 'status' ? mutation.target : currentOrder.status} onChange={event => { setMutation(event.target.value === currentOrder.status ? null : { type: 'status', target: event.target.value }); setReason(''); }}>{STATUSES.map(value => <option value={value} key={value}>{t(`admin.status.${value}`)}</option>)}</select></label></section><section className="admin-detail-card"><h3 dir="auto">{t('admin.detail.paymentRecording')}</h3><p dir="auto">{t(`admin.method.${currentOrder.paymentMethod}`)}</p><label className="admin-field"><span className="sr-only">{t('admin.payment')}</span><select dir="auto" disabled={busy} value={mutation?.type === 'payment' ? mutation.target : currentOrder.paymentStatus} onChange={event => { setMutation(event.target.value === currentOrder.paymentStatus ? null : { type: 'payment', target: event.target.value }); setReason(''); }}>{PAYMENTS.filter(value => currentOrder.paymentStatus === 'PAID' || value === currentOrder.paymentStatus || value === 'PAID').map(value => <option value={value} key={value}>{t(`admin.payment.${value}`)}</option>)}</select></label></section></div>
+          <p className="admin-bookkeeping-hint" dir="auto">{t('admin.bookkeepingHint')}</p>
+          {mutation && <form className="admin-mutation-form" onSubmit={event => { event.preventDefault(); const body = mutation.type === 'status' ? { status: mutation.target, expectedStatus: currentOrder.status, expectedUpdatedAt: currentOrder.updatedAt, reason: reason.trim() } : { paymentStatus: mutation.target, expectedPaymentStatus: currentOrder.paymentStatus, expectedUpdatedAt: currentOrder.updatedAt, reason: reason.trim() }; void doMutation(body, mutation.type); }}><p dir="auto"><strong>{t(mutation.type === 'status' ? 'admin.detail.changeStatus' : 'admin.detail.changePayment')}</strong> · {t(`admin.${mutation.type}.${mutation.type === 'status' ? currentOrder.status : currentOrder.paymentStatus}`)} → {t(`admin.${mutation.type}.${mutation.target}`)}</p><label className="admin-field"><span dir="auto">{t('admin.reasonRequired')}</span><textarea required minLength={3} maxLength={500} rows={2} dir="auto" value={reason} disabled={busy} onChange={event => setReason(event.target.value)} /></label><div className="admin-form-actions"><button type="button" className="admin-button" disabled={busy} onClick={() => setMutation(null)}>{t('admin.cancel')}</button><button type="submit" className="admin-button admin-button-primary" disabled={busy || reason.trim().length < 3}><Check size={16} />{t(busy ? 'admin.saving' : 'admin.save')}</button></div></form>}
+          <section className="admin-detail-card"><h3 dir="auto">{t('admin.detail.note')}</h3><p className="admin-bookkeeping-hint" dir="auto">{t('admin.detail.noteHint')}</p><form onSubmit={event => { event.preventDefault(); void doMutation({ note: note.trim(), expectedUpdatedAt: currentOrder.updatedAt }, 'notes'); }}><label className="admin-field"><span className="sr-only">{t('admin.detail.note')}</span><textarea rows={3} maxLength={1000} dir="auto" value={note} disabled={busy} onChange={event => setNote(event.target.value)} /></label><div className="admin-form-actions"><span>{note.length}/1000</span><button type="submit" className="admin-button" disabled={busy || note.trim().length < 1}><Check size={16} />{t(busy ? 'admin.saving' : 'admin.save')}</button></div></form><div className="admin-note-list">{currentOrder.adminNoteEntries?.slice().reverse().map(entry => <article key={entry.id}><p dir="auto">{entry.text}</p><small><bdi>{entry.actorEmail}</bdi> · {formatAdminDate(entry.timestampIso || entry.timestamp, language)}</small></article>)}{currentOrder.adminNotes?.map((text, index) => <article key={`legacy-${index}`}><p dir="auto">{text}</p><small dir="auto">{t('admin.detail.legacyNote')}</small></article>)}{!currentOrder.adminNoteEntries?.length && !currentOrder.adminNotes?.length && <p className="admin-muted" dir="auto">{t('admin.detail.notesEmpty')}</p>}</div></section>
+          <section className="admin-detail-card"><h3 dir="auto">{t('admin.detail.audit')}</h3><ol className="admin-audit-list">{detail.audits.map((entry, index) => <li key={`${entry.timestamp}-${index}`}><span className="admin-audit-dot" /><div><p>{entry.newStatus ? <><span dir="auto">{t(`admin.status.${entry.previousStatus}`)}</span> → <span dir="auto">{t(`admin.status.${entry.newStatus}`)}</span></> : entry.newPaymentStatus ? <><span dir="auto">{t(`admin.payment.${entry.previousPaymentStatus}`)}</span> → <span dir="auto">{t(`admin.payment.${entry.newPaymentStatus}`)}</span></> : <span dir="auto">{t('admin.detail.note')}</span>}</p>{(entry.reason || entry.note) && <p className="admin-muted" dir="auto">{entry.reason || entry.note}</p>}<small><bdi>{entry.actorEmail || '—'}</bdi> · {formatAdminDate(entry.timestampIso || entry.timestamp, language)}</small></div></li>)}</ol>{!detail.audits.length && <p className="admin-muted" dir="auto">{t('admin.detail.auditEmpty')}</p>}</section>
+        </>}
+        {feedback && <p className="admin-notice" role="status" dir="auto">{feedback}</p>}
+      </div>
+    </AdminDialog>}
+    {!!packingOrders.length && <PackingPreview orders={packingOrders} onClose={() => setPackingOrders([])} />}
+  </div>;
 }

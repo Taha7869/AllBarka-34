@@ -1,5 +1,8 @@
 import { STORE_CONFIG } from '../config/store';
 import { ShippingMethodId } from '../types.ts';
+import { calculateShipping, getCartShippingWeightGrams, isLahoreCity } from './shippingPolicy';
+import type { HamperConfiguration } from './hamperCatalog';
+export { calculateShipping, getCartShippingWeightGrams, getProductShippingWeightGrams, isLahoreCity } from './shippingPolicy';
 
 export const GIFT_WRAP_FEE = 250;
 export const FREE_SHIPPING_THRESHOLD = STORE_CONFIG.shipping.freeThreshold; // 3000 PKR
@@ -8,6 +11,10 @@ export interface OrderItemPriceInput {
   unitPrice?: number;
   price?: number;
   quantity: number;
+  productId?: string;
+  id?: string;
+  selectedWeight?: string;
+  hamperConfiguration?: HamperConfiguration;
 }
 
 export interface PricingSummary {
@@ -17,6 +24,8 @@ export interface PricingSummary {
   shipping: number;
   giftWrapFee: number;
   total: number;
+  shippingWeightGrams?: number | null;
+  shippingRegion?: 'lahore' | 'nationwide';
 }
 
 /**
@@ -25,7 +34,7 @@ export interface PricingSummary {
  */
 export function sanitizePrice(val: unknown): number {
   if (typeof val === 'number') {
-    return isNaN(val) || val < 0 ? 0 : Math.round(val);
+    return !Number.isFinite(val) || val < 0 ? 0 : Math.round(val);
   }
   if (!val) return 0;
   const str = String(val).replace(/(?:Rs\.?|PKR|\$)/gi, '').trim();
@@ -33,7 +42,7 @@ export function sanitizePrice(val: unknown): number {
   const match = noCommas.match(/-?\d+(?:\.\d+)?/);
   if (!match) return 0;
   const parsed = parseFloat(match[0]);
-  return isNaN(parsed) || parsed < 0 ? 0 : Math.round(parsed);
+  return !Number.isFinite(parsed) || parsed < 0 ? 0 : Math.round(parsed);
 }
 
 /**
@@ -63,24 +72,6 @@ export function calculateDiscount(subtotal: number, couponCode?: string | null):
   return 0;
 }
 
-export function calculateShipping(
-  discountedSubtotal: number,
-  methodId: ShippingMethodId,
-  giftWrapFee: number = 0
-): number {
-  if (discountedSubtotal <= 0) return 0;
-  if (methodId === 'sameday') {
-    const totalBeforeShipping = discountedSubtotal + giftWrapFee;
-    // Same-day fee: Rs. 500 when total <= 3000, Rs. 300 when total > 3000
-    // Same-day fees remain payable independently of standard free-shipping threshold
-    return totalBeforeShipping <= 3000 ? 500 : 300;
-  }
-  if (methodId === 'express') {
-    return STORE_CONFIG.shipping.expressRate;
-  }
-  return discountedSubtotal >= FREE_SHIPPING_THRESHOLD ? 0 : STORE_CONFIG.shipping.standardRate;
-}
-
 /**
  * Authoritative single calculation contract used by UI and server.
  */
@@ -90,19 +81,22 @@ export function calculateOrderSummary({
   couponCode,
   manualDiscount = 0,
   giftWrapping = false,
+  city = 'Lahore',
 }: {
   items: OrderItemPriceInput[];
   shippingMethodId?: ShippingMethodId;
   couponCode?: string | null;
   manualDiscount?: number;
   giftWrapping?: boolean;
+  city?: string;
 }): PricingSummary {
   const subtotal = calculateSubtotal(items);
   const couponDiscount = calculateDiscount(subtotal, couponCode);
   const discount = Math.min(subtotal, Math.max(couponDiscount, sanitizePrice(manualDiscount)));
   const discountedSubtotal = Math.max(0, subtotal - discount);
   const giftWrapFee = giftWrapping ? GIFT_WRAP_FEE : 0;
-  const shipping = calculateShipping(discountedSubtotal, shippingMethodId, giftWrapFee);
+  const shippingWeightGrams = getCartShippingWeightGrams(items);
+  const shipping = calculateShipping(discountedSubtotal, shippingMethodId, giftWrapFee, city, shippingWeightGrams);
   const total = discountedSubtotal + shipping + giftWrapFee;
 
   return {
@@ -112,6 +106,8 @@ export function calculateOrderSummary({
     shipping,
     giftWrapFee,
     total,
+    shippingWeightGrams,
+    shippingRegion: isLahoreCity(city) ? 'lahore' : 'nationwide',
   };
 }
 
