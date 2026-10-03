@@ -31,6 +31,8 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
+  const [failureCode, setFailureCode] = useState('AI_UNAVAILABLE');
+  const [humanRequested, setHumanRequested] = useState(false);
   const [serviceLoaded, setServiceLoaded] = useState(false);
   const aiServiceRef = useRef<typeof import('../services/aiConcierge') | null>(null);
   const requestRef = useRef<AbortController | null>(null);
@@ -39,6 +41,7 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
   const previouslyOpenRef = useRef(false);
   const launcherRef = useRef<HTMLButtonElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const accountRef = useRef(currentUser?.uid ?? null);
   const chipsScrollRef = useDragScroll<HTMLDivElement>();
   const displayMessages: ChatMessage[] = [
     { role: 'assistant', content: t(`concierge.${greeting}`) },
@@ -51,6 +54,24 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
     previouslyOpenRef.current = isOpen;
   }, [isOpen, onOpenChange]);
   useEffect(() => () => requestRef.current?.abort(), []);
+
+  // Conversation memory belongs only to this browser's current signed-in session.
+  useEffect(() => {
+    const uid = currentUser?.uid ?? null;
+    if (accountRef.current === uid) return;
+    accountRef.current = uid;
+    requestRef.current?.abort();
+    requestRef.current = null;
+    sendingRef.current = false;
+    lastFailedTextRef.current = '';
+    setMessages([]);
+    setInputText('');
+    setStreamingText('');
+    setIsLoading(false);
+    setIsOffline(false);
+    setHumanRequested(false);
+    setGreeting('welcome');
+  }, [currentUser?.uid]);
 
   useEffect(() => {
     if (isOpen) messagesEndRef.current?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'nearest' });
@@ -91,42 +112,56 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
     if (!customText) setInputText('');
     setIsLoading(true);
     setIsOffline(false);
+    setHumanRequested(false);
     setStreamingText('');
     const controller = new AbortController();
     requestRef.current = controller;
     let responseText = '';
+    let timeout: ReturnType<typeof setTimeout> | undefined;
 
     try {
-      if (!aiServiceRef.current) {
-        aiServiceRef.current = await import('../services/aiConcierge');
-        setServiceLoaded(true);
-      }
-      await aiServiceRef.current.chatWithOllama(
-        conversation.filter(message => message.role !== 'system').slice(-10),
-        language,
-        chunk => {
-          if (controller.signal.aborted) return;
-          responseText += chunk;
-          setStreamingText(responseText);
-        },
-        await currentUser?.getIdToken(),
-        controller.signal,
-      );
-      if (!controller.signal.aborted) {
+      const result = await Promise.race([
+        new Promise<never>((_, reject) => {
+          timeout = setTimeout(() => { controller.abort(); reject(new Error('AI_TIMEOUT')); }, 30000);
+        }),
+        (async () => {
+          const service = aiServiceRef.current ?? await import('../services/aiConcierge');
+          if (controller.signal.aborted) throw new Error('AI_CANCELLED');
+          aiServiceRef.current = service;
+          setServiceLoaded(true);
+          let token: string | undefined;
+          try { token = currentUser ? await currentUser.getIdToken() : undefined; }
+          catch { throw new Error('AUTH_SERVICE_UNAVAILABLE'); }
+          if (currentUser && !token) throw new Error('AUTH_SERVICE_UNAVAILABLE');
+          if (controller.signal.aborted) throw new Error('AI_CANCELLED');
+          return service.chatWithConcierge(conversation.filter(message => message.role !== 'system').slice(-5), language,
+            chunk => {
+              if (controller.signal.aborted || requestRef.current !== controller) return;
+              responseText += chunk;
+              setStreamingText(responseText);
+            }, token, controller.signal);
+        })(),
+      ]);
+      if (requestRef.current === controller && !controller.signal.aborted) {
         setMessages(previous => [...previous, { role: 'assistant', content: responseText }]);
+        setHumanRequested(result.action === 'human');
         setStreamingText('');
         lastFailedTextRef.current = '';
       }
-    } catch {
-      if (!controller.signal.aborted) {
+    } catch (error) {
+      if (requestRef.current === controller) {
         lastFailedTextRef.current = textToSend;
         setStreamingText('');
         setIsOffline(true);
+        setFailureCode(error instanceof Error ? ('code' in error ? String(error.code) : error.message) : 'AI_UNAVAILABLE');
       }
     } finally {
-      sendingRef.current = false;
-      if (!controller.signal.aborted) setIsLoading(false);
-      if (requestRef.current === controller) requestRef.current = null;
+      clearTimeout(timeout);
+      if (requestRef.current === controller) {
+        sendingRef.current = false;
+        setIsLoading(false);
+        requestRef.current = null;
+      }
     }
   };
 
@@ -135,6 +170,7 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
     setMessages([]);
     setGreeting('reset');
     setIsOffline(false);
+    setHumanRequested(false);
     setStreamingText('');
     lastFailedTextRef.current = '';
   };
@@ -235,6 +271,7 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
 
             {/* Chat Area */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[var(--color-base,#FAF9F5)] scrollbar-thin">
+              <p dir="auto" className="text-[11px] leading-relaxed text-[var(--color-ink-muted)]">{t('concierge.aiNotice')}</p>
               {displayMessages.map((msg, index) => (
                 <div key={index} className={`flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[85%] p-3.5 rounded-2xl text-[13px] leading-relaxed shadow-sm
@@ -270,7 +307,7 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
                   <div className="bg-[var(--color-surface,#FFFFFF)] border border-red-200 p-3.5 rounded-2xl rounded-bl-none shadow-sm flex flex-col gap-3">
                     <p className="text-[13px] text-red-800 dark:text-red-200 flex items-start gap-2">
                       <AlertCircle size={16} className="shrink-0 mt-0.5 text-red-600" />
-                      <span dir="auto">{t('conciergeOffline', 'Our concierge is resting. Please reach us on WhatsApp for assistance.')}</span>
+                      <span dir="auto">{t(failureCode === 'AI_GUEST_TRIAL_EXHAUSTED' ? 'concierge.trialEnded' : failureCode === 'AI_RATE_LIMITED' ? 'concierge.rateLimited' : failureCode === 'AI_TIMEOUT' ? 'concierge.timeout' : failureCode === 'UNAUTHORIZED' || failureCode === 'AUTH_SERVICE_UNAVAILABLE' ? 'concierge.signInAgain' : 'concierge.unavailable')}</span>
                     </p>
                     <div className="flex items-center gap-2">
                        <a
@@ -288,12 +325,15 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
                         onClick={() => handleSendMessage(undefined, lastFailedTextRef.current, true)}
                         className="min-h-11 text-xs font-bold text-[var(--color-ink,#1A1A1A)] disabled:opacity-40 px-3 py-2 border border-[var(--color-gold,#B8935F)] rounded-xl hover:bg-[var(--color-gold,#B8935F)] hover:text-[#29231D] transition-colors"
                       >
-                        {t('retry', 'Retry')}
+                        {t('concierge.retry')}
                       </button>
                     </div>
+                    {failureCode === 'AI_GUEST_TRIAL_EXHAUSTED' && <button type="button" className="min-h-11 text-xs font-bold text-start" onClick={() => window.dispatchEvent(new CustomEvent('open-auth-modal'))}>{t('concierge.googleTrial')}</button>}
                   </div>
                 </div>
               )}
+
+              {humanRequested && <a dir="auto" href={buildHumanSupportWhatsAppUrl()} target="_blank" rel="noreferrer" className="block rounded-xl border border-[var(--color-gold)] p-3 text-sm min-h-11">{t('concierge.humanSupport')}</a>}
 
               <div ref={messagesEndRef} />
             </div>

@@ -1,0 +1,429 @@
+{
+  "name": "AllBarka canonical Sheet status synchronization — INACTIVE",
+  "active": false,
+  "nodes": [
+    {
+      "id": "a575c09d15db97981e0b7eb522d7c906",
+      "name": "Poll Explicit Sheet Commands",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "1c381e7316a0b3a4a8e14f4a0e6192b1",
+      "name": "Read Pending Sheet Commands",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        200,
+        0
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.N8N_SHEET_BRIDGE_URL }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({action:'pending',secret:$env.N8N_SHEET_SYNC_SECRET}) }}",
+        "options": {
+          "timeout": 10000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "notesInFlow": true,
+      "notes": "Secret is server-only n8n environment / Script Properties; never Sheet cells. Verify JSON ok:true."
+    },
+    {
+      "id": "236d619c61936e3f9364deb8ddd7ae6a",
+      "name": "Validate Sheet Commands",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const raw = $input.first().json || {}; const body = raw.body && typeof raw.body === 'object' ? raw.body : raw;\nconst statuses=['NEW','ORDER_RECEIVED','CONFIRMED','PREPARING','DISPATCHED','OUT_FOR_DELIVERY','DELIVERED','CANCELLED']; const aliases={RECEIVED:'ORDER_RECEIVED',ORDER:'ORDER_RECEIVED',CONF:'CONFIRMED',PROC:'PREPARING',PACK:'PREPARING',DISP:'DISPATCHED',SHIP:'DISPATCHED',DELIV:'DELIVERED',CANC:'CANCELLED'}; const canonical=v=>{const s=String(v||'').trim().toUpperCase();return aliases[s]||s;}; const revision=v=>typeof v==='string' && /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$/.test(v) && Number.isFinite(Date.parse(v)) && new Date(Date.parse(v)).toISOString()===v;\nif(body.ok!==true || !Array.isArray(body.commands) || body.commands.length>25) throw new Error('SHEET_POLL_UNAVAILABLE');\nconst ids=new Set(); const orders=new Set(); return body.commands.map(row=>{ const requestId=String(row.request_id||''); const orderId=String(row.order_id||''); if(!/^[A-Za-z0-9_-]{16,128}$/.test(requestId)||!/^AB-[A-Za-z0-9-]{6,80}$/.test(orderId)||ids.has(requestId)||orders.has(orderId)) throw new Error('INVALID_OR_DUPLICATE_COMMAND'); ids.add(requestId);orders.add(orderId);const value=canonical(row.requested_status), base=canonical(row.request_base_status);if(!statuses.includes(value)||!statuses.includes(base)||!revision(row.request_base_revision)||!revision(row.request_created_at))throw new Error('INVALID_STATUS_COMMAND');return {json:{requestId,request:{source:'google_sheet',eventId:'sheet:'+requestId,orderId,status:value,expectedStatus:base,expectedUpdatedAt:row.request_base_revision,reason:typeof row.request_reason==='string'&&row.request_reason.trim()?row.request_reason.trim().slice(0,500):'Owner changed delivery status in Sheet'}}};});"
+      }
+    },
+    {
+      "id": "cc6d991813dc8e9c5e921e30e47cd874",
+      "name": "Apply Canonical Status Transaction",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        600,
+        0
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ALLBARKA_COMMERCE_ORIGIN + '/api/integrations/n8n/order-status' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.request) }}",
+        "options": {
+          "timeout": 10000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "notesInFlow": true,
+      "notes": "REQUIRED private Header Auth credential: X-AllBarka-Integration-Secret. No retries."
+    },
+    {
+      "id": "b20fe29a515aca369e401138268fb8bc",
+      "name": "Prepare Compare And Acknowledge",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const raw = $input.first().json || {}; const body = raw.body && typeof raw.body === 'object' ? raw.body : raw;\nconst statuses=['NEW','ORDER_RECEIVED','CONFIRMED','PREPARING','DISPATCHED','OUT_FOR_DELIVERY','DELIVERED','CANCELLED']; const aliases={RECEIVED:'ORDER_RECEIVED',ORDER:'ORDER_RECEIVED',CONF:'CONFIRMED',PROC:'PREPARING',PACK:'PREPARING',DISP:'DISPATCHED',SHIP:'DISPATCHED',DELIV:'DELIVERED',CANC:'CANCELLED'}; const canonical=v=>{const s=String(v||'').trim().toUpperCase();return aliases[s]||s;}; const revision=v=>typeof v==='string' && /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$/.test(v) && Number.isFinite(Date.parse(v)) && new Date(Date.parse(v)).toISOString()===v;\nconst command=$('Validate Sheet Commands').item.json; const canonicalReply=body.canonical||body.order||body; const applied=raw.statusCode>=200 && raw.statusCode<300 && body.ok===true && body.orderId===command.request.orderId && (body.eventId===command.request.eventId || body.eventId===undefined);const currentStatus=canonical(canonicalReply.status), currentRevision=canonicalReply.updatedAt||canonicalReply.statusRevision; if(applied && (!statuses.includes(currentStatus)||!revision(currentRevision)))throw new Error('INVALID_CANONICAL_ACK'); return [{json:{ack:{action:'ack',orderId:command.request.orderId,requestId:command.requestId,applied,...(statuses.includes(currentStatus)&&revision(currentRevision)?{status:currentStatus,revision:currentRevision}:{}),...(applied?{}:{error:raw.statusCode===409?'CONFLICT: canonical status changed; review and explicitly edit requested_status again':'STATUS_SYNC_FAILED: review before a new request'})}}}];"
+      }
+    },
+    {
+      "id": "15cfb0201f1a25a36986bd884c8f3ac4",
+      "name": "Acknowledge Same Sheet Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1000,
+        0
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.N8N_SHEET_BRIDGE_URL }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({...$json.ack,secret:$env.N8N_SHEET_SYNC_SECRET}) }}",
+        "options": {
+          "timeout": 10000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "notesInFlow": true,
+      "notes": "Secret is server-only n8n environment / Script Properties; never Sheet cells. Verify JSON ok:true."
+    },
+    {
+      "id": "037fafd0b24c98dd4fb3c35b2d46a785",
+      "name": "Verify Command Acknowledgement",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const raw = $input.first().json || {}; const body = raw.body && typeof raw.body === 'object' ? raw.body : raw;\nconst command=$('Prepare Compare And Acknowledge').item.json.ack;if(body.ok!==true||body.orderId!==command.orderId||body.requestId!==command.requestId)throw new Error('SHEET_ACK_UNCONFIRMED');return [{json:{ok:true,newerRequestPreserved:body.newerRequestPreserved===true}}];"
+      }
+    },
+    {
+      "id": "b081c6c0352e63668a36449f09488753",
+      "webhookId": "c2082135ea8c626ea4e40bee97f8667d",
+      "name": "Canonical Status Receiver",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        500
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "allbarka-order-status",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "notesInFlow": true,
+      "notes": "REQUIRED Header Auth X-AllBarka-Webhook-Secret with separate N8N_STATUS_WEBHOOK_SECRET."
+    },
+    {
+      "id": "87419c4bc91e13cf5da6969242662a0c",
+      "name": "Validate Canonical Status Event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        250,
+        500
+      ],
+      "parameters": {
+        "jsCode": "const raw = $input.first().json || {}; const body = raw.body && typeof raw.body === 'object' ? raw.body : raw;\nconst statuses=['NEW','ORDER_RECEIVED','CONFIRMED','PREPARING','DISPATCHED','OUT_FOR_DELIVERY','DELIVERED','CANCELLED']; const aliases={RECEIVED:'ORDER_RECEIVED',ORDER:'ORDER_RECEIVED',CONF:'CONFIRMED',PROC:'PREPARING',PACK:'PREPARING',DISP:'DISPATCHED',SHIP:'DISPATCHED',DELIV:'DELIVERED',CANC:'CANCELLED'}; const canonical=v=>{const s=String(v||'').trim().toUpperCase();return aliases[s]||s;}; const revision=v=>typeof v==='string' && /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$/.test(v) && Number.isFinite(Date.parse(v)) && new Date(Date.parse(v)).toISOString()===v;\nconst fail=()=>[{json:{valid:false,httpStatus:400,responseBody:{ok:false,error:'INVALID_STATUS_EVENT'}}}]; const order=body.order; if(body.event!=='ORDER_STATUS_CHANGED'||typeof body.eventId!=='string'||body.eventId.length>180||!body.eventId||!order||!/^AB-[A-Za-z0-9-]{6,80}$/.test(order.orderId)||!statuses.includes(order.status)||!revision(order.updatedAt)||!revision(body.timestamp)||Math.abs(Date.now()-Date.parse(body.timestamp))>300000)return fail(); return [{json:{valid:true,orderId:order.orderId,eventId:body.eventId,statusRevision:order.updatedAt,mirror:{action:'mirror',orderId:order.orderId,eventId:body.eventId,status:order.status,revision:order.updatedAt}}}];"
+      }
+    },
+    {
+      "id": "d1dbd4b4069c8fd3205d660a24c860fa",
+      "name": "Mirror Protected Canonical Outputs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        500,
+        500
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.N8N_SHEET_BRIDGE_URL }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({...$json.mirror,secret:$env.N8N_SHEET_SYNC_SECRET}) }}",
+        "options": {
+          "timeout": 10000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "notesInFlow": true,
+      "notes": "Secret is server-only n8n environment / Script Properties; never Sheet cells. Verify JSON ok:true."
+    },
+    {
+      "id": "ba2d9d3e72424c7c34333f6587d74b40",
+      "name": "Verify Status Mirror Acknowledgement",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        500
+      ],
+      "parameters": {
+        "jsCode": "const raw = $input.first().json || {}; const body = raw.body && typeof raw.body === 'object' ? raw.body : raw;\nconst expected=$('Validate Canonical Status Event').item.json;const receiptRevision=body.revision;const validRevision=typeof receiptRevision==='string' && Number.isFinite(Date.parse(receiptRevision)) && (receiptRevision===expected.statusRevision || (body.ignored==='STALE_REVISION' && Date.parse(receiptRevision)>Date.parse(expected.statusRevision))); if(body.ok!==true||body.orderId!==expected.orderId||body.eventId!==expected.eventId||body.mirrorStored!==true||!validRevision)return [{json:{httpStatus:503,responseBody:{ok:false,error:'STATUS_MIRROR_UNCONFIRMED'}}}];return [{json:{httpStatus:200,responseBody:{ok:true,orderId:expected.orderId,eventId:expected.eventId,statusRevision:expected.statusRevision,mirrorStored:true,...(body.ignored?{ignored:body.ignored}:{}),duplicate:body.duplicate===true}}}];"
+      }
+    },
+    {
+      "id": "25c91e120372b65f91c0bab8673a5140",
+      "name": "Respond Canonical Status Mirror",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1000,
+        500
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.responseBody }}",
+        "options": {
+          "responseCode": "={{ $json.httpStatus }}"
+        }
+      }
+    },
+    {
+      "id": "4f41e3c73425e34e01fa6bd271d0b794",
+      "name": "Canonical Status Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        400,
+        500
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "257cc0137c21cca9e10085b9f0ab6582",
+              "leftValue": "={{ $json.valid }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Poll Explicit Sheet Commands": {
+      "main": [
+        [
+          {
+            "node": "Read Pending Sheet Commands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Pending Sheet Commands": {
+      "main": [
+        [
+          {
+            "node": "Validate Sheet Commands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Sheet Commands": {
+      "main": [
+        [
+          {
+            "node": "Apply Canonical Status Transaction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apply Canonical Status Transaction": {
+      "main": [
+        [
+          {
+            "node": "Prepare Compare And Acknowledge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Compare And Acknowledge": {
+      "main": [
+        [
+          {
+            "node": "Acknowledge Same Sheet Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Acknowledge Same Sheet Request": {
+      "main": [
+        [
+          {
+            "node": "Verify Command Acknowledgement",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Canonical Status Receiver": {
+      "main": [
+        [
+          {
+            "node": "Validate Canonical Status Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Canonical Status Event": {
+      "main": [
+        [
+          {
+            "node": "Canonical Status Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mirror Protected Canonical Outputs": {
+      "main": [
+        [
+          {
+            "node": "Verify Status Mirror Acknowledgement",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Status Mirror Acknowledgement": {
+      "main": [
+        [
+          {
+            "node": "Respond Canonical Status Mirror",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Canonical Status Valid?": {
+      "main": [
+        [
+          {
+            "node": "Mirror Protected Canonical Outputs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Canonical Status Mirror",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveExecutionProgress": false,
+    "executionTimeout": 60
+  }
+}

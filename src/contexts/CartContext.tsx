@@ -98,7 +98,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCartPulsing, setIsCartPulsing] = useState(false);
   const [shippingCity, updateShippingCity] = useState(() => {
-    try { return localStorage.getItem(DELIVERY_CITY_KEY) || readCheckoutDraft()?.customer.city || 'Lahore'; } catch { return 'Lahore'; }
+    try { return localStorage.getItem(DELIVERY_CITY_KEY) || readCheckoutDraft()?.customer.city || 'Lahore'; } catch { return readCheckoutDraft()?.customer.city || 'Lahore'; }
   });
   const setShippingCity = useCallback((city: string) => {
     const normalized = city.trim().slice(0, 60);

@@ -1,4 +1,7 @@
-import crypto from 'crypto';
+import crypto from 'node:crypto';
+import type { CanonicalOrder } from '../lib/serverOrderService';
+import type { HamperConfiguration } from '../lib/hamperCatalog';
+import { ADMIN_STATUSES } from '../lib/adminOperations';
 
 export interface N8nNotificationResult {
   sent: boolean;
@@ -7,11 +10,34 @@ export interface N8nNotificationResult {
   statusCode?: number;
 }
 
-/**
- * Sends a server-side order event notification to n8n webhook if configured.
- * This function is timeout-protected and isolated from order transaction processing.
- * An n8n notification failure will NEVER cause an order transaction rollback or error state.
- */
+export interface N8nOrderDispatchConfig {
+  enabled: boolean;
+  webhookUrl?: string;
+  webhookSecret?: string;
+  timeoutMs: number;
+  reason?: string;
+}
+
+/** The webhook URL and secret must remain exclusively in the server environment. */
+export function getN8nOrderDispatchConfig(env: NodeJS.ProcessEnv = process.env): N8nOrderDispatchConfig {
+  const webhookUrl = env.N8N_ORDER_WEBHOOK_URL?.trim();
+  const webhookSecret = env.N8N_WEBHOOK_SECRET?.trim();
+  const configuredTimeout = Number(env.N8N_ORDER_TIMEOUT_MS);
+  const timeoutMs = Number.isFinite(configuredTimeout) && configuredTimeout >= 1000
+    ? Math.min(30000, Math.floor(configuredTimeout)) : 5000;
+  if (!webhookUrl) return { enabled: false, timeoutMs, reason: 'ORDER_WEBHOOK_URL_NOT_CONFIGURED' };
+  try {
+    const parsed = new URL(webhookUrl);
+    if (parsed.protocol !== 'https:' || !parsed.hostname || parsed.username || parsed.password || parsed.hash || parsed.search) {
+      return { enabled: false, timeoutMs, reason: 'ORDER_WEBHOOK_URL_REQUIRES_HTTPS' };
+    }
+  } catch {
+    return { enabled: false, timeoutMs, reason: 'ORDER_WEBHOOK_URL_INVALID' };
+  }
+  if (!webhookSecret) return { enabled: false, timeoutMs, reason: 'ORDER_WEBHOOK_SECRET_NOT_CONFIGURED' };
+  return { enabled: true, webhookUrl, webhookSecret, timeoutMs };
+}
+
 export interface N8nOrderDelivery {
   type: string;
   priority: string;
@@ -21,110 +47,175 @@ export interface N8nOrderDelivery {
 export interface N8nOrderData {
   orderId: string;
   customerUid?: string | null;
-  customer: {
-    name: string;
-    phone: string;
-    address: string;
-    city: string;
-    deliverySlot?: string;
-  };
+  customer: { name: string; phone: string; address: string; city: string; deliverySlot?: string };
   delivery?: N8nOrderDelivery | null;
-  totals: {
-    subtotal: number;
-    discount: number;
-    shipping: number;
-    total: number;
-  };
+  totals: { subtotal: number; discount: number; shipping: number; total: number };
   items: Array<{
-    id: string;
-    name: string;
-    selectedWeight: string;
-    quantity: number;
-    price: number;
+    id: string; name: string; selectedWeight: string; quantity: number; price: number;
+    hamperConfiguration?: HamperConfiguration;
   }>;
+  gifting?: { giftWrapping: boolean; giftWrapFee: number; giftMessage?: string };
   paymentMethod: string;
   createdAt: string;
-  whatsappMessage?: string;
+  status: CanonicalOrder['status'];
+  updatedAt: string;
+}
+
+function requiredText(value: unknown, max: number): string {
+  if (typeof value !== 'string' || !value.trim() || value.length > max) throw new Error('CANONICAL_ORDER_INVALID');
+  return value;
+}
+
+function money(value: unknown, positive = false): number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 100000000 || (positive && value === 0)) {
+    throw new Error('CANONICAL_ORDER_INVALID');
+  }
+  return value;
 }
 
 /**
- * Sends a server-side order event notification to n8n webhook if configured.
- * This function is timeout-protected and isolated from order transaction processing.
- * An n8n notification failure will NEVER cause an order transaction rollback or error state.
+ * Project only the persisted canonical receipt. Totals are copied, never recalculated;
+ * claim tokens, admin notes, auth data and WhatsApp links cannot enter this envelope.
  */
-export async function sendOrderToN8n(orderData: N8nOrderData): Promise<N8nNotificationResult> {
-  const webhookUrl = process.env.N8N_ORDER_WEBHOOK_URL;
-  const webhookSecret = process.env.N8N_WEBHOOK_SECRET;
-
-  if (!webhookUrl || !webhookUrl.trim()) {
-    return {
-      sent: false,
-      status: 'DISABLED',
-      reason: 'N8N_ORDER_WEBHOOK_URL environment variable is not configured.',
-    };
+export function projectCanonicalOrderForN8n(order: CanonicalOrder): N8nOrderData {
+  if (!order || !/^AB-\d{8}-[A-F0-9]{6}$/i.test(order.orderId || '') || !Number.isFinite(Date.parse(order.createdAt))) {
+    throw new Error('CANONICAL_ORDER_INVALID');
   }
-
-  const payload = JSON.stringify({
-    event: 'ORDER_CREATED',
-    timestamp: new Date().toISOString(),
-    order: orderData,
-  });
-
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    'User-Agent': 'AllBarka-OrderService/1.0',
+  if (order.paymentMethod !== 'cod' && order.paymentMethod !== 'bank') throw new Error('CANONICAL_ORDER_INVALID');
+  if (!ADMIN_STATUSES.includes(order.status) || !Number.isFinite(Date.parse(order.updatedAt))) throw new Error('CANONICAL_ORDER_INVALID');
+  const customer = order.customer;
+  const totals = order.totals;
+  if (!customer || !totals || !Array.isArray(order.items) || order.items.length < 1 || order.items.length > 100) {
+    throw new Error('CANONICAL_ORDER_INVALID');
+  }
+  if (!/^03\d{9}$/.test(customer.phone)) throw new Error('CANONICAL_ORDER_INVALID');
+  const wireOrder: N8nOrderData = {
+    orderId: order.orderId,
+    customerUid: order.uid == null ? null : requiredText(order.uid, 128),
+    customer: {
+      name: requiredText(customer.name, 120), phone: customer.phone,
+      address: requiredText(customer.address, 500), city: requiredText(customer.city, 80),
+      ...(customer.deliverySlot ? { deliverySlot: requiredText(customer.deliverySlot, 120) } : {}),
+    },
+    totals: {
+      subtotal: money(totals.subtotal), discount: money(totals.discount),
+      shipping: money(totals.shipping), total: money(totals.total),
+    },
+    items: order.items.map(item => {
+      if (!Number.isSafeInteger(item.quantity) || item.quantity < 1 || item.quantity > 1000) throw new Error('CANONICAL_ORDER_INVALID');
+      // Cart identities can contain a complete hamper configuration and exceed the receiver's 120-character limit.
+      const projected: N8nOrderData['items'][number] = {
+        id: requiredText(item.productId || item.id, 120), name: requiredText(item.name, 200),
+        selectedWeight: requiredText(item.selectedWeight, 50), quantity: item.quantity, price: money(item.price, true),
+      };
+      if (item.hamperConfiguration) {
+        const configuration = item.hamperConfiguration;
+        projected.hamperConfiguration = {
+          version: 1, boxId: configuration.boxId, selections: [...configuration.selections],
+          recipientName: configuration.recipientName, giftMessage: configuration.giftMessage,
+        };
+      }
+      return projected;
+    }),
+    paymentMethod: order.paymentMethod, createdAt: requiredText(order.createdAt, 60),
+    status: order.status, updatedAt: requiredText(order.updatedAt, 60),
   };
-
-  if (webhookSecret && webhookSecret.trim()) {
-    const trimmedSecret = webhookSecret.trim();
-    const signature = crypto
-      .createHmac('sha256', trimmedSecret)
-      .update(payload)
-      .digest('hex');
-    headers['X-N8n-Signature'] = signature;
-    headers['X-AllBarka-Webhook-Secret'] = trimmedSecret;
-  }
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s strict timeout
-
-  try {
-    const response = await fetch(webhookUrl.trim(), {
-      method: 'POST',
-      headers,
-      body: payload,
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-
-    if (response.ok) {
-      return {
-        sent: true,
-        status: 'SUCCESS',
-        statusCode: response.status,
-      };
-    } else {
-      return {
-        sent: false,
-        status: 'FAILED',
-        statusCode: response.status,
-        reason: `n8n webhook responded with HTTP status ${response.status}`,
-      };
-    }
-  } catch (error: any) {
-    clearTimeout(timeoutId);
-    if (error.name === 'AbortError') {
-      return {
-        sent: false,
-        status: 'TIMEOUT',
-        reason: 'n8n webhook dispatch timed out after 5000ms',
-      };
-    }
-    return {
-      sent: false,
-      status: 'FAILED',
-      reason: error.message || 'n8n webhook network error',
+  if (order.gifting) {
+    wireOrder.gifting = {
+      giftWrapping: Boolean(order.gifting.giftWrapping), giftWrapFee: money(order.gifting.giftWrapFee),
+      ...(order.gifting.giftMessage ? { giftMessage: order.gifting.giftMessage } : {}),
     };
+  }
+  if (order.deliverySchedule) {
+    const schedule = order.deliverySchedule;
+    wireOrder.delivery = {
+      type: schedule.shippingMethodId,
+      priority: schedule.shippingMethodId === 'sameday' ? 'SAME_DAY' : schedule.shippingMethodId === 'express' ? 'EXPRESS' : 'STANDARD',
+      promisedDeliveryDate: schedule.scheduledDeliveryDate,
+    };
+  }
+  return wireOrder;
+}
+
+export interface SendOrderToN8nOptions {
+  config?: N8nOrderDispatchConfig;
+  fetchImpl?: typeof fetch;
+  now?: () => number;
+  timeoutMs?: number;
+}
+
+/** Bounded transport only. Durable delivery/retries belong to orderOutboxWorker. */
+export async function sendOrderToN8n(orderData: N8nOrderData, options: SendOrderToN8nOptions = {}): Promise<N8nNotificationResult> {
+  const config = options.config ?? getN8nOrderDispatchConfig();
+  if (!config.enabled || !config.webhookUrl || !config.webhookSecret) {
+    return { sent: false, status: 'DISABLED', reason: config.reason || 'ORDER_WEBHOOK_DISABLED' };
+  }
+  // Even injected configurations must satisfy the HTTPS + secret requirement.
+  const verifiedConfig = getN8nOrderDispatchConfig({ N8N_ORDER_WEBHOOK_URL: config.webhookUrl, N8N_WEBHOOK_SECRET: config.webhookSecret });
+  if (!verifiedConfig.enabled) return { sent: false, status: 'DISABLED', reason: verifiedConfig.reason };
+  const timeoutMs = Math.max(1, Math.min(30000, options.timeoutMs ?? config.timeoutMs));
+  const controller = new AbortController();
+  let timeoutId: ReturnType<typeof setTimeout>;
+  const deadline = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      controller.abort();
+      const error = new Error('ORDER_WEBHOOK_TIMEOUT');
+      error.name = 'AbortError';
+      reject(error);
+    }, timeoutMs);
+  });
+  try {
+    // Whitelist again to prevent callers from accidentally serializing a full security-bearing database record.
+    const envelopeOrder: N8nOrderData = {
+      orderId: orderData.orderId, customerUid: orderData.customerUid ?? null,
+      customer: {
+        name: orderData.customer.name, phone: orderData.customer.phone,
+        address: orderData.customer.address, city: orderData.customer.city,
+        ...(orderData.customer.deliverySlot ? { deliverySlot: orderData.customer.deliverySlot } : {}),
+      },
+      totals: { subtotal: orderData.totals.subtotal, discount: orderData.totals.discount, shipping: orderData.totals.shipping, total: orderData.totals.total },
+      items: orderData.items.map(item => ({
+        id: item.id, name: item.name, selectedWeight: item.selectedWeight, quantity: item.quantity, price: item.price,
+        ...(item.hamperConfiguration ? { hamperConfiguration: item.hamperConfiguration } : {}),
+      })),
+      ...(orderData.delivery ? { delivery: orderData.delivery } : {}),
+      ...(orderData.gifting ? { gifting: orderData.gifting } : {}),
+      paymentMethod: orderData.paymentMethod, createdAt: orderData.createdAt,
+      status: orderData.status, updatedAt: orderData.updatedAt,
+    };
+    const payload = JSON.stringify({ event: 'ORDER_CREATED', timestamp: new Date((options.now ?? Date.now)()).toISOString(), order: envelopeOrder });
+    const response = await Promise.race([
+      (options.fetchImpl ?? fetch)(verifiedConfig.webhookUrl!, {
+        method: 'POST', redirect: 'error', signal: controller.signal, body: payload,
+        headers: {
+          'Content-Type': 'application/json', 'User-Agent': 'AllBarka-OrderService/2.0',
+          'X-AllBarka-Webhook-Secret': verifiedConfig.webhookSecret!,
+          // Compatibility signature; the bundled receiver authenticates the shared-secret header.
+          'X-N8n-Signature': crypto.createHmac('sha256', verifiedConfig.webhookSecret!).update(payload).digest('hex'),
+        },
+      }), deadline,
+    ]);
+    if (!response.ok) {
+      controller.abort();
+      return { sent: false, status: 'FAILED', statusCode: response.status, reason: 'ORDER_WEBHOOK_HTTP_ERROR' };
+    }
+    let acknowledgement: unknown;
+    try {
+      acknowledgement = await Promise.race([response.json(), deadline]);
+    } catch (error) {
+      if (controller.signal.aborted || (error as Error)?.name === 'AbortError') throw error;
+      return { sent: false, status: 'FAILED', statusCode: response.status, reason: 'ORDER_WEBHOOK_INVALID_ACK' };
+    }
+    const ack = acknowledgement as { ok?: unknown; orderId?: unknown; mirrorStored?: unknown } | null;
+    if (!ack || ack.ok !== true || ack.orderId !== orderData.orderId || ack.mirrorStored !== true) {
+      return { sent: false, status: 'FAILED', statusCode: response.status, reason: 'ORDER_WEBHOOK_INVALID_ACK' };
+    }
+    return { sent: true, status: 'SUCCESS', statusCode: response.status };
+  } catch (error) {
+    return controller.signal.aborted || (error as Error)?.name === 'AbortError'
+      ? { sent: false, status: 'TIMEOUT', reason: 'ORDER_WEBHOOK_TIMEOUT' }
+      : { sent: false, status: 'FAILED', reason: 'ORDER_WEBHOOK_NETWORK_ERROR' };
+  } finally {
+    clearTimeout(timeoutId!);
   }
 }

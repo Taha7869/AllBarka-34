@@ -8,6 +8,8 @@ import { PRODUCTS } from '../data/products';
 import { getReorderItems, orderProgress } from '../lib/orderPresentation';
 import { Link } from 'react-router-dom';
 import { acquireScrollLock } from '../utils/scrollLock';
+import { apiUrl } from '../lib/apiUrl';
+import { withApiDeadline } from '../lib/apiDeadline';
 
 interface PatronLoungeModalProps {
   isOpen: boolean;
@@ -162,13 +164,18 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
     setLoadingOrders(true);
     (async () => {
       try {
-        const idToken = await currentUser.getIdToken();
-        const response = await fetch('/api/me/orders', {
-          headers: { Authorization: `Bearer ${idToken}` }, signal: controller.signal,
-        });
-        if (!response.ok) throw new Error('Orders unavailable');
-        const data = await response.json();
-        if (!data.success || !Array.isArray(data.orders)) throw new Error('Invalid order response');
+        const data = await withApiDeadline(async signal => {
+          const idToken = await currentUser.getIdToken();
+          if (signal.aborted || !idToken) throw new Error('Account verification unavailable');
+          const response = await fetch(apiUrl('/api/me/orders'), {
+            headers: { Authorization: `Bearer ${idToken}`, Accept: 'application/json' }, signal,
+            credentials: 'omit', cache: 'no-store',
+          });
+          if (!response.ok) throw new Error('Orders unavailable');
+          const body = await response.json();
+          if (body?.success !== true || !Array.isArray(body.orders)) throw new Error('Invalid order response');
+          return body;
+        }, 12000, controller.signal);
         if (active) setOrders(data.orders);
       } catch {
         if (active) setOrdersError(true);

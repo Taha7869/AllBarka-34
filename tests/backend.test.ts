@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { sendOrderToN8n } from '../src/services/n8nOrderNotification.ts';
 import { validateAndPriceOrder, validateCustomerDetails, ValidationError } from '../src/lib/orderValidation.ts';
-import { PersistenceUnavailableError, IdempotencyConflictError, QuoteChangedError } from '../src/lib/orderDatabase.ts';
+import { PersistenceUnavailableError, IdempotencyConflictError, QuoteChangedError, createDurableOrder } from '../src/lib/orderDatabase.ts';
+import { hashPayload } from '../src/lib/serverOrderService.ts';
 
 async function runBackendTests() {
   console.log('🧪 Starting AllBarka Backend Production Hardening Unit & Integration Test Suite...\n');
@@ -66,6 +67,7 @@ async function runBackendTests() {
     delete process.env.N8N_ORDER_WEBHOOK_URL;
     const result = await sendOrderToN8n({
       orderId: 'ORD-TEST-001',
+      status: 'NEW', updatedAt: new Date().toISOString(),
       customer: {
         name: 'Test Patron',
         phone: '+92 300 1234567',
@@ -94,12 +96,13 @@ async function runBackendTests() {
     globalThis.fetch = async (url: any, options: any) => {
       capturedHeaders = options.headers;
       capturedBody = options.body;
-      return { ok: true, status: 200 } as any;
+      return { ok: true, status: 200, json: async () => ({ ok: true, orderId: JSON.parse(options.body).order.orderId, mirrorStored: true }) } as any;
     };
 
     try {
       const orderData = {
         orderId: 'AB-TEST-N8N-02',
+        status: 'NEW' as const, updatedAt: new Date().toISOString(),
         customerUid: 'patron_uid_999',
         customer: { name: 'Zahra', phone: '03001234567', address: 'Model Town', city: 'Lahore' },
         delivery: { type: 'sameday', priority: 'SAME_DAY', promisedDeliveryDate: '2026-09-23' },
@@ -140,6 +143,47 @@ async function runBackendTests() {
     const err = new IdempotencyConflictError();
     assert.equal(err.code, 'IDEMPOTENCY_PAYLOAD_MISMATCH');
   });
+
+  const idempotencyPayload = {
+    name: 'Fixture Customer', phone: '03001234567', address: 'Fixture house, test street', city: 'Lahore',
+    paymentMethod: 'cod', shippingMethodId: 'standard', deliverySlot: 'Fastest Dispatch', isWholesale: false,
+    items: [{ id: 'pista', selectedWeight: '500g', quantity: 1, price: 2500 }],
+  };
+
+  test('Idempotency intent: Default/trimmed delivery slots and false wholesale mode normalize identically', () => {
+    const { deliverySlot: _slot, isWholesale: _wholesale, ...defaults } = idempotencyPayload;
+    assert.equal(hashPayload(defaults), hashPayload(idempotencyPayload));
+    assert.equal(hashPayload({ ...defaults, deliverySlot: '  Fastest Dispatch  ', isWholesale: false }), hashPayload(idempotencyPayload));
+  });
+
+  test('Idempotency intent: Browser prices, expected quotes and refreshed tokens do not change retry identity', () => {
+    assert.equal(hashPayload({ ...idempotencyPayload, expectedFinalTotal: 99999, authToken: 'refreshed-token',
+      items: idempotencyPayload.items.map(item => ({ ...item, price: 1, unitPrice: 1 })) }), hashPayload(idempotencyPayload));
+  });
+
+  for (const [field, value] of [['deliverySlot', 'Evening'], ['isWholesale', true]] as const) {
+    await test(`Idempotency intent: A changed ${field} with the same key rejects before any order write`, async () => {
+      let reads = 0;
+      let writes = 0;
+      const ref = (path: string) => ({ path });
+      const mockDb: any = {
+        collection: (name: string) => ({ doc: (id: string) => ref(`${name}/${id}`) }),
+        runTransaction: async (callback: any) => callback({
+          get: async (document: { path: string }) => {
+            reads++;
+            assert.equal(document.path, 'checkoutIntents/fixture-conflict-key');
+            return { exists: true, data: () => ({ payloadHash: hashPayload(idempotencyPayload), orderId: 'AB-20261003-A1B2C3' }) };
+          },
+          set: () => { writes++; }, update: () => { writes++; },
+        }),
+      };
+      await assert.rejects(() => createDurableOrder({ db: mockDb, payload: { ...idempotencyPayload, [field]: value },
+        uid: 'fixture-customer', idempotencyKey: 'fixture-conflict-key' }),
+      (error: any) => error instanceof IdempotencyConflictError && error.code === 'IDEMPOTENCY_PAYLOAD_MISMATCH');
+      assert.equal(reads, 1);
+      assert.equal(writes, 0);
+    });
+  }
 
   console.log(`\n========================================`);
   console.log(`Test Results: ${passedCount} PASSED, ${failedCount} FAILED.`);

@@ -1,3 +1,4 @@
+import { apiUrl } from '../lib/apiUrl';
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import type { User } from 'firebase/auth';
 import { patronProfileFromIdentity } from '../lib/emailAuthentication';
@@ -126,7 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ]);
       // Firebase sign-out must still happen if optional server-cookie cleanup is unavailable.
       const results = await Promise.allSettled([
-        fetch('/api/auth/sessionLogout', { method: 'POST', signal: AbortSignal.timeout(8000) }),
+        fetch(apiUrl('/api/auth/sessionLogout'), { method: 'POST', signal: AbortSignal.timeout(8000) }),
         signOut(auth),
       ]);
       if (results[1].status === 'rejected') throw results[1].reason;

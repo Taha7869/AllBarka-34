@@ -1,0 +1,488 @@
+{
+  "schemaVersion": 1,
+  "name": "AllBarka targeted tracking and receipt safety patch",
+  "active": false,
+  "baseline": {
+    "nodeCount": 108,
+    "originalNodeCount": 90,
+    "parentExportPresent": false,
+    "packageValidatorChecks": 29,
+    "sourceArchive": "AllBarka-n8n-v29-20261003.zip",
+    "sourceWorkflowSha256": "18b6abbe63079b5caea55cc5708634a2f11b123d30eb0c72b9d52f3b51fc7cdf"
+  },
+  "parentLinkage": "Apply in place to the current Execute Workflow child; preserve its workflow ID. No parent export supplied or verified.",
+  "modifiedNodes": [
+    {
+      "name": "Classify Customer Intent",
+      "type": "n8n-nodes-base.code",
+      "parameters": {
+        "jsCode": "// ===== Classify Customer Intent V7: Naya Menu + Herbs + Custom Order + Rage Filter + GUARD =====\nfunction distance(a,b) {\n  if (Math.abs(a.length-b.length)>2) return 3;\n  let prior=Array.from({length:b.length+1},(_,i)=>i);\n  for(let i=1;i<=a.length;i++) {\n    const next=[i];\n    for(let j=1;j<=b.length;j++) next[j]=Math.min(next[j-1]+1,prior[j]+1,prior[j-1]+(a[i-1]===b[j-1]?0:1));\n    prior=next;\n  }\n  return prior[b.length];\n}\nfunction aliases(row) {\n  const raw=row.aliases || row.search_aliases || '';\n  let list=raw;\n  if(typeof raw==='string') {\n    try { list=JSON.parse(raw); } catch { list=raw.split(','); }\n  }\n  return [row.name,...(Array.isArray(list)?list:[])].filter(Boolean).map(normalize);\n}\nfunction findProduct(query,rows) {\n  if(!query || query.length<3) return null;\n  const matches=[];\n  for(const row of rows) for(const alias of aliases(row)) {\n    if(!alias || alias.length<3) continue;\n    const exact=query===alias || (` ${query} `).includes(` ${alias} `);\n    const words=query.split(' ');\n    const fuzzy=alias.length>=5 && words.some(word=>word.length>=4 && Math.abs(word.length-alias.length)<=2 && distance(word,alias)<= (alias.length>=7?2:1));\n    if(exact||fuzzy) matches.push({row,score:exact?100+alias.length:alias.length});\n  }\n  matches.sort((a,b)=>b.score-a.score);\n  if(!matches.length || (matches[1] && matches[0].score===matches[1].score && matches[0].row.name!==matches[1].row.name)) return null;\n  return matches[0].row;\n}\nfunction normalize(value) {\n  return String(value ?? '')\n    .normalize('NFKC')\n    .toLowerCase()\n    .replace(/[\\u200B-\\u200F\\uFEFF]/g, '')\n    .replace(/[\\u064B-\\u065F\\u0670\\u0640]/g, '')\n    .replace(/[أإآ]/g, 'ا')\n    .replace(/[^\\p{L}\\p{N}\\s]/gu, ' ')\n    .replace(/\\s+/g, ' ')\n    .trim();\n}\nfunction exact(value, list) {\n  return list.some(x => value === normalize(x));\n}\nfunction has(value, list) {\n  const padded = ` ${value} `;\n  return list.some(x =>\n    padded.includes(` ${normalize(x)} `)\n  );\n}\nfunction looksLikeQuestion(text, raw) {\n  if (/\\?|؟/.test(raw || '')) return true;\n  return has(text, [\n    'kya','kia','kaise','kese','kesa','kaisa','kyun','kyu','kab','kahan','kitna','kitne','kitni',\n    'kaun','kon','konsa','faida','fayda','faide','fayde','benefit','benefits','nutrition',\n    'price','rate','cost','detail','details','info','jankari','batao','batado',\n    'istemal','istamal','istemaal','tarika','tareeka','use','what','how','when','where','why','which',\n    'کیا','کیسے','کب','کہاں',\n  ]);\n}\nfunction safeContext(source) {\n  try {\n    const value =\n      typeof source === 'string'\n        ? JSON.parse(source || '{}')\n        : (source || {});\n    return value &&\n      typeof value === 'object' &&\n      !Array.isArray(value)\n      ? value\n      : {};\n  } catch {\n    return {};\n  }\n}\nfunction isQuantityChange(raw) {\n  const q = String(raw || '').normalize('NFKC').toLowerCase().replace(/,/g, '.').trim();\n  return /^(make it |karo |kar do |change |badal |chahiye )?\\d+(?:\\.\\d+)?\\s*(g|gm|gram|grams|kg|kgs|kilogram|kilograms|box|boxes|pack|packs|packet|packets|piece|pieces|pc|pcs)?\\s*(chahiye|hai)?$/.test(q);\n}\nfunction extractQuantity(raw) {\n  const m = String(raw || '').normalize('NFKC').toLowerCase().replace(/,/g, '.').match(/(\\d+(?:\\.\\d+)?)\\s*(g|gm|gram|grams|kg|kgs|kilogram|kilograms|box|boxes|pack|packs|packet|packets|piece|pieces|pc|pcs)?\\s*$/);\n  return m ? (m[1] + (m[2] ? m[2] : '')) : String(raw || '').trim();\n}\n\n// ===== RAGE FILTER: abuse vs complaint =====\nconst ABUSE_WORDS = [\n  'fraud','fraudster','chor','loot','lootere','ghatiya','bakwas','bekar','pagal','pagal ho',\n  'harami','haraami','bewakoof','ullu','ullu ka patha','third class','3rd class','nalayak',\n  'badtameez','jali','scam','scammer','dhoka','cheater','cheat','stupid','idiot','fool',\n  'nonsense','rubbish','worst','pathetic','useless','chor hai','loot rahe','loot rahe ho',\n];\nconst COMPLAINT_WORDS = [\n  'kharab','damaged','damage','toota','tuti','broken','ghalat','wrong','missing',\n  'refund','wapas','return','complain','complaint','shikayat','shikwa','shikvaat',\n];\n\nconst CHOICES = {\n  menu_catalogue: 'browse_products',\n  menu_deals: 'deals',\n  menu_herbs: 'herbs_spices',\n  menu_custom: 'custom_order',\n  menu_tracking: 'order_status',\n  menu_faq: 'faq_help',\n  menu_ai: 'ai_start',\n  menu_human: 'human_support',\n  // legacy buttons (purane menu wale customers ke liye)\n  menu_dry_fruits: 'browse_products',\n  menu_snacks: 'browse_products',\n  menu_gift_boxes: 'browse_products',\n  confirm_yes: 'confirm_order',\n  confirm_no: 'cancel_order',\n};\nconst NUMBERS = {\n  '1': 'browse_products',\n  '2': 'deals',\n  '3': 'herbs_spices',\n  '4': 'custom_order',\n  '5': 'order_status',\n  '6': 'faq_help',\n  '7': 'ai_start',\n  '8': 'human_support',\n  '9': 'human_support', // legacy\n  '0': 'menu',\n};\nconst MENU_CATEGORIES = {\n  menu_dry_fruits: 'Dry Fruits & Nuts',\n  menu_snacks: 'Snacks & Seeds',\n  menu_gift_boxes: 'Gift Boxes',\n};\nconst TITLE_KEYWORDS = [\n  [/catalog/i, 'browse_products', null],\n  [/deal|offer/i, 'deals', null],\n  [/herbs?\\s*&?\\s*spices?|herbs|spices|masala/i, 'herbs_spices', null],\n  [/custom\\s*order|custom|special order/i, 'custom_order', null],\n  [/dry fruit/i, 'browse_products', 'Dry Fruits & Nuts'],\n  [/snack/i, 'browse_products', 'Snacks & Seeds'],\n  [/gift/i, 'browse_products', 'Gift Boxes'],\n  [/order/i, 'place_order', null],\n  [/track/i, 'order_status', null],\n  [/ai health|health bot/i, 'ai_start', null],\n  [/faq|help/i, 'faq_help', null],\n  [/human|support/i, 'human_support', null],\n];\nconst catalogue = $input.all().map(item => item.json || {}).filter(row => row.active !== false && row.name);\nconst item = {json: $('Prepare Conversation Context').first().json};\nreturn [(() => {\n  const index = 0;\n  const data = item.json || {};\n  const rawText =\n    typeof data.text === 'string'\n      ? data.text.trim()\n      : String(data.text?.body || '').trim();\n  const text = normalize(rawText);\n  const rawChoice = String(data.choiceId || '')\n    .trim()\n    .toLowerCase();\n  const command = values =>\n    exact(text, values) || exact(rawChoice, values.map(x => normalize(x)));\n  let state = String(\n    data.sessionState ||\n    data.state ||\n    'idle'\n  ).trim().toLowerCase();\n  const expiresAt = Date.parse(data.expires_at || '');\n  if (\n    data.active === false ||\n    data.active === 'false' ||\n    (\n      Number.isFinite(expiresAt) &&\n      expiresAt <= Date.now()\n    )\n  ) {\n    state = 'idle';\n  }\n  const context = safeContext(\n    data.sessionContext ?? data.context_json\n  );\n  let intent = 'unknown';\n  let confidence = 0;\n  const duplicate = Boolean(data.last_message_id && data.last_message_id === data.messageId);\n  const isText = ['text','button','interactive','reaction'].includes(String(data.messageType || '').toLowerCase());\n\n  // ===== GUARD (NAYA): opt-out text pehchano — forceMenu inhe khae ga nahi =====\n  const isOptOutText = command([\n    'cancel', 'cancel order', 'cancel_order', 'order cancel', 'cancel karo', 'cancel kardo', 'cancel krdo', 'کینسل', 'منسوخ',\n    'stop', 'stop messages', 'stop reminders', 'reminder band', 'reminders band',\n    'band karo', 'band kardo', 'band krdo', 'nahi chahiye', 'nahin chahiye', 'abhi nahi chahiye',\n  ]);\n  // ===== FIX: PEHLA MSG = HAMESHA MENU (opt-out text chhod kar) =====\n  const trackingIds = [...new Set([\n    ...[...rawText.matchAll(/\\bab[\\s:-]*(\\d{8})[\\s:-]*(\\d{4,6})[\\s:-]*(\\d{2,4})(?![a-z0-9-])/gi)]\n      .map(m => 'AB-' + m[1] + '-' + m[2] + '-' + m[3]),\n    ...[...rawText.matchAll(/\\bab[\\s:-]*(\\d{8})[\\s:-]*([a-f0-9]{6})(?![a-z0-9-])/gi)]\n      .map(m => 'AB-' + m[1] + '-' + m[2].toUpperCase()),\n  ])];\n  const isTrackingRequest = trackingIds.length > 0 || command([\n    'tracking', 'track', 'order status', 'track order', 'track my order',\n    'where is my order', 'order kahan hai', 'mera order kahan hai',\n  ]) || has(text, ['track my order', 'track order', 'where is my order', 'order kahan hai']);\n  const forceMenu = (state === 'idle' && !rawChoice && !isOptOutText && !isTrackingRequest);\n\n  if (duplicate) {\n    intent = 'duplicate_message'; confidence = 1;\n  } else if (forceMenu) {\n    intent = 'menu'; confidence = 1;\n  } else if (!isText || (!rawText && !rawChoice)) {\n    intent = 'unsupported_media'; confidence = 1;\n  } else if (\n    command([\n      'cancel',\n      'cancel order',\n      'cancel_order',\n      'order cancel',\n      'cancel karo',\n      'cancel kardo',\n      'cancel krdo',\n      'کینسل',\n      'منسوخ',\n    ])\n  ) {\n    intent = 'cancel_order';\n    confidence = 1;\n  } else if (\n    // ===== GUARD (NAYA): STOP / soft opt-out → cancel_order =====\n    // Late cancel (session expire) aur soft mana (\"nahi chahiye\") dono yahan pakde jate hain.\n    // Existing Cancel path row ko active=false karta hai — abandonment nudge2 kabhi nahi jayega.\n    state !== 'human_handoff' &&\n    (\n      command([\n        'stop', 'stop messages', 'stop reminders', 'reminder band', 'reminders band',\n        'band karo', 'band kardo', 'band krdo', 'disturb nahi karo', 'pareshan na karo',\n      ]) ||\n      (\n        ['awaiting_quantity', 'awaiting_address', 'idle'].includes(state) &&\n        rawText.length <= 40 &&\n        has(text, [\n          'cancel kar do', 'cancel karde',\n          'nahi chahiye', 'nahin chahiye', 'abhi nahi', 'abhi nahi chahiye',\n          'order nahi karna', 'nahi order karna', 'mat bhejo', 'disturb nahi', 'reminder nahi',\n          'band karo', 'band kardo', 'band krdo',\n        ])\n      )\n    )\n  ) {\n    intent = 'cancel_order';\n    confidence = 1;\n  } else if (String(data.messageType || '').toLowerCase() === 'reaction') {\n    // ===== REACTIONS: 👍=Confirm/Menu, ❌/🛑=Cancel =====\n    if (rawText.includes('❌') || rawText.includes('🛑')) {\n      intent = 'cancel_order'; confidence = 1;\n    } else if (rawText.includes('👍') || rawText.includes('✅') || rawText.includes('❤️')) {\n      intent = (state === 'awaiting_confirmation') ? 'confirm_order' : 'menu';\n      confidence = 1;\n    } else {\n      intent = 'menu'; confidence = 1;\n    }\n  } else if (isTrackingRequest) {\n    intent = 'order_status'; confidence = 1;\n    data.trackingOrderId = trackingIds.length === 1 ? trackingIds[0] : '';\n    data.trackingAmbiguous = trackingIds.length > 1;\n  } else if (/^ab[\\s:-]*\\d{8}[\\s:-]*[a-f0-9]{6}$/i.test(rawText.trim())) {\n    intent = 'order_status'; confidence = 1;\n    const websiteId = rawText.trim().match(/^ab[\\s:-]*(\\d{8})[\\s:-]*([a-f0-9]{6})$/i);\n    data.trackingOrderId = 'AB-' + websiteId[1] + '-' + websiteId[2].toUpperCase();\n  } else if (\n    /^ab[\\s:-]*\\d{4,8}[\\s:-]*\\d{4,6}[\\s:-]*\\d{2,4}$/i.test(rawText.trim())\n  ) {\n    // ===== ORDER ID: spaces/dashes dono canonical =====\n    intent = 'order_status';\n    confidence = 1;\n    const oidParts = rawText.trim().match(/^ab[\\s:-]*(\\d{4,8})[\\s:-]*(\\d{4,6})[\\s:-]*(\\d{2,4})$/i);\n    data.trackingOrderId = 'AB-' + oidParts[1] + '-' + oidParts[2] + '-' + oidParts[3];\n  } else if (rawChoice.startsWith('cat_')) {\n    const catMap = { cat_dryfruits:'Dry Fruits & Nuts', cat_oils:'Oils', cat_desi:'Desi Essentials',\n      cat_snacks:'Snacks & Seeds', cat_gifts:'Gift Boxes', cat_herbs:'Herbs & Spices' };\n    intent = 'browse_products'; confidence = 1;\n    data.browseCategory = catMap[rawChoice] || '';\n  } else if (rawChoice.startsWith('prod_')) {\n    const prow = catalogue.find(r => String(r.base_product_id).toLowerCase() === rawChoice.slice(5));\n    if (prow) {\n      intent = 'order_product'; confidence = 1;\n      data.selectedProductId = String(prow.base_product_id);\n      data.selectedProduct = prow.name;\n    } else {\n      intent = 'browse_products'; confidence = 0.9;\n    }\n  } else if (rawChoice.startsWith('qty_')) {\n    const bodyStr = rawChoice.slice(4);\n    const cut = bodyStr.lastIndexOf('_');\n    const pid = bodyStr.slice(0, cut);\n    const tail = bodyStr.slice(cut + 1);\n    const prow = catalogue.find(r => String(r.base_product_id).toLowerCase() === pid);\n    if (prow) {\n      data.selectedProductId = String(prow.base_product_id);\n      data.selectedProduct = prow.name;\n      if (tail === 'custom') {\n        intent = 'order_quantity_custom'; confidence = 1;\n        data.customQty = true;\n      } else {\n        intent = 'order_quantity'; confidence = 1;\n        data.quantityChoice = tail;\n      }\n    } else {\n      intent = 'menu'; confidence = 1;\n    }\n  } else if (rawChoice.startsWith('win_')) {\n    // ===== DELIVERY WINDOW BUTTON: win_fastest::AB-... =====\n    const parts = rawChoice.slice(4).split('::');\n    const wtype = (parts[0] || '').trim();\n    const joid = (parts[1] || '').trim();\n    const wmap = { fastest: 'Fastest', morning: 'Morning', evening: 'Evening', night: 'Night' };\n    if (wmap[wtype] && joid) {\n      intent = 'delivery_window'; confidence = 1;\n      data.windowChoice = wmap[wtype];\n      data.journeyOrderId = joid;\n    } else {\n      intent = 'menu'; confidence = 1;\n    }\n  } else if (rawChoice.startsWith('fb_')) {\n    // ===== FEEDBACK BUTTON: fb_great::AB-... =====\n    const parts = rawChoice.slice(3).split('::');\n    const ftype = (parts[0] || '').trim();\n    const joid = (parts[1] || '').trim();\n    const fmap = { great: 'great', good: 'good', ok: 'ok', bad: 'bad' };\n    if (fmap[ftype] && joid) {\n      intent = 'feedback'; confidence = 1;\n      data.feedbackRating = ftype;\n      data.journeyOrderId = joid;\n    } else {\n      intent = 'menu'; confidence = 1;\n    }\n  } else if (CHOICES[rawChoice]) {\n    intent = CHOICES[rawChoice];\n    confidence = 1;\n    if (MENU_CATEGORIES[rawChoice]) {\n      data.browseCategory = MENU_CATEGORIES[rawChoice];\n    }\n  } else if (rawChoice) {\n    const numMatch = rawChoice.match(/^(\\d+)\\s*[\\.\\)]?\\s*/);\n    const numKey = numMatch ? numMatch[1] : '';\n    if (numKey && NUMBERS[numKey]) {\n      intent = NUMBERS[numKey];\n      confidence = 1;\n      if (MENU_CATEGORIES[numKey]) {\n        data.browseCategory = MENU_CATEGORIES[numKey];\n      }\n    } else {\n      const kw = TITLE_KEYWORDS.find(([re]) => re.test(rawChoice));\n      if (kw) {\n        intent = kw[1];\n        confidence = 1;\n        if (kw[2]) data.browseCategory = kw[2];\n      } else {\n        intent = 'menu'; confidence = 0.8;\n      }\n    }\n  } else if (\n    command([\n      'menu',\n      'main menu',\n      'home',\n      'start',\n      'hi',\n      'hello',\n      'hey',\n      'salam',\n      'assalamualaikum',\n      'اسلام علیکم',\n      'السلام عليكم',\n    ])\n  ) {\n    intent = 'menu';\n    confidence = 1;\n  } else if (\n    command([\n      'human',\n      'human support',\n      'support',\n      'agent',\n      'representative',\n      'customer support',\n      'talk to human',\n      'human se baat',\n    ])\n  ) {\n    intent = 'human_support';\n    confidence = 1;\n  } else if (\n    command([\n      'tracking',\n      'track',\n      'order status',\n      'track order',\n      'track my order',\n      'where is my order',\n      'order kahan hai',\n    ])\n  ) {\n    intent = 'order_status';\n    confidence = 1;\n  } else if (\n    command([\n      'order',\n      'new order',\n      'place order',\n      'place_order',\n      'buy',\n      'order karna hai',\n    ])\n  ) {\n    intent = 'place_order';\n    confidence = 1;\n  } else if (\n    command(['ai', 'ai bot', 'health bot', 'ai health bot', 'health', 'sehat'])\n  ) {\n    intent = 'ai_start';\n    confidence = 1;\n  } else if (\n    // ===== RAGE FILTER: abuse → direct human (quiet mode mein nahi) =====\n    has(text, ABUSE_WORDS) && state !== 'human_handoff'\n  ) {\n    intent = 'human_support'; confidence = 1;\n    data.rageFlag = true;\n  } else if (\n    // ===== COMPLAINT: AI details collect karega =====\n    has(text, COMPLAINT_WORDS) && state !== 'human_handoff' && state !== 'awaiting_custom_order'\n  ) {\n    intent = 'faq'; confidence = 1;\n    data.complaintFlag = true;\n  } else if (state === 'ai_chat') {\n    intent = 'faq';\n    confidence = 0.95;\n  } else if (state === 'human_handoff') {\n    // ===== BOT QUIET MODE: free-text SILENT drop =====\n    intent = 'duplicate_message';\n    confidence = 1;\n  } else if (state === 'awaiting_custom_order') {\n    // ===== CUSTOM ORDER: customer apni desired product likh raha hai =====\n    if (rawText.length >= 3) {\n      intent = 'custom_order_details'; confidence = 1;\n    } else {\n      intent = 'custom_order_details'; confidence = 0.7;\n    }\n  } else if (\n    has(text, [\n      'products',\n      'product',\n      'catalogue',\n      'catalog',\n      'items',\n      'saman',\n      'saaman',\n      'price list',\n      'kya bikta',\n      'kya milta',\n    ]) &&\n    !has(text, ['order','buy','purchase','khareedna','kharidna'])\n  ) {\n    intent = 'browse_products';\n    confidence = 0.9;\n  } else if (\n    looksLikeQuestion(text, rawText) &&\n    !has(text, ['order','buy','purchase','khareedna','kharidna'])\n  ) {\n    intent = 'faq';\n    confidence = 0.9;\n  } else if (has(text,['order','buy','purchase','khareedna','kharidna']) && findProduct(text,catalogue)) {\n    intent = 'order_product'; confidence = 0.94;\n  } else if (state === 'awaiting_confirmation') {\n    if (\n      command([\n        'yes',\n        'confirm',\n        'ok',\n        'okay',\n        'haan',\n        'han',\n        'ji',\n        'jee',\n        '1',\n      ])\n    ) {\n      intent = 'confirm_order';\n      confidence = 1;\n    } else if (\n      command([\n        'no',\n        'nahi',\n        'nahin',\n        '2',\n      ])\n    ) {\n      intent = 'cancel_order';\n      confidence = 1;\n    } else if (isQuantityChange(rawText) && (context.product || data.selectedProduct)) {\n      // ===== MID-ORDER QUANTITY CHANGE =====\n      intent = 'order_quantity';\n      confidence = 1;\n      data.quantityChoice = extractQuantity(rawText);\n    } else {\n      intent = 'order_confirmation';\n      confidence = 0.95;\n    }\n  } else if (state === 'awaiting_product') {\n    if (rawText.length <= 80 && findProduct(text, catalogue)) {\n      intent = 'order_product';\n      confidence = 0.95;\n    } else if (looksLikeQuestion(text, rawText)) {\n      intent = 'faq';\n      confidence = 0.9;\n    } else {\n      intent = 'order_product_invalid';\n      confidence = 1;\n    }\n  } else if (state === 'awaiting_quantity') {\n    const quantityText = rawText\n      .normalize('NFKC')\n      .toLowerCase()\n      .replace(/,/g, '.')\n      .replace(/\\s+/g, ' ')\n      .trim();\n    const quantityMatch = quantityText.match(\n      /^(\\d+(?:\\.\\d+)?)\\s*(g|gm|gram|grams|kg|kgs|kilogram|kilograms|box|boxes|pack|packs|packet|packets|piece|pieces|pc|pcs)?$/\n    );\n    const amount = quantityMatch\n      ? Number(quantityMatch[1])\n      : NaN;\n    if (\n      quantityMatch &&\n      Number.isFinite(amount) &&\n      amount > 0 &&\n      amount <= 10000\n    ) {\n      intent = 'order_quantity';\n      confidence = 1;\n    } else if (looksLikeQuestion(text, rawText)) {\n      intent = 'faq';\n      confidence = 0.9;\n    } else {\n      intent = 'order_quantity_invalid';\n      confidence = 1;\n    }\n  } else if (state === 'awaiting_address') {\n    if (isQuantityChange(rawText) && (context.product || data.selectedProduct)) {\n      intent = 'order_quantity';\n      confidence = 1;\n      data.quantityChoice = extractQuantity(rawText);\n    } else if (\n      rawText.length >= 12 &&\n      rawText.length <= 300 &&\n      rawText.includes(' ')\n    ) {\n      intent = 'order_address';\n      confidence = 0.95;\n    } else {\n      intent = 'order_address_invalid';\n      confidence = 1;\n    }\n  } else if (state === 'awaiting_delivery_window') {\n    // ===== DELIVERY WINDOW: text reply (button ya text dono) =====\n    let wc = '';\n    if (has(text, ['fastest', 'jaldi', 'turant', 'foran', 'fast'])) wc = 'Fastest';\n    else if (has(text, ['morning', 'subah', 'saveray', 'savere'])) wc = 'Morning';\n    else if (has(text, ['evening', 'sham', 'shaam'])) wc = 'Evening';\n    else if (has(text, ['night', 'raat', 'rat'])) wc = 'Night';\n    if (wc) {\n      intent = 'delivery_window'; confidence = 1;\n      data.windowChoice = wc;\n      data.journeyOrderId = context.order_id || data.journeyOrderId || '';\n    } else if (looksLikeQuestion(text, rawText)) {\n      intent = 'faq'; confidence = 0.9;\n    } else {\n      intent = 'delivery_window_invalid'; confidence = 1;\n    }\n  } else if (state === 'awaiting_landmark') {\n    // ===== LANDMARK: text reply =====\n    if (/^\\d{1,3}$/.test(rawText.trim())) {\n      intent = 'menu'; confidence = 1;\n    } else if (rawText.length >= 3 && rawText.length <= 120) {\n      intent = 'landmark'; confidence = 1;\n    } else if (looksLikeQuestion(text, rawText)) {\n      intent = 'faq'; confidence = 0.9;\n    } else {\n      intent = 'landmark'; confidence = 0.7;\n    }\n  } else if (NUMBERS[text]) {\n    intent = NUMBERS[text];\n    confidence = 1;\n    if (MENU_CATEGORIES[text]) {\n      data.browseCategory = MENU_CATEGORIES[text];\n    }\n  } else if (\n    exact(text, [\n      'catalogue',\n      'catalog',\n      'products',\n      'all products',\n    ])\n  ) {\n    intent = 'browse_products';\n    confidence = 0.95;\n  } else if (\n    has(text, [\n      'deal',\n      'deals',\n      'offer',\n      'offers',\n      'discount',\n    ])\n  ) {\n    intent = 'deals';\n    confidence = 0.9;\n  } else if (\n    has(text, ['herbs', 'herb', 'spices', 'spice', 'masala', 'jasab'])\n  ) {\n    intent = 'herbs_spices';\n    confidence = 0.9;\n  } else if (\n    has(text, ['custom order', 'custom', 'special order', 'apni pasand', 'khass', 'desired'])\n  ) {\n    intent = 'custom_order';\n    confidence = 0.9;\n  } else if (\n    has(text, ['order']) &&\n    has(text, ['kahan','kab','status','track','aayega','hua'])\n  ) {\n    intent = 'order_status';\n    confidence = 0.9;\n  } else if (findProduct(text, catalogue)) {\n    intent = 'order_product';\n    confidence = 0.94;\n  } else if (\n    has(text, [\n      'dry fruit',\n      'dry fruits',\n      'kishmish',\n      'khajoor',\n    ])\n  ) {\n    intent = 'browse_products';\n    confidence = 0.9;\n    data.browseCategory = 'Dry Fruits & Nuts';\n  } else if (\n    has(text, [\n      'snack',\n      'snacks',\n      'chips',\n    ])\n  ) {\n    intent = 'browse_products';\n    confidence = 0.9;\n    data.browseCategory = 'Snacks & Seeds';\n  } else if (\n    has(text, [\n      'gift',\n      'gift box',\n      'gift boxes',\n    ])\n  ) {\n    intent = 'browse_products';\n    confidence = 0.9;\n    data.browseCategory = 'Gift Boxes';\n  } else if (\n    has(text, [\n      'delivery',\n      'shipping',\n      'payment',\n      'cod',\n      'return',\n      'refund',\n      'delivery charges',\n      'faq',\n      'help',\n    ])\n  ) {\n    intent = 'faq';\n    confidence = 0.9;\n  } else if (\n    has(text, [\n      'order',\n      'buy',\n      'purchase',\n      'khareedna',\n      'kharidna',\n    ])\n  ) {\n    intent = 'place_order';\n    confidence = 0.85;\n  } else {\n    intent = 'faq';\n    confidence = 0.5;\n  }\n  let detectedLanguage = 'en';\n  if (/[\\u0600-\\u06FF]/.test(rawText)) {\n    detectedLanguage = 'ur';\n  } else if (\n    has(text, [\n      'hai',\n      'hain',\n      'kar',\n      'karo',\n      'karna',\n      'chahiye',\n      'mujhe',\n      'aap',\n      'batao',\n      'kitna',\n      'kahan',\n      'haan',\n      'nahi',\n      'salam',\n    ])\n  ) {\n    detectedLanguage = 'ur';\n  }\n  const selectedProduct = findProduct(text,catalogue);\n  const looksLikeConfirmation = /order confirmation|financial summary|total payable|items ordered|order confirmed/i.test(rawText)\n    || (rawText.length > 180 && rawText.includes('\\n'));\n  if (intent === 'order_product' && !data.selectedProductId && (!selectedProduct || looksLikeConfirmation)) {\n    intent = looksLikeConfirmation ? 'order_status' : 'order_product_invalid';\n    confidence = 1;\n  }\n  return {\n    ...item,\n    json: {\n      ...data,\n      text: rawText,\n      normalizedText: text,\n      sessionState: state,\n      sessionContext: JSON.stringify(context),\n      intent,\n      selectedProduct: data.selectedProduct || (selectedProduct?.name || null),\n      selectedProductId: data.selectedProductId || (intent === 'order_product' && selectedProduct && selectedProduct.base_product_id ? String(selectedProduct.base_product_id) : ''),\n      browseCategory: data.browseCategory || '',\n      quantityChoice: data.quantityChoice || '',\n      customQty: data.customQty || false,\n      windowChoice: data.windowChoice || '',\n      feedbackRating: data.feedbackRating || '',\n      journeyOrderId: data.journeyOrderId || '',\n      rageFlag: data.rageFlag || false,\n      complaintFlag: data.complaintFlag || false,\n      intentConfidence: confidence,\n      detectedLanguage,\n      needsHuman: intent === 'human_support',\n    },\n    pairedItem: {\n      item: index,\n    },\n  };\n})()];"
+      },
+      "expectedParametersSha256": "f2eaab6fd9e164bccbb83dc9484015baca0438b6150f2cf7cac6a135da0d4da1",
+      "acceptedParametersSha256": [
+        "f2eaab6fd9e164bccbb83dc9484015baca0438b6150f2cf7cac6a135da0d4da1",
+        "3d835909f6b88334e3e5be629168339a783ecd15588ae603b1b57d200cd3e3fe",
+        "c826685ec16164fa749795af520d2db936d6dbdb583bdb15c7aa71ec229e5f75"
+      ]
+    },
+    {
+      "name": "Prepare Tracking Reply",
+      "type": "n8n-nodes-base.code",
+      "parameters": {
+        "jsCode": "// Return a saved receipt only to its authenticated WhatsApp sender.\n// The parent ingress must verify Meta and deduplicate inbound message IDs.\nconst ctx = $('Prepare Conversation Context').first().json || {};\nconst classify = $('Classify Customer Intent').first().json || {};\nconst normalizePhone = value => {\n  let phone = String(value || '').replace(/\\D/g, '');\n  if (/^03\\d{9}$/.test(phone)) phone = '92' + phone.slice(1);\n  else if (/^3\\d{9}$/.test(phone)) phone = '92' + phone;\n  else if (/^0092\\d{10}$/.test(phone)) phone = phone.slice(2);\n  return /^923\\d{9}$/.test(phone) ? phone : '';\n};\nconst sender = normalizePhone(ctx.from);\nconst input = $input.all().map(item => item.json || {});\nconst requested = String(classify.trackingOrderId || '').trim().toUpperCase();\nconst clean = (value, limit = 800) => String(value ?? '')\n  .replace(/[\\u0000-\\u001F\\u007F]/g, ' ').replace(/\\*/g, '').trim().slice(0, limit);\nconst amount = value => value !== null && value !== undefined && String(value).trim() !== ''\n  && Number.isFinite(Number(value)) && Number(value) >= 0 ? Number(value) : null;\nconst money = value => Number(value).toLocaleString('en-PK', { maximumFractionDigits: 2 });\nconst labels = {\n  RECEIVED: 'Received 📥', ORDER: 'Received 📥', PEND: 'Pending ⏳',\n  CONF: 'Confirmed ✅', PROC: 'Processing ⏳', PACK: 'Packed 📦',\n  DISP: 'Dispatched 🚚', SHIP: 'Shipped 🚚', DELIV: 'Delivered ✅',\n  CANC: 'Cancelled ❌', RTN: 'Returned ↩️',\n};\nconst status = value => {\n  const code = String(value || '').trim().toUpperCase();\n  const key = Object.keys(labels).find(key => code.startsWith(key));\n  return key ? labels[key] : clean(value || 'Pending verification', 80);\n};\nlet replyText;\nconst ownRows = input.filter(row => sender && row.order_id && normalizePhone(row.phone) === sender\n  && !/^AB-\\d{8}-[A-F0-9]{6}$/i.test(String(row.order_id))\n  && (!requested || String(row.order_id).trim().toUpperCase() === requested));\nif (input.some(row => row.error || row.lookupFailed === true)) {\n  replyText = 'Tracking abhi temporarily available nahi hai. Thori dair baad isi ID se dobara try karein.';\n} else if (classify.trackingAmbiguous) {\n  replyText = 'Ek waqt mein ek Order ID bhejein: *Track my order AB-YYYYMMDD-XXXXXX*.';\n} else if (!ownRows.length) {\n  replyText = 'Is WhatsApp number par matching order nahi mila. Checkout par diya hua number aur Order ID check karein.\\n\\nMenu ke liye *Menu* likhein.';\n} else if (new Set(ownRows.map(row => String(row.order_id).trim().toUpperCase())).size !== ownRows.length) {\n  replyText = 'Order record ko team verify kar rahi hai. Thori dair baad dobara tracking try karein.';\n} else if (!requested && ownRows.length > 1) {\n  const date = row => Date.parse(row.order_date || '') || 0;\n  const latest = [...ownRows].sort((a, b) => date(b) - date(a)).slice(0, 5);\n  replyText = 'Aapke number par yeh orders hain:\\n\\n' + latest\n    .map(row => '*' + clean(row.order_id, 60) + '* — ' + status(row.status)).join('\\n')\n    + '\\n\\nReceipt ke liye *Track my order <Order ID>* bhejein.';\n} else {\n  const row = ownRows[0];\n  const total = amount(row.grand_total) ?? amount(row.total_amount);\n  const subtotal = amount(row.subtotal);\n  const shipping = amount(row.shipping_fee);\n  const items = clean(row.items_summary || row.product || 'Saved order');\n  replyText = [\n    '🧾 *Order Receipt & Tracking*', '',\n    'Order ID: *' + clean(row.order_id, 60) + '*',\n    '🛍️ Items: ' + items,\n    row.quantity ? '⚖️ Quantity: ' + clean(row.quantity, 120) : '',\n    subtotal !== null ? 'Subtotal: Rs ' + money(subtotal) : '',\n    shipping !== null ? 'Delivery: Rs ' + money(shipping) : '',\n    total !== null ? '💰 Order total: *Rs ' + money(total) + '*' : 'Final total: verification pending',\n    row.payment_method ? '💳 Payment method: ' + clean(row.payment_method, 80) : '',\n    row.order_date ? '📅 Date: ' + clean(row.order_date, 32) : '',\n    '📦 Status: *' + status(row.status) + '*', '',\n    'Yeh saved order receipt hai; payment received ya delivery ka saboot nahi.',\n    'Menu ke liye *Menu* likhein.',\n  ].filter(Boolean).join('\\n').slice(0, 3500);\n}\nreturn [{ json: { ...ctx, to: sender, replyType: 'order_tracking', replyText } }];\n"
+      },
+      "expectedParametersSha256": "70da76f68eff8e2b7add7bfc8ed18f30ceea728e96461cb1b806173177e6cc6b",
+      "acceptedParametersSha256": [
+        "70da76f68eff8e2b7add7bfc8ed18f30ceea728e96461cb1b806173177e6cc6b",
+        "ef4b3254c4e4ab8ba970be566f48597b5db644c52556aaf12ca1b4ef182a89e2",
+        "35a0de9b8b14187d3f0c957c5650981fb7c29a6cd3a5e3856d19bc3ebddeb83f"
+      ]
+    },
+    {
+      "name": "Prepare Confirmation Reply",
+      "type": "n8n-nodes-base.set",
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "97dfffd9-6942-4b70-9809-3e86c9bb543f",
+              "name": "to",
+              "value": "={{ $('Prepare Confirmed Order').first().json.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "7c6228b5-0f55-467f-a223-be7236ab77c0",
+              "name": "replyType",
+              "value": "order_request_received",
+              "type": "string"
+            },
+            {
+              "id": "e897deba-b942-4b3a-acf6-7922088402e0",
+              "name": "replyText",
+              "value": "={{ ['Request received — manual verification pending.','Tracking ID: '+$('Prepare Confirmed Order').first().json.order_id,'Track my order '+$('Prepare Confirmed Order').first().json.order_id,'Items: '+$('Prepare Confirmed Order').first().json.product+' — '+$('Prepare Confirmed Order').first().json.quantity,'Shipping, stock and final total will be verified before acceptance.','Payment method: Cash on Delivery. Payment has not been received.'].join('\\n') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "expectedParametersSha256": "0927ea712be6a25f2d1e744d593222bc95d0404cebcba5d7fea028d42f1a5903",
+      "acceptedParametersSha256": [
+        "0927ea712be6a25f2d1e744d593222bc95d0404cebcba5d7fea028d42f1a5903",
+        "fc6c745f34d9cc25e0e2d86467a257f96ec413961f87f87a7cfe1e26d24e781a"
+      ]
+    },
+    {
+      "name": "Normalize Tracked Order",
+      "type": "n8n-nodes-base.set",
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "23d44e31-8608-4553-81e5-67b53d4d29cd",
+              "name": "order_id",
+              "value": "={{ $json.order_id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "9a7a0626-eb45-4db1-830a-518683c88b0c",
+              "name": "product",
+              "value": "={{ $json.items_summary || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "1f51bd2a-569f-4be8-9e3b-0d460c61918e",
+              "name": "quantity",
+              "value": "={{ $json.quantity || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "76aa101d-40d6-4ca1-8476-51f9fd393e66",
+              "name": "status",
+              "value": "={{ $json.status || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "f1d512eb-f8e0-4daf-8974-e5e83849c8dc",
+              "name": "from",
+              "value": "={{ $('Prepare Conversation Context').first().json.from }}",
+              "type": "string"
+            },
+            {
+              "id": "a83368f0-8150-4ed6-822f-9ff7e2c78af7",
+              "name": "order_date",
+              "value": "={{ $json.order_date || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "5b35050b-9ab9-4181-a45f-51d94658f061",
+              "name": "total_amount",
+              "value": "={{ $json.total_amount || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "3f904922-8ac9-4f25-998b-dbdea6f5d87a",
+              "name": "phone",
+              "value": "={{ $json.phone || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "09af0b2d-7ec8-40a4-a37a-8a280828b97f",
+              "name": "subtotal",
+              "value": "={{ $json.subtotal ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "0c484ef3-35ad-49ce-80c1-98cd9c2a1754",
+              "name": "shipping_fee",
+              "value": "={{ $json.shipping_fee ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "2279e943-9835-4304-908a-5970e43569d7",
+              "name": "grand_total",
+              "value": "={{ $json.grand_total ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "01ba8cce-fc84-408e-a735-9350cd83408e",
+              "name": "payment_method",
+              "value": "={{ $json.payment_method ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "9dc89575-3e95-4824-b0e1-e062a264f0d5",
+              "name": "source",
+              "value": "={{ $json.source ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "e4c5f239-1e4f-414b-8a38-388fa1f68e15",
+              "name": "lookupFailed",
+              "value": "={{ Boolean($json.error) }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "expectedParametersSha256": "d573d7c938d013e67a42a367c55acaff1058a92476101b9a1b8a5317f8fb417d",
+      "acceptedParametersSha256": [
+        "d573d7c938d013e67a42a367c55acaff1058a92476101b9a1b8a5317f8fb417d",
+        "0f850a40784f94195e2958ff165506c330536cb65f477ec750112ff741ecb7d6",
+        "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+      ]
+    }
+  ],
+  "addedNodes": [
+    {
+      "id": "50284033d3d68f66cd062bd11256a9f4",
+      "name": "Read Verified Canonical Receipt",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1200,
+        700
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ALLBARKA_COMMERCE_ORIGIN + '/api/integrations/n8n/whatsapp/receipt' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({source:'meta_parent',messageId:$('Prepare Conversation Context').first().json.messageId}) }}",
+        "options": {
+          "timeout": 10000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "notesInFlow": true,
+      "notes": "REQUIRED private Header Auth credential: X-AllBarka-Integration-Secret. No retries."
+    },
+    {
+      "id": "e99ce8f24bea7c7bed3b290c270798f3",
+      "name": "Canonical Receipt Or Legacy Route",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1400,
+        700
+      ],
+      "parameters": {
+        "jsCode": "const raw = $input.first().json || {}; const body = raw.body && typeof raw.body === 'object' ? raw.body : raw;\nconst ctx=$('Prepare Conversation Context').first().json||{};if(raw.statusCode!==200||body.ok!==true)throw new Error('VERIFIED_META_RECEIPT_UNAVAILABLE');if(['RECEIPT','CHOICES','OPTED_OUT'].includes(body.replyType)&&typeof body.text==='string'&&body.text.trim())return []; // Canonical receipt is already queued durably by verified inbound; never bypass the window/send worker.\nif(body.replyType!=='NOT_FOUND')throw new Error('INVALID_RECEIPT_REPLY');return [{json:{...$('Classify Customer Intent').first().json,canonicalReceipt:false}}];"
+      }
+    },
+    {
+      "id": "181b945456647deb11a9ea04fe4be0b1",
+      "name": "Canonical Receipt Available?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1600,
+        700
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "56619d7d2bab4d923577c5cd149baddc",
+              "leftValue": "={{ $json.canonicalReceipt }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Intent Router": {
+      "main": [
+        [
+          {
+            "node": "Prepare Menu Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Browse Category Set?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Order Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Read Verified Canonical Receipt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Human Support Reply",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Slack Rage Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Load AI Orders",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Product Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Cancel Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Load Order Prices",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Address Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Load Confirmation Stock",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Confirmation Retry",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Product Retry",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Quantity Retry",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Address Retry",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Media Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        [
+          {
+            "node": "Prepare Custom Qty Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare AI Start Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare FAQ Help Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Herbs Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Custom Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Custom Thanks",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Unknown Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Verified Canonical Receipt": {
+      "main": [
+        [
+          {
+            "node": "Canonical Receipt Or Legacy Route",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Canonical Receipt Or Legacy Route": {
+      "main": [
+        [
+          {
+            "node": "Canonical Receipt Available?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Canonical Receipt Available?": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Has Tracking ID?)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "removedNodes": [],
+  "requiredSetup": [
+    "Verified actual Meta parent forwards original signed raw body to commerce before invoking child",
+    "Commerce Header Auth credential on Read Verified Canonical Receipt",
+    "Existing credential/resource selections preserved privately",
+    "Automatic WhatsApp-created order acceptance blocked pending canonical product mapping and atomic stock"
+  ],
+  "runtimePatches": [
+    {
+      "name": "Find Order in Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    }
+  ]
+}

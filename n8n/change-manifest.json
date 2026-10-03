@@ -1,0 +1,90 @@
+{
+  "source": "Pasted text(6).txt",
+  "originalNodes": 90,
+  "integratedNodes": 108,
+  "addedNodes": [
+    "Set AI Handoff Session",
+    "Website AI Webhook",
+    "Prepare Website Chat",
+    "Website Chat Valid?",
+    "Website AI Brain",
+    "Extract Website Reply",
+    "Respond Website Chat",
+    "Website Chat Setup",
+    "Website Order Webhook",
+    "Validate Website Order",
+    "Website Order Valid?",
+    "Find Website Order Mirror",
+    "Classify Order Mirror",
+    "Website Mirror Route",
+    "Write Website Order Mirror",
+    "Acknowledge Website Mirror",
+    "Respond Website Order",
+    "Website Orders Setup"
+  ],
+  "modifiedNodes": [
+    "Classify Customer Intent",
+    "Find Order in Sheet",
+    "Normalize Tracked Order",
+    "In AI Chat?",
+    "Prepare Confirmation Reply",
+    "Prepare Tracking Reply",
+    "AI Brain",
+    "Build AI Context1",
+    "Extract AI Reply1",
+    "Slack Custom Alert",
+    "Slack Rage Alert",
+    "IF AI Handoff",
+    "Slack AI Handoff Alert"
+  ],
+  "removedNodes": [],
+  "redactedAndDisabledSlackNodes": [
+    "Slack Custom Alert",
+    "Slack Rage Alert",
+    "Slack AI Handoff Alert"
+  ],
+  "connectionsModified": [
+    "IF AI Handoff",
+    "Set AI Handoff Session",
+    "Website AI Webhook",
+    "Prepare Website Chat",
+    "Website Chat Valid?",
+    "Website AI Brain",
+    "Extract Website Reply",
+    "Website Order Webhook",
+    "Validate Website Order",
+    "Website Order Valid?",
+    "Find Website Order Mirror",
+    "Classify Order Mirror",
+    "Website Mirror Route",
+    "Write Website Order Mirror",
+    "Acknowledge Website Mirror"
+  ],
+  "provenance": {
+    "sourceArchive": "AllBarka-n8n-v29-20261003.zip",
+    "offlineValidatorChecks": 29,
+    "parentExportPresent": false,
+    "fullSourceSha256": "18b6abbe63079b5caea55cc5708634a2f11b123d30eb0c72b9d52f3b51fc7cdf",
+    "liveImported": false,
+    "livePublished": false
+  },
+  "repositoryArtifacts": {
+    "websiteNodes": 17,
+    "statusSyncNodes": 13,
+    "windowNodes": 13,
+    "trackingModifiedNodes": [
+      "Classify Customer Intent",
+      "Prepare Tracking Reply",
+      "Prepare Confirmation Reply",
+      "Normalize Tracked Order"
+    ],
+    "trackingAddedNodes": [
+      "Read Verified Canonical Receipt",
+      "Canonical Receipt Or Legacy Route",
+      "Canonical Receipt Available?"
+    ],
+    "trackingRuntimePatches": [
+      "Find Order in Sheet"
+    ]
+  }
+}

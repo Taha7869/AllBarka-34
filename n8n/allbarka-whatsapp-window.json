@@ -1,0 +1,421 @@
+{
+  "name": "AllBarka verified Meta window and transactional notifications — INACTIVE",
+  "active": false,
+  "nodes": [
+    {
+      "id": "aab6a9f6e09724c1df185991595e64fc",
+      "name": "Raw Verified Parent Envelope",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        500
+      ],
+      "parameters": {
+        "inputSource": "jsonExample",
+        "jsonExample": "{\"rawMetaBody\":\"EXACT_ORIGINAL_REQUEST_BODY_BYTES\",\"metaSignature\":\"sha256=ORIGINAL_X_HUB_SIGNATURE_256\"}"
+      },
+      "notesInFlow": true,
+      "notes": "Call only from actual Meta parent. Pass unmodified raw body and original X-Hub-Signature-256. Parent is absent from supplied package; NOT verified. Never reconstruct JSON."
+    },
+    {
+      "id": "e9dcabd091f9dd6aec242ec77d218643",
+      "name": "Validate Raw Parent Envelope",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        200,
+        500
+      ],
+      "parameters": {
+        "jsCode": "const body=$input.first().json||{};if(typeof body.rawMetaBody!=='string'||!body.rawMetaBody||new TextEncoder().encode(body.rawMetaBody).byteLength>96*1024||typeof body.metaSignature!=='string'||!/^sha256=[a-f0-9]{64}$/.test(body.metaSignature))throw new Error('RAW_META_EVIDENCE_REQUIRED');return [{json:{source:'meta_parent',rawMetaBody:body.rawMetaBody,metaSignature:body.metaSignature}}];"
+      }
+    },
+    {
+      "id": "093300c809c3b126f2dd41a13b41a8f3",
+      "name": "Verify Meta Evidence In Commerce",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        400,
+        500
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ALLBARKA_COMMERCE_ORIGIN + '/api/integrations/n8n/whatsapp/inbound' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 10000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "notesInFlow": true,
+      "notes": "REQUIRED private Header Auth credential: X-AllBarka-Integration-Secret. No retries."
+    },
+    {
+      "id": "c6c4f524e81821f7deba29da75d960ef",
+      "name": "Verify Inbound Acknowledgement",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        600,
+        500
+      ],
+      "parameters": {
+        "jsCode": "const raw = $input.first().json || {}; const body = raw.body && typeof raw.body === 'object' ? raw.body : raw;\nif(raw.statusCode!==200||body.ok!==true)throw new Error('META_INGRESS_NOT_AUTHENTICATED');return [{json:{ok:true,processed:body.processed,duplicates:body.duplicates,receiptsQueued:body.receiptsQueued}}];"
+      }
+    },
+    {
+      "id": "57904d752872262a1299ac83a44e177e",
+      "name": "Poll Durable Transactional Notifications",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "a6303b03724ee4e38032af86f4de204f",
+      "name": "Claim One Durable Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        200,
+        0
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ALLBARKA_COMMERCE_ORIGIN + '/api/integrations/n8n/whatsapp/notifications/claim' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({source:'meta_parent'}) }}",
+        "options": {
+          "timeout": 10000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "notesInFlow": true,
+      "notes": "REQUIRED private Header Auth credential: X-AllBarka-Integration-Secret. No retries."
+    },
+    {
+      "id": "32062f5b6865e3c90699ac84cb508e6d",
+      "name": "Validate Notification Lease",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const raw = $input.first().json || {}; const body = raw.body && typeof raw.body === 'object' ? raw.body : raw;\nif(raw.statusCode!==200||body.ok!==true)throw new Error('NOTIFICATION_CLAIM_UNAVAILABLE');if(body.idle===true)return [];if(typeof body.jobId!=='string'||typeof body.leaseToken!=='string'||!Number.isFinite(body.leaseExpiresAtMs)||body.leaseExpiresAtMs<=Date.now())throw new Error('INVALID_NOTIFICATION_LEASE');return [{json:{source:'meta_parent',jobId:body.jobId,leaseToken:body.leaseToken}}];"
+      }
+    },
+    {
+      "id": "662b2eeddfbf83e41f9f9de755bbe31f",
+      "name": "Authorize Immediately Before Send",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        600,
+        0
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ALLBARKA_COMMERCE_ORIGIN + '/api/integrations/n8n/whatsapp/notifications/authorize' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 10000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "notesInFlow": true,
+      "notes": "REQUIRED private Header Auth credential: X-AllBarka-Integration-Secret. No retries."
+    },
+    {
+      "id": "66200898334bdbd3730a248f45ae6cfb",
+      "name": "Validate Final Window And Ownership Gate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const raw = $input.first().json || {}; const body = raw.body && typeof raw.body === 'object' ? raw.body : raw;\nconst claim=$('Validate Notification Lease').item.json;if(raw.statusCode!==200||body.ok!==true)return [];if(body.jobId!==claim.jobId||body.leaseToken!==claim.leaseToken||!/^\\d{10,15}$/.test(body.to)||typeof body.text!=='string'||!body.text.trim()||body.text.length>4000||typeof body.eventId!=='string'||!(typeof body.revision==='string' && Number.isFinite(Date.parse(body.revision)) || body.revision===null && body.eventId.startsWith('receipt:'))||!Number.isFinite(body.sendBeforeMs)||body.sendBeforeMs<=Date.now()+6000)throw new Error('FINAL_SEND_AUTHORIZATION_INVALID');return [{json:{...claim,to:body.to,text:body.text,eventId:body.eventId,revision:body.revision,sendBeforeMs:body.sendBeforeMs}}];"
+      }
+    },
+    {
+      "id": "486d58b5422add0df4e5cb0b50a5c809",
+      "name": "One Meta Service Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1000,
+        0
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://graph.facebook.com/' + $env.WHATSAPP_GRAPH_VERSION + '/' + $env.WHATSAPP_BUSINESS_PHONE_ID + '/messages' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({messaging_product:'whatsapp',to:$json.to,type:'text',text:{preview_url:false,body:$json.text}}) }}",
+        "options": {
+          "timeout": 5000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "notesInFlow": true,
+      "notes": "REQUIRED existing private Meta Header Auth credential (Authorization Bearer). Exactly ONE attempt. Delivery is not claimed by HTTP acceptance. UNKNOWN requires reconciliation; never automatic resend."
+    },
+    {
+      "id": "d166f75e02296f9ef09077d7fa4a965d",
+      "name": "Classify Actual Provider Outcome",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const raw = $input.first().json || {}; const body = raw.body && typeof raw.body === 'object' ? raw.body : raw;\nconst send=$('Validate Final Window And Ownership Gate').item.json;const providerId=body.messages?.[0]?.id;const accepted=raw.statusCode>=200&&raw.statusCode<300&&typeof providerId==='string'&&providerId.length>0&&providerId.length<=255;const rejected=raw.statusCode>=400&&raw.statusCode<500&&raw.statusCode!==408&&raw.statusCode!==429&&body.error;return [{json:{source:'meta_parent',jobId:send.jobId,leaseToken:send.leaseToken,outcome:accepted?'ACCEPTED':rejected?'REJECTED':'UNKNOWN',...(accepted?{providerMessageId:providerId}:{})}}];"
+      }
+    },
+    {
+      "id": "d7ce97ddb8077c2d4ecf2027cb5651d8",
+      "name": "Persist Provider Result Without Retry",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1400,
+        0
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ALLBARKA_COMMERCE_ORIGIN + '/api/integrations/n8n/whatsapp/notifications/result' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 10000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "notesInFlow": true,
+      "notes": "REQUIRED private Header Auth credential: X-AllBarka-Integration-Secret. No retries."
+    },
+    {
+      "id": "3d2b173acac0a84d41dbece03d4f8aa0",
+      "name": "Verify Notification Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const raw = $input.first().json || {}; const body = raw.body && typeof raw.body === 'object' ? raw.body : raw;\nif(raw.statusCode!==200||body.ok!==true)throw new Error('PROVIDER_RESULT_RECONCILIATION_REQUIRED');return [{json:{ok:true,state:body.state}}];"
+      }
+    }
+  ],
+  "connections": {
+    "Raw Verified Parent Envelope": {
+      "main": [
+        [
+          {
+            "node": "Validate Raw Parent Envelope",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Raw Parent Envelope": {
+      "main": [
+        [
+          {
+            "node": "Verify Meta Evidence In Commerce",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Meta Evidence In Commerce": {
+      "main": [
+        [
+          {
+            "node": "Verify Inbound Acknowledgement",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Poll Durable Transactional Notifications": {
+      "main": [
+        [
+          {
+            "node": "Claim One Durable Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claim One Durable Notification": {
+      "main": [
+        [
+          {
+            "node": "Validate Notification Lease",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Notification Lease": {
+      "main": [
+        [
+          {
+            "node": "Authorize Immediately Before Send",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Authorize Immediately Before Send": {
+      "main": [
+        [
+          {
+            "node": "Validate Final Window And Ownership Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Final Window And Ownership Gate": {
+      "main": [
+        [
+          {
+            "node": "One Meta Service Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "One Meta Service Message": {
+      "main": [
+        [
+          {
+            "node": "Classify Actual Provider Outcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify Actual Provider Outcome": {
+      "main": [
+        [
+          {
+            "node": "Persist Provider Result Without Retry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist Provider Result Without Retry": {
+      "main": [
+        [
+          {
+            "node": "Verify Notification Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveExecutionProgress": false,
+    "executionTimeout": 60
+  }
+}

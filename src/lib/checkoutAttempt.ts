@@ -1,4 +1,5 @@
 import type { OrderPayload } from './order';
+import { withApiDeadline } from './apiDeadline';
 
 export const CHECKOUT_ATTEMPT_KEY = 'allbarka_checkout_attempt_v1';
 const MAX_AGE_MS = 7 * 86400000;
@@ -10,8 +11,9 @@ export interface CheckoutAttempt {
 }
 
 /** Price refreshes and refreshed auth tokens must not turn a retry into a new order. */
-export async function checkoutFingerprint(payload: OrderPayload): Promise<string> {
+export async function checkoutFingerprint(payload: OrderPayload, customerUid: string | null = null): Promise<string> {
   const serialized = JSON.stringify({
+    customerUid,
     name: payload.name.trim(), phone: payload.phone.trim(), address: payload.address.trim(), city: payload.city.trim(),
     deliverySlot: payload.deliverySlot?.trim() || 'Fastest Dispatch', instructions: payload.instructions?.trim() || '',
     giftWrapping: !!payload.giftWrapping, giftMessage: payload.giftMessage?.trim() || '', paymentMethod: payload.paymentMethod,
@@ -27,6 +29,30 @@ export async function checkoutFingerprint(payload: OrderPayload): Promise<string
     // This fallback is never written to browser storage.
     return serialized;
   }
+}
+
+/** Quote validity follows the complete pricing request and the verified account identity. */
+export function checkoutQuoteKey(payload: Pick<OrderPayload, 'items' | 'city' | 'shippingMethodId' | 'giftWrapping' | 'discountCode' | 'rewardId' | 'isWholesale'>, customerUid: string | null): string {
+  return JSON.stringify({
+    items: payload.items.map(item => [item.productId, item.selectedWeight, item.quantity, item.unitPrice, item.hamperConfiguration]),
+    city: payload.city.trim(), shipping: payload.shippingMethodId, wrapping: !!payload.giftWrapping,
+    coupon: payload.discountCode?.trim().toUpperCase() || null, reward: payload.rewardId || null,
+    wholesale: !!payload.isWholesale, customerUid,
+  });
+}
+
+export class CheckoutAuthenticationError extends Error {
+  constructor() { super('CHECKOUT_AUTH_REQUIRED'); this.name = 'CheckoutAuthenticationError'; }
+}
+
+/** Only an actual guest returns null; expired or unavailable account credentials stop checkout. */
+export async function getCheckoutAuthToken(user: { getIdToken: () => Promise<string> } | null, signal?: AbortSignal, timeoutMs = 8000): Promise<string | null> {
+  if (!user) return null;
+  try {
+    const token = await withApiDeadline(() => user.getIdToken(), timeoutMs, signal);
+    if (typeof token !== 'string' || !token.trim()) throw new CheckoutAuthenticationError();
+    return token;
+  } catch { throw new CheckoutAuthenticationError(); }
 }
 
 function currentAttempt(attempt: CheckoutAttempt, now: number): boolean {

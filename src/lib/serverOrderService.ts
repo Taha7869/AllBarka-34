@@ -52,6 +52,8 @@ export interface CanonicalOrder {
   paymentStatus: PaymentStatus;
   paymentMethod: PaymentMethod;
   uid: string | null;
+  // Older receipts may omit this field; new canonical orders always persist the mode.
+  isWholesale?: boolean;
   guestSessionId?: string | null;
   claimTokenHash?: string | null; // SHA-256 hash of high-entropy token, excluded from public customer responses
   claimTokenExpiry?: number | null;
@@ -102,8 +104,18 @@ export interface OutboxOrderEvent {
   schemaVersion: string;
   occurredAt: string;
   occurredAtMs: number;
-  deliveryState: 'PENDING' | 'DISABLED';
+  deliveryState: 'PENDING' | 'LEASED' | 'DELIVERED' | 'FAILED' | 'DISABLED';
   attempts: number;
+  nextAttemptAtMs?: number;
+  leaseOwner?: string;
+  leaseToken?: string;
+  leaseUntilMs?: number;
+  lastAttemptAtMs?: number;
+  deliveredAtMs?: number;
+  updatedAtMs?: number;
+  disabledReason?: string;
+  lastError?: string;
+  lastStatusCode?: number;
   payload: Record<string, any>;
 }
 
@@ -229,14 +241,16 @@ export function generateAuthoritativeWhatsAppMessage(order: CanonicalOrder): str
 /**
  * Computes payload hash for idempotency checking.
  */
-export function hashPayload(payload: any): string {
+function hashCheckoutPayload(payload: any, includeDeliveryPricingIntent: boolean): string {
   const normalized = {
     name: payload.name?.trim(),
     phone: payload.phone?.trim(),
     address: payload.address?.trim(),
     city: payload.city?.trim(),
     paymentMethod: payload.paymentMethod?.trim(),
+    ...(includeDeliveryPricingIntent ? { deliverySlot: payload.deliverySlot?.trim() || 'Fastest Dispatch' } : {}),
     shippingMethodId: payload.shippingMethodId,
+    ...(includeDeliveryPricingIntent ? { isWholesale: Boolean(payload.isWholesale) } : {}),
     discountCode: payload.discountCode ? String(payload.discountCode).trim().toUpperCase() : null,
     rewardId: payload.rewardId ? String(payload.rewardId).trim() : null,
     giftWrapping: Boolean(payload.giftWrapping),
@@ -253,6 +267,10 @@ export function hashPayload(payload: any): string {
 
   return crypto.createHash('sha256').update(JSON.stringify(normalized)).digest('hex');
 }
+
+export function hashPayload(payload: any): string { return hashCheckoutPayload(payload, true); }
+/** Migration comparison only; the saved canonical slot/mode must independently prove compatibility. */
+export function hashLegacyCheckoutPayload(payload: any): string { return hashCheckoutPayload(payload, false); }
 
 /**
  * Generates a unique collision-resistant AllBarka order reference:

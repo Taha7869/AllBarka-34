@@ -2,93 +2,61 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { CheckCircle, ShoppingBag, MessageCircle, ArrowRight, Package, MapPin, Clock } from 'lucide-react';
 import { STORE_CONFIG } from '../config/store';
-import { CONTACT_CONFIG, buildHumanSupportWhatsAppUrl, buildAutomatedOrderWhatsAppUrl } from '../config/contacts';
+import { buildHumanSupportWhatsAppUrl, buildOrderTrackingWhatsAppUrl } from '../config/contacts';
 import { formatPKR } from '../lib/pricing';
 import { useLanguage } from '../contexts/LanguageContext';
-import { getLocalized } from '../utils/localize';
+import { useAuth } from '../contexts/AuthContext';
+import { getCheckoutAuthToken } from '../lib/checkoutAttempt';
+import { recoverOrderSuccessReceipt, type ConfirmedSuccessReceipt } from '../lib/orderSuccessRecovery';
 
-export interface OrderSuccessSnapshot {
-  orderId: string;
-  name: string;
-  phone: string;
-  address: string;
-  city: string;
-  deliverySlot?: string;
-  items: Array<{
-    name: string;
-    selectedWeight?: string;
-    quantity: number;
-    price: number;
-  }>;
-  subtotal: number;
-  discount: number;
-  shipping: number;
-  giftWrapFee?: number;
-  totalAmount: number;
-  paymentMethod: string;
-  whatsappMessage?: string;
-  timestamp?: string;
-}
+export type OrderSuccessSnapshot = ConfirmedSuccessReceipt;
 
 export default function OrderSuccessPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { t, isRtl, language } = useLanguage();
-  const [order, setOrder] = useState<OrderSuccessSnapshot | null>(null);
+  const { currentUser, loading: authLoading } = useAuth();
+  const [confirmedReceipt, setOrder] = useState<OrderSuccessSnapshot | null>(null);
+  const order = confirmedReceipt?.customerUid === (currentUser?.uid || null) ? confirmedReceipt : null;
   const [isLoaded, setIsLoaded] = useState(false);
+  const [recoveryRevision, setRecoveryRevision] = useState(0);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-
-    // 1. First priority: location state
-    if (location.state?.orderData) {
-      setOrder(location.state.orderData);
-      try {
-        sessionStorage.setItem('allbarka_latest_order', JSON.stringify(location.state.orderData));
-      } catch {
-        // ignore
-      }
-      setIsLoaded(true);
-      return;
-    }
-
-    // 2. Second priority: sessionStorage snapshot for reloads/back-forward navigation
+    setOrder(null);
+    setIsLoaded(false);
+    if (authLoading) return;
+    let candidate: unknown = location.state?.orderData;
     try {
-      const saved = sessionStorage.getItem('allbarka_latest_order') || sessionStorage.getItem('allbarka_order_success');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && parsed.orderId) {
-          const normalized: OrderSuccessSnapshot = {
-            orderId: parsed.orderId,
-            name: parsed.name || parsed.customer?.name || 'Valued Patron',
-            phone: parsed.phone || parsed.customer?.phone || '',
-            address: parsed.address || parsed.customer?.address || '',
-            city: parsed.city || parsed.customer?.city || 'Lahore',
-            deliverySlot: parsed.deliverySlot || parsed.customer?.deliverySlot || 'Fastest Dispatch',
-            items: (parsed.items || []).map((it: any) => ({
-              name: getLocalized(it, 'name', language),
-              selectedWeight: it.selectedWeight,
-              quantity: it.quantity,
-              price: it.price || it.unitPrice || 0,
-            })),
-            subtotal: parsed.subtotal ?? parsed.totals?.subtotal ?? 0,
-            discount: parsed.discount ?? parsed.totals?.discountAmt ?? 0,
-            shipping: parsed.shipping ?? parsed.totals?.shippingFee ?? 0,
-            giftWrapFee: parsed.giftWrapFee ?? parsed.totals?.giftFee ?? 0,
-            totalAmount: parsed.totalAmount ?? parsed.totals?.finalPayable ?? 0,
-            paymentMethod: parsed.paymentMethod || parsed.customer?.paymentMethod || 'Cash on Delivery',
-            whatsappMessage: parsed.whatsappMessage,
-            timestamp: parsed.timestamp || new Date().toISOString()
-          };
-          setOrder(normalized);
+      if (!candidate) {
+        // The checkout snapshot is newer than the last manually opened receipt.
+        const saved = sessionStorage.getItem('allbarka_order_success') || sessionStorage.getItem('allbarka_latest_order');
+        if (saved) candidate = JSON.parse(saved);
+      }
+      if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) {
+        const recovery = candidate as Record<string, unknown>;
+        if (!recovery.claimToken && sessionStorage.getItem('pendingOrderId') === recovery.orderId) {
+          candidate = { ...recovery, claimToken: sessionStorage.getItem('pendingClaimToken') };
         }
       }
-    } catch {
-      // ignore
-    }
-
-    setIsLoaded(true);
-  }, [location.state, language]);
+    } catch { /* Existing recovery data remains untouched when storage is unavailable. */ }
+    let active = true;
+    const controller = new AbortController();
+    void recoverOrderSuccessReceipt(candidate, { language, customerUid: currentUser?.uid || null, signal: controller.signal,
+      getAuthToken: () => getCheckoutAuthToken(currentUser, controller.signal),
+    }).then(receipt => {
+      if (!active) return;
+      setOrder(receipt);
+      if (receipt) {
+        try {
+          const saved = JSON.stringify(receipt);
+          sessionStorage.setItem('allbarka_order_success', saved);
+          sessionStorage.setItem('allbarka_latest_order', saved);
+        } catch { /* in-memory receipt remains available */ }
+      }
+    }).catch(() => { if (active) setOrder(null); }).finally(() => { if (active) setIsLoaded(true); });
+    return () => { active = false; controller.abort(); };
+  }, [location.state, language, currentUser, authLoading, recoveryRevision]);
 
   if (!isLoaded) {
     return (
@@ -106,12 +74,16 @@ export default function OrderSuccessPage() {
           <Package size={30} />
         </div>
         <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[var(--color-ink,#29231D)] mb-3">
-          No Recent Order Snapshot
+          {t('checkout.receiptUnavailable')}
         </h2>
         <p className="text-sm text-[var(--color-ink-muted,#635B52)] max-w-md mb-8 leading-relaxed">
-          If you have recently placed an order, our concierge team will reach out to confirm your details. You can also explore our harvest selections.
+          {t('checkout.receiptRecovery')}
         </p>
         <div className="flex flex-col sm:flex-row gap-3">
+          <button type="button" onClick={() => setRecoveryRevision(value => value + 1)}
+            className="focus-ring min-h-11 px-8 py-3.5 rounded-full border border-[var(--color-gold,#C7982F)]/40 text-[var(--color-ink,#29231D)] font-bold text-xs uppercase tracking-[0.2em] hover:bg-[var(--color-gold,#C7982F)]/10">
+            {t('retry')}
+          </button>
           <button
             type="button"
             onClick={() => navigate('/shop')}
@@ -133,10 +105,7 @@ export default function OrderSuccessPage() {
     );
   }
 
-  const whatsappText = order.whatsappMessage
-    ? order.whatsappMessage
-    : `Assalam-o-Alaikum AllBarka, inquiring about Order ID: ${order.orderId}`;
-  const whatsappUrl = buildAutomatedOrderWhatsAppUrl(whatsappText);
+  const whatsappUrl = buildOrderTrackingWhatsAppUrl(order.orderId);
 
   return (
     <div className="w-full min-h-[70vh] py-12 px-4 sm:px-6 flex justify-center items-start">
@@ -147,13 +116,13 @@ export default function OrderSuccessPage() {
 
         <div className="text-center mb-8">
           <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--color-gold,#C7982F)] block mb-1">
-            Order Confirmed
+            {t('checkout.receiptReceived')}
           </span>
           <h1 className="text-2xl sm:text-3xl font-serif font-bold text-[var(--color-ink,#29231D)]">
             Thank You, {order.name.split(' ')[0]}
           </h1>
           <p className="text-xs sm:text-sm text-[var(--color-ink-muted,#635B52)] mt-2 max-w-md mx-auto">
-            Your luxury harvest package is being prepared for dispatch in Lahore.
+            {t('checkout.receiptSaved')}
           </p>
         </div>
 
@@ -255,7 +224,7 @@ export default function OrderSuccessPage() {
             className="flex-1 py-3.5 px-6 rounded-full bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider text-center flex items-center justify-center gap-2 hover:bg-emerald-800 transition-colors shadow-xs"
           >
             <MessageCircle size={16} />
-            Track via WhatsApp
+            {t('checkout.trackWhatsApp')}
           </a>
           <button
             type="button"
@@ -265,6 +234,7 @@ export default function OrderSuccessPage() {
             Continue Shopping
           </button>
         </div>
+        <p className="mt-3 text-xs leading-relaxed text-[var(--color-ink-muted)]">{t('checkout.trackingSendNotice')}</p>
       </div>
     </div>
   );

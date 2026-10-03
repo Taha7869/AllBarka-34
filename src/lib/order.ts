@@ -1,5 +1,6 @@
-import { STORE_CONFIG } from '../config/store';
-import { CartItem } from '../types.ts';
+import { apiUrl } from './apiUrl';
+import { withApiDeadline } from './apiDeadline';
+import type { CartItem } from '../types';
 
 export interface OrderPayload {
   name: string;
@@ -41,292 +42,120 @@ export interface OrderResponse {
   isDuplicate?: boolean;
 }
 
-// In-flight request lock
 let isOrderInFlight = false;
 
-/**
- * Places an order to the backend API with:
- * - Deterministic idempotency key per checkout attempt
- * - Single in-flight request locking
- * - 15-second bounded abort timeout
- * - Verified Bearer authorization token forwarding
- * - Quote-change detection and safe containment
- */
-export async function placeOrder(payload: OrderPayload): Promise<OrderResponse> {
-  if (isOrderInFlight) {
-    return {
-      success: false,
-      code: 'REQUEST_IN_FLIGHT',
-      error: 'An order submission is already in progress. Please wait a moment.',
-    };
-  }
+function validTotals(totals: any): boolean {
+  return !!totals && ['subtotal', 'discount', 'discountedSubtotal', 'shipping', 'giftWrapFee', 'total'].every(key => typeof totals[key] === 'number' && Number.isFinite(totals[key]) && totals[key] >= 0)
+    && totals.discount <= totals.subtotal && Math.abs(totals.subtotal - totals.discount - totals.discountedSubtotal) <= 1
+    && Math.abs(totals.discountedSubtotal + totals.shipping + totals.giftWrapFee - totals.total) <= 1;
+}
 
+function requestItems(items: CartItem[]) {
+  return items.map(item => ({ id: item.id, productId: item.productId, name: item.name_en,
+    selectedWeight: item.selectedWeight, quantity: item.quantity, price: item.unitPrice ?? item.price,
+    hamperConfiguration: item.hamperConfiguration }));
+}
+
+/** One bounded attempt; callers retain the same idempotency key when a connection fails. */
+export async function placeOrder(payload: OrderPayload, options: { signal?: AbortSignal; timeoutMs?: number } = {}): Promise<OrderResponse> {
+  if (isOrderInFlight) return { success: false, code: 'REQUEST_IN_FLIGHT', error: 'An order submission is already in progress. Please wait a moment.' };
   isOrderInFlight = true;
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-  // Generate or reuse stable idempotency key for this attempt
-  const idempotencyKey = payload.idempotencyKey || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `ik_${Date.now()}_${Math.random().toString(36).slice(2)}`);
-
+  const idempotencyKey = payload.idempotencyKey || (globalThis.crypto?.randomUUID ? crypto.randomUUID() : `ik_${Date.now()}_${Math.random().toString(36).slice(2)}`);
   try {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Idempotency-Key': idempotencyKey,
-    };
-
-    if (payload.authToken) {
-      headers['Authorization'] = `Bearer ${payload.authToken}`;
-    }
-
-    const response = await fetch('/api/orders', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        idempotencyKey,
-        name: payload.name,
-        phone: payload.phone,
-        address: payload.address,
-        city: payload.city,
-        deliverySlot: payload.deliverySlot || 'Fastest Dispatch',
-        instructions: payload.instructions || '',
-        giftWrapping: Boolean(payload.giftWrapping),
-        giftMessage: payload.giftMessage || '',
-        paymentMethod: payload.paymentMethod,
-        items: payload.items.map(item => ({
-          id: item.id,
-          productId: item.productId,
-          name: item.name_en,
-          selectedWeight: item.selectedWeight,
-          quantity: item.quantity,
-          price: item.unitPrice ?? item.price,
-          hamperConfiguration: item.hamperConfiguration,
-        })),
-        shippingMethodId: payload.shippingMethodId,
-        discountCode: payload.discountCode || null,
-        rewardId: payload.rewardId || null,
-        isWholesale: Boolean(payload.isWholesale),
-        expectedFinalTotal: payload.expectedFinalTotal,
-      }),
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-
-    const contentType = response.headers.get('content-type') || '';
-    if (!contentType.includes('application/json')) {
-      throw new Error('Server returned an unexpected non-JSON response. Please try again or contact concierge.');
-    }
-
-    const data = await response.json().catch(() => null);
-
-    if (!data || typeof data !== 'object') {
-      throw new Error('Malformed response received from server.');
-    }
-
-    if (!response.ok) {
-      return {
-        success: false,
-        code: data.code || `HTTP_${response.status}`,
-        error: data.error || `Server responded with status ${response.status}`,
-        durablePersistenceReady: data.durablePersistenceReady,
-        supportAction: data.supportAction,
-        totals: data.totals,
-      };
-    }
-
-    // Strict runtime response structure verification
-    if (data.success !== true) {
-      return {
-        success: false,
-        code: data.code || 'ORDER_REJECTED',
-        error: data.error || 'Order was not accepted by the boutique server.',
-      };
-    }
-
-    if (typeof data.orderId !== 'string' || data.orderId.trim().length < 5) {
-      return {
-        success: false,
-        code: 'INVALID_ORDER_ID',
-        error: 'Server response missing authoritative Order ID.',
-      };
-    }
-
-    if (typeof data.whatsappMessage !== 'string' || data.whatsappMessage.trim().length === 0) {
-      return {
-        success: false,
-        code: 'MISSING_RECEIPT',
-        error: 'Order accepted but receipt generation was incomplete.',
-      };
-    }
-
-    // Totals comparison check (within 1 PKR tolerance)
-    if (payload.expectedFinalTotal !== undefined && data.totals?.total !== undefined) {
-      const diff = Math.abs(data.totals.total - payload.expectedFinalTotal);
-      if (diff > 5) {
-        console.warn(`[Order] Server total (Rs. ${data.totals.total}) diverged from client expectation (Rs. ${payload.expectedFinalTotal})`);
+    return await withApiDeadline(async signal => {
+      const response = await fetch(apiUrl('/api/orders'), {
+        method: 'POST', signal,
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'Idempotency-Key': idempotencyKey,
+          ...(payload.authToken ? { Authorization: `Bearer ${payload.authToken}` } : {}) },
+        body: JSON.stringify({ idempotencyKey, name: payload.name, phone: payload.phone, address: payload.address,
+          city: payload.city, deliverySlot: payload.deliverySlot || 'Fastest Dispatch', instructions: payload.instructions || '',
+          giftWrapping: !!payload.giftWrapping, giftMessage: payload.giftMessage || '', paymentMethod: payload.paymentMethod,
+          items: requestItems(payload.items), shippingMethodId: payload.shippingMethodId, discountCode: payload.discountCode || null,
+          rewardId: payload.rewardId || null, isWholesale: !!payload.isWholesale, expectedFinalTotal: payload.expectedFinalTotal }),
+      });
+      if (!response.headers.get('content-type')?.toLowerCase().includes('application/json')) {
+        return { success: false, code: 'INVALID_RESPONSE', error: 'The order service returned an unexpected response. Your bag is preserved; retry or contact concierge.' };
       }
-    }
-
-    return {
-      success: true,
-      orderId: data.orderId,
-      whatsappMessage: data.whatsappMessage,
-      claimToken: data.claimToken || null,
-      totals: data.totals,
-      items: data.items,
-      isDuplicate: Boolean(data.isDuplicate),
-    };
-  } catch (err: any) {
-    clearTimeout(timeoutId);
-    if (err.name === 'AbortError') {
-      return {
-        success: false,
-        code: 'TIMEOUT',
-        error: 'Connection timed out while securing your order. Your bag is safely preserved. Please retry.',
-      };
-    }
-    return {
-      success: false,
-      code: 'NETWORK_ERROR',
-      error: err.message || 'Network error while placing order. Your box is safely preserved.',
-    };
-  } finally {
-    isOrderInFlight = false;
-  }
+      const data = await response.json();
+      if (!data || typeof data !== 'object' || Array.isArray(data)) {
+        return { success: false, code: 'INVALID_RESPONSE', error: 'The order service returned an invalid response. Your bag is preserved.' };
+      }
+      if (!response.ok) return { success: false, code: data.code || `HTTP_${response.status}`,
+        error: data.error || `Server responded with status ${response.status}`, durablePersistenceReady: data.durablePersistenceReady,
+        supportAction: data.supportAction, totals: data.totals };
+      if (data.success !== true) return { success: false, code: data.code || 'ORDER_REJECTED', error: data.error || 'Order was not accepted by the boutique server.' };
+      if (data.durablePersistenceReady !== true) return { success: false, code: 'PERSISTENCE_UNVERIFIED', error: 'The server could not confirm a saved order. Your bag is preserved; retry or contact concierge.' };
+      if (typeof data.orderId !== 'string' || data.orderId.trim().length < 5) return { success: false, code: 'INVALID_ORDER_ID', error: 'Server response missing authoritative Order ID.' };
+      if (typeof data.whatsappMessage !== 'string' || !data.whatsappMessage.trim()) return { success: false, code: 'MISSING_RECEIPT', error: 'The saved order receipt is incomplete. Your bag is preserved; retry or contact concierge.' };
+      if (!validTotals(data.totals) || !Array.isArray(data.items) || !data.items.length
+        || data.items.some((item: any) => typeof item?.productId !== 'string' || typeof item.selectedWeight !== 'string'
+          || !Number.isSafeInteger(item.quantity) || item.quantity < 1 || typeof item.price !== 'number' || !Number.isFinite(item.price) || item.price < 0)
+        || Math.abs(data.items.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0) - data.totals.subtotal) > 1) {
+        return { success: false, code: 'INVALID_RECEIPT', error: 'The saved order receipt could not be verified. Your bag is preserved; retry or contact concierge.' };
+      }
+      // A verified duplicate intentionally returns the original persisted prices, even after a catalogue refresh.
+      return { success: true, orderId: data.orderId, whatsappMessage: data.whatsappMessage,
+        claimToken: typeof data.claimToken === 'string' ? data.claimToken : null, totals: data.totals, items: data.items,
+        isDuplicate: data.isDuplicate === true, durablePersistenceReady: true };
+    }, options.timeoutMs ?? 15000, options.signal);
+  } catch (error: any) {
+    return error?.name === 'AbortError'
+      ? { success: false, code: 'TIMEOUT', error: 'Connection timed out while securing your order. Your bag is preserved. Please retry.' }
+      : { success: false, code: 'NETWORK_ERROR', error: error?.message || 'The order service is unreachable. Your bag is preserved. Please retry.' };
+  } finally { isOrderInFlight = false; }
 }
 
-/**
- * Fetches an authoritative order quote from the server without consuming coupons or placing an order.
- */
+/** An authoritative price check never creates an order or consumes a coupon. */
 export async function getOrderQuote(params: {
-  items: CartItem[];
-  city: string;
-  shippingMethodId: string;
-  discountCode?: string | null;
-  rewardId?: string | null;
-  giftWrapping?: boolean;
-  isWholesale?: boolean;
-  authToken?: string | null;
+  items: CartItem[]; city: string; shippingMethodId: string; discountCode?: string | null; rewardId?: string | null;
+  giftWrapping?: boolean; isWholesale?: boolean; authToken?: string | null; signal?: AbortSignal;
 }): Promise<{ success: boolean; totals?: any; items?: any[]; earnedPoints?: number; error?: string; code?: string }> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 12000);
   try {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    };
-    if (params.authToken) {
-      headers['Authorization'] = `Bearer ${params.authToken}`;
-    }
-
-    const res = await fetch('/api/orders/quote', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        items: params.items.map(item => ({
-          id: item.id,
-          productId: item.productId,
-          name: item.name_en,
-          selectedWeight: item.selectedWeight,
-          quantity: item.quantity,
-          price: item.unitPrice ?? item.price,
-          hamperConfiguration: item.hamperConfiguration,
-        })),
-        city: params.city,
-        shippingMethodId: params.shippingMethodId,
-        discountCode: params.discountCode || null,
-        rewardId: params.rewardId || null,
-        giftWrapping: Boolean(params.giftWrapping),
-        isWholesale: Boolean(params.isWholesale),
-      }),
-      signal: controller.signal,
-    });
-
-    const data = await res.json();
-    if (!data || typeof data !== 'object') return { success: false, code: 'INVALID_QUOTE', error: 'The price check returned an invalid response. Please retry.' };
-    if (!res.ok) {
-      return { success: false, code: data.code || `HTTP_${res.status}`, error: data.error || 'Failed to calculate quote' };
-    }
-    const totals = data.totals;
-    if (data.success !== true || !totals || !['subtotal', 'discount', 'discountedSubtotal', 'shipping', 'giftWrapFee', 'total'].every(key => typeof totals[key] === 'number' && Number.isFinite(totals[key]) && totals[key] >= 0)
-      || totals.discount > totals.subtotal || Math.abs(totals.subtotal - totals.discount - totals.discountedSubtotal) > 1
-      || Math.abs(totals.discountedSubtotal + totals.shipping + totals.giftWrapFee - totals.total) > 1) {
-      return { success: false, code: 'INVALID_QUOTE', error: 'The price check returned inconsistent totals. Please retry.' };
-    }
-    return {
-      success: true,
-      totals: data.totals,
-      items: data.items,
-      earnedPoints: data.earnedPoints,
-    };
-  } catch (e: any) {
-    if (e?.name === 'AbortError') return { success: false, code: 'TIMEOUT', error: 'The price check timed out. Please retry.' };
-    return { success: false, code: 'NETWORK_ERROR', error: e.message || 'Quote service unreachable' };
-  } finally {
-    clearTimeout(timeoutId);
+    return await withApiDeadline(async signal => {
+      const response = await fetch(apiUrl('/api/orders/quote'), {
+        method: 'POST', signal,
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(params.authToken ? { Authorization: `Bearer ${params.authToken}` } : {}) },
+        body: JSON.stringify({ items: requestItems(params.items), city: params.city, shippingMethodId: params.shippingMethodId,
+          discountCode: params.discountCode || null, rewardId: params.rewardId || null, giftWrapping: !!params.giftWrapping, isWholesale: !!params.isWholesale }),
+      });
+      const data = await response.json();
+      if (!data || typeof data !== 'object' || Array.isArray(data)) return { success: false, code: 'INVALID_QUOTE', error: 'The price check returned an invalid response. Please retry.' };
+      if (!response.ok) return { success: false, code: data.code || `HTTP_${response.status}`, error: data.error || 'Failed to calculate quote' };
+      if (data.success !== true || !validTotals(data.totals)) return { success: false, code: 'INVALID_QUOTE', error: 'The price check returned inconsistent totals. Please retry.' };
+      return { success: true, totals: data.totals, items: data.items, earnedPoints: data.earnedPoints };
+    }, 12000, params.signal);
+  } catch (error: any) {
+    return error?.name === 'AbortError' ? { success: false, code: 'TIMEOUT', error: 'The price check timed out. Please retry.' }
+      : { success: false, code: 'NETWORK_ERROR', error: error?.message || 'Quote service unreachable' };
   }
 }
 
-/**
- * Claims a guest order by linking it to an authenticated patron account.
- */
-export async function claimOrder(params: {
-  orderId: string;
-  claimToken: string;
-  authToken: string;
-}): Promise<{ success: boolean; message?: string; error?: string }> {
+/** Claims a guest order only after the authenticated server confirms ownership. */
+export async function claimOrder(params: { orderId: string; claimToken: string; authToken: string }): Promise<{ success: boolean; message?: string; error?: string }> {
   try {
-    const res = await fetch('/api/orders/claim', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${params.authToken}`,
-      },
-      body: JSON.stringify({
-        orderId: params.orderId,
-        claimToken: params.claimToken,
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      return { success: false, error: data.error || 'Claiming order failed' };
-    }
-    return { success: true, message: data.message };
-  } catch (e: any) {
-    return { success: false, error: e.message || 'Network error during claiming' };
-  }
+    return await withApiDeadline(async signal => {
+      const response = await fetch(apiUrl('/api/orders/claim'), {
+        method: 'POST', signal, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${params.authToken}` },
+        body: JSON.stringify({ orderId: params.orderId, claimToken: params.claimToken }),
+      });
+      const data = await response.json();
+      if (!response.ok || data?.success !== true) return { success: false, error: data?.error || 'Claiming order failed' };
+      return { success: true, message: data.message };
+    }, 12000);
+  } catch (error: any) { return { success: false, error: error?.message || 'Network error during claiming' }; }
 }
 
-/**
- * Retrieves sanitized order details via account ownership or guest claim token.
- */
-export async function getOrderDetails(params: {
-  orderId: string;
-  authToken?: string | null;
-  claimToken?: string | null;
-}): Promise<{ success: boolean; order?: any; error?: string }> {
+/** Retrieves a saved receipt using account ownership or a private guest recovery header. */
+export async function getOrderDetails(params: { orderId: string; authToken?: string | null; claimToken?: string | null; signal?: AbortSignal }): Promise<{ success: boolean; order?: any; error?: string }> {
   try {
-    const headers: Record<string, string> = {
-      'Accept': 'application/json',
-    };
-    if (params.authToken) {
-      headers['Authorization'] = `Bearer ${params.authToken}`;
-    }
-    if (params.claimToken) {
-      headers['X-Guest-Claim-Token'] = params.claimToken;
-    }
-
-    const res = await fetch(`/api/orders/${encodeURIComponent(params.orderId)}`, {
-      headers,
-    });
-
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      return { success: false, error: data.error || 'Order lookup failed' };
-    }
-    return { success: true, order: data.order };
-  } catch (e: any) {
-    return { success: false, error: e.message || 'Order lookup failed' };
-  }
+    return await withApiDeadline(async signal => {
+      const response = await fetch(apiUrl(`/api/orders/${encodeURIComponent(params.orderId)}`), { signal,
+        headers: { Accept: 'application/json', ...(params.authToken ? { Authorization: `Bearer ${params.authToken}` } : {}),
+          ...(params.claimToken ? { 'X-Guest-Claim-Token': params.claimToken } : {}) },
+      });
+      const data = await response.json();
+      if (!response.ok || data?.success !== true || data.order?.orderId !== params.orderId) return { success: false, error: data?.error || 'Order lookup failed' };
+      return { success: true, order: data.order };
+    }, 12000, params.signal);
+  } catch (error: any) { return { success: false, error: error?.message || 'Order lookup failed' }; }
 }

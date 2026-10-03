@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { calculateOrderSummary, GIFT_WRAP_FEE, type PricingSummary } from '../lib/pricing';
 import { readCheckoutDraft, CHECKOUT_DRAFT_KEY } from '../lib/checkoutPreferences';
 import { acceptedCheckoutReceipt } from '../lib/checkoutReceipt';
-import { checkoutFingerprint, clearCheckoutAttempt, persistCheckoutAttempt, readCheckoutAttempt, resolveCheckoutAttempt, writeCheckoutSession, type CheckoutAttempt } from '../lib/checkoutAttempt';
+import { checkoutFingerprint, checkoutQuoteKey, getCheckoutAuthToken, CheckoutAuthenticationError, clearCheckoutAttempt, persistCheckoutAttempt, readCheckoutAttempt, resolveCheckoutAttempt, writeCheckoutSession, type CheckoutAttempt } from '../lib/checkoutAttempt';
+import { checkoutReliabilityTranslations } from '../contexts/checkoutReliabilityTranslations';
 import AddressBook from '../components/AddressBook';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { useNavigate } from 'react-router-dom';
@@ -45,7 +46,7 @@ import { calculateFinalTotal } from '../lib/pricing';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart, parsePrice, formatPrice } from '../contexts/CartContext';
 import { STORE_CONFIG } from '../config/store';
-import { buildAutomatedOrderWhatsAppUrl, buildHumanSupportWhatsAppUrl } from '../config/contacts';
+import { buildOrderTrackingWhatsAppUrl, buildHumanSupportWhatsAppUrl } from '../config/contacts';
 import { placeOrder, getOrderQuote, type OrderPayload } from '../lib/order';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
@@ -68,15 +69,23 @@ interface CheckoutPageProps {
 export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth: propsOnOpenAuth }: CheckoutPageProps = {}) {
   const navigate = useNavigate();
   const { cartItems, clearCart, shippingCity, setShippingCity } = useCart();
-  const { patronProfile, currentUser } = useAuth();
+  const { patronProfile, currentUser, loading: authLoading } = useAuth();
   const onOpenAuth = propsOnOpenAuth || (() => {});
-  const { language, t } = useLanguage();
+  const { language, t: storefrontTranslation } = useLanguage();
+  const t = React.useCallback((key: string, fallback = '') => checkoutReliabilityTranslations[language][key] || storefrontTranslation(key, fallback), [language, storefrontTranslation]);
   const mediaCover = useProductMediaCover();
   const online = useOnlineStatus();
   const reduceMotion = useReducedMotion();
   const [restoredDraft] = useState(readCheckoutDraft);
   const [draftNotice, setDraftNotice] = useState(!!restoredDraft);
   const checkoutAttemptRef = React.useRef<CheckoutAttempt | null>(null);
+  const submissionRequestRef = React.useRef<AbortController | null>(null);
+  const couponRequestRef = React.useRef<AbortController | null>(null);
+  const identityRef = React.useRef<string | null>(null);
+  identityRef.current = currentUser?.uid || null;
+  const isWholesale = false;
+  // Active rewards are displayed by the account; none is automatically selected for an order.
+  const selectedRewardId: string | null = null;
 
   // 1. All Hooks declared unconditionally at the top (Rules of Hooks)
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('details');
@@ -125,23 +134,35 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   const [activeReward, setActiveReward] = useState<any>(null);
   const [rewardDetails, setRewardDetails] = useState<any>(null);
 
-  const quoteKey = JSON.stringify({ items: cartItems.map(item => [item.productId, item.selectedWeight, item.quantity, item.unitPrice, item.hamperConfiguration]), city: formData.city, shipping: activeShippingMethod, wrapping: formData.giftWrapping, coupon: appliedCoupon });
+  const quoteKey = checkoutQuoteKey({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping, discountCode: appliedCoupon, rewardId: selectedRewardId, isWholesale }, currentUser?.uid || null);
+  const pricingKeyRef = React.useRef(quoteKey);
+  pricingKeyRef.current = quoteKey;
+  const quoteStatusRef = React.useRef({ quote, loading: quoteLoading });
+  quoteStatusRef.current = { quote, loading: quoteLoading };
+  useEffect(() => () => { submissionRequestRef.current?.abort(); couponRequestRef.current?.abort(); }, [currentUser?.uid]);
   useEffect(() => { setShippingCity(formData.city); }, [formData.city, setShippingCity]);
   useEffect(() => {
-    if (!online || !cartItems.length) { setQuoteLoading(false); return; }
+    setQuote(null);
+    setQuoteError('');
+    if (!online || !cartItems.length || authLoading) { setQuoteLoading(false); return; }
     if (formData.city.trim().length < 2 || isPlaceholderCity(formData.city)) { setQuoteLoading(false); setQuoteError(t('shipping.enterCity')); return; }
     let active = true;
+    const controller = new AbortController();
     setQuoteLoading(true); setQuoteError('');
     const timer = setTimeout(async () => {
-      const authToken = await currentUser?.getIdToken().catch(() => undefined);
-      const result = await getOrderQuote({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping, discountCode: appliedCoupon, authToken });
-      if (!active) return;
-      if (result.success && result.totals) { setQuote({ key: quoteKey, totals: result.totals }); }
-      else setQuoteError(result.code === 'TIMEOUT' ? t('checkout.quoteTimeout', 'The price check timed out. Please retry.') : result.error || t('checkout.quoteFailed'));
-      setQuoteLoading(false);
+      try {
+        const authToken = await getCheckoutAuthToken(currentUser, controller.signal);
+        if (!active || controller.signal.aborted) return;
+        const result = await getOrderQuote({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping, discountCode: appliedCoupon, rewardId: selectedRewardId, isWholesale, authToken, signal: controller.signal });
+        if (!active) return;
+        if (result.success && result.totals) setQuote({ key: quoteKey, totals: result.totals });
+        else setQuoteError(result.code === 'TIMEOUT' ? t('checkout.quoteTimeout', 'The price check timed out. Please retry.') : result.error || t('checkout.quoteFailed'));
+      } catch (error) {
+        if (active) setQuoteError(error instanceof CheckoutAuthenticationError ? t('checkout.signInAgain') : t('checkout.quoteFailed'));
+      } finally { if (active) setQuoteLoading(false); }
     }, 250);
-    return () => { active = false; clearTimeout(timer); };
-  }, [quoteKey, quoteRefresh, online, currentUser, activeShippingMethod, appliedCoupon, cartItems, formData.giftWrapping, formData.city, t]);
+    return () => { active = false; clearTimeout(timer); controller.abort(); };
+  }, [quoteKey, quoteRefresh, online, authLoading, currentUser, activeShippingMethod, appliedCoupon, cartItems, formData.giftWrapping, formData.city, selectedRewardId, isWholesale, t]);
   useEffect(() => {
     if (currentStep === 'success' || orderSuccessResult) return;
     if (!formData.name && !formData.phone && !formData.address && !formData.giftMessage && !formData.instructions) return;
@@ -200,7 +221,6 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
 
   const onClose = propsOnClose || (() => { navigate('/shop'); });
   const onClearCart = () => { clearCart(); };
-  const isWholesale = false;
 
   const handleShippingChange = (method: ShippingMethodId) => {
     setInternalShippingMethod(method);
@@ -345,11 +365,23 @@ const handleInputChange = (field: string, value: any) => {
     if (!code) { setAppliedCoupon(''); setCouponErrorMsg(t('checkout.enterCoupon')); return; }
     if (code === 'CANCER' || code === 'کینسر') { setIsCompassionMode(true); setAppliedCoupon(''); setFormData(previous => ({ ...previous, giftWrapping: false })); return; }
     setIsCompassionMode(false); setIsValidatingCoupon(true);
-    const authToken = await currentUser?.getIdToken().catch(() => undefined);
-    const result = await getOrderQuote({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping, discountCode: code, authToken });
-    setIsValidatingCoupon(false);
-    if (result.success && result.totals && result.totals.discount > 0) { setAppliedCoupon(code); setCouponSuccessMsg(t('checkout.couponApplied')); }
-    else { setAppliedCoupon(''); setCouponErrorMsg(result.code === 'TIMEOUT' ? t('checkout.quoteTimeout', 'The price check timed out. Please retry.') : result.error || t('checkout.couponNoEffect')); }
+    couponRequestRef.current?.abort();
+    const controller = new AbortController();
+    couponRequestRef.current = controller;
+    const initialKey = quoteKey;
+    const initialUid = currentUser?.uid || null;
+    try {
+      const authToken = await getCheckoutAuthToken(currentUser, controller.signal);
+      if (controller.signal.aborted) return;
+      const result = await getOrderQuote({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping, discountCode: code, rewardId: selectedRewardId, isWholesale, authToken, signal: controller.signal });
+      if (controller.signal.aborted || pricingKeyRef.current !== initialKey || identityRef.current !== initialUid) return;
+      if (result.success && result.totals && result.totals.discount > 0) { setAppliedCoupon(code); setCouponSuccessMsg(t('checkout.couponApplied')); }
+      else { setAppliedCoupon(''); setCouponErrorMsg(result.code === 'TIMEOUT' ? t('checkout.quoteTimeout', 'The price check timed out. Please retry.') : result.error || t('checkout.couponNoEffect')); }
+    } catch (error) {
+      if (!controller.signal.aborted) setCouponErrorMsg(error instanceof CheckoutAuthenticationError ? t('checkout.signInAgain') : t('checkout.quoteFailed'));
+    } finally {
+      if (couponRequestRef.current === controller) { couponRequestRef.current = null; setIsValidatingCoupon(false); }
+    }
   };
 
   const localSummary = (() => {
@@ -381,11 +413,16 @@ const handleInputChange = (field: string, value: any) => {
       return;
     }
 
-    if (!online || !verifiedQuote || quoteLoading) { setSubmissionError(t('checkout.waitQuote')); return; }
+    if (!online || authLoading || !verifiedQuote || quoteLoading || couponRequestRef.current) { setSubmissionError(t('checkout.waitQuote')); return; }
     if (isSubmittingRef.current) return;
     isSubmittingRef.current = true;
+    const controller = new AbortController();
+    submissionRequestRef.current = controller;
+    const submittedUid = currentUser?.uid || null;
+    const submittedQuoteKey = quoteKey;
     setIsSubmittingOrder(true);
     setSubmissionError(null);
+    setSupportAction(null);
 
     // Save order snapshot before emptying cart
     const itemsSnapshot = [...cartItems];
@@ -400,14 +437,9 @@ const handleInputChange = (field: string, value: any) => {
     setSavedTotals(totalsSnapshot);
 
     try {
-      let authToken: string | null = null;
-      if (currentUser) {
-        try {
-          authToken = await currentUser.getIdToken();
-        } catch (tokenErr) {
-          console.warn('Could not acquire patron ID token:', tokenErr);
-        }
-      }
+      const authToken = await getCheckoutAuthToken(currentUser, controller.signal);
+      if (controller.signal.aborted || identityRef.current !== submittedUid) throw new Error(t('checkout.requestCancelled'));
+      if (pricingKeyRef.current !== submittedQuoteKey || quoteStatusRef.current.loading || quoteStatusRef.current.quote?.key !== submittedQuoteKey || couponRequestRef.current) throw new Error(t('checkout.waitQuote'));
 
       const orderPayload: OrderPayload = {
         name: formData.name,
@@ -425,20 +457,30 @@ const handleInputChange = (field: string, value: any) => {
         })),
         shippingMethodId: activeShippingMethod,
         discountCode: appliedCoupon,
+        rewardId: selectedRewardId,
         isWholesale,
         expectedFinalTotal: finalPayable,
         authToken
       };
-      const fingerprint = await checkoutFingerprint(orderPayload);
+      const fingerprint = await checkoutFingerprint(orderPayload, submittedUid);
+      // Digest creation is asynchronous: changed account/cart details invalidate the pending submission too.
+      if (controller.signal.aborted || identityRef.current !== submittedUid) throw new Error(t('checkout.requestCancelled'));
+      if (pricingKeyRef.current !== submittedQuoteKey || quoteStatusRef.current.loading || quoteStatusRef.current.quote?.key !== submittedQuoteKey || couponRequestRef.current) throw new Error(t('checkout.waitQuote'));
       const attempt = resolveCheckoutAttempt(fingerprint, checkoutAttemptRef.current || readCheckoutAttempt(), () =>
         typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `ik_${Date.now()}_${Math.random().toString(36).slice(2)}`);
       checkoutAttemptRef.current = attempt;
       persistCheckoutAttempt(attempt);
-      const orderResult = await placeOrder({ ...orderPayload, idempotencyKey: attempt.key });
+      const orderResult = await placeOrder({ ...orderPayload, idempotencyKey: attempt.key }, { signal: controller.signal });
+      if (controller.signal.aborted || identityRef.current !== submittedUid) { setSubmissionError(t('checkout.requestCancelled')); return; }
 
       if (!orderResult.success) {
-        setSubmissionError(orderResult.error || 'Unable to complete order placement.');
+        setSubmissionError(orderResult.error || t('checkout.orderUnavailable'));
         setSupportAction(orderResult.supportAction || null);
+        if (orderResult.code === 'QUOTE_CHANGED') {
+          setQuote(null);
+          setQuoteRefresh(value => value + 1);
+          setSubmissionError(t('checkout.quoteChanged'));
+        }
         return;
       }
 
@@ -447,7 +489,7 @@ const handleInputChange = (field: string, value: any) => {
       const receipt = acceptedCheckoutReceipt(itemsSnapshot, totalsSnapshot, orderResult);
       setOrderItemsSnapshot(receipt.items);
       setSavedTotals(receipt.totals);
-      const whatsappUrl = buildAutomatedOrderWhatsAppUrl(orderResult.whatsappMessage!);
+      const whatsappUrl = buildOrderTrackingWhatsAppUrl(orderId);
 
       if (orderResult.claimToken) {
         writeCheckoutSession('pendingClaimToken', orderResult.claimToken);
@@ -458,6 +500,8 @@ const handleInputChange = (field: string, value: any) => {
       try {
         sessionStorage.setItem("allbarka_order_success", JSON.stringify({
           orderId,
+          durablePersistenceReady: true,
+          customerUid: submittedUid,
           whatsappUrl,
           claimToken: orderResult.claimToken,
           items: receipt.items,
@@ -482,7 +526,7 @@ const handleInputChange = (field: string, value: any) => {
       clearCheckoutAttempt();
 
       if (currentUser) {
-        try {
+        void (async () => { try {
           const { doc, setDoc } = await import('firebase/firestore');
           const { db } = await import('../lib/firebase');
           await setDoc(doc(db, 'users', currentUser.uid), {
@@ -493,13 +537,14 @@ const handleInputChange = (field: string, value: any) => {
           }, { merge: true });
         } catch (e) {
           console.warn("Could not save address to patron profile:", e);
-        }
+        } })();
       }
 
     } catch (err: any) {
       console.error('Order placement failed:', err);
-      setSubmissionError(err.message || 'Unable to place order. Please check your connection and try again.');
+      setSubmissionError(err instanceof CheckoutAuthenticationError ? t('checkout.signInAgain') : err.message || t('checkout.orderUnavailable'));
     } finally {
+      if (submissionRequestRef.current === controller) submissionRequestRef.current = null;
       isSubmittingRef.current = false;
       setIsSubmittingOrder(false);
     }
@@ -1248,7 +1293,7 @@ const handleInputChange = (field: string, value: any) => {
                     ) : (
                       <button
                         type="submit"
-                        disabled={isSubmittingOrder || isValidatingCoupon || !online || quoteLoading || !verifiedQuote}
+                        disabled={isSubmittingOrder || isValidatingCoupon || !online || authLoading || quoteLoading || !verifiedQuote}
                         className="flex-1 py-3.5 rounded-full bg-[var(--color-ink,#1F120F)] text-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)] text-xs font-black uppercase tracking-widest hover:bg-[var(--color-ink,#1F120F)]/90 hover:shadow-[0_4px_20px_rgba(184,147,95,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
                       >
                         <CheckCircle size={16} className="text-[var(--color-gold,#B8935F)]" />
@@ -1275,10 +1320,10 @@ const handleInputChange = (field: string, value: any) => {
                       AllBarka Reserve Order
                     </span>
                     <h3 className="text-2xl font-serif font-black text-[var(--color-ink,#1F120F)] mb-1">
-                      Order Confirmed
+                      {t('checkout.receiptReceived')}
                     </h3>
                     <p className="text-xs text-[var(--color-ink,#1F120F)]/70">
-                      Your gourmet harvest package has been registered with priority concierge dispatch.
+                      {t('checkout.receiptSaved')}
                     </p>
                   </div>
 
@@ -1385,8 +1430,9 @@ const handleInputChange = (field: string, value: any) => {
                       className="w-full py-3.5 min-h-[48px] rounded-full bg-[#25D366] text-white font-black uppercase tracking-widest hover:bg-[#1da851] hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 text-xs"
                     >
                       <MessageCircle size={16} />
-                      <span>Forward to WhatsApp Concierge</span>
+                      <span>{t('checkout.trackWhatsApp')}</span>
                     </a>
+                    <p className="text-xs leading-relaxed text-[var(--color-ink-muted)]">{t('checkout.trackingSendNotice')}</p>
                     <button
                       type="button"
                       onClick={onClose}
