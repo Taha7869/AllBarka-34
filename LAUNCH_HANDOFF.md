@@ -1,5 +1,15 @@
 # AllBarka launch handoff — 3 October 2026
 
+## Connection preflight follow-up — 4 October 2026
+
+The launch implementation remains preserved. GitHub initially matched `2afd16f4dbf44ac3d89050ebdc45eb721adcc6b3`; this follow-up changes setup documentation and credential-file ignores only. See [docs/LAUNCH-ENV-AUDIT.md](docs/LAUNCH-ENV-AUDIT.md) for the complete environment inventory and current Railway evidence.
+
+Railway currently lists unsupported `FIREBASE_SERVICE_ACCOUNT`, while the code requires the absent `FIREBASE_CLIENT_EMAIL` and `FIREBASE_PRIVATE_KEY`. The status webhook pair and Meta app-secret/business-phone-ID pair are also absent. All original15 shared variable names remain present; four public Firebase fields and APP_URL/FRONTEND_ORIGINS are present as well. Values are redacted: do not claim key validity or that the resolved API base is blank. Verify/blank the service's `VITE_API_BASE_URL` for same-origin hosting without overwriting existing shared secrets. `TRUST_PROXY_HOPS` is absent and remains unset.
+
+The service is offline with no deployment or staged changes. Returned config exposes no repository/branch source object; verify the exact source in the owner's dashboard before connecting. Existing build/start/health settings match the branch. No Railway variables, source, deployments, main branch, n8n workflows or customer data were changed in this follow-up. Historical3Oct configuration below describes that day's setup; current4Oct evidence above takes precedence.
+
+Follow-up checks passed: TypeScript, fullstack build, workflow/static fixtures45/45, diff whitespace and credential-file ignores. No actual committed credential was found; private-key header/password/apiKey matches are test fixtures or application/docs references. A normal documentation-only follow-up commit is pushed to the same branch; the final response records its SHA.
+
 Branch: `codex/launch-checkout-groq-outbox-20261003`.
 Repository: `Taha7869/AllBarka-34`. Existing changes were preserved; no reset or main-branch merge.
 
