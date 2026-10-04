@@ -1,0 +1,119 @@
+{
+  "category": "herbs-spices",
+  "checks": [
+    {
+      "id": "ceylon-cinnamon",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/ceylon-cinnamon.svg"
+    },
+    {
+      "id": "green-cardamom",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/green-cardamom.svg"
+    },
+    {
+      "id": "black-cardamom",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/black-cardamom.svg"
+    },
+    {
+      "id": "nutmeg-mace",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/nutmeg-mace.svg"
+    },
+    {
+      "id": "whole-cloves",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/whole-cloves.svg"
+    },
+    {
+      "id": "black-peppercorns",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/black-peppercorns.svg"
+    },
+    {
+      "id": "star-anise",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/star-anise.svg"
+    },
+    {
+      "id": "cumin-seeds",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/cumin-seeds.svg"
+    },
+    {
+      "id": "fennel-seeds",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/fennel-seeds.svg"
+    },
+    {
+      "id": "ajwain",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/ajwain.svg"
+    },
+    {
+      "id": "dried-ginger",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/dried-ginger.svg"
+    },
+    {
+      "id": "kasuri-methi",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/kasuri-methi.svg"
+    },
+    {
+      "id": "dried-mint",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/dried-mint.svg"
+    },
+    {
+      "id": "chaat-masala",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/chaat-masala.svg"
+    },
+    {
+      "id": "garam-masala",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/garam-masala.svg"
+    },
+    {
+      "id": "gond-katira",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/gond-katira.svg"
+    },
+    {
+      "id": "edible-gond",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/edible-gond.svg"
+    },
+    {
+      "id": "dried-rose-petals",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/dried-rose-petals.svg"
+    },
+    {
+      "id": "dried-jujube",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/dried-jujube.svg"
+    }
+  ]
+}

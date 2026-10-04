@@ -84,7 +84,7 @@ test('new shop sections show the actual active category count and matching produ
     const html = render(<CategoryPLP initialCategory={category} />, 'en', `/shop/${category}`);
     assert.match(html, new RegExp(`<strong[^>]*>${expected.length}</strong>\\s*(?:<!-- -->)?\\s*selections`));
     assert.ok(html.includes(`href="/product/${expected[0].id}"`));
-    assert.match(html, /role="img" aria-label="[^"]+ — AllBarka"/);
+    assert.ok(/role="img" aria-label="[^"]+ — AllBarka"/.test(html) || /<img[^>]+\/images\/products\//.test(html));
     assert.doesNotMatch(html, /href="\/product\/pista"/);
     for (const newCategory of ['herbs-spices', 'bundles']) assert.ok(html.includes(catalogTranslations.en[`shop.${newCategory}`].replaceAll('&', '&amp;')));
   }

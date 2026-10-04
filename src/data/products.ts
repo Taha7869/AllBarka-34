@@ -1415,6 +1415,7 @@ function withCatalogMetadata(product: Product): Product {
 
 interface CatalogAddition {
   id: string;
+  image?: string;
   name: string;
   nameUr: string;
   nameAr: string;
@@ -1477,7 +1478,7 @@ function defineAddition(definition: CatalogAddition): Product {
     name_en: definition.name, name_ur: definition.nameUr, name_ar: definition.nameAr,
     category: definition.category, category_en: definition.category, category_ur: copy.ur, category_ar: copy.ar,
     desc_en: definition.description, desc_ur: copy.descriptionUr, desc_ar: copy.descriptionAr,
-    image: null, imageName: null, active: true, variants, prices,
+    image: definition.image ?? null, imageName: definition.image ?? null, active: true, variants, prices,
     pricePer100g: definition.pricePer100g,
     allowCustomWeight: !quoteOnly && !isBundle && definition.category !== 'oils' && definition.allowCustomWeight !== false,
     minCustomWeightG: 100, maxCustomWeightG: 5000, fragile: definition.category === 'oils',
@@ -1501,25 +1502,25 @@ function defineAddition(definition: CatalogAddition): Product {
 // New fixed prices below are owner-supplied placeholders in PKR. Existing products
 // remain above with their established photos and prices; equivalent items are not duplicated.
 const ADDITIONS: CatalogAddition[] = [
-  { id: 'ceylon-cinnamon', name: 'Ceylon Cinnamon Sticks (Dalchini)', nameUr: 'سیلون دارچینی کی چھڑیاں', nameAr: 'عيدان القرفة السيلانية', category: 'herbs-spices', description: 'Delicate Ceylon cinnamon sticks for fragrant tea, baking and slow-cooked dishes.', variants: [['100g', 250], ['250g', 550]], pricePer100g: 250 },
-  { id: 'green-cardamom', name: 'Green Cardamom Jumbo (Sabz Ilaichi)', nameUr: 'جمبو سبز الائچی', nameAr: 'هيل أخضر كبير', category: 'herbs-spices', description: 'Jumbo green cardamom pods for chai, desserts and an aromatic kitchen finish.', variants: [['100g', 1800], ['250g', 4200]], pricePer100g: 1800 },
-  { id: 'black-cardamom', name: 'Black Cardamom (Bari Ilaichi)', nameUr: 'بڑی کالی الائچی', nameAr: 'هيل أسود', category: 'herbs-spices', description: 'Whole black cardamom brings a deep, smoky note to rice and slow-cooked favourites.', variants: [['100g', 600], ['250g', 1400]], pricePer100g: 600 },
-  { id: 'nutmeg-mace', name: 'Nutmeg & Mace Combo (Jaifal Javitri)', nameUr: 'جائفل اور جاوتری کی جوڑی', nameAr: 'ثنائي جوزة الطيب والبسباسة', category: 'herbs-spices', description: 'A fragrant nutmeg and mace pairing for gentle warmth in savoury dishes and desserts.', variants: [['100g', 700]], pricePer100g: 700 },
-  { id: 'whole-cloves', name: 'Whole Cloves (Laung)', nameUr: 'ثابت لونگ', nameAr: 'قرنفل كامل', category: 'herbs-spices', description: 'Whole cloves with a warm aromatic character for rice, tea and kitchen blends.', variants: [['100g', 350], ['250g', 800]], pricePer100g: 350 },
-  { id: 'black-peppercorns', name: 'Black Peppercorns (Kali Mirch)', nameUr: 'ثابت کالی مرچ', nameAr: 'حبوب الفلفل الأسود', category: 'herbs-spices', description: 'Whole black peppercorns to grind fresh for a bright, warming finish.', variants: [['100g', 450], ['250g', 1000]], pricePer100g: 450 },
-  { id: 'star-anise', name: 'Star Anise (Badyan)', nameUr: 'بادیان کے پھول', nameAr: 'يانسون نجمي', category: 'herbs-spices', description: 'Star-shaped anise for fragrant broths, spiced tea and thoughtful home cooking.', variants: [['100g', 400]], pricePer100g: 400 },
-  { id: 'cumin-seeds', name: 'Cumin Seeds (Zeera)', nameUr: 'ثابت زیرہ', nameAr: 'بذور الكمون', category: 'herbs-spices', description: 'Whole cumin seeds for a warm, earthy base in everyday cooking.', variants: [['100g', 500], ['250g', 1150]], pricePer100g: 500 },
-  { id: 'fennel-seeds', name: 'Fennel Seeds (Saunf)', nameUr: 'سونف', nameAr: 'بذور الشمر', category: 'herbs-spices', description: 'A delicate fennel selection with a softly sweet aromatic note.', variants: [['100g', 180], ['250g', 400]], pricePer100g: 180 },
-  { id: 'ajwain', name: 'Ajwain', nameUr: 'اجوائن', nameAr: 'بذور الأجوين', category: 'herbs-spices', description: 'A familiar aromatic seed for breads, savoury snacks and kitchen spice blends.', variants: [['100g', 150]], pricePer100g: 150 },
-  { id: 'dried-ginger', name: 'Dried Ginger Powder (Sonth)', nameUr: 'سونٹھ کا پاؤڈر', nameAr: 'مسحوق الزنجبيل المجفف', category: 'herbs-spices', description: 'Dried ginger powder adds gentle warmth to baking, tea and traditional recipes.', variants: [['100g', 250]], pricePer100g: 250 },
-  { id: 'kasuri-methi', name: 'Kasuri Methi', nameUr: 'قصوری میتھی', nameAr: 'أوراق الحلبة المجففة', category: 'herbs-spices', description: 'Dried fenugreek leaves for the fragrant finishing touch in curries and breads.', variants: [['100g', 150]], pricePer100g: 150 },
-  { id: 'dried-mint', name: 'Dried Mint (Podina)', nameUr: 'خشک پودینہ', nameAr: 'نعناع مجفف', category: 'herbs-spices', description: 'Dried mint for cooling flavour in yoghurt, dressings and home-prepared tea.', variants: [['100g', 120]], pricePer100g: 120 },
-  { id: 'chaat-masala', name: 'AllBarka Chaat Masala', nameUr: 'آلبرکہ چاٹ مصالحہ', nameAr: 'خلطة تشات ماسالا من البركة', category: 'herbs-spices', description: 'Our signature chaat blend for a lively finish on fruit, snacks and savoury favourites.', variants: [['100g', 200]], pricePer100g: 200 },
-  { id: 'garam-masala', name: 'AllBarka Garam Masala', nameUr: 'آلبرکہ گرم مصالحہ', nameAr: 'خلطة غارام ماسالا من البركة', category: 'herbs-spices', description: 'A signature warming spice blend for considered everyday cooking.', variants: [['100g', 300]], pricePer100g: 300 },
-  { id: 'gond-katira', name: 'Gond Katira', nameUr: 'گوند کتیرا', nameAr: 'صمغ الكثيراء', category: 'herbs-spices', description: 'Traditional gond katira for familiar home recipes; prepare according to your recipe.', variants: [['100g', 400], ['250g', 900]], pricePer100g: 400 },
-  { id: 'edible-gond', name: 'Edible Gond (Acacia)', nameUr: 'کھانے والا گوند (ببول)', nameAr: 'صمغ الأكاسيا الغذائي', category: 'herbs-spices', description: 'Edible acacia gond for winter sweets and traditional home preparations.', variants: [['100g', 500], ['250g', 1150]], pricePer100g: 500 },
-  { id: 'dried-rose-petals', name: 'Dried Rose Petals', nameUr: 'خشک گلاب کی پتیاں', nameAr: 'بتلات الورد المجففة', category: 'herbs-spices', description: 'Dried rose petals for a delicate floral touch in tea, desserts and presentation.', variants: [['100g', 300]], pricePer100g: 300 },
-  { id: 'dried-jujube', name: 'Dried Jujube (Ber)', nameUr: 'خشک بیر', nameAr: 'عنّاب مجفف', category: 'herbs-spices', description: 'Dried jujube with a mellow fruit character for snacking and traditional recipes.', variants: [['250g', 350]], pricePer100g: 140 },
+  { id: 'ceylon-cinnamon', image: '/images/products/ceylon-cinnamon.svg', name: 'Ceylon Cinnamon Sticks (Dalchini)', nameUr: 'سیلون دارچینی کی چھڑیاں', nameAr: 'عيدان القرفة السيلانية', category: 'herbs-spices', description: 'Delicate Ceylon cinnamon sticks for fragrant tea, baking and slow-cooked dishes.', variants: [['100g', 250], ['250g', 550]], pricePer100g: 250 },
+  { id: 'green-cardamom', image: '/images/products/green-cardamom.svg', name: 'Green Cardamom Jumbo (Sabz Ilaichi)', nameUr: 'جمبو سبز الائچی', nameAr: 'هيل أخضر كبير', category: 'herbs-spices', description: 'Jumbo green cardamom pods for chai, desserts and an aromatic kitchen finish.', variants: [['100g', 1800], ['250g', 4200]], pricePer100g: 1800 },
+  { id: 'black-cardamom', image: '/images/products/black-cardamom.svg', name: 'Black Cardamom (Bari Ilaichi)', nameUr: 'بڑی کالی الائچی', nameAr: 'هيل أسود', category: 'herbs-spices', description: 'Whole black cardamom brings a deep, smoky note to rice and slow-cooked favourites.', variants: [['100g', 600], ['250g', 1400]], pricePer100g: 600 },
+  { id: 'nutmeg-mace', image: '/images/products/nutmeg-mace.svg', name: 'Nutmeg & Mace Combo (Jaifal Javitri)', nameUr: 'جائفل اور جاوتری کی جوڑی', nameAr: 'ثنائي جوزة الطيب والبسباسة', category: 'herbs-spices', description: 'A fragrant nutmeg and mace pairing for gentle warmth in savoury dishes and desserts.', variants: [['100g', 700]], pricePer100g: 700 },
+  { id: 'whole-cloves', image: '/images/products/whole-cloves.svg', name: 'Whole Cloves (Laung)', nameUr: 'ثابت لونگ', nameAr: 'قرنفل كامل', category: 'herbs-spices', description: 'Whole cloves with a warm aromatic character for rice, tea and kitchen blends.', variants: [['100g', 350], ['250g', 800]], pricePer100g: 350 },
+  { id: 'black-peppercorns', image: '/images/products/black-peppercorns.svg', name: 'Black Peppercorns (Kali Mirch)', nameUr: 'ثابت کالی مرچ', nameAr: 'حبوب الفلفل الأسود', category: 'herbs-spices', description: 'Whole black peppercorns to grind fresh for a bright, warming finish.', variants: [['100g', 450], ['250g', 1000]], pricePer100g: 450 },
+  { id: 'star-anise', image: '/images/products/star-anise.svg', name: 'Star Anise (Badyan)', nameUr: 'بادیان کے پھول', nameAr: 'يانسون نجمي', category: 'herbs-spices', description: 'Star-shaped anise for fragrant broths, spiced tea and thoughtful home cooking.', variants: [['100g', 400]], pricePer100g: 400 },
+  { id: 'cumin-seeds', image: '/images/products/cumin-seeds.svg', name: 'Cumin Seeds (Zeera)', nameUr: 'ثابت زیرہ', nameAr: 'بذور الكمون', category: 'herbs-spices', description: 'Whole cumin seeds for a warm, earthy base in everyday cooking.', variants: [['100g', 500], ['250g', 1150]], pricePer100g: 500 },
+  { id: 'fennel-seeds', image: '/images/products/fennel-seeds.svg', name: 'Fennel Seeds (Saunf)', nameUr: 'سونف', nameAr: 'بذور الشمر', category: 'herbs-spices', description: 'A delicate fennel selection with a softly sweet aromatic note.', variants: [['100g', 180], ['250g', 400]], pricePer100g: 180 },
+  { id: 'ajwain', image: '/images/products/ajwain.svg', name: 'Ajwain', nameUr: 'اجوائن', nameAr: 'بذور الأجوين', category: 'herbs-spices', description: 'A familiar aromatic seed for breads, savoury snacks and kitchen spice blends.', variants: [['100g', 150]], pricePer100g: 150 },
+  { id: 'dried-ginger', image: '/images/products/dried-ginger.svg', name: 'Dried Ginger Powder (Sonth)', nameUr: 'سونٹھ کا پاؤڈر', nameAr: 'مسحوق الزنجبيل المجفف', category: 'herbs-spices', description: 'Dried ginger powder adds gentle warmth to baking, tea and traditional recipes.', variants: [['100g', 250]], pricePer100g: 250 },
+  { id: 'kasuri-methi', image: '/images/products/kasuri-methi.svg', name: 'Kasuri Methi', nameUr: 'قصوری میتھی', nameAr: 'أوراق الحلبة المجففة', category: 'herbs-spices', description: 'Dried fenugreek leaves for the fragrant finishing touch in curries and breads.', variants: [['100g', 150]], pricePer100g: 150 },
+  { id: 'dried-mint', image: '/images/products/dried-mint.svg', name: 'Dried Mint (Podina)', nameUr: 'خشک پودینہ', nameAr: 'نعناع مجفف', category: 'herbs-spices', description: 'Dried mint for cooling flavour in yoghurt, dressings and home-prepared tea.', variants: [['100g', 120]], pricePer100g: 120 },
+  { id: 'chaat-masala', image: '/images/products/chaat-masala.svg', name: 'AllBarka Chaat Masala', nameUr: 'آلبرکہ چاٹ مصالحہ', nameAr: 'خلطة تشات ماسالا من البركة', category: 'herbs-spices', description: 'Our signature chaat blend for a lively finish on fruit, snacks and savoury favourites.', variants: [['100g', 200]], pricePer100g: 200 },
+  { id: 'garam-masala', image: '/images/products/garam-masala.svg', name: 'AllBarka Garam Masala', nameUr: 'آلبرکہ گرم مصالحہ', nameAr: 'خلطة غارام ماسالا من البركة', category: 'herbs-spices', description: 'A signature warming spice blend for considered everyday cooking.', variants: [['100g', 300]], pricePer100g: 300 },
+  { id: 'gond-katira', image: '/images/products/gond-katira.svg', name: 'Gond Katira', nameUr: 'گوند کتیرا', nameAr: 'صمغ الكثيراء', category: 'herbs-spices', description: 'Traditional gond katira for familiar home recipes; prepare according to your recipe.', variants: [['100g', 400], ['250g', 900]], pricePer100g: 400 },
+  { id: 'edible-gond', image: '/images/products/edible-gond.svg', name: 'Edible Gond (Acacia)', nameUr: 'کھانے والا گوند (ببول)', nameAr: 'صمغ الأكاسيا الغذائي', category: 'herbs-spices', description: 'Edible acacia gond for winter sweets and traditional home preparations.', variants: [['100g', 500], ['250g', 1150]], pricePer100g: 500 },
+  { id: 'dried-rose-petals', image: '/images/products/dried-rose-petals.svg', name: 'Dried Rose Petals', nameUr: 'خشک گلاب کی پتیاں', nameAr: 'بتلات الورد المجففة', category: 'herbs-spices', description: 'Dried rose petals for a delicate floral touch in tea, desserts and presentation.', variants: [['100g', 300]], pricePer100g: 300 },
+  { id: 'dried-jujube', image: '/images/products/dried-jujube.svg', name: 'Dried Jujube (Ber)', nameUr: 'خشک بیر', nameAr: 'عنّاب مجفف', category: 'herbs-spices', description: 'Dried jujube with a mellow fruit character for snacking and traditional recipes.', variants: [['250g', 350]], pricePer100g: 140 },
 
   { id: 'kashmiri-walnut', name: 'Kashmiri Walnut Kernels (Akhrot Giri)', nameUr: 'کشمیری اخروٹ کی گری', nameAr: 'لب الجوز الكشميري', category: 'nuts', description: 'A Kashmiri walnut selection for baking, breakfast bowls and quiet everyday indulgence.', variants: [['250g', 1400], ['500g', 2700]], pricePer100g: 560 },
   { id: 'ajwa-dates', name: 'Ajwa Dates Madina (Khajoor)', nameUr: 'مدینہ کی عجوہ کھجور', nameAr: 'تمور عجوة المدينة', category: 'nuts', description: 'Ajwa dates from Madina for a considered date selection and thoughtful gifting.', variants: [['250g', 1800], ['500g', 3400]], pricePer100g: 720 },
@@ -1637,7 +1638,7 @@ export const PRODUCTS: Product[] = [
   return approved ? { ...product, nameUr: approved[0], nameAr: approved[1], name_ur: approved[0], name_ar: approved[1] } : product;
 });
 
-// Only established photographs are registered; new selections deliberately have no image.
+// Established photographs remain untouched; new selections may use branded SVG placeholders.
 
 export const CATALOG_COUNTS = PRODUCTS.reduce<Record<string, number>>((counts, product) => {
   counts[product.category] = (counts[product.category] || 0) + 1;
