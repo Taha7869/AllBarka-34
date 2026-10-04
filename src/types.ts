@@ -8,6 +8,24 @@ export interface ProductBadge {
 
 export interface Product {
   id: string;
+  /** Owner-editable catalogue aliases; legacy localized fields remain compatible. */
+  name?: string;
+  nameUr?: string;
+  nameAr?: string;
+  description?: string;
+  active?: boolean;
+  variants?: { label: string; price: number }[];
+  pricePer100g?: number;
+  allowCustomWeight?: boolean;
+  minCustomWeightG?: number;
+  maxCustomWeightG?: number;
+  fragile?: boolean;
+  quoteOnly?: boolean;
+  components?: string[];
+  componentIds?: string[];
+  badge?: string;
+  /** Merchant-approved grams used for shipping billing, keyed by canonical portion. */
+  shippingWeights?: Record<string, number>;
   name_en: string;
   name_ur: string;
   name_ar: string;
@@ -21,8 +39,8 @@ export interface Product {
   tag_en?: string;
   tag_ur?: string;
   tag_ar?: string;
-  image: string;
-  imageName: string;
+  image: string | null;
+  imageName: string | null;
   prices: Record<string, number>;
   price?: number; // legacy fallback
   isBundle?: boolean;
