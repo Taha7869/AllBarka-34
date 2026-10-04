@@ -21,6 +21,7 @@ import { useLanguage, type LanguageCode } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { acquireScrollLock } from '../utils/scrollLock';
 import { buildHumanSupportWhatsAppUrl } from '../config/contacts';
+import { CANONICAL_CATEGORIES } from '../config/categories';
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -363,62 +364,16 @@ export default function MobileMenu({
                     <ChevronRight size={14} className="text-[#C7982F]/70 rtl:rotate-180" />
                   </button>
 
-                  <button
+                  {Object.keys(CANONICAL_CATEGORIES).map(id => <button
+                    key={id}
                     type="button"
-                    onClick={() => handleDestination('/shop/nuts', 'Shop')}
+                    data-nav-path={id === 'gift-boxes' ? '/gifting' : `/shop/${id}`}
+                    onClick={() => handleDestination(id === 'gift-boxes' ? '/gifting' : `/shop/${id}`, id === 'herbs-spices' ? 'Herbs & Spices' : 'Shop')}
                     className="w-full min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-xs text-[#29231D]/85 dark:text-[#F6F1EA]/85 hover:bg-[#C7982F]/10 transition-colors text-left cursor-pointer"
                   >
-                    <span>{t('nuts', 'Dry Fruits & Nuts')}</span>
+                    <span>{t(`shop.${id}`)}</span>
                     <ChevronRight size={13} className="text-[#C7982F]/50 rtl:rotate-180" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleDestination('/shop/seeds', 'Shop')}
-                    className="w-full min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-xs text-[#29231D]/85 dark:text-[#F6F1EA]/85 hover:bg-[#C7982F]/10 transition-colors text-left cursor-pointer"
-                  >
-                    <span>{t('seeds', 'Seeds & Superfoods')}</span>
-                    <ChevronRight size={13} className="text-[#C7982F]/50 rtl:rotate-180" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleDestination('/shop/snacks', 'Shop')}
-                    className="w-full min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-xs text-[#29231D]/85 dark:text-[#F6F1EA]/85 hover:bg-[#C7982F]/10 transition-colors text-left cursor-pointer"
-                  >
-                    <span>{t('snacks', 'Premium Snacks')}</span>
-                    <ChevronRight size={13} className="text-[#C7982F]/50 rtl:rotate-180" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleDestination('/shop/oils', 'Shop')}
-                    className="w-full min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-xs text-[#29231D]/85 dark:text-[#F6F1EA]/85 hover:bg-[#C7982F]/10 transition-colors text-left cursor-pointer"
-                  >
-                    <span>{t('oils', 'Cold-Pressed Oils')}</span>
-                    <ChevronRight size={13} className="text-[#C7982F]/50 rtl:rotate-180" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleDestination('/shop/organics', 'Shop')}
-                    className="w-full min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-xs text-[#29231D]/85 dark:text-[#F6F1EA]/85 hover:bg-[#C7982F]/10 transition-colors text-left cursor-pointer"
-                  >
-                    <span>{t('organics', 'Pure Organic Essentials')}</span>
-                    <ChevronRight size={13} className="text-[#C7982F]/50 rtl:rotate-180" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleDestination('/shop/combos', 'Gift Boxes')}
-                    className="w-full min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-xs text-[#29231D]/85 dark:text-[#F6F1EA]/85 hover:bg-[#C7982F]/10 transition-colors text-left cursor-pointer"
-                  >
-                    <span className="flex items-center gap-1.5 font-semibold text-[#806326] dark:text-[#C7982F]">
-                      <Sparkles size={13} className="text-[#C7982F]" />
-                      {t('combos', 'Gift Boxes & Combos')}
-                    </span>
-                    <ChevronRight size={13} className="text-[#C7982F]/50 rtl:rotate-180" />
-                  </button>
+                  </button>)}
 
                   <button
                     type="button"

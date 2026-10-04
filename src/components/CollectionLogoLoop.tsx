@@ -4,16 +4,22 @@ import { Droplets, Gift, Leaf, Nut, Package, Sprout } from 'lucide-react';
 import LogoLoop, { type LogoItem } from './LogoLoop';
 import { AllBarkaCrestVector } from './AllBarkaLogo';
 import { useVisualRefinementLanguage } from '../hooks/useVisualRefinementLanguage';
+import { CANONICAL_CATEGORIES, resolveCategorySlug } from '../config/categories';
 
-export const COLLECTION_RIBBON_LINKS = [
+const COLLECTION_RIBBON_PRESENTATION = [
   { key: 'visual.nuts', href: '/shop/nuts', icon: Nut },
-  { key: 'visual.deals', href: '/shop/combos', icon: Package },
+  { key: 'pantry.bundles', href: '/shop/bundles', icon: Package },
   { key: 'visual.snacks', href: '/shop/snacks-seeds', icon: Sprout },
   { key: 'visual.gifts', href: '/gifting', icon: Gift },
   { key: 'visual.oils', href: '/shop/oils', icon: Droplets },
   { key: 'visual.essentials', href: '/shop/essentials', icon: Leaf },
   { key: 'visual.all', href: '/shop', icon: null },
 ] as const;
+export const COLLECTION_RIBBON_LINKS = [
+  ...COLLECTION_RIBBON_PRESENTATION,
+  ...Object.keys(CANONICAL_CATEGORIES).filter(id => !COLLECTION_RIBBON_PRESENTATION.some(item => resolveCategorySlug(item.href.split('/').pop()) === id))
+    .map(id => ({ key: `shop.${id}`, href: `/shop/${id}`, icon: Leaf })),
+];
 
 /** Real storefront collections; no implied payment, courier or third-party partnerships. */
 export default function CollectionLogoLoop() {

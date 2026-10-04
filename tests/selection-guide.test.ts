@@ -7,7 +7,7 @@ import { trendTranslations } from '../src/contexts/trendTranslations';
 test('guide resolves real smallest portions and prices without mutating the catalogue', () => {
   const before = JSON.stringify(PRODUCTS);
   const matches = selectionMatches(PRODUCTS, { category: 'all', budget: null });
-  assert.equal(matches.length, PRODUCTS.length);
+  assert.equal(matches.length, PRODUCTS.filter(product => product.active !== false && !product.quoteOnly && Object.values(product.prices).some(price => price > 0)).length);
   for (const { product, weight, price } of matches) {
     assert.equal(price, product.prices[weight]);
     assert.equal(price, Math.min(...Object.values(product.prices)));

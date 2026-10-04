@@ -53,12 +53,12 @@ export default function QuickViewModal({ isOpen, onClose, product, onAddToCart }
     return () => { cancelAnimationFrame(frame); document.removeEventListener('keydown', handleKey); releaseLock(); previousFocus?.focus(); };
   }, [isOpen, productId]);
 
-  if (!isOpen || !product) return null;
+  if (!isOpen || !product || product.active === false) return null;
   const weights = Object.keys(product.prices).filter(weight => product.prices[weight] > 0);
   const weight = weights.includes(selectedWeight) ? selectedWeight : weights[0];
   const price = product.prices[weight] || 0;
   const add = () => {
-    if (!weight || !price) return;
+    if (product.quoteOnly || !weight || !price) return;
     if (onAddToCart) onAddToCart(product.id, weight, quantity);
     else addToCart(product, weight, quantity);
     onClose();
@@ -82,6 +82,7 @@ export default function QuickViewModal({ isOpen, onClose, product, onAddToCart }
         <p className="mt-3 text-sm leading-7 text-[var(--color-text-secondary)]" dir="auto">{getLocalized(product, 'desc', language)}</p>
         {getLocalized(product, 'tasteProfile', language) && <div className="mt-4 rounded-xl border border-[var(--color-border)] p-3 text-xs leading-6"><strong className="block text-[var(--color-accent-text)]">{t('tasteProfile')}</strong><span dir="auto">{getLocalized(product, 'tasteProfile', language)}</span></div>}
         {getLocalized(product, 'contents', language) && <div className="mt-3 rounded-xl border border-[var(--color-border)] p-3 text-xs leading-6"><strong className="block text-[var(--color-accent-text)]">{t('packContents')}</strong><span dir="auto">{getLocalized(product, 'contents', language)}</span></div>}
+        {product.quoteOnly ? <><p className="mt-5 text-sm leading-7 text-[var(--color-text-secondary)]">{t('catalog.quoteDescription')}</p><Link to="/pages/contact" onClick={onClose} className="focus-ring mt-4 flex min-h-12 items-center justify-center rounded-full bg-[#1e3a2b] px-4 text-sm font-semibold text-[#fff8e9]">{t('catalog.requestQuote')}</Link></> : <>
         <div className="mt-5 flex items-center justify-between gap-3"><p className="font-serif text-3xl"><bdi>Rs. {price.toLocaleString()}</bdi></p><span className="rounded-full bg-[#0e7a53]/10 px-3 py-1.5 text-xs text-[#0e7a53] dark:text-[#8cd7b1]">{t('inStock')}</span></div>
         <fieldset className="mt-5"><legend className="mb-3 text-xs font-semibold uppercase tracking-wider">{t('selectWeight')}</legend><div className="flex flex-wrap gap-2" dir="ltr">{weights.map(size => <button type="button" key={size} aria-pressed={weight === size} onClick={() => setSelectedWeight(size)} className={`focus-ring min-h-11 rounded-full border px-5 text-xs font-semibold ${weight === size ? 'border-[#1e3a2b] bg-[#1e3a2b] text-[#fff8e9]' : 'border-[var(--color-border)] hover:border-[#c7982f]'}`}>{size}</button>)}</div></fieldset>
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3"><div className="flex min-h-12 items-center rounded-full border border-[var(--color-border)]" dir="ltr">
@@ -90,6 +91,7 @@ export default function QuickViewModal({ isOpen, onClose, product, onAddToCart }
           <button type="button" aria-label={t('cart.increase')} disabled={quantity >= 50} onClick={() => setQuantity(q => Math.min(50, q + 1))} className="focus-ring flex h-11 w-11 items-center justify-center rounded-full disabled:opacity-30"><Plus size={16} /></button>
         </div><PulseHeart liked={savedIds.includes(product.id)} onChange={next => setSaved(product.id, next)} label={t('shop.save')} savedLabel={t('shop.unsave')} /></div>
         <button type="button" onClick={add} id="quickview-add-to-cart-btn" disabled={!price || !weight} className="focus-ring mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[#1e3a2b] px-4 text-sm font-semibold text-[#fff8e9] hover:bg-[#092e23] disabled:opacity-40"><ShoppingBag size={17} />{t('addToCart')}<bdi>— Rs. {(price * quantity).toLocaleString()}</bdi></button>
+        </>}
         <Link to={`/product/${product.id}`} onClick={onClose} className="focus-ring mt-2 flex min-h-11 items-center justify-center gap-2 rounded-full text-xs font-semibold text-[var(--color-accent-text)]">{t('viewFullDetails')}<ArrowUpRight size={16} /></Link>
         <div className="mt-5"><ProductDetailAccordion key={product.id} product={product} defaultOpenKey="" /></div>
       </div>

@@ -25,10 +25,20 @@ export default function ProductImageGallery({ product, linkToDetails = true }: {
     if (track) track.scrollTo({ left: activeIndex.current * track.clientWidth, behavior: 'instant' });
   }, [galleryKey, images.length]);
   const goTo = (index: number) => {
+    if (images.length === 0) return;
     const next = (index + images.length) % images.length;
     setSelected(next);
     viewport.current?.scrollTo({ left: next * viewport.current.clientWidth, behavior: reduceMotion ? 'instant' : 'smooth' });
   };
+  if (product.image === null && images.length === 0) {
+    return <div className="product-gallery flex aspect-square items-center justify-center rounded-2xl border border-[#c7982f]/30 bg-[#f3efe5]" role="img" aria-label={`${getLocalized(product, 'name', language)} — AllBarka`}>
+      <div className="flex flex-col items-center gap-3 text-center text-[#1e3a2b]">
+        <span className="font-serif text-3xl tracking-tight">AllBarka</span>
+        <span className="h-px w-20 bg-[#c7982f]/70" aria-hidden="true" />
+        <span className="text-[10px] font-semibold uppercase tracking-[.24em] text-[#94732e]">The collection</span>
+      </div>
+    </div>;
+  }
   return (
     <div className="product-gallery" role="group" aria-label={`${getLocalized(product, 'name', language)} — ${t('gallery.photos')}`}
       onMouseDown={event => event.stopPropagation()} onTouchStart={event => event.stopPropagation()}>

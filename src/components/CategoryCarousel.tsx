@@ -6,16 +6,27 @@ import useEmblaCarousel from 'embla-carousel-react';
 import { useReducedMotion } from 'motion/react';
 import { canRotatePantry, pantryCardProjection, pantryRotationDistance } from '../lib/pantryMotion';
 import { visibleCardFraction } from '../lib/circularCatalogue';
+import { CANONICAL_CATEGORIES } from '../config/categories';
+import { PRODUCTS, getProductImage } from '../data/products';
 
-const categories = [
+const collectionPresentation = [
   { id: 'all', name: 'All Items', image: '/assets/categories/all_items.png', altKey: 'imageAlt.hero', link: '/shop' },
-  { id: 'deals', name: 'Deals & Bundles', image: '/assets/categories/deals.png', altKey: 'imageAlt.categoryDealBoxes', link: '/shop/combos' },
+  { id: 'bundles', name: 'Bundles', image: '/assets/categories/deals.png', altKey: 'imageAlt.categoryDealBoxes', link: '/shop/bundles' },
   { id: 'nuts', name: 'Dry Fruits & Nuts', image: '/assets/categories/dry_fruits.png', altKey: 'imageAlt.categoryDryFruits', link: '/shop/nuts' },
   { id: 'snacks-seeds', name: 'Snacks & Seeds', image: '/assets/categories/snacks.png', altKey: 'imageAlt.categorySnacks', link: '/shop/snacks-seeds' },
   { id: 'gift-boxes', name: 'Gift Boxes', image: '/assets/categories/gifts.png', altKey: 'imageAlt.categoryGifts', link: '/gifting' },
   { id: 'oils', name: 'Cold-Pressed Oils', image: '/images/generated/category-oils-tile-v1.webp', altKey: 'imageAlt.categoryOils', link: '/shop/oils' },
   { id: 'essentials', name: 'Desi Essentials', image: '/images/generated/category-essentials-tile-v1.webp', altKey: 'imageAlt.categoryEssentials', link: '/shop/essentials' },
 ];
+/** Preserve the established collection art/order; new canonical collections join automatically. */
+export const PANTRY_CATEGORIES = [
+  ...collectionPresentation,
+  ...Object.values(CANONICAL_CATEGORIES).filter(category => !collectionPresentation.some(item => item.id === category.id)).map(category => {
+    const cover = PRODUCTS.find(product => product.active !== false && product.category === category.id);
+    return { id: category.id, name: category.name, image: cover ? getProductImage(cover) : '/images/product-placeholder.svg', altKey: `catalog.alt.${category.id}`, link: `/shop/${category.id}` };
+  }),
+];
+const categories = PANTRY_CATEGORIES;
 
 export default function CategoryCarousel() {
   const { t } = useLanguage();

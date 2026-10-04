@@ -62,6 +62,7 @@ export default function RootLayout() {
   const activeNavItem = React.useMemo(() => {
     if (location.pathname === '/') return 'Home';
     if (location.pathname.startsWith('/shop/combos') || location.pathname.startsWith('/gifting')) return 'Gift Boxes';
+    if (location.pathname === '/shop/herbs-spices' || location.pathname === '/category/herbs-spices') return 'Herbs & Spices';
     if (location.pathname.startsWith('/shop') || location.pathname.startsWith('/product') || location.pathname.startsWith('/category') || location.pathname.startsWith('/wholesale')) return 'Shop';
     if (location.pathname.startsWith('/journal')) return 'Journal';
     if (location.pathname.startsWith('/pages/contact') || location.pathname === '/contact') return 'Contact';
@@ -377,6 +378,7 @@ export default function RootLayout() {
         onNavItemClick={(item) => {
           if (item === 'Home') navigate('/');
           else if (item === 'Shop') navigate('/shop');
+          else if (item === 'Herbs & Spices') navigate('/shop/herbs-spices');
           else if (item === 'Gift Boxes') navigate('/shop/combos');
           else if (item === 'Contact') navigate('/pages/contact');
           else navigate('/shop');

@@ -127,7 +127,7 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
                 >
                   <img src={mediaCover(product)} alt="" loading="lazy" />
                   <span><strong>{getLocalized(product, 'name', language)}</strong><small>{getLocalized(product, 'category', language)}</small></span>
-                  <bdi dir="ltr">Rs. {startingPrice(product).toLocaleString()}</bdi>
+                  {product.quoteOnly ? <span>{t('catalog.requestQuote')}</span> : <bdi dir="ltr">Rs. {startingPrice(product).toLocaleString()}</bdi>}
                 </Link>
               )) : <p className="boutique-search-empty">{t('boutique.noResults')}</p>}
               <button type="button" className="boutique-search-all" onClick={() => onSearch?.(query.trim())}>

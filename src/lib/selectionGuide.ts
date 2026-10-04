@@ -1,4 +1,5 @@
 import type { Product } from '../types';
+import { resolveCategorySlug } from '../config/categories';
 
 export interface SelectionPreferences { category: string; budget: number | null }
 export interface SelectionMatch { product: Product; weight: string; price: number }
@@ -7,6 +8,7 @@ export interface SelectionMatch { product: Product; weight: string; price: numbe
 export function selectionMatches(products: Product[], preferences: SelectionPreferences): SelectionMatch[] {
   if (preferences.budget !== null && (!Number.isFinite(preferences.budget) || preferences.budget <= 0)) return [];
   return products.flatMap(product => {
+    if (product.active === false || product.quoteOnly) return [];
     if (preferences.category !== 'all' && product.category !== preferences.category) return [];
     const portions = Object.entries(product.prices).filter(([, price]) => Number.isFinite(price) && price > 0)
       .sort((a, b) => a[1] - b[1]);
@@ -17,7 +19,7 @@ export function selectionMatches(products: Product[], preferences: SelectionPref
 }
 
 export function selectionResultsPath(preferences: SelectionPreferences): string {
-  const category = ['nuts', 'snacks-seeds', 'gift-boxes', 'oils', 'essentials'].includes(preferences.category) ? preferences.category : 'all';
+  const category = resolveCategorySlug(preferences.category) || 'all';
   const params = new URLSearchParams();
   if (preferences.budget !== null && Number.isFinite(preferences.budget) && preferences.budget >= 300 && preferences.budget < 10000) params.set('budget', String(preferences.budget));
   return `${category === 'all' ? '/shop' : `/shop/${category}`}${params.size ? `?${params}` : ''}`;

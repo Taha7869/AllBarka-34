@@ -28,11 +28,13 @@ export function productSearchScore(product: Product, query: string): number {
 }
 
 export function searchCatalog(products: Product[], query: string): Product[] {
-  return products.map(product => ({ product, score: productSearchScore(product, query) }))
+  return products.filter(product => product.active !== false).map(product => ({ product, score: productSearchScore(product, query) }))
     .filter(result => result.score > 0).sort((a, b) => b.score - a.score).map(result => result.product);
 }
 
 export function startingPrice(product: Product): number {
+  // A quote-only selection has no sale price and must never look like a free item.
+  if (product.quoteOnly) return Number.POSITIVE_INFINITY;
   const prices = Object.values(product.prices || {}).filter(price => Number.isFinite(price) && price > 0);
   return prices.length ? Math.min(...prices) : product.price || 0;
 }
