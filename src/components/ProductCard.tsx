@@ -30,7 +30,7 @@ export default function ProductCard({
   const saved = savedIds.includes(product.id);
   const navigate = useNavigate();
   const shouldReduceMotion = useReducedMotion();
-  const weights = Object.keys(product.prices || {});
+  const weights = Object.keys(product.prices || {}).filter(weight => Number.isFinite(product.prices[weight]) && product.prices[weight] > 0);
   const [selectedWeight, setSelectedWeight] = useState(weights[0] || '250g');
   const titleTypography = language === 'ur' ? 'font-urdu text-[20px]' : language === 'ar' ? 'font-arabic text-[23px]' : 'font-serif text-[21px] leading-[1.25]';
 
