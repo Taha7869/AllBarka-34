@@ -258,7 +258,7 @@ try {
         orderId: 'ORD-1',
         uid: customerA_Uid,
         claimTokenHash: 'secret_hash',
-        status: 'NEW',
+        status: 'ORDER_RECEIVED',
         paymentStatus: 'UNPAID',
         paymentMethod: 'cod',
         customer: { name: 'User A', phone: '03001234567', address: 'Lahore', city: 'Lahore' },
@@ -272,7 +272,7 @@ try {
         orderId: 'ORD-2',
         uid: 'user_B_456',
         claimTokenHash: 'secret_hash_2',
-        status: 'NEW',
+        status: 'ORDER_RECEIVED',
         paymentStatus: 'UNPAID',
         paymentMethod: 'cod',
         customer: { name: 'User B', phone: '03007654321', address: 'Karachi', city: 'Karachi' },
@@ -323,10 +323,12 @@ try {
     const userUid = 'user_loyalty_test_789';
     const initialOrder = {
       orderId: 'AB-DELIVERED-TEST',
-      status: 'NEW',
+      source: 'website',
+      status: 'ORDER_RECEIVED',
       uid: userUid,
       earnedPoints: 25,
       pointsAwarded: false,
+      totals: { total: 2500 },
       customer: { name: 'Loyalty Patron', phone: '03001234567', address: 'Lahore' }
     };
     store.set('orders/AB-DELIVERED-TEST', initialOrder);
@@ -364,10 +366,12 @@ try {
     const userUid = 'user_cancel_test_456';
     const initialOrder = {
       orderId: 'AB-CANCEL-TEST',
-      status: 'NEW',
+      source: 'website',
+      status: 'ORDER_RECEIVED',
       uid: userUid,
       earnedPoints: 30,
       pointsAwarded: false,
+      totals: { total: 3000 },
       customer: { name: 'Fixture Patron', phone: '03001234567', address: 'Fixture house', city: 'Lahore' }
     };
     store.set('orders/AB-CANCEL-TEST', initialOrder);

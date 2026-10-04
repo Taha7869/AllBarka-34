@@ -39,8 +39,9 @@ test('reordering resolves composite IDs without reusing historic prices', () => 
 });
 test('unknown and cancelled order statuses never show false progress', () => {
   assert.equal(orderProgress('ORDER_RECEIVED'), 0);
-  assert.equal(orderProgress('PACKED'), 1);
-  assert.equal(orderProgress('OUT FOR DELIVERY'), 2);
+  assert.equal(orderProgress('PREPARING'), 1);
+  assert.equal(orderProgress('OUT_FOR_DELIVERY'), 2);
+  assert.equal(orderProgress('OUT FOR DELIVERY'), -1);
   assert.equal(orderProgress('DELIVERED'), 3);
   assert.equal(orderProgress('CANCELLED'), -1);
   assert.equal(orderProgress('unknown'), -1);

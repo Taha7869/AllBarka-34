@@ -1,5 +1,7 @@
 # Frontend, Express and Firebase host settings
 
+4October2026: [INTEGRATIONS.md](../INTEGRATIONS.md) is the current order/status/loyalty contract. Status delivery now falls back to the order webhook when no dedicated status URL is set; its receiver must handle both event types. The worker polls15seconds after completion, with one initial send plus five retries. Existing inactive workflow files require review before publication.
+
 This repository supports same-origin Express hosting and a separately hosted static frontend. Both need a real Express commerce API and durable Firebase Admin persistence for accepted orders. n8n is the chat/order-mirror workflow; it is not the checkout server.
 
 ## Existing persistent Express host
@@ -22,7 +24,8 @@ Set server-only host variables:
 | `N8N_AI_TIMEOUT_MS` | `22000`; n8n20s < Express22s < browser30s |
 | `N8N_ORDER_WEBHOOK_URL`, `N8N_WEBHOOK_SECRET` | Private order mirror webhook and separate random secret |
 | `N8N_ORDER_TIMEOUT_MS` | `5000`, bounded1000–30000; includes acknowledgement body |
-| `N8N_STATUS_WEBHOOK_URL`, `N8N_STATUS_WEBHOOK_SECRET`, `N8N_STATUS_TIMEOUT_MS` | Separate authenticated canonical status receiver and bounded transport deadline; creation receiver is never reused. |
+| `N8N_STATUS_WEBHOOK_URL`, `N8N_STATUS_WEBHOOK_SECRET`, `N8N_STATUS_TIMEOUT_MS` | Optional dedicated authenticated status receiver; blank URL uses the shared order endpoint/secret. |
+| `LOYALTY_POINTS_PER_100_RUPEES` | Optional nonnegative integer; default1 point per complete Rs100 of saved payable total. |
 | `N8N_INTEGRATION_SECRET` | Distinct random 32+ character n8n-to-commerce credential; private integration routes only. |
 | `WHATSAPP_META_APP_SECRET`, `WHATSAPP_BUSINESS_PHONE_ID` | Original Meta signature verification and expected business phone; not browser/profile identifiers. |
 | `WHATSAPP_PARENT_VERIFIED` | Keep false until actual Meta parent and raw-signature forwarding are inspected and tested. |

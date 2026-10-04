@@ -67,7 +67,7 @@ async function runBackendTests() {
     delete process.env.N8N_ORDER_WEBHOOK_URL;
     const result = await sendOrderToN8n({
       orderId: 'ORD-TEST-001',
-      status: 'NEW', updatedAt: new Date().toISOString(),
+      status: 'ORDER_RECEIVED', updatedAt: new Date().toISOString(),
       customer: {
         name: 'Test Patron',
         phone: '+92 300 1234567',
@@ -102,7 +102,7 @@ async function runBackendTests() {
     try {
       const orderData = {
         orderId: 'AB-TEST-N8N-02',
-        status: 'NEW' as const, updatedAt: new Date().toISOString(),
+        status: 'ORDER_RECEIVED' as const, updatedAt: new Date().toISOString(),
         customerUid: 'patron_uid_999',
         customer: { name: 'Zahra', phone: '03001234567', address: 'Model Town', city: 'Lahore' },
         delivery: { type: 'sameday', priority: 'SAME_DAY', promisedDeliveryDate: '2026-09-23' },

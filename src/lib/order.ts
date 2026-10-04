@@ -158,7 +158,7 @@ export async function claimOrder(params: { orderId: string; claimToken: string; 
 export async function getOrderDetails(params: { orderId: string; authToken?: string | null; claimToken?: string | null; signal?: AbortSignal }): Promise<{ success: boolean; order?: any; error?: string }> {
   try {
     return await withApiDeadline(async signal => {
-      const response = await fetch(apiUrl(`/api/orders/${encodeURIComponent(params.orderId)}`), { signal,
+      const response = await fetch(apiUrl(`/api/orders/${encodeURIComponent(params.orderId)}`), { signal, cache: 'no-store',
         headers: { Accept: 'application/json', ...(params.authToken ? { Authorization: `Bearer ${params.authToken}` } : {}),
           ...(params.claimToken ? { 'X-Guest-Claim-Token': params.claimToken } : {}) },
       });

@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCart } from '../contexts/CartContext';
 import { PRODUCTS } from '../data/products';
-import { getReorderItems, orderProgress } from '../lib/orderPresentation';
+import { getReorderItems, trackingProgress, TRACKING_STEPS } from '../lib/orderPresentation';
 import { Link } from 'react-router-dom';
 import { acquireScrollLock } from '../utils/scrollLock';
 import { apiUrl } from '../lib/apiUrl';
@@ -222,12 +222,10 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'NEW': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'ORDER_RECEIVED': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'CONFIRMED': return 'bg-indigo-100 text-indigo-800 border-indigo-200';
-      case 'PACKED':
       case 'PREPARING': return 'bg-amber-100 text-amber-800 border-amber-200';
       case 'OUT_FOR_DELIVERY':
-      case 'OUT FOR DELIVERY':
       case 'DISPATCHED': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'DELIVERED': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
       case 'CANCELLED': return 'bg-rose-100 text-rose-800 border-rose-200';
@@ -432,7 +430,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
               ) : (
                 <div className="space-y-4">
                   {orders.map((order) => {
-                    const progress = orderProgress(order.status || '');
+                    const progress = trackingProgress(order.status || '');
                     const reorderItems = getReorderItems(order.items || [], PRODUCTS);
                     const totalAmt = order.totals?.total ?? order.total ?? 0;
                     const subtotalAmt = order.totals?.subtotal ?? order.subtotal ?? 0;
@@ -470,7 +468,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                         </div>
 
                         <div className="p-5">
-                          {progress >= 0 && <ol className="mb-6 grid grid-cols-4 gap-2" aria-label={t('account.orders')}>{['received', 'preparing', 'dispatch', 'delivered'].map((stage, index) => <li key={stage} aria-current={index === progress ? 'step' : undefined} className="min-w-0"><div className={`mb-2 h-1 rounded-full ${index <= progress ? 'bg-[#c7982f]' : 'bg-[var(--color-border)]'}`} /><span className={`text-[10px] ${index <= progress ? 'font-bold text-[var(--color-accent-text)]' : 'text-[var(--color-text-secondary)]'}`}>{t(`account.${stage}`)}</span></li>)}</ol>}
+                          {progress >= 0 && <ol className="mb-6 grid grid-cols-3 sm:grid-cols-6 gap-2" aria-label={t('account.orders')}>{TRACKING_STEPS.map((stage, index) => <li key={stage} aria-current={index === progress ? 'step' : undefined} className="min-w-0"><div className={`mb-2 h-1 rounded-full ${index <= progress ? 'bg-[#c7982f]' : 'bg-[var(--color-border)]'}`} /><span className={`block text-[10px] [overflow-wrap:anywhere] ${index <= progress ? 'font-bold text-[var(--color-accent-text)]' : 'text-[var(--color-text-secondary)]'}`}>{t(`tracking.${stage}`)}</span></li>)}</ol>}
                           <div className="mb-5 rounded-xl border border-[var(--color-border)] p-3"><button type="button" disabled={!reorderItems.length} onClick={() => reorder(order)} className="flex min-h-11 items-center gap-2 text-xs font-semibold disabled:opacity-40"><ShoppingBag size={15} />{t('account.reorder')}</button><p className="text-[10px] leading-5 text-[var(--color-text-secondary)]">{t('account.currentPrice')}{reorderItems.length !== (order.items || []).length && ` ${t('account.reorderMissing')}`}</p></div>
                           <div className="mb-3 flex items-center justify-between text-xs text-[var(--color-ink,#1F120F)]/70 dark:text-[#FDFBF7]/70">
                             <span className="font-medium">Payment Method: <strong className="text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">{paymentMethodStr}</strong></span>

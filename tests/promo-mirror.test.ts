@@ -59,11 +59,11 @@ test('projection quarantines contradictory or payable quote documents; cancellat
     assert.throws(() => projectCanonicalOrderForN8n({ ...quote(), ...changes } as CanonicalOrder), /CANONICAL_ORDER_INVALID/);
   }
   assert.equal(projectCanonicalOrderForN8n({ ...quote(), status: 'CANCELLED' }).orderType, 'QUOTE_REQUEST');
-  assert.equal(normalizeSheetStatus(' QUOTE_REQUESTED '), 'QUOTE_REQUESTED');
+  assert.throws(() => normalizeSheetStatus(' QUOTE_REQUESTED '), /INVALID_STATUS/);
 });
 
 test('gift and percentage metadata survive the whitelisted transport projection without private fields', () => {
-  const base: CanonicalOrder = { ...quote(), orderType: 'ORDER', status: 'NEW', paymentMethod: 'cod', paymentStatus: 'UNPAID',
+  const base: CanonicalOrder = { ...quote(), orderType: 'ORDER', status: 'ORDER_RECEIVED', paymentMethod: 'cod', paymentStatus: 'UNPAID',
     promoCode: 'MYSTERY', promoType: 'free_gift', freeGift: true, isQuoteRequest: false,
     totals: { subtotal: 2500, discount: 0, discountedSubtotal: 2500, shipping: 150, giftWrapFee: 0, total: 2650 } };
   assert.equal(projectCanonicalOrderForN8n(base).freeGift, true);
@@ -77,7 +77,7 @@ test('gift and percentage metadata survive the whitelisted transport projection 
 test('legacy coupon receipts retain their original saved discount rather than today\'s cap or percentage', () => {
   const legacy = quote();
   for (const key of ['orderType', 'promoCode', 'promoType', 'discountAmount', 'freeShipping', 'freeGiftWrap', 'freeGift', 'isQuoteRequest'] as const) delete legacy[key];
-  Object.assign(legacy, { status: 'NEW', paymentMethod: 'bank', paymentStatus: 'UNPAID', couponCode: 'ALLBARKA10', couponDiscount: 1500,
+  Object.assign(legacy, { status: 'ORDER_RECEIVED', paymentMethod: 'bank', paymentStatus: 'UNPAID', couponCode: 'ALLBARKA10', couponDiscount: 1500,
     totals: { subtotal: 15000, discount: 1500, discountedSubtotal: 13500, shipping: 150, giftWrapFee: 0, total: 13650 } });
   const projected = projectCanonicalOrderForN8n(legacy);
   assert.equal(projected.promoCode, 'ALLBARKA10');
@@ -90,7 +90,7 @@ test('legacy coupon receipts retain their original saved discount rather than to
 });
 
 test('Admin quote controls permit cancellation only and keep the payment record inert', () => {
-  const statuses = ['NEW', 'QUOTE_REQUESTED', 'CONFIRMED', 'DISPATCHED', 'CANCELLED'] as const;
+  const statuses = ['ORDER_RECEIVED', 'QUOTE_REQUESTED', 'CONFIRMED', 'DISPATCHED', 'CANCELLED'] as const;
   const payments = ['UNPAID', 'PAID', 'REFUNDED', 'NOT_REQUIRED'] as const;
   assert.deepEqual(adminEditableStatuses(quote(), statuses), ['QUOTE_REQUESTED', 'CANCELLED']);
   assert.deepEqual(adminEditablePaymentStatuses(quote(), payments), ['NOT_REQUIRED']);

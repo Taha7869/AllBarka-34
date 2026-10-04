@@ -5,7 +5,8 @@ import { getOrderQuote, placeOrder, type OrderPayload } from '../src/lib/order';
 import { withApiDeadline } from '../src/lib/apiDeadline';
 import { apiUrl } from '../src/lib/apiUrl';
 import { submitBoutiqueInquiry, subscribeNewsletter } from '../src/lib/storefrontSubmissions';
-import { recoverOrderSuccessReceipt } from '../src/lib/orderSuccessRecovery';
+import { recoverOrderSuccessReceipt, refreshOrderSuccessReceipt } from '../src/lib/orderSuccessRecovery';
+import { TRACKING_POLL_MS, TRACKING_STEPS, trackingProgress } from '../src/lib/orderPresentation';
 import { acceptedCheckoutReceipt, appliedPromotionMessage } from '../src/lib/checkoutReceipt';
 import { checkoutReliabilityTranslations } from '../src/contexts/checkoutReliabilityTranslations';
 import { PRODUCTS, getProductImage } from '../src/data/products';
@@ -358,6 +359,28 @@ test('saved inquiry tickets and newsletter confirmations use the server response
 
 const canonicalSavedOrder = { orderId: 'AB-SAVED-TEST-123', customer: { name: payload.name, phone: payload.phone, address: payload.address, city: payload.city },
   paymentMethod: 'cod', items: savedResponse().items, totals, createdAt: '2026-10-03T10:00:00.000Z' };
+
+test('Tracking refresh reads authoritative status/fulfillment/points even for a verified cached receipt', async () => {
+  const original = globalThis.fetch; let calls = 0;
+  try {
+    globalThis.fetch = async (_url, init) => {
+      calls++; assert.equal(init?.cache, 'no-store'); assert.equal(new Headers(init?.headers).get('X-Guest-Claim-Token'), 'private-tracking-token');
+      return jsonResponse({ success: true, order: { ...canonicalSavedOrder, status: calls === 1 ? 'PREPARING' : 'DELIVERED',
+        trackingNumber: 'COURIER-REAL-123', estimatedDelivery: '2026-10-08', loyaltyPointsEarned: calls === 1 ? 0 : 50, loyaltyPointsTotal: calls === 1 ? 0 : 100 } });
+    };
+    const candidate = { orderId: canonicalSavedOrder.orderId, claimToken: 'private-tracking-token' };
+    const options = { language: 'en' as const, customerUid: null, getAuthToken: async () => null };
+    const packed = await refreshOrderSuccessReceipt(candidate, options), delivered = await refreshOrderSuccessReceipt(candidate, options);
+    assert.equal(packed?.status, 'PREPARING'); assert.equal(packed?.trackingNumber, 'COURIER-REAL-123'); assert.equal(packed?.loyaltyPointsEarned, 0);
+    assert.equal(delivered?.status, 'DELIVERED'); assert.equal(delivered?.loyaltyPointsEarned, 50); assert.equal(delivered?.loyaltyPointsTotal, 100);
+    assert.equal(calls, 2);
+  } finally { globalThis.fetch = original; }
+});
+
+test('Tracking timeline uses the exact live Sheet stages and never shows cancelled/quote orders as fulfilled', () => {
+  assert.equal(TRACKING_POLL_MS, 30000); assert.deepEqual(TRACKING_STEPS, ['ORDER_RECEIVED', 'CONFIRMED', 'PREPARING', 'DISPATCHED', 'OUT_FOR_DELIVERY', 'DELIVERED']);
+  for (const [status, index] of [['ORDER_RECEIVED', 0], ['CONFIRMED', 1], ['PREPARING', 2], ['DISPATCHED', 3], ['OUT_FOR_DELIVERY', 4], ['DELIVERED', 5], ['CANCELLED', -1], ['QUOTE_REQUESTED', -1]] as const) assert.equal(trackingProgress(status), index);
+});
 
 test('legacy success snapshots require a saved receipt lookup and discard copied prices and customer details', async () => {
   const original = globalThis.fetch;

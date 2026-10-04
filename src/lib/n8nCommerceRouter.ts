@@ -2,7 +2,9 @@ import express, { type Request, type Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import type { Firestore } from 'firebase-admin/firestore';
 import { requireN8nIntegration } from './integrationAuthentication';
-import { applySheetStatusCommand, validateSheetStatusCommand } from './orderDatabase';
+import { applySheetStatusCommand, validateSheetStatusCommand, applyOrderUpdate } from './orderDatabase';
+import { validateOrderUpdate } from './orderUpdateCommand';
+import { ORDER_STATUSES } from './orderStatuses';
 import {
   WhatsAppIntegrationError, getWhatsAppIntegrationConfig, ingestMetaWebhook, getWhatsAppReceiptForMessage,
   claimWhatsAppNotification, authorizeWhatsAppSend, completeWhatsAppSend, type WhatsAppIntegrationConfig,
@@ -29,12 +31,12 @@ function exactBody(req: Request, allowed: string[], required: string[]) {
   return body;
 }
 
-const statusNames = new Set(['NEW', 'ORDER_RECEIVED', 'CONFIRMED', 'PREPARING', 'DISPATCHED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED']);
+const statusNames = new Set<string>([...ORDER_STATUSES, 'QUOTE_REQUESTED']);
 
 function safeError(res: Response, error: any) {
-  const typed = error instanceof WhatsAppIntegrationError || error?.name === 'SheetStatusError' || error?.name === 'PersistenceUnavailableError';
+  const typed = error instanceof WhatsAppIntegrationError || error?.name === 'SheetStatusError' || error?.name === 'PersistenceUnavailableError' || error?.name === 'ValidationError';
   const code = typed && typeof error.code === 'string' && /^[A-Z][A-Z0-9_]{0,79}$/.test(error.code) ? error.code : 'INTEGRATION_FAILED';
-  const requestedStatus = error?.statusCode ?? error?.httpStatus;
+  const requestedStatus = error?.statusCode ?? error?.httpStatus ?? (error?.name === 'ValidationError' ? 400 : undefined);
   const status = typed && [400, 401, 403, 404, 409, 415, 429, 503].includes(requestedStatus) ? requestedStatus
     : code === 'PERSISTENCE_UNAVAILABLE' ? 503 : 500;
   const canonical = status === 409 && statusNames.has(error?.canonical?.status)
@@ -70,6 +72,11 @@ export function createN8nCommerceRouter(options: N8nCommerceRouterOptions) {
     if (body.source !== 'meta_parent') throw new WhatsAppIntegrationError('INTEGRATION_SOURCE_INVALID', 403);
     return body;
   };
+
+  route('/order-update', async req => {
+    const body = exactBody(req, ['orderId', 'status', 'trackingNumber', 'estimatedDelivery', 'notes', 'updatedAt', 'eventId'], ['orderId', 'status', 'updatedAt']);
+    return applyOrderUpdate({ db: db(), command: validateOrderUpdate(body) });
+  });
 
   route('/order-status', async req => {
     const body = exactBody(req, ['source', 'eventId', 'orderId', 'status', 'expectedStatus', 'expectedUpdatedAt', 'reason'], ['source', 'eventId', 'orderId', 'status', 'expectedStatus', 'expectedUpdatedAt', 'reason']);

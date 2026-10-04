@@ -1,5 +1,17 @@
 # AllBarka launch handoff — 3 October 2026
 
+## Order integration follow-up — 4 October 2026 (current)
+
+Branch `codex/order-integrations-loyalty-20261004`, based on latest merged catalog `origin/main` (`c6e6a04`). Current contract and pending live setup: [INTEGRATIONS.md](INTEGRATIONS.md). Existing catalog, shipping, authentication and coupon work is preserved.
+
+Implemented: structured/redacted outbox error diagnostics with failed step/event/HTTP status, per-cycle heartbeat and health worker state;15second scheduling and max5retries after the initial attempt; stable lowercase event types alongside legacy envelopes; shared order/status receiver fallback; authenticated fulfillment update API with timestamp/event dedup and semantic no-op handling; exact seven live Sheet statuses; unknown-order200 ignore; website-only atomic `pointsLedger/{orderId}` award/legacy-marker checks and held guest claim credit; backend-derived tracking/ETA/points and30second customer refresh. Creation/status also create existing backend-gated WhatsApp jobs. n8n does no pricing/points/window logic.
+
+Read-only Railway inventory/logs confirm a SUCCESS production service on `main`, Firebase Admin startup, and repeated old label-only worker errors. Their root cause cannot be recovered from those logs. New production diagnostics require the owner's reviewed deployment. No production data, variables, workflows or deployment were changed. Older handoff service-offline/missing-Admin-credential statements below are historical; the user reports working Firebase and current inventory shows the running service.
+
+Remaining: review PR; configure/publish the combined or dedicated n8n receiver with the documented acknowledgements, fulfillment command mapper and existing window-gated WhatsApp pump; verify actual database composite index/Meta parent credentials; deploy when authorized; inspect detailed error/heartbeat and test disposable end-to-end orders. Outside-window utility templates require separate backend authorization and Meta approval; they are not enabled here. Final checks and resulting pushed SHA are recorded in the final PR/response.
+
+Final verification: TypeScript and React hooks lint passed. `npm test` built the fullstack app, passed478/478 Node tests across44 test families,21 legacy backend checks and47 production-bundle HTTP checks. Asset audit:89 products,107 image references,103 unique files,57 single-image placeholders,0 missing files or retired views. Browser QA passed12 mobile/desktop × English/Urdu/Arabic × light/dark tracking cases, including current timeline step, private mocked receipt refresh, tracking/ETA/earned points and label overflow checks. Catalog data, fonts and all image files are unchanged. Changed-file credential audit found0 credentials; whitespace checks passed. No live order/update/WhatsApp request was sent.
+
 ## Coupon follow-up — 4 October 2026
 
 Current work branch: `codex/full-coupons-quote-fix-20261004`, based on preserved launch branch commit `1fab4ac90374272f801a4211d93b3d8808d4b94a`. This follow-up changes checkout promotions only and their Firestore, receipt, Admin and Sheet safety plumbing. No merge or deployment is authorized.

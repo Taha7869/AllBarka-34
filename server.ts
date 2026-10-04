@@ -261,8 +261,10 @@ app.post('/api/orders', ordersLimiter);
 const ordersDb: any[] = [];
 
 // 1. API: Health Check
+let orderOutboxWorker: ReturnType<typeof startOrderOutboxWorker> | null = null;
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', apiActive: Boolean(getN8nAiConfig()), aiConfigured: Boolean(getN8nAiConfig()), aiProvider: 'n8n-groq', aiConnectivityVerified: false });
+  res.json({ status: 'ok', apiActive: Boolean(getN8nAiConfig()), aiConfigured: Boolean(getN8nAiConfig()), aiProvider: 'n8n-groq', aiConnectivityVerified: false,
+    outboxWorker: orderOutboxWorker?.getState() ?? null });
 });
 
 // 1.2 API: Commerce Persistence Readiness Status
@@ -493,9 +495,11 @@ app.get('/api/orders/:orderId', authenticateOptionalUser, async (req, res) => {
       return res.status(404).json({ error: 'Order not found.', code: 'ORDER_NOT_FOUND' });
     }
 
+    res.setHeader('Cache-Control', 'private, no-store');
     res.json({
       success: true,
-      order: sanitizeOrderForCustomer(order),
+      order: { ...sanitizeOrderForCustomer(order), loyaltyPointsTotal: order.uid
+        ? Number((await db.collection('users').doc(order.uid).get()).data()?.loyaltyPoints) || 0 : 0 },
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message || 'Server error retrieving order.', code: 'SERVER_ERROR' });
@@ -973,7 +977,12 @@ async function startServer() {
     });
   }
 
-  const worker = startOrderOutboxWorker({ getDb: () => db, logger: message => console.warn('[Order outbox]', message) });
+  const worker = startOrderOutboxWorker({ getDb: () => db, logger: (message, metadata) => {
+    const line = `[Order outbox] ${message} ${JSON.stringify(metadata || {})}`;
+    if (message === 'ORDER_OUTBOX_WORKER_ERROR') console.error(line);
+    else console.info(line);
+  } });
+  orderOutboxWorker = worker;
   const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`[AllBarka Fullstack Server] booting success, running on port ${PORT}`);
   });

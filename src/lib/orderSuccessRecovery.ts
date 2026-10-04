@@ -11,6 +11,8 @@ export interface ConfirmedSuccessReceipt {
   paymentMethod: string; whatsappMessage?: string; timestamp?: string;
   orderType?: 'ORDER' | 'QUOTE_REQUEST'; status?: string; promoCode?: string | null; promoType?: string | null;
   discountAmount?: number; freeShipping?: boolean; freeGiftWrap?: boolean; freeGift?: boolean;
+  trackingNumber?: string; estimatedDelivery?: string | null; updatedAt?: string;
+  loyaltyPointsEarned?: number; loyaltyPointsTotal?: number;
   durablePersistenceReady: true; customerUid: string | null; claimToken?: string;
 }
 
@@ -54,7 +56,25 @@ function normalizeReceipt(raw: any, language: LanguageCode, customerUid: string 
     freeShipping: raw.freeShipping === true || raw.totals?.freeShipping === true,
     freeGiftWrap: raw.freeGiftWrap === true || raw.totals?.freeGiftWrap === true,
     freeGift: raw.freeGift === true || raw.totals?.freeGift === true,
+    trackingNumber: typeof raw.trackingNumber === 'string' ? raw.trackingNumber : '',
+    estimatedDelivery: typeof raw.estimatedDelivery === 'string' ? raw.estimatedDelivery : null,
+    updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : undefined,
+    loyaltyPointsEarned: Number.isSafeInteger(raw.loyaltyPointsEarned) && raw.loyaltyPointsEarned >= 0 ? raw.loyaltyPointsEarned : 0,
+    loyaltyPointsTotal: Number.isSafeInteger(raw.loyaltyPointsTotal) && raw.loyaltyPointsTotal >= 0 ? raw.loyaltyPointsTotal : 0,
     ...(typeof raw.claimToken === 'string' ? { claimToken: raw.claimToken } : {}) };
+}
+
+/** Polls Firestore-backed API even when a verified receipt is already cached. */
+export async function refreshOrderSuccessReceipt(candidate: Pick<ConfirmedSuccessReceipt, 'orderId' | 'claimToken'>, options: {
+  language: LanguageCode; customerUid: string | null; getAuthToken: () => Promise<string | null>; signal?: AbortSignal;
+}): Promise<ConfirmedSuccessReceipt | null> {
+  if (!validOrderId(candidate.orderId) || options.signal?.aborted) return null;
+  const authToken = await options.getAuthToken();
+  if (options.signal?.aborted) return null;
+  const result = await getOrderDetails({ orderId: candidate.orderId, authToken, claimToken: candidate.claimToken, signal: options.signal });
+  if (!result.success) return null;
+  const saved = normalizeReceipt(result.order, options.language, options.customerUid);
+  return saved ? { ...saved, ...(candidate.claimToken ? { claimToken: candidate.claimToken } : {}) } : null;
 }
 
 /** Old snapshots are recovery hints, not proof of a saved order. Never trust their copied totals. */

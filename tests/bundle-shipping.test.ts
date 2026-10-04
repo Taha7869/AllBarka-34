@@ -124,7 +124,7 @@ test('every payable bundle completes durable nationwide checkout and idempotent 
       const response = await createDurableOrder({ db: fake.db as never, payload, uid: null, idempotencyKey: `bundle-shipping-${id}` });
       const stored = fake.records.get(`orders/${response.orderId}`);
       assert.ok(response.orderId);
-      assert.equal(response.status, 'NEW');
+      assert.equal(response.status, 'ORDER_RECEIVED');
       assert.equal(response.orderType, 'ORDER');
       assert.equal(stored.items[0].price, bundle(id).prices.Bundle);
       assert.equal(stored.totals.shippingWeightGrams, grams);
