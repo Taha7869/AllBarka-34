@@ -15,12 +15,9 @@ var ORDER_CONTROL_OUTPUTS = ['status', 'status_revision', 'canonical_status_upda
   'request_created_at', 'last_applied_request_id'];
 
 function canonicalStatus(value) {
-  var status = String(value || '').trim().toUpperCase();
-  var aliases = { RECEIVED: 'ORDER_RECEIVED', ORDER: 'ORDER_RECEIVED', CONF: 'CONFIRMED',
-    PROC: 'PREPARING', PACK: 'PREPARING', DISP: 'DISPATCHED', SHIP: 'DISPATCHED',
-    DELIV: 'DELIVERED', CANC: 'CANCELLED' };
-  status = aliases[status] || status;
-  return ['NEW', 'QUOTE_REQUESTED', 'ORDER_RECEIVED', 'CONFIRMED', 'PREPARING', 'DISPATCHED',
+  var status = String(value || '');
+  // QUOTE_REQUESTED is a read-only inquiry state, never a fulfillment dropdown value.
+  return ['QUOTE_REQUESTED', 'ORDER_RECEIVED', 'CONFIRMED', 'PREPARING', 'DISPATCHED',
     'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'].indexOf(status) >= 0 ? status : null;
 }
 
@@ -87,7 +84,7 @@ function installOrderControl() {
   var requested = control.sheet.getRange(2, control.index.requested_status + 1,
     Math.max(1, control.sheet.getMaxRows() - 1), 1);
   requested.setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList([
-    'NEW', 'QUOTE_REQUESTED', 'ORDER_RECEIVED', 'CONFIRMED', 'PREPARING', 'DISPATCHED',
+    'ORDER_RECEIVED', 'CONFIRMED', 'PREPARING', 'DISPATCHED',
     'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'
   ], true).setAllowInvalid(false).build());
   if (!ScriptApp.getProjectTriggers().some(function (trigger) {

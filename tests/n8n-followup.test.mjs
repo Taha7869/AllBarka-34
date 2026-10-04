@@ -20,7 +20,7 @@ const revision = '2026-10-03T12:00:00.000Z';
 const newer = '2026-10-03T12:00:00.001Z';
 const orderId = 'AB-20261003-A1B2C3';
 const requestId = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
-const command = () => ({ order_id: orderId, requested_status: 'DISP', request_id: requestId,
+const command = () => ({ order_id: orderId, requested_status: 'DISPATCHED', request_id: requestId,
   request_base_status: 'PREPARING', request_base_revision: revision, request_created_at: revision,
   request_reason: 'Owner changed delivery status in Sheet' });
 const header = ['order_id', 'status', 'status_revision', 'canonical_status_updated_at', 'sync_error',
@@ -118,6 +118,29 @@ test('Sheet poll rejects duplicate commands/order rows, invalid status and unava
     [{ ...command(), request_base_revision: '' }]]) {
     assert.throws(() => run('Validate Sheet Commands', { body: { ok: true, commands: rows } }));
   }
+});
+
+test('Sheet artifacts accept the exact seven live statuses and reject obsolete aliases', () => {
+  const fixture = scriptFixture();
+  for (const value of ['ORDER_RECEIVED', 'CONFIRMED', 'PREPARING', 'DISPATCHED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED']) {
+    assert.equal(fixture.context.canonicalStatus(value), value);
+    assert.equal(run('Validate Sheet Commands', { body: { ok: true, commands: [{ ...command(), requested_status: value }] } })[0].json.request.status, value);
+  }
+  for (const value of ['NEW', 'PACKED', 'DISP', 'PACK', 'CONF', 'confirmed', ' CONFIRMED ']) {
+    assert.equal(fixture.context.canonicalStatus(value), null);
+    assert.throws(() => run('Validate Sheet Commands', { body: { ok: true, commands: [{ ...command(), requested_status: value }] } }));
+  }
+});
+
+test('ignored unknown/unchanged orders acknowledge the request without overwriting the Sheet mirror', () => {
+  const request = run('Validate Sheet Commands', { body: { ok: true, commands: [{ ...command(), order_id: 'WA-123' }] } })[0].json;
+  const ack = run('Prepare Compare And Acknowledge', { statusCode: 200, body: { ok: true, ignored: true, orderId: 'WA-123', eventId: request.request.eventId } }, { 'Validate Sheet Commands': request })[0].json.ack;
+  assert.equal(ack.applied, true); assert.equal(ack.ignored, true);
+  assert.equal(ack.status, undefined); assert.equal(ack.revision, undefined);
+  const fixture = scriptFixture();
+  fixture.context.acknowledgeStatusCommand(fixture.control, { ...ack, orderId });
+  assert.equal(fixture.read('status'), 'PREPARING'); assert.equal(fixture.read('status_revision'), revision);
+  assert.equal(fixture.read('last_applied_request_id'), requestId);
 });
 
 test('409 Sheet acknowledgement keeps the original request ID and requires explicit repair without rebasing', () => {

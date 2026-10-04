@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import crypto from 'node:crypto';
 import { getN8nOrderDispatchConfig, projectCanonicalOrderForN8n, sendOrderToN8n } from '../src/services/n8nOrderNotification';
-import { createOrderOutboxWorker, inspectOrderOutbox, ORDER_OUTBOX_LOCK_PATH, ORDER_OUTBOX_MAX_ATTEMPTS, orderOutboxBackoffMs } from '../src/services/orderOutboxWorker';
+import { createOrderOutboxWorker, inspectOrderOutbox, ORDER_OUTBOX_LOCK_PATH, ORDER_OUTBOX_MAX_ATTEMPTS, ORDER_OUTBOX_MAX_RETRIES, orderOutboxBackoffMs } from '../src/services/orderOutboxWorker';
 import { createDurableOrder, PersistenceUnavailableError } from '../src/lib/orderDatabase';
 import type { CanonicalOrder, OutboxOrderEvent } from '../src/lib/serverOrderService';
 import { parseOrderOutboxReportArgs, summarizeOrderOutboxReport } from '../scripts/report-order-outbox';
@@ -67,7 +67,7 @@ function savedOrder(index = 1): CanonicalOrder {
     schemaVersion: '2.0.0', orderId: `AB-20261003-${index.toString(16).toUpperCase().padStart(6, '0')}`,
     source: 'website', createdAt: '2026-10-01T12:00:00.000Z', createdAtMs: Date.parse('2026-10-01T12:00:00Z'),
     updatedAt: '2026-10-01T12:00:00.000Z', updatedAtMs: Date.parse('2026-10-01T12:00:00Z'),
-    status: 'NEW', paymentStatus: 'UNPAID', paymentMethod: 'bank', uid: 'test-customer',
+    status: 'ORDER_RECEIVED', paymentStatus: 'UNPAID', paymentMethod: 'bank', uid: 'test-customer',
     claimTokenHash: 'private-hash-must-not-be-sent', claimTokenExpiry: INITIAL_TIME + 1000,
     adminNoteEntries: [{ id: 'private', text: 'private-admin-note', actorUid: 'admin', actorEmail: 'private@example.com', timestamp: INITIAL_TIME, timestampIso: new Date(INITIAL_TIME).toISOString() }],
     customer: { name: 'Test Customer', phone: '03001234567', address: 'Test Street, House 12', city: 'Karachi', deliverySlot: 'Evening' },
@@ -367,6 +367,58 @@ async function withNotificationEnvironment(env: Record<string, string | undefine
 }
 
 const checkoutPayload = { name: 'Test Customer', phone: '03001234567', address: 'Test Street, House 12', city: 'Karachi', paymentMethod: 'cod', shippingMethodId: 'standard', items: [{ productId: 'badam', id: 'badam', selectedWeight: '500g', quantity: 1 }] };
+
+test('Worker logs full redacted transport diagnostics, item ID, HTTP status, and one heartbeat per cycle', async () => {
+  const order = savedOrder(), store = seeded(order); const logs: any[] = [];
+  const instance = worker(store.db, { logger: (message: string, metadata: any) => logs.push({ message, ...metadata }),
+    dispatch: async () => ({ sent: false, status: 'FAILED', statusCode: 503, reason: 'ORDER_WEBHOOK_HTTP_ERROR', errorMessage: 'Receiver unavailable', errorStack: 'Error: Receiver unavailable\n at test:1' }) });
+  assert.equal((await instance.runOnce()).status, 'RETRY_SCHEDULED');
+  const error = logs.find(log => log.message === 'ORDER_OUTBOX_WORKER_ERROR');
+  assert.equal(error.eventId, pendingEvent(order).eventId); assert.equal(error.step, 'N8N_ORDER_WEBHOOK_URL.call'); assert.equal(error.httpStatus, 503);
+  assert.equal(error.errorMessage, 'Receiver unavailable'); assert.match(error.errorStack, /at test:1/);
+  assert.equal(logs.filter(log => log.message.startsWith('outbox worker tick:')).length, 1);
+  assert.equal(ORDER_OUTBOX_MAX_RETRIES, 5); assert.equal(ORDER_OUTBOX_MAX_ATTEMPTS, 6);
+});
+
+test('Firestore SDK failures report the read step, original message/stack, and code without credentials', async () => {
+  const store = seeded(savedOrder()); const logs: any[] = [];
+  store.db.runTransaction = async () => { const error: any = new Error(`SDK access denied ${enabledConfig.webhookSecret} ${enabledConfig.webhookUrl}`); error.code = 7; throw error; };
+  const instance = worker(store.db, { logger: (message: string, metadata: any) => logs.push({ message, ...metadata }) });
+  assert.equal((await instance.runOnce()).status, 'ERROR');
+  const error = logs.find(log => log.message === 'ORDER_OUTBOX_WORKER_ERROR');
+  assert.equal(error.step, 'firestore.acquire_lease'); assert.equal(error.eventId, 'none'); assert.equal(error.errorCode, 7);
+  assert.match(error.errorMessage, /SDK access denied/); assert.match(error.errorStack, /Error: SDK access denied/);
+  assert.ok(!JSON.stringify(logs).includes(enabledConfig.webhookUrl!)); assert.ok(!JSON.stringify(logs).includes(enabledConfig.webhookSecret!));
+  assert.equal(logs.filter(log => log.message.startsWith('outbox worker tick:')).length, 1);
+});
+
+test('Worker starts immediately, schedules subsequent cycles, and drains cleanly after a failed cycle', async () => {
+  const logs: string[] = []; const instance = createOrderOutboxWorker({ getDb: () => null, getConfig: () => getN8nOrderDispatchConfig({}),
+    getStatusConfig: () => getN8nStatusDispatchConfig({}), pollIntervalMs: 100, logger: message => logs.push(message) });
+  instance.start(); instance.start(); await new Promise(resolve => setTimeout(resolve, 240)); await instance.stop();
+  assert.equal(logs.filter(message => message === 'ORDER_OUTBOX_WORKER_STARTED').length, 1);
+  assert.ok(logs.filter(message => message.startsWith('outbox worker tick:')).length >= 2);
+  assert.equal(instance.getState().started, true); assert.equal(instance.getState().stopped, true);
+  assert.ok(instance.getState().lastTickAt); assert.equal((await instance.runOnce()).status, 'STOPPED');
+});
+
+test('Order wire contract carries immutable identity and line quantities with a stable retry event ID', async () => {
+  const order = savedOrder(); let body: any;
+  await sendOrderToN8n(projectCanonicalOrderForN8n(order), { config: enabledConfig, eventId: 'stable-test-event', fetchImpl: (async (_url: any, init: any) => {
+    body = JSON.parse(init.body); return { ok: true, status: 200, json: async () => ({ ok: true, orderId: order.orderId, mirrorStored: true }) };
+  }) as any });
+  assert.equal(body.type, 'order_created'); assert.equal(body.eventId, 'stable-test-event');
+  assert.deepEqual(body.payload, { orderId: order.orderId, customerName: order.customer.name, customerPhone: order.customer.phone,
+    items: order.items.map(item => ({ name: item.name, qty: item.quantity, price: item.price })), total: order.totals.total, paymentMethod: order.paymentMethod, createdAt: order.createdAt });
+  assert.ok(!JSON.stringify(body).includes(order.claimTokenHash!));
+});
+
+test('Status receiver falls back to the shared order endpoint, but a configured dedicated endpoint needs its own secret', () => {
+  const fallback = getN8nStatusDispatchConfig({ N8N_ORDER_WEBHOOK_URL: enabledConfig.webhookUrl, N8N_WEBHOOK_SECRET: enabledConfig.webhookSecret });
+  assert.equal(fallback.enabled, true); assert.equal(fallback.webhookUrl, enabledConfig.webhookUrl);
+  assert.equal(getN8nStatusDispatchConfig({ N8N_ORDER_WEBHOOK_URL: enabledConfig.webhookUrl, N8N_WEBHOOK_SECRET: enabledConfig.webhookSecret,
+    N8N_STATUS_WEBHOOK_URL: statusConfig.webhookUrl }).enabled, false);
+});
 
 test('order transaction atomically creates eligible outbox only with valid config, duplicates create no second event', async () => {
   await withNotificationEnvironment({ N8N_ORDER_WEBHOOK_URL: enabledConfig.webhookUrl, N8N_WEBHOOK_SECRET: enabledConfig.webhookSecret }, async () => {

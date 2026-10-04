@@ -3,9 +3,10 @@ import type { Firestore } from 'firebase-admin/firestore';
 import type { AdminNoteEntry, CanonicalOrder, OrderStatus, PaymentStatus } from './serverOrderService';
 import { resolveHamper } from './hamperCatalog';
 import { sanitizeFirestoreData } from './firestoreData';
+import { ORDER_STATUSES, storedOrderStatus } from './orderStatuses';
 
 export const ADMIN_SCAN_LIMIT = 5000;
-export const ADMIN_STATUSES: OrderStatus[] = ['NEW', 'QUOTE_REQUESTED', 'ORDER_RECEIVED', 'CONFIRMED', 'PREPARING', 'DISPATCHED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'];
+export const ADMIN_STATUSES: OrderStatus[] = [...ORDER_STATUSES, 'QUOTE_REQUESTED'];
 export const ADMIN_PAYMENT_STATUSES: PaymentStatus[] = ['UNPAID', 'PAID', 'REFUNDED', 'NOT_REQUIRED'];
 
 export class AdminOperationError extends Error {
@@ -109,7 +110,7 @@ export function sanitizeOrderForAdmin(order: CanonicalOrder): AdminOrder {
     createdAt: order.createdAt, createdAtMs: order.createdAtMs,
     updatedAt: order.updatedAt || order.createdAt,
     updatedAtMs: order.updatedAtMs || order.createdAtMs,
-    status: order.status, paymentStatus: order.paymentStatus, paymentMethod: order.paymentMethod,
+    status: storedOrderStatus(order.status) || order.status, paymentStatus: order.paymentStatus, paymentMethod: order.paymentMethod,
     orderType: order.orderType ?? 'ORDER',
     promoCode: order.promoCode === undefined ? (order.couponCode ?? null) : order.promoCode,
     promoType: order.promoType ?? null,
@@ -162,7 +163,7 @@ export function filterAdminOrders(orders: CanonicalOrder[], filters: AdminOrderF
   const phoneSearch = search.replace(/[^\d]/g, '');
   const start = rangeStart(filters.range, now);
   return orders.filter(order => {
-    if (filters.queue === 'new' && !['NEW', 'ORDER_RECEIVED'].includes(order.status)) return false;
+    if (filters.queue === 'new' && storedOrderStatus(order.status) !== 'ORDER_RECEIVED') return false;
     if (filters.queue === 'packing' && order.status !== 'PREPARING') return false;
     if (filters.queue === 'transit' && !['DISPATCHED', 'OUT_FOR_DELIVERY'].includes(order.status)) return false;
     if (filters.queue === 'bank-pending' && (order.paymentMethod !== 'bank' || order.paymentStatus !== 'UNPAID' || order.status === 'CANCELLED')) return false;
@@ -210,7 +211,8 @@ export async function listAdminOrders(db: Firestore | null, filters: AdminOrderF
   requireDatabase(db);
   const now = Date.now();
   const snap = await db.collection('orders').orderBy('createdAtMs', 'desc').limit(ADMIN_SCAN_LIMIT + 1).get();
-  const scanned = snap.docs.slice(0, ADMIN_SCAN_LIMIT).map(doc => ({ ...doc.data(), orderId: doc.id }) as CanonicalOrder);
+  const scanned = snap.docs.slice(0, ADMIN_SCAN_LIMIT).map(doc => ({ ...doc.data(), orderId: doc.id,
+    status: storedOrderStatus(doc.data().status) || doc.data().status }) as CanonicalOrder);
   const matching = filterAdminOrders(scanned, filters, now);
   const totalCount = matching.length;
   const totalPages = Math.ceil(totalCount / filters.limit) || 1;

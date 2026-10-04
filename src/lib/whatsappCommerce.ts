@@ -2,6 +2,7 @@ import { sanitizeFirestoreData } from './firestoreData';
 import crypto from 'node:crypto';
 import type { Firestore } from 'firebase-admin/firestore';
 import type { CanonicalOrder } from './serverOrderService';
+import { storedOrderStatus } from './orderStatuses';
 
 /** No outbound templates: every send is gated by the authenticated customer's service window. */
 export const WHATSAPP_WINDOW_MS = 24 * 60 * 60 * 1000;
@@ -256,7 +257,7 @@ export function isWhatsAppTrackingRequest(text: string): boolean {
 function ownOrder(order: CanonicalOrder | undefined, senderKey: string): boolean {
   const phone = normalizeWhatsAppPhone(order?.customer?.phone);
   return Boolean(order && phone && phoneKey(phone) === senderKey && Array.isArray(order.items) && order.items.length
-    && order.source === 'website' && ['NEW', 'QUOTE_REQUESTED', 'ORDER_RECEIVED', 'CONFIRMED', 'PREPARING', 'DISPATCHED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'].includes(order.status)
+    && order.source === 'website' && storedOrderStatus(order.status) !== null
     && (order.orderType === 'QUOTE_REQUEST'
       ? order.promoCode === 'CANCER' && order.promoType === 'quote' && order.paymentStatus === 'NOT_REQUIRED' && order.paymentMethod === 'quote'
         && ['QUOTE_REQUESTED', 'CANCELLED'].includes(order.status) && ['subtotal', 'discount', 'shipping', 'giftWrapFee', 'total'].every(key => order.totals?.[key] === 0)
@@ -271,7 +272,10 @@ export function renderWhatsAppSavedReceipt(order: CanonicalOrder): string {
     'Our team will contact you with your personalized rate.'].join('\n');
   const payment = order.paymentStatus === 'PAID' ? 'Recorded as paid' : order.paymentStatus === 'REFUNDED' ? 'Recorded as refunded' : 'Payment not recorded as received';
   return [
-    '*AllBarka — saved order receipt*', `Order: ${order.orderId}`, `Status: ${order.status}`, '',
+    '*AllBarka — saved order receipt*', `Order: ${order.orderId}`, `Status: ${storedOrderStatus(order.status) || order.status}`, '',
+    ...(order.trackingNumber ? [`Tracking: ${order.trackingNumber}`] : []),
+    ...(order.estimatedDelivery ? [`Estimated delivery: ${order.estimatedDelivery}`] : []),
+    ...(order.pointsAwarded ? [`Points earned: ${order.earnedPoints || 0}`] : []),
     ...order.items.map(item => `• ${item.name} (${item.selectedWeight}) × ${item.quantity} — Rs. ${(item.price * item.quantity).toLocaleString('en-PK')}`),
     '', `Subtotal: Rs. ${order.totals.subtotal.toLocaleString('en-PK')}`, `Discount: Rs. ${order.totals.discount.toLocaleString('en-PK')}`,
     `Delivery: Rs. ${order.totals.shipping.toLocaleString('en-PK')}`, `Gift wrapping: Rs. ${(order.totals.giftWrapFee || 0).toLocaleString('en-PK')}`,

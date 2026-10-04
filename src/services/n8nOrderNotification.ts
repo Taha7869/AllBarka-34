@@ -3,12 +3,16 @@ import type { CanonicalOrder } from '../lib/serverOrderService';
 import type { HamperConfiguration } from '../lib/hamperCatalog';
 import { ADMIN_STATUSES } from '../lib/adminOperations';
 import type { AppliedPromo } from '../types/promo';
+import { outboxErrorDetails } from './outboxDiagnostics';
+import { storedOrderStatus } from '../lib/orderStatuses';
 
 export interface N8nNotificationResult {
   sent: boolean;
   status: 'DISABLED' | 'SUCCESS' | 'FAILED' | 'TIMEOUT';
   reason?: string;
   statusCode?: number;
+  errorMessage?: string;
+  errorStack?: string;
 }
 
 export interface N8nOrderDispatchConfig {
@@ -99,7 +103,8 @@ export function projectCanonicalOrderForN8n(order: CanonicalOrder): N8nOrderData
   } else if ((order.paymentMethod !== 'cod' && order.paymentMethod !== 'bank') || order.paymentStatus === 'NOT_REQUIRED') {
     throw new Error('CANONICAL_ORDER_INVALID');
   }
-  if (!ADMIN_STATUSES.includes(order.status) || !Number.isFinite(Date.parse(order.updatedAt))) throw new Error('CANONICAL_ORDER_INVALID');
+  const status = storedOrderStatus(order.status);
+  if (!status || !ADMIN_STATUSES.includes(status) || !Number.isFinite(Date.parse(order.updatedAt))) throw new Error('CANONICAL_ORDER_INVALID');
   const customer = order.customer;
   const totals = order.totals;
   if (!customer || !totals || !Array.isArray(order.items) || order.items.length < 1 || order.items.length > 100) {
@@ -143,7 +148,7 @@ export function projectCanonicalOrderForN8n(order: CanonicalOrder): N8nOrderData
       return projected;
     }),
     paymentMethod: order.paymentMethod, createdAt: requiredText(order.createdAt, 60),
-    status: order.status, updatedAt: requiredText(order.updatedAt, 60),
+    status, updatedAt: requiredText(order.updatedAt, 60),
   };
   if (order.gifting) {
     wireOrder.gifting = {
@@ -167,6 +172,7 @@ export interface SendOrderToN8nOptions {
   fetchImpl?: typeof fetch;
   now?: () => number;
   timeoutMs?: number;
+  eventId?: string;
 }
 
 /** Bounded transport only. Durable delivery/retries belong to orderOutboxWorker. */
@@ -215,7 +221,12 @@ export async function sendOrderToN8n(orderData: N8nOrderData, options: SendOrder
       paymentMethod: orderData.paymentMethod, createdAt: orderData.createdAt,
       status: orderData.status, updatedAt: orderData.updatedAt,
     };
-    const payload = JSON.stringify({ event: 'ORDER_CREATED', timestamp: new Date((options.now ?? Date.now)()).toISOString(), order: envelopeOrder });
+    const payload = JSON.stringify({ type: 'order_created', event: 'ORDER_CREATED',
+      ...(options.eventId ? { eventId: options.eventId } : {}), source: 'website',
+      timestamp: new Date((options.now ?? Date.now)()).toISOString(), order: envelopeOrder,
+      payload: { orderId: envelopeOrder.orderId, customerName: envelopeOrder.customer.name, customerPhone: envelopeOrder.customer.phone,
+        items: envelopeOrder.items.map(item => ({ name: item.name, qty: item.quantity, price: item.price })),
+        total: envelopeOrder.totals.total, paymentMethod: envelopeOrder.paymentMethod, createdAt: envelopeOrder.createdAt } });
     const response = await Promise.race([
       (options.fetchImpl ?? fetch)(verifiedConfig.webhookUrl!, {
         method: 'POST', redirect: 'error', signal: controller.signal, body: payload,
@@ -229,24 +240,27 @@ export async function sendOrderToN8n(orderData: N8nOrderData, options: SendOrder
     ]);
     if (!response.ok) {
       controller.abort();
-      return { sent: false, status: 'FAILED', statusCode: response.status, reason: 'ORDER_WEBHOOK_HTTP_ERROR' };
+      return { sent: false, status: 'FAILED', statusCode: response.status, reason: 'ORDER_WEBHOOK_HTTP_ERROR',
+        ...outboxErrorDetails(new Error(`N8N_ORDER_WEBHOOK_URL returned HTTP ${response.status}`)) };
     }
     let acknowledgement: unknown;
     try {
       acknowledgement = await Promise.race([response.json(), deadline]);
     } catch (error) {
       if (controller.signal.aborted || (error as Error)?.name === 'AbortError') throw error;
-      return { sent: false, status: 'FAILED', statusCode: response.status, reason: 'ORDER_WEBHOOK_INVALID_ACK' };
+      return { sent: false, status: 'FAILED', statusCode: response.status, reason: 'ORDER_WEBHOOK_INVALID_ACK',
+        ...outboxErrorDetails(error, [config.webhookUrl, config.webhookSecret]) };
     }
     const ack = acknowledgement as { ok?: unknown; orderId?: unknown; mirrorStored?: unknown } | null;
     if (!ack || ack.ok !== true || ack.orderId !== orderData.orderId || ack.mirrorStored !== true) {
-      return { sent: false, status: 'FAILED', statusCode: response.status, reason: 'ORDER_WEBHOOK_INVALID_ACK' };
+      return { sent: false, status: 'FAILED', statusCode: response.status, reason: 'ORDER_WEBHOOK_INVALID_ACK',
+        ...outboxErrorDetails(new Error('n8n acknowledgement must confirm matching orderId and mirrorStored:true')) };
     }
     return { sent: true, status: 'SUCCESS', statusCode: response.status };
   } catch (error) {
     return controller.signal.aborted || (error as Error)?.name === 'AbortError'
-      ? { sent: false, status: 'TIMEOUT', reason: 'ORDER_WEBHOOK_TIMEOUT' }
-      : { sent: false, status: 'FAILED', reason: 'ORDER_WEBHOOK_NETWORK_ERROR' };
+      ? { sent: false, status: 'TIMEOUT', reason: 'ORDER_WEBHOOK_TIMEOUT', ...outboxErrorDetails(error, [config.webhookUrl, config.webhookSecret]) }
+      : { sent: false, status: 'FAILED', reason: 'ORDER_WEBHOOK_NETWORK_ERROR', ...outboxErrorDetails(error, [config.webhookUrl, config.webhookSecret]) };
   } finally {
     clearTimeout(timeoutId!);
   }

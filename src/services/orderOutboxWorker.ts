@@ -7,9 +7,11 @@ import {
   type N8nNotificationResult, type N8nOrderData, type N8nOrderDispatchConfig, type SendOrderToN8nOptions,
 } from './n8nOrderNotification';
 import { getN8nStatusDispatchConfig, sendStatusToN8n, projectStatusEvent } from './n8nStatusNotification';
+import { outboxErrorDetails } from './outboxDiagnostics';
 
-export const ORDER_OUTBOX_MAX_ATTEMPTS = 6;
-export const ORDER_OUTBOX_POLL_MS = 1000;
+export const ORDER_OUTBOX_MAX_RETRIES = 5;
+export const ORDER_OUTBOX_MAX_ATTEMPTS = 1 + ORDER_OUTBOX_MAX_RETRIES;
+export const ORDER_OUTBOX_POLL_MS = 15000;
 export const ORDER_OUTBOX_LOCK_PATH = 'outboxDispatchLocks/n8nOrderCreated';
 const MAX_DUE_SCAN = 25;
 
@@ -71,6 +73,27 @@ export function createOrderOutboxWorker(options: OrderOutboxWorkerOptions) {
   let started = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let inFlight: Promise<OutboxRunResult> | undefined;
+  let lastTickAt: string | null = null;
+  let lastResult: OutboxRunResult | null = null;
+  let cyclePending = 0;
+  let cycleEventId = 'none';
+  let cycleStep = 'configuration';
+  const log = (message: string, metadata?: Record<string, string | number>) => {
+    try { options.logger?.(message, metadata); } catch { /* A logger failure must never stop durable delivery. */ }
+  };
+  async function step<T>(name: string, operation: () => Promise<T>): Promise<T> {
+    cycleStep = name;
+    try { return await operation(); }
+    catch (error) {
+      log('ORDER_OUTBOX_WORKER_ERROR', { step: name, eventId: cycleEventId,
+        ...outboxErrorDetails(error, [getConfig().webhookUrl, getConfig().webhookSecret, getStatusConfig().webhookUrl, getStatusConfig().webhookSecret]),
+        ...(typeof (error as any)?.code === 'number' || typeof (error as any)?.code === 'string' ? { errorCode: (error as any).code } : {}) });
+      // Mark already logged so release/final catch cannot lose the original failed step.
+      const failure = new Error(`Outbox step failed: ${name}`, { cause: error });
+      (failure as any).outboxLogged = true;
+      throw failure;
+    }
+  }
 
   async function acquireGlobalLease(db: Firestore, leaseMs: number): Promise<DispatchLease | null> {
     const ref = db.doc(ORDER_OUTBOX_LOCK_PATH);
@@ -176,20 +199,22 @@ export function createOrderOutboxWorker(options: OrderOutboxWorkerOptions) {
     if (!db) return { status: 'PERSISTENCE_UNAVAILABLE' };
     // The transport deadline is shorter than either lease; crashed processes recover after expiry.
     const leaseMs = Math.max(60000, Math.min(30000, Math.max(config.timeoutMs, statusConfig.timeoutMs)) * 3 + 15000);
-    const lease = await acquireGlobalLease(db, leaseMs);
+    const lease = await step('firestore.acquire_lease', () => acquireGlobalLease(db, leaseMs));
     if (!lease) return { status: 'BUSY' };
     let cooldownMs = 0;
     try {
       // Query each enabled receiver separately: an unavailable receiver's pending
       // events must not fill the first page and starve the other event type.
       // The required eventType/nextAttemptAtMs composite index is checked in.
-      const batches = await Promise.all(enabledTypes.map(eventType => db.collection('orderEvents')
+      const batches = await step('firestore.read_due_events', () => Promise.all(enabledTypes.map(eventType => db.collection('orderEvents')
         .where('eventType', '==', eventType).where('nextAttemptAtMs', '<=', now())
-        .orderBy('nextAttemptAtMs', 'asc').limit(MAX_DUE_SCAN).get()));
+        .orderBy('nextAttemptAtMs', 'asc').limit(MAX_DUE_SCAN).get())));
       const due = batches.flatMap(batch => batch.docs).sort((a, b) =>
         Number(a.data().nextAttemptAtMs) - Number(b.data().nextAttemptAtMs));
+      cyclePending = due.length;
       for (const snapshot of due) {
-        const claim = await claimEvent(db, snapshot.ref, lease, enabledTypes);
+        cycleEventId = snapshot.id;
+        const claim = await step('firestore.claim_event_and_read_order', () => claimEvent(db, snapshot.ref, lease, enabledTypes));
         if (!claim) continue;
         if ('status' in claim) return claim;
         let wireOrder: N8nOrderData | undefined;
@@ -198,36 +223,59 @@ export function createOrderOutboxWorker(options: OrderOutboxWorkerOptions) {
         try {
           if (isStatus) projectStatusEvent(claim.event);
           else wireOrder = projectCanonicalOrderForN8n(claim.order);
-        } catch {
-          return await completeEvent(db, claim, lease, { sent: false, status: 'FAILED', reason: 'CANONICAL_ORDER_INVALID' }, true);
+        } catch (error) {
+          log('ORDER_OUTBOX_WORKER_ERROR', { step: 'canonical_payload_validation', eventId: claim.event.eventId, ...outboxErrorDetails(error) });
+          return await step('firestore.mark_failed', () => completeEvent(db, claim, lease, { sent: false, status: 'FAILED', reason: 'CANONICAL_ORDER_INVALID' }, true));
         }
         // Recheck lease ownership immediately before crossing the network boundary.
-        const lock = await db.doc(ORDER_OUTBOX_LOCK_PATH).get();
+        const lock = await step('firestore.verify_lease', () => db.doc(ORDER_OUTBOX_LOCK_PATH).get());
         if (!ownsLease(lock.data(), lease, now())) return { status: 'LEASE_LOST', eventId: claim.event.eventId, orderId: claim.event.orderId };
         let result: N8nNotificationResult;
+        cycleStep = isStatus && process.env.N8N_STATUS_WEBHOOK_URL ? 'N8N_STATUS_WEBHOOK_URL.call' : 'N8N_ORDER_WEBHOOK_URL.call';
         try {
           result = isStatus ? await dispatchStatus(claim.event, { config: selectedConfig, now })
-            : await dispatch(wireOrder!, { config: selectedConfig, now });
-        } catch {
-          result = { sent: false, status: 'FAILED', reason: 'ORDER_WEBHOOK_NETWORK_ERROR' };
+            : await dispatch(wireOrder!, { config: selectedConfig, now, eventId: claim.event.eventId });
+        } catch (error) {
+          result = { sent: false, status: 'FAILED', reason: 'ORDER_WEBHOOK_NETWORK_ERROR',
+            ...outboxErrorDetails(error, [selectedConfig.webhookUrl, selectedConfig.webhookSecret]) };
         }
+        if (!result.sent || result.status !== 'SUCCESS') log('ORDER_OUTBOX_WORKER_ERROR', {
+          step: cycleStep, eventId: claim.event.eventId, orderId: claim.event.orderId,
+          httpStatus: result.statusCode ?? 'no response', attempts: claim.event.attempts,
+          ...outboxErrorDetails(new Error(result.reason || 'ORDER_WEBHOOK_FAILURE')),
+          ...(result.errorMessage ? { errorMessage: result.errorMessage } : {}),
+          ...(result.errorStack ? { errorStack: result.errorStack } : {}),
+        });
         // After an uncertain delivery, keep other backend instances out briefly while the receiver settles.
         if (result.status !== 'SUCCESS' || !result.sent) cooldownMs = Math.max(30000, Math.min(60000, selectedConfig.timeoutMs * 2));
-        return await completeEvent(db, claim, lease, result);
+        return await step('firestore.persist_delivery_result', () => completeEvent(db, claim, lease, result));
       }
       return { status: 'IDLE' };
     } finally {
-      await releaseGlobalLease(db, lease, cooldownMs);
+      await step('firestore.release_lease', () => releaseGlobalLease(db, lease, cooldownMs));
     }
   }
 
   function runOnce(): Promise<OutboxRunResult> {
     if (stopped) return Promise.resolve({ status: 'STOPPED' });
     if (inFlight) return Promise.resolve({ status: 'BUSY' });
-    inFlight = processOnce().catch((): OutboxRunResult => {
-      // Do not log webhook URLs, secrets, customer records, or raw SDK/network error messages.
-      options.logger?.('ORDER_OUTBOX_WORKER_ERROR');
+    cyclePending = 0;
+    cycleEventId = 'none';
+    cycleStep = 'configuration';
+    lastTickAt = new Date(now()).toISOString();
+    inFlight = processOnce().catch((error): OutboxRunResult => {
+      if (!error?.outboxLogged) log('ORDER_OUTBOX_WORKER_ERROR', { step: cycleStep, eventId: cycleEventId, ...outboxErrorDetails(error) });
       return { status: 'ERROR' };
+    }).then(result => {
+      lastResult = result;
+      const delivered = result.status === 'DELIVERED' ? 1 : 0;
+      const failed = result.status === 'FAILED' ? 1 : 0;
+      const pending = Math.max(0, cyclePending - delivered - failed);
+      log(`outbox worker tick: ${pending} pending, ${delivered} delivered, ${failed} failed`, {
+        status: result.status, eventId: result.eventId || cycleEventId, pending, delivered, failed,
+        ...(result.attempts !== undefined ? { attempts: result.attempts } : {}),
+      });
+      return result;
     }).finally(() => { inFlight = undefined; });
     return inFlight;
   }
@@ -241,6 +289,7 @@ export function createOrderOutboxWorker(options: OrderOutboxWorkerOptions) {
   function start(): void {
     if (started || stopped) return;
     started = true;
+    log('ORDER_OUTBOX_WORKER_STARTED', { pollIntervalMs: pollMs, maxRetries: ORDER_OUTBOX_MAX_RETRIES });
     void runOnce().then(schedule);
   }
 
@@ -250,7 +299,7 @@ export function createOrderOutboxWorker(options: OrderOutboxWorkerOptions) {
     await inFlight;
   }
 
-  return { runOnce, start, stop };
+  return { runOnce, start, stop, getState: () => ({ started, stopped, running: Boolean(inFlight), lastTickAt, lastResult: lastResult?.status || null, pollIntervalMs: pollMs }) };
 }
 
 /** Start once when the persistent Express server starts; await stop() before process shutdown. */

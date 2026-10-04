@@ -8,6 +8,7 @@ import { CUSTOM_HAMPER_PRODUCT_ID, hamperCartKey, resolveHamper, type HamperConf
 import { evaluatePromo, getPromo, NO_PROMO } from './couponEngine';
 import { resolveCartIdentity } from './cartInput';
 import { resolveCustomWeight, resolveProductVariant } from './productVariants';
+import { calculateLoyaltyPoints } from './loyaltyPoints';
 
 export interface ValidatedOrderItem {
   id: string; // composite cart item id, e.g. "pista-250g"
@@ -272,6 +273,6 @@ export function validateAndPriceOrder({
   return {
     items: validatedItems,
     summary: discounted,
-    earnedPoints: applied.isQuoteRequest ? 0 : totalEarnedPoints,
+    earnedPoints: calculateLoyaltyPoints(discounted.total, isWholesale, applied.isQuoteRequest),
   };
 }

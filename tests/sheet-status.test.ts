@@ -6,6 +6,10 @@ import { applySheetStatusCommand, validateSheetStatusCommand, SheetStatusError, 
   createDurableOrder, IdempotencyConflictError } from '../src/lib/orderDatabase';
 import { sheetStatusRequestKey } from '../src/lib/sheetStatusCommand';
 import { validateAndPriceOrder } from '../src/lib/orderValidation';
+import crypto from 'node:crypto';
+import { applyOrderUpdate, claimGuestOrder } from '../src/lib/orderDatabase';
+import { validateOrderUpdate } from '../src/lib/orderUpdateCommand';
+import { calculateLoyaltyPoints, loyaltyRate } from '../src/lib/loyaltyPoints';
 
 class MemoryDatabase {
   records = new Map<string, any>();
@@ -46,8 +50,9 @@ const command = (order = fixtureOrder(), patch: Record<string, unknown> = {}) =>
 const code = (value: string, status = 400) => (error: any) => error instanceof SheetStatusError && error.code === value && error.httpStatus === status;
 const count = (store: MemoryDatabase, collection: string) => [...store.records.keys()].filter(key => key.startsWith(`${collection}/`)).length;
 
-test('Sheet validation explicitly maps legacy codes and rejects unknown/private mutation fields', () => {
-  for (const [raw, expected] of Object.entries({ RECEIVED: 'ORDER_RECEIVED', ORDER: 'ORDER_RECEIVED', CONF: 'CONFIRMED', PROC: 'PREPARING', PACK: 'PREPARING', DISP: 'DISPATCHED', SHIP: 'DISPATCHED', DELIV: 'DELIVERED', CANC: 'CANCELLED' })) assert.equal(command(undefined, { status: raw }).status, expected);
+test('Sheet validation accepts only the exact seven live statuses and rejects obsolete/private mutation fields', () => {
+  for (const raw of ['ORDER_RECEIVED', 'CONFIRMED', 'PREPARING', 'DISPATCHED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED']) assert.equal(command(undefined, { status: raw }).status, raw);
+  for (const status of ['NEW', 'PACKED', 'pending', 'delivered', 'PACK', 'CONF', 'QUOTE_REQUESTED']) assert.throws(() => command(undefined, { status }), SheetStatusError);
   for (const patch of [{ source: 'browser' }, { status: 'PAID' }, { actorUid: 'admin' }, { totals: { total: 1 } }, { phone: '03009999999' },
     { paymentStatus: 'PAID' }, { eventId: 'sheet:../secret' }, { expectedUpdatedAt: '' }, { reason: 'x' }]) assert.throws(() => command(undefined, patch), SheetStatusError);
 });
@@ -73,7 +78,7 @@ test('Sheet mutation atomically writes canonical status, minimal snapshot, actor
 test('Duplicate Sheet event returns original result after newer Admin change without repeat effects', async () => {
   const { store, order } = seeded(); const input = command(order, { status: 'DELIVERED' });
   const first = await applySheetStatusCommand({ db: store.db, command: input });
-  assert.equal(store.records.get('users/fixture-patron').loyaltyPoints, 25);
+  assert.equal(store.records.get('users/fixture-patron').loyaltyPoints, 26);
   await updateAdminOrderStatus({ db: store.db, orderId: order.orderId, status: 'CANCELLED', expectedStatus: 'DELIVERED',
     expectedUpdatedAt: first.updatedAt, actorUid: 'verified-admin', reason: 'Returned order' });
   const before = [...store.records.entries()];
@@ -114,11 +119,11 @@ test('Audit failure rolls back canonical mutation, dedup record, mirror event an
   assert.deepEqual(store.records.get(`orders/${order.orderId}`), order); assert.equal(store.records.size, 1);
 });
 
-test('Same-state command is durably deduplicated without status, loyalty or notification effects', async () => {
+test('Same-state command is ignored with zero writes or status, loyalty and notification effects', async () => {
   const { store, order } = seeded(); const input = command(order, { status: order.status });
   const first = await applySheetStatusCommand({ db: store.db, command: input }); const second = await applySheetStatusCommand({ db: store.db, command: input });
   assert.equal(first.updatedAt, order.updatedAt); assert.equal(second.duplicate, true); assert.equal(count(store, 'orderEvents'), 0); assert.equal(count(store, 'whatsappNotificationJobs'), 0);
-  assert.ok(store.records.has(`integrationStatusRequests/${sheetStatusRequestKey(input.eventId)}`));
+  assert.equal(store.records.has(`integrationStatusRequests/${sheetStatusRequestKey(input.eventId)}`), false);
 });
 
 const checkout = { name: 'Fixture Patron', phone: '03001234567', address: 'Fixture street, house12', city: 'Lahore', paymentMethod: 'cod',
@@ -157,4 +162,110 @@ test('Legacy changed slot/mode or missing/zero mode proof conflicts without recr
 
 test('Wholesale canonical pricing guarantees zero loyalty points; unknown legacy mode stays unprovable', () => {
   assert.equal(validateAndPriceOrder({ city: 'Lahore', items: checkout.items, shippingMethodId: 'standard', isWholesale: true }).earnedPoints, 0);
+});
+
+const update = (order = fixtureOrder(), patch: Record<string, unknown> = {}) => validateOrderUpdate({ orderId: order.orderId,
+  status: 'DELIVERED', updatedAt: new Date(Date.now() + 1000).toISOString(), eventId: 'sheet:new-contract-0001', ...patch });
+
+test('Simple Sheets update is atomic, duplicate-safe, and cannot award points twice under concurrent retry', async () => {
+  const { store, order } = seeded(); const command = update(order, { trackingNumber: 'COURIER-123', estimatedDelivery: '2026-10-08', notes: 'Private packing note' });
+  const [first, second] = await Promise.all([applyOrderUpdate({ db: store.db, command }), applyOrderUpdate({ db: store.db, command })]);
+  assert.equal(first.duplicate, false); assert.equal(second.duplicate, true);
+  assert.equal(store.records.get(`orders/${order.orderId}`).trackingNumber, 'COURIER-123');
+  assert.equal(store.records.get(`orders/${order.orderId}`).estimatedDelivery, '2026-10-08');
+  assert.equal(store.records.get('users/fixture-patron').loyaltyPoints, 26);
+  assert.equal(count(store, 'pointsLedger'), 1); assert.equal(count(store, 'orderEvents'), 1); assert.equal(count(store, 'orderAudits'), 1);
+  const ledger = store.records.get(`pointsLedger/${order.orderId}`);
+  assert.equal(ledger.customerId, 'fixture-patron'); assert.equal(ledger.points, 26); assert.equal(ledger.type, 'EARNED'); assert.ok(ledger.timestamp);
+  const before = [...store.records.entries()]; await applyOrderUpdate({ db: store.db, command }); assert.deepEqual([...store.records.entries()], before);
+});
+
+test('New event IDs at the same revision deduplicate; changed payload conflicts; old revisions cannot regress state', async () => {
+  const { store, order } = seeded(); const command = update(order, { status: 'DISPATCHED' });
+  await applyOrderUpdate({ db: store.db, command }); const before = [...store.records.entries()];
+  const duplicate = await applyOrderUpdate({ db: store.db, command: { ...command, eventId: 'sheet:new-contract-0002' } });
+  assert.equal(duplicate.duplicate, true); assert.deepEqual([...store.records.entries()], before);
+  await assert.rejects(() => applyOrderUpdate({ db: store.db, command: { ...command, trackingNumber: 'CHANGED', eventId: 'sheet:new-contract-0003' } }), code('INTEGRATION_REVISION_CONFLICT', 409));
+  const stale = await applyOrderUpdate({ db: store.db, command: update(order, { eventId: 'sheet:older-revision-0001', status: 'ORDER_RECEIVED', updatedAt: order.createdAt }) });
+  assert.equal(stale.ignored, true); assert.equal(store.records.get(`orders/${order.orderId}`).status, 'DISPATCHED');
+  assert.deepEqual([...store.records.entries()], before);
+});
+
+test('Tracking-only edits create a new immutable event while duplicate edits remain inert', async () => {
+  const { store, order } = seeded(); const command = update(order, { status: 'CONFIRMED' });
+  await applyOrderUpdate({ db: store.db, command });
+  const next = update(order, { status: 'CONFIRMED', eventId: 'sheet:tracking-update-0002', updatedAt: new Date(Date.parse(command.updatedAt) + 1000).toISOString(), trackingNumber: 'NEW-COURIER-ID' });
+  await applyOrderUpdate({ db: store.db, command: next }); await applyOrderUpdate({ db: store.db, command: next });
+  assert.equal(count(store, 'orderEvents'), 2); assert.equal(count(store, 'pointsLedger'), 0);
+  const event = [...store.records.values()].find(value => value.payload?.notification?.trackingNumber === 'NEW-COURIER-ID');
+  assert.equal(event.type, 'order_status_updated'); assert.equal(event.payload.notification.customerPhone, order.customer.phone);
+  assert.equal(event.payload.notification.status, 'CONFIRMED'); assert.equal(event.payload.notification.loyaltyPointsEarned, 0);
+});
+
+test('Loyalty rate uses payable total, floors whole hundreds, excludes quote/wholesale, and rejects invalid environment', () => {
+  assert.equal(loyaltyRate({}), 1); assert.equal(loyaltyRate({ LOYALTY_POINTS_PER_100_RUPEES: '2' }), 2);
+  assert.equal(calculateLoyaltyPoints(2650, false, false, 2), 52); assert.equal(calculateLoyaltyPoints(99, false, false, 1), 0);
+  assert.equal(calculateLoyaltyPoints(2650, true, false, 1), 0); assert.equal(calculateLoyaltyPoints(2650, false, true, 1), 0);
+  for (const value of ['NaN', '-1', '1.5']) assert.throws(() => loyaltyRate({ LOYALTY_POINTS_PER_100_RUPEES: value }), /INVALID_LOYALTY/);
+});
+
+test('Ledger blocks re-awarding even after an Admin reverses and reopens the same order', async () => {
+  const { store, order } = seeded();
+  await updateAdminOrderStatus({ db: store.db, orderId: order.orderId, status: 'DELIVERED', actorUid: 'admin' });
+  await updateAdminOrderStatus({ db: store.db, orderId: order.orderId, status: 'CANCELLED', actorUid: 'admin' });
+  await updateAdminOrderStatus({ db: store.db, orderId: order.orderId, status: 'CONFIRMED', actorUid: 'admin' });
+  await updateAdminOrderStatus({ db: store.db, orderId: order.orderId, status: 'DELIVERED', actorUid: 'admin' });
+  assert.equal(store.records.get('users/fixture-patron').loyaltyPoints, 0); assert.equal(count(store, 'pointsLedger'), 1);
+});
+
+test('Guest award is held once and credited only by verified private order claim, including claim retry', async () => {
+  const { store, order } = seeded(); const token = 'fixture-high-entropy-guest-token';
+  order.uid = null; order.claimTokenHash = crypto.createHash('sha256').update(token).digest('hex'); order.claimTokenExpiry = Date.now() + 60000;
+  store.records.set(`orders/${order.orderId}`, order);
+  await applyOrderUpdate({ db: store.db, command: update(order) });
+  assert.equal(count(store, 'pointsLedger'), 1); assert.equal(store.records.get(`pointsLedger/${order.orderId}`).credited, false);
+  await assert.rejects(() => claimGuestOrder({ db: store.db, uid: 'claimed-patron', orderId: order.orderId, claimToken: 'wrong' }), /Invalid/);
+  await claimGuestOrder({ db: store.db, uid: 'claimed-patron', orderId: order.orderId, claimToken: token });
+  await claimGuestOrder({ db: store.db, uid: 'claimed-patron', orderId: order.orderId, claimToken: token });
+  assert.equal(store.records.get('users/claimed-patron').loyaltyPoints, 26); assert.equal(count(store, 'pointsLedger'), 1);
+  assert.equal(store.records.get(`pointsLedger/${order.orderId}`).customerId, 'claimed-patron');
+});
+
+test('Simple update validation rejects price/identity injection, bad statuses and timestamps', () => {
+  for (const patch of [{ status: 'paid' }, { status: 'delivered' }, { total: 1 }, { uid: 'fake' }, { updatedAt: 'yesterday' },
+    { updatedAt: new Date(Date.now() + 600000).toISOString() }, { estimatedDelivery: '2026-99-99' }, { estimatedDelivery: '2026-02-30' }]) assert.throws(() => update(fixtureOrder(), patch), SheetStatusError);
+});
+
+test('Unknown Sheet/WhatsApp order IDs return ignored success without any persistence or notifications', async () => {
+  const store = new MemoryDatabase();
+  const result = await applyOrderUpdate({ db: store.db, command: update(fixtureOrder(), { orderId: 'WHATSAPP-ORDER-123' }) });
+  assert.equal(result.ok, true); assert.equal(result.ignored, true); assert.equal(store.records.size, 0);
+  const legacy = await applySheetStatusCommand({ db: store.db, command: command(fixtureOrder(), { orderId: 'WHATSAPP-ORDER-123' }) });
+  assert.equal(legacy.ignored, true); assert.equal(store.records.size, 0);
+});
+
+test('Identical status and tracking ignore different event IDs, timestamps, ETA and notes with zero writes', async () => {
+  const { store, order } = seeded(); order.trackingNumber = 'SAME-TRACKING'; store.records.set(`orders/${order.orderId}`, order);
+  const before = [...store.records.entries()];
+  for (const eventId of ['sheet:semantic-retry-0001', 'sheet:semantic-retry-0002']) {
+    const result = await applyOrderUpdate({ db: store.db, command: update(order, { status: 'PREPARING', trackingNumber: 'SAME-TRACKING',
+      eventId, notes: 'Changed notes are not a status/tracking change', estimatedDelivery: '2026-10-09' }) });
+    assert.equal(result.ignored, true); assert.equal(result.duplicate, true); assert.deepEqual([...store.records.entries()], before);
+  }
+});
+
+test('Non-website Firestore orders may change status but never receive a loyalty award', async () => {
+  const { store, order } = seeded(); (order as any).source = 'whatsapp'; store.records.set(`orders/${order.orderId}`, order);
+  await applyOrderUpdate({ db: store.db, command: update(order) });
+  assert.equal(store.records.get(`orders/${order.orderId}`).status, 'DELIVERED');
+  assert.equal(store.records.get(`orders/${order.orderId}`).earnedPoints, 0);
+  assert.equal(count(store, 'pointsLedger'), 0); assert.equal(store.records.has('users/fixture-patron'), false);
+});
+
+test('Tracking-only edits of an already DELIVERED order cannot initiate a new loyalty award', async () => {
+  const { store, order } = seeded(); order.status = 'DELIVERED'; order.pointsAwarded = false;
+  store.records.set(`orders/${order.orderId}`, order);
+  await applyOrderUpdate({ db: store.db, command: update(order, { trackingNumber: 'CORRECTED-TRACKING' }) });
+  assert.equal(count(store, 'pointsLedger'), 0); assert.equal(store.records.has('users/fixture-patron'), false);
+  assert.equal(store.records.get(`orders/${order.orderId}`).pointsAwarded, false);
 });

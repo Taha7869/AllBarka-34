@@ -8,10 +8,11 @@ import { STORE_CONFIG } from '../config/store';
 import { REWARDS } from '../data/rewards';
 import { CUSTOM_HAMPER_PRODUCT_ID, resolveHamper } from './hamperCatalog';
 import { PRODUCTS } from '../data/products';
+import { storedOrderStatus, type StoredOrderStatus } from './orderStatuses';
 
 export const SCHEMA_VERSION = '2.0.0';
 
-export type OrderStatus = 'NEW' | 'QUOTE_REQUESTED' | 'ORDER_RECEIVED' | 'CONFIRMED' | 'PREPARING' | 'DISPATCHED' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'CANCELLED';
+export type OrderStatus = StoredOrderStatus;
 export type PaymentStatus = 'UNPAID' | 'PAID' | 'REFUNDED' | 'NOT_REQUIRED';
 export type PaymentMethod = 'cod' | 'bank' | 'quote';
 
@@ -72,6 +73,11 @@ export interface CanonicalOrder extends Partial<AppliedPromo> {
   rewardDiscount?: number;
   earnedPoints: number;
   pointsAwarded?: boolean;
+  trackingNumber?: string;
+  estimatedDelivery?: string | null;
+  integrationUpdatedAt?: string;
+  integrationUpdateHash?: string;
+  integrationNotes?: string;
   adminNotes?: string[];
   adminNoteEntries?: AdminNoteEntry[];
 }
@@ -98,12 +104,18 @@ export interface SanitizedCustomerOrder extends Partial<AppliedPromo> {
   pointsAwarded?: boolean;
   claimedAt?: number | null;
   whatsappMessage?: string;
+  updatedAt?: string;
+  trackingNumber?: string;
+  estimatedDelivery?: string | null;
+  loyaltyPointsEarned?: number;
+  loyaltyPointsTotal?: number;
 }
 
 export interface OutboxOrderEvent {
   eventId: string;
   orderId: string;
   eventType: 'ORDER_CREATED' | 'ORDER_STATUS_CHANGED' | 'ORDER_PAID' | 'LOYALTY_AWARDED' | 'LOYALTY_REVERSED';
+  type?: 'order_created' | 'order_status_updated';
   schemaVersion: string;
   occurredAt: string;
   occurredAtMs: number;
@@ -149,7 +161,7 @@ export function sanitizeOrderForCustomer(order: CanonicalOrder, whatsappMessage?
     orderId: order.orderId,
     createdAt: order.createdAt,
     createdAtMs: order.createdAtMs,
-    status: order.status,
+    status: storedOrderStatus(order.status) || order.status,
     orderType: order.orderType || 'ORDER',
     promoCode: order.promoCode ?? order.couponCode ?? null,
     promoType: order.promoType ?? null,
@@ -183,6 +195,10 @@ export function sanitizeOrderForCustomer(order: CanonicalOrder, whatsappMessage?
     rewardDiscount: order.rewardDiscount || 0,
     earnedPoints: order.earnedPoints || 0,
     pointsAwarded: Boolean(order.pointsAwarded),
+    updatedAt: order.updatedAt,
+    trackingNumber: order.trackingNumber || '',
+    estimatedDelivery: order.estimatedDelivery ?? null,
+    loyaltyPointsEarned: order.pointsAwarded ? order.earnedPoints || 0 : 0,
     claimedAt: order.claimedAt || null,
     whatsappMessage,
   });

@@ -24,6 +24,10 @@ import { STORE_CONFIG } from '../config/store';
 import { validateShippingRewardDestination } from './shippingPolicy';
 import { getN8nOrderDispatchConfig } from '../services/n8nOrderNotification';
 import { getN8nStatusDispatchConfig } from '../services/n8nStatusNotification';
+import { calculateLoyaltyPoints } from './loyaltyPoints';
+import { storedOrderStatus } from './orderStatuses';
+import { validateOrderUpdate, orderUpdateHash, canonicalIntegrationStatus, integrationStatus,
+  type OrderUpdateCommand, type OrderUpdateResult } from './orderUpdateCommand';
 import { buildWhatsAppPhoneIndex, buildWhatsAppStatusNotification } from './whatsappCommerce';
 import { CANONICAL_ORDER_STATUSES, SheetStatusError, validateSheetStatusCommand, sheetStatusPayloadHash, sheetStatusRequestKey,
   type SheetStatusCommand, type SheetStatusResult } from './sheetStatusCommand';
@@ -234,7 +238,7 @@ export async function createDurableOrder({
       createdAtMs: nowMs,
       updatedAt: nowIso,
       updatedAtMs: nowMs,
-      status: isQuoteRequest ? 'QUOTE_REQUESTED' : 'NEW',
+      status: isQuoteRequest ? 'QUOTE_REQUESTED' : 'ORDER_RECEIVED',
       orderType: isQuoteRequest ? 'QUOTE_REQUEST' : 'ORDER',
       paymentStatus: isQuoteRequest ? 'NOT_REQUIRED' : 'UNPAID',
       paymentMethod: customer.paymentMethod as any,
@@ -271,7 +275,7 @@ export async function createDurableOrder({
       isQuoteRequest,
       rewardId: rewardId || null,
       rewardDiscount: 0,
-      earnedPoints: validated.earnedPoints,
+      earnedPoints: calculateLoyaltyPoints(validated.summary.total, payload.isWholesale === true, validated.summary.isQuoteRequest === true),
       pointsAwarded: false,
     };
 
@@ -338,6 +342,7 @@ export async function createDurableOrder({
       eventId: `${orderId}_ORDER_CREATED_${nowMs}`,
       orderId,
       eventType: 'ORDER_CREATED',
+      type: 'order_created',
       schemaVersion: SCHEMA_VERSION,
       occurredAt: nowIso,
       occurredAtMs: nowMs,
@@ -350,12 +355,18 @@ export async function createDurableOrder({
         status: canonicalOrder.status,
         uid,
         customerName: customer.name,
+        customerPhone: customer.phone,
+        items: validated.items.map(item => ({ name: item.name, qty: item.quantity, price: item.price })),
+        paymentMethod: canonicalOrder.paymentMethod,
+        createdAt: nowIso,
         phone: customer.phone,
         total: validated.summary.total,
         itemCount: validated.items.length,
       }
     };
     transaction.set(eventRef, sanitizeFirestoreData(outboxEvent));
+    const confirmation = buildWhatsAppStatusNotification(canonicalOrder, outboxEvent.eventId, nowMs);
+    transaction.set(db.collection('whatsappNotificationJobs').doc(confirmation.id), sanitizeFirestoreData(confirmation.data));
 
     return {
       isDuplicate: false,
@@ -424,6 +435,19 @@ export async function claimGuestOrder({
       throw new ValidationError('This guest claim token has expired. Please contact concierge.', 'CLAIM_TOKEN_EXPIRED');
     }
 
+    // A delivered guest award is held against this order until its private claim token links an account.
+    const ledgerRef = db.collection('pointsLedger').doc(orderId);
+    const ledgerSnap = await transaction.get(ledgerRef);
+    const ledger = ledgerSnap.exists ? ledgerSnap.data() : null;
+    const userRef = db.collection('users').doc(uid);
+    const userSnap = ledger && !ledger.credited && !ledger.reversed && order.status === 'DELIVERED' ? await transaction.get(userRef) : null;
+    if (userSnap && order.source === 'website') {
+      transaction.set(userRef, sanitizeFirestoreData({ loyaltyPoints: (Number(userSnap.data()?.loyaltyPoints) || 0) + ledger!.points }), { merge: true });
+      transaction.set(ledgerRef, sanitizeFirestoreData({ customerId: uid, credited: true, creditedAt: new Date(now).toISOString() }), { merge: true });
+      transaction.set(userRef.collection('loyaltyTransactions').doc(`ORDER_${orderId}`), sanitizeFirestoreData({
+        type: 'EARNED', points: ledger!.points, orderId, description: `Earned from Order #${orderId}`, createdAt: now,
+      }));
+    }
     // Atomically transfer ownership
     transaction.update(orderRef, sanitizeFirestoreData({
       uid,
@@ -463,6 +487,7 @@ interface CanonicalStatusMutation {
   actorUid: string;
   actorEmail?: string;
   sheetCommand?: SheetStatusCommand;
+  orderUpdate?: OrderUpdateCommand;
 }
 
 async function mutateCanonicalOrderStatus({
@@ -474,8 +499,9 @@ async function mutateCanonicalOrderStatus({
   expectedUpdatedAt,
   actorUid,
   actorEmail,
-  sheetCommand
-}: CanonicalStatusMutation): Promise<{ order: CanonicalOrder; sheetResult?: SheetStatusResult }> {
+  sheetCommand,
+  orderUpdate
+}: CanonicalStatusMutation): Promise<{ order: CanonicalOrder | null; sheetResult?: SheetStatusResult; updateResult?: OrderUpdateResult }> {
   if (!db) {
     throw new PersistenceUnavailableError();
   }
@@ -485,26 +511,52 @@ async function mutateCanonicalOrderStatus({
   }
 
   const orderRef = db.collection('orders').doc(orderId);
-  const requestRef = sheetCommand ? db.collection('integrationStatusRequests').doc(sheetStatusRequestKey(sheetCommand.eventId)) : null;
-  const commandHash = sheetCommand ? sheetStatusPayloadHash(sheetCommand) : null;
+  const requestEventId = sheetCommand?.eventId || orderUpdate?.eventId;
+  const requestRef = requestEventId ? db.collection('integrationStatusRequests').doc(sheetStatusRequestKey(requestEventId)) : null;
+  const commandHash = sheetCommand ? sheetStatusPayloadHash(sheetCommand) : orderUpdate ? orderUpdateHash(orderUpdate) : null;
   const statusConfig = getN8nStatusDispatchConfig();
 
   return await db.runTransaction(async (transaction) => {
     // READ PHASE
     const requestSnap = requestRef ? await transaction.get(requestRef) : null;
     const snap = await transaction.get(orderRef);
-    if (requestSnap?.exists && requestSnap.data()?.payloadHash !== commandHash) {
-      const current = snap.exists ? snap.data() as CanonicalOrder : null;
-      throw new SheetStatusError('INTEGRATION_EVENT_CONFLICT', 409,
-        current ? { status: current.status, updatedAt: current.updatedAt || current.createdAt } : undefined);
-    }
     if (!snap.exists) {
-      if (sheetCommand) throw new SheetStatusError('ORDER_NOT_FOUND', 404);
+      if (orderUpdate) return { order: null, updateResult: { ok: true, ignored: true, duplicate: true, eventId: orderUpdate.eventId,
+        orderId, status: orderUpdate.status, updatedAt: orderUpdate.updatedAt, statusRevision: null } };
+      if (sheetCommand) return { order: null, sheetResult: { ok: true, ignored: true, duplicate: true, eventId: sheetCommand.eventId,
+        orderId, status: sheetCommand.status, updatedAt: sheetCommand.expectedUpdatedAt } };
       throw new ValidationError('Order not found.', 'ORDER_NOT_FOUND');
     }
 
-    const order = snap.data() as CanonicalOrder;
+    const rawOrder = snap.data() as CanonicalOrder;
+    const order = { ...rawOrder, status: storedOrderStatus(rawOrder.status) || rawOrder.status };
     const canonicalRevision = order.updatedAt || order.createdAt;
+    const makeUpdateResult = (duplicate = false, ignored = false): OrderUpdateResult => ({ ok: true, eventId: orderUpdate!.eventId,
+      orderId, status: integrationStatus(order.status) as OrderUpdateResult['status'], updatedAt: orderUpdate!.updatedAt,
+      statusRevision: canonicalRevision, duplicate, ...(ignored ? { ignored: true } : {}) });
+    // Semantic idempotency wins even if a new event ID/time or changed non-status notes are supplied.
+    if (orderUpdate && order.status === status && (orderUpdate.trackingNumber ?? order.trackingNumber ?? '') === (order.trackingNumber || '')) {
+      return { order, updateResult: makeUpdateResult(true, true) };
+    }
+    if (sheetCommand && order.status === status) return { order, sheetResult: { ok: true, ignored: true, duplicate: true,
+      eventId: sheetCommand.eventId, orderId, status, updatedAt: canonicalRevision } };
+    if (requestSnap?.exists && requestSnap.data()?.payloadHash !== commandHash) {
+      throw new SheetStatusError('INTEGRATION_EVENT_CONFLICT', 409, { status: order.status, updatedAt: canonicalRevision });
+    }
+    if (orderUpdate && requestSnap?.exists) {
+      const stored = requestSnap.data();
+      if (stored?.source !== 'google_sheet' || stored.eventId !== orderUpdate.eventId || stored.result?.ok !== true
+        || stored.result.orderId !== orderId || stored.result.eventId !== orderUpdate.eventId) throw new SheetStatusError('INVALID_STORED_STATUS_RESULT', 503);
+      return { order, updateResult: { ...stored.result, duplicate: true } };
+    }
+    if (orderUpdate && order.integrationUpdatedAt && Date.parse(orderUpdate.updatedAt) <= Date.parse(order.integrationUpdatedAt)) {
+      if (orderUpdate.updatedAt === order.integrationUpdatedAt && order.integrationUpdateHash !== commandHash) throw new SheetStatusError('INTEGRATION_REVISION_CONFLICT', 409);
+      return { order, updateResult: makeUpdateResult(true, true) };
+    }
+    // A Sheets revision older than any Admin/checkout revision must never overwrite it.
+    if (orderUpdate && Date.parse(orderUpdate.updatedAt) < Date.parse(canonicalRevision)) {
+      return { order, updateResult: makeUpdateResult(true, true) };
+    }
     if (order.orderType === 'QUOTE_REQUEST' && !['QUOTE_REQUESTED', 'CANCELLED'].includes(status)) {
       throw new ValidationError('A quote request needs a separately priced order before payment or fulfilment.', 'QUOTE_REQUIRES_PRICING');
     }
@@ -534,21 +586,33 @@ async function mutateCanonicalOrderStatus({
       throw new ValidationError('This order was modified by another session. Please refresh.', 'ORDER_CONFLICT');
     }
 
-    if (order.status === status) {
-      const sheetResult: SheetStatusResult | undefined = sheetCommand ? { ok: true, eventId: sheetCommand.eventId,
-        orderId, status: order.status, updatedAt: canonicalRevision, duplicate: false } : undefined;
-      if (requestRef) transaction.set(requestRef, sanitizeFirestoreData({ source: 'google_sheet', eventId: sheetCommand!.eventId,
-        payloadHash: commandHash, result: sheetResult, appliedAtMs: Date.now() }));
-      return { order, ...(sheetResult ? { sheetResult } : {}) }; // No repeated effects for a no-op.
+    const fulfillmentPatch = orderUpdate ? {
+      ...(orderUpdate.trackingNumber !== undefined ? { trackingNumber: orderUpdate.trackingNumber } : {}),
+      ...(orderUpdate.estimatedDelivery !== undefined ? { estimatedDelivery: orderUpdate.estimatedDelivery } : {}),
+      ...(orderUpdate.notes !== undefined ? { integrationNotes: orderUpdate.notes } : {}),
+    } : {};
+    const fulfillmentChanged = Object.entries(fulfillmentPatch).some(([key, value]) => (order as any)[key] !== value);
+    if (orderUpdate && ['DELIVERED', 'CANCELLED'].includes(order.status) && status !== order.status) throw new SheetStatusError('TERMINAL_STATUS_CONFLICT', 409);
+    if (order.status === status && !fulfillmentChanged) {
+      // Sheet commands were already ignored above; unchanged Admin edits are also read-only.
+      return { order };
     }
 
     // Read user document BEFORE any writes if loyalty points will be modified
     let userSnap: any = null;
     let userRef: any = null;
-    if (order.uid && (order.earnedPoints || 0) > 0) {
+    if (order.uid && ['DELIVERED', 'CANCELLED'].includes(status)) {
       userRef = db.collection('users').doc(order.uid);
       userSnap = await transaction.get(userRef);
     }
+    const ledgerRef = db.collection('pointsLedger').doc(orderId);
+    const ledgerSnap = ['DELIVERED', 'CANCELLED'].includes(status) ? await transaction.get(ledgerRef) : null;
+    const legacyRef = order.uid ? db.collection('users').doc(order.uid).collection('loyaltyTransactions').doc(`ORDER_${orderId}`) : null;
+    const legacySnap = legacyRef && ['DELIVERED', 'CANCELLED'].includes(status) ? await transaction.get(legacyRef) : null;
+    const ledger = ledgerSnap?.exists ? ledgerSnap.data() : null;
+    const previouslyAwarded = Boolean(ledger || legacySnap?.exists || order.pointsAwarded);
+    const earnedPoints = previouslyAwarded ? (ledger?.points ?? legacySnap?.data()?.points ?? order.earnedPoints)
+      : calculateLoyaltyPoints(order.totals.total, order.isWholesale === true || order.source !== 'website', order.orderType === 'QUOTE_REQUEST');
 
     // WRITE PHASE
     // Every status mutation advances the same revision used by notes/payment, even within one millisecond.
@@ -565,19 +629,22 @@ async function mutateCanonicalOrderStatus({
       reason: reason || 'Admin status adjustment',
       actorUid,
       actorEmail: actorEmail || 'admin',
-      source: sheetCommand ? 'google_sheet' : 'admin',
-      ...(sheetCommand ? { requestEventId: sheetCommand.eventId } : {}),
+      source: sheetCommand || orderUpdate ? 'google_sheet' : 'admin',
+      ...(requestEventId ? { requestEventId } : {}),
       timestamp: now,
       timestampIso: nowIso,
     };
 
     // Loyalty Ledger Updates (Award points ONLY on DELIVERED, exactly once)
     let pointsAwardedNew = order.pointsAwarded || false;
-    if (status === 'DELIVERED' && !order.pointsAwarded && order.uid && (order.earnedPoints || 0) > 0) {
+    if (status === 'DELIVERED' && oldStatus !== 'DELIVERED' && order.source === 'website' && !previouslyAwarded && earnedPoints > 0) {
+      transaction.set(ledgerRef, sanitizeFirestoreData({ customerId: order.uid || `guest:${orderId}`, orderId,
+        points: earnedPoints, type: 'EARNED', timestamp: nowIso, credited: Boolean(order.uid) }));
       // Award loyalty points exactly once
+      if (order.uid) {
       const loyaltyRef = db.collection('users').doc(order.uid).collection('loyaltyTransactions').doc(`ORDER_${orderId}`);
       transaction.set(loyaltyRef, sanitizeFirestoreData({
-        points: order.earnedPoints,
+        points: earnedPoints,
         type: 'EARNED',
         orderId,
         description: `Earned from Order #${orderId}`,
@@ -585,13 +652,17 @@ async function mutateCanonicalOrderStatus({
       }));
 
       const currentPts = userSnap && userSnap.exists ? (userSnap.data()?.loyaltyPoints || 0) : 0;
-      transaction.set(userRef, sanitizeFirestoreData({ loyaltyPoints: currentPts + order.earnedPoints }), { merge: true });
+      transaction.set(userRef, sanitizeFirestoreData({ loyaltyPoints: currentPts + earnedPoints }), { merge: true });
+      }
       pointsAwardedNew = true;
-    } else if (status === 'CANCELLED' && order.pointsAwarded && order.uid && (order.earnedPoints || 0) > 0) {
+    } else if (status === 'CANCELLED' && order.pointsAwarded && earnedPoints > 0 && !ledger?.reversed) {
+      transaction.set(ledgerRef, sanitizeFirestoreData({ customerId: order.uid || `guest:${orderId}`, orderId,
+        points: earnedPoints, type: 'EARNED', timestamp: ledger?.timestamp || nowIso, credited: Boolean(order.uid), reversed: true }), { merge: true });
       // Reverse loyalty points if order was previously delivered and now cancelled
+      if (order.uid) {
       const reverseRef = db.collection('users').doc(order.uid).collection('loyaltyTransactions').doc(`REV_${orderId}`);
       transaction.set(reverseRef, sanitizeFirestoreData({
-        points: -order.earnedPoints,
+        points: -earnedPoints,
         type: 'REVERSED',
         orderId,
         description: `Points reversed due to Order #${orderId} cancellation`,
@@ -599,19 +670,25 @@ async function mutateCanonicalOrderStatus({
       }));
 
       const currentPts = userSnap && userSnap.exists ? (userSnap.data()?.loyaltyPoints || 0) : 0;
-      transaction.set(userRef, sanitizeFirestoreData({ loyaltyPoints: Math.max(0, currentPts - order.earnedPoints) }), { merge: true });
+      transaction.set(userRef, sanitizeFirestoreData({ loyaltyPoints: Math.max(0, currentPts - earnedPoints) }), { merge: true });
+      }
       pointsAwardedNew = false;
+    } else if (status === 'DELIVERED' && order.source === 'website' && previouslyAwarded && !ledgerSnap?.exists) {
+      // Migrate existing awards without crediting the account a second time.
+      transaction.set(ledgerRef, sanitizeFirestoreData({ customerId: order.uid || `guest:${orderId}`, orderId,
+        points: earnedPoints, type: 'EARNED', timestamp: nowIso, credited: Boolean(order.uid) }));
     }
 
-    const updatedOrder: CanonicalOrder = { ...order, status, pointsAwarded: pointsAwardedNew,
+    const updatedOrder: CanonicalOrder = { ...order, ...fulfillmentPatch, status, earnedPoints, pointsAwarded: pointsAwardedNew,
       updatedAt: nowIso, updatedAtMs: now };
     const eventId = `${orderId}_STATUS_${status}_${now}`;
-    // Status events have a separate receiver. The immutable snapshot cannot race a newer order revision.
+    // Both receiver configurations use this immutable snapshot, never a later canonical status.
     const eventRef = db.collection('orderEvents').doc(eventId);
     transaction.set(eventRef, sanitizeFirestoreData({
       eventId,
       orderId,
       eventType: 'ORDER_STATUS_CHANGED',
+      type: 'order_status_updated',
       schemaVersion: SCHEMA_VERSION,
       occurredAt: nowIso,
       occurredAtMs: now,
@@ -619,7 +696,10 @@ async function mutateCanonicalOrderStatus({
       attempts: 0,
       ...(statusConfig.enabled ? { nextAttemptAtMs: now } : { disabledReason: statusConfig.reason || 'STATUS_WEBHOOK_DISABLED' }),
       payload: { oldStatus, newStatus: status, actorUid, reason: reason || 'Admin status adjustment',
-        order: { orderId, status, updatedAt: nowIso }, statusRevision: nowIso },
+        order: { orderId, status, updatedAt: nowIso }, statusRevision: nowIso,
+        notification: { orderId, source: 'website', status: integrationStatus(status), customerName: order.customer.name,
+          customerPhone: order.customer.phone, trackingNumber: updatedOrder.trackingNumber || '', estimatedDelivery: updatedOrder.estimatedDelivery ?? null,
+          loyaltyPointsEarned: pointsAwardedNew ? earnedPoints : 0, updatedAt: nowIso } },
     }));
 
     const notification = buildWhatsAppStatusNotification(updatedOrder, eventId, now);
@@ -629,21 +709,33 @@ async function mutateCanonicalOrderStatus({
     transaction.update(orderRef, sanitizeFirestoreData({
       status,
       pointsAwarded: pointsAwardedNew,
+      earnedPoints,
+      ...fulfillmentPatch,
+      ...(orderUpdate ? { integrationUpdatedAt: orderUpdate.updatedAt, integrationUpdateHash: commandHash } : {}),
       updatedAt: nowIso,
       updatedAtMs: now,
     }));
 
     const sheetResult: SheetStatusResult | undefined = sheetCommand ? { ok: true, eventId: sheetCommand.eventId,
       orderId, status, updatedAt: nowIso, duplicate: false } : undefined;
-    if (requestRef) transaction.set(requestRef, sanitizeFirestoreData({ source: 'google_sheet', eventId: sheetCommand!.eventId,
-      payloadHash: commandHash, result: sheetResult, appliedAtMs: now }));
-    return { order: updatedOrder, ...(sheetResult ? { sheetResult } : {}) };
+    const updateResult: OrderUpdateResult | undefined = orderUpdate ? { ...makeUpdateResult(), status: orderUpdate.status, statusRevision: nowIso } : undefined;
+    if (requestRef) transaction.set(requestRef, sanitizeFirestoreData({ source: 'google_sheet', eventId: requestEventId,
+      payloadHash: commandHash, result: updateResult || sheetResult, appliedAtMs: now }));
+    return { order: updatedOrder, ...(sheetResult ? { sheetResult } : {}), ...(updateResult ? { updateResult } : {}) };
   });
 }
 
 /** Both Admin and Sheet commands use the same canonical status, audit, loyalty and notification transaction. */
-export async function updateAdminOrderStatus(input: Omit<CanonicalStatusMutation, 'sheetCommand'>): Promise<CanonicalOrder> {
-  return (await mutateCanonicalOrderStatus(input)).order;
+export async function updateAdminOrderStatus(input: Omit<CanonicalStatusMutation, 'sheetCommand' | 'orderUpdate'>): Promise<CanonicalOrder> {
+  return (await mutateCanonicalOrderStatus(input)).order!;
+}
+
+export async function applyOrderUpdate({ db, command }: { db: Firestore | null; command: OrderUpdateCommand }): Promise<OrderUpdateResult> {
+  if (!db) throw new SheetStatusError('PERSISTENCE_UNAVAILABLE', 503);
+  const verified = validateOrderUpdate(command);
+  const result = await mutateCanonicalOrderStatus({ db, orderId: verified.orderId, status: canonicalIntegrationStatus(verified.status),
+    reason: verified.notes || 'Sheets fulfillment update', actorUid: 'n8n_sheet', actorEmail: 'n8n_sheet', orderUpdate: verified });
+  return result.updateResult!;
 }
 
 export async function applySheetStatusCommand({ db, command }: { db: Firestore | null; command: SheetStatusCommand }): Promise<SheetStatusResult> {

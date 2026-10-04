@@ -19,7 +19,7 @@ const order = (overrides: Partial<CanonicalOrder> = {}): CanonicalOrder => ({
   schemaVersion: '2.0.0', source: 'website', orderId: 'AB-TEST-00001',
   createdAt: new Date(NOW).toISOString(), createdAtMs: NOW,
   updatedAt: new Date(NOW).toISOString(), updatedAtMs: NOW,
-  status: 'NEW', paymentStatus: 'UNPAID', paymentMethod: 'bank', uid: 'customer-123',
+  status: 'ORDER_RECEIVED', paymentStatus: 'UNPAID', paymentMethod: 'bank', uid: 'customer-123',
   customer: { name: 'Taha Patron', phone: '03160666083', address: 'Gulberg III', city: 'Lahore' },
   gifting: { giftWrapping: false, giftWrapFee: 0 },
   items: [{ id: 'pista-500g', productId: 'pista', name: 'Iranian Pistachios', selectedWeight: '500g', quantity: 1, price: 2500, earnedPoints: 25 }],
@@ -102,8 +102,8 @@ test('filters and mutation validators reject malformed arrays, paths and missing
   }
   assert.throws(() => validateAdminOrderId('../private/token'), errorCode('INVALID_ORDER_ID'));
   assert.throws(() => validateAdminStatusInput({ status: 'DELIVERED', reason: 'Delivered' }), errorCode('INVALID_EXPECTED_STATUS'));
-  assert.throws(() => validateAdminStatusInput({ status: 'DELIVERED', expectedStatus: 'NEW', reason: 'x' }), errorCode('INVALID_REASON'));
-  assert.throws(() => validateAdminStatusInput({ status: 'DELIVERED', expectedStatus: 'NEW', reason: 'Courier confirmed' }), errorCode('INVALID_REVISION'));
+  assert.throws(() => validateAdminStatusInput({ status: 'DELIVERED', expectedStatus: 'ORDER_RECEIVED', reason: 'x' }), errorCode('INVALID_REASON'));
+  assert.throws(() => validateAdminStatusInput({ status: 'DELIVERED', expectedStatus: 'ORDER_RECEIVED', reason: 'Courier confirmed' }), errorCode('INVALID_REVISION'));
 });
 
 test('filters combine state, method, search and Karachi calendar day correctly', () => {
@@ -131,16 +131,16 @@ test('matching metrics exclude cancelled amounts and distinguish unpaid bank ord
 });
 
 test('grouped queues match new/transit states and exclude cancelled bank payments while preserving other filters', () => {
-  const orders = ['NEW', 'ORDER_RECEIVED', 'CONFIRMED', 'PREPARING', 'DISPATCHED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'].map((status, index) =>
+  const orders = ['ORDER_RECEIVED', 'ORDER_RECEIVED', 'CONFIRMED', 'PREPARING', 'DISPATCHED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'].map((status, index) =>
     order({ orderId: `AB-QUEUE-${index}`, status: status as CanonicalOrder['status'] }));
   const matching = (query: Record<string, string>) => filterAdminOrders(orders, parseAdminOrderFilters(query), NOW);
-  assert.deepEqual(new Set(matching({ queue: 'new' }).map(item => item.status)), new Set(['NEW', 'ORDER_RECEIVED']));
+  assert.deepEqual(new Set(matching({ queue: 'new' }).map(item => item.status)), new Set(['ORDER_RECEIVED', 'ORDER_RECEIVED']));
   assert.deepEqual(matching({ queue: 'packing' }).map(item => item.status), ['PREPARING']);
   assert.deepEqual(new Set(matching({ queue: 'transit' }).map(item => item.status)), new Set(['DISPATCHED', 'OUT_FOR_DELIVERY']));
   assert.equal(matching({ queue: 'bank-pending' }).length, 7);
   assert.equal(matching({ queue: 'bank-pending' }).some(item => item.status === 'CANCELLED'), false);
   assert.equal(matching({ queue: 'transit', paymentStatus: 'PAID' }).length, 0);
-  assert.deepEqual(matching({ queue: 'new', status: 'ORDER_RECEIVED' }).map(item => item.status), ['ORDER_RECEIVED']);
+  assert.deepEqual(matching({ queue: 'new', status: 'ORDER_RECEIVED' }).map(item => item.status), ['ORDER_RECEIVED', 'ORDER_RECEIVED']);
   assert.equal(matching({ queue: 'bank-pending', paymentMethod: 'cod' }).length, 0);
   assert.equal(matching({ queue: 'bank-pending', search: 'QUEUE-3' }).length, 1);
 });
@@ -181,7 +181,7 @@ test('allowlisted admin order/detail responses preserve useful information but r
   assert.equal('authToken' in safe.customer, false);
   assert.deepEqual(safe.totals, original.totals);
   const db = new FakeFirestore([original]);
-  db.store.set('orderAudits/older', { orderId: original.orderId, timestamp: 1, previousStatus: 'NEW', newStatus: 'CONFIRMED', token: 'audit-secret' });
+  db.store.set('orderAudits/older', { orderId: original.orderId, timestamp: 1, previousStatus: 'ORDER_RECEIVED', newStatus: 'CONFIRMED', token: 'audit-secret' });
   db.store.set('orderAudits/newer', { orderId: original.orderId, timestamp: 2, action: 'NOTE_ADDED', note: 'Called customer' });
   const detail = await getAdminOrder(db.db, original.orderId);
   assert.deepEqual(detail.audits.map(item => item.id), ['newer', 'older']);
@@ -279,12 +279,12 @@ test('existing delivered/cancelled status path preserves once-only loyalty ledge
   const original = order();
   const db = new FakeFirestore([original]);
   db.store.set(`users/${original.uid}`, { loyaltyPoints: 10 });
-  const input = { db: db.db, orderId: original.orderId, status: 'DELIVERED' as const, expectedStatus: 'NEW' as const,
+  const input = { db: db.db, orderId: original.orderId, status: 'DELIVERED' as const, expectedStatus: 'ORDER_RECEIVED' as const,
     actorUid: 'admin-123', reason: 'Courier confirmed delivery' };
   await updateAdminOrderStatus(input);
-  assert.equal(db.store.get(`users/${original.uid}`).loyaltyPoints, 35);
+  assert.equal(db.store.get(`users/${original.uid}`).loyaltyPoints, 36);
   await updateAdminOrderStatus({ ...input, expectedStatus: 'DELIVERED' });
-  assert.equal(db.store.get(`users/${original.uid}`).loyaltyPoints, 35);
+  assert.equal(db.store.get(`users/${original.uid}`).loyaltyPoints, 36);
   await updateAdminOrderStatus({ ...input, status: 'CANCELLED', expectedStatus: 'DELIVERED', reason: 'Delivery reversed and order cancelled' });
   assert.equal(db.store.get(`users/${original.uid}`).loyaltyPoints, 10);
 });
@@ -293,12 +293,12 @@ test('status revision detects ABA changes even when expected status returns to i
   const original = order();
   const db = new FakeFirestore([original]);
   const input = { db: db.db, orderId: original.orderId, actorUid: 'admin-123', reason: 'Reviewed current order' };
-  const confirmed = await updateAdminOrderStatus({ ...input, status: 'CONFIRMED', expectedStatus: 'NEW', expectedUpdatedAt: original.updatedAt });
-  const restored = await updateAdminOrderStatus({ ...input, status: 'NEW', expectedStatus: 'CONFIRMED', expectedUpdatedAt: confirmed.updatedAt });
+  const confirmed = await updateAdminOrderStatus({ ...input, status: 'CONFIRMED', expectedStatus: 'ORDER_RECEIVED', expectedUpdatedAt: original.updatedAt });
+  const restored = await updateAdminOrderStatus({ ...input, status: 'ORDER_RECEIVED', expectedStatus: 'CONFIRMED', expectedUpdatedAt: confirmed.updatedAt });
   assert.notEqual(restored.updatedAt, original.updatedAt);
-  await assert.rejects(() => updateAdminOrderStatus({ ...input, status: 'DISPATCHED', expectedStatus: 'NEW', expectedUpdatedAt: original.updatedAt }),
+  await assert.rejects(() => updateAdminOrderStatus({ ...input, status: 'DISPATCHED', expectedStatus: 'ORDER_RECEIVED', expectedUpdatedAt: original.updatedAt }),
     (error: any) => error.code === 'ORDER_CONFLICT');
-  assert.equal(db.store.get(`orders/${original.orderId}`).status, 'NEW');
+  assert.equal(db.store.get(`orders/${original.orderId}`).status, 'ORDER_RECEIVED');
   assert.equal([...db.store.keys()].filter(key => key.startsWith('orderAudits/')).length, 2);
 });
 
@@ -309,7 +309,7 @@ test('notes, status and payment advance shared revisions within the same clock m
   Date.now = () => NOW;
   try {
     const withNote = await addAdminOrderNote({ ...actor(db), note: 'Address checked' });
-    const confirmed = await updateAdminOrderStatus({ db: db.db, orderId: original.orderId, status: 'CONFIRMED', expectedStatus: 'NEW',
+    const confirmed = await updateAdminOrderStatus({ db: db.db, orderId: original.orderId, status: 'CONFIRMED', expectedStatus: 'ORDER_RECEIVED',
       expectedUpdatedAt: withNote.updatedAt, reason: 'Order checked', actorUid: 'admin-123' });
     const paid = await updateAdminOrderPayment({ ...actor(db, confirmed), paymentStatus: 'PAID', expectedPaymentStatus: 'UNPAID', reason: 'Payment checked' });
     assert.deepEqual([withNote.updatedAtMs, confirmed.updatedAtMs, paid.updatedAtMs], [NOW + 1, NOW + 2, NOW + 3]);

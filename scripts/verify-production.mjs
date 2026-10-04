@@ -37,7 +37,7 @@ try {
   }
   assert.ok(ready, `Production server did not start. Process output:\n${logs}`);
   await check('private integration endpoints reject missing or forged credentials', async () => {
-    for (const path of ['/api/integrations/n8n/order-status', '/api/integrations/n8n/whatsapp/inbound',
+    for (const path of ['/api/integrations/n8n/order-update', '/api/integrations/n8n/order-status', '/api/integrations/n8n/whatsapp/inbound',
       '/api/integrations/n8n/whatsapp/receipt', '/api/integrations/n8n/whatsapp/notifications/claim',
       '/api/integrations/n8n/whatsapp/notifications/authorize', '/api/integrations/n8n/whatsapp/notifications/result']) {
       const response = await request(path, { method: 'POST', headers: {
@@ -50,7 +50,12 @@ try {
     }
   });
   await check('health and honest persistence readiness', async () => {
-    assert.equal((await (await request('/api/health')).json()).status, 'ok');
+    const health = await (await request('/api/health')).json();
+    assert.equal(health.status, 'ok');
+    assert.equal(health.outboxWorker.started, true);
+    assert.equal(health.outboxWorker.stopped, false);
+    assert.equal(health.outboxWorker.pollIntervalMs, 15000);
+    assert.ok(health.outboxWorker.lastTickAt);
     const status = await (await request('/api/commerce/readiness')).json();
     assert.equal(status.authActive, false);
     assert.equal(status.durablePersistenceReady, false);

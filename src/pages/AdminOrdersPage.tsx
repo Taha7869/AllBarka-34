@@ -17,7 +17,7 @@ import { getLocalized } from '../utils/localize';
 import { resolveHamper } from '../lib/hamperCatalog';
 import '../styles/admin.css';
 
-const STATUSES: OrderStatus[] = ['NEW', 'QUOTE_REQUESTED', 'ORDER_RECEIVED', 'CONFIRMED', 'PREPARING', 'DISPATCHED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'];
+const STATUSES: OrderStatus[] = ['ORDER_RECEIVED', 'CONFIRMED', 'PREPARING', 'DISPATCHED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED', 'QUOTE_REQUESTED'];
 const PAYMENTS: PaymentStatus[] = ['UNPAID', 'PAID', 'REFUNDED', 'NOT_REQUIRED'];
 export type AdminOrderSummary = CanonicalOrder;
 type Audit = { timestamp?: number; timestampIso?: string; actorEmail?: string; reason?: string; previousStatus?: string; newStatus?: string; previousPaymentStatus?: string; newPaymentStatus?: string; action?: string; note?: string };
@@ -283,7 +283,7 @@ export default function AdminOrdersPage() {
         {tab === 'overview' && <>
           <section className="admin-section admin-pipeline"><div className="admin-section-heading"><div><p className="admin-eyebrow" dir="auto">{t('admin.operations')}</p><h2 dir="auto">{t('admin.pipeline')}</h2></div><span className="admin-badge admin-badge-success"><ShieldCheck size={13} />{t('admin.security')}</span></div><div className="admin-pipeline-grid">{STATUSES.map((value, index) => <button type="button" key={value} onClick={() => changeFilters({ view: 'orders', status: value, queue: 'all' })} disabled={loading || !ledger}><span className="admin-stage-number">{String(index + 1).padStart(2, '0')}</span><strong>{loading || !metrics ? '—' : metrics.statusCounts[value] || 0}</strong><span dir="auto">{t(`admin.status.${value}`)}</span></button>)}</div></section>
           <section className="admin-queues"><div className="admin-section-heading"><div><h2 dir="auto">{t('admin.queueHint')}</h2><p dir="auto">{t('admin.filteredScope')}</p></div></div><div className="admin-queue-grid">{[
-            { label: 'new', count: (metrics?.statusCounts.NEW || 0) + (metrics?.statusCounts.ORDER_RECEIVED || 0), status: 'NEW', icon: ClipboardList },
+            { label: 'new', count: metrics?.statusCounts.ORDER_RECEIVED || 0, status: 'ORDER_RECEIVED', icon: ClipboardList },
             { label: 'packing', count: metrics?.statusCounts.PREPARING || 0, status: 'PREPARING', icon: Package },
             { label: 'transit', count: (metrics?.statusCounts.DISPATCHED || 0) + (metrics?.statusCounts.OUT_FOR_DELIVERY || 0), status: 'DISPATCHED', icon: Truck },
             { label: 'payments', count: metrics?.bankPendingCount || 0, status: 'ALL', icon: CreditCard },

@@ -69,6 +69,24 @@ async function withRouter(options: any, run: (request: (path: string, body?: any
   try { await run(request); } finally { await new Promise<void>(resolve => server.close(() => resolve())); }
 }
 
+test('New order-update endpoint authenticates, rejects injected fields, and returns 200 without duplicate effects', async () => {
+  const order = savedOrder(); order.uid = 'fixture-patron'; const store = memoryDatabase({ [`orders/${ORDER_ID}`]: order });
+  await withRouter({ getDb: () => store.db }, async request => {
+    const payload = { orderId: ORDER_ID, status: 'DELIVERED', trackingNumber: 'COURIER-123', estimatedDelivery: '2026-10-08',
+      notes: 'Team note', updatedAt: new Date(Date.now() + 1000).toISOString(), eventId: 'sheet:http-contract-0001' };
+    assert.equal((await request('/order-update', payload, { headers: { 'Content-Type': 'application/json' } })).status, 401);
+    assert.equal((await request('/order-update', { ...payload, loyaltyPoints: 9999 })).status, 400);
+    assert.equal((await request('/order-update', { ...payload, status: 'PAID' })).status, 400);
+    const unknown = await request('/order-update', { ...payload, orderId: 'WHATSAPP-OUTSIDE-FIRESTORE' });
+    assert.equal(unknown.status, 200); assert.equal((await unknown.json()).ignored, true);
+    const first = await request('/order-update', payload); assert.equal(first.status, 200); assert.equal((await first.json()).duplicate, false);
+    const before = [...store.records.entries()]; const duplicate = await request('/order-update', payload);
+    assert.equal(duplicate.status, 200); assert.equal((await duplicate.json()).duplicate, true); assert.deepEqual([...store.records.entries()], before);
+    assert.equal(store.records.get(`orders/${ORDER_ID}`).status, 'DELIVERED'); assert.equal(store.records.get('users/fixture-patron').loyaltyPoints, 12);
+    assert.ok(store.records.has(`pointsLedger/${ORDER_ID}`));
+  });
+});
+
 test('forged or missing integration auth cannot touch Firestore or rely on a customer/admin bearer', async () => {
   let reads = 0;
   await withRouter({ getDb: () => { reads++; throw new Error('must not reach database'); } }, async request => {
@@ -162,10 +180,10 @@ test('signed inbound first-message tracking is durable, replay-safe, and current
   });
 });
 
-test('real Sheet HTTP transaction maps legacy codes, deduplicates effects, rejects stale/rebound requests and assigns actor server-side', async () => {
+test('real Sheet HTTP transaction accepts exact statuses, ignores matching state, rejects rebound requests and assigns actor server-side', async () => {
   const saved = savedOrder(), store = memoryDatabase({ [`orders/${ORDER_ID}`]: saved });
   await withRouter({ getDb: () => store.db }, async request => {
-    const command = { source: 'google_sheet', eventId: 'sheet:request-00000001', orderId: ORDER_ID, status: 'DISP', expectedStatus: 'PACK', expectedUpdatedAt: saved.updatedAt, reason: 'Owner dispatch change' };
+    const command = { source: 'google_sheet', eventId: 'sheet:request-00000001', orderId: ORDER_ID, status: 'DISPATCHED', expectedStatus: 'PREPARING', expectedUpdatedAt: saved.updatedAt, reason: 'Owner dispatch change' };
     const response = await request('/order-status', command); assert.equal(response.status, 200);
     const applied = await response.json(); assert.equal(applied.status, 'DISPATCHED'); assert.equal(applied.duplicate, false);
     assert.equal(store.records.get(`orders/${ORDER_ID}`).status, 'DISPATCHED');
@@ -175,8 +193,8 @@ test('real Sheet HTTP transaction maps legacy codes, deduplicates effects, rejec
     assert.equal([...store.records.keys()].filter(key => key.startsWith('orderAudits/')).length, 1);
     assert.equal([...store.records.keys()].filter(key => key.startsWith('whatsappNotificationJobs/')).length, 1);
     const stale = await request('/order-status', { ...command, eventId: 'sheet:request-00000002' });
-    assert.equal(stale.status, 409); const staleBody = await stale.json(); assert.deepEqual(staleBody.canonical, { status: 'DISPATCHED', updatedAt: applied.updatedAt });
-    const rebound = await request('/order-status', { ...command, status: 'CONF' });
+    assert.equal(stale.status, 200); const staleBody = await stale.json(); assert.equal(staleBody.ignored, true); assert.equal(staleBody.updatedAt, applied.updatedAt);
+    const rebound = await request('/order-status', { ...command, status: 'CONFIRMED' });
     assert.equal(rebound.status, 409); assert.equal((await rebound.json()).code, 'INTEGRATION_EVENT_CONFLICT');
     assert.equal((await request('/order-status', { ...command, eventId: 'sheet:request-00000003', status: 'UNKNOWN' })).status, 400);
     assert.equal((await request('/order-status', { ...command, actorUid: 'owner-from-body' })).status, 400);

@@ -7,7 +7,8 @@ import { formatPKR } from '../lib/pricing';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { getCheckoutAuthToken } from '../lib/checkoutAttempt';
-import { recoverOrderSuccessReceipt, type ConfirmedSuccessReceipt } from '../lib/orderSuccessRecovery';
+import { recoverOrderSuccessReceipt, refreshOrderSuccessReceipt, type ConfirmedSuccessReceipt } from '../lib/orderSuccessRecovery';
+import { TRACKING_POLL_MS, TRACKING_STEPS, trackingProgress } from '../lib/orderPresentation';
 
 export type OrderSuccessSnapshot = ConfirmedSuccessReceipt;
 
@@ -20,6 +21,8 @@ export default function OrderSuccessPage() {
   const order = confirmedReceipt?.customerUid === (currentUser?.uid || null) ? confirmedReceipt : null;
   const [isLoaded, setIsLoaded] = useState(false);
   const [recoveryRevision, setRecoveryRevision] = useState(0);
+  const [trackingRevision, setTrackingRevision] = useState(0);
+  const [trackingState, setTrackingState] = useState<'checking' | 'live' | 'unavailable'>('checking');
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -39,6 +42,11 @@ export default function OrderSuccessPage() {
           candidate = { ...recovery, claimToken: sessionStorage.getItem('pendingClaimToken') };
         }
       }
+      const requestedId = new URLSearchParams(location.search).get('orderId');
+      if (requestedId) {
+        const cached = candidate as Record<string, unknown> | undefined;
+        candidate = cached?.orderId === requestedId ? cached : { orderId: requestedId };
+      }
     } catch { /* Existing recovery data remains untouched when storage is unavailable. */ }
     let active = true;
     const controller = new AbortController();
@@ -56,7 +64,34 @@ export default function OrderSuccessPage() {
       }
     }).catch(() => { if (active) setOrder(null); }).finally(() => { if (active) setIsLoaded(true); });
     return () => { active = false; controller.abort(); };
-  }, [location.state, language, currentUser, authLoading, recoveryRevision]);
+  }, [location.state, location.search, language, currentUser, authLoading, recoveryRevision]);
+
+  useEffect(() => {
+    if (!order?.orderId || authLoading) return;
+    let active = true;
+    let inFlight = false;
+    const controller = new AbortController();
+    const candidate = { orderId: order.orderId, claimToken: order.claimToken };
+    const refresh = async () => {
+      if (!active || inFlight || document.hidden) return;
+      inFlight = true;
+      try {
+        const receipt = await refreshOrderSuccessReceipt(candidate, { language, customerUid: currentUser?.uid || null, signal: controller.signal,
+          getAuthToken: () => getCheckoutAuthToken(currentUser, controller.signal) });
+        if (!active) return;
+        setTrackingState(receipt ? 'live' : 'unavailable');
+        if (receipt) setOrder(receipt);
+      } catch { if (active) setTrackingState('unavailable'); }
+      finally { inFlight = false; }
+    };
+    setTrackingState('checking');
+    void refresh();
+    const timer = window.setInterval(() => { void refresh(); }, TRACKING_POLL_MS);
+    const onVisible = () => { if (!document.hidden) void refresh(); };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onVisible);
+    return () => { active = false; controller.abort(); clearInterval(timer); document.removeEventListener('visibilitychange', onVisible); window.removeEventListener('focus', onVisible); };
+  }, [order?.orderId, order?.claimToken, currentUser, authLoading, language, trackingRevision]);
 
   if (!isLoaded) {
     return (
@@ -218,6 +253,27 @@ export default function OrderSuccessPage() {
         </div>
 
         {/* Action Buttons */}
+        {!isQuoteRequest && <section aria-labelledby="order-tracking-title" className="mb-6 rounded-2xl border border-[var(--color-gold,#C7982F)]/25 p-5" dir={isRtl ? 'rtl' : 'ltr'}>
+          <h2 id="order-tracking-title" className="font-serif text-xl text-[var(--color-ink)] mb-4">{t('tracking.title')}</h2>
+          {order.status === 'CANCELLED' ? <p role="status"><span dir="ltr">CANCELLED</span> — {t('tracking.cancelled')}</p> : <ol aria-label={t('tracking.title')} className="grid grid-cols-3 sm:grid-cols-6 gap-x-2 gap-y-4 mb-5">
+            {TRACKING_STEPS.map((step, index) => {
+              const progress = trackingProgress(order.status || '');
+              return <li key={step} aria-current={progress === index ? 'step' : undefined} className="text-center min-w-0">
+                <span aria-hidden="true" className={`mx-auto mb-2 flex size-8 items-center justify-center rounded-full border text-xs ${index <= progress ? 'bg-[var(--color-gold)] border-[var(--color-gold)] text-[#042821]' : 'border-[var(--color-gold)]/25 text-[var(--color-ink-muted)]'}`}>{index < progress ? '✓' : index + 1}</span>
+                <span className="block text-[10px] sm:text-xs [overflow-wrap:anywhere] text-[var(--color-ink)]">{t(`tracking.${step}`)}</span>
+              </li>;
+            })}
+          </ol>}
+          <dl className="space-y-2 text-sm text-[var(--color-ink)]">
+            {order.trackingNumber && <div><dt className="text-xs text-[var(--color-ink-muted)]">{t('tracking.number')}</dt><dd dir="ltr" className="font-mono break-all">{order.trackingNumber}</dd></div>}
+            {order.estimatedDelivery && <div><dt className="text-xs text-[var(--color-ink-muted)]">{t('tracking.eta')}</dt><dd>{new Date(order.estimatedDelivery.length === 10 ? `${order.estimatedDelivery}T12:00:00` : order.estimatedDelivery).toLocaleDateString(language === 'ur' ? 'ur-PK' : language === 'ar' ? 'ar' : 'en-PK', { day: 'numeric', month: 'long', year: 'numeric' })}</dd></div>}
+            <div className="flex flex-wrap justify-between gap-2"><dt>{t('tracking.earned')}</dt><dd className="font-bold">{order.loyaltyPointsEarned || 0}</dd></div>
+            {currentUser && <div className="flex flex-wrap justify-between gap-2"><dt>{t('tracking.balance')}</dt><dd className="font-bold">{order.loyaltyPointsTotal || 0}</dd></div>}
+          </dl>
+          {!currentUser && (order.loyaltyPointsEarned || 0) > 0 && <p className="text-xs mt-3 text-[var(--color-ink-muted)]">{t('tracking.guest')}</p>}
+          <p role="status" className="mt-4 text-xs leading-relaxed text-[var(--color-ink-muted)]">{t(`tracking.${trackingState}`)}</p>
+          <button type="button" onClick={() => setTrackingRevision(value => value + 1)} className="focus-ring min-h-11 mt-2 text-xs font-bold text-[var(--color-gold)]">{t('tracking.refresh')}</button>
+        </section>}
         <div className="flex flex-col sm:flex-row gap-3">
           <a
             href={whatsappUrl}
