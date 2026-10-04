@@ -1,0 +1,83 @@
+{
+  "category": "bundles",
+  "checks": [
+    {
+      "id": "bundle-daily-grind",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/bundle-daily-grind.svg"
+    },
+    {
+      "id": "bundle-brain-fuel",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/bundle-brain-fuel.svg"
+    },
+    {
+      "id": "bundle-winter-warrior",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/bundle-winter-warrior.svg"
+    },
+    {
+      "id": "bundle-immunity-shield",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/bundle-immunity-shield.svg"
+    },
+    {
+      "id": "bundle-sunrise-seeds",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/bundle-sunrise-seeds.svg"
+    },
+    {
+      "id": "bundle-royal-feast",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/bundle-royal-feast.svg"
+    },
+    {
+      "id": "bundle-silver-hamper",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/bundle-silver-hamper.svg"
+    },
+    {
+      "id": "bundle-gold-hamper",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/bundle-gold-hamper.svg"
+    },
+    {
+      "id": "bundle-platinum-hamper",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/bundle-platinum-hamper.svg"
+    },
+    {
+      "id": "bundle-ramadan-ready",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/bundle-ramadan-ready.svg"
+    },
+    {
+      "id": "bundle-mystery-box",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/bundle-mystery-box.svg"
+    },
+    {
+      "id": "bundle-tasting-flight",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/bundle-tasting-flight.svg"
+    },
+    {
+      "id": "corporate-gifting",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/corporate-gifting.svg"
+    }
+  ]
+}

@@ -7,6 +7,7 @@ import { PRODUCTS } from '../src/data/products.ts';
 const sequence = ['herbs-spices', 'nuts', 'snacks-seeds', 'oils', 'bundles'];
 const category = process.argv[2];
 if (!sequence.includes(category)) throw new Error(`Choose one category: ${sequence.join(', ')}`);
+const refreshGenerated = process.argv.includes('--refresh-generated');
 const chrome = process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const fonts = {
   ur: readFileSync('public/fonts/NotoNastaliqUrdu.ttf').toString('base64'),
@@ -14,7 +15,7 @@ const fonts = {
 };
 const out = resolve('public/images/products');
 mkdirSync(out, { recursive: true });
-const products = PRODUCTS.filter(p => p.category === category && p.image === null);
+const products = PRODUCTS.filter(p => p.category === category && (p.image === null || (refreshGenerated && p.image === `/images/products/${p.id}.svg`)));
 const browser = await chromium.launch({ executablePath: chrome, headless: true, args: ['--no-sandbox'] });
 const page = await browser.newPage();
 await page.goto('about:blank');
@@ -51,7 +52,8 @@ function piece(id, x, y, angle, variation) {
   else if (/fig/.test(id)) inner = `<path d="M0-24Q22-13 19 7Q0 23-19 7Q-22-13 0-24Z" fill="#8b6746" stroke="#4a4430" stroke-width="2"/><path d="M-10 2Q0 12 10 1" stroke="#d7b07a" fill="none"/>`;
   else if (/apricot|mulberry|cranberr|raisin/.test(id)) inner = `<ellipse rx="${/raisin/.test(id) ? 12 : 17}" ry="${/raisin/.test(id) ? 8 : 12}" fill="${/golden/.test(id) ? '#bb8545' : /cranberr/.test(id) ? '#a34546' : '#74503b'}" stroke="#563822" stroke-width="1.5"/>`;
   else if (/walnut/.test(id)) inner = `<path d="M-17-7Q-19-21 0-17Q19-21 17-7Q22 9 2 17Q-17 18-17-7Z" fill="#b89061" stroke="#805b37" stroke-width="2"/><path d="M0-15Q-6 0 1 15M-12-5L-2 3M11-5L1 4" stroke="#795636" fill="none" stroke-width="2"/>`;
-  else if (/almond|maghaz|pine-nuts/.test(id)) inner = `<path d="M-20 0Q0-15 20 0Q0 17-20 0Z" fill="${variation > .5 ? '#b3804e' : '#c3986b'}" stroke="#835b35" stroke-width="2"/><path d="M-12 0H12" stroke="#e7bd88" stroke-width="1"/>`;
+  else if (/pista/.test(id)) inner = `<path d="M-20-3Q-5-18 15-9Q24 5 9 14Q-10 21-20-3Z" fill="#e5d4b0" stroke="#957f55" stroke-width="2"/><ellipse cx="1" cy="1" rx="12" ry="7" fill="#7e9b64"/>`;
+  else if (/almond|maghaz|pine[- ]nuts/.test(id)) inner = `<path d="M-20 0Q0-15 20 0Q0 17-20 0Z" fill="${variation > .5 ? '#b3804e' : '#c3986b'}" stroke="#835b35" stroke-width="2"/><path d="M-12 0H12" stroke="#e7bd88" stroke-width="1"/>`;
   else if (/cashew/.test(id)) inner = `<path d="M-17-6Q-25 15-5 17Q24 16 18-8Q14-16 7-12Q14 2 2 5Q-10 7-9-8Z" fill="#e7cd9a" stroke="#aa8a59" stroke-width="2"/>`;
   else if (/fox-nuts/.test(id)) inner = `<circle r="15" fill="#e7d8b9" stroke="#b9a17e" stroke-width="2"/><circle r="4" fill="#8f7860"/>`;
   else inner = `<ellipse rx="14" ry="5" fill="${variation > .5 ? '#9d875d' : '#c4ac79'}" stroke="#756443" stroke-width="1"/>`;
@@ -90,7 +92,7 @@ function bundleScene(product) {
     const fill = tones[(hash(product.id) + i) % tones.length];
     return `<rect x="${x}" y="${y}" width="144" height="85" rx="9" fill="#f2e6cd" stroke="#baa97f" stroke-width="5"/>
       <ellipse cx="${x + 72}" cy="${y + 42}" rx="58" ry="30" fill="${fill}"/>
-      ${spread(hash(product.id + i), 10, (sx, sy, a, v) => piece(i % 2 ? 'almond' : 'dates', x + 70 + (sx - 480) * .16, y + 41 + (sy - 405) * .17, a, v))}`;
+      ${spread(hash(product.id + i), 10, (sx, sy, a, v) => piece((product.components?.[i % (product.components?.length || 1)] || (i % 2 ? 'almond' : 'dates')).toLowerCase(), x + 70 + (sx - 480) * .16, y + 41 + (sy - 405) * .17, a, v))}`;
   }).join('');
   return `<ellipse cx="480" cy="575" rx="350" ry="46" fill="#493f30" opacity=".27" filter="url(#soft)"/>
     <rect x="205" y="251" width="550" height="313" rx="21" fill="#0f382c" stroke="#bf9a54" stroke-width="11"/>
@@ -101,7 +103,9 @@ function bundleScene(product) {
 }
 function scene(product, label) {
   const visual = product.category === 'oils' ? oilScene(product) : product.category === 'bundles' ? bundleScene(product) : baseScene(product);
-  const badge = product.category === 'bundles' ? `<rect x="63" y="62" width="185" height="37" rx="18" fill="#173c2e"/><text x="155" y="87" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="700" letter-spacing="2" fill="#e9c27e">${escape(product.badge || 'CURATED BUNDLE').toUpperCase()}</text>` : '';
+  const badgeText = (product.badge || 'Curated Bundle').toUpperCase();
+  const badgeWidth = Math.min(480, Math.max(185, 26 + badgeText.length * 10));
+  const badge = product.category === 'bundles' ? `<rect x="63" y="62" width="${badgeWidth}" height="37" rx="18" fill="#173c2e"/><text x="${63 + badgeWidth / 2}" y="87" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="700" letter-spacing="2" fill="#e9c27e">${escape(badgeText)}</text>` : '';
   return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 960 960" role="img" aria-label="${escape(product.name)} — ${escape(product.nameUr)} — ${escape(product.nameAr)}">
     <defs>
       <radialGradient id="stone" cx=".28" cy=".16" r=".95"><stop stop-color="#fff9ed"/><stop offset=".58" stop-color="#ecdfcb"/><stop offset="1" stop-color="#cabfa9"/></radialGradient>
@@ -185,7 +189,7 @@ try {
     const label = await createLabel(product);
     if (!label.fontReady || !label.boxes.length) throw new Error(`Font or bounds unavailable: ${product.id}`);
     const svg = scene(product, label.uri);
-    if (!existsSync(file)) writeFileSync(file, svg, 'utf8');
+    if (!existsSync(file) || refreshGenerated) writeFileSync(file, svg, 'utf8');
     const marker = `id: '${product.id}',`;
     const index = source.indexOf(marker);
     if (index < 0) throw new Error(`Cannot locate ${product.id} in catalog source`);
