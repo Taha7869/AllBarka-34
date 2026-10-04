@@ -1,0 +1,89 @@
+{
+  "category": "nuts",
+  "checks": [
+    {
+      "id": "kashmiri-walnut",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/kashmiri-walnut.svg"
+    },
+    {
+      "id": "ajwa-dates",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/ajwa-dates.svg"
+    },
+    {
+      "id": "medjool-dates",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/medjool-dates.svg"
+    },
+    {
+      "id": "golden-raisins",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/golden-raisins.svg"
+    },
+    {
+      "id": "afghan-figs",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/afghan-figs.svg"
+    },
+    {
+      "id": "pine-nuts",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/pine-nuts.svg"
+    },
+    {
+      "id": "black-raisins",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/black-raisins.svg"
+    },
+    {
+      "id": "dried-mulberry",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/dried-mulberry.svg"
+    },
+    {
+      "id": "dried-cranberries",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/dried-cranberries.svg"
+    },
+    {
+      "id": "roasted-cashews",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/roasted-cashews.svg"
+    },
+    {
+      "id": "masala-almonds",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/masala-almonds.svg"
+    },
+    {
+      "id": "char-maghaz-mix",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/char-maghaz-mix.svg"
+    },
+    {
+      "id": "aseel-dates",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/aseel-dates.svg"
+    },
+    {
+      "id": "chohara",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/chohara.svg"
+    }
+  ]
+}
