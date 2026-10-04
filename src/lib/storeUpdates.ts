@@ -1,3 +1,4 @@
+import { sanitizeFirestoreData } from './firestoreData';
 export type UpdateLocale = 'en' | 'ur' | 'ar';
 export type UpdateText = Record<UpdateLocale, string>;
 export interface StoreUpdate { id: string; title: UpdateText; message: UpdateText; href: string; publishedAt: number }
@@ -59,7 +60,7 @@ export async function saveUpdatePreference(db: any, uid: string, enabled: unknow
   return db.runTransaction(async (tx: any) => {
     const existing = await tx.get(ref), previous = updatePreferences(existing.exists ? existing.data() : null);
     const next = { enabled, seenAt: enabled && !previous.enabled ? now : previous.seenAt };
-    tx.set(ref, { ...next, updatedAt: now }, { merge: true }); return next;
+    tx.set(ref, sanitizeFirestoreData({ ...next, updatedAt: now }), { merge: true }); return next;
   });
 }
 export async function markUpdatesRead(db: any, uid: string, through: unknown, now = Date.now()) {
@@ -69,7 +70,7 @@ export async function markUpdatesRead(db: any, uid: string, through: unknown, no
   return db.runTransaction(async (tx: any) => {
     const existing = await tx.get(ref), previous = updatePreferences(existing.exists ? existing.data() : null);
     const next = { ...previous, seenAt: Math.max(previous.seenAt, through) };
-    tx.set(ref, { ...next, updatedAt: now }, { merge: true }); return next;
+    tx.set(ref, sanitizeFirestoreData({ ...next, updatedAt: now }), { merge: true }); return next;
   });
 }
 export async function publishStoreUpdate(db: any, input: unknown, actor: { uid: string; email?: string }, now = Date.now()): Promise<StoreUpdate> {
@@ -84,8 +85,8 @@ export async function publishStoreUpdate(db: any, input: unknown, actor: { uid: 
       return previous;
     }
     const update = { id, title: draft.title, message: draft.message, href: draft.href, publishedAt: now };
-    tx.set(ref, { ...update, authorUid: actor.uid });
-    tx.set(ref.collection('audit').doc(), { action: 'PUBLISHED', actorUid: actor.uid, actorEmail: actor.email || '', timestamp: now });
+    tx.set(ref, sanitizeFirestoreData({ ...update, authorUid: actor.uid }));
+    tx.set(ref.collection('audit').doc(), sanitizeFirestoreData({ action: 'PUBLISHED', actorUid: actor.uid, actorEmail: actor.email || '', timestamp: now }));
     return update;
   });
 }

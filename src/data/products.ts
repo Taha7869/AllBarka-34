@@ -1,3 +1,6 @@
+// ⚠️ EDIT PRICES HERE — owner updates prices manually
+// All fixed prices, custom rates, portions and shipping billing weights live in this file.
+// New selections intentionally use a branded placeholder until approved photography is supplied.
 import type { Product, CustomerReview } from '../types.ts';
 
 export const PRODUCT_IMAGE_PATHS: Record<string, string> = {
@@ -38,7 +41,7 @@ export const PRODUCT_IMAGE_PATHS: Record<string, string> = {
   'org-shakkar':     '/images/generated/org-shakkar-catalog-v1.webp',
 };
 
-export const getProductImage = (p: { image?: string; imageName?: string; id: string }): string => {
+export const getProductImage = (p: { image?: string | null; imageName?: string | null; id: string }): string => {
   if (PRODUCT_IMAGE_PATHS[p.id]) return PRODUCT_IMAGE_PATHS[p.id];
   if (p.imageName && p.imageName.startsWith('/')) return p.imageName;
   if (p.imageName && p.imageName.startsWith('products/')) return `/images/${p.imageName}`;
@@ -46,7 +49,7 @@ export const getProductImage = (p: { image?: string; imageName?: string; id: str
   return '/images/product-placeholder.svg';
 };
 
-export const PRODUCTS: Product[] = [
+const EXISTING_PRODUCTS: Product[] = [
   {
     id: 'pista',
     name_en: 'Roasted Iranian Pistachios (Pista)',
@@ -532,7 +535,7 @@ export const PRODUCTS: Product[] = [
     tag_ar: 'Superfood',
     image: '/images/generated/pumpkin-seeds-catalog-v1.webp',
     imageName: '/images/generated/pumpkin-seeds-catalog-v1.webp',
-    prices: { '250g': 400, '500g': 800, '1kg': 1600 },
+    prices: { '250g': 400, '500g': 800, '1kg': 1600, '100g': 500 },
     earnedPoints: { '250g': 20, '500g': 40, '1kg': 80 },
     wholesale: 1200,
     desc_en: 'Plump, raw green pumpkin seeds triple-sifted for clean crunch and dense magnesium content. Pure, unroasted, and unsalted.',
@@ -578,7 +581,7 @@ export const PRODUCTS: Product[] = [
     tag_ar: 'Superfood',
     image: '/images/generated/chia-seeds-catalog-v1.webp',
     imageName: '/images/generated/chia-seeds-catalog-v1.webp',
-    prices: { '250g': 400, '500g': 800, '1kg': 1600 },
+    prices: { '250g': 400, '500g': 800, '1kg': 1600, '100g': 350 },
     earnedPoints: { '250g': 20, '500g': 40, '1kg': 80 },
     wholesale: 1200,
     desc_en: 'Tiny botanical powerhouses that expand in liquid to provide lasting hydration, soluble fiber, and plant-based omega-3 fatty acids.',
@@ -901,7 +904,7 @@ export const PRODUCTS: Product[] = [
     health_ar: 'ANTIOXIDANT • OMEGA-6 RICH',
     image: '/images/generated/oil-sesame-catalog-v1.webp',
     imageName: '/images/generated/oil-sesame-catalog-v1.webp',
-    prices: { '100ml': 700 },
+    prices: { '100ml': 700, '250ml': 700 },
     wholesale: 600,
     desc_en: 'Cold-pressed unrefined sesame oil with a rich nutty flavor, traditionally used in Ayurvedic oil-pulling and deep scalp massage.',
     desc_ur: 'Cold-pressed unrefined sesame oil with a rich nutty flavor, traditionally used in Ayurvedic oil-pulling and deep scalp massage.',
@@ -1003,7 +1006,7 @@ export const PRODUCTS: Product[] = [
     tag_ar: 'Premium',
     image: '/images/generated/oil-olive-catalog-v1.webp',
     imageName: '/images/generated/oil-olive-catalog-v1.webp',
-    prices: { '100ml': 700, '250ml': 1650 },
+    prices: { '100ml': 700, '250ml': 1650, '500ml': 2800 },
     wholesale: 1400,
     desc_en: 'First cold-pressed extra virgin olive oil from handpicked Mediterranean olives with a bold peppery finish and rich golden color.',
     desc_ur: 'First cold-pressed extra virgin olive oil from handpicked Mediterranean olives with a bold peppery finish and rich golden color.',
@@ -1259,7 +1262,7 @@ export const PRODUCTS: Product[] = [
     tag_ar: 'Traditional',
     image: '/images/generated/org-panjeeri-catalog-v1.webp',
     imageName: '/images/generated/org-panjeeri-catalog-v1.webp',
-    prices: { '500g': 2400, '1kg': 4500 },
+    prices: { '500g': 2400, '1kg': 4500, '250g': 900 },
     earnedPoints: { '500g': 120, '1kg': 225 },
     wholesale: 4000,
     desc_en: 'Heritage Lahori panjeeri made with pure desi ghee, whole wheat flour, ajwain, gond, and assorted dry fruits — a time-honored postpartum and winter tonic.',
@@ -1299,7 +1302,7 @@ export const PRODUCTS: Product[] = [
     tag_ar: 'Ultra Premium',
     image: '/images/generated/org-saffron-catalog-v1.webp',
     imageName: '/images/generated/org-saffron-catalog-v1.webp',
-    prices: { '1g': 1000, '3g': 2800, '5g': 4500 },
+    prices: { '1g': 1000, '3g': 2800, '5g': 4500, '2g': 1250 },
     earnedPoints: { '1g': 50, '3g': 140, '5g': 225 },
     wholesale: 4200,
     desc_en: 'Handpicked Grade-A Sargol saffron threads from the high-altitude Kashmiri and Iranian orchards — the purest golden spice in Pakistan.',
@@ -1360,6 +1363,287 @@ export const PRODUCTS: Product[] = [
     keywords: ['shakkar', 'desi shakkar', 'raw sugar', 'cane sugar', 'unrefined sugar', 'jaggery', 'gur shakkar']
   }
 ];
+
+// These custom rates are independent of the fixed-size prices above. Initial rates
+// use the smallest canonical loose portion; edit a rate here to change custom pricing.
+const EXISTING_CUSTOM_RATES: Record<string, number> = {
+  pista: 500, kaju: 380, badam: 380, akhroot: 110,
+  khubani: 110, alubukhara: 200, kishmish: 146, khajoor: 96,
+  pumpkin_seeds: 500, chia_seeds: 350, nimko: 70, chanay: 60,
+  'org-panjeeri': 360, 'org-shakkar': 40,
+};
+
+/** Numeric ml is billed as the same numeric grams, as authorized by the owner. */
+function declaredPortionGrams(label: string): number | null {
+  const simple = /^(\d+(?:\.\d+)?)\s*(kg|g|ml)$/i.exec(label);
+  if (simple) return Number(simple[1]) * (simple[2].toLowerCase() === 'kg' ? 1000 : 1);
+  const pack = /^(\d+)x(\d+)g$/i.exec(label);
+  return pack ? Number(pack[1]) * Number(pack[2]) : null;
+}
+
+function withCatalogMetadata(product: Product): Product {
+  const shippingWeights = Object.fromEntries(Object.keys(product.prices).flatMap(label => {
+    const grams = declaredPortionGrams(label);
+    return grams === null ? [] : [[label, grams]];
+  }));
+  // Preserve the established billing weight of both existing 500g + 500g duos.
+  if (product.id === 'deal-1' || product.id === 'deal-2') shippingWeights['Combo (500g + 500g)'] = 1000;
+  const customRate = EXISTING_CUSTOM_RATES[product.id] ?? 0;
+  return {
+    ...product,
+    name: product.name_en,
+    nameUr: product.name_ur,
+    nameAr: product.name_ar,
+    description: product.desc_en,
+    active: true,
+    variants: Object.entries(product.prices).map(([label, price]) => ({ label, price })),
+    pricePer100g: customRate,
+    allowCustomWeight: customRate > 0,
+    minCustomWeightG: 100,
+    maxCustomWeightG: 5000,
+    fragile: product.category === 'oils',
+    shippingWeights,
+    ...(product.id === 'deal-1' ? {
+      components: ['Chilean Walnuts (Akhroot Halves)', 'Roasted Iranian Pistachios (Pista)'],
+      componentIds: ['akhroot', 'pista'],
+    } : product.id === 'deal-2' ? {
+      components: ['Golden Mountain Almonds (Badam)', 'Luxury King Cashews (Kaju)'],
+      componentIds: ['badam', 'kaju'],
+    } : {}),
+  };
+}
+
+interface CatalogAddition {
+  id: string;
+  image?: string;
+  name: string;
+  nameUr: string;
+  nameAr: string;
+  category: 'herbs-spices' | 'nuts' | 'snacks-seeds' | 'oils' | 'bundles';
+  description: string;
+  variants: [label: string, price: number][];
+  /** Explicit custom rate; never inferred from a client-entered price. */
+  pricePer100g: number;
+  allowCustomWeight?: boolean;
+  components?: string[];
+  componentIds?: string[];
+  badge?: string;
+  /** Owner-provided placeholder packed weight; edit manually before final dispatch. */
+  shippingWeightG?: number;
+  shippingWeights?: Record<string, number>;
+  quoteOnly?: boolean;
+}
+
+const categoryCopy: Record<CatalogAddition['category'], { ur: string; ar: string; descriptionUr: string; descriptionAr: string }> = {
+  'herbs-spices': {
+    ur: 'جڑی بوٹیاں اور مصالحے', ar: 'الأعشاب والتوابل',
+    descriptionUr: 'روزمرہ کھانوں اور خاص دعوتوں کے لیے احتیاط سے پیش کیا گیا مصالحہ۔ ٹھنڈی اور خشک جگہ پر بند ڈبے میں رکھیں۔',
+    descriptionAr: 'اختيار من التوابل للمطبخ اليومي والمناسبات. يُحفظ في وعاء محكم في مكان بارد وجاف.',
+  },
+  nuts: {
+    ur: 'میوہ جات', ar: 'المكسرات والفواكه المجففة',
+    descriptionUr: 'روزمرہ لطف اور تحفے کے لیے پیش کیا گیا میوہ۔ تازگی برقرار رکھنے کے لیے خشک جگہ پر بند ڈبے میں رکھیں۔',
+    descriptionAr: 'اختيار من المكسرات والفواكه المجففة للاستمتاع اليومي والهدايا. يُحفظ في وعاء محكم في مكان جاف.',
+  },
+  'snacks-seeds': {
+    ur: 'اسنیکس اور بیج', ar: 'الوجبات الخفيفة والبذور',
+    descriptionUr: 'آپ کے باورچی خانے اور روزمرہ کھانوں کے لیے بیجوں کا انتخاب۔ خشک جگہ پر بند ڈبے میں رکھیں۔',
+    descriptionAr: 'اختيار من البذور لمطبخك ووجباتك اليومية. يُحفظ في وعاء محكم في مكان جاف.',
+  },
+  oils: {
+    ur: 'کولڈ پریسڈ تیل', ar: 'الزيوت المعصورة على البارد',
+    descriptionUr: 'آپ کی پسند کے لیے تیل، رساؤ سے محفوظ پیکنگ کے ساتھ۔ دھوپ اور گرمی سے دور رکھیں۔',
+    descriptionAr: 'زيت مختار مع تغليف مانع للتسرب. يُحفظ بعيدًا عن الحرارة وأشعة الشمس.',
+  },
+  bundles: {
+    ur: 'ڈیلز اور بنڈلز', ar: 'العروض والباقات',
+    descriptionUr: 'آلبرکہ کے انتخاب سے تیار کردہ تحفہ یا روزمرہ استعمال کا بنڈل۔ اجزاء اور دستیابی کی تفصیل ملاحظہ کریں۔',
+    descriptionAr: 'باقة من اختيارات البركة للهدايا أو الاستمتاع اليومي. راجع تفاصيل المكونات والتوافر.',
+  },
+};
+
+function defineAddition(definition: CatalogAddition): Product {
+  const copy = categoryCopy[definition.category];
+  const isBundle = definition.category === 'bundles';
+  const quoteOnly = definition.quoteOnly === true;
+  const variants = definition.variants.map(([label, price]) => ({ label, price }));
+  const prices = Object.fromEntries(variants.map(variant => [variant.label, variant.price]));
+  const shippingWeights = definition.shippingWeights ?? Object.fromEntries(variants.flatMap(({ label }) => {
+    const grams = declaredPortionGrams(label);
+    return grams === null ? [] : [[label, grams]];
+  }));
+  return {
+    id: definition.id,
+    name: definition.name, nameUr: definition.nameUr, nameAr: definition.nameAr, description: definition.description,
+    name_en: definition.name, name_ur: definition.nameUr, name_ar: definition.nameAr,
+    category: definition.category, category_en: definition.category, category_ur: copy.ur, category_ar: copy.ar,
+    desc_en: definition.description, desc_ur: copy.descriptionUr, desc_ar: copy.descriptionAr,
+    image: definition.image ?? null, imageName: definition.image ?? null, active: true, variants, prices,
+    pricePer100g: definition.pricePer100g,
+    allowCustomWeight: !quoteOnly && !isBundle && definition.category !== 'oils' && definition.allowCustomWeight !== false,
+    minCustomWeightG: 100, maxCustomWeightG: 5000, fragile: definition.category === 'oils',
+    // No new wholesale discount has been authorized; zero disables a special wholesale price.
+    wholesale: 0, isBundle, quoteOnly,
+    components: definition.components, componentIds: definition.componentIds,
+    contents_en: definition.components?.join(' · '),
+    badge: definition.badge,
+    tag_en: quoteOnly ? 'Request a Quote' : isBundle ? 'Bundle' : 'New Selection',
+    tag_ur: quoteOnly ? 'قیمت کی درخواست' : isBundle ? 'بنڈل' : 'نیا انتخاب',
+    tag_ar: quoteOnly ? 'طلب عرض سعر' : isBundle ? 'باقة' : 'اختيار جديد',
+    shippingWeights,
+    ...(definition.shippingWeightG !== undefined ? { shippingWeightG: definition.shippingWeightG } : {}),
+    packagingDetails_en: definition.category === 'oils' ? 'Leak-proof packaging; keep the bottle upright.' : 'Keep sealed in a cool, dry place.',
+    packagingDetails_ur: definition.category === 'oils' ? 'رساؤ سے محفوظ پیکنگ؛ بوتل سیدھی رکھیں۔' : 'ٹھنڈی اور خشک جگہ پر بند رکھیں۔',
+    packagingDetails_ar: definition.category === 'oils' ? 'تغليف مانع للتسرب؛ تُحفظ الزجاجة عموديًا.' : 'يُحفظ مغلقًا في مكان بارد وجاف.',
+    keywords: [definition.name, definition.nameUr, definition.nameAr, definition.category],
+  };
+}
+
+// New fixed prices below are owner-supplied placeholders in PKR. Existing products
+// remain above with their established photos and prices; equivalent items are not duplicated.
+const ADDITIONS: CatalogAddition[] = [
+  { id: 'ceylon-cinnamon', image: '/images/products/ceylon-cinnamon.svg', name: 'Ceylon Cinnamon Sticks (Dalchini)', nameUr: 'سیلون دارچینی کی چھڑیاں', nameAr: 'عيدان القرفة السيلانية', category: 'herbs-spices', description: 'Delicate Ceylon cinnamon sticks for fragrant tea, baking and slow-cooked dishes.', variants: [['100g', 250], ['250g', 550]], pricePer100g: 250 },
+  { id: 'green-cardamom', image: '/images/products/green-cardamom.svg', name: 'Green Cardamom Jumbo (Sabz Ilaichi)', nameUr: 'جمبو سبز الائچی', nameAr: 'هيل أخضر كبير', category: 'herbs-spices', description: 'Jumbo green cardamom pods for chai, desserts and an aromatic kitchen finish.', variants: [['100g', 1800], ['250g', 4200]], pricePer100g: 1800 },
+  { id: 'black-cardamom', image: '/images/products/black-cardamom.svg', name: 'Black Cardamom (Bari Ilaichi)', nameUr: 'بڑی کالی الائچی', nameAr: 'هيل أسود', category: 'herbs-spices', description: 'Whole black cardamom brings a deep, smoky note to rice and slow-cooked favourites.', variants: [['100g', 600], ['250g', 1400]], pricePer100g: 600 },
+  { id: 'nutmeg-mace', image: '/images/products/nutmeg-mace.svg', name: 'Nutmeg & Mace Combo (Jaifal Javitri)', nameUr: 'جائفل اور جاوتری کی جوڑی', nameAr: 'ثنائي جوزة الطيب والبسباسة', category: 'herbs-spices', description: 'A fragrant nutmeg and mace pairing for gentle warmth in savoury dishes and desserts.', variants: [['100g', 700]], pricePer100g: 700 },
+  { id: 'whole-cloves', image: '/images/products/whole-cloves.svg', name: 'Whole Cloves (Laung)', nameUr: 'ثابت لونگ', nameAr: 'قرنفل كامل', category: 'herbs-spices', description: 'Whole cloves with a warm aromatic character for rice, tea and kitchen blends.', variants: [['100g', 350], ['250g', 800]], pricePer100g: 350 },
+  { id: 'black-peppercorns', image: '/images/products/black-peppercorns.svg', name: 'Black Peppercorns (Kali Mirch)', nameUr: 'ثابت کالی مرچ', nameAr: 'حبوب الفلفل الأسود', category: 'herbs-spices', description: 'Whole black peppercorns to grind fresh for a bright, warming finish.', variants: [['100g', 450], ['250g', 1000]], pricePer100g: 450 },
+  { id: 'star-anise', image: '/images/products/star-anise.svg', name: 'Star Anise (Badyan)', nameUr: 'بادیان کے پھول', nameAr: 'يانسون نجمي', category: 'herbs-spices', description: 'Star-shaped anise for fragrant broths, spiced tea and thoughtful home cooking.', variants: [['100g', 400]], pricePer100g: 400 },
+  { id: 'cumin-seeds', image: '/images/products/cumin-seeds.svg', name: 'Cumin Seeds (Zeera)', nameUr: 'ثابت زیرہ', nameAr: 'بذور الكمون', category: 'herbs-spices', description: 'Whole cumin seeds for a warm, earthy base in everyday cooking.', variants: [['100g', 500], ['250g', 1150]], pricePer100g: 500 },
+  { id: 'fennel-seeds', image: '/images/products/fennel-seeds.svg', name: 'Fennel Seeds (Saunf)', nameUr: 'سونف', nameAr: 'بذور الشمر', category: 'herbs-spices', description: 'A delicate fennel selection with a softly sweet aromatic note.', variants: [['100g', 180], ['250g', 400]], pricePer100g: 180 },
+  { id: 'ajwain', image: '/images/products/ajwain.svg', name: 'Ajwain', nameUr: 'اجوائن', nameAr: 'بذور الأجوين', category: 'herbs-spices', description: 'A familiar aromatic seed for breads, savoury snacks and kitchen spice blends.', variants: [['100g', 150]], pricePer100g: 150 },
+  { id: 'dried-ginger', image: '/images/products/dried-ginger.svg', name: 'Dried Ginger Powder (Sonth)', nameUr: 'سونٹھ کا پاؤڈر', nameAr: 'مسحوق الزنجبيل المجفف', category: 'herbs-spices', description: 'Dried ginger powder adds gentle warmth to baking, tea and traditional recipes.', variants: [['100g', 250]], pricePer100g: 250 },
+  { id: 'kasuri-methi', image: '/images/products/kasuri-methi.svg', name: 'Kasuri Methi', nameUr: 'قصوری میتھی', nameAr: 'أوراق الحلبة المجففة', category: 'herbs-spices', description: 'Dried fenugreek leaves for the fragrant finishing touch in curries and breads.', variants: [['100g', 150]], pricePer100g: 150 },
+  { id: 'dried-mint', image: '/images/products/dried-mint.svg', name: 'Dried Mint (Podina)', nameUr: 'خشک پودینہ', nameAr: 'نعناع مجفف', category: 'herbs-spices', description: 'Dried mint for cooling flavour in yoghurt, dressings and home-prepared tea.', variants: [['100g', 120]], pricePer100g: 120 },
+  { id: 'chaat-masala', image: '/images/products/chaat-masala.svg', name: 'AllBarka Chaat Masala', nameUr: 'آلبرکہ چاٹ مصالحہ', nameAr: 'خلطة تشات ماسالا من البركة', category: 'herbs-spices', description: 'Our signature chaat blend for a lively finish on fruit, snacks and savoury favourites.', variants: [['100g', 200]], pricePer100g: 200 },
+  { id: 'garam-masala', image: '/images/products/garam-masala.svg', name: 'AllBarka Garam Masala', nameUr: 'آلبرکہ گرم مصالحہ', nameAr: 'خلطة غارام ماسالا من البركة', category: 'herbs-spices', description: 'A signature warming spice blend for considered everyday cooking.', variants: [['100g', 300]], pricePer100g: 300 },
+  { id: 'gond-katira', image: '/images/products/gond-katira.svg', name: 'Gond Katira', nameUr: 'گوند کتیرا', nameAr: 'صمغ الكثيراء', category: 'herbs-spices', description: 'Traditional gond katira for familiar home recipes; prepare according to your recipe.', variants: [['100g', 400], ['250g', 900]], pricePer100g: 400 },
+  { id: 'edible-gond', image: '/images/products/edible-gond.svg', name: 'Edible Gond (Acacia)', nameUr: 'کھانے والا گوند (ببول)', nameAr: 'صمغ الأكاسيا الغذائي', category: 'herbs-spices', description: 'Edible acacia gond for winter sweets and traditional home preparations.', variants: [['100g', 500], ['250g', 1150]], pricePer100g: 500 },
+  { id: 'dried-rose-petals', image: '/images/products/dried-rose-petals.svg', name: 'Dried Rose Petals', nameUr: 'خشک گلاب کی پتیاں', nameAr: 'بتلات الورد المجففة', category: 'herbs-spices', description: 'Dried rose petals for a delicate floral touch in tea, desserts and presentation.', variants: [['100g', 300]], pricePer100g: 300 },
+  { id: 'dried-jujube', image: '/images/products/dried-jujube.svg', name: 'Dried Jujube (Ber)', nameUr: 'خشک بیر', nameAr: 'عنّاب مجفف', category: 'herbs-spices', description: 'Dried jujube with a mellow fruit character for snacking and traditional recipes.', variants: [['250g', 350]], pricePer100g: 140 },
+
+  { id: 'kashmiri-walnut', image: '/images/products/kashmiri-walnut.svg', name: 'Kashmiri Walnut Kernels (Akhrot Giri)', nameUr: 'کشمیری اخروٹ کی گری', nameAr: 'لب الجوز الكشميري', category: 'nuts', description: 'A Kashmiri walnut selection for baking, breakfast bowls and quiet everyday indulgence.', variants: [['250g', 1400], ['500g', 2700]], pricePer100g: 560 },
+  { id: 'ajwa-dates', image: '/images/products/ajwa-dates.svg', name: 'Ajwa Dates Madina (Khajoor)', nameUr: 'مدینہ کی عجوہ کھجور', nameAr: 'تمور عجوة المدينة', category: 'nuts', description: 'Ajwa dates from Madina for a considered date selection and thoughtful gifting.', variants: [['250g', 1800], ['500g', 3400]], pricePer100g: 720 },
+  { id: 'medjool-dates', image: '/images/products/medjool-dates.svg', name: 'Medjool Dates Jumbo', nameUr: 'جمبو میجول کھجور', nameAr: 'تمور المجهول الكبيرة', category: 'nuts', description: 'Jumbo Medjool dates with a rich, soft character for sharing and everyday enjoyment.', variants: [['250g', 2200], ['500g', 4200]], pricePer100g: 880 },
+  { id: 'golden-raisins', image: '/images/products/golden-raisins.svg', name: 'Golden Raisins (Kishmish)', nameUr: 'سنہری کشمش', nameAr: 'زبيب ذهبي', category: 'nuts', description: 'Golden raisins add a gently sweet note to baking, rice dishes and pantry pairings.', variants: [['250g', 600], ['500g', 1100]], pricePer100g: 240 },
+  { id: 'afghan-figs', image: '/images/products/afghan-figs.svg', name: 'Afghan Dried Figs (Anjeer)', nameUr: 'افغان خشک انجیر', nameAr: 'تين أفغاني مجفف', category: 'nuts', description: 'Afghan dried figs for a textured fruit selection to enjoy alone or alongside nuts.', variants: [['250g', 1500]], pricePer100g: 600 },
+  { id: 'pine-nuts', image: '/images/products/pine-nuts.svg', name: 'Pine Nuts (Chilgoza)', nameUr: 'چلغوزہ', nameAr: 'حبوب الصنوبر', category: 'nuts', description: 'A considered chilgoza selection for gifting, sharing and a delicate nutty finish.', variants: [['100g', 4500], ['250g', 11000]], pricePer100g: 4500 },
+  { id: 'black-raisins', image: '/images/products/black-raisins.svg', name: 'Black Raisins (Munakka)', nameUr: 'کالی کشمش (منقہ)', nameAr: 'زبيب أسود', category: 'nuts', description: 'Dark raisins with a rich fruit character for breakfast, baking and pantry snacks.', variants: [['250g', 700]], pricePer100g: 280 },
+  { id: 'dried-mulberry', image: '/images/products/dried-mulberry.svg', name: 'Dried Mulberry (Shahtoot)', nameUr: 'خشک شہتوت', nameAr: 'توت مجفف', category: 'nuts', description: 'Dried mulberries with a delicate sweetness for bowls, trail mixes and everyday snacking.', variants: [['250g', 700]], pricePer100g: 280 },
+  { id: 'dried-cranberries', image: '/images/products/dried-cranberries.svg', name: 'Dried Cranberries', nameUr: 'خشک کرین بیری', nameAr: 'توت بري مجفف', category: 'nuts', description: 'Dried cranberries bring a bright fruit note to nut pairings, salads and baking.', variants: [['250g', 900]], pricePer100g: 360 },
+  { id: 'roasted-cashews', image: '/images/products/roasted-cashews.svg', name: 'Roasted Salted Cashews', nameUr: 'بھنے ہوئے نمکین کاجو', nameAr: 'كاجو محمص ومملح', category: 'nuts', description: 'Roasted salted cashews for a savoury take on the familiar buttery nut.', variants: [['250g', 1050]], pricePer100g: 420 },
+  { id: 'masala-almonds', image: '/images/products/masala-almonds.svg', name: 'Masala Almonds', nameUr: 'مصالحے والے بادام', nameAr: 'لوز متبل', category: 'nuts', description: 'A savoury spiced almond selection for sharing, tea-time and everyday snacking.', variants: [['250g', 1100]], pricePer100g: 440 },
+  { id: 'char-maghaz-mix', image: '/images/products/char-maghaz-mix.svg', name: 'Char Maghaz Mix', nameUr: 'چار مغز مکس (چار ۱۰۰ گرام پیک)', nameAr: 'مزيج البذور الأربعة (٤ × ١٠٠ غرام)', category: 'nuts', description: 'A four-pack seed selection for traditional recipes, with four 100g portions.', variants: [['4x100g', 1200]], pricePer100g: 0, allowCustomWeight: false, shippingWeights: { '4x100g': 400 } },
+  { id: 'aseel-dates', image: '/images/products/aseel-dates.svg', name: 'Aseel Dates Khairpur', nameUr: 'خیرپور کی اصیل کھجور', nameAr: 'تمور أصيل خيربور', category: 'nuts', description: 'Aseel dates from Khairpur for familiar date traditions and everyday sharing.', variants: [['500g', 600]], pricePer100g: 120 },
+  { id: 'chohara', image: '/images/products/chohara.svg', name: 'Chohara (Winter Special)', nameUr: 'چھوہارا (سردیوں کا انتخاب)', nameAr: 'تمور مجففة (اختيار الشتاء)', category: 'nuts', description: 'Dried chohara for traditional winter recipes, warm milk preparations and pantry use.', variants: [['250g', 500]], pricePer100g: 200 },
+
+  { id: 'flax-seeds', image: '/images/products/flax-seeds.svg', name: 'Flax Seeds (Alsi)', nameUr: 'السی کے بیج', nameAr: 'بذور الكتان', category: 'snacks-seeds', description: 'Flax seeds for thoughtful pantry additions, breakfast bowls and homemade baking.', variants: [['250g', 250]], pricePer100g: 100 },
+  { id: 'sunflower-seeds', image: '/images/products/sunflower-seeds.svg', name: 'Sunflower Seeds', nameUr: 'سورج مکھی کے بیج', nameAr: 'بذور دوار الشمس', category: 'snacks-seeds', description: 'Sunflower seeds for a mild, nutty addition to salads, breads and seed blends.', variants: [['250g', 350]], pricePer100g: 140 },
+  { id: 'watermelon-seeds', image: '/images/products/watermelon-seeds.svg', name: 'Watermelon Seeds Peeled (Maghaz Tarbooz)', nameUr: 'تربوز کے چھلے ہوئے مغز', nameAr: 'لب بذور البطيخ المقشّر', category: 'snacks-seeds', description: 'Peeled watermelon seed kernels for traditional recipes and everyday seed pairings.', variants: [['100g', 350]], pricePer100g: 350 },
+  { id: 'melon-seeds', image: '/images/products/melon-seeds.svg', name: 'Melon Seeds (Maghaz Kharbooza)', nameUr: 'خربوزے کے مغز', nameAr: 'لب بذور الشمام', category: 'snacks-seeds', description: 'Melon seed kernels for sweets, baking and familiar pantry preparations.', variants: [['100g', 300]], pricePer100g: 300 },
+  { id: 'white-sesame', image: '/images/products/white-sesame.svg', name: 'White Sesame (Safed Til)', nameUr: 'سفید تل', nameAr: 'سمسم أبيض', category: 'snacks-seeds', description: 'White sesame seeds for breads, sweets and a delicate finishing crunch.', variants: [['250g', 250]], pricePer100g: 100 },
+  { id: 'black-sesame', image: '/images/products/black-sesame.svg', name: 'Black Sesame (Kala Til)', nameUr: 'کالے تل', nameAr: 'سمسم أسود', category: 'snacks-seeds', description: 'Black sesame seeds for contrasting presentation and a rounded nutty character.', variants: [['250g', 350]], pricePer100g: 140 },
+  { id: 'basil-seeds', image: '/images/products/basil-seeds.svg', name: 'Basil Seeds (Tukhm-e-Bangla)', nameUr: 'تخمِ بالنگا', nameAr: 'بذور الريحان', category: 'snacks-seeds', description: 'Basil seeds for familiar drinks and desserts; prepare according to your recipe.', variants: [['100g', 150]], pricePer100g: 150 },
+  { id: 'fox-nuts', image: '/images/products/fox-nuts.svg', name: 'Fox Nuts (Makhana)', nameUr: 'مکھانا', nameAr: 'حبوب الماخانا', category: 'snacks-seeds', description: 'Makhana for light roasting, gentle seasoning and traditional home recipes.', variants: [['100g', 550], ['250g', 1250]], pricePer100g: 550 },
+  { id: 'poppy-seeds', image: '/images/products/poppy-seeds.svg', name: 'Poppy Seeds (Khashkhash)', nameUr: 'خشخاش', nameAr: 'بذور الخشخاش', category: 'snacks-seeds', description: 'Poppy seeds for classic sweets, baking and kitchen spice preparations.', variants: [['100g', 250]], pricePer100g: 250 },
+
+  { id: 'oil-pumpkin', image: '/images/products/oil-pumpkin.svg', name: 'Pumpkin Seed Oil (Kaddu)', nameUr: 'کدو کے بیجوں کا تیل', nameAr: 'زيت بذور اليقطين', category: 'oils', description: 'Pumpkin seed oil presented in leak-proof packaging. Keep the bottle upright and away from direct sunlight.', variants: [['100ml', 1400]], pricePer100g: 0, allowCustomWeight: false },
+  { id: 'oil-chilgoza', image: '/images/products/oil-chilgoza.svg', name: 'Chilgoza Oil', nameUr: 'چلغوزے کا تیل', nameAr: 'زيت الصنوبر', category: 'oils', description: 'Chilgoza oil in a considered 30ml bottle with leak-proof packaging.', variants: [['30ml', 3500]], pricePer100g: 0, allowCustomWeight: false },
+
+  { id: 'bundle-daily-grind', image: '/images/products/bundle-daily-grind.svg', shippingWeightG: 900, name: 'The Daily Grind', nameUr: 'دی ڈیلی گرائنڈ — روزمرہ میوے', nameAr: 'باقة المكسرات اليومية', category: 'bundles', description: 'Almonds, cashews and raisins in three 250g portions for everyday pantry enjoyment.', variants: [['Bundle', 2400]], pricePer100g: 0, components: ['Golden Mountain Almonds (Badam)', 'Luxury King Cashews (Kaju)', 'Emerald Green Raisins (Kishmish)'], componentIds: ['badam', 'kaju', 'kishmish'], badge: '3 × 250g' },
+  { id: 'bundle-brain-fuel', image: '/images/products/bundle-brain-fuel.svg', shippingWeightG: 1100, name: 'Brain Fuel Box', nameUr: 'برین فیول باکس', nameAr: 'صندوق برين فيول', category: 'bundles', description: 'Walnuts, almonds, chia and pumpkin seeds brought together in one considered selection.', variants: [['Bundle', 2800]], pricePer100g: 0, components: ['Chilean Walnuts (Akhroot Halves)', 'Golden Mountain Almonds (Badam)', 'Organic Chia Seeds', 'Raw Pumpkin Seeds (Pepitas)'], componentIds: ['akhroot', 'badam', 'chia_seeds', 'pumpkin_seeds'], badge: 'Four selections' },
+  { id: 'bundle-winter-warrior', image: '/images/products/bundle-winter-warrior.svg', shippingWeightG: 1500, name: 'Winter Warrior Pack', nameUr: 'ونٹر وارئیر پیک', nameAr: 'باقة وينتر ووريور', category: 'bundles', description: 'Gond, char maghaz, panjeeri and chohara for a traditional winter pantry pairing.', variants: [['Bundle', 3200]], pricePer100g: 0, components: ['Edible Gond (Acacia)', 'Char Maghaz Mix', 'Traditional Panjeeri', 'Chohara (Winter Special)'], componentIds: ['edible-gond', 'char-maghaz-mix', 'org-panjeeri', 'chohara'], badge: 'Winter selection' },
+  { id: 'bundle-immunity-shield', image: '/images/products/bundle-immunity-shield.svg', shippingWeightG: 800, name: 'Immunity Shield', nameUr: 'امیونٹی شیلڈ بنڈل', nameAr: 'باقة إميونيتي شيلد', category: 'bundles', description: 'Black seed oil, Ajwa dates and flax seeds in a thoughtful pantry trio.', variants: [['Bundle', 3000]], pricePer100g: 0, components: ['Black Seed Oil', 'Ajwa Dates Madina (Khajoor)', 'Flax Seeds (Alsi)'], componentIds: ['oil-blackseed', 'ajwa-dates', 'flax-seeds'], badge: 'Three selections' },
+  { id: 'bundle-sunrise-seeds', image: '/images/products/bundle-sunrise-seeds.svg', shippingWeightG: 800, name: 'Sunrise Seeds', nameUr: 'سن رائز سیڈز بنڈل', nameAr: 'باقة بذور الصباح', category: 'bundles', description: 'Chia, flax, pumpkin and sunflower seeds for a versatile seed collection.', variants: [['Bundle', 1400]], pricePer100g: 0, components: ['Organic Chia Seeds', 'Flax Seeds (Alsi)', 'Raw Pumpkin Seeds (Pepitas)', 'Sunflower Seeds'], componentIds: ['chia_seeds', 'flax-seeds', 'pumpkin_seeds', 'sunflower-seeds'], badge: 'Four seed selections' },
+  { id: 'bundle-royal-feast', image: '/images/products/bundle-royal-feast.svg', shippingWeightG: 2500, name: 'Royal Feast', nameUr: 'شاہی ضیافت بنڈل', nameAr: 'باقة الوليمة الملكية', category: 'bundles', description: 'Chilgoza, Medjool dates, dried figs and pistachios for a generous gifting selection.', variants: [['Bundle', 12000]], pricePer100g: 0, components: ['Pine Nuts (Chilgoza)', 'Medjool Dates Jumbo', 'Afghan Dried Figs (Anjeer)', 'Roasted Iranian Pistachios (Pista)'], componentIds: ['pine-nuts', 'medjool-dates', 'afghan-figs', 'pista'], badge: 'Royal selection' },
+  { id: 'bundle-silver-hamper', image: '/images/products/bundle-silver-hamper.svg', shippingWeightG: 1500, name: 'Silver Hamper', nameUr: 'سلور ہیمپر', nameAr: 'سلة الهدايا الفضية', category: 'bundles', description: 'Three selections with complimentary gift wrap. Final selections are confirmed before dispatch.', variants: [['Bundle', 2500]], pricePer100g: 0, components: ['Three selections — confirmed before dispatch', 'Complimentary gift wrap'], badge: 'Three selections' },
+  { id: 'bundle-gold-hamper', image: '/images/products/bundle-gold-hamper.svg', shippingWeightG: 2500, name: 'Gold Hamper', nameUr: 'گولڈ ہیمپر', nameAr: 'سلة الهدايا الذهبية', category: 'bundles', description: 'Five selections presented in a premium box. Final selections are confirmed before dispatch.', variants: [['Bundle', 5500]], pricePer100g: 0, components: ['Five selections — confirmed before dispatch', 'Premium box'], badge: 'Five selections' },
+  { id: 'bundle-platinum-hamper', image: '/images/products/bundle-platinum-hamper.svg', shippingWeightG: 4000, name: 'Platinum Hamper', nameUr: 'پلاٹینم ہیمپر', nameAr: 'سلة الهدايا البلاتينية', category: 'bundles', description: 'Seven selections including saffron, presented in a premium box. Final selections are confirmed before dispatch.', variants: [['Bundle', 12500]], pricePer100g: 0, components: ['Seven selections including Premium Saffron / Zafran', 'Premium box'], componentIds: ['org-saffron'], badge: 'Seven selections' },
+  { id: 'bundle-ramadan-ready', image: '/images/products/bundle-ramadan-ready.svg', shippingWeightG: 2000, name: 'Ramadan Ready', nameUr: 'رمضان ریڈی بنڈل', nameAr: 'باقة رمضان', category: 'bundles', description: 'Ajwa, Medjool, dried figs and a mixed nut selection for thoughtful Ramadan sharing.', variants: [['Bundle', 4500]], pricePer100g: 0, components: ['Ajwa Dates Madina (Khajoor)', 'Medjool Dates Jumbo', 'Afghan Dried Figs (Anjeer)', 'Mixed nuts — selection confirmed before dispatch'], componentIds: ['ajwa-dates', 'medjool-dates', 'afghan-figs'], badge: 'Ramadan selection' },
+  { id: 'bundle-mystery-box', image: '/images/products/bundle-mystery-box.svg', shippingWeightG: 1200, name: 'Mystery Box', nameUr: 'مسٹری باکس', nameAr: 'صندوق المفاجآت', category: 'bundles', description: 'A surprise selection of four to five items. Contents are confirmed by the boutique before dispatch.', variants: [['Bundle', 1500]], pricePer100g: 0, components: ['Four to five surprise selections'], badge: 'Surprise selection' },
+  { id: 'bundle-tasting-flight', image: '/images/products/bundle-tasting-flight.svg', shippingWeightG: 500, name: 'Tasting Flight', nameUr: 'ٹیسٹنگ فلائٹ — چار نمونے', nameAr: 'باقة التذوق — أربع عينات', category: 'bundles', description: 'Four 100g samples for exploring the AllBarka pantry. Sample selections are confirmed before dispatch.', variants: [['Bundle', 1000]], pricePer100g: 0, components: ['Four selections, 100g each — confirmed before dispatch'], badge: '4 × 100g' },
+  { id: 'corporate-gifting', image: '/images/products/corporate-gifting.svg', name: 'Corporate Gifting', nameUr: 'کارپوریٹ تحائف', nameAr: 'هدايا الشركات', category: 'bundles', description: 'Thoughtful gifting for teams, clients and occasions. Contact AllBarka to confirm selections, quantities and a tailored quote.', variants: [], pricePer100g: 0, components: ['Selections and quantities agreed with AllBarka'], badge: 'Request a quote', quoteOnly: true },
+];
+
+export const LEGACY_PRODUCT_IDS: readonly string[] = EXISTING_PRODUCTS.map(product => product.id);
+export const NEW_PRODUCT_IDS: readonly string[] = ADDITIONS.map(product => product.id);
+// Exact owner-approved Urdu and Arabic spellings for the expanded catalogue.
+export const APPROVED_CATALOG_NAMES: Record<string, readonly [string, string]> = {
+  'org-saffron': ['ایرانی زعفران', 'زعفران'],
+  'ceylon-cinnamon': ['سری لنکا دارچینی', 'قرفة'],
+  'green-cardamom': ['بڑی سبز الائچی', 'هيل أخضر'],
+  'black-cardamom': ['کالی الائچی', 'هيل أسود'],
+  'nutmeg-mace': ['جائفل و جاویتری', 'جوزة الطيب و السببة'],
+  'whole-cloves': ['لونگ', 'قرنفل'],
+  'black-peppercorns': ['کالی مرچ', 'فلفل أسود'],
+  'star-anise': ['بادیان', 'يانسون نجومي'],
+  'cumin-seeds': ['زیرہ', 'كمون'],
+  'fennel-seeds': ['سونف', 'شمر'],
+  ajwain: ['اجوائن', 'أجوين'],
+  'dried-ginger': ['سونٹھ', 'زنجبيل مجفف'],
+  'kasuri-methi': ['کاسوری میتھی', 'أوراق الحلبة المجففة'],
+  'dried-mint': ['خشک پودینہ', 'نعنع مجفف'],
+  'chaat-masala': ['چاٹ مصالحہ', 'بهار شات'],
+  'garam-masala': ['گرم مصالحہ', 'بهار مشكل'],
+  'gond-katira': ['گوند کتیرا', 'كتيرا'],
+  'edible-gond': ['خوردنی گوند', 'صمغ عربي'],
+  'dried-rose-petals': ['خشک گلاب کی پتیاں', 'بتلات الورد'],
+  'dried-jujube': ['خشک بیر', 'عناب'],
+  'org-panjeeri': ['پنجیری', 'بنجيري'],
+  akhroot: ['اخروٹ گری', 'جوز مقشر'],
+  'kashmiri-walnut': ['اخروٹ گری', 'جوز مقشر'],
+  'ajwa-dates': ['کھجور عجوا', 'تمر عجوة'],
+  'medjool-dates': ['میڈجول کھجور', 'تمر مجهول'],
+  'golden-raisins': ['سنہری کشمش', 'زبيب ذهبي'],
+  'afghan-figs': ['افغانی انجیر', 'تين مجفف'],
+  khubani: ['ہنزہ خشک خوبانی', 'مشمش مجفف'],
+  'pine-nuts': ['چلغوزہ', 'حب الصنوبر'],
+  'black-raisins': ['منقّی', 'زبيب أسود'],
+  kishmish: ['سندھکھانی', 'زبيب أخضر'],
+  'dried-mulberry': ['خشک شہتوت', 'توت مجفف'],
+  alubukhara: ['آلو بخارا', 'برقوق'],
+  'dried-cranberries': ['خشک کرین بیری', 'توت بري'],
+  'roasted-cashews': ['نمکین بھنی کاجو', 'كاجو محمص مملح'],
+  'masala-almonds': ['مصالحہ بادام', 'لوز بالبهار'],
+  'char-maghaz-mix': ['چار مغز', 'خليط البذور الأربعة'],
+  'aseel-dates': ['کھجور اصیل', 'تمر أصيل'],
+  chohara: ['چھوہارہ', 'تمر مجفف'],
+  chia_seeds: ['چیا سیڈز', 'بذور الشيا'],
+  'flax-seeds': ['السی', 'بذر الكتان'],
+  pumpkin_seeds: ['مغز کدو', 'بذور اليقطين'],
+  'sunflower-seeds': ['بیج سورج مکھی', 'بذور عباد الشمس'],
+  'watermelon-seeds': ['مغز تربوز', 'بذور البطيخ'],
+  'melon-seeds': ['مغز خربوزہ', 'بذور الشمام'],
+  'white-sesame': ['سفید تل', 'سمسم أبيض'],
+  'black-sesame': ['کالا تل', 'سمسم أسود'],
+  'basil-seeds': ['تخم بنگلہ', 'بذور الحبق'],
+  'fox-nuts': ['مکھانہ', 'بذور اللوتس'],
+  'poppy-seeds': ['خشخاش', 'خشخاش'],
+  'oil-blackseed': ['روغن کلونجی', 'زيت حبة البركة'],
+  'oil-castor': ['روغن ارنڈی', 'زيت الخروع'],
+  'oil-walnut': ['روغن اخروٹ', 'زيت الجوز'],
+  'oil-coconut': ['روغن ناریل', 'زيت جوز الهند'],
+  'oil-olive': ['روغن زیتون', 'زيت الزيتون'],
+  'oil-sesame': ['روغن تل', 'زيت السمسم'],
+  'oil-flaxseed': ['روغن السی', 'زيت بذر الكتان'],
+  'oil-pumpkin': ['روغن مغز کدو', 'زيت بذور اليقطين'],
+  'oil-apricot': ['روغن مغز خوبانی', 'زيت نوى المشمش'],
+  'oil-chilgoza': ['روغن چلغوزہ', 'زيت الصنوبر'],
+};
+export const PRODUCTS: Product[] = [
+  ...EXISTING_PRODUCTS.map(withCatalogMetadata),
+  ...ADDITIONS.map(defineAddition),
+].map(product => {
+  const approved = APPROVED_CATALOG_NAMES[product.id];
+  return approved ? { ...product, nameUr: approved[0], nameAr: approved[1], name_ur: approved[0], name_ar: approved[1] } : product;
+});
+
+// Established photographs remain untouched; new selections may use branded SVG placeholders.
+
+export const CATALOG_COUNTS = PRODUCTS.reduce<Record<string, number>>((counts, product) => {
+  counts[product.category] = (counts[product.category] || 0) + 1;
+  return counts;
+}, {});
 
 export const REVIEWS: CustomerReview[] = [
   {

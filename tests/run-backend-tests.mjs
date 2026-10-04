@@ -1,5 +1,21 @@
 import assert from 'node:assert/strict';
 
+// Path-aware staged writes model Firestore transaction atomicity and read-before-write rules.
+function transactionalDatabase(store) {
+  const snapshot = path => ({ exists: store.has(path), data: () => structuredClone(store.get(path)) });
+  const reference = path => ({ path, id: path.split('/').at(-1), get: async () => snapshot(path),
+    collection: name => collection(`${path}/${name}`) });
+  const collection = path => ({ doc: id => reference(`${path}/${id}`) });
+  return { collection, runTransaction: async callback => {
+    const writes = [];
+    const result = await callback({ get: async ref => { assert.equal(writes.length, 0, 'Reads must precede writes'); return snapshot(ref.path); },
+      set: (ref, data, options) => writes.push({ path: ref.path, data: structuredClone(data), merge: !!options?.merge }),
+      update: (ref, data) => writes.push({ path: ref.path, data: structuredClone(data), merge: true }) });
+    for (const write of writes) store.set(write.path, write.merge ? { ...store.get(write.path), ...write.data } : write.data);
+    return result;
+  } };
+}
+
 try {
   const { PRODUCTS } = await import('../src/data/products.ts');
   const { sendOrderToN8n } = await import('../src/services/n8nOrderNotification.ts');
@@ -100,7 +116,7 @@ try {
     globalThis.fetch = async (url, options) => {
       capturedHeaders = options.headers;
       capturedBody = options.body;
-      return { ok: true, status: 200 };
+      return { ok: true, status: 200, json: async () => ({ ok: true, orderId: JSON.parse(options.body).order.orderId, mirrorStored: true }) };
     };
 
     try {
@@ -195,26 +211,7 @@ try {
   await test('Order Security: Verified token uid is attached to saved order', async () => {
     const verifiedUid = 'patron_user_uid_123';
     const store = new Map();
-    const mockDb = {
-      collection(name) {
-        return {
-          doc(id) {
-            return {
-              id,
-              get: async () => ({ exists: store.has(id), data: () => store.get(id) }),
-              set: async (val) => { store.set(id, val); }
-            };
-          }
-        };
-      },
-      runTransaction: async (cb) => {
-        const txn = {
-          get: async (ref) => ref.get(),
-          set: (ref, val) => ref.set(val)
-        };
-        return cb(txn);
-      }
-    };
+    const mockDb = transactionalDatabase(store);
 
     const payload = {
       name: 'Taha',
@@ -233,7 +230,7 @@ try {
       idempotencyKey: 'test-key-uid-attachment'
     });
 
-    const savedOrder = store.get(res.orderId);
+    const savedOrder = store.get(`orders/${res.orderId}`);
     assert.strictEqual(savedOrder.uid, 'patron_user_uid_123');
     assert.strictEqual(savedOrder.pointsAwarded, false, 'New order must not have points awarded yet');
   });
@@ -300,26 +297,7 @@ try {
   // 9. Requirement E.6: Duplicate order submission remains idempotent
   await test('Order Security: Duplicate order submission remains idempotent', async () => {
     const store = new Map();
-    const mockDb = {
-      collection(name) {
-        return {
-          doc(id) {
-            return {
-              id,
-              get: async () => ({ exists: store.has(id), data: () => store.get(id) }),
-              set: async (val) => { store.set(id, val); }
-            };
-          }
-        };
-      },
-      runTransaction: async (cb) => {
-        const txn = {
-          get: async (ref) => ref.get(),
-          set: (ref, val) => ref.set(val)
-        };
-        return cb(txn);
-      }
-    };
+    const mockDb = transactionalDatabase(store);
 
     const payload = {
       name: 'Taha',
@@ -351,45 +329,12 @@ try {
       pointsAwarded: false,
       customer: { name: 'Loyalty Patron', phone: '03001234567', address: 'Lahore' }
     };
-    store.set('AB-DELIVERED-TEST', initialOrder);
+    store.set('orders/AB-DELIVERED-TEST', initialOrder);
 
     const userDocRef = { loyaltyPoints: 0 };
     store.set(`users/${userUid}`, userDocRef);
 
-    const createMockDoc = (key) => ({
-      id: key.split('/').pop(),
-      get: async () => ({ exists: store.has(key), data: () => store.get(key) }),
-      set: async (val, opts) => {
-        const prev = store.get(key) || {};
-        store.set(key, opts?.merge ? { ...prev, ...val } : val);
-      },
-      update: async (val) => {
-        const prev = store.get(key) || {};
-        store.set(key, { ...prev, ...val });
-      },
-      collection: (subName) => ({
-        doc: (subId) => createMockDoc(`${key}/${subName}/${subId}`)
-      })
-    });
-
-    const mockDb = {
-      collection(name) {
-        return {
-          doc(id) {
-            const key = name === 'orders' ? id : `${name}/${id}`;
-            return createMockDoc(key);
-          }
-        };
-      },
-      runTransaction: async (cb) => {
-        const txn = {
-          get: async (ref) => ref.get(),
-          set: (ref, val, opts) => ref.set(val, opts),
-          update: (ref, val) => ref.update(val)
-        };
-        return cb(txn);
-      }
-    };
+    const mockDb = transactionalDatabase(store);
 
     // First transition to DELIVERED
     const updated1 = await updateAdminOrderStatus({
@@ -422,45 +367,13 @@ try {
       status: 'NEW',
       uid: userUid,
       earnedPoints: 30,
-      pointsAwarded: false
+      pointsAwarded: false,
+      customer: { name: 'Fixture Patron', phone: '03001234567', address: 'Fixture house', city: 'Lahore' }
     };
-    store.set('AB-CANCEL-TEST', initialOrder);
+    store.set('orders/AB-CANCEL-TEST', initialOrder);
     store.set(`users/${userUid}`, { loyaltyPoints: 0 });
 
-    const createMockDoc = (key) => ({
-      id: key.split('/').pop(),
-      get: async () => ({ exists: store.has(key), data: () => store.get(key) }),
-      set: async (val, opts) => {
-        const prev = store.get(key) || {};
-        store.set(key, opts?.merge ? { ...prev, ...val } : val);
-      },
-      update: async (val) => {
-        const prev = store.get(key) || {};
-        store.set(key, { ...prev, ...val });
-      },
-      collection: (subName) => ({
-        doc: (subId) => createMockDoc(`${key}/${subName}/${subId}`)
-      })
-    });
-
-    const mockDb = {
-      collection(name) {
-        return {
-          doc(id) {
-            const key = name === 'orders' ? id : `${name}/${id}`;
-            return createMockDoc(key);
-          }
-        };
-      },
-      runTransaction: async (cb) => {
-        const txn = {
-          get: async (ref) => ref.get(),
-          set: (ref, val, opts) => ref.set(val, opts),
-          update: (ref, val) => ref.update(val)
-        };
-        return cb(txn);
-      }
-    };
+    const mockDb = transactionalDatabase(store);
 
     const updated = await updateAdminOrderStatus({
       db: mockDb,
@@ -543,7 +456,8 @@ try {
 
   // 15. Webhook Failure Safety: Order notification failure never rolls back order creation
   await test('Webhook Safety: n8n notification error returns sent: false without throwing', async () => {
-    process.env.N8N_ORDER_WEBHOOK_URL = 'https://httpbin.org/status/500';
+    process.env.N8N_ORDER_WEBHOOK_URL = 'https://n8n.example.com/webhook/test-order';
+    process.env.N8N_WEBHOOK_SECRET = 'test-only-secret';
     const res = await sendOrderToN8n({
       orderId: 'ORD-FAIL-SAFE',
       customer: { name: 'Test Patron', phone: '03001234567', address: 'Lahore', city: 'Lahore' },
@@ -551,36 +465,18 @@ try {
       items: [{ id: pistaProduct.id, name: pistaProduct.name, selectedWeight: weight500g, quantity: 1, price: price500g }],
       paymentMethod: 'cod',
       createdAt: new Date().toISOString()
-    });
+    }, { fetchImpl: async () => ({ ok: false, status: 503 }) });
 
     assert.strictEqual(res.sent, false, 'Webhook failure must be caught gracefully');
     assert.strictEqual(res.status, 'FAILED');
     delete process.env.N8N_ORDER_WEBHOOK_URL;
+    delete process.env.N8N_WEBHOOK_SECRET;
   });
 
   // 16. Authoritative Order Result Payload: customerUid and delivery derived from server
   await test('n8n Webhook Payload: customerUid and delivery fields come from authoritative server order result', async () => {
     const store = new Map();
-    const mockDb = {
-      collection(name) {
-        return {
-          doc(id) {
-            return {
-              id,
-              get: async () => ({ exists: store.has(id), data: () => store.get(id) }),
-              set: async (val) => { store.set(id, val); }
-            };
-          }
-        };
-      },
-      runTransaction: async (cb) => {
-        const txn = {
-          get: async (ref) => ref.get(),
-          set: (ref, val) => ref.set(val)
-        };
-        return cb(txn);
-      }
-    };
+    const mockDb = transactionalDatabase(store);
 
     const payload = {
       name: 'Taha',

@@ -1,5 +1,6 @@
+import { sanitizeFirestoreData } from './firestoreData';
 import type { Firestore } from 'firebase-admin/firestore';
-import { STORE_COUPONS, CouponRecord } from './couponEngine';
+import { STORE_COUPONS } from './couponEngine';
 
 export interface WelcomeVoucherResult {
   eligible: boolean;
@@ -14,6 +15,15 @@ export interface WelcomeVoucherResult {
  * Uses atomic Firestore transaction on userEntitlements/{uid}_welcome.
  */
 export async function claimWelcomeVoucher(db: Firestore, uid: string): Promise<WelcomeVoucherResult> {
+  // This legacy personalized voucher has not been activated. Do not create an
+  // entitlement or advertise an old entitlement as redeemable while inactive.
+  if (!STORE_COUPONS.WELCOME200.active) {
+    return {
+      eligible: false,
+      message: 'The welcome voucher promotion is not currently available.',
+      reason: 'PROMOTION_INACTIVE',
+    };
+  }
   if (!db) {
     return {
       eligible: false,
@@ -57,7 +67,7 @@ export async function claimWelcomeVoucher(db: Firestore, uid: string): Promise<W
       status: 'ISSUED',
     };
 
-    transaction.set(entitlementRef, welcomeRecord);
+    transaction.set(entitlementRef, sanitizeFirestoreData(welcomeRecord));
 
     return {
       eligible: true,

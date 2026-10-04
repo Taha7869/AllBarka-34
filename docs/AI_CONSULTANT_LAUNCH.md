@@ -1,31 +1,35 @@
-# AllBarka AI consultant: implementation and launch gates
+# AllBarka website AI — current n8n/Groq route
 
-## Useful points from the supplied PDF
+The owner-supplied workflow reviewed on 3 October 2026 uses Groq's `openai/gpt-oss-120b` through its existing n8n HTTP Header Auth credential. The current integration is [n8n/allbarka-website-integration.json](../n8n/allbarka-website-integration.json). The older generic Ollama bridge is superseded; no local model, paid host or browser-side Groq key is required.
 
-- The existing n8n intent router sends FAQ questions to an HTTP Request node. A direct node test needs input data: connect a temporary Set/Edit Fields node with `text`, execute it first, then execute the HTTP node; or run the full workflow with an FAQ example.
-- n8n should call Ollama's `/api/generate` with a JSON body, `stream: false`, a bounded timeout, and Continue On Error. Route the error output to a short, honest fallback reply.
-- A `trycloudflare.com` tunnel to a home PC is temporary and will stop when the PC, Ollama, or tunnel is down. Keep its URL inside n8n. Use a stable authenticated endpoint before depending on it for customers.
-- Guest trial limits belong on the server. A browser-only counter is easy to reset. Firebase Google ID tokens must be verified by the commerce API before unlimited access.
+## Setup
 
-## Code contract
+1. Back up the owner's existing n8n workflow. Import the inactive website-only JSON into a review workflow, then copy its 17 nodes into the existing workflow. The owner's original 90 nodes are not included or replaced. Keep the full 108-node review copy private; its targeted WhatsApp fixes are separate from this website import.
+2. On **Website AI Webhook**, select a Header Auth credential whose header is `X-AllBarka-Webhook-Secret` and value matches the commerce server's random 32+ character `N8N_AI_WEBHOOK_SECRET`.
+3. On **Website AI Brain**, select the owner's existing Groq HTTP Header Auth credential (`Authorization: Bearer …`). The node already targets `https://api.groq.com/openai/v1/chat/completions`; the prepared request uses `openai/gpt-oss-120b`, strict JSON schema and a 20-second deadline.
+4. Publish/activate only after reviewing credentials and testing the isolated branch. Set `N8N_AI_WEBHOOK_URL` on the commerce host to the **Production URL** ending `/webhook/allbarka-website-ai`. A `/webhook-test/` listener is temporary.
+5. Keep the webhook URL/secret, `AI_GUEST_HASH_SECRET` and Groq credential server-side. Never prefix them with `VITE_`. Use a different secret for website order events.
 
-The browser calls `POST /api/concierge/chat` on the commerce API with `message`, recent `history`, and optional Firebase Bearer token. Verified Google sign-in has no AI message cap. Other customers receive five messages per rolling 24 hours, counted in Firestore by an HMAC of network address and browser agent; raw IP is not persisted. If Firestore or the server secret is missing, guest AI fails closed. This fingerprint is a practical trial gate, not strong identity: a different network or browser can get a new trial, and shared networks may collide.
+Credential references and Sheet resource selections are intentionally blank in the checked-in JSON. Selecting them in n8n is required. Importing JSON or passing fixture tests does not configure a running instance.
 
-When `N8N_AI_WEBHOOK_URL` is set, the API posts `{message, history, system}` to that HTTPS webhook, with an optional `X-AllBarka-Webhook-Secret` header. n8n must verify the secret and return JSON `{ "text": "..." }` (or `reply`). A failed or slow n8n request times out after eight seconds and receives the existing boutique fallback. When the webhook is not configured, the existing Gemini/boutique path remains available. The browser never receives the Ollama tunnel URL or webhook secret.
+## Request and response
 
-The AI is a food and catalog guide. Personal medical advice, diagnosis, and treatment claims are outside its role; test the n8n system prompt for this behavior too.
+The browser keeps the existing `/api/chat` or `/api/concierge/chat` contract on the Express commerce API. Express generates canonical catalogue, shipping policy and requested language instructions, then sends:
 
-## n8n work remaining
+```json
+{"source":"website","message":"Pista 500g ka rate?","history":[{"role":"user","text":"Mujhe nuts chahiye"}],"system":"Server-generated canonical instructions"}
+```
 
-1. In **AB-02 WhatsApp Conversation Engine V2 - Optimized**, connect the FAQ route to an HTTP Request node. Use the correct, current Ollama URL in n8n only. Send a POST JSON body with `model`, `prompt`, `system`, `stream: false`, and temperature. The Ollama API response's `response` field must be mapped to the workflow's reply.
-2. Set a 20-second timeout on n8n's Ollama request and Continue On Error. Route errors to an honest "assistant temporarily unavailable" message, with human support contact.
-3. Expose a separate authenticated n8n webhook to the commerce API, map the API's `message` and `history` to the FAQ branch, and return `{ "text": reply }`. Do not put webhook/tunnel URLs or secrets in Vite variables or frontend code.
-4. Test with upstream mock `{ "text": "badam khane ke kya fayde hain?" }`, then an actual FAQ workflow event. Test with the home PC turned off to confirm fallback.
+Messages are nonempty and bounded to 1,000 characters. History contains only the last four user/assistant messages, with 1,000 characters each. Browser identity, prices, order data and supplied system prompts do not become canonical instructions. This catalogue branch receives no customer order records. Tracking belongs in authenticated account history or official support.
 
-## Production launch gates
+Success returns `text`, `reply`, `action` (`answer` or `human`), `available:true` and `modelUsed:"n8n-groq"`. Human support uses only `https://wa.me/923160666083`. No complaint, ticket, Slack alert or WhatsApp message is sent by this branch. Provider errors, 429, malformed/empty/truncated replies and timeout return unavailable/retry/support UI rather than an invented answer. Deadlines are 20 seconds in n8n, 22 seconds in Express and 30 seconds in the browser, including response-body reads. `N8N_AI_TIMEOUT_MS` defaults to/maxes at 22000 and is bounded to a 1000ms minimum.
 
-- Azure Static Web Apps serves frontend assets only. Deploy the Express commerce API separately over HTTPS, route `/api/*` from the frontend origin to it securely, and verify CORS/origin, Firebase Admin credentials, and order persistence. n8n is the AI/order notification workflow, not the commerce API.
-- Set Firebase web app config for the Azure site and add the exact production hostname to Firebase Authentication authorized domains.
-- Configure `AI_GUEST_HASH_SECRET` to a random 32+ character value, `TRUST_PROXY_HOPS` for the actual ingress, and optional n8n webhook URL/secret in the API host's server-only environment.
-- Check real mobile UI, Google sign-in, five guest questions and sixth blocked, Google unlimited access, Ollama healthy/offline fallback, quote, order, and order history before public launch.
-- The generated product images are editorial mockups; owner should confirm labels and packaging correspond to the goods sold.
+The existing Firestore guest trial is preserved. Verified Google access does not remove abuse protection: requests are limited to 10/minute per process by IP and authenticated UID where present. Multiple API replicas require coordinated ingress/rate limits for an aggregate provider quota; the per-process limiter is not a distributed guarantee. Memory stays scoped to the current browser/account and is cleared at logout or account change. Guidance is general food/store information with an AI notice; it does not diagnose or promise treatment.
+
+## Verification and limits
+
+`npm run test:workflow` executes the sanitized import's offline graph and Code-node fixtures. The supplied private package's original validator passed 22 checks before sanitization; those checks include the full review graph and do not certify a live provider, Sheet or original WhatsApp workflow.
+
+Verify the published private webhook, Header Auth, current Groq credential/model, malformed replies and 429/timeout behavior on the owner's actual n8n instance before accepting live traffic. Tests do not send customer messages or submit an order. Complete host/Firebase setup in [COMMERCE-INTEGRATION.md](COMMERCE-INTEGRATION.md), and use [N8N-INTEGRATION.md](N8N-INTEGRATION.md) for the independent order mirror.
+
+Primary references: [n8n Webhook authentication and production URLs](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.webhook/), [Respond to Webhook](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.respondtowebhook/), [Groq structured outputs](https://console.groq.com/docs/structured-outputs), [Groq rate limits](https://console.groq.com/docs/rate-limits).

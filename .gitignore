@@ -1,6 +1,7 @@
 node_modules/
 build/
 dist/
+dist-client/
 coverage/
 .DS_Store
 *.log
@@ -18,6 +19,7 @@ coverage/
 *.key
 *service-account*.json
 *service_account*.json
+*firebase-adminsdk*.json
 credentials*.json
 .firebase/
 .cache/

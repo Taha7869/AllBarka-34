@@ -18,6 +18,8 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { getLocalized } from '../utils/localize';
 import PulseHeart from '../components/PulseHeart';
 import { buildHumanSupportWhatsAppUrl } from '../config/contacts';
+import CustomWeightInput from '../components/CustomWeightInput';
+import { resolveCustomWeight } from '../lib/productVariants';
 
 const ProductPhotoViewer = lazy(() => import('../components/ProductPhotoViewer'));
 
@@ -27,10 +29,12 @@ export default function ProductDetailPage() {
   const { addToCart, setIsCartOpen } = useCart();
   const { t, language } = useLanguage();
   
-  const product = PRODUCTS.find((p) => p.id === id);
+  const product = PRODUCTS.find((p) => p.id === id && p.active !== false);
   const productMedia = useProductMedia(product);
   const mediaCover = useProductMediaCover();
   const [selectedWeightIndex, setSelectedWeightIndex] = useState(0);
+  const [customWeightSelected, setCustomWeightSelected] = useState(false);
+  const [customGrams, setCustomGrams] = useState('100');
   const [quantity, setQuantity] = useState(1);
   const [isAdded, setIsAdded] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -52,6 +56,8 @@ export default function ProductDetailPage() {
     window.scrollTo(0, 0);
     if (id) view(id);
     setSelectedWeightIndex(0);
+    setCustomWeightSelected(false);
+    setCustomGrams('100');
     setQuantity(1);
     setImageError(false);
     setActiveGalleryIdx(0);
@@ -81,8 +87,8 @@ export default function ProductDetailPage() {
   // Related selections from the current catalogue
   const relatedProducts = useMemo(() => {
     if (!product) return [];
-    const sameCategory = PRODUCTS.filter((p) => p.id !== product.id && p.category === product.category);
-    const otherBestsellers = PRODUCTS.filter((p) => p.id !== product.id && p.category !== product.category);
+    const sameCategory = PRODUCTS.filter((p) => p.active !== false && p.id !== product.id && p.category === product.category);
+    const otherBestsellers = PRODUCTS.filter((p) => p.active !== false && p.id !== product.id && p.category !== product.category);
     return [...sameCategory, ...otherBestsellers].slice(0, 4);
   }, [product]);
 
@@ -122,11 +128,14 @@ export default function ProductDetailPage() {
   }
 
   const weights = Object.keys(product.prices);
-  const selectedWeight = weights[selectedWeightIndex] || weights[0];
-  const priceToUse = product.prices[selectedWeight];
-  const unit = unitPrice(priceToUse, selectedWeight);
+  let customSelection: ReturnType<typeof resolveCustomWeight> | null = null;
+  if (customWeightSelected) { try { customSelection = resolveCustomWeight(product, customGrams); } catch { /* Input shows the reason. */ } }
+  const selectedWeight = customWeightSelected ? customSelection?.label || '' : weights[selectedWeightIndex] || weights[0];
+  const priceToUse = customWeightSelected ? customSelection?.price : product.prices[selectedWeight];
+  const unit = !product.quoteOnly && priceToUse ? unitPrice(priceToUse, selectedWeight) : null;
 
   const handleAddToCart = () => {
+    if (product.quoteOnly || !selectedWeight || !priceToUse) return;
     addToCart({
       id: `${product.id}-${selectedWeight}`,
       productId: product.id,
@@ -170,14 +179,14 @@ export default function ProductDetailPage() {
             '@type': 'Brand',
             name: 'AllBarka'
           },
-          offers: {
+          ...(!product.quoteOnly && priceToUse ? { offers: {
             '@type': 'Offer',
             url: `${siteOrigin}/product/${product.id}`,
             priceCurrency: 'PKR',
             price: priceToUse,
             availability: 'https://schema.org/InStock',
             itemCondition: 'https://schema.org/NewCondition'
-          }
+          } } : {})
         }}
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -187,7 +196,7 @@ export default function ProductDetailPage() {
           {/* Left: Product Visual Showcase */}
           <div className="flex flex-col gap-3 lg:sticky lg:top-28">
             <div className="relative aspect-square rounded-3xl overflow-hidden bg-[var(--color-surface,#FFFCF7)] border border-[var(--color-gold,#C7982F)]/30 shadow-sm flex items-center justify-center p-6 group">
-              {imageError ? (
+              {imageError || (product.image === null && productMedia.images.length === 0) ? (
                 <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-[#FAF9F5] to-[#EFE7D8]">
                   <div className="w-16 h-16 rounded-2xl bg-[var(--color-gold,#C7982F)]/20 border border-[var(--color-gold,#C7982F)]/40 flex items-center justify-center text-[var(--color-gold,#C7982F)] mb-4">
                     <Sparkles size={28} />
@@ -303,6 +312,7 @@ export default function ProductDetailPage() {
             </div>
             
             {/* Price Row */}
+            {product.quoteOnly ? <div className="my-5 rounded-xl border border-[var(--color-border-accent)] p-5 text-sm leading-7 text-[var(--color-text-secondary)]">{t('catalog.quoteDescription')}</div> : <>
             <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2 py-4 border-y border-[var(--color-accent,#C7982F)]/25 mb-6">
               <span className="text-3xl sm:text-4xl font-serif font-bold text-[var(--color-text-price,#29231D)] dark:text-[var(--color-text-price,#F6F1EA)]">
                 <bdi dir="ltr">Rs. {priceToUse?.toLocaleString()}</bdi>
@@ -329,23 +339,25 @@ export default function ProductDetailPage() {
                     <button
                       key={idx}
                       type="button"
-                      onClick={() => setSelectedWeightIndex(idx)}
+                      onClick={() => { setSelectedWeightIndex(idx); setCustomWeightSelected(false); }}
                       className={`min-h-[44px] min-w-[70px] px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer ${
-                        isSelected 
+                        isSelected && !customWeightSelected
                           ? 'bg-[var(--color-primary,#042821)] border-[var(--color-primary,#042821)] text-[var(--color-text-on-emerald,#FFFCF7)] shadow-sm' 
                           : 'bg-white dark:bg-[#1C2422] border-[var(--color-accent,#C7982F)]/30 text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)] hover:border-[var(--color-accent,#C7982F)]'
                       }`}
                     >
-                      {w}
+                      {w === 'Bundle' ? t('weight.bundle') : w}
                     </button>
                   );
                 })}
               </div>
+              <CustomWeightInput product={product} selected={customWeightSelected} grams={customGrams} onSelect={() => setCustomWeightSelected(true)} onChange={setCustomGrams} />
             </div>
+            </>}
 
             {/* Quantity & Add to Cart (minimum 44px tap targets) */}
             <div className="flex flex-col gap-3 mb-8">
-              <div className="flex flex-col sm:flex-row gap-3">
+              {product.quoteOnly ? <Link to="/pages/contact" className="focus-ring flex min-h-12 items-center justify-center rounded-xl border border-[#c7982f]/40 bg-[#1e3a2b] px-5 text-sm font-semibold text-[#fff8e9]">{t('catalog.requestQuote')}</Link> : <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex items-center justify-center bg-white dark:bg-[#1C2422] border border-[var(--color-accent,#C7982F)]/35 rounded-xl h-12 px-2 shrink-0">
                   <button 
                     type="button"
@@ -371,7 +383,7 @@ export default function ProductDetailPage() {
                 <button 
                   type="button"
                   onClick={handleAddToCart}
-                  disabled={isAdded}
+                  disabled={isAdded || !priceToUse || !selectedWeight}
                   className={`flex-1 min-h-[48px] rounded-xl flex items-center justify-center gap-2.5 text-xs font-bold uppercase tracking-widest transition-all cursor-pointer shadow-sm ${
                     isAdded 
                       ? 'bg-[var(--color-accent,#C7982F)] text-[var(--color-text-on-gold,#121615)] shadow-md scale-[1.01]' 
@@ -390,7 +402,7 @@ export default function ProductDetailPage() {
                     </>
                   )}
                 </button>
-              </div>
+              </div>}
               
               {/* Internal Actions: Wishlist & Share */}
               <div className="flex flex-col min-[390px]:flex-row items-stretch gap-3">
@@ -495,7 +507,7 @@ export default function ProductDetailPage() {
 
                     <div className="pt-3 mt-3 border-t border-[var(--color-gold,#C7982F)]/15 flex items-center justify-between">
                       <span className="text-xs font-bold text-[var(--color-emerald,#042821)]">
-                        Rs. {price?.toLocaleString()}
+                        {rel.quoteOnly ? t('catalog.requestQuote') : `Rs. ${price?.toLocaleString()}`}
                       </span>
                       <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-gold,#C7982F)] group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
                         {t('viewDetails')}

@@ -44,5 +44,5 @@ export function filterCatalogSelection(
     (!context.isWholesale || product.wholesale > 0) &&
     (!filters.special || !!product.tag_en) &&
     (!filters.saved || context.savedIds.includes(product.id)) &&
-    (filters.budget === 10000 || startingPrice(product) <= filters.budget));
+    (filters.budget === 10000 || (!product.quoteOnly && startingPrice(product) <= filters.budget)));
 }

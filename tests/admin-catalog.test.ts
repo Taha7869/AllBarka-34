@@ -5,11 +5,12 @@ import { checkCatalogAssets, filterAdminCatalog, getAdminCatalogSnapshot, isLoca
 
 test('admin catalogue counts unique photographs rather than shared bundle references', () => {
   const snapshot = getAdminCatalogSnapshot(PRODUCTS);
-  assert.equal(snapshot.productCount, 32);
-  assert.equal(snapshot.imageCount, 46);
+  assert.equal(snapshot.productCount, 89);
+  const newImages = PRODUCTS.filter(product => product.image?.startsWith('/images/products/')).length;
+  assert.equal(snapshot.imageCount, 46 + newImages);
   assert.equal(snapshot.galleryCount, 14);
   assert.equal(snapshot.issueCount, 0);
-  assert.equal(snapshot.rows.reduce((count, row) => count + row.images.length, 0), 50);
+  assert.equal(snapshot.rows.reduce((count, row) => count + row.images.length, 0), 50 + newImages);
 });
 
 test('catalogue quality flags duplicate identities, invalid prices, untranslated names and placeholders', () => {
@@ -26,7 +27,7 @@ test('catalogue admin search supports canonical IDs and translated product queri
   const gifts = filterAdminCatalog(rows, 'بادام', 'gift-boxes');
   assert.ok(gifts.some(row => row.product.id === 'deal-2'));
   assert.ok(gifts.every(row => row.product.category === 'gift-boxes'));
-  assert.equal(filterAdminCatalog(rows, '', 'oils').length, 13);
+  assert.equal(filterAdminCatalog(rows, '', 'oils').length, 15);
 });
 
 test('image health audit only allows local image paths', () => {

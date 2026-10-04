@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, Check, Compass, ShoppingBag, X } from 'lucide-react';
 import { PRODUCTS } from '../data/products';
+import { CANONICAL_CATEGORIES } from '../config/categories';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCart } from '../contexts/CartContext';
@@ -47,7 +48,7 @@ export default function SelectionGuide({ onClose, opener }: SelectionGuideProps)
     </header>
     <div className="selection-guide-body">
       <div className="selection-guide-controls">
-        <fieldset><legend>{t('guide.collection')}</legend><div className="selection-guide-choices">{['all', 'nuts', 'snacks-seeds', 'gift-boxes', 'oils', 'essentials'].map(id => <button type="button" key={id} aria-pressed={category === id} onClick={() => { setCategory(id); setAddedId(''); }} className="focus-ring">{t(`shop.${id}`)}</button>)}</div></fieldset>
+        <fieldset><legend>{t('guide.collection')}</legend><div className="selection-guide-choices">{['all', ...Object.keys(CANONICAL_CATEGORIES)].map(id => <button type="button" key={id} aria-pressed={category === id} onClick={() => { setCategory(id); setAddedId(''); }} className="focus-ring">{t(`shop.${id}`)}</button>)}</div></fieldset>
         <label className="selection-guide-budget"><span>{t('guide.budget')}</span><select value={budget ?? 'any'} onChange={event => { setBudget(event.target.value === 'any' ? null : Number(event.target.value)); setAddedId(''); }}>
           <option value="any">{t('guide.anyBudget')}</option>{[500, 1000, 1500, 2500, 5000].map(amount => <option key={amount} value={amount}>{t('guide.upTo')} Rs. {amount.toLocaleString()}</option>)}
         </select><small>{t('guide.priceNote')}</small></label>

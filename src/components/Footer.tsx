@@ -7,12 +7,13 @@ import { AllBarkaCrestVector } from './AllBarkaLogo';
 import { STORE_CONFIG } from '../config/store';
 import { CONTACT_CONFIG, buildHumanSupportWhatsAppUrl } from '../config/contacts';
 import NewsletterCard from './NewsletterCard';
+import { CANONICAL_CATEGORIES } from '../config/categories';
 
 export default function Footer() {
   const { t } = useLanguage();
   const collections = [
-    ['footer.allProducts', '/shop'], ['footer.nuts', '/shop/nuts'], ['footer.oils', '/shop/oils'],
-    ['footer.essentials', '/shop/essentials'], ['footer.snacks', '/shop/snacks-seeds'], ['footer.gifts', '/gifting'],
+    ['footer.allProducts', '/shop'],
+    ...Object.keys(CANONICAL_CATEGORIES).map(id => [`shop.${id}`, id === 'gift-boxes' ? '/gifting' : `/shop/${id}`]),
   ];
   const journal = [
     ['footer.journal', '/journal'], ['footer.story', '/pages/our-story'], ['footer.sourcing', '/pages/our-story'],

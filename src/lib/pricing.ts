@@ -2,6 +2,7 @@ import { STORE_CONFIG } from '../config/store';
 import { ShippingMethodId } from '../types.ts';
 import { calculateShipping, getCartShippingWeightGrams, isLahoreCity } from './shippingPolicy';
 import type { HamperConfiguration } from './hamperCatalog';
+import type { AppliedPromo } from '../types/promo';
 export { calculateShipping, getCartShippingWeightGrams, getProductShippingWeightGrams, isLahoreCity } from './shippingPolicy';
 
 export const GIFT_WRAP_FEE = 250;
@@ -17,7 +18,7 @@ export interface OrderItemPriceInput {
   hamperConfiguration?: HamperConfiguration;
 }
 
-export interface PricingSummary {
+export interface PricingSummary extends Partial<AppliedPromo> {
   subtotal: number;
   discount: number;
   discountedSubtotal: number;
@@ -64,11 +65,7 @@ export function calculateSubtotal(items: OrderItemPriceInput[]): number {
 }
 
 export function calculateDiscount(subtotal: number, couponCode?: string | null): number {
-  if (!couponCode || subtotal <= 0) return 0;
-  const normalized = couponCode.trim().toUpperCase();
-  if (normalized === 'ALLBARKA10') {
-    return Math.round(subtotal * 0.10);
-  }
+  // Public estimates never own promo rules. Only an authoritative API quote grants a promo.
   return 0;
 }
 

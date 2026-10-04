@@ -1,3 +1,5 @@
+import { sanitizeFirestoreData } from './firestoreData';
+import { apiUrl } from './apiUrl';
 import type { User } from 'firebase/auth';
 import type { PatronProfile } from '../contexts/AuthContext';
 
@@ -104,7 +106,7 @@ export async function claimPendingOrder(user: Pick<User, 'getIdToken'>, request:
     return await optionalAuthService(async signal => {
       const idToken = await user.getIdToken();
       if (signal.aborted) return false;
-      const response = await request('/api/orders/claim', {
+      const response = await request(apiUrl('/api/orders/claim'), {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
         body: JSON.stringify({ orderId, claimToken }), signal,
       });
@@ -129,13 +131,13 @@ export async function completeEmailSignIn(user: User, enteredName = ''): Promise
       await runTransaction(db, async transaction => {
         const existing = await transaction.get(ref);
         const patch = emailProfileWrite(user, enteredName, existing.exists() ? existing.data() : null);
-        if (patch) transaction.set(ref, patch, { merge: true });
+        if (patch) transaction.set(ref, sanitizeFirestoreData(patch), { merge: true });
       });
     }),
     optionalAuthService(async signal => {
       const idToken = await user.getIdToken();
       if (signal.aborted) return;
-      await fetch('/api/auth/sessionLogin', { method: 'POST', credentials: 'same-origin',
+      await fetch(apiUrl('/api/auth/sessionLogin'), { method: 'POST', credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken }), signal });
     }),
     claimPendingOrder(user),

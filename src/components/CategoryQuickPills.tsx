@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { useDragScroll } from '../hooks/useDragScroll';
 import { useLanguage } from '../contexts/LanguageContext';
+import { CANONICAL_CATEGORIES, resolveCategorySlug } from '../config/categories';
 
 export interface CategoryPillItem {
   id: string;
@@ -11,7 +12,7 @@ export interface CategoryPillItem {
   searchTerm?: string;
 }
 
-export const CATEGORY_PILLS: CategoryPillItem[] = [
+const FEATURED_CATEGORY_PILLS: CategoryPillItem[] = [
   {
     id: 'all',
     label: 'All Items',
@@ -44,7 +45,7 @@ export const CATEGORY_PILLS: CategoryPillItem[] = [
     id: 'gift-boxes',
     label: 'Gift Boxes & Deals',
     emoji: '🎁',
-    categoryFilter: 'combos',
+    categoryFilter: 'gift-boxes',
     searchTerm: ''
   },
   {
@@ -53,7 +54,13 @@ export const CATEGORY_PILLS: CategoryPillItem[] = [
     emoji: '🌱',
     categoryFilter: 'seeds',
     searchTerm: ''
-  }
+  },
+];
+export const CATEGORY_PILLS: CategoryPillItem[] = [
+  ...FEATURED_CATEGORY_PILLS,
+  ...Object.values(CANONICAL_CATEGORIES).filter(category => !FEATURED_CATEGORY_PILLS.some(pill => resolveCategorySlug(pill.categoryFilter) === category.id)).map(category => ({
+    id: category.id, label: category.shortName, emoji: category.id === 'bundles' ? '🎁' : '🌿', categoryFilter: category.id, searchTerm: '',
+  })),
 ];
 
 interface CategoryQuickPillsProps {
@@ -113,7 +120,7 @@ export default function CategoryQuickPills({
                 }`}
               >
                 <span className="text-sm sm:text-base leading-none drop-shadow-xs">{item.emoji}</span>
-                <span className="tracking-wide">{t(`boutique.pill.${item.id}`, item.label)}</span>
+                <span className="tracking-wide">{t(`boutique.pill.${item.id}`, CANONICAL_CATEGORIES[item.id] ? t(`shop.${item.id}`) : item.label)}</span>
               </motion.button>
             );
           })}

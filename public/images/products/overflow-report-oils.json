@@ -1,0 +1,17 @@
+{
+  "category": "oils",
+  "checks": [
+    {
+      "id": "oil-pumpkin",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/oil-pumpkin.svg"
+    },
+    {
+      "id": "oil-chilgoza",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/oil-chilgoza.svg"
+    }
+  ]
+}

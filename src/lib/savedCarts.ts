@@ -1,4 +1,5 @@
 import type { CartItem, Product } from '../types';
+import { resolveProductVariant } from './productVariants';
 export interface CartLine { productId: string; weight: string; quantity: number; }
 export interface SavedBox { id: string; name: string; lines: CartLine[]; }
 export const SAVED_BOXES_KEY = 'allbarka_saved_boxes_v1';
@@ -8,9 +9,10 @@ export function validateCartLines(value: unknown, products: Product[]): CartLine
   for (const entry of value) {
     if (!entry || typeof entry !== 'object') continue;
     const product = products.find(item => item.id === entry.productId);
-    if (!product || typeof entry.weight !== 'string' || !Object.hasOwn(product.prices, entry.weight) || !Number.isFinite(product.prices[entry.weight]) || product.prices[entry.weight] <= 0 || !Number.isInteger(entry.quantity) || entry.quantity < 1 || entry.quantity > 50) continue;
-    const key = `${product.id}-${entry.weight}`; const previous = result.get(key);
-    result.set(key, { productId: product.id, weight: entry.weight, quantity: Math.min(50, (previous?.quantity || 0) + entry.quantity) });
+    const variant = product ? resolveProductVariant(product, entry.weight) : null;
+    if (!product || !variant || !Number.isInteger(entry.quantity) || entry.quantity < 1 || entry.quantity > 50) continue;
+    const key = `${product.id}-${variant.label}`; const previous = result.get(key);
+    result.set(key, { productId: product.id, weight: variant.label, quantity: Math.min(50, (previous?.quantity || 0) + entry.quantity) });
   }
   return [...result.values()];
 }

@@ -1,4 +1,5 @@
 import type { Product } from '../types';
+import { resolveProductPrice, resolveProductVariant } from './productVariants';
 
 interface CartIdentityInput {
   id?: unknown;
@@ -19,7 +20,22 @@ interface CartIdentity {
 
 function compositePortion(product: Product, candidates: string[], requestedPortion?: string): string | undefined {
   const portions = requestedPortion ? [requestedPortion] : Object.keys(product.prices || {});
-  return portions.find(portion => candidates.includes(`${product.id}-${portion}`));
+  const fixed = portions.find(portion => candidates.includes(`${product.id}-${portion}`));
+  if (fixed) return fixed;
+  for (const candidate of candidates) {
+    const prefix = `${product.id}-`;
+    if (!candidate.startsWith(prefix)) continue;
+    const suffix = candidate.slice(prefix.length);
+    if (/^Custom\s+/i.test(suffix)) {
+      const variant = resolveProductVariant(product, suffix);
+      if (!requestedPortion || suffix === requestedPortion || variant?.label === requestedPortion) {
+        // Even an obsolete custom portion retains its exact catalogue identity;
+        // restoration can then reject it instead of keeping an unknown product.
+        return variant?.label || suffix;
+      }
+    }
+  }
+  return undefined;
 }
 
 /** Resolve complete catalog IDs before considering an exact cart-item suffix. */
@@ -49,18 +65,18 @@ export function resolveCartQuantity(itemQuantity: unknown, explicitQuantity?: nu
   return Number.isFinite(number) ? Math.max(1, Math.min(50, Math.floor(number))) : 1;
 }
 
-/** Catalog portions must match a supported key; custom hamper labels stay intact. */
+/** Catalog portions must resolve canonically; custom hamper labels stay intact. */
 export function resolveCartPortion(product: Product | undefined, requestedPortion?: unknown): string | null {
   const portion = nonEmptyString(requestedPortion);
   if (!product) return portion || '250g';
   const supportedPortions = Object.keys(product.prices || {});
-  if (!portion) return supportedPortions[0] || null;
-  return supportedPortions.includes(portion) ? portion : null;
+  if (!portion) return supportedPortions.map(label => resolveProductVariant(product, label)).find(Boolean)?.label || null;
+  return resolveProductVariant(product, portion)?.label ?? null;
 }
 
 /** Restored catalogue selections always display today's retail price. */
 export function resolveCartUnitPrice(product: Product | undefined, portion: string, fallback: unknown): number {
-  const value = product ? product.prices[portion] : fallback;
+  const value = product ? resolveProductPrice(product, portion) : fallback;
   const amount = typeof value === 'number' ? value : Number(String(value ?? '').replace(/(?:Rs\.?|PKR|\$|,)/gi, '').trim());
   return Number.isFinite(amount) && amount >= 0 ? Math.round(amount) : 0;
 }

@@ -8,6 +8,7 @@ const bundleContents: Record<string, string[]> = {
 };
 
 export function getProductImages(product: Product): string[] {
+  if (product.image === null) return [];
   const images = [getProductImage(product)];
   if (secondPhotoIds.has(product.id)) images.push(`/images/generated/${product.id}-secondary-v1.webp`);
   images.push(...(bundleContents[product.id] || []));

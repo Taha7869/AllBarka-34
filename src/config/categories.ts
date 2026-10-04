@@ -50,6 +50,23 @@ export const CANONICAL_CATEGORIES: Record<string, CategoryMeta> = {
     badge: 'Artisanal',
     provenance: 'Hand-Curated in Lahore',
   },
+  'herbs-spices': {
+    id: 'herbs-spices',
+    name: 'Herbs & Spices',
+    shortName: 'Herbs & Spices',
+    description: 'Explore whole spices, traditional herbs and carefully selected pantry ingredients in the portions you need.',
+    bannerTitle: 'The AllBarka Herbs & Spices Collection',
+    provenance: 'Selected Pantry Ingredients',
+  },
+  bundles: {
+    id: 'bundles',
+    name: 'Bundles',
+    shortName: 'Bundles',
+    description: 'Thoughtful pairings and fixed-price collections for everyday favourites, celebrations and gifting.',
+    bannerTitle: 'AllBarka Bundles & Gift Collections',
+    badge: 'Bundle',
+    provenance: 'Curated by AllBarka',
+  },
 };
 
 export const CATEGORY_ALIASES: Record<string, string> = {
@@ -71,6 +88,9 @@ export const CATEGORY_ALIASES: Record<string, string> = {
   oil: 'oils',
   'cold-pressed': 'oils',
   tail: 'oils',
+  herbs: 'herbs-spices',
+  spices: 'herbs-spices',
+  'herbs-and-spices': 'herbs-spices',
 };
 
 /**

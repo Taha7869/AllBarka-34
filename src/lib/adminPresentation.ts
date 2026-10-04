@@ -1,3 +1,4 @@
+import type { CanonicalOrder, OrderStatus, PaymentStatus } from './serverOrderService';
 type AdminLanguage = 'en' | 'ur' | 'ar';
 const dateLocales: Record<AdminLanguage, string> = { en: 'en-PK', ur: 'ur-PK', ar: 'ar-PK' };
 
@@ -62,4 +63,38 @@ export function adminPhoneHref(value: unknown): string | null {
   const normalized = text.replace(/[ ()-]/g, '');
   if (!/^\+?\d{7,15}$/.test(normalized)) return null;
   return `tel:${normalized}`;
+}
+
+export function isAdminQuoteRequest(order: Pick<CanonicalOrder, 'orderType' | 'isQuoteRequest' | 'paymentMethod'>): boolean {
+  return order.orderType === 'QUOTE_REQUEST' || order.isQuoteRequest === true || order.paymentMethod === 'quote';
+}
+
+/** Preserve quote identity even after cancellation; zero-valued quotes are never shown as payable. */
+export function formatAdminOrderTotal(order: CanonicalOrder, t: (key: string) => string): string {
+  return isAdminQuoteRequest(order) ? t('admin.promo.quote') : formatAdminCurrency(order.totals.total);
+}
+
+export function adminEditableStatuses(order: CanonicalOrder, statuses: readonly OrderStatus[]): OrderStatus[] {
+  if (isAdminQuoteRequest(order)) return statuses.filter(status => status === order.status || status === 'CANCELLED');
+  return statuses.filter(status => status !== 'QUOTE_REQUESTED');
+}
+
+export function adminEditablePaymentStatuses(order: CanonicalOrder, statuses: readonly PaymentStatus[]): PaymentStatus[] {
+  if (isAdminQuoteRequest(order)) return ['NOT_REQUIRED'];
+  return statuses.filter(status => status !== 'NOT_REQUIRED'
+    && (order.paymentStatus === 'PAID' || status === order.paymentStatus || status === 'PAID'));
+}
+
+/** Packing and exports derive effects from persisted server metadata, never promotion definitions. */
+export function adminPromoNotes(order: CanonicalOrder, t: (key: string) => string): string[] {
+  if (!order.promoCode) return [];
+  const effects: string[] = [];
+  if (isAdminQuoteRequest(order)) effects.push(t('admin.promo.quote'));
+  if (order.freeShipping) effects.push(t('admin.promo.freeShipping'));
+  if (order.freeGiftWrap) effects.push(t('admin.promo.freeGiftWrap'));
+  if (order.freeGift) effects.push(t('admin.promo.freeGift'));
+  if (typeof order.discountAmount === 'number' && order.discountAmount > 0) {
+    effects.push(t('admin.promo.saved').replace('{amount}', formatAdminCurrency(order.discountAmount)));
+  }
+  return [`${t('admin.detail.promo')}: ${order.promoCode}`, ...effects];
 }

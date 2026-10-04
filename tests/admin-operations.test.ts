@@ -253,6 +253,28 @@ test('payment validation, status/revision conflicts and atomic errors prevent ac
   assert.deepEqual(db.store.get(`orders/${original.orderId}`), original);
 });
 
+test('quote orders are filterable, preserve promo packing flags and cannot be marked paid', async () => {
+  const original = order({ orderType: 'QUOTE_REQUEST', status: 'QUOTE_REQUESTED', paymentMethod: 'quote', paymentStatus: 'NOT_REQUIRED',
+    promoCode: 'CANCER', promoType: 'quote', discountAmount: 0, freeShipping: false, freeGiftWrap: false,
+    freeGift: false, isQuoteRequest: true,
+    totals: { subtotal: 0, discount: 0, discountedSubtotal: 0, shipping: 0, giftWrapFee: 0, total: 0 }, earnedPoints: 0 });
+  const filters = parseAdminOrderFilters({ status: 'QUOTE_REQUESTED', paymentMethod: 'quote', paymentStatus: 'NOT_REQUIRED' });
+  assert.equal(filterAdminOrders([original, order()], filters).length, 1);
+  assert.equal(sanitizeOrderForAdmin(original).promoCode, 'CANCER');
+  assert.equal(sanitizeOrderForAdmin(original).isQuoteRequest, true);
+  assert.equal(adminOrderMetrics([original]).statusCounts.QUOTE_REQUESTED, 1);
+  assert.equal(adminOrderMetrics([original]).paidValue, 0);
+  const db = new FakeFirestore([original]);
+  await assert.rejects(() => updateAdminOrderPayment({ ...actor(db, original), paymentStatus: 'PAID',
+    expectedPaymentStatus: 'NOT_REQUIRED', reason: 'Attempted payment' }), errorCode('QUOTE_PAYMENT_NOT_REQUIRED'));
+  assert.deepEqual(db.store.get(`orders/${original.orderId}`), original);
+  assert.equal([...db.store.keys()].some(key => key.startsWith('orderAudits/')), false);
+  const gift = sanitizeOrderForAdmin(order({ promoCode: 'MYSTERY', promoType: 'free_gift', discountAmount: 0,
+    freeGift: true, freeShipping: false, freeGiftWrap: false, isQuoteRequest: false }));
+  assert.equal(gift.freeGift, true);
+  assert.equal(gift.promoCode, 'MYSTERY');
+});
+
 test('existing delivered/cancelled status path preserves once-only loyalty ledger behavior', async () => {
   const original = order();
   const db = new FakeFirestore([original]);

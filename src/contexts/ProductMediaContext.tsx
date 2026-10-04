@@ -1,3 +1,4 @@
+import { apiUrl } from '../lib/apiUrl';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { resolveProductMedia, sanitizeProductMediaOverrides, type ProductMedia, type ProductMediaOverrides } from '../lib/productMedia';
 import type { Product } from '../types';
@@ -27,7 +28,7 @@ export function ProductMediaProvider({ children, initialOverrides }: { children:
     const version = ++generation.current;
     const timer = setTimeout(() => controller.abort(), 10_000);
     try {
-      const response = await fetch('/api/product-media', { signal: controller.signal, credentials: 'omit', cache: 'no-store', headers: { Accept: 'application/json' } });
+      const response = await fetch(apiUrl('/api/product-media'), { signal: controller.signal, credentials: 'omit', cache: 'no-store', headers: { Accept: 'application/json' } });
       if (!response.ok) return;
       const data = await response.json();
       const next = sanitizeProductMediaOverrides(data.overrides);

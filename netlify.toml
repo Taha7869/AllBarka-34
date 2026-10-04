@@ -1,0 +1,24 @@
+[build]
+  command = "npm run verify:static-config && npm run build:frontend && node scripts/verify-static-config.mjs --artifact"
+  publish = "dist-client"
+
+[build.environment]
+  NODE_VERSION = "24"
+
+# Static hosting never turns /api errors into successful HTML responses.
+# The storefront uses the configured VITE_API_BASE_URL commerce origin.
+[[redirects]]
+  from = "/api/*"
+  to = "/api-unavailable.json"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache"

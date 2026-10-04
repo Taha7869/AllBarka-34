@@ -31,6 +31,12 @@ export function buildAutomatedOrderWhatsAppUrl(textMessage?: string): string {
   return `https://wa.me/${number}?text=${encodeURIComponent(textMessage)}`;
 }
 
+/** Saved-order lookup only. Opening the link does not send a message or establish a service window. */
+export function buildOrderTrackingWhatsAppUrl(orderId: string): string {
+  if (!/^AB-\d{8}-[A-F0-9]{6}$/i.test(orderId)) throw new Error('INVALID_SAVED_ORDER_ID');
+  return buildAutomatedOrderWhatsAppUrl(`Track my order ${orderId}`);
+}
+
 /**
  * Builds a WhatsApp link for human customer support / concierge (Targets +92 316 0666083)
  */

@@ -1,3 +1,4 @@
+import { submitBoutiqueInquiry } from '../lib/storefrontSubmissions';
 import React, { useState } from 'react';
 import {
   MessageCircle,
@@ -11,8 +12,10 @@ import {
   Sparkles
 } from 'lucide-react';
 import { CONTACT_CONFIG, buildHumanSupportWhatsAppUrl, buildCustomerEmailUrl } from '../config/contacts';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function BoutiqueContactForm() {
+  const { t } = useLanguage();
   const [name, setName] = useState('');
   const [contact, setContact] = useState('');
   const [topic, setTopic] = useState('corporate-gifting');
@@ -24,6 +27,7 @@ export default function BoutiqueContactForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (status === 'submitting') return;
     setFeedback(null);
 
     if (!name.trim()) {
@@ -44,37 +48,18 @@ export default function BoutiqueContactForm() {
 
     setStatus('submitting');
     try {
-      const res = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: name.trim(),
-          contact: contact.trim(),
-          topic,
-          message: message.trim()
-        })
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to submit inquiry.');
-      }
+      const data = await submitBoutiqueInquiry({ name: name.trim(), contact: contact.trim(), topic, message: message.trim() });
 
       setStatus('success');
-      setTicketId(data.ticketId || `AB-${Date.now().toString(36).toUpperCase()}`);
+      setTicketId(data.ticketId);
       setFeedback(data.message || 'Inquiry received. Our Lahore concierge will contact you shortly.');
       setName('');
       setContact('');
       setMessage('');
-    } catch (err: any) {
-      // Local graceful fallback if network fails
-      const fallbackId = `AB-${Date.now().toString(36).toUpperCase()}`;
-      setStatus('success');
-      setTicketId(fallbackId);
-      setFeedback('Thank you. Your inquiry has been registered with our AllBarka boutique concierge.');
-      setName('');
-      setContact('');
-      setMessage('');
+    } catch {
+      setStatus('error');
+      setTicketId(null);
+      setFeedback(t('contact.submitFailed'));
     }
   };
 

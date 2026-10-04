@@ -1,7 +1,8 @@
 import crypto from 'crypto';
 import type { Firestore, Transaction, DocumentSnapshot } from 'firebase-admin/firestore';
 import { validateAndPriceOrder, validateCustomerDetails, ValidationError, ValidatedOrderItem } from './orderValidation';
-import { STORE_COUPONS, calculateCouponDiscount, CouponRecord } from './couponEngine';
+import type { AppliedPromo } from '../types/promo';
+import { sanitizeFirestoreData } from './firestoreData';
 import { PricingSummary } from './pricing';
 import { STORE_CONFIG } from '../config/store';
 import { REWARDS } from '../data/rewards';
@@ -10,9 +11,9 @@ import { PRODUCTS } from '../data/products';
 
 export const SCHEMA_VERSION = '2.0.0';
 
-export type OrderStatus = 'NEW' | 'ORDER_RECEIVED' | 'CONFIRMED' | 'PREPARING' | 'DISPATCHED' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'CANCELLED';
-export type PaymentStatus = 'UNPAID' | 'PAID' | 'REFUNDED';
-export type PaymentMethod = 'cod' | 'bank';
+export type OrderStatus = 'NEW' | 'QUOTE_REQUESTED' | 'ORDER_RECEIVED' | 'CONFIRMED' | 'PREPARING' | 'DISPATCHED' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'CANCELLED';
+export type PaymentStatus = 'UNPAID' | 'PAID' | 'REFUNDED' | 'NOT_REQUIRED';
+export type PaymentMethod = 'cod' | 'bank' | 'quote';
 
 export interface AdminNoteEntry {
   id: string;
@@ -40,7 +41,8 @@ export interface CanonicalGiftingSnapshot {
 
 import { DeliveryScheduleResult } from './deliveryCalendar';
 
-export interface CanonicalOrder {
+export interface CanonicalOrder extends Partial<AppliedPromo> {
+  orderType?: 'ORDER' | 'QUOTE_REQUEST';
   schemaVersion: string; // '2.0.0'
   orderId: string; // e.g. 'AB-20260914-7F89AB'
   source: 'website';
@@ -52,6 +54,8 @@ export interface CanonicalOrder {
   paymentStatus: PaymentStatus;
   paymentMethod: PaymentMethod;
   uid: string | null;
+  // Older receipts may omit this field; new canonical orders always persist the mode.
+  isWholesale?: boolean;
   guestSessionId?: string | null;
   claimTokenHash?: string | null; // SHA-256 hash of high-entropy token, excluded from public customer responses
   claimTokenExpiry?: number | null;
@@ -72,7 +76,8 @@ export interface CanonicalOrder {
   adminNoteEntries?: AdminNoteEntry[];
 }
 
-export interface SanitizedCustomerOrder {
+export interface SanitizedCustomerOrder extends Partial<AppliedPromo> {
+  orderType?: 'ORDER' | 'QUOTE_REQUEST';
   schemaVersion: string;
   orderId: string;
   createdAt: string;
@@ -102,8 +107,18 @@ export interface OutboxOrderEvent {
   schemaVersion: string;
   occurredAt: string;
   occurredAtMs: number;
-  deliveryState: 'PENDING' | 'DISABLED';
+  deliveryState: 'PENDING' | 'LEASED' | 'DELIVERED' | 'FAILED' | 'DISABLED';
   attempts: number;
+  nextAttemptAtMs?: number;
+  leaseOwner?: string;
+  leaseToken?: string;
+  leaseUntilMs?: number;
+  lastAttemptAtMs?: number;
+  deliveredAtMs?: number;
+  updatedAtMs?: number;
+  disabledReason?: string;
+  lastError?: string;
+  lastStatusCode?: number;
   payload: Record<string, any>;
 }
 
@@ -114,6 +129,8 @@ export interface IdempotencyRecord {
   createdAt: number;
   response: {
     orderId: string;
+    status?: OrderStatus;
+    orderType?: 'ORDER' | 'QUOTE_REQUEST';
     whatsappMessage: string;
     totals: PricingSummary;
     items: ValidatedOrderItem[];
@@ -127,12 +144,21 @@ export interface IdempotencyRecord {
  * Strips private security fields, claim token hashes, and internal admin logs from customer-facing views.
  */
 export function sanitizeOrderForCustomer(order: CanonicalOrder, whatsappMessage?: string): SanitizedCustomerOrder {
-  return {
+  return sanitizeFirestoreData({
     schemaVersion: order.schemaVersion,
     orderId: order.orderId,
     createdAt: order.createdAt,
     createdAtMs: order.createdAtMs,
     status: order.status,
+    orderType: order.orderType || 'ORDER',
+    promoCode: order.promoCode ?? order.couponCode ?? null,
+    promoType: order.promoType ?? null,
+    ...(typeof order.promoValue === 'number' ? { promoValue: order.promoValue } : {}),
+    discountAmount: order.discountAmount ?? order.couponDiscount ?? order.totals.discount ?? 0,
+    freeShipping: Boolean(order.freeShipping),
+    freeGiftWrap: Boolean(order.freeGiftWrap),
+    freeGift: Boolean(order.freeGift),
+    isQuoteRequest: order.orderType === 'QUOTE_REQUEST',
     paymentStatus: order.paymentStatus,
     paymentMethod: order.paymentMethod,
     customer: {
@@ -159,13 +185,18 @@ export function sanitizeOrderForCustomer(order: CanonicalOrder, whatsappMessage?
     pointsAwarded: Boolean(order.pointsAwarded),
     claimedAt: order.claimedAt || null,
     whatsappMessage,
-  };
+  });
 }
 
 /**
  * Generates an authoritative WhatsApp concierge receipt text for Lahore dispatch.
  */
 export function generateAuthoritativeWhatsAppMessage(order: CanonicalOrder): string {
+  if (order.orderType === 'QUOTE_REQUEST') {
+    return ['*ALLBARKA — QUOTE REQUEST*', `Ref: #${order.orderId}`, `Customer: ${order.customer.name}`,
+      ...order.items.map(item => `• ${item.name} (${item.selectedWeight}) × ${item.quantity}`),
+      'PROMO:CANCER: quote request', 'Our team will contact you with your personalized rate.'].join('\n');
+  }
   const dateStr = new Date(order.createdAtMs).toLocaleDateString('en-PK', {
     day: 'numeric',
     month: 'short',
@@ -229,14 +260,16 @@ export function generateAuthoritativeWhatsAppMessage(order: CanonicalOrder): str
 /**
  * Computes payload hash for idempotency checking.
  */
-export function hashPayload(payload: any): string {
+function hashCheckoutPayload(payload: any, includeDeliveryPricingIntent: boolean): string {
   const normalized = {
     name: payload.name?.trim(),
     phone: payload.phone?.trim(),
     address: payload.address?.trim(),
     city: payload.city?.trim(),
     paymentMethod: payload.paymentMethod?.trim(),
+    ...(includeDeliveryPricingIntent ? { deliverySlot: payload.deliverySlot?.trim() || 'Fastest Dispatch' } : {}),
     shippingMethodId: payload.shippingMethodId,
+    ...(includeDeliveryPricingIntent ? { isWholesale: Boolean(payload.isWholesale) } : {}),
     discountCode: payload.discountCode ? String(payload.discountCode).trim().toUpperCase() : null,
     rewardId: payload.rewardId ? String(payload.rewardId).trim() : null,
     giftWrapping: Boolean(payload.giftWrapping),
@@ -253,6 +286,10 @@ export function hashPayload(payload: any): string {
 
   return crypto.createHash('sha256').update(JSON.stringify(normalized)).digest('hex');
 }
+
+export function hashPayload(payload: any): string { return hashCheckoutPayload(payload, true); }
+/** Migration comparison only; the saved canonical slot/mode must independently prove compatibility. */
+export function hashLegacyCheckoutPayload(payload: any): string { return hashCheckoutPayload(payload, false); }
 
 /**
  * Generates a unique collision-resistant AllBarka order reference:

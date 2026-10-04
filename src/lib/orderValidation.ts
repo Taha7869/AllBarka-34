@@ -1,10 +1,13 @@
 import { PRODUCTS } from '../data/products';
 import { calculateOrderSummary, PricingSummary } from './pricing';
 import { ShippingMethodId } from '../types.ts';
-import { validateShippingCity } from './shippingPolicy';
+import { isLahoreCity, validateShippingCity } from './shippingPolicy';
 import { ValidationError } from './validationError';
 export { ValidationError } from './validationError';
 import { CUSTOM_HAMPER_PRODUCT_ID, hamperCartKey, resolveHamper, type HamperConfiguration } from './hamperCatalog';
+import { evaluatePromo, getPromo, NO_PROMO } from './couponEngine';
+import { resolveCartIdentity } from './cartInput';
+import { resolveCustomWeight, resolveProductVariant } from './productVariants';
 
 export interface ValidatedOrderItem {
   id: string; // composite cart item id, e.g. "pista-250g"
@@ -72,7 +75,7 @@ export function normalizeAndValidatePkPhone(rawPhone: unknown): { valid: boolean
  * Validates customer details and payment method.
  * Throws ValidationError on any failing constraint.
  */
-export function validateCustomerDetails(input: Partial<CustomerInput>): CustomerInput & { phone: string } {
+export function validateCustomerDetails(input: Partial<CustomerInput>, isQuoteRequest = false): CustomerInput & { phone: string } {
   const name = typeof input.name === 'string' ? input.name.trim() : '';
   if (!name || name.length < 3) {
     throw new ValidationError('Recipient name must be at least 3 characters long.', 'INVALID_NAME');
@@ -96,9 +99,9 @@ export function validateCustomerDetails(input: Partial<CustomerInput>): Customer
 
   const city = validateShippingCity(input.city);
 
-  const paymentMethod = typeof input.paymentMethod === 'string' ? input.paymentMethod.trim().toLowerCase() : '';
+  const paymentMethod = isQuoteRequest ? 'quote' : typeof input.paymentMethod === 'string' ? input.paymentMethod.trim().toLowerCase() : '';
   const allowedPayments = ['cod', 'bank'];
-  if (!allowedPayments.includes(paymentMethod)) {
+  if (!isQuoteRequest && !allowedPayments.includes(paymentMethod)) {
     throw new ValidationError(
       `Unsupported payment method "${input.paymentMethod}". Allowed methods: ${allowedPayments.join(', ')}`,
       'INVALID_PAYMENT_METHOD'
@@ -132,6 +135,7 @@ export function validateAndPriceOrder({
   giftWrapping = false,
   isWholesale = false,
   city,
+  promoContext,
 }: {
   items: any[];
   shippingMethodId: string;
@@ -139,6 +143,7 @@ export function validateAndPriceOrder({
   giftWrapping?: boolean;
   isWholesale?: boolean;
   city: string;
+  promoContext?: { hasPastOrders?: boolean; identityVerified?: boolean; now?: number };
 }): ValidatedOrder {
   if (!Array.isArray(items) || items.length === 0) {
     throw new ValidationError('Order must contain at least one item.', 'EMPTY_CART');
@@ -180,10 +185,8 @@ export function validateAndPriceOrder({
         price: hamper.unitPrice, earnedPoints: 0, hamperConfiguration: hamper.configuration,
       };
     }
-    const strippedId = rawId.replace(/-(?:250g|500g|1kg|piece|box|pack|single|set)$/i, '');
-    const product = PRODUCTS.find(
-      p => p.id === clientItem.productId || p.id === rawId || p.id === strippedId
-    );
+    const identity = resolveCartIdentity(clientItem, PRODUCTS);
+    const product = identity?.product;
 
     if (!product) {
       throw new ValidationError(
@@ -192,30 +195,28 @@ export function validateAndPriceOrder({
       );
     }
 
-    const weight = String(clientItem.selectedWeight || '250g').trim();
+    if (product.active === false) {
+      throw new ValidationError(`Product "${product.name_en}" is currently unavailable.`, 'PRODUCT_UNAVAILABLE');
+    }
+    if (product.quoteOnly === true) {
+      throw new ValidationError(`Please request a personalized quote for "${product.name_en}".`, 'QUOTE_REQUIRED');
+    }
+    const requestedWeight = String(clientItem.selectedWeight || identity?.portion || '250g').trim();
     const allowedWeights = product.prices ? Object.keys(product.prices) : [];
-    if (allowedWeights.length > 0 && !Object.hasOwn(product.prices, weight)) {
+    const variant = /^Custom\s+/i.test(requestedWeight)
+      ? resolveCustomWeight(product, requestedWeight)
+      : resolveProductVariant(product, requestedWeight);
+    if (!variant) {
       throw new ValidationError(
-        `Invalid weight "${weight}" for product "${product.name_en}". Allowed weights: ${allowedWeights.join(', ')}`,
+        `Invalid weight "${requestedWeight}" for product "${product.name_en}". Allowed weights: ${allowedWeights.join(', ')}`,
         'INVALID_WEIGHT'
       );
     }
-
-    let authoritativeUnitPrice = 0;
-    if (isWholesale && product.wholesale) {
-      authoritativeUnitPrice = product.wholesale;
-    } else if (product.prices && typeof product.prices[weight] === 'number') {
-      authoritativeUnitPrice = product.prices[weight];
-    } else if (product.price) {
-      authoritativeUnitPrice = product.price;
-    } else if (allowedWeights.length > 0 && product.prices) {
-      throw new ValidationError(
-        `Invalid weight "${weight}" for product "${product.name_en}". Allowed weights: ${allowedWeights.join(', ')}`,
-        'INVALID_WEIGHT'
-      );
-    } else {
-      throw new ValidationError(`Pricing unavailable for product "${product.name_en}".`, 'PRICING_UNAVAILABLE');
-    }
+    const weight = variant.label;
+    // Existing fixed wholesale pricing remains compatible. Custom grams always
+    // use the catalogue retail rate, never a client-supplied wholesale amount.
+    const authoritativeUnitPrice = !variant.isCustom && isWholesale && product.wholesale > 0
+      ? product.wholesale : variant.price;
 
     // Validate quantity strictly: integer between 1 and 50 inclusive. Reject fractional, zero, negative or non-finite.
     const rawQty = clientItem.quantity;
@@ -251,17 +252,26 @@ export function validateAndPriceOrder({
     };
   });
 
-  const summary = calculateOrderSummary({
-    items: validatedItems.map(i => ({ unitPrice: i.price, quantity: i.quantity, productId: i.productId, selectedWeight: i.selectedWeight, hamperConfiguration: i.hamperConfiguration })),
-    shippingMethodId: resolvedShipping,
-    couponCode: discountCode,
-    giftWrapping,
-    city: destination,
+  const subtotal = validatedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const promo = getPromo(discountCode);
+  const applied = promo ? evaluatePromo(promo, subtotal, promoContext) : { ...NO_PROMO };
+  const discounted = calculateOrderSummary({
+    items: validatedItems.map(item => ({ unitPrice: item.price, quantity: item.quantity, productId: item.productId,
+      selectedWeight: item.selectedWeight, hamperConfiguration: item.hamperConfiguration })),
+    shippingMethodId: resolvedShipping, city: applied.isQuoteRequest ? 'Lahore' : destination, manualDiscount: applied.discountAmount,
+    giftWrapping: applied.freeGiftWrap ? false : giftWrapping,
   });
+  if (applied.freeShipping) discounted.shipping = 0;
+  discounted.total = discounted.discountedSubtotal + discounted.shipping + discounted.giftWrapFee;
+  Object.assign(discounted, applied);
+  if (applied.isQuoteRequest) {
+    Object.assign(discounted, { subtotal: 0, discount: 0, discountedSubtotal: 0, shipping: 0,
+      giftWrapFee: 0, total: 0, shippingWeightGrams: 0, shippingRegion: isLahoreCity(destination) ? 'lahore' : 'nationwide' });
+  }
 
   return {
     items: validatedItems,
-    summary,
-    earnedPoints: totalEarnedPoints,
+    summary: discounted,
+    earnedPoints: applied.isQuoteRequest ? 0 : totalEarnedPoints,
   };
 }

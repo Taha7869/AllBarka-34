@@ -6,16 +6,27 @@ import useEmblaCarousel from 'embla-carousel-react';
 import { useReducedMotion } from 'motion/react';
 import { canRotatePantry, pantryCardProjection, pantryRotationDistance } from '../lib/pantryMotion';
 import { visibleCardFraction } from '../lib/circularCatalogue';
+import { CANONICAL_CATEGORIES } from '../config/categories';
+import { PRODUCTS, getProductImage } from '../data/products';
 
-const categories = [
+const collectionPresentation = [
   { id: 'all', name: 'All Items', image: '/assets/categories/all_items.png', altKey: 'imageAlt.hero', link: '/shop' },
-  { id: 'deals', name: 'Deals & Bundles', image: '/assets/categories/deals.png', altKey: 'imageAlt.categoryDealBoxes', link: '/shop/combos' },
+  { id: 'bundles', name: 'Bundles', image: '/assets/categories/deals.png', altKey: 'imageAlt.categoryDealBoxes', link: '/shop/bundles' },
   { id: 'nuts', name: 'Dry Fruits & Nuts', image: '/assets/categories/dry_fruits.png', altKey: 'imageAlt.categoryDryFruits', link: '/shop/nuts' },
   { id: 'snacks-seeds', name: 'Snacks & Seeds', image: '/assets/categories/snacks.png', altKey: 'imageAlt.categorySnacks', link: '/shop/snacks-seeds' },
   { id: 'gift-boxes', name: 'Gift Boxes', image: '/assets/categories/gifts.png', altKey: 'imageAlt.categoryGifts', link: '/gifting' },
   { id: 'oils', name: 'Cold-Pressed Oils', image: '/images/generated/category-oils-tile-v1.webp', altKey: 'imageAlt.categoryOils', link: '/shop/oils' },
   { id: 'essentials', name: 'Desi Essentials', image: '/images/generated/category-essentials-tile-v1.webp', altKey: 'imageAlt.categoryEssentials', link: '/shop/essentials' },
 ];
+/** Preserve the established collection art/order; new canonical collections join automatically. */
+export const PANTRY_CATEGORIES = [
+  ...collectionPresentation,
+  ...Object.values(CANONICAL_CATEGORIES).filter(category => !collectionPresentation.some(item => item.id === category.id)).map(category => {
+    const cover = PRODUCTS.find(product => product.active !== false && product.category === category.id);
+    return { id: category.id, name: category.name, image: cover?.image === null ? '' : cover ? getProductImage(cover) : '', altKey: `catalog.alt.${category.id}`, link: `/shop/${category.id}` };
+  }),
+];
+const categories = PANTRY_CATEGORIES;
 
 export default function CategoryCarousel() {
   const { t } = useLanguage();
@@ -180,10 +191,10 @@ export default function CategoryCarousel() {
                 <div key={category.id} className="editorial-pantry-slide" aria-hidden={!visible.has(index)} inert={!visible.has(index)}>
                   <Link to={category.link} draggable={false} aria-label={t(`pantry.${category.id}`)}
                     className="editorial-category group relative block w-full overflow-hidden border border-[var(--color-border-accent)] bg-[var(--color-surface)] focus-ring hover:border-[#C7982F]/60 pointer-events-auto select-none">
-                    <img src={category.image} alt={t(category.altKey, category.name)} draggable={false}
+                    {category.image ? <img src={category.image} alt={t(category.altKey, category.name)} draggable={false}
                       onError={event => { const node = event.currentTarget; node.onerror = null; node.src = '/images/product-placeholder.svg'; }}
                       className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:transform-none"
-                      loading="lazy" decoding="async" />
+                      loading="lazy" decoding="async" /> : <div role="img" aria-label={category.name} className="absolute inset-0 flex items-center justify-center bg-[#173a2c] font-serif text-3xl text-[#e4c783]">AllBarka</div>}
                     <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-emerald)]/95 via-[var(--color-emerald)]/30 to-transparent pointer-events-none" />
                     {index < 2 && <span className="absolute left-4 top-4 rounded-full border border-white/25 bg-[var(--color-emerald)]/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-[var(--color-ivory)] backdrop-blur-md pointer-events-none z-10">{t(index === 0 ? 'pantry.start' : 'pantry.value')}</span>}
                     <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-5 pointer-events-none z-10">

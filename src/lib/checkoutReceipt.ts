@@ -1,4 +1,17 @@
 import type { CartItem } from '../types';
+import type { PricingSummary } from './pricing';
+
+/** Describes the server's applied effect; it does not infer or calculate a promo. */
+export function appliedPromotionMessage(totals: PricingSummary | null, t: (key: string) => string): string | null {
+  if (!totals?.promoCode || !totals.promoType) return null;
+  const effect = totals.promoType === 'free_shipping' ? t('checkout.promoFreeShipping')
+    : totals.promoType === 'free_giftwrap' ? t('checkout.promoFreeGiftWrap')
+    : totals.promoType === 'free_gift' ? t('checkout.promoFreeGift')
+    : totals.promoType === 'quote' ? t('checkout.quoteRequestNotice')
+    : `${totals.promoType === 'percent' && typeof totals.promoValue === 'number'
+      ? t('checkout.promoPercentApplied').replace('{value}', String(totals.promoValue)) : t('checkout.promoDiscountApplied')} — ${t('checkout.promoSaved')} Rs. ${totals.discount.toLocaleString('en-PK')}`;
+  return `${totals.promoCode}: ${effect}`;
+}
 
 export interface CheckoutReceiptTotals {
   subtotal: number;

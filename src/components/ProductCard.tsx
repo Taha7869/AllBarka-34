@@ -98,7 +98,7 @@ export default function ProductCard({
       {/* Weights & Action Area */}
       <div className="mt-auto space-y-4 border-t border-[var(--color-border)] pt-4">
         {/* Weight Selector */}
-        <div className="flex w-full flex-wrap gap-1.5" role="group" aria-label={t('shop.portion')}>
+        {!product.quoteOnly && <div className="flex w-full flex-wrap gap-1.5" role="group" aria-label={t('shop.portion')}>
           {weights.map((w) => (
             <button
               key={w}
@@ -117,7 +117,7 @@ export default function ProductCard({
               {w}
             </button>
           ))}
-        </div>
+        </div>}
 
         {/* Pricing & Add to Cart */}
         <div className="flex flex-col gap-3">
@@ -127,7 +127,7 @@ export default function ProductCard({
                 {t('price', 'Price')}
               </span>
               <span className="font-serif text-2xl font-medium leading-tight tracking-tight text-[var(--color-text-price)]">
-                <bdi dir="ltr">Rs. {unitPrice?.toLocaleString()}</bdi>
+                {product.quoteOnly ? <span className="text-base">{t('catalog.requestQuote')}</span> : <bdi dir="ltr">Rs. {unitPrice?.toLocaleString()}</bdi>}
               </span>
             </div>
             {onQuickView && <button type="button" onClick={(e) => { e.stopPropagation(); onQuickView(product); }} className="focus-ring inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-lg px-2 text-[10px] font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-base)] hover:text-[var(--color-accent-text)]" aria-label={`${t('quickView')}: ${getLocalized(product, 'name', language)}`}><Eye size={15} strokeWidth={1.7} /><span dir="auto">{t('quickView')}</span></button>}
@@ -135,7 +135,7 @@ export default function ProductCard({
 
           <div className="w-full">
             {/* Magnetic Add-to-Cart */}
-            <MagneticButton
+            {product.quoteOnly ? <Link to="/pages/contact" className="focus-ring flex min-h-[46px] items-center justify-center rounded-xl border border-[#c7982f]/35 bg-[#1e3a2b] px-3 text-xs font-semibold text-[#fff8e9]">{t('catalog.requestQuote')}</Link> : <MagneticButton
               strength={3}
               onClick={(e) => {
                 e.stopPropagation();
@@ -149,7 +149,7 @@ export default function ProductCard({
             >
               <ShoppingBag size={14} strokeWidth={1.7} className="text-[#E4C783]" />
               <span dir="auto">{t('addToCart', 'Add to Cart')}</span>
-            </MagneticButton>
+            </MagneticButton>}
           </div>
         </div>
       </div>

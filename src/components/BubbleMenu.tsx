@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { CANONICAL_CATEGORIES } from '../config/categories';
 
 interface MenuItem {
   id: string;
@@ -31,12 +32,10 @@ export default function BubbleMenu({
       path: '/shop',
       dropdownItems: [
         { id: 'all', label: t('allProducts', 'All Products'), path: '/shop' },
-        { id: 'deals', label: t('deals', 'Deals & Bundles'), path: '/shop/combos' },
-        { id: 'nuts', label: t('dryFruits', 'Dry Fruits & Nuts'), path: '/shop/nuts' },
-        { id: 'seeds', label: t('berries', 'Seeds & Superfoods'), path: '/shop/seeds' },
-        { id: 'snacks', label: t('snacks', 'Premium Snacks'), path: '/shop/snacks-seeds' },
+        ...Object.keys(CANONICAL_CATEGORIES).map(id => ({ id, label: t(`shop.${id}`), path: `/shop/${id}` })),
       ],
     },
+    { id: 'Herbs & Spices', label: t('catalog.navHerbs'), path: '/shop/herbs-spices' },
     { id: 'Gift Boxes', label: t('giftBoxes', 'Gifting'), path: '/gifting' },
     { id: 'Journal', label: t('journal', 'Journal'), path: '/journal' },
     { id: 'Contact', label: t('contact', 'Contact'), path: '/pages/contact' },
@@ -60,6 +59,7 @@ export default function BubbleMenu({
           <div key={item.id} className="relative" onMouseEnter={() => setHoveredItem(item.id)} onMouseLeave={() => setHoveredItem(null)}>
             <button
               type="button"
+              data-nav-path={item.path}
               onClick={() => onItemClick?.(item)}
               className={'focus-ring relative z-10 block cursor-pointer rounded-full px-3 py-1.5 font-sans text-[11px] font-medium uppercase tracking-[0.07em] outline-none transition-colors duration-200 ' + itemClass}
             >

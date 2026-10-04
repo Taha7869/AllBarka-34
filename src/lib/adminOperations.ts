@@ -2,10 +2,11 @@ import crypto from 'node:crypto';
 import type { Firestore } from 'firebase-admin/firestore';
 import type { AdminNoteEntry, CanonicalOrder, OrderStatus, PaymentStatus } from './serverOrderService';
 import { resolveHamper } from './hamperCatalog';
+import { sanitizeFirestoreData } from './firestoreData';
 
 export const ADMIN_SCAN_LIMIT = 5000;
-export const ADMIN_STATUSES: OrderStatus[] = ['NEW', 'ORDER_RECEIVED', 'CONFIRMED', 'PREPARING', 'DISPATCHED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'];
-export const ADMIN_PAYMENT_STATUSES: PaymentStatus[] = ['UNPAID', 'PAID', 'REFUNDED'];
+export const ADMIN_STATUSES: OrderStatus[] = ['NEW', 'QUOTE_REQUESTED', 'ORDER_RECEIVED', 'CONFIRMED', 'PREPARING', 'DISPATCHED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'];
+export const ADMIN_PAYMENT_STATUSES: PaymentStatus[] = ['UNPAID', 'PAID', 'REFUNDED', 'NOT_REQUIRED'];
 
 export class AdminOperationError extends Error {
   constructor(message: string, public code: string, public httpStatus = 400) {
@@ -58,7 +59,7 @@ export interface AdminOrderFilters {
   limit: number;
   status: 'ALL' | OrderStatus;
   paymentStatus: 'ALL' | PaymentStatus;
-  paymentMethod: 'ALL' | 'cod' | 'bank';
+  paymentMethod: 'ALL' | 'cod' | 'bank' | 'quote';
   range: 'all' | 'today' | '7d' | '30d';
   queue: 'all' | 'new' | 'packing' | 'transit' | 'bank-pending';
   search: string;
@@ -88,7 +89,7 @@ export function parseAdminOrderFilters(query: Record<string, unknown>): AdminOrd
   const queue = queryString(query.queue, 'all');
   if (!(status === 'ALL' || ADMIN_STATUSES.includes(status as OrderStatus)) ||
       !(paymentStatus === 'ALL' || ADMIN_PAYMENT_STATUSES.includes(paymentStatus as PaymentStatus)) ||
-      !['ALL', 'cod', 'bank'].includes(paymentMethod) || !['all', 'today', '7d', '30d'].includes(range) ||
+      !['ALL', 'cod', 'bank', 'quote'].includes(paymentMethod) || !['all', 'today', '7d', '30d'].includes(range) ||
       !['all', 'new', 'packing', 'transit', 'bank-pending'].includes(queue)) {
     throw new AdminOperationError('Invalid order filter.', 'INVALID_FILTER');
   }
@@ -109,6 +110,13 @@ export function sanitizeOrderForAdmin(order: CanonicalOrder): AdminOrder {
     updatedAt: order.updatedAt || order.createdAt,
     updatedAtMs: order.updatedAtMs || order.createdAtMs,
     status: order.status, paymentStatus: order.paymentStatus, paymentMethod: order.paymentMethod,
+    orderType: order.orderType ?? 'ORDER',
+    promoCode: order.promoCode === undefined ? (order.couponCode ?? null) : order.promoCode,
+    promoType: order.promoType ?? null,
+    ...(typeof order.promoValue === 'number' && Number.isFinite(order.promoValue) ? { promoValue: order.promoValue } : {}),
+    discountAmount: order.discountAmount ?? order.couponDiscount ?? totals.discount ?? 0,
+    freeShipping: order.freeShipping === true, freeGiftWrap: order.freeGiftWrap === true,
+    freeGift: order.freeGift === true, isQuoteRequest: order.isQuoteRequest === true,
     uid: order.uid, claimedAt: order.claimedAt,
     customer: { name: customer.name, phone: customer.phone, address: customer.address,
       city: customer.city, deliverySlot: customer.deliverySlot, instructions: customer.instructions },
@@ -274,17 +282,17 @@ export async function addAdminOrderNote(input: AdminMutation & { note: unknown }
     const clock = revisionTime(order);
     const note: AdminNoteEntry = { id, text, actorUid: actor.actorUid, actorEmail: actor.actorEmail, ...clock };
     const update = { adminNoteEntries: [...existing, note], updatedAt: clock.timestampIso, updatedAtMs: clock.timestamp };
-    transaction.update(orderRef, update);
-    transaction.set(db.collection('orderAudits').doc(`${actor.orderId}_NOTE_${id}`), {
+    transaction.update(orderRef, sanitizeFirestoreData(update));
+    transaction.set(db.collection('orderAudits').doc(`${actor.orderId}_NOTE_${id}`), sanitizeFirestoreData({
       orderId: actor.orderId, action: 'NOTE_ADDED', noteId: id, note: text,
       actorUid: actor.actorUid, actorEmail: actor.actorEmail, ...clock,
-    });
+    }));
     return sanitizeOrderForAdmin({ ...order, ...update });
   });
 }
 
 const PAYMENT_TRANSITIONS: Record<PaymentStatus, PaymentStatus[]> = {
-  UNPAID: ['PAID'], PAID: ['UNPAID', 'REFUNDED'], REFUNDED: ['PAID'],
+  UNPAID: ['PAID'], PAID: ['UNPAID', 'REFUNDED'], REFUNDED: ['PAID'], NOT_REQUIRED: [],
 };
 
 /** A bookkeeping record only: never charges, refunds, reprices, or updates loyalty. */
@@ -310,17 +318,20 @@ export async function updateAdminOrderPayment(input: AdminMutation & {
     }
     assertRevision(order, actor.expectedUpdatedAt);
     if (order.paymentStatus === paymentStatus) return sanitizeOrderForAdmin(order);
+    if (order.orderType === 'QUOTE_REQUEST' || order.isQuoteRequest === true || order.paymentMethod === 'quote') {
+      throw new AdminOperationError('A quote request does not require payment and cannot be marked paid.', 'QUOTE_PAYMENT_NOT_REQUIRED');
+    }
     if (!PAYMENT_TRANSITIONS[order.paymentStatus]?.includes(paymentStatus)) {
       throw new AdminOperationError('That payment correction is not allowed.', 'INVALID_PAYMENT_TRANSITION');
     }
     const clock = revisionTime(order);
     const update = { paymentStatus, updatedAt: clock.timestampIso, updatedAtMs: clock.timestamp };
-    transaction.update(orderRef, update);
-    transaction.set(db.collection('orderAudits').doc(`${actor.orderId}_PAYMENT_${auditId}`), {
+    transaction.update(orderRef, sanitizeFirestoreData(update));
+    transaction.set(db.collection('orderAudits').doc(`${actor.orderId}_PAYMENT_${auditId}`), sanitizeFirestoreData({
       orderId: actor.orderId, action: 'PAYMENT_STATUS_CHANGED',
       previousPaymentStatus: order.paymentStatus, newPaymentStatus: paymentStatus, reason,
       actorUid: actor.actorUid, actorEmail: actor.actorEmail, ...clock,
-    });
+    }));
     return sanitizeOrderForAdmin({ ...order, ...update });
   });
 }

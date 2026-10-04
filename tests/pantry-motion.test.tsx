@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { renderToString } from 'react-dom/server';
 import { MemoryRouter } from 'react-router-dom';
-import CategoryCarousel from '../src/components/CategoryCarousel';
+import CategoryCarousel, { PANTRY_CATEGORIES } from '../src/components/CategoryCarousel';
 import { LanguageProvider } from '../src/contexts/LanguageContext';
 import { trendTranslations } from '../src/contexts/trendTranslations';
 import { canRotatePantry, pantryCardProjection, pantryRotationDistance } from '../src/lib/pantryMotion';
@@ -37,11 +37,11 @@ test('collection projection stays restrained and reduced motion removes the curv
   assert.equal(pantryCardProjection(NaN).scale, 1);
 });
 
-test('the existing collection rail retains seven real destinations and manual navigation', () => {
+test('the collection rail includes every canonical destination and retains manual navigation', () => {
   const html = renderToString(<MemoryRouter><LanguageProvider><CategoryCarousel /></LanguageProvider></MemoryRouter>);
-  assert.equal((html.match(/class="editorial-pantry-slide"/g) || []).length, 7);
+  assert.equal((html.match(/class="editorial-pantry-slide"/g) || []).length, PANTRY_CATEGORIES.length);
   assert.equal((html.match(/class="editorial-pantry-slide"[^>]*aria-hidden="false"/g) || []).length, 1, 'unknown side peeks are inert before the first geometry pass');
-  for (const path of ['/shop', '/shop/combos', '/shop/nuts', '/shop/snacks-seeds', '/gifting', '/shop/oils', '/shop/essentials']) {
+  for (const path of PANTRY_CATEGORIES.map(category => category.link)) {
     assert.ok(html.includes(`href="${path}"`), `missing collection ${path}`);
   }
   assert.match(html, /aria-label="Browse collections"/);

@@ -12,11 +12,14 @@ import ShippingMethodSelector from '../src/components/ShippingMethodSelector';
 
 const items: CartItem[] = [{ id: 'pista-1kg', productId: 'pista', name_en: 'Pistachios', name_ur: 'پستے', name_ar: 'فستق', slug: 'pista', image: '', selectedWeight: '1kg', quantity: 2, price: 1, unitPrice: 1 }];
 
-function restoredCart(city: string, selections = items, draftCity?: string): CartContextValue {
+function restoredCart(city: string, selections = items, draftCity?: string, cityStorageBlocked = false): CartContextValue {
   const originals = ['window', 'localStorage', 'sessionStorage'].map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)] as const);
   Object.defineProperty(globalThis, 'window', { configurable: true, value: {} });
   Object.defineProperty(globalThis, 'sessionStorage', { configurable: true, value: { getItem: () => draftCity ? JSON.stringify({ customer: { city: draftCity }, updatedAt: Date.now() }) : null } });
-  Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: { getItem: (key: string) => key === 'allbarka_cart_v1' ? JSON.stringify(selections) : key === 'allbarka_delivery_city' ? city : null } });
+  Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: { getItem: (key: string) => {
+    if (cityStorageBlocked && key === 'allbarka_delivery_city') throw new Error('City storage blocked');
+    return key === 'allbarka_cart_v1' ? JSON.stringify(selections) : key === 'allbarka_delivery_city' ? city : null;
+  } } });
   let observed!: CartContextValue;
   function Probe() { observed = useCart(); return null; }
   try { renderToString(<LanguageProvider><CartProvider><Probe /></CartProvider></LanguageProvider>); return observed; }
@@ -36,6 +39,13 @@ test('restored cart reprices canonically and never unlocks national free shippin
 
 test('current cart destination wins over an older checkout draft', () => {
   const national = restoredCart('Karachi', items, 'Lahore');
+  assert.equal(national.shippingCity, 'Karachi');
+  assert.equal(national.isFreeShippingUnlocked, false);
+  assert.equal(national.estimatedShipping, 500);
+});
+
+test('an available checkout draft restores the destination when city storage is blocked', () => {
+  const national = restoredCart('Lahore', items, 'Karachi', true);
   assert.equal(national.shippingCity, 'Karachi');
   assert.equal(national.isFreeShippingUnlocked, false);
   assert.equal(national.estimatedShipping, 500);
