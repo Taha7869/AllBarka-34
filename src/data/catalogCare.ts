@@ -2,8 +2,9 @@ import type { Product } from '../types';
 import type { CareEntry, LocalizedCare, StorageKind } from './care/types';
 import { herbCare } from './care/herbs';
 import { dryCare } from './care/dry';
+import { seedCare } from './care/seeds';
 
-export const CATALOG_CARE: Record<string, CareEntry> = { ...herbCare, ...dryCare };
+export const CATALOG_CARE: Record<string, CareEntry> = { ...herbCare, ...dryCare, ...seedCare };
 
 const facility: LocalizedCare = [
   'Packed in a facility that also handles tree nuts, peanuts and seeds.',
