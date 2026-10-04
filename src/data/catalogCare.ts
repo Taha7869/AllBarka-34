@@ -4,8 +4,9 @@ import { herbCare } from './care/herbs';
 import { dryCare } from './care/dry';
 import { seedCare } from './care/seeds';
 import { oilCare } from './care/oils';
+import { bundleCare } from './care/bundles';
 
-export const CATALOG_CARE: Record<string, CareEntry> = { ...herbCare, ...dryCare, ...seedCare, ...oilCare };
+export const CATALOG_CARE: Record<string, CareEntry> = { ...herbCare, ...dryCare, ...seedCare, ...oilCare, ...bundleCare };
 
 const facility: LocalizedCare = [
   'Packed in a facility that also handles tree nuts, peanuts and seeds.',
