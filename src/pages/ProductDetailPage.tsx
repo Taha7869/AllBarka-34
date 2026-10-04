@@ -5,6 +5,7 @@ import React, { lazy, Suspense, useState, useEffect, useMemo, useRef } from 'rea
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { PRODUCTS, getProductImage } from '../data/products';
+import { isSingleImageCatalogProduct } from '../data/productImages';
 import { useProductMedia, useProductMediaCover } from '../contexts/ProductMediaContext';
 import { clampPhotoIndex } from '../lib/productPhotoViewer';
 import ProductVideo from '../components/ProductVideo';
@@ -247,7 +248,7 @@ export default function ProductDetailPage() {
               )}
             </div>
 
-            <button type="button" aria-haspopup="dialog" aria-expanded={photoViewerOpen} onClick={event => { photoViewerOpener.current = event.currentTarget; setPhotoViewerOpen(true); }} className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 self-start rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-5 text-xs font-semibold text-[var(--color-accent-text)]" dir="ltr"><Maximize2 size={16} aria-hidden="true" /><span dir="auto">{t('gallery.viewPhotos')}</span><bdi className="text-[var(--color-text-secondary)]">({galleryImages.length})</bdi></button>
+            <button type="button" aria-haspopup="dialog" aria-expanded={photoViewerOpen} onClick={event => { photoViewerOpener.current = event.currentTarget; setPhotoViewerOpen(true); }} className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 self-start rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-5 text-xs font-semibold text-[var(--color-accent-text)]" dir="ltr"><Maximize2 size={16} aria-hidden="true" /><span dir="auto">{t('gallery.viewPhotos')}</span>{!isSingleImageCatalogProduct(product) && <bdi className="text-[var(--color-text-secondary)]">({galleryImages.length})</bdi>}</button>
 
             {/* Gift image gallery thumbnails */}
             {galleryImages.length > 1 && (
@@ -524,7 +525,7 @@ export default function ProductDetailPage() {
         )}
 
       </div>
-      {photoViewerOpen && <Suspense fallback={<span className="sr-only" role="status">{t('viewer.loading')}</span>}><ProductPhotoViewer key={product.id} images={galleryImages} productName={getLocalized(product, 'name', language)} initialIndex={activeGalleryIndex} restoreFocusTo={photoViewerOpener.current} onClose={() => setPhotoViewerOpen(false)} onIndexChange={index => { setActiveGalleryIdx(index); setImageError(false); }} /></Suspense>}
+      {photoViewerOpen && <Suspense fallback={<span className="sr-only" role="status">{t('viewer.loading')}</span>}><ProductPhotoViewer key={product.id} images={galleryImages} productName={getLocalized(product, 'name', language)} hideSingleImageCounter={isSingleImageCatalogProduct(product)} initialIndex={activeGalleryIndex} restoreFocusTo={photoViewerOpener.current} onClose={() => setPhotoViewerOpen(false)} onIndexChange={index => { setActiveGalleryIdx(index); setImageError(false); }} /></Suspense>}
     </div>
   );
 }

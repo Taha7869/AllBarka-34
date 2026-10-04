@@ -31,16 +31,16 @@ function render(url: string, category = 'all') {
   return renderToString(<MemoryRouter initialEntries={[url]}><LanguageProvider><CartProvider><CategoryPLP initialCategory={category} /></CartProvider></LanguageProvider></MemoryRouter>);
 }
 
-test('all new boutique cards render the same localized origin row and two-view gallery', () => {
+test('all new boutique cards retain localized origin rows and exactly one image without carousel controls', () => {
   for (const id of NEW_PRODUCT_IDS) {
     const product = PRODUCTS.find(product => product.id === id)!;
     for (const language of ['en', 'ur', 'ar'] as const) {
       const html = renderInLanguage(<ProductCard product={product} isWholesale={false} />, language);
       const origin = getLocalized(product, 'origin', language).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       assert.ok(html.includes(origin), `${id}:${language}`);
-      assert.match(html, /product-gallery-counter/);
-      assert.match(html, /01<span class="product-gallery-counter__divider">\/<\/span>02/);
-      assert.ok(html.includes(`/images/products/${id}-secondary.svg`), `${id}:${language}`);
+      assert.doesNotMatch(html, /product-gallery-counter|product-gallery-arrow|-secondary\.svg/);
+      assert.equal((html.match(/<img\b/g) || []).length, 1, `${id}:${language}`);
+      assert.ok(html.includes(`/images/products/${id}.svg`), `${id}:${language}`);
       assert.match(html, /product-gallery-track" dir="ltr"/);
       assert.match(html, /aria-pressed="false"/);
     }

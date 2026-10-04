@@ -4,6 +4,25 @@ Branch: `codex/master-catalog-polish-20261004`, based on latest main `a6494d2`.
 The actual catalog has 89 products: 32 established selections and 57 additions.
 Prices, portions, categories, names and canonical pricing are preserved.
 
+## Single-image follow-up — complete (4 October)
+
+The owner's latest instruction supersedes the two-view gallery described in the original Phase 4/5 record below. All 57 generated placeholder products now have exactly one final SVG cover. All 32 established photographic products retain their original files, covers and ordered galleries, including the five highlighted brand references.
+
+- Cream stone, ivory ceramic, emerald cloth and common lighting/shadows remain consistent. Ingredient silhouettes distinguish sticks, pods, kernels, fruit, leaves and powders. Oils retain the established white-cap bottle silhouette; bundles show emerald/gold compartment hampers. Unspecified hamper selections stay wrapped rather than inventing ingredients.
+- The approved English/Urdu/Arabic raster label panels are byte-identical to the previous commit. Names, prices, categories, portions, care content, origin tags and shipping data did not change.
+- Removed 57 `*-secondary.svg` files and their gallery references. Added 57 single-cover entries to the media manifest; its 32 existing photo entries are unchanged. Retired stored pack-view overrides cannot restore deleted images; owner cover replacements and videos remain supported.
+- Single-image cards, Quick View and detail photo viewer show no carousel arrows, thumbnails or image counter. Zoom remains available. Established photo galleries retain their existing controls and counter behavior.
+- Counts: generated SVGs **114 → 57**; total product-gallery image references **164 → 107**; unique referenced product image files **160 → 103**. There are **0 missing files** and **0 retired generated views**.
+- Text audit: **57 SVGs, 403 measured text boxes, 0 overflows** under the 6% safe-area rule. Every full approved name fits in one or two lines, with local Urdu/Arabic fonts successfully loaded.
+- Verification: TypeScript passed; final production build and full offline suite passed (**44 test files, 457 Node tests, 21 backend checks, 47 production checks**, plus legacy hardening checks). Browser verification passed **12 mobile/desktop × EN/UR/AR × light/dark card/Quick View cases**, **6 detail/viewer gallery cases**, single-image zoom and preserved weight-selection regressions, with **0 page errors**.
+- Preservation audit: all 89 products retain their business data; all 32 original manifest entries and their 50 photo references match commit `e0929e4`. Original photography, fonts, care and canonical pricing files are unchanged.
+
+Files changed in this follow-up (**134**): 57 primary SVGs refreshed, 57 secondary SVGs removed, 5 overflow reports updated; `scripts/catalog-image-scenes.mjs`, `scripts/generate-catalog-images.mjs`, `scripts/verify-catalog-assets.ts`; `src/data/productImages.ts`, `src/data/product-media.json`, `src/lib/productMedia.ts`, `src/pages/ProductDetailPage.tsx`, `src/components/ProductPhotoViewer.tsx`; six catalog/media test files and this handoff. Local browser screenshots and temporary verification scripts are ignored and not committed.
+
+Existing draft PR: https://github.com/Taha7869/AllBarka-34/pull/9. No merge or deployment.
+
+## Original catalog polish record
+
 - Phase 1 complete: invalid custom weights show an em dash; purchase stays disabled. Nearest valid step is an explicit choice. Eligible 1kg/5kg shortcuts use canonical weight validation. Full offline suite passed (42 test files, backend, asset and 47 production checks). Browser interaction passed for empty, 4999g, 99g, 5050g, correction and both shortcuts.
 - Phase 2 complete: 57 additions have localized origin tags; named regions are used only where supported by the name, otherwise Pakistan packing is stated. Both card layouts use the same origin field as category/search/wishlist and comparison views.
 - Phase 3 complete: Herbs & Spices/saffron (20), dry fruits/nuts/essentials (26), snacks/seeds (13), oils (15), bundles/established duos (15): all 89 products have specific use, storage, sourcing, packaging and allergen content in English, Urdu and Arabic. Storage windows describe quality rotation, with earlier printed dates taking priority. Batch ingredients and cosmetic versus food-grade oil labels still require owner verification; no medical or unverified certification claims were added.

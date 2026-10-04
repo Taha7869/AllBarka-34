@@ -92,28 +92,32 @@ async function checkSvgText(svg) {
 try {
   let source = readFileSync('src/data/products.ts', 'utf8');
   const originalSource = source;
+  const manifestPath = 'src/data/product-media.json';
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  const originalManifest = JSON.stringify(manifest);
   for (const product of products) {
     const path = `/images/products/${product.id}.svg`;
     const label = await createLabel(product);
     if (!label.fontReady || !label.boxes.length) throw new Error(`Font or bounds unavailable: ${product.id}`);
-    for (const variant of ['primary', 'secondary']) {
-      const imagePath = `/images/products/${product.id}${variant === 'secondary' ? '-secondary' : ''}.svg`;
-      const file = resolve(`public${imagePath}`);
-      const svg = catalogImageScene(product, label.uri, variant);
-      const bounds = [...label.boxes, ...await checkSvgText(svg)];
-      if (!existsSync(file) || refreshGenerated) writeFileSync(file, svg, 'utf8');
-      checks.push({ id: product.id, variant, boxes: bounds.length, bounds, safe: true, fontReady: label.fontReady, path: imagePath });
-    }
+    const file = resolve(`public${path}`);
+    const svg = catalogImageScene(product, label.uri);
+    const bounds = [...label.boxes, ...await checkSvgText(svg)];
+    if (!existsSync(file) || refreshGenerated) writeFileSync(file, svg, 'utf8');
+    checks.push({ id: product.id, variant: 'primary', boxes: bounds.length, bounds, safe: true, fontReady: label.fontReady, path });
+    const configured = manifest[product.id];
+    manifest[product.id] = { images: [path], videoUrl: configured?.videoUrl || '',
+      videoPoster: configured?.videoPoster === `/images/products/${product.id}-secondary.svg` ? '' : configured?.videoPoster || '' };
     const marker = `id: '${product.id}',`;
     const index = source.indexOf(marker);
     if (index < 0) throw new Error(`Cannot locate ${product.id} in catalog source`);
     if (!source.slice(index, index + 150).includes(`image: '${path}'`)) source = source.slice(0, index + marker.length) + ` image: '${path}',` + source.slice(index + marker.length);
   }
   if (source !== originalSource) writeFileSync('src/data/products.ts', source, 'utf8');
+  if (JSON.stringify(manifest) !== originalManifest) writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n', 'utf8');
   // A resume with no pending products must not erase the successful audit report.
   if (checks.length) {
     const reportPath = resolve(out, `overflow-report-${category}.json`);
-    const prior = !refreshGenerated && existsSync(reportPath) ? JSON.parse(readFileSync(reportPath, 'utf8')).checks || [] : [];
+    const prior = !refreshGenerated && existsSync(reportPath) ? (JSON.parse(readFileSync(reportPath, 'utf8')).checks || []).filter(check => check.variant === 'primary') : [];
     const combined = [...new Map([...prior, ...checks].map(check => [check.path, check])).values()];
     writeFileSync(reportPath, JSON.stringify({ category, styleVersion: 2, canvas: 960, safeArea: { left: 58, right: 902, top: 58, bottom: 902 }, checks: combined }, null, 2));
   }

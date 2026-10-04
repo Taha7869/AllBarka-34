@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { PRODUCTS, NEW_PRODUCT_IDS } from '../src/data/products';
 
 const categories = ['herbs-spices', 'nuts', 'snacks-seeds', 'oils', 'bundles'] as const;
@@ -12,18 +12,18 @@ test('every expanded product has a self-contained local SVG with its exact appro
     const path = `/images/products/${product.id}.svg`;
     assert.equal(product.image, path, product.id);
     assert.equal(product.imageName, path, product.id);
-    for (const [variant, imagePath] of [['primary', path], ['secondary', `/images/products/${product.id}-secondary.svg`]]) {
-    const file = `public${imagePath}`;
+    const file = `public${path}`;
     assert.ok(statSync(file).size > 1000, product.id);
     const svg = readFileSync(file, 'utf8');
     assert.match(svg, /<svg[^>]+viewBox="0 0 960 960"/);
     assert.match(svg, /data:image\/png;base64,/);
     assert.ok(svg.includes('data-catalog-style="editorial-v2"'), product.id);
-    assert.ok(svg.includes(`data-variant="${variant}"`), product.id);
+    assert.ok(svg.includes('data-variant="primary"'), product.id);
+    assert.ok(!existsSync(`public/images/products/${product.id}-secondary.svg`), product.id);
     assert.ok(svg.includes(product.nameUr!), `${product.id}: Urdu name`);
     assert.ok(svg.includes(product.nameAr!), `${product.id}: Arabic name`);
-    }
   }
+  assert.deepEqual(readdirSync('public/images/products').filter(file => file.endsWith('.svg')).sort(), additions.map(product => `${product.id}.svg`).sort());
 });
 
 test('every new image has a successful rendered text safe-area report', () => {
@@ -38,13 +38,14 @@ test('every new image has a successful rendered text safe-area report', () => {
     assert.equal(report.category, category);
     assert.equal(report.styleVersion, 2);
     const expected = PRODUCTS.filter(product => NEW_PRODUCT_IDS.includes(product.id) && product.category === category);
-    assert.deepEqual(report.checks.map(check => `${check.id}:${check.variant}`).sort(), expected.flatMap(product => [`${product.id}:primary`, `${product.id}:secondary`]).sort());
+    assert.deepEqual(report.checks.map(check => `${check.id}:${check.variant}`).sort(), expected.map(product => `${product.id}:primary`).sort());
     for (const check of report.checks) {
       assert.equal(check.safe, true, check.id);
       assert.equal(check.fontReady, true, check.id);
       assert.ok(check.boxes >= 6, check.id);
       assert.equal(check.boxes, check.bounds.length, check.id);
       const product = expected.find(product => product.id === check.id)!;
+      assert.equal(check.path, `/images/products/${product.id}.svg`);
       for (const [kind, name] of [['name_en', product.name], ['name_ur', product.nameUr], ['name_ar', product.nameAr]]) {
         const lines = check.bounds.filter(box => box.kind === kind);
         assert.ok(lines.length >= 1 && lines.length <= 2, `${check.id}:${kind}`);
@@ -58,5 +59,5 @@ test('every new image has a successful rendered text safe-area report', () => {
       covered.add(check.path);
     }
   }
-  assert.equal(covered.size, 114);
+  assert.equal(covered.size, 57);
 });
