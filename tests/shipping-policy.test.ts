@@ -69,7 +69,7 @@ test('server quote ignores forged price, shipping mass, and shipping totals', ()
   });
   const expectedSubtotal = mixed.reduce((sum, item) => sum + PRODUCTS.find(product => product.id === item.productId)!.prices[item.selectedWeight] * item.quantity, 0);
   assert.equal(result.summary.subtotal, expectedSubtotal);
-  assert.equal(result.summary.discount, Math.round(expectedSubtotal * 0.1));
+  assert.equal(result.summary.discount, Math.min(500, Math.round(expectedSubtotal * 0.1)));
   assert.equal(result.summary.shippingWeightGrams, 1200);
   assert.equal(result.summary.shippingRegion, 'nationwide');
   assert.equal(result.summary.shipping, 300);

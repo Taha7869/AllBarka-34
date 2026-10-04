@@ -1,3 +1,4 @@
+import { sanitizeFirestoreData } from '../lib/firestoreData';
 import crypto from 'node:crypto';
 import type { Firestore, DocumentReference } from 'firebase-admin/firestore';
 import type { CanonicalOrder, OutboxOrderEvent } from '../lib/serverOrderService';
@@ -79,7 +80,7 @@ export function createOrderOutboxWorker(options: OrderOutboxWorkerOptions) {
       const nowMs = now();
       if (snapshot.exists && snapshot.data()?.leaseUntilMs > nowMs) return null;
       const lease = { owner, token, until: nowMs + leaseMs };
-      transaction.set(ref, { owner, token, leaseUntilMs: lease.until, updatedAtMs: nowMs });
+      transaction.set(ref, sanitizeFirestoreData({ owner, token, leaseUntilMs: lease.until, updatedAtMs: nowMs }));
       return lease;
     });
   }
@@ -91,10 +92,10 @@ export function createOrderOutboxWorker(options: OrderOutboxWorkerOptions) {
       const lock = snapshot.data();
       // Token fencing prevents a late process from releasing a replacement worker's lease.
       if (!snapshot.exists || lock?.owner !== lease.owner || lock?.token !== lease.token) return;
-      transaction.set(ref, {
+      transaction.set(ref, sanitizeFirestoreData({
         owner: cooldownMs ? lease.owner : '', token: cooldownMs ? lease.token : '',
         leaseUntilMs: now() + cooldownMs, updatedAtMs: now(),
-      });
+      }));
     });
   }
 
@@ -112,14 +113,14 @@ export function createOrderOutboxWorker(options: OrderOutboxWorkerOptions) {
         || (event.deliveryState === 'LEASED' && event.leaseUntilMs! > nowMs)) return null;
       const attempts = Number.isSafeInteger(event.attempts) && event.attempts >= 0 ? event.attempts : ORDER_OUTBOX_MAX_ATTEMPTS;
       if (attempts >= ORDER_OUTBOX_MAX_ATTEMPTS) {
-        transaction.set(ref, terminalEvent(event, 'FAILED', nowMs, 'ORDER_WEBHOOK_ATTEMPTS_EXHAUSTED'));
+        transaction.set(ref, sanitizeFirestoreData(terminalEvent(event, 'FAILED', nowMs, 'ORDER_WEBHOOK_ATTEMPTS_EXHAUSTED')));
         return { status: 'FAILED', eventId: event.eventId, orderId: event.orderId, attempts };
       }
       // Both reads precede the write, so a missing order can never be dispatched from an event's stale summary.
       const orderSnapshot = await transaction.get(db.collection('orders').doc(event.orderId));
       const order = orderSnapshot.exists ? orderSnapshot.data() as CanonicalOrder : null;
       if (!order || order.orderId !== event.orderId) {
-        transaction.set(ref, terminalEvent(event, 'FAILED', nowMs, 'CANONICAL_ORDER_MISSING'));
+        transaction.set(ref, sanitizeFirestoreData(terminalEvent(event, 'FAILED', nowMs, 'CANONICAL_ORDER_MISSING')));
         return { status: 'FAILED', eventId: event.eventId, orderId: event.orderId, attempts };
       }
       const claimed: OutboxOrderEvent = {
@@ -127,7 +128,7 @@ export function createOrderOutboxWorker(options: OrderOutboxWorkerOptions) {
         leaseToken: token, leaseUntilMs: lease.until, nextAttemptAtMs: lease.until,
         lastAttemptAtMs: nowMs, updatedAtMs: nowMs,
       };
-      transaction.set(ref, claimed);
+      transaction.set(ref, sanitizeFirestoreData(claimed));
       return { event: claimed, order, token };
     });
   }
@@ -156,7 +157,7 @@ export function createOrderOutboxWorker(options: OrderOutboxWorkerOptions) {
         };
       }
       if (Number.isFinite(result.statusCode)) updated.lastStatusCode = result.statusCode;
-      transaction.set(ref, updated);
+      transaction.set(ref, sanitizeFirestoreData(updated));
       return {
         status: success ? 'DELIVERED' : failed ? 'FAILED' : 'RETRY_SCHEDULED',
         eventId: event.eventId, orderId: event.orderId, attempts: event.attempts,

@@ -1,3 +1,4 @@
+import { sanitizeFirestoreData } from './firestoreData';
 import { Router, type RequestHandler } from 'express';
 import type { Firestore } from 'firebase-admin/firestore';
 import { randomUUID } from 'node:crypto';
@@ -53,12 +54,12 @@ export async function updateProductMedia(input: {
     if (current.revision !== expectedRevision) throw new ProductMediaError('MEDIA_REVISION_CONFLICT', 409);
     if (current.revision >= Number.MAX_SAFE_INTEGER) throw new ProductMediaError('MEDIA_REVISION_CONFLICT', 409);
     const revision = current.revision + 1;
-    transaction.set(reference, { productId, media, revision, updatedAt, updatedBy: input.actorUid });
-    transaction.set(audit, {
+    transaction.set(reference, sanitizeFirestoreData({ productId, media, revision, updatedAt, updatedBy: input.actorUid }));
+    transaction.set(audit, sanitizeFirestoreData({
       productId, action: media ? 'MEDIA_UPDATED' : 'MEDIA_RESET', previousRevision: current.revision, revision,
       previousMedia: current.override, media, actorUid: input.actorUid,
       actorEmail: typeof input.actorEmail === 'string' ? input.actorEmail.slice(0, 254) : '', updatedAt,
-    });
+    }));
     return { productId, revision, updatedAt, override: media, media: media || getDefaultProductMedia(productById.get(productId)!) };
   });
 }

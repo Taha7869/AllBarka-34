@@ -1,3 +1,4 @@
+import { sanitizeFirestoreData } from './src/lib/firestoreData';
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
@@ -33,7 +34,8 @@ import {
   QuoteChangedError,
   IdempotencyConflictError
 } from './src/lib/orderDatabase';
-import { STORE_COUPONS, calculateCouponDiscount } from './src/lib/couponEngine';
+import { getPromo } from './src/lib/couponEngine';
+import { firstOrderPromoContext } from './src/server/promoEligibility';
 import { sanitizeOrderForCustomer, CanonicalOrder } from './src/lib/serverOrderService';
 import { claimWelcomeVoucher } from './src/lib/welcomeCouponService';
 import { authenticatePatronCredentials } from './src/lib/serverAuthentication';
@@ -94,6 +96,7 @@ try {
     firebaseAdminAuthAvailable = false;
     console.warn(`[Firebase Admin] ${firebaseAdminMissingCredentialsMsg}`);
   }
+  if (db) db.settings({ ignoreUndefinedProperties: true });
 } catch {
   adminAuth = null;
   firebaseAdminAuthAvailable = false;
@@ -296,6 +299,7 @@ app.post('/api/orders/quote', authenticateOptionalUser, async (req, res) => {
   try {
     const { items, city, shippingMethodId, discountCode, rewardId, giftWrapping, isWholesale } = req.body;
     const authenticatedUser = (req as any).user;
+    const promoContext = await firstOrderPromoContext(db, authenticatedUser?.uid || null, discountCode);
 
     const validatedOrder = validateAndPriceOrder({
       items,
@@ -304,6 +308,7 @@ app.post('/api/orders/quote', authenticateOptionalUser, async (req, res) => {
       discountCode,
       giftWrapping: Boolean(giftWrapping),
       isWholesale: Boolean(isWholesale && authenticatedUser?.wholesaleEligible),
+      promoContext,
     });
 
     if (rewardId) {
@@ -328,6 +333,7 @@ app.post('/api/orders/quote', authenticateOptionalUser, async (req, res) => {
     if (error.name === 'ValidationError') {
       return res.status(400).json({ error: error.message, code: error.code || 'VALIDATION_ERROR' });
     }
+    if (error.code === 'PERSISTENCE_UNAVAILABLE') return res.status(503).json({ error: error.message, code: error.code });
     res.status(500).json({ error: 'Internal server error while calculating quote.', code: 'SERVER_ERROR' });
   }
 });
@@ -350,7 +356,8 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
 
     // When durable persistence (db) is not configured, do NOT create fake accepted orders
     if (!db) {
-      const customer = validateCustomerDetails(req.body);
+      const promoContext = await firstOrderPromoContext(null, verifiedUid, req.body.discountCode);
+      const customer = validateCustomerDetails(req.body, getPromo(req.body.discountCode)?.type === 'quote');
       const validatedOrder = validateAndPriceOrder({
         items: req.body.items,
         city: customer.city,
@@ -358,15 +365,20 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
         discountCode: req.body.discountCode,
         giftWrapping: Boolean(req.body.giftWrapping),
         isWholesale: Boolean(req.body.isWholesale && authenticatedUser?.wholesaleEligible),
+        promoContext,
       });
 
       const currencyFormat = (num: number) => `Rs. ${num.toLocaleString()}`;
       let itemsStr = '';
       validatedOrder.items.forEach((item, index) => {
-        itemsStr += `\n${index + 1}. *${item.name}* (${item.selectedWeight}) x ${item.quantity} -> ${currencyFormat(item.price * item.quantity)}`;
+        itemsStr += `\n${index + 1}. *${item.name}* (${item.selectedWeight}) x ${item.quantity}${validatedOrder.summary.isQuoteRequest ? '' : ` -> ${currencyFormat(item.price * item.quantity)}`}`;
       });
 
-      const receiptMessage = `👑 *ALLBARKA LUXURY BOUTIQUE ORDER* 👑\n\n*Customer:* ${customer.name}\n*Phone:* ${customer.phone}\n*Delivery Address:* ${customer.address}, ${customer.city}\n*Delivery Slot:* ${customer.deliverySlot}\n\n*Selected Items:*${itemsStr}\n\n*Subtotal:* ${currencyFormat(validatedOrder.summary.subtotal)}${validatedOrder.summary.discount > 0 ? `\n*Discount Applied:* -${currencyFormat(validatedOrder.summary.discount)}` : ''}${customer.giftWrapping ? `\n*Gift Wrapping:* +${currencyFormat(validatedOrder.summary.giftWrapFee)}` : ''}\n*Shipping:* ${validatedOrder.summary.shipping === 0 ? 'FREE' : currencyFormat(validatedOrder.summary.shipping)}\n*Total Due:* *${currencyFormat(validatedOrder.summary.total)}*\n*Payment Method:* ${customer.paymentMethod === 'bank' ? 'Bank Transfer' : 'Cash on Delivery'}`;
+      const standardReceiptMessage = `👑 *ALLBARKA LUXURY BOUTIQUE ORDER* 👑\n\n*Customer:* ${customer.name}\n*Phone:* ${customer.phone}\n*Delivery Address:* ${customer.address}, ${customer.city}\n*Delivery Slot:* ${customer.deliverySlot}\n\n*Selected Items:*${itemsStr}\n\n*Subtotal:* ${currencyFormat(validatedOrder.summary.subtotal)}${validatedOrder.summary.discount > 0 ? `\n*Discount Applied:* -${currencyFormat(validatedOrder.summary.discount)}` : ''}${customer.giftWrapping ? `\n*Gift Wrapping:* +${currencyFormat(validatedOrder.summary.giftWrapFee)}` : ''}\n*Shipping:* ${validatedOrder.summary.shipping === 0 ? 'FREE' : currencyFormat(validatedOrder.summary.shipping)}\n*Total Due:* *${currencyFormat(validatedOrder.summary.total)}*\n*Payment Method:* ${customer.paymentMethod === 'bank' ? 'Bank Transfer' : 'Cash on Delivery'}`;
+
+      const receiptMessage = validatedOrder.summary.isQuoteRequest
+        ? `*ALLBARKA QUOTE ENQUIRY*\n\n*Customer:* ${customer.name}\n*Phone:* ${customer.phone}\n*Delivery Address:* ${customer.address}, ${customer.city}\n\n*Selected Items:*${itemsStr}\n\nPROMO:CANCER: quote request\nOur team will contact you with your personalized rate.`
+        : standardReceiptMessage;
 
       return res.status(503).json({
         success: false,
@@ -395,6 +407,8 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
     res.json({
       success: true,
       orderId: result.orderId,
+      status: result.status,
+      orderType: result.orderType,
       whatsappMessage: result.whatsappMessage,
       claimToken: result.claimToken,
       totals: result.totals,
@@ -418,7 +432,7 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
     if (error.name === 'ValidationError') {
       return res.status(400).json({ error: error.message, code: error.code || 'VALIDATION_ERROR' });
     }
-    if (error instanceof PersistenceUnavailableError) {
+    if (error instanceof PersistenceUnavailableError || error.code === 'PERSISTENCE_UNAVAILABLE') {
       return res.status(503).json({ error: error.message, code: error.code });
     }
     console.error('Order creation failed:', error);
@@ -491,42 +505,28 @@ app.get('/api/orders/:orderId', authenticateOptionalUser, async (req, res) => {
 // 1.8 API: Coupon Preview Endpoint (Rate-Limited, Non-Consuming)
 app.post('/api/coupons/preview', authenticateOptionalUser, async (req, res) => {
   try {
-    const { code, subtotal } = req.body;
+    const { code, items, city = 'Lahore', shippingMethodId = 'standard', giftWrapping, isWholesale } = req.body;
     if (!code) {
       return res.status(400).json({ valid: false, error: 'Coupon code is required.' });
     }
-    const cleanCode = String(code).trim().toUpperCase();
-    const cleanSubtotal = Number(subtotal) || 0;
-    const uid = (req as any).user?.uid || null;
-
-    let couponRecord: any = null;
-    if (db) {
-      const snap = await db.collection('coupons').doc(cleanCode).get();
-      if (snap.exists) {
-        couponRecord = snap.data();
-      }
-    }
-    if (!couponRecord && STORE_COUPONS[cleanCode]) {
-      couponRecord = STORE_COUPONS[cleanCode];
-    }
-
-    if (!couponRecord) {
-      return res.status(400).json({ valid: false, error: `Coupon code "${cleanCode}" is invalid.` });
-    }
-
-    const calc = calculateCouponDiscount(couponRecord, cleanSubtotal, uid);
-    if (calc.error) {
-      return res.status(400).json({ valid: false, error: calc.error });
-    }
+    const promo = getPromo(code);
+    if (!promo) throw new ValidationError('Promo code is required.', 'PROMO_REQUIRED');
+    const user = (req as any).user;
+    const promoContext = await firstOrderPromoContext(db, user?.uid || null, promo.code);
+    const validated = validateAndPriceOrder({ items, city, shippingMethodId, discountCode: promo.code,
+      giftWrapping: Boolean(giftWrapping), isWholesale: Boolean(isWholesale && user?.wholesaleEligible), promoContext });
 
     res.json({
       valid: true,
-      code: cleanCode,
-      discount: calc.discount,
-      discountMode: couponRecord.discountMode,
-      value: couponRecord.value,
+      code: promo.code,
+      discount: validated.summary.discount,
+      discountMode: promo.type,
+      value: promo.value ?? null,
+      totals: validated.summary,
     });
   } catch (e: any) {
+    if (e.name === 'ValidationError') return res.status(400).json({ valid: false, error: e.message, code: e.code });
+    if (e.code === 'PERSISTENCE_UNAVAILABLE') return res.status(503).json({ valid: false, error: e.message, code: e.code });
     res.status(500).json({ valid: false, error: 'Failed to preview coupon.' });
   }
 });
@@ -689,18 +689,18 @@ app.post('/api/loyalty/redeem', requireAuth, async (req, res) => {
             }
 
             const newPoints = currentPoints - reward.pointsCost;
-            t.set(userRef, { loyaltyPoints: newPoints }, { merge: true });
+            t.set(userRef, sanitizeFirestoreData({ loyaltyPoints: newPoints }), { merge: true });
 
             const txId = crypto.randomUUID();
             const txRef = userRef.collection("loyaltyTransactions").doc(txId);
-            t.set(txRef, {
+            t.set(txRef, sanitizeFirestoreData({
                 transactionId: txId,
                 type: 'REDEEM',
                 points: -reward.pointsCost,
                 rewardId: reward.rewardId,
                 description: `Redeemed ${reward.name}`,
                 createdAt: Date.now()
-            });
+            }));
 
             const arId = crypto.randomUUID();
             const arRef = userRef.collection("activeRewards").doc(arId);
@@ -711,7 +711,7 @@ app.post('/api/loyalty/redeem', requireAuth, async (req, res) => {
                 status: 'ACTIVE',
                 rewardType: reward.rewardType
             };
-            t.set(arRef, activeRewardData);
+            t.set(arRef, sanitizeFirestoreData(activeRewardData));
         });
 
         res.json({ success: true, activeReward: activeRewardData });
@@ -785,14 +785,14 @@ app.post('/api/newsletter/subscribe', async (req, res) => {
     {
       try {
         const subDoc = db.collection('subscribers').doc(Buffer.from(normalized).toString('base64url'));
-        await subDoc.set({
+        await subDoc.set(sanitizeFirestoreData({
           contact: normalized,
           type: isEmail ? 'email' : 'phone',
           consent: Boolean(consent),
           createdAt: new Date().toISOString(),
           status: 'ACTIVE',
           tags: ['harvest-alerts', 'seasonal-reserves']
-        }, { merge: true });
+        }), { merge: true });
       } catch (dbErr) {
         console.warn('Firestore subscription failed:', dbErr);
         return res.status(503).json({ error: 'Newsletter is temporarily unavailable.', code: 'PERSISTENCE_UNAVAILABLE' });
@@ -830,7 +830,7 @@ app.post('/api/contact', async (req, res) => {
     if (!db) return res.status(503).json({ success: false, error: 'Inquiry storage is temporarily unavailable. Your inquiry has not been registered.', code: 'PERSISTENCE_UNAVAILABLE' });
     {
       try {
-        await db.collection('inquiries').doc(ticketId).set({
+        await db.collection('inquiries').doc(ticketId).set(sanitizeFirestoreData({
           ticketId,
           name: name.trim(),
           contact: contact.trim(),
@@ -838,7 +838,7 @@ app.post('/api/contact', async (req, res) => {
           message: message.trim(),
           createdAt: new Date().toISOString(),
           status: 'PENDING'
-        });
+        }));
       } catch (dbErr) {
         console.warn('Firestore inquiry storage failed');
         return res.status(503).json({ success: false, error: 'Inquiry storage is temporarily unavailable. Please retry or contact our team.', code: 'PERSISTENCE_UNAVAILABLE' });
@@ -900,7 +900,7 @@ ${catalogContext}
 Delivery & Ordering:
 - Standard Delivery across all major Lahore neighborhoods is Rs. ${STORE_CONFIG.shipping.standardRate}.
 - Standard delivery is free ONLY within Lahore when the merchandise subtotal after discounts reaches Rs. ${STORE_CONFIG.shipping.freeThreshold}; gift wrapping does not count toward this threshold. Lahore express delivery is Rs. ${STORE_CONFIG.shipping.expressRate}.
-- Outside Lahore, every delivery method is billed at Rs. ${STORE_CONFIG.shipping.nationwidePerKg} per kilogram with a minimum charge of Rs. ${STORE_CONFIG.shipping.nationwideMinimum}. Fractional kilograms are proportional (1.2kg costs Rs. 300). There is no free shipping outside Lahore, including coupons or rewards.
+- Outside Lahore, every delivery method is billed at Rs. ${STORE_CONFIG.shipping.nationwidePerKg} per kilogram with a minimum charge of Rs. ${STORE_CONFIG.shipping.nationwideMinimum}. Fractional kilograms are proportional (1.2kg costs Rs. 300). The approved ZAFRANI promo explicitly waives shipping; thresholds and rewards do not waive nationwide shipping.
 - Shipping billing weight comes from canonical selected portions and quantities. Oils follow the merchant's billing convention: numeric ml is billed as the same numeric grams (100ml is billed as 100g); no container uplift. This is not a physical density claim. Ask for the delivery city and exact portions, and use checkout's authoritative quote if anything is uncertain.
 - WhatsApp for customer support: ${CONTACT_CONFIG.humanSupportWhatsApp.formatted}. Automated order WhatsApp: ${CONTACT_CONFIG.automatedOrdersWhatsApp.formatted}.
 - Boutique service address: ${CONTACT_CONFIG.boutiqueAddress}. Ask customers to confirm their visit with our team; never invent a street address, branch, coordinate or opening time.

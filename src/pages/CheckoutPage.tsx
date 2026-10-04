@@ -2,7 +2,7 @@ import { getLocalized } from '../utils/localize';
 import React, { useState, useEffect } from 'react';
 import { calculateOrderSummary, GIFT_WRAP_FEE, type PricingSummary } from '../lib/pricing';
 import { readCheckoutDraft, CHECKOUT_DRAFT_KEY } from '../lib/checkoutPreferences';
-import { acceptedCheckoutReceipt } from '../lib/checkoutReceipt';
+import { acceptedCheckoutReceipt, appliedPromotionMessage } from '../lib/checkoutReceipt';
 import { checkoutFingerprint, checkoutQuoteKey, getCheckoutAuthToken, CheckoutAuthenticationError, clearCheckoutAttempt, persistCheckoutAttempt, readCheckoutAttempt, resolveCheckoutAttempt, writeCheckoutSession, type CheckoutAttempt } from '../lib/checkoutAttempt';
 import { checkoutReliabilityTranslations } from '../contexts/checkoutReliabilityTranslations';
 import AddressBook from '../components/AddressBook';
@@ -58,7 +58,7 @@ const PREFERRED_PAYMENT_KEY = 'allbarka_preferred_payment';
 const DELIVERY_CITIES = ['Lahore', 'Karachi', 'Islamabad', 'Rawalpindi', 'Faisalabad', 'Peshawar', 'Multan'];
 const isPlaceholderCity = (city: string) => /^(other city|outside lahore|nationwide)$/i.test(city.trim());
 
-export type CheckoutStep = 'details' | 'shipping' | 'payment' | 'success';
+export type CheckoutStep = 'details' | 'shipping' | 'payment' | 'review' | 'success';
 
 interface CheckoutPageProps {
   isOpen?: boolean;
@@ -97,7 +97,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
     discountAmt: number;
     giftFee: number;
   } | null>(null);
-  const [orderSuccessResult, setOrderSuccessResult] = useState<{ orderId: string; whatsappUrl: string; claimToken?: string } | null>(null);
+  const [orderSuccessResult, setOrderSuccessResult] = useState<{ orderId: string; whatsappUrl: string; claimToken?: string; isQuoteRequest: boolean } | null>(null);
 
   const selectedShippingMethod = 'standard';
   const [internalShippingMethod, setInternalShippingMethod] = useState<ShippingMethodId>(restoredDraft?.shipping || selectedShippingMethod);
@@ -130,7 +130,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
   const [couponSuccessMsg, setCouponSuccessMsg] = useState<string | null>(null);
   const [couponErrorMsg, setCouponErrorMsg] = useState<string | null>(null);
-  const [isCompassionMode, setIsCompassionMode] = useState(false);
+  const [isQuoteRequestMode, setIsQuoteRequestMode] = useState(false);
   const [activeReward, setActiveReward] = useState<any>(null);
   const [rewardDetails, setRewardDetails] = useState<any>(null);
 
@@ -155,8 +155,15 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
         if (!active || controller.signal.aborted) return;
         const result = await getOrderQuote({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping, discountCode: appliedCoupon, rewardId: selectedRewardId, isWholesale, authToken, signal: controller.signal });
         if (!active) return;
-        if (result.success && result.totals) setQuote({ key: quoteKey, totals: result.totals });
-        else setQuoteError(result.code === 'TIMEOUT' ? t('checkout.quoteTimeout', 'The price check timed out. Please retry.') : result.error || t('checkout.quoteFailed'));
+        if (result.success && result.totals) {
+          setQuote({ key: quoteKey, totals: result.totals }); setIsQuoteRequestMode(result.totals.isQuoteRequest === true);
+          if (appliedCoupon) setCouponErrorMsg(null);
+        }
+        else {
+          const message = result.code === 'TIMEOUT' ? t('checkout.quoteTimeout', 'The price check timed out. Please retry.') : result.error || t('checkout.quoteFailed');
+          setQuoteError(message);
+          if (appliedCoupon) { setCouponSuccessMsg(null); setCouponErrorMsg(message); }
+        }
       } catch (error) {
         if (active) setQuoteError(error instanceof CheckoutAuthenticationError ? t('checkout.signInAgain') : t('checkout.quoteFailed'));
       } finally { if (active) setQuoteLoading(false); }
@@ -355,16 +362,15 @@ const handleInputChange = (field: string, value: any) => {
 
   const handleProceedToStep3 = () => {
     if (validateStep2(true)) {
-      setCurrentStep('payment');
+      setCurrentStep(isQuoteRequestMode ? 'review' : 'payment');
     }
   };
 
   const handleApplyCoupon = async () => {
     setCouponErrorMsg(null); setCouponSuccessMsg(null);
     const code = couponCode.trim().toUpperCase();
-    if (!code) { setAppliedCoupon(''); setCouponErrorMsg(t('checkout.enterCoupon')); return; }
-    if (code === 'CANCER' || code === 'کینسر') { setIsCompassionMode(true); setAppliedCoupon(''); setFormData(previous => ({ ...previous, giftWrapping: false })); return; }
-    setIsCompassionMode(false); setIsValidatingCoupon(true);
+    if (!code) { setAppliedCoupon(''); setIsQuoteRequestMode(false); setCouponErrorMsg(t('checkout.enterCoupon')); return; }
+    setIsValidatingCoupon(true);
     couponRequestRef.current?.abort();
     const controller = new AbortController();
     couponRequestRef.current = controller;
@@ -375,8 +381,11 @@ const handleInputChange = (field: string, value: any) => {
       if (controller.signal.aborted) return;
       const result = await getOrderQuote({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping, discountCode: code, rewardId: selectedRewardId, isWholesale, authToken, signal: controller.signal });
       if (controller.signal.aborted || pricingKeyRef.current !== initialKey || identityRef.current !== initialUid) return;
-      if (result.success && result.totals && result.totals.discount > 0) { setAppliedCoupon(code); setCouponSuccessMsg(t('checkout.couponApplied')); }
-      else { setAppliedCoupon(''); setCouponErrorMsg(result.code === 'TIMEOUT' ? t('checkout.quoteTimeout', 'The price check timed out. Please retry.') : result.error || t('checkout.couponNoEffect')); }
+      if (result.success && result.totals && result.totals.promoCode === code) {
+        setAppliedCoupon(code); setCouponCode(code); setIsQuoteRequestMode(result.totals.isQuoteRequest === true);
+        setCouponSuccessMsg(t('checkout.couponApplied'));
+        if (result.totals.isQuoteRequest === true && (currentStep === 'payment' || currentStep === 'review')) setCurrentStep('review');
+      } else { setAppliedCoupon(''); setIsQuoteRequestMode(false); setCouponErrorMsg(result.code === 'TIMEOUT' ? t('checkout.quoteTimeout', 'The price check timed out. Please retry.') : result.error || t('checkout.couponNoEffect')); }
     } catch (error) {
       if (!controller.signal.aborted) setCouponErrorMsg(error instanceof CheckoutAuthenticationError ? t('checkout.signInAgain') : t('checkout.quoteFailed'));
     } finally {
@@ -385,7 +394,7 @@ const handleInputChange = (field: string, value: any) => {
   };
 
   const localSummary = (() => {
-    try { return calculateOrderSummary({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping, couponCode: appliedCoupon }); }
+    try { return calculateOrderSummary({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping }); }
     catch { return null; }
   })();
   const verifiedQuote = quote?.key === quoteKey ? quote.totals : null;
@@ -397,6 +406,7 @@ const handleInputChange = (field: string, value: any) => {
   const selectedMethodObj = SHIPPING_METHODS.find(method => method.id === activeShippingMethod) || SHIPPING_METHODS[0];
   const giftFeeTotal = summary.giftWrapFee;
   const finalPayable = summary.total;
+  const appliedPromoMessage = appliedPromotionMessage(verifiedQuote, t) || couponSuccessMsg;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -450,7 +460,7 @@ const handleInputChange = (field: string, value: any) => {
         instructions: formData.instructions,
         giftWrapping: formData.giftWrapping,
         giftMessage: formData.giftMessage,
-        paymentMethod: selectedPayment,
+        ...(isQuoteRequestMode ? {} : { paymentMethod: selectedPayment }),
         items: cartItems.map(item => ({
           ...item,
           price: parsePrice(item.unitPrice ?? item.price)
@@ -496,45 +506,43 @@ const handleInputChange = (field: string, value: any) => {
         writeCheckoutSession('pendingOrderId', orderId);
       }
 
+      const isAcceptedQuote = orderResult.orderType === 'QUOTE_REQUEST';
+      const successSnapshot = {
+        orderId, durablePersistenceReady: true, customerUid: submittedUid, whatsappUrl, claimToken: orderResult.claimToken,
+        orderType: orderResult.orderType, status: orderResult.status,
+        promoCode: orderResult.totals?.promoCode || null, promoType: orderResult.totals?.promoType || null,
+        discountAmount: orderResult.totals?.discountAmount ?? orderResult.totals?.discount ?? 0,
+        freeShipping: orderResult.totals?.freeShipping === true, freeGiftWrap: orderResult.totals?.freeGiftWrap === true,
+        freeGift: orderResult.totals?.freeGift === true,
+        paymentMethod: isAcceptedQuote ? 'quote' : selectedPayment,
+        items: receipt.items, totals: receipt.totals, whatsappMessage: orderResult.whatsappMessage,
+        customer: { name: formData.name, phone: formData.phone, address: formData.address, city: formData.city,
+          paymentMethod: isAcceptedQuote ? 'quote' : selectedPayment },
+      };
       // Save order confirmation snapshot in session storage for resilient recovery
       try {
-        sessionStorage.setItem("allbarka_order_success", JSON.stringify({
-          orderId,
-          durablePersistenceReady: true,
-          customerUid: submittedUid,
-          whatsappUrl,
-          claimToken: orderResult.claimToken,
-          items: receipt.items,
-          totals: receipt.totals,
-          whatsappMessage: orderResult.whatsappMessage,
-          customer: {
-            name: formData.name,
-            phone: formData.phone,
-            address: formData.address,
-            city: formData.city,
-            paymentMethod: selectedPayment
-          }
-        }));
+        sessionStorage.setItem("allbarka_order_success", JSON.stringify(successSnapshot));
       } catch (storageErr) {
         console.warn("Could not write order success snapshot to sessionStorage:", storageErr);
       }
 
-      setOrderSuccessResult({ orderId, claimToken: orderResult.claimToken || undefined, whatsappUrl });
+      setOrderSuccessResult({ orderId, claimToken: orderResult.claimToken || undefined, whatsappUrl, isQuoteRequest: isAcceptedQuote });
       setCurrentStep('success');
       onClearCart();
       checkoutAttemptRef.current = null;
       clearCheckoutAttempt();
+      if (isAcceptedQuote) navigate('/success', { state: { orderData: successSnapshot } });
 
       if (currentUser) {
         void (async () => { try {
           const { doc, setDoc } = await import('firebase/firestore');
           const { db } = await import('../lib/firebase');
-          await setDoc(doc(db, 'users', currentUser.uid), {
+          await setDoc(doc(db, 'users', currentUser.uid), sanitizeFirestoreData({
             name: formData.name,
             phone: formData.phone,
             address: formData.address,
             city: formData.city
-          }, { merge: true });
+          }), { merge: true });
         } catch (e) {
           console.warn("Could not save address to patron profile:", e);
         } })();
@@ -632,16 +640,16 @@ const handleInputChange = (field: string, value: any) => {
               onClick={() => {
                 if (!validateStep1(true)) { setCurrentStep('details'); return; }
                 if (!validateStep2(true)) { setCurrentStep('shipping'); return; }
-                setCurrentStep('payment');
+                setCurrentStep(isQuoteRequestMode ? 'review' : 'payment');
               }}
               className={`flex min-h-11 items-center justify-center sm:justify-start gap-1.5 sm:gap-2 py-1.5 sm:py-2 px-1 sm:px-2.5 rounded-xl border text-center sm:text-left transition-all cursor-pointer ${
-                currentStep === 'payment'
+                (currentStep === 'payment' || currentStep === 'review')
                   ? 'bg-[#1F120F] text-[#FDFBF7] border-[#B8935F] shadow-xs'
                   : 'bg-white/80 text-[#1F120F]/70 border-[#B8935F]/20 hover:border-[#B8935F]/40'
               }`}
             >
               <div className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0 ${
-                currentStep === 'payment' ? 'bg-[#B8935F] text-[#1F120F]' : 'bg-[#1F120F]/10 text-[#1F120F]'
+                (currentStep === 'payment' || currentStep === 'review') ? 'bg-[#B8935F] text-[#1F120F]' : 'bg-[#1F120F]/10 text-[#1F120F]'
               }`}>
                 3
               </div>
@@ -656,10 +664,65 @@ const handleInputChange = (field: string, value: any) => {
           onSubmit={handleSubmit}
           className="flex-1 overflow-y-auto min-h-0 px-4 sm:px-6 py-5 pb-10 space-y-4 [scrollbar-width:thin]"
         >
-          {draftNotice && <div role="status" className="rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] p-3 text-xs"><p>{t('checkout.draftRestored')}</p><button type="button" onClick={() => { setFormData({ name: '', phone: '', address: '', city: 'Lahore', deliverySlot: 'Fastest Dispatch', giftWrapping: false, giftMessage: '', instructions: '' }); setCouponCode(''); setAppliedCoupon(''); setDraftNotice(false); try { sessionStorage.removeItem(CHECKOUT_DRAFT_KEY); } catch { /* private mode */ } }} className="focus-ring mt-2 min-h-11 underline underline-offset-4">{t('checkout.clearDraft')}</button></div>}
+          {draftNotice && <div role="status" className="rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] p-3 text-xs"><p>{t('checkout.draftRestored')}</p><button type="button" onClick={() => { setFormData({ name: '', phone: '', address: '', city: 'Lahore', deliverySlot: 'Fastest Dispatch', giftWrapping: false, giftMessage: '', instructions: '' }); setCouponCode(''); setAppliedCoupon(''); setIsQuoteRequestMode(false); setCouponSuccessMsg(null); setCouponErrorMsg(null); setDraftNotice(false); try { sessionStorage.removeItem(CHECKOUT_DRAFT_KEY); } catch { /* private mode */ } }} className="focus-ring mt-2 min-h-11 underline underline-offset-4">{t('checkout.clearDraft')}</button></div>}
           {!online && <p role="status" className="rounded-xl border border-[var(--color-border)] p-3 text-sm">{t('checkout.offline')}</p>}
           {(currentStep === 'details' || currentStep === 'shipping') && <AddressBook customer={formData} onSelect={value => setFormData(previous => ({ ...previous, ...value }))} />}
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] p-3 text-xs"><p role="status" aria-live="polite">{quoteLoading ? t('checkout.checkingQuote') : quoteError || (verifiedQuote ? t('checkout.quoteVerified') : t('checkout.waitQuote'))}</p><button type="button" disabled={!online || quoteLoading} onClick={() => setQuoteRefresh(value => value + 1)} className="focus-ring min-h-11 underline underline-offset-4 disabled:opacity-40">{t('checkout.refreshQuote')}</button>{quoteError && <a href={buildHumanSupportWhatsAppUrl()} target="_blank" rel="noreferrer" className="focus-ring ms-4 inline-flex min-h-11 items-center underline underline-offset-4">{t('footer.connect')}</a>}</div>
+          {/* One server-validated promo, available before the payment step. */}
+          {currentStep !== 'success' && (
+                  <div className="space-y-1.5">
+                    <label htmlFor="checkout-promo-code" className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)]/80 flex items-center gap-1">
+                      <Tag size={12} className="text-[var(--color-gold,#B8935F)]" />
+                      {t('checkout.promoLabel')}
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={couponCode}
+                        disabled={isSubmittingOrder}
+                        onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); if (!isValidatingCoupon) void handleApplyCoupon(); } }}
+                        onChange={(e) => {
+                          setCouponCode(e.target.value);
+                          setCouponErrorMsg(null);
+                          setCouponSuccessMsg(null);
+                        }}
+                        id="checkout-promo-code"
+                        aria-invalid={!!couponErrorMsg}
+                        aria-describedby={couponErrorMsg ? 'checkout-promo-error' : appliedPromoMessage ? 'checkout-promo-effect' : undefined}
+                        autoComplete="off"
+                        maxLength={60}
+                        placeholder={t('checkout.promoPlaceholder')}
+                        className="flex-1 bg-white dark:bg-[#1A201E] border border-[var(--color-gold,#B8935F)]/30 rounded-xl py-2.5 px-3.5 text-base sm:text-sm min-h-[44px] font-semibold focus:outline-none focus:border-[var(--color-gold,#B8935F)] text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7] uppercase placeholder:normal-case placeholder:text-[var(--color-ink,#1F120F)]/30 dark:placeholder:text-[#FDFBF7]/30"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyCoupon}
+                        disabled={isValidatingCoupon || isSubmittingOrder || !online || authLoading}
+                        className="bg-[var(--color-ink,#1F120F)] text-[var(--color-gold,#B8935F)] border border-[var(--color-gold,#B8935F)]/50 px-4 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-[var(--color-ink,#1F120F)]/80 transition-colors cursor-pointer shadow-xs active:scale-95 disabled:opacity-50"
+                      >
+                        {isValidatingCoupon ? t('checkout.promoChecking') : t('checkout.promoApply')}
+                      </button>
+                    </div>
+
+                    {isValidatingCoupon && (
+                      <div className="h-6 w-full rounded luxury-skeleton mt-1" />
+                    )}
+
+                    {appliedPromoMessage && (
+                      <p id="checkout-promo-effect" role="status" aria-live="polite" className="text-[10.5px] text-[var(--color-gold,#B8935F)] font-black uppercase tracking-wide flex items-center gap-1">
+                        <Sparkles size={12} className="text-[var(--color-gold,#B8935F)]" /> {appliedPromoMessage}
+                      </p>
+                    )}
+                    {couponErrorMsg && (
+                      <p id="checkout-promo-error" role="alert" className="text-[10px] text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-1">
+                        <AlertCircle size={12} className="shrink-0" />
+                        <span>{couponErrorMsg}</span>
+                      </p>
+                    )}
+                    {appliedCoupon && <button type="button" disabled={isSubmittingOrder} onClick={() => { couponRequestRef.current?.abort(); setAppliedCoupon(''); setCouponCode(''); setIsQuoteRequestMode(false); setCouponSuccessMsg(null); setCouponErrorMsg(null); }} className="focus-ring min-h-11 text-xs underline underline-offset-4">{t('checkout.promoRemove')}</button>}
+                  </div>
+          )}
+
           {/* Skeleton State on Submitting Order */}
           {isSubmittingOrder && (
             <div className="p-4 rounded-2xl bg-white border border-[var(--color-gold,#B8935F)]/30 space-y-3">
@@ -840,7 +903,7 @@ const handleInputChange = (field: string, value: any) => {
                           <span className="truncate max-w-[240px]">
                             {getLocalized(item, 'name', language)} <span className="text-[10px] text-[var(--color-gold,#B8935F)]">({item.selectedWeight})</span> x {item.quantity}
                           </span>
-                          <span className="font-bold shrink-0">Rs. {(item.price * item.quantity)?.toLocaleString()}</span>
+                          {!isQuoteRequestMode && <span className="font-bold shrink-0">Rs. {(item.price * item.quantity)?.toLocaleString()}</span>}
                         </div>
                       ))}
                     </div>
@@ -930,18 +993,18 @@ const handleInputChange = (field: string, value: any) => {
                       <input type="text" name="city" autoComplete="address-level2" maxLength={60} value={formData.city} onChange={event => handleInputChange('city', event.target.value)} className="focus-ring min-h-11 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-base" />
                     </label>}
                     {errors.city && <p role="alert" className="text-xs text-rose-600">{errors.city}</p>}
-                    <p className="text-xs leading-relaxed">{t(formData.city === 'Lahore' ? 'shipping.lahoreRule' : 'shipping.nationwideRule')}</p>
+                    {!isQuoteRequestMode && <p className="text-xs leading-relaxed">{t(formData.city === 'Lahore' ? 'shipping.lahoreRule' : 'shipping.nationwideRule')}</p>}
                   </div>
 
                   {/* Luxury Shipping Method Selector */}
                   <div className="pt-1">
-                    <ShippingMethodSelector
+                    {!isQuoteRequestMode && <ShippingMethodSelector
                       selected={activeShippingMethod}
                       onSelect={handleShippingChange}
                       subtotal={summary.discountedSubtotal}
                       city={formData.city}
                       items={cartItems}
-                    />
+                    />}
                   </div>
 
                   {/* Preferred Delivery Time Slot */}
@@ -989,7 +1052,8 @@ const handleInputChange = (field: string, value: any) => {
                     <label className="flex items-start gap-3 cursor-pointer select-none">
                       <input
                         type="checkbox"
-                        checked={formData.giftWrapping}
+                        checked={formData.giftWrapping || verifiedQuote?.freeGiftWrap === true}
+                        disabled={verifiedQuote?.freeGiftWrap === true}
                         onChange={(e) => handleInputChange('giftWrapping', e.target.checked)}
                         className="mt-0.5 w-4 h-4 rounded text-[var(--color-ink,#1F120F)] accent-[var(--color-ink,#1F120F)] cursor-pointer"
                       />
@@ -1000,7 +1064,7 @@ const handleInputChange = (field: string, value: any) => {
                             Premium Gift Box & Handwritten Card
                           </span>
                           <span className="text-xs font-bold text-[var(--color-gold,#B8935F)] font-serif shrink-0">
-                            +Rs. {GIFT_WRAP_FEE}
+                            {isQuoteRequestMode ? t('checkout.quoteRequestTitle') : verifiedQuote?.freeGiftWrap ? t('checkout.promoFreeGiftWrap') : `+Rs. ${GIFT_WRAP_FEE}`}
                           </span>
                         </div>
                         <p className="text-[10px] text-[var(--color-ink,#1F120F)]/65 mt-0.5 leading-relaxed">
@@ -1009,7 +1073,7 @@ const handleInputChange = (field: string, value: any) => {
                       </div>
                     </label>
 
-                    {formData.giftWrapping && (
+                    {(formData.giftWrapping || verifiedQuote?.freeGiftWrap) && (
                       <div className="mt-3 pt-3 border-t border-[var(--color-gold,#B8935F)]/20">
                         <label className="block text-[9.5px] font-black text-[var(--color-ink,#1F120F)]/75 uppercase tracking-widest mb-1">
                           Custom Message on Card
@@ -1043,7 +1107,7 @@ const handleInputChange = (field: string, value: any) => {
                       onClick={handleProceedToStep3}
                       className="flex-1 py-3.5 rounded-full bg-[var(--color-ink,#1F120F)] text-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)] text-xs font-black uppercase tracking-widest hover:bg-[var(--color-ink,#1F120F)]/90 hover:shadow-[0_4px_20px_rgba(184,147,95,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                     >
-                      <span>Proceed to Payment & Review</span>
+                      <span>{isQuoteRequestMode ? t('checkout.reviewRequest') : t('checkout.proceedReview', 'Proceed to Payment & Review')}</span>
                       <ArrowRight size={14} className="text-[var(--color-gold,#B8935F)]" />
                     </button>
                   </div>
@@ -1051,7 +1115,7 @@ const handleInputChange = (field: string, value: any) => {
               )}
 
               {/* ───────────────── STEP 3: PAYMENT & ORDER REVIEW ───────────────── */}
-              {currentStep === 'payment' && (
+              {(currentStep === 'payment' || currentStep === 'review') && (
                 <motion.div
                   key="step-payment"
                   initial={reduceMotion ? false : { opacity: 0, x: -10 }}
@@ -1061,7 +1125,7 @@ const handleInputChange = (field: string, value: any) => {
                   className="space-y-4"
                 >
                   {/* Payment Protocol Selector */}
-                  <div className="space-y-2">
+                  {!isQuoteRequestMode && <div className="space-y-2">
                     <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)]/80">
                       Payment Protocol *
                     </label>
@@ -1108,62 +1172,18 @@ const handleInputChange = (field: string, value: any) => {
                         </p>
                       </button>
                     </div>
-                  </div>
-
-                  {/* Promo Code Input */}
-                  <div className="space-y-1.5">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)]/80 flex items-center gap-1">
-                      <Tag size={12} className="text-[var(--color-gold,#B8935F)]" />
-                      Boutique Promo Code
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={couponCode}
-                        onChange={(e) => {
-                          setCouponCode(e.target.value);
-                          setCouponErrorMsg(null);
-                          setCouponSuccessMsg(null);
-                        }}
-                        placeholder="Enter ALLBARKA10"
-                        className="flex-1 bg-white dark:bg-[#1A201E] border border-[var(--color-gold,#B8935F)]/30 rounded-xl py-2.5 px-3.5 text-base sm:text-sm min-h-[44px] font-semibold focus:outline-none focus:border-[var(--color-gold,#B8935F)] text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7] uppercase placeholder:normal-case placeholder:text-[var(--color-ink,#1F120F)]/30 dark:placeholder:text-[#FDFBF7]/30"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleApplyCoupon}
-                        disabled={isValidatingCoupon}
-                        className="bg-[var(--color-ink,#1F120F)] text-[var(--color-gold,#B8935F)] border border-[var(--color-gold,#B8935F)]/50 px-4 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-[var(--color-ink,#1F120F)]/80 transition-colors cursor-pointer shadow-xs active:scale-95 disabled:opacity-50"
-                      >
-                        {isValidatingCoupon ? 'Checking...' : 'Apply'}
-                      </button>
-                    </div>
-
-                    {isValidatingCoupon && (
-                      <div className="h-6 w-full rounded luxury-skeleton mt-1" />
-                    )}
-
-                    {couponSuccessMsg && (
-                      <p className="text-[10.5px] text-[var(--color-gold,#B8935F)] font-black uppercase tracking-wide flex items-center gap-1">
-                        <Sparkles size={12} className="text-[var(--color-gold,#B8935F)]" /> {couponSuccessMsg}
-                      </p>
-                    )}
-                    {couponErrorMsg && (
-                      <p className="text-[10px] text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-1">
-                        <AlertCircle size={12} className="shrink-0" />
-                        <span>{couponErrorMsg}</span>
-                      </p>
-                    )}
-                  </div>
+                  </div>}
 
                   {/* Summary Review Card: 16px inner padding */}
                   <div className="p-4 rounded-2xl bg-white dark:bg-[#1A201E] border border-[var(--color-gold,#B8935F)]/25 space-y-2 text-xs shadow-2xs">
-                    {isCompassionMode ? (
+                    {isQuoteRequestMode ? (
                       <div className="py-2 text-center text-[var(--color-emerald-dark,#042821)] dark:text-[#42f5bf] space-y-3">
                         <p className="font-serif font-black text-sm">
-                          Hum aapki sehat ke liye dua karte hain.
+                          {t('checkout.quoteRequestTitle')}
                         </p>
                         <p className="text-[11.5px] leading-relaxed max-w-[280px] mx-auto opacity-90">
-                          Hamari team WhatsApp par aap se rabta karegi aur aap ke liye special pricing share karegi.
+                          {t('checkout.quoteRequestNotice')}
+                          <span className="block mt-2">{t('checkout.quoteNoPayment')}</span>
                         </p>
                         <div className="bg-[var(--color-emerald-dark,#042821)]/5 dark:bg-[#42f5bf]/10 p-3 rounded-xl border border-[var(--color-emerald-dark,#042821)]/10 text-left mt-3">
                           <p className="text-[10px] font-black uppercase tracking-wider mb-2 opacity-80">Reserved Items</p>
@@ -1204,7 +1224,7 @@ const handleInputChange = (field: string, value: any) => {
                           </span>
                         </div>
 
-                        {formData.giftWrapping && (
+                        {(formData.giftWrapping || verifiedQuote?.freeGiftWrap) && (
                           <div className="flex justify-between text-[11px] text-[var(--color-gold,#B8935F)] font-bold">
                             <span>Luxury Gift Box & Handwritten Card</span>
                             <span>{giftFeeTotal === 0 ? 'FREE' : `+Rs. ${GIFT_WRAP_FEE}`}</span>
@@ -1278,28 +1298,14 @@ const handleInputChange = (field: string, value: any) => {
                       <ArrowLeft size={14} />
                       <span>Back</span>
                     </button>
-                    {isCompassionMode ? (
-                      <a
-                        href={buildHumanSupportWhatsAppUrl(
-                          `ALLBARKA SUPPORT\nName: ${formData.name}\nPhone: ${formData.phone}\nAddress: ${formData.address}, ${formData.city}\nItems:\n${cartItems.map(i => `- ${getLocalized(i, 'name', language)} (${i.selectedWeight}) x ${i.quantity}`).join('\n')}`
-                        )}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-1 py-3.5 rounded-full bg-[#25D366] text-white border border-[#25D366] text-xs font-black uppercase tracking-widest hover:bg-[#1EBE5D] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-98"
-                      >
-                        <MessageCircle size={16} />
-                        <span>Support Contact (No DB Order)</span>
-                      </a>
-                    ) : (
                       <button
                         type="submit"
                         disabled={isSubmittingOrder || isValidatingCoupon || !online || authLoading || quoteLoading || !verifiedQuote}
                         className="flex-1 py-3.5 rounded-full bg-[var(--color-ink,#1F120F)] text-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)] text-xs font-black uppercase tracking-widest hover:bg-[var(--color-ink,#1F120F)]/90 hover:shadow-[0_4px_20px_rgba(184,147,95,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
                       >
                         <CheckCircle size={16} className="text-[var(--color-gold,#B8935F)]" />
-                        <span>{isSubmittingOrder ? 'Placing Order...' : 'Confirm & Place Order'}</span>
+                        <span>{isQuoteRequestMode ? t(isSubmittingOrder ? 'checkout.quoteSubmitting' : 'checkout.quoteSubmit') : isSubmittingOrder ? t('checkout.placingOrder', 'Placing Order…') : t('checkout.confirmOrder', 'Confirm & Place Order')}</span>
                       </button>
-                    )}
                   </div>
                 </motion.div>
               )}
@@ -1320,10 +1326,10 @@ const handleInputChange = (field: string, value: any) => {
                       AllBarka Reserve Order
                     </span>
                     <h3 className="text-2xl font-serif font-black text-[var(--color-ink,#1F120F)] mb-1">
-                      {t('checkout.receiptReceived')}
+                      {t(orderSuccessResult.isQuoteRequest ? 'checkout.quoteReceived' : 'checkout.receiptReceived')}
                     </h3>
                     <p className="text-xs text-[var(--color-ink,#1F120F)]/70">
-                      {t('checkout.receiptSaved')}
+                      {t(orderSuccessResult.isQuoteRequest ? 'checkout.quoteRequestNotice' : 'checkout.receiptSaved')}
                     </p>
                   </div>
 
@@ -1345,7 +1351,7 @@ const handleInputChange = (field: string, value: any) => {
                           Ordered Items ({orderItemsSnapshot.length})
                         </span>
                         <span className="text-[10px] font-bold text-[var(--color-gold,#B8935F)]">
-                          {selectedPayment === 'bank' ? 'Direct Bank / Raast' : 'Cash on Delivery'}
+                          {orderSuccessResult.isQuoteRequest ? t('checkout.quoteNoPayment') : selectedPayment === 'bank' ? 'Direct Bank / Raast' : 'Cash on Delivery'}
                         </span>
                       </div>
                       <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1 text-xs">
@@ -1354,14 +1360,14 @@ const handleInputChange = (field: string, value: any) => {
                             <span className="truncate max-w-[220px]">
                               {getLocalized(item, 'name', language)} <span className="text-[10px] font-medium text-[var(--color-gold,#B8935F)]">({item.selectedWeight})</span> x {item.quantity}
                             </span>
-                            <span className="font-bold shrink-0">
+                            {!orderSuccessResult.isQuoteRequest && <span className="font-bold shrink-0">
                               Rs. {(parsePrice(item.unitPrice ?? item.price) * item.quantity).toLocaleString()}
-                            </span>
+                            </span>}
                           </div>
                         ))}
                       </div>
 
-                      {savedTotals && (
+                      {savedTotals && !orderSuccessResult.isQuoteRequest && (
                         <div className="border-t border-[var(--color-gold,#B8935F)]/15 pt-2 flex justify-between items-center text-xs">
                           <span className="font-bold text-[var(--color-ink,#1F120F)]">Total Payable</span>
                           <span className="font-serif font-black text-sm text-[var(--color-emerald,#042821)]">
@@ -1373,7 +1379,7 @@ const handleInputChange = (field: string, value: any) => {
                   )}
 
                   {/* Bank Transfer Details (if bank payment was chosen) */}
-                  {selectedPayment === 'bank' && (
+                  {selectedPayment === 'bank' && !orderSuccessResult.isQuoteRequest && (
                     <div className="bg-[#FAF9F5] border border-[#C7982F]/40 rounded-2xl p-4 text-left text-xs space-y-1.5 shadow-2xs">
                       <div className="flex items-center gap-1.5 text-[var(--color-gold,#B8935F)] font-bold text-xs uppercase tracking-wider">
                         <Building2 size={14} />
@@ -1467,18 +1473,19 @@ const handleInputChange = (field: string, value: any) => {
           {cartItems.map(item => <div key={item.id} className="boutique-order-item">
             <img src={mediaCover(PRODUCTS.find(product => product.id === item.productId || product.id === item.id), item.image)} alt={getLocalized(item, 'name', language)} width={64} height={64} />
             <div><strong>{getLocalized(item, 'name', language)}</strong><small>{item.selectedWeight} × {item.quantity}</small></div>
-            <bdi>Rs. {(parsePrice(item.unitPrice ?? item.price) * item.quantity).toLocaleString()}</bdi>
+            {!isQuoteRequestMode && <bdi>Rs. {(parsePrice(item.unitPrice ?? item.price) * item.quantity).toLocaleString()}</bdi>}
           </div>)}
         </div>
-        <dl>
+        {isQuoteRequestMode ? <div role="status" className="rounded-xl border border-[var(--color-gold)]/30 p-4"><h3 className="font-serif text-lg">{t('checkout.quoteRequestTitle')}</h3><p className="mt-2 text-sm">{t('checkout.quoteRequestNotice')}</p><p className="mt-2 text-xs">{t('checkout.quoteNoPayment')}</p></div> : <dl>
           <div><dt>{t('subtotal', 'Subtotal')}</dt><dd>Rs. {subtotal.toLocaleString()}</dd></div>
           <div><dt>{t('boutique.shipping')}</dt><dd>{hasEstimate ? `Rs. ${currentShippingFee.toLocaleString()}` : t('shipping.pending')}</dd></div>
           {discountAmt > 0 && <div><dt>{t('boutique.discount')}</dt><dd>− Rs. {discountAmt.toLocaleString()}</dd></div>}
           {giftFeeTotal > 0 && <div><dt>{t('boutique.wrapping')}</dt><dd>Rs. {giftFeeTotal.toLocaleString()}</dd></div>}
           <div className="boutique-order-total"><dt>{t('total', 'Total')}</dt><dd>{hasEstimate ? `Rs. ${finalPayable.toLocaleString()}` : t('shipping.pending')}</dd></div>
-        </dl>
+        </dl>}
         <p>{t('boutique.orderNote')}</p>
       </aside>}
     </div>
   );
 }
+import { sanitizeFirestoreData } from '../lib/firestoreData';

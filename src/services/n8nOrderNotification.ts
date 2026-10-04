@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import type { CanonicalOrder } from '../lib/serverOrderService';
 import type { HamperConfiguration } from '../lib/hamperCatalog';
 import { ADMIN_STATUSES } from '../lib/adminOperations';
+import type { AppliedPromo } from '../types/promo';
 
 export interface N8nNotificationResult {
   sent: boolean;
@@ -44,7 +45,10 @@ export interface N8nOrderDelivery {
   promisedDeliveryDate: string;
 }
 
-export interface N8nOrderData {
+export interface N8nOrderData extends Partial<AppliedPromo> {
+  source?: 'website';
+  orderType?: 'ORDER' | 'QUOTE_REQUEST';
+  paymentStatus?: CanonicalOrder['paymentStatus'];
   orderId: string;
   customerUid?: string | null;
   customer: { name: string; phone: string; address: string; city: string; deliverySlot?: string };
@@ -81,7 +85,20 @@ export function projectCanonicalOrderForN8n(order: CanonicalOrder): N8nOrderData
   if (!order || !/^AB-\d{8}-[A-F0-9]{6}$/i.test(order.orderId || '') || !Number.isFinite(Date.parse(order.createdAt))) {
     throw new Error('CANONICAL_ORDER_INVALID');
   }
-  if (order.paymentMethod !== 'cod' && order.paymentMethod !== 'bank') throw new Error('CANONICAL_ORDER_INVALID');
+  const isQuote = order.orderType === 'QUOTE_REQUEST';
+  const quoteSignal = isQuote || order.isQuoteRequest === true || order.promoType === 'quote'
+    || order.promoCode === 'CANCER' || order.status === 'QUOTE_REQUESTED' || order.paymentMethod === 'quote';
+  if (quoteSignal) {
+    if (!isQuote || order.isQuoteRequest !== true || order.promoCode !== 'CANCER' || order.promoType !== 'quote'
+      || order.paymentMethod !== 'quote' || order.paymentStatus !== 'NOT_REQUIRED'
+      || !['QUOTE_REQUESTED', 'CANCELLED'].includes(order.status)
+      || !order.totals || ['subtotal', 'discount', 'discountedSubtotal', 'shipping', 'giftWrapFee', 'total'].some(key => order.totals[key] !== 0)
+      || order.discountAmount !== 0 || order.freeShipping !== false || order.freeGiftWrap !== false || order.freeGift !== false) {
+      throw new Error('CANONICAL_ORDER_INVALID');
+    }
+  } else if ((order.paymentMethod !== 'cod' && order.paymentMethod !== 'bank') || order.paymentStatus === 'NOT_REQUIRED') {
+    throw new Error('CANONICAL_ORDER_INVALID');
+  }
   if (!ADMIN_STATUSES.includes(order.status) || !Number.isFinite(Date.parse(order.updatedAt))) throw new Error('CANONICAL_ORDER_INVALID');
   const customer = order.customer;
   const totals = order.totals;
@@ -90,6 +107,14 @@ export function projectCanonicalOrderForN8n(order: CanonicalOrder): N8nOrderData
   }
   if (!/^03\d{9}$/.test(customer.phone)) throw new Error('CANONICAL_ORDER_INVALID');
   const wireOrder: N8nOrderData = {
+    source: 'website', orderType: isQuote ? 'QUOTE_REQUEST' : 'ORDER', paymentStatus: order.paymentStatus,
+    // Historical receipts keep their saved discount and code, regardless of today's caps.
+    promoCode: order.promoCode === undefined ? (order.couponCode?.trim().toUpperCase() || null) : order.promoCode,
+    promoType: order.promoType ?? null,
+    ...(typeof order.promoValue === 'number' ? { promoValue: money(order.promoValue) } : {}),
+    discountAmount: money(order.discountAmount ?? order.couponDiscount ?? totals.discount ?? 0),
+    freeShipping: order.freeShipping === true, freeGiftWrap: order.freeGiftWrap === true,
+    freeGift: order.freeGift === true, isQuoteRequest: isQuote,
     orderId: order.orderId,
     customerUid: order.uid == null ? null : requiredText(order.uid, 128),
     customer: {
@@ -167,6 +192,13 @@ export async function sendOrderToN8n(orderData: N8nOrderData, options: SendOrder
   try {
     // Whitelist again to prevent callers from accidentally serializing a full security-bearing database record.
     const envelopeOrder: N8nOrderData = {
+      source: 'website', orderType: orderData.orderType ?? 'ORDER',
+      ...(orderData.paymentStatus ? { paymentStatus: orderData.paymentStatus } : {}),
+      promoCode: orderData.promoCode ?? null, promoType: orderData.promoType ?? null,
+      ...(typeof orderData.promoValue === 'number' ? { promoValue: orderData.promoValue } : {}),
+      discountAmount: orderData.discountAmount ?? 0,
+      freeShipping: orderData.freeShipping === true, freeGiftWrap: orderData.freeGiftWrap === true,
+      freeGift: orderData.freeGift === true, isQuoteRequest: orderData.isQuoteRequest === true,
       orderId: orderData.orderId, customerUid: orderData.customerUid ?? null,
       customer: {
         name: orderData.customer.name, phone: orderData.customer.phone,

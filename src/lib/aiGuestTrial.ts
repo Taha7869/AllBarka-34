@@ -1,3 +1,4 @@
+import { sanitizeFirestoreData } from './firestoreData';
 import crypto from 'crypto';
 
 export class GuestTrialLimitError extends Error {
@@ -31,7 +32,7 @@ export async function reserveGuestAiMessage(
       ? data.resetAt : now + 24 * 60 * 60 * 1000;
     const used = resetAt === data?.resetAt ? Number(data?.used || 0) : 0;
     if (used >= 5) throw new GuestTrialLimitError();
-    tx.set(ref, { used: used + 1, resetAt, updatedAt: now }, { merge: true });
+    tx.set(ref, sanitizeFirestoreData({ used: used + 1, resetAt, updatedAt: now }), { merge: true });
     return 4 - used;
   });
 }

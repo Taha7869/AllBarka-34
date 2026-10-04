@@ -106,6 +106,7 @@ export default function OrderSuccessPage() {
   }
 
   const whatsappUrl = buildOrderTrackingWhatsAppUrl(order.orderId);
+  const isQuoteRequest = order.orderType === 'QUOTE_REQUEST';
 
   return (
     <div className="w-full min-h-[70vh] py-12 px-4 sm:px-6 flex justify-center items-start">
@@ -116,13 +117,13 @@ export default function OrderSuccessPage() {
 
         <div className="text-center mb-8">
           <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--color-gold,#C7982F)] block mb-1">
-            {t('checkout.receiptReceived')}
+            {t(isQuoteRequest ? 'checkout.quoteReceived' : 'checkout.receiptReceived')}
           </span>
           <h1 className="text-2xl sm:text-3xl font-serif font-bold text-[var(--color-ink,#29231D)]">
             Thank You, {order.name.split(' ')[0]}
           </h1>
           <p className="text-xs sm:text-sm text-[var(--color-ink-muted,#635B52)] mt-2 max-w-md mx-auto">
-            {t('checkout.receiptSaved')}
+            {t(isQuoteRequest ? 'checkout.quoteRequestNotice' : 'checkout.receiptSaved')}
           </p>
         </div>
 
@@ -137,14 +138,14 @@ export default function OrderSuccessPage() {
                 {order.orderId}
               </span>
             </div>
-            <div className="text-right">
+            {!isQuoteRequest && <div className="text-right">
               <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted,#635B52)] block">
                 Payment Method
               </span>
               <span className="text-xs font-bold text-[var(--color-ink,#29231D)]">
                 {order.paymentMethod === 'bank' ? 'Direct Bank Transfer' : 'Cash on Delivery (COD)'}
               </span>
-            </div>
+            </div>}
           </div>
 
           {/* Delivery Details */}
@@ -177,9 +178,9 @@ export default function OrderSuccessPage() {
                     <span className="text-[var(--color-ink,#29231D)]">
                       {item.name} {item.selectedWeight ? `(${item.selectedWeight})` : ''} <span className="text-[var(--color-ink-faint)]">× {item.quantity}</span>
                     </span>
-                    <span className="font-medium text-[var(--color-ink,#29231D)]">
+                    {!isQuoteRequest && <span className="font-medium text-[var(--color-ink,#29231D)]">
                       {formatPKR(item.price * item.quantity)}
-                    </span>
+                    </span>}
                   </div>
                 ))}
               </div>
@@ -187,7 +188,7 @@ export default function OrderSuccessPage() {
           )}
 
           {/* Totals Breakdown */}
-          <div className="pt-4 space-y-1.5 text-xs">
+          {isQuoteRequest ? <p role="status" className="pt-4 text-sm leading-relaxed text-[var(--color-ink,#29231D)]">{t('checkout.quoteNoPayment')}</p> : <div className="pt-4 space-y-1.5 text-xs">
             <div className="flex justify-between text-[var(--color-ink-muted,#635B52)]">
               <span>Subtotal</span>
               <span>{formatPKR(order.subtotal)}</span>
@@ -212,7 +213,8 @@ export default function OrderSuccessPage() {
               <span>Total Payable</span>
               <span className="font-serif text-base">{formatPKR(order.totalAmount)}</span>
             </div>
-          </div>
+          </div>}
+          {!isQuoteRequest && order.promoCode && <p className="mt-3 text-xs text-[var(--color-ink,#29231D)]"><span dir="ltr">{order.promoCode}</span>: {order.freeGiftWrap ? t('checkout.promoFreeGiftWrap') : order.freeGift ? t('checkout.promoFreeGift') : order.freeShipping ? t('checkout.promoFreeShipping') : `${t('checkout.promoSaved')} ${formatPKR(order.discountAmount ?? order.discount)}`}</p>}
         </div>
 
         {/* Action Buttons */}

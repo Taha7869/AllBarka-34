@@ -5,6 +5,7 @@ import { validateShippingCity } from './shippingPolicy';
 import { ValidationError } from './validationError';
 export { ValidationError } from './validationError';
 import { CUSTOM_HAMPER_PRODUCT_ID, hamperCartKey, resolveHamper, type HamperConfiguration } from './hamperCatalog';
+import { evaluatePromo, getPromo, NO_PROMO } from './couponEngine';
 
 export interface ValidatedOrderItem {
   id: string; // composite cart item id, e.g. "pista-250g"
@@ -72,7 +73,7 @@ export function normalizeAndValidatePkPhone(rawPhone: unknown): { valid: boolean
  * Validates customer details and payment method.
  * Throws ValidationError on any failing constraint.
  */
-export function validateCustomerDetails(input: Partial<CustomerInput>): CustomerInput & { phone: string } {
+export function validateCustomerDetails(input: Partial<CustomerInput>, isQuoteRequest = false): CustomerInput & { phone: string } {
   const name = typeof input.name === 'string' ? input.name.trim() : '';
   if (!name || name.length < 3) {
     throw new ValidationError('Recipient name must be at least 3 characters long.', 'INVALID_NAME');
@@ -96,9 +97,9 @@ export function validateCustomerDetails(input: Partial<CustomerInput>): Customer
 
   const city = validateShippingCity(input.city);
 
-  const paymentMethod = typeof input.paymentMethod === 'string' ? input.paymentMethod.trim().toLowerCase() : '';
+  const paymentMethod = isQuoteRequest ? 'quote' : typeof input.paymentMethod === 'string' ? input.paymentMethod.trim().toLowerCase() : '';
   const allowedPayments = ['cod', 'bank'];
-  if (!allowedPayments.includes(paymentMethod)) {
+  if (!isQuoteRequest && !allowedPayments.includes(paymentMethod)) {
     throw new ValidationError(
       `Unsupported payment method "${input.paymentMethod}". Allowed methods: ${allowedPayments.join(', ')}`,
       'INVALID_PAYMENT_METHOD'
@@ -132,6 +133,7 @@ export function validateAndPriceOrder({
   giftWrapping = false,
   isWholesale = false,
   city,
+  promoContext,
 }: {
   items: any[];
   shippingMethodId: string;
@@ -139,6 +141,7 @@ export function validateAndPriceOrder({
   giftWrapping?: boolean;
   isWholesale?: boolean;
   city: string;
+  promoContext?: { hasPastOrders?: boolean; identityVerified?: boolean; now?: number };
 }): ValidatedOrder {
   if (!Array.isArray(items) || items.length === 0) {
     throw new ValidationError('Order must contain at least one item.', 'EMPTY_CART');
@@ -254,14 +257,29 @@ export function validateAndPriceOrder({
   const summary = calculateOrderSummary({
     items: validatedItems.map(i => ({ unitPrice: i.price, quantity: i.quantity, productId: i.productId, selectedWeight: i.selectedWeight, hamperConfiguration: i.hamperConfiguration })),
     shippingMethodId: resolvedShipping,
-    couponCode: discountCode,
     giftWrapping,
     city: destination,
   });
 
+  const promo = getPromo(discountCode);
+  const applied = promo ? evaluatePromo(promo, summary.subtotal, promoContext) : { ...NO_PROMO };
+  const discounted = calculateOrderSummary({
+    items: validatedItems.map(item => ({ unitPrice: item.price, quantity: item.quantity, productId: item.productId,
+      selectedWeight: item.selectedWeight, hamperConfiguration: item.hamperConfiguration })),
+    shippingMethodId: resolvedShipping, city: destination, manualDiscount: applied.discountAmount,
+    giftWrapping: applied.freeGiftWrap ? false : giftWrapping,
+  });
+  if (applied.freeShipping) discounted.shipping = 0;
+  discounted.total = discounted.discountedSubtotal + discounted.shipping + discounted.giftWrapFee;
+  Object.assign(discounted, applied);
+  if (applied.isQuoteRequest) {
+    Object.assign(discounted, { subtotal: 0, discount: 0, discountedSubtotal: 0, shipping: 0,
+      giftWrapFee: 0, total: 0, shippingWeightGrams: 0 });
+  }
+
   return {
     items: validatedItems,
-    summary,
-    earnedPoints: totalEarnedPoints,
+    summary: discounted,
+    earnedPoints: applied.isQuoteRequest ? 0 : totalEarnedPoints,
   };
 }

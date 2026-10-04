@@ -28,7 +28,7 @@ Dark mode must ALWAYS keep working
 Respect prefers-reduced-motion in every animation
 Business Rules (DO NOT CHANGE without explicit instruction)
 Lahore standard shipping Rs.150; FREE when discounted subtotal >= Rs.3,000.
-Outside Lahore all delivery methods use actual canonical order weight x Rs.250/kg, minimum Rs.250. Never grant free delivery outside Lahore. Do not round up to whole kilograms (1.2kg = Rs.300).
+Outside Lahore all delivery methods use actual canonical order weight x Rs.250/kg, minimum Rs.250. Only the owner-authorized ZAFRANI promo waives that charge; order thresholds and rewards never grant national free delivery. Do not round up to whole kilograms (1.2kg = Rs.300).
 Oil billing convention: 1ml counts as 1g for the delivery tariff, as confirmed by the owner; this is not a physical density assertion.
 Lahore express shipping Rs.350 (priority courier).
 Server strictly recalculates prices, coupons (e.g. ALLBARKA10 = 10%), and shipping

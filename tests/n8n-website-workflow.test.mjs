@@ -207,3 +207,79 @@ test('creation mirrors persist canonical status and ISO revision for later expli
   input.body.order.updatedAt = 'not-a-revision';
   assert.equal(run('Validate Website Order', input).valid, false);
 });
+
+test('packing summaries preserve gift, shipping and monetary promo effects from canonical metadata', () => {
+  for (const [code, type, flag, note] of [
+    ['GIFTBOX', 'free_giftwrap', 'freeGiftWrap', 'free gift wrap'],
+    ['MYSTERY', 'free_gift', 'freeGift', 'free gift'],
+    ['ZAFRANI', 'free_shipping', 'freeShipping', 'free shipping'],
+  ]) {
+    const input = order();
+    Object.assign(input.body.order, { source: 'website', orderType: 'ORDER', paymentStatus: 'UNPAID',
+      promoCode: code, promoType: type, discountAmount: 0,
+      freeShipping: false, freeGiftWrap: false, freeGift: false, isQuoteRequest: false, [flag]: true });
+    if (flag === 'freeShipping') { input.body.order.totals.shipping = 0; input.body.order.totals.total = 2500; }
+    const result = run('Validate Website Order', input);
+    assert.equal(result.valid, true);
+    assert.ok(result.sheetRow.items_summary.includes(`PROMO:${code}: ${note}`));
+    assert.equal(result.sheetRow.total_amount, input.body.order.totals.total);
+  }
+  const discounted = order();
+  Object.assign(discounted.body.order, { promoCode: 'ALLBARKA10', promoType: 'percent', promoValue: 10, discountAmount: 250,
+    freeShipping: false, freeGiftWrap: false, freeGift: false, isQuoteRequest: false });
+  discounted.body.order.totals.discount = 250;
+  discounted.body.order.totals.total = 2400;
+  assert.match(run('Validate Website Order', discounted).sheetRow.items_summary, /PROMO:ALLBARKA10: 10% off; saved Rs 250/);
+});
+
+test('legacy uncapped coupons keep their persisted totals and receive a saved-discount packing note', () => {
+  const input = order();
+  Object.assign(input.body.order, { promoCode: 'ALLBARKA10', promoType: null, discountAmount: 1500,
+    freeShipping: false, freeGiftWrap: false, freeGift: false, isQuoteRequest: false,
+    totals: { subtotal: 15000, discount: 1500, shipping: 150, total: 13650 } });
+  const result = run('Validate Website Order', input);
+  assert.equal(result.valid, true);
+  assert.equal(result.sheetRow.total_amount, 13650);
+  assert.match(result.sheetRow.items_summary, /PROMO:ALLBARKA10: saved Rs 1500/);
+  input.body.order.promoCode = 'LEGACY_VOUCHER';
+  assert.match(run('Validate Website Order', input).sheetRow.items_summary, /PROMO:LEGACY_VOUCHER: saved Rs 1500/);
+  input.body.order.promoCode = 'CANCER';
+  assert.equal(run('Validate Website Order', input).sheetRow.payment_method, 'COD', 'A historical null-type coupon does not become a new quote');
+});
+
+const quoteOrder = () => {
+  const input = order();
+  Object.assign(input.body.order, { source: 'website', orderType: 'QUOTE_REQUEST', status: 'QUOTE_REQUESTED',
+    paymentMethod: 'quote', paymentStatus: 'NOT_REQUIRED', promoCode: 'CANCER', promoType: 'quote',
+    discountAmount: 0, freeShipping: false, freeGiftWrap: false, freeGift: false, isQuoteRequest: true,
+    totals: { subtotal: 0, discount: 0, shipping: 0, total: 0 } });
+  return input;
+};
+
+test('CANCER mirrors a tracked QUOTE_REQUESTED website order with zero totals and no payment method', () => {
+  const input = quoteOrder(), result = run('Validate Website Order', input);
+  assert.equal(result.valid, true);
+  assert.equal(result.orderId, input.body.order.orderId);
+  assert.equal(result.sheetRow.source, 'website');
+  assert.equal(result.sheetRow.status, 'QUOTE_REQUESTED');
+  assert.equal(result.sheetRow.payment_method, 'QUOTE');
+  assert.equal(result.sheetRow.subtotal, 0);
+  assert.equal(result.sheetRow.shipping_fee, 0);
+  assert.equal(result.sheetRow.total_amount, 0);
+  assert.match(result.sheetRow.items_summary, /PROMO:CANCER: quote request/);
+  assert.equal(input.body.order.items[0].price, 2500, 'Receiver never reprices the quote from item prices');
+});
+
+test('quote mirror rejects paid/misclassified quotes, nonzero totals and contradictory promo flags', () => {
+  for (const mutate of [o => o.paymentMethod = 'cod', o => o.paymentStatus = 'PAID', o => o.orderType = 'ORDER',
+    o => o.promoCode = 'ALLBARKA10', o => o.promoType = 'percent', o => o.status = 'CONFIRMED',
+    o => o.isQuoteRequest = false, o => o.totals.total = 1, o => o.totals.subtotal = 2500,
+    o => o.freeGift = true, o => o.gifting = { giftWrapping: true, giftWrapFee: 150 }]) {
+    const input = quoteOrder(); mutate(input.body.order);
+    assert.equal(run('Validate Website Order', input).valid, false);
+  }
+  const gift = order();
+  Object.assign(gift.body.order, { promoCode: 'GIFTBOX', promoType: 'free_giftwrap', discountAmount: 0,
+    freeShipping: false, freeGiftWrap: false, freeGift: true, isQuoteRequest: false });
+  assert.equal(run('Validate Website Order', gift).valid, false);
+});

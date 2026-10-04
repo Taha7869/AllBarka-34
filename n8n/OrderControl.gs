@@ -20,7 +20,7 @@ function canonicalStatus(value) {
     PROC: 'PREPARING', PACK: 'PREPARING', DISP: 'DISPATCHED', SHIP: 'DISPATCHED',
     DELIV: 'DELIVERED', CANC: 'CANCELLED' };
   status = aliases[status] || status;
-  return ['NEW', 'ORDER_RECEIVED', 'CONFIRMED', 'PREPARING', 'DISPATCHED',
+  return ['NEW', 'QUOTE_REQUESTED', 'ORDER_RECEIVED', 'CONFIRMED', 'PREPARING', 'DISPATCHED',
     'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'].indexOf(status) >= 0 ? status : null;
 }
 
@@ -87,7 +87,7 @@ function installOrderControl() {
   var requested = control.sheet.getRange(2, control.index.requested_status + 1,
     Math.max(1, control.sheet.getMaxRows() - 1), 1);
   requested.setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList([
-    'NEW', 'ORDER_RECEIVED', 'CONFIRMED', 'PREPARING', 'DISPATCHED',
+    'NEW', 'QUOTE_REQUESTED', 'ORDER_RECEIVED', 'CONFIRMED', 'PREPARING', 'DISPATCHED',
     'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'
   ], true).setAllowInvalid(false).build());
   if (!ScriptApp.getProjectTriggers().some(function (trigger) {
@@ -124,6 +124,12 @@ function captureOrderStatusEdit(event) {
     var revision = String(values[control.index.status_revision] || '');
     if (!status || !baseStatus || !Number.isFinite(revisionTime(revision)) || !values[control.index.order_id]) {
       control.sheet.getRange(rowIndex, control.index.sync_error + 1).setValue('INVALID_COMMAND: canonical mirror/revision required');
+      control.sheet.getRange(rowIndex, control.index.request_id + 1).setValue('');
+      return;
+    }
+    if ((baseStatus === 'QUOTE_REQUESTED' && status !== 'QUOTE_REQUESTED' && status !== 'CANCELLED')
+      || (baseStatus !== 'QUOTE_REQUESTED' && status === 'QUOTE_REQUESTED')) {
+      control.sheet.getRange(rowIndex, control.index.sync_error + 1).setValue('QUOTE_STATUS_RESTRICTED: quote requests may only be cancelled');
       control.sheet.getRange(rowIndex, control.index.request_id + 1).setValue('');
       return;
     }

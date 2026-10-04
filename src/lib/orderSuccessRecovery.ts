@@ -9,6 +9,8 @@ export interface ConfirmedSuccessReceipt {
   items: Array<{ name: string; name_en?: string; name_ur?: string; name_ar?: string; productId?: string; selectedWeight?: string; quantity: number; price: number }>;
   subtotal: number; discount: number; shipping: number; giftWrapFee: number; totalAmount: number;
   paymentMethod: string; whatsappMessage?: string; timestamp?: string;
+  orderType?: 'ORDER' | 'QUOTE_REQUEST'; status?: string; promoCode?: string | null; promoType?: string | null;
+  discountAmount?: number; freeShipping?: boolean; freeGiftWrap?: boolean; freeGift?: boolean;
   durablePersistenceReady: true; customerUid: string | null; claimToken?: string;
 }
 
@@ -34,15 +36,24 @@ function normalizeReceipt(raw: any, language: LanguageCode, customerUid: string 
   const shipping = raw.shipping ?? raw.totals?.shipping ?? raw.totals?.shippingFee;
   const giftWrapFee = raw.giftWrapFee ?? raw.totals?.giftWrapFee ?? raw.totals?.giftFee ?? 0;
   const totalAmount = raw.totalAmount ?? raw.totals?.total ?? raw.totals?.finalPayable;
+  const isQuoteRequest = raw.orderType === 'QUOTE_REQUEST';
+  const promoCode = raw.promoCode ?? raw.totals?.promoCode ?? null;
+  const promoType = raw.promoType ?? raw.totals?.promoType ?? null;
   if ([subtotal, discount, shipping, giftWrapFee, totalAmount].some(value => typeof value !== 'number' || !Number.isFinite(value) || value < 0)
     || discount > subtotal || Math.abs(subtotal - discount + shipping + giftWrapFee - totalAmount) > 1
-    || Math.abs(items.reduce((sum, item) => sum + item.price * item.quantity, 0) - subtotal) > 1) return null;
+    || (isQuoteRequest ? promoCode !== 'CANCER' || promoType !== 'quote' || [subtotal, discount, shipping, giftWrapFee, totalAmount].some(value => value !== 0)
+      : Math.abs(items.reduce((sum, item) => sum + item.price * item.quantity, 0) - subtotal) > 1)) return null;
   const paymentMethod = raw.paymentMethod || customer.paymentMethod;
-  if (!['cod', 'bank'].includes(paymentMethod)) return null;
+  if (!(isQuoteRequest ? paymentMethod === 'quote' : ['cod', 'bank'].includes(paymentMethod))) return null;
   return { orderId: raw.orderId, name: customer.name, phone: customer.phone, address: customer.address, city: customer.city,
     deliverySlot: customer.deliverySlot || raw.deliverySlot, items, subtotal, discount, shipping, giftWrapFee, totalAmount,
     paymentMethod, whatsappMessage: typeof raw.whatsappMessage === 'string' ? raw.whatsappMessage : undefined,
     timestamp: raw.createdAt || raw.timestamp, durablePersistenceReady: true, customerUid,
+    orderType: isQuoteRequest ? 'QUOTE_REQUEST' : 'ORDER', status: typeof raw.status === 'string' ? raw.status : undefined,
+    promoCode, promoType, discountAmount: raw.discountAmount ?? raw.totals?.discountAmount ?? discount,
+    freeShipping: raw.freeShipping === true || raw.totals?.freeShipping === true,
+    freeGiftWrap: raw.freeGiftWrap === true || raw.totals?.freeGiftWrap === true,
+    freeGift: raw.freeGift === true || raw.totals?.freeGift === true,
     ...(typeof raw.claimToken === 'string' ? { claimToken: raw.claimToken } : {}) };
 }
 

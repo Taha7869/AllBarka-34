@@ -1,3 +1,4 @@
+import { sanitizeFirestoreData } from './firestoreData';
 import { apiUrl } from './apiUrl';
 import type { User } from 'firebase/auth';
 import type { PatronProfile } from '../contexts/AuthContext';
@@ -130,7 +131,7 @@ export async function completeEmailSignIn(user: User, enteredName = ''): Promise
       await runTransaction(db, async transaction => {
         const existing = await transaction.get(ref);
         const patch = emailProfileWrite(user, enteredName, existing.exists() ? existing.data() : null);
-        if (patch) transaction.set(ref, patch, { merge: true });
+        if (patch) transaction.set(ref, sanitizeFirestoreData(patch), { merge: true });
       });
     }),
     optionalAuthService(async signal => {

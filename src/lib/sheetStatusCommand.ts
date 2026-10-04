@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import type { OrderStatus } from './serverOrderService';
 
-export const CANONICAL_ORDER_STATUSES: OrderStatus[] = ['NEW', 'ORDER_RECEIVED', 'CONFIRMED', 'PREPARING', 'DISPATCHED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'];
+export const CANONICAL_ORDER_STATUSES: OrderStatus[] = ['NEW', 'QUOTE_REQUESTED', 'ORDER_RECEIVED', 'CONFIRMED', 'PREPARING', 'DISPATCHED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'];
 const legacyStatus: Record<string, OrderStatus> = { RECEIVED: 'ORDER_RECEIVED', ORDER: 'ORDER_RECEIVED', CONF: 'CONFIRMED',
   PROC: 'PREPARING', PACK: 'PREPARING', DISP: 'DISPATCHED', SHIP: 'DISPATCHED', DELIV: 'DELIVERED', CANC: 'CANCELLED' };
 export interface SheetStatusCommand {

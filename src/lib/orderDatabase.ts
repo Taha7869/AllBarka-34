@@ -1,3 +1,4 @@
+import { sanitizeFirestoreData } from './firestoreData';
 import { calculateDeliverySchedule } from './deliveryCalendar';
 import crypto from 'crypto';
 import type { Firestore } from 'firebase-admin/firestore';
@@ -16,7 +17,8 @@ import {
   SCHEMA_VERSION
 } from './serverOrderService';
 import { validateAndPriceOrder, validateCustomerDetails, ValidationError } from './orderValidation';
-import { STORE_COUPONS, calculateCouponDiscount, CouponRecord } from './couponEngine';
+import { getPromo, normalizePromoCode } from './couponEngine';
+import { firstOrderPromoContext } from '../server/promoEligibility';
 import { PricingSummary } from './pricing';
 import { STORE_CONFIG } from '../config/store';
 import { validateShippingRewardDestination } from './shippingPolicy';
@@ -74,6 +76,8 @@ export async function createDurableOrder({
   expectedFinalTotal
 }: CreateOrderParams): Promise<{
   orderId: string;
+  status: OrderStatus;
+  orderType: 'ORDER' | 'QUOTE_REQUEST';
   claimToken?: string | null;
   whatsappMessage: string;
   totals: PricingSummary;
@@ -87,7 +91,8 @@ export async function createDurableOrder({
   }
 
   // 1. Authoritative Validation (Prior to Transaction)
-  const customer = validateCustomerDetails(payload);
+  const promo = getPromo(payload.discountCode);
+  const customer = validateCustomerDetails(payload, promo?.type === 'quote');
 
   // 3. Stable IDs and Tokens Generated Outside Retryable Callback
   const resolvedKey = idempotencyKey?.trim() || crypto.randomUUID();
@@ -106,10 +111,11 @@ export async function createDurableOrder({
   const eventRef = db.collection('orderEvents').doc(`${orderId}_ORDER_CREATED_${nowMs}`);
 
   let couponRef: any = null;
-  const couponCode = payload.discountCode ? String(payload.discountCode).trim().toUpperCase() : null;
+  const couponCode = normalizePromoCode(payload.discountCode);
   if (couponCode) {
     couponRef = db.collection('coupons').doc(couponCode);
   }
+  const historyRef = uid ? db.collection('customerOrderHistory').doc(crypto.createHash('sha256').update(uid).digest('hex')) : null;
 
   let rewardRef: any = null;
   const rewardId = payload.rewardId ? String(payload.rewardId).trim() : null;
@@ -154,6 +160,8 @@ export async function createDurableOrder({
       return {
         isDuplicate: true,
         orderId: savedOrder.orderId,
+        status: savedOrder.status,
+        orderType: savedOrder.orderType || 'ORDER',
         whatsappMessage: generateAuthoritativeWhatsAppMessage(savedOrder),
         totals: savedOrder.totals,
         items: savedOrder.items,
@@ -165,6 +173,11 @@ export async function createDurableOrder({
 
     // New orders use current canonical pricing. Saved idempotent receipts are returned before repricing,
     // including when the catalog or a previously expected quote has changed after persistence.
+    // Serializes first-order eligibility against any competing checkout for this account.
+    const historySnap = historyRef ? await transaction.get(historyRef) : null;
+    const storedCount = historySnap?.data()?.orderCount;
+    const orderCount = Number.isSafeInteger(storedCount) && storedCount >= 0 ? storedCount : 0;
+    const promoContext = await firstOrderPromoContext(db, uid, couponCode, reference => transaction.get(reference), orderCount);
     const validated = validateAndPriceOrder({
       items: payload.items,
       shippingMethodId: payload.shippingMethodId,
@@ -172,6 +185,7 @@ export async function createDurableOrder({
       giftWrapping: payload.giftWrapping,
       isWholesale: Boolean(payload.isWholesale),
       city: customer.city,
+      promoContext,
     });
     if (expectedFinalTotal !== undefined && expectedFinalTotal !== null && Math.abs(expectedFinalTotal - validated.summary.total) > 1) {
       throw new QuoteChangedError(
@@ -180,25 +194,10 @@ export async function createDurableOrder({
       );
     }
 
-    // Read coupon if supplied
-    let couponRecord: CouponRecord | null = null;
-    if (couponRef) {
-      const couponSnap = await transaction.get(couponRef);
-      if (couponSnap.exists) {
-        couponRecord = couponSnap.data() as CouponRecord;
-      } else if (STORE_COUPONS[couponCode!]) {
-        // Fallback to static coupon store if not yet seeded in Firestore
-        couponRecord = STORE_COUPONS[couponCode!];
-      } else {
-        throw new ValidationError(`Coupon code "${couponCode}" is invalid or does not exist.`, 'INVALID_COUPON');
-      }
-
-      // Verify coupon constraints inside transaction
-      const calc = calculateCouponDiscount(couponRecord, validated.summary.subtotal, uid);
-      if (calc.error) {
-        throw new ValidationError(calc.error, 'COUPON_INELIGIBLE');
-      }
-    }
+    // Persist usage counters only. Firestore never overrides server promotion definitions.
+    const couponSnap = couponRef ? await transaction.get(couponRef) : null;
+    const storedUsage = couponSnap?.data()?.usedCount;
+    const usedCount = Number.isSafeInteger(storedUsage) && storedUsage >= 0 ? storedUsage : 0;
 
     // Read reward if supplied
     if (rewardRef) {
@@ -216,7 +215,8 @@ export async function createDurableOrder({
       throw new ValidationError('This reward cannot yet be applied at checkout. Your reward remains available.', 'REWARD_APPLICATION_UNAVAILABLE');
     }
 
-    const deliverySchedule = calculateDeliverySchedule({
+    const isQuoteRequest = validated.summary.isQuoteRequest === true;
+    const deliverySchedule = isQuoteRequest ? undefined : calculateDeliverySchedule({
       shippingMethodId: (payload.shippingMethodId as any) || 'standard',
       city: customer.city,
       orderSubtotalNet: validated.summary.discountedSubtotal,
@@ -224,6 +224,7 @@ export async function createDurableOrder({
       shippingWeightGrams: validated.summary.shippingWeightGrams,
       orderTimestamp: nowMs,
     });
+    if (deliverySchedule) deliverySchedule.shippingFee = validated.summary.shipping;
 
     const canonicalOrder: CanonicalOrder = {
       schemaVersion: SCHEMA_VERSION,
@@ -233,8 +234,9 @@ export async function createDurableOrder({
       createdAtMs: nowMs,
       updatedAt: nowIso,
       updatedAtMs: nowMs,
-      status: 'NEW',
-      paymentStatus: 'UNPAID',
+      status: isQuoteRequest ? 'QUOTE_REQUESTED' : 'NEW',
+      orderType: isQuoteRequest ? 'QUOTE_REQUEST' : 'ORDER',
+      paymentStatus: isQuoteRequest ? 'NOT_REQUIRED' : 'UNPAID',
       paymentMethod: customer.paymentMethod as any,
       uid: uid || null,
       isWholesale: Boolean(payload.isWholesale),
@@ -250,15 +252,23 @@ export async function createDurableOrder({
         instructions: customer.instructions,
       },
       gifting: {
-        giftWrapping: customer.giftWrapping,
+        giftWrapping: Boolean(customer.giftWrapping || validated.summary.freeGiftWrap),
         giftMessage: customer.giftMessage,
         giftWrapFee: validated.summary.giftWrapFee,
       },
-      deliverySchedule,
+      ...(deliverySchedule ? { deliverySchedule } : {}),
       items: validated.items,
       totals: validated.summary,
       couponCode: couponCode || null,
       couponDiscount: validated.summary.discount,
+      promoCode: validated.summary.promoCode ?? null,
+      promoType: validated.summary.promoType ?? null,
+      ...(typeof validated.summary.promoValue === 'number' ? { promoValue: validated.summary.promoValue } : {}),
+      discountAmount: validated.summary.discountAmount ?? 0,
+      freeShipping: Boolean(validated.summary.freeShipping),
+      freeGiftWrap: Boolean(validated.summary.freeGiftWrap),
+      freeGift: Boolean(validated.summary.freeGift),
+      isQuoteRequest,
       rewardId: rewardId || null,
       rewardDiscount: 0,
       earnedPoints: validated.earnedPoints,
@@ -268,40 +278,42 @@ export async function createDurableOrder({
     const whatsappMessage = generateAuthoritativeWhatsAppMessage(canonicalOrder);
 
     // Write Order
-    transaction.set(orderRef, canonicalOrder);
+    transaction.set(orderRef, sanitizeFirestoreData(canonicalOrder));
     const phoneIndex = buildWhatsAppPhoneIndex(canonicalOrder);
-    transaction.set(db.collection('whatsappPhoneOrders').doc(phoneIndex.phoneKey).collection('orders').doc(phoneIndex.orderId), phoneIndex.data);
+    transaction.set(db.collection('whatsappPhoneOrders').doc(phoneIndex.phoneKey).collection('orders').doc(phoneIndex.orderId), sanitizeFirestoreData(phoneIndex.data));
 
     // Write Coupon Redemption if applicable
     if (couponCode) {
       const redemptionRef = db.collection('couponRedemptions').doc(`${couponCode}_${orderId}`);
-      transaction.set(redemptionRef, {
+      transaction.set(redemptionRef, sanitizeFirestoreData({
         couponCode,
         orderId,
         uid: uid || null,
         phone: customer.phone,
         discountAmount: validated.summary.discount,
         redeemedAt: nowMs,
-      });
+      }));
 
-      if (couponRef && couponRecord) {
-        transaction.set(couponRef, {
-          ...couponRecord,
-          usedCount: (couponRecord.usedCount || 0) + 1,
-        }, { merge: true });
+      if (couponRef) {
+        transaction.set(couponRef, sanitizeFirestoreData({
+          code: couponCode,
+          usedCount: usedCount + 1,
+          lastRedeemedAt: nowMs,
+        }), { merge: true });
       }
     }
 
     // Write Reward Redemption if applicable
     if (rewardRef) {
-      transaction.update(rewardRef, {
+      transaction.update(rewardRef, sanitizeFirestoreData({
         status: 'USED',
         usedAt: nowMs,
         orderId,
-      });
+      }));
     }
 
     // Write Idempotency Document
+    if (historyRef) transaction.set(historyRef, sanitizeFirestoreData({ uid, orderCount: orderCount + 1, lastOrderId: orderId, updatedAtMs: nowMs }), { merge: true });
     const idempotencyRecord: IdempotencyRecord = {
       idempotencyKey: resolvedKey,
       orderId,
@@ -309,6 +321,8 @@ export async function createDurableOrder({
       createdAt: nowMs,
       response: {
         orderId,
+        status: canonicalOrder.status,
+        orderType: canonicalOrder.orderType,
         whatsappMessage,
         totals: validated.summary,
         items: validated.items,
@@ -317,7 +331,7 @@ export async function createDurableOrder({
         deliverySchedule,
       }
     };
-    transaction.set(idempotencyRef, idempotencyRecord);
+    transaction.set(idempotencyRef, sanitizeFirestoreData(idempotencyRecord));
 
     // Write Durable Outbox Event
     const outboxEvent: OutboxOrderEvent = {
@@ -332,6 +346,8 @@ export async function createDurableOrder({
       ...(notificationConfig.enabled ? { nextAttemptAtMs: nowMs } : { disabledReason: notificationConfig.reason || 'ORDER_WEBHOOK_DISABLED' }),
       payload: {
         orderId,
+        source: 'website',
+        status: canonicalOrder.status,
         uid,
         customerName: customer.name,
         phone: customer.phone,
@@ -339,11 +355,13 @@ export async function createDurableOrder({
         itemCount: validated.items.length,
       }
     };
-    transaction.set(eventRef, outboxEvent);
+    transaction.set(eventRef, sanitizeFirestoreData(outboxEvent));
 
     return {
       isDuplicate: false,
       orderId,
+      status: canonicalOrder.status,
+      orderType: canonicalOrder.orderType || 'ORDER',
       whatsappMessage,
       totals: validated.summary,
       items: validated.items,
@@ -407,14 +425,14 @@ export async function claimGuestOrder({
     }
 
     // Atomically transfer ownership
-    transaction.update(orderRef, {
+    transaction.update(orderRef, sanitizeFirestoreData({
       uid,
       claimStatus: 'CLAIMED',
       claimedAt: now,
       claimTokenHash: null, // Clear hash to prevent replay
       updatedAt: new Date(now).toISOString(),
       updatedAtMs: now,
-    });
+    }));
 
     return {
       ...order,
@@ -487,6 +505,12 @@ async function mutateCanonicalOrderStatus({
 
     const order = snap.data() as CanonicalOrder;
     const canonicalRevision = order.updatedAt || order.createdAt;
+    if (order.orderType === 'QUOTE_REQUEST' && !['QUOTE_REQUESTED', 'CANCELLED'].includes(status)) {
+      throw new ValidationError('A quote request needs a separately priced order before payment or fulfilment.', 'QUOTE_REQUIRES_PRICING');
+    }
+    if (status === 'QUOTE_REQUESTED' && order.orderType !== 'QUOTE_REQUEST') {
+      throw new ValidationError('A payable order cannot be converted into a quote by a status change.', 'INVALID_QUOTE_TRANSITION');
+    }
     if (requestSnap?.exists) {
       const stored = requestSnap.data();
       if (stored?.source !== 'google_sheet' || stored?.eventId !== sheetCommand!.eventId
@@ -513,8 +537,8 @@ async function mutateCanonicalOrderStatus({
     if (order.status === status) {
       const sheetResult: SheetStatusResult | undefined = sheetCommand ? { ok: true, eventId: sheetCommand.eventId,
         orderId, status: order.status, updatedAt: canonicalRevision, duplicate: false } : undefined;
-      if (requestRef) transaction.set(requestRef, { source: 'google_sheet', eventId: sheetCommand!.eventId,
-        payloadHash: commandHash, result: sheetResult, appliedAtMs: Date.now() });
+      if (requestRef) transaction.set(requestRef, sanitizeFirestoreData({ source: 'google_sheet', eventId: sheetCommand!.eventId,
+        payloadHash: commandHash, result: sheetResult, appliedAtMs: Date.now() }));
       return { order, ...(sheetResult ? { sheetResult } : {}) }; // No repeated effects for a no-op.
     }
 
@@ -552,30 +576,30 @@ async function mutateCanonicalOrderStatus({
     if (status === 'DELIVERED' && !order.pointsAwarded && order.uid && (order.earnedPoints || 0) > 0) {
       // Award loyalty points exactly once
       const loyaltyRef = db.collection('users').doc(order.uid).collection('loyaltyTransactions').doc(`ORDER_${orderId}`);
-      transaction.set(loyaltyRef, {
+      transaction.set(loyaltyRef, sanitizeFirestoreData({
         points: order.earnedPoints,
         type: 'EARNED',
         orderId,
         description: `Earned from Order #${orderId}`,
         createdAt: now,
-      });
+      }));
 
       const currentPts = userSnap && userSnap.exists ? (userSnap.data()?.loyaltyPoints || 0) : 0;
-      transaction.set(userRef, { loyaltyPoints: currentPts + order.earnedPoints }, { merge: true });
+      transaction.set(userRef, sanitizeFirestoreData({ loyaltyPoints: currentPts + order.earnedPoints }), { merge: true });
       pointsAwardedNew = true;
     } else if (status === 'CANCELLED' && order.pointsAwarded && order.uid && (order.earnedPoints || 0) > 0) {
       // Reverse loyalty points if order was previously delivered and now cancelled
       const reverseRef = db.collection('users').doc(order.uid).collection('loyaltyTransactions').doc(`REV_${orderId}`);
-      transaction.set(reverseRef, {
+      transaction.set(reverseRef, sanitizeFirestoreData({
         points: -order.earnedPoints,
         type: 'REVERSED',
         orderId,
         description: `Points reversed due to Order #${orderId} cancellation`,
         createdAt: now,
-      });
+      }));
 
       const currentPts = userSnap && userSnap.exists ? (userSnap.data()?.loyaltyPoints || 0) : 0;
-      transaction.set(userRef, { loyaltyPoints: Math.max(0, currentPts - order.earnedPoints) }, { merge: true });
+      transaction.set(userRef, sanitizeFirestoreData({ loyaltyPoints: Math.max(0, currentPts - order.earnedPoints) }), { merge: true });
       pointsAwardedNew = false;
     }
 
@@ -584,7 +608,7 @@ async function mutateCanonicalOrderStatus({
     const eventId = `${orderId}_STATUS_${status}_${now}`;
     // Status events have a separate receiver. The immutable snapshot cannot race a newer order revision.
     const eventRef = db.collection('orderEvents').doc(eventId);
-    transaction.set(eventRef, {
+    transaction.set(eventRef, sanitizeFirestoreData({
       eventId,
       orderId,
       eventType: 'ORDER_STATUS_CHANGED',
@@ -596,23 +620,23 @@ async function mutateCanonicalOrderStatus({
       ...(statusConfig.enabled ? { nextAttemptAtMs: now } : { disabledReason: statusConfig.reason || 'STATUS_WEBHOOK_DISABLED' }),
       payload: { oldStatus, newStatus: status, actorUid, reason: reason || 'Admin status adjustment',
         order: { orderId, status, updatedAt: nowIso }, statusRevision: nowIso },
-    });
+    }));
 
     const notification = buildWhatsAppStatusNotification(updatedOrder, eventId, now);
-    transaction.set(db.collection('whatsappNotificationJobs').doc(notification.id), notification.data);
+    transaction.set(db.collection('whatsappNotificationJobs').doc(notification.id), sanitizeFirestoreData(notification.data));
 
-    transaction.set(auditRef, auditData);
-    transaction.update(orderRef, {
+    transaction.set(auditRef, sanitizeFirestoreData(auditData));
+    transaction.update(orderRef, sanitizeFirestoreData({
       status,
       pointsAwarded: pointsAwardedNew,
       updatedAt: nowIso,
       updatedAtMs: now,
-    });
+    }));
 
     const sheetResult: SheetStatusResult | undefined = sheetCommand ? { ok: true, eventId: sheetCommand.eventId,
       orderId, status, updatedAt: nowIso, duplicate: false } : undefined;
-    if (requestRef) transaction.set(requestRef, { source: 'google_sheet', eventId: sheetCommand!.eventId,
-      payloadHash: commandHash, result: sheetResult, appliedAtMs: now });
+    if (requestRef) transaction.set(requestRef, sanitizeFirestoreData({ source: 'google_sheet', eventId: sheetCommand!.eventId,
+      payloadHash: commandHash, result: sheetResult, appliedAtMs: now }));
     return { order: updatedOrder, ...(sheetResult ? { sheetResult } : {}) };
   });
 }

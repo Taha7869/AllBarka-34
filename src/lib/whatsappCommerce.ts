@@ -1,3 +1,4 @@
+import { sanitizeFirestoreData } from './firestoreData';
 import crypto from 'node:crypto';
 import type { Firestore } from 'firebase-admin/firestore';
 import type { CanonicalOrder } from './serverOrderService';
@@ -198,16 +199,16 @@ export async function ingestMetaWebhook(db: Firestore, envelope: any, config = g
         optedOut: consentChanges ? command === 'STOP' : old?.optedOut || false,
       };
       const nowMs = now();
-      transaction.set(messageRef, { ...message, senderKey, businessPhoneId: config.businessPhoneId, fingerprint, recordedAtMs: nowMs, signatureVerified: true });
-      transaction.set(windowRef, current);
+      transaction.set(messageRef, sanitizeFirestoreData({ ...message, senderKey, businessPhoneId: config.businessPhoneId, fingerprint, recordedAtMs: nowMs, signatureVerified: true }));
+      transaction.set(windowRef, sanitizeFirestoreData(current));
       // Only the latest reply is required after a new request. Never queue historical status spam here.
       const receipt = !command && isWhatsAppTrackingRequest(message.text) && windowAllowed(current, nowMs, config.businessPhoneId);
       if (receipt) {
         const eventId = `receipt:${message.messageId}`;
-        transaction.set(db.collection('whatsappNotificationJobs').doc(whatsappDocumentKey(eventId)), {
+        transaction.set(db.collection('whatsappNotificationJobs').doc(whatsappDocumentKey(eventId)), sanitizeFirestoreData({
           eventId, kind: 'RECEIPT', inboundMessageId: message.messageId, senderKey,
           state: 'PENDING', createdAtMs: nowMs, updatedAtMs: nowMs, nextAttemptAtMs: nowMs, attempts: 0,
-        } satisfies WhatsAppNotificationJob);
+        } satisfies WhatsAppNotificationJob));
       }
       return { duplicate: false, receipt };
     });
@@ -225,12 +226,12 @@ export async function ingestMetaWebhook(db: Firestore, envelope: any, config = g
       const jobSnap = jobRef ? await transaction.get(jobRef) : null;
       // Provider delivery can arrive before the accepted-result callback. Preserve that evidence durably.
       if (['delivered', 'read'].includes(evidence.status) && (!existingEvidence.exists || evidence.timestampMs > existingEvidence.data()!.timestampMs)) {
-        transaction.set(evidenceRef, { providerMessageId: evidence.providerMessageId, senderKey: phoneKey(evidence.recipient), businessPhoneId: config.businessPhoneId, timestampMs: evidence.timestampMs, status: evidence.status, signatureVerified: true });
+        transaction.set(evidenceRef, sanitizeFirestoreData({ providerMessageId: evidence.providerMessageId, senderKey: phoneKey(evidence.recipient), businessPhoneId: config.businessPhoneId, timestampMs: evidence.timestampMs, status: evidence.status, signatureVerified: true }));
       }
       const job = jobSnap?.exists ? jobSnap.data() as WhatsAppNotificationJob : null;
       if (!job || job.providerMessageId !== evidence.providerMessageId || !['ACCEPTED', 'DELIVERED'].includes(job.state)
         || !['delivered', 'read'].includes(evidence.status) || job.state === 'DELIVERED') return false;
-      transaction.set(jobRef, { ...job, state: 'DELIVERED', deliveredAtMs: evidence.timestampMs, deliveryEvidence: evidence.status, updatedAtMs: now() });
+      transaction.set(jobRef, sanitizeFirestoreData({ ...job, state: 'DELIVERED', deliveredAtMs: evidence.timestampMs, deliveryEvidence: evidence.status, updatedAtMs: now() }));
       return true;
     });
     if (applied) deliveryEvidenceRecorded++;
@@ -255,13 +256,19 @@ export function isWhatsAppTrackingRequest(text: string): boolean {
 function ownOrder(order: CanonicalOrder | undefined, senderKey: string): boolean {
   const phone = normalizeWhatsAppPhone(order?.customer?.phone);
   return Boolean(order && phone && phoneKey(phone) === senderKey && Array.isArray(order.items) && order.items.length
-    && order.source === 'website' && ['NEW', 'ORDER_RECEIVED', 'CONFIRMED', 'PREPARING', 'DISPATCHED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'].includes(order.status)
-    && ['PAID', 'UNPAID', 'REFUNDED'].includes(order.paymentStatus) && ['bank', 'cod'].includes(order.paymentMethod)
+    && order.source === 'website' && ['NEW', 'QUOTE_REQUESTED', 'ORDER_RECEIVED', 'CONFIRMED', 'PREPARING', 'DISPATCHED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'].includes(order.status)
+    && (order.orderType === 'QUOTE_REQUEST'
+      ? order.promoCode === 'CANCER' && order.promoType === 'quote' && order.paymentStatus === 'NOT_REQUIRED' && order.paymentMethod === 'quote'
+        && ['QUOTE_REQUESTED', 'CANCELLED'].includes(order.status) && ['subtotal', 'discount', 'shipping', 'giftWrapFee', 'total'].every(key => order.totals?.[key] === 0)
+      : ['PAID', 'UNPAID', 'REFUNDED'].includes(order.paymentStatus) && ['bank', 'cod'].includes(order.paymentMethod))
     && order.items.every(item => typeof item.name === 'string' && typeof item.selectedWeight === 'string' && Number.isSafeInteger(item.quantity) && item.quantity > 0 && Number.isFinite(item.price) && item.price >= 0)
     && ['subtotal', 'discount', 'shipping', 'total'].every(key => typeof order.totals?.[key] === 'number' && Number.isFinite(order.totals[key]) && order.totals[key] >= 0));
 }
 
 export function renderWhatsAppSavedReceipt(order: CanonicalOrder): string {
+  if (order.orderType === 'QUOTE_REQUEST') return ['*AllBarka — saved quote request*', `Order: ${order.orderId}`, `Status: ${order.status}`,
+    ...order.items.map(item => `• ${item.name} (${item.selectedWeight}) × ${item.quantity}`),
+    'Our team will contact you with your personalized rate.'].join('\n');
   const payment = order.paymentStatus === 'PAID' ? 'Recorded as paid' : order.paymentStatus === 'REFUNDED' ? 'Recorded as refunded' : 'Payment not recorded as received';
   return [
     '*AllBarka — saved order receipt*', `Order: ${order.orderId}`, `Status: ${order.status}`, '',
@@ -353,17 +360,17 @@ export async function claimWhatsAppNotification(db: Firestore, options: { now?: 
       const nowMs = now();
       if (job.state === 'SENDING' && (job.leaseExpiresAtMs || 0) <= nowMs) {
         // A crashed worker may have reached Meta. Never blindly replay an uncertain send.
-        transaction.set(document.ref, clearLease(job, 'UNKNOWN', nowMs, 'SEND_OUTCOME_UNRECONCILED'));
+        transaction.set(document.ref, sanitizeFirestoreData(clearLease(job, 'UNKNOWN', nowMs, 'SEND_OUTCOME_UNRECONCILED')));
         return null;
       }
       if (!['PENDING', 'LEASED'].includes(job.state) || (job.state === 'LEASED' && (job.leaseExpiresAtMs || 0) > nowMs)) return null;
       const gate = await readJobGate(transaction, db, job, nowMs, config.businessPhoneId);
       if (gate.reason) {
-        transaction.set(document.ref, clearLease(job, gate.disposition!, nowMs, gate.reason));
+        transaction.set(document.ref, sanitizeFirestoreData(clearLease(job, gate.disposition!, nowMs, gate.reason)));
         return null;
       }
       const leaseToken = crypto.randomUUID(), leaseExpiresAtMs = nowMs + WHATSAPP_SEND_LEASE_MS;
-      transaction.set(document.ref, { ...job, state: 'LEASED', leaseToken, leaseExpiresAtMs, updatedAtMs: nowMs, nextAttemptAtMs: leaseExpiresAtMs });
+      transaction.set(document.ref, sanitizeFirestoreData({ ...job, state: 'LEASED', leaseToken, leaseExpiresAtMs, updatedAtMs: nowMs, nextAttemptAtMs: leaseExpiresAtMs }));
       return { ok: true as const, jobId: document.id, leaseToken, leaseExpiresAtMs };
     });
     if (result) return result;
@@ -394,13 +401,13 @@ export async function authorizeWhatsAppSend(db: Firestore, input: { jobId: strin
       if (!current.exists || !ownOrder(current.data() as CanonicalOrder, job.senderKey) || current.data()!.updatedAt !== receipt!.revisions?.[id]) changed = true;
     }
     if (gate.reason || changed || receipt?.replyType === 'OPTED_OUT') {
-      transaction.set(ref, clearLease(job, changed ? 'PENDING' : gate.disposition || 'OPTED_OUT', nowMs, changed ? 'RECEIPT_CHANGED_RETRY_CLAIM' : gate.reason || 'CUSTOMER_OPTED_OUT'));
-      if (changed) transaction.set(ref, { nextAttemptAtMs: nowMs }, { merge: true });
+      transaction.set(ref, sanitizeFirestoreData(clearLease(job, changed ? 'PENDING' : gate.disposition || 'OPTED_OUT', nowMs, changed ? 'RECEIPT_CHANGED_RETRY_CLAIM' : gate.reason || 'CUSTOMER_OPTED_OUT')));
+      if (changed) transaction.set(ref, sanitizeFirestoreData({ nextAttemptAtMs: nowMs }), { merge: true });
       return { blocked: true as const, code: changed ? 'RECEIPT_CHANGED_RETRY_CLAIM' : gate.reason || 'CUSTOMER_OPTED_OUT' };
     }
     const text = job.kind === 'STATUS' ? renderWhatsAppSavedReceipt(gate.order!) : receipt!.text;
     const sendBeforeMs = Math.min(nowMs + WHATSAPP_SEND_LEASE_MS, gate.state!.lastCustomerMessageAtMs + WHATSAPP_WINDOW_MS - WHATSAPP_WINDOW_MARGIN_MS);
-    transaction.set(ref, { ...job, state: 'SENDING', leaseExpiresAtMs: sendBeforeMs, nextAttemptAtMs: sendBeforeMs, attempts: job.attempts + 1, updatedAtMs: nowMs });
+    transaction.set(ref, sanitizeFirestoreData({ ...job, state: 'SENDING', leaseExpiresAtMs: sendBeforeMs, nextAttemptAtMs: sendBeforeMs, attempts: job.attempts + 1, updatedAtMs: nowMs }));
     return { ok: true as const, jobId: input.jobId, leaseToken: input.leaseToken, to: gate.state!.sender, text, eventId: job.eventId,
       revision: gate.order?.updatedAt || receipt?.revisions?.[receipt.orderIds[0]] || null, sendBeforeMs };
   });
@@ -439,9 +446,9 @@ export async function completeWhatsAppSend(db: Firestore, input: { jobId: string
         (updated as any).deliveredAtMs = evidence.timestampMs;
         (updated as any).deliveryEvidence = evidence.status;
       }
-      transaction.set(providerRef!, { jobId: input.jobId, senderKey: job.senderKey, createdAtMs: now() });
+      transaction.set(providerRef!, sanitizeFirestoreData({ jobId: input.jobId, senderKey: job.senderKey, createdAtMs: now() }));
     }
-    transaction.set(ref, updated);
+    transaction.set(ref, sanitizeFirestoreData(updated));
     return { ok: true as const, state: updated.state };
   });
 }

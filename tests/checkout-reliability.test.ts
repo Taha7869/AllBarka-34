@@ -6,7 +6,8 @@ import { withApiDeadline } from '../src/lib/apiDeadline';
 import { apiUrl } from '../src/lib/apiUrl';
 import { submitBoutiqueInquiry, subscribeNewsletter } from '../src/lib/storefrontSubmissions';
 import { recoverOrderSuccessReceipt } from '../src/lib/orderSuccessRecovery';
-import { acceptedCheckoutReceipt } from '../src/lib/checkoutReceipt';
+import { acceptedCheckoutReceipt, appliedPromotionMessage } from '../src/lib/checkoutReceipt';
+import { checkoutReliabilityTranslations } from '../src/contexts/checkoutReliabilityTranslations';
 import { PRODUCTS, getProductImage } from '../src/data/products';
 
 const product = PRODUCTS.find(product => product.id === 'pista')!;
@@ -449,4 +450,92 @@ test('cancelled or invalid receipt recovery never starts a lookup', async () => 
     assert.equal(await recoverOrderSuccessReceipt(candidate, { language: 'en', customerUid: null, getAuthToken }), null);
   }
   assert.equal(credentials, 0);
+});
+
+const personalizedQuoteTotals = { subtotal: 0, discount: 0, discountedSubtotal: 0, shipping: 0, giftWrapFee: 0, total: 0,
+  promoCode: 'CANCER', promoType: 'quote', discountAmount: 0, freeShipping: false, freeGiftWrap: false, freeGift: false, isQuoteRequest: true };
+
+test('server-approved nonmonetary promos remain usable even with zero discount', async () => {
+  const original = globalThis.fetch;
+  try {
+    for (const [promoCode, promoType, flag] of [['ZAFRANI', 'free_shipping', 'freeShipping'], ['GIFTBOX', 'free_giftwrap', 'freeGiftWrap'], ['MYSTERY', 'free_gift', 'freeGift']] as const) {
+      const canonical = { ...totals, promoCode, promoType, discountAmount: 0, [flag]: true, isQuoteRequest: false };
+      globalThis.fetch = async () => jsonResponse({ success: true, totals: canonical });
+      const result = await getOrderQuote({ items: payload.items, city: 'Lahore', shippingMethodId: 'standard', discountCode: promoCode });
+      assert.equal(result.success, true); assert.equal(result.totals.discount, 0); assert.equal(result.totals[flag], true);
+      for (const language of ['en', 'ur', 'ar'] as const) {
+        const dictionary = checkoutReliabilityTranslations[language];
+        const message = appliedPromotionMessage(result.totals, key => dictionary[key]);
+        assert.ok(message?.includes(promoCode)); assert.ok(message!.length > promoCode.length + 3);
+      }
+    }
+  } finally { globalThis.fetch = original; }
+});
+
+test('promo confirmation shows the saved amount and rate supplied by the server', () => {
+  const dictionary = checkoutReliabilityTranslations.en;
+  const message = appliedPromotionMessage({ ...totals, subtotal: 1250, discount: 125, discountedSubtotal: 1125, total: 1125,
+    promoCode: 'ALLBARKA10', promoType: 'percent', promoValue: 10, discountAmount: 125 }, key => dictionary[key]);
+  assert.equal(message, 'ALLBARKA10: 10% off applied — you saved Rs. 125');
+  assert.equal(appliedPromotionMessage(totals, key => dictionary[key]), null);
+  assert.equal(dictionary['checkout.promoPlaceholder'], 'Enter promo code');
+});
+
+test('a durable quote request returns tracking identity while omitting any payment choice', async () => {
+  const original = globalThis.fetch;
+  try {
+    globalThis.fetch = async (_url, init) => {
+      const request = JSON.parse(String(init?.body));
+      assert.equal('paymentMethod' in request, false); assert.equal(request.discountCode, 'CANCER');
+      return jsonResponse(savedResponse({ totals: personalizedQuoteTotals, orderType: 'QUOTE_REQUEST', status: 'QUOTE_REQUESTED' }));
+    };
+    const { paymentMethod: _unused, ...quotePayload } = payload;
+    const result = await placeOrder({ ...quotePayload, discountCode: 'CANCER', expectedFinalTotal: 0 });
+    assert.equal(result.success, true); assert.equal(result.orderType, 'QUOTE_REQUEST'); assert.equal(result.status, 'QUOTE_REQUESTED');
+    assert.equal(result.orderId, savedResponse().orderId); assert.equal(result.totals.total, 0);
+    assert.ok(result.items!.every(item => item.price > 0));
+  } finally { globalThis.fetch = original; }
+});
+
+test('a quote-labelled response cannot bypass receipt verification with inconsistent status or totals', async () => {
+  const original = globalThis.fetch;
+  try {
+    for (const changed of [{ status: 'ORDER_RECEIVED' }, { orderType: 'ORDER' },
+      { totals: { ...personalizedQuoteTotals, promoCode: 'OTHER' } }, { totals: { ...personalizedQuoteTotals, total: 1 } }]) {
+      globalThis.fetch = async () => jsonResponse(savedResponse({ totals: personalizedQuoteTotals, orderType: 'QUOTE_REQUEST', status: 'QUOTE_REQUESTED', ...changed }));
+      assert.equal((await placeOrder({ ...payload, discountCode: 'CANCER' })).success, false);
+    }
+  } finally { globalThis.fetch = original; }
+});
+
+test('quote receipt lookup and reload preserve quote status in every language with zero totals', async () => {
+  const original = globalThis.fetch;
+  let requests = 0;
+  try {
+    globalThis.fetch = async () => { requests++; return jsonResponse({ success: true, order: { ...canonicalSavedOrder,
+      orderType: 'QUOTE_REQUEST', status: 'QUOTE_REQUESTED', promoCode: 'CANCER', promoType: 'quote', paymentMethod: 'quote', totals: personalizedQuoteTotals } }); };
+    const receipt = await recoverOrderSuccessReceipt({ orderId: canonicalSavedOrder.orderId, claimToken: 'private-recovery-token' },
+      { language: 'en', customerUid: null, getAuthToken: async () => null });
+    assert.ok(receipt); assert.equal(receipt.orderType, 'QUOTE_REQUEST'); assert.equal(receipt.status, 'QUOTE_REQUESTED');
+    assert.equal(receipt.paymentMethod, 'quote'); assert.equal(receipt.totalAmount, 0); assert.equal(receipt.subtotal, 0);
+    assert.equal(receipt.items[0].price, 2500); assert.equal(receipt.claimToken, 'private-recovery-token');
+    for (const language of ['en', 'ur', 'ar'] as const) {
+      const restored = await recoverOrderSuccessReceipt(receipt, { language, customerUid: null, getAuthToken: async () => { throw new Error('Verified cache should not require another request'); } });
+      assert.ok(restored); assert.equal(restored.orderType, 'QUOTE_REQUEST'); assert.equal(restored.totalAmount, 0);
+      assert.equal(restored.items[0].name, product[`name_${language}`]);
+    }
+    assert.equal(requests, 1);
+  } finally { globalThis.fetch = original; }
+});
+
+test('a cancelled quote retry keeps its existing tracking receipt only for a verified duplicate', async () => {
+  const original = globalThis.fetch;
+  try {
+    for (const isDuplicate of [true, false]) {
+      globalThis.fetch = async () => jsonResponse(savedResponse({ totals: personalizedQuoteTotals, orderType: 'QUOTE_REQUEST', status: 'CANCELLED', isDuplicate }));
+      const result = await placeOrder({ ...payload, discountCode: 'CANCER' });
+      assert.equal(result.success, isDuplicate);
+      if (isDuplicate) { assert.equal(result.status, 'CANCELLED'); assert.equal(result.orderId, savedResponse().orderId); }
+    }
+  } finally { globalThis.fetch = original; }
 });

@@ -162,6 +162,37 @@ try {
     assert.equal(quote.totals.shipping, 150);
     assert.equal(quote.totals.total, 2650);
   });
+  await check('coupon API rejects inactive, unknown, multiple and unauthenticated first-order codes', async () => {
+    for (const [discountCode, code] of [['EID15', 'PROMO_INACTIVE'], ['UNKNOWN', 'INVALID_PROMO'],
+      ['FRIEND ALLBARKA10', 'ONE_PROMO_ONLY'], ['WELCOME10', 'PROMO_REQUIRES_AUTH']]) {
+      const response = await request('/api/orders/quote', post({ ...order, discountCode }));
+      assert.equal(response.status, 400);
+      const result = await response.json();
+      assert.equal(result.code, code);
+      assert.ok(result.error);
+    }
+  });
+  await check('quote-request API hides all totals and ignores client payment and benefit assertions', async () => {
+    const response = await request('/api/orders/quote', post({ ...order, discountCode: ' cancer ',
+      paymentMethod: 'cod', freeGift: true, discountAmount: 999999 }));
+    assert.equal(response.status, 200);
+    const { totals } = await response.json();
+    for (const key of ['subtotal', 'discount', 'discountedSubtotal', 'shipping', 'giftWrapFee', 'total']) assert.equal(totals[key], 0);
+    assert.equal(totals.promoCode, 'CANCER');
+    assert.equal(totals.isQuoteRequest, true);
+    assert.equal(totals.freeGift, false);
+  });
+  await check('unavailable quote persistence returns enquiry support without a fake zero-price payment order', async () => {
+    const response = await request('/api/orders', post({ ...order, discountCode: 'CANCER',
+      name: 'Offline Quote Tester', phone: '03001234567', address: 'House 10, Test Street' }));
+    assert.equal(response.status, 503);
+    const result = await response.json();
+    assert.equal(result.success, false);
+    assert.equal(result.orderId, undefined);
+    const message = new URL(result.supportAction.whatsappUrl).searchParams.get('text');
+    assert.match(message, /personalized rate/);
+    assert.doesNotMatch(message, /Rs\.|Subtotal|Total Due|Payment Method|Cash on Delivery/);
+  });
   await check('quote requires an explicit delivery city', async () => {
     const { city, ...withoutCity } = order;
     const response = await request('/api/orders/quote', post(withoutCity));

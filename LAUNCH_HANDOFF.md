@@ -1,5 +1,17 @@
 # AllBarka launch handoff — 3 October 2026
 
+## Coupon follow-up — 4 October 2026
+
+Current work branch: `codex/full-coupons-quote-fix-20261004`, based on preserved launch branch commit `1fab4ac90374272f801a4211d93b3d8808d4b94a`. This follow-up changes checkout promotions only and their Firestore, receipt, Admin and Sheet safety plumbing. No merge or deployment is authorized.
+
+The undefined `maxDiscount` bug is removed. Every Firestore write is deep-sanitized, with backend `ignoreUndefinedProperties` as secondary protection. Ten codes now share a server-only configuration, canonical pricing, benefit flags, inline effects/errors and one-code validation. WELCOME10 requires a verified account and Firestore history; competing checkouts share an atomic customer history marker. Saved duplicate receipts and historical discounts retain their original values.
+
+CANCER now saves a real `QUOTE_REQUEST`/`QUOTE_REQUESTED` receipt with the normal tracking ID, zero monetary totals, no payment selection and no loyalty award. Admin/Sheet block payment or fulfillment of an unpriced quote. The durable website order event and inactive n8n receiver preserve the quote status and packing promo notes. The input placeholder reads “Enter promo code.” Details and owner setup are in [docs/COUPONS.md](docs/COUPONS.md).
+
+Final verification passed: `npm test` built the fullstack app and ran all 36 test files (400/400 tests), 21 legacy backend checks, 45 production HTTP checks and all 32 products/50 image references. TypeScript, React hooks lint, diff whitespace and actual public artifact credential/promo isolation checks passed. The Firestore regression uses strict write validation and the real SDK serializer with undefined ignoring disabled; no live database was contacted. The existing large Firebase vendor chunk warning remains.
+
+Live setup remains pending: existing Firebase/Railway private configuration, reviewed import/publish of updated n8n website/status artifacts and the bound OrderControl Apps Script, then authorized disposable-order tests. Coupons introduce no new secrets or composite indexes. Nothing has been imported, published, deployed or sent to customers. The final response records the commit and verified remote branch SHA.
+
 ## Connection preflight follow-up — 4 October 2026
 
 The launch implementation remains preserved. GitHub initially matched `2afd16f4dbf44ac3d89050ebdc45eb721adcc6b3`; this follow-up changes setup documentation and credential-file ignores only. See [docs/LAUNCH-ENV-AUDIT.md](docs/LAUNCH-ENV-AUDIT.md) for the complete environment inventory and current Railway evidence.

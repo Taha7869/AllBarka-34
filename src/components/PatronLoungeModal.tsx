@@ -1,3 +1,4 @@
+import { sanitizeFirestoreData } from '../lib/firestoreData';
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { X, User, Package, MapPin, Phone, Crown, LogOut, Clock, Calendar, CheckCircle2, RotateCcw, ShoppingBag, AlertCircle, ShieldCheck, Bell } from 'lucide-react';
@@ -107,16 +108,16 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
           const txRef = doc(db, "users", currentUser.uid, "loyaltyTransactions", txId);
           const arRef = doc(db, "users", currentUser.uid, "activeRewards", arId);
 
-          t.set(userRef, { loyaltyPoints: currentPoints - reward.pointsCost }, { merge: true });
+          t.set(userRef, sanitizeFirestoreData({ loyaltyPoints: currentPoints - reward.pointsCost }), { merge: true });
 
-          t.set(txRef, {
+          t.set(txRef, sanitizeFirestoreData({
               transactionId: txId,
               type: 'REDEEM',
               points: -reward.pointsCost,
               rewardId: reward.rewardId,
               description: `Redeemed ${reward.name}`,
               createdAt: Date.now()
-          });
+          }));
 
           newActiveReward = {
               rewardId: reward.rewardId,
@@ -125,7 +126,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
               status: 'ACTIVE',
               rewardType: reward.rewardType
           };
-          t.set(arRef, newActiveReward);
+          t.set(arRef, sanitizeFirestoreData(newActiveReward));
       });
 
       alert('Reward redeemed successfully! It will be applied to your next eligible order.');

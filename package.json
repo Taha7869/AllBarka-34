@@ -4,6 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "test": "npm run build && node scripts/run-all-tests.mjs",
+    "test:coupons": "node --import tsx --test --test-isolation=none tests/promo-engine.test.ts tests/promo-checkout.test.ts tests/promo-mirror.test.ts",
     "dev": "node scripts/dev.mjs",
     "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=build/server.cjs",
     "build:frontend": "vite build --outDir dist-client",

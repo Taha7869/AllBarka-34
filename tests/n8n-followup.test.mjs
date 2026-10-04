@@ -84,6 +84,34 @@ test('Sheet commands capture explicit base revision and exact source without cus
   assert.equal(result.request.source, 'google_sheet');
 });
 
+test('quote status is accepted by revision-protected Sheet and canonical status mirrors', () => {
+  const quoteCommand = { ...command(), requested_status: 'CANCELLED', request_base_status: 'QUOTE_REQUESTED' };
+  const result = run('Validate Sheet Commands', { body: { ok: true, commands: [quoteCommand] } })[0].json;
+  assert.equal(result.request.expectedStatus, 'QUOTE_REQUESTED');
+  assert.equal(result.request.status, 'CANCELLED');
+  const timestamp = new Date().toISOString();
+  const mirrored = run('Validate Canonical Status Event', { body: { event: 'ORDER_STATUS_CHANGED', eventId: 'quote-status-event',
+    timestamp, order: { orderId, status: 'QUOTE_REQUESTED', updatedAt: timestamp } } })[0].json;
+  assert.equal(mirrored.valid, true);
+  assert.equal(mirrored.mirror.status, 'QUOTE_REQUESTED');
+});
+
+test('Apps Script accepts quote identity but blocks quote fulfillment and normal-order conversion', () => {
+  const quote = scriptFixture({ status: 'QUOTE_REQUESTED', requested_status: 'DISPATCHED' });
+  assert.equal(quote.context.canonicalStatus('QUOTE_REQUESTED'), 'QUOTE_REQUESTED');
+  quote.context.captureOrderStatusEdit({ range: quote.range(2, 6), value: 'DISPATCHED' });
+  assert.equal(quote.read('request_id'), '');
+  assert.match(quote.read('sync_error'), /QUOTE_STATUS_RESTRICTED/);
+  const cancelled = scriptFixture({ status: 'QUOTE_REQUESTED', requested_status: 'CANCELLED' });
+  cancelled.context.captureOrderStatusEdit({ range: cancelled.range(2, 6), value: 'CANCELLED' });
+  assert.equal(cancelled.read('request_base_status'), 'QUOTE_REQUESTED');
+  assert.equal(cancelled.read('request_id'), 'new-command-uuid-0000000000000000');
+  const conversion = scriptFixture({ requested_status: 'QUOTE_REQUESTED' });
+  conversion.context.captureOrderStatusEdit({ range: conversion.range(2, 6), value: 'QUOTE_REQUESTED' });
+  assert.equal(conversion.read('request_id'), '');
+  assert.match(conversion.read('sync_error'), /QUOTE_STATUS_RESTRICTED/);
+});
+
 test('Sheet poll rejects duplicate commands/order rows, invalid status and unavailable response', () => {
   assert.throws(() => run('Validate Sheet Commands', { error: 'timeout' }));
   for (const rows of [[command(), command()], [{ ...command(), requested_status: 'PAID' }],

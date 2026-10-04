@@ -11,7 +11,7 @@ export interface OrderPayload {
   instructions?: string;
   giftWrapping?: boolean;
   giftMessage?: string;
-  paymentMethod: string;
+  paymentMethod?: string;
   items: CartItem[];
   shippingMethodId: string;
   discountCode?: string | null;
@@ -40,14 +40,20 @@ export interface OrderResponse {
   durablePersistenceReady?: boolean;
   supportAction?: SupportAction;
   isDuplicate?: boolean;
+  orderType?: 'ORDER' | 'QUOTE_REQUEST';
+  status?: string;
 }
 
 let isOrderInFlight = false;
 
 function validTotals(totals: any): boolean {
-  return !!totals && ['subtotal', 'discount', 'discountedSubtotal', 'shipping', 'giftWrapFee', 'total'].every(key => typeof totals[key] === 'number' && Number.isFinite(totals[key]) && totals[key] >= 0)
+  const moneyFields = ['subtotal', 'discount', 'discountedSubtotal', 'shipping', 'giftWrapFee', 'total'];
+  return !!totals && moneyFields.every(key => typeof totals[key] === 'number' && Number.isFinite(totals[key]) && totals[key] >= 0)
     && totals.discount <= totals.subtotal && Math.abs(totals.subtotal - totals.discount - totals.discountedSubtotal) <= 1
-    && Math.abs(totals.discountedSubtotal + totals.shipping + totals.giftWrapFee - totals.total) <= 1;
+    && Math.abs(totals.discountedSubtotal + totals.shipping + totals.giftWrapFee - totals.total) <= 1
+    && (totals.isQuoteRequest !== true || (totals.promoCode === 'CANCER' && totals.promoType === 'quote'
+      && moneyFields.every(key => totals[key] === 0)))
+    && (totals.discountAmount === undefined || totals.discountAmount === totals.discount);
 }
 
 function requestItems(items: CartItem[]) {
@@ -87,16 +93,19 @@ export async function placeOrder(payload: OrderPayload, options: { signal?: Abor
       if (data.durablePersistenceReady !== true) return { success: false, code: 'PERSISTENCE_UNVERIFIED', error: 'The server could not confirm a saved order. Your bag is preserved; retry or contact concierge.' };
       if (typeof data.orderId !== 'string' || data.orderId.trim().length < 5) return { success: false, code: 'INVALID_ORDER_ID', error: 'Server response missing authoritative Order ID.' };
       if (typeof data.whatsappMessage !== 'string' || !data.whatsappMessage.trim()) return { success: false, code: 'MISSING_RECEIPT', error: 'The saved order receipt is incomplete. Your bag is preserved; retry or contact concierge.' };
+      const isQuoteRequest = data.totals?.isQuoteRequest === true;
       if (!validTotals(data.totals) || !Array.isArray(data.items) || !data.items.length
         || data.items.some((item: any) => typeof item?.productId !== 'string' || typeof item.selectedWeight !== 'string'
           || !Number.isSafeInteger(item.quantity) || item.quantity < 1 || typeof item.price !== 'number' || !Number.isFinite(item.price) || item.price < 0)
-        || Math.abs(data.items.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0) - data.totals.subtotal) > 1) {
+        || (isQuoteRequest ? data.orderType !== 'QUOTE_REQUEST' || !(data.status === 'QUOTE_REQUESTED' || (data.isDuplicate === true && data.status === 'CANCELLED'))
+          : data.orderType === 'QUOTE_REQUEST' || Math.abs(data.items.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0) - data.totals.subtotal) > 1)) {
         return { success: false, code: 'INVALID_RECEIPT', error: 'The saved order receipt could not be verified. Your bag is preserved; retry or contact concierge.' };
       }
       // A verified duplicate intentionally returns the original persisted prices, even after a catalogue refresh.
       return { success: true, orderId: data.orderId, whatsappMessage: data.whatsappMessage,
         claimToken: typeof data.claimToken === 'string' ? data.claimToken : null, totals: data.totals, items: data.items,
-        isDuplicate: data.isDuplicate === true, durablePersistenceReady: true };
+        isDuplicate: data.isDuplicate === true, durablePersistenceReady: true,
+        orderType: isQuoteRequest ? 'QUOTE_REQUEST' : 'ORDER', status: typeof data.status === 'string' ? data.status : undefined };
     }, options.timeoutMs ?? 15000, options.signal);
   } catch (error: any) {
     return error?.name === 'AbortError'
