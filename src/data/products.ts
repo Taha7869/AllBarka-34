@@ -3,6 +3,7 @@
 // New selections intentionally use a branded placeholder until approved photography is supplied.
 import type { Product, CustomerReview } from '../types.ts';
 import { additionOrigin } from './catalogOrigins';
+import { withProductCare } from './catalogCare';
 
 export const PRODUCT_IMAGE_PATHS: Record<string, string> = {
   // ── Nuts & Dried Fruits (real catalog images exist) ──────────────────────
@@ -1638,7 +1639,7 @@ export const PRODUCTS: Product[] = [
 ].map(product => {
   const approved = APPROVED_CATALOG_NAMES[product.id];
   return approved ? { ...product, nameUr: approved[0], nameAr: approved[1], name_ur: approved[0], name_ar: approved[1] } : product;
-});
+}).map(withProductCare);
 
 // Established photographs remain untouched; new selections may use branded SVG placeholders.
 
