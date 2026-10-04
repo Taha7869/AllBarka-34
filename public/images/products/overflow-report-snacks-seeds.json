@@ -1,0 +1,59 @@
+{
+  "category": "snacks-seeds",
+  "checks": [
+    {
+      "id": "flax-seeds",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/flax-seeds.svg"
+    },
+    {
+      "id": "sunflower-seeds",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/sunflower-seeds.svg"
+    },
+    {
+      "id": "watermelon-seeds",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/watermelon-seeds.svg"
+    },
+    {
+      "id": "melon-seeds",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/melon-seeds.svg"
+    },
+    {
+      "id": "white-sesame",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/white-sesame.svg"
+    },
+    {
+      "id": "black-sesame",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/black-sesame.svg"
+    },
+    {
+      "id": "basil-seeds",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/basil-seeds.svg"
+    },
+    {
+      "id": "fox-nuts",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/fox-nuts.svg"
+    },
+    {
+      "id": "poppy-seeds",
+      "boxes": 3,
+      "safe": true,
+      "path": "/images/products/poppy-seeds.svg"
+    }
+  ]
+}
