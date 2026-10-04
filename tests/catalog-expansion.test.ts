@@ -164,7 +164,7 @@ test('new product images are local SVGs when available; established galleries re
     } else {
       assert.equal(product.image, `/images/products/${id}.svg`, id);
       assert.equal(product.imageName, product.image, id);
-      assert.deepEqual(getProductImages(product), [product.image], id);
+      assert.deepEqual(getProductImages(product), [product.image, `/images/products/${id}-secondary.svg`], id);
     }
   }
   assert.equal(getProductImages(PRODUCTS.find(item => item.id === 'pista')!).length, 2);

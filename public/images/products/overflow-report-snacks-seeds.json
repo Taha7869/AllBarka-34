@@ -1,59 +1,1309 @@
 {
   "category": "snacks-seeds",
+  "styleVersion": 2,
+  "canvas": 960,
+  "safeArea": {
+    "left": 58,
+    "right": 902,
+    "top": 58,
+    "bottom": 902
+  },
   "checks": [
     {
       "id": "flax-seeds",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Flax Seeds (Alsi)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 341.4873046875,
+          "x2": 618.2626953125,
+          "y1": 719.5,
+          "y2": 754.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "السی",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 240.79400634765625,
+          "x2": 286.96600341796875,
+          "y1": 817.7760009765625,
+          "y2": 865
+        },
+        {
+          "text": "بذر الكتان",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 647.5625381469727,
+          "x2": 742.1674728393555,
+          "y1": 831,
+          "y2": 863
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/flax-seeds.svg"
     },
     {
-      "id": "sunflower-seeds",
-      "boxes": 3,
+      "id": "flax-seeds",
+      "variant": "secondary",
+      "boxes": 8,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Flax Seeds (Alsi)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 341.4873046875,
+          "x2": 618.2626953125,
+          "y1": 719.5,
+          "y2": 754.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "السی",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 240.79400634765625,
+          "x2": 286.96600341796875,
+          "y1": 817.7760009765625,
+          "y2": 865
+        },
+        {
+          "text": "بذر الكتان",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 647.5625381469727,
+          "x2": 742.1674728393555,
+          "y1": 831,
+          "y2": 863
+        },
+        {
+          "kind": "scene",
+          "text": "AllBarka",
+          "x1": 428.9453125,
+          "x2": 530.9462890625,
+          "y1": 406,
+          "y2": 436
+        },
+        {
+          "kind": "scene",
+          "text": "THE PANTRY",
+          "x1": 432.546875,
+          "x2": 527.453125,
+          "y1": 463,
+          "y2": 477
+        }
+      ],
       "safe": true,
+      "fontReady": true,
+      "path": "/images/products/flax-seeds-secondary.svg"
+    },
+    {
+      "id": "sunflower-seeds",
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Sunflower Seeds",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 342.619140625,
+          "x2": 617.9599609375,
+          "y1": 719.5,
+          "y2": 748.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "بیج سورج مکھی",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 193.0400161743164,
+          "x2": 344.67598724365234,
+          "y1": 808.0480041503906,
+          "y2": 865
+        },
+        {
+          "text": "بذور عباد الشمس",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 603.9920654296875,
+          "x2": 785.7379455566406,
+          "y1": 832,
+          "y2": 866
+        }
+      ],
+      "safe": true,
+      "fontReady": true,
       "path": "/images/products/sunflower-seeds.svg"
     },
     {
-      "id": "watermelon-seeds",
-      "boxes": 3,
+      "id": "sunflower-seeds",
+      "variant": "secondary",
+      "boxes": 8,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Sunflower Seeds",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 342.619140625,
+          "x2": 617.9599609375,
+          "y1": 719.5,
+          "y2": 748.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "بیج سورج مکھی",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 193.0400161743164,
+          "x2": 344.67598724365234,
+          "y1": 808.0480041503906,
+          "y2": 865
+        },
+        {
+          "text": "بذور عباد الشمس",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 603.9920654296875,
+          "x2": 785.7379455566406,
+          "y1": 832,
+          "y2": 866
+        },
+        {
+          "kind": "scene",
+          "text": "AllBarka",
+          "x1": 428.9453125,
+          "x2": 530.9462890625,
+          "y1": 406,
+          "y2": 436
+        },
+        {
+          "kind": "scene",
+          "text": "THE PANTRY",
+          "x1": 432.546875,
+          "x2": 527.453125,
+          "y1": 463,
+          "y2": 477
+        }
+      ],
       "safe": true,
+      "fontReady": true,
+      "path": "/images/products/sunflower-seeds-secondary.svg"
+    },
+    {
+      "id": "watermelon-seeds",
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Watermelon Seeds Peeled (Maghaz Tarbooz)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 103.712890625,
+          "x2": 854.037109375,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "مغز تربوز",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 222.96002197265625,
+          "x2": 303.72398376464844,
+          "y1": 827.3159942626953,
+          "y2": 868
+        },
+        {
+          "text": "بذور البطيخ",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 636.9140472412109,
+          "x2": 752.8159637451172,
+          "y1": 832,
+          "y2": 872
+        }
+      ],
+      "safe": true,
+      "fontReady": true,
       "path": "/images/products/watermelon-seeds.svg"
     },
     {
-      "id": "melon-seeds",
-      "boxes": 3,
+      "id": "watermelon-seeds",
+      "variant": "secondary",
+      "boxes": 8,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Watermelon Seeds Peeled (Maghaz Tarbooz)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 103.712890625,
+          "x2": 854.037109375,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "مغز تربوز",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 222.96002197265625,
+          "x2": 303.72398376464844,
+          "y1": 827.3159942626953,
+          "y2": 868
+        },
+        {
+          "text": "بذور البطيخ",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 636.9140472412109,
+          "x2": 752.8159637451172,
+          "y1": 832,
+          "y2": 872
+        },
+        {
+          "kind": "scene",
+          "text": "AllBarka",
+          "x1": 428.9453125,
+          "x2": 530.9462890625,
+          "y1": 406,
+          "y2": 436
+        },
+        {
+          "kind": "scene",
+          "text": "THE PANTRY",
+          "x1": 432.546875,
+          "x2": 527.453125,
+          "y1": 463,
+          "y2": 477
+        }
+      ],
       "safe": true,
+      "fontReady": true,
+      "path": "/images/products/watermelon-seeds-secondary.svg"
+    },
+    {
+      "id": "melon-seeds",
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Melon Seeds (Maghaz Kharbooza)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 193.46923828125,
+          "x2": 765.28076171875,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "مغز خربوزہ",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 215.6220245361328,
+          "x2": 313.0619812011719,
+          "y1": 827.3159942626953,
+          "y2": 868
+        },
+        {
+          "text": "بذور الشمام",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 636.3870468139648,
+          "x2": 753.3429641723633,
+          "y1": 832,
+          "y2": 871
+        }
+      ],
+      "safe": true,
+      "fontReady": true,
       "path": "/images/products/melon-seeds.svg"
     },
     {
-      "id": "white-sesame",
-      "boxes": 3,
+      "id": "melon-seeds",
+      "variant": "secondary",
+      "boxes": 8,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Melon Seeds (Maghaz Kharbooza)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 193.46923828125,
+          "x2": 765.28076171875,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "مغز خربوزہ",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 215.6220245361328,
+          "x2": 313.0619812011719,
+          "y1": 827.3159942626953,
+          "y2": 868
+        },
+        {
+          "text": "بذور الشمام",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 636.3870468139648,
+          "x2": 753.3429641723633,
+          "y1": 832,
+          "y2": 871
+        },
+        {
+          "kind": "scene",
+          "text": "AllBarka",
+          "x1": 428.9453125,
+          "x2": 530.9462890625,
+          "y1": 406,
+          "y2": 436
+        },
+        {
+          "kind": "scene",
+          "text": "THE PANTRY",
+          "x1": 432.546875,
+          "x2": 527.453125,
+          "y1": 463,
+          "y2": 477
+        }
+      ],
       "safe": true,
+      "fontReady": true,
+      "path": "/images/products/melon-seeds-secondary.svg"
+    },
+    {
+      "id": "white-sesame",
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "White Sesame (Safed Til)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 267.28173828125,
+          "x2": 690.46826171875,
+          "y1": 719.5,
+          "y2": 754.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "سفید تل",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 225.59000396728516,
+          "x2": 303.3779983520508,
+          "y1": 823,
+          "y2": 865
+        },
+        {
+          "text": "سمسم أبيض",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 637.6425247192383,
+          "x2": 752.0824813842773,
+          "y1": 824,
+          "y2": 875
+        }
+      ],
+      "safe": true,
+      "fontReady": true,
       "path": "/images/products/white-sesame.svg"
     },
     {
-      "id": "black-sesame",
-      "boxes": 3,
+      "id": "white-sesame",
+      "variant": "secondary",
+      "boxes": 8,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "White Sesame (Safed Til)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 267.28173828125,
+          "x2": 690.46826171875,
+          "y1": 719.5,
+          "y2": 754.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "سفید تل",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 225.59000396728516,
+          "x2": 303.3779983520508,
+          "y1": 823,
+          "y2": 865
+        },
+        {
+          "text": "سمسم أبيض",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 637.6425247192383,
+          "x2": 752.0824813842773,
+          "y1": 824,
+          "y2": 875
+        },
+        {
+          "kind": "scene",
+          "text": "AllBarka",
+          "x1": 428.9453125,
+          "x2": 530.9462890625,
+          "y1": 406,
+          "y2": 436
+        },
+        {
+          "kind": "scene",
+          "text": "THE PANTRY",
+          "x1": 432.546875,
+          "x2": 527.453125,
+          "y1": 463,
+          "y2": 477
+        }
+      ],
       "safe": true,
+      "fontReady": true,
+      "path": "/images/products/white-sesame-secondary.svg"
+    },
+    {
+      "id": "black-sesame",
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Black Sesame (Kala Til)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 282.67822265625,
+          "x2": 677.07177734375,
+          "y1": 719.5,
+          "y2": 754.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "کالا تل",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 233.40201568603516,
+          "x2": 300.86998748779297,
+          "y1": 823,
+          "y2": 865
+        },
+        {
+          "text": "سمسم أسود",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 641.2540283203125,
+          "x2": 748.4709777832031,
+          "y1": 824,
+          "y2": 875
+        }
+      ],
+      "safe": true,
+      "fontReady": true,
       "path": "/images/products/black-sesame.svg"
     },
     {
-      "id": "basil-seeds",
-      "boxes": 3,
+      "id": "black-sesame",
+      "variant": "secondary",
+      "boxes": 8,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Black Sesame (Kala Til)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 282.67822265625,
+          "x2": 677.07177734375,
+          "y1": 719.5,
+          "y2": 754.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "کالا تل",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 233.40201568603516,
+          "x2": 300.86998748779297,
+          "y1": 823,
+          "y2": 865
+        },
+        {
+          "text": "سمسم أسود",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 641.2540283203125,
+          "x2": 748.4709777832031,
+          "y1": 824,
+          "y2": 875
+        },
+        {
+          "kind": "scene",
+          "text": "AllBarka",
+          "x1": 428.9453125,
+          "x2": 530.9462890625,
+          "y1": 406,
+          "y2": 436
+        },
+        {
+          "kind": "scene",
+          "text": "THE PANTRY",
+          "x1": 432.546875,
+          "x2": 527.453125,
+          "y1": 463,
+          "y2": 477
+        }
+      ],
       "safe": true,
+      "fontReady": true,
+      "path": "/images/products/black-sesame-secondary.svg"
+    },
+    {
+      "id": "basil-seeds",
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Basil Seeds (Tukhm-e-Bangla)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 226.2626953125,
+          "x2": 733.4873046875,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "تخم بنگلہ",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 227.31999969482422,
+          "x2": 300.4360122680664,
+          "y1": 811.0479888916016,
+          "y2": 872
+        },
+        {
+          "text": "بذور الحبق",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 642.6645431518555,
+          "x2": 747.0654678344727,
+          "y1": 832,
+          "y2": 864
+        }
+      ],
+      "safe": true,
+      "fontReady": true,
       "path": "/images/products/basil-seeds.svg"
     },
     {
-      "id": "fox-nuts",
-      "boxes": 3,
+      "id": "basil-seeds",
+      "variant": "secondary",
+      "boxes": 8,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Basil Seeds (Tukhm-e-Bangla)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 226.2626953125,
+          "x2": 733.4873046875,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "تخم بنگلہ",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 227.31999969482422,
+          "x2": 300.4360122680664,
+          "y1": 811.0479888916016,
+          "y2": 872
+        },
+        {
+          "text": "بذور الحبق",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 642.6645431518555,
+          "x2": 747.0654678344727,
+          "y1": 832,
+          "y2": 864
+        },
+        {
+          "kind": "scene",
+          "text": "AllBarka",
+          "x1": 428.9453125,
+          "x2": 530.9462890625,
+          "y1": 406,
+          "y2": 436
+        },
+        {
+          "kind": "scene",
+          "text": "THE PANTRY",
+          "x1": 432.546875,
+          "x2": 527.453125,
+          "y1": 463,
+          "y2": 477
+        }
+      ],
       "safe": true,
+      "fontReady": true,
+      "path": "/images/products/basil-seeds-secondary.svg"
+    },
+    {
+      "id": "fox-nuts",
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Fox Nuts (Makhana)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 307.291015625,
+          "x2": 652.458984375,
+          "y1": 719.5,
+          "y2": 754.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "مکھانہ",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 239.6400146484375,
+          "x2": 295.88800048828125,
+          "y1": 812.9400024414062,
+          "y2": 858
+        },
+        {
+          "text": "بذور اللوتس",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 635.7515487670898,
+          "x2": 753.9784622192383,
+          "y1": 832,
+          "y2": 866
+        }
+      ],
+      "safe": true,
+      "fontReady": true,
       "path": "/images/products/fox-nuts.svg"
     },
     {
-      "id": "poppy-seeds",
-      "boxes": 3,
+      "id": "fox-nuts",
+      "variant": "secondary",
+      "boxes": 8,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Fox Nuts (Makhana)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 307.291015625,
+          "x2": 652.458984375,
+          "y1": 719.5,
+          "y2": 754.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "مکھانہ",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 239.6400146484375,
+          "x2": 295.88800048828125,
+          "y1": 812.9400024414062,
+          "y2": 858
+        },
+        {
+          "text": "بذور اللوتس",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 635.7515487670898,
+          "x2": 753.9784622192383,
+          "y1": 832,
+          "y2": 866
+        },
+        {
+          "kind": "scene",
+          "text": "AllBarka",
+          "x1": 428.9453125,
+          "x2": 530.9462890625,
+          "y1": 406,
+          "y2": 436
+        },
+        {
+          "kind": "scene",
+          "text": "THE PANTRY",
+          "x1": 432.546875,
+          "x2": 527.453125,
+          "y1": 463,
+          "y2": 477
+        }
+      ],
       "safe": true,
+      "fontReady": true,
+      "path": "/images/products/fox-nuts-secondary.svg"
+    },
+    {
+      "id": "poppy-seeds",
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Poppy Seeds (Khashkhash)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 253.37109375,
+          "x2": 706.37890625,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "خشخاش",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 228.34800720214844,
+          "x2": 300.8000030517578,
+          "y1": 816.8159942626953,
+          "y2": 865
+        },
+        {
+          "text": "خشخاش",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 649.8410110473633,
+          "x2": 739.8539962768555,
+          "y1": 832,
+          "y2": 863
+        }
+      ],
+      "safe": true,
+      "fontReady": true,
       "path": "/images/products/poppy-seeds.svg"
+    },
+    {
+      "id": "poppy-seeds",
+      "variant": "secondary",
+      "boxes": 8,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Poppy Seeds (Khashkhash)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 253.37109375,
+          "x2": 706.37890625,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "خشخاش",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 228.34800720214844,
+          "x2": 300.8000030517578,
+          "y1": 816.8159942626953,
+          "y2": 865
+        },
+        {
+          "text": "خشخاش",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 649.8410110473633,
+          "x2": 739.8539962768555,
+          "y1": 832,
+          "y2": 863
+        },
+        {
+          "kind": "scene",
+          "text": "AllBarka",
+          "x1": 428.9453125,
+          "x2": 530.9462890625,
+          "y1": 406,
+          "y2": 436
+        },
+        {
+          "kind": "scene",
+          "text": "THE PANTRY",
+          "x1": 432.546875,
+          "x2": 527.453125,
+          "y1": 463,
+          "y2": 477
+        }
+      ],
+      "safe": true,
+      "fontReady": true,
+      "path": "/images/products/poppy-seeds-secondary.svg"
     }
   ]
 }

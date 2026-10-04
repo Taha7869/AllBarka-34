@@ -7,10 +7,10 @@ test('admin catalogue counts unique photographs rather than shared bundle refere
   const snapshot = getAdminCatalogSnapshot(PRODUCTS);
   assert.equal(snapshot.productCount, 89);
   const newImages = PRODUCTS.filter(product => product.image?.startsWith('/images/products/')).length;
-  assert.equal(snapshot.imageCount, 46 + newImages);
-  assert.equal(snapshot.galleryCount, 14);
+  assert.equal(snapshot.imageCount, 46 + newImages * 2);
+  assert.equal(snapshot.galleryCount, 14 + newImages);
   assert.equal(snapshot.issueCount, 0);
-  assert.equal(snapshot.rows.reduce((count, row) => count + row.images.length, 0), 50 + newImages);
+  assert.equal(snapshot.rows.reduce((count, row) => count + row.images.length, 0), 50 + newImages * 2);
 });
 
 test('catalogue quality flags duplicate identities, invalid prices, untranslated names and placeholders', () => {

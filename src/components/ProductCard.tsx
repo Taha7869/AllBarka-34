@@ -30,7 +30,7 @@ export default function ProductCard({
   const saved = savedIds.includes(product.id);
   const navigate = useNavigate();
   const shouldReduceMotion = useReducedMotion();
-  const weights = Object.keys(product.prices || {});
+  const weights = Object.keys(product.prices || {}).filter(weight => Number.isFinite(product.prices[weight]) && product.prices[weight] > 0);
   const [selectedWeight, setSelectedWeight] = useState(weights[0] || '250g');
   const titleTypography = language === 'ur' ? 'font-urdu text-[20px]' : language === 'ar' ? 'font-arabic text-[23px]' : 'font-serif text-[21px] leading-[1.25]';
 
@@ -70,7 +70,7 @@ export default function ProductCard({
       {/* Top Meta Line */}
       <div className="mb-1 flex min-h-11 items-center gap-2">
         <span dir="auto" className="min-w-0 flex-1 truncate text-[9px] font-sans font-medium uppercase tracking-[0.12em] text-[var(--color-accent-text)]">
-          {language === 'en' ? (getLocalized(product, 'health', language) || 'Single-Origin') : t('slider.quality')}
+          {getLocalized(product, 'origin', language)}
         </span>
         {getLocalized(product, 'tag', language) && (
           <span dir="auto" className="max-w-[42%] truncate rounded-full border border-[var(--color-border-accent)] bg-[var(--color-base)] px-2.5 py-1 text-[8px] font-sans font-medium uppercase tracking-[0.08em] text-[var(--color-accent-text)]">
