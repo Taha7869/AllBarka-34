@@ -50,13 +50,28 @@ The brief lists the same four-pack Char Maghaz selection twice at Rs. 1,200 and 
 - New entries do not invent wholesale discounts: their `wholesale` compatibility field is zero, while their declared retail variants remain available.
 - `corporate-gifting` is quote only. It has no purchase variants and no price; its contact action must not place a zero-price cart item.
 
-## Shipping weights requiring owner confirmation
+## Editing bundle shipping weights
 
 Shipping metadata uses actual declared portions. Dry grams/kilograms and four-packs are derived from their canonical labels. Oil tariff billing preserves the owner's numeric convention: 1ml is billed as 1g; this is not a physical density claim.
 
-Both established 500g + 500g gift duos retain 1,000g shipping billing weight. The Daily Grind declares three 250g portions, so its weight is 750g. Tasting Flight declares four 100g samples, so its weight is 400g. Char Maghaz's four 100g packs total 400g.
+Each purchasable new bundle defines `shippingWeightG` in `src/data/products.ts`. These are owner-provided placeholder packed weights, including packaging; edit the field manually to update courier billing. The shipping engine uses this value ahead of any older per-portion `shippingWeights` entry. Quantities multiply the packed weight, and mixed carts add all canonical weights before applying Rs. 250/kg with a Rs. 250 nationwide minimum. No rounding up to whole kilograms occurs.
 
-Other new bundles lack component portions in the brief. Their `shippingWeights` are intentionally empty. Outside-Lahore checkout must remain blocked with a clear unavailable-weight error until the owner specifies the packed portion weight for each canonical `Bundle` selection. Do not invent masses from component names or prices. Lahore's regional tariff can still be quoted without inventing a national weight. Corporate gifting is handled through its quote flow.
+| Bundle | `shippingWeightG` |
+| --- | ---: |
+| The Daily Grind | 900 |
+| Brain Fuel Box | 1100 |
+| Winter Warrior Pack | 1500 |
+| Immunity Shield | 800 |
+| Sunrise Seeds | 800 |
+| Royal Feast | 2500 |
+| Silver Hamper | 1500 |
+| Gold Hamper | 2500 |
+| Platinum Hamper | 4000 |
+| Ramadan Ready | 2000 |
+| Mystery Box | 1200 |
+| Tasting Flight | 500 |
+
+Both established 500g + 500g gift duos retain 1,000g shipping billing weight. Char Maghaz's four 100g packs retain 400g. Corporate Gifting remains quote only, has no shipping weight, and cannot enter checkout. Invalid or missing bundle weights still block nationwide pricing rather than inventing a mass.
 
 Silver, Gold, Platinum, Mystery, Ramadan mixed nuts and Tasting Flight have partially unspecified selections. Their descriptions state that selections are confirmed before dispatch; their `componentIds` list only specifically identified products.
 

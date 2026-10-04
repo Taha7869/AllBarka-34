@@ -124,6 +124,12 @@ test('all oils keep fragile handling and numeric ml shipping convention', () => 
 });
 
 test('bundles use one fixed purchase portion, canonical components and only declared shipping masses', () => {
+  const bundleShippingWeights: Record<string, number> = {
+    'bundle-daily-grind': 900, 'bundle-brain-fuel': 1100, 'bundle-winter-warrior': 1500,
+    'bundle-immunity-shield': 800, 'bundle-sunrise-seeds': 800, 'bundle-royal-feast': 2500,
+    'bundle-silver-hamper': 1500, 'bundle-gold-hamper': 2500, 'bundle-platinum-hamper': 4000,
+    'bundle-ramadan-ready': 2000, 'bundle-mystery-box': 1200, 'bundle-tasting-flight': 500,
+  };
   for (const product of PRODUCTS.filter(item => item.category === 'bundles')) {
     assert.equal(product.isBundle, true, product.id);
     assert.equal(product.allowCustomWeight, false, product.id);
@@ -135,13 +141,13 @@ test('bundles use one fixed purchase portion, canonical components and only decl
       assert.equal(product.id, 'corporate-gifting');
       assert.deepEqual(product.prices, {});
       assert.deepEqual(product.variants, []);
+      assert.equal(product.shippingWeightG, undefined, product.id);
     } else {
       assert.deepEqual(Object.keys(product.prices), ['Bundle'], product.id);
       assert.ok(product.prices.Bundle > 0, product.id);
+      assert.equal(product.shippingWeightG, bundleShippingWeights[product.id], product.id);
     }
-    const expected = product.id === 'bundle-daily-grind' ? { Bundle: 750 }
-      : product.id === 'bundle-tasting-flight' ? { Bundle: 400 } : {};
-    assert.deepEqual(product.shippingWeights, expected, product.id);
+    assert.deepEqual(product.shippingWeights, {}, product.id);
   }
   assert.deepEqual(PRODUCTS.find(item => item.id === 'char-maghaz-mix')!.shippingWeights, { '4x100g': 400 });
   for (const id of ['deal-1', 'deal-2']) {

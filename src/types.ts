@@ -24,6 +24,8 @@ export interface Product {
   components?: string[];
   componentIds?: string[];
   badge?: string;
+  /** Owner-editable packed shipping weight for a fixed bundle, in grams. */
+  shippingWeightG?: number;
   /** Merchant-approved grams used for shipping billing, keyed by canonical portion. */
   shippingWeights?: Record<string, number>;
   name_en: string;

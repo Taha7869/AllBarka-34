@@ -148,15 +148,24 @@ test('server rejects malformed custom portions, bad quantities, and quote-only p
 });
 
 test('unknown bundle mass blocks nationwide purchase but a nonpaying quote remains available', () => {
-  const bundle = PRODUCTS.find(product => product.isBundle && !product.quoteOnly && Object.keys(product.shippingWeights || {}).length === 0);
+  const bundle = PRODUCTS.find(product => product.id === 'bundle-immunity-shield');
   assert.ok(bundle);
-  const portion = Object.keys(bundle.prices)[0];
-  assert.equal(getProductShippingWeightGrams(bundle.id, portion), null);
-  assert.throws(() => validateAndPriceOrder({ city: 'Karachi', shippingMethodId: 'standard', items: [line(bundle.id, portion)] }), isCode('SHIPPING_WEIGHT_UNAVAILABLE'));
-  const quote = validateAndPriceOrder({ city: 'Karachi', shippingMethodId: 'standard', discountCode: 'CANCER', items: [line(bundle.id, portion)] });
-  assert.equal(quote.summary.isQuoteRequest, true);
-  for (const field of ['subtotal', 'discount', 'discountedSubtotal', 'shipping', 'giftWrapFee', 'total', 'shippingWeightGrams'] as const) {
-    assert.equal(quote.summary[field], 0, field);
+  const originalWeight = bundle.shippingWeightG;
+  const originalPortionWeights = bundle.shippingWeights;
+  delete bundle.shippingWeightG;
+  bundle.shippingWeights = {};
+  try {
+    const portion = Object.keys(bundle.prices)[0];
+    assert.equal(getProductShippingWeightGrams(bundle.id, portion), null);
+    assert.throws(() => validateAndPriceOrder({ city: 'Karachi', shippingMethodId: 'standard', items: [line(bundle.id, portion)] }), isCode('SHIPPING_WEIGHT_UNAVAILABLE'));
+    const quote = validateAndPriceOrder({ city: 'Karachi', shippingMethodId: 'standard', discountCode: 'CANCER', items: [line(bundle.id, portion)] });
+    assert.equal(quote.summary.isQuoteRequest, true);
+    for (const field of ['subtotal', 'discount', 'discountedSubtotal', 'shipping', 'giftWrapFee', 'total', 'shippingWeightGrams'] as const) {
+      assert.equal(quote.summary[field], 0, field);
+    }
+  } finally {
+    bundle.shippingWeightG = originalWeight;
+    bundle.shippingWeights = originalPortionWeights;
   }
 });
 

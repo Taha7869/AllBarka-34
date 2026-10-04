@@ -59,13 +59,20 @@ export function resolveCustomWeight(product: Product, value: unknown): ProductVa
 }
 
 function fixedShippingWeight(product: Product, label: string): number | null {
+  const isFixedBundle = product.isBundle || ['bundles', 'gift-boxes'].includes(product.category);
+  // Packed bundle weight includes packaging and takes precedence over legacy
+  // portion weights. Invalid explicit values cannot borrow a fallback mass.
+  if (isFixedBundle && product.shippingWeightG !== undefined) {
+    const grams = product.shippingWeightG;
+    return Number.isSafeInteger(grams) && grams > 0 ? grams : null;
+  }
   if (Object.hasOwn(product.shippingWeights || {}, label)) {
     const grams = product.shippingWeights![label];
     return Number.isFinite(grams) && grams > 0 ? grams : null;
   }
   // Fixed bundles require an explicit merchant-approved mass, even if their
   // display label resembles a portion. Oil ml follows the approved billing tariff.
-  if (product.isBundle || ['bundles', 'gift-boxes'].includes(product.category)) return null;
+  if (isFixedBundle) return null;
   const match = /^(\d+(?:\.\d+)?)\s*(kg|g|ml)$/i.exec(label);
   if (!match || (match[2].toLowerCase() === 'ml' && product.category !== 'oils')) return null;
   const grams = Number(match[1]) * (match[2].toLowerCase() === 'kg' ? 1000 : 1);

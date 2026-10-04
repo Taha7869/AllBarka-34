@@ -50,7 +50,7 @@ test('fixed portions have approved billing mass, while unspecified bundles and q
     }
     for (const portion of Object.keys(product.prices)) {
       const grams = getProductShippingWeightGrams(product.id, portion);
-      if (product.isBundle && product.category === 'bundles' && !Object.hasOwn(product.shippingWeights || {}, portion)) {
+      if (product.isBundle && product.category === 'bundles' && product.shippingWeightG === undefined && !Object.hasOwn(product.shippingWeights || {}, portion)) {
         assert.equal(grams, null, `${product.id} must wait for an approved packing mass`);
         continue;
       }

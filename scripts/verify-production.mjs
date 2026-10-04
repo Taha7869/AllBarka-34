@@ -218,6 +218,31 @@ try {
     assert.equal(totals.shippingWeightGrams, 1200);
     assert.equal(totals.shipping, 300);
   });
+  await check('every purchasable bundle receives a nationwide quote using its canonical packed weight', async () => {
+    const weights = {
+      'bundle-daily-grind': 900, 'bundle-brain-fuel': 1100, 'bundle-winter-warrior': 1500,
+      'bundle-immunity-shield': 800, 'bundle-sunrise-seeds': 800, 'bundle-royal-feast': 2500,
+      'bundle-silver-hamper': 1500, 'bundle-gold-hamper': 2500, 'bundle-platinum-hamper': 4000,
+      'bundle-ramadan-ready': 2000, 'bundle-mystery-box': 1200, 'bundle-tasting-flight': 500,
+    };
+    for (const [productId, grams] of Object.entries(weights)) {
+      const response = await request('/api/orders/quote', post({ ...order, city: 'Karachi',
+        items: [{ productId, selectedWeight: 'Bundle', quantity: 2, price: 1, shippingWeightG: 1, shippingWeightGrams: 1 }] }));
+      assert.equal(response.status, 200, productId);
+      const { totals } = await response.json();
+      const shipping = Math.max(250, Math.round(grams * 2 / 1000 * 250));
+      assert.equal(totals.shippingWeightGrams, grams * 2, productId);
+      assert.equal(totals.shippingRegion, 'nationwide', productId);
+      assert.equal(totals.shipping, shipping, productId);
+      assert.equal(totals.total, totals.discountedSubtotal + shipping, productId);
+    }
+  });
+  await check('Corporate Gifting stays quote-only and cannot obtain a checkout price', async () => {
+    const response = await request('/api/orders/quote', post({ ...order, city: 'Karachi',
+      items: [{ productId: 'corporate-gifting', selectedWeight: 'Bundle', quantity: 1, shippingWeightG: 1000 }] }));
+    assert.equal(response.status, 400);
+    assert.equal((await response.json()).code, 'QUOTE_REQUIRED');
+  });
   await check('custom hamper quote prices canonical configuration and contents weight on the server', async () => {
     const response = await request('/api/orders/quote', post({ ...order, city: 'Karachi', items: [{
       productId: 'custom-hamper', selectedWeight: 'forged 1g', quantity: 2, price: 1, shippingWeightGrams: 1,
