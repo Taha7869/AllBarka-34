@@ -1,5 +1,5 @@
 import manifest from '../data/product-media.json';
-import { getProductImages } from '../data/productImages';
+import { getProductImages, isSingleImageCatalogProduct } from '../data/productImages';
 import { PRODUCTS } from '../data/products';
 import type { Product } from '../types';
 
@@ -97,14 +97,22 @@ export function sanitizeProductMediaOverrides(value: unknown): ProductMediaOverr
   return output;
 }
 
+function applyCatalogImagePolicy(product: Product, media: ProductMedia): ProductMedia {
+  if (!isSingleImageCatalogProduct(product)) return media;
+  // A previously saved two-view override must not reintroduce the retired SVG.
+  const retired = `/images/products/${product.id}-secondary.svg`;
+  const cover = media.images.find(image => image !== retired) || product.image!;
+  return { ...media, images: [cover], videoPoster: media.videoPoster === retired ? cover : media.videoPoster };
+}
+
 export function resolveProductMedia(product: Product, overrides: ProductMediaOverrides = {}): ResolvedProductMedia {
   const override = overrides[product.id];
   if (override) {
-    try { return { ...validateProductMedia(override), source: 'override' }; } catch { /* Safe fallback. */ }
+    try { return { ...applyCatalogImagePolicy(product, validateProductMedia(override)), source: 'override' }; } catch { /* Safe fallback. */ }
   }
   const configured = (manifest as Record<string, unknown>)[product.id];
   if (configured) {
-    try { return { ...validateProductMedia(configured), source: 'manifest' }; } catch { /* Safe fallback. */ }
+    try { return { ...applyCatalogImagePolicy(product, validateProductMedia(configured)), source: 'manifest' }; } catch { /* Safe fallback. */ }
   }
   return { images: getProductImages(product), videoUrl: '', videoPoster: '', source: 'catalogue' };
 }

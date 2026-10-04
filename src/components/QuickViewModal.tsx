@@ -54,7 +54,7 @@ export default function QuickViewModal({ isOpen, onClose, product, onAddToCart }
   }, [isOpen, productId]);
 
   if (!isOpen || !product || product.active === false) return null;
-  const weights = Object.keys(product.prices).filter(weight => product.prices[weight] > 0);
+  const weights = Object.keys(product.prices).filter(weight => Number.isFinite(product.prices[weight]) && product.prices[weight] > 0);
   const weight = weights.includes(selectedWeight) ? selectedWeight : weights[0];
   const price = product.prices[weight] || 0;
   const add = () => {

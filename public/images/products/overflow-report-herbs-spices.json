@@ -1,118 +1,1228 @@
 {
   "category": "herbs-spices",
+  "styleVersion": 2,
+  "canvas": 960,
+  "safeArea": {
+    "left": 58,
+    "right": 902,
+    "top": 58,
+    "bottom": 902
+  },
   "checks": [
     {
       "id": "ceylon-cinnamon",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Ceylon Cinnamon Sticks (Dalchini)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 186.27734375,
+          "x2": 773.47265625,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "سری لنکا دارچینی",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 186.12403869628906,
+          "x2": 343.0519714355469,
+          "y1": 826,
+          "y2": 868
+        },
+        {
+          "text": "قرفة",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 674.6640167236328,
+          "x2": 714.1909942626953,
+          "y1": 835,
+          "y2": 864
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/ceylon-cinnamon.svg"
     },
     {
       "id": "green-cardamom",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Green Cardamom Jumbo (Sabz Ilaichi)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 152.58203125,
+          "x2": 807.16796875,
+          "y1": 719.5,
+          "y2": 754.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "بڑی سبز الائچی",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 196.7080307006836,
+          "x2": 332.51197052001953,
+          "y1": 816.6559906005859,
+          "y2": 868
+        },
+        {
+          "text": "هيل أخضر",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 636.4480285644531,
+          "x2": 749.5399780273438,
+          "y1": 824,
+          "y2": 867
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/green-cardamom.svg"
     },
     {
       "id": "black-cardamom",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Black Cardamom (Bari Ilaichi)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 224.42578125,
+          "x2": 735.32421875,
+          "y1": 719.5,
+          "y2": 754.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "کالی الائچی",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 215.74803161621094,
+          "x2": 318.5239715576172,
+          "y1": 816.6559906005859,
+          "y2": 865
+        },
+        {
+          "text": "هيل أسود",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 645.9505310058594,
+          "x2": 744.0374755859375,
+          "y1": 824,
+          "y2": 867
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/black-cardamom.svg"
     },
     {
       "id": "nutmeg-mace",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Nutmeg & Mace Combo (Jaifal Javitri)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 156.1279296875,
+          "x2": 802.6220703125,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "جائفل و جاویتری",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 185.0880355834961,
+          "x2": 344.0799789428711,
+          "y1": 819.7359924316406,
+          "y2": 868
+        },
+        {
+          "text": "جوزة الطيب و السببة",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 587.4145889282227,
+          "x2": 801.2804183959961,
+          "y1": 832,
+          "y2": 864
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/nutmeg-mace.svg"
     },
     {
       "id": "whole-cloves",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Whole Cloves (Laung)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 293.5458984375,
+          "x2": 664.2041015625,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "لونگ",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 241.4860076904297,
+          "x2": 287.40199279785156,
+          "y1": 815,
+          "y2": 857
+        },
+        {
+          "text": "قرنفل",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 667.3250198364258,
+          "x2": 722.5299911499023,
+          "y1": 834,
+          "y2": 867
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/whole-cloves.svg"
     },
     {
       "id": "black-peppercorns",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Black Peppercorns (Kali Mirch)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 216.7998046875,
+          "x2": 742.9501953125,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "کالی مرچ",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 225.03001403808594,
+          "x2": 309.2419891357422,
+          "y1": 825.5,
+          "y2": 868
+        },
+        {
+          "text": "فلفل أسود",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 643.2535400390625,
+          "x2": 746.6014709472656,
+          "y1": 824,
+          "y2": 867
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/black-peppercorns.svg"
     },
     {
       "id": "star-anise",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Star Anise (Badyan)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 313.01513671875,
+          "x2": 646.73486328125,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "بادیان",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 233.73802185058594,
+          "x2": 295.65399169921875,
+          "y1": 831,
+          "y2": 865.6199951171875
+        },
+        {
+          "text": "يانسون نجومي",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 631.0860443115234,
+          "x2": 762.0239562988281,
+          "y1": 832,
+          "y2": 869
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/star-anise.svg"
     },
     {
       "id": "cumin-seeds",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Cumin Seeds (Zeera)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 305.62109375,
+          "x2": 654.12890625,
+          "y1": 719.5,
+          "y2": 754.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "زیرہ",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 245.49800872802734,
+          "x2": 284.9260025024414,
+          "y1": 833.6999969482422,
+          "y2": 859.2359924316406
+        },
+        {
+          "text": "كمون",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 670.0530090332031,
+          "x2": 720.1759948730469,
+          "y1": 829,
+          "y2": 864
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/cumin-seeds.svg"
     },
     {
       "id": "fennel-seeds",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Fennel Seeds (Saunf)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 303.2275390625,
+          "x2": 656.5224609375,
+          "y1": 719.5,
+          "y2": 754.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "سونف",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 231.8260040283203,
+          "x2": 298.1419982910156,
+          "y1": 826.0839996337891,
+          "y2": 857
+        },
+        {
+          "text": "شمر",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 675.8645095825195,
+          "x2": 709.8604965209961,
+          "y1": 832,
+          "y2": 864
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/fennel-seeds.svg"
     },
     {
       "id": "ajwain",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Ajwain",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 419.330078125,
+          "x2": 538.21875,
+          "y1": 720.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "اجوائن",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 231.05001831054688,
+          "x2": 296.7099914550781,
+          "y1": 827.1559906005859,
+          "y2": 865
+        },
+        {
+          "text": "أجوين",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 664.6280136108398,
+          "x2": 727.1179885864258,
+          "y1": 824,
+          "y2": 864
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/ajwain.svg"
     },
     {
       "id": "dried-ginger",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Dried Ginger Powder (Sonth)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 234.6494140625,
+          "x2": 725.1005859375,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "سونٹھ",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 237.92400360107422,
+          "x2": 291.0439987182617,
+          "y1": 826.6440124511719,
+          "y2": 857
+        },
+        {
+          "text": "زنجبيل مجفف",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 626.9785461425781,
+          "x2": 762.6524658203125,
+          "y1": 832,
+          "y2": 867
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/dried-ginger.svg"
     },
     {
       "id": "kasuri-methi",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Kasuri Methi",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 371.1748046875,
+          "x2": 589.6923828125,
+          "y1": 719.5,
+          "y2": 748.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "کاسوری میتھی",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 201.6220245361328,
+          "x2": 332.6499786376953,
+          "y1": 818.1320037841797,
+          "y2": 865
+        },
+        {
+          "text": "أوراق الحلبة المجففة",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 599.3030853271484,
+          "x2": 791.4429168701172,
+          "y1": 824,
+          "y2": 863
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/kasuri-methi.svg"
     },
     {
       "id": "dried-mint",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Dried Mint (Podina)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 309.8330078125,
+          "x2": 649.9169921875,
+          "y1": 719.5,
+          "y2": 754.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "خشک پودینہ",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 211.43002319335938,
+          "x2": 316.7179870605469,
+          "y1": 818,
+          "y2": 869.843994140625
+        },
+        {
+          "text": "نعنع مجفف",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 640.6185302734375,
+          "x2": 749.4914703369141,
+          "y1": 835,
+          "y2": 873
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/dried-mint.svg"
     },
     {
       "id": "chaat-masala",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "AllBarka Chaat Masala",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 286.72900390625,
+          "x2": 671.12255859375,
+          "y1": 719.5,
+          "y2": 748.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "چاٹ مصالحہ",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 201.81201171875,
+          "x2": 327.4280090332031,
+          "y1": 821.4160003662109,
+          "y2": 866.7920074462891
+        },
+        {
+          "text": "بهار شات",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 646.8030319213867,
+          "x2": 743.2929763793945,
+          "y1": 832,
+          "y2": 864
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/chaat-masala.svg"
     },
     {
       "id": "garam-masala",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "AllBarka Garam Masala",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 278.24951171875,
+          "x2": 679.60205078125,
+          "y1": 719.5,
+          "y2": 748.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "گرم مصالحہ",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 209.73600006103516,
+          "x2": 330.26399993896484,
+          "y1": 809.8000030517578,
+          "y2": 872
+        },
+        {
+          "text": "بهار مشكل",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 641.1455459594727,
+          "x2": 748.9504623413086,
+          "y1": 829,
+          "y2": 867
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/garam-masala.svg"
     },
     {
       "id": "gond-katira",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Gond Katira",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 378.01220703125,
+          "x2": 582.83935546875,
+          "y1": 719.5,
+          "y2": 748.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "گوند کتیرا",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 229.1720199584961,
+          "x2": 313.8279800415039,
+          "y1": 809.7760009765625,
+          "y2": 868
+        },
+        {
+          "text": "كتيرا",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 670.1305160522461,
+          "x2": 719.4404830932617,
+          "y1": 831,
+          "y2": 862
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/gond-katira.svg"
     },
     {
       "id": "edible-gond",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Edible Gond (Acacia)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 302.5595703125,
+          "x2": 657.1904296875,
+          "y1": 719.5,
+          "y2": 754.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "خوردنی گوند",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 214.40602111816406,
+          "x2": 312.59397888183594,
+          "y1": 814.0559997558594,
+          "y2": 865
+        },
+        {
+          "text": "صمغ عربي",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 643.6100387573242,
+          "x2": 746.2399673461914,
+          "y1": 837,
+          "y2": 873
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/edible-gond.svg"
     },
     {
       "id": "dried-rose-petals",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Dried Rose Petals",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 332.63671875,
+          "x2": 627.9423828125,
+          "y1": 719.5,
+          "y2": 748.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "خشک گلاب کی پتیاں",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 169.25403594970703,
+          "x2": 359.8939743041992,
+          "y1": 812.5,
+          "y2": 865.39599609375
+        },
+        {
+          "text": "بتلات الورد",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 635.3950500488281,
+          "x2": 754.9479522705078,
+          "y1": 832,
+          "y2": 864
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/dried-rose-petals.svg"
     },
     {
       "id": "dried-jujube",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Dried Jujube (Ber)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 323.4521484375,
+          "x2": 636.2978515625,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "خشک بیر",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 219.9120101928711,
+          "x2": 303.23600006103516,
+          "y1": 818,
+          "y2": 868
+        },
+        {
+          "text": "عناب",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 666.9220123291016,
+          "x2": 723.2910003662109,
+          "y1": 832,
+          "y2": 863
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/dried-jujube.svg"
     }
   ]

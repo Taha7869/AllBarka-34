@@ -13,9 +13,10 @@ interface ProductPhotoViewerProps {
   restoreFocusTo?: HTMLElement | null;
   onClose: () => void;
   onIndexChange?: (index: number) => void;
+  hideSingleImageCounter?: boolean;
 }
 
-export default function ProductPhotoViewer({ images, productName, initialIndex = 0, restoreFocusTo, onClose, onIndexChange }: ProductPhotoViewerProps) {
+export default function ProductPhotoViewer({ images, productName, initialIndex = 0, restoreFocusTo, onClose, onIndexChange, hideSingleImageCounter = false }: ProductPhotoViewerProps) {
   const { t } = useLanguage();
   const photos = useMemo(() => prepareProductPhotos(images, { src: '/images/product-placeholder.svg', alt: productName }), [images, productName]);
   const [index, setIndex] = useState(() => clampPhotoIndex(initialIndex, photos.length));
@@ -119,9 +120,11 @@ export default function ProductPhotoViewer({ images, productName, initialIndex =
   const zoomLabel = t('viewer.zoomLevel').replace('{percent}', String(Math.round(zoom * 100)));
   const photoCount = t('viewer.photoOf').replace('{current}', String(active + 1)).replace('{total}', String(photos.length));
   const photoAlt = photo.alt ? `${photo.alt} — ${active + 1}` : t('viewer.photoAlt').replace('{name}', productName).replace('{number}', String(active + 1));
+  const singleIllustration = hideSingleImageCounter && photos.length === 1;
+  const showHint = !singleIllustration || zoom > 1;
   if (typeof document === 'undefined') return null;
 
-  return createPortal(<div ref={dialog} role="dialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={hintId} tabIndex={-1} dir="ltr" className="product-photo-viewer">
+  return createPortal(<div ref={dialog} role="dialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={showHint ? hintId : undefined} tabIndex={-1} dir="ltr" className="product-photo-viewer">
     <header className="photo-viewer-header">
       <div className="photo-viewer-title"><span className="photo-viewer-eyebrow" dir="auto">{t('viewer.title')}</span><h2 id={titleId} dir="auto">{productName}</h2></div>
       <button ref={closeButton} type="button" onClick={() => closeRef.current()} className="photo-viewer-control focus-ring" aria-label={t('viewer.close')}><X size={21} aria-hidden="true" /></button>
@@ -159,14 +162,14 @@ export default function ProductPhotoViewer({ images, productName, initialIndex =
       {photos.length > 1 && <><button type="button" onClick={() => move(-1)} className="photo-viewer-control photo-viewer-previous focus-ring" aria-label={t('gallery.previous')}><ArrowLeft size={20} aria-hidden="true" /></button><button type="button" onClick={() => move(1)} className="photo-viewer-control photo-viewer-next focus-ring" aria-label={t('gallery.next')}><ArrowRight size={20} aria-hidden="true" /></button></>}
     </div>
     <footer className="photo-viewer-footer">
-      <div className="photo-viewer-tools"><span className="photo-viewer-counter" role="status" aria-live="polite" aria-atomic="true" dir="auto">{photoCount}</span><div className="photo-viewer-zoom-tools">
+      <div className="photo-viewer-tools">{!singleIllustration && <span className="photo-viewer-counter" role="status" aria-live="polite" aria-atomic="true" dir="auto">{photoCount}</span>}<div className="photo-viewer-zoom-tools">
         <button type="button" onClick={() => setZoom(current => changePhotoZoom(current, -1))} disabled={zoom <= 1 || isFailed} className="photo-viewer-control focus-ring" aria-label={t('viewer.zoomOut')}><ZoomOut size={19} aria-hidden="true" /></button>
         <output className="photo-viewer-zoom-level" aria-label={zoomLabel}>{Math.round(zoom * 100)}%</output>
         <button type="button" onClick={() => setZoom(current => changePhotoZoom(current, 1))} disabled={zoom >= 2 || isFailed} className="photo-viewer-control focus-ring" aria-label={t('viewer.zoomIn')}><ZoomIn size={19} aria-hidden="true" /></button>
         <button type="button" onClick={() => setZoom(1)} disabled={zoom === 1} className="photo-viewer-control focus-ring" aria-label={t('viewer.reset')}><RotateCcw size={17} aria-hidden="true" /></button>
       </div></div>
       {photos.length > 1 && <div className="photo-viewer-thumbnails" role="group" aria-label={t('gallery.photos')}>{photos.map((image, photoIndex) => <button key={image.src} ref={element => { thumbButtons.current[photoIndex] = element; }} type="button" onClick={() => goTo(photoIndex)} aria-pressed={active === photoIndex} aria-label={t('viewer.select').replace('{number}', String(photoIndex + 1))} className="photo-viewer-thumbnail focus-ring">{failed[image.src] ? <ImageOff size={19} aria-hidden="true" /> : <img src={retries[image.src] ? `${image.src}${image.src.includes('?') ? '&' : '?'}viewer-retry=${retries[image.src]}` : image.src} alt="" width={64} height={64} loading="lazy" draggable={false} onError={() => setFailed(current => ({ ...current, [image.src]: true }))} />}</button>)}</div>}
-      <p id={hintId} className="photo-viewer-hint" dir="auto">{t(zoom > 1 ? 'viewer.zoomHint' : 'viewer.swipeHint')}</p>
+      {showHint && <p id={hintId} className="photo-viewer-hint" dir="auto">{t(zoom > 1 ? 'viewer.zoomHint' : 'viewer.swipeHint')}</p>}
     </footer>
   </div>, document.body);
 }

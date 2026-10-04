@@ -201,7 +201,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
     <CatalogTools mode="compare" />
     {compareMessage && <p role="status" className="mb-4 text-xs">{compareMessage}</p>}
     {products.length ? <div id="plp-products-grid" className={listView ? 'grid grid-cols-1 gap-4 md:grid-cols-2' : 'grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:gap-6'}>{products.slice(0, visibleCount).map((product, index) => {
-      const weights = Object.keys(product.prices).filter(weight => product.prices[weight] > 0);
+      const weights = Object.keys(product.prices).filter(weight => Number.isFinite(product.prices[weight]) && product.prices[weight] > 0);
       const weight = sizes[product.id] || weights[0];
       const saved = savedIds.includes(product.id);
       const unit = product.quoteOnly ? null : unitPrice(product.prices[weight], weight || '');

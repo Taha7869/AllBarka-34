@@ -5,7 +5,7 @@ import { once } from 'node:events';
 import express from 'express';
 import type { Firestore } from 'firebase-admin/firestore';
 import manifest from '../src/data/product-media.json';
-import { PRODUCTS } from '../src/data/products';
+import { PRODUCTS, NEW_PRODUCT_IDS, LEGACY_PRODUCT_IDS } from '../src/data/products';
 import { getProductImages } from '../src/data/productImages';
 import { getDefaultProductMedia, MAX_PRODUCT_IMAGES, ProductMediaError, resolveProductMedia, sanitizeProductMediaOverrides, validateMediaPatch, validateProductMedia, validateProductMediaUrl } from '../src/lib/productMedia';
 import { createProductMediaRouter, getAdminProductMedia, getPublicProductMedia, updateProductMedia } from '../src/lib/productMediaRouter';
@@ -63,25 +63,42 @@ test('media payloads preserve ordered covers and reject unsafe, duplicate and un
   assert.throws(() => validateMediaPatch({ expectedRevision: 0, media, actorUid: 'spoofed' }), errorCode('INVALID_MEDIA'));
 });
 
-test('established products retain editable manifests; SVG additions use catalogue fallback', () => {
-  const photographed = PRODUCTS.filter(product => Object.hasOwn(manifest, product.id));
-  assert.equal(Object.keys(manifest).length, photographed.length);
+test('all media manifests agree with the catalogue; established photography and single SVG covers are preserved', () => {
+  const photographed = PRODUCTS.filter(product => LEGACY_PRODUCT_IDS.includes(product.id));
+  assert.equal(photographed.length, 32);
+  assert.equal(Object.keys(manifest).length, PRODUCTS.length);
   for (const product of photographed) {
     assert.ok(Object.hasOwn(manifest, product.id));
-    const configured = validateProductMedia(manifest[product.id]);
+    const configured = validateProductMedia((manifest as Record<string, unknown>)[product.id]);
     assert.deepEqual(configured.images, getProductImages(product));
     for (const url of configured.images) assert.ok(existsSync(`public${url}`), `${product.id}: ${url}`);
     assert.equal(configured.videoUrl, '', 'Do not invent films for products');
   }
-  for (const product of PRODUCTS.filter(item => item.image?.startsWith('/images/products/'))) {
-    assert.equal(Object.hasOwn(manifest, product.id), false);
+  for (const product of PRODUCTS.filter(item => NEW_PRODUCT_IDS.includes(item.id))) {
+    assert.equal(Object.hasOwn(manifest, product.id), true);
     assert.deepEqual(resolveProductMedia(product).images, [product.image]);
-    assert.ok(existsSync(`public${product.image}`), product.id);
+    assert.equal(resolveProductMedia(product).source, 'manifest');
+    for (const path of resolveProductMedia(product).images) assert.ok(existsSync(`public${path}`), product.id);
   }
   for (const product of PRODUCTS.filter(item => item.image === null)) {
     assert.equal(Object.hasOwn(manifest, product.id), false);
     assert.deepEqual(resolveProductMedia(product).images, []);
   }
+});
+
+test('single-image additions discard obsolete pack overrides without changing owner covers or real-photo galleries', () => {
+  const product = PRODUCTS.find(product => product.id === 'ceylon-cinnamon')!;
+  const retired = `/images/products/${product.id}-secondary.svg`;
+  const override = { images: [retired, product.image!], videoUrl: 'https://cdn.allbarka.com/cinnamon.mp4', videoPoster: retired };
+  assert.deepEqual(resolveProductMedia(product, { [product.id]: override }), {
+    images: [product.image], videoUrl: override.videoUrl, videoPoster: product.image, source: 'override',
+  });
+  assert.deepEqual(override.images, [retired, product.image], 'Stored overrides must not be mutated');
+  assert.deepEqual(resolveProductMedia(product, { [product.id]: { images: [retired] , videoUrl: '', videoPoster: '' } }).images, [product.image]);
+  assert.deepEqual(resolveProductMedia(product, { [product.id]: { images: [image, product.image!], videoUrl: '', videoPoster: '' } }).images, [image], 'An owner can still replace the single cover');
+  const photographed = PRODUCTS.find(product => product.id === 'pista')!;
+  const photos = getProductImages(photographed);
+  assert.deepEqual(resolveProductMedia(photographed, { pista: { images: photos, videoUrl: '', videoPoster: '' } }).images, photos);
 });
 
 test('resolving overrides never changes canonical catalogue prices or persisted product objects', () => {

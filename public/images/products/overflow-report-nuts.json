@@ -1,88 +1,908 @@
 {
   "category": "nuts",
+  "styleVersion": 2,
+  "canvas": 960,
+  "safeArea": {
+    "left": 58,
+    "right": 902,
+    "top": 58,
+    "bottom": 902
+  },
   "checks": [
     {
       "id": "kashmiri-walnut",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Kashmiri Walnut Kernels (Akhrot Giri)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 152.990234375,
+          "x2": 806.759765625,
+          "y1": 719.5,
+          "y2": 754.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "اخروٹ گری",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 201.5940170288086,
+          "x2": 326.1659927368164,
+          "y1": 809.8000030517578,
+          "y2": 868
+        },
+        {
+          "text": "جوز مقشر",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 639.4395370483398,
+          "x2": 746.2554702758789,
+          "y1": 834,
+          "y2": 865
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/kashmiri-walnut.svg"
     },
     {
       "id": "ajwa-dates",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Ajwa Dates Madina (Khajoor)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 228.25390625,
+          "x2": 728.49609375,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "کھجور عجوا",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 223.68402099609375,
+          "x2": 316.37599182128906,
+          "y1": 801.0759887695312,
+          "y2": 857.8079986572266
+        },
+        {
+          "text": "تمر عجوة",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 659.0015335083008,
+          "x2": 730.7834701538086,
+          "y1": 834,
+          "y2": 864
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/ajwa-dates.svg"
     },
     {
       "id": "medjool-dates",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Medjool Dates Jumbo",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 295.5107421875,
+          "x2": 664.0048828125,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "میڈجول کھجور",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 198.8940200805664,
+          "x2": 328.1819839477539,
+          "y1": 801.0759887695312,
+          "y2": 865
+        },
+        {
+          "text": "تمر مجهول",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 649.2520294189453,
+          "x2": 740.5329742431641,
+          "y1": 831,
+          "y2": 864
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/medjool-dates.svg"
     },
     {
       "id": "golden-raisins",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Golden Raisins (Kishmish)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 255.5234375,
+          "x2": 704.2265625,
+          "y1": 719.5,
+          "y2": 754.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "سنہری کشمش",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 200.7400131225586,
+          "x2": 328.39598846435547,
+          "y1": 792.6519927978516,
+          "y2": 868
+        },
+        {
+          "text": "زبيب ذهبي",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 637.6580352783203,
+          "x2": 751.9729766845703,
+          "y1": 835,
+          "y2": 873
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/golden-raisins.svg"
     },
     {
       "id": "afghan-figs",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Afghan Dried Figs (Anjeer)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 251.3544921875,
+          "x2": 705.3955078125,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "افغانی انجیر",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 208.23602294921875,
+          "x2": 313.52398681640625,
+          "y1": 820.8760070800781,
+          "y2": 868
+        },
+        {
+          "text": "تين مجفف",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 645.9350280761719,
+          "x2": 746.1749725341797,
+          "y1": 835,
+          "y2": 862
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/afghan-figs.svg"
     },
     {
       "id": "pine-nuts",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Pine Nuts (Chilgoza)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 307.56005859375,
+          "x2": 652.18994140625,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "چلغوزہ",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 234.6340103149414,
+          "x2": 295.6060104370117,
+          "y1": 822.18798828125,
+          "y2": 857
+        },
+        {
+          "text": "حب الصنوبر",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 628.5895462036133,
+          "x2": 757.1054611206055,
+          "y1": 832,
+          "y2": 864
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/pine-nuts.svg"
     },
     {
       "id": "black-raisins",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Black Raisins (Munakka)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 270.3857421875,
+          "x2": 689.3642578125,
+          "y1": 719.5,
+          "y2": 754.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "منقّی",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 242.92200469970703,
+          "x2": 286.1539993286133,
+          "y1": 815.8159942626953,
+          "y2": 865
+        },
+        {
+          "text": "زبيب أسود",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 638.1695404052734,
+          "x2": 751.4614715576172,
+          "y1": 824,
+          "y2": 864
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/black-raisins.svg"
     },
     {
       "id": "dried-mulberry",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Dried Mulberry (Shahtoot)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 255.2265625,
+          "x2": 704.5234375,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "خشک شہتوت",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 199.06600952148438,
+          "x2": 331.0820007324219,
+          "y1": 818,
+          "y2": 857
+        },
+        {
+          "text": "توت مجفف",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 638.0145263671875,
+          "x2": 754.0954742431641,
+          "y1": 835,
+          "y2": 864
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/dried-mulberry.svg"
     },
     {
       "id": "dried-cranberries",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Dried Cranberries",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 329.60302734375,
+          "x2": 630.97607421875,
+          "y1": 719.5,
+          "y2": 748.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "خشک کرین بیری",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 186.5440216064453,
+          "x2": 342.60398864746094,
+          "y1": 811.8000030517578,
+          "y2": 868
+        },
+        {
+          "text": "توت بري",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 649.6240234375,
+          "x2": 742.4859771728516,
+          "y1": 839,
+          "y2": 869
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/dried-cranberries.svg"
     },
     {
       "id": "roasted-cashews",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Roasted Salted Cashews",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 279.05078125,
+          "x2": 681.5283203125,
+          "y1": 719.5,
+          "y2": 748.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "نمکین بھنی کاجو",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 195.7140121459961,
+          "x2": 334.0379867553711,
+          "y1": 808.4879913330078,
+          "y2": 865
+        },
+        {
+          "text": "كاجو محمص مملح",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 609.8510513305664,
+          "x2": 778.9519577026367,
+          "y1": 830,
+          "y2": 872
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/roasted-cashews.svg"
     },
     {
       "id": "masala-almonds",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Masala Almonds",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 339.92138671875,
+          "x2": 619.65771484375,
+          "y1": 719.5,
+          "y2": 748.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "مصالحہ بادام",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 205.15001678466797,
+          "x2": 323.0139846801758,
+          "y1": 821.4160003662109,
+          "y2": 872
+        },
+        {
+          "text": "لوز بالبهار",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 647.1895446777344,
+          "x2": 738.3854675292969,
+          "y1": 832,
+          "y2": 864
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/masala-almonds.svg"
     },
     {
       "id": "char-maghaz-mix",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Char Maghaz Mix",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 332.5068359375,
+          "x2": 629.3076171875,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "چار مغز",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 224.05601501464844,
+          "x2": 300.1840057373047,
+          "y1": 827.3159942626953,
+          "y2": 868
+        },
+        {
+          "text": "خليط البذور الأربعة",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 593.2580718994141,
+          "x2": 795.9559326171875,
+          "y1": 824,
+          "y2": 863
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/char-maghaz-mix.svg"
     },
     {
       "id": "aseel-dates",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Aseel Dates Khairpur",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 299.56884765625,
+          "x2": 658.86376953125,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "کھجور اصیل",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 209.02801513671875,
+          "x2": 329.03199768066406,
+          "y1": 801.0759887695312,
+          "y2": 865
+        },
+        {
+          "text": "تمر أصيل",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 651.1585235595703,
+          "x2": 738.6264801025391,
+          "y1": 824,
+          "y2": 867
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/aseel-dates.svg"
     },
     {
       "id": "chohara",
-      "boxes": 3,
+      "variant": "primary",
+      "boxes": 6,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Chohara (Winter Special)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 267.33349609375,
+          "x2": 692.41650390625,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "چھوہارہ",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 229.55201721191406,
+          "x2": 300.1719970703125,
+          "y1": 828.5079956054688,
+          "y2": 866.0399932861328
+        },
+        {
+          "text": "تمر مجفف",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 648.5545272827148,
+          "x2": 741.2304763793945,
+          "y1": 834,
+          "y2": 864
+        }
+      ],
       "safe": true,
+      "fontReady": true,
       "path": "/images/products/chohara.svg"
     }
   ]

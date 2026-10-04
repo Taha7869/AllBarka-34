@@ -8,7 +8,7 @@ import { LanguageProvider, type LanguageCode } from '../src/contexts/LanguageCon
 import CategoryPLP from '../src/components/CategoryPLP';
 import ProductCard from '../src/components/ProductCard';
 import QuickViewModal from '../src/components/QuickViewModal';
-import { PRODUCTS } from '../src/data/products';
+import { PRODUCTS, NEW_PRODUCT_IDS } from '../src/data/products';
 import { getLocalized } from '../src/utils/localize';
 
 function renderInLanguage(element: React.ReactElement, language: LanguageCode, url = '/shop') {
@@ -30,6 +30,22 @@ function renderInLanguage(element: React.ReactElement, language: LanguageCode, u
 function render(url: string, category = 'all') {
   return renderToString(<MemoryRouter initialEntries={[url]}><LanguageProvider><CartProvider><CategoryPLP initialCategory={category} /></CartProvider></LanguageProvider></MemoryRouter>);
 }
+
+test('all new boutique cards retain localized origin rows and exactly one image without carousel controls', () => {
+  for (const id of NEW_PRODUCT_IDS) {
+    const product = PRODUCTS.find(product => product.id === id)!;
+    for (const language of ['en', 'ur', 'ar'] as const) {
+      const html = renderInLanguage(<ProductCard product={product} isWholesale={false} />, language);
+      const origin = getLocalized(product, 'origin', language).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      assert.ok(html.includes(origin), `${id}:${language}`);
+      assert.doesNotMatch(html, /product-gallery-counter|product-gallery-arrow|-secondary\.svg/);
+      assert.equal((html.match(/<img\b/g) || []).length, 1, `${id}:${language}`);
+      assert.ok(html.includes(`/images/products/${id}.svg`), `${id}:${language}`);
+      assert.match(html, /product-gallery-track" dir="ltr"/);
+      assert.match(html, /aria-pressed="false"/);
+    }
+  }
+});
 test('shop renders URL search results with a visible search field', () => {
   const html = render('/shop?search=badaam');
   assert.match(html, /type="search"/);
