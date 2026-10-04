@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import test from 'node:test';
 import { PRODUCTS, LEGACY_PRODUCT_IDS, NEW_PRODUCT_IDS, CATALOG_COUNTS, APPROVED_CATALOG_NAMES, getProductImage } from '../src/data/products';
 import { getProductImages } from '../src/data/productImages';
@@ -82,6 +83,8 @@ test('localized names and compatibility aliases share the canonical catalogue de
 });
 
 test('owner-approved Urdu and Arabic spellings are applied without clipping or substitutions', () => {
+  assert.equal(Object.keys(APPROVED_CATALOG_NAMES).length, 60);
+  assert.equal(createHash('sha256').update(JSON.stringify(Object.entries(APPROVED_CATALOG_NAMES).sort(([a], [b]) => a.localeCompare(b)))).digest('hex'), 'd3532dc16a5e558e515ebc2f74ee1de59636ebdf6cb7d2eb338ae72a8b963136');
   for (const [id, [urdu, arabic]] of Object.entries(APPROVED_CATALOG_NAMES)) {
     const product = PRODUCTS.find(item => item.id === id);
     assert.ok(product, id);

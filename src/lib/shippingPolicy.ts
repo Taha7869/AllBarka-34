@@ -3,6 +3,7 @@ import { PRODUCTS } from '../data/products';
 import type { ShippingMethodId } from '../types';
 import { ValidationError } from './validationError';
 import { CUSTOM_HAMPER_PRODUCT_ID, resolveHamper, type HamperConfiguration } from './hamperCatalog';
+import { resolveProductVariant } from './productVariants';
 
 export interface ShippingWeightItem {
   productId?: string;
@@ -11,29 +12,6 @@ export interface ShippingWeightItem {
   quantity: number;
   hamperConfiguration?: HamperConfiguration;
 }
-
-// Merchant-approved shipping billing weights. The numeric ml portion is billed
-// at the same numeric grams; this is a tariff convention, not an oil density.
-const OIL_BILLING_WEIGHTS: Readonly<Record<string, Readonly<Record<string, number>>>> = {
-  'oil-almond': { '60ml': 60, '100ml': 100, '250ml': 250 },
-  'oil-blackseed': { '60ml': 60, '100ml': 100, '250ml': 250 },
-  'oil-coconut': { '100ml': 100, '250ml': 250 },
-  'oil-castor': { '100ml': 100, '250ml': 250 },
-  'oil-apricot': { '100ml': 100 },
-  'oil-sesame': { '100ml': 100 },
-  'oil-flaxseed': { '100ml': 100 },
-  'oil-walnut': { '100ml': 100 },
-  'oil-olive': { '100ml': 100, '250ml': 250 },
-  'oil-onionseed': { '100ml': 100 },
-  'oil-mustard': { '100ml': 100, '500ml': 500 },
-  'oil-hairblend': { '100ml': 100 },
-  'oil-hairgrowth': { '100ml': 100 },
-};
-
-const BUNDLE_BILLING_WEIGHTS: Readonly<Record<string, Readonly<Record<string, number>>>> = {
-  'deal-1': { 'Combo (500g + 500g)': 1000 },
-  'deal-2': { 'Combo (500g + 500g)': 1000 },
-};
 
 export function isLahoreCity(city: string): boolean {
   return typeof city === 'string' && ['lahore', 'لاہور', 'لاهور'].includes(city.trim().toLowerCase());
@@ -63,14 +41,7 @@ export function validateShippingRewardDestination(reward: { rewardType?: string;
 /** Only canonical catalogue portions can supply the shipping billing weight. */
 export function getProductShippingWeightGrams(productId: string, selectedWeight: string): number | null {
   const product = PRODUCTS.find(item => item.id === productId);
-  if (!product || !Object.hasOwn(product.prices, selectedWeight)) return null;
-  const configured = OIL_BILLING_WEIGHTS[productId]?.[selectedWeight]
-    ?? BUNDLE_BILLING_WEIGHTS[productId]?.[selectedWeight];
-  if (configured !== undefined) return configured;
-  const portion = /^(\d+(?:\.\d+)?)\s*(kg|g)$/i.exec(selectedWeight);
-  if (!portion) return null;
-  const grams = Number(portion[1]) * (portion[2].toLowerCase() === 'kg' ? 1000 : 1);
-  return Number.isFinite(grams) && grams > 0 ? grams : null;
+  return product ? resolveProductVariant(product, selectedWeight)?.weightGrams ?? null : null;
 }
 
 /** Null means that an honest weight quote is unavailable; never trust client weight fields. */

@@ -112,6 +112,10 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
   const origins = useMemo(() => [...new Map(PRODUCTS.filter(p => p.active !== false && p.origin_en).map(p => [p.origin_en, getLocalized(p, 'origin', language)])).entries()], [language]);
   const products = useMemo(() => {
     const found = filterCatalogSelection(PRODUCTS, { query: filters.query, origin: filters.origin, budget: filters.budget, special: filters.special, saved: filters.saved, sort: filters.sort }, { category, isWholesale, savedIds, sharedIds });
+    if (category === 'all' && filters.sort === 'featured') {
+      const order = Object.keys(CANONICAL_CATEGORIES);
+      return found.sort((a, b) => order.indexOf(a.category) - order.indexOf(b.category));
+    }
     return found.sort((a, b) => (filters.sort === 'price-asc' || filters.sort === 'price-desc') && !!a.quoteOnly !== !!b.quoteOnly ? Number(!!a.quoteOnly) - Number(!!b.quoteOnly)
       : filters.sort === 'price-asc' ? startingPrice(a) - startingPrice(b)
       : filters.sort === 'price-desc' ? startingPrice(b) - startingPrice(a)
@@ -196,12 +200,12 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
     </div>
     <CatalogTools mode="compare" />
     {compareMessage && <p role="status" className="mb-4 text-xs">{compareMessage}</p>}
-    {products.length ? <div id="plp-products-grid" className={listView ? 'grid grid-cols-1 gap-4 md:grid-cols-2' : 'grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:gap-6'}>{products.slice(0, visibleCount).map(product => {
+    {products.length ? <div id="plp-products-grid" className={listView ? 'grid grid-cols-1 gap-4 md:grid-cols-2' : 'grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:gap-6'}>{products.slice(0, visibleCount).map((product, index) => {
       const weights = Object.keys(product.prices).filter(weight => product.prices[weight] > 0);
       const weight = sizes[product.id] || weights[0];
       const saved = savedIds.includes(product.id);
       const unit = product.quoteOnly ? null : unitPrice(product.prices[weight], weight || '');
-      return <article key={product.id} className={`group relative flex min-w-0 cursor-pointer flex-col rounded-[22px] border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5 transition-[border-color,box-shadow] duration-300 hover:border-[var(--color-border-accent)] hover:shadow-md motion-reduce:transition-none sm:p-4 ${listView ? "catalog-list-card" : ""}`} onClick={event => { if (!(event.target as HTMLElement).closest('a,button,input,select')) navigate(`/product/${product.id}`); }}>
+      return <React.Fragment key={product.id}>{category === 'all' && filters.sort === 'featured' && (index === 0 || products[index - 1].category !== product.category) && <h2 className="col-span-full mt-4 border-b border-[var(--color-border)] pb-3 font-serif text-2xl text-[var(--color-text-primary)]">{t(`shop.${product.category}`)}</h2>}<article className={`group relative flex min-w-0 cursor-pointer flex-col rounded-[22px] border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5 transition-[border-color,box-shadow] duration-300 hover:border-[var(--color-border-accent)] hover:shadow-md motion-reduce:transition-none sm:p-4 ${listView ? "catalog-list-card" : ""}`} onClick={event => { if (!(event.target as HTMLElement).closest('a,button,input,select')) navigate(`/product/${product.id}`); }}>
         <ProductImageGallery product={product} />
         <div className="flex items-center justify-between gap-2 pt-3"><span className="truncate text-[9px] font-semibold uppercase tracking-[.14em] text-[var(--color-accent-text)]" dir="auto">{getLocalized(product, 'origin', language)}</span><button type="button" onClick={() => setSaved(product.id, !saved)} aria-label={saved ? t('shop.unsave') : t('shop.save')} aria-pressed={saved} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[var(--color-accent-text)] hover:bg-[#c7982f]/10"><Heart size={18} fill={saved ? 'currentColor' : 'none'} /></button></div>
         <Link to={`/product/${product.id}`} lang={language} dir="auto" className={`focus-ring mb-3 block min-h-12 min-w-0 max-w-full whitespace-normal break-words [overflow-wrap:anywhere] text-start font-medium ${language === 'ur' ? 'font-urdu text-[20px]' : language === 'ar' ? 'font-arabic text-[23px]' : 'font-serif text-[21px] leading-[1.25]'}`}><span>{getLocalized(product, 'name', language)}</span></Link>
@@ -211,7 +215,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
           <div className="mt-2 grid grid-cols-2 gap-2"><button type="button" aria-pressed={compareIds.includes(product.id)} onClick={() => { const added = toggleCompare(product.id); setCompareMessage(added ? t('shop.compareUpdated') : t('shop.compareFull')); }} className="focus-ring flex min-h-11 w-full items-center justify-center gap-2 rounded-xl text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-base)]"><Scale size={15} />{t(compareIds.includes(product.id) ? 'shop.compared' : 'shop.compareAdd')} ({compareIds.length}/3)</button>
           {onQuickView && <button type="button" onClick={() => onQuickView(product)} className="focus-ring flex min-h-11 w-full items-center justify-center gap-2 rounded-xl text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-base)] hover:text-[var(--color-accent-text)]"><Eye size={15} />{t('shop.quick')}</button>}</div>
         </div>
-      </article>;
+      </article></React.Fragment>;
     })}</div> : <div className="rounded-3xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-16 text-center"><Search size={30} className="mx-auto mb-5 text-[var(--color-accent-text)]" /><h2 className="font-serif text-3xl">{t('shop.empty')}</h2><p className="mx-auto mt-3 max-w-sm text-sm leading-7 text-[var(--color-text-secondary)]">{t('shop.emptyCopy')}</p><button type="button" onClick={clear} className="mt-6 min-h-12 rounded-full bg-[#1e3a2b] px-6 text-sm text-white">{t('shop.clear')}</button><Link to="/shop" className="mx-auto mt-2 flex min-h-11 w-fit items-center gap-2 text-xs" onClick={() => { if (isModal) { clear(); setModalCategory('all'); } }}>{t('shop.all')}<ArrowUpRight size={15} /></Link></div>}
     {products.length > visibleCount && <div className="mt-8 text-center"><button type="button" onClick={() => setVisibleCount(count => count + 12)} className="focus-ring min-h-12 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-7 text-sm font-semibold">{t('shop.loadMore')} ({products.length - visibleCount})</button><p className="mt-3 text-xs text-[var(--color-text-secondary)]">{visibleCount} / {products.length}</p></div>}
     <CatalogTools mode="recent" />

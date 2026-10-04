@@ -59,8 +59,8 @@ test('every product has an actual Urdu and Arabic name with the full defining pr
     }
   }
   const walnut = PRODUCTS.find(product => product.id === 'akhroot')!;
-  assert.match(walnut.name_ur, /آدھے مغز/);
-  assert.match(walnut.name_ar, /أنصاف اللب/);
+  assert.equal(walnut.name_ur, 'اخروٹ گری');
+  assert.equal(walnut.name_ar, 'جوز مقشر');
   const mustard = PRODUCTS.find(product => product.id === 'oil-mustard')!;
   assert.match(mustard.name_ur, /کولڈ پریسڈ/);
   assert.match(mustard.name_ar, /المعصور على البارد/);

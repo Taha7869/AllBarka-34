@@ -5,7 +5,7 @@ import { checkCatalogAssets, filterAdminCatalog, getAdminCatalogSnapshot, isLoca
 
 test('admin catalogue counts unique photographs rather than shared bundle references', () => {
   const snapshot = getAdminCatalogSnapshot(PRODUCTS);
-  assert.equal(snapshot.productCount, 32);
+  assert.equal(snapshot.productCount, 89);
   assert.equal(snapshot.imageCount, 46);
   assert.equal(snapshot.galleryCount, 14);
   assert.equal(snapshot.issueCount, 0);
@@ -26,7 +26,7 @@ test('catalogue admin search supports canonical IDs and translated product queri
   const gifts = filterAdminCatalog(rows, 'بادام', 'gift-boxes');
   assert.ok(gifts.some(row => row.product.id === 'deal-2'));
   assert.ok(gifts.every(row => row.product.category === 'gift-boxes'));
-  assert.equal(filterAdminCatalog(rows, '', 'oils').length, 13);
+  assert.equal(filterAdminCatalog(rows, '', 'oils').length, 15);
 });
 
 test('image health audit only allows local image paths', () => {

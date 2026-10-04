@@ -63,14 +63,19 @@ test('media payloads preserve ordered covers and reject unsafe, duplicate and un
   assert.throws(() => validateMediaPatch({ expectedRevision: 0, media, actorUid: 'spoofed' }), errorCode('INVALID_MEDIA'));
 });
 
-test('all canonical products have editable manifests pointing to real existing catalogue photographs', () => {
-  assert.equal(Object.keys(manifest).length, PRODUCTS.length);
-  for (const product of PRODUCTS) {
+test('established products retain editable manifests; new products have no image files', () => {
+  const photographed = PRODUCTS.filter(product => product.image !== null);
+  assert.equal(Object.keys(manifest).length, photographed.length);
+  for (const product of photographed) {
     assert.ok(Object.hasOwn(manifest, product.id));
     const configured = validateProductMedia(manifest[product.id]);
     assert.deepEqual(configured.images, getProductImages(product));
     for (const url of configured.images) assert.ok(existsSync(`public${url}`), `${product.id}: ${url}`);
     assert.equal(configured.videoUrl, '', 'Do not invent films for products');
+  }
+  for (const product of PRODUCTS.filter(item => item.image === null)) {
+    assert.equal(Object.hasOwn(manifest, product.id), false);
+    assert.deepEqual(resolveProductMedia(product).images, []);
   }
 });
 

@@ -26,8 +26,8 @@ export function getAdminCatalogSnapshot(products: Product[]) {
     if (!product.id?.trim() || idCounts.get(product.id) !== 1) issues.push('id');
     if (!product.name_en?.trim() || !product.name_ur?.trim() || !product.name_ar?.trim()
       || product.name_ur === product.name_en || product.name_ar === product.name_en) issues.push('name');
-    if (!portions.length || portions.some(([weight, price]) => !weight.trim() || !Number.isFinite(price) || price <= 0)) issues.push('portion');
-    if (!images.length || images.some(path => !isLocalCatalogImage(path) || path.includes('product-placeholder'))) issues.push('image');
+    if ((!portions.length && !product.quoteOnly) || portions.some(([weight, price]) => !weight.trim() || !Number.isFinite(price) || price <= 0)) issues.push('portion');
+    if ((product.image !== null && !images.length) || images.some(path => !isLocalCatalogImage(path) || path.includes('product-placeholder'))) issues.push('image');
     return { product, images, portions, issues };
   });
   const assets = [...new Set(rows.flatMap(row => row.images))];

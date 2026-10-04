@@ -115,7 +115,7 @@ export default function AdminCatalogPanel() {
           const assetErrors = productResults.filter(result => result && result.result !== 'ok');
           return <li key={`${row.product.id}-${index}`} className="grid gap-4 p-4 sm:p-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,.8fr)] xl:items-start">
             <div className="flex min-w-0 gap-3">
-              <Link to={`/product/${encodeURIComponent(row.product.id)}`} aria-label={`${t('admin.catalog.open')}: ${getLocalized(row.product, 'name', language)}`} className="focus-ring shrink-0 rounded-xl"><img src={row.images[0]} alt="" loading="lazy" width={64} height={64} className="h-16 w-16 rounded-xl bg-[var(--color-base)] object-cover" /></Link>
+              <Link to={`/product/${encodeURIComponent(row.product.id)}`} aria-label={`${t('admin.catalog.open')}: ${getLocalized(row.product, 'name', language)}`} className="focus-ring shrink-0 rounded-xl">{row.images[0] ? <img src={row.images[0]} alt="" loading="lazy" width={64} height={64} className="h-16 w-16 rounded-xl bg-[var(--color-base)] object-cover" /> : <span className="flex h-16 w-16 items-center justify-center rounded-xl border border-[#c7982f]/30 bg-[#f3efe5] font-serif text-lg text-[#1e3a2b]">AB</span>}</Link>
               <div className="min-w-0"><Link to={`/product/${encodeURIComponent(row.product.id)}`} className="focus-ring inline-flex min-h-11 items-center rounded font-serif text-lg leading-6" dir="auto">{getLocalized(row.product, 'name', language)}</Link><p className="mt-1 break-all font-mono text-[11px] text-[var(--color-text-secondary)]">{row.product.id}</p><p className="mt-1 text-xs text-[var(--color-accent-text)]" dir="auto">{t(`shop.${row.product.category}`)}</p></div>
             </div>
             <div>

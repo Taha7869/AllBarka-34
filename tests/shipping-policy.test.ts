@@ -42,12 +42,39 @@ test('canonical grams, quantities and paired bundles determine billing mass', ()
   assert.equal(getCartShippingWeightGrams([]), 0);
 });
 
-test('every canonical product portion has an explicit or unambiguous billing weight', () => {
+test('fixed portions have approved billing mass, while unspecified bundles and quote-only products never invent it', () => {
   for (const product of PRODUCTS) {
+    if (product.quoteOnly) {
+      assert.deepEqual(Object.keys(product.prices), [], `${product.id} must not contain paid portions`);
+      continue;
+    }
     for (const portion of Object.keys(product.prices)) {
       const grams = getProductShippingWeightGrams(product.id, portion);
+      if (product.isBundle && product.category === 'bundles' && !Object.hasOwn(product.shippingWeights || {}, portion)) {
+        assert.equal(grams, null, `${product.id} must wait for an approved packing mass`);
+        continue;
+      }
       assert.ok(grams !== null && grams > 0, `${product.id} ${portion} must have a billing weight`);
       if (product.id.startsWith('oil-')) assert.equal(grams, Number(portion.replace('ml', '')));
+    }
+  }
+});
+
+test('the original32 catalogue identities retain every approved mass and paired gift weight', () => {
+  const originalIds = ['pista', 'kaju', 'badam', 'akhroot', 'deal-1', 'deal-2', 'khubani', 'alubukhara', 'kishmish',
+    'khajoor', 'pumpkin_seeds', 'chia_seeds', 'nimko', 'chanay', 'oil-almond', 'oil-blackseed', 'oil-coconut',
+    'oil-castor', 'oil-apricot', 'oil-sesame', 'oil-flaxseed', 'oil-walnut', 'oil-olive', 'oil-onionseed', 'oil-mustard',
+    'oil-hairblend', 'oil-hairgrowth', 'org-ghee', 'org-honey', 'org-panjeeri', 'org-saffron', 'org-shakkar'];
+  assert.equal(originalIds.length, 32);
+  for (const id of originalIds) {
+    const product = PRODUCTS.find(item => item.id === id);
+    assert.ok(product, `${id} must be preserved`);
+    for (const portion of Object.keys(product.prices)) {
+      const parsed = /^(\d+(?:\.\d+)?)(kg|g|ml)$/.exec(portion);
+      const expectedGrams = id === 'deal-1' || id === 'deal-2' ? 1000
+        : parsed ? Number(parsed[1]) * (parsed[2] === 'kg' ? 1000 : 1) : null;
+      assert.ok(expectedGrams !== null);
+      assert.equal(getProductShippingWeightGrams(id, portion), expectedGrams, `${id} ${portion}`);
     }
   }
 });
