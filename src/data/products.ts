@@ -2,6 +2,7 @@
 // All fixed prices, custom rates, portions and shipping billing weights live in this file.
 // New selections intentionally use a branded placeholder until approved photography is supplied.
 import type { Product, CustomerReview } from '../types.ts';
+import { additionOrigin } from './catalogOrigins';
 
 export const PRODUCT_IMAGE_PATHS: Record<string, string> = {
   // ── Nuts & Dried Fruits (real catalog images exist) ──────────────────────
@@ -1478,6 +1479,7 @@ function defineAddition(definition: CatalogAddition): Product {
     name_en: definition.name, name_ur: definition.nameUr, name_ar: definition.nameAr,
     category: definition.category, category_en: definition.category, category_ur: copy.ur, category_ar: copy.ar,
     desc_en: definition.description, desc_ur: copy.descriptionUr, desc_ar: copy.descriptionAr,
+    ...additionOrigin(definition.id, definition.category),
     image: definition.image ?? null, imageName: definition.image ?? null, active: true, variants, prices,
     pricePer100g: definition.pricePer100g,
     allowCustomWeight: !quoteOnly && !isBundle && definition.category !== 'oils' && definition.allowCustomWeight !== false,
