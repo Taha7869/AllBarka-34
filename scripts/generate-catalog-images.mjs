@@ -91,6 +91,7 @@ async function checkSvgText(svg) {
 }
 try {
   let source = readFileSync('src/data/products.ts', 'utf8');
+  const originalSource = source;
   for (const product of products) {
     const path = `/images/products/${product.id}.svg`;
     const label = await createLabel(product);
@@ -108,7 +109,13 @@ try {
     if (index < 0) throw new Error(`Cannot locate ${product.id} in catalog source`);
     if (!source.slice(index, index + 150).includes(`image: '${path}'`)) source = source.slice(0, index + marker.length) + ` image: '${path}',` + source.slice(index + marker.length);
   }
-  writeFileSync('src/data/products.ts', source, 'utf8');
-  writeFileSync(resolve(out, `overflow-report-${category}.json`), JSON.stringify({ category, styleVersion: 2, canvas: 960, safeArea: { left: 58, right: 902, top: 58, bottom: 902 }, checks }, null, 2));
+  if (source !== originalSource) writeFileSync('src/data/products.ts', source, 'utf8');
+  // A resume with no pending products must not erase the successful audit report.
+  if (checks.length) {
+    const reportPath = resolve(out, `overflow-report-${category}.json`);
+    const prior = !refreshGenerated && existsSync(reportPath) ? JSON.parse(readFileSync(reportPath, 'utf8')).checks || [] : [];
+    const combined = [...new Map([...prior, ...checks].map(check => [check.path, check])).values()];
+    writeFileSync(reportPath, JSON.stringify({ category, styleVersion: 2, canvas: 960, safeArea: { left: 58, right: 902, top: 58, bottom: 902 }, checks: combined }, null, 2));
+  }
   console.log(`${category}: ${checks.length} SVGs, ${checks.reduce((sum, item) => sum + item.boxes, 0)} text boxes within 6% safe area; 0 overflows.`);
 } finally { await browser.close(); }

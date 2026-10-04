@@ -4,8 +4,10 @@ import { PRODUCTS, NEW_PRODUCT_IDS } from '../src/data/products';
 import { getLocalized } from '../src/utils/localize';
 
 test('all products expose origin tags in English, Urdu and Arabic', () => {
-  for (const product of PRODUCTS) for (const language of ['en', 'ur', 'ar']) {
-    assert.ok(getLocalized(product, 'origin', language).trim(), `${product.id}:${language}`);
+  for (const product of PRODUCTS) for (const language of ['en', 'ur', 'ar'] as const) {
+    const direct = product[`origin_${language}` as keyof typeof product];
+    assert.ok(typeof direct === 'string' && direct.trim(), `${product.id}:${language}`);
+    assert.equal(getLocalized(product, 'origin', language), direct, `${product.id}:${language}`);
   }
 });
 
