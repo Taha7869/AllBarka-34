@@ -10,6 +10,7 @@ const bundleContents: Record<string, string[]> = {
 export function getProductImages(product: Product): string[] {
   if (product.image === null) return [];
   const images = [getProductImage(product)];
+  if (product.image === `/images/products/${product.id}.svg`) images.push(`/images/products/${product.id}-secondary.svg`);
   if (secondPhotoIds.has(product.id)) images.push(`/images/generated/${product.id}-secondary-v1.webp`);
   images.push(...(bundleContents[product.id] || []));
   return [...new Set(images)];

@@ -75,8 +75,8 @@ test('established products retain editable manifests; SVG additions use catalogu
   }
   for (const product of PRODUCTS.filter(item => item.image?.startsWith('/images/products/'))) {
     assert.equal(Object.hasOwn(manifest, product.id), false);
-    assert.deepEqual(resolveProductMedia(product).images, [product.image]);
-    assert.ok(existsSync(`public${product.image}`), product.id);
+    assert.deepEqual(resolveProductMedia(product).images, [product.image, `/images/products/${product.id}-secondary.svg`]);
+    for (const path of resolveProductMedia(product).images) assert.ok(existsSync(`public${path}`), product.id);
   }
   for (const product of PRODUCTS.filter(item => item.image === null)) {
     assert.equal(Object.hasOwn(manifest, product.id), false);
