@@ -11,7 +11,9 @@ import { outboxErrorDetails } from './outboxDiagnostics';
 
 export const ORDER_OUTBOX_MAX_RETRIES = 5;
 export const ORDER_OUTBOX_MAX_ATTEMPTS = 1 + ORDER_OUTBOX_MAX_RETRIES;
-export const ORDER_OUTBOX_POLL_MS = 15000;
+// QUOTA FIX: pehle 15000 (15s) tha — har tick par lease acquire/release = 2 faltu writes.
+// Ab 60s poll + read-before-lease: idle tick par ZERO Firestore writes.
+export const ORDER_OUTBOX_POLL_MS = 60000;
 export const ORDER_OUTBOX_LOCK_PATH = 'outboxDispatchLocks/n8nOrderCreated';
 const MAX_DUE_SCAN = 25;
 
@@ -197,21 +199,29 @@ export function createOrderOutboxWorker(options: OrderOutboxWorkerOptions) {
     if (!enabledTypes.length) return { status: 'CONFIG_DISABLED' };
     const db = options.getDb();
     if (!db) return { status: 'PERSISTENCE_UNAVAILABLE' };
-    // The transport deadline is shorter than either lease; crashed processes recover after expiry.
+
+    // ============================================================
+    // QUOTA FIX (READ-BEFORE-LEASE):
+    // Pehle sasti READ se check karo ke koi due event hai hi ya nahi.
+    // Kuch due na ho to yahin IDLE return — ZERO Firestore writes.
+    // (Pehle har tick par lease acquire+release = 2 faltu writes hoti theen.)
+    // Jo results yahan mile, lease ke baad wahi reuse hote hain — double query nahi.
+    // ============================================================
+    const batches = await step('firestore.read_due_events', () => Promise.all(enabledTypes.map(eventType => db.collection('orderEvents')
+      .where('eventType', '==', eventType).where('nextAttemptAtMs', '<=', now())
+      .orderBy('nextAttemptAtMs', 'asc').limit(MAX_DUE_SCAN).get())));
+    const due = batches.flatMap(batch => batch.docs).sort((a, b) =>
+      Number(a.data().nextAttemptAtMs) - Number(b.data().nextAttemptAtMs));
+    cyclePending = due.length;
+    if (!due.length) return { status: 'IDLE' };
+
+    // Lease sirf tab lo jab kaam ho. Transport deadline lease se choti hai;
+    // crashed processes expiry ke baad recover karte hain.
     const leaseMs = Math.max(60000, Math.min(30000, Math.max(config.timeoutMs, statusConfig.timeoutMs)) * 3 + 15000);
     const lease = await step('firestore.acquire_lease', () => acquireGlobalLease(db, leaseMs));
     if (!lease) return { status: 'BUSY' };
     let cooldownMs = 0;
     try {
-      // Query each enabled receiver separately: an unavailable receiver's pending
-      // events must not fill the first page and starve the other event type.
-      // The required eventType/nextAttemptAtMs composite index is checked in.
-      const batches = await step('firestore.read_due_events', () => Promise.all(enabledTypes.map(eventType => db.collection('orderEvents')
-        .where('eventType', '==', eventType).where('nextAttemptAtMs', '<=', now())
-        .orderBy('nextAttemptAtMs', 'asc').limit(MAX_DUE_SCAN).get())));
-      const due = batches.flatMap(batch => batch.docs).sort((a, b) =>
-        Number(a.data().nextAttemptAtMs) - Number(b.data().nextAttemptAtMs));
-      cyclePending = due.length;
       for (const snapshot of due) {
         cycleEventId = snapshot.id;
         const claim = await step('firestore.claim_event_and_read_order', () => claimEvent(db, snapshot.ref, lease, enabledTypes));
