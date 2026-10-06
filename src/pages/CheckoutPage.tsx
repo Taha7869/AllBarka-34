@@ -48,6 +48,8 @@ import { useCart, parsePrice, formatPrice } from '../contexts/CartContext';
 import { STORE_CONFIG } from '../config/store';
 import { buildOrderTrackingWhatsAppUrl, buildHumanSupportWhatsAppUrl } from '../config/contacts';
 import { placeOrder, getOrderQuote, type OrderPayload } from '../lib/order';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { PRODUCTS } from '../data/products';
@@ -57,6 +59,17 @@ import { PRODUCTS } from '../data/products';
 const PREFERRED_PAYMENT_KEY = 'allbarka_preferred_payment';
 const DELIVERY_CITIES = ['Lahore', 'Karachi', 'Islamabad', 'Rawalpindi', 'Faisalabad', 'Peshawar', 'Multan'];
 const isPlaceholderCity = (city: string) => /^(other city|outside lahore|nationwide)$/i.test(city.trim());
+
+export interface PaymentDetails {
+  bankName?: string;
+  accountTitle?: string;
+  accountNumber?: string;
+  iban?: string;
+  raastId?: string;
+  wallets?: Array<{ label: string; number: string }>;
+  updatedAt?: number;
+  version?: string;
+}
 
 export type CheckoutStep = 'details' | 'shipping' | 'payment' | 'review' | 'success';
 
@@ -78,6 +91,18 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   const reduceMotion = useReducedMotion();
   const [restoredDraft] = useState(readCheckoutDraft);
   const [draftNotice, setDraftNotice] = useState(!!restoredDraft);
+  const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
+
+  useEffect(() => {
+    getDoc(doc(db, 'content', 'paymentDetails'))
+      .then(snap => {
+        if (snap.exists()) {
+          setPaymentDetails(snap.data() as PaymentDetails);
+        }
+      })
+      .catch(console.error);
+  }, []);
+
   const checkoutAttemptRef = React.useRef<CheckoutAttempt | null>(null);
   const submissionRequestRef = React.useRef<AbortController | null>(null);
   const couponRequestRef = React.useRef<AbortController | null>(null);
@@ -1386,9 +1411,25 @@ const handleInputChange = (field: string, value: any) => {
                         <span>{t('payment.transferDetails')}</span>
                       </div>
                       <div className="text-[11px] text-[var(--color-ink,#1F120F)]/80 dark:text-[#FDFBF7]/80 space-y-0.5 pt-1">
-                        <p>{t('payment.confirmInstructions')}</p>
+                        {paymentDetails?.bankName ? (
+                          <>
+                            <p>{t('payment.confirmInstructions')}</p>
+                            <div className="bg-[var(--color-ink,#1F120F)]/5 dark:bg-black/30 p-2.5 rounded-lg border border-[#C7982F]/30 text-xs font-mono mt-2 space-y-0.5">
+                              <p className="font-bold font-sans text-[13px] text-[var(--color-emerald,#042821)] dark:text-[#FDFBF7]">{paymentDetails.bankName}</p>
+                              {paymentDetails.accountTitle && <p>Title: {paymentDetails.accountTitle}</p>}
+                              {paymentDetails.accountNumber && <p>A/C: {paymentDetails.accountNumber}</p>}
+                              {paymentDetails.iban && <p>IBAN: {paymentDetails.iban}</p>}
+                              {paymentDetails.raastId && <p className="pt-1">Raast: {paymentDetails.raastId}</p>}
+                              {paymentDetails.wallets && paymentDetails.wallets.map(w => (
+                                <p key={w.label} className="pt-1">{w.label}: {w.number}</p>
+                              ))}
+                            </div>
+                          </>
+                        ) : (
+                          <p>{t('payment.conciergeFallback', 'Confirm the bank / Raast account with AllBarka concierge before transferring payment.')}</p>
+                        )}
                       </div>
-                      <p className="text-[10px] text-[var(--color-ink-muted,#5A5A5A)] dark:text-[#FDFBF7]/60 pt-1">
+                      <p className="text-[10px] text-[var(--color-ink-muted,#5A5A5A)] dark:text-[#FDFBF7]/60 pt-2">
                         {t('payment.shareReceipt')}
                       </p>
                     </div>
