@@ -1,0 +1,189 @@
+{
+  "category": "oils",
+  "styleVersion": 2,
+  "canvas": 960,
+  "safeArea": {
+    "left": 58,
+    "right": 902,
+    "top": 58,
+    "bottom": 902
+  },
+  "checks": [
+    {
+      "id": "oil-pumpkin",
+      "variant": "primary",
+      "boxes": 9,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Pumpkin Seed Oil (Kaddu)",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 255.32861328125,
+          "x2": 704.42138671875,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "روغن مغز کدو",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 198.54202270507812,
+          "x2": 331.08998107910156,
+          "y1": 817,
+          "y2": 868
+        },
+        {
+          "text": "زيت بذور اليقطين",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 604.4260787963867,
+          "x2": 785.2049331665039,
+          "y1": 832,
+          "y2": 863
+        },
+        {
+          "kind": "scene",
+          "text": "✦",
+          "x1": 469.390625,
+          "x2": 490.609375,
+          "y1": 356,
+          "y2": 386
+        },
+        {
+          "kind": "scene",
+          "text": "AllBarka",
+          "x1": 427.0234375,
+          "x2": 532.37060546875,
+          "y1": 390,
+          "y2": 421
+        },
+        {
+          "kind": "scene",
+          "text": "PUMPKIN SEED OIL",
+          "x1": 415.3125,
+          "x2": 544.6875,
+          "y1": 442,
+          "y2": 456
+        }
+      ],
+      "safe": true,
+      "fontReady": true,
+      "path": "/images/products/oil-pumpkin.svg"
+    },
+    {
+      "id": "oil-chilgoza",
+      "variant": "primary",
+      "boxes": 9,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Chilgoza Oil",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 379.08837890625,
+          "x2": 582.03857421875,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "روغن چلغوزہ",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 202.95201873779297,
+          "x2": 326.6799850463867,
+          "y1": 821.6319885253906,
+          "y2": 865
+        },
+        {
+          "text": "زيت الصنوبر",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 628.4190521240234,
+          "x2": 757.2119598388672,
+          "y1": 832,
+          "y2": 864
+        },
+        {
+          "kind": "scene",
+          "text": "✦",
+          "x1": 469.390625,
+          "x2": 490.609375,
+          "y1": 356,
+          "y2": 386
+        },
+        {
+          "kind": "scene",
+          "text": "AllBarka",
+          "x1": 427.0234375,
+          "x2": 532.37060546875,
+          "y1": 390,
+          "y2": 421
+        },
+        {
+          "kind": "scene",
+          "text": "CHILGOZA OIL",
+          "x1": 432.3203125,
+          "x2": 527.6796875,
+          "y1": 442,
+          "y2": 456
+        }
+      ],
+      "safe": true,
+      "fontReady": true,
+      "path": "/images/products/oil-chilgoza.svg"
+    }
+  ]
+}

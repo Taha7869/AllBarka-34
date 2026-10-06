@@ -1,0 +1,643 @@
+{
+  "pista": {
+    "images": [
+      "/images/generated/pistachios-catalog-v1.webp",
+      "/images/generated/pista-secondary-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "kaju": {
+    "images": [
+      "/images/generated/cashews-catalog-v1.webp",
+      "/images/generated/kaju-secondary-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "badam": {
+    "images": [
+      "/images/generated/almonds-catalog-v1.webp",
+      "/images/generated/badam-secondary-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "akhroot": {
+    "images": [
+      "/images/generated/walnut-halves-catalog-v1.webp",
+      "/images/generated/akhroot-secondary-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "deal-1": {
+    "images": [
+      "/images/generated/walnut-pistachio-duo-catalog-v1.webp",
+      "/images/generated/deal-1-secondary-v1.webp",
+      "/images/generated/walnut-halves-catalog-v1.webp",
+      "/images/generated/pistachios-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "deal-2": {
+    "images": [
+      "/images/generated/almond-cashew-duo-catalog-v1.webp",
+      "/images/generated/deal-2-secondary-v1.webp",
+      "/images/generated/almonds-catalog-v1.webp",
+      "/images/generated/cashews-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "khubani": {
+    "images": [
+      "/images/generated/dried-apricots-catalog-v1.webp",
+      "/images/generated/khubani-secondary-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "alubukhara": {
+    "images": [
+      "/images/generated/dried-plums-catalog-v1.webp",
+      "/images/generated/alubukhara-secondary-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "kishmish": {
+    "images": [
+      "/images/generated/green-raisins-catalog-v1.webp",
+      "/images/generated/kishmish-secondary-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "khajoor": {
+    "images": [
+      "/images/generated/dark-dates-catalog-v1.webp",
+      "/images/generated/khajoor-secondary-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "pumpkin_seeds": {
+    "images": [
+      "/images/generated/pumpkin-seeds-catalog-v1.webp",
+      "/images/generated/pumpkin_seeds-secondary-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "chia_seeds": {
+    "images": [
+      "/images/generated/chia-seeds-catalog-v1.webp",
+      "/images/generated/chia_seeds-secondary-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "nimko": {
+    "images": [
+      "/images/generated/lahori-nimko-catalog-v1.webp",
+      "/images/generated/nimko-secondary-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "chanay": {
+    "images": [
+      "/images/generated/roasted-chanay-catalog-v1.webp",
+      "/images/generated/chanay-secondary-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "oil-almond": {
+    "images": [
+      "/images/generated/oil-almond-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "oil-blackseed": {
+    "images": [
+      "/images/generated/oil-blackseed-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "oil-coconut": {
+    "images": [
+      "/images/generated/oil-coconut-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "oil-castor": {
+    "images": [
+      "/images/generated/oil-castor-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "oil-apricot": {
+    "images": [
+      "/images/generated/oil-apricot-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "oil-sesame": {
+    "images": [
+      "/images/generated/oil-sesame-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "oil-flaxseed": {
+    "images": [
+      "/images/generated/oil-flaxseed-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "oil-walnut": {
+    "images": [
+      "/images/generated/oil-walnut-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "oil-olive": {
+    "images": [
+      "/images/generated/oil-olive-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "oil-onionseed": {
+    "images": [
+      "/images/generated/oil-onionseed-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "oil-mustard": {
+    "images": [
+      "/images/generated/oil-mustard-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "oil-hairblend": {
+    "images": [
+      "/images/generated/oil-hairblend-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "oil-hairgrowth": {
+    "images": [
+      "/images/generated/oil-hairgrowth-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "org-ghee": {
+    "images": [
+      "/images/generated/org-ghee-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "org-honey": {
+    "images": [
+      "/images/generated/org-honey-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "org-panjeeri": {
+    "images": [
+      "/images/generated/org-panjeeri-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "org-saffron": {
+    "images": [
+      "/images/generated/org-saffron-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "org-shakkar": {
+    "images": [
+      "/images/generated/org-shakkar-catalog-v1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "ceylon-cinnamon": {
+    "images": [
+      "/images/products/ceylon-cinnamon.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "green-cardamom": {
+    "images": [
+      "/images/products/green-cardamom.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "black-cardamom": {
+    "images": [
+      "/images/products/black-cardamom.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "nutmeg-mace": {
+    "images": [
+      "/images/products/nutmeg-mace.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "whole-cloves": {
+    "images": [
+      "/images/products/whole-cloves.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "black-peppercorns": {
+    "images": [
+      "/images/products/black-peppercorns.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "star-anise": {
+    "images": [
+      "/images/products/star-anise.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "cumin-seeds": {
+    "images": [
+      "/images/products/cumin-seeds.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "fennel-seeds": {
+    "images": [
+      "/images/products/fennel-seeds.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "ajwain": {
+    "images": [
+      "/images/products/ajwain.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "dried-ginger": {
+    "images": [
+      "/images/products/dried-ginger.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "kasuri-methi": {
+    "images": [
+      "/images/products/kasuri-methi.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "dried-mint": {
+    "images": [
+      "/images/products/dried-mint.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "chaat-masala": {
+    "images": [
+      "/images/products/chaat-masala.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "garam-masala": {
+    "images": [
+      "/images/products/garam-masala.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "gond-katira": {
+    "images": [
+      "/images/products/gond-katira.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "edible-gond": {
+    "images": [
+      "/images/products/edible-gond.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "dried-rose-petals": {
+    "images": [
+      "/images/products/dried-rose-petals.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "dried-jujube": {
+    "images": [
+      "/images/products/dried-jujube.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "kashmiri-walnut": {
+    "images": [
+      "/images/products/kashmiri-walnut.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "ajwa-dates": {
+    "images": [
+      "/images/products/ajwa-dates.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "medjool-dates": {
+    "images": [
+      "/images/products/medjool-dates.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "golden-raisins": {
+    "images": [
+      "/images/products/golden-raisins.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "afghan-figs": {
+    "images": [
+      "/images/products/afghan-figs.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "pine-nuts": {
+    "images": [
+      "/images/products/pine-nuts.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "black-raisins": {
+    "images": [
+      "/images/products/black-raisins.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "dried-mulberry": {
+    "images": [
+      "/images/products/dried-mulberry.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "dried-cranberries": {
+    "images": [
+      "/images/products/dried-cranberries.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "roasted-cashews": {
+    "images": [
+      "/images/products/roasted-cashews.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "masala-almonds": {
+    "images": [
+      "/images/products/masala-almonds.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "char-maghaz-mix": {
+    "images": [
+      "/images/products/char-maghaz-mix.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "aseel-dates": {
+    "images": [
+      "/images/products/aseel-dates.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "chohara": {
+    "images": [
+      "/images/products/chohara.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "flax-seeds": {
+    "images": [
+      "/images/products/flax-seeds.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "sunflower-seeds": {
+    "images": [
+      "/images/products/sunflower-seeds.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "watermelon-seeds": {
+    "images": [
+      "/images/products/watermelon-seeds.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "melon-seeds": {
+    "images": [
+      "/images/products/melon-seeds.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "white-sesame": {
+    "images": [
+      "/images/products/white-sesame.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "black-sesame": {
+    "images": [
+      "/images/products/black-sesame.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "basil-seeds": {
+    "images": [
+      "/images/products/basil-seeds.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "fox-nuts": {
+    "images": [
+      "/images/products/fox-nuts.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "poppy-seeds": {
+    "images": [
+      "/images/products/poppy-seeds.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "oil-pumpkin": {
+    "images": [
+      "/images/products/oil-pumpkin.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "oil-chilgoza": {
+    "images": [
+      "/images/products/oil-chilgoza.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "bundle-daily-grind": {
+    "images": [
+      "/images/products/bundle-daily-grind.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "bundle-brain-fuel": {
+    "images": [
+      "/images/products/bundle-brain-fuel.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "bundle-winter-warrior": {
+    "images": [
+      "/images/products/bundle-winter-warrior.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "bundle-immunity-shield": {
+    "images": [
+      "/images/products/bundle-immunity-shield.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "bundle-sunrise-seeds": {
+    "images": [
+      "/images/products/bundle-sunrise-seeds.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "bundle-royal-feast": {
+    "images": [
+      "/images/products/bundle-royal-feast.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "bundle-silver-hamper": {
+    "images": [
+      "/images/products/bundle-silver-hamper.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "bundle-gold-hamper": {
+    "images": [
+      "/images/products/bundle-gold-hamper.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "bundle-platinum-hamper": {
+    "images": [
+      "/images/products/bundle-platinum-hamper.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "bundle-ramadan-ready": {
+    "images": [
+      "/images/products/bundle-ramadan-ready.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "bundle-mystery-box": {
+    "images": [
+      "/images/products/bundle-mystery-box.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "bundle-tasting-flight": {
+    "images": [
+      "/images/products/bundle-tasting-flight.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "corporate-gifting": {
+    "images": [
+      "/images/products/corporate-gifting.svg"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  }
+}

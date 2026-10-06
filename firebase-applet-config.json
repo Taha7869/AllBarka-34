@@ -1,0 +1,12 @@
+{
+  "projectId": "allbarka-live",
+  "appId": "",
+  "apiKey": "",
+  "authDomain": "allbarka-live.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "allbarka-live.firebasestorage.app",
+  "messagingSenderId": "",
+  "measurementId": "",
+  "oAuthClientId": "",
+  "recaptchaSiteKey": ""
+}

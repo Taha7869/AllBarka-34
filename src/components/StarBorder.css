@@ -1,0 +1,76 @@
+.star-border-container {
+  display: inline-block;
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  cursor: pointer;
+  padding: var(--border-thickness, 1px);
+}
+
+.border-gradient-bottom {
+  position: absolute;
+  width: 300%;
+  height: 50%;
+  opacity: 0.8;
+  bottom: -12px;
+  right: -250%;
+  border-radius: 50%;
+  animation: star-movement-bottom linear infinite alternate;
+  z-index: 0;
+}
+
+.border-gradient-top {
+  position: absolute;
+  opacity: 0.8;
+  width: 300%;
+  height: 50%;
+  top: -12px;
+  left: -250%;
+  border-radius: 50%;
+  animation: star-movement-top linear infinite alternate;
+  z-index: 0;
+}
+
+/* Customized for Premium Whitish / Gold Theme */
+.inner-content {
+  position: relative;
+  border: 1px solid rgba(184, 147, 95, 0.4); /* Soft Gold Border */
+  background: var(--color-surface, #FFFFFF); /* White Background */
+  color: var(--color-gold, #B8935F); /* Luxury Gold Text */
+  font-size: var(--inner-font-size, 16px);
+  font-family: var(--inner-font-family, 'Georgia', serif);
+  font-weight: bold;
+  text-align: center;
+  padding: var(--inner-padding, 14px 28px);
+  border-radius: var(--inner-radius, 20px);
+  z-index: 1;
+  transition: all 0.3s ease;
+}
+
+/* Hover Effect for extra interaction */
+.star-border-container:hover .inner-content {
+  background: var(--color-gold, #B8935F);
+  color: #FFFFFF;
+}
+
+@keyframes star-movement-bottom {
+  0% {
+    transform: translate(0%, 0%);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-100%, 0%);
+    opacity: 0.4;
+  }
+}
+
+@keyframes star-movement-top {
+  0% {
+    transform: translate(0%, 0%);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(100%, 0%);
+    opacity: 0.4;
+  }
+}

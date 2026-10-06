@@ -1,0 +1,46 @@
+/*
+ * ShinyText.css
+ * Gold shimmer sweep animation via background-clip: text.
+ * Uses AllBarka brand gold (#C7982F / #E4C783) as shimmer colour.
+ * 3 s infinite loop — paused automatically on prefers-reduced-motion.
+ */
+
+@keyframes shinyShimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.shiny-text {
+  /* Gold base with a bright shimmer band sweeping left→right */
+  background: linear-gradient(
+    90deg,
+    #C7982F 0%,
+    #C7982F 30%,
+    #E4C783 48%,
+    #FFF3C4 52%,
+    #E4C783 56%,
+    #C7982F 70%,
+    #C7982F 100%
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: shinyShimmer 3s linear infinite;
+  display: inline-block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shiny-text {
+    animation-play-state: paused;
+    /* Fallback: static gold text so it remains legible */
+    background: none;
+    -webkit-text-fill-color: #C7982F;
+    color: #C7982F;
+  }
+}

@@ -1,0 +1,37 @@
+/* A restrained circular stage for Boutique Bestsellers only. */
+.circular-boutique { --circular-gap:12px; position:relative; width:100%; }
+.circular-boutique-viewport { position:relative; overflow:hidden; border-radius:20px; touch-action:pan-y pinch-zoom; scrollbar-width:none; }
+.circular-boutique-viewport::-webkit-scrollbar { display:none; }
+.circular-boutique-track { display:flex; align-items:stretch; gap:var(--circular-gap); padding-block:18px 38px; touch-action:pan-y pinch-zoom; }
+/* The card itself is centred, so both neighbors have equal visible edges. */
+.circular-boutique-slide { flex:0 0 76%; min-width:0; position:relative; perspective:1600px; }
+.circular-boutique-card { height:100%; transform:translateY(var(--circular-rise,0px)) translateZ(var(--circular-depth,0px)) rotateY(var(--circular-turn,0deg)) scale(var(--circular-scale,1)); transform-origin:center center; backface-visibility:hidden; -webkit-backface-visibility:hidden; }
+.circular-boutique-card .boutique-product-card { box-shadow:0 10px 26px -18px #29231d40; border-color:var(--color-border-accent); }
+.circular-boutique-slide[data-active="true"] .boutique-product-card { box-shadow:0 16px 34px -22px #80632670; border-color:var(--color-gold); }
+.circular-boutique-edge { position:absolute; inset-block:0; width:8px; pointer-events:none; z-index:2; }
+.circular-boutique-edge-left { left:0; background:linear-gradient(to right,var(--color-surface),transparent); }
+.circular-boutique-edge-right { right:0; background:linear-gradient(to left,var(--color-surface),transparent); }
+.circular-boutique-controls { position:relative; display:flex; align-items:center; justify-content:space-between; gap:16px; padding-top:18px; border-top:1px solid var(--color-border); }
+.circular-boutique-caption { display:flex; align-items:center; gap:20px; min-width:0; }
+.circular-boutique-caption p { margin:0; color:var(--color-text-secondary); font-size:11px; line-height:1.6; }
+.circular-boutique-buttons { display:flex; align-items:center; gap:8px; flex:none; }
+.circular-boutique-hint { margin:14px 0 0; font-size:11px; color:var(--color-text-secondary); line-height:1.7; }
+.dark .circular-boutique-card .boutique-product-card { box-shadow:0 12px 30px -18px #0008; }
+@media(min-width:640px) { .circular-boutique { --circular-gap:18px; } .circular-boutique-slide { flex-basis:46%; } }
+@media(min-width:1024px) { .circular-boutique { --circular-gap:22px; } .circular-boutique-slide { flex-basis:27.5%; } }
+@media(max-width:639px) {
+  /* Let neighboring products reach the screen edge instead of fading inside an inset. */
+  .circular-boutique-viewport { width:calc(100% + 32px); margin-inline:-16px; border-radius:0; }
+  .circular-boutique-edge { display:none; }
+  .circular-boutique-caption { gap:0; }
+  .circular-boutique-caption p { display:none; }
+  /* Keep the tour buttons clear of the existing floating support controls. */
+  .circular-boutique-controls { gap:8px; padding-right:48px; }
+  .circular-boutique-buttons { gap:6px; }
+  .circular-boutique-caption .bestseller-position { gap:6px; }
+  .circular-boutique-track { padding-block:10px 28px; }
+}
+@media(max-width:359px) { .circular-boutique { --circular-gap:10px; } }
+@media(prefers-reduced-motion:reduce) { .circular-boutique-card { transform:none!important; } }
+/* Keep shopping controls at their full touch size on phones and tablets. */
+@media(max-width:1023px) and (pointer:coarse) { .circular-boutique-card { transform:none; } }

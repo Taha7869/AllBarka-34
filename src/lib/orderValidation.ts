@@ -1,0 +1,278 @@
+import { PRODUCTS } from '../data/products';
+import { calculateOrderSummary, PricingSummary } from './pricing';
+import { ShippingMethodId } from '../types.ts';
+import { isLahoreCity, validateShippingCity } from './shippingPolicy';
+import { ValidationError } from './validationError';
+export { ValidationError } from './validationError';
+import { CUSTOM_HAMPER_PRODUCT_ID, hamperCartKey, resolveHamper, type HamperConfiguration } from './hamperCatalog';
+import { evaluatePromo, getPromo, NO_PROMO } from './couponEngine';
+import { resolveCartIdentity } from './cartInput';
+import { resolveCustomWeight, resolveProductVariant } from './productVariants';
+import { calculateLoyaltyPoints } from './loyaltyPoints';
+
+export interface ValidatedOrderItem {
+  id: string; // composite cart item id, e.g. "pista-250g"
+  productId: string; // canonical product id, e.g. "pista"
+  name: string;
+  selectedWeight: string;
+  quantity: number;
+  price: number; // authoritative price per unit in PKR
+  earnedPoints: number;
+  hamperConfiguration?: HamperConfiguration;
+}
+
+export interface ValidatedOrder {
+  items: ValidatedOrderItem[];
+  summary: PricingSummary;
+  earnedPoints: number;
+}
+
+export interface CustomerInput {
+  name: string;
+  phone: string;
+  address: string;
+  city: string;
+  paymentMethod: string;
+  deliverySlot?: string;
+  giftWrapping?: boolean;
+  giftMessage?: string;
+  instructions?: string;
+}
+
+/**
+ * Normalizes and strictly validates Pakistani mobile phone numbers.
+ * Accepts formats: 03XXXXXXXXX, +923XXXXXXXXX, 00923XXXXXXXXX, with spaces or hyphens.
+ * Returns normalized 11-digit canonical form: "03XXXXXXXXX".
+ */
+export function normalizeAndValidatePkPhone(rawPhone: unknown): { valid: boolean; normalized: string; error?: string } {
+  if (!rawPhone || typeof rawPhone !== 'string') {
+    return { valid: false, normalized: '', error: 'Phone number is required.' };
+  }
+
+  const clean = rawPhone.replace(/[\s\-\(\)\.]/g, '');
+
+  let standardized = clean;
+  if (standardized.startsWith('+92')) {
+    standardized = '0' + standardized.slice(3);
+  } else if (standardized.startsWith('0092')) {
+    standardized = '0' + standardized.slice(4);
+  } else if (standardized.startsWith('92') && standardized.length === 12) {
+    standardized = '0' + standardized.slice(2);
+  }
+
+  const pkMobileRegex = /^03\d{9}$/;
+  if (!pkMobileRegex.test(standardized)) {
+    return {
+      valid: false,
+      normalized: '',
+      error: 'Please enter a valid 11-digit Pakistani mobile number (e.g., 03160666083 or +923160666083).'
+    };
+  }
+
+  return { valid: true, normalized: standardized };
+}
+
+/**
+ * Validates customer details and payment method.
+ * Throws ValidationError on any failing constraint.
+ */
+export function validateCustomerDetails(input: Partial<CustomerInput>, isQuoteRequest = false): CustomerInput & { phone: string } {
+  const name = typeof input.name === 'string' ? input.name.trim() : '';
+  if (!name || name.length < 3) {
+    throw new ValidationError('Recipient name must be at least 3 characters long.', 'INVALID_NAME');
+  }
+  if (name.length > 80) {
+    throw new ValidationError('Recipient name exceeds maximum allowed length (80 characters).', 'NAME_TOO_LONG');
+  }
+
+  const phoneRes = normalizeAndValidatePkPhone(input.phone);
+  if (!phoneRes.valid) {
+    throw new ValidationError(phoneRes.error || 'Invalid Pakistani phone number.', 'INVALID_PHONE');
+  }
+
+  const address = typeof input.address === 'string' ? input.address.trim() : '';
+  if (!address || address.length < 8) {
+    throw new ValidationError('Please enter a complete delivery address (minimum 8 characters).', 'INVALID_ADDRESS');
+  }
+  if (address.length > 300) {
+    throw new ValidationError('Delivery address exceeds maximum allowed length (300 characters).', 'ADDRESS_TOO_LONG');
+  }
+
+  const city = validateShippingCity(input.city);
+
+  const paymentMethod = isQuoteRequest ? 'quote' : typeof input.paymentMethod === 'string' ? input.paymentMethod.trim().toLowerCase() : '';
+  const allowedPayments = ['cod', 'bank'];
+  if (!isQuoteRequest && !allowedPayments.includes(paymentMethod)) {
+    throw new ValidationError(
+      `Unsupported payment method "${input.paymentMethod}". Allowed methods: ${allowedPayments.join(', ')}`,
+      'INVALID_PAYMENT_METHOD'
+    );
+  }
+
+  const giftMessage = typeof input.giftMessage === 'string' ? input.giftMessage.trim().slice(0, 300) : '';
+  const instructions = typeof input.instructions === 'string' ? input.instructions.trim().slice(0, 300) : '';
+
+  return {
+    name,
+    phone: phoneRes.normalized,
+    address,
+    city,
+    paymentMethod,
+    deliverySlot: typeof input.deliverySlot === 'string' ? input.deliverySlot.slice(0, 80) : 'Fastest Dispatch',
+    giftWrapping: Boolean(input.giftWrapping),
+    giftMessage,
+    instructions
+  };
+}
+
+/**
+ * Validates cart items, selected weights, quantities, and pricing against the product catalog.
+ * Authoritative: browser prices are completely ignored.
+ */
+export function validateAndPriceOrder({
+  items,
+  shippingMethodId,
+  discountCode,
+  giftWrapping = false,
+  isWholesale = false,
+  city,
+  promoContext,
+}: {
+  items: any[];
+  shippingMethodId: string;
+  discountCode?: string | null;
+  giftWrapping?: boolean;
+  isWholesale?: boolean;
+  city: string;
+  promoContext?: { hasPastOrders?: boolean; identityVerified?: boolean; now?: number };
+}): ValidatedOrder {
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new ValidationError('Order must contain at least one item.', 'EMPTY_CART');
+  }
+  if (items.length > 50) {
+    throw new ValidationError('Maximum allowable distinct cart items is 50.', 'TOO_MANY_ITEMS');
+  }
+
+  // Validate supported shipping method - NO silent fallback
+  const validShippingMethods: ShippingMethodId[] = ['standard', 'express', 'sameday'];
+  if (!shippingMethodId || !validShippingMethods.includes(shippingMethodId as ShippingMethodId)) {
+    throw new ValidationError(
+      `Unsupported shipping method "${shippingMethodId}". Allowed methods: ${validShippingMethods.join(', ')}.`,
+      'INVALID_SHIPPING_METHOD'
+    );
+  }
+  const resolvedShipping = shippingMethodId as ShippingMethodId;
+  const destination = validateShippingCity(city);
+
+  let totalEarnedPoints = 0;
+
+  const validatedItems: ValidatedOrderItem[] = items.map((clientItem, idx) => {
+    if (!clientItem || typeof clientItem !== 'object') {
+      throw new ValidationError(`Invalid item object at position ${idx + 1}.`, 'INVALID_ITEM');
+    }
+
+    // Resolve canonical product ID
+    const rawId = String(clientItem.productId || clientItem.id || '').trim();
+    if (rawId === CUSTOM_HAMPER_PRODUCT_ID) {
+      const hamper = resolveHamper(clientItem.hamperConfiguration);
+      if (!hamper) throw new ValidationError('Please rebuild this hamper with a supported box and valid harvest selections.', 'INVALID_HAMPER_CONFIGURATION');
+      const quantity = typeof clientItem.quantity === 'number' ? clientItem.quantity : Number(clientItem.quantity);
+      if (!Number.isInteger(quantity) || quantity < 1 || quantity > 50) {
+        throw new ValidationError('Invalid quantity for this hamper: must be an integer between 1 and 50 units.', 'INVALID_QUANTITY');
+      }
+      return {
+        id: hamperCartKey(hamper.configuration), productId: CUSTOM_HAMPER_PRODUCT_ID,
+        name: hamper.name_en, selectedWeight: hamper.portion, quantity,
+        price: hamper.unitPrice, earnedPoints: 0, hamperConfiguration: hamper.configuration,
+      };
+    }
+    const identity = resolveCartIdentity(clientItem, PRODUCTS);
+    const product = identity?.product;
+
+    if (!product) {
+      throw new ValidationError(
+        `Product not found: ${clientItem.name || clientItem.productId || clientItem.id || `position ${idx + 1}`}`,
+        'PRODUCT_NOT_FOUND'
+      );
+    }
+
+    if (product.active === false) {
+      throw new ValidationError(`Product "${product.name_en}" is currently unavailable.`, 'PRODUCT_UNAVAILABLE');
+    }
+    if (product.quoteOnly === true) {
+      throw new ValidationError(`Please request a personalized quote for "${product.name_en}".`, 'QUOTE_REQUIRED');
+    }
+    const requestedWeight = String(clientItem.selectedWeight || identity?.portion || '250g').trim();
+    const allowedWeights = product.prices ? Object.keys(product.prices) : [];
+    const variant = /^Custom\s+/i.test(requestedWeight)
+      ? resolveCustomWeight(product, requestedWeight)
+      : resolveProductVariant(product, requestedWeight);
+    if (!variant) {
+      throw new ValidationError(
+        `Invalid weight "${requestedWeight}" for product "${product.name_en}". Allowed weights: ${allowedWeights.join(', ')}`,
+        'INVALID_WEIGHT'
+      );
+    }
+    const weight = variant.label;
+    // Existing fixed wholesale pricing remains compatible. Custom grams always
+    // use the catalogue retail rate, never a client-supplied wholesale amount.
+    const authoritativeUnitPrice = !variant.isCustom && isWholesale && product.wholesale > 0
+      ? product.wholesale : variant.price;
+
+    // Validate quantity strictly: integer between 1 and 50 inclusive. Reject fractional, zero, negative or non-finite.
+    const rawQty = clientItem.quantity;
+    const numQty = typeof rawQty === 'number' ? rawQty : Number(rawQty);
+
+    if (!Number.isFinite(numQty) || !Number.isInteger(numQty) || numQty < 1 || numQty > 50) {
+      throw new ValidationError(
+        `Invalid quantity for "${product.name_en}": must be an integer between 1 and 50 units.`,
+        'INVALID_QUANTITY'
+      );
+    }
+    const quantity = numQty;
+
+    // Calculate loyalty points
+    let pts = 0;
+    if (!isWholesale && product.earnedPoints) {
+      if (typeof product.earnedPoints === 'number') {
+        pts = product.earnedPoints;
+      } else if (product.earnedPoints[weight]) {
+        pts = product.earnedPoints[weight];
+      }
+    }
+    totalEarnedPoints += pts * quantity;
+
+    return {
+      id: `${product.id}-${weight}`,
+      productId: product.id,
+      name: product.name_en,
+      selectedWeight: weight,
+      quantity,
+      price: authoritativeUnitPrice,
+      earnedPoints: pts * quantity,
+    };
+  });
+
+  const subtotal = validatedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const promo = getPromo(discountCode);
+  const applied = promo ? evaluatePromo(promo, subtotal, promoContext) : { ...NO_PROMO };
+  const discounted = calculateOrderSummary({
+    items: validatedItems.map(item => ({ unitPrice: item.price, quantity: item.quantity, productId: item.productId,
+      selectedWeight: item.selectedWeight, hamperConfiguration: item.hamperConfiguration })),
+    shippingMethodId: resolvedShipping, city: applied.isQuoteRequest ? 'Lahore' : destination, manualDiscount: applied.discountAmount,
+    giftWrapping: applied.freeGiftWrap ? false : giftWrapping,
+  });
+  if (applied.freeShipping) discounted.shipping = 0;
+  discounted.total = discounted.discountedSubtotal + discounted.shipping + discounted.giftWrapFee;
+  Object.assign(discounted, applied);
+  if (applied.isQuoteRequest) {
+    Object.assign(discounted, { subtotal: 0, discount: 0, discountedSubtotal: 0, shipping: 0,
+      giftWrapFee: 0, total: 0, shippingWeightGrams: 0, shippingRegion: isLahoreCity(destination) ? 'lahore' : 'nationwide' });
+  }
+
+  return {
+    items: validatedItems,
+    summary: discounted,
+    earnedPoints: calculateLoyaltyPoints(discounted.total, isWholesale, applied.isQuoteRequest),
+  };
+}

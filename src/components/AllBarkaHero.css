@@ -1,0 +1,189 @@
+/*
+ * AllBarkaHero.css
+ * Ken Burns zoom animation and gold dust particles.
+ * All animations respect prefers-reduced-motion.
+ */
+
+/* ─── Ken Burns slow zoom ────────────────────────────────────────────────── */
+@keyframes kenBurns {
+  from { transform: scale(1.0); }
+  to   { transform: scale(1.06); }
+}
+
+.hero-ken-burns {
+  animation: kenBurns 18s ease-in-out infinite alternate;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-ken-burns {
+    animation: none;
+    transform: scale(1);
+  }
+}
+
+/* ─── CTA button shine sweep ─────────────────────────────────────────────── */
+@keyframes buttonShine {
+  0%   { left: -120%; opacity: 0.8; }
+  100% { left: 120%;  opacity: 0; }
+}
+
+.hero-cta-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-cta-shine::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 243, 196, 0.3) 50%,
+    transparent 100%
+  );
+  transform: skewX(-20deg);
+  pointer-events: none;
+  transition: none;
+}
+
+.hero-cta-shine:hover::after {
+  animation: buttonShine 0.7s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-cta-shine::after {
+    display: none;
+  }
+}
+
+/* ─── Gold dust particles ────────────────────────────────────────────────── */
+@keyframes goldFloat {
+  0%   { transform: translateY(0px)   translateX(0px)   rotate(0deg);   opacity: 0; }
+  10%  { opacity: var(--dust-opacity, 0.55); }
+  90%  { opacity: var(--dust-opacity, 0.55); }
+  100% { transform: translateY(-60px) translateX(var(--dust-drift, 12px)) rotate(180deg); opacity: 0; }
+}
+
+.gold-dust-particle {
+  position: absolute;
+  width: var(--dust-size, 4px);
+  height: var(--dust-size, 4px);
+  border-radius: 50%;
+  background: radial-gradient(circle, #E4C783 0%, #C7982F 60%, transparent 100%);
+  pointer-events: none;
+  animation: goldFloat var(--dust-duration, 6s) ease-in-out var(--dust-delay, 0s) infinite;
+  z-index: 10;
+}
+
+/* Hide gold dust below 768px */
+@media (max-width: 767px) {
+  .gold-dust-particle {
+    display: none !important;
+  }
+}
+
+/* Hide gold dust when user prefers reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .gold-dust-particle {
+    display: none !important;
+  }
+}
+
+/* Centered heritage hero: the existing still-life image keeps its clear center for copy. */
+.heritage-hero {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: min(760px, calc(100svh - 110px));
+  padding: 92px 20px 60px;
+  overflow: visible;
+  z-index: 2;
+  background: #0b3025;
+  color: #fffaf0;
+}
+.heritage-hero-background,
+.heritage-hero-wash { position: absolute; inset: 0; pointer-events: none; }
+.heritage-hero-background { z-index: -2; overflow: hidden; }
+.heritage-hero-background img {
+  width: 100%; height: 100%; object-fit: cover;
+  animation: kenBurns 20s ease-in-out infinite alternate;
+}
+.heritage-hero-wash {
+  z-index: -1;
+  background: radial-gradient(ellipse at center, rgba(4, 34, 26, .16) 0%, rgba(4, 34, 26, .38) 68%, rgba(4, 34, 26, .55) 100%),
+    linear-gradient(180deg, rgba(3, 29, 24, .12), rgba(3, 29, 24, .3));
+}
+.heritage-hero-content {
+  display: flex; flex-direction: column; align-items: center;
+  width: min(100%, 1000px); text-align: center;
+}
+.heritage-hero-brand { margin-bottom: 32px; }
+.heritage-hero-title {
+  max-width: 900px;
+  font-family: var(--font-display, Georgia, serif);
+  font-size: clamp(2.45rem, 5vw, 4.6rem);
+  line-height: 1.13; font-weight: 600; letter-spacing: -.035em;
+  text-wrap: balance;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, .25);
+}
+.heritage-hero-title em { color: #ead097; font-weight: 600; }
+.heritage-hero-description {
+  max-width: 665px; margin-top: 23px;
+  font-size: clamp(.95rem, 1.3vw, 1.1rem); line-height: 1.65;
+  color: #f5f0e5; text-wrap: pretty;
+}
+.heritage-hero-search-wrap { position: relative; z-index: 5; width: min(100%, 590px); margin-top: 32px; }
+.heritage-hero-suggestions { text-align: start; max-height: min(390px, 55svh); overflow-y: auto; overscroll-behavior: contain; }
+.heritage-hero-pills { width: min(100%, 860px); margin-top: 25px; }
+.heritage-hero-language {
+  position: absolute; z-index: 6; top: 19px; inset-inline-end: 24px;
+  display: flex; align-items: center; gap: 3px; padding: 4px 6px 4px 10px;
+  border: 1px solid rgba(234, 208, 151, .5); border-radius: 999px;
+  background: rgba(4, 36, 29, .82); color: #e7c57b;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .2);
+  backdrop-filter: blur(10px);
+}
+.heritage-hero-language-button {
+  min-width: 48px; min-height: 44px; padding: 5px 11px;
+  border-radius: 999px; color: #fff8e9; font-size: .77rem; font-weight: 600;
+  transition: background .2s, color .2s;
+}
+.heritage-hero-language-button[aria-pressed="true"] { background: #e4c783; color: #092c23; }
+.heritage-hero-language-button:hover:not([aria-pressed="true"]) { background: rgba(255, 255, 255, .12); }
+
+@media (max-width: 767px) {
+  .heritage-hero {
+    min-height: min(730px, calc(100svh - 62px));
+    padding: 95px 12px 48px;
+  }
+  .heritage-hero-background img { object-position: center; }
+  .heritage-hero-wash { background: rgba(3, 32, 25, .58); }
+  .heritage-hero-language { top: 14px; inset-inline-end: 50%; transform: translateX(50%); }
+  [dir="rtl"] .heritage-hero-language { transform: translateX(-50%); }
+  .heritage-hero-language-button { min-height: 44px; padding-inline: 9px; }
+  .heritage-hero-brand { margin-bottom: 28px; }
+  .heritage-hero-title { font-size: clamp(2.15rem, 9vw, 3.3rem); line-height: 1.15; }
+  .heritage-hero-description { max-width: 34ch; margin-top: 18px; font-size: .92rem; }
+  .heritage-hero-search-wrap { margin-top: 28px; }
+  .heritage-hero-pills { margin-top: 18px; }
+}
+
+@media (max-width: 380px) {
+  .heritage-hero { padding-inline: 8px; }
+  .heritage-hero-language { gap: 0; }
+  .heritage-hero-language-button { padding-inline: 7px; font-size: .72rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heritage-hero-background img { animation: none; }
+}

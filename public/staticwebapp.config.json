@@ -1,0 +1,11 @@
+{
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": [
+      "/api/*",
+      "/assets/*",
+      "/videos/*",
+      "/*.{css,js,json,map,png,jpg,jpeg,webp,avif,svg,ico,woff,woff2,mp4,webm}"
+    ]
+  }
+}
