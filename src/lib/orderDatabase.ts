@@ -288,7 +288,7 @@ export async function createDurableOrder({
     const whatsappMessage = generateAuthoritativeWhatsAppMessage(canonicalOrder);
 
     // Write Order
-    transaction.set(orderRef, sanitizeFirestoreData(canonicalOrder));
+    transaction.create(orderRef, sanitizeFirestoreData(canonicalOrder));
     const phoneIndex = buildWhatsAppPhoneIndex(canonicalOrder);
     transaction.set(db.collection('whatsappPhoneOrders').doc(phoneIndex.phoneKey).collection('orders').doc(phoneIndex.orderId), sanitizeFirestoreData(phoneIndex.data));
 
