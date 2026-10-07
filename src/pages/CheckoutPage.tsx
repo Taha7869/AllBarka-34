@@ -53,6 +53,7 @@ import { db } from '../lib/firebase';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { PRODUCTS } from '../data/products';
+import { useLiveCatalog } from '../hooks/useLiveCatalog';
 
 // Popular Lahore Neighborhoods for Rapid Delivery Pinning
 
@@ -1512,7 +1513,7 @@ const handleInputChange = (field: string, value: any) => {
         <h2>{t('boutique.order')}</h2>
         <div className="boutique-order-items">
           {cartItems.map(item => <div key={item.id} className="boutique-order-item">
-            <img src={mediaCover(PRODUCTS.find(product => product.id === item.productId || product.id === item.id), item.image)} alt={getLocalized(item, 'name', language)} width={64} height={64} />
+            <img src={mediaCover(catalog.find(product => product.id === item.productId || product.id === item.id), item.image)} alt={getLocalized(item, 'name', language)} width={64} height={64} />
             <div><strong>{getLocalized(item, 'name', language)}</strong><small>{item.selectedWeight} × {item.quantity}</small></div>
             {!isQuoteRequestMode && <bdi>Rs. {(parsePrice(item.unitPrice ?? item.price) * item.quantity).toLocaleString()}</bdi>}
           </div>)}

@@ -5,6 +5,7 @@ import React, { lazy, Suspense, useState, useEffect, useMemo, useRef } from 'rea
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { PRODUCTS, getProductImage } from '../data/products';
+import { useLiveCatalog } from '../hooks/useLiveCatalog';
 import { isSingleImageCatalogProduct } from '../data/productImages';
 import { useProductMedia, useProductMediaCover } from '../contexts/ProductMediaContext';
 import { clampPhotoIndex } from '../lib/productPhotoViewer';
@@ -31,7 +32,8 @@ export default function ProductDetailPage() {
   const { addToCart, setIsCartOpen } = useCart();
   const { t, language } = useLanguage();
   
-  const product = PRODUCTS.find((p) => p.id === id && p.active !== false);
+  const catalog = useLiveCatalog();
+  const product = catalog.find((p) => p.id === id && p.active !== false);
   const productMedia = useProductMedia(product);
   const mediaCover = useProductMediaCover();
   const [selectedWeightIndex, setSelectedWeightIndex] = useState(0);

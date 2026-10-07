@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import type { CartItem, Product } from '../types';
 import { PRODUCTS, getProductImage } from '../data/products';
+import { useLiveCatalog } from '../hooks/useLiveCatalog';
 import { useToast } from '../components/ToastManager';
 
 import { STORE_CONFIG } from '../config/store';
@@ -117,7 +118,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (Array.isArray(parsed)) {
           return parsed.flatMap((item: any) => {
             if (!item || typeof item !== 'object') return [];
-            const identity = resolveCartIdentity(item, PRODUCTS);
+            const identity = resolveCartIdentity(item, catalog);
             if (!identity) return [];
             const hamper = identity.productId === 'custom-hamper' ? resolveHamper(item.hamperConfiguration) : null;
             const rawWeight = hamper?.portion || resolveCartPortion(identity.product, item.selectedWeight || identity.portion);
@@ -176,7 +177,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isFreeShippingUnlocked = isLahoreCity(shippingCity) && subtotal >= FREE_SHIPPING_THRESHOLD;
   const estimatedShipping = useMemo(() => {
-    try { return calculateOrderSummary({ items: cartItems, city: shippingCity }).shipping; }
+    try { return calculateOrderSummary({ items: cartItems, city: shippingCity, catalog }).shipping; }
     catch { return null; } // A selection requiring a quote must never crash the bag.
   }, [cartItems, shippingCity]);
 
@@ -201,7 +202,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       customUnitPrice?: number,
       options?: { silent?: boolean; openCart?: boolean }
     ) => {
-      const identity = resolveCartIdentity(productOrItem, PRODUCTS);
+      const identity = resolveCartIdentity(productOrItem, catalog);
       if (!identity) return;
       const rawProdId = identity.productId;
       const hamper = rawProdId === 'custom-hamper' ? resolveHamper((productOrItem as CartItem).hamperConfiguration) : null;
