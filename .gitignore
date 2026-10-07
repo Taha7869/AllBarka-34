@@ -5,3 +5,8 @@ dist/
 *.local
 build/
 backups/
+keys/
+serviceAccount*.json
+*-firebase-adminsdk*.json
+*.pem
+.local-setup/
