@@ -195,7 +195,7 @@ try {
     assert.equal(result.success, false);
     assert.equal(result.orderId, undefined);
     const message = new URL(result.supportAction.whatsappUrl).searchParams.get('text');
-    assert.match(message, /personalized rate/);
+    assert.match(message, /Your quote request has been received/);
     assert.doesNotMatch(message, /Rs\.|Subtotal|Total Due|Payment Method|Cash on Delivery/);
   });
   await check('quote requires an explicit delivery city', async () => {
