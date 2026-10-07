@@ -83,7 +83,7 @@ export default function LogoLoop({ logos, direction = 'left', fadeOut = true, fa
   } as React.CSSProperties;
 
   return (
-    <div ref={containerRef} dir="ltr" className={`logoloop ${fadeOut ? 'logoloop--fade' : ''} ${stationary ? 'logoloop--static' : ''} ${className}`}
+    <div ref={containerRef} dir="ltr" className={`logoloop whitespace-nowrap ${fadeOut ? 'logoloop--fade' : ''} ${stationary ? 'logoloop--static' : ''} ${className}`}
       style={style} role="region" aria-label={ariaLabel}
       onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
       onFocusCapture={() => setFocused(true)} onBlurCapture={event => {

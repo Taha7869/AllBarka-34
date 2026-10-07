@@ -75,7 +75,7 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
 
       <div className="heritage-hero-content">
         <AllBarkaFullLogo size="md" variant="light" as="span" className="heritage-hero-brand" />
-        <h1 className="heritage-hero-title">
+        <h1 className={`heritage-hero-title ${isRtl ? 'text-xl sm:text-2xl md:text-4xl leading-[2] sm:leading-[2.1] break-words' : ''}`}>
           {t('heroHeadlinePart1')}{' '}
           <em><GradientText colors={['#e4c783', '#fff0bd', '#d7b263', '#fff0bd', '#e4c783']} animationSpeed={12}>{t('heroHeadlinePart2')}</GradientText></em>
         </h1>
