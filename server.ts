@@ -910,7 +910,7 @@ app.post(['/api/chat', '/api/concierge/chat'], authenticateOptionalUser, patronC
     for (const [weight, price] of Object.entries(p.prices)) {
       priceStr += `${weight}: Rs. ${price}, `;
     }
-    return `- ${p.name_en}: ${priceStr} (Wholesale: Rs. ${p.wholesale})`;
+    return `- ${p.name_en}: ${priceStr}`;
   }).join('\n');
 
   const systemInstruction = `You are the AI Concierge & Gourmet Dry Fruits Sommelier representing '${STORE_CONFIG.storeName}', a premium dry fruit, spices, and artisanal gifting store based in ${STORE_CONFIG.location}.
@@ -928,7 +928,6 @@ Delivery & Ordering:
 - Shipping billing weight comes from canonical selected portions and quantities. Oils follow the merchant's billing convention: numeric ml is billed as the same numeric grams (100ml is billed as 100g); no container uplift. This is not a physical density claim. Ask for the delivery city and exact portions, and use checkout's authoritative quote if anything is uncertain.
 - WhatsApp for customer support: ${CONTACT_CONFIG.humanSupportWhatsApp.formatted}. Automated order WhatsApp: ${CONTACT_CONFIG.automatedOrdersWhatsApp.formatted}.
 - Boutique service address: ${CONTACT_CONFIG.boutiqueAddress}. Ask customers to confirm their visit with our team; never invent a street address, branch, coordinate or opening time.
-- Wholesale figures are reference information for approved accounts only. Refer wholesale enquiries to our team; never promise eligibility or apply an unapproved discount.
 - Customers can add items to their cart and checkout via WhatsApp or cash on delivery.
 
 Behavior Guidelines:
@@ -1024,3 +1023,6 @@ startServer().catch((error) => {
   console.error('[AllBarka] startup failed:', error.message);
   process.exitCode = 1;
 });
+
+
+
