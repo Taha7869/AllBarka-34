@@ -369,11 +369,12 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
       });
     }
 
+    const _catRes = await getCatalogServer();
+
     // When durable persistence (db) is not configured, do NOT create fake accepted orders
     if (!db) {
       const promoContext = await firstOrderPromoContext(null, verifiedUid, req.body.discountCode);
       const customer = validateCustomerDetails(req.body, getPromo(req.body.discountCode)?.type === 'quote');
-      const _catRes = await getCatalogServer();
     const validatedOrder = validateAndPriceOrder({
       catalog: _catRes.catalog,
 

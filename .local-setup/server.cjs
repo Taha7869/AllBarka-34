@@ -1948,7 +1948,7 @@ var catalogCacheTime = 0;
 var CACHE_TTL = 5 * 60 * 1e3;
 async function getCatalogServer() {
   if (process.env.CATALOG_SOURCE === "static") {
-    return { catalog: PRODUCTS, source: "static-fallback" };
+    return { catalog: PRODUCTS, source: "static" };
   }
   const now = Date.now();
   if (cachedCatalog && now - catalogCacheTime < CACHE_TTL) {
@@ -3388,11 +3388,11 @@ function validateShippingRewardDestination(reward, city) {
     throw new ValidationError("Free shipping rewards are available for Lahore delivery only. Your reward has not been used.", "SHIPPING_REWARD_LAHORE_ONLY");
   }
 }
-function getProductShippingWeightGrams(productId, selectedWeight, catalog2 = PRODUCTS) {
-  const product = catalog2.find((item) => item.id === productId);
+function getProductShippingWeightGrams(productId, selectedWeight, catalog = PRODUCTS) {
+  const product = catalog.find((item) => item.id === productId);
   return product ? resolveProductVariant(product, selectedWeight)?.weightGrams ?? null : null;
 }
-function getCartShippingWeightGrams(items) {
+function getCartShippingWeightGrams(items, catalog = PRODUCTS) {
   if (!Array.isArray(items)) return null;
   let total = 0;
   for (const item of items) {
@@ -3462,14 +3462,14 @@ function calculateOrderSummary({
   manualDiscount = 0,
   giftWrapping = false,
   city = "Lahore",
-  catalog: catalog2
+  catalog
 }) {
   const subtotal = calculateSubtotal(items);
   const couponDiscount = calculateDiscount(subtotal, couponCode);
   const discount = Math.min(subtotal, Math.max(couponDiscount, sanitizePrice(manualDiscount)));
   const discountedSubtotal = Math.max(0, subtotal - discount);
   const giftWrapFee = giftWrapping ? GIFT_WRAP_FEE : 0;
-  const shippingWeightGrams = getCartShippingWeightGrams(items, catalog2);
+  const shippingWeightGrams = getCartShippingWeightGrams(items, catalog);
   const shipping = calculateShipping(discountedSubtotal, shippingMethodId, giftWrapFee, city, shippingWeightGrams);
   const total = discountedSubtotal + shipping + giftWrapFee;
   return {
@@ -3746,7 +3746,7 @@ function validateCustomerDetails(input, isQuoteRequest = false) {
   };
 }
 function validateAndPriceOrder({
-  catalog: catalog2 = PRODUCTS,
+  catalog = PRODUCTS,
   items,
   shippingMethodId,
   discountCode,
@@ -3794,7 +3794,7 @@ function validateAndPriceOrder({
         hamperConfiguration: hamper.configuration
       };
     }
-    const identity = resolveCartIdentity(clientItem, catalog2);
+    const identity = resolveCartIdentity(clientItem, catalog);
     const product = identity?.product;
     if (!product) {
       throw new ValidationError(
@@ -6734,9 +6734,9 @@ var contactLimiter = (0, import_express_rate_limit3.default)({ windowMs: 60 * 1e
 var ordersLimiter = (0, import_express_rate_limit3.default)({ windowMs: 60 * 1e3, max: 10, message: apiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
 app.get("/api/catalog", async (req, res) => {
   try {
-    const { catalog: catalog2, source } = await getCatalogServer();
+    const { catalog, source } = await getCatalogServer();
     res.setHeader("X-Catalog-Source", source);
-    res.json(catalog2);
+    res.json(catalog);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch catalog" });
   }
@@ -6788,9 +6788,9 @@ app.post("/api/orders/quote", authenticateOptionalUser, async (req, res) => {
     const { items, city, shippingMethodId, discountCode, rewardId, giftWrapping, isWholesale } = req.body;
     const authenticatedUser = req.user;
     const promoContext = await firstOrderPromoContext(db, authenticatedUser?.uid || null, discountCode);
-    const _catRes2 = await getCatalogServer();
+    const _catRes = await getCatalogServer();
     const validatedOrder = validateAndPriceOrder({
-      catalog: _catRes2.catalog,
+      catalog: _catRes.catalog,
       items,
       city,
       shippingMethodId,
@@ -6836,12 +6836,12 @@ app.post("/api/orders", authenticateOptionalUser, async (req, res) => {
         code: "FORBIDDEN_WHOLESALE"
       });
     }
+    const _catRes = await getCatalogServer();
     if (!db) {
       const promoContext = await firstOrderPromoContext(null, verifiedUid, req.body.discountCode);
       const customer = validateCustomerDetails(req.body, getPromo(req.body.discountCode)?.type === "quote");
-      const _catRes2 = await getCatalogServer();
       const validatedOrder = validateAndPriceOrder({
-        catalog: _catRes2.catalog,
+        catalog: _catRes.catalog,
         items: req.body.items,
         city: customer.city,
         shippingMethodId: req.body.shippingMethodId,
@@ -7342,8 +7342,8 @@ app.post(["/api/chat", "/api/concierge/chat"], authenticateOptionalUser, patronC
       }
     }
     if (res.headersSent) return;
-    const _catRes2 = await getCatalogServer();
-    const catalogContext = _catRes2.catalog.map((p) => {
+    const _catRes = await getCatalogServer();
+    const catalogContext = _catRes.catalog.map((p) => {
       let priceStr = "";
       for (const [weight, price] of Object.entries(p.prices)) {
         priceStr += `${weight}: Rs. ${price}, `;

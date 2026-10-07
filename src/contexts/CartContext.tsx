@@ -96,6 +96,7 @@ const CartContext = createContext<CartContextValue | null>(null);
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { addToast } = useToast();
   const { t, language } = useLanguage();
+  const catalog = useLiveCatalog();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCartPulsing, setIsCartPulsing] = useState(false);
   const [shippingCity, updateShippingCity] = useState(() => {

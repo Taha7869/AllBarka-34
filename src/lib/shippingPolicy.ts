@@ -1,6 +1,6 @@
 import { STORE_CONFIG } from '../config/store';
 import { PRODUCTS } from '../data/products';
-import type { ShippingMethodId } from '../types';
+import type { ShippingMethodId, Product } from '../types';
 import { ValidationError } from './validationError';
 import { CUSTOM_HAMPER_PRODUCT_ID, resolveHamper, type HamperConfiguration } from './hamperCatalog';
 import { resolveProductVariant } from './productVariants';
@@ -39,13 +39,13 @@ export function validateShippingRewardDestination(reward: { rewardType?: string;
 }
 
 /** Only canonical catalogue portions can supply the shipping billing weight. */
-export function getProductShippingWeightGrams(productId: string, selectedWeight: string, catalog: any[] = PRODUCTS): number | null {
+export function getProductShippingWeightGrams(productId: string, selectedWeight: string, catalog: readonly Product[] = PRODUCTS): number | null {
   const product = catalog.find(item => item.id === productId);
   return product ? resolveProductVariant(product, selectedWeight)?.weightGrams ?? null : null;
 }
 
 /** Null means that an honest weight quote is unavailable; never trust client weight fields. */
-export function getCartShippingWeightGrams(items: readonly ShippingWeightItem[]): number | null {
+export function getCartShippingWeightGrams(items: readonly ShippingWeightItem[], catalog: readonly Product[] = PRODUCTS): number | null {
   if (!Array.isArray(items)) return null;
   let total = 0;
   for (const item of items) {

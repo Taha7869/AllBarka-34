@@ -90,6 +90,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   const mediaCover = useProductMediaCover();
   const online = useOnlineStatus();
   const reduceMotion = useReducedMotion();
+  const catalog = useLiveCatalog();
   const [restoredDraft] = useState(readCheckoutDraft);
   const [draftNotice, setDraftNotice] = useState(!!restoredDraft);
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
@@ -1531,3 +1532,6 @@ const handleInputChange = (field: string, value: any) => {
   );
 }
 import { sanitizeFirestoreData } from '../lib/firestoreData';
+
+
+
