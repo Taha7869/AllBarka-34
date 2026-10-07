@@ -624,6 +624,25 @@ app.get('/api/admin/orders', requireAdmin, async (req, res) => {
   } catch (error) { adminOperationFailure(res, error); }
 });
 
+app.get('/api/admin/inquiries', requireAdmin, async (req, res) => {
+  try {
+    res.setHeader('Cache-Control', 'no-store');
+    const limitNum = 50;
+    const snapshot = await db.collection('inquiries').orderBy('createdAt', 'desc').limit(limitNum).get();
+    res.json({ inquiries: snapshot.docs.map(d => d.data()) });
+  } catch (error) { adminOperationFailure(res, error); }
+});
+
+app.post('/api/admin/inquiries/:ticketId/status', requireAdmin, express.json(), async (req, res) => {
+  try {
+    const { ticketId } = req.params;
+    const { status } = req.body;
+    if (status !== 'RESOLVED' && status !== 'PENDING') return res.status(400).json({ error: 'Invalid status' });
+    await db.collection('inquiries').doc(ticketId).update({ status });
+    res.json({ success: true, status });
+  } catch (error) { adminOperationFailure(res, error); }
+});
+
 // Admin-only: Single order details with audit trail
 app.get('/api/admin/orders/:orderId', requireAdmin, async (req, res) => {
   try {

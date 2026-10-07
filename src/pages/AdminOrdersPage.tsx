@@ -8,6 +8,7 @@ import { useAdminLanguage } from '../hooks/useAdminLanguage';
 import { AllBarkaCrestVector } from '../components/AllBarkaLogo';
 import AdminCatalogPanel from '../components/AdminCatalogPanel';
 import AdminUpdatesPanel from '../components/AdminUpdatesPanel';
+import AdminInquiriesPanel from '../components/AdminInquiriesPanel';
 import { adminRequest, AdminRequestError } from '../lib/adminClient';
 import { adminPhoneHref, createAdminCsv, formatAdminCurrency, formatAdminDate, isAdminQuoteRequest, formatAdminOrderTotal, adminEditableStatuses, adminEditablePaymentStatuses, adminPromoNotes } from '../lib/adminPresentation';
 import { acquireScrollLock } from '../utils/scrollLock';
@@ -26,7 +27,7 @@ type Ledger = {
   orders: AdminOrderSummary[]; page: number; totalCount: number; totalPages: number; asOf: string; scannedCount: number; truncated: boolean;
   metrics: { count: number; activeCount: number; deliveredCount: number; cancelledCount: number; orderValue: number; paidValue: number; unpaidValue: number; bankPendingCount: number; statusCounts: Partial<Record<OrderStatus, number>> };
 };
-type Tab = 'overview' | 'orders' | 'catalogue' | 'updates';
+type Tab = 'overview' | 'orders' | 'catalogue' | 'updates' | 'inquiries';
 type Mutation = { type: 'status' | 'payment'; target: string };
 
 function hamperPackingDetails(item: CanonicalOrder['items'][number], language: LanguageCode, t: (key: string) => string) {
@@ -157,7 +158,7 @@ export default function AdminOrdersPage() {
   }, [currentUser, accessRefresh]);
   useEffect(() => {
     if (!currentUser || isAdmin !== true) return;
-    if (tab === 'catalogue' || tab === 'updates') { setLoading(false); return; }
+    if (tab === 'catalogue' || tab === 'updates' || tab === 'inquiries') { setLoading(false); return; }
     const controller = new AbortController();
     setLoading(true); setError(''); setSelection([]);
     adminRequest<Ledger>(() => currentUser.getIdToken(), `/api/admin/orders?${listQuery}`, { signal: controller.signal }).then(data => {
@@ -262,12 +263,12 @@ export default function AdminOrdersPage() {
 
   return <div className="admin-workspace" dir="ltr">
     <aside className="admin-sidebar"><div className="admin-sidebar-brand"><AllBarkaCrestVector className="w-9 h-12" /><div><strong>AllBarka</strong><p dir="auto">{t('admin.operations')}</p></div></div>
-      <nav aria-label={t('admin.workspace')}>{([{ key: 'overview', icon: LayoutDashboard }, { key: 'orders', icon: ClipboardList }, { key: 'catalogue', icon: Package }, { key: 'updates', icon: Bell }] as const).map(({ key, icon: Icon }) => <button type="button" key={key} aria-current={tab === key ? 'page' : undefined} className={tab === key ? 'active' : ''} onClick={() => changeFilters({ view: key })}><Icon size={18} /><span dir="auto">{key === 'updates' ? updateT('updates.adminTitle') : t(`admin.${key}`)}</span>{key === 'orders' && metrics && <span className="admin-nav-count">{metrics.count}</span>}</button>)}</nav>
+      <nav aria-label={t('admin.workspace')}>{([{ key: 'overview', icon: LayoutDashboard }, { key: 'orders', icon: ClipboardList }, { key: 'catalogue', icon: Package }, { key: 'updates', icon: Bell }, { key: 'inquiries', icon: ShieldCheck }] as const).map(({ key, icon: Icon }) => <button type="button" key={key} aria-current={tab === key ? 'page' : undefined} className={tab === key ? 'active' : ''} onClick={() => changeFilters({ view: key })}><Icon size={18} /><span dir="auto">{key === 'updates' ? updateT('updates.adminTitle') : t(`admin.${key}`)}</span>{key === 'orders' && metrics && <span className="admin-nav-count">{metrics.count}</span>}</button>)}</nav>
       <div className="admin-sidebar-bottom"><ShieldCheck size={21} /><strong dir="auto">{t('admin.security')}</strong><p dir="auto">{t('admin.privacy')}</p><bdi>{currentUser.email || currentUser.phoneNumber}</bdi><Link to="/" className="admin-store-link"><span dir="auto">{t('admin.returnStore')}</span><ArrowUpRight size={16} /></Link></div>
     </aside>
     <div className="admin-main">
-      <header className="admin-page-heading"><div><p className="admin-eyebrow" dir="auto">{t('admin.workspace')}</p><h1 dir="auto">{tab === 'updates' ? updateT('updates.adminTitle') : t(`admin.${tab}`)}</h1><p dir="auto">{tab === 'updates' ? updateT('updates.adminHint') : t(tab === 'catalogue' ? 'admin.catalog.hint' : tab === 'orders' ? 'admin.ordersHint' : 'admin.overviewHint')}</p></div><div className="admin-heading-actions">{languageSelect}{tab !== 'catalogue' && tab !== 'updates' && <button type="button" className="admin-button" disabled={loading} onClick={() => setRefresh(value => value + 1)}><RefreshCw size={16} className={loading ? 'admin-loading-spin' : ''} /><span dir="auto">{t('admin.refresh')}</span></button>}</div></header>
-      {tab === 'catalogue' ? <AdminCatalogPanel /> : tab === 'updates' ? <AdminUpdatesPanel /> : <>
+      <header className="admin-page-heading"><div><p className="admin-eyebrow" dir="auto">{t('admin.workspace')}</p><h1 dir="auto">{tab === 'updates' ? updateT('updates.adminTitle') : t(`admin.${tab}`)}</h1><p dir="auto">{tab === 'updates' ? updateT('updates.adminHint') : tab === 'inquiries' ? 'Manage customer inquiries and contact requests' : t(tab === 'catalogue' ? 'admin.catalog.hint' : tab === 'orders' ? 'admin.ordersHint' : 'admin.overviewHint')}</p></div><div className="admin-heading-actions">{languageSelect}{tab !== 'catalogue' && tab !== 'updates' && tab !== 'inquiries' && <button type="button" className="admin-button" disabled={loading} onClick={() => setRefresh(value => value + 1)}><RefreshCw size={16} className={loading ? 'admin-loading-spin' : ''} /><span dir="auto">{t('admin.refresh')}</span></button>}</div></header>
+      {tab === 'catalogue' ? <AdminCatalogPanel /> : tab === 'updates' ? <AdminUpdatesPanel /> : tab === 'inquiries' ? <AdminInquiriesPanel /> : <>
         {filters}
         <div className="admin-sync-line"><span dir="auto">{t('admin.filteredScope')}</span><span dir="auto">{ledger?.asOf ? t('admin.lastSynced').replace('{time}', formatAdminDate(ledger.asOf, language)) : '—'}</span></div>
         {queue !== 'all' && <div className="admin-queue-filter"><span dir="auto">{t(`admin.queue.${queue === 'bank-pending' ? 'payments' : queue}`)}</span><button type="button" className="admin-icon-button" aria-label={t('admin.clearQueue')} onClick={() => changeFilters({ queue: 'all' })}><X size={15} /></button></div>}
