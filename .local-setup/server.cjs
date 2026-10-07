@@ -47,9 +47,9 @@ var import_node_fs = require("node:fs");
 var import_dotenv = __toESM(require("dotenv"), 1);
 var import_google_spreadsheet = require("google-spreadsheet");
 var import_google_auth_library = require("google-auth-library");
-var import_app = require("firebase-admin/app");
+var import_app2 = require("firebase-admin/app");
 var import_auth = require("firebase-admin/auth");
-var import_firestore = require("firebase-admin/firestore");
+var import_firestore2 = require("firebase-admin/firestore");
 
 // src/lib/apiCors.ts
 function commerceCors(configuredOrigins = "") {
@@ -1940,6 +1940,42 @@ var CATALOG_COUNTS = PRODUCTS.reduce((counts, product) => {
   return counts;
 }, {});
 
+// src/lib/liveCatalog.ts
+var import_firestore = require("firebase-admin/firestore");
+var import_app = require("firebase-admin/app");
+var cachedCatalog = null;
+var catalogCacheTime = 0;
+var CACHE_TTL = 5 * 60 * 1e3;
+async function getCatalogServer() {
+  if (process.env.CATALOG_SOURCE === "static") {
+    return { catalog: PRODUCTS, source: "static-fallback" };
+  }
+  const now = Date.now();
+  if (cachedCatalog && now - catalogCacheTime < CACHE_TTL) {
+    return { catalog: cachedCatalog, source: "firestore" };
+  }
+  try {
+    if (!(0, import_app.getApps)().length) {
+      return { catalog: PRODUCTS, source: "static-fallback" };
+    }
+    const db2 = (0, import_firestore.getFirestore)();
+    const snapshot = await db2.collection("products").get();
+    if (snapshot.empty) {
+      return { catalog: PRODUCTS, source: "static-fallback" };
+    }
+    const fetchedProducts = [];
+    snapshot.forEach((doc2) => {
+      fetchedProducts.push(doc2.data());
+    });
+    cachedCatalog = fetchedProducts;
+    catalogCacheTime = now;
+    return { catalog: fetchedProducts, source: "firestore" };
+  } catch (error) {
+    console.error("Error fetching live catalog from Firestore, falling back to static:", error);
+    return { catalog: PRODUCTS, source: "static-fallback" };
+  }
+}
+
 // src/config/contacts.ts
 var CONTACT_CONFIG = {
   // Automated Orders & n8n Integration WhatsApp (Order Placement / Cart Checkout)
@@ -3352,8 +3388,8 @@ function validateShippingRewardDestination(reward, city) {
     throw new ValidationError("Free shipping rewards are available for Lahore delivery only. Your reward has not been used.", "SHIPPING_REWARD_LAHORE_ONLY");
   }
 }
-function getProductShippingWeightGrams(productId, selectedWeight) {
-  const product = PRODUCTS.find((item) => item.id === productId);
+function getProductShippingWeightGrams(productId, selectedWeight, catalog2 = PRODUCTS) {
+  const product = catalog2.find((item) => item.id === productId);
   return product ? resolveProductVariant(product, selectedWeight)?.weightGrams ?? null : null;
 }
 function getCartShippingWeightGrams(items) {
@@ -3369,8 +3405,8 @@ function getCartShippingWeightGrams(items) {
       total += hamper.massGrams * item.quantity;
       continue;
     }
-    const productId = PRODUCTS.some((product) => product.id === rawId) ? rawId : rawId.endsWith(`-${selectedWeight}`) ? rawId.slice(0, -(selectedWeight.length + 1)) : rawId;
-    const grams = getProductShippingWeightGrams(productId, selectedWeight);
+    const productId = catalog.some((product) => product.id === rawId) ? rawId : rawId.endsWith(`-${selectedWeight}`) ? rawId.slice(0, -(selectedWeight.length + 1)) : rawId;
+    const grams = getProductShippingWeightGrams(productId, selectedWeight, catalog);
     if (grams === null) return null;
     total += grams * item.quantity;
   }
@@ -3425,14 +3461,15 @@ function calculateOrderSummary({
   couponCode,
   manualDiscount = 0,
   giftWrapping = false,
-  city = "Lahore"
+  city = "Lahore",
+  catalog: catalog2
 }) {
   const subtotal = calculateSubtotal(items);
   const couponDiscount = calculateDiscount(subtotal, couponCode);
   const discount = Math.min(subtotal, Math.max(couponDiscount, sanitizePrice(manualDiscount)));
   const discountedSubtotal = Math.max(0, subtotal - discount);
   const giftWrapFee = giftWrapping ? GIFT_WRAP_FEE : 0;
-  const shippingWeightGrams = getCartShippingWeightGrams(items);
+  const shippingWeightGrams = getCartShippingWeightGrams(items, catalog2);
   const shipping = calculateShipping(discountedSubtotal, shippingMethodId, giftWrapFee, city, shippingWeightGrams);
   const total = discountedSubtotal + shipping + giftWrapFee;
   return {
@@ -3709,6 +3746,7 @@ function validateCustomerDetails(input, isQuoteRequest = false) {
   };
 }
 function validateAndPriceOrder({
+  catalog: catalog2 = PRODUCTS,
   items,
   shippingMethodId,
   discountCode,
@@ -3756,7 +3794,7 @@ function validateAndPriceOrder({
         hamperConfiguration: hamper.configuration
       };
     }
-    const identity = resolveCartIdentity(clientItem, PRODUCTS);
+    const identity = resolveCartIdentity(clientItem, catalog2);
     const product = identity?.product;
     if (!product) {
       throw new ValidationError(
@@ -4693,7 +4731,9 @@ async function createDurableOrder({
   payload,
   uid,
   idempotencyKey,
-  expectedFinalTotal
+  expectedFinalTotal,
+  priceSource = "static-fallback",
+  catalogFetchedAt = (/* @__PURE__ */ new Date()).toISOString()
 }) {
   if (!db2) {
     throw new PersistenceUnavailableError();
@@ -4807,6 +4847,8 @@ async function createDurableOrder({
     if (deliverySchedule) deliverySchedule.shippingFee = validated.summary.shipping;
     const canonicalOrder = {
       schemaVersion: SCHEMA_VERSION,
+      priceSource,
+      catalogFetchedAt,
       orderId,
       source: "website",
       createdAt: nowIso,
@@ -6531,30 +6573,30 @@ try {
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKey = process.env.FIREBASE_PRIVATE_KEY;
   if (clientEmail && privateKey) {
-    const credentialOptions = (0, import_app.cert)({
+    const credentialOptions = (0, import_app2.cert)({
       projectId,
       clientEmail: clientEmail.trim(),
       privateKey: privateKey.replace(/\\n/g, "\n")
     });
-    const adminApp = (0, import_app.initializeApp)({ credential: credentialOptions, projectId });
+    const adminApp = (0, import_app2.initializeApp)({ credential: credentialOptions, projectId });
     adminAuth = (0, import_auth.getAuth)(adminApp);
     firebaseAdminAuthAvailable = true;
     console.log(`[Firebase Admin] Authentication service initialized successfully for project '${projectId}'.`);
     if (process.env.FIRESTORE_EMULATOR_HOST) {
       const dbId = process.env.FIRESTORE_DATABASE_ID || "(default)";
-      db = (0, import_firestore.getFirestore)(adminApp, dbId);
+      db = (0, import_firestore2.getFirestore)(adminApp, dbId);
       console.log(`[Firestore] Connected via emulator host (${process.env.FIRESTORE_EMULATOR_HOST}).`);
     } else {
       const dbId = process.env.FIRESTORE_DATABASE_ID;
-      db = dbId && dbId !== "(default)" ? (0, import_firestore.getFirestore)(adminApp, dbId) : (0, import_firestore.getFirestore)(adminApp);
+      db = dbId && dbId !== "(default)" ? (0, import_firestore2.getFirestore)(adminApp, dbId) : (0, import_firestore2.getFirestore)(adminApp);
       console.log(`[Firestore] Live production database initialized successfully for project '${projectId}'.`);
     }
   } else if (process.env.FIRESTORE_EMULATOR_HOST) {
-    const adminApp = (0, import_app.initializeApp)({ projectId });
+    const adminApp = (0, import_app2.initializeApp)({ projectId });
     adminAuth = (0, import_auth.getAuth)(adminApp);
     firebaseAdminAuthAvailable = true;
     const dbId = process.env.FIRESTORE_DATABASE_ID || "(default)";
-    db = (0, import_firestore.getFirestore)(adminApp, dbId);
+    db = (0, import_firestore2.getFirestore)(adminApp, dbId);
     console.log(`[Firestore] Connected via emulator host (${process.env.FIRESTORE_EMULATOR_HOST}).`);
   } else {
     adminAuth = null;
@@ -6690,6 +6732,15 @@ var chatLimiter = (0, import_express_rate_limit3.default)({ windowMs: 60 * 1e3, 
 var patronChatLimiter = (0, import_express_rate_limit3.default)({ windowMs: 60 * 1e3, max: 10, skip: (req) => !req.user?.uid, keyGenerator: (req) => req.user?.uid || "guest", message: aiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
 var contactLimiter = (0, import_express_rate_limit3.default)({ windowMs: 60 * 1e3, max: 5, message: apiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
 var ordersLimiter = (0, import_express_rate_limit3.default)({ windowMs: 60 * 1e3, max: 10, message: apiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
+app.get("/api/catalog", async (req, res) => {
+  try {
+    const { catalog: catalog2, source } = await getCatalogServer();
+    res.setHeader("X-Catalog-Source", source);
+    res.json(catalog2);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch catalog" });
+  }
+});
 app.use("/api/chat", chatLimiter);
 app.use("/api/concierge", chatLimiter);
 app.use("/api/ai", chatLimiter);
@@ -6737,7 +6788,9 @@ app.post("/api/orders/quote", authenticateOptionalUser, async (req, res) => {
     const { items, city, shippingMethodId, discountCode, rewardId, giftWrapping, isWholesale } = req.body;
     const authenticatedUser = req.user;
     const promoContext = await firstOrderPromoContext(db, authenticatedUser?.uid || null, discountCode);
+    const _catRes2 = await getCatalogServer();
     const validatedOrder = validateAndPriceOrder({
+      catalog: _catRes2.catalog,
       items,
       city,
       shippingMethodId,
@@ -6786,7 +6839,9 @@ app.post("/api/orders", authenticateOptionalUser, async (req, res) => {
     if (!db) {
       const promoContext = await firstOrderPromoContext(null, verifiedUid, req.body.discountCode);
       const customer = validateCustomerDetails(req.body, getPromo(req.body.discountCode)?.type === "quote");
+      const _catRes2 = await getCatalogServer();
       const validatedOrder = validateAndPriceOrder({
+        catalog: _catRes2.catalog,
         items: req.body.items,
         city: customer.city,
         shippingMethodId: req.body.shippingMethodId,
@@ -6845,7 +6900,9 @@ Our team will contact you with your personalized rate.` : standardReceiptMessage
       payload: req.body,
       uid: verifiedUid,
       idempotencyKey,
-      expectedFinalTotal
+      expectedFinalTotal,
+      priceSource: _catRes.source,
+      catalogFetchedAt: (/* @__PURE__ */ new Date()).toISOString()
     });
     savedOrderVerifiedThisProcess = true;
     res.json({
@@ -7285,7 +7342,8 @@ app.post(["/api/chat", "/api/concierge/chat"], authenticateOptionalUser, patronC
       }
     }
     if (res.headersSent) return;
-    const catalogContext = PRODUCTS.map((p) => {
+    const _catRes2 = await getCatalogServer();
+    const catalogContext = _catRes2.catalog.map((p) => {
       let priceStr = "";
       for (const [weight, price] of Object.entries(p.prices)) {
         priceStr += `${weight}: Rs. ${price}, `;

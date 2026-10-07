@@ -7,10 +7,10 @@ let cachedCatalog: Product[] | null = null;
 let catalogCacheTime = 0;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-export async function getCatalogServer(): Promise<{ catalog: Product[], source: 'firestore' | 'static-fallback' }> {
+export async function getCatalogServer(): Promise<{ catalog: Product[], source: 'firestore' | 'static-fallback' | 'static' }> {
   // Amendment B: Kill switch
   if (process.env.CATALOG_SOURCE === 'static') {
-    return { catalog: PRODUCTS, source: 'static-fallback' };
+    return { catalog: PRODUCTS, source: 'static' };
   }
 
   const now = Date.now();

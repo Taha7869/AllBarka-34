@@ -67,7 +67,7 @@ export interface CreateOrderParams {
   uid: string | null;
   idempotencyKey?: string | null;
   expectedFinalTotal?: number | null;
-  priceSource?: 'firestore' | 'static-fallback';
+  priceSource?: 'firestore' | 'static-fallback' | 'static';
   catalogFetchedAt?: string;
 }
 
