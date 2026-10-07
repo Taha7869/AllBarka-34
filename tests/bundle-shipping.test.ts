@@ -107,7 +107,7 @@ function fakeFirestore() {
     const pending: Array<() => void> = [];
     const result = await run({
       get: async (ref: any) => ({ exists: records.has(ref.key), data: () => records.get(ref.key) }),
-      set: (ref: any, value: unknown) => pending.push(() => { records.set(ref.key, value); writes.push(ref.key); }),
+      create: function(ref, data) { return this.set(ref, data); }, set: (ref: any, value: unknown) => pending.push(() => { records.set(ref.key, value); writes.push(ref.key); }),
       update: (ref: any, value: unknown) => pending.push(() => { records.set(ref.key, { ...records.get(ref.key), ...value as object }); writes.push(ref.key); }),
     });
     pending.forEach(write => write());

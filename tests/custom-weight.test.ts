@@ -176,7 +176,7 @@ function mockDatabase() {
     const pending: Array<() => void> = [];
     const result = await run({
       get: async (ref: any) => ({ exists: records.has(ref.key), data: () => records.get(ref.key) }),
-      set: (ref: any, value: unknown) => pending.push(() => { records.set(ref.key, value); }),
+      create: function(ref, data) { return this.set(ref, data); }, set: (ref: any, value: unknown) => pending.push(() => { records.set(ref.key, value); }),
       update: (ref: any, value: unknown) => pending.push(() => { records.set(ref.key, { ...records.get(ref.key), ...value as object }); }),
     });
     pending.forEach(write => write()); return result;

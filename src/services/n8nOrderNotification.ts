@@ -86,7 +86,7 @@ function money(value: unknown, positive = false): number {
  * claim tokens, admin notes, auth data and WhatsApp links cannot enter this envelope.
  */
 export function projectCanonicalOrderForN8n(order: CanonicalOrder): N8nOrderData {
-  if (!order || !/^AB-\d{8}-[A-F0-9]{6}$/i.test(order.orderId || '') || !Number.isFinite(Date.parse(order.createdAt))) {
+  if (!order || !/^AB-\d{8}-[A-F0-9]{8}$/i.test(order.orderId || '') || !Number.isFinite(Date.parse(order.createdAt))) {
     throw new Error('CANONICAL_ORDER_INVALID');
   }
   const isQuote = order.orderType === 'QUOTE_REQUEST';

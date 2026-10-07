@@ -65,7 +65,7 @@ class TransactionalFirestore {
           this.reads.push(ref.path);
           return this.snapshot(ref.path);
         },
-        set: (ref: { path: string }, data: any, options?: { merge: boolean }) => {
+        create: function(ref, data) { return this.set(ref, data); }, set: (ref: { path: string }, data: any, options?: { merge: boolean }) => {
           if (this.failAudit && ref.path.includes('/audit/')) throw new Error('Private audit write failure');
           pending.push({ path: ref.path, data: structuredClone(data), merge: !!options?.merge });
         },

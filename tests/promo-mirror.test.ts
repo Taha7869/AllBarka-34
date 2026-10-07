@@ -6,7 +6,7 @@ import { normalizeSheetStatus } from '../src/lib/sheetStatusCommand';
 import { adminEditablePaymentStatuses, adminEditableStatuses, adminPromoNotes, formatAdminOrderTotal } from '../src/lib/adminPresentation';
 
 const quote = (): CanonicalOrder => ({
-  schemaVersion: '2.0.0', orderId: 'AB-20261004-A1B2C3', source: 'website',
+  schemaVersion: '2.0.0', orderId: 'AB-20261004-A1B2C300', source: 'website',
   orderType: 'QUOTE_REQUEST', status: 'QUOTE_REQUESTED', paymentMethod: 'quote', paymentStatus: 'NOT_REQUIRED',
   createdAt: '2026-10-04T10:00:00.000Z', createdAtMs: Date.parse('2026-10-04T10:00:00.000Z'),
   updatedAt: '2026-10-04T10:00:00.000Z', updatedAtMs: Date.parse('2026-10-04T10:00:00.000Z'),

@@ -22,7 +22,7 @@ class MemoryDatabase {
       const writes: Array<{ path: string; data: any; merge: boolean }> = [];
       const value = await callback({
         get: async (ref: any) => { assert.equal(writes.length, 0, 'All transaction reads precede writes'); return this.snapshot(ref.path); },
-        set: (ref: any, data: any, options?: any) => { if (this.failAudit && ref.path.startsWith('orderAudits/')) throw new Error('audit unavailable');
+        create: function(ref, data) { return this.set(ref, data); }, set: (ref: any, data: any, options?: any) => { if (this.failAudit && ref.path.startsWith('orderAudits/')) throw new Error('audit unavailable');
           writes.push({ path: ref.path, data: structuredClone(data), merge: !!options?.merge }); },
         update: (ref: any, data: any) => writes.push({ path: ref.path, data: structuredClone(data), merge: true }),
       });

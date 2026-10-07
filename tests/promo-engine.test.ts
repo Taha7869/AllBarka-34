@@ -6,7 +6,7 @@ import { ValidationError } from '../src/lib/validationError';
 import { claimWelcomeVoucher } from '../src/lib/welcomeCouponService';
 
 const hasCode = (code: string) => (error: unknown) => error instanceof ValidationError && error.code === code;
-const apply = (code: unknown, subtotal: number) => evaluatePromo(getPromo(code), subtotal);
+const apply = (code: unknown, subtotal: number) => evaluatePromo(getPromo(code), subtotal, { identityVerified: true, hasPastOrders: false });
 
 function assertNoUndefined(value: unknown, path = 'payload'): void {
   assert.notEqual(value, undefined, path);
@@ -110,7 +110,7 @@ test('inactive codes and expired promotions produce clear validation errors; nul
 
 test('invalid subtotal is rejected and a discount can never exceed subtotal', () => {
   for (const subtotal of [NaN, Infinity, -1]) assert.throws(() => apply('ALLBARKA10', subtotal), hasCode('INVALID_PROMO_SUBTOTAL'));
-  assert.equal(evaluatePromo({ ...PROMO_CONFIG.FRIEND, minOrder: 0 }, 50).discountAmount, 50);
+  assert.equal(evaluatePromo({ ...PROMO_CONFIG.FRIEND, minOrder: 0 }, 50, { identityVerified: true, hasPastOrders: false }).discountAmount, 50);
   assert.equal(apply('ALLBARKA10', 0).discountAmount, 0);
 });
 

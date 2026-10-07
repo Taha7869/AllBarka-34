@@ -60,7 +60,7 @@ class FakeFirestore {
         return this.snap(ref.path);
       },
       update: (ref: any, data: any) => pending.push({ path: ref.path, data: structuredClone(data), merge: true }),
-      set: (ref: any, data: any, options?: any) => {
+      create: function(ref, data) { return this.set(ref, data); }, set: (ref: any, data: any, options?: any) => {
         if (this.failAudit && ref.path.startsWith('orderAudits/')) throw new Error('Simulated audit write failure');
         pending.push({ path: ref.path, data: structuredClone(data), merge: !!options?.merge });
       },

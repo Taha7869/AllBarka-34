@@ -32,7 +32,7 @@ function memoryDatabase(initial: Record<string, any> = {}) {
       const next = tail.then(async () => {
         const writes: any[] = [];
         const result = await callback({ get: async (document: any) => { assert.equal(writes.length, 0); return snapshot(document.path); },
-          set: (document: any, data: any, options?: any) => writes.push(() => records.set(document.path, options?.merge ? { ...records.get(document.path), ...clone(data) } : clone(data))),
+          create: function(ref, data) { return this.set(ref, data); }, set: (document: any, data: any, options?: any) => writes.push(() => records.set(document.path, options?.merge ? { ...records.get(document.path), ...clone(data) } : clone(data))),
           update: (document: any, data: any) => writes.push(() => records.set(document.path, { ...records.get(document.path), ...clone(data) })),
         }); writes.forEach(write => write()); return result;
       }); tail = next.then(() => undefined, () => undefined); return next;

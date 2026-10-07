@@ -49,7 +49,7 @@ function memoryDatabase(initial: Record<string, any> = {}) {
         const writes: Array<() => void> = [];
         const result = await callback({
           get: async (document: any) => { assert.equal(writes.length, 0, 'Firestore reads must precede writes'); return snapshot(document.path); },
-          set: (document: any, data: any, options?: { merge?: boolean }) => writes.push(() => records.set(document.path, options?.merge ? { ...records.get(document.path), ...clone(data) } : clone(data))),
+          create: function(ref, data) { return this.set(ref, data); }, set: (document: any, data: any, options?: { merge?: boolean }) => writes.push(() => records.set(document.path, options?.merge ? { ...records.get(document.path), ...clone(data) } : clone(data))),
           update: (document: any, data: any) => writes.push(() => records.set(document.path, { ...records.get(document.path), ...clone(data) })),
         });
         writes.forEach(write => write());
@@ -64,7 +64,7 @@ function memoryDatabase(initial: Record<string, any> = {}) {
 
 function savedOrder(index = 1): CanonicalOrder {
   return {
-    schemaVersion: '2.0.0', orderId: `AB-20261003-${index.toString(16).toUpperCase().padStart(6, '0')}`,
+    schemaVersion: '2.0.0', orderId: `AB-20261003-${index.toString(16).toUpperCase().padStart(8, '0')}`,
     source: 'website', createdAt: '2026-10-01T12:00:00.000Z', createdAtMs: Date.parse('2026-10-01T12:00:00Z'),
     updatedAt: '2026-10-01T12:00:00.000Z', updatedAtMs: Date.parse('2026-10-01T12:00:00Z'),
     status: 'ORDER_RECEIVED', paymentStatus: 'UNPAID', paymentMethod: 'bank', uid: 'test-customer',
@@ -217,7 +217,7 @@ test('sender signs exact envelope, refreshes dispatch time and requires persiste
 
 test('sender rejects empty/HTML/malformed/mismatched acknowledgements and non-2xx without dispatch success', async () => {
   const order = projectCanonicalOrderForN8n(savedOrder());
-  for (const ack of [null, {}, { ok: false, orderId: order.orderId, mirrorStored: true }, { ok: true, orderId: 'AB-20261003-FFFFFF', mirrorStored: true }, { ok: true, orderId: order.orderId }, { ok: true, orderId: order.orderId, mirrorStored: false }]) {
+  for (const ack of [null, {}, { ok: false, orderId: order.orderId, mirrorStored: true }, { ok: true, orderId: 'AB-20261003-FFFFFFFF', mirrorStored: true }, { ok: true, orderId: order.orderId }, { ok: true, orderId: order.orderId, mirrorStored: false }]) {
     const result = await sendOrderToN8n(order, { config: enabledConfig, fetchImpl: (async () => ({ ok: true, status: 200, json: async () => ack })) as any });
     assert.equal(result.status, 'FAILED'); assert.equal(result.sent, false);
   }

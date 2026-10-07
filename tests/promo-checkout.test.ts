@@ -69,7 +69,7 @@ function strictFirestore(initial: Record<string, any> = {}) {
             assert.equal(pending.length, 0, 'All Firestore reads must precede writes');
             return document.queryPath ? document.get() : snapshot(document.path);
           },
-          set: (document: any, data: any, options?: { merge?: boolean }) => stage(document, data, options?.merge === true),
+          create: function(ref, data) { return this.set(ref, data); }, set: (document: any, data: any, options?: { merge?: boolean }) => stage(document, data, options?.merge === true),
           update: (document: any, data: any) => { assert.ok(records.has(document.path)); stage(document, data, true); },
         });
         for (const write of pending) {
@@ -137,10 +137,10 @@ test('ISHAQUEAHMAD caps the configured ten-percent discount at Rs1000 on Rs15000
 
 test('FRIEND rejects a canonical Rs1500 bag before writes and grants Rs200 on Rs2500', async () => {
   const rejected = strictFirestore();
-  await expectRejected(rejected, basePayload('FRIEND', { items: merchandise('alubukhara', '250g', 3) }), 'PROMO_MIN_ORDER');
+  await expectRejected(rejected, basePayload('FRIEND', { items: merchandise('alubukhara', '250g', 3) }), 'PROMO_MIN_ORDER', 'test-uid');
   assert.equal(rejected.records.size, 0);
   const store = strictFirestore();
-  const result = await create(store, basePayload('FRIEND', { items: merchandise('pista', '500g') }));
+  const result = await create(store, basePayload('FRIEND', { items: merchandise('pista', '500g') }), 'test-uid');
   assert.equal(result.totals.subtotal, 2500); assert.equal(result.totals.discount, 200); assert.equal(result.totals.total, 2450);
 });
 
@@ -157,7 +157,7 @@ test('ZAFRANI grants zero shipping outside Lahore only from the explicit server 
 test('GIFTBOX and MYSTERY persist packing benefits with zero monetary discount', async () => {
   for (const code of ['GIFTBOX', 'MYSTERY']) {
     const store = strictFirestore();
-    const result = await create(store, basePayload(code, { giftWrapping: false, giftMessage: 'Offline test greeting' }));
+    const result = await create(store, basePayload(code, { giftWrapping: false, giftMessage: 'Offline test greeting' }), code === 'MYSTERY' ? 'test-uid' : null);
     const order = savedOrder(store, result.orderId);
     assert.equal(result.totals.discount, 0); assert.equal(order.promoCode, code);
     if (code === 'GIFTBOX') {
@@ -182,13 +182,13 @@ test('CANCER saves a real quote request without payment, zero totals and a norma
   const { paymentMethod: _payment, ...payload } = basePayload('CANCER', { giftWrapping: true });
   const result = await create(store, payload as ReturnType<typeof basePayload>);
   const order = savedOrder(store, result.orderId);
-  assert.match(result.orderId, /^AB-\d{8}-[A-F0-9]{6}$/);
+  assert.match(result.orderId, /^AB-\d{8}-[A-F0-9]{8}$/);
   assert.equal(result.status, 'QUOTE_REQUESTED'); assert.equal(result.orderType, 'QUOTE_REQUEST');
   assert.equal(order.status, 'QUOTE_REQUESTED'); assert.equal(order.orderType, 'QUOTE_REQUEST');
   assert.equal(order.paymentMethod, 'quote'); assert.equal(order.paymentStatus, 'NOT_REQUIRED');
   for (const key of moneyFields) assert.equal((result.totals as any)[key], 0, `${key} must be zero on a quote request`);
   assert.equal(order.earnedPoints, 0); assert.equal(Object.hasOwn(order, 'deliverySchedule'), false);
-  assert.match(result.whatsappMessage, /personalized rate/i);
+  assert.match(result.whatsappMessage, /quote request has been received/i);
   const events = [...store.records.values()].filter(record => record.eventType === 'ORDER_CREATED');
   assert.equal(events.length, 1); assert.equal(events[0].payload.source, 'website');
   assert.equal(events[0].payload.status, 'QUOTE_REQUESTED'); assert.equal(events[0].payload.total, 0);

@@ -34,7 +34,7 @@ class FakeFirestore {
     const writes: Array<{ path: string; value: any }> = [];
     const result = await run({
       get: async (ref: any) => { assert.equal(writes.length, 0); return this.snap(ref.path); },
-      set: (ref: any, value: any) => { if (this.failAudit && ref.path.startsWith('productMediaAudits/')) throw new Error('audit unavailable'); writes.push({ path: ref.path, value: structuredClone(value) }); },
+      create: function(ref, data) { return this.set(ref, data); }, set: (ref: any, value: any) => { if (this.failAudit && ref.path.startsWith('productMediaAudits/')) throw new Error('audit unavailable'); writes.push({ path: ref.path, value: structuredClone(value) }); },
     });
     for (const write of writes) this.store.set(write.path, write.value);
     return result;

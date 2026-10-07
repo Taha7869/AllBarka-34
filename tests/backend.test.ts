@@ -174,7 +174,7 @@ async function runBackendTests() {
             assert.equal(document.path, 'checkoutIntents/fixture-conflict-key');
             return { exists: true, data: () => ({ payloadHash: hashPayload(idempotencyPayload), orderId: 'AB-20261003-A1B2C3' }) };
           },
-          set: () => { writes++; }, update: () => { writes++; },
+          create: function(ref, data) { return this.set(ref, data); }, set: () => { writes++; }, update: () => { writes++; },
         }),
       };
       await assert.rejects(() => createDurableOrder({ db: mockDb, payload: { ...idempotencyPayload, [field]: value },

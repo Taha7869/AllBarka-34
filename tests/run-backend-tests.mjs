@@ -9,7 +9,7 @@ function transactionalDatabase(store) {
   return { collection, runTransaction: async callback => {
     const writes = [];
     const result = await callback({ get: async ref => { assert.equal(writes.length, 0, 'Reads must precede writes'); return snapshot(ref.path); },
-      set: (ref, data, options) => writes.push({ path: ref.path, data: structuredClone(data), merge: !!options?.merge }),
+      create: function(ref, data) { return this.set(ref, data); }, set: (ref, data, options) => writes.push({ path: ref.path, data: structuredClone(data), merge: !!options?.merge }),
       update: (ref, data) => writes.push({ path: ref.path, data: structuredClone(data), merge: true }) });
     for (const write of writes) store.set(write.path, write.merge ? { ...store.get(write.path), ...write.data } : write.data);
     return result;

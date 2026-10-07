@@ -173,7 +173,7 @@ test('acknowledgement requires matching confirmed Sheet result and cannot accept
   const valid = run('Validate Website Order', order()), refs = { 'Validate Website Order': valid };
   assert.deepEqual(run('Acknowledge Website Mirror', { order_id: valid.orderId }, refs).responseBody,
     { ok: true, orderId: valid.orderId, duplicate: false, mirrorStored: true });
-  for (const input of [{}, { error: 'write failed' }, { order_id: 'AB-20261003-000000' }]) assert.equal(run('Acknowledge Website Mirror', input, refs).httpStatus, 503);
+  for (const input of [{}, { error: 'write failed' }, { order_id: 'AB-20261003-00000000' }]) assert.equal(run('Acknowledge Website Mirror', input, refs).httpStatus, 503);
 });
 
 test('wrapped custom hampers keep exact discounted total including wrapping while packing stays canonical', () => {
