@@ -130,6 +130,7 @@ export function validateCustomerDetails(input: Partial<CustomerInput>, isQuoteRe
  * Authoritative: browser prices are completely ignored.
  */
 export function validateAndPriceOrder({
+  catalog = PRODUCTS,
   items,
   shippingMethodId,
   discountCode,
@@ -138,6 +139,7 @@ export function validateAndPriceOrder({
   city,
   promoContext,
 }: {
+  catalog?: any[];
   items: any[];
   shippingMethodId: string;
   discountCode?: string | null;
@@ -186,7 +188,7 @@ export function validateAndPriceOrder({
         price: hamper.unitPrice, earnedPoints: 0, hamperConfiguration: hamper.configuration,
       };
     }
-    const identity = resolveCartIdentity(clientItem, PRODUCTS);
+    const identity = resolveCartIdentity(clientItem, catalog);
     const product = identity?.product;
 
     if (!product) {

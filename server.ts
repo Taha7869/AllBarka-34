@@ -16,6 +16,7 @@ import type { ConciergeLanguage } from './src/lib/conciergeFallback';
 import { commerceCors } from './src/lib/apiCors';
 import { probeCommerceDatabase } from './src/lib/commerceReadiness';
 import { PRODUCTS } from './src/data/products';
+import { getCatalogServer } from './src/lib/liveCatalog';
 import { STORE_CONFIG } from './src/config/store';
 import { CONTACT_CONFIG, buildAutomatedOrderWhatsAppUrl, buildHumanSupportWhatsAppUrl } from './src/config/contacts';
 import { getN8nOrderDispatchConfig } from './src/services/n8nOrderNotification';
@@ -250,6 +251,15 @@ const patronChatLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, skip: req =>
 const contactLimiter = rateLimit({ windowMs: 60 * 1000, max: 5, message: apiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
 const ordersLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, message: apiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
 
+app.get('/api/catalog', async (req, res) => {
+  try {
+    const { catalog, source } = await getCatalogServer();
+    res.setHeader('X-Catalog-Source', source);
+    res.json(catalog);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch catalog' });
+  }
+});
 app.use('/api/chat', chatLimiter);
 app.use('/api/concierge', chatLimiter);
 app.use('/api/ai', chatLimiter);
@@ -303,7 +313,10 @@ app.post('/api/orders/quote', authenticateOptionalUser, async (req, res) => {
     const authenticatedUser = (req as any).user;
     const promoContext = await firstOrderPromoContext(db, authenticatedUser?.uid || null, discountCode);
 
+    const _catRes = await getCatalogServer();
     const validatedOrder = validateAndPriceOrder({
+      catalog: _catRes.catalog,
+
       items,
       city,
       shippingMethodId,
@@ -360,7 +373,10 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
     if (!db) {
       const promoContext = await firstOrderPromoContext(null, verifiedUid, req.body.discountCode);
       const customer = validateCustomerDetails(req.body, getPromo(req.body.discountCode)?.type === 'quote');
-      const validatedOrder = validateAndPriceOrder({
+      const _catRes = await getCatalogServer();
+    const validatedOrder = validateAndPriceOrder({
+      catalog: _catRes.catalog,
+
         items: req.body.items,
         city: customer.city,
         shippingMethodId: req.body.shippingMethodId,
@@ -402,7 +418,9 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
       payload: req.body,
       uid: verifiedUid,
       idempotencyKey,
-      expectedFinalTotal
+      expectedFinalTotal,
+      priceSource: _catRes.source,
+      catalogFetchedAt: new Date().toISOString()
     });
     savedOrderVerifiedThisProcess = true;
 
@@ -885,7 +903,8 @@ app.post(['/api/chat', '/api/concierge/chat'], authenticateOptionalUser, patronC
     }
     if (res.headersSent) return;
   // Generate instructions dynamically from the actual PRODUCTS array
-  const catalogContext = PRODUCTS.map(p => {
+  const _catRes = await getCatalogServer();
+  const catalogContext = _catRes.catalog.map(p => {
     let priceStr = '';
     for (const [weight, price] of Object.entries(p.prices)) {
       priceStr += `${weight}: Rs. ${price}, `;

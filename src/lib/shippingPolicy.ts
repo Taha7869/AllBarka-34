@@ -39,8 +39,8 @@ export function validateShippingRewardDestination(reward: { rewardType?: string;
 }
 
 /** Only canonical catalogue portions can supply the shipping billing weight. */
-export function getProductShippingWeightGrams(productId: string, selectedWeight: string): number | null {
-  const product = PRODUCTS.find(item => item.id === productId);
+export function getProductShippingWeightGrams(productId: string, selectedWeight: string, catalog: any[] = PRODUCTS): number | null {
+  const product = catalog.find(item => item.id === productId);
   return product ? resolveProductVariant(product, selectedWeight)?.weightGrams ?? null : null;
 }
 
@@ -58,10 +58,10 @@ export function getCartShippingWeightGrams(items: readonly ShippingWeightItem[])
       total += hamper.massGrams * item.quantity;
       continue;
     }
-    const productId = PRODUCTS.some(product => product.id === rawId)
+    const productId = catalog.some(product => product.id === rawId)
       ? rawId
       : rawId.endsWith(`-${selectedWeight}`) ? rawId.slice(0, -(selectedWeight.length + 1)) : rawId;
-    const grams = getProductShippingWeightGrams(productId, selectedWeight);
+    const grams = getProductShippingWeightGrams(productId, selectedWeight, catalog);
     if (grams === null) return null;
     total += grams * item.quantity;
   }

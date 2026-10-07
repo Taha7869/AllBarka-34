@@ -67,6 +67,8 @@ export interface CreateOrderParams {
   uid: string | null;
   idempotencyKey?: string | null;
   expectedFinalTotal?: number | null;
+  priceSource?: 'firestore' | 'static-fallback';
+  catalogFetchedAt?: string;
 }
 
 /**
@@ -77,7 +79,9 @@ export async function createDurableOrder({
   payload,
   uid,
   idempotencyKey,
-  expectedFinalTotal
+  expectedFinalTotal,
+  priceSource = 'static-fallback',
+  catalogFetchedAt = new Date().toISOString()
 }: CreateOrderParams): Promise<{
   orderId: string;
   status: OrderStatus;
@@ -230,8 +234,10 @@ export async function createDurableOrder({
     });
     if (deliverySchedule) deliverySchedule.shippingFee = validated.summary.shipping;
 
-    const canonicalOrder: CanonicalOrder = {
+    const canonicalOrder: CanonicalOrder & { priceSource?: string; catalogFetchedAt?: string; } = {
       schemaVersion: SCHEMA_VERSION,
+      priceSource,
+      catalogFetchedAt,
       orderId,
       source: 'website',
       createdAt: nowIso,

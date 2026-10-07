@@ -73,14 +73,17 @@ export function calculateDiscount(subtotal: number, couponCode?: string | null):
  * Authoritative single calculation contract used by UI and server.
  */
 export function calculateOrderSummary({
+
   items,
   shippingMethodId = 'standard',
   couponCode,
   manualDiscount = 0,
   giftWrapping = false,
   city = 'Lahore',
+  catalog
 }: {
   items: OrderItemPriceInput[];
+  catalog?: any[];
   shippingMethodId?: ShippingMethodId;
   couponCode?: string | null;
   manualDiscount?: number;
@@ -92,7 +95,7 @@ export function calculateOrderSummary({
   const discount = Math.min(subtotal, Math.max(couponDiscount, sanitizePrice(manualDiscount)));
   const discountedSubtotal = Math.max(0, subtotal - discount);
   const giftWrapFee = giftWrapping ? GIFT_WRAP_FEE : 0;
-  const shippingWeightGrams = getCartShippingWeightGrams(items);
+  const shippingWeightGrams = getCartShippingWeightGrams(items, catalog);
   const shipping = calculateShipping(discountedSubtotal, shippingMethodId, giftWrapFee, city, shippingWeightGrams);
   const total = discountedSubtotal + shipping + giftWrapFee;
 
