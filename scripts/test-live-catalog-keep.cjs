@@ -53,10 +53,10 @@ async function run() {
     console.log('⚠️ zz-test-probe NOT found in /api/catalog (likely due to 5-min cache).');
   }
 
-  // Now delete it
-  await db.collection('products').doc('zz-test-probe').delete();
+  // Actually keep it, no delete.
   console.log('Kept zz-test-probe in Firestore for visual testing.');
 }
 
 run().catch(console.error);
+
 
