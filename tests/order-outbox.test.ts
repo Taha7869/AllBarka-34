@@ -283,7 +283,7 @@ test('failure schedules bounded backoff, persists attempts and never rolls back 
     assert.deepEqual(store.records.get(`orders/${order.orderId}`), order);
     if (attempt < ORDER_OUTBOX_MAX_ATTEMPTS) {
       assert.equal(event.nextAttemptAtMs, now + orderOutboxBackoffMs(attempt));
-      assert.equal((await instance.runOnce()).status, 'BUSY');
+      assert.equal((await instance.runOnce()).status, 'IDLE');
       now = event.nextAttemptAtMs;
     } else assert.equal(event.nextAttemptAtMs, undefined);
   }
@@ -301,7 +301,7 @@ test('a restarted process recovers an expired event/global lease and preserves o
   });
   let wire: any;
   const restarted = worker(store.db, { now: () => now, dispatch: async (order: any) => { wire = order; return { sent: true, status: 'SUCCESS' }; } });
-  assert.equal((await restarted.runOnce()).status, 'BUSY'); now += 51;
+  assert.equal((await restarted.runOnce()).status, 'IDLE'); now += 51;
   const result = await restarted.runOnce(); assert.equal(result.status, 'DELIVERED'); assert.equal(result.attempts, 2);
   assert.equal(wire.createdAt, order.createdAt);
 });

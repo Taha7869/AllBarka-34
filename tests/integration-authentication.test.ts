@@ -26,7 +26,7 @@ test('unconfigured integration stays unavailable and never calls its mutation ha
   invoke(secret, secret); assert.equal(next, 1);
 });
 test('saved receipt action targets automated tracking without receipt/customer data', () => {
-  const id = 'AB-20261003-A1B2C3';
+  const id = 'AB-20261003-A1B2C300';
   const url = new URL(buildOrderTrackingWhatsAppUrl(id));
   assert.equal(url.pathname, `/${CONTACT_CONFIG.automatedOrdersWhatsApp.raw}`);
   assert.equal(url.searchParams.get('text'), `Track my order ${id}`);

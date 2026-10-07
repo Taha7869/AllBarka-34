@@ -33,7 +33,7 @@ export function buildAutomatedOrderWhatsAppUrl(textMessage?: string): string {
 
 /** Saved-order lookup only. Opening the link does not send a message or establish a service window. */
 export function buildOrderTrackingWhatsAppUrl(orderId: string): string {
-  if (!/^AB-\d{8}-[A-F0-9]{6}$/i.test(orderId)) throw new Error('INVALID_SAVED_ORDER_ID');
+  if (!/^AB-\d{8}-[A-F0-9]{8}$/i.test(orderId)) throw new Error('INVALID_SAVED_ORDER_ID');
   return buildAutomatedOrderWhatsAppUrl(`Track my order ${orderId}`);
 }
 

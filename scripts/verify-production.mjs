@@ -54,7 +54,7 @@ try {
     assert.equal(health.status, 'ok');
     assert.equal(health.outboxWorker.started, true);
     assert.equal(health.outboxWorker.stopped, false);
-    assert.equal(health.outboxWorker.pollIntervalMs, 15000);
+    assert.equal(health.outboxWorker.pollIntervalMs, 60000);
     assert.ok(health.outboxWorker.lastTickAt);
     const status = await (await request('/api/commerce/readiness')).json();
     assert.equal(status.authActive, false);
