@@ -17,6 +17,7 @@ const collectionPresentation = [
   { id: 'gift-boxes', name: 'Gift Boxes', image: '/assets/categories/gifts.png', altKey: 'imageAlt.categoryGifts', link: '/gifting' },
   { id: 'oils', name: 'Cold-Pressed Oils', image: '/images/generated/category-oils-tile-v1.webp', altKey: 'imageAlt.categoryOils', link: '/shop/oils' },
   { id: 'essentials', name: 'Desi Essentials', image: '/images/generated/category-essentials-tile-v1.webp', altKey: 'imageAlt.categoryEssentials', link: '/shop/essentials' },
+  { id: 'herbs-spices', name: 'Herbs & Spices', image: '/images/generated/category-herbs-spices-tile-v1.webp', altKey: 'imageAlt.categoryHerbsSpices', link: '/shop/herbs-spices' },
 ];
 /** Preserve the established collection art/order; new canonical collections join automatically. */
 export const PANTRY_CATEGORIES = [
