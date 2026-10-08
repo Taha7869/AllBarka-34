@@ -117,10 +117,10 @@ try {
     assert.equal((await response.json()).code, 'NOT_FOUND');
   });
   await check('crawler URLs use deployment domain', async () => {
-    assert.match(await (await request('/robots.txt')).text(), /Sitemap: https:\/\/allbarka-launch.example\/sitemap.xml/);
+    assert.match(await (await request('/robots.txt')).text(), /Sitemap: https:\/\/allbarka.com\/sitemap.xml/);
     const sitemap = await request('/sitemap.xml');
     assert.match(sitemap.headers.get('content-type'), /application\/xml/);
-    assert.ok((await sitemap.text()).includes('https://allbarka-launch.example/product/pista'));
+    assert.ok((await sitemap.text()).includes('https://allbarka.com/product/pista'));
   });
   await check('hashed assets use immutable caching', async () => {
     const html = await (await request('/')).text();

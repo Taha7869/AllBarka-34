@@ -1,7 +1,9 @@
-﻿User-agent: *
+User-agent: *
 Allow: /
-Disallow: /cart
+Disallow: /api/
 Disallow: /checkout
+Disallow: /cart
+Disallow: /success
 Disallow: /admin
 
 Sitemap: https://allbarka.com/sitemap.xml

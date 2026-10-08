@@ -988,14 +988,8 @@ async function startServer() {
     const html = readFileSync(path.join(distPath, 'index.html'), 'utf8')
       .replaceAll('https://allbarka.com', publicOrigin)
       .replaceAll('content="/images/generated/og-image.jpg"', `content="${publicOrigin}/images/generated/og-image.jpg"`);
-    app.get('/robots.txt', (_req, res) => res.type('text/plain').send(
-      `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /checkout\nDisallow: /cart\nDisallow: /success\nDisallow: /admin\nSitemap: ${publicOrigin}/sitemap.xml\n`
-    ));
-    app.get('/sitemap.xml', (_req, res) => {
-      const routes = ['/', '/shop', '/gifting', '/wholesale', '/journal', '/faq', '/contact',
-        ...PRODUCTS.map(product => `/product/${encodeURIComponent(product.id)}`)];
-      res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${routes.map(route => `<url><loc>${publicOrigin}${route}</loc></url>`).join('')}</urlset>`);
-    });
+    
+    
     app.get('/index.html', (_req, res) => {
       res.setHeader('Cache-Control', 'no-cache');
       res.type('html').send(html);
