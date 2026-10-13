@@ -40,7 +40,7 @@ test('all new boutique cards retain localized origin rows and exactly one image 
       assert.ok(html.includes(origin), `${id}:${language}`);
       assert.doesNotMatch(html, /product-gallery-counter|product-gallery-arrow|-secondary\.svg/);
       assert.equal((html.match(/<img\b/g) || []).length, 1, `${id}:${language}`);
-      assert.ok(html.includes(`/images/products/${id}.svg`), `${id}:${language}`);
+      assert.ok(html.includes(`/images/products/${id}-1.webp`), `${id}:${language}`);
       assert.match(html, /product-gallery-track" dir="ltr"/);
       assert.match(html, /aria-pressed="false"/);
     }

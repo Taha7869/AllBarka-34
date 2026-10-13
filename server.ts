@@ -23,7 +23,8 @@ import { getN8nOrderDispatchConfig } from './src/services/n8nOrderNotification';
 import { startOrderOutboxWorker } from './src/services/orderOutboxWorker';
 import { askN8nConsultant, getN8nAiConfig } from './src/services/n8nAIConsultant';
 import { reserveGuestAiMessage, GuestTrialLimitError } from './src/lib/aiGuestTrial';
-import { REWARDS } from './src/data/rewards';
+import { createLoyaltyRouter } from './src/lib/loyaltyRouter';
+import { deploymentIdentity } from './src/lib/deploymentIdentity';
 import { validateAndPriceOrder, validateCustomerDetails, ValidationError } from './src/lib/orderValidation';
 import { validateShippingRewardDestination } from './src/lib/shippingPolicy';
 import crypto from 'crypto';
@@ -273,8 +274,9 @@ const ordersDb: any[] = [];
 // 1. API: Health Check
 let orderOutboxWorker: ReturnType<typeof startOrderOutboxWorker> | null = null;
 app.get('/api/health', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
   res.json({ status: 'ok', apiActive: Boolean(getN8nAiConfig()), aiConfigured: Boolean(getN8nAiConfig()), aiProvider: 'n8n-groq', aiConnectivityVerified: false,
-    outboxWorker: orderOutboxWorker?.getState() ?? null });
+    deployment: deploymentIdentity(), outboxWorker: orderOutboxWorker?.getState() ?? null });
 });
 
 // 1.2 API: Commerce Persistence Readiness Status
@@ -671,96 +673,7 @@ app.post('/api/admin/orders/:orderId/payment', requireAdmin, async (req, res) =>
   } catch (error) { adminOperationFailure(res, error); }
 });
 
-// Authenticated customer loyalty profile
-app.get('/api/loyalty/profile', requireAuth, async (req, res) => {
-    try {
-        const uid = (req as any).user.uid;
-        if (!db) {
-          return res.json({
-            loyaltyPoints: 0,
-            transactions: [],
-            activeRewards: []
-          });
-        }
-
-        const userDoc = await db.collection("users").doc(uid).get();
-        const loyaltyPoints = userDoc.exists ? (userDoc.data()?.loyaltyPoints || 0) : 0;
-
-        const txSnap = await db.collection("users").doc(uid).collection("loyaltyTransactions").orderBy("createdAt", "desc").limit(10).get();
-        const transactions = txSnap.docs.map((d: any) => d.data());
-
-        const arSnap = await db.collection("users").doc(uid).collection("activeRewards").where("status", "==", "ACTIVE").get();
-        const activeRewards = arSnap.docs.map((d: any) => d.data());
-
-        res.json({
-            loyaltyPoints,
-            transactions,
-            activeRewards
-        });
-    } catch(err: any) {
-        res.status(500).json({ error: err.message, code: 'SERVER_ERROR' });
-    }
-});
-
-app.get('/api/loyalty/rewards', (req, res) => {
-    res.json(REWARDS);
-});
-
-// Authenticated customer loyalty redeem
-app.post('/api/loyalty/redeem', requireAuth, async (req, res) => {
-    try {
-        const uid = (req as any).user.uid;
-        const { rewardId } = req.body;
-        if (!rewardId) return res.status(400).json({ error: "Missing rewardId", code: 'MISSING_REWARD' });
-        if (!db) return res.status(503).json({ error: "Loyalty redemption database is currently undergoing maintenance.", code: 'DB_UNAVAILABLE' });
-
-        const reward = REWARDS.find(r => r.rewardId === rewardId);
-        if (!reward || !reward.active) return res.status(400).json({ error: "Invalid reward", code: 'INVALID_REWARD' });
-
-        let activeRewardData: any = null;
-        await db.runTransaction(async (t: any) => {
-            const userRef = db.collection("users").doc(uid);
-            const userDoc = await t.get(userRef);
-            if (!userDoc.exists) throw new Error("User not found");
-            const currentPoints = userDoc.data()?.loyaltyPoints || 0;
-            if (currentPoints < reward.pointsCost) throw new Error("Insufficient points");
-
-            const activeRewardsSnapshot = await t.get(userRef.collection("activeRewards").where("status", "==", "ACTIVE").limit(1));
-            if (!activeRewardsSnapshot.empty) {
-                throw new Error("You already have an active reward. Please use it first.");
-            }
-
-            const newPoints = currentPoints - reward.pointsCost;
-            t.set(userRef, sanitizeFirestoreData({ loyaltyPoints: newPoints }), { merge: true });
-
-            const txId = crypto.randomUUID();
-            const txRef = userRef.collection("loyaltyTransactions").doc(txId);
-            t.set(txRef, sanitizeFirestoreData({
-                transactionId: txId,
-                type: 'REDEEM',
-                points: -reward.pointsCost,
-                rewardId: reward.rewardId,
-                description: `Redeemed ${reward.name}`,
-                createdAt: Date.now()
-            }));
-
-            const arId = crypto.randomUUID();
-            const arRef = userRef.collection("activeRewards").doc(arId);
-            activeRewardData = {
-                rewardId: reward.rewardId,
-                claimedAt: Date.now(),
-                expiresAt: Date.now() + (reward.expiryDays * 24 * 60 * 60 * 1000),
-                status: 'ACTIVE',
-                rewardType: reward.rewardType
-            };
-            t.set(arRef, sanitizeFirestoreData(activeRewardData));
-        });
-
-        res.json({ success: true, activeReward: activeRewardData });
-    } catch(err: any) {
-        res.status(400).json({ error: err.message, code: 'REDEEM_FAILED' });
-    }
-});
+app.use(createLoyaltyRouter({ getDb: () => db, requireAuth }));
 
 // Authenticated guest order claim
 app.post('/api/orders/claim', requireAuth, async (req, res) => {

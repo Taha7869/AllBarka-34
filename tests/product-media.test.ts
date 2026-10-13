@@ -63,7 +63,7 @@ test('media payloads preserve ordered covers and reject unsafe, duplicate and un
   assert.throws(() => validateMediaPatch({ expectedRevision: 0, media, actorUid: 'spoofed' }), errorCode('INVALID_MEDIA'));
 });
 
-test('all media manifests agree with the catalogue; established photography and single SVG covers are preserved', () => {
+test('all media manifests agree with the catalogue; approved launch photography and single WebP covers are preserved', () => {
   const photographed = PRODUCTS.filter(product => LEGACY_PRODUCT_IDS.includes(product.id));
   assert.equal(photographed.length, 32);
   assert.equal(Object.keys(manifest).length, PRODUCTS.length);
@@ -86,7 +86,7 @@ test('all media manifests agree with the catalogue; established photography and 
   }
 });
 
-test('single-image additions discard obsolete pack overrides without changing owner covers or real-photo galleries', () => {
+test('single-image additions discard obsolete pack overrides after WebP migration without changing owner covers', () => {
   const product = PRODUCTS.find(product => product.id === 'ceylon-cinnamon')!;
   const retired = `/images/products/${product.id}-secondary.svg`;
   const override = { images: [retired, product.image!], videoUrl: 'https://cdn.allbarka.com/cinnamon.mp4', videoPoster: retired };

@@ -180,7 +180,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const estimatedShipping = useMemo(() => {
     try { return calculateOrderSummary({ items: cartItems, city: shippingCity, catalog }).shipping; }
     catch { return null; } // A selection requiring a quote must never crash the bag.
-  }, [cartItems, shippingCity]);
+  }, [cartItems, shippingCity, catalog]);
 
   const freeShippingProgress = useMemo(() => {
     return Math.min(100, Math.round((subtotal / FREE_SHIPPING_THRESHOLD) * 100));
@@ -275,7 +275,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsCartOpen(true);
       }
     },
-    [addToast, t, language]
+    [addToast, t, language, catalog]
   );
 
   /**

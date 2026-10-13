@@ -38,11 +38,11 @@ service cloud.firestore {
     }
     
     // Orders collection:
-    // Read: authenticated patron owner can read their own order documents
-    // Writes: client creation, update, and delete are strictly DENIED (orders created server-side only)
+    // Canonical orders include private staff notes and guest-claim security fields.
+    // Customers use the authenticated, ownership-checked API and its explicit
+    // response allowlist; Firestore rules cannot hide individual document fields.
     match /orders/{orderId} {
-      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
-      allow write: if false;
+      allow read, write: if false;
     }
 
     // Coupons and discounts: server-side evaluation only

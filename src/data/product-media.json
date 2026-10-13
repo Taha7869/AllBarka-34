@@ -85,7 +85,7 @@
   },
   "pumpkin_seeds": {
     "images": [
-      "/images/generated/pumpkin-seeds-catalog-v1.webp",
+      "/images/products/pumpkin_seeds-1.webp",
       "/images/generated/pumpkin_seeds-secondary-v1.webp"
     ],
     "videoUrl": "",
@@ -109,7 +109,7 @@
   },
   "chanay": {
     "images": [
-      "/images/generated/roasted-chanay-catalog-v1.webp",
+      "/images/products/chanay-1.webp",
       "/images/generated/chanay-secondary-v1.webp"
     ],
     "videoUrl": "",
