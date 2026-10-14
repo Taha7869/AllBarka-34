@@ -45,7 +45,7 @@ export function getProductShippingWeightGrams(productId: string, selectedWeight:
 }
 
 /** Null means that an honest weight quote is unavailable; never trust client weight fields. */
-export function getCartShippingWeightGrams(items: readonly ShippingWeightItem[], catalog: readonly Product[] = PRODUCTS): number | null {
+export function getCartShippingWeightGrams(items: readonly ShippingWeightItem[], catalog: readonly Product[] = PRODUCTS, boxes?: readonly import('./hamperCatalog').HamperBox[]): number | null {
   if (!Array.isArray(items)) return null;
   let total = 0;
   for (const item of items) {
@@ -53,7 +53,7 @@ export function getCartShippingWeightGrams(items: readonly ShippingWeightItem[],
     const selectedWeight = item.selectedWeight || '';
     const rawId = item.productId || item.id || '';
     if (rawId === CUSTOM_HAMPER_PRODUCT_ID) {
-      const hamper = resolveHamper(item.hamperConfiguration);
+      const hamper = resolveHamper(item.hamperConfiguration, catalog, boxes);
       if (!hamper) return null;
       total += hamper.massGrams * item.quantity;
       continue;

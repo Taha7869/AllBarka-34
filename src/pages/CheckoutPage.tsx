@@ -52,8 +52,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
-import { PRODUCTS } from '../data/products';
-import { useLiveCatalog } from '../hooks/useLiveCatalog';
+import { useCatalogState } from '../hooks/useLiveCatalog';
 
 // Popular Lahore Neighborhoods for Rapid Delivery Pinning
 
@@ -90,7 +89,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   const mediaCover = useProductMediaCover();
   const online = useOnlineStatus();
   const reduceMotion = useReducedMotion();
-  const catalog = useLiveCatalog();
+  const { catalog, boxes: hamperBoxes, revision: catalogRevision } = useCatalogState();
   const [restoredDraft] = useState(readCheckoutDraft);
   const [draftNotice, setDraftNotice] = useState(!!restoredDraft);
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
@@ -150,7 +149,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
 
   const [couponCode, setCouponCode] = useState(restoredDraft?.coupon || '');
   const [appliedCoupon, setAppliedCoupon] = useState(restoredDraft?.coupon || '');
-  const [quote, setQuote] = useState<{ key: string; totals: PricingSummary } | null>(null);
+  const [quote, setQuote] = useState<{ key: string; totals: PricingSummary; fingerprint?: string } | null>(null);
   const [quoteError, setQuoteError] = useState('');
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteRefresh, setQuoteRefresh] = useState(0);
@@ -161,7 +160,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   const [activeReward, setActiveReward] = useState<any>(null);
   const [rewardDetails, setRewardDetails] = useState<any>(null);
 
-  const quoteKey = checkoutQuoteKey({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping, discountCode: appliedCoupon, rewardId: selectedRewardId, isWholesale }, currentUser?.uid || null);
+  const quoteKey = `${catalogRevision}:${checkoutQuoteKey({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping, discountCode: appliedCoupon, rewardId: selectedRewardId, isWholesale }, currentUser?.uid || null)}`;
   const pricingKeyRef = React.useRef(quoteKey);
   pricingKeyRef.current = quoteKey;
   const quoteStatusRef = React.useRef({ quote, loading: quoteLoading });
@@ -183,11 +182,11 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
         const result = await getOrderQuote({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping, discountCode: appliedCoupon, rewardId: selectedRewardId, isWholesale, authToken, signal: controller.signal });
         if (!active) return;
         if (result.success && result.totals) {
-          setQuote({ key: quoteKey, totals: result.totals }); setIsQuoteRequestMode(result.totals.isQuoteRequest === true);
+          setQuote({ key: quoteKey, totals: result.totals, fingerprint: result.quoteFingerprint }); setIsQuoteRequestMode(result.totals.isQuoteRequest === true);
           if (appliedCoupon) setCouponErrorMsg(null);
         }
         else {
-          const message = result.code === 'TIMEOUT' ? t('checkout.quoteTimeout', 'The price check timed out. Please retry.') : result.error || t('checkout.quoteFailed');
+          const message = result.code?.startsWith('CATALOG_') ? t('pricing.unavailable') : result.code === 'TIMEOUT' ? t('checkout.quoteTimeout', 'The price check timed out. Please retry.') : result.error || t('checkout.quoteFailed');
           setQuoteError(message);
           if (appliedCoupon) { setCouponSuccessMsg(null); setCouponErrorMsg(message); }
         }
@@ -412,7 +411,7 @@ const handleInputChange = (field: string, value: any) => {
         setAppliedCoupon(code); setCouponCode(code); setIsQuoteRequestMode(result.totals.isQuoteRequest === true);
         setCouponSuccessMsg(t('checkout.couponApplied'));
         if (result.totals.isQuoteRequest === true && (currentStep === 'payment' || currentStep === 'review')) setCurrentStep('review');
-      } else { setAppliedCoupon(''); setIsQuoteRequestMode(false); setCouponErrorMsg(result.code === 'TIMEOUT' ? t('checkout.quoteTimeout', 'The price check timed out. Please retry.') : result.error || t('checkout.couponNoEffect')); }
+      } else { setAppliedCoupon(''); setIsQuoteRequestMode(false); setCouponErrorMsg(result.code?.startsWith('CATALOG_') ? t('pricing.unavailable') : result.code === 'TIMEOUT' ? t('checkout.quoteTimeout', 'The price check timed out. Please retry.') : result.error || t('checkout.couponNoEffect')); }
     } catch (error) {
       if (!controller.signal.aborted) setCouponErrorMsg(error instanceof CheckoutAuthenticationError ? t('checkout.signInAgain') : t('checkout.quoteFailed'));
     } finally {
@@ -421,7 +420,7 @@ const handleInputChange = (field: string, value: any) => {
   };
 
   const localSummary = (() => {
-    try { return calculateOrderSummary({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping }); }
+    try { return calculateOrderSummary({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping, catalog, boxes: hamperBoxes }); }
     catch { return null; }
   })();
   const verifiedQuote = quote?.key === quoteKey ? quote.totals : null;
@@ -497,6 +496,7 @@ const handleInputChange = (field: string, value: any) => {
         rewardId: selectedRewardId,
         isWholesale,
         expectedFinalTotal: finalPayable,
+        expectedQuoteFingerprint: quoteStatusRef.current.quote?.fingerprint,
         authToken
       };
       const fingerprint = await checkoutFingerprint(orderPayload, submittedUid);
@@ -511,7 +511,7 @@ const handleInputChange = (field: string, value: any) => {
       if (controller.signal.aborted || identityRef.current !== submittedUid) { setSubmissionError(t('checkout.requestCancelled')); return; }
 
       if (!orderResult.success) {
-        setSubmissionError(orderResult.error || t('checkout.orderUnavailable'));
+        setSubmissionError(orderResult.code?.startsWith('CATALOG_') ? t('pricing.unavailable') : orderResult.error || t('checkout.orderUnavailable'));
         setSupportAction(orderResult.supportAction || null);
         if (orderResult.code === 'QUOTE_CHANGED') {
           setQuote(null);

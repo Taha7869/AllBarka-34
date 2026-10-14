@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import type { Product } from '../types';
-import { PRODUCTS } from '../data/products';
+import { useLiveCatalog } from '../hooks/useLiveCatalog';
 import CircularCarousel from './CircularCarousel';
 import { circularCatalogue } from '../lib/circularCatalogue';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -20,8 +20,9 @@ export default function ProductSlider({
   subtitle = 'Hand-sorted premium harvest lots, freshly packed for Lahore doorstep delivery.',
   products, onAddToCart, onQuickView,
 }: ProductSliderProps) {
+  const catalog = useLiveCatalog();
   const { t } = useLanguage();
-  const catalogue = useMemo(() => circularCatalogue(products, PRODUCTS), [products]);
+  const catalogue = useMemo(() => circularCatalogue(products, catalog), [products, catalog]);
 
   return (
     <section dir="ltr" className="boutique-bestsellers w-full py-12 sm:py-16 lg:py-20 bg-[var(--color-surface)] border-y border-[var(--color-border)]">

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useOutletContext } from 'react-router-dom';
-import { PRODUCTS } from '../data/products';
+import { useLiveCatalog } from '../hooks/useLiveCatalog';
 import { Product } from '../types';
 import Hero from '../components/Hero';
 import CategoryCarousel from '../components/CategoryCarousel';
@@ -22,7 +22,6 @@ interface OutletContextType {
 }
 
 const featuredIds = ['pista', 'kaju', 'badam', 'akhroot', 'deal-1', 'deal-2', 'khajoor', 'org-honey'];
-const featuredProducts = featuredIds.map(id => PRODUCTS.find(product => product.id === id)).filter((product): product is Product => !!product);
 
 const servicePillars = [
   { icon: ShieldCheck,          number: '01', title: 'home.purity',    copy: 'home.purityCopy' },
@@ -31,6 +30,8 @@ const servicePillars = [
 ];
 
 export default function HomePage() {
+  const catalog = useLiveCatalog();
+  const featuredProducts = featuredIds.map(id => catalog.find(product => product.id === id && product.active !== false)).filter((product): product is Product => !!product);
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [giftFilmPlaying, setGiftFilmPlaying] = useState(false);

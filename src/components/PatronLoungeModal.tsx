@@ -4,7 +4,7 @@ import { X, User, Package, MapPin, Phone, Crown, LogOut, Clock, Calendar, CheckC
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCart } from '../contexts/CartContext';
-import { PRODUCTS } from '../data/products';
+import { useLiveCatalog } from '../hooks/useLiveCatalog';
 import { getReorderItems, trackingProgress, TRACKING_STEPS } from '../lib/orderPresentation';
 import { Link } from 'react-router-dom';
 import { acquireScrollLock } from '../utils/scrollLock';
@@ -18,6 +18,7 @@ interface PatronLoungeModalProps {
 }
 
 export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModalProps) {
+  const catalog = useLiveCatalog();
   const { currentUser, patronProfile, logout } = useAuth();
   const { t } = useLanguage();
   const { addToCart, openCart } = useCart();
@@ -116,7 +117,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
   }, [isOpen]);
 
   const reorder = (order: any) => {
-    const items = getReorderItems(order.items || [], PRODUCTS);
+    const items = getReorderItems(order.items || [], catalog);
     if (!items.length) return;
     items.forEach(({ product, weight, quantity }) => addToCart(product, weight, quantity, undefined, { silent: true, openCart: false }));
     onClose();
@@ -342,7 +343,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                 <div className="space-y-4">
                   {orders.map((order) => {
                     const progress = trackingProgress(order.status || '');
-                    const reorderItems = getReorderItems(order.items || [], PRODUCTS);
+                    const reorderItems = getReorderItems(order.items || [], catalog);
                     const totalAmt = order.totals?.total ?? order.total ?? 0;
                     const subtotalAmt = order.totals?.subtotal ?? order.subtotal ?? 0;
                     const discountAmt = order.totals?.discount ?? order.discount ?? 0;

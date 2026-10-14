@@ -4,7 +4,7 @@ import { useSavedProducts } from '../hooks/useSavedProducts';
 import React, { lazy, Suspense, useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { PRODUCTS, getProductImage } from '../data/products';
+import { getProductImage } from '../data/products';
 import { useLiveCatalog } from '../hooks/useLiveCatalog';
 import { isSingleImageCatalogProduct } from '../data/productImages';
 import { useProductMedia, useProductMediaCover } from '../contexts/ProductMediaContext';
@@ -91,10 +91,10 @@ export default function ProductDetailPage() {
   // Related selections from the current catalogue
   const relatedProducts = useMemo(() => {
     if (!product) return [];
-    const sameCategory = PRODUCTS.filter((p) => p.active !== false && p.id !== product.id && p.category === product.category);
-    const otherBestsellers = PRODUCTS.filter((p) => p.active !== false && p.id !== product.id && p.category !== product.category);
+    const sameCategory = catalog.filter((p) => p.active !== false && p.id !== product.id && p.category === product.category);
+    const otherBestsellers = catalog.filter((p) => p.active !== false && p.id !== product.id && p.category !== product.category);
     return [...sameCategory, ...otherBestsellers].slice(0, 4);
-  }, [product]);
+  }, [product, catalog]);
 
   if (!product) {
     return (

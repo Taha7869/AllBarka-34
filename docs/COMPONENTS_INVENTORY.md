@@ -221,3 +221,12 @@ Existing ProductImageGallery uses a single numeric photo counter and retains arr
 - `lib/hamperCatalog.ts` is the shared packaging/contents registry and configuration resolver. The existing CustomHamperBuilderModal emits this configuration; CartContext, server validation, admin packing and WhatsApp checkout preserve it.
 - `contexts/shippingTranslations.ts` supplies destination, tariff and payment-confirmation copy in all three languages.
 - `styles/luminous.css` adds non-interactive gold light and borders to existing surfaces, with a finite crest ripple and reduced-motion fallback. It is imported last in main.tsx.
+
+## Part 2 — Firestore pricing
+
+- `components/AdminPriceEditor.tsx` extends AdminCatalogPanel with authenticated product/box price editing, version conflicts, change reasons and the latest ten editor audits.
+- `lib/catalogPricing.ts` validates commercial fields and reconstructs public views from immutable catalogue metadata.
+- `lib/liveCatalog.ts` shares server Firestore listeners and fresh transaction pricing; `lib/catalogPricingRouter.ts` exposes public catalogue and guarded admin routes.
+- `lib/catalogClient.ts` and `hooks/useLiveCatalog.ts` share bounded requests, revisions and active-tab refreshes across the storefront.
+- `lib/cartPricing.ts` refreshes unsaved bags while retaining unavailable selections; saved order receipts are immutable.
+- `contexts/pricingTranslations.ts` contains English, Urdu and Arabic pricing/editor copy.

@@ -2,7 +2,7 @@ import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, Check, Compass, ShoppingBag, X } from 'lucide-react';
-import { PRODUCTS } from '../data/products';
+import { useLiveCatalog } from '../hooks/useLiveCatalog';
 import { CANONICAL_CATEGORIES } from '../config/categories';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -15,6 +15,7 @@ import '../styles/selection-guide.css';
 interface SelectionGuideProps { onClose: () => void; opener: HTMLElement | null }
 
 export default function SelectionGuide({ onClose, opener }: SelectionGuideProps) {
+  const catalog = useLiveCatalog();
   const { t, language, isRtl } = useLanguage();
   const { addToCart } = useCart();
   const mediaCover = useProductMediaCover();
@@ -26,7 +27,7 @@ export default function SelectionGuide({ onClose, opener }: SelectionGuideProps)
   const [budget, setBudget] = useState<number | null>(null);
   const [addedId, setAddedId] = useState('');
   const preferences = useMemo(() => ({ category, budget }), [category, budget]);
-  const matches = useMemo(() => selectionMatches(PRODUCTS, preferences), [preferences]);
+  const matches = useMemo(() => selectionMatches(catalog, preferences), [preferences, catalog]);
 
   useEffect(() => {
     const dialog = dialogRef.current;

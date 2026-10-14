@@ -18,6 +18,7 @@ export interface OrderPayload {
   rewardId?: string | null;
   isWholesale?: boolean;
   expectedFinalTotal?: number;
+  expectedQuoteFingerprint?: string;
   authToken?: string | null;
   idempotencyKey?: string | null;
 }
@@ -77,7 +78,8 @@ export async function placeOrder(payload: OrderPayload, options: { signal?: Abor
           city: payload.city, deliverySlot: payload.deliverySlot || 'Fastest Dispatch', instructions: payload.instructions || '',
           giftWrapping: !!payload.giftWrapping, giftMessage: payload.giftMessage || '', paymentMethod: payload.paymentMethod,
           items: requestItems(payload.items), shippingMethodId: payload.shippingMethodId, discountCode: payload.discountCode || null,
-          rewardId: payload.rewardId || null, isWholesale: !!payload.isWholesale, expectedFinalTotal: payload.expectedFinalTotal }),
+          rewardId: payload.rewardId || null, isWholesale: !!payload.isWholesale, expectedFinalTotal: payload.expectedFinalTotal,
+          expectedQuoteFingerprint: payload.expectedQuoteFingerprint }),
       });
       if (!response.headers.get('content-type')?.toLowerCase().includes('application/json')) {
         return { success: false, code: 'INVALID_RESPONSE', error: 'The order service returned an unexpected response. Your bag is preserved; retry or contact concierge.' };
@@ -118,7 +120,7 @@ export async function placeOrder(payload: OrderPayload, options: { signal?: Abor
 export async function getOrderQuote(params: {
   items: CartItem[]; city: string; shippingMethodId: string; discountCode?: string | null; rewardId?: string | null;
   giftWrapping?: boolean; isWholesale?: boolean; authToken?: string | null; signal?: AbortSignal;
-}): Promise<{ success: boolean; totals?: any; items?: any[]; earnedPoints?: number; error?: string; code?: string }> {
+}): Promise<{ success: boolean; totals?: any; items?: any[]; earnedPoints?: number; quoteFingerprint?: string; error?: string; code?: string }> {
   try {
     return await withApiDeadline(async signal => {
       const response = await fetch(apiUrl('/api/orders/quote'), {
@@ -131,7 +133,8 @@ export async function getOrderQuote(params: {
       if (!data || typeof data !== 'object' || Array.isArray(data)) return { success: false, code: 'INVALID_QUOTE', error: 'The price check returned an invalid response. Please retry.' };
       if (!response.ok) return { success: false, code: data.code || `HTTP_${response.status}`, error: data.error || 'Failed to calculate quote' };
       if (data.success !== true || !validTotals(data.totals)) return { success: false, code: 'INVALID_QUOTE', error: 'The price check returned inconsistent totals. Please retry.' };
-      return { success: true, totals: data.totals, items: data.items, earnedPoints: data.earnedPoints };
+      return { success: true, totals: data.totals, items: data.items, earnedPoints: data.earnedPoints,
+        quoteFingerprint: typeof data.quoteFingerprint === 'string' && /^[a-f0-9]{64}$/.test(data.quoteFingerprint) ? data.quoteFingerprint : undefined };
     }, 12000, params.signal);
   } catch (error: any) {
     return error?.name === 'AbortError' ? { success: false, code: 'TIMEOUT', error: 'The price check timed out. Please retry.' }

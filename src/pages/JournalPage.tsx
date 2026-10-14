@@ -15,7 +15,8 @@ import {
   Search 
 } from 'lucide-react';
 import { JOURNAL_ARTICLES, getArticleBySlug, JournalArticle } from '../data/articles';
-import { PRODUCTS, getProductImage } from '../data/products';
+import { getProductImage } from '../data/products';
+import { useLiveCatalog } from '../hooks/useLiveCatalog';
 import SEO from '../components/SEO';
 import { useCart } from '../contexts/CartContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -23,6 +24,7 @@ import { getLocalized } from '../utils/localize';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 
 export default function JournalPage() {
+  const catalog = useLiveCatalog();
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { addToCart, setIsCartOpen } = useCart();
@@ -54,7 +56,7 @@ export default function JournalPage() {
   }, [selectedCategory, searchQuery]);
 
   const handleQuickAdd = (productId: string) => {
-    const product = PRODUCTS.find(p => p.id === productId);
+    const product = catalog.find(p => p.id === productId);
     if (!product) return;
     const defaultWeight = Object.keys(product.prices)[0] || '500g';
     const price = product.prices[defaultWeight] || 0;
@@ -115,7 +117,7 @@ export default function JournalPage() {
       );
     }
 
-    const relatedProducts = PRODUCTS.filter((p) =>
+    const relatedProducts = catalog.filter((p) =>
       currentArticle.relatedProductIds.includes(p.id)
     );
 

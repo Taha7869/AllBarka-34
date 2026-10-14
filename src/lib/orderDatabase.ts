@@ -20,6 +20,7 @@ import { validateAndPriceOrder, validateCustomerDetails, ValidationError } from 
 import { getPromo, normalizePromoCode } from './couponEngine';
 import { firstOrderPromoContext } from '../server/promoEligibility';
 import { PricingSummary } from './pricing';
+import { transactionalCatalog, quoteFingerprint } from './liveCatalog';
 import { STORE_CONFIG } from '../config/store';
 import { validateShippingRewardDestination } from './shippingPolicy';
 import { getN8nOrderDispatchConfig } from '../services/n8nOrderNotification';
@@ -69,6 +70,8 @@ export interface CreateOrderParams {
   expectedFinalTotal?: number | null;
   priceSource?: 'firestore' | 'static-fallback' | 'static';
   catalogFetchedAt?: string;
+  catalogSource?: 'firestore' | 'static';
+  expectedQuoteFingerprint?: string | null;
 }
 
 /**
@@ -80,8 +83,8 @@ export async function createDurableOrder({
   uid,
   idempotencyKey,
   expectedFinalTotal,
-  priceSource = 'static-fallback',
-  catalogFetchedAt = new Date().toISOString()
+  catalogSource,
+  expectedQuoteFingerprint,
 }: CreateOrderParams): Promise<{
   orderId: string;
   status: OrderStatus;
@@ -186,7 +189,9 @@ export async function createDurableOrder({
     const storedCount = historySnap?.data()?.orderCount;
     const orderCount = Number.isSafeInteger(storedCount) && storedCount >= 0 ? storedCount : 0;
     const promoContext = await firstOrderPromoContext(db, uid, couponCode, reference => transaction.get(reference), orderCount);
+    const currentCatalog = await transactionalCatalog(db, transaction, payload.items, catalogSource);
     const validated = validateAndPriceOrder({
+      catalog: currentCatalog.catalog, boxes: currentCatalog.boxes,
       items: payload.items,
       shippingMethodId: payload.shippingMethodId,
       discountCode: payload.discountCode,
@@ -195,7 +200,8 @@ export async function createDurableOrder({
       city: customer.city,
       promoContext,
     });
-    if (expectedFinalTotal !== undefined && expectedFinalTotal !== null && Math.abs(expectedFinalTotal - validated.summary.total) > 1) {
+    if (expectedQuoteFingerprint && expectedQuoteFingerprint !== quoteFingerprint(validated)
+      || expectedFinalTotal !== undefined && expectedFinalTotal !== null && Math.abs(expectedFinalTotal - validated.summary.total) > 1) {
       throw new QuoteChangedError(
         `Prices or delivery rates have been refreshed. New total is Rs. ${validated.summary.total.toLocaleString('en-PK')}. Please reconfirm your order.`,
         validated.summary, validated.items,
@@ -234,10 +240,11 @@ export async function createDurableOrder({
     });
     if (deliverySchedule) deliverySchedule.shippingFee = validated.summary.shipping;
 
-    const canonicalOrder: CanonicalOrder & { priceSource?: string; catalogFetchedAt?: string; } = {
+    const canonicalOrder: CanonicalOrder & { priceSource?: string; catalogFetchedAt?: string; catalogRevision?: string } = {
       schemaVersion: SCHEMA_VERSION,
-      priceSource,
-      catalogFetchedAt,
+      priceSource: currentCatalog.source,
+      catalogFetchedAt: new Date().toISOString(),
+      catalogRevision: currentCatalog.revision,
       orderId,
       source: 'website',
       createdAt: nowIso,
