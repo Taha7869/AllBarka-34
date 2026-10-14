@@ -51,7 +51,7 @@ export default function Footer() {
         {column('footer.journalTitle', journal)}
         <div>{column('footer.support', support)}<div className="site-footer-concierge"><strong>{t('footer.concierge')}</strong><p>{t('footer.conciergeCopy')}</p><Link to="/contact">{t('footer.connect')} <ArrowRight size={15}/></Link></div></div>
       </div>
-      <div className="site-footer-bottom"><span>© {new Date().getFullYear()} AllBarka Dry Fruits & Confections. {t('allRightsReserved')}</span><div><Link to="/policies/privacy">{t('footer.privacy')}</Link><Link to="/policies/terms">{t('footer.terms')}</Link><Link to="/policies/shipping">{t('footer.shipping')}</Link></div></div>
+      <div className="site-footer-bottom"><span>© {new Date().getFullYear()} AllBarka Dry Fruits & Confections. {t('allRightsReserved')}</span><div><button type="button" className="focus-ring min-h-11 rounded-lg px-2 text-xs" onClick={() => window.dispatchEvent(new CustomEvent('open-measurement-preferences'))}>{t('experience.measurement.open')}</button><Link to="/policies/privacy">{t('footer.privacy')}</Link><Link to="/policies/terms">{t('footer.terms')}</Link><Link to="/policies/shipping">{t('footer.shipping')}</Link></div></div>
     </div>
   </footer>;
 }

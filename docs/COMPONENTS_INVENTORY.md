@@ -231,3 +231,26 @@ Existing ProductImageGallery uses a single numeric photo counter and retains arr
 - `lib/catalogClient.ts` and `hooks/useLiveCatalog.ts` share bounded requests, revisions and active-tab refreshes across the storefront.
 - `lib/cartPricing.ts` refreshes unsaved bags while retaining unavailable selections; saved order receipts are immutable.
 - `contexts/pricingTranslations.ts` contains English, Urdu and Arabic pricing/editor copy.
+
+## Part 3 — Commerce operations
+
+`components/AdminInventoryEditor.tsx` reuses the catalogue editor surface for opt-in product/box stock controls. `lib/inventoryServer.ts` and `lib/inventory.ts` manage units and cached availability; the existing order database service applies transaction reservations. `lib/rewardFulfillment.ts` fulfils existing checkout benefits and `contexts/commerceTranslations.ts` supplies their three-language copy. Existing admin order/export and notification worker surfaces use the bounded services described in [COMMERCE_OPERATIONS.md](COMMERCE_OPERATIONS.md).
+
+## Part 4 — Storefront experience
+
+| File Path | Responsibility | Included By |
+| --- | --- | --- |
+| `components/MeasurementPreferences.tsx` | Lazy consent banner and native preference dialog | RootLayout; existing footer entry |
+| `components/SEO.tsx` | One route head controller | RootLayout |
+| `components/ErrorBoundary.tsx` | Existing boundary and translated safe recovery | RootLayout/App |
+| `hooks/useRouteExperience.ts` | Route measurement, focus and announcement label | RootLayout |
+| `contexts/experienceTranslations.ts` | Navigation/privacy/recovery and key checkout/receipt copy | LanguageContext |
+| `lib/routeMetadata.ts` | Canonicals, public/private routes and verified schema | SEO, server rendering, route hook |
+| `server/seoDocument.ts` | Production HTML heads, robots and sitemap | server.ts |
+| `data/articleIndex.ts` | Lightweight canonical editorial metadata | routeMetadata; integrity test |
+| `lib/catalogTransport.ts` | Compact pricing transport and strict decoder | Catalogue router/client |
+| `lib/measurementConfig.ts` | Validated public provider ID | server.ts, analytics |
+| `lib/analytics.ts` | Consent, event allowlist and accepted-order measurement | Existing cart/checkout/product and route surfaces |
+| `lib/pageVitals.ts` | Optional numeric document LCP/CLS | MeasurementPreferences |
+
+Existing BubbleMenu uses real links and collection disclosure; LuxuryPreloader is explicit-demo only and shares the existing scroll-lock utility. No duplicate cart, checkout, product or account UI was created. See [PREMIUM_EXPERIENCE.md](PREMIUM_EXPERIENCE.md) for configuration, release steps and verification limits.

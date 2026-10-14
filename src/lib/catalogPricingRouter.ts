@@ -1,3 +1,4 @@
+import { compactCatalog } from './catalogTransport';
 import { Router, type RequestHandler } from 'express';
 import { randomUUID } from 'node:crypto';
 import type { Firestore } from 'firebase-admin/firestore';
@@ -65,12 +66,14 @@ export function createCatalogPricingRouter(options: { getDb: () => Firestore | n
     try {
       const snapshot = await options.catalog.getSnapshot();
       const envelope = req.path === '/api/catalog/snapshot';
-      const etag = `"${envelope ? 'snapshot' : 'array'}-${snapshot.source}-${snapshot.revision}"`;
+      const compact = envelope && req.query.format === 'pricing-v1';
+      if (req.query.format !== undefined && (!compact || typeof req.query.format !== 'string')) throw new CatalogPricingError('INVALID_CATALOG_FORMAT');
+      const etag = `"${compact ? 'pricing-v1' : envelope ? 'snapshot' : 'array'}-${snapshot.source}-${snapshot.revision}"`;
       res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
       res.setHeader('ETag', etag); res.setHeader('X-Catalog-Source', snapshot.source);
       if (req.headers['if-none-match'] === etag) return res.status(304).end();
       // Preserve deployed clients' array contract; new consumers request the complete product/box view.
-      return res.json(envelope ? snapshot : snapshot.catalog);
+      return res.json(compact ? compactCatalog(snapshot) : envelope ? snapshot : snapshot.catalog);
     } catch (error) { return fail(error, res); }
   });
   router.get('/api/admin/catalog-prices/:kind/:id', options.requireAdmin, async (req, res) => {

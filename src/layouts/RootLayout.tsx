@@ -1,6 +1,8 @@
+import { useRouteExperience } from '../hooks/useRouteExperience';
+import SEO from '../components/SEO';
 import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { useLanguage, type LanguageCode } from '../contexts/LanguageContext';
@@ -29,6 +31,7 @@ const InfoPagesModal = React.lazy(() => import('../components/InfoPagesModal'));
 const PolicyPagesModal = React.lazy(() => import('../components/PolicyPagesModal'));
 const AIConcierge = React.lazy(() => import('../components/AIConcierge'));
 const CustomHamperBuilderModal = React.lazy(() => import('../components/CustomHamperBuilderModal'));
+const MeasurementPreferences = React.lazy(() => import('../components/MeasurementPreferences'));
 const StoreUpdatesDialog = React.lazy(() => import('../components/StoreUpdatesDialog'));
 
 import LahoreExpressTimer from '../components/LahoreExpressTimer';
@@ -50,10 +53,12 @@ export default function RootLayout() {
   const online = useOnlineStatus();
 
   const location = useLocation();
+  const routeAnnouncement = useRouteExperience();
+  const prefersReducedMotion = useReducedMotion();
   const isAdminRoute = location.pathname.startsWith('/admin/');
   const { currentUser, patronProfile, logout } = useAuth();
   const { language, setLanguage, isRtl, t } = useLanguage();
-  
+
   const mobileMenuTriggerRef = React.useRef<HTMLButtonElement>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -102,10 +107,10 @@ export default function RootLayout() {
       window.removeEventListener('open-store-updates', handleOpenUpdates);
     };
   }, []);
-  
+
   const [infoModalOpen, setInfoModalOpen] = useState(false);
   const [infoModalTab, setInfoModalTab] = useState<InfoPageTab>('our-story');
-  
+
   const [policyModalOpen, setPolicyModalOpen] = useState(false);
   const [policyModalTab, setPolicyModalTab] = useState<PolicyTab>('shipping');
   const [galleryModalOpen, setGalleryModalOpen] = useState(false);
@@ -183,15 +188,15 @@ export default function RootLayout() {
   }, []);
 
   // Check if any modal or drawer is active:
-  const isAnyModalOrDrawerOpen = 
-    isCartOpen || 
-    authModalOpen || 
-    authChoiceModalOpen || 
-    patronLoungeOpen || 
+  const isAnyModalOrDrawerOpen =
+    isCartOpen ||
+    authModalOpen ||
+    authChoiceModalOpen ||
+    patronLoungeOpen ||
     updatesOpen ||
-    selectedQuickViewProduct !== null || 
-    infoModalOpen || 
-    policyModalOpen || 
+    selectedQuickViewProduct !== null ||
+    infoModalOpen ||
+    policyModalOpen ||
     galleryModalOpen ||
     hamperModalOpen ||
     aiConciergeOpen;
@@ -205,17 +210,17 @@ export default function RootLayout() {
 
 
   // We add AnimatePresence page transitions, but respect prefers-reduced-motion
-  const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  
+
+
   const pageTransitionVariants = {
     initial: { opacity: 0, y: 10 },
-    enter: { 
-      opacity: 1, 
-      y: 0, 
+    enter: {
+      opacity: 1,
+      y: 0,
       transition: { duration: 0.25, ease: 'easeOut' as const }
     },
-    exit: { 
-      opacity: 0, 
+    exit: {
+      opacity: 0,
       y: -5,
       transition: { duration: 0.15, ease: 'easeIn' as const }
     }
@@ -223,18 +228,21 @@ export default function RootLayout() {
 
   return (
     <div className="min-h-screen w-full max-w-full relative flex flex-col font-sans bg-[var(--color-base)] text-[var(--color-ink)] selection:bg-[var(--color-gold)]/30 selection:text-[var(--color-ink)]">
+      <SEO />
+      <a href="#main-content" className="skip-main-link focus-ring" onClick={() => document.getElementById('main-content')?.focus()}>{t('experience.skip')}</a>
+      <span className="sr-only" aria-live="polite" aria-atomic="true">{routeAnnouncement}</span>
       <ToastManager />
       {!isAdminRoute && <GradualBlur preset="header" strength={1.5} opacity={0.9} />}
-      
+
       {/* Lahore Same-Day Express Timer Bar */}
       {!isAdminRoute && <LahoreExpressTimer onOpenSchedule={() => { setPolicyModalTab('shipping'); setPolicyModalOpen(true); }} />}
 
       {/* Header Navigation */}
-      <header 
+      <header
         id="main-navigation-header"
         dir="ltr"
         className={`sticky top-0 left-0 right-0 z-[100] w-full transition-all duration-300 ${
-          isScrolled 
+          isScrolled
             ? 'h-[60px] sm:h-[68px] bg-[var(--color-surface)]/85 dark:bg-[var(--color-base)]/85 backdrop-blur-xl shadow-[var(--shadow-card)] border-b border-[var(--color-border)]'
             : 'h-[68px] sm:h-20 bg-[var(--color-base)]/95 dark:bg-[var(--color-base)]/95 backdrop-blur-md shadow-none border-b border-transparent'
         }`}
@@ -243,11 +251,11 @@ export default function RootLayout() {
       {!isAdminRoute && <ScrollProgressBar showGlow={false} />}
         <div className="w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 h-full flex flex-col justify-center">
           <div className="flex justify-between items-center gap-2 sm:gap-4 w-full h-full">
-            
+
             {/* Leading Brand Mark: Desktop shows full logo, Mobile shows crest + animated intro */}
             <div className="flex items-center shrink-0">
-              <div 
-                onClick={() => { navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
+              <div
+                onClick={() => { navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                 className="hidden lg:block cursor-pointer focus-ring rounded-xl p-1 -m-1"
                 aria-label="AllBarka — Home"
               >
@@ -258,12 +266,12 @@ export default function RootLayout() {
                 <MobileHeaderBrand onHomeClick={() => { navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
               </div>
             </div>
-            
+
             {/* Center Navigation (Desktop Only) */}
             <div className="hidden xl:flex flex-1 justify-center px-4">
-              <BubbleMenu 
-                activeItem={activeNavItem} 
-                onItemClick={(item) => navigate(item.path)} 
+              <BubbleMenu
+                activeItem={activeNavItem}
+                onItemClick={(item) => navigate(item.path)}
               />
             </div>
 
@@ -288,7 +296,7 @@ export default function RootLayout() {
                   id="desktop-language-select"
                   value={language}
                   onChange={(event) => setLanguage(event.target.value as LanguageCode)}
-                  className="h-[42px] w-[112px] appearance-none cursor-pointer rounded-xl bg-transparent ps-8 pe-7 text-xs font-semibold focus:outline-none"
+                  className="min-h-11 w-[112px] appearance-none cursor-pointer rounded-xl bg-transparent ps-8 pe-7 text-xs font-semibold focus:outline-none"
                   aria-label={t('nav.language')}
                 >
                   <option value="en">English</option>
@@ -303,10 +311,10 @@ export default function RootLayout() {
 
               {/* Patron VIP Lounge / Login (Desktop only) */}
               <div className="hidden sm:flex items-center gap-1.5">
-                <button 
+                <button
                   type="button"
                   onClick={() => currentUser ? setPatronLoungeOpen(true) : setAuthModalOpen(true)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 border border-[#29231D]/10 dark:border-[#C7982F]/25 bg-[#F6F1EA]/60 dark:bg-[#1A201E]/60 hover:bg-[#C7982F]/15 text-[#042821] dark:text-[#FFFCF7] focus-ring cursor-pointer"
+                  className="flex min-h-11 items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 border border-[#29231D]/10 dark:border-[#C7982F]/25 bg-[#F6F1EA]/60 dark:bg-[#1A201E]/60 hover:bg-[#C7982F]/15 text-[#042821] dark:text-[#FFFCF7] focus-ring cursor-pointer"
                   aria-label={currentUser ? t('patronLounge') : t('vipLogin')}
                 >
                   <div className="bg-[#C7982F]/15 p-1 rounded-lg">
@@ -316,12 +324,12 @@ export default function RootLayout() {
                     {currentUser ? (patronProfile?.name?.split(' ')[0] || t('patronLounge')) : t('nav.patron')}
                   </span>
                 </button>
-                
+
                 {currentUser && (
                   <button
                     type="button"
                     onClick={logout}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl transition-all duration-200 border border-red-200 dark:border-red-900/30 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-700 dark:text-red-400 focus-ring cursor-pointer"
+                    className="flex min-h-11 items-center gap-1.5 px-3 py-2 rounded-xl transition-all duration-200 border border-red-200 dark:border-red-900/30 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-700 dark:text-red-400 focus-ring cursor-pointer"
                     aria-label={t('nav.logout')}
                   >
                     <span className="text-[11px] font-bold tracking-wide uppercase">{t('nav.logout')}</span>
@@ -330,7 +338,7 @@ export default function RootLayout() {
               </div>
 
               {/* Cart Button */}
-              <button 
+              <button
                 id="header-cart-btn"
                 type="button"
                 onClick={() => setIsCartOpen(true)}
@@ -343,8 +351,9 @@ export default function RootLayout() {
                 <AnimatePresence>
                   {totalItemsCount > 0 && (
                     <motion.div
-                      initial={{ scale: 0, opacity: 0 }}
+                      initial={prefersReducedMotion ? false : { scale: 0, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
+                      transition={{ duration: prefersReducedMotion ? 0 : .2 }}
                       exit={{ scale: 0, opacity: 0 }}
                       className="absolute -top-1 -right-1 min-w-[19px] h-[19px] flex items-center justify-center bg-[#C7982F] text-[#042821] text-[10px] font-bold rounded-full px-1 shadow-xs leading-none pointer-events-none"
                     >
@@ -353,13 +362,13 @@ export default function RootLayout() {
                   )}
                 </AnimatePresence>
               </button>
-              
+
               {/* Mobile Menu Trigger */}
-              <button 
+              <button
                 ref={mobileMenuTriggerRef}
                 id="mobile-menu-trigger-btn"
                 type="button"
-                onClick={() => setMobileMenuOpen(true)} 
+                onClick={() => setMobileMenuOpen(true)}
                 className="xl:hidden min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-[#29231D] dark:text-[#FFFCF7] hover:bg-[#C7982F]/15 border border-[#29231D]/10 dark:border-[#C7982F]/25 transition-colors focus-ring cursor-pointer"
                 aria-label={t('nav.openMenu')}
                 aria-expanded={mobileMenuOpen}
@@ -372,36 +381,29 @@ export default function RootLayout() {
         </div>
       </header>
 
-      <MobileMenu 
-        isOpen={mobileMenuOpen} 
-        onClose={() => setMobileMenuOpen(false)} 
+      <MobileMenu
+        isOpen={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
         cartCount={totalItemsCount}
         onOpenCart={() => setIsCartOpen(true)}
         triggerRef={mobileMenuTriggerRef}
-        onNavItemClick={(item) => {
-          if (item === 'Home') navigate('/');
-          else if (item === 'Shop') navigate('/shop');
-          else if (item === 'Herbs & Spices') navigate('/shop/herbs-spices');
-          else if (item === 'Gift Boxes') navigate('/shop/combos');
-          else if (item === 'Contact') navigate('/pages/contact');
-          else navigate('/shop');
-        }}
+
       />
 
-      <main className="flex-1 w-full relative z-10 flex flex-col items-center">
+      <main id="main-content" tabIndex={-1} className="flex-1 w-full relative z-10 flex flex-col items-center">
         {!isAdminRoute && priceStatus !== 'ready' && <div role="status" className="flex w-full flex-wrap items-center justify-center gap-2 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-center text-xs text-[var(--color-text-secondary)]" dir={isRtl ? 'rtl' : 'ltr'}><span>{t(priceStatus === 'loading' ? 'pricing.loading' : 'pricing.unavailable')}</span>{priceStatus === 'unavailable' && <button type="button" className="focus-ring min-h-11 rounded-lg px-3 font-medium underline underline-offset-4" onClick={() => void catalogStore.refresh()}>{t('pricing.retry')}</button>}</div>}
         {/* Shared Breadcrumb Navigation for all subpages (hidden on homepage) */}
         {!isAdminRoute && <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <Breadcrumbs />
         </div>}
-        
+
         <ErrorBoundary>
           <React.Suspense
             fallback={
               <div className="min-h-[50vh] flex flex-col items-center justify-center p-8" aria-busy="true">
                 <div className="w-10 h-10 rounded-full border-2 border-[var(--color-gold,#C7982F)]/30 border-t-[var(--color-gold,#C7982F)] animate-spin mb-4" />
                 <span className="text-xs uppercase tracking-[0.2em] font-bold text-[var(--color-gold,#C7982F)]">
-                  Loading AllBarka...
+                  {t('experience.loading')}
                 </span>
               </div>
             }
@@ -429,12 +431,13 @@ export default function RootLayout() {
       </main>
 
       {!isAdminRoute && <Footer />}
+      {!isAdminRoute && <React.Suspense fallback={null}><MeasurementPreferences /></React.Suspense>}
       <BackToTop hide={isAdminRoute || isAnyModalOrDrawerOpen} hasCartBar={totalItemsCount > 0 && location.pathname !== '/checkout' && location.pathname !== '/cart'} />
-      
-      <StickyCartBottomBar 
+
+      <StickyCartBottomBar
         hide={isAdminRoute || isAnyModalOrDrawerOpen}
       />
-      
+
       {/* Drawer & Modals */}
       <CartDrawer
         isOpen={isCartOpen}

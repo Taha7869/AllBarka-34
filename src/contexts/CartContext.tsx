@@ -1,3 +1,4 @@
+import { trackCommerce } from '../lib/analytics';
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import type { CartItem, Product } from '../types';
 import { PRODUCTS, getProductImage } from '../data/products';
@@ -241,6 +242,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ? (productOrItem as any).wholesale
         : false;
 
+      void trackCommerce('add_to_cart', { path: '/shop', items: [{ productId: rawProdId, quantity: cleanQty, price: unitPrice }], value: unitPrice * cleanQty });
       setCartItems((prev) => {
         const existingIndex = prev.findIndex((item) => item.id === compositeId);
         if (existingIndex > -1) {

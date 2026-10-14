@@ -18,6 +18,7 @@ export function createInventoryStore(getDb: () => Firestore | null) {
   const waiting = new Set<(error?: InventoryError) => void>();
   const finish = (error?: InventoryError) => { waiting.forEach(resolve => resolve(error)); waiting.clear(); };
   return {
+    getCachedSnapshot(): Map<string, unknown> | null { return getDb() ? current : new Map(); },
     async getSnapshot(): Promise<Map<string, unknown>> {
       const db = getDb(); if (!db) return new Map();
       if (current) return current;
