@@ -20,3 +20,17 @@ export async function loadLoyaltyAccount(getToken: () => Promise<string>, signal
     return { profile, rewards };
   }, 12000, signal);
 }
+
+export class LoyaltyRequestError extends Error {
+  constructor(public code: string) { super(code); this.name = 'LoyaltyRequestError'; }
+}
+export async function redeemLoyaltyVoucher(getToken: () => Promise<string>, rewardId: string, requestId: string, signal?: AbortSignal) {
+  return withApiDeadline(async requestSignal => {
+    const token = await getToken(); if (!token || requestSignal.aborted) throw new LoyaltyRequestError('LOYALTY_UNAVAILABLE');
+    const response = await fetch(apiUrl('/api/loyalty/redeem'), { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ rewardId, requestId }), signal: requestSignal, credentials: 'omit', cache: 'no-store' });
+    const data = await response.json();
+    if (!response.ok || data?.success !== true) throw new LoyaltyRequestError(typeof data?.code === 'string' ? data.code : 'LOYALTY_UNAVAILABLE');
+    return data as { success: true; activeRewardId: string; loyaltyPoints: number; duplicate: boolean };
+  }, 15000, signal);
+}

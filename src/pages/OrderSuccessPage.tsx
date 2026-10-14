@@ -222,6 +222,8 @@ export default function OrderSuccessPage() {
             </div>
           )}
 
+          {order.rewardApplication && ['APPLIED', 'FULFILLED'].includes(order.rewardApplication.status) && order.status !== 'CANCELLED' && <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-xs leading-6" dir={isRtl ? 'rtl' : 'ltr'}><p className="font-semibold">{t('commerce.rewards.fulfillment')}: {t(`commerce.rewards.${order.rewardApplication.rewardId}`)}</p><p>{t(`commerce.rewards.desc.${order.rewardApplication.rewardId}`)}</p></div>}
+
           {/* Totals Breakdown */}
           {isQuoteRequest ? <p role="status" className="pt-4 text-sm leading-relaxed text-[var(--color-ink,#29231D)]">{t('checkout.quoteNoPayment')}</p> : <div className="pt-4 space-y-1.5 text-xs">
             <div className="flex justify-between text-[var(--color-ink-muted,#635B52)]">

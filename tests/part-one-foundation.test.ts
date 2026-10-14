@@ -19,12 +19,13 @@ test('public deployment identity accepts a full commit and never exposes other e
   assert.deepEqual(deploymentIdentity({}), { commit: null, branch: null });
 });
 
-test('unsupported rewards keep their definitions and prices but cannot be exchanged for points', () => {
+test('fulfilled rewards retain original point costs; future unsupported definitions cannot be exchanged', () => {
   const before = structuredClone(REWARDS);
   const visible = publicRewards(REWARDS);
-  assert.equal(REWARD_REDEMPTION_AVAILABLE, false);
+  assert.equal(REWARD_REDEMPTION_AVAILABLE, true);
   assert.equal(visible.length, 4);
-  assert.ok(visible.every(reward => reward.redeemable === false));
+  assert.ok(visible.every(reward => reward.redeemable === true));
+  assert.equal(publicRewards([{ ...REWARDS[0], rewardId: 'future_unsupported' } as any])[0].redeemable, false);
   assert.deepEqual(REWARDS, before);
   assert.deepEqual(visible.map(({ redeemable: _, ...reward }) => reward), before);
   for (const language of ['en', 'ur', 'ar'] as const) {
@@ -88,7 +89,7 @@ test('customer order responses retain receipts while excluding private staff and
   assert.doesNotMatch(JSON.stringify(response), /private-|internal-staff|adminNotes|adminNoteEntries|actorEmail|claimTokenHash|guestSessionId/);
 });
 
-test('loyalty HTTP boundary blocks unsupported exchanges with zero database access and protects account reads', async () => {
+test('loyalty HTTP boundary blocks keyless exchanges with zero database access and protects account reads', async () => {
   let databaseAccesses = 0;
   const app = express();
   app.use(express.json());
@@ -102,13 +103,13 @@ test('loyalty HTTP boundary blocks unsupported exchanges with zero database acce
   const origin = `http://127.0.0.1:${(server.address() as any).port}`;
   try {
     const listed = await (await fetch(`${origin}/api/loyalty/rewards`)).json();
-    assert.ok(listed.every((reward: any) => reward.redeemable === false));
+    assert.ok(listed.every((reward: any) => reward.redeemable === true));
     for (const reward of REWARDS) {
       const response = await fetch(`${origin}/api/loyalty/redeem`, { method: 'POST',
         headers: { Authorization: 'Bearer fixture-token', 'Content-Type': 'application/json' },
         body: JSON.stringify({ rewardId: reward.rewardId }) });
-      assert.equal(response.status, 409);
-      assert.equal((await response.json()).code, 'REWARD_APPLICATION_UNAVAILABLE');
+      assert.equal(response.status, 400);
+      assert.equal((await response.json()).code, 'INVALID_REDEMPTION_KEY');
     }
     assert.equal(databaseAccesses, 0);
     assert.equal((await fetch(`${origin}/api/loyalty/profile`)).status, 401);
@@ -127,7 +128,7 @@ test('loyalty profile returns only the caller ledger and safe voucher fields', a
       const query = { orderBy: () => query, limit: () => query, where: () => query, get: async () => ({ docs: [{
         id: name === 'activeRewards' ? 'issued-voucher' : 'ledger-entry',
         data: () => name === 'activeRewards' ? { rewardId: 'free_shipping', status: 'ACTIVE', rewardType: 'SHIPPING',
-          claimedAt: 1, expiresAt: 2, privateStaffNote: 'private-voucher' } : { type: 'EARN', points: 450,
+          claimedAt: 1, expiresAt: Date.now() + 86400000, privateStaffNote: 'private-voucher' } : { type: 'EARN', points: 450,
           description: 'Completed order', createdAt: 1, privateStaffNote: 'private-ledger' },
       }] }) };
       return query;
@@ -146,7 +147,7 @@ test('loyalty profile returns only the caller ledger and safe voucher fields', a
     assert.equal(profile.loyaltyPoints, 450);
     assert.equal(profile.activeRewards[0].id, 'issued-voucher');
     assert.equal(profile.transactions[0].transactionId, 'ledger-entry');
-    assert.deepEqual(scopes.sort(), ['activeRewards', 'loyaltyTransactions']);
+    assert.deepEqual(scopes.sort(), ['activeRewards', 'activeRewards', 'activeRewards', 'activeRewards', 'loyaltyTransactions']);
     assert.doesNotMatch(JSON.stringify(profile), /private-|privateStaffNote/);
   } finally { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); }
 });

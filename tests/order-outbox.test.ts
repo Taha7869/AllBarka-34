@@ -262,8 +262,8 @@ test('global atomic lease serializes separate events across worker instances and
   let entered!: () => void;
   const enteredPromise = new Promise<void>(resolve => { entered = resolve; });
   const sent: string[] = [];
-  const a = worker(store.db, { dispatch: async (order: any) => { sent.push(order.orderId); entered(); return new Promise(resolve => { finish = resolve; }); } });
-  const b = worker(store.db, { dispatch: async (order: any) => { sent.push(order.orderId); return { sent: true, status: 'SUCCESS' }; } });
+  const a = worker(store.db, { batchSize: 1, dispatch: async (order: any) => { sent.push(order.orderId); entered(); return new Promise(resolve => { finish = resolve; }); } });
+  const b = worker(store.db, { batchSize: 1, dispatch: async (order: any) => { sent.push(order.orderId); return { sent: true, status: 'SUCCESS' }; } });
   const running = a.runOnce(); await enteredPromise;
   assert.equal((await a.runOnce()).status, 'BUSY');
   assert.equal((await b.runOnce()).status, 'BUSY');
@@ -448,7 +448,7 @@ test('unsupported reward never silently consumes benefits or creates an order/ou
   const key = 'users/test-customer/activeRewards/reward-1';
   for (const rewardType of ['SAMPLE', 'PACKAGING', 'SHIPPING']) {
     const store = memoryDatabase({ [key]: { status: 'ACTIVE', rewardType } });
-    await assert.rejects(() => createDurableOrder({ db: store.db, payload: { ...checkoutPayload, city: 'Lahore', rewardId: 'reward-1' }, uid: 'test-customer', idempotencyKey: 'unsupported-reward' }), (error: any) => error.code === 'REWARD_APPLICATION_UNAVAILABLE');
+    await assert.rejects(() => createDurableOrder({ db: store.db, payload: { ...checkoutPayload, city: 'Lahore', rewardId: 'reward-1' }, uid: 'test-customer', idempotencyKey: 'unsupported-reward' }), (error: any) => error.code === 'INVALID_REWARD');
     assert.equal(store.records.get(key).status, 'ACTIVE'); assert.equal(store.records.size, 1);
   }
   const guest = memoryDatabase();

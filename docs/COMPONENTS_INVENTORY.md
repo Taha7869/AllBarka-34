@@ -4,6 +4,7 @@ This document is auto-generated and lists every component, page, context, hook, 
 
 | File Path | Name | Category | Props | Included By (Pages/Files) |
 |-----------|------|----------|-------|--------------------------|
+| `components/AdminInventoryEditor.tsx` | **AdminInventoryEditor** | Component | target, onClose | AdminCatalogPanel.tsx |
 | `components/AIConcierge.tsx` | **AIConcierge** | Component | Has Props Interface | RootLayout.tsx |
 | `components/AllBarkaDarkReviews.tsx` | **AllBarkaDarkReviews** | Component | - | *Unused* |
 | `components/AllBarkaHero.tsx` | **AllBarkaHero** | Component | Has Props Interface | Hero.tsx |

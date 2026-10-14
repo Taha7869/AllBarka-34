@@ -31,6 +31,9 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      match /rewardClaims/{claimId} { allow read, write: if false; }
+      match /rewardRedemptions/{requestId} { allow read, write: if false; }
+
       // Customer favorites and saved bag: client writable for owner
       match /favorites/{favId} {
         allow read, write: if isOwner(userId);
@@ -61,6 +64,9 @@ service cloud.firestore {
     match /catalogPriceAudits/{auditId} {
       allow read, write: if false;
     }
+
+    match /catalogInventory/{targetId} { allow read, write: if false; }
+    match /inventoryAudits/{document=**} { allow read, write: if false; }
 
     match /reviews/{reviewId} {
       allow read: if true;

@@ -67,10 +67,10 @@ try {
     assert.equal(status.savedOrderVerifiedThisProcess, false);
     assert.equal(status.aiConfigured, false);
   });
-  await check('unsupported rewards are advertised honestly and anonymous accounts cannot spend points', async () => {
+  await check('fulfilled rewards are discoverable and anonymous accounts cannot spend points', async () => {
     const rewards = await (await request('/api/loyalty/rewards')).json();
     assert.equal(rewards.length, 4);
-    assert.ok(rewards.every(reward => reward.redeemable === false));
+    assert.ok(rewards.every(reward => reward.redeemable === true));
     const response = await request('/api/loyalty/redeem', { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ rewardId: 'free_shipping' }) });
     assert.equal(response.status, 401);

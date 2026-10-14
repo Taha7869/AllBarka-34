@@ -1,3 +1,4 @@
+import { sanitizeRewardApplication, type RewardApplication } from './rewardFulfillment';
 import { PRODUCTS } from '../data/products';
 import { resolveHamper } from './hamperCatalog';
 import { getOrderDetails } from './order';
@@ -12,6 +13,7 @@ export interface ConfirmedSuccessReceipt {
   orderType?: 'ORDER' | 'QUOTE_REQUEST'; status?: string; promoCode?: string | null; promoType?: string | null;
   discountAmount?: number; freeShipping?: boolean; freeGiftWrap?: boolean; freeGift?: boolean;
   trackingNumber?: string; estimatedDelivery?: string | null; updatedAt?: string;
+  rewardApplication?: RewardApplication;
   loyaltyPointsEarned?: number; loyaltyPointsTotal?: number;
   durablePersistenceReady: true; customerUid: string | null; claimToken?: string;
 }
@@ -47,7 +49,7 @@ function normalizeReceipt(raw: any, language: LanguageCode, customerUid: string 
       : Math.abs(items.reduce((sum, item) => sum + item.price * item.quantity, 0) - subtotal) > 1)) return null;
   const paymentMethod = raw.paymentMethod || customer.paymentMethod;
   if (!(isQuoteRequest ? paymentMethod === 'quote' : ['cod', 'bank'].includes(paymentMethod))) return null;
-  return { orderId: raw.orderId, name: customer.name, phone: customer.phone, address: customer.address, city: customer.city,
+  return { orderId: raw.orderId, ...(sanitizeRewardApplication(raw.rewardApplication) ? { rewardApplication: sanitizeRewardApplication(raw.rewardApplication)! } : {}), name: customer.name, phone: customer.phone, address: customer.address, city: customer.city,
     deliverySlot: customer.deliverySlot || raw.deliverySlot, items, subtotal, discount, shipping, giftWrapFee, totalAmount,
     paymentMethod, whatsappMessage: typeof raw.whatsappMessage === 'string' ? raw.whatsappMessage : undefined,
     timestamp: raw.createdAt || raw.timestamp, durablePersistenceReady: true, customerUid,
