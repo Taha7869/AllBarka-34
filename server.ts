@@ -1,3 +1,6 @@
+import { validMeasurementId } from './src/lib/measurementConfig';
+import { renderSeoDocument, renderSitemap, renderRobots } from './src/server/seoDocument';
+import { routeMetadata, publicSiteOrigin } from './src/lib/routeMetadata';
 import { createInventoryStore, createInventoryRouter, catalogWithInventory } from './src/lib/inventoryServer';
 import { InventoryError, orderStockRequirements, validateStockCapacity } from './src/lib/inventory';
 import { applyPatronReward, validActiveRewardId } from './src/lib/rewardFulfillment';
@@ -116,7 +119,7 @@ try {
 async function authenticateOptionalUser(req: express.Request, res: express.Response, next: express.NextFunction) {
   const sessionCookie = req.cookies.__session || '';
   const authHeader = req.headers.authorization;
-  
+
   if (!sessionCookie && authHeader === undefined) {
     (req as any).user = null;
     return next();
@@ -141,7 +144,7 @@ async function authenticateOptionalUser(req: express.Request, res: express.Respo
       code: 'UNAUTHORIZED'
     });
   }
-  
+
 }
 
 async function requireAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
@@ -193,6 +196,7 @@ if (process.env.GOOGLE_SHEETS_ID && process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && 
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
+const measurementId = validMeasurementId(process.env.ANALYTICS_MEASUREMENT_ID) ? process.env.ANALYTICS_MEASUREMENT_ID : null;
 const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS || 0);
 if (!Number.isInteger(trustProxyHops) || trustProxyHops < 0) {
   throw new Error('TRUST_PROXY_HOPS must be a non-negative integer.');
@@ -205,11 +209,11 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://apis.google.com", "https://*.firebaseapp.com", "https://*.googleapis.com", "https://*.gstatic.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://apis.google.com", "https://*.firebaseapp.com", "https://*.googleapis.com", "https://*.gstatic.com", ...(measurementId ? ["https://www.googletagmanager.com"] : [])],
       frameSrc: ["'self'", "https://allbarka-live.firebaseapp.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://api.fontshare.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdn.fontshare.com"],
-      connectSrc: ["'self'", "https://*.firebaseio.com", "https://*.googleapis.com", "https://*.cloudfunctions.net", "https://*.firebaseapp.com"],
+      connectSrc: ["'self'", "https://*.firebaseio.com", "https://*.googleapis.com", "https://*.cloudfunctions.net", "https://*.firebaseapp.com", ...(measurementId ? ["https://www.google-analytics.com", "https://region1.google-analytics.com"] : [])],
       imgSrc: ["'self'", "data:", "https://*"],
       mediaSrc: ["'self'", "https:"],
     }
@@ -222,6 +226,7 @@ app.use('/api', commerceCors(process.env.FRONTEND_ORIGINS));
 const pricingCatalog = createLiveCatalog({ getDb: () => db });
 const inventoryStore = createInventoryStore(() => db);
 const liveCatalog = {
+  getCachedSnapshot() { const catalog = pricingCatalog.getCachedSnapshot(); const inventory = inventoryStore.getCachedSnapshot(); return catalog && inventory ? catalogWithInventory(catalog, inventory) : null; },
   async getSnapshot() { const [catalog, inventory] = await Promise.all([pricingCatalog.getSnapshot(), inventoryStore.getSnapshot()]); return catalogWithInventory(catalog, inventory); },
   close() { pricingCatalog.close(); inventoryStore.close(); },
 };
@@ -245,7 +250,7 @@ app.post('/api/auth/sessionLogin', async (req, res) => {
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
     const isProd = process.env.NODE_ENV === 'production';
     const options = { maxAge: expiresIn, httpOnly: true, secure: isProd, sameSite: 'lax' as const };
-    
+
     res.cookie('__session', sessionCookie, options);
     res.json({ status: 'success' });
   } catch (error) {
@@ -312,6 +317,8 @@ app.get('/api/commerce/readiness', async (_req, res) => {
       : 'The order database is not configured. Automated checkout is unavailable; use the existing WhatsApp concierge.'
   });
 });
+
+app.get('/api/site/config', (_req, res) => { res.setHeader('Cache-Control', 'public, max-age=300'); res.json({ measurementId }); });
 
 // 1.3 API: Authoritative Order Quote Calculation
 app.post('/api/orders/quote', authenticateOptionalUser, async (req, res) => {
@@ -910,17 +917,11 @@ async function startServer() {
     console.timeEnd('[dev] Vite middleware');
   } else {
     const distPath = path.join(process.cwd(), 'dist');
-    const publicOrigin = new URL(process.env.APP_URL || (process.env.RAILWAY_PUBLIC_DOMAIN
-      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : `http://localhost:${PORT}`)).origin;
-    const html = readFileSync(path.join(distPath, 'index.html'), 'utf8')
-      .replaceAll('https://allbarka.com', publicOrigin)
-      .replaceAll('content="/images/generated/og-image.jpg"', `content="${publicOrigin}/images/generated/og-image.jpg"`);
-    
-    
-    app.get('/index.html', (_req, res) => {
-      res.setHeader('Cache-Control', 'no-cache');
-      res.type('html').send(html);
-    });
+    const publicOrigin = publicSiteOrigin(process.env.APP_URL || (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : undefined));
+    const template = readFileSync(path.join(distPath, 'index.html'), 'utf8');
+    app.get('/robots.txt', (_req, res) => { res.type('text/plain').setHeader('Cache-Control', 'public, max-age=300'); res.send(renderRobots(publicOrigin)); });
+    app.get('/sitemap.xml', (_req, res) => { res.type('application/xml').setHeader('Cache-Control', 'public, max-age=300'); res.send(renderSitemap(publicOrigin)); });
+    app.get('/index.html', (_req, res) => { res.setHeader('Cache-Control', 'no-cache'); res.type('html').send(renderSeoDocument(template, routeMetadata('/', { origin: publicOrigin, catalog: liveCatalog.getCachedSnapshot() }), publicOrigin)); });
     app.use(express.static(distPath, {
       index: false,
       setHeaders(res, filePath) {
@@ -930,9 +931,10 @@ async function startServer() {
     }));
     app.get('*', (req, res) => {
       if (path.extname(req.path)) return res.status(404).type('text/plain').send('Not found');
-      if (req.path.startsWith('/admin/')) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+      const metadata = routeMetadata(req.originalUrl, { origin: publicOrigin, catalog: liveCatalog.getCachedSnapshot() });
+      if (metadata.noindex) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
       res.setHeader('Cache-Control', 'no-cache');
-      res.type('html').send(html);
+      res.status(metadata.status).type('html').send(renderSeoDocument(template, metadata, publicOrigin));
     });
   }
 

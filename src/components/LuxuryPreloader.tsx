@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { AllBarkaHeaderLogo } from './AllBarkaLogo';
+import { acquireScrollLock } from '../utils/scrollLock';
 
 /**
  * LuxuryPreloader — Full-screen deep emerald overlay with gold line and logo reveal.
- * Displays max 1.6s then 400ms fade-out.
- * Only shows ONCE per browser session unless `?preload=1` is in the URL.
+ * Optional brand intro on explicit ?preload=1; regular visits render immediately.
+ * Shows at most once per session on an explicit ?preload=1 request.
  * Locked scroll while visible; fully bypassed if prefers-reduced-motion is true.
  */
 export default function LuxuryPreloader() {
@@ -15,7 +16,7 @@ export default function LuxuryPreloader() {
   useEffect(() => {
     if (shouldReduceMotion) {
       setIsVisible(false);
-      return; 
+      return;
     }
 
     const searchParams = new URLSearchParams(window.location.search);
@@ -23,19 +24,19 @@ export default function LuxuryPreloader() {
     let hasSeen: string | null = null;
     try { hasSeen = sessionStorage.getItem('allbarka_preloaded'); } catch { /* Storage may be unavailable. */ }
 
-    if (!hasSeen || forceShow) {
+    if (forceShow && !hasSeen) {
       setIsVisible(true);
       try { sessionStorage.setItem('allbarka_preloaded', 'true'); } catch { /* Continue without persistence. */ }
-      document.body.style.overflow = 'hidden';
+      const releaseScrollLock = acquireScrollLock();
 
       const timer = setTimeout(() => {
         setIsVisible(false);
-        document.body.style.overflow = '';
+        releaseScrollLock();
       }, 1600);
 
       return () => {
         clearTimeout(timer);
-        document.body.style.overflow = '';
+        releaseScrollLock();
       };
     } else {
       setIsVisible(false);

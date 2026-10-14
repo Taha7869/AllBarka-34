@@ -1,6 +1,7 @@
+import { parseCatalogTransport } from './catalogTransport';
 import { PRODUCTS } from '../data/products';
 import { HAMPER_BOXES } from './hamperCatalog';
-import { parseCatalogResponse, type CatalogSnapshot } from './catalogPricing';
+import { type CatalogSnapshot } from './catalogPricing';
 import { apiUrl } from './apiUrl';
 
 export interface CatalogClientState extends CatalogSnapshot { status: 'loading' | 'ready' | 'unavailable' }
@@ -26,7 +27,7 @@ export function createCatalogStore(options: { fetcher?: typeof fetch; timeoutMs?
       const aborted = new Promise<never>((_, reject) => { abortListener = () => reject(new Error('CATALOG_TIMEOUT')); controller.signal.addEventListener('abort', abortListener, { once: true }); });
       const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? 10000);
       try {
-        const response = await Promise.race([(options.fetcher || fetch)(apiUrl('/api/catalog/snapshot'), {
+        const response = await Promise.race([(options.fetcher || fetch)(apiUrl('/api/catalog/snapshot?format=pricing-v1'), {
           headers: { Accept: 'application/json', ...(etag ? { 'If-None-Match': etag } : {}) },
           signal: controller.signal, credentials: 'omit', cache: 'no-store',
         }), aborted]);
@@ -35,7 +36,7 @@ export function createCatalogStore(options: { fetcher?: typeof fetch; timeoutMs?
           return;
         }
         if (!response.ok) throw new Error('CATALOG_UNAVAILABLE');
-        const next = parseCatalogResponse(await Promise.race([response.json(), aborted]));
+        const next = parseCatalogTransport(await Promise.race([response.json(), aborted]));
         etag = response.headers.get('etag') || '';
         if (next.revision !== state.revision || next.source !== state.source || state.status !== 'ready') {
           state = { ...next, status: 'ready' }; emit();

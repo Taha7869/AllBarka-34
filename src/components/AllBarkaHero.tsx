@@ -53,7 +53,7 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
     <section className="heritage-hero" dir={isRtl ? 'rtl' : 'ltr'} aria-label="AllBarka boutique">
       <picture className="heritage-hero-background" aria-hidden="true">
         <source media="(max-width: 767px)" srcSet="/images/generated/hero-dry-fruits-mobile-v1.webp" type="image/webp" />
-        <img src="/images/generated/hero-dry-fruits-wide-v1.webp" width={1920} height={1080} alt="" fetchPriority="high" />
+        <img src="/images/generated/hero-dry-fruits-wide-v1.webp" width={1920} height={1080} alt="" loading="eager" decoding="async" fetchPriority="high" />
       </picture>
       <div className="heritage-hero-wash" aria-hidden="true" />
 

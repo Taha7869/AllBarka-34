@@ -7,7 +7,6 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useLiveCatalog } from '../hooks/useLiveCatalog';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import CartTools from '../components/CartTools';
-import SEO from '../components/SEO';
 import TrustBadges from '../components/TrustBadges';
 import { buildAutomatedOrderWhatsAppUrl } from '../config/contacts';
 import { hamperPackingLines } from '../lib/hamperCatalog';
@@ -61,7 +60,7 @@ export default function CartPage() {
   if (cartItems.length === 0) {
     return (
       <div className="min-h-screen bg-[var(--color-base,#F6F1EA)] flex items-center justify-center px-4 py-16">
-        <SEO title="Your Cart — AllBarka" description="View and manage your AllBarka cart" canonicalPath="/cart" />
+
         <div className="max-w-md w-full text-center space-y-6">
           <CartTools />
           <div className="w-24 h-24 rounded-full bg-[#FFFCF7] border border-[#C7982F]/30 flex items-center justify-center text-[#C7982F] mx-auto shadow-sm">
@@ -89,7 +88,7 @@ export default function CartPage() {
 
   return (
     <div className="min-h-screen bg-[var(--color-base,#F6F1EA)] pb-24" dir={isRtl ? 'rtl' : 'ltr'}>
-      <SEO title={`Your Cart (${totalItemCount} items) — AllBarka`} description="Review your AllBarka order before checkout" canonicalPath="/cart" />
+
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12">
         {/* Header */}

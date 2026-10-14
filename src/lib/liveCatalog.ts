@@ -54,6 +54,7 @@ export function createLiveCatalog(options: { getDb: () => Firestore | null; getS
     } catch { failed(); }
   };
   return {
+    getCachedSnapshot(): CatalogSnapshot | null { return (options.getSource?.() ?? process.env.CATALOG_SOURCE) === 'static' ? staticCatalogSnapshot() : snapshot; },
     async getSnapshot(): Promise<CatalogSnapshot> {
       if ((options.getSource?.() ?? process.env.CATALOG_SOURCE) === 'static') return staticCatalogSnapshot();
       const db = options.getDb();

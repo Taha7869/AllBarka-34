@@ -1,23 +1,22 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { 
-  BookOpen, 
-  Clock, 
-  Tag, 
-  ArrowRight, 
-  ArrowLeft, 
-  Share2, 
-  Sparkles, 
-  ShoppingBag, 
-  ShieldCheck, 
-  Check, 
-  Search 
+import {
+  BookOpen,
+  Clock,
+  Tag,
+  ArrowRight,
+  ArrowLeft,
+  Share2,
+  Sparkles,
+  ShoppingBag,
+  ShieldCheck,
+  Check,
+  Search
 } from 'lucide-react';
 import { JOURNAL_ARTICLES, getArticleBySlug, JournalArticle } from '../data/articles';
 import { getProductImage } from '../data/products';
 import { useLiveCatalog } from '../hooks/useLiveCatalog';
-import SEO from '../components/SEO';
 import { useCart } from '../contexts/CartContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getLocalized } from '../utils/localize';
@@ -47,7 +46,7 @@ export default function JournalPage() {
   const filteredArticles = useMemo(() => {
     return JOURNAL_ARTICLES.filter((article) => {
       const matchesCategory = selectedCategory === 'All' || article.category === selectedCategory;
-      const matchesSearch = !searchQuery.trim() || 
+      const matchesSearch = !searchQuery.trim() ||
         article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         article.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
         article.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -96,7 +95,7 @@ export default function JournalPage() {
     if (!currentArticle) {
       return (
         <div className="w-full min-h-[70vh] bg-[var(--color-base,#F6F1EA)] py-16 px-4 flex flex-col items-center justify-center text-center">
-          <SEO title="Article Not Found" canonicalPath={`/journal/${slug}`} />
+
           <div className="w-16 h-16 rounded-full bg-[var(--color-gold,#C7982F)]/20 border border-[var(--color-gold,#C7982F)]/40 flex items-center justify-center text-[var(--color-gold,#C7982F)] mb-4">
             <BookOpen size={28} />
           </div>
@@ -123,34 +122,7 @@ export default function JournalPage() {
 
     return (
       <article className="w-full bg-[var(--color-base,#F6F1EA)] pt-6 sm:pt-10 pb-24 text-[var(--color-ink,#29231D)]">
-        <SEO
-          title={currentArticle.title}
-          description={currentArticle.excerpt}
-          canonicalPath={`/journal/${currentArticle.slug}`}
-          type="article"
-          image={currentArticle.image}
-          structuredData={{
-            '@context': 'https://schema.org',
-            '@type': 'Article',
-            headline: currentArticle.title,
-            description: currentArticle.excerpt,
-            image: `https://allbarka.com${currentArticle.image}`,
-            datePublished: currentArticle.publishedDate,
-            dateModified: currentArticle.updatedDate,
-            author: {
-              '@type': 'Person',
-              name: currentArticle.author.name
-            },
-            publisher: {
-              '@type': 'Organization',
-              name: 'AllBarka Luxury Dry Fruits',
-              logo: {
-                '@type': 'ImageObject',
-                url: 'https://allbarka.com/images/logo.png'
-              }
-            }
-          }}
-        />
+
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           {/* Navigation Bar */}
           <div className="flex items-center justify-between">
@@ -378,11 +350,7 @@ export default function JournalPage() {
 
   return (
     <div className="w-full bg-[var(--color-base,#F6F1EA)] pt-6 sm:pt-10 pb-24 text-[var(--color-ink,#29231D)]">
-      <SEO
-        title="The Harvest Chronicle — Dry Fruit Storage, Nutrition & Culinary Guides"
-        description="Comprehensive guides from AllBarka: choosing nut pack sizes, warm-climate storage science, Lahori tea-time pairings, allergen safety, and luxury gifting."
-        canonicalPath="/journal"
-      />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         {/* Header Hero Banner */}
         <div className="text-center max-w-3xl mx-auto space-y-3">

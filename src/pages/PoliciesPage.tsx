@@ -1,22 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { 
-  X, 
-  Truck, 
-  RotateCcw, 
-  ShieldCheck, 
-  CheckCircle2, 
-  Clock, 
-  MapPin, 
-  Sparkles, 
+import {
+  X,
+  Truck,
+  RotateCcw,
+  ShieldCheck,
+  CheckCircle2,
+  Clock,
+  MapPin,
+  Sparkles,
   ArrowRight,
   FileText,
   Scale,
   PhoneCall
 } from 'lucide-react';
 import { acquireScrollLock } from '../utils/scrollLock';
-import SEO from '../components/SEO';
 import { useLanguage } from '../contexts/LanguageContext';
 import { CONTACT_CONFIG, buildHumanSupportWhatsAppUrl, buildCustomerEmailUrl } from '../config/contacts';
 
@@ -113,11 +112,7 @@ export function PolicyPagesModal({
   if (asPage) {
     return (
       <div className="w-full min-h-screen bg-[var(--color-base,#F6F1EA)] pt-6 sm:pt-10 pb-24 px-4 sm:px-6 lg:px-8">
-        <SEO 
-          title={`${currentMeta.title} — AllBarka Luxury Boutique`}
-          description={currentMeta.desc}
-          canonicalPath={activeTab !== 'unknown' ? `/policies/${activeTab}` : '/policies'}
-        />
+
         <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
           {/* Top Header & Breadcrumb */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[var(--color-gold,#C7982F)]/25">
@@ -231,7 +226,7 @@ export function PolicyPagesModal({
                   <h3 className="text-xl sm:text-2xl font-serif font-black text-[var(--color-emerald,#042821)]">
                     Transit Windows & City Coverage
                   </h3>
-                  
+
                   <div className="grid sm:grid-cols-2 gap-4 pt-1">
                     <div className="p-4.5 rounded-2xl bg-[var(--color-base,#F6F1EA)] border border-[var(--color-gold,#C7982F)]/30 space-y-2 shadow-xs">
                       <div className="flex items-center gap-2 text-xs font-black text-[var(--color-ink,#29231D)] uppercase tracking-wider">
@@ -265,7 +260,7 @@ export function PolicyPagesModal({
                   <h3 className="text-lg sm:text-xl font-serif font-bold text-[var(--color-emerald,#042821)]">
                     Delivery Rates by Destination
                   </h3>
-                  
+
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="p-4 rounded-2xl bg-[var(--color-base,#F6F1EA)] border border-[var(--color-gold,#C7982F)]/30 space-y-1.5">
                       <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-gold,#C7982F)]">{t('shipping.lahore')}</span>
