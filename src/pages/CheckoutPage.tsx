@@ -1,3 +1,6 @@
+import { loadLoyaltyAccount } from '../lib/loyaltyClient';
+import { commerceErrorKey } from '../contexts/commerceTranslations';
+import type { RewardApplication } from '../lib/rewardFulfillment';
 import { getLocalized } from '../utils/localize';
 import React, { useState, useEffect } from 'react';
 import { calculateOrderSummary, GIFT_WRAP_FEE, type PricingSummary } from '../lib/pricing';
@@ -111,7 +114,11 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   identityRef.current = currentUser?.uid || null;
   const isWholesale = false;
   // Active rewards are displayed by the account; none is automatically selected for an order.
-  const selectedRewardId: string | null = null;
+  const [selectedRewardId, setSelectedRewardId] = useState<string | null>(null);
+  const [rewardVouchers, setRewardVouchers] = useState<any[]>([]);
+  const [rewardsLoading, setRewardsLoading] = useState(false);
+  const [rewardsError, setRewardsError] = useState(false);
+  const [rewardsRefresh, setRewardsRefresh] = useState(0);
 
   // 1. All Hooks declared unconditionally at the top (Rules of Hooks)
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('details');
@@ -149,7 +156,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
 
   const [couponCode, setCouponCode] = useState(restoredDraft?.coupon || '');
   const [appliedCoupon, setAppliedCoupon] = useState(restoredDraft?.coupon || '');
-  const [quote, setQuote] = useState<{ key: string; totals: PricingSummary; fingerprint?: string } | null>(null);
+  const [quote, setQuote] = useState<{ key: string; totals: PricingSummary; fingerprint?: string; rewardApplication?: RewardApplication } | null>(null);
   const [quoteError, setQuoteError] = useState('');
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteRefresh, setQuoteRefresh] = useState(0);
@@ -158,7 +165,6 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   const [couponErrorMsg, setCouponErrorMsg] = useState<string | null>(null);
   const [isQuoteRequestMode, setIsQuoteRequestMode] = useState(false);
   const [activeReward, setActiveReward] = useState<any>(null);
-  const [rewardDetails, setRewardDetails] = useState<any>(null);
 
   const quoteKey = `${catalogRevision}:${checkoutQuoteKey({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping, discountCode: appliedCoupon, rewardId: selectedRewardId, isWholesale }, currentUser?.uid || null)}`;
   const pricingKeyRef = React.useRef(quoteKey);
@@ -182,11 +188,11 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
         const result = await getOrderQuote({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping, discountCode: appliedCoupon, rewardId: selectedRewardId, isWholesale, authToken, signal: controller.signal });
         if (!active) return;
         if (result.success && result.totals) {
-          setQuote({ key: quoteKey, totals: result.totals, fingerprint: result.quoteFingerprint }); setIsQuoteRequestMode(result.totals.isQuoteRequest === true);
+          setQuote({ key: quoteKey, totals: result.totals, fingerprint: result.quoteFingerprint, rewardApplication: result.rewardApplication }); setIsQuoteRequestMode(result.totals.isQuoteRequest === true);
           if (appliedCoupon) setCouponErrorMsg(null);
         }
         else {
-          const message = result.code?.startsWith('CATALOG_') ? t('pricing.unavailable') : result.code === 'TIMEOUT' ? t('checkout.quoteTimeout', 'The price check timed out. Please retry.') : result.error || t('checkout.quoteFailed');
+          const message = commerceErrorKey(result.code) ? t(commerceErrorKey(result.code)!) : result.code?.startsWith('CATALOG_') ? t('pricing.unavailable') : result.code === 'TIMEOUT' ? t('checkout.quoteTimeout', 'The price check timed out. Please retry.') : result.error || t('checkout.quoteFailed');
           setQuoteError(message);
           if (appliedCoupon) { setCouponSuccessMsg(null); setCouponErrorMsg(message); }
         }
@@ -229,28 +235,16 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
     }
   }, [patronProfile]);
 
-  // Load active rewards safely
+  // Account-owned API vouchers; selection is explicit and clears on account changes.
   useEffect(() => {
-    if (currentUser) {
-      let isMounted = true;
-      import('../data/rewards').then(mod => {
-        if (isMounted) setRewardDetails(mod.REWARDS);
-      }).catch(console.error);
+    const controller = new AbortController(); let active = true;
+    setSelectedRewardId(null); setRewardVouchers([]); setRewardsError(false); setRewardsLoading(Boolean(currentUser));
+    if (currentUser) void loadLoyaltyAccount(() => currentUser.getIdToken(), controller.signal).then(({ profile }) => {
+      if (active) setRewardVouchers(profile.activeRewards);
+    }).catch(() => { if (active) setRewardsError(true); }).finally(() => { if (active) setRewardsLoading(false); });
+    return () => { active = false; controller.abort(); };
+  }, [currentUser, rewardsRefresh]);
 
-      import('firebase/firestore').then(({ collection, query, where, getDocs }) => {
-        import('../lib/firebase').then(({ db }) => {
-          const arQuery = query(collection(db, "users", currentUser.uid, "activeRewards"), where("status", "==", "ACTIVE"));
-          getDocs(arQuery).then(snap => {
-            if (isMounted && !snap.empty) {
-              setActiveReward(snap.docs[0].data());
-            }
-          }).catch(e => console.error(e));
-        }).catch(console.error);
-      }).catch(console.error);
-
-      return () => { isMounted = false; };
-    }
-  }, [currentUser]);
 
   const onClose = propsOnClose || (() => { navigate('/shop'); });
   const onClearCart = () => { clearCart(); };
@@ -411,7 +405,7 @@ const handleInputChange = (field: string, value: any) => {
         setAppliedCoupon(code); setCouponCode(code); setIsQuoteRequestMode(result.totals.isQuoteRequest === true);
         setCouponSuccessMsg(t('checkout.couponApplied'));
         if (result.totals.isQuoteRequest === true && (currentStep === 'payment' || currentStep === 'review')) setCurrentStep('review');
-      } else { setAppliedCoupon(''); setIsQuoteRequestMode(false); setCouponErrorMsg(result.code?.startsWith('CATALOG_') ? t('pricing.unavailable') : result.code === 'TIMEOUT' ? t('checkout.quoteTimeout', 'The price check timed out. Please retry.') : result.error || t('checkout.couponNoEffect')); }
+      } else { setAppliedCoupon(''); setIsQuoteRequestMode(false); setCouponErrorMsg(commerceErrorKey(result.code) ? t(commerceErrorKey(result.code)!) : result.code?.startsWith('CATALOG_') ? t('pricing.unavailable') : result.code === 'TIMEOUT' ? t('checkout.quoteTimeout', 'The price check timed out. Please retry.') : result.error || t('checkout.couponNoEffect')); }
     } catch (error) {
       if (!controller.signal.aborted) setCouponErrorMsg(error instanceof CheckoutAuthenticationError ? t('checkout.signInAgain') : t('checkout.quoteFailed'));
     } finally {
@@ -511,7 +505,7 @@ const handleInputChange = (field: string, value: any) => {
       if (controller.signal.aborted || identityRef.current !== submittedUid) { setSubmissionError(t('checkout.requestCancelled')); return; }
 
       if (!orderResult.success) {
-        setSubmissionError(orderResult.code?.startsWith('CATALOG_') ? t('pricing.unavailable') : orderResult.error || t('checkout.orderUnavailable'));
+        setSubmissionError(commerceErrorKey(orderResult.code) ? t(commerceErrorKey(orderResult.code)!) : orderResult.code?.startsWith('CATALOG_') ? t('pricing.unavailable') : orderResult.error || t('checkout.orderUnavailable'));
         setSupportAction(orderResult.supportAction || null);
         if (orderResult.code === 'QUOTE_CHANGED') {
           setQuote(null);
@@ -542,7 +536,7 @@ const handleInputChange = (field: string, value: any) => {
         freeShipping: orderResult.totals?.freeShipping === true, freeGiftWrap: orderResult.totals?.freeGiftWrap === true,
         freeGift: orderResult.totals?.freeGift === true,
         paymentMethod: isAcceptedQuote ? 'quote' : selectedPayment,
-        items: receipt.items, totals: receipt.totals, whatsappMessage: orderResult.whatsappMessage,
+        items: receipt.items, totals: receipt.totals, rewardApplication: orderResult.rewardApplication, whatsappMessage: orderResult.whatsappMessage,
         customer: { name: formData.name, phone: formData.phone, address: formData.address, city: formData.city,
           paymentMethod: isAcceptedQuote ? 'quote' : selectedPayment },
       };
@@ -694,7 +688,15 @@ const handleInputChange = (field: string, value: any) => {
           {draftNotice && <div role="status" className="rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] p-3 text-xs"><p>{t('checkout.draftRestored')}</p><button type="button" onClick={() => { setFormData({ name: '', phone: '', address: '', city: 'Lahore', deliverySlot: 'Fastest Dispatch', giftWrapping: false, giftMessage: '', instructions: '' }); setCouponCode(''); setAppliedCoupon(''); setIsQuoteRequestMode(false); setCouponSuccessMsg(null); setCouponErrorMsg(null); setDraftNotice(false); try { sessionStorage.removeItem(CHECKOUT_DRAFT_KEY); } catch { /* private mode */ } }} className="focus-ring mt-2 min-h-11 underline underline-offset-4">{t('checkout.clearDraft')}</button></div>}
           {!online && <p role="status" className="rounded-xl border border-[var(--color-border)] p-3 text-sm">{t('checkout.offline')}</p>}
           {(currentStep === 'details' || currentStep === 'shipping') && <AddressBook customer={formData} onSelect={value => setFormData(previous => ({ ...previous, ...value }))} />}
-          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] p-3 text-xs"><p role="status" aria-live="polite">{quoteLoading ? t('checkout.checkingQuote') : quoteError || (verifiedQuote ? t('checkout.quoteVerified') : t('checkout.waitQuote'))}</p><button type="button" disabled={!online || quoteLoading} onClick={() => setQuoteRefresh(value => value + 1)} className="focus-ring min-h-11 underline underline-offset-4 disabled:opacity-40">{t('checkout.refreshQuote')}</button>{quoteError && <a href={buildHumanSupportWhatsAppUrl()} target="_blank" rel="noreferrer" className="focus-ring ms-4 inline-flex min-h-11 items-center underline underline-offset-4">{t('footer.connect')}</a>}</div>
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] p-3 text-xs"><p role="status" aria-live="polite">{quoteLoading ? t('checkout.checkingQuote') : quoteError || (verifiedQuote ? t('checkout.quoteVerified') : t('checkout.waitQuote'))}</p><button type="button" disabled={!online || quoteLoading} onClick={() => setQuoteRefresh(value => value + 1)} className="focus-ring min-h-11 underline underline-offset-4 disabled:opacity-40">{t('checkout.refreshQuote')}</button>
+
+{quoteError && <a href={buildHumanSupportWhatsAppUrl()} target="_blank" rel="noreferrer" className="focus-ring ms-4 inline-flex min-h-11 items-center underline underline-offset-4">{t('footer.connect')}</a>}</div>
+          {currentUser && !orderSuccessResult && <section className="mb-5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4" dir={language === 'en' ? 'ltr' : 'rtl'}>
+            <label htmlFor="checkout-patron-voucher" className="mb-2 block text-xs font-semibold">{t('commerce.rewards.choose')}</label>
+            {rewardsLoading ? <p role="status" className="text-xs">{t('loyalty.loading')}</p> : <select id="checkout-patron-voucher" disabled={isSubmittingOrder || isQuoteRequestMode} value={selectedRewardId || ''} onChange={event => setSelectedRewardId(event.target.value || null)} className="focus-ring min-h-11 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] px-3 text-base sm:text-sm"><option value="">{t('commerce.rewards.none')}</option>{rewardVouchers.map(voucher => <option key={voucher.id} value={voucher.id}>{t(`commerce.rewards.${voucher.rewardId}`)} — {t('commerce.rewards.expiry').replace('{date}', new Date(voucher.expiresAt).toLocaleDateString(language === 'ur' ? 'ur-PK' : language === 'ar' ? 'ar-PK' : 'en-PK'))}</option>)}</select>}
+            {rewardsError && <div role="status" className="mt-3 text-xs"><p>{t('commerce.rewards.failed')}</p><button type="button" onClick={() => setRewardsRefresh(value => value + 1)} className="focus-ring min-h-11 underline underline-offset-4">{t('loyalty.retry')}</button></div>}
+            {quote?.key === quoteKey && quote.rewardApplication && <p className="mt-3 text-xs leading-6 text-[var(--color-accent-text)]">{t('commerce.rewards.fulfillment')}: {t(`commerce.rewards.${quote.rewardApplication.rewardId}`)}</p>}
+          </section>}
           {/* One server-validated promo, available before the payment step. */}
           {currentStep !== 'success' && (
                   <div className="space-y-1.5">
@@ -1079,8 +1081,8 @@ const handleInputChange = (field: string, value: any) => {
                     <label className="flex items-start gap-3 cursor-pointer select-none">
                       <input
                         type="checkbox"
-                        checked={formData.giftWrapping || verifiedQuote?.freeGiftWrap === true}
-                        disabled={verifiedQuote?.freeGiftWrap === true}
+                        checked={formData.giftWrapping || verifiedQuote?.freeGiftWrap === true || quote?.rewardApplication?.rewardType === 'PACKAGING'}
+                        disabled={verifiedQuote?.freeGiftWrap === true || quote?.rewardApplication?.rewardType === 'PACKAGING'}
                         onChange={(e) => handleInputChange('giftWrapping', e.target.checked)}
                         className="mt-0.5 w-4 h-4 rounded text-[var(--color-ink,#1F120F)] accent-[var(--color-ink,#1F120F)] cursor-pointer"
                       />

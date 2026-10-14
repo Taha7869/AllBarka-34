@@ -1,3 +1,7 @@
+import { createInventoryStore, createInventoryRouter, catalogWithInventory } from './src/lib/inventoryServer';
+import { InventoryError, orderStockRequirements, validateStockCapacity } from './src/lib/inventory';
+import { applyPatronReward, validActiveRewardId } from './src/lib/rewardFulfillment';
+import { streamAdminOrdersCsv } from './src/lib/adminExport';
 import { sanitizeFirestoreData } from './src/lib/firestoreData';
 import express from 'express';
 import cookieParser from 'cookie-parser';
@@ -29,7 +33,6 @@ import { reserveGuestAiMessage, GuestTrialLimitError } from './src/lib/aiGuestTr
 import { createLoyaltyRouter } from './src/lib/loyaltyRouter';
 import { deploymentIdentity } from './src/lib/deploymentIdentity';
 import { validateAndPriceOrder, validateCustomerDetails, ValidationError } from './src/lib/orderValidation';
-import { validateShippingRewardDestination } from './src/lib/shippingPolicy';
 import crypto from 'crypto';
 import {
   createDurableOrder,
@@ -49,7 +52,7 @@ import { createStoreUpdatesRouter } from './src/lib/storeUpdatesRouter';
 import { createN8nCommerceRouter } from './src/lib/n8nCommerceRouter';
 import {
   AdminOperationError, hasAdminClaim, validateAdminOrderId, validateAdminStatusInput,
-  parseAdminOrderFilters, listAdminOrders, getAdminOrder, sanitizeOrderForAdmin,
+  parseAdminOrderFilters, listAdminOrders, getAdminOrder, sanitizeOrderForAdmin, invalidateAdminOrderMetrics,
   addAdminOrderNote, updateAdminOrderPayment,
 } from './src/lib/adminOperations';
 
@@ -216,11 +219,17 @@ app.use(helmet({
 app.use('/api', commerceCors(process.env.FRONTEND_ORIGINS));
 // Authenticate private integrations before parsing their JSON. Their router owns
 // payload limits and safe parse errors; customer/admin bearer guards remain separate.
-const liveCatalog = createLiveCatalog({ getDb: () => db });
-app.use('/api/integrations/n8n', createN8nCommerceRouter({ getDb: () => db, getCatalog: () => liveCatalog.getSnapshot() }));
+const pricingCatalog = createLiveCatalog({ getDb: () => db });
+const inventoryStore = createInventoryStore(() => db);
+const liveCatalog = {
+  async getSnapshot() { const [catalog, inventory] = await Promise.all([pricingCatalog.getSnapshot(), inventoryStore.getSnapshot()]); return catalogWithInventory(catalog, inventory); },
+  close() { pricingCatalog.close(); inventoryStore.close(); },
+};
+app.use('/api/integrations/n8n', createN8nCommerceRouter({ getDb: () => db, getCatalog: () => liveCatalog.getSnapshot(), getInventory: () => inventoryStore.getSnapshot(), onOrderChanged: () => orderOutboxWorker?.wake() }));
 app.use(createCatalogPricingRouter({ getDb: () => db, requireAdmin, catalog: liveCatalog }));
 app.use(express.json({ limit: '128kb' }));
 app.use(cookieParser());
+app.use(createInventoryRouter({ getDb: () => db, requireAdmin }));
 app.use(createProductMediaRouter({ getDb: () => db, requireAdmin }));
 app.use(createStoreUpdatesRouter({ getDb: () => db, requireAuth, requireAdmin }));
 
@@ -324,16 +333,17 @@ app.post('/api/orders/quote', authenticateOptionalUser, async (req, res) => {
       promoContext,
     });
 
+    let rewardApplication;
     if (rewardId) {
       if (!authenticatedUser?.uid) throw new ValidationError('Please sign in to use a patron reward.', 'REWARD_REQUIRES_AUTH');
-      if (!db) return res.status(503).json({ error: 'Reward verification is unavailable until the order database is configured.', code: 'PERSISTENCE_UNAVAILABLE' });
-      const rewardSnap = await db.collection('users').doc(authenticatedUser.uid).collection('activeRewards').doc(String(rewardId).trim()).get();
+      if (!db) return res.status(503).json({ code: 'PERSISTENCE_UNAVAILABLE' });
+      const activeRewardId = validActiveRewardId(rewardId);
+      const rewardSnap = await db.collection('users').doc(authenticatedUser.uid).collection('activeRewards').doc(activeRewardId).get();
       if (!rewardSnap.exists) throw new ValidationError('Selected reward does not exist for this patron.', 'REWARD_NOT_FOUND');
-      const reward = rewardSnap.data();
-      if (reward?.status !== 'ACTIVE') throw new ValidationError('Selected reward is no longer active or has already been used.', 'REWARD_ALREADY_USED');
-      validateShippingRewardDestination(reward, city);
-      throw new ValidationError('This reward cannot yet be applied at checkout. It remains active; contact support for assistance.', 'REWARD_APPLICATION_UNAVAILABLE');
+      rewardApplication = applyPatronReward({ order: validatedOrder, voucher: rewardSnap.data()!, activeRewardId,
+        city, shippingMethodId, catalog: _catRes.catalog, isWholesale: Boolean(isWholesale && authenticatedUser?.wholesaleEligible) });
     }
+    if (!validatedOrder.summary.isQuoteRequest) validateStockCapacity(orderStockRequirements(validatedOrder.items, rewardApplication?.sample), await inventoryStore.getSnapshot());
 
     res.json({
       success: true,
@@ -341,13 +351,15 @@ app.post('/api/orders/quote', authenticateOptionalUser, async (req, res) => {
       items: validatedOrder.items,
       earnedPoints: validatedOrder.earnedPoints,
       generatedAt: Date.now(),
-      quoteFingerprint: quoteFingerprint(validatedOrder),
+      quoteFingerprint: quoteFingerprint({ ...validatedOrder, rewardApplication }),
+      rewardApplication,
       catalogRevision: _catRes.revision,
     });
   } catch (error: any) {
     if (error.name === 'ValidationError') {
       return res.status(400).json({ error: error.message, code: error.code || 'VALIDATION_ERROR' });
     }
+    if (error instanceof InventoryError) return res.status(error.httpStatus).json({ code: error.code });
     if (error instanceof CatalogPricingError) return res.status(error.httpStatus).json({ code: error.code });
     if (error.code === 'PERSISTENCE_UNAVAILABLE') return res.status(503).json({ error: error.message, code: error.code });
     res.status(500).json({ error: 'Internal server error while calculating quote.', code: 'SERVER_ERROR' });
@@ -423,6 +435,7 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
       expectedQuoteFingerprint: typeof req.body.expectedQuoteFingerprint === 'string' ? req.body.expectedQuoteFingerprint : null,
     });
     savedOrderVerifiedThisProcess = true;
+    if (!result.isDuplicate) { orderOutboxWorker?.wake(); invalidateAdminOrderMetrics(db); }
 
     res.json({
       success: true,
@@ -433,6 +446,7 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
       claimToken: result.claimToken,
       totals: result.totals,
       items: result.items,
+      rewardApplication: result.rewardApplication,
       isDuplicate: result.isDuplicate,
       durablePersistenceReady: true,
       n8nNotification: { managedBy: 'durable-outbox', deliveryVerified: false }
@@ -452,6 +466,7 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
     if (error.name === 'ValidationError') {
       return res.status(400).json({ error: error.message, code: error.code || 'VALIDATION_ERROR' });
     }
+    if (error instanceof InventoryError) return res.status(error.httpStatus).json({ code: error.code });
     if (error instanceof CatalogPricingError) return res.status(error.httpStatus).json({ code: error.code });
     if (error instanceof PersistenceUnavailableError || error.code === 'PERSISTENCE_UNAVAILABLE') {
       return res.status(503).json({ error: error.message, code: error.code });
@@ -550,6 +565,7 @@ app.post('/api/coupons/preview', authenticateOptionalUser, async (req, res) => {
     });
   } catch (e: any) {
     if (e.name === 'ValidationError') return res.status(400).json({ valid: false, error: e.message, code: e.code });
+    if (e instanceof InventoryError) return res.status(e.httpStatus).json({ valid: false, code: e.code });
     if (e instanceof CatalogPricingError) return res.status(e.httpStatus).json({ valid: false, code: e.code });
     if (e.code === 'PERSISTENCE_UNAVAILABLE') return res.status(503).json({ valid: false, error: e.message, code: e.code });
     res.status(500).json({ valid: false, error: 'Failed to preview coupon.' });
@@ -604,13 +620,18 @@ app.post('/api/admin/orders/:orderId/status', requireAdmin, async (req, res) => 
       actorEmail: user.email || 'admin',
     });
 
+    invalidateAdminOrderMetrics(db); orderOutboxWorker?.wake();
     res.json({ success: true, order: sanitizeOrderForAdmin(updated) });
   } catch (e: any) {
     adminOperationFailure(res, e);
   }
 });
 
-// Register export before the dynamic order ID route. The frontend handles CSV formatting.
+// Register exports before the dynamic order ID route.
+app.get('/api/admin/orders/export.csv', requireAdmin, async (req, res) => {
+  try { await streamAdminOrdersCsv(db, { ...parseAdminOrderFilters(req.query), page: 1, cursor: undefined }, req.query.lang, req, res); }
+  catch (error) { adminOperationFailure(res, error); }
+});
 app.get('/api/admin/orders/export', requireAdmin, async (req, res) => {
   try {
     res.setHeader('Cache-Control', 'no-store');
@@ -618,7 +639,7 @@ app.get('/api/admin/orders/export', requireAdmin, async (req, res) => {
   } catch (error) { adminOperationFailure(res, error); }
 });
 
-// Admin-only: newest-order bounded scan, matching-filter metrics, and pagination.
+// Admin-only: indexed cursor pages and cached aggregate reports.
 app.get('/api/admin/orders', requireAdmin, async (req, res) => {
   try {
     res.setHeader('Cache-Control', 'no-store');
@@ -930,9 +951,16 @@ async function startServer() {
     shuttingDown = true;
     const timer = setTimeout(() => process.exit(1), 40000);
     timer.unref();
-    await worker.stop();
-    server.close(() => { clearTimeout(timer); process.exitCode = 0; });
-    server.closeIdleConnections();
+    try {
+      // Stop accepting orders, drain API transactions, then stop notification transport/listeners.
+      const closed = new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
+      server.closeIdleConnections();
+      await closed;
+      await worker.stop();
+      liveCatalog.close();
+      if (db) await db.terminate();
+      clearTimeout(timer); process.exitCode = 0;
+    } catch { process.exitCode = 1; }
   };
   process.once('SIGTERM', shutdown);
   process.once('SIGINT', shutdown);

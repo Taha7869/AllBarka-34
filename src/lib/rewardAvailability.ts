@@ -1,9 +1,8 @@
 import type { PatronReward } from '../types';
+import { SUPPORTED_REWARD_IDS } from './rewardFulfillment';
 
-// Checkout currently rejects reward application. Do not issue a paid-for voucher
-// until its benefit, expiry and fulfilment are implemented and tested together.
-export const REWARD_REDEMPTION_AVAILABLE = false;
+export const REWARD_REDEMPTION_AVAILABLE = true;
 
 export function publicRewards(rewards: PatronReward[]) {
-  return rewards.map(reward => ({ ...reward, redeemable: REWARD_REDEMPTION_AVAILABLE }));
+  return rewards.map(reward => ({ ...reward, redeemable: REWARD_REDEMPTION_AVAILABLE && reward.active && SUPPORTED_REWARD_IDS.some(id => id === reward.rewardId) }));
 }

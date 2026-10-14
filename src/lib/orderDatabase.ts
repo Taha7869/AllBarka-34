@@ -1,3 +1,8 @@
+import { applyPatronReward, validActiveRewardId, type RewardApplication } from './rewardFulfillment';
+import { rewardCancellationOutcome } from './rewardRedemption';
+import { orderStockRequirements } from './inventory';
+import { readStockReservation, commitStockReservation, readStockRelease, commitStockRelease } from './inventoryServer';
+import { orderSearchPrefixes, invalidateAdminOrderMetrics } from './adminOperations';
 import { sanitizeFirestoreData } from './firestoreData';
 import { calculateDeliverySchedule } from './deliveryCalendar';
 import crypto from 'crypto';
@@ -22,7 +27,6 @@ import { firstOrderPromoContext } from '../server/promoEligibility';
 import { PricingSummary } from './pricing';
 import { transactionalCatalog, quoteFingerprint } from './liveCatalog';
 import { STORE_CONFIG } from '../config/store';
-import { validateShippingRewardDestination } from './shippingPolicy';
 import { getN8nOrderDispatchConfig } from '../services/n8nOrderNotification';
 import { getN8nStatusDispatchConfig } from '../services/n8nStatusNotification';
 import { calculateLoyaltyPoints } from './loyaltyPoints';
@@ -96,6 +100,7 @@ export async function createDurableOrder({
   isDuplicate?: boolean;
   uid?: string | null;
   deliverySchedule?: import('./deliveryCalendar').DeliveryScheduleResult;
+  rewardApplication?: RewardApplication;
 }> {
   if (!db) {
     throw new PersistenceUnavailableError();
@@ -129,7 +134,7 @@ export async function createDurableOrder({
   const historyRef = uid ? db.collection('customerOrderHistory').doc(crypto.createHash('sha256').update(uid).digest('hex')) : null;
 
   let rewardRef: any = null;
-  const rewardId = payload.rewardId ? String(payload.rewardId).trim() : null;
+  const rewardId = payload.rewardId ? validActiveRewardId(payload.rewardId) : null;
   if (rewardId && !uid) {
     throw new ValidationError('Please sign in to use a patron reward.', 'REWARD_REQUIRES_AUTH');
   }
@@ -179,6 +184,7 @@ export async function createDurableOrder({
         claimToken: intentData.response.claimToken || null,
         uid: savedOrder.uid ?? null,
         deliverySchedule: savedOrder.deliverySchedule,
+        rewardApplication: savedOrder.rewardApplication,
       };
     }
 
@@ -189,7 +195,11 @@ export async function createDurableOrder({
     const storedCount = historySnap?.data()?.orderCount;
     const orderCount = Number.isSafeInteger(storedCount) && storedCount >= 0 ? storedCount : 0;
     const promoContext = await firstOrderPromoContext(db, uid, couponCode, reference => transaction.get(reference), orderCount);
-    const currentCatalog = await transactionalCatalog(db, transaction, payload.items, catalogSource);
+    const rewardSnap = rewardRef ? await transaction.get(rewardRef) : null;
+    if (rewardRef && !rewardSnap?.exists) throw new ValidationError('Selected reward does not exist for this patron.', 'REWARD_NOT_FOUND');
+    const rewardData = rewardSnap?.data();
+    const extraIds = rewardData?.rewardId === 'cashew_sample' ? ['kaju'] : rewardData?.rewardId === 'pista_sample' ? ['pista'] : [];
+    const currentCatalog = await transactionalCatalog(db, transaction, payload.items, catalogSource, extraIds);
     const validated = validateAndPriceOrder({
       catalog: currentCatalog.catalog, boxes: currentCatalog.boxes,
       items: payload.items,
@@ -200,7 +210,11 @@ export async function createDurableOrder({
       city: customer.city,
       promoContext,
     });
-    if (expectedQuoteFingerprint && expectedQuoteFingerprint !== quoteFingerprint(validated)
+    const rewardApplication = rewardData ? applyPatronReward({ order: validated, voucher: rewardData, activeRewardId: rewardId!,
+      city: customer.city, shippingMethodId: payload.shippingMethodId, catalog: currentCatalog.catalog, isWholesale: Boolean(payload.isWholesale) }) : undefined;
+    const stockRequirements = validated.summary.isQuoteRequest ? [] : orderStockRequirements(validated.items, rewardApplication?.sample);
+    const stock = await readStockReservation(db, transaction, stockRequirements);
+    if (expectedQuoteFingerprint && expectedQuoteFingerprint !== quoteFingerprint({ ...validated, rewardApplication })
       || expectedFinalTotal !== undefined && expectedFinalTotal !== null && Math.abs(expectedFinalTotal - validated.summary.total) > 1) {
       throw new QuoteChangedError(
         `Prices or delivery rates have been refreshed. New total is Rs. ${validated.summary.total.toLocaleString('en-PK')}. Please reconfirm your order.`,
@@ -213,22 +227,6 @@ export async function createDurableOrder({
     const storedUsage = couponSnap?.data()?.usedCount;
     const usedCount = Number.isSafeInteger(storedUsage) && storedUsage >= 0 ? storedUsage : 0;
 
-    // Read reward if supplied
-    if (rewardRef) {
-      const rewardSnap = await transaction.get(rewardRef);
-      if (!rewardSnap.exists) {
-        throw new ValidationError(`Selected reward does not exist for this patron.`, 'REWARD_NOT_FOUND');
-      }
-      const rewardData = rewardSnap.data();
-      if (rewardData?.status !== 'ACTIVE') {
-        throw new ValidationError(`Selected reward is no longer active or has already been used.`, 'REWARD_ALREADY_USED');
-      }
-      validateShippingRewardDestination(rewardData, customer.city);
-      // Benefits are not implemented in the canonical pricing/packing engine yet.
-      // Never consume a patron's reward without actually granting its advertised benefit.
-      throw new ValidationError('This reward cannot yet be applied at checkout. Your reward remains available.', 'REWARD_APPLICATION_UNAVAILABLE');
-    }
-
     const isQuoteRequest = validated.summary.isQuoteRequest === true;
     const deliverySchedule = isQuoteRequest ? undefined : calculateDeliverySchedule({
       shippingMethodId: (payload.shippingMethodId as any) || 'standard',
@@ -240,6 +238,7 @@ export async function createDurableOrder({
     });
     if (deliverySchedule) deliverySchedule.shippingFee = validated.summary.shipping;
 
+    const inventoryReservation = stock.length ? { status: 'RESERVED' as const, allocations: stock.map(entry => entry.allocation), reservedAt: nowIso } : undefined;
     const canonicalOrder: CanonicalOrder & { priceSource?: string; catalogFetchedAt?: string; catalogRevision?: string } = {
       schemaVersion: SCHEMA_VERSION,
       priceSource: currentCatalog.source,
@@ -269,7 +268,7 @@ export async function createDurableOrder({
         instructions: customer.instructions,
       },
       gifting: {
-        giftWrapping: Boolean(customer.giftWrapping || validated.summary.freeGiftWrap),
+        giftWrapping: Boolean(customer.giftWrapping || validated.summary.freeGiftWrap || rewardApplication?.rewardType === 'PACKAGING'),
         giftMessage: customer.giftMessage,
         giftWrapFee: validated.summary.giftWrapFee,
       },
@@ -287,7 +286,10 @@ export async function createDurableOrder({
       freeGift: Boolean(validated.summary.freeGift),
       isQuoteRequest,
       rewardId: rewardId || null,
-      rewardDiscount: 0,
+      rewardDiscount: (rewardApplication?.shippingDiscount || 0) + (rewardApplication?.giftWrapDiscount || 0),
+      ...(rewardApplication ? { rewardApplication } : {}),
+      ...(inventoryReservation ? { inventoryReservation } : {}),
+      searchPrefixes: orderSearchPrefixes({ orderId, customer }), searchVersion: 1,
       earnedPoints: calculateLoyaltyPoints(validated.summary.total, payload.isWholesale === true, validated.summary.isQuoteRequest === true),
       pointsAwarded: false,
     };
@@ -295,6 +297,7 @@ export async function createDurableOrder({
     const whatsappMessage = generateAuthoritativeWhatsAppMessage(canonicalOrder);
 
     // Write Order
+    commitStockReservation(db, transaction, stock, nowIso);
     transaction.create(orderRef, sanitizeFirestoreData(canonicalOrder));
     const phoneIndex = buildWhatsAppPhoneIndex(canonicalOrder);
     transaction.set(db.collection('whatsappPhoneOrders').doc(phoneIndex.phoneKey).collection('orders').doc(phoneIndex.orderId), sanitizeFirestoreData(phoneIndex.data));
@@ -324,6 +327,7 @@ export async function createDurableOrder({
     if (rewardRef) {
       transaction.update(rewardRef, sanitizeFirestoreData({
         status: 'USED',
+        usedOrderId: orderId,
         usedAt: nowMs,
         orderId,
       }));
@@ -392,6 +396,7 @@ export async function createDurableOrder({
       claimToken: rawClaimToken,
       uid: uid || null,
       deliverySchedule,
+      rewardApplication,
     };
   });
 
@@ -529,7 +534,7 @@ async function mutateCanonicalOrderStatus({
   const commandHash = sheetCommand ? sheetStatusPayloadHash(sheetCommand) : orderUpdate ? orderUpdateHash(orderUpdate) : null;
   const statusConfig = getN8nStatusDispatchConfig();
 
-  return await db.runTransaction(async (transaction) => {
+  const result = await db.runTransaction<{ order: CanonicalOrder; sheetResult?: SheetStatusResult; updateResult?: OrderUpdateResult }>(async (transaction) => {
     // READ PHASE
     const requestSnap = requestRef ? await transaction.get(requestRef) : null;
     const snap = await transaction.get(orderRef);
@@ -606,6 +611,9 @@ async function mutateCanonicalOrderStatus({
     } : {};
     const fulfillmentChanged = Object.entries(fulfillmentPatch).some(([key, value]) => (order as any)[key] !== value);
     if (orderUpdate && ['DELIVERED', 'CANCELLED'].includes(order.status) && status !== order.status) throw new SheetStatusError('TERMINAL_STATUS_CONFLICT', 409);
+    if (order.status === 'CANCELLED' && status !== 'CANCELLED' && (order.inventoryReservation || order.rewardApplication)) {
+      throw new ValidationError('A cancelled order with released stock or a recovered reward needs a new checkout.', 'CANCELLED_ORDER_REQUIRES_CHECKOUT');
+    }
     if (order.status === status && !fulfillmentChanged) {
       // Sheet commands were already ignored above; unchanged Admin edits are also read-only.
       return { order };
@@ -626,6 +634,17 @@ async function mutateCanonicalOrderStatus({
     const previouslyAwarded = Boolean(ledger || legacySnap?.exists || order.pointsAwarded);
     const earnedPoints = previouslyAwarded ? (ledger?.points ?? legacySnap?.data()?.points ?? order.earnedPoints)
       : calculateLoyaltyPoints(order.totals.total, order.isWholesale === true || order.source !== 'website', order.orderType === 'QUOTE_REQUEST');
+
+    if (!Number.isSafeInteger(earnedPoints) || earnedPoints < 0) throw new ValidationError('Order points could not be verified.', 'LOYALTY_UNAVAILABLE');
+    if (userRef && (!Number.isSafeInteger(userSnap?.data()?.loyaltyPoints ?? 0) || (userSnap?.data()?.loyaltyPoints ?? 0) < 0)) throw new ValidationError('Loyalty balance could not be verified.', 'LOYALTY_UNAVAILABLE');
+
+    const stockRelease = status === 'CANCELLED' ? await readStockRelease(db, transaction, order.inventoryReservation) : [];
+    const rewardRecovery = status === 'CANCELLED' ? rewardCancellationOutcome(order.rewardApplication, order.status, Date.now()) : null;
+    const rewardRestoreRef = rewardRecovery && order.uid ? db.collection('users').doc(order.uid).collection('activeRewards').doc(rewardRecovery.application.activeRewardId) : null;
+    const rewardRestore = rewardRestoreRef ? await transaction.get(rewardRestoreRef) : null;
+    if (rewardRestoreRef && (!rewardRestore?.exists || rewardRestore.data()?.status !== 'USED' || rewardRestore.data()?.usedOrderId !== orderId)) {
+      throw new ValidationError('Reward recovery could not be verified.', 'REWARD_RECOVERY_UNAVAILABLE');
+    }
 
     // WRITE PHASE
     // Every status mutation advances the same revision used by notes/payment, even within one millisecond.
@@ -650,6 +669,7 @@ async function mutateCanonicalOrderStatus({
 
     // Loyalty Ledger Updates (Award points ONLY on DELIVERED, exactly once)
     let pointsAwardedNew = order.pointsAwarded || false;
+    let pointsAfterStatus = userSnap?.data()?.loyaltyPoints ?? 0;
     if (status === 'DELIVERED' && oldStatus !== 'DELIVERED' && order.source === 'website' && !previouslyAwarded && earnedPoints > 0) {
       transaction.set(ledgerRef, sanitizeFirestoreData({ customerId: order.uid || `guest:${orderId}`, orderId,
         points: earnedPoints, type: 'EARNED', timestamp: nowIso, credited: Boolean(order.uid) }));
@@ -665,7 +685,9 @@ async function mutateCanonicalOrderStatus({
       }));
 
       const currentPts = userSnap && userSnap.exists ? (userSnap.data()?.loyaltyPoints || 0) : 0;
-      transaction.set(userRef, sanitizeFirestoreData({ loyaltyPoints: currentPts + earnedPoints }), { merge: true });
+      pointsAfterStatus = currentPts + earnedPoints;
+      if (!Number.isSafeInteger(pointsAfterStatus)) throw new ValidationError('Loyalty balance could not be verified.', 'LOYALTY_UNAVAILABLE');
+      transaction.set(userRef, sanitizeFirestoreData({ loyaltyPoints: pointsAfterStatus }), { merge: true });
       }
       pointsAwardedNew = true;
     } else if (status === 'CANCELLED' && order.pointsAwarded && earnedPoints > 0 && !ledger?.reversed) {
@@ -683,7 +705,8 @@ async function mutateCanonicalOrderStatus({
       }));
 
       const currentPts = userSnap && userSnap.exists ? (userSnap.data()?.loyaltyPoints || 0) : 0;
-      transaction.set(userRef, sanitizeFirestoreData({ loyaltyPoints: Math.max(0, currentPts - earnedPoints) }), { merge: true });
+      pointsAfterStatus = Math.max(0, currentPts - earnedPoints);
+      transaction.set(userRef, sanitizeFirestoreData({ loyaltyPoints: pointsAfterStatus }), { merge: true });
       }
       pointsAwardedNew = false;
     } else if (status === 'DELIVERED' && order.source === 'website' && previouslyAwarded && !ledgerSnap?.exists) {
@@ -692,7 +715,26 @@ async function mutateCanonicalOrderStatus({
         points: earnedPoints, type: 'EARNED', timestamp: nowIso, credited: Boolean(order.uid) }));
     }
 
-    const updatedOrder: CanonicalOrder = { ...order, ...fulfillmentPatch, status, earnedPoints, pointsAwarded: pointsAwardedNew,
+    const benefitPatch: Partial<CanonicalOrder> = {};
+    if (order.inventoryReservation?.status === 'RESERVED') {
+      if (status === 'CANCELLED') {
+        commitStockRelease(db, transaction, stockRelease, nowIso);
+        benefitPatch.inventoryReservation = { ...order.inventoryReservation, status: 'RELEASED', releasedAt: nowIso };
+      } else if (status === 'DELIVERED') benefitPatch.inventoryReservation = { ...order.inventoryReservation, status: 'FULFILLED', fulfilledAt: nowIso };
+    }
+    if (order.rewardApplication?.status === 'APPLIED' && status === 'DELIVERED') benefitPatch.rewardApplication = { ...order.rewardApplication, status: 'FULFILLED' };
+    if (rewardRecovery && rewardRestoreRef) {
+      benefitPatch.rewardApplication = rewardRecovery.application;
+      transaction.update(rewardRestoreRef, { status: rewardRecovery.voucherStatus, usedOrderId: null, usedAt: null, restoredFromOrderId: orderId });
+      if (rewardRecovery.refundPoints > 0 && userRef) {
+        const points = pointsAfterStatus;
+        if (!Number.isSafeInteger(points) || points < 0 || !Number.isSafeInteger(points + rewardRecovery.refundPoints)) throw new ValidationError('Loyalty balance could not be verified.', 'LOYALTY_UNAVAILABLE');
+        transaction.set(userRef, { loyaltyPoints: points + rewardRecovery.refundPoints }, { merge: true });
+        transaction.set(userRef.collection('loyaltyTransactions').doc(`REWARD_REFUND_${orderId}`), { type: 'ADJUSTMENT', points: rewardRecovery.refundPoints,
+          orderId, rewardId: rewardRecovery.application.rewardId, description: 'Cancelled order reward refunded', createdAt: now });
+      }
+    }
+    const updatedOrder: CanonicalOrder = { ...order, ...fulfillmentPatch, ...benefitPatch, status, earnedPoints, pointsAwarded: pointsAwardedNew,
       updatedAt: nowIso, updatedAtMs: now };
     const eventId = `${orderId}_STATUS_${status}_${now}`;
     // Both receiver configurations use this immutable snapshot, never a later canonical status.
@@ -724,6 +766,7 @@ async function mutateCanonicalOrderStatus({
       pointsAwarded: pointsAwardedNew,
       earnedPoints,
       ...fulfillmentPatch,
+      ...benefitPatch,
       ...(orderUpdate ? { integrationUpdatedAt: orderUpdate.updatedAt, integrationUpdateHash: commandHash } : {}),
       updatedAt: nowIso,
       updatedAtMs: now,
@@ -736,6 +779,8 @@ async function mutateCanonicalOrderStatus({
       payloadHash: commandHash, result: updateResult || sheetResult, appliedAtMs: now }));
     return { order: updatedOrder, ...(sheetResult ? { sheetResult } : {}), ...(updateResult ? { updateResult } : {}) };
   });
+  invalidateAdminOrderMetrics(db);
+  return result;
 }
 
 /** Both Admin and Sheet commands use the same canonical status, audit, loyalty and notification transaction. */

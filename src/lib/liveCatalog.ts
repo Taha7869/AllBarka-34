@@ -74,10 +74,11 @@ export function createLiveCatalog(options: { getDb: () => Firestore | null; getS
 }
 
 /** Fresh reads inside the order transaction prevent a cached display quote from becoming an accepted price. */
-export async function transactionalCatalog(db: Firestore, transaction: Transaction, items: unknown, source = process.env.CATALOG_SOURCE): Promise<CatalogSnapshot> {
+export async function transactionalCatalog(db: Firestore, transaction: Transaction, items: unknown, source = process.env.CATALOG_SOURCE, additionalIds: string[] = []): Promise<CatalogSnapshot> {
   if (source === 'static') return staticCatalogSnapshot();
   if (!Array.isArray(items) || items.length === 0 || items.length > 50) throw new CatalogPricingError('INVALID_CATALOG_CART');
   const ids = new Set<string>();
+  for (const id of additionalIds) if (PRODUCTS.some(product => product.id === id)) ids.add(id);
   const boxIds = new Set<string>();
   for (const item of items) {
     const identity = resolveCartIdentity(item, PRODUCTS);
@@ -101,4 +102,4 @@ export async function transactionalCatalog(db: Firestore, transaction: Transacti
   } catch { throw new CatalogPricingError('CATALOG_NOT_READY', 503); }
 }
 
-export function quoteFingerprint(order: { items: unknown; summary: unknown }): string { return pricingVersion([order.items, order.summary]); }
+export function quoteFingerprint(order: { items: unknown; summary: unknown; rewardApplication?: unknown }): string { return pricingVersion([order.items, order.summary, order.rewardApplication ?? null]); }
