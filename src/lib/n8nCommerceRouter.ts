@@ -5,6 +5,10 @@ import { requireN8nIntegration } from './integrationAuthentication';
 import { applySheetStatusCommand, validateSheetStatusCommand, applyOrderUpdate } from './orderDatabase';
 import { validateOrderUpdate } from './orderUpdateCommand';
 import { ORDER_STATUSES } from './orderStatuses';
+import type { CatalogSnapshot } from './catalogPricing';
+import { CatalogPricingError } from './catalogPricing';
+import { validateAndPriceOrder } from './orderValidation';
+import { quoteFingerprint } from './liveCatalog';
 import {
   WhatsAppIntegrationError, getWhatsAppIntegrationConfig, ingestMetaWebhook, getWhatsAppReceiptForMessage,
   claimWhatsAppNotification, authorizeWhatsAppSend, completeWhatsAppSend, type WhatsAppIntegrationConfig,
@@ -12,6 +16,7 @@ import {
 
 export interface N8nCommerceRouterOptions {
   getDb: () => Firestore | null;
+  getCatalog?: () => Promise<CatalogSnapshot>;
   getIntegrationSecret?: () => string | undefined;
   metaConfig?: WhatsAppIntegrationConfig | (() => WhatsAppIntegrationConfig);
   /** Only an in-process fixture seam; production uses the shared canonical Firestore transaction. */
@@ -34,7 +39,7 @@ function exactBody(req: Request, allowed: string[], required: string[]) {
 const statusNames = new Set<string>([...ORDER_STATUSES, 'QUOTE_REQUESTED']);
 
 function safeError(res: Response, error: any) {
-  const typed = error instanceof WhatsAppIntegrationError || error?.name === 'SheetStatusError' || error?.name === 'PersistenceUnavailableError' || error?.name === 'ValidationError';
+  const typed = error instanceof CatalogPricingError || error instanceof WhatsAppIntegrationError || error?.name === 'SheetStatusError' || error?.name === 'PersistenceUnavailableError' || error?.name === 'ValidationError';
   const code = typed && typeof error.code === 'string' && /^[A-Z][A-Z0-9_]{0,79}$/.test(error.code) ? error.code : 'INTEGRATION_FAILED';
   const requestedStatus = error?.statusCode ?? error?.httpStatus ?? (error?.name === 'ValidationError' ? 400 : undefined);
   const status = typed && [400, 401, 403, 404, 409, 415, 429, 503].includes(requestedStatus) ? requestedStatus
@@ -53,6 +58,7 @@ export function createN8nCommerceRouter(options: N8nCommerceRouterOptions) {
     handler: (_req, res) => res.status(429).json({ ok: false, code: 'INTEGRATION_RATE_LIMITED', error: 'Integration request limit reached.' }),
   }));
   router.use(requireN8nIntegration(options.getIntegrationSecret));
+  router.use((_req, res, next) => { res.setHeader('Cache-Control', 'private, no-store'); next(); });
   router.use(express.json({ limit: '128kb' }));
   const db = () => {
     const database = options.getDb();
@@ -72,6 +78,21 @@ export function createN8nCommerceRouter(options: N8nCommerceRouterOptions) {
     if (body.source !== 'meta_parent') throw new WhatsAppIntegrationError('INTEGRATION_SOURCE_INVALID', 403);
     return body;
   };
+
+  route('/catalog', async req => {
+    exactBody(req, [], []);
+    if (!options.getCatalog) throw new CatalogPricingError('CATALOG_UNAVAILABLE', 503);
+    return options.getCatalog();
+  });
+  route('/quote', async req => {
+    const body = exactBody(req, ['items', 'city', 'shippingMethodId', 'discountCode', 'giftWrapping'], ['items', 'city', 'shippingMethodId']);
+    if (!options.getCatalog) throw new CatalogPricingError('CATALOG_UNAVAILABLE', 503);
+    const snapshot = await options.getCatalog();
+    const priced = validateAndPriceOrder({ catalog: snapshot.catalog, boxes: snapshot.boxes, items: body.items,
+      city: body.city, shippingMethodId: body.shippingMethodId, discountCode: body.discountCode,
+      giftWrapping: body.giftWrapping === true, promoContext: { identityVerified: false, hasPastOrders: true } });
+    return { success: true, items: priced.items, totals: priced.summary, quoteFingerprint: quoteFingerprint(priced), catalogRevision: snapshot.revision };
+  });
 
   route('/order-update', async req => {
     const body = exactBody(req, ['orderId', 'status', 'trackingNumber', 'estimatedDelivery', 'notes', 'updatedAt', 'eventId'], ['orderId', 'status', 'updatedAt']);

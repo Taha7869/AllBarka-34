@@ -7,7 +7,7 @@ import { AllBarkaFullLogo } from './AllBarkaLogo';
 import CategoryQuickPills from './CategoryQuickPills';
 import GradientText from './GradientText';
 import PlaceholdersAndVanishInput from './ui/placeholders-and-vanish-input';
-import { PRODUCTS } from '../data/products';
+import { useLiveCatalog } from '../hooks/useLiveCatalog';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { getLocalized } from '../utils/localize';
 import './AllBarkaHero.css';
@@ -27,6 +27,7 @@ const LANGUAGES: { code: LanguageCode; label: string }[] = [
 ];
 
 export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps = {}) {
+  const catalog = useLiveCatalog();
   const { t, language, isRtl, setLanguage } = useLanguage();
   const mediaCover = useProductMediaCover();
   const [query, setQuery] = useState('');
@@ -34,7 +35,7 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
   const [selected, setSelected] = useState('all');
   const [guideOpen, setGuideOpen] = useState(false);
   const guideOpener = useRef<HTMLButtonElement>(null);
-  const suggestions = useMemo(() => query.trim() ? searchCatalog(PRODUCTS, query).slice(0, 5) : [], [query]);
+  const suggestions = useMemo(() => query.trim() ? searchCatalog(catalog, query).slice(0, 5) : [], [query, catalog]);
 
   const placeholders = [
     t('searchPlaceholder1'),

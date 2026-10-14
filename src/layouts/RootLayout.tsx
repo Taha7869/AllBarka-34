@@ -36,20 +36,23 @@ import { Menu, X, ShoppingBag, User, Gift, Languages, ChevronDown } from 'lucide
 import { AllBarkaHeaderLogo } from '../components/AllBarkaLogo';
 import MobileHeaderBrand from '../components/MobileHeaderBrand';
 import Breadcrumbs from '../components/Breadcrumbs';
-import { PRODUCTS, getProductImage } from '../data/products';
+import { getProductImage } from '../data/products';
+import { useCatalogState } from '../hooks/useLiveCatalog';
+import { catalogStore } from '../lib/catalogClient';
 import { acquireScrollLock } from '../utils/scrollLock';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 
 
 export default function RootLayout() {
+  const { catalog, status: priceStatus } = useCatalogState();
   const navigate = useNavigate();
   const online = useOnlineStatus();
 
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin/');
   const { currentUser, patronProfile, logout } = useAuth();
-  const { language, setLanguage, t } = useLanguage();
+  const { language, setLanguage, isRtl, t } = useLanguage();
   
   const mobileMenuTriggerRef = React.useRef<HTMLButtonElement>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -127,7 +130,7 @@ export default function RootLayout() {
   };
 
   const handleAddToCart = (productId: string, weight: string, customQty = 1) => {
-    const product = PRODUCTS.find((p) => p.id === productId);
+    const product = catalog.find((p) => p.id === productId);
     if (!product) return;
 
     const unitPrice = product.prices[weight];
@@ -386,6 +389,7 @@ export default function RootLayout() {
       />
 
       <main className="flex-1 w-full relative z-10 flex flex-col items-center">
+        {!isAdminRoute && priceStatus !== 'ready' && <div role="status" className="flex w-full flex-wrap items-center justify-center gap-2 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-center text-xs text-[var(--color-text-secondary)]" dir={isRtl ? 'rtl' : 'ltr'}><span>{t(priceStatus === 'loading' ? 'pricing.loading' : 'pricing.unavailable')}</span>{priceStatus === 'unavailable' && <button type="button" className="focus-ring min-h-11 rounded-lg px-3 font-medium underline underline-offset-4" onClick={() => void catalogStore.refresh()}>{t('pricing.retry')}</button>}</div>}
         {/* Shared Breadcrumb Navigation for all subpages (hidden on homepage) */}
         {!isAdminRoute && <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <Breadcrumbs />
@@ -442,7 +446,7 @@ export default function RootLayout() {
         {(authModalOpen || loadedOverlays.auth) && <AuthModal isOpen={authModalOpen} initialMode={authInitialMode} onClose={() => setAuthModalOpen(false)} />}
       </React.Suspense>
       <React.Suspense fallback={null}>
-        {(!!selectedQuickViewProduct || loadedOverlays.quick) && <QuickViewModal product={selectedQuickViewProduct} isOpen={!!selectedQuickViewProduct} onClose={() => setSelectedQuickViewProduct(null)} onAddToCart={handleAddToCart} />}
+        {(!!selectedQuickViewProduct || loadedOverlays.quick) && <QuickViewModal product={selectedQuickViewProduct ? catalog.find(product => product.id === selectedQuickViewProduct.id) || null : null} isOpen={!!selectedQuickViewProduct} onClose={() => setSelectedQuickViewProduct(null)} onAddToCart={handleAddToCart} />}
         {(hamperModalOpen || loadedOverlays.hamper) && <CustomHamperBuilderModal isOpen={hamperModalOpen} onClose={() => setHamperModalOpen(false)} onAddToCart={handleAddCustomHamper} />}
         {(authChoiceModalOpen || loadedOverlays.checkout) && <CheckoutAuthChoiceModal isOpen={authChoiceModalOpen} onClose={() => setAuthChoiceModalOpen(false)} onSignIn={() => { setAuthChoiceModalOpen(false); setAuthModalOpen(true); }} onContinueAsGuest={() => { setAuthChoiceModalOpen(false); navigate('/checkout'); }} />}
         {(patronLoungeOpen || loadedOverlays.patron) && <PatronLoungeModal isOpen={patronLoungeOpen} onClose={() => setPatronLoungeOpen(false)} />}

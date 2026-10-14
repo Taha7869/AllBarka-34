@@ -4,6 +4,7 @@ import { Truck, Zap } from 'lucide-react';
 import { STORE_CONFIG } from '../config/store';
 import { calculateShipping, getCartShippingWeightGrams, isLahoreCity } from '../lib/pricing';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useCatalogState } from '../hooks/useLiveCatalog';
 
 export const SHIPPING_METHODS = [
   {
@@ -37,8 +38,9 @@ interface Props {
 }
 
 export default function ShippingMethodSelector({ selected, onSelect, subtotal, city, items }: Props) {
+  const { catalog, boxes } = useCatalogState();
   const { t, isRtl } = useLanguage();
-  const weight = getCartShippingWeightGrams(items);
+  const weight = getCartShippingWeightGrams(items, catalog, boxes);
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
       {SHIPPING_METHODS.map((method) => {

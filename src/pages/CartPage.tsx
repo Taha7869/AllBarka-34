@@ -4,7 +4,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, MessageCircle, ShoppingCart } from 'lucide-react';
 import { useCart, formatPrice, parsePrice } from '../contexts/CartContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { PRODUCTS } from '../data/products';
 import { useLiveCatalog } from '../hooks/useLiveCatalog';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import CartTools from '../components/CartTools';
@@ -172,6 +171,7 @@ export default function CartPage() {
                     <h3 className="font-serif font-bold text-[#29231D] dark:text-[#F6F1EA] text-sm sm:text-base line-clamp-1">
                       {getLocalized(item, 'name', language)}
                     </h3>
+                    {item.priceUnavailable && <p className="mt-2 text-xs leading-5 text-red-800 dark:text-red-200" dir="auto">{t('pricing.itemUnavailable')}</p>}
                     <div className="flex items-center gap-2 mt-1">
                       <span className="inline-block px-2 py-0.5 rounded-md bg-[#F6F1EA] dark:bg-[#222A28] border border-[#29231D]/10 text-[#635B52] dark:text-[#A8A199] text-[9.5px] font-semibold uppercase tracking-wider">
                         {item.selectedWeight}
