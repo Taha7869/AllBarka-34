@@ -21,7 +21,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import type { ConciergeLanguage } from './src/lib/conciergeFallback';
 import { commerceCors } from './src/lib/apiCors';
-import { probeCommerceDatabase } from './src/lib/commerceReadiness';
+import { probeCommerceDatabase, deploymentReadiness } from './src/lib/commerceReadiness';
 import { PRODUCTS } from './src/data/products';
 import { createLiveCatalog, quoteFingerprint } from './src/lib/liveCatalog';
 import { createCatalogPricingRouter } from './src/lib/catalogPricingRouter';
@@ -117,7 +117,7 @@ try {
 
 // Security & Authentication Middlewares
 async function authenticateOptionalUser(req: express.Request, res: express.Response, next: express.NextFunction) {
-  const sessionCookie = req.cookies.__session || '';
+  const sessionCookie = req.cookies?.__session || '';
   const authHeader = req.headers.authorization;
 
   if (!sessionCookie && authHeader === undefined) {
@@ -231,9 +231,9 @@ const liveCatalog = {
   close() { pricingCatalog.close(); inventoryStore.close(); },
 };
 app.use('/api/integrations/n8n', createN8nCommerceRouter({ getDb: () => db, getCatalog: () => liveCatalog.getSnapshot(), getInventory: () => inventoryStore.getSnapshot(), onOrderChanged: () => orderOutboxWorker?.wake() }));
-app.use(createCatalogPricingRouter({ getDb: () => db, requireAdmin, catalog: liveCatalog }));
 app.use(express.json({ limit: '128kb' }));
 app.use(cookieParser());
+app.use(createCatalogPricingRouter({ getDb: () => db, requireAdmin, catalog: liveCatalog }));
 app.use(createInventoryRouter({ getDb: () => db, requireAdmin }));
 app.use(createProductMediaRouter({ getDb: () => db, requireAdmin }));
 app.use(createStoreUpdatesRouter({ getDb: () => db, requireAuth, requireAdmin }));
@@ -292,12 +292,22 @@ app.get('/api/health', (req, res) => {
 // 1.2 API: Commerce Persistence Readiness Status
 let readinessProbe: Promise<{ connected: boolean; checked: boolean }> | null = null;
 let readinessProbeExpiresAt = 0;
-app.get('/api/commerce/readiness', async (_req, res) => {
+function getCommerceProbe() {
   if (!readinessProbe || Date.now() >= readinessProbeExpiresAt) {
     readinessProbeExpiresAt = Date.now() + 30000;
     readinessProbe = probeCommerceDatabase(db);
   }
-  const probe = await readinessProbe;
+  return readinessProbe;
+}
+// Dependency checks must not require customer checkouts or write production data.
+app.get('/api/ready', async (_req, res) => {
+  const [probe, catalog] = await Promise.all([getCommerceProbe(), liveCatalog.getSnapshot().catch(() => null)]);
+  const readiness = deploymentReadiness(Boolean(adminAuth), probe.connected, catalog);
+  res.setHeader('Cache-Control', 'no-store');
+  res.status(readiness.ready ? 200 : 503).json({ ...readiness, deployment: deploymentIdentity() });
+});
+app.get('/api/commerce/readiness', async (_req, res) => {
+  const probe = await getCommerceProbe();
   res.json({
     status: 'ok',
     processRunning: true,

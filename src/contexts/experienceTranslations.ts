@@ -1,4 +1,8 @@
 const copy = [
+ ['experience.dispatch.lahore', 'Lahore same-day delivery', 'لاہور میں اسی دن ترسیل', 'توصيل لاهور في اليوم نفسه'],
+ ['experience.dispatch.cutoff', 'Order by 6 PM Pakistan time', 'شام ۶ بجے پاکستانی وقت تک آرڈر دیں', 'اطلب قبل السادسة مساءً بتوقيت باكستان'],
+ ['experience.dispatch.next', 'Next dispatch:', 'اگلی روانگی:', 'الإرسال التالي:'],
+ ['experience.dispatch.schedule', 'Delivery schedule', 'ترسیل کا شیڈول', 'جدول التوصيل'],
  ['experience.skip', 'Skip to main content', 'مرکزی مواد پر جائیں', 'انتقل إلى المحتوى الرئيسي'],
  ['experience.loading', 'Loading your selection…', 'آپ کا انتخاب لوڈ ہو رہا ہے…', 'جارٍ تحميل اختيارك…'],
  ['experience.error.title', 'This page could not load', 'یہ صفحہ لوڈ نہیں ہو سکا', 'تعذر تحميل هذه الصفحة'],

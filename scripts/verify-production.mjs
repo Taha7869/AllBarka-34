@@ -67,6 +67,21 @@ try {
     assert.equal(status.savedOrderVerifiedThisProcess, false);
     assert.equal(status.aiConfigured, false);
   });
+  await check('Railway readiness rejects offline preview prices without database/auth', async () => {
+    const ready = await request('/api/ready');
+    assert.equal(ready.status, 503);
+    assert.equal(ready.headers.get('cache-control'), 'no-store');
+    assert.deepEqual((await ready.json()).checks, { auth: false, database: false, catalog: false });
+  });
+  await check('catalogue admin bearer requests reach the guard without cookie-parser crashes', async () => {
+    for (const method of ['GET', 'POST']) {
+      const response = await request('/api/admin/catalog-prices/products/pista', { method,
+        headers: { Authorization: 'Bearer invalid-token', ...(method === 'POST' ? { 'Content-Type': 'application/json' } : {}) },
+        ...(method === 'POST' ? { body: JSON.stringify({ reason: 'Offline guard check' }) } : {}) });
+      assert.equal(response.status, 503);
+      assert.equal((await response.json()).code, 'AUTH_SERVICE_UNAVAILABLE');
+    }
+  });
   await check('fulfilled rewards are discoverable and anonymous accounts cannot spend points', async () => {
     const rewards = await (await request('/api/loyalty/rewards')).json();
     assert.equal(rewards.length, 4);
