@@ -11,7 +11,7 @@ for (const product of PRODUCTS) {
   const gallery = getProductImages(product);
   assert.deepEqual(resolveProductMedia(product).images, gallery, `Manifest differs from catalogue: ${product.id}`);
   if (NEW_PRODUCT_IDS.includes(product.id)) {
-    assert.deepEqual(gallery, [`/images/products/${product.id}.svg`], `One final placeholder required: ${product.id}`);
+    assert.deepEqual(gallery, [`/images/products/${product.id}-1.webp`], `One approved WebP cover required: ${product.id}`);
     assert.ok(Object.hasOwn(manifest, product.id), `Missing media entry: ${product.id}`);
     assert.equal(existsSync(`public/images/products/${product.id}-secondary.svg`), false, `Retired view remains: ${product.id}`);
   }
@@ -27,4 +27,4 @@ assert.deepEqual(svgs, NEW_PRODUCT_IDS.map(id => `${id}.svg`).sort(), 'Only one 
 assert.equal(images, 107);
 assert.equal(unique.size, 103);
 assert.equal(LEGACY_PRODUCT_IDS.reduce((sum, id) => sum + getProductImages(PRODUCTS.find(product => product.id === id)!).length, 0), 50);
-console.log(`${PRODUCTS.length} products, ${images} image references (${unique.size} unique files); ${NEW_PRODUCT_IDS.length} single-image placeholders; 0 missing files, 0 retired views.`);
+console.log(`${PRODUCTS.length} products, ${images} image references (${unique.size} unique files); ${NEW_PRODUCT_IDS.length} single-image WebP selections; 0 missing files, 0 retired views.`);

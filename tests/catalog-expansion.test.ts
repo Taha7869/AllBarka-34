@@ -155,14 +155,14 @@ test('bundles use one fixed purchase portion, canonical components and only decl
   }
 });
 
-test('new product images are local SVGs when available; established galleries remain intact', () => {
+test('new products use approved WebP covers; established galleries remain intact', () => {
   for (const id of NEW_PRODUCT_IDS) {
     const product = PRODUCTS.find(item => item.id === id)!;
     if (product.image === null) {
       assert.equal(product.imageName, null, id);
       assert.deepEqual(getProductImages(product), [], id);
     } else {
-      assert.equal(product.image, `/images/products/${id}.svg`, id);
+      assert.equal(product.image, `/images/products/${id}-1.webp`, id);
       assert.equal(product.imageName, product.image, id);
       assert.deepEqual(getProductImages(product), [product.image], id);
     }

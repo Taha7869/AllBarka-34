@@ -56,7 +56,7 @@ test('placeholder cards and quick views show one final cover without pack contro
     for (const children of [<ProductImageGallery product={product} />, <QuickViewModal isOpen product={product} onClose={() => {}} />]) {
       const html = render(children, `/product/${id}`);
       assert.equal((html.match(/<img\b/g) || []).length, 1, id);
-      assert.ok(html.includes(`src="/images/products/${id}.svg"`), id);
+      assert.ok(html.includes(`src="/images/products/${id}-1.webp"`), id);
       assert.doesNotMatch(html, /product-gallery-arrow|product-gallery-counter|-secondary\.svg/);
     }
   }

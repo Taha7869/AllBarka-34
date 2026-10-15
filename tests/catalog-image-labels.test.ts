@@ -5,13 +5,18 @@ import { PRODUCTS, NEW_PRODUCT_IDS } from '../src/data/products';
 
 const categories = ['herbs-spices', 'nuts', 'snacks-seeds', 'oils', 'bundles'] as const;
 
-test('every expanded product has a self-contained local SVG with its exact approved multilingual names', () => {
+test('active WebP covers are valid, and archived SVG previews retain the approved multilingual names', () => {
   const additions = PRODUCTS.filter(product => NEW_PRODUCT_IDS.includes(product.id));
   assert.equal(additions.length, 57);
   for (const product of additions) {
     const path = `/images/products/${product.id}.svg`;
-    assert.equal(product.image, path, product.id);
-    assert.equal(product.imageName, path, product.id);
+    const cover = `/images/products/${product.id}-1.webp`;
+    assert.equal(product.image, cover, product.id);
+    assert.equal(product.imageName, cover, product.id);
+    const photograph = readFileSync(`public${cover}`);
+    assert.ok(photograph.length > 1000, product.id);
+    assert.equal(photograph.toString('ascii', 0, 4), 'RIFF', product.id);
+    assert.equal(photograph.toString('ascii', 8, 12), 'WEBP', product.id);
     const file = `public${path}`;
     assert.ok(statSync(file).size > 1000, product.id);
     const svg = readFileSync(file, 'utf8');
