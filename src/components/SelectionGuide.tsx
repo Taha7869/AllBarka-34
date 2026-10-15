@@ -1,3 +1,4 @@
+import { useCatalogProducts } from '../contexts/CatalogContext';
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
@@ -15,6 +16,7 @@ import '../styles/selection-guide.css';
 interface SelectionGuideProps { onClose: () => void; opener: HTMLElement | null }
 
 export default function SelectionGuide({ onClose, opener }: SelectionGuideProps) {
+  const PRODUCTS = useCatalogProducts();
   const { t, language, isRtl } = useLanguage();
   const { addToCart } = useCart();
   const mediaCover = useProductMediaCover();
@@ -26,7 +28,7 @@ export default function SelectionGuide({ onClose, opener }: SelectionGuideProps)
   const [budget, setBudget] = useState<number | null>(null);
   const [addedId, setAddedId] = useState('');
   const preferences = useMemo(() => ({ category, budget }), [category, budget]);
-  const matches = useMemo(() => selectionMatches(PRODUCTS, preferences), [preferences]);
+  const matches = useMemo(() => selectionMatches(PRODUCTS, preferences), [preferences, PRODUCTS]);
 
   useEffect(() => {
     const dialog = dialogRef.current;

@@ -15,7 +15,7 @@ export default function TrustBadges() {
     {
       icon: Lock,
       title: t('trust.secureCheckout', 'Secure Checkout'),
-      desc: t('trust.secureCheckoutDesc', 'Encrypted payment processing for your safety')
+      desc: t('trust.secureCheckoutDesc', 'Cash on delivery or bank transfer; account details confirmed by our team')
     },
     {
       icon: Truck,

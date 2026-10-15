@@ -9,6 +9,7 @@ import { validateAndPriceOrder, ValidationError } from '../src/lib/orderValidati
 import { sanitizeFirestoreData } from '../src/lib/firestoreData';
 import { evaluatePromo, STORE_COUPONS } from '../src/lib/couponEngine';
 import { PROMO_CONFIG } from '../src/server/promoConfig';
+import { fixtureCatalogSnapshot } from './helpers/catalogFixtures';
 
 const clone = <T>(value: T): T => value === undefined ? value : structuredClone(value);
 
@@ -36,8 +37,14 @@ function strictFirestore(initial: Record<string, any> = {}) {
   let transactionTail: Promise<unknown> = Promise.resolve();
   const reference = (path: string): any => ({ path, id: path.split('/').at(-1),
     get: async () => snapshot(path), collection: (name: string) => collection(`${path}/${name}`) });
-  const snapshot = (path: string): any => ({ exists: records.has(path), id: path.split('/').at(-1), ref: reference(path),
-    data: () => clone(records.get(path)) });
+  const snapshot = (path: string): any => {
+    if (records.has(path)) {
+      return { exists: true, id: path.split('/').at(-1), ref: reference(path), data: () => clone(records.get(path)) };
+    }
+    const fixture = fixtureCatalogSnapshot(path);
+    if (fixture.exists) return { ...fixture, id: path.split('/').at(-1), ref: reference(path) };
+    return { exists: false, id: path.split('/').at(-1), ref: reference(path), data: () => undefined };
+  };
   const collection = (path: string): any => {
     const query = (filters: Array<[string, string, unknown]> = [], count = Infinity): any => ({
       queryPath: path,

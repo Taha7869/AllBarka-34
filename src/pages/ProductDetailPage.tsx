@@ -1,3 +1,4 @@
+import { useCatalogProducts } from '../contexts/CatalogContext';
 import { useCatalogActivity } from '../hooks/useCatalogActivity';
 import { unitPrice } from '../lib/catalogActivity';
 import { useSavedProducts } from '../hooks/useSavedProducts';
@@ -26,6 +27,7 @@ import { displayProductPrice } from '../lib/productSelection';
 const ProductPhotoViewer = lazy(() => import('../components/ProductPhotoViewer'));
 
 export default function ProductDetailPage() {
+  const PRODUCTS = useCatalogProducts();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { addToCart, setIsCartOpen } = useCart();
@@ -92,7 +94,7 @@ export default function ProductDetailPage() {
     const sameCategory = PRODUCTS.filter((p) => p.active !== false && p.id !== product.id && p.category === product.category);
     const otherBestsellers = PRODUCTS.filter((p) => p.active !== false && p.id !== product.id && p.category !== product.category);
     return [...sameCategory, ...otherBestsellers].slice(0, 4);
-  }, [product]);
+  }, [product, PRODUCTS]);
 
   if (!product) {
     return (
@@ -187,7 +189,6 @@ export default function ProductDetailPage() {
             url: `${siteOrigin}/product/${product.id}`,
             priceCurrency: 'PKR',
             price: priceToUse,
-            availability: 'https://schema.org/InStock',
             itemCondition: 'https://schema.org/NewCondition'
           } } : {})
         }}

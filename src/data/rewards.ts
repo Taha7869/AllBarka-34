@@ -3,8 +3,8 @@ import { PatronReward } from '../types';
 export const REWARDS: PatronReward[] = [
   {
     rewardId: 'free_shipping',
-    name: 'Free Standard Shipping',
-    description: 'Waive standard delivery fees on your next order.',
+    name: 'Free Lahore Standard Shipping',
+    description: 'Waive Lahore standard delivery on an eligible order of Rs. 2,000 or more within 30 days.',
     pointsCost: 300,
     rewardType: 'SHIPPING',
     minimumOrderAmount: 2000,
@@ -18,7 +18,7 @@ export const REWARDS: PatronReward[] = [
     pointsCost: 500,
     rewardType: 'SAMPLE',
     minimumOrderAmount: 1500,
-    active: true,
+    active: false,
     expiryDays: 60
   },
   {
@@ -28,13 +28,13 @@ export const REWARDS: PatronReward[] = [
     pointsCost: 750,
     rewardType: 'SAMPLE',
     minimumOrderAmount: 1500,
-    active: true,
+    active: false,
     expiryDays: 60
   },
   {
     rewardId: 'gift_packaging',
     name: 'Premium Gift Packaging Upgrade',
-    description: 'Elevate your order with our luxury unboxing experience.',
+    description: 'Include premium gift packaging without its Rs. 250 fee on your next eligible order within 90 days.',
     pointsCost: 1200,
     rewardType: 'PACKAGING',
     minimumOrderAmount: 0,

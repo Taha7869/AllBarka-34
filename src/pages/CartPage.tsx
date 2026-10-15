@@ -1,3 +1,4 @@
+import { useCatalogProducts } from '../contexts/CatalogContext';
 import { getLocalized } from '../utils/localize';
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -13,6 +14,7 @@ import { buildAutomatedOrderWhatsAppUrl } from '../config/contacts';
 import { hamperPackingLines } from '../lib/hamperCatalog';
 
 export default function CartPage() {
+  const PRODUCTS = useCatalogProducts();
   const navigate = useNavigate();
   const { t, isRtl , language } = useLanguage();
   const mediaCover = useProductMediaCover();

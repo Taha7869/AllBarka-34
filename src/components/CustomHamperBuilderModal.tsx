@@ -1,3 +1,4 @@
+import { useCatalogProducts } from '../contexts/CatalogContext';
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { X, Gift, Check, ArrowRight, ShoppingBag } from 'lucide-react';
@@ -63,6 +64,7 @@ const translations = {
 };
 
 export default function CustomHamperBuilderModal({ isOpen, onClose, onAddToCart }: CustomHamperBuilderModalProps) {
+  const PRODUCTS = useCatalogProducts();
   const { language, isRtl, t: storefrontTranslation } = useLanguage();
   const t = (key: string) => translations[language][key] || storefrontTranslation(key);
   const reducedMotion = useReducedMotion();

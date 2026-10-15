@@ -60,10 +60,10 @@ export default function ShippingMethodSelector({ selected, onSelect, subtotal, c
             aria-pressed={isSelected}
             dir={isRtl ? 'rtl' : 'ltr'}
             onClick={() => onSelect(method.id)}
-            className={`relative flex items-start gap-3 p-4 rounded-xl border text-left transition-all ${
+            className={`relative flex items-start gap-3 p-4 rounded-xl border text-start transition-all ${
               isSelected
                 ? 'border-[var(--color-gold)] bg-[var(--color-gold)]/5 ring-1 ring-[var(--color-gold)]'
-                : 'border-[var(--color-gold)]/30 hover:border-[var(--color-gold)] bg-white'
+                : 'border-[var(--color-gold)]/30 hover:border-[var(--color-gold)] bg-[var(--color-surface,#FDFBF7)]'
             }`}
           >
             <div className={`p-2 rounded-full ${isSelected ? 'bg-[var(--color-gold)] text-white' : 'bg-[var(--color-gold)]/10 text-[var(--color-gold)]'}`}>

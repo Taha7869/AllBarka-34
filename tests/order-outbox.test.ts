@@ -7,6 +7,7 @@ import { createDurableOrder, PersistenceUnavailableError } from '../src/lib/orde
 import type { CanonicalOrder, OutboxOrderEvent } from '../src/lib/serverOrderService';
 import { parseOrderOutboxReportArgs, summarizeOrderOutboxReport } from '../scripts/report-order-outbox';
 import { getN8nStatusDispatchConfig, sendStatusToN8n } from '../src/services/n8nStatusNotification';
+import { fixtureCatalogSnapshot } from './helpers/catalogFixtures';
 
 const INITIAL_TIME = Date.parse('2026-10-03T10:00:00Z');
 const enabledConfig = getN8nOrderDispatchConfig({ N8N_ORDER_WEBHOOK_URL: 'https://n8n.example.com/webhook/order', N8N_WEBHOOK_SECRET: 'test-only-shared-secret' });
@@ -49,6 +50,7 @@ function memoryDatabase(initial: Record<string, any> = {}) {
         const writes: Array<() => void> = [];
         const result = await callback({
           get: async (document: any) => { assert.equal(writes.length, 0, 'Firestore reads must precede writes'); return snapshot(document.path); },
+          getAll: async (...documents: any[]) => { assert.equal(writes.length, 0, 'Firestore reads must precede writes'); return documents.map(document => fixtureCatalogSnapshot(document.path)); },
           set: (document: any, data: any, options?: { merge?: boolean }) => writes.push(() => records.set(document.path, options?.merge ? { ...records.get(document.path), ...clone(data) } : clone(data))),
           update: (document: any, data: any) => writes.push(() => records.set(document.path, { ...records.get(document.path), ...clone(data) })),
         });
@@ -272,6 +274,33 @@ test('global atomic lease serializes separate events across worker instances and
   assert.equal((await b.runOnce()).status, 'DELIVERED'); assert.deepEqual(sent, [first.orderId, second.orderId]);
 });
 
+test('bounded batches drain due orders promptly and leave the remainder durable', async () => {
+  const orders = Array.from({ length: 12 }, (_, index) => savedOrder(index + 1));
+  const store = seeded(...orders);
+  const sent: string[] = [];
+  const instance = worker(store.db, { dispatch: async (order: any) => {
+    sent.push(order.orderId); return { sent: true, status: 'SUCCESS' };
+  } });
+  assert.equal((await instance.runBatch()).status, 'DELIVERED');
+  assert.equal(sent.length, 10);
+  assert.equal((await instance.runBatch()).status, 'IDLE');
+  assert.equal(sent.length, 12);
+  assert.equal(new Set(sent).size, 12);
+  assert.equal((await instance.runBatch()).status, 'IDLE');
+  assert.equal(sent.length, 12);
+});
+
+test('a batch stops at an uncertain send and preserves the cooldown for other workers', async () => {
+  const store = seeded(savedOrder(1), savedOrder(2));
+  let calls = 0;
+  const instance = worker(store.db, { dispatch: async () => {
+    calls++; return { sent: false, status: 'TIMEOUT', reason: 'ORDER_WEBHOOK_TIMEOUT' };
+  } });
+  assert.equal((await instance.runBatch()).status, 'RETRY_SCHEDULED');
+  assert.equal(calls, 1);
+  assert.equal((await worker(store.db).runBatch()).status, 'BUSY');
+});
+
 test('failure schedules bounded backoff, persists attempts and never rolls back canonical order', async () => {
   const order = savedOrder(); const store = seeded(order); let now = INITIAL_TIME; let calls = 0;
   const instance = worker(store.db, { now: () => now, dispatch: async () => { calls++; return { sent: false, status: 'FAILED', reason: 'ORDER_WEBHOOK_INVALID_ACK', statusCode: 200 }; } });
@@ -283,7 +312,7 @@ test('failure schedules bounded backoff, persists attempts and never rolls back 
     assert.deepEqual(store.records.get(`orders/${order.orderId}`), order);
     if (attempt < ORDER_OUTBOX_MAX_ATTEMPTS) {
       assert.equal(event.nextAttemptAtMs, now + orderOutboxBackoffMs(attempt));
-      assert.equal((await instance.runOnce()).status, 'BUSY');
+      assert.equal((await instance.runOnce()).status, 'IDLE');
       now = event.nextAttemptAtMs;
     } else assert.equal(event.nextAttemptAtMs, undefined);
   }
@@ -301,7 +330,7 @@ test('a restarted process recovers an expired event/global lease and preserves o
   });
   let wire: any;
   const restarted = worker(store.db, { now: () => now, dispatch: async (order: any) => { wire = order; return { sent: true, status: 'SUCCESS' }; } });
-  assert.equal((await restarted.runOnce()).status, 'BUSY'); now += 51;
+  assert.equal((await restarted.runOnce()).status, 'IDLE'); now += 51;
   const result = await restarted.runOnce(); assert.equal(result.status, 'DELIVERED'); assert.equal(result.attempts, 2);
   assert.equal(wire.createdAt, order.createdAt);
 });
@@ -448,7 +477,7 @@ test('unsupported reward never silently consumes benefits or creates an order/ou
   const key = 'users/test-customer/activeRewards/reward-1';
   for (const rewardType of ['SAMPLE', 'PACKAGING', 'SHIPPING']) {
     const store = memoryDatabase({ [key]: { status: 'ACTIVE', rewardType } });
-    await assert.rejects(() => createDurableOrder({ db: store.db, payload: { ...checkoutPayload, city: 'Lahore', rewardId: 'reward-1' }, uid: 'test-customer', idempotencyKey: 'unsupported-reward' }), (error: any) => error.code === 'REWARD_APPLICATION_UNAVAILABLE');
+    await assert.rejects(() => createDurableOrder({ db: store.db, payload: { ...checkoutPayload, city: 'Lahore', rewardId: 'reward-1' }, uid: 'test-customer', idempotencyKey: 'unsupported-reward' }), (error: any) => error.code === 'REWARD_UNAVAILABLE');
     assert.equal(store.records.get(key).status, 'ACTIVE'); assert.equal(store.records.size, 1);
   }
   const guest = memoryDatabase();

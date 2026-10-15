@@ -1,3 +1,4 @@
+import { useCatalogProducts } from '../contexts/CatalogContext';
 import { getLocalized } from '../utils/localize';
 import { hamperPackingLines } from '../lib/hamperCatalog';
 import React, { useEffect, useState, useId, useRef } from 'react';
@@ -85,6 +86,7 @@ export default function CartDrawer({
   onCheckout: propsOnCheckout,
   onAddToCart: propsOnAddToCart,
 }: CartDrawerProps) {
+  const PRODUCTS = useCatalogProducts();
   const navigate = useNavigate();
   const { t, isRtl , language } = useLanguage();
   const mediaCover = useProductMediaCover();

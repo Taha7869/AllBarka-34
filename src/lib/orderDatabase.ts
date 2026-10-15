@@ -20,8 +20,8 @@ import { validateAndPriceOrder, validateCustomerDetails, ValidationError } from 
 import { getPromo, normalizePromoCode } from './couponEngine';
 import { firstOrderPromoContext } from '../server/promoEligibility';
 import { PricingSummary } from './pricing';
-import { STORE_CONFIG } from '../config/store';
-import { validateShippingRewardDestination } from './shippingPolicy';
+import { applyPatronReward, validateRewardInstanceId } from './rewardPolicy';
+import { loadCatalogForTransaction } from './catalogStore';
 import { getN8nOrderDispatchConfig } from '../services/n8nOrderNotification';
 import { getN8nStatusDispatchConfig } from '../services/n8nStatusNotification';
 import { calculateLoyaltyPoints } from './loyaltyPoints';
@@ -122,7 +122,7 @@ export async function createDurableOrder({
   const historyRef = uid ? db.collection('customerOrderHistory').doc(crypto.createHash('sha256').update(uid).digest('hex')) : null;
 
   let rewardRef: any = null;
-  const rewardId = payload.rewardId ? String(payload.rewardId).trim() : null;
+  const rewardId = payload.rewardId ? validateRewardInstanceId(payload.rewardId) : null;
   if (rewardId && !uid) {
     throw new ValidationError('Please sign in to use a patron reward.', 'REWARD_REQUIRES_AUTH');
   }
@@ -178,6 +178,7 @@ export async function createDurableOrder({
     // New orders use current canonical pricing. Saved idempotent receipts are returned before repricing,
     // including when the catalog or a previously expected quote has changed after persistence.
     // Serializes first-order eligibility against any competing checkout for this account.
+    const catalog = await loadCatalogForTransaction(db, transaction, payload.items);
     const historySnap = historyRef ? await transaction.get(historyRef) : null;
     const storedCount = historySnap?.data()?.orderCount;
     const orderCount = Number.isSafeInteger(storedCount) && storedCount >= 0 ? storedCount : 0;
@@ -190,33 +191,32 @@ export async function createDurableOrder({
       isWholesale: Boolean(payload.isWholesale),
       city: customer.city,
       promoContext,
+      products: catalog.products,
+      hamperBoxes: catalog.hamperBoxes,
     });
-    if (expectedFinalTotal !== undefined && expectedFinalTotal !== null && Math.abs(expectedFinalTotal - validated.summary.total) > 1) {
-      throw new QuoteChangedError(
-        `Prices or delivery rates have been refreshed. New total is Rs. ${validated.summary.total.toLocaleString('en-PK')}. Please reconfirm your order.`,
-        validated.summary, validated.items,
-      );
-    }
-
     // Persist usage counters only. Firestore never overrides server promotion definitions.
     const couponSnap = couponRef ? await transaction.get(couponRef) : null;
     const storedUsage = couponSnap?.data()?.usedCount;
     const usedCount = Number.isSafeInteger(storedUsage) && storedUsage >= 0 ? storedUsage : 0;
 
-    // Read reward if supplied
+    // Reward eligibility, quoted benefit and consumption share this order transaction.
+    let rewardDiscount = 0;
     if (rewardRef) {
       const rewardSnap = await transaction.get(rewardRef);
       if (!rewardSnap.exists) {
         throw new ValidationError(`Selected reward does not exist for this patron.`, 'REWARD_NOT_FOUND');
       }
       const rewardData = rewardSnap.data();
-      if (rewardData?.status !== 'ACTIVE') {
-        throw new ValidationError(`Selected reward is no longer active or has already been used.`, 'REWARD_ALREADY_USED');
-      }
-      validateShippingRewardDestination(rewardData, customer.city);
-      // Benefits are not implemented in the canonical pricing/packing engine yet.
-      // Never consume a patron's reward without actually granting its advertised benefit.
-      throw new ValidationError('This reward cannot yet be applied at checkout. Your reward remains available.', 'REWARD_APPLICATION_UNAVAILABLE');
+      const applied = applyPatronReward({ reward: rewardData, summary: validated.summary,
+        city: customer.city, shippingMethodId: payload.shippingMethodId, nowMs: Date.now() });
+      validated.summary = applied.summary;
+      rewardDiscount = applied.rewardDiscount;
+    }
+    if (expectedFinalTotal !== undefined && expectedFinalTotal !== null && Math.abs(expectedFinalTotal - validated.summary.total) > 1) {
+      throw new QuoteChangedError(
+        `Prices or delivery rates have been refreshed. New total is Rs. ${validated.summary.total.toLocaleString('en-PK')}. Please reconfirm your order.`,
+        validated.summary, validated.items,
+      );
     }
 
     const isQuoteRequest = validated.summary.isQuoteRequest === true;
@@ -274,7 +274,7 @@ export async function createDurableOrder({
       freeGift: Boolean(validated.summary.freeGift),
       isQuoteRequest,
       rewardId: rewardId || null,
-      rewardDiscount: 0,
+      rewardDiscount,
       earnedPoints: calculateLoyaltyPoints(validated.summary.total, payload.isWholesale === true, validated.summary.isQuoteRequest === true),
       pointsAwarded: false,
     };

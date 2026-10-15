@@ -4,11 +4,13 @@ import { ShippingMethodId } from '../types.ts';
 import { isLahoreCity, validateShippingCity } from './shippingPolicy';
 import { ValidationError } from './validationError';
 export { ValidationError } from './validationError';
-import { CUSTOM_HAMPER_PRODUCT_ID, hamperCartKey, resolveHamper, type HamperConfiguration } from './hamperCatalog';
+import { CUSTOM_HAMPER_PRODUCT_ID, hamperCartKey, resolveHamper, type HamperConfiguration, type HamperBox } from './hamperCatalog';
 import { evaluatePromo, getPromo, NO_PROMO } from './couponEngine';
 import { resolveCartIdentity } from './cartInput';
 import { resolveCustomWeight, resolveProductVariant } from './productVariants';
 import { calculateLoyaltyPoints } from './loyaltyPoints';
+import type { Product } from '../types';
+import { catalogVariantId } from './catalogSchema';
 
 export interface ValidatedOrderItem {
   id: string; // composite cart item id, e.g. "pista-250g"
@@ -18,6 +20,8 @@ export interface ValidatedOrderItem {
   quantity: number;
   price: number; // authoritative price per unit in PKR
   earnedPoints: number;
+  catalogRevision?: string;
+  variantId?: string;
   hamperConfiguration?: HamperConfiguration;
 }
 
@@ -137,6 +141,8 @@ export function validateAndPriceOrder({
   isWholesale = false,
   city,
   promoContext,
+  products = PRODUCTS,
+  hamperBoxes,
 }: {
   items: any[];
   shippingMethodId: string;
@@ -145,6 +151,8 @@ export function validateAndPriceOrder({
   isWholesale?: boolean;
   city: string;
   promoContext?: { hasPastOrders?: boolean; identityVerified?: boolean; now?: number };
+  products?: Product[];
+  hamperBoxes?: HamperBox[];
 }): ValidatedOrder {
   if (!Array.isArray(items) || items.length === 0) {
     throw new ValidationError('Order must contain at least one item.', 'EMPTY_CART');
@@ -174,7 +182,7 @@ export function validateAndPriceOrder({
     // Resolve canonical product ID
     const rawId = String(clientItem.productId || clientItem.id || '').trim();
     if (rawId === CUSTOM_HAMPER_PRODUCT_ID) {
-      const hamper = resolveHamper(clientItem.hamperConfiguration);
+      const hamper = resolveHamper(clientItem.hamperConfiguration, products, hamperBoxes);
       if (!hamper) throw new ValidationError('Please rebuild this hamper with a supported box and valid harvest selections.', 'INVALID_HAMPER_CONFIGURATION');
       const quantity = typeof clientItem.quantity === 'number' ? clientItem.quantity : Number(clientItem.quantity);
       if (!Number.isInteger(quantity) || quantity < 1 || quantity > 50) {
@@ -184,9 +192,10 @@ export function validateAndPriceOrder({
         id: hamperCartKey(hamper.configuration), productId: CUSTOM_HAMPER_PRODUCT_ID,
         name: hamper.name_en, selectedWeight: hamper.portion, quantity,
         price: hamper.unitPrice, earnedPoints: 0, hamperConfiguration: hamper.configuration,
+        catalogRevision: [hamperBoxes?.find(box => box.id === hamper.configuration.boxId)?.catalogRevision || 'source', ...hamper.configuration.selections.map(id => `${id}:${products.find(product => product.id === id)?.catalogRevision || 'source'}`)].join('|'), variantId: 'custom-hamper-v1',
       };
     }
-    const identity = resolveCartIdentity(clientItem, PRODUCTS);
+    const identity = resolveCartIdentity(clientItem, products);
     const product = identity?.product;
 
     if (!product) {
@@ -250,6 +259,7 @@ export function validateAndPriceOrder({
       quantity,
       price: authoritativeUnitPrice,
       earnedPoints: pts * quantity,
+      catalogRevision: product.catalogRevision || 'source', variantId: variant.isCustom ? `custom-${weight}` : catalogVariantId(weight),
     };
   });
 
@@ -261,6 +271,7 @@ export function validateAndPriceOrder({
       selectedWeight: item.selectedWeight, hamperConfiguration: item.hamperConfiguration })),
     shippingMethodId: resolvedShipping, city: applied.isQuoteRequest ? 'Lahore' : destination, manualDiscount: applied.discountAmount,
     giftWrapping: applied.freeGiftWrap ? false : giftWrapping,
+    products,
   });
   if (applied.freeShipping) discounted.shipping = 0;
   discounted.total = discounted.discountedSubtotal + discounted.shipping + discounted.giftWrapFee;

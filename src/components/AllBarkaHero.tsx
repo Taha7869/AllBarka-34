@@ -1,3 +1,4 @@
+import { useCatalogProducts } from '../contexts/CatalogContext';
 import { searchCatalog, startingPrice } from '../lib/catalogDiscovery';
 import React, { lazy, Suspense, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -27,6 +28,7 @@ const LANGUAGES: { code: LanguageCode; label: string }[] = [
 ];
 
 export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps = {}) {
+  const PRODUCTS = useCatalogProducts();
   const { t, language, isRtl, setLanguage } = useLanguage();
   const mediaCover = useProductMediaCover();
   const [query, setQuery] = useState('');
@@ -34,7 +36,7 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
   const [selected, setSelected] = useState('all');
   const [guideOpen, setGuideOpen] = useState(false);
   const guideOpener = useRef<HTMLButtonElement>(null);
-  const suggestions = useMemo(() => query.trim() ? searchCatalog(PRODUCTS, query).slice(0, 5) : [], [query]);
+  const suggestions = useMemo(() => query.trim() ? searchCatalog(PRODUCTS, query).slice(0, 5) : [], [query, PRODUCTS]);
 
   const placeholders = [
     t('searchPlaceholder1'),

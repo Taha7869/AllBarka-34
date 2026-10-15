@@ -1,3 +1,4 @@
+import { useCatalogProducts } from '../contexts/CatalogContext';
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronRight, Home } from 'lucide-react';
@@ -17,6 +18,7 @@ interface BreadcrumbsProps {
 }
 
 export default function Breadcrumbs({ items: customItems, className = '' }: BreadcrumbsProps) {
+  const PRODUCTS = useCatalogProducts();
   const location = useLocation();
   const { language, isRtl, t } = useLanguage();
 
@@ -250,7 +252,7 @@ export default function Breadcrumbs({ items: customItems, className = '' }: Brea
     }
 
     return result;
-  }, [customItems, location.pathname, location.search, language, t]);
+  }, [customItems, location.pathname, location.search, language, t, PRODUCTS]);
 
   // If on homepage or single item, do not render redundant breadcrumbs
   if (items.length <= 1) {

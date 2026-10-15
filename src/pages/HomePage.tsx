@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useOutletContext } from 'react-router-dom';
-import { PRODUCTS } from '../data/products';
+import { useCatalogProducts } from '../contexts/CatalogContext';
 import { Product } from '../types';
 import Hero from '../components/Hero';
 import CategoryCarousel from '../components/CategoryCarousel';
@@ -22,7 +22,7 @@ interface OutletContextType {
 }
 
 const featuredIds = ['pista', 'kaju', 'badam', 'akhroot', 'deal-1', 'deal-2', 'khajoor', 'org-honey'];
-const featuredProducts = featuredIds.map(id => PRODUCTS.find(product => product.id === id)).filter((product): product is Product => !!product);
+
 
 const servicePillars = [
   { icon: ShieldCheck,          number: '01', title: 'home.purity',    copy: 'home.purityCopy' },
@@ -31,6 +31,8 @@ const servicePillars = [
 ];
 
 export default function HomePage() {
+  const PRODUCTS = useCatalogProducts();
+  const featuredProducts = featuredIds.map(id => PRODUCTS.find(product => product.id === id)).filter((product): product is Product => !!product && product.active !== false);
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [giftFilmPlaying, setGiftFilmPlaying] = useState(false);
@@ -80,7 +82,7 @@ export default function HomePage() {
       <ScrollReveal className="w-full" index={0}>
         <ProductSlider
           title="Boutique Bestsellers"
-          subtitle="Our most requested harvest lots — freshly sealed in barrier pouches."
+          subtitle="A small selection from our collections, packed for your home."
           products={featuredProducts}
           onAddToCart={handleAddToCart}
           onQuickView={setSelectedQuickViewProduct}

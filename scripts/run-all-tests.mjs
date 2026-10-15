@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
 // Run every tracked test family and offline production checks; never use live integration credentials.
-const env = { ...process.env };
+const env = { ...process.env, ALLBARKA_SKIP_LOCAL_ENV: 'true' };
 for (const key of ['FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY', 'FIRESTORE_EMULATOR_HOST',
   'FIREBASE_AUTH_EMULATOR_HOST', 'GOOGLE_APPLICATION_CREDENTIALS', 'N8N_AI_WEBHOOK_URL',
   'N8N_ORDER_WEBHOOK_URL', 'N8N_STATUS_WEBHOOK_URL', 'WHATSAPP_META_APP_SECRET',

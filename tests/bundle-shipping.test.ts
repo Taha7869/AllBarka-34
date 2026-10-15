@@ -7,6 +7,7 @@ import { getCartShippingWeightGrams, getProductShippingWeightGrams } from '../sr
 import { calculateOrderSummary } from '../src/lib/pricing';
 import { validateAndPriceOrder, ValidationError } from '../src/lib/orderValidation';
 import { createDurableOrder } from '../src/lib/orderDatabase';
+import { fixtureCatalogSnapshot } from './helpers/catalogFixtures';
 
 // Independent owner-provided packing masses; edit these expectations only when the tariff inputs change.
 const approvedWeights: Record<string, number> = {
@@ -106,7 +107,13 @@ function fakeFirestore() {
   const db = { collection, runTransaction: async (run: (transaction: any) => Promise<unknown>) => {
     const pending: Array<() => void> = [];
     const result = await run({
-      get: async (ref: any) => ({ exists: records.has(ref.key), data: () => records.get(ref.key) }),
+      get: async (ref: any) => {
+        const path = ref.key || ref.path;
+        if (records.has(path)) return { id: path.split('/').at(-1), exists: true, data: () => records.get(path) };
+        const fixture = fixtureCatalogSnapshot(path);
+        if (fixture.exists) return fixture;
+        return { id: path.split('/').at(-1), exists: false, data: () => undefined };
+      },
       set: (ref: any, value: unknown) => pending.push(() => { records.set(ref.key, value); writes.push(ref.key); }),
       update: (ref: any, value: unknown) => pending.push(() => { records.set(ref.key, { ...records.get(ref.key), ...value as object }); writes.push(ref.key); }),
     });

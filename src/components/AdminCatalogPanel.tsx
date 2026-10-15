@@ -1,3 +1,4 @@
+import { useCatalogProducts } from '../contexts/CatalogContext';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, CheckCircle2, Image, Layers3, PackageSearch, Search, ShieldCheck, TriangleAlert, X } from 'lucide-react';
@@ -7,6 +8,7 @@ import { getLocalized } from '../utils/localize';
 import { checkCatalogAssets, filterAdminCatalog, getAdminCatalogSnapshot, type CatalogAssetResult, type CatalogIssue } from '../lib/adminCatalog';
 import AdminProductMediaEditor from './AdminProductMediaEditor';
 import { useProductMediaLanguage } from '../hooks/useProductMediaLanguage';
+import AdminCatalogPricingEditor, { useCatalogPricingLanguage } from './AdminCatalogPricingEditor';
 
 const issueKeys: Record<CatalogIssue, string> = {
   id: 'admin.catalog.issueId', name: 'admin.catalog.issueName', portion: 'admin.catalog.issuePortion', image: 'admin.catalog.issueImage',
@@ -17,8 +19,11 @@ const resultKeys: Record<CatalogAssetResult['result'], string> = {
 };
 
 export default function AdminCatalogPanel() {
+  const PRODUCTS = useCatalogProducts();
   const { language, t } = useAdminLanguage();
   const { t: mediaTranslation } = useProductMediaLanguage();
+  const { t: pricingTranslation } = useCatalogPricingLanguage();
+  const [pricingProductId, setPricingProductId] = useState<string | null>(null);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
@@ -27,7 +32,7 @@ export default function AdminCatalogPanel() {
   const [cancelled, setCancelled] = useState(false);
   const request = useRef<AbortController | null>(null);
   const ids = useId();
-  const snapshot = useMemo(() => getAdminCatalogSnapshot(PRODUCTS), []);
+  const snapshot = useMemo(() => getAdminCatalogSnapshot(PRODUCTS), [PRODUCTS]);
   const rows = useMemo(() => filterAdminCatalog(snapshot.rows, query, category), [snapshot.rows, query, category]);
   const assetsToCheck = useMemo(() => snapshot.assets.slice(0, 256), [snapshot.assets]);
   const checked = Object.keys(results).length;
@@ -134,8 +139,10 @@ export default function AdminCatalogPanel() {
               </details>
               <Link to={`/product/${encodeURIComponent(row.product.id)}`} className="focus-ring mt-1 inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-[var(--color-accent-text)]"><span dir="auto">{t('admin.catalog.open')}</span><ArrowUpRight size={14} aria-hidden="true" /></Link>
               <button type="button" className="focus-ring mt-2 inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--color-border)] px-3 text-xs font-semibold" onClick={() => setEditingProductId(current => current === row.product.id ? null : row.product.id)} aria-expanded={editingProductId === row.product.id} aria-controls={`${ids}-editor-${row.product.id}`}><Image size={15} aria-hidden="true" /><span dir="auto">{mediaTranslation('media.edit')}</span></button>
+              <button type="button" className="focus-ring mt-2 inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--color-border)] px-3 text-xs font-semibold" onClick={() => setPricingProductId(current => current === row.product.id ? null : row.product.id)} aria-expanded={pricingProductId === row.product.id} aria-controls={`${ids}-pricing-${row.product.id}`}><span dir="auto">{pricingTranslation('editButton')}</span></button>
             </div>
             {editingProductId === row.product.id && <div id={`${ids}-editor-${row.product.id}`} className="min-w-0 xl:col-span-3"><AdminProductMediaEditor key={row.product.id} product={row.product} onClose={() => setEditingProductId(null)} /></div>}
+            {pricingProductId === row.product.id && <div id={`${ids}-pricing-${row.product.id}`} className="min-w-0 xl:col-span-3"><AdminCatalogPricingEditor key={row.product.id} product={row.product} onClose={() => setPricingProductId(null)} /></div>}
           </li>;
         })}
       </ul>

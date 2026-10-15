@@ -1,3 +1,4 @@
+import { useCatalogProducts } from '../contexts/CatalogContext';
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import type { CartItem, Product } from '../types';
 import { PRODUCTS, getProductImage } from '../data/products';
@@ -93,6 +94,7 @@ export interface CartContextValue {
 const CartContext = createContext<CartContextValue | null>(null);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const PRODUCTS = useCatalogProducts();
   const { addToast } = useToast();
   const { t, language } = useLanguage();
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -150,6 +152,24 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   // Sync with localStorage on changes
+  // Keep an already-open bag in step with merchant prices while preserving unavailable lines for review.
+  useEffect(() => {
+    setCartItems(current => {
+      let changed = false;
+      const next = current.map(item => {
+        const identity = resolveCartIdentity(item, PRODUCTS);
+        const hamper = item.productId === 'custom-hamper' ? resolveHamper(item.hamperConfiguration, PRODUCTS) : null;
+        const product = identity?.product;
+        if (!hamper && (!product || product.active === false || product.quoteOnly)) return item;
+        const price = hamper?.unitPrice ?? (product ? resolveCartUnitPrice(product, item.selectedWeight, 0) : 0);
+        if (price <= 0 || price === item.unitPrice) return item;
+        changed = true;
+        return { ...item, unitPrice: price, price };
+      });
+      return changed ? next : current;
+    });
+  }, [PRODUCTS]);
+
   useEffect(() => {
     try {
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
@@ -273,7 +293,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsCartOpen(true);
       }
     },
-    [addToast, t, language]
+    [addToast, t, language, PRODUCTS]
   );
 
   /**

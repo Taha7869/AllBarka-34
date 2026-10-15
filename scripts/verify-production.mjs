@@ -11,6 +11,7 @@ await once(socket, 'listening');
 const port = socket.address().port;
 await new Promise(resolve => socket.close(resolve));
 const env = { ...process.env, NODE_ENV: 'production', PORT: String(port),
+  ALLBARKA_SKIP_LOCAL_ENV: 'true',
   APP_URL: 'https://allbarka-launch.example', TRUST_PROXY_HOPS: '0', FRONTEND_ORIGINS: 'https://allbarka-static.example' };
 for (const key of ['FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY', 'FIRESTORE_EMULATOR_HOST',
   'FIREBASE_AUTH_EMULATOR_HOST', 'GOOGLE_APPLICATION_CREDENTIALS', 'GOOGLE_SHEETS_ID',
@@ -54,7 +55,9 @@ try {
     assert.equal(health.status, 'ok');
     assert.equal(health.outboxWorker.started, true);
     assert.equal(health.outboxWorker.stopped, false);
-    assert.equal(health.outboxWorker.pollIntervalMs, 15000);
+    assert.equal(health.outboxWorker.pollIntervalMs, 60000);
+    assert.equal(health.outboxWorker.batchSize, 10);
+    assert.match(health.build.sourceHash, /^[a-f0-9]{64}$/);
     assert.ok(health.outboxWorker.lastTickAt);
     const status = await (await request('/api/commerce/readiness')).json();
     assert.equal(status.authActive, false);
@@ -94,6 +97,19 @@ try {
     assert.ok(scripts.includes('https://apis.google.com'));
     assert.equal(frames.trim(), "frame-src 'self' https://allbarka-live.firebaseapp.com");
     assert.equal(response.headers.get('cross-origin-opener-policy'), 'same-origin-allow-popups');
+    assert.ok(!scripts.includes("'unsafe-eval'"));
+    assert.ok(!scripts.includes("'unsafe-inline'"));
+    const nonce = scripts.match(/'nonce-([^']+)'/)[1];
+    for (const tag of (await response.text()).matchAll(/<script\b[^>]*>/g)) assert.ok(tag[0].includes(`nonce="${nonce}"`));
+  });
+  await check('initial product metadata and missing-route HTTP status are accurate', async () => {
+    const product = await (await request('/product/pista')).text();
+    assert.match(product, /<meta property="og:type" content="product">/);
+    assert.match(product, /href="https:\/\/allbarka-launch.example\/product\/pista"/);
+    for (const route of ['/not-a-page', '/product/missing-product', '/shop/missing-category', '/.env', '/.env.local']) {
+      const response = await request(route);
+      assert.equal(response.status, 404, route);
+    }
   });
   for (const path of ['/', '/index.html', '/shop', '/checkout', '/product/pista', '/admin/orders']) {
     await check(`SPA route ${path}`, async () => {
@@ -104,7 +120,7 @@ try {
       if (path.startsWith('/admin/')) assert.equal(response.headers.get('x-robots-tag'), 'noindex, nofollow');
       const html = await response.text();
       assert.ok(html.includes('https://allbarka-launch.example/'));
-      assert.ok(html.includes('https://allbarka-launch.example/images/generated/og-image.jpg'));
+      assert.match(html, /property="og:image" content="https:\/\/allbarka-launch.example\/images\//);
       assert.ok(!html.includes('https://allbarka.com'));
     });
   }
@@ -120,7 +136,9 @@ try {
     assert.match(await (await request('/robots.txt')).text(), /Sitemap: https:\/\/allbarka-launch.example\/sitemap.xml/);
     const sitemap = await request('/sitemap.xml');
     assert.match(sitemap.headers.get('content-type'), /application\/xml/);
-    assert.ok((await sitemap.text()).includes('https://allbarka-launch.example/product/pista'));
+    const sitemapBody = await sitemap.text();
+    assert.ok(sitemapBody.includes('https://allbarka-launch.example/shop'));
+    assert.ok(!sitemapBody.includes('/product/'), 'unavailable catalog must not advertise purchasable product routes');
   });
   await check('hashed assets use immutable caching', async () => {
     const html = await (await request('/')).text();
@@ -159,33 +177,14 @@ try {
     const response = await request('/');
     assert.match(response.headers.get('content-security-policy'), /media-src 'self' https:/);
   });
-  await check('quote rejects browser price tampering', async () => {
-    const response = await request('/api/orders/quote', post(order));
-    assert.equal(response.status, 200);
-    const quote = await response.json();
-    assert.equal(quote.totals.subtotal, 2500);
-    assert.equal(quote.totals.shipping, 150);
-    assert.equal(quote.totals.total, 2650);
-  });
-  await check('coupon API rejects inactive, unknown, multiple and unauthenticated first-order codes', async () => {
-    for (const [discountCode, code] of [['EID15', 'PROMO_INACTIVE'], ['UNKNOWN', 'INVALID_PROMO'],
-      ['FRIEND ALLBARKA10', 'ONE_PROMO_ONLY'], ['WELCOME10', 'PROMO_REQUIRES_AUTH']]) {
-      const response = await request('/api/orders/quote', post({ ...order, discountCode }));
-      assert.equal(response.status, 400);
-      const result = await response.json();
-      assert.equal(result.code, code);
-      assert.ok(result.error);
+  // Pricing arithmetic and fresh-price acceptance checks run in authoritative-quote.test.ts.
+  // The actual production HTTP process has no database and must fail closed.
+  await check('catalog and quote fail closed without authoritative persistence', async () => {
+    for (const [path, options] of [['/api/catalog', undefined], ['/api/orders/quote', post(order)]]) {
+      const response = await request(path, options);
+      assert.equal(response.status, 503);
+      assert.equal((await response.json()).code, 'CATALOG_STORE_UNAVAILABLE');
     }
-  });
-  await check('quote-request API hides all totals and ignores client payment and benefit assertions', async () => {
-    const response = await request('/api/orders/quote', post({ ...order, discountCode: ' cancer ',
-      paymentMethod: 'cod', freeGift: true, discountAmount: 999999 }));
-    assert.equal(response.status, 200);
-    const { totals } = await response.json();
-    for (const key of ['subtotal', 'discount', 'discountedSubtotal', 'shipping', 'giftWrapFee', 'total']) assert.equal(totals[key], 0);
-    assert.equal(totals.promoCode, 'CANCER');
-    assert.equal(totals.isQuoteRequest, true);
-    assert.equal(totals.freeGift, false);
   });
   await check('unavailable quote persistence returns enquiry support without a fake zero-price payment order', async () => {
     const response = await request('/api/orders', post({ ...order, discountCode: 'CANCER',
@@ -197,103 +196,6 @@ try {
     const message = new URL(result.supportAction.whatsappUrl).searchParams.get('text');
     assert.match(message, /personalized rate/);
     assert.doesNotMatch(message, /Rs\.|Subtotal|Total Due|Payment Method|Cash on Delivery/);
-  });
-  await check('quote requires an explicit delivery city', async () => {
-    const { city, ...withoutCity } = order;
-    const response = await request('/api/orders/quote', post(withoutCity));
-    assert.equal(response.status, 400);
-    assert.equal((await response.json()).code, 'INVALID_CITY');
-  });
-  await check('national quote has a minimum charge even above the Lahore free threshold', async () => {
-    const response = await request('/api/orders/quote', post({ ...order, city: 'Karachi',
-      items: [{ productId: 'pista', selectedWeight: '1kg', quantity: 1, shippingWeightGrams: 0, price: 1 }] }));
-    assert.equal(response.status, 200);
-    const { totals } = await response.json();
-    assert.equal(totals.shippingWeightGrams, 1000);
-    assert.equal(totals.shippingRegion, 'nationwide');
-    assert.equal(totals.shipping, 250);
-    assert.equal(totals.total, totals.discountedSubtotal + 250);
-  });
-  await check('national quote charges fractional kilograms proportionally and ignores forged billing mass', async () => {
-    const response = await request('/api/orders/quote', post({ ...order, city: 'Islamabad',
-      items: [{ productId: 'badam', selectedWeight: '1kg', quantity: 1, shippingWeightGrams: 0 },
-        { productId: 'oil-almond', selectedWeight: '100ml', quantity: 2, shippingWeightGrams: 0 }] }));
-    assert.equal(response.status, 200);
-    const { totals } = await response.json();
-    assert.equal(totals.shippingWeightGrams, 1200);
-    assert.equal(totals.shipping, 300);
-  });
-  await check('every purchasable bundle receives a nationwide quote using its canonical packed weight', async () => {
-    const weights = {
-      'bundle-daily-grind': 900, 'bundle-brain-fuel': 1100, 'bundle-winter-warrior': 1500,
-      'bundle-immunity-shield': 800, 'bundle-sunrise-seeds': 800, 'bundle-royal-feast': 2500,
-      'bundle-silver-hamper': 1500, 'bundle-gold-hamper': 2500, 'bundle-platinum-hamper': 4000,
-      'bundle-ramadan-ready': 2000, 'bundle-mystery-box': 1200, 'bundle-tasting-flight': 500,
-    };
-    for (const [productId, grams] of Object.entries(weights)) {
-      const response = await request('/api/orders/quote', post({ ...order, city: 'Karachi',
-        items: [{ productId, selectedWeight: 'Bundle', quantity: 2, price: 1, shippingWeightG: 1, shippingWeightGrams: 1 }] }));
-      assert.equal(response.status, 200, productId);
-      const { totals } = await response.json();
-      const shipping = Math.max(250, Math.round(grams * 2 / 1000 * 250));
-      assert.equal(totals.shippingWeightGrams, grams * 2, productId);
-      assert.equal(totals.shippingRegion, 'nationwide', productId);
-      assert.equal(totals.shipping, shipping, productId);
-      assert.equal(totals.total, totals.discountedSubtotal + shipping, productId);
-    }
-  });
-  await check('Corporate Gifting stays quote-only and cannot obtain a checkout price', async () => {
-    const response = await request('/api/orders/quote', post({ ...order, city: 'Karachi',
-      items: [{ productId: 'corporate-gifting', selectedWeight: 'Bundle', quantity: 1, shippingWeightG: 1000 }] }));
-    assert.equal(response.status, 400);
-    assert.equal((await response.json()).code, 'QUOTE_REQUIRED');
-  });
-  await check('custom hamper quote prices canonical configuration and contents weight on the server', async () => {
-    const response = await request('/api/orders/quote', post({ ...order, city: 'Karachi', items: [{
-      productId: 'custom-hamper', selectedWeight: 'forged 1g', quantity: 2, price: 1, shippingWeightGrams: 1,
-      hamperConfiguration: { version: 1, boxId: 'box-velvet', selections: ['pista', 'kaju', 'badam'],
-        recipientName: 'Test recipient', giftMessage: 'Local fixture only' },
-    }] }));
-    assert.equal(response.status, 200);
-    const quote = await response.json();
-    assert.ok(quote.items[0].price > 1400);
-    assert.equal(quote.items[0].selectedWeight, '3 × 200g');
-    assert.equal(quote.totals.subtotal, quote.items[0].price * 2);
-    assert.equal(quote.totals.shippingWeightGrams, 1200);
-    assert.equal(quote.totals.shipping, 300);
-    assert.equal(quote.items[0].hamperConfiguration.recipientName, 'Test recipient');
-  });
-  await check('invalid custom hamper configuration cannot obtain a quote', async () => {
-    const response = await request('/api/orders/quote', post({ ...order, items: [{
-      productId: 'custom-hamper', selectedWeight: '5 × 200g', quantity: 1, price: 1,
-    }] }));
-    assert.equal(response.status, 400);
-    assert.equal((await response.json()).code, 'INVALID_HAMPER_CONFIGURATION');
-  });
-  await check('coupon and gift wrapping are priced together on the server', async () => {
-    const response = await request('/api/orders/quote', post({ ...order, discountCode: 'ALLBARKA10', giftWrapping: true }));
-    assert.equal(response.status, 200);
-    const { totals } = await response.json();
-    assert.equal(totals.discount, 250);
-    assert.equal(totals.discountedSubtotal, 2250);
-    assert.equal(totals.giftWrapFee, 250);
-    assert.equal(totals.shipping, 150);
-    assert.equal(totals.total, 2650);
-  });
-  await check('free delivery is based on discounted subtotal', async () => {
-    const items = [...order.items, { id: 'nimko', selectedWeight: '1kg', quantity: 1, price: 1 }];
-    const before = await (await request('/api/orders/quote', post({ ...order, items }))).json();
-    assert.equal(before.totals.subtotal, 3200);
-    assert.equal(before.totals.shipping, 0);
-    const after = await (await request('/api/orders/quote', post({ ...order, items, discountCode: 'ALLBARKA10' }))).json();
-    assert.equal(after.totals.discountedSubtotal, 2880);
-    assert.equal(after.totals.shipping, 150);
-    assert.equal(after.totals.total, 3030);
-  });
-  await check('unsupported tin portions cannot enter checkout', async () => {
-    const response = await request('/api/orders/quote', post({ ...order, items: [{ ...order.items[0], selectedWeight: '500g • Vacuum Tin' }] }));
-    assert.equal(response.status, 400);
-    assert.equal((await response.json()).code, 'INVALID_WEIGHT');
   });
   await check('wholesale discounts require account approval', async () => {
     const response = await request('/api/orders', post({ ...order, isWholesale: true }));

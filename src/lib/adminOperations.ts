@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import type { Firestore } from 'firebase-admin/firestore';
+import { FieldPath, type Firestore, type Query } from 'firebase-admin/firestore';
 import type { AdminNoteEntry, CanonicalOrder, OrderStatus, PaymentStatus } from './serverOrderService';
 import { resolveHamper } from './hamperCatalog';
 import { sanitizeFirestoreData } from './firestoreData';
@@ -64,6 +64,7 @@ export interface AdminOrderFilters {
   range: 'all' | 'today' | '7d' | '30d';
   queue: 'all' | 'new' | 'packing' | 'transit' | 'bank-pending';
   search: string;
+  cursor: string;
 }
 
 function queryString(value: unknown, fallback: string, maxLength = 200): string {
@@ -95,7 +96,7 @@ export function parseAdminOrderFilters(query: Record<string, unknown>): AdminOrd
     throw new AdminOperationError('Invalid order filter.', 'INVALID_FILTER');
   }
   return { page: queryInteger(query.page, 1, 99999999), limit: queryInteger(query.limit, 15, 50),
-    status, paymentStatus, paymentMethod, range, queue, search: queryString(query.search, '') } as AdminOrderFilters;
+    status, paymentStatus, paymentMethod, range, queue, search: queryString(query.search, ''), cursor: queryString(query.cursor, '', 1600) } as AdminOrderFilters;
 }
 
 export type AdminOrder = Omit<CanonicalOrder, 'guestSessionId' | 'claimTokenHash' | 'claimTokenExpiry' | 'claimStatus'>;
@@ -206,21 +207,87 @@ export function adminOrderMetrics(orders: CanonicalOrder[]): AdminOrderMetrics {
   return metrics;
 }
 
-/** Bound reads to the newest 5,000 orders plus a sentinel; totals disclose incomplete coverage. */
+interface AdminCursor {
+  version: 1; asOf: number; createdAtMs: number; orderId: string; page: number; filters: string;
+}
+
+function filterFingerprint(filters: AdminOrderFilters): string {
+  return crypto.createHash('sha256').update(JSON.stringify([filters.status, filters.paymentStatus,
+    filters.paymentMethod, filters.range, filters.queue, filters.search, filters.limit])).digest('hex').slice(0, 24);
+}
+
+function readAdminCursor(filters: AdminOrderFilters, now: number): AdminCursor | null {
+  if (!filters.cursor) return null;
+  try {
+    if (!/^[A-Za-z0-9_-]+$/.test(filters.cursor)) throw new Error();
+    const cursor = JSON.parse(Buffer.from(filters.cursor, 'base64url').toString('utf8')) as AdminCursor;
+    if (cursor.version !== 1 || !Number.isSafeInteger(cursor.asOf) || cursor.asOf < 1 || cursor.asOf > now + 60000 ||
+      !Number.isSafeInteger(cursor.createdAtMs) || cursor.createdAtMs < 0 || cursor.createdAtMs > cursor.asOf ||
+      !Number.isSafeInteger(cursor.page) || cursor.page !== filters.page || cursor.page < 2 ||
+      cursor.filters !== filterFingerprint(filters)) throw new Error();
+    validateAdminOrderId(cursor.orderId);
+    return cursor;
+  } catch {
+    throw new AdminOperationError('This order cursor is invalid for the selected filters. Return to the first page.', 'INVALID_CURSOR');
+  }
+}
+
+/** Equality/range filtering happens in Firestore before the bounded read, across all history. */
+function indexedOrderQuery(db: Firestore, filters: AdminOrderFilters, asOf: number): Query | null {
+  let statuses: string[] | null = filters.status === 'ALL' ? null : [filters.status];
+  const queueStatuses = filters.queue === 'new' ? ['ORDER_RECEIVED'] : filters.queue === 'packing' ? ['PREPARING'] :
+    filters.queue === 'transit' ? ['DISPATCHED', 'OUT_FOR_DELIVERY'] : filters.queue === 'bank-pending' ? ADMIN_STATUSES.filter(status => status !== 'CANCELLED') : null;
+  if (queueStatuses) statuses = statuses ? statuses.filter(status => queueStatuses.includes(status as OrderStatus)) : queueStatuses;
+  if (statuses?.length === 0) return null;
+  // Keep historical NEW/PACKED records discoverable during the status vocabulary transition.
+  if (statuses?.includes('ORDER_RECEIVED')) statuses.push('NEW');
+  if (statuses?.includes('PREPARING')) statuses.push('PACKED');
+  const paymentMethod = filters.queue === 'bank-pending' ? 'bank' : filters.paymentMethod;
+  const paymentStatus = filters.queue === 'bank-pending' ? 'UNPAID' : filters.paymentStatus;
+  if (filters.queue === 'bank-pending' && ((filters.paymentMethod !== 'ALL' && filters.paymentMethod !== 'bank') ||
+    (filters.paymentStatus !== 'ALL' && filters.paymentStatus !== 'UNPAID'))) return null;
+  let query: Query = db.collection('orders');
+  if (statuses) query = query.where('status', statuses.length === 1 ? '==' : 'in', statuses.length === 1 ? statuses[0] : statuses);
+  if (paymentMethod !== 'ALL') query = query.where('paymentMethod', '==', paymentMethod);
+  if (paymentStatus !== 'ALL') query = query.where('paymentStatus', '==', paymentStatus);
+  if (filters.range !== 'all') query = query.where('createdAtMs', '>=', rangeStart(filters.range, asOf));
+  return query.where('createdAtMs', '<=', asOf).orderBy('createdAtMs', 'desc').orderBy(FieldPath.documentId(), 'desc');
+}
+
+/** Indexed cursor browsing reads one page + sentinel. Text search / CSV remain explicitly bounded. */
 export async function listAdminOrders(db: Firestore | null, filters: AdminOrderFilters, exportAll = false) {
   requireDatabase(db);
   const now = Date.now();
-  const snap = await db.collection('orders').orderBy('createdAtMs', 'desc').limit(ADMIN_SCAN_LIMIT + 1).get();
-  const scanned = snap.docs.slice(0, ADMIN_SCAN_LIMIT).map(doc => ({ ...doc.data(), orderId: doc.id,
+  const bounded = !!filters.search || exportAll || !filters.cursor;
+  const cursor = bounded ? null : readAdminCursor(filters, now);
+  if (!bounded && filters.page > 1 && !cursor) throw new AdminOperationError('A cursor is required for the next page.', 'INVALID_CURSOR');
+  const asOf = cursor?.asOf ?? now;
+  let query = bounded
+    ? db.collection('orders').orderBy('createdAtMs', 'desc')
+    : indexedOrderQuery(db, filters, asOf);
+  if (query && cursor) query = query.startAfter(cursor.createdAtMs, cursor.orderId);
+  const cap = bounded ? ADMIN_SCAN_LIMIT : filters.limit;
+  const snap = query ? await query.limit(cap + 1).get() : { docs: [] };
+  const scanned = snap.docs.slice(0, cap).map(doc => ({ ...doc.data(), orderId: doc.id,
     status: storedOrderStatus(doc.data().status) || doc.data().status }) as CanonicalOrder);
-  const matching = filterAdminOrders(scanned, filters, now);
-  const totalCount = matching.length;
-  const totalPages = Math.ceil(totalCount / filters.limit) || 1;
-  const page = Math.min(filters.page, totalPages);
-  return { orders: (exportAll ? matching : matching.slice((page - 1) * filters.limit, page * filters.limit)).map(sanitizeOrderForAdmin),
-    page, limit: exportAll ? ADMIN_SCAN_LIMIT : filters.limit, totalCount, totalPages: exportAll ? 1 : totalPages,
-    metrics: adminOrderMetrics(matching), scannedCount: scanned.length, truncated: snap.docs.length > ADMIN_SCAN_LIMIT,
-    asOf: new Date(now).toISOString() };
+  if (bounded) {
+    const matching = filterAdminOrders(scanned, filters, asOf);
+    const totalPages = Math.ceil(matching.length / filters.limit) || 1;
+    const page = Math.min(filters.page, totalPages);
+    return { orders: (exportAll ? matching : matching.slice((page - 1) * filters.limit, page * filters.limit)).map(sanitizeOrderForAdmin),
+      page, limit: exportAll ? ADMIN_SCAN_LIMIT : filters.limit, totalCount: matching.length, totalPages: exportAll ? 1 : totalPages,
+      metrics: adminOrderMetrics(matching), metricsScope: 'bounded-search' as const, pagination: 'bounded' as const,
+      nextCursor: null, hasMore: !exportAll && page < totalPages, scannedCount: scanned.length,
+      truncated: snap.docs.length > cap, asOf: new Date(asOf).toISOString() };
+  }
+  const hasMore = snap.docs.length > cap;
+  const last = scanned.at(-1);
+  const nextCursor = hasMore && last ? Buffer.from(JSON.stringify({ version: 1, asOf, createdAtMs: last.createdAtMs,
+    orderId: last.orderId, page: filters.page + 1, filters: filterFingerprint(filters) } satisfies AdminCursor)).toString('base64url') : null;
+  return { orders: scanned.map(sanitizeOrderForAdmin), page: filters.page, limit: filters.limit,
+    totalCount: null, totalPages: null, metrics: adminOrderMetrics(scanned), metricsScope: 'page' as const,
+    pagination: 'cursor' as const, nextCursor, hasMore, scannedCount: scanned.length, truncated: false,
+    asOf: new Date(asOf).toISOString() };
 }
 
 function sanitizeAudit(id: string, audit: any) {
