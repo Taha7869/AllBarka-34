@@ -1,3 +1,4 @@
+import { useCatalogProducts } from '../contexts/CatalogContext';
 import { useCatalogActivity } from '../hooks/useCatalogActivity';
 import { unitPrice } from '../lib/catalogActivity';
 import { useSavedProducts } from '../hooks/useSavedProducts';
@@ -5,7 +6,6 @@ import React, { lazy, Suspense, useState, useEffect, useMemo, useRef } from 'rea
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { PRODUCTS, getProductImage } from '../data/products';
-import { useLiveCatalog } from '../hooks/useLiveCatalog';
 import { isSingleImageCatalogProduct } from '../data/productImages';
 import { useProductMedia, useProductMediaCover } from '../contexts/ProductMediaContext';
 import { clampPhotoIndex } from '../lib/productPhotoViewer';
@@ -27,13 +27,13 @@ import { displayProductPrice } from '../lib/productSelection';
 const ProductPhotoViewer = lazy(() => import('../components/ProductPhotoViewer'));
 
 export default function ProductDetailPage() {
+  const PRODUCTS = useCatalogProducts();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { addToCart, setIsCartOpen } = useCart();
   const { t, language } = useLanguage();
   
-  const catalog = useLiveCatalog();
-  const product = catalog.find((p) => p.id === id && p.active !== false);
+  const product = PRODUCTS.find((p) => p.id === id && p.active !== false);
   const productMedia = useProductMedia(product);
   const mediaCover = useProductMediaCover();
   const [selectedWeightIndex, setSelectedWeightIndex] = useState(0);
@@ -94,7 +94,7 @@ export default function ProductDetailPage() {
     const sameCategory = PRODUCTS.filter((p) => p.active !== false && p.id !== product.id && p.category === product.category);
     const otherBestsellers = PRODUCTS.filter((p) => p.active !== false && p.id !== product.id && p.category !== product.category);
     return [...sameCategory, ...otherBestsellers].slice(0, 4);
-  }, [product]);
+  }, [product, PRODUCTS]);
 
   if (!product) {
     return (
@@ -189,7 +189,6 @@ export default function ProductDetailPage() {
             url: `${siteOrigin}/product/${product.id}`,
             priceCurrency: 'PKR',
             price: priceToUse,
-            availability: 'https://schema.org/InStock',
             itemCondition: 'https://schema.org/NewCondition'
           } } : {})
         }}

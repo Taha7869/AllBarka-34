@@ -7,6 +7,7 @@ import { createDurableOrder, PersistenceUnavailableError } from '../src/lib/orde
 import type { CanonicalOrder, OutboxOrderEvent } from '../src/lib/serverOrderService';
 import { parseOrderOutboxReportArgs, summarizeOrderOutboxReport } from '../scripts/report-order-outbox';
 import { getN8nStatusDispatchConfig, sendStatusToN8n } from '../src/services/n8nStatusNotification';
+import { fixtureCatalogSnapshot } from './helpers/catalogFixtures';
 
 const INITIAL_TIME = Date.parse('2026-10-03T10:00:00Z');
 const enabledConfig = getN8nOrderDispatchConfig({ N8N_ORDER_WEBHOOK_URL: 'https://n8n.example.com/webhook/order', N8N_WEBHOOK_SECRET: 'test-only-shared-secret' });
@@ -49,7 +50,8 @@ function memoryDatabase(initial: Record<string, any> = {}) {
         const writes: Array<() => void> = [];
         const result = await callback({
           get: async (document: any) => { assert.equal(writes.length, 0, 'Firestore reads must precede writes'); return snapshot(document.path); },
-          create: function(ref, data) { return this.set(ref, data); }, set: (document: any, data: any, options?: { merge?: boolean }) => writes.push(() => records.set(document.path, options?.merge ? { ...records.get(document.path), ...clone(data) } : clone(data))),
+          getAll: async (...documents: any[]) => { assert.equal(writes.length, 0, 'Firestore reads must precede writes'); return documents.map(document => fixtureCatalogSnapshot(document.path)); },
+          set: (document: any, data: any, options?: { merge?: boolean }) => writes.push(() => records.set(document.path, options?.merge ? { ...records.get(document.path), ...clone(data) } : clone(data))),
           update: (document: any, data: any) => writes.push(() => records.set(document.path, { ...records.get(document.path), ...clone(data) })),
         });
         writes.forEach(write => write());
@@ -64,7 +66,7 @@ function memoryDatabase(initial: Record<string, any> = {}) {
 
 function savedOrder(index = 1): CanonicalOrder {
   return {
-    schemaVersion: '2.0.0', orderId: `AB-20261003-${index.toString(16).toUpperCase().padStart(8, '0')}`,
+    schemaVersion: '2.0.0', orderId: `AB-20261003-${index.toString(16).toUpperCase().padStart(6, '0')}`,
     source: 'website', createdAt: '2026-10-01T12:00:00.000Z', createdAtMs: Date.parse('2026-10-01T12:00:00Z'),
     updatedAt: '2026-10-01T12:00:00.000Z', updatedAtMs: Date.parse('2026-10-01T12:00:00Z'),
     status: 'ORDER_RECEIVED', paymentStatus: 'UNPAID', paymentMethod: 'bank', uid: 'test-customer',
@@ -217,7 +219,7 @@ test('sender signs exact envelope, refreshes dispatch time and requires persiste
 
 test('sender rejects empty/HTML/malformed/mismatched acknowledgements and non-2xx without dispatch success', async () => {
   const order = projectCanonicalOrderForN8n(savedOrder());
-  for (const ack of [null, {}, { ok: false, orderId: order.orderId, mirrorStored: true }, { ok: true, orderId: 'AB-20261003-FFFFFFFF', mirrorStored: true }, { ok: true, orderId: order.orderId }, { ok: true, orderId: order.orderId, mirrorStored: false }]) {
+  for (const ack of [null, {}, { ok: false, orderId: order.orderId, mirrorStored: true }, { ok: true, orderId: 'AB-20261003-FFFFFF', mirrorStored: true }, { ok: true, orderId: order.orderId }, { ok: true, orderId: order.orderId, mirrorStored: false }]) {
     const result = await sendOrderToN8n(order, { config: enabledConfig, fetchImpl: (async () => ({ ok: true, status: 200, json: async () => ack })) as any });
     assert.equal(result.status, 'FAILED'); assert.equal(result.sent, false);
   }
@@ -270,6 +272,33 @@ test('global atomic lease serializes separate events across worker instances and
   assert.deepEqual(sent, [first.orderId]);
   finish({ sent: true, status: 'SUCCESS' }); assert.equal((await running).status, 'DELIVERED');
   assert.equal((await b.runOnce()).status, 'DELIVERED'); assert.deepEqual(sent, [first.orderId, second.orderId]);
+});
+
+test('bounded batches drain due orders promptly and leave the remainder durable', async () => {
+  const orders = Array.from({ length: 12 }, (_, index) => savedOrder(index + 1));
+  const store = seeded(...orders);
+  const sent: string[] = [];
+  const instance = worker(store.db, { dispatch: async (order: any) => {
+    sent.push(order.orderId); return { sent: true, status: 'SUCCESS' };
+  } });
+  assert.equal((await instance.runBatch()).status, 'DELIVERED');
+  assert.equal(sent.length, 10);
+  assert.equal((await instance.runBatch()).status, 'IDLE');
+  assert.equal(sent.length, 12);
+  assert.equal(new Set(sent).size, 12);
+  assert.equal((await instance.runBatch()).status, 'IDLE');
+  assert.equal(sent.length, 12);
+});
+
+test('a batch stops at an uncertain send and preserves the cooldown for other workers', async () => {
+  const store = seeded(savedOrder(1), savedOrder(2));
+  let calls = 0;
+  const instance = worker(store.db, { dispatch: async () => {
+    calls++; return { sent: false, status: 'TIMEOUT', reason: 'ORDER_WEBHOOK_TIMEOUT' };
+  } });
+  assert.equal((await instance.runBatch()).status, 'RETRY_SCHEDULED');
+  assert.equal(calls, 1);
+  assert.equal((await worker(store.db).runBatch()).status, 'BUSY');
 });
 
 test('failure schedules bounded backoff, persists attempts and never rolls back canonical order', async () => {
@@ -448,7 +477,7 @@ test('unsupported reward never silently consumes benefits or creates an order/ou
   const key = 'users/test-customer/activeRewards/reward-1';
   for (const rewardType of ['SAMPLE', 'PACKAGING', 'SHIPPING']) {
     const store = memoryDatabase({ [key]: { status: 'ACTIVE', rewardType } });
-    await assert.rejects(() => createDurableOrder({ db: store.db, payload: { ...checkoutPayload, city: 'Lahore', rewardId: 'reward-1' }, uid: 'test-customer', idempotencyKey: 'unsupported-reward' }), (error: any) => error.code === 'REWARD_APPLICATION_UNAVAILABLE');
+    await assert.rejects(() => createDurableOrder({ db: store.db, payload: { ...checkoutPayload, city: 'Lahore', rewardId: 'reward-1' }, uid: 'test-customer', idempotencyKey: 'unsupported-reward' }), (error: any) => error.code === 'REWARD_UNAVAILABLE');
     assert.equal(store.records.get(key).status, 'ACTIVE'); assert.equal(store.records.size, 1);
   }
   const guest = memoryDatabase();

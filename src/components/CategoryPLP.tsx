@@ -1,3 +1,4 @@
+import { useCatalogProducts } from '../contexts/CatalogContext';
 import React, { useEffect, useId, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
@@ -32,6 +33,7 @@ export function CategoryPLPSkeleton() {
   return <div className="grid grid-cols-2 gap-4 lg:grid-cols-4" aria-busy="true">{Array.from({ length: 8 }, (_, i) => <div key={i} className="aspect-[3/5] rounded-2xl bg-[var(--color-border)] motion-safe:animate-pulse" />)}</div>;
 }
 export default function CategoryPLP({ searchFilter: initialSearch, initialCategory = 'all', onAddToCart, onQuickView, isWholesale = false, isModal = false, onClose }: CategoryPLPProps) {
+  const PRODUCTS = useCatalogProducts();
   const { t, language } = useCatalogFilterLanguage();
   const mediaCover = useProductMediaCover();
   const { addToCart } = useCart();
@@ -55,12 +57,12 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
   const sheetFilterId = useId();
   const activeParams = isModal ? localParams : params;
   const filters = readCatalogFilters(activeParams);
-  const sharedIds = useMemo(() => readSharedSelections(activeParams.get('shared'), PRODUCTS), [activeParams]);
+  const sharedIds = useMemo(() => readSharedSelections(activeParams.get('shared'), PRODUCTS), [activeParams, PRODUCTS]);
   const listView = activeParams.get('view') === 'list';
   const [visibleCount, setVisibleCount] = useState(12);
   const [shareStatus, setShareStatus] = useState('');
   const [manualLink, setManualLink] = useState('');
-  const suggestions = useMemo(() => filters.query.trim() ? searchCatalog(PRODUCTS, filters.query).slice(0, 5) : [], [filters.query]);
+  const suggestions = useMemo(() => filters.query.trim() ? searchCatalog(PRODUCTS, filters.query).slice(0, 5) : [], [filters.query, PRODUCTS]);
   const category = resolveCategorySlug(isModal ? modalCategory : initialCategory) || 'all';
   const filterSignature = activeParams.toString();
   useEffect(() => { setVisibleCount(12); }, [category, filters.query, filters.origin, filters.budget, filters.sort, filters.saved, filters.special]);
@@ -109,7 +111,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
     if (isModal) setLocalParams(next); else setParams(next, { replace: true, preventScrollReset: true });
     setFilterDraft(null);
   };
-  const origins = useMemo(() => [...new Map(PRODUCTS.filter(p => p.active !== false && p.origin_en).map(p => [p.origin_en, getLocalized(p, 'origin', language)])).entries()], [language]);
+  const origins = useMemo(() => [...new Map(PRODUCTS.filter(p => p.active !== false && p.origin_en).map(p => [p.origin_en, getLocalized(p, 'origin', language)])).entries()], [language, PRODUCTS]);
   const products = useMemo(() => {
     const found = filterCatalogSelection(PRODUCTS, { query: filters.query, origin: filters.origin, budget: filters.budget, special: filters.special, saved: filters.saved, sort: filters.sort }, { category, isWholesale, savedIds, sharedIds });
     if (category === 'all' && filters.sort === 'featured') {
@@ -120,7 +122,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
       : filters.sort === 'price-asc' ? startingPrice(a) - startingPrice(b)
       : filters.sort === 'price-desc' ? startingPrice(b) - startingPrice(a)
       : filters.sort === 'name-asc' ? getLocalized(a, 'name', language).localeCompare(getLocalized(b, 'name', language), language) : 0);
-  }, [category, filters.query, filters.origin, filters.special, filters.saved, filters.budget, filters.sort, isWholesale, savedIds, language, sharedIds]);
+  }, [category, filters.query, filters.origin, filters.special, filters.saved, filters.budget, filters.sort, isWholesale, savedIds, language, sharedIds, PRODUCTS]);
   const previewCount = (draft: CatalogFilterDraft) => filterCatalogSelection(PRODUCTS, draft, { category, isWholesale, savedIds, sharedIds: readSharedSelections(draft.shared, PRODUCTS) }).length;
   const draftOrigins = filterDraft ? [['all', t('shop.anyOrigin')], ...origins].map(([id, label]) => ({ id, label, count: previewCount({ ...filterDraft, origin: id }) })) : [];
   const chips = [

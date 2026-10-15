@@ -1,3 +1,4 @@
+import { useCatalogProducts } from '../contexts/CatalogContext';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
@@ -23,6 +24,7 @@ import { getLocalized } from '../utils/localize';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 
 export default function JournalPage() {
+  const PRODUCTS = useCatalogProducts();
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { addToCart, setIsCartOpen } = useCart();

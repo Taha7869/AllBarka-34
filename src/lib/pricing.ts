@@ -1,5 +1,5 @@
 import { STORE_CONFIG } from '../config/store';
-import { ShippingMethodId } from '../types.ts';
+import { Product, ShippingMethodId } from '../types.ts';
 import { calculateShipping, getCartShippingWeightGrams, isLahoreCity } from './shippingPolicy';
 import type { HamperConfiguration } from './hamperCatalog';
 import type { AppliedPromo } from '../types/promo';
@@ -73,29 +73,28 @@ export function calculateDiscount(subtotal: number, couponCode?: string | null):
  * Authoritative single calculation contract used by UI and server.
  */
 export function calculateOrderSummary({
-
   items,
   shippingMethodId = 'standard',
   couponCode,
   manualDiscount = 0,
   giftWrapping = false,
   city = 'Lahore',
-  catalog
+  products,
 }: {
   items: OrderItemPriceInput[];
-  catalog?: any[];
   shippingMethodId?: ShippingMethodId;
   couponCode?: string | null;
   manualDiscount?: number;
   giftWrapping?: boolean;
   city?: string;
+  products?: Product[];
 }): PricingSummary {
   const subtotal = calculateSubtotal(items);
   const couponDiscount = calculateDiscount(subtotal, couponCode);
   const discount = Math.min(subtotal, Math.max(couponDiscount, sanitizePrice(manualDiscount)));
   const discountedSubtotal = Math.max(0, subtotal - discount);
   const giftWrapFee = giftWrapping ? GIFT_WRAP_FEE : 0;
-  const shippingWeightGrams = getCartShippingWeightGrams(items, catalog);
+  const shippingWeightGrams = getCartShippingWeightGrams(items, products);
   const shipping = calculateShipping(discountedSubtotal, shippingMethodId, giftWrapFee, city, shippingWeightGrams);
   const total = discountedSubtotal + shipping + giftWrapFee;
 

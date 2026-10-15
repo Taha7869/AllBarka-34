@@ -1,6 +1,6 @@
 import { STORE_CONFIG } from '../config/store';
 import { PRODUCTS } from '../data/products';
-import type { ShippingMethodId, Product } from '../types';
+import type { Product, ShippingMethodId } from '../types';
 import { ValidationError } from './validationError';
 import { CUSTOM_HAMPER_PRODUCT_ID, resolveHamper, type HamperConfiguration } from './hamperCatalog';
 import { resolveProductVariant } from './productVariants';
@@ -39,13 +39,13 @@ export function validateShippingRewardDestination(reward: { rewardType?: string;
 }
 
 /** Only canonical catalogue portions can supply the shipping billing weight. */
-export function getProductShippingWeightGrams(productId: string, selectedWeight: string, catalog: readonly Product[] = PRODUCTS): number | null {
-  const product = catalog.find(item => item.id === productId);
+export function getProductShippingWeightGrams(productId: string, selectedWeight: string, products: Product[] = PRODUCTS): number | null {
+  const product = products.find(item => item.id === productId);
   return product ? resolveProductVariant(product, selectedWeight)?.weightGrams ?? null : null;
 }
 
 /** Null means that an honest weight quote is unavailable; never trust client weight fields. */
-export function getCartShippingWeightGrams(items: readonly ShippingWeightItem[], catalog: readonly Product[] = PRODUCTS): number | null {
+export function getCartShippingWeightGrams(items: readonly ShippingWeightItem[], products: Product[] = PRODUCTS): number | null {
   if (!Array.isArray(items)) return null;
   let total = 0;
   for (const item of items) {
@@ -53,15 +53,15 @@ export function getCartShippingWeightGrams(items: readonly ShippingWeightItem[],
     const selectedWeight = item.selectedWeight || '';
     const rawId = item.productId || item.id || '';
     if (rawId === CUSTOM_HAMPER_PRODUCT_ID) {
-      const hamper = resolveHamper(item.hamperConfiguration);
+      const hamper = resolveHamper(item.hamperConfiguration, products);
       if (!hamper) return null;
       total += hamper.massGrams * item.quantity;
       continue;
     }
-    const productId = catalog.some(product => product.id === rawId)
+    const productId = products.some(product => product.id === rawId)
       ? rawId
       : rawId.endsWith(`-${selectedWeight}`) ? rawId.slice(0, -(selectedWeight.length + 1)) : rawId;
-    const grams = getProductShippingWeightGrams(productId, selectedWeight, catalog);
+    const grams = getProductShippingWeightGrams(productId, selectedWeight, products);
     if (grams === null) return null;
     total += grams * item.quantity;
   }

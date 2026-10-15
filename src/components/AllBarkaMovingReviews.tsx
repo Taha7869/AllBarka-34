@@ -11,7 +11,7 @@ export function AllBarkaMovingReviews() {
   const { t } = useLanguage();
   const average = REVIEWS.length ? REVIEWS.reduce((sum, review) => sum + review.rating, 0) / REVIEWS.length : 0;
 
-  // Map authentic Lahore reviews into MovingReviewItem format
+  // Historical store-published feedback has no order-linked verification record.
   const marqueeItems: MovingReviewItem[] = REVIEWS.map((rev) => ({
     id: rev.id,
     quote: rev.review,
@@ -21,9 +21,9 @@ export function AllBarkaMovingReviews() {
     location: rev.location,
     rating: rev.rating,
     purchasedItem: rev.purchasedItem,
-    verifiedSource: rev.verifiedSource,
+
     avatarInitials: rev.avatarInitials,
-    isReviewOfTheMonth: rev.isReviewOfTheMonth,
+
   }));
 
   return (
@@ -36,7 +36,7 @@ export function AllBarkaMovingReviews() {
         <div className="text-center max-w-2xl mx-auto space-y-3">
           <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[var(--color-surface)] border border-[var(--color-gold)]/50 text-[var(--color-gold)] text-[11px] font-black tracking-wider uppercase shadow-xs">
             <CheckCircle2 size={12} className="text-[var(--color-gold)]" />
-            <span>{t('verifiedReviews', 'Verified Lahore Patron Feedback')}</span>
+            <span>{t('verifiedReviews')}</span>
           </div>
 
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-black tracking-tight text-[var(--color-ink)]">
@@ -44,7 +44,7 @@ export function AllBarkaMovingReviews() {
           </h2>
 
           <p className="text-xs sm:text-sm text-[var(--color-ink-muted)] leading-relaxed font-medium">
-            {t('reviewsDesc', 'Continuous feedback from WhatsApp orders and deliveries across Lahore. Hover over any card to pause and read.')}
+            {t('reviewsDesc')}
           </p>
 
           {/* Grounded Trust Bar */}
@@ -56,7 +56,7 @@ export function AllBarkaMovingReviews() {
 
             <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-ink-muted)] text-[11px] font-semibold shadow-xs">
               <ShieldCheck size={12} className="text-[var(--color-gold)]" />
-              <span>{t('airtightJars', 'Airtight Resealable Jars')}</span>
+              <span>{t('airtightJars')}</span>
             </div>
 
             <div className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-ink-muted)] text-[11px] font-semibold shadow-xs">
@@ -82,13 +82,13 @@ export function AllBarkaMovingReviews() {
               {t('freshnessPromise', 'Our Freshness & Purity Promise')}
             </h3>
             <p className="text-xs sm:text-[13px] text-[var(--color-ink-muted)] leading-relaxed max-w-lg mx-auto font-medium break-words">
-              {t('freshnessDesc', 'Every batch is sorted, checked for natural oil freshness, and sealed in airtight packaging before courier dispatch. If any item does not meet your expectations, we offer instant replacement or support.')}
+              {t('freshnessDesc')}
             </p>
           </div>
 
           <div className="pt-1 flex flex-wrap gap-2 justify-center text-[10.5px] text-[var(--color-ink)] font-bold">
             <span className="max-w-full px-3 py-1 rounded-full bg-[var(--color-base)] border border-[var(--color-border)] shadow-xs break-words">✓ {t('cleanSorting', 'Clean Sorting')}</span>
-            <span className="max-w-full px-3 py-1 rounded-full bg-[var(--color-base)] border border-[var(--color-border)] shadow-xs break-words">✓ {t('resealableJars', 'Resealable Freshness Jars')}</span>
+            <span className="max-w-full px-3 py-1 rounded-full bg-[var(--color-base)] border border-[var(--color-border)] shadow-xs break-words">✓ {t('resealableJars')}</span>
             <span className="max-w-full px-3 py-1 rounded-full bg-[var(--color-base)] border border-[var(--color-border)] shadow-xs break-words">✓ {t('directWhatsapp', 'Direct WhatsApp Dispatch')}</span>
           </div>
         </div>

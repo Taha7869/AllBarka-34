@@ -1,3 +1,4 @@
+import { useCatalogProducts } from '../contexts/CatalogContext';
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Archive, Download, Share2, Trash2, Plus } from 'lucide-react';
@@ -9,12 +10,13 @@ import { cartLines, downloadText, readSharedCart, savedBoxes, SAVED_BOXES_KEY, t
 import { shareOrCopy } from '../lib/catalogLinks';
 
 export default function CartTools() {
+  const PRODUCTS = useCatalogProducts();
   const { cartItems, subtotal, addToCart } = useCart();
   const { t, language } = useLanguage();
   const [params, setParams] = useSearchParams();
   const [boxes, setBoxes] = useState(() => { try { return savedBoxes(JSON.parse(localStorage.getItem(SAVED_BOXES_KEY) || '[]'), PRODUCTS); } catch { return []; } });
   const [name, setName] = useState(''); const [status, setStatus] = useState(''); const [manualLink, setManualLink] = useState('');
-  const shared = useMemo(() => readSharedCart(params.get('items'), PRODUCTS), [params]);
+  const shared = useMemo(() => readSharedCart(params.get('items'), PRODUCTS), [params, PRODUCTS]);
   const lines = cartLines(cartItems, PRODUCTS);
   const persist = (next: typeof boxes) => { try { localStorage.setItem(SAVED_BOXES_KEY, JSON.stringify(next)); setBoxes(next); return true; } catch { setStatus(t('checkout.storageUnavailable')); return false; } };
   const add = (entries: CartLine[]) => { entries.forEach(line => { const product = PRODUCTS.find(item => item.id === line.productId); if (product) addToCart(product, line.weight, line.quantity, undefined, { silent: true, openCart: false }); }); setStatus(t('cart.boxAdded')); };

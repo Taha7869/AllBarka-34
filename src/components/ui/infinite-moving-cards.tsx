@@ -168,7 +168,7 @@ export const InfiniteMovingCards = ({
                 {item.isReviewOfTheMonth && (
                   <div className="absolute top-0 right-8 z-10 flex items-center gap-1 bg-gradient-to-r from-[#D4AF6A] via-[#F3DFA2] to-[#D4AF6A] text-[#2B1B17] text-[8.5px] font-black uppercase px-3 py-1 rounded-b-lg tracking-wider shadow-xs border-b border-x border-[#D4AF6A]/60">
                     <Sparkles size={10} className="fill-[#2B1B17]" />
-                    <span>Review of the Month</span>
+                    <span>{t('reviews.featured')}</span>
                   </div>
                 )}
 
@@ -229,7 +229,7 @@ export const InfiniteMovingCards = ({
                     {/* Verified badge */}
                     <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FAF9F5] border border-[#D4AF6A]/50 text-[#2B1B17] font-bold text-[9.5px] shrink-0 shadow-2xs">
                       <Check size={10} className="stroke-[2.5] text-[#D4AF6A]" />
-                      <span>{item.verifiedSource || "Verified Lahore Patron"}</span>
+                      <span>{t('reviews.source')}</span>
                     </div>
                   </div>
 
@@ -241,7 +241,7 @@ export const InfiniteMovingCards = ({
                         <span className="font-semibold text-[#2B1B17] truncate">{item.purchasedItem}</span>
                       </div>
                       <span className="text-[9.5px] text-[#8C6B1B] group-hover:text-[#2B1B17] font-bold shrink-0 pl-2">
-                        Quick View ↗
+                        {t('quickView')} ↗
                       </span>
                     </div>
                   )}
@@ -278,7 +278,7 @@ export const InfiniteMovingCards = ({
               {selectedReview.isReviewOfTheMonth && (
                 <div className="absolute top-0 left-8 z-10 flex items-center gap-1.5 bg-gradient-to-r from-[#D4AF6A] via-[#F3DFA2] to-[#D4AF6A] text-[#2B1B17] text-[9.5px] font-black uppercase px-3.5 py-1.5 rounded-b-xl tracking-wider shadow-xs border-b border-x border-[#D4AF6A]">
                   <Sparkles size={11} className="fill-[#2B1B17]" />
-                  <span>Review of the Month • Lahore Community Pick</span>
+                  <span>{t('reviews.featured')}</span>
                 </div>
               )}
 
@@ -287,7 +287,7 @@ export const InfiniteMovingCards = ({
                 type="button"
                 onClick={() => setSelectedReview(null)}
                 className="absolute top-5 right-5 w-9 h-9 rounded-full bg-white border border-[#D4AF6A]/40 text-[#2B1B17] hover:text-[#8C6B1B] hover:border-[#D4AF6A] flex items-center justify-center transition-colors shadow-xs focus:outline-none cursor-pointer"
-                aria-label="Close review details"
+                aria-label={t('reviews.close')}
               >
                 <X size={18} />
               </button>
@@ -324,7 +324,7 @@ export const InfiniteMovingCards = ({
                     </div>
                     <div className="text-xs text-[#8C6B1B] font-medium flex items-center gap-1.5 mt-0.5">
                       <BadgeCheck size={13} className="text-[#D4AF6A] shrink-0" />
-                      <span>{selectedReview.verifiedSource || "Verified Lahore Resident"}</span>
+                      <span>{t('reviews.source')}</span>
                     </div>
                   </div>
                 </div>
@@ -354,32 +354,32 @@ export const InfiniteMovingCards = ({
                     <div className="flex items-center justify-between text-[#8C6B1B] font-bold pb-1.5 border-b border-[#D4AF6A]/20">
                       <span className="flex items-center gap-1.5 uppercase tracking-wider text-[10px]">
                         <ShoppingBag size={13} />
-                        <span>Order Particulars</span>
+                        <span>{t('reviews.details')}</span>
                       </span>
                       <span className="text-[10px] text-[#2B1B17] font-semibold flex items-center gap-1">
                         <CheckCircle2 size={11} className="text-[#D4AF6A]" />
-                        <span>Dispatched & Verified</span>
+                        <span>{t('reviews.source')}</span>
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between pt-1">
-                      <span className="text-[#2B1B17]/60">Items Delivered:</span>
+                      <span className="text-[#2B1B17]/60">{t('reviews.items')}:</span>
                       <span className="font-bold text-[#2B1B17] text-right truncate max-w-[240px]">
                         {selectedReview.purchasedItem}
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span className="text-[#2B1B17]/60">Delivery Area:</span>
+                      <span className="text-[#2B1B17]/60">{t('reviews.area')}:</span>
                       <span className="font-medium text-[#2B1B17]/90">
                         {selectedReview.location || selectedReview.title || "Lahore"}
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span className="text-[#2B1B17]/60">Packaging Standard:</span>
+                      <span className="text-[#2B1B17]/60">{t('reviews.packaging')}:</span>
                       <span className="font-medium text-[#8C6B1B]">
-                        Airtight Resealable Jar (Vacuum Sealed)
+                        {t('reviews.packagingHint')}
                       </span>
                     </div>
                   </div>
@@ -392,7 +392,7 @@ export const InfiniteMovingCards = ({
                     onClick={() => setSelectedReview(null)}
                     className="flex-1 py-3 px-4 rounded-xl bg-white border border-[#D4AF6A]/50 text-[#2B1B17] hover:border-[#D4AF6A] text-xs font-bold transition-all text-center cursor-pointer shadow-xs"
                   >
-                    Close Review
+                    {t('reviews.close')}
                   </button>
 
                   <a
@@ -404,7 +404,7 @@ export const InfiniteMovingCards = ({
                     className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-[#2B1B17] to-[#3D2721] hover:from-[#3D2721] hover:to-[#2B1B17] text-[#FFFDD0] border border-[#D4AF6A]/60 text-xs font-black transition-all text-center flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
                   >
                     <MessageCircle size={14} className="text-[#D4AF6A]" />
-                    <span>Order via WhatsApp</span>
+                    <span>{t('reviews.whatsapp')}</span>
                   </a>
                 </div>
               </div>

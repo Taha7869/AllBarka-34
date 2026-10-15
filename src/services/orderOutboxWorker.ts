@@ -14,6 +14,8 @@ export const ORDER_OUTBOX_MAX_ATTEMPTS = 1 + ORDER_OUTBOX_MAX_RETRIES;
 // QUOTA FIX: pehle 15000 (15s) tha — har tick par lease acquire/release = 2 faltu writes.
 // Ab 60s poll + read-before-lease: idle tick par ZERO Firestore writes.
 export const ORDER_OUTBOX_POLL_MS = 60000;
+export const ORDER_OUTBOX_BATCH_SIZE = 10;
+export const ORDER_OUTBOX_DRAIN_BUDGET_MS = 10000;
 export const ORDER_OUTBOX_LOCK_PATH = 'outboxDispatchLocks/n8nOrderCreated';
 const MAX_DUE_SCAN = 25;
 
@@ -37,6 +39,8 @@ export interface OrderOutboxWorkerOptions {
   now?: () => number;
   dispatch?: (order: N8nOrderData, options: SendOrderToN8nOptions) => Promise<N8nNotificationResult>;
   dispatchStatus?: typeof sendStatusToN8n;
+  batchSize?: number;
+  drainBudgetMs?: number;
 }
 
 interface DispatchLease { owner: string; token: string; until: number }
@@ -61,7 +65,8 @@ function safeFailureCode(result: N8nNotificationResult): string {
 
 /**
  * Firestore leases are authoritative across backend instances; the in-process guard
- * also prevents overlapping timer/manual runs. Only one event is dispatched per cycle.
+ * also prevents overlapping timer/manual runs. Scheduled cycles drain bounded batches;
+ * an empty queue retains the low-cost, read-only idle poll.
  */
 export function createOrderOutboxWorker(options: OrderOutboxWorkerOptions) {
   const owner = crypto.randomUUID();
@@ -75,6 +80,7 @@ export function createOrderOutboxWorker(options: OrderOutboxWorkerOptions) {
   let started = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let inFlight: Promise<OutboxRunResult> | undefined;
+  let draining: Promise<OutboxRunResult> | undefined;
   let lastTickAt: string | null = null;
   let lastResult: OutboxRunResult | null = null;
   let cyclePending = 0;
@@ -290,9 +296,29 @@ export function createOrderOutboxWorker(options: OrderOutboxWorkerOptions) {
     return inFlight;
   }
 
-  function schedule(): void {
+  function runBatch(): Promise<OutboxRunResult> {
+    if (draining) return Promise.resolve({ status: 'BUSY' });
+    const batchSize = Math.max(1, Math.min(50, Math.floor(options.batchSize ?? ORDER_OUTBOX_BATCH_SIZE)));
+    const budgetMs = Math.max(100, Math.min(30000, options.drainBudgetMs ?? ORDER_OUTBOX_DRAIN_BUDGET_MS));
+    draining = (async () => {
+      const began = Date.now();
+      let result: OutboxRunResult = { status: 'IDLE' };
+      for (let count = 0; count < batchSize && !stopped; count++) {
+        result = await runOnce();
+        // Uncertain sends retain their persisted backoff and global cooldown.
+        if (!['DELIVERED', 'FAILED'].includes(result.status) || Date.now() - began >= budgetMs) break;
+      }
+      return result;
+    })().finally(() => { draining = undefined; });
+    return draining;
+  }
+
+  function schedule(result?: OutboxRunResult): void {
     if (stopped) return;
-    timer = setTimeout(() => { void runOnce().then(schedule); }, pollMs);
+    // A full/budget-limited batch may leave more due work. Yield to the event loop
+    // briefly, then continue; do not impose the 60-second idle interval on backlog.
+    const delay = result && ['DELIVERED', 'FAILED'].includes(result.status) ? 100 : pollMs;
+    timer = setTimeout(() => { void runBatch().then(schedule); }, delay);
     timer.unref?.();
   }
 
@@ -300,16 +326,17 @@ export function createOrderOutboxWorker(options: OrderOutboxWorkerOptions) {
     if (started || stopped) return;
     started = true;
     log('ORDER_OUTBOX_WORKER_STARTED', { pollIntervalMs: pollMs, maxRetries: ORDER_OUTBOX_MAX_RETRIES });
-    void runOnce().then(schedule);
+    void runBatch().then(schedule);
   }
 
   async function stop(): Promise<void> {
     stopped = true;
     if (timer) clearTimeout(timer);
+    await draining;
     await inFlight;
   }
 
-  return { runOnce, start, stop, getState: () => ({ started, stopped, running: Boolean(inFlight), lastTickAt, lastResult: lastResult?.status || null, pollIntervalMs: pollMs }) };
+  return { runOnce, runBatch, start, stop, getState: () => ({ started, stopped, running: Boolean(inFlight || draining), lastTickAt, lastResult: lastResult?.status || null, pollIntervalMs: pollMs, batchSize: ORDER_OUTBOX_BATCH_SIZE }) };
 }
 
 /** Start once when the persistent Express server starts; await stop() before process shutdown. */

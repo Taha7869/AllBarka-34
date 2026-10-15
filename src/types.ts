@@ -8,6 +8,8 @@ export interface ProductBadge {
 
 export interface Product {
   id: string;
+  /** Purchase-time pricing fingerprint, including direct Console edits. */
+  catalogRevision?: string;
   /** Owner-editable catalogue aliases; legacy localized fields remain compatible. */
   name?: string;
   nameUr?: string;

@@ -5,11 +5,12 @@ export const CUSTOM_HAMPER_PRODUCT_ID = 'custom-hamper';
 export const HAMPER_PORTION_GRAMS = 200;
 export const HAMPER_SELECTION_IDS = ['pista', 'kaju', 'badam', 'akhroot', 'khubani', 'alubukhara', 'kishmish', 'khajoor'] as const;
 
-export const HAMPER_BOXES = [
+export interface HamperBox { id: 'box-wood' | 'box-velvet' | 'box-tin'; name_en: string; name_ur: string; name_ar: string; price: number; minSelections: number; maxSelections: number; image: string; active?: boolean; catalogRevision?: string }
+export const HAMPER_BOXES: HamperBox[] = [
   { id: 'box-wood', name_en: 'Sheesham Artisan Wooden Chest', name_ur: 'شیشم کی کاریگرانہ لکڑی کی صندوقچی', name_ar: 'صندوق خشبي حرفي من خشب الشيشم', price: 1800, minSelections: 4, maxSelections: 6, image: '/images/generated/hamper-sheesham-chest-v1.webp' },
   { id: 'box-velvet', name_en: 'Royal Emerald Velvet Coffer', name_ur: 'شاہی زمردی مخملی صندوقچی', name_ar: 'صندوق ملكي من المخمل الزمردي', price: 1400, minSelections: 3, maxSelections: 5, image: '/images/generated/hamper-emerald-coffer-v1.webp' },
   { id: 'box-tin', name_en: 'Heritage Gold Keepsake Tin', name_ur: 'سنہری یادگاری دھاتی ڈبہ', name_ar: 'علبة تذكارية ذهبية معدنية', price: 950, minSelections: 3, maxSelections: 4, image: '/images/generated/hamper-gold-tin-v1.webp' },
-] as const;
+];
 
 export interface HamperConfiguration {
   version: 1;
@@ -32,6 +33,7 @@ export interface ResolvedHamper {
 
 /** Retail cost for an actual canonical product's 200g hamper portion. */
 export function hamperSelectionPrice(product: Product): number | null {
+  if (product.active === false || product.quoteOnly === true) return null;
   const price = product.prices['250g'];
   if (!Number.isSafeInteger(price) || price <= 0) return null;
   const portionPrice = Math.round(price * HAMPER_PORTION_GRAMS / 250);
@@ -52,11 +54,11 @@ function note(value: unknown, limit: number): string | null {
  * Shared storefront/server resolver. Never trusts browser prices, names or mass.
  * Reported weight is the contents' net weight; packaging has no invented mass.
  */
-export function resolveHamper(value: unknown, products: Product[] = PRODUCTS): ResolvedHamper | null {
+export function resolveHamper(value: unknown, products: Product[] = PRODUCTS, boxes: HamperBox[] = HAMPER_BOXES): ResolvedHamper | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const input = value as Record<string, unknown>;
   if (input.version !== 1) return null;
-  const box = HAMPER_BOXES.find(option => option.id === input.boxId);
+  const box = boxes.find(option => option.id === input.boxId && option.active !== false);
   if (!box || !Array.isArray(input.selections) || input.selections.length < box.minSelections || input.selections.length > box.maxSelections) return null;
   if (input.selections.some(id => typeof id !== 'string' || !HAMPER_SELECTION_IDS.includes(id as typeof HAMPER_SELECTION_IDS[number]))) return null;
   if (new Set(input.selections).size !== input.selections.length) return null;

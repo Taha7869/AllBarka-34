@@ -1,3 +1,4 @@
+import { useCatalogProducts } from '../contexts/CatalogContext';
 import { getLocalized } from '../utils/localize';
 import React, { useState, useEffect } from 'react';
 import { calculateOrderSummary, GIFT_WRAP_FEE, type PricingSummary } from '../lib/pricing';
@@ -48,29 +49,17 @@ import { useCart, parsePrice, formatPrice } from '../contexts/CartContext';
 import { STORE_CONFIG } from '../config/store';
 import { buildOrderTrackingWhatsAppUrl, buildHumanSupportWhatsAppUrl } from '../config/contacts';
 import { placeOrder, getOrderQuote, type OrderPayload } from '../lib/order';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../lib/firebase';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { PRODUCTS } from '../data/products';
-import { useLiveCatalog } from '../hooks/useLiveCatalog';
+import { fetchLoyaltyProfile } from '../lib/loyaltyClient';
+import type { IssuedPatronReward } from '../lib/rewardPolicy';
 
 // Popular Lahore Neighborhoods for Rapid Delivery Pinning
 
 const PREFERRED_PAYMENT_KEY = 'allbarka_preferred_payment';
 const DELIVERY_CITIES = ['Lahore', 'Karachi', 'Islamabad', 'Rawalpindi', 'Faisalabad', 'Peshawar', 'Multan'];
 const isPlaceholderCity = (city: string) => /^(other city|outside lahore|nationwide)$/i.test(city.trim());
-
-export interface PaymentDetails {
-  bankName?: string;
-  accountTitle?: string;
-  accountNumber?: string;
-  iban?: string;
-  raastId?: string;
-  wallets?: Array<{ label: string; number: string }>;
-  updatedAt?: number;
-  version?: string;
-}
 
 export type CheckoutStep = 'details' | 'shipping' | 'payment' | 'review' | 'success';
 
@@ -81,6 +70,7 @@ interface CheckoutPageProps {
 }
 
 export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth: propsOnOpenAuth }: CheckoutPageProps = {}) {
+  const PRODUCTS = useCatalogProducts();
   const navigate = useNavigate();
   const { cartItems, clearCart, shippingCity, setShippingCity } = useCart();
   const { patronProfile, currentUser, loading: authLoading } = useAuth();
@@ -90,29 +80,16 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   const mediaCover = useProductMediaCover();
   const online = useOnlineStatus();
   const reduceMotion = useReducedMotion();
-  const catalog = useLiveCatalog();
   const [restoredDraft] = useState(readCheckoutDraft);
   const [draftNotice, setDraftNotice] = useState(!!restoredDraft);
-  const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
-
-  useEffect(() => {
-    getDoc(doc(db, 'content', 'paymentDetails'))
-      .then(snap => {
-        if (snap.exists()) {
-          setPaymentDetails(snap.data() as PaymentDetails);
-        }
-      })
-      .catch(console.error);
-  }, []);
-
   const checkoutAttemptRef = React.useRef<CheckoutAttempt | null>(null);
   const submissionRequestRef = React.useRef<AbortController | null>(null);
   const couponRequestRef = React.useRef<AbortController | null>(null);
   const identityRef = React.useRef<string | null>(null);
   identityRef.current = currentUser?.uid || null;
   const isWholesale = false;
-  // Active rewards are displayed by the account; none is automatically selected for an order.
-  const selectedRewardId: string | null = null;
+  // Customers explicitly choose a reward; the server validates its benefit again.
+  const [selectedRewardId, setSelectedRewardId] = useState<string | null>(null);
 
   // 1. All Hooks declared unconditionally at the top (Rules of Hooks)
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('details');
@@ -158,8 +135,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   const [couponSuccessMsg, setCouponSuccessMsg] = useState<string | null>(null);
   const [couponErrorMsg, setCouponErrorMsg] = useState<string | null>(null);
   const [isQuoteRequestMode, setIsQuoteRequestMode] = useState(false);
-  const [activeReward, setActiveReward] = useState<any>(null);
-  const [rewardDetails, setRewardDetails] = useState<any>(null);
+  const [activeRewards, setActiveRewards] = useState<IssuedPatronReward[]>([]);
 
   const quoteKey = checkoutQuoteKey({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping, discountCode: appliedCoupon, rewardId: selectedRewardId, isWholesale }, currentUser?.uid || null);
   const pricingKeyRef = React.useRef(quoteKey);
@@ -196,7 +172,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
       } finally { if (active) setQuoteLoading(false); }
     }, 250);
     return () => { active = false; clearTimeout(timer); controller.abort(); };
-  }, [quoteKey, quoteRefresh, online, authLoading, currentUser, activeShippingMethod, appliedCoupon, cartItems, formData.giftWrapping, formData.city, selectedRewardId, isWholesale, t]);
+  }, [quoteKey, quoteRefresh, online, authLoading, currentUser, activeShippingMethod, appliedCoupon, cartItems, formData.giftWrapping, formData.city, selectedRewardId, isWholesale, t, PRODUCTS]);
   useEffect(() => {
     if (currentStep === 'success' || orderSuccessResult) return;
     if (!formData.name && !formData.phone && !formData.address && !formData.giftMessage && !formData.instructions) return;
@@ -232,25 +208,15 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
 
   // Load active rewards safely
   useEffect(() => {
-    if (currentUser) {
-      let isMounted = true;
-      import('../data/rewards').then(mod => {
-        if (isMounted) setRewardDetails(mod.REWARDS);
-      }).catch(console.error);
-
-      import('firebase/firestore').then(({ collection, query, where, getDocs }) => {
-        import('../lib/firebase').then(({ db }) => {
-          const arQuery = query(collection(db, "users", currentUser.uid, "activeRewards"), where("status", "==", "ACTIVE"));
-          getDocs(arQuery).then(snap => {
-            if (isMounted && !snap.empty) {
-              setActiveReward(snap.docs[0].data());
-            }
-          }).catch(e => console.error(e));
-        }).catch(console.error);
-      }).catch(console.error);
-
-      return () => { isMounted = false; };
-    }
+    let active = true;
+    const controller = new AbortController();
+    setSelectedRewardId(null);
+    setActiveRewards([]);
+    if (currentUser) fetchLoyaltyProfile(currentUser, controller.signal).then(profile => {
+      if (active) setActiveRewards(profile.activeRewards.filter(reward => reward.id && reward.expiresAt > Date.now()
+        && ['free_shipping', 'gift_packaging'].includes(reward.rewardId)));
+    }).catch(() => { /* Optional rewards never prevent an ordinary checkout. */ });
+    return () => { active = false; controller.abort(); };
   }, [currentUser]);
 
   const onClose = propsOnClose || (() => { navigate('/shop'); });
@@ -265,9 +231,9 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
     setTimeout(() => {
       const el = document.getElementById(fieldId);
       if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
         el.focus();
-        el.classList.add('animate-error-shake');
+        if (!reduceMotion) el.classList.add('animate-error-shake');
         setTimeout(() => {
           el.classList.remove('animate-error-shake');
         }, 500);
@@ -279,20 +245,20 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   if ((!cartItems || cartItems.length === 0) && currentStep !== 'success' && !orderSuccessResult) {
     return (
       <div className="min-h-[60vh] bg-[var(--color-cream,#FAF9F5)] pt-16 pb-12 flex flex-col items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-3xl p-8 shadow-sm border border-[var(--color-gold,#B8935F)]/20 text-center">
+        <div className="max-w-md w-full bg-[var(--color-surface,#FDFBF7)] rounded-3xl p-8 shadow-sm border border-[var(--color-gold,#B8935F)]/20 text-center">
           <div className="w-20 h-20 bg-[var(--color-cream,#FAF9F5)] rounded-full flex items-center justify-center mx-auto mb-6">
             <ShoppingBag size={32} className="text-[var(--color-gold,#B8935F)]" />
           </div>
-          <h2 className="text-2xl font-serif font-black text-[var(--color-ink,#1F120F)] mb-3">Your Box is Empty</h2>
+          <h2 className="text-2xl font-serif font-black text-[var(--color-ink,#1F120F)] mb-3">{t('checkout.emptyTitle')}</h2>
           <p className="text-[13px] text-[var(--color-ink,#1F120F)]/70 mb-8 leading-relaxed">
-            It looks like you haven't added any luxury items to your box yet. Discover our latest collections.
+            {t('checkout.emptyCopy')}
           </p>
           <button
             type="button"
             onClick={() => navigate('/shop')}
             className="w-full py-3.5 rounded-full bg-[var(--color-ink,#1F120F)] text-white font-bold text-xs uppercase tracking-[0.2em] hover:bg-[var(--color-gold,#B8935F)] transition-colors cursor-pointer"
           >
-            Browse Collections
+            {t('checkout.browse')}
           </button>
         </div>
       </div>
@@ -305,16 +271,16 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   const handleBlur = (field: string) => {
     let err = '';
     if (field === 'name') {
-      if (!formData.name.trim() || formData.name.trim().length < 3) err = 'Full name must be at least 3 characters.';
+      if (!formData.name.trim() || formData.name.trim().length < 3) err = 'checkout.nameError';
     }
     if (field === 'phone') {
       const cleanPhone = formData.phone.replace(/[\s-]/g, '');
-      const pkPhoneRegex = /^((\+92)|(0092))-{0,1}\d{3}-{0,1}\d{7}$|^\d{11}$|^\d{4}-\d{7}$/;
-      if (!cleanPhone) err = 'Phone number is required.';
-      else if (!pkPhoneRegex.test(cleanPhone)) err = 'Please enter a valid Pakistani number (e.g., 03001234567)';
+      const pkPhoneRegex = /^(03\d{9}|\+923\d{9})$/;
+      if (!cleanPhone) err = 'checkout.phoneRequired';
+      else if (!pkPhoneRegex.test(cleanPhone)) err = 'checkout.phoneError';
     }
     if (field === 'address') {
-      if (!formData.address.trim() || formData.address.trim().length < 8) err = 'Please provide a complete street address.';
+      if (!formData.address.trim() || formData.address.trim().length < 8) err = 'checkout.addressError';
     }
     if (err) {
       setErrors(prev => ({ ...prev, [field]: err }));
@@ -337,16 +303,16 @@ const handleInputChange = (field: string, value: any) => {
     let firstErrorId = '';
 
     if (!formData.name.trim() || formData.name.trim().length < 3) {
-      errs.name = 'Please enter your full recipient name (min 3 characters).';
+      errs.name = 'checkout.nameError';
       if (!firstErrorId) firstErrorId = 'checkout-field-name';
     }
     const cleanPhone = formData.phone.replace(/[\s-]/g, '');
     const isPkPhone = /^(03\d{9}|\+923\d{9})$/.test(cleanPhone);
     if (!cleanPhone) {
-      errs.phone = 'Please enter your phone or WhatsApp number.';
+      errs.phone = 'checkout.phoneRequired';
       if (!firstErrorId) firstErrorId = 'checkout-field-phone';
     } else if (!isPkPhone) {
-      errs.phone = 'Please enter an 11-digit Pakistani mobile number (e.g., 03160666083).';
+      errs.phone = 'checkout.phoneError';
       if (!firstErrorId) firstErrorId = 'checkout-field-phone';
     }
 
@@ -365,11 +331,11 @@ const handleInputChange = (field: string, value: any) => {
     let firstErrorId = '';
 
     if (!formData.address.trim() || formData.address.trim().length < 8) {
-      errs.address = 'Please enter a complete delivery address with house, street, or sector details.';
+      errs.address = 'checkout.addressError';
       firstErrorId = 'checkout-field-address';
     }
     if (formData.city.trim().length < 2 || isPlaceholderCity(formData.city)) {
-      errs.city = t('shipping.enterCity');
+      errs.city = 'shipping.enterCity';
       if (!firstErrorId) firstErrorId = 'checkout-field-city';
     }
     setErrors(errs);
@@ -586,7 +552,7 @@ const handleInputChange = (field: string, value: any) => {
   };
 
   return (
-    <div className="boutique-checkout w-full max-w-6xl mx-auto grid lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] items-start gap-8 py-10 px-4 sm:px-6 relative z-10">
+    <div dir={language === 'en' ? 'ltr' : 'rtl'} className="boutique-checkout w-full max-w-6xl mx-auto grid lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] items-start gap-8 py-10 px-4 sm:px-6 relative z-10">
 
       {/* Main Checkout Modal Container: 24px Outer Padding without restrictive max-h */}
       <motion.div
@@ -599,40 +565,40 @@ const handleInputChange = (field: string, value: any) => {
         <div className="absolute top-0 right-0 w-44 h-44 bg-[var(--color-gold,#B8935F)]/10 rounded-full blur-3xl pointer-events-none" />
 
         {/* 1. Header (24px padding on sides) */}
-        <div className="px-4 sm:px-6 py-4.5 border-b border-[var(--color-gold,#B8935F)]/20 bg-white/85 backdrop-blur-md flex items-center justify-between shrink-0">
+        <div className="px-4 sm:px-6 py-4.5 border-b border-[var(--color-gold,#B8935F)]/20 bg-[var(--color-surface,#FDFBF7)]/85 backdrop-blur-md flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[var(--color-ink,#1F120F)] border border-[var(--color-gold,#B8935F)]/60 flex items-center justify-center text-[var(--color-gold,#B8935F)] shadow-xs shrink-0">
               <ShoppingBag size={18} className="text-[var(--color-gold,#B8935F)]" />
             </div>
             <div>
               <h3 className="text-lg font-serif font-bold text-[var(--color-ink,#1F120F)] leading-tight">
-                Curated Checkout
+                {t('checkout.heading')}
               </h3>
               <p className="text-[9.5px] text-[var(--color-gold,#B8935F)] font-bold uppercase tracking-widest leading-none mt-0.5">
-                AllBarka Luxury Order
+                {t('checkout.orderHeading')}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-[var(--color-ink,#1F120F)]/5 hover:bg-[var(--color-ink,#1F120F)]/10 text-[var(--color-ink,#1F120F)] flex items-center justify-center transition-colors cursor-pointer"
-            aria-label="Close checkout"
+            className="w-11 h-11 rounded-full bg-[var(--color-ink,#1F120F)]/5 hover:bg-[var(--color-ink,#1F120F)]/10 text-[var(--color-ink,#1F120F)] flex items-center justify-center transition-colors cursor-pointer"
+            aria-label={t('checkout.close')}
           >
             <X size={16} />
           </button>
         </div>
 
         {/* 2. Vertical Multi-Step Process Header */}
-        <div className="px-4 sm:px-6 pt-3 pb-2 border-b border-[var(--color-gold,#B8935F)]/15 bg-white/50 shrink-0">
+        <div className="px-4 sm:px-6 pt-3 pb-2 border-b border-[var(--color-gold,#B8935F)]/15 bg-[var(--color-surface,#FDFBF7)]/50 shrink-0">
           <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
             {/* Step 1 */}
             <button
               type="button"
               onClick={() => setCurrentStep('details')}
-              className={`flex min-h-11 items-center justify-center sm:justify-start gap-1.5 sm:gap-2 py-1.5 sm:py-2 px-1 sm:px-2.5 rounded-xl border text-center sm:text-left transition-all cursor-pointer ${
+              className={`flex min-h-11 items-center justify-center sm:justify-start gap-1.5 sm:gap-2 py-1.5 sm:py-2 px-1 sm:px-2.5 rounded-xl border text-center sm:text-start transition-all cursor-pointer ${
                 currentStep === 'details'
                   ? 'bg-[#1F120F] text-[#FDFBF7] border-[#B8935F] shadow-xs'
-                  : 'bg-white/80 text-[#1F120F]/70 border-[#B8935F]/20 hover:border-[#B8935F]/40'
+                  : 'bg-[var(--color-surface,#FDFBF7)]/80 text-[#1F120F]/70 border-[#B8935F]/20 hover:border-[#B8935F]/40'
               }`}
             >
               <div className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0 ${
@@ -640,17 +606,17 @@ const handleInputChange = (field: string, value: any) => {
               }`}>
                 1
               </div>
-              <span className="text-[9.5px] sm:text-[10.5px] font-bold uppercase tracking-wider">Details</span>
+              <span className="text-[9.5px] sm:text-[10.5px] font-bold uppercase tracking-wider">{t('checkout.stepDetails')}</span>
             </button>
 
             {/* Step 2 */}
             <button
               type="button"
               onClick={() => { if (validateStep1(true)) setCurrentStep('shipping'); }}
-              className={`flex min-h-11 items-center justify-center sm:justify-start gap-1.5 sm:gap-2 py-1.5 sm:py-2 px-1 sm:px-2.5 rounded-xl border text-center sm:text-left transition-all cursor-pointer ${
+              className={`flex min-h-11 items-center justify-center sm:justify-start gap-1.5 sm:gap-2 py-1.5 sm:py-2 px-1 sm:px-2.5 rounded-xl border text-center sm:text-start transition-all cursor-pointer ${
                 currentStep === 'shipping'
                   ? 'bg-[#1F120F] text-[#FDFBF7] border-[#B8935F] shadow-xs'
-                  : 'bg-white/80 text-[#1F120F]/70 border-[#B8935F]/20 hover:border-[#B8935F]/40'
+                  : 'bg-[var(--color-surface,#FDFBF7)]/80 text-[#1F120F]/70 border-[#B8935F]/20 hover:border-[#B8935F]/40'
               }`}
             >
               <div className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0 ${
@@ -658,7 +624,7 @@ const handleInputChange = (field: string, value: any) => {
               }`}>
                 2
               </div>
-              <span className="text-[9.5px] sm:text-[10.5px] font-bold uppercase tracking-wider">Shipping</span>
+              <span className="text-[9.5px] sm:text-[10.5px] font-bold uppercase tracking-wider">{t('checkout.stepShipping')}</span>
             </button>
 
             {/* Step 3 */}
@@ -669,10 +635,10 @@ const handleInputChange = (field: string, value: any) => {
                 if (!validateStep2(true)) { setCurrentStep('shipping'); return; }
                 setCurrentStep(isQuoteRequestMode ? 'review' : 'payment');
               }}
-              className={`flex min-h-11 items-center justify-center sm:justify-start gap-1.5 sm:gap-2 py-1.5 sm:py-2 px-1 sm:px-2.5 rounded-xl border text-center sm:text-left transition-all cursor-pointer ${
+              className={`flex min-h-11 items-center justify-center sm:justify-start gap-1.5 sm:gap-2 py-1.5 sm:py-2 px-1 sm:px-2.5 rounded-xl border text-center sm:text-start transition-all cursor-pointer ${
                 (currentStep === 'payment' || currentStep === 'review')
                   ? 'bg-[#1F120F] text-[#FDFBF7] border-[#B8935F] shadow-xs'
-                  : 'bg-white/80 text-[#1F120F]/70 border-[#B8935F]/20 hover:border-[#B8935F]/40'
+                  : 'bg-[var(--color-surface,#FDFBF7)]/80 text-[#1F120F]/70 border-[#B8935F]/20 hover:border-[#B8935F]/40'
               }`}
             >
               <div className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0 ${
@@ -680,7 +646,7 @@ const handleInputChange = (field: string, value: any) => {
               }`}>
                 3
               </div>
-              <span className="text-[9.5px] sm:text-[10.5px] font-bold uppercase tracking-wider">Review</span>
+              <span className="text-[9.5px] sm:text-[10.5px] font-bold uppercase tracking-wider">{t('checkout.stepReview')}</span>
             </button>
           </div>
         </div>
@@ -719,7 +685,7 @@ const handleInputChange = (field: string, value: any) => {
                         autoComplete="off"
                         maxLength={60}
                         placeholder={t('checkout.promoPlaceholder')}
-                        className="flex-1 bg-white dark:bg-[#1A201E] border border-[var(--color-gold,#B8935F)]/30 rounded-xl py-2.5 px-3.5 text-base sm:text-sm min-h-[44px] font-semibold focus:outline-none focus:border-[var(--color-gold,#B8935F)] text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7] uppercase placeholder:normal-case placeholder:text-[var(--color-ink,#1F120F)]/30 dark:placeholder:text-[#FDFBF7]/30"
+                        className="flex-1 bg-[var(--color-surface,#FDFBF7)] dark:bg-[#1A201E] border border-[var(--color-gold,#B8935F)]/30 rounded-xl py-2.5 px-3.5 text-base sm:text-sm min-h-[44px] font-semibold focus:outline-none focus:border-[var(--color-gold,#B8935F)] text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7] uppercase placeholder:normal-case placeholder:text-[var(--color-ink,#1F120F)]/30 dark:placeholder:text-[#FDFBF7]/30"
                       />
                       <button
                         type="button"
@@ -752,12 +718,12 @@ const handleInputChange = (field: string, value: any) => {
 
           {/* Skeleton State on Submitting Order */}
           {isSubmittingOrder && (
-            <div className="p-4 rounded-2xl bg-white border border-[var(--color-gold,#B8935F)]/30 space-y-3">
+            <div className="p-4 rounded-2xl bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/30 space-y-3">
               <div className="h-4 w-36 rounded luxury-skeleton" />
               <div className="h-8 w-full rounded-xl luxury-skeleton" />
               <div className="h-14 w-full rounded-xl luxury-skeleton" />
               <p className="text-center text-[10px] uppercase font-bold tracking-widest text-[var(--color-gold,#B8935F)] animate-pulse pt-2">
-                Compiling WhatsApp Encrypted Receipt...
+                {t('checkout.preparing')}
               </p>
             </div>
           )}
@@ -791,36 +757,36 @@ const handleInputChange = (field: string, value: any) => {
                             </span>
                           </div>
                           <p className="text-[9.5px] text-[var(--color-gold,#B8935F)] tracking-wide">
-                            Pre-filled recipient info & VIP loyalty points enabled
+                            {t('checkout.profilePrefilled')}
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-1 text-[10px] font-bold text-[var(--color-gold,#B8935F)] shrink-0">
                         <ShieldCheck size={14} />
-                        <span>Verified</span>
+                        <span>{t('checkout.signedIn')}</span>
                       </div>
                     </div>
                   ) : (
-                    <div className="p-3 rounded-2xl bg-white border border-[var(--color-gold,#B8935F)]/30 shadow-2xs flex items-center justify-between gap-2.5">
+                    <div className="p-3 rounded-2xl bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/30 shadow-2xs flex items-center justify-between gap-2.5">
                       <div className="flex items-center gap-2 min-w-0">
                         <div className="w-7 h-7 rounded-xl bg-[var(--color-cream,#FAF9F5)] border border-[var(--color-gold,#B8935F)]/25 flex items-center justify-center text-[var(--color-gold,#B8935F)] shrink-0">
                           <ShoppingBag size={13} />
                         </div>
                         <div className="min-w-0">
                           <span className="text-[11px] font-bold text-[var(--color-ink,#1F120F)] block">
-                            Checking out as Guest
+                            {t('checkout.guest')}
                           </span>
                           <span className="text-[9.5px] text-[var(--color-ink-muted,#5A5A5A)]">
-                            Instant express order without account
+                            {t('checkout.guestHint')}
                           </span>
                         </div>
                       </div>
                       <button
                         type="button"
                         onClick={() => handleOpenAuth('signin')}
-                        className="px-2.5 py-1 rounded-lg bg-[var(--color-cream,#FAF9F5)] hover:bg-[#B8935F] text-[var(--color-ink,#1F120F)] hover:text-white border border-[var(--color-gold,#B8935F)]/35 text-[10px] font-bold tracking-wider transition-colors shrink-0 cursor-pointer"
+                        className="min-h-11 px-2.5 py-1 rounded-lg bg-[var(--color-cream,#FAF9F5)] hover:bg-[#B8935F] text-[var(--color-ink,#1F120F)] hover:text-white border border-[var(--color-gold,#B8935F)]/35 text-[10px] font-bold tracking-wider transition-colors shrink-0 cursor-pointer"
                       >
-                        Sign In
+                        {t('checkout.signIn')}
                       </button>
                     </div>
                   )}
@@ -830,27 +796,32 @@ const handleInputChange = (field: string, value: any) => {
                     <div className="p-3 rounded-2xl bg-[#043327]/10 border border-[#D4AF37]/40 text-[#043327] flex items-center justify-between text-xs font-semibold mb-3">
                       <div className="flex items-center gap-2">
                         <Sparkles size={14} className="text-[#D4AF37]" />
-                        <span>Welcome back, <strong>{patronProfile.name}</strong>! Your saved Lahore address is auto-filled.</span>
+                        <span>{t('checkout.savedAddress')}</span>
                       </div>
-                      <span className="text-[10px] font-black uppercase text-[#D4AF37] bg-white px-2 py-0.5 rounded-full border border-[#D4AF37]/30">Auto-Filled</span>
+                      <span className="text-[10px] font-black uppercase text-[#D4AF37] bg-[var(--color-surface,#FDFBF7)] px-2 py-0.5 rounded-full border border-[#D4AF37]/30">{t('checkout.autoFilled')}</span>
                     </div>
                   )}
 
                   {/* Recipient Full Name */}
                   <div className="space-y-1.5">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)]/80">
-                      Recipient Full Name *
+                    <label htmlFor="checkout-field-name" className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)]/80">
+                      {t('checkout.nameLabel')} *
                     </label>
                     <div className="relative">
-                      <User className="absolute left-3.5 top-3 text-[var(--color-gold,#B8935F)]" size={16} />
+                      <User className="absolute start-3.5 top-3 text-[var(--color-gold,#B8935F)]" size={16} />
                       <input
                         id="checkout-field-name"
+                        name="name"
+                        autoComplete="shipping name"
+                        required
+                        aria-invalid={!!errors.name}
+                        aria-describedby={errors.name ? 'checkout-name-error' : undefined}
                         type="text"
                         value={formData.name || ''}
                         onChange={(e) => handleInputChange('name', e.target.value)}
                         onBlur={() => handleBlur('name')}
-                        placeholder="e.g. Taha Ishaque"
-                        className={`w-full bg-white border rounded-xl py-3 pl-10 pr-3.5 text-base sm:text-sm font-semibold text-[var(--color-ink,#1F120F)] placeholder:text-[var(--color-ink,#1F120F)]/30 focus:outline-none transition-all ${
+                        placeholder={t('checkout.namePlaceholder')}
+                        className={`w-full bg-[var(--color-surface,#FDFBF7)] border rounded-xl py-3 ps-10 pe-3.5 text-base sm:text-sm font-semibold text-[var(--color-ink,#1F120F)] placeholder:text-[var(--color-ink,#1F120F)]/30 focus:outline-none transition-all ${
                           errors.name
                             ? 'border-rose-500 ring-2 ring-rose-400/40 bg-rose-50/30 shadow-xs'
                             : 'border-[var(--color-gold,#B8935F)]/30 focus:border-[var(--color-gold,#B8935F)] focus:ring-1 focus:ring-[var(--color-gold,#B8935F)]'
@@ -858,29 +829,34 @@ const handleInputChange = (field: string, value: any) => {
                       />
                     </div>
                     {errors.name && (
-                      <p className="text-[10px] text-rose-600 font-semibold flex items-center gap-1 mt-1">
+                      <p id="checkout-name-error" role="alert" className="text-[10px] text-rose-700 dark:text-rose-300 font-semibold flex items-center gap-1 mt-1">
                         <AlertCircle size={12} className="shrink-0" />
-                        <span>{errors.name}</span>
+                        <span>{t(errors.name)}</span>
                       </p>
                     )}
                   </div>
 
                   {/* Phone / WhatsApp */}
                   <div className="space-y-1.5">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)]/80">
-                      Phone / WhatsApp Number *
+                    <label htmlFor="checkout-field-phone" className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)]/80">
+                      {t('checkout.phoneLabel')} *
                     </label>
                     <div className="relative">
-                      <Phone className="absolute left-3.5 top-3 text-[var(--color-gold,#B8935F)]" size={16} />
+                      <Phone className="absolute start-3.5 top-3 text-[var(--color-gold,#B8935F)]" size={16} />
                       <input
                         id="checkout-field-phone"
+                        name="phone"
+                        autoComplete="shipping tel"
+                        required
+                        aria-invalid={!!errors.phone}
+                        aria-describedby={errors.phone ? 'checkout-phone-error' : 'checkout-phone-hint'}
                         type="tel"
                         dir="ltr"
                         value={formData.phone || ''}
                         onChange={(e) => handleInputChange('phone', e.target.value)}
                         onBlur={() => handleBlur('phone')}
-                        placeholder="e.g. 03160666083"
-                        className={`w-full bg-white border rounded-xl py-3 pl-10 pr-3.5 text-base sm:text-sm font-semibold text-[var(--color-ink,#1F120F)] placeholder:text-[var(--color-ink,#1F120F)]/30 focus:outline-none transition-all ${
+                        placeholder={t('checkout.phonePlaceholder')}
+                        className={`w-full bg-[var(--color-surface,#FDFBF7)] border rounded-xl py-3 ps-10 pe-3.5 text-base sm:text-sm font-semibold text-[var(--color-ink,#1F120F)] placeholder:text-[var(--color-ink,#1F120F)]/30 focus:outline-none transition-all ${
                           errors.phone
                             ? 'border-rose-500 ring-2 ring-rose-400/40 bg-rose-50/30 shadow-xs'
                             : 'border-[var(--color-gold,#B8935F)]/30 focus:border-[var(--color-gold,#B8935F)] focus:ring-1 focus:ring-[var(--color-gold,#B8935F)]'
@@ -888,40 +864,42 @@ const handleInputChange = (field: string, value: any) => {
                       />
                     </div>
                     {errors.phone ? (
-                      <p className="text-[10px] text-rose-600 font-semibold flex items-center gap-1 mt-1">
+                      <p id="checkout-phone-error" role="alert" className="text-[10px] text-rose-700 dark:text-rose-300 font-semibold flex items-center gap-1 mt-1">
                         <AlertCircle size={12} className="shrink-0" />
-                        <span>{errors.phone}</span>
+                        <span>{t(errors.phone)}</span>
                       </p>
                     ) : (
-                      <p className="text-[10px] text-[var(--color-ink,#1F120F)]/60 mt-1">
-                        Used for dispatch confirmation & live courier delivery updates.
+                      <p id="checkout-phone-hint" className="text-[10px] text-[var(--color-ink,#1F120F)]/60 mt-1">
+                        {t('checkout.phoneHint')}
                       </p>
                     )}
                   </div>
 
                   {/* Special Delivery Notes */}
                   <div className="space-y-1.5">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)]/80">
-                      Special Delivery Instructions (Optional)
+                    <label htmlFor="checkout-instructions" className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)]/80">
+                      {t('checkout.instructionsLabel')}
                     </label>
                     <textarea
+                      id="checkout-instructions"
+                      name="deliveryInstructions"
                       maxLength={300}
                       dir="auto"
                       value={formData.instructions || ''}
                       onChange={(e) => handleInputChange('instructions', e.target.value)}
-                      placeholder="e.g. Please call before arrival or leave with gate security."
-                      className="w-full bg-white border border-[var(--color-gold,#B8935F)]/30 rounded-xl py-2.5 px-3.5 text-base sm:text-sm font-medium text-[var(--color-ink,#1F120F)] placeholder:text-[var(--color-ink,#1F120F)]/30 h-18 resize-none focus:outline-none focus:border-[var(--color-gold,#B8935F)]"
+                      placeholder={t('checkout.instructionsPlaceholder')}
+                      className="w-full bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/30 rounded-xl py-2.5 px-3.5 text-base sm:text-sm font-medium text-[var(--color-ink,#1F120F)] placeholder:text-[var(--color-ink,#1F120F)]/30 h-18 resize-none focus:outline-none focus:border-[var(--color-gold,#B8935F)]"
                     />
                   </div>
 
                   {/* Order Overview Summary Card: 16px inner padding */}
-                  <div className="p-4 rounded-2xl bg-white border border-[var(--color-gold,#B8935F)]/25 space-y-2 shadow-2xs">
+                  <div className="p-4 rounded-2xl bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/25 space-y-2 shadow-2xs">
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-[10px] font-black uppercase tracking-wider text-[var(--color-ink,#1F120F)]/70">
-                        Selected Harvest Items
+                        {t('checkout.items')}
                       </span>
                       <span className="text-[11px] font-serif font-bold text-[var(--color-gold,#B8935F)]">
-                        {cartItems.length} {cartItems.length === 1 ? 'variety' : 'varieties'}
+                        {cartItems.length} {t('checkout.items')}
                       </span>
                     </div>
                     <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
@@ -942,7 +920,7 @@ const handleInputChange = (field: string, value: any) => {
                     onClick={handleProceedToStep2}
                     className="w-full py-3.5 rounded-full bg-[var(--color-ink,#1F120F)] text-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)] text-xs font-black uppercase tracking-widest hover:bg-[var(--color-ink,#1F120F)]/90 hover:shadow-[0_4px_20px_rgba(184,147,95,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                   >
-                    <span>Continue to Shipping & Address</span>
+                    <span>{t('checkout.continueDelivery')}</span>
                     <ArrowRight size={14} className="text-[var(--color-gold,#B8935F)]" />
                   </button>
                 </motion.div>
@@ -961,20 +939,25 @@ const handleInputChange = (field: string, value: any) => {
                   {/* Shipping Address with Locate on Map */}
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)]/80">
-                        Full Shipping Address *
+                      <label htmlFor="checkout-field-address" className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)]/80">
+                        {t('checkout.deliveryAddressLabel')} *
                       </label>
                     </div>
                     <div className="relative">
-                      <MapPin className="absolute left-3.5 top-3 text-[var(--color-gold,#B8935F)]" size={16} />
+                      <MapPin className="absolute start-3.5 top-3 text-[var(--color-gold,#B8935F)]" size={16} />
                       <input
                         id="checkout-field-address"
+                        name="address"
+                        autoComplete="shipping street-address"
+                        required
+                        aria-invalid={!!errors.address}
+                        aria-describedby={errors.address ? 'checkout-address-error' : undefined}
                         type="text"
                         value={formData.address || ''}
                         onChange={(e) => handleInputChange('address', e.target.value)}
                         onBlur={() => handleBlur('address')}
-                        placeholder="House #, Street #, Block / Phase, Landmark"
-                        className={`w-full bg-white border rounded-xl py-3 pl-10 pr-3.5 text-base sm:text-sm font-semibold text-[var(--color-ink,#1F120F)] placeholder:text-[var(--color-ink,#1F120F)]/30 focus:outline-none transition-all ${
+                        placeholder={t('checkout.addressPlaceholder')}
+                        className={`w-full bg-[var(--color-surface,#FDFBF7)] border rounded-xl py-3 ps-10 pe-3.5 text-base sm:text-sm font-semibold text-[var(--color-ink,#1F120F)] placeholder:text-[var(--color-ink,#1F120F)]/30 focus:outline-none transition-all ${
                           errors.address
                             ? 'border-rose-500 ring-2 ring-rose-400/40 bg-rose-50/30 shadow-xs'
                             : 'border-[var(--color-gold,#B8935F)]/30 focus:border-[var(--color-gold,#B8935F)] focus:ring-1 focus:ring-[var(--color-gold,#B8935F)]'
@@ -982,15 +965,15 @@ const handleInputChange = (field: string, value: any) => {
                       />
                     </div>
                     {errors.address && (
-                      <p className="text-[10px] text-rose-600 font-semibold flex items-center gap-1 mt-1">
+                      <p id="checkout-address-error" role="alert" className="text-[10px] text-rose-700 dark:text-rose-300 font-semibold flex items-center gap-1 mt-1">
                         <AlertCircle size={12} className="shrink-0" />
-                        <span>{errors.address}</span>
+                        <span>{t(errors.address)}</span>
                       </p>
                     )}
                     {formData.address.includes('http') && (
                       <p className="text-[10px] text-[var(--color-gold,#B8935F)] font-bold mt-1 flex items-center gap-1">
                         <CheckCircle size={12} className="text-[var(--color-gold,#B8935F)]" />
-                        Live Google Maps link attached for precision courier routing.
+                        {t('checkout.addressLink')}
                       </p>
                     )}
                   </div>
@@ -1002,24 +985,29 @@ const handleInputChange = (field: string, value: any) => {
                     </label>
                     <select
                       id="checkout-field-city"
+                      name="destinationCity"
+                      autoComplete="shipping address-level2"
+                      required
+                      aria-invalid={!!errors.city}
+                      aria-describedby={errors.city ? 'checkout-city-error' : undefined}
                       value={DELIVERY_CITIES.includes(formData.city) ? formData.city : 'Other City'}
                       onChange={(e) => { if (e.target.value === 'Other City') { setShippingCity('Other City'); handleInputChange('city', ''); } else handleInputChange('city', e.target.value); }}
-                      className="w-full bg-white border border-[var(--color-gold,#B8935F)]/30 rounded-xl py-3 px-3.5 text-base sm:text-sm min-h-[44px] font-bold text-[var(--color-ink,#1F120F)] focus:outline-none focus:border-[var(--color-gold,#B8935F)] shadow-2xs cursor-pointer"
+                      className="w-full bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/30 rounded-xl py-3 px-3.5 text-base sm:text-sm min-h-[44px] font-bold text-[var(--color-ink,#1F120F)] focus:outline-none focus:border-[var(--color-gold,#B8935F)] shadow-2xs cursor-pointer"
                     >
                       <option value="Lahore">{t('shipping.lahore')}</option>
-                      <option value="Karachi">Karachi</option>
-                      <option value="Islamabad">Islamabad</option>
-                      <option value="Rawalpindi">Rawalpindi</option>
-                      <option value="Faisalabad">Faisalabad</option>
-                      <option value="Peshawar">Peshawar</option>
-                      <option value="Multan">Multan</option>
+                      <option value="Karachi">{t('city.Karachi')}</option>
+                      <option value="Islamabad">{t('city.Islamabad')}</option>
+                      <option value="Rawalpindi">{t('city.Rawalpindi')}</option>
+                      <option value="Faisalabad">{t('city.Faisalabad')}</option>
+                      <option value="Peshawar">{t('city.Peshawar')}</option>
+                      <option value="Multan">{t('city.Multan')}</option>
                       <option value="Other City">{t('shipping.outside')}</option>
                     </select>
                     {!DELIVERY_CITIES.includes(formData.city) && <label className="block space-y-2 pt-2 text-xs font-semibold">
                       <span>{t('shipping.actualCity')}</span>
-                      <input type="text" name="city" autoComplete="address-level2" maxLength={60} value={formData.city} onChange={event => handleInputChange('city', event.target.value)} className="focus-ring min-h-11 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-base" />
+                      <input id="checkout-actual-city" type="text" name="city" autoComplete="shipping address-level2" required aria-invalid={!!errors.city} aria-describedby={errors.city ? 'checkout-city-error' : undefined} maxLength={60} value={formData.city} onChange={event => handleInputChange('city', event.target.value)} className="focus-ring min-h-11 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-base" />
                     </label>}
-                    {errors.city && <p role="alert" className="text-xs text-rose-600">{errors.city}</p>}
+                    {errors.city && <p id="checkout-city-error" role="alert" className="text-xs text-rose-600">{t(errors.city)}</p>}
                     {!isQuoteRequestMode && <p className="text-xs leading-relaxed">{t(formData.city === 'Lahore' ? 'shipping.lahoreRule' : 'shipping.nationwideRule')}</p>}
                   </div>
 
@@ -1035,17 +1023,18 @@ const handleInputChange = (field: string, value: any) => {
                   </div>
 
                   {/* Preferred Delivery Time Slot */}
-                  <div className="space-y-1.5">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)]/80 flex items-center gap-1.5">
+                  <div role="group" aria-labelledby="checkout-window-label" aria-describedby="checkout-window-hint" className="space-y-1.5">
+                    <p id="checkout-window-label" className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)]/80 flex items-center gap-1.5">
                       <Clock size={13} className="text-[var(--color-gold,#B8935F)]" />
-                      Preferred Delivery Window
-                    </label>
+                      {t('checkout.windowLabel')}
+                    </p>
+                    <p id="checkout-window-hint" className="text-xs text-[var(--color-ink-muted)]">{t('checkout.windowHint')}</p>
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       {[
-                        { id: 'Fastest Dispatch', label: 'Fastest Dispatch', icon: Zap },
-                        { id: 'Morning (10 AM - 2 PM)', label: 'Morning (10 AM - 2 PM)', icon: Sun },
-                        { id: 'Evening (3 PM - 7 PM)', label: 'Evening (3 PM - 7 PM)', icon: Sunset },
-                        { id: 'Night (7 PM - 10 PM)', label: 'Night (7 PM - 10 PM)', icon: Moon },
+                        { id: 'Fastest Dispatch', label: t('checkout.slotFastest'), icon: Zap },
+                        { id: 'Morning (10 AM - 2 PM)', label: t('checkout.slotMorning'), icon: Sun },
+                        { id: 'Evening (3 PM - 7 PM)', label: t('checkout.slotEvening'), icon: Sunset },
+                        { id: 'Night (7 PM - 10 PM)', label: t('checkout.slotNight'), icon: Moon },
                       ].map((slot) => {
                         const isSelected = formData.deliverySlot === slot.id;
                         const IconComp = slot.icon;
@@ -1053,11 +1042,12 @@ const handleInputChange = (field: string, value: any) => {
                           <button
                             key={slot.id}
                             type="button"
+                            aria-pressed={isSelected}
                             onClick={() => handleInputChange('deliverySlot', slot.id)}
-                            className={`p-2.5 rounded-xl border text-left flex items-center gap-2 transition-all cursor-pointer ${
+                            className={`min-h-11 p-2.5 rounded-xl border text-start flex items-center gap-2 transition-all cursor-pointer ${
                               isSelected
                                 ? 'bg-[var(--color-ink,#1F120F)] text-[var(--color-surface,#FDFBF7)] border-[var(--color-gold,#B8935F)] shadow-xs font-black'
-                                : 'bg-white text-[var(--color-ink,#1F120F)]/80 border-[var(--color-gold,#B8935F)]/25 hover:border-[var(--color-gold,#B8935F)]/60'
+                                : 'bg-[var(--color-surface,#FDFBF7)] text-[var(--color-ink,#1F120F)]/80 border-[var(--color-gold,#B8935F)]/25 hover:border-[var(--color-gold,#B8935F)]/60'
                             }`}
                           >
                             <IconComp size={13} className={isSelected ? 'text-[var(--color-gold,#B8935F)]' : 'text-[var(--color-ink,#1F120F)]/60'} />
@@ -1073,7 +1063,7 @@ const handleInputChange = (field: string, value: any) => {
                     className={`p-4 rounded-2xl border transition-all duration-300 ${
                       formData.giftWrapping
                         ? 'bg-[var(--color-surface,#FDFBF7)] border-[var(--color-gold,#B8935F)] shadow-[0_2px_15px_rgba(184,147,95,0.15)]'
-                        : 'bg-white border-[var(--color-gold,#B8935F)]/25 hover:border-[var(--color-gold,#B8935F)]/50'
+                        : 'bg-[var(--color-surface,#FDFBF7)] border-[var(--color-gold,#B8935F)]/25 hover:border-[var(--color-gold,#B8935F)]/50'
                     }`}
                   >
                     <label className="flex items-start gap-3 cursor-pointer select-none">
@@ -1088,32 +1078,34 @@ const handleInputChange = (field: string, value: any) => {
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-black text-[var(--color-ink,#1F120F)] flex items-center gap-1.5">
                             <Gift size={14} className="text-[var(--color-gold,#B8935F)]" />
-                            Premium Gift Box & Handwritten Card
+                            {t('checkout.giftLabel')}
                           </span>
                           <span className="text-xs font-bold text-[var(--color-gold,#B8935F)] font-serif shrink-0">
                             {isQuoteRequestMode ? t('checkout.quoteRequestTitle') : verifiedQuote?.freeGiftWrap ? t('checkout.promoFreeGiftWrap') : `+Rs. ${GIFT_WRAP_FEE}`}
                           </span>
                         </div>
                         <p className="text-[10px] text-[var(--color-ink,#1F120F)]/65 mt-0.5 leading-relaxed">
-                          Satin luxury gold ribbon, embossed presentation sleeve, and personalized calligraphed card.
+                          {t('checkout.giftDescription')}
                         </p>
                       </div>
                     </label>
 
                     {(formData.giftWrapping || verifiedQuote?.freeGiftWrap) && (
                       <div className="mt-3 pt-3 border-t border-[var(--color-gold,#B8935F)]/20">
-                        <label className="block text-[9.5px] font-black text-[var(--color-ink,#1F120F)]/75 uppercase tracking-widest mb-1">
-                          Custom Message on Card
+                        <label htmlFor="checkout-gift-message" className="block text-[9.5px] font-black text-[var(--color-ink,#1F120F)]/75 uppercase tracking-widest mb-1">
+                          {t('checkout.giftMessageLabel')}
                         </label>
                     <div className="mb-2 flex flex-wrap gap-2">{['birthday', 'thanks', 'celebration'].map(key => <button type="button" key={key} onClick={() => handleInputChange('giftMessage', t(`gift.${key}Message`))} className="focus-ring min-h-11 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs">{t(`gift.${key}`)}</button>)}</div>
                         <input
+                          id="checkout-gift-message"
+                          name="giftMessage"
                           type="text"
                           maxLength={300}
                           dir="auto"
                           value={formData.giftMessage || ''}
                           onChange={(e) => handleInputChange('giftMessage', e.target.value)}
-                          placeholder="e.g. Wishing you health and abundant prosperity! - From Ahmad"
-                          className="w-full bg-white border border-[var(--color-gold,#B8935F)]/35 rounded-xl py-2.5 px-3 text-base sm:text-sm font-medium focus:outline-none focus:border-[var(--color-gold,#B8935F)] text-[var(--color-ink,#1F120F)] placeholder:text-[var(--color-ink,#1F120F)]/30"
+                          placeholder={t('checkout.giftPlaceholder')}
+                          className="w-full bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/35 rounded-xl py-2.5 px-3 text-base sm:text-sm font-medium focus:outline-none focus:border-[var(--color-gold,#B8935F)] text-[var(--color-ink,#1F120F)] placeholder:text-[var(--color-ink,#1F120F)]/30"
                         />
                       </div>
                     )}
@@ -1124,10 +1116,10 @@ const handleInputChange = (field: string, value: any) => {
                     <button
                       type="button"
                       onClick={() => setCurrentStep('details')}
-                      className="px-4 py-3 rounded-full bg-white border border-[var(--color-gold,#B8935F)]/30 text-[var(--color-ink,#1F120F)] text-xs font-bold flex items-center gap-1.5 hover:bg-[var(--color-gold,#B8935F)]/10 cursor-pointer"
+                      className="px-4 py-3 rounded-full bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/30 text-[var(--color-ink,#1F120F)] text-xs font-bold flex items-center gap-1.5 hover:bg-[var(--color-gold,#B8935F)]/10 cursor-pointer"
                     >
                       <ArrowLeft size={14} />
-                      <span>Back</span>
+                      <span>{t('checkout.back')}</span>
                     </button>
                     <button
                       type="button"
@@ -1152,47 +1144,49 @@ const handleInputChange = (field: string, value: any) => {
                   className="space-y-4"
                 >
                   {/* Payment Protocol Selector */}
-                  {!isQuoteRequestMode && <div className="space-y-2">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)]/80">
-                      Payment Protocol *
-                    </label>
+                  {!isQuoteRequestMode && <div role="group" aria-labelledby="checkout-payment-label" className="space-y-2">
+                    <p id="checkout-payment-label" className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)]/80">
+                      {t('checkout.paymentLabel')}
+                    </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       <button
                         type="button"
+                        aria-pressed={selectedPayment === 'cod'}
                         onClick={() => {
                             setSelectedPayment('cod');
                             try { sessionStorage.setItem(PREFERRED_PAYMENT_KEY, 'cod'); } catch { /* private mode */ }
                           }}
-                        className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
+                        className={`p-3.5 rounded-2xl border text-start transition-all cursor-pointer ${
                           selectedPayment === 'cod'
                             ? 'bg-[var(--color-ink,#1F120F)] text-[var(--color-surface,#FDFBF7)] border-[var(--color-gold,#B8935F)] shadow-xs'
-                            : 'bg-white text-[var(--color-ink,#1F120F)] dark:bg-[#1A201E] dark:text-[#FDFBF7] border-[var(--color-gold,#B8935F)]/25 hover:border-[var(--color-gold,#B8935F)]/50'
+                            : 'bg-[var(--color-surface,#FDFBF7)] text-[var(--color-ink,#1F120F)] dark:bg-[#1A201E] dark:text-[#FDFBF7] border-[var(--color-gold,#B8935F)]/25 hover:border-[var(--color-gold,#B8935F)]/50'
                         }`}
                       >
                         <div className="flex items-center gap-2 mb-1">
                           <CreditCard size={15} className="text-[var(--color-gold,#B8935F)]" />
-                          <span className="text-xs font-black uppercase tracking-wider">Cash on Delivery</span>
+                          <span className="text-xs font-black uppercase tracking-wider">{t('checkout.cod')}</span>
                         </div>
                         <p className={`text-[10px] leading-snug ${selectedPayment === 'cod' ? 'text-[var(--color-surface,#FDFBF7)]/70' : 'text-[var(--color-ink,#1F120F)]/60'}`}>
-                          Pay upon delivery inspection in Lahore & nationwide.
+                          {t('checkout.codDescription')}
                         </p>
                       </button>
 
                       <button
                         type="button"
+                        aria-pressed={selectedPayment === 'bank'}
                         onClick={() => {
                             setSelectedPayment('bank');
                             try { sessionStorage.setItem(PREFERRED_PAYMENT_KEY, 'bank'); } catch { /* private mode */ }
                           }}
-                        className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
+                        className={`p-3.5 rounded-2xl border text-start transition-all cursor-pointer ${
                           selectedPayment === 'bank'
                             ? 'bg-[var(--color-ink,#1F120F)] text-[var(--color-surface,#FDFBF7)] border-[var(--color-gold,#B8935F)] shadow-xs'
-                            : 'bg-white text-[var(--color-ink,#1F120F)] dark:bg-[#1A201E] dark:text-[#FDFBF7] border-[var(--color-gold,#B8935F)]/25 hover:border-[var(--color-gold,#B8935F)]/50'
+                            : 'bg-[var(--color-surface,#FDFBF7)] text-[var(--color-ink,#1F120F)] dark:bg-[#1A201E] dark:text-[#FDFBF7] border-[var(--color-gold,#B8935F)]/25 hover:border-[var(--color-gold,#B8935F)]/50'
                         }`}
                       >
                         <div className="flex items-center gap-2 mb-1">
                           <Building2 size={15} className="text-[var(--color-gold,#B8935F)]" />
-                          <span className="text-xs font-black uppercase tracking-wider">Direct Bank Transfer</span>
+                          <span className="text-xs font-black uppercase tracking-wider">{t('checkout.bank')}</span>
                         </div>
                         <p className={`text-[10px] leading-snug ${selectedPayment === 'bank' ? 'text-[var(--color-surface,#FDFBF7)]/70' : 'text-[var(--color-ink,#1F120F)]/60'}`}>
                           {t('payment.bankDescription')}
@@ -1202,7 +1196,7 @@ const handleInputChange = (field: string, value: any) => {
                   </div>}
 
                   {/* Summary Review Card: 16px inner padding */}
-                  <div className="p-4 rounded-2xl bg-white dark:bg-[#1A201E] border border-[var(--color-gold,#B8935F)]/25 space-y-2 text-xs shadow-2xs">
+                  <div className="p-4 rounded-2xl bg-[var(--color-surface,#FDFBF7)] dark:bg-[#1A201E] border border-[var(--color-gold,#B8935F)]/25 space-y-2 text-xs shadow-2xs">
                     {isQuoteRequestMode ? (
                       <div className="py-2 text-center text-[var(--color-emerald-dark,#042821)] dark:text-[#42f5bf] space-y-3">
                         <p className="font-serif font-black text-sm">
@@ -1212,8 +1206,8 @@ const handleInputChange = (field: string, value: any) => {
                           {t('checkout.quoteRequestNotice')}
                           <span className="block mt-2">{t('checkout.quoteNoPayment')}</span>
                         </p>
-                        <div className="bg-[var(--color-emerald-dark,#042821)]/5 dark:bg-[#42f5bf]/10 p-3 rounded-xl border border-[var(--color-emerald-dark,#042821)]/10 text-left mt-3">
-                          <p className="text-[10px] font-black uppercase tracking-wider mb-2 opacity-80">Reserved Items</p>
+                        <div className="bg-[var(--color-emerald-dark,#042821)]/5 dark:bg-[#42f5bf]/10 p-3 rounded-xl border border-[var(--color-emerald-dark,#042821)]/10 text-start mt-3">
+                          <p className="text-[10px] font-black uppercase tracking-wider mb-2 opacity-80">{t('checkout.items')}</p>
                           <div className="space-y-1.5">
                             {cartItems.map((item, idx) => (
                               <div key={idx} className="flex justify-between items-center text-[11px]">
@@ -1230,22 +1224,22 @@ const handleInputChange = (field: string, value: any) => {
                       <>
                         <div className="flex justify-between items-center pb-2 border-b border-[var(--color-gold,#B8935F)]/20">
                           <span className="text-[10px] font-black uppercase tracking-wider text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">
-                            Valuation Breakdown
+                            {t('checkout.breakdown')}
                           </span>
                           <span className="text-[10px] font-serif font-bold text-[var(--color-gold,#B8935F)]">
-                            {cartItems.length} items
+                            {cartItems.length} {t('checkout.items')}
                           </span>
                         </div>
 
                         <div className="flex justify-between text-[11px] text-[var(--color-ink,#1F120F)]/80 dark:text-[#FDFBF7]/80">
-                          <span>Harvest Items Subtotal</span>
+                          <span>{t('checkout.subtotalLabel')}</span>
                           <span className="font-bold text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">
                             Rs. {subtotal?.toLocaleString()}
                           </span>
                         </div>
 
                         <div className="flex justify-between text-[11px] text-[var(--color-ink,#1F120F)]/80 dark:text-[#FDFBF7]/80">
-                          <span>Shipping ({selectedMethodObj.title})</span>
+                          <span>{t('checkout.shippingLabel')} ({t(activeShippingMethod === 'standard' ? 'shipping.standard' : 'shipping.express')})</span>
                           <span className={`font-bold ${currentShippingFee === 0 ? 'text-[var(--color-gold,#B8935F)] font-black' : 'text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]'}`}>
                             {!hasEstimate ? t('shipping.pending') : currentShippingFee === 0 ? t('shipping.free') : `Rs. ${currentShippingFee?.toLocaleString()}`}
                           </span>
@@ -1253,8 +1247,8 @@ const handleInputChange = (field: string, value: any) => {
 
                         {(formData.giftWrapping || verifiedQuote?.freeGiftWrap) && (
                           <div className="flex justify-between text-[11px] text-[var(--color-gold,#B8935F)] font-bold">
-                            <span>Luxury Gift Box & Handwritten Card</span>
-                            <span>{giftFeeTotal === 0 ? 'FREE' : `+Rs. ${GIFT_WRAP_FEE}`}</span>
+                            <span>{t('checkout.giftLabel')}</span>
+                            <span>{giftFeeTotal === 0 ? t('shipping.free') : `+Rs. ${GIFT_WRAP_FEE}`}</span>
                           </div>
                         )}
 
@@ -1266,7 +1260,7 @@ const handleInputChange = (field: string, value: any) => {
                         )}
 
                         <div className="pt-2 border-t border-[var(--color-gold,#B8935F)]/20 flex justify-between items-baseline">
-                          <span className="text-xs font-serif font-black text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">Total Payable</span>
+                          <span className="text-xs font-serif font-black text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">{t('checkout.totalLabel')}</span>
                           <span className="text-base font-serif font-black text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">
                             {hasEstimate ? `Rs. ${finalPayable.toLocaleString()}` : t('shipping.pending')}
                           </span>
@@ -1278,26 +1272,26 @@ const handleInputChange = (field: string, value: any) => {
                   {/* Recipient & Shipping Snapshot */}
                   <div className="p-3.5 rounded-xl bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/30 text-[10px] space-y-1 text-[var(--color-ink,#1F120F)]/80">
                     <p className="font-bold text-[var(--color-ink,#1F120F)] flex items-center justify-between">
-                      <span>Recipient: {formData.name || 'Patron'}</span>
+                      <span>{t('checkout.recipient')}: {formData.name}</span>
                       <button
                         type="button"
                         onClick={() => setCurrentStep('details')}
-                        className="text-[var(--color-gold,#B8935F)] hover:underline cursor-pointer"
+                        className="min-h-11 text-[var(--color-accent-text,#806326)] hover:underline cursor-pointer"
                       >
-                        Edit Details
+                        {t('checkout.edit')}
                       </button>
                     </p>
-                    <p className="truncate">Address: {formData.address || 'Address pending'}, {formData.city}</p>
-                    <p>Delivery Slot: {formData.deliverySlot}</p>
+                    <p className="truncate">{t('checkout.address')}: {formData.address || t('checkout.addressPending')}, {formData.city}</p>
+                    <p>{t('checkout.windowLabel')}: {t(({ 'Fastest Dispatch': 'checkout.slotFastest', 'Morning (10 AM - 2 PM)': 'checkout.slotMorning', 'Evening (3 PM - 7 PM)': 'checkout.slotEvening', 'Night (7 PM - 10 PM)': 'checkout.slotNight' } as Record<string, string>)[formData.deliverySlot] || '', formData.deliverySlot)}</p>
                   </div>
 
                   {/* Submission Error Banner */}
                   {submissionError && (
-                    <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/40 text-rose-800 dark:text-rose-300 text-xs flex flex-col gap-2.5 text-left">
+                    <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/40 text-rose-800 dark:text-rose-300 text-xs flex flex-col gap-2.5 text-start">
                       <div className="flex items-start gap-2">
                         <AlertCircle size={16} className="shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
                         <div className="flex-1">
-                          <p className="font-bold">Order Placement Notice</p>
+                          <p className="font-bold">{t('checkout.notice')}</p>
                           <p className="text-[11px] mt-0.5 leading-relaxed">{submissionError}</p>
                         </div>
                       </div>
@@ -1309,7 +1303,7 @@ const handleInputChange = (field: string, value: any) => {
                           className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#25D366] text-white font-bold text-xs hover:bg-[#1EBE5D] transition-all shadow-xs"
                         >
                           <MessageCircle size={15} />
-                          <span>{supportAction.label || 'Place Order via WhatsApp Concierge'}</span>
+                          <span>{t('checkout.support')}</span>
                         </a>
                       )}
                     </div>
@@ -1320,10 +1314,10 @@ const handleInputChange = (field: string, value: any) => {
                     <button
                       type="button"
                       onClick={() => setCurrentStep('shipping')}
-                      className="px-4 py-3 rounded-full bg-[var(--color-cream,#FAF9F5)] sm:bg-white border border-[var(--color-gold,#B8935F)]/30 text-[var(--color-ink,#1F120F)] text-[var(--color-ink,#1F120F)] dark:text-[var(--color-ink,#1F120F)] text-xs font-bold flex items-center gap-1.5 hover:bg-[var(--color-gold,#B8935F)]/10 cursor-pointer"
+                      className="px-4 py-3 rounded-full bg-[var(--color-cream,#FAF9F5)] sm:bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/30 text-[var(--color-ink,#1F120F)] text-[var(--color-ink,#1F120F)] dark:text-[var(--color-ink,#1F120F)] text-xs font-bold flex items-center gap-1.5 hover:bg-[var(--color-gold,#B8935F)]/10 cursor-pointer"
                     >
                       <ArrowLeft size={14} />
-                      <span>Back</span>
+                      <span>{t('checkout.back')}</span>
                     </button>
                       <button
                         type="submit"
@@ -1350,7 +1344,7 @@ const handleInputChange = (field: string, value: any) => {
 
                   <div>
                     <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--color-gold,#B8935F)] block mb-1">
-                      AllBarka Reserve Order
+                      {t('checkout.orderHeading')}
                     </span>
                     <h3 className="text-2xl font-serif font-black text-[var(--color-ink,#1F120F)] mb-1">
                       {t(orderSuccessResult.isQuoteRequest ? 'checkout.quoteReceived' : 'checkout.receiptReceived')}
@@ -1363,7 +1357,7 @@ const handleInputChange = (field: string, value: any) => {
                   {/* Official Order ID Badge */}
                   <div className="bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/35 rounded-2xl p-4 shadow-2xs">
                     <p className="text-[10px] uppercase font-bold text-[var(--color-ink,#1F120F)]/60 mb-1 tracking-wider">
-                      Official Tracking Order ID
+                      {t('checkout.trackingId')}
                     </p>
                     <p className="text-xl font-mono font-black text-[var(--color-ink,#1F120F)] tracking-wider">
                       {orderSuccessResult.orderId}
@@ -1372,13 +1366,13 @@ const handleInputChange = (field: string, value: any) => {
 
                   {/* Itemized Order Breakdown */}
                   {orderItemsSnapshot.length > 0 && (
-                    <div className="bg-white border border-[var(--color-gold,#B8935F)]/25 rounded-2xl p-4 text-left shadow-2xs space-y-2.5">
+                    <div className="bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/25 rounded-2xl p-4 text-start shadow-2xs space-y-2.5">
                       <div className="flex items-center justify-between border-b border-[var(--color-gold,#B8935F)]/15 pb-2">
                         <span className="text-[10px] font-black uppercase tracking-wider text-[var(--color-ink,#1F120F)]/70">
-                          Ordered Items ({orderItemsSnapshot.length})
+                          {t('checkout.orderedItems')} ({orderItemsSnapshot.length})
                         </span>
                         <span className="text-[10px] font-bold text-[var(--color-gold,#B8935F)]">
-                          {orderSuccessResult.isQuoteRequest ? t('checkout.quoteNoPayment') : selectedPayment === 'bank' ? 'Direct Bank / Raast' : 'Cash on Delivery'}
+                          {orderSuccessResult.isQuoteRequest ? t('checkout.quoteNoPayment') : selectedPayment === 'bank' ? t('checkout.bank') : t('checkout.cod')}
                         </span>
                       </div>
                       <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1 text-xs">
@@ -1396,8 +1390,8 @@ const handleInputChange = (field: string, value: any) => {
 
                       {savedTotals && !orderSuccessResult.isQuoteRequest && (
                         <div className="border-t border-[var(--color-gold,#B8935F)]/15 pt-2 flex justify-between items-center text-xs">
-                          <span className="font-bold text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">Total Payable</span>
-                          <span className="font-serif font-black text-sm text-[var(--color-emerald,#042821)] dark:text-[var(--color-gold,#B8935F)]">
+                          <span className="font-bold text-[var(--color-ink,#1F120F)]">{t('checkout.totalLabel')}</span>
+                          <span className="font-serif font-black text-sm text-[var(--color-emerald,#042821)]">
                             Rs. {savedTotals.finalPayable.toLocaleString()}
                           </span>
                         </div>
@@ -1407,48 +1401,32 @@ const handleInputChange = (field: string, value: any) => {
 
                   {/* Bank Transfer Details (if bank payment was chosen) */}
                   {selectedPayment === 'bank' && !orderSuccessResult.isQuoteRequest && (
-                    <div className="bg-[var(--color-cream,#FAF9F5)] dark:bg-[#1A201E] border border-[#C7982F]/40 rounded-2xl p-4 text-left text-xs space-y-1.5 shadow-2xs">
-                      <div className="flex items-center gap-1.5 text-[var(--color-accent-text,#806326)] dark:text-[var(--color-gold,#B8935F)] font-bold text-xs uppercase tracking-wider">
+                    <div className="bg-[#FAF9F5] border border-[#C7982F]/40 rounded-2xl p-4 text-start text-xs space-y-1.5 shadow-2xs">
+                      <div className="flex items-center gap-1.5 text-[var(--color-gold,#B8935F)] font-bold text-xs uppercase tracking-wider">
                         <Building2 size={14} />
                         <span>{t('payment.transferDetails')}</span>
                       </div>
-                      <div className="text-[11px] text-[var(--color-ink,#1F120F)]/80 dark:text-[#FDFBF7]/80 space-y-0.5 pt-1">
-                        {paymentDetails?.bankName ? (
-                          <>
-                            <p>{t('payment.confirmInstructions')}</p>
-                            <div className="bg-[var(--color-ink,#1F120F)]/5 dark:bg-black/30 p-2.5 rounded-lg border border-[#C7982F]/30 text-xs font-mono mt-2 space-y-0.5">
-                              <p className="font-bold font-sans text-[13px] text-[var(--color-emerald,#042821)] dark:text-[#FDFBF7]">{paymentDetails.bankName}</p>
-                              {paymentDetails.accountTitle && <p>Title: {paymentDetails.accountTitle}</p>}
-                              {paymentDetails.accountNumber && <p>A/C: {paymentDetails.accountNumber}</p>}
-                              {paymentDetails.iban && <p>IBAN: {paymentDetails.iban}</p>}
-                              {paymentDetails.raastId && <p className="pt-1">Raast: {paymentDetails.raastId}</p>}
-                              {paymentDetails.wallets && paymentDetails.wallets.map(w => (
-                                <p key={w.label} className="pt-1">{w.label}: {w.number}</p>
-                              ))}
-                            </div>
-                          </>
-                        ) : (
-                          <p>{t('payment.conciergeFallback', 'Confirm the bank / Raast account with AllBarka concierge before transferring payment.')}</p>
-                        )}
+                      <div className="text-[11px] text-[var(--color-ink,#1F120F)]/80 space-y-0.5 pt-1">
+                        <p>{t('payment.confirmInstructions')}</p>
                       </div>
-                      <p className="text-[10px] text-[var(--color-ink-muted,#5A5A5A)] dark:text-[#FDFBF7]/60 pt-2">
+                      <p className="text-[10px] text-[var(--color-ink,#1F120F)]/60 pt-1">
                         {t('payment.shareReceipt')}
                       </p>
                     </div>
                   )}
 
                   {!currentUser && (
-                    <div className="bg-white border border-[var(--color-gold,#B8935F)]/50 rounded-xl p-4 shadow-sm text-left my-4">
+                    <div className="bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/50 rounded-xl p-4 shadow-sm text-start my-4">
                       <div className="flex items-start gap-3">
                         <div className="w-10 h-10 rounded-full bg-[var(--color-ink,#1F120F)] flex items-center justify-center shrink-0 text-[var(--color-gold,#B8935F)]">
                           <Crown size={20} />
                         </div>
                         <div>
                           <h4 className="text-sm font-serif font-black text-[var(--color-ink,#1F120F)] leading-tight">
-                            Create your AllBarka account
+                            {t('checkout.accountTitle')}
                           </h4>
                           <p className="text-[10.5px] text-[var(--color-ink,#1F120F)]/70 mt-1 leading-snug">
-                            Track your orders, view your purchase history and access future Patron benefits.
+                            {t('checkout.accountCopy')}
                           </p>
                         </div>
                       </div>
@@ -1458,14 +1436,14 @@ const handleInputChange = (field: string, value: any) => {
                           onClick={() => { onClose(); if(onOpenAuth) onOpenAuth(); }}
                           className="flex-1 py-2.5 min-h-[44px] rounded-lg bg-[var(--color-ink,#1F120F)] text-[var(--color-surface,#FDFBF7)] font-black text-[10px] uppercase tracking-widest text-center cursor-pointer"
                         >
-                          Create Account
+                          {t('checkout.createAccount')}
                         </button>
                         <button
                           type="button"
                           onClick={onClose}
-                          className="flex-1 py-2.5 min-h-[44px] rounded-lg bg-white border border-[var(--color-gold,#B8935F)]/30 text-[var(--color-ink,#1F120F)] font-bold text-[10px] uppercase tracking-widest text-center cursor-pointer"
+                          className="flex-1 py-2.5 min-h-[44px] rounded-lg bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/30 text-[var(--color-ink,#1F120F)] font-bold text-[10px] uppercase tracking-widest text-center cursor-pointer"
                         >
-                          Maybe Later
+                          {t('checkout.later')}
                         </button>
                       </div>
                     </div>
@@ -1485,9 +1463,9 @@ const handleInputChange = (field: string, value: any) => {
                     <button
                       type="button"
                       onClick={onClose}
-                      className="w-full py-3.5 min-h-[48px] rounded-full bg-white text-[var(--color-ink,#1F120F)] border border-[var(--color-gold,#B8935F)]/30 font-bold uppercase tracking-widest hover:bg-[var(--color-gold,#B8935F)]/10 transition-colors cursor-pointer"
+                      className="w-full py-3.5 min-h-[48px] rounded-full bg-[var(--color-surface,#FDFBF7)] text-[var(--color-ink,#1F120F)] border border-[var(--color-gold,#B8935F)]/30 font-bold uppercase tracking-widest hover:bg-[var(--color-gold,#B8935F)]/10 transition-colors cursor-pointer"
                     >
-                      Continue Shopping
+                      {t('checkout.continueShopping')}
                     </button>
                   </div>
                 </motion.div>
@@ -1498,14 +1476,14 @@ const handleInputChange = (field: string, value: any) => {
 
         {/* 4. Bottom Security Reassurance (Hide on Success) */}
         {currentStep !== 'success' && (
-          <div className="px-4 sm:px-6 py-2.5 border-t border-[var(--color-gold,#B8935F)]/20 bg-white/70 flex flex-wrap items-center justify-between gap-1.5 text-[9.5px] text-[var(--color-ink,#1F120F)]/65 shrink-0">
+          <div className="px-4 sm:px-6 py-2.5 border-t border-[var(--color-gold,#B8935F)]/20 bg-[var(--color-surface,#FDFBF7)]/70 flex flex-wrap items-center justify-between gap-1.5 text-[9.5px] text-[var(--color-ink,#1F120F)]/65 shrink-0">
             <span className="flex items-center gap-1.5">
               <Lock size={12} className="text-[var(--color-gold,#B8935F)]" />
-              Review your details before ordering
+              {t('checkout.reviewDetails')}
             </span>
             <span className="flex items-center gap-1.5">
               <ShieldCheck size={12} className="text-[var(--color-gold,#B8935F)]" />
-              100% Crop Purity Guarantee
+              {t('checkout.supportAvailable')}
             </span>
           </div>
         )}
@@ -1514,11 +1492,19 @@ const handleInputChange = (field: string, value: any) => {
         <h2>{t('boutique.order')}</h2>
         <div className="boutique-order-items">
           {cartItems.map(item => <div key={item.id} className="boutique-order-item">
-            <img src={mediaCover(catalog.find(product => product.id === item.productId || product.id === item.id), item.image)} alt={getLocalized(item, 'name', language)} width={64} height={64} />
+            <img src={mediaCover(PRODUCTS.find(product => product.id === item.productId || product.id === item.id), item.image)} alt={getLocalized(item, 'name', language)} width={64} height={64} />
             <div><strong>{getLocalized(item, 'name', language)}</strong><small>{item.selectedWeight} × {item.quantity}</small></div>
             {!isQuoteRequestMode && <bdi>Rs. {(parsePrice(item.unitPrice ?? item.price) * item.quantity).toLocaleString()}</bdi>}
           </div>)}
         </div>
+        {!!activeRewards.length && <div className="mb-4 rounded-xl border border-[var(--color-border)] p-3">
+          <label htmlFor="checkout-patron-reward" className="mb-2 block text-xs font-semibold">{t('rewards.select')}</label>
+          <select id="checkout-patron-reward" value={selectedRewardId || ''} onChange={event => setSelectedRewardId(event.target.value || null)} className="focus-ring min-h-11 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm text-[var(--color-text)]" aria-describedby="checkout-patron-reward-help">
+            <option value="">{t('rewards.none')}</option>
+            {activeRewards.map(reward => <option key={reward.id} value={reward.id}>{t(`rewards.${reward.rewardId}.name`)}</option>)}
+          </select>
+          <p id="checkout-patron-reward-help" className="mt-2 text-xs leading-relaxed text-[var(--color-text-secondary)]">{selectedRewardId ? t(`rewards.${activeRewards.find(reward => reward.id === selectedRewardId)?.rewardId}.description`) : t('rewards.ready')}</p>
+        </div>}
         {isQuoteRequestMode ? <div role="status" className="rounded-xl border border-[var(--color-gold)]/30 p-4"><h3 className="font-serif text-lg">{t('checkout.quoteRequestTitle')}</h3><p className="mt-2 text-sm">{t('checkout.quoteRequestNotice')}</p><p className="mt-2 text-xs">{t('checkout.quoteNoPayment')}</p></div> : <dl>
           <div><dt>{t('subtotal', 'Subtotal')}</dt><dd>Rs. {subtotal.toLocaleString()}</dd></div>
           <div><dt>{t('boutique.shipping')}</dt><dd>{hasEstimate ? `Rs. ${currentShippingFee.toLocaleString()}` : t('shipping.pending')}</dd></div>
@@ -1532,6 +1518,3 @@ const handleInputChange = (field: string, value: any) => {
   );
 }
 import { sanitizeFirestoreData } from '../lib/firestoreData';
-
-
-

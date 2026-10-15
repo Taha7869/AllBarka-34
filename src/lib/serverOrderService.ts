@@ -211,7 +211,7 @@ export function generateAuthoritativeWhatsAppMessage(order: CanonicalOrder): str
   if (order.orderType === 'QUOTE_REQUEST') {
     return ['*ALLBARKA — QUOTE REQUEST*', `Ref: #${order.orderId}`, `Customer: ${order.customer.name}`,
       ...order.items.map(item => `• ${item.name} (${item.selectedWeight}) × ${item.quantity}`),
-      'Your quote request has been received. Our team will contact you shortly.'].join('\n');
+      'PROMO:CANCER: quote request', 'Our team will contact you with your personalized rate.'].join('\n');
   }
   const dateStr = new Date(order.createdAtMs).toLocaleDateString('en-PK', {
     day: 'numeric',
@@ -315,7 +315,7 @@ export function generateOrderId(now = new Date()): string {
   const yyyy = now.getFullYear();
   const mm = String(now.getMonth() + 1).padStart(2, '0');
   const dd = String(now.getDate()).padStart(2, '0');
-  const hex = crypto.randomBytes(4).toString('hex').toUpperCase();
+  const hex = crypto.randomBytes(3).toString('hex').toUpperCase();
   return `AB-${yyyy}${mm}${dd}-${hex}`;
 }
 

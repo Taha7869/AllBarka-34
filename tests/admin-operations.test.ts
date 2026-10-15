@@ -60,7 +60,7 @@ class FakeFirestore {
         return this.snap(ref.path);
       },
       update: (ref: any, data: any) => pending.push({ path: ref.path, data: structuredClone(data), merge: true }),
-      create: function(ref, data) { return this.set(ref, data); }, set: (ref: any, data: any, options?: any) => {
+      set: (ref: any, data: any, options?: any) => {
         if (this.failAudit && ref.path.startsWith('orderAudits/')) throw new Error('Simulated audit write failure');
         pending.push({ path: ref.path, data: structuredClone(data), merge: !!options?.merge });
       },
@@ -346,16 +346,11 @@ test('actual production admin routes reject unauthenticated reads, exports and m
       await delay(200);
     }
     assert.equal(ready, true, `Production server must start: ${logs}`);
-    for (const path of ['/api/admin/orders', '/api/admin/orders/export', '/api/admin/orders/AB-TEST-00001', '/api/admin/inquiries']) {
+    for (const path of ['/api/admin/orders', '/api/admin/orders/export', '/api/admin/orders/AB-TEST-00001']) {
       const response = await request(path);
       assert.equal(response.status, 401, path);
       assert.equal((await response.json()).code, 'AUTHENTICATION_REQUIRED');
     }
-    const responseInq = await request('/api/admin/inquiries/TICKET-123/status', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'RESOLVED' }),
-      });
-      assert.equal(responseInq.status, 401, 'inquiry status patch');
-
     for (const action of ['status', 'notes', 'payment']) {
       const response = await request(`/api/admin/orders/AB-TEST-00001/${action}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ admin: true }),

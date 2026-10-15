@@ -58,6 +58,20 @@ export default function SEO({
     const ogUrl = document.querySelector('meta[property="og:url"]');
     if (ogUrl) ogUrl.setAttribute('content', canonicalUrl);
 
+    const setMeta = (attribute: 'name' | 'property', key: string, content: string) => {
+      let element = document.querySelector(`meta[${attribute}="${key}"]`);
+      if (!element) {
+        element = document.createElement('meta'); element.setAttribute(attribute, key); document.head.appendChild(element);
+      }
+      element.setAttribute('content', content);
+    };
+    setMeta('property', 'og:type', type);
+    setMeta('name', 'twitter:card', 'summary_large_image');
+    setMeta('name', 'twitter:title', fullTitle);
+    setMeta('name', 'twitter:description', description);
+    setMeta('name', 'twitter:image', new URL(image, siteOrigin).href);
+    setMeta('name', 'robots', /^\/(?:admin|cart|checkout|success)(?:\/|$)/.test(currentPath) ? 'noindex, nofollow' : 'index, follow');
+
     const ogImage = document.querySelector('meta[property="og:image"]');
     if (ogImage && image) {
       const fullImageUrl = new URL(image, siteOrigin).href;
@@ -83,7 +97,7 @@ export default function SEO({
       const el = document.getElementById('route-structured-data');
       if (el) el.remove();
     };
-  }, [fullTitle, description, canonicalUrl, image, structuredData, siteOrigin]);
+  }, [fullTitle, description, canonicalUrl, image, structuredData, siteOrigin, type, currentPath]);
 
   return null;
 }

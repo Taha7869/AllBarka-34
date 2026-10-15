@@ -13,15 +13,16 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { CartProvider } from './contexts/CartContext';
+import { CatalogProvider } from './contexts/CatalogContext';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider>
       <LanguageProvider>
         <AuthProvider>
-          <ProductMediaProvider><CartProvider>
+          <CatalogProvider><ProductMediaProvider><CartProvider>
             <App />
-          </CartProvider></ProductMediaProvider>
+          </CartProvider></ProductMediaProvider></CatalogProvider>
         </AuthProvider>
       </LanguageProvider>
     </ThemeProvider>

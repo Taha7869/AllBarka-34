@@ -1,7 +1,7 @@
+import { useCatalogProducts } from '../contexts/CatalogContext';
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import type { CartItem, Product } from '../types';
 import { PRODUCTS, getProductImage } from '../data/products';
-import { useLiveCatalog } from '../hooks/useLiveCatalog';
 import { useToast } from '../components/ToastManager';
 
 import { STORE_CONFIG } from '../config/store';
@@ -94,9 +94,9 @@ export interface CartContextValue {
 const CartContext = createContext<CartContextValue | null>(null);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const PRODUCTS = useCatalogProducts();
   const { addToast } = useToast();
   const { t, language } = useLanguage();
-  const catalog = useLiveCatalog();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCartPulsing, setIsCartPulsing] = useState(false);
   const [shippingCity, updateShippingCity] = useState(() => {
@@ -119,7 +119,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (Array.isArray(parsed)) {
           return parsed.flatMap((item: any) => {
             if (!item || typeof item !== 'object') return [];
-            const identity = resolveCartIdentity(item, catalog);
+            const identity = resolveCartIdentity(item, PRODUCTS);
             if (!identity) return [];
             const hamper = identity.productId === 'custom-hamper' ? resolveHamper(item.hamperConfiguration) : null;
             const rawWeight = hamper?.portion || resolveCartPortion(identity.product, item.selectedWeight || identity.portion);
@@ -152,6 +152,24 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   // Sync with localStorage on changes
+  // Keep an already-open bag in step with merchant prices while preserving unavailable lines for review.
+  useEffect(() => {
+    setCartItems(current => {
+      let changed = false;
+      const next = current.map(item => {
+        const identity = resolveCartIdentity(item, PRODUCTS);
+        const hamper = item.productId === 'custom-hamper' ? resolveHamper(item.hamperConfiguration, PRODUCTS) : null;
+        const product = identity?.product;
+        if (!hamper && (!product || product.active === false || product.quoteOnly)) return item;
+        const price = hamper?.unitPrice ?? (product ? resolveCartUnitPrice(product, item.selectedWeight, 0) : 0);
+        if (price <= 0 || price === item.unitPrice) return item;
+        changed = true;
+        return { ...item, unitPrice: price, price };
+      });
+      return changed ? next : current;
+    });
+  }, [PRODUCTS]);
+
   useEffect(() => {
     try {
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
@@ -178,7 +196,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isFreeShippingUnlocked = isLahoreCity(shippingCity) && subtotal >= FREE_SHIPPING_THRESHOLD;
   const estimatedShipping = useMemo(() => {
-    try { return calculateOrderSummary({ items: cartItems, city: shippingCity, catalog }).shipping; }
+    try { return calculateOrderSummary({ items: cartItems, city: shippingCity }).shipping; }
     catch { return null; } // A selection requiring a quote must never crash the bag.
   }, [cartItems, shippingCity]);
 
@@ -203,7 +221,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       customUnitPrice?: number,
       options?: { silent?: boolean; openCart?: boolean }
     ) => {
-      const identity = resolveCartIdentity(productOrItem, catalog);
+      const identity = resolveCartIdentity(productOrItem, PRODUCTS);
       if (!identity) return;
       const rawProdId = identity.productId;
       const hamper = rawProdId === 'custom-hamper' ? resolveHamper((productOrItem as CartItem).hamperConfiguration) : null;
@@ -275,7 +293,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsCartOpen(true);
       }
     },
-    [addToast, t, language]
+    [addToast, t, language, PRODUCTS]
   );
 
   /**

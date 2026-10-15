@@ -1,3 +1,4 @@
+import { useCatalogProducts } from '../contexts/CatalogContext';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { X, Scale, Clock } from 'lucide-react';
@@ -10,6 +11,7 @@ import { useCart } from '../contexts/CartContext';
 import { unitPrice } from '../lib/catalogActivity';
 
 export default function CatalogTools({ mode }: { mode: 'compare' | 'recent' }) {
+  const PRODUCTS = useCatalogProducts();
   const { t, language } = useLanguage();
   const mediaCover = useProductMediaCover();
   const { compareIds, recentIds, toggleCompare, clearCompare, clearRecent } = useCatalogActivity();

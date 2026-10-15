@@ -8,6 +8,7 @@ import { calculateDeliverySchedule } from '../src/lib/deliveryCalendar';
 import { createDurableOrder } from '../src/lib/orderDatabase';
 import { hashPayload } from '../src/lib/serverOrderService';
 import { resolveHamper, type HamperConfiguration } from '../src/lib/hamperCatalog';
+import { fixtureCatalogSnapshot } from './helpers/catalogFixtures';
 
 const line = (productId: string, selectedWeight: string, quantity = 1) => ({ productId, selectedWeight, quantity });
 const mixed = [line('badam', '1kg'), line('oil-almond', '100ml', 2)];
@@ -158,7 +159,8 @@ function mockDatabase(initial: Record<string, unknown> = {}) {
       const pending: Array<() => void> = [];
       const result = await run({
         get: async (ref: any) => ({ exists: records.has(ref.key), data: () => records.get(ref.key) }),
-        create: function(ref, data) { return this.set(ref, data); }, set: (ref: any, value: unknown) => pending.push(() => { records.set(ref.key, value); writes.push(ref.key); }),
+        getAll: async (...references: any[]) => references.map(reference => fixtureCatalogSnapshot(reference.key)),
+        set: (ref: any, value: unknown) => pending.push(() => { records.set(ref.key, value); writes.push(ref.key); }),
         update: (ref: any, value: unknown) => pending.push(() => { records.set(ref.key, { ...records.get(ref.key), ...value as object }); writes.push(ref.key); }),
       });
       pending.forEach(write => write());
@@ -184,7 +186,7 @@ test('persisted order, calendar and idempotent response retain the canonical des
 
 test('outside Lahore a shipping reward cannot be consumed or write an order', async () => {
   const key = 'users/test-customer/activeRewards/reward-1';
-  const mock = mockDatabase({ [key]: { rewardType: 'SHIPPING', status: 'ACTIVE' } });
+  const mock = mockDatabase({ [key]: { rewardId: 'free_shipping', rewardType: 'SHIPPING', status: 'ACTIVE', expiresAt: Date.now() + 86400000 } });
   await assert.rejects(createDurableOrder({ db: mock.db as never, uid: 'test-customer',
     payload: { ...destination, items: mixed, shippingMethodId: 'standard', rewardId: 'reward-1' }, idempotencyKey: 'reward-test' }), isCode('SHIPPING_REWARD_LAHORE_ONLY'));
   assert.equal(mock.records.get(key).status, 'ACTIVE');

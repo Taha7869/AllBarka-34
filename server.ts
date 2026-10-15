@@ -15,8 +15,9 @@ import { getFirestore } from 'firebase-admin/firestore';
 import type { ConciergeLanguage } from './src/lib/conciergeFallback';
 import { commerceCors } from './src/lib/apiCors';
 import { probeCommerceDatabase } from './src/lib/commerceReadiness';
+import { readBuildInfo } from './src/lib/buildInfo';
+import { routeMetadata, renderRouteDocument } from './src/lib/routeDocument';
 import { PRODUCTS } from './src/data/products';
-import { getCatalogServer } from './src/lib/liveCatalog';
 import { STORE_CONFIG } from './src/config/store';
 import { CONTACT_CONFIG, buildAutomatedOrderWhatsAppUrl, buildHumanSupportWhatsAppUrl } from './src/config/contacts';
 import { getN8nOrderDispatchConfig } from './src/services/n8nOrderNotification';
@@ -25,7 +26,6 @@ import { askN8nConsultant, getN8nAiConfig } from './src/services/n8nAIConsultant
 import { reserveGuestAiMessage, GuestTrialLimitError } from './src/lib/aiGuestTrial';
 import { REWARDS } from './src/data/rewards';
 import { validateAndPriceOrder, validateCustomerDetails, ValidationError } from './src/lib/orderValidation';
-import { validateShippingRewardDestination } from './src/lib/shippingPolicy';
 import crypto from 'crypto';
 import {
   createDurableOrder,
@@ -41,6 +41,11 @@ import { sanitizeOrderForCustomer, CanonicalOrder } from './src/lib/serverOrderS
 import { claimWelcomeVoucher } from './src/lib/welcomeCouponService';
 import { authenticatePatronCredentials } from './src/lib/serverAuthentication';
 import { createProductMediaRouter } from './src/lib/productMediaRouter';
+import { createCatalogRouter } from './src/lib/catalogRouter';
+import { loadAuthoritativeCatalog } from './src/lib/catalogStore';
+import { CatalogError, unavailableProduct } from './src/lib/catalogSchema';
+import { redeemPatronReward } from './src/lib/loyaltyRedemption';
+import { quoteOrderForCustomer } from './src/lib/orderQuote';
 import { createStoreUpdatesRouter } from './src/lib/storeUpdatesRouter';
 import { createN8nCommerceRouter } from './src/lib/n8nCommerceRouter';
 import {
@@ -50,7 +55,7 @@ import {
 } from './src/lib/adminOperations';
 
 // Load environment variables
-dotenv.config();
+if (process.env.ALLBARKA_SKIP_LOCAL_ENV !== 'true') dotenv.config({ quiet: true });
 
 // Initialize Firebase Admin (Production or Emulator)
 let db: any = null;
@@ -192,13 +197,19 @@ if (!Number.isInteger(trustProxyHops) || trustProxyHops < 0) {
 }
 app.set('trust proxy', trustProxyHops);
 
+app.use((_req, res, next) => {
+  res.locals.cspNonce = crypto.randomBytes(18).toString('base64');
+  next();
+});
 app.use(helmet({
   // Firebase Google sign-in needs to communicate with its OAuth popup.
   crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://apis.google.com", "https://*.firebaseapp.com", "https://*.googleapis.com", "https://*.gstatic.com"],
+      scriptSrc: ["'self'", (_req, res) => `'nonce-${(res as express.Response).locals.cspNonce}'`,
+        ...(process.env.NODE_ENV !== 'production' ? ["'unsafe-inline'", "'unsafe-eval'"] : []),
+        "https://apis.google.com", "https://*.firebaseapp.com", "https://*.googleapis.com", "https://*.gstatic.com"],
       frameSrc: ["'self'", "https://allbarka-live.firebaseapp.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://api.fontshare.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdn.fontshare.com"],
@@ -216,6 +227,7 @@ app.use('/api/integrations/n8n', createN8nCommerceRouter({ getDb: () => db }));
 app.use(express.json({ limit: '128kb' }));
 app.use(cookieParser());
 app.use(createProductMediaRouter({ getDb: () => db, requireAdmin }));
+app.use(createCatalogRouter({ getDb: () => db, requireAdmin }));
 app.use(createStoreUpdatesRouter({ getDb: () => db, requireAuth, requireAdmin }));
 
 // Auth & Session Endpoints
@@ -251,15 +263,6 @@ const patronChatLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, skip: req =>
 const contactLimiter = rateLimit({ windowMs: 60 * 1000, max: 5, message: apiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
 const ordersLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, message: apiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
 
-app.get('/api/catalog', async (req, res) => {
-  try {
-    const { catalog, source } = await getCatalogServer();
-    res.setHeader('X-Catalog-Source', source);
-    res.json(catalog);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch catalog' });
-  }
-});
 app.use('/api/chat', chatLimiter);
 app.use('/api/concierge', chatLimiter);
 app.use('/api/ai', chatLimiter);
@@ -272,9 +275,10 @@ const ordersDb: any[] = [];
 
 // 1. API: Health Check
 let orderOutboxWorker: ReturnType<typeof startOrderOutboxWorker> | null = null;
+const buildInfo = readBuildInfo();
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', apiActive: Boolean(getN8nAiConfig()), aiConfigured: Boolean(getN8nAiConfig()), aiProvider: 'n8n-groq', aiConnectivityVerified: false,
-    outboxWorker: orderOutboxWorker?.getState() ?? null });
+    outboxWorker: orderOutboxWorker?.getState() ?? null, build: buildInfo });
 });
 
 // 1.2 API: Commerce Persistence Readiness Status
@@ -309,42 +313,9 @@ app.get('/api/commerce/readiness', async (_req, res) => {
 // 1.3 API: Authoritative Order Quote Calculation
 app.post('/api/orders/quote', authenticateOptionalUser, async (req, res) => {
   try {
-    const { items, city, shippingMethodId, discountCode, rewardId, giftWrapping, isWholesale } = req.body;
-    const authenticatedUser = (req as any).user;
-    const promoContext = await firstOrderPromoContext(db, authenticatedUser?.uid || null, discountCode);
-
-    const _catRes = await getCatalogServer();
-    const validatedOrder = validateAndPriceOrder({
-      catalog: _catRes.catalog,
-
-      items,
-      city,
-      shippingMethodId,
-      discountCode,
-      giftWrapping: Boolean(giftWrapping),
-      isWholesale: Boolean(isWholesale && authenticatedUser?.wholesaleEligible),
-      promoContext,
-    });
-
-    if (rewardId) {
-      if (!authenticatedUser?.uid) throw new ValidationError('Please sign in to use a patron reward.', 'REWARD_REQUIRES_AUTH');
-      if (!db) return res.status(503).json({ error: 'Reward verification is unavailable until the order database is configured.', code: 'PERSISTENCE_UNAVAILABLE' });
-      const rewardSnap = await db.collection('users').doc(authenticatedUser.uid).collection('activeRewards').doc(String(rewardId).trim()).get();
-      if (!rewardSnap.exists) throw new ValidationError('Selected reward does not exist for this patron.', 'REWARD_NOT_FOUND');
-      const reward = rewardSnap.data();
-      if (reward?.status !== 'ACTIVE') throw new ValidationError('Selected reward is no longer active or has already been used.', 'REWARD_ALREADY_USED');
-      validateShippingRewardDestination(reward, city);
-      throw new ValidationError('This reward cannot yet be applied at checkout. It remains active; contact support for assistance.', 'REWARD_APPLICATION_UNAVAILABLE');
-    }
-
-    res.json({
-      success: true,
-      totals: validatedOrder.summary,
-      items: validatedOrder.items,
-      earnedPoints: validatedOrder.earnedPoints,
-      generatedAt: Date.now(),
-    });
+    res.set('Cache-Control', 'no-store').json(await quoteOrderForCustomer(db, req.body, (req as any).user));
   } catch (error: any) {
+    if (error instanceof CatalogError) return res.status(error.httpStatus).json({ error: 'Current product pricing is temporarily unavailable.', code: error.code });
     if (error.name === 'ValidationError') {
       return res.status(400).json({ error: error.message, code: error.code || 'VALIDATION_ERROR' });
     }
@@ -369,15 +340,11 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
       });
     }
 
-    const _catRes = await getCatalogServer();
-
     // When durable persistence (db) is not configured, do NOT create fake accepted orders
     if (!db) {
       const promoContext = await firstOrderPromoContext(null, verifiedUid, req.body.discountCode);
       const customer = validateCustomerDetails(req.body, getPromo(req.body.discountCode)?.type === 'quote');
-    const validatedOrder = validateAndPriceOrder({
-      catalog: _catRes.catalog,
-
+      const validatedOrder = validateAndPriceOrder({
         items: req.body.items,
         city: customer.city,
         shippingMethodId: req.body.shippingMethodId,
@@ -396,7 +363,7 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
       const standardReceiptMessage = `👑 *ALLBARKA LUXURY BOUTIQUE ORDER* 👑\n\n*Customer:* ${customer.name}\n*Phone:* ${customer.phone}\n*Delivery Address:* ${customer.address}, ${customer.city}\n*Delivery Slot:* ${customer.deliverySlot}\n\n*Selected Items:*${itemsStr}\n\n*Subtotal:* ${currencyFormat(validatedOrder.summary.subtotal)}${validatedOrder.summary.discount > 0 ? `\n*Discount Applied:* -${currencyFormat(validatedOrder.summary.discount)}` : ''}${customer.giftWrapping ? `\n*Gift Wrapping:* +${currencyFormat(validatedOrder.summary.giftWrapFee)}` : ''}\n*Shipping:* ${validatedOrder.summary.shipping === 0 ? 'FREE' : currencyFormat(validatedOrder.summary.shipping)}\n*Total Due:* *${currencyFormat(validatedOrder.summary.total)}*\n*Payment Method:* ${customer.paymentMethod === 'bank' ? 'Bank Transfer' : 'Cash on Delivery'}`;
 
       const receiptMessage = validatedOrder.summary.isQuoteRequest
-        ? `*ALLBARKA QUOTE ENQUIRY*\n\n*Customer:* ${customer.name}\n*Phone:* ${customer.phone}\n*Delivery Address:* ${customer.address}, ${customer.city}\n\n*Selected Items:*${itemsStr}\n\nYour quote request has been received. Our team will contact you shortly.`
+        ? `*ALLBARKA QUOTE ENQUIRY*\n\n*Customer:* ${customer.name}\n*Phone:* ${customer.phone}\n*Delivery Address:* ${customer.address}, ${customer.city}\n\n*Selected Items:*${itemsStr}\n\nPROMO:CANCER: quote request\nOur team will contact you with your personalized rate.`
         : standardReceiptMessage;
 
       return res.status(503).json({
@@ -419,9 +386,7 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
       payload: req.body,
       uid: verifiedUid,
       idempotencyKey,
-      expectedFinalTotal,
-      priceSource: _catRes.source,
-      catalogFetchedAt: new Date().toISOString()
+      expectedFinalTotal
     });
     savedOrderVerifiedThisProcess = true;
 
@@ -536,8 +501,10 @@ app.post('/api/coupons/preview', authenticateOptionalUser, async (req, res) => {
     if (!promo) throw new ValidationError('Promo code is required.', 'PROMO_REQUIRED');
     const user = (req as any).user;
     const promoContext = await firstOrderPromoContext(db, user?.uid || null, promo.code);
+    const catalog = await loadAuthoritativeCatalog(db, { fresh: true });
     const validated = validateAndPriceOrder({ items, city, shippingMethodId, discountCode: promo.code,
-      giftWrapping: Boolean(giftWrapping), isWholesale: Boolean(isWholesale && user?.wholesaleEligible), promoContext });
+      giftWrapping: Boolean(giftWrapping), isWholesale: Boolean(isWholesale && user?.wholesaleEligible), promoContext,
+      products: catalog.products, hamperBoxes: catalog.hamperBoxes });
 
     res.json({
       valid: true,
@@ -548,6 +515,7 @@ app.post('/api/coupons/preview', authenticateOptionalUser, async (req, res) => {
       totals: validated.summary,
     });
   } catch (e: any) {
+    if (e instanceof CatalogError) return res.status(e.httpStatus).json({ valid: false, error: 'Current product pricing is temporarily unavailable.', code: e.code });
     if (e.name === 'ValidationError') return res.status(400).json({ valid: false, error: e.message, code: e.code });
     if (e.code === 'PERSISTENCE_UNAVAILABLE') return res.status(503).json({ valid: false, error: e.message, code: e.code });
     res.status(500).json({ valid: false, error: 'Failed to preview coupon.' });
@@ -624,25 +592,6 @@ app.get('/api/admin/orders', requireAdmin, async (req, res) => {
   } catch (error) { adminOperationFailure(res, error); }
 });
 
-app.get('/api/admin/inquiries', requireAdmin, async (req, res) => {
-  try {
-    res.setHeader('Cache-Control', 'no-store');
-    const limitNum = 50;
-    const snapshot = await db.collection('inquiries').orderBy('createdAt', 'desc').limit(limitNum).get();
-    res.json({ inquiries: snapshot.docs.map(d => d.data()) });
-  } catch (error) { adminOperationFailure(res, error); }
-});
-
-app.post('/api/admin/inquiries/:ticketId/status', requireAdmin, express.json(), async (req, res) => {
-  try {
-    const { ticketId } = req.params;
-    const { status } = req.body;
-    if (status !== 'RESOLVED' && status !== 'PENDING') return res.status(400).json({ error: 'Invalid status' });
-    await db.collection('inquiries').doc(ticketId).update({ status });
-    res.json({ success: true, status });
-  } catch (error) { adminOperationFailure(res, error); }
-});
-
 // Admin-only: Single order details with audit trail
 app.get('/api/admin/orders/:orderId', requireAdmin, async (req, res) => {
   try {
@@ -690,9 +639,10 @@ app.get('/api/loyalty/profile', requireAuth, async (req, res) => {
         const transactions = txSnap.docs.map((d: any) => d.data());
 
         const arSnap = await db.collection("users").doc(uid).collection("activeRewards").where("status", "==", "ACTIVE").get();
-        const activeRewards = arSnap.docs.map((d: any) => d.data());
+        const activeRewards = arSnap.docs.map((d: any) => ({ ...d.data(), id: d.id }))
+          .filter((reward: any) => Number.isFinite(reward.expiresAt) && reward.expiresAt > Date.now());
 
-        res.json({
+        res.set('Cache-Control', 'no-store').json({
             loyaltyPoints,
             transactions,
             activeRewards
@@ -709,56 +659,12 @@ app.get('/api/loyalty/rewards', (req, res) => {
 // Authenticated customer loyalty redeem
 app.post('/api/loyalty/redeem', requireAuth, async (req, res) => {
     try {
-        const uid = (req as any).user.uid;
-        const { rewardId } = req.body;
-        if (!rewardId) return res.status(400).json({ error: "Missing rewardId", code: 'MISSING_REWARD' });
-        if (!db) return res.status(503).json({ error: "Loyalty redemption database is currently undergoing maintenance.", code: 'DB_UNAVAILABLE' });
-
-        const reward = REWARDS.find(r => r.rewardId === rewardId);
-        if (!reward || !reward.active) return res.status(400).json({ error: "Invalid reward", code: 'INVALID_REWARD' });
-
-        let activeRewardData: any = null;
-        await db.runTransaction(async (t: any) => {
-            const userRef = db.collection("users").doc(uid);
-            const userDoc = await t.get(userRef);
-            if (!userDoc.exists) throw new Error("User not found");
-            const currentPoints = userDoc.data()?.loyaltyPoints || 0;
-            if (currentPoints < reward.pointsCost) throw new Error("Insufficient points");
-
-            const activeRewardsSnapshot = await t.get(userRef.collection("activeRewards").where("status", "==", "ACTIVE").limit(1));
-            if (!activeRewardsSnapshot.empty) {
-                throw new Error("You already have an active reward. Please use it first.");
-            }
-
-            const newPoints = currentPoints - reward.pointsCost;
-            t.set(userRef, sanitizeFirestoreData({ loyaltyPoints: newPoints }), { merge: true });
-
-            const txId = crypto.randomUUID();
-            const txRef = userRef.collection("loyaltyTransactions").doc(txId);
-            t.set(txRef, sanitizeFirestoreData({
-                transactionId: txId,
-                type: 'REDEEM',
-                points: -reward.pointsCost,
-                rewardId: reward.rewardId,
-                description: `Redeemed ${reward.name}`,
-                createdAt: Date.now()
-            }));
-
-            const arId = crypto.randomUUID();
-            const arRef = userRef.collection("activeRewards").doc(arId);
-            activeRewardData = {
-                rewardId: reward.rewardId,
-                claimedAt: Date.now(),
-                expiresAt: Date.now() + (reward.expiryDays * 24 * 60 * 60 * 1000),
-                status: 'ACTIVE',
-                rewardType: reward.rewardType
-            };
-            t.set(arRef, sanitizeFirestoreData(activeRewardData));
-        });
-
-        res.json({ success: true, activeReward: activeRewardData });
+        const result = await redeemPatronReward({ db, uid: (req as any).user.uid,
+          rewardId: req.body?.rewardId, requestId: req.body?.requestId });
+        res.set('Cache-Control', 'no-store').json(result);
     } catch(err: any) {
-        res.status(400).json({ error: err.message, code: 'REDEEM_FAILED' });
+        res.status(err.code === 'PERSISTENCE_UNAVAILABLE' ? 503 : 400)
+          .json({ error: err.code ? err.message : 'Reward redemption is temporarily unavailable.', code: err.code || 'REDEEM_FAILED' });
     }
 });
 
@@ -922,14 +828,13 @@ app.post(['/api/chat', '/api/concierge/chat'], authenticateOptionalUser, patronC
       }
     }
     if (res.headersSent) return;
-  // Generate instructions dynamically from the actual PRODUCTS array
-  const _catRes = await getCatalogServer();
-  const catalogContext = _catRes.catalog.map(p => {
+  const catalog = await loadAuthoritativeCatalog(db);
+  const catalogContext = catalog.products.filter(p => p.active !== false && !p.quoteOnly).map(p => {
     let priceStr = '';
     for (const [weight, price] of Object.entries(p.prices)) {
       priceStr += `${weight}: Rs. ${price}, `;
     }
-    return `- ${p.name_en}: ${priceStr}`;
+    return `- ${p.name_en}: ${priceStr} (Wholesale: Rs. ${p.wholesale})`;
   }).join('\n');
 
   const systemInstruction = `You are the AI Concierge & Gourmet Dry Fruits Sommelier representing '${STORE_CONFIG.storeName}', a premium dry fruit, spices, and artisanal gifting store based in ${STORE_CONFIG.location}.
@@ -947,6 +852,7 @@ Delivery & Ordering:
 - Shipping billing weight comes from canonical selected portions and quantities. Oils follow the merchant's billing convention: numeric ml is billed as the same numeric grams (100ml is billed as 100g); no container uplift. This is not a physical density claim. Ask for the delivery city and exact portions, and use checkout's authoritative quote if anything is uncertain.
 - WhatsApp for customer support: ${CONTACT_CONFIG.humanSupportWhatsApp.formatted}. Automated order WhatsApp: ${CONTACT_CONFIG.automatedOrdersWhatsApp.formatted}.
 - Boutique service address: ${CONTACT_CONFIG.boutiqueAddress}. Ask customers to confirm their visit with our team; never invent a street address, branch, coordinate or opening time.
+- Wholesale figures are reference information for approved accounts only. Refer wholesale enquiries to our team; never promise eligibility or apply an unapproved discount.
 - Customers can add items to their cart and checkout via WhatsApp or cash on delivery.
 
 Behavior Guidelines:
@@ -988,11 +894,22 @@ async function startServer() {
     const html = readFileSync(path.join(distPath, 'index.html'), 'utf8')
       .replaceAll('https://allbarka.com', publicOrigin)
       .replaceAll('content="/images/generated/og-image.jpg"', `content="${publicOrigin}/images/generated/og-image.jpg"`);
-    
-    
-    app.get('/index.html', (_req, res) => {
+    const pageCatalog = async () => {
+      try { return (await loadAuthoritativeCatalog(db)).products; }
+      catch { return PRODUCTS.map(unavailableProduct); }
+    };
+    app.get('/robots.txt', (_req, res) => res.type('text/plain').send(
+      `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /checkout\nDisallow: /cart\nDisallow: /success\nDisallow: /admin\nSitemap: ${publicOrigin}/sitemap.xml\n`
+    ));
+    app.get('/sitemap.xml', async (_req, res) => {
+      const products = await pageCatalog();
+      const routes = ['/', '/shop', '/gifting', '/wholesale', '/journal', '/faq', '/contact',
+        ...products.filter(product => product.active !== false).map(product => `/product/${encodeURIComponent(product.id)}`)];
+      res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${routes.map(route => `<url><loc>${publicOrigin}${route}</loc></url>`).join('')}</urlset>`);
+    });
+    app.get('/index.html', async (_req, res) => {
       res.setHeader('Cache-Control', 'no-cache');
-      res.type('html').send(html);
+      res.type('html').send(renderRouteDocument(html, routeMetadata('/', publicOrigin, await pageCatalog()), publicOrigin, res.locals.cspNonce));
     });
     app.use(express.static(distPath, {
       index: false,
@@ -1001,11 +918,12 @@ async function startServer() {
           ? 'public, max-age=31536000, immutable' : 'public, max-age=3600');
       },
     }));
-    app.get('*', (req, res) => {
+    app.get('*', async (req, res) => {
       if (path.extname(req.path)) return res.status(404).type('text/plain').send('Not found');
-      if (req.path.startsWith('/admin/')) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+      const metadata = routeMetadata(req.path, publicOrigin, await pageCatalog());
+      if (metadata.noindex) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
       res.setHeader('Cache-Control', 'no-cache');
-      res.type('html').send(html);
+      res.status(metadata.status).type('html').send(renderRouteDocument(html, metadata, publicOrigin, res.locals.cspNonce));
     });
   }
 
@@ -1036,6 +954,3 @@ startServer().catch((error) => {
   console.error('[AllBarka] startup failed:', error.message);
   process.exitCode = 1;
 });
-
-
-

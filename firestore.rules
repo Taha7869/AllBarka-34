@@ -7,15 +7,28 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == userId;
     }
 
+    // Validate only contact fields. Existing server-managed membership/loyalty fields
+    // can remain on a profile, but no browser operation may add or change them.
+    function validContactFields(data) {
+      return (!('name' in data) || (data.name is string && data.name.size() <= 120))
+        && (!('phone' in data) || (data.phone is string && data.phone.size() <= 40))
+        && (!('address' in data) || (data.address is string && data.address.size() <= 1000))
+        && (!('city' in data) || (data.city is string && data.city.size() <= 120))
+        && (!('createdAt' in data) || data.createdAt is number)
+        && (!('updatedAt' in data) || data.updatedAt is number);
+    }
+
     // User profile: only safe customer contact fields editable by client
     match /users/{userId} {
       allow read: if isOwner(userId);
       
       allow create: if isOwner(userId) 
-        && request.resource.data.keys().hasOnly(['name', 'phone', 'address', 'city', 'createdAt', 'updatedAt']);
+        && request.resource.data.keys().hasOnly(['name', 'phone', 'address', 'city', 'createdAt', 'updatedAt'])
+        && validContactFields(request.resource.data);
         
       allow update: if isOwner(userId)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'phone', 'address', 'city', 'updatedAt'])
+        && validContactFields(request.resource.data)
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['loyaltyPoints', 'role', 'admin', 'wholesaleEligible', 'patronStatus', 'tier']));
         
       allow delete: if false;
@@ -37,12 +50,11 @@ service cloud.firestore {
       }
     }
     
-    // Orders collection:
-    // Read: authenticated patron owner can read their own order documents
-    // Writes: client creation, update, and delete are strictly DENIED (orders created server-side only)
+    // Canonical orders contain private staff notes, identifiers and claim credentials.
+    // Customer reads use the authenticated, sanitized /api/me/orders and order API.
+    // Firebase Admin on the server bypasses these browser rules.
     match /orders/{orderId} {
-      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
-      allow write: if false;
+      allow read, write: if false;
     }
 
     // Coupons and discounts: server-side evaluation only

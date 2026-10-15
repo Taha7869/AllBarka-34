@@ -1,15 +1,22 @@
 import assert from 'node:assert/strict';
+import { fixtureCatalogSnapshot } from './helpers/catalogFixtures.ts';
 
 // Path-aware staged writes model Firestore transaction atomicity and read-before-write rules.
 function transactionalDatabase(store) {
-  const snapshot = path => ({ exists: store.has(path), data: () => structuredClone(store.get(path)) });
+  const snapshot = path => {
+    if (store.has(path)) return { id: path.split('/').at(-1), exists: true, data: () => structuredClone(store.get(path)) };
+    const fixture = fixtureCatalogSnapshot(path);
+    if (fixture.exists) return fixture;
+    return { id: path.split('/').at(-1), exists: false, data: () => undefined };
+  };
   const reference = path => ({ path, id: path.split('/').at(-1), get: async () => snapshot(path),
     collection: name => collection(`${path}/${name}`) });
   const collection = path => ({ doc: id => reference(`${path}/${id}`) });
   return { collection, runTransaction: async callback => {
     const writes = [];
     const result = await callback({ get: async ref => { assert.equal(writes.length, 0, 'Reads must precede writes'); return snapshot(ref.path); },
-      create: function(ref, data) { return this.set(ref, data); }, set: (ref, data, options) => writes.push({ path: ref.path, data: structuredClone(data), merge: !!options?.merge }),
+      set: (ref, data, options) => writes.push({ path: ref.path, data: structuredClone(data), merge: !!options?.merge }),
+      create: function(ref, data) { return this.set(ref, data); },
       update: (ref, data) => writes.push({ path: ref.path, data: structuredClone(data), merge: true }) });
     for (const write of writes) store.set(write.path, write.merge ? { ...store.get(write.path), ...write.data } : write.data);
     return result;

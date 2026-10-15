@@ -13,6 +13,7 @@ import { getCartShippingWeightGrams, getProductShippingWeightGrams } from '../sr
 import { validateAndPriceOrder, ValidationError } from '../src/lib/orderValidation';
 import { createDurableOrder } from '../src/lib/orderDatabase';
 import { hashPayload } from '../src/lib/serverOrderService';
+import { fixtureCatalogSnapshot } from './helpers/catalogFixtures';
 
 const base = PRODUCTS.find(product => product.id === 'pista')!;
 const configured: Product = { ...base, allowCustomWeight: true, pricePer100g: 103, minCustomWeightG: 100, maxCustomWeightG: 5000 };
@@ -175,8 +176,14 @@ function mockDatabase() {
   return { records, db: { collection, runTransaction: async (run: (transaction: any) => Promise<unknown>) => {
     const pending: Array<() => void> = [];
     const result = await run({
-      get: async (ref: any) => ({ exists: records.has(ref.key), data: () => records.get(ref.key) }),
-      create: function(ref, data) { return this.set(ref, data); }, set: (ref: any, value: unknown) => pending.push(() => { records.set(ref.key, value); }),
+      get: async (ref: any) => {
+        const path = ref.key || ref.path;
+        if (records.has(path)) return { id: path.split('/').at(-1), exists: true, data: () => records.get(path) };
+        const fixture = fixtureCatalogSnapshot(path);
+        if (fixture.exists) return fixture;
+        return { id: path.split('/').at(-1), exists: false, data: () => undefined };
+      },
+      set: (ref: any, value: unknown) => pending.push(() => { records.set(ref.key, value); }),
       update: (ref: any, value: unknown) => pending.push(() => { records.set(ref.key, { ...records.get(ref.key), ...value as object }); }),
     });
     pending.forEach(write => write()); return result;

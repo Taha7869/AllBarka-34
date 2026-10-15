@@ -1,0 +1,17 @@
+.env
+.env.*
+.git
+.local-setup
+node_modules
+build
+dist
+dist-client
+coverage
+*.log
+*.zip
+*.pem
+*.key
+*service-account*.json
+*service_account*.json
+*firebase-adminsdk*.json
+credentials*.json

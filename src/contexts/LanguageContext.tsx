@@ -1,4 +1,5 @@
 import { catalogTranslations } from './catalogTranslations';
+import { shoppingQualityTranslations } from './shoppingQualityTranslations';
 import { trendTranslations } from './trendTranslations';
 import { authTranslations } from './authTranslations';
 import { updateTranslations } from './updateTranslations';
@@ -7,6 +8,7 @@ import { conciergeTranslations } from './conciergeTranslations';
 import { checkoutReliabilityTranslations } from './checkoutReliabilityTranslations';
 import { weightTranslations } from './weightTranslations';
 import { trackingTranslations } from './trackingTranslations';
+import { rewardTranslations } from './rewardTranslations';
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 
 import { boutiqueTranslations } from './boutiqueTranslations';
@@ -117,7 +119,6 @@ const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     'imageAlt.categoryDryFruits': 'Dried fruits arranged in four small bowls',
     'imageAlt.categoryOils': 'Bottle of cold-pressed oil',
     'imageAlt.categoryEssentials': 'Jar of organic desi ghee',
-    'imageAlt.categoryHerbsSpices': 'Assortment of premium herbs and spices',
     'imageAlt.categorySnacks': 'Traditional Lahori nimko snack mix',
     'imageAlt.categoryGifts': 'Plain gift packs of walnuts and pistachios',
     'imageAlt.categoryDealBoxes': 'Plain packs of almonds and cashews',
@@ -298,7 +299,6 @@ const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     'imageAlt.categoryDryFruits': 'چار پیالیوں میں سجے خشک میوہ جات',
     'imageAlt.categoryOils': 'خالص تیل کی بوتل',
     'imageAlt.categoryEssentials': 'خالص دیسی گھی کا جار',
-    'imageAlt.categoryHerbsSpices': 'اعلیٰ معیار کی جڑی بوٹیاں اور مصالحہ جات',
     'imageAlt.categorySnacks': 'روایتی لاہوری نمکو',
     'imageAlt.categoryGifts': 'اخروٹ اور پستے کے سادہ تحفہ پیک',
     'imageAlt.categoryDealBoxes': 'بادام اور کاجو کے سادہ پیک',
@@ -478,7 +478,6 @@ const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     'imageAlt.categoryDryFruits': 'فواكه مجففة مرتبة في أربعة أوعية صغيرة',
     'imageAlt.categoryOils': 'زجاجة من الزيت المعصور على البارد',
     'imageAlt.categoryEssentials': 'وعاء من السمن العضوي',
-    'imageAlt.categoryHerbsSpices': 'مجموعة متنوعة من الأعشاب والتوابل الفاخرة',
     'imageAlt.categorySnacks': 'مزيج نمكو لاهوري تقليدي',
     'imageAlt.categoryGifts': 'عبوات هدايا بسيطة من الجوز والفستق',
     'imageAlt.categoryDealBoxes': 'عبوات بسيطة من اللوز والكاجو',
@@ -608,7 +607,8 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [language, isRtl]);
 
   const t = useCallback((key: string, defaultText = ''): string => {
-    return trackingTranslations[language]?.[key] || weightTranslations[language]?.[key] || checkoutReliabilityTranslations[language]?.[key] || (conciergeTranslations[language] as Record<string, string>)[key] || shippingTranslations[language]?.[key] || updateTranslations[language]?.[key] || authTranslations[language]?.[key] || trendTranslations[language]?.[key] || catalogTranslations[language]?.[key] || boutiqueTranslations[language]?.[key] || TRANSLATIONS[language]?.[key] || TRANSLATIONS.en[key] || defaultText || key;
+    if (rewardTranslations[language]?.[key]) return rewardTranslations[language][key];
+    return shoppingQualityTranslations[language]?.[key] || trackingTranslations[language]?.[key] || weightTranslations[language]?.[key] || checkoutReliabilityTranslations[language]?.[key] || (conciergeTranslations[language] as Record<string, string>)[key] || shippingTranslations[language]?.[key] || updateTranslations[language]?.[key] || authTranslations[language]?.[key] || trendTranslations[language]?.[key] || catalogTranslations[language]?.[key] || boutiqueTranslations[language]?.[key] || TRANSLATIONS[language]?.[key] || TRANSLATIONS.en[key] || defaultText || key;
   }, [language]);
 
   const value = useMemo(() => ({

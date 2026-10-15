@@ -1,3 +1,4 @@
+import { useCatalogProducts } from '../contexts/CatalogContext';
 import { getLocalized } from '../utils/localize';
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -5,7 +6,6 @@ import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, MessageCircle, ShoppingCa
 import { useCart, formatPrice, parsePrice } from '../contexts/CartContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { PRODUCTS } from '../data/products';
-import { useLiveCatalog } from '../hooks/useLiveCatalog';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import CartTools from '../components/CartTools';
 import SEO from '../components/SEO';
@@ -14,7 +14,7 @@ import { buildAutomatedOrderWhatsAppUrl } from '../config/contacts';
 import { hamperPackingLines } from '../lib/hamperCatalog';
 
 export default function CartPage() {
-  const catalog = useLiveCatalog();
+  const PRODUCTS = useCatalogProducts();
   const navigate = useNavigate();
   const { t, isRtl , language } = useLanguage();
   const mediaCover = useProductMediaCover();
@@ -145,7 +145,7 @@ export default function CartPage() {
             {cartItems.map((item) => {
               const itemUnit = parsePrice(item.unitPrice || item.price);
               const itemTotal = itemUnit * item.quantity;
-              const matchedProduct = catalog.find((p) => p.id === item.productId || p.id === item.id);
+              const matchedProduct = PRODUCTS.find((p) => p.id === item.productId || p.id === item.id);
               const imageSource = mediaCover(matchedProduct, item.image || '');
 
               return (

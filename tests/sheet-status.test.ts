@@ -10,19 +10,27 @@ import crypto from 'node:crypto';
 import { applyOrderUpdate, claimGuestOrder } from '../src/lib/orderDatabase';
 import { validateOrderUpdate } from '../src/lib/orderUpdateCommand';
 import { calculateLoyaltyPoints, loyaltyRate } from '../src/lib/loyaltyPoints';
+import { fixtureCatalogSnapshot } from './helpers/catalogFixtures';
 
 class MemoryDatabase {
   records = new Map<string, any>();
   tail = Promise.resolve();
   failAudit = false;
   collection(path: string): any { return { doc: (id: string) => ({ path: `${path}/${id}`, collection: (name: string) => this.collection(`${path}/${id}/${name}`) }) }; }
-  snapshot(path: string): any { return { exists: this.records.has(path), data: () => structuredClone(this.records.get(path)) }; }
+  snapshot(path: string): any {
+    if (this.records.has(path)) {
+      return { id: path.split('/').at(-1), exists: true, data: () => structuredClone(this.records.get(path)) };
+    }
+    const fixture = fixtureCatalogSnapshot(path);
+    if (fixture.exists) return fixture;
+    return { id: path.split('/').at(-1), exists: false, data: () => undefined };
+  }
   runTransaction<T>(callback: (tx: any) => Promise<T>): Promise<T> {
     const result = this.tail.then(async () => {
       const writes: Array<{ path: string; data: any; merge: boolean }> = [];
       const value = await callback({
         get: async (ref: any) => { assert.equal(writes.length, 0, 'All transaction reads precede writes'); return this.snapshot(ref.path); },
-        create: function(ref, data) { return this.set(ref, data); }, set: (ref: any, data: any, options?: any) => { if (this.failAudit && ref.path.startsWith('orderAudits/')) throw new Error('audit unavailable');
+        set: (ref: any, data: any, options?: any) => { if (this.failAudit && ref.path.startsWith('orderAudits/')) throw new Error('audit unavailable');
           writes.push({ path: ref.path, data: structuredClone(data), merge: !!options?.merge }); },
         update: (ref: any, data: any) => writes.push({ path: ref.path, data: structuredClone(data), merge: true }),
       });
