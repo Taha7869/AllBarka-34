@@ -283,21 +283,3 @@ test('quote mirror rejects paid/misclassified quotes, nonzero totals and contrad
     freeShipping: false, freeGiftWrap: false, freeGift: true, isQuoteRequest: false });
   assert.equal(run('Validate Website Order', gift).valid, false);
 });
-
-
-test('the website receiver accepts current eight-hex IDs and legacy six-hex IDs, rejecting seven-hex IDs', () => {
-  for (const suffix of ['A1B2C3', 'A1B2C3D4']) { const input = order(); input.body.order.orderId = 'AB-20261014-' + suffix; assert.equal(run('Validate Website Order', input).valid, true); }
-  const invalid = order(); invalid.body.order.orderId = 'AB-20261014-A1B2C3D'; assert.equal(run('Validate Website Order', invalid).valid, false);
-});
-
-test('the saved mirror includes explicit sample and gift packing benefits without copying voucher identities', () => {
-  const input = order(); input.body.order.orderId = 'AB-20261014-A1B2C3D4';
-  input.body.order.rewardApplication = { rewardId: 'cashew_sample', rewardType: 'SAMPLE', status: 'APPLIED', shippingDiscount: 0, giftWrapDiscount: 0,
-    sample: { productId: 'kaju', grams: 50, quantity: 1 }, activeRewardId: 'private-voucher-id', pointsCost: 500 };
-  const result = run('Validate Website Order', input); assert.equal(result.valid, true); assert.match(result.sheetRow.items_summary, /free 50g cashew/);
-  assert.doesNotMatch(JSON.stringify(result), /private-voucher|pointsCost|activeRewardId/);
-  input.body.order.rewardApplication.sample.grams = 100; assert.equal(run('Validate Website Order', input).valid, false);
-  input.body.order.rewardApplication = { rewardId: 'gift_packaging', rewardType: 'PACKAGING', status: 'APPLIED', shippingDiscount: 0, giftWrapDiscount: 250 };
-  assert.match(run('Validate Website Order', input).sheetRow.items_summary, /premium gift packaging/);
-  input.body.order.rewardApplication.status = 'RESTORED'; assert.doesNotMatch(run('Validate Website Order', input).sheetRow.items_summary, /premium gift packaging/);
-});

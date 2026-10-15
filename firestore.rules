@@ -31,9 +31,6 @@ service cloud.firestore {
         allow write: if false;
       }
 
-      match /rewardClaims/{claimId} { allow read, write: if false; }
-      match /rewardRedemptions/{requestId} { allow read, write: if false; }
-
       // Customer favorites and saved bag: client writable for owner
       match /favorites/{favId} {
         allow read, write: if isOwner(userId);
@@ -41,11 +38,11 @@ service cloud.firestore {
     }
     
     // Orders collection:
-    // Canonical orders include private staff notes and guest-claim security fields.
-    // Customers use the authenticated, ownership-checked API and its explicit
-    // response allowlist; Firestore rules cannot hide individual document fields.
+    // Read: authenticated patron owner can read their own order documents
+    // Writes: client creation, update, and delete are strictly DENIED (orders created server-side only)
     match /orders/{orderId} {
-      allow read, write: if false;
+      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow write: if false;
     }
 
     // Coupons and discounts: server-side evaluation only
@@ -53,20 +50,11 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // Pricing is published through the validated public API. Legacy documents
-    // may contain internal fields; clients cannot bypass the response allowlist.
+    // Public catalog & content (read-only for clients, immutable)
     match /products/{productId} {
-      allow read, write: if false;
+      allow read: if true;
+      allow write: if false;
     }
-    match /catalogBoxes/{boxId} {
-      allow read, write: if false;
-    }
-    match /catalogPriceAudits/{auditId} {
-      allow read, write: if false;
-    }
-
-    match /catalogInventory/{targetId} { allow read, write: if false; }
-    match /inventoryAudits/{document=**} { allow read, write: if false; }
 
     match /reviews/{reviewId} {
       allow read: if true;

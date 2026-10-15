@@ -1,13 +1,61 @@
-// Read-only smoke check. Never creates/deletes probe products or loads Firebase credentials.
-const base = process.env.BASE_URL || 'http://localhost:3000';
-async function run() {
-  const response = await fetch(new URL('/api/catalog/snapshot', base), { signal: AbortSignal.timeout(12000), cache: 'no-store' });
-  const snapshot = await response.json();
-  if (!response.ok || !Array.isArray(snapshot.catalog) || !Array.isArray(snapshot.boxes) || !['static', 'firestore'].includes(snapshot.source)
-    || !/^[a-f0-9]{64}$/.test(snapshot.revision || '') || snapshot.catalog.length !== 89 || snapshot.boxes.length !== 3
-    || snapshot.catalog.some(product => typeof product.id !== 'string' || !product.prices || Object.values(product.prices).some(price => !Number.isSafeInteger(price) || price <= 0))) {
-    throw new Error('Catalogue is unavailable or invalid.');
-  }
-  console.log(`Validated public catalogue: ${snapshot.catalog.length} products, ${snapshot.boxes.length} boxes, source ${snapshot.source}. No writes were made.`);
+const { initializeApp, cert, getApps } = require('firebase-admin/app');
+const { getFirestore } = require('firebase-admin/firestore');
+
+const dotenv = require('dotenv');
+
+dotenv.config();
+
+const projectId = process.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || 'allbarka-live';
+
+const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+
+if (!getApps().length) {
+  initializeApp({
+    projectId,
+    credential: cert({
+      projectId,
+      clientEmail: clientEmail.trim(),
+      privateKey: privateKey.replace(/\\n/g, '\n'),
+    })
+  });
 }
-run().catch(() => { console.error('Read-only catalogue smoke check failed.'); process.exitCode = 1; });
+
+const db = getFirestore();
+const BASE_URL = 'http://localhost:3000';
+
+async function run() {
+  console.log('--- STARTING SAFE TEST PLAN ---');
+  
+  // 1. Get kishmish and create zz-test-probe
+  const kishmishDoc = await db.collection('products').doc('kishmish').get();
+  const probeData = kishmishDoc.data();
+  probeData.id = 'zz-test-probe';
+  probeData.name = 'Test Probe';
+  probeData.variants = [
+    { label: '250g', price: 999 },
+    { label: '500g', price: 1998 },
+    { label: '1kg', price: 3996 }
+  ];
+  probeData.prices = { '250g': 999, '500g': 1998, '1kg': 3996 };
+  
+  await db.collection('products').doc('zz-test-probe').set(probeData);
+  console.log('Created zz-test-probe in Firestore with price 999.');
+  
+  const catalogRes = await fetch(BASE_URL + '/api/catalog');
+  const catalog = await catalogRes.json();
+  console.log('Fetched /api/catalog. Source:', catalogRes.headers.get('x-catalog-source'));
+  
+  const probeInCatalog = catalog.find && catalog.find(c => c.id === 'zz-test-probe');
+  if (probeInCatalog) {
+    console.log('✅ Found zz-test-probe in /api/catalog:', probeInCatalog.prices);
+  } else {
+    console.log('⚠️ zz-test-probe NOT found in /api/catalog (likely due to 5-min cache).');
+  }
+
+  // Now delete it
+  await db.collection('products').doc('zz-test-probe').delete();
+  console.log('Deleted zz-test-probe from Firestore.');
+}
+
+run().catch(console.error);

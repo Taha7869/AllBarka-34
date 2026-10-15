@@ -1,7 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Truck } from 'lucide-react';
-import { useLanguage } from '../contexts/LanguageContext';
-import { calculateDeliverySchedule } from '../lib/deliveryCalendar';
+import React, { useState, useEffect } from 'react';
+import { Clock, Truck, Sparkles, MapPin } from 'lucide-react';
 
 interface LahoreExpressTimerProps {
   className?: string;
@@ -9,32 +7,74 @@ interface LahoreExpressTimerProps {
 }
 
 export default function LahoreExpressTimer({ className = '', onOpenSchedule }: LahoreExpressTimerProps) {
-  const { t, language, isRtl } = useLanguage();
-  const [now, setNow] = useState(() => new Date());
+  const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number }>({
+    hours: 2,
+    minutes: 15,
+    seconds: 0,
+  });
+
   useEffect(() => {
-    const refresh = () => setNow(new Date());
-    const interval = setInterval(refresh, 30000);
-    document.addEventListener('visibilitychange', refresh);
-    return () => { clearInterval(interval); document.removeEventListener('visibilitychange', refresh); };
+    const updateCountdown = () => {
+      const now = new Date();
+      // Target today's 4:00 PM Lahore cutoff (or tomorrow's if passed)
+      const target = new Date();
+      target.setHours(16, 0, 0, 0);
+
+      let diff = target.getTime() - now.getTime();
+      if (diff <= 0) {
+        // If passed 4pm, target next day 4pm
+        target.setDate(target.getDate() + 1);
+        diff = target.getTime() - now.getTime();
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      setTimeLeft({ hours, minutes, seconds });
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
   }, []);
-  const schedule = calculateDeliverySchedule({ city: 'Lahore', shippingMethodId: 'sameday', orderTimestamp: now });
-  const dispatchDate = new Intl.DateTimeFormat(language === 'ur' ? 'ur-PK' : language === 'ar' ? 'ar' : 'en-PK', {
-    timeZone: 'Asia/Karachi', weekday: 'short', month: 'short', day: 'numeric',
-  }).format(new Date(`${schedule.scheduledDeliveryDate}T12:00:00+05:00`));
+
+  const format2 = (n: number) => n.toString().padStart(2, '0');
 
   return (
-    <div dir={isRtl ? 'rtl' : 'ltr'} className={`w-full border-b border-[#D4AF37]/30 bg-[#042821] px-3 text-[#EDE8DE] sm:px-4 ${className}`}>
-      <div className="mx-auto flex min-h-11 max-w-7xl flex-wrap items-center justify-between gap-x-4 gap-y-1 py-1 text-[11px] sm:text-xs">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <Truck size={14} aria-hidden="true" className="shrink-0 text-[#E4C783]" />
-          <span className="font-medium">{t('experience.dispatch.lahore')}</span>
-          <span className="text-[#E4C783]">
-            {schedule.isSameDayEligible ? t('experience.dispatch.cutoff') : <>{t('experience.dispatch.next')} <bdi>{dispatchDate}</bdi></>}
+    <div dir="ltr"
+      className={`w-full bg-[#042821] text-[#EDE8DE] border-b border-[#D4AF37]/30 py-2 px-3 sm:px-4 text-[11px] sm:text-xs select-none transition-colors ${className}`}
+    >
+      <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 font-medium">
+          <span className="flex h-2 w-2 rounded-full bg-[#D4AF37] animate-pulse shrink-0" />
+          <span className="text-[#D4AF37] font-serif font-bold tracking-wider uppercase text-[10px] sm:text-[11px]">
+            Lahore Same-Day Express
+          </span>
+          <span className="hidden md:inline text-white/50">|</span>
+          <span className="text-white/90">
+            Order within{' '}
+            <span className="font-mono font-bold text-[#E4C783] bg-white/10 px-1.5 py-0.5 rounded border border-[#D4AF37]/30">
+              {timeLeft.hours}h {format2(timeLeft.minutes)}m {format2(timeLeft.seconds)}s
+            </span>{' '}
+            for evening dispatch
           </span>
         </div>
-        {onOpenSchedule && <button type="button" onClick={onOpenSchedule} className="focus-ring inline-flex min-h-11 items-center text-[#E4C783] underline underline-offset-2 hover:text-white">
-          {t('experience.dispatch.schedule')}
-        </button>}
+
+        <div className="flex items-center gap-3 text-[10.5px] text-white/80">
+          <span className="hidden sm:flex items-center gap-1 text-[#A8B2AF]">
+            <MapPin size={11} className="text-[#D4AF37]" />
+            DHA, Gulberg, Cantt & Model Town
+          </span>
+          {onOpenSchedule && (
+            <button
+              onClick={onOpenSchedule}
+              className="text-[#D4AF37] hover:text-[#E4C783] underline underline-offset-2 font-medium cursor-pointer"
+            >
+              Delivery Schedule
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

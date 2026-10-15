@@ -17,11 +17,9 @@ export default defineConfig(() => {
       hmr: process.env.DISABLE_HMR !== 'true',
     },
     build: {
-      manifest: true,
       rollupOptions: {
         output: {
           manualChunks(id) {
-            if (id.replace(/\\/g, '/').includes('/src/data/products.ts')) return 'catalog-data';
             if (id.includes('node_modules')) {
               if (id.includes('motion') || id.includes('framer-motion')) return 'motion';
               if (id.includes('gsap')) return 'gsap';

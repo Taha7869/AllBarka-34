@@ -1,4 +1,3 @@
-import { experienceTranslations } from './experienceTranslations';
 import { catalogTranslations } from './catalogTranslations';
 import { trendTranslations } from './trendTranslations';
 import { authTranslations } from './authTranslations';
@@ -8,9 +7,6 @@ import { conciergeTranslations } from './conciergeTranslations';
 import { checkoutReliabilityTranslations } from './checkoutReliabilityTranslations';
 import { weightTranslations } from './weightTranslations';
 import { trackingTranslations } from './trackingTranslations';
-import { loyaltyTranslations } from './loyaltyTranslations';
-import { pricingTranslations } from './pricingTranslations';
-import { commerceTranslations } from './commerceTranslations';
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 
 import { boutiqueTranslations } from './boutiqueTranslations';
@@ -612,7 +608,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [language, isRtl]);
 
   const t = useCallback((key: string, defaultText = ''): string => {
-    return experienceTranslations[language]?.[key] || commerceTranslations[language]?.[key] || pricingTranslations[language]?.[key] || (loyaltyTranslations[language] as Record<string, string>)[key] || trackingTranslations[language]?.[key] || weightTranslations[language]?.[key] || checkoutReliabilityTranslations[language]?.[key] || (conciergeTranslations[language] as Record<string, string>)[key] || shippingTranslations[language]?.[key] || updateTranslations[language]?.[key] || authTranslations[language]?.[key] || trendTranslations[language]?.[key] || catalogTranslations[language]?.[key] || boutiqueTranslations[language]?.[key] || TRANSLATIONS[language]?.[key] || TRANSLATIONS.en[key] || defaultText || key;
+    return trackingTranslations[language]?.[key] || weightTranslations[language]?.[key] || checkoutReliabilityTranslations[language]?.[key] || (conciergeTranslations[language] as Record<string, string>)[key] || shippingTranslations[language]?.[key] || updateTranslations[language]?.[key] || authTranslations[language]?.[key] || trendTranslations[language]?.[key] || catalogTranslations[language]?.[key] || boutiqueTranslations[language]?.[key] || TRANSLATIONS[language]?.[key] || TRANSLATIONS.en[key] || defaultText || key;
   }, [language]);
 
   const value = useMemo(() => ({

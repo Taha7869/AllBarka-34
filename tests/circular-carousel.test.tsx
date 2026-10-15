@@ -63,11 +63,11 @@ test('painted side peeks remain below the readable threshold on either edge', ()
   }
 });
 
-test('featured selections keep real detail links, Quick View, portions, save and add-to-cart controls', () => {
+test('the tour keeps real detail links, Quick View, portions, save and add-to-cart controls', () => {
   const html = renderToString(<MemoryRouter><LanguageProvider><CartProvider><ProductSlider products={PRODUCTS.slice(0, 3)} onAddToCart={() => undefined} onQuickView={() => undefined} /></CartProvider></LanguageProvider></MemoryRouter>);
-  assert.equal((html.match(/class="circular-boutique-slide"/g) || []).length, 3);
+  assert.equal((html.match(/class="circular-boutique-slide"/g) || []).length, PRODUCTS.length);
   assert.equal((html.match(/class="circular-boutique-slide"[^>]*aria-hidden="false"/g) || []).length, 1, 'only the selected product is accessible before geometry is known');
-  for (const product of PRODUCTS.slice(0, 3)) assert.ok(html.includes(`href="/product/${product.id}"`), `missing detail link for ${product.id}`);
+  for (const product of PRODUCTS) assert.ok(html.includes(`href="/product/${product.id}"`), `missing detail link for ${product.id}`);
   assert.match(html, /Quick View/);
   assert.match(html, /Add to Bag/);
   assert.match(html, /aria-label="Save product:/);

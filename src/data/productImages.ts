@@ -1,7 +1,5 @@
 import type { Product } from '../types';
-import { getProductImage, NEW_PRODUCT_IDS } from './products';
-
-const singleCoverIds = new Set(NEW_PRODUCT_IDS);
+import { getProductImage } from './products';
 
 const secondPhotoIds = new Set(['pista', 'kaju', 'badam', 'akhroot', 'deal-1', 'deal-2', 'khubani', 'alubukhara', 'kishmish', 'khajoor', 'pumpkin_seeds', 'chia_seeds', 'nimko', 'chanay']);
 const bundleContents: Record<string, string[]> = {
@@ -9,9 +7,9 @@ const bundleContents: Record<string, string[]> = {
   'deal-2': ['/images/generated/almonds-catalog-v1.webp', '/images/generated/cashews-catalog-v1.webp'],
 };
 
-/** Migrated selections retain one approved cover regardless of its file format. */
+/** Generated catalogue illustrations have one cover, never a second pack view. */
 export function isSingleImageCatalogProduct(product: Product): boolean {
-  return singleCoverIds.has(product.id) && product.image !== null;
+  return product.image === `/images/products/${product.id}.svg`;
 }
 
 export function getProductImages(product: Product): string[] {

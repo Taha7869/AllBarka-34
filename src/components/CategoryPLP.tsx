@@ -9,7 +9,7 @@ import { useCatalogFilterLanguage } from '../hooks/useCatalogFilterLanguage';
 import { useCatalogActivity } from '../hooks/useCatalogActivity';
 import { unitPrice } from '../lib/catalogActivity';
 import ProductImageGallery from './ProductImageGallery';
-import { useLiveCatalog } from '../hooks/useLiveCatalog';
+import { PRODUCTS } from '../data/products';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { readSharedSelections, selectionLink, shareOrCopy } from '../lib/catalogLinks';
 import { buildHumanSupportWhatsAppUrl } from '../config/contacts';
@@ -32,7 +32,6 @@ export function CategoryPLPSkeleton() {
   return <div className="grid grid-cols-2 gap-4 lg:grid-cols-4" aria-busy="true">{Array.from({ length: 8 }, (_, i) => <div key={i} className="aspect-[3/5] rounded-2xl bg-[var(--color-border)] motion-safe:animate-pulse" />)}</div>;
 }
 export default function CategoryPLP({ searchFilter: initialSearch, initialCategory = 'all', onAddToCart, onQuickView, isWholesale = false, isModal = false, onClose }: CategoryPLPProps) {
-  const catalog = useLiveCatalog();
   const { t, language } = useCatalogFilterLanguage();
   const mediaCover = useProductMediaCover();
   const { addToCart } = useCart();
@@ -56,12 +55,12 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
   const sheetFilterId = useId();
   const activeParams = isModal ? localParams : params;
   const filters = readCatalogFilters(activeParams);
-  const sharedIds = useMemo(() => readSharedSelections(activeParams.get('shared'), catalog), [activeParams, catalog]);
+  const sharedIds = useMemo(() => readSharedSelections(activeParams.get('shared'), PRODUCTS), [activeParams]);
   const listView = activeParams.get('view') === 'list';
   const [visibleCount, setVisibleCount] = useState(12);
   const [shareStatus, setShareStatus] = useState('');
   const [manualLink, setManualLink] = useState('');
-  const suggestions = useMemo(() => filters.query.trim() ? searchCatalog(catalog, filters.query).slice(0, 5) : [], [filters.query, catalog]);
+  const suggestions = useMemo(() => filters.query.trim() ? searchCatalog(PRODUCTS, filters.query).slice(0, 5) : [], [filters.query]);
   const category = resolveCategorySlug(isModal ? modalCategory : initialCategory) || 'all';
   const filterSignature = activeParams.toString();
   useEffect(() => { setVisibleCount(12); }, [category, filters.query, filters.origin, filters.budget, filters.sort, filters.saved, filters.special]);
@@ -84,7 +83,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
     };
   }, [isModal]);
   const share = async (saved = false) => {
-    const url = saved ? selectionLink(window.location.origin, savedIds, catalog) : new URL(`${location.pathname}?${activeParams}`, window.location.origin).toString();
+    const url = saved ? selectionLink(window.location.origin, savedIds, PRODUCTS) : new URL(`${location.pathname}?${activeParams}`, window.location.origin).toString();
     const result = await shareOrCopy(t(saved ? 'shop.shareSaved' : 'shop.shareCollection'), url);
     setShareStatus(result === 'copied' ? t('shareCopied') : ''); setManualLink(result === 'manual' ? url : '');
   };
@@ -110,9 +109,9 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
     if (isModal) setLocalParams(next); else setParams(next, { replace: true, preventScrollReset: true });
     setFilterDraft(null);
   };
-  const origins = useMemo(() => [...new Map(catalog.filter(p => p.active !== false && p.origin_en).map(p => [p.origin_en, getLocalized(p, 'origin', language)])).entries()], [language, catalog]);
+  const origins = useMemo(() => [...new Map(PRODUCTS.filter(p => p.active !== false && p.origin_en).map(p => [p.origin_en, getLocalized(p, 'origin', language)])).entries()], [language]);
   const products = useMemo(() => {
-    const found = filterCatalogSelection(catalog, { query: filters.query, origin: filters.origin, budget: filters.budget, special: filters.special, saved: filters.saved, sort: filters.sort }, { category, isWholesale, savedIds, sharedIds });
+    const found = filterCatalogSelection(PRODUCTS, { query: filters.query, origin: filters.origin, budget: filters.budget, special: filters.special, saved: filters.saved, sort: filters.sort }, { category, isWholesale, savedIds, sharedIds });
     if (category === 'all' && filters.sort === 'featured') {
       const order = Object.keys(CANONICAL_CATEGORIES);
       return found.sort((a, b) => order.indexOf(a.category) - order.indexOf(b.category));
@@ -121,8 +120,8 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
       : filters.sort === 'price-asc' ? startingPrice(a) - startingPrice(b)
       : filters.sort === 'price-desc' ? startingPrice(b) - startingPrice(a)
       : filters.sort === 'name-asc' ? getLocalized(a, 'name', language).localeCompare(getLocalized(b, 'name', language), language) : 0);
-  }, [category, filters.query, filters.origin, filters.special, filters.saved, filters.budget, filters.sort, isWholesale, savedIds, language, sharedIds, catalog]);
-  const previewCount = (draft: CatalogFilterDraft) => filterCatalogSelection(catalog, draft, { category, isWholesale, savedIds, sharedIds: readSharedSelections(draft.shared, catalog) }).length;
+  }, [category, filters.query, filters.origin, filters.special, filters.saved, filters.budget, filters.sort, isWholesale, savedIds, language, sharedIds]);
+  const previewCount = (draft: CatalogFilterDraft) => filterCatalogSelection(PRODUCTS, draft, { category, isWholesale, savedIds, sharedIds: readSharedSelections(draft.shared, PRODUCTS) }).length;
   const draftOrigins = filterDraft ? [['all', t('shop.anyOrigin')], ...origins].map(([id, label]) => ({ id, label, count: previewCount({ ...filterDraft, origin: id }) })) : [];
   const chips = [
     ...(sharedIds !== null ? [{ key: 'shared', label: t('shop.sharedSelections') }] : []),
@@ -141,7 +140,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
       <div className="pointer-events-none absolute -bottom-36 end-6 h-80 w-80 rounded-full border border-[#d5b876]/15" aria-hidden="true" />
       <p className="relative mb-4 text-[10px] font-semibold tracking-[.25em] text-[#e4c783]">{t('shop.eyebrow')}</p>
       <h1 className="relative max-w-3xl font-serif text-4xl leading-[1.12] sm:text-6xl">{category === 'all' ? t('shop.title') : t(`shop.${category}`)}</h1>
-      <div className="relative mt-5 flex flex-wrap items-end justify-between gap-5"><p className="max-w-lg text-sm leading-7 text-[#d1ded5]">{t('shop.copy')}</p><span className="text-xs text-[#e4c783]">{catalog.length} / {t('shop.results')}</span></div>
+      <div className="relative mt-5 flex flex-wrap items-end justify-between gap-5"><p className="max-w-lg text-sm leading-7 text-[#d1ded5]">{t('shop.copy')}</p><span className="text-xs text-[#e4c783]">{PRODUCTS.length} / {t('shop.results')}</span></div>
     </header>
     {isWholesale && <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--color-border)] p-4"><p className="max-w-lg text-sm leading-6">{t('shop.wholesaleCopy')}</p><a href={buildHumanSupportWhatsAppUrl('I would like to enquire about wholesale products.')} target="_blank" rel="noreferrer" className="focus-ring inline-flex min-h-11 items-center rounded-full bg-[#1e3a2b] px-5 text-xs text-[#fff8e9]">{t('shop.wholesaleEnquiry')}</a></div>}
     <nav aria-label={t('category')} className="catalog-category-nav mb-6 flex gap-2 overflow-x-auto pb-2">

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { X, Scale, Clock } from 'lucide-react';
-import { useLiveCatalog } from '../hooks/useLiveCatalog';
+import { PRODUCTS } from '../data/products';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { getLocalized } from '../utils/localize';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -10,13 +10,12 @@ import { useCart } from '../contexts/CartContext';
 import { unitPrice } from '../lib/catalogActivity';
 
 export default function CatalogTools({ mode }: { mode: 'compare' | 'recent' }) {
-  const catalog = useLiveCatalog();
   const { t, language } = useLanguage();
   const mediaCover = useProductMediaCover();
   const { compareIds, recentIds, toggleCompare, clearCompare, clearRecent } = useCatalogActivity();
   const { addToCart } = useCart();
   const [weights, setWeights] = useState<Record<string, string>>({});
-  const products = (mode === 'compare' ? compareIds : recentIds).map(id => catalog.find(product => product.id === id && product.active !== false)).filter(product => !!product);
+  const products = (mode === 'compare' ? compareIds : recentIds).map(id => PRODUCTS.find(product => product.id === id && product.active !== false)).filter(product => !!product);
   if (!products.length) return null;
   return <section id={mode === 'compare' ? 'catalog-comparison' : undefined} className="my-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:p-6" aria-label={t(mode === 'compare' ? 'shop.compare' : 'shop.recent')}>
     <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><h2 className="flex items-center gap-2 font-serif text-xl">{mode === 'compare' ? <Scale size={19} /> : <Clock size={19} />}{t(mode === 'compare' ? 'shop.compare' : 'shop.recent')}</h2><button type="button" onClick={mode === 'compare' ? clearCompare : clearRecent} className="focus-ring min-h-11 rounded-full border border-[var(--color-border)] px-4 text-xs">{t(mode === 'compare' ? 'shop.clearCompare' : 'shop.clearRecent')}</button></div>

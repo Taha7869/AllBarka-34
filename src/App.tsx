@@ -1,4 +1,3 @@
-import { INFO_ROUTES, POLICY_ROUTES } from './lib/routeMetadata';
 import React from 'react';
 import { BrowserRouter, Routes, Route, useParams } from 'react-router-dom';
 
@@ -34,7 +33,6 @@ const PageLoadingFallback = () => (
 
 function InfoPageRoute() {
   const { slug } = useParams<{ slug: string }>();
-  if (slug && !Object.hasOwn(INFO_ROUTES, slug)) return <NotFoundPage />;
   return (
     <InfoPage
       asPage={true}
@@ -45,7 +43,6 @@ function InfoPageRoute() {
 
 function PoliciesPageRoute() {
   const { slug } = useParams<{ slug: string }>();
-  if (slug && !Object.hasOwn(POLICY_ROUTES, slug)) return <NotFoundPage />;
   return (
     <PoliciesPage
       asPage={true}

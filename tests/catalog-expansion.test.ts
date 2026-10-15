@@ -56,14 +56,13 @@ test('73 requested entries expand the original 32 into 89 unique products after 
   });
 });
 
-test('original names and prices survive alongside the approved launch cover migration', () => {
+test('every original name, photograph and fixed price survives; only six missing portions are added', () => {
   for (const [id, name, image, prices] of originalProducts) {
     const product = PRODUCTS.find(item => item.id === id);
     assert.ok(product, id);
     assert.equal(product.name_en, name, id);
-    const cover = ['pumpkin_seeds', 'chanay'].includes(id) ? `/images/products/${id}-1.webp` : image;
-    assert.equal(product.image, cover, id);
-    assert.equal(getProductImage(product), cover, id);
+    assert.equal(product.image, image, id);
+    assert.equal(getProductImage(product), image, id);
     assert.deepEqual(product.prices, { ...prices, ...(addedSizes[id] || {}) }, id);
   }
 });
@@ -156,14 +155,14 @@ test('bundles use one fixed purchase portion, canonical components and only decl
   }
 });
 
-test('new products use approved WebP covers; established galleries remain intact', () => {
+test('new product images are local SVGs when available; established galleries remain intact', () => {
   for (const id of NEW_PRODUCT_IDS) {
     const product = PRODUCTS.find(item => item.id === id)!;
     if (product.image === null) {
       assert.equal(product.imageName, null, id);
       assert.deepEqual(getProductImages(product), [], id);
     } else {
-      assert.equal(product.image, `/images/products/${id}-1.webp`, id);
+      assert.equal(product.image, `/images/products/${id}.svg`, id);
       assert.equal(product.imageName, product.image, id);
       assert.deepEqual(getProductImages(product), [product.image], id);
     }

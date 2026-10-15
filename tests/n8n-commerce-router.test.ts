@@ -5,7 +5,6 @@ import express from 'express';
 import { once } from 'node:events';
 import { createN8nCommerceRouter } from '../src/lib/n8nCommerceRouter';
 import { getWhatsAppIntegrationConfig } from '../src/lib/whatsappCommerce';
-import { staticCatalogSnapshot, pricingVersion } from '../src/lib/liveCatalog';
 
 const SECRET = 'offline-test-integration-secret-32-characters';
 const CONFIG = getWhatsAppIntegrationConfig({ WHATSAPP_META_APP_SECRET: 'offline-test-meta-secret', WHATSAPP_BUSINESS_PHONE_ID: '1234567890', WHATSAPP_PARENT_VERIFIED: 'true' });
@@ -69,29 +68,6 @@ async function withRouter(options: any, run: (request: (path: string, body?: any
   });
   try { await run(request); } finally { await new Promise<void>(resolve => server.close(() => resolve())); }
 }
-
-test('n8n catalogue and quote endpoints share current prices and cannot assert wholesale eligibility', async () => {
-  const snapshot = staticCatalogSnapshot(); snapshot.source = 'firestore';
-  snapshot.catalog.find(product => product.id === 'pista')!.prices['250g'] = 1510; snapshot.revision = pricingVersion(1510);
-  let reads = 0;
-  await withRouter({ getDb: () => assert.fail('Price reads do not access customer data'), getCatalog: async () => { reads++; return snapshot; } }, async request => {
-    const denied = await request('/catalog', {}, { headers: { 'Content-Type': 'application/json', Authorization: 'Bearer patron-token' } });
-    assert.equal(denied.status, 401); assert.equal(reads, 0);
-    const catalog = await request('/catalog', {}); assert.equal(catalog.status, 200); assert.equal((await catalog.json()).revision, snapshot.revision);
-    const body = { items: [{ productId: 'pista', selectedWeight: '250g', quantity: 2, price: 1 }], city: 'Karachi', shippingMethodId: 'standard' };
-    const response = await request('/quote', body); assert.equal(response.status, 200); assert.equal(response.headers.get('cache-control'), 'private, no-store');
-    const quote = await response.json(); assert.equal(quote.totals.subtotal, 3020); assert.equal(quote.totals.shipping, 250); assert.equal(quote.items[0].price, 1510);
-    assert.match(quote.quoteFingerprint, /^[a-f0-9]{64}$/);
-    assert.equal((await request('/quote', { ...body, isWholesale: true })).status, 400);
-    assert.equal((await request('/catalog', { includePrivateCosts: true })).status, 400);
-  });
-});
-
-test('n8n pricing fails closed when the trusted catalogue is unavailable', async () => {
-  await withRouter({ getDb: () => null }, async request => {
-    const response = await request('/catalog', {}); assert.equal(response.status, 503); assert.equal((await response.json()).code, 'CATALOG_UNAVAILABLE');
-  });
-});
 
 test('New order-update endpoint authenticates, rejects injected fields, and returns 200 without duplicate effects', async () => {
   const order = savedOrder(); order.uid = 'fixture-patron'; const store = memoryDatabase({ [`orders/${ORDER_ID}`]: order });

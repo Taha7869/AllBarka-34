@@ -4,9 +4,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, MessageCircle, ShoppingCart } from 'lucide-react';
 import { useCart, formatPrice, parsePrice } from '../contexts/CartContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { PRODUCTS } from '../data/products';
 import { useLiveCatalog } from '../hooks/useLiveCatalog';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import CartTools from '../components/CartTools';
+import SEO from '../components/SEO';
 import TrustBadges from '../components/TrustBadges';
 import { buildAutomatedOrderWhatsAppUrl } from '../config/contacts';
 import { hamperPackingLines } from '../lib/hamperCatalog';
@@ -60,7 +62,7 @@ export default function CartPage() {
   if (cartItems.length === 0) {
     return (
       <div className="min-h-screen bg-[var(--color-base,#F6F1EA)] flex items-center justify-center px-4 py-16">
-
+        <SEO title="Your Cart — AllBarka" description="View and manage your AllBarka cart" canonicalPath="/cart" />
         <div className="max-w-md w-full text-center space-y-6">
           <CartTools />
           <div className="w-24 h-24 rounded-full bg-[#FFFCF7] border border-[#C7982F]/30 flex items-center justify-center text-[#C7982F] mx-auto shadow-sm">
@@ -88,7 +90,7 @@ export default function CartPage() {
 
   return (
     <div className="min-h-screen bg-[var(--color-base,#F6F1EA)] pb-24" dir={isRtl ? 'rtl' : 'ltr'}>
-
+      <SEO title={`Your Cart (${totalItemCount} items) — AllBarka`} description="Review your AllBarka order before checkout" canonicalPath="/cart" />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12">
         {/* Header */}
@@ -170,7 +172,6 @@ export default function CartPage() {
                     <h3 className="font-serif font-bold text-[#29231D] dark:text-[#F6F1EA] text-sm sm:text-base line-clamp-1">
                       {getLocalized(item, 'name', language)}
                     </h3>
-                    {item.priceUnavailable && <p className="mt-2 text-xs leading-5 text-red-800 dark:text-red-200" dir="auto">{t('pricing.itemUnavailable')}</p>}
                     <div className="flex items-center gap-2 mt-1">
                       <span className="inline-block px-2 py-0.5 rounded-md bg-[#F6F1EA] dark:bg-[#222A28] border border-[#29231D]/10 text-[#635B52] dark:text-[#A8A199] text-[9.5px] font-semibold uppercase tracking-wider">
                         {item.selectedWeight}

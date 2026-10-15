@@ -1,9 +1,7 @@
-import { trackCommerce } from '../lib/analytics';
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import type { CartItem, Product } from '../types';
 import { PRODUCTS, getProductImage } from '../data/products';
-import { useCatalogState } from '../hooks/useLiveCatalog';
-import { repriceCart } from '../lib/cartPricing';
+import { useLiveCatalog } from '../hooks/useLiveCatalog';
 import { useToast } from '../components/ToastManager';
 
 import { STORE_CONFIG } from '../config/store';
@@ -98,7 +96,7 @@ const CartContext = createContext<CartContextValue | null>(null);
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { addToast } = useToast();
   const { t, language } = useLanguage();
-  const { catalog, boxes: hamperBoxes } = useCatalogState();
+  const catalog = useLiveCatalog();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCartPulsing, setIsCartPulsing] = useState(false);
   const [shippingCity, updateShippingCity] = useState(() => {
@@ -123,7 +121,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (!item || typeof item !== 'object') return [];
             const identity = resolveCartIdentity(item, catalog);
             if (!identity) return [];
-            const hamper = identity.productId === 'custom-hamper' ? resolveHamper(item.hamperConfiguration, catalog, hamperBoxes) : null;
+            const hamper = identity.productId === 'custom-hamper' ? resolveHamper(item.hamperConfiguration) : null;
             const rawWeight = hamper?.portion || resolveCartPortion(identity.product, item.selectedWeight || identity.portion);
             if (!rawWeight) return [];
             const rawProductId = identity.productId;
@@ -153,8 +151,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return [];
   });
 
-  useEffect(() => { setCartItems(previous => repriceCart(previous, catalog, hamperBoxes)); }, [catalog, hamperBoxes]);
-
   // Sync with localStorage on changes
   useEffect(() => {
     try {
@@ -182,9 +178,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isFreeShippingUnlocked = isLahoreCity(shippingCity) && subtotal >= FREE_SHIPPING_THRESHOLD;
   const estimatedShipping = useMemo(() => {
-    try { return calculateOrderSummary({ items: cartItems, city: shippingCity, catalog, boxes: hamperBoxes }).shipping; }
+    try { return calculateOrderSummary({ items: cartItems, city: shippingCity, catalog }).shipping; }
     catch { return null; } // A selection requiring a quote must never crash the bag.
-  }, [cartItems, shippingCity, catalog, hamperBoxes]);
+  }, [cartItems, shippingCity]);
 
   const freeShippingProgress = useMemo(() => {
     return Math.min(100, Math.round((subtotal / FREE_SHIPPING_THRESHOLD) * 100));
@@ -210,10 +206,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const identity = resolveCartIdentity(productOrItem, catalog);
       if (!identity) return;
       const rawProdId = identity.productId;
-      const hamper = rawProdId === 'custom-hamper' ? resolveHamper((productOrItem as CartItem).hamperConfiguration, catalog, hamperBoxes) : null;
-      if (identity.product?.active === false || identity.product?.quoteOnly || rawProdId === 'custom-hamper' && !hamper) {
-        addToast(t('pricing.itemUnavailable'), 'error'); return;
-      }
+      const hamper = rawProdId === 'custom-hamper' ? resolveHamper((productOrItem as CartItem).hamperConfiguration) : null;
       const fullProd = hamper ? { ...hamper, id: 'custom-hamper' } : identity.product || (productOrItem as any);
       const selectedWeight = hamper?.portion || resolveCartPortion(identity.product, weight || (productOrItem as any).selectedWeight || identity.portion);
       if (!selectedWeight) {
@@ -242,7 +235,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ? (productOrItem as any).wholesale
         : false;
 
-      void trackCommerce('add_to_cart', { path: '/shop', items: [{ productId: rawProdId, quantity: cleanQty, price: unitPrice }], value: unitPrice * cleanQty });
       setCartItems((prev) => {
         const existingIndex = prev.findIndex((item) => item.id === compositeId);
         if (existingIndex > -1) {
@@ -283,7 +275,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsCartOpen(true);
       }
     },
-    [addToast, t, language, catalog, hamperBoxes]
+    [addToast, t, language]
   );
 
   /**

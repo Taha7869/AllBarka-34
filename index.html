@@ -3,18 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+    
+    
+    
+    
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="apple-touch-icon" href="/favicon.svg">
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
 
     <!-- Google Fonts: Playfair Display (headings), Inter (body), Amiri (Urdu/Arabic RTL) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700&family=Noto+Nastaliq+Urdu:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
     <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap" rel="stylesheet">
-
+    
     <!-- JSON-LD LocalBusiness & E-Commerce Schema for Google Top Ranking -->
-
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Store",
+      "name": "AllBarka Luxury Dry Fruits",
+      "image": "https://images.unsplash.com/photo-1543257580-7269da773bf5?w=1200&q=80",
+      "telephone": "+923160666083",
+      "url": "https://allbarka.com",
+      "priceRange": "PKR 150 - PKR 8500",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Neelum Block, Allama Iqbal Town",
+        "addressLocality": "Lahore",
+        "addressRegion": "Punjab",
+        "postalCode": "54000",
+        "addressCountry": "PK"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 31.5085,
+        "longitude": 74.2882
+      },
+      "openingHoursSpecification": {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+          "Sunday"
+        ],
+        "opens": "09:00",
+        "closes": "21:00"
+      }
+    }
+    </script>
     <script>
       (function() {
         try {
@@ -34,6 +87,41 @@
     </script>
 
     <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://allbarka.com/#organization",
+          "name": "AllBarka",
+          "url": "https://allbarka.com/",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://allbarka.com/images/generated/og-image.jpg"
+          },
+          "sameAs": [
+            "https://www.instagram.com/allbarkadryfruits/",
+            "https://www.facebook.com/allbarkadryfruits/"
+          ]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://allbarka.com/#website",
+          "url": "https://allbarka.com/",
+          "name": "AllBarka",
+          "publisher": {
+            "@id": "https://allbarka.com/#organization"
+          },
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://allbarka.com/shop?search={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        }
+      ]
+    }
+    </script>
 
     <title>AllBarka - Premium Dry Fruits, Nuts & Gift Packs | Lahore, Pakistan</title>
     <meta name="description" content="Buy premium dry fruits online in Pakistan. We offer the finest dates, almonds, cashews, and custom corporate gifting packages in Lahore.">
@@ -55,7 +143,48 @@
     <meta name="twitter:image" content="https://allbarka.com/images/generated/og-image.jpg">
 
     <!-- JSON-LD Structured Data -->
-
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://allbarka.com/#organization",
+          "name": "AllBarka",
+          "url": "https://allbarka.com/",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://allbarka.com/images/generated/og-image.jpg"
+          },
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "telephone": "+92 316 0666083",
+            "contactType": "customer support",
+            "areaServed": "PK",
+            "availableLanguage": ["English", "Urdu"]
+          },
+          "sameAs": [
+            "https://instagram.com/allbarka.pk",
+            "https://facebook.com/allbarka.pk"
+          ]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://allbarka.com/#website",
+          "url": "https://allbarka.com/",
+          "name": "AllBarka",
+          "publisher": {
+            "@id": "https://allbarka.com/#organization"
+          },
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://allbarka.com/shop?search={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        }
+      ]
+    }
+    </script>
 </head>
 <body class="bg-[var(--color-base,#F6F1EA)] text-[var(--color-ink,#29231D)] font-sans antialiased transition-colors duration-200">
     <div id="root"></div>

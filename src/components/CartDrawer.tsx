@@ -17,7 +17,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import type { CartItem } from '../types';
-import { useLiveCatalog } from '../hooks/useLiveCatalog';
+import { PRODUCTS } from '../data/products';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { useCart, parsePrice, formatPrice, FREE_SHIPPING_THRESHOLD } from '../contexts/CartContext';
 import { buildAutomatedOrderWhatsAppUrl } from '../config/contacts';
@@ -85,7 +85,6 @@ export default function CartDrawer({
   onCheckout: propsOnCheckout,
   onAddToCart: propsOnAddToCart,
 }: CartDrawerProps) {
-  const catalog = useLiveCatalog();
   const navigate = useNavigate();
   const { t, isRtl , language } = useLanguage();
   const mediaCover = useProductMediaCover();
@@ -185,13 +184,13 @@ export default function CartDrawer({
     if (propsOnAddToCart) {
       propsOnAddToCart(productId, weight);
     } else {
-      const prod = catalog.find((p) => p.id === productId);
+      const prod = PRODUCTS.find((p) => p.id === productId);
       if (prod) context.addToCart(prod, weight, 1);
     }
   };
 
   // Recommendations: up to 3 catalog items not in cart
-  const recommendations = catalog.filter(
+  const recommendations = PRODUCTS.filter(
     (prod) => !cartItems.some((item) => item.productId === prod.id || item.id.startsWith(prod.id))
   ).slice(0, 3);
 
@@ -349,7 +348,7 @@ export default function CartDrawer({
                   {cartItems.map((item) => {
                     const itemUnitPrice = parsePrice(item.unitPrice || item.price);
                     const itemTotalPrice = itemUnitPrice * item.quantity;
-                    const matchedProduct = catalog.find((p) => p.id === item.productId || p.id === item.id);
+                    const matchedProduct = PRODUCTS.find((p) => p.id === item.productId || p.id === item.id);
                     const imageSource = mediaCover(matchedProduct, item.image || '');
 
                     return (
@@ -368,7 +367,6 @@ export default function CartDrawer({
                           <h4 className="font-serif font-bold text-[#29231D] dark:text-[#F6F1EA] text-sm truncate leading-tight">
                             {getLocalized(item, 'name', language)}
                           </h4>
-                          {item.priceUnavailable && <p className="mt-2 text-xs leading-5 text-red-800 dark:text-red-200" dir="auto">{t('pricing.itemUnavailable')}</p>}
                           <div className="flex items-center gap-2 mt-1">
                             <span className="inline-block px-2 py-0.5 rounded-md bg-[#F6F1EA] dark:bg-[#222A28] border border-[#29231D]/10 dark:border-[#F6F1EA]/10 text-[#635B52] dark:text-[#A8A199] text-[9.5px] font-semibold uppercase tracking-wider">
                               {item.selectedWeight}

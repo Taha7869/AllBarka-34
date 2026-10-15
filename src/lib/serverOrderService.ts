@@ -9,8 +9,6 @@ import { REWARDS } from '../data/rewards';
 import { CUSTOM_HAMPER_PRODUCT_ID, resolveHamper } from './hamperCatalog';
 import { PRODUCTS } from '../data/products';
 import { storedOrderStatus, type StoredOrderStatus } from './orderStatuses';
-import { rewardPackingLines, sanitizeRewardApplication, type RewardApplication } from './rewardFulfillment';
-import type { InventoryReservation } from './inventory';
 
 export const SCHEMA_VERSION = '2.0.0';
 
@@ -73,10 +71,6 @@ export interface CanonicalOrder extends Partial<AppliedPromo> {
   couponDiscount?: number;
   rewardId?: string | null;
   rewardDiscount?: number;
-  rewardApplication?: RewardApplication;
-  inventoryReservation?: InventoryReservation;
-  searchPrefixes?: string[];
-  searchVersion?: number;
   earnedPoints: number;
   pointsAwarded?: boolean;
   trackingNumber?: string;
@@ -106,7 +100,6 @@ export interface SanitizedCustomerOrder extends Partial<AppliedPromo> {
   couponDiscount?: number;
   rewardId?: string | null;
   rewardDiscount?: number;
-  rewardApplication?: RewardApplication;
   earnedPoints: number;
   pointsAwarded?: boolean;
   claimedAt?: number | null;
@@ -200,7 +193,6 @@ export function sanitizeOrderForCustomer(order: CanonicalOrder, whatsappMessage?
     couponDiscount: order.couponDiscount || 0,
     rewardId: order.rewardId || null,
     rewardDiscount: order.rewardDiscount || 0,
-    ...(sanitizeRewardApplication(order.rewardApplication) ? { rewardApplication: sanitizeRewardApplication(order.rewardApplication)! } : {}),
     earnedPoints: order.earnedPoints || 0,
     pointsAwarded: Boolean(order.pointsAwarded),
     updatedAt: order.updatedAt,
@@ -268,7 +260,6 @@ export function generateAuthoritativeWhatsAppMessage(order: CanonicalOrder): str
   if (order.totals.shippingRegion === 'nationwide' && typeof order.totals.shippingWeightGrams === 'number') {
     lines.push(`Delivery billing weight: ${(order.totals.shippingWeightGrams / 1000).toLocaleString('en-PK')}kg (Rs. ${STORE_CONFIG.shipping.nationwidePerKg}/kg; minimum Rs. ${STORE_CONFIG.shipping.nationwideMinimum}).`);
   }
-  lines.push(...rewardPackingLines(order.rewardApplication));
   lines.push(`Payment Method: ${order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Direct Bank Transfer'}`);
 
   if (order.customer.instructions) {

@@ -1,4 +1,3 @@
-import { useLanguage } from '../contexts/LanguageContext';
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCcw } from 'lucide-react';
 
@@ -31,15 +30,26 @@ export class ErrorBoundary extends React.Component<Props, State> {
       if ((this as any).props.fallback) {
         return (this as any).props.fallback;
       }
-      return <ErrorFallback />;
+      return (
+        <div className="min-h-[200px] flex flex-col items-center justify-center p-6 bg-rose-50 border border-rose-200 rounded-2xl m-4 text-center">
+          <AlertTriangle className="text-rose-600 mb-3" size={32} />
+          <h2 className="text-sm font-bold text-rose-900 mb-2">Something went wrong</h2>
+          <p className="text-xs text-rose-700 max-w-sm mb-4">
+            {this.state.error?.message || "An unexpected error occurred."}
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-lg text-xs font-semibold hover:bg-rose-700 transition-colors"
+          >
+            <RefreshCcw size={14} />
+            Reload Page
+          </button>
+        </div>
+      );
     }
 
     return (this as any).props.children;
   }
 }
 
-export function ErrorFallback() {
-  const { t, isRtl } = useLanguage();
-  return <section role="alert" dir={isRtl ? 'rtl' : 'ltr'} className="m-4 flex min-h-[240px] flex-col items-center justify-center rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center text-[var(--color-ink)]"><AlertTriangle aria-hidden="true" className="mb-4 text-[var(--color-accent-text)]" size={32} /><h2 className="font-serif text-xl">{t('experience.error.title')}</h2><p className="my-4 max-w-sm text-sm leading-7 text-[var(--color-text-secondary)]">{t('experience.error.body')}</p><button type="button" onClick={() => window.location.reload()} className="focus-ring flex min-h-11 items-center gap-2 rounded-xl bg-[var(--color-primary)] px-5 text-sm text-[var(--color-primary-fg)]"><RefreshCcw size={16} aria-hidden="true" />{t('experience.error.reload')}</button></section>;
-}
 export default ErrorBoundary;

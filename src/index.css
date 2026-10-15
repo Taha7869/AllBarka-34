@@ -37,36 +37,36 @@
   --color-surface-elevated: #FFFFFF;  /* Clean elevated surface */
   --color-surface-subtle: #FAF9F5;    /* Subtle tinted surface */
   --color-surface-sunken: #ECE5DC;    /* Sunken track / well */
-
+  
   --color-accent: #C7982F;            /* Champagne-gold details & selected borders */
   --color-accent-hover: #B58724;
   --color-accent-text: #806326;       /* Dark bronze labels on light backgrounds (WCAG AA 4.6+:1) */
-
+  
   --color-primary: #1E3A2B;           /* Main actions & deep-forest sections */
   --color-primary-hover: #14281E;
   --color-primary-fg: #FFFCF7;        /* Ivory text on primary actions */
-
+  
   /* Dedicated Semantic Text Tokens (WCAG AAA compliant on light canvas/surfaces) */
   --color-text-primary: #29231D;      /* Warm charcoal headings, body (13.8+:1 contrast) */
   --color-text-secondary: #635B52;    /* Readable muted charcoal subtitle (5.9+:1 contrast) */
   --color-text-price: #29231D;        /* Clearly readable charcoal price text (15.1+:1 contrast) */
   --color-text-on-emerald: #FFFCF7;   /* Ivory text on deep emerald (15.4+:1 contrast) */
   --color-text-on-gold: #1A150B;      /* Deep charcoal text on champagne gold (6.9+:1 contrast) */
-
+  
   --color-ink: #29231D;               /* Headings, body and prices */
   --color-ink-muted: #635B52;         /* Accessible muted charcoal text */
   --color-ink-faint: rgba(41, 35, 29, 0.42);
-
+  
   --color-border: rgba(41, 35, 29, 0.12);
   --color-border-accent: rgba(199, 152, 47, 0.38);
-
+  
   --color-gold: #C7982F;
   --color-gold-muted: #806326;
   --color-gold-light: #D4B483;
   --color-emerald: #1E3A2B;
   --color-emerald-dark: #14281E;
   --color-cream: #FAF9F5;
-
+  
   --shadow-card: 0 4px 20px -4px rgba(41, 35, 29, 0.06), 0 2px 6px -1px rgba(41, 35, 29, 0.03);
   --shadow-card-hover: 0 16px 36px -8px rgba(41, 35, 29, 0.12), 0 4px 12px -2px rgba(41, 35, 29, 0.05);
 
@@ -83,36 +83,36 @@
   --color-surface-elevated: #222A28;  /* Elevated modals, inputs, and popovers */
   --color-surface-subtle: #1E2523;    /* Subtle dark surface for secondary chips/panels */
   --color-surface-sunken: #0D1110;    /* Sunken track */
-
+  
   --color-accent: #D4A843;            /* Luminous champagne-gold */
   --color-accent-hover: #E2BA5A;
   --color-accent-text: #E4C783;       /* Readable warm gold label text */
-
+  
   --color-primary: #0E4A3B;           /* Vibrant deep emerald action */
   --color-primary-hover: #165B4A;
   --color-primary-fg: #F6F1EA;        /* Warm cream text on primary actions */
-
+  
   /* Dedicated Semantic Text Tokens (WCAG AAA compliant on dark canvas/surfaces) */
   --color-text-primary: #F6F1EA;      /* Readable warm cream headings and body (14.7+:1 contrast) */
   --color-text-secondary: #B4C0BC;    /* Readable muted light sage/cream subtitle (8.8+:1 contrast) */
   --color-text-price: #F6F1EA;        /* Clearly readable cream prices (14.7+:1 contrast) */
   --color-text-on-emerald: #F6F1EA;   /* Warm cream text on emerald (9.0+:1 contrast) */
   --color-text-on-gold: #121615;      /* Deep dark text on luminous gold (8.2+:1 contrast) */
-
+  
   --color-ink: #F6F1EA;               /* Headings, body, prices */
   --color-ink-muted: #B4C0BC;         /* Readable muted cream/sage text */
   --color-ink-faint: rgba(246, 241, 234, 0.38);
-
+  
   --color-border: rgba(246, 241, 234, 0.14);
   --color-border-accent: rgba(212, 168, 67, 0.35);
-
+  
   --color-gold: #D4A843;
   --color-gold-muted: #E4C783;
   --color-gold-light: #E8D4A2;
   --color-emerald: #0E4A3B;
   --color-emerald-dark: #083127;
   --color-cream: #1E2523;
-
+  
   --shadow-card: 0 4px 20px -4px rgba(0, 0, 0, 0.45), 0 2px 6px -1px rgba(0, 0, 0, 0.3);
   --shadow-card-hover: 0 16px 36px -8px rgba(0, 0, 0, 0.6), 0 4px 12px -2px rgba(0, 0, 0, 0.35);
 }
@@ -642,12 +642,3 @@ html[dir="rtl"] [dir="auto"]:dir(ltr) { --localized-body-font:var(--font-sans); 
 html[lang="ur"] [dir="auto"]:dir(rtl) { --localized-body-font:var(--font-urdu),var(--font-sans); --localized-heading-font:var(--font-urdu),var(--font-serif); font-family:var(--localized-body-font); }
 html[lang="ar"] [dir="auto"]:dir(rtl) { --localized-body-font:var(--font-arabic),var(--font-sans); --localized-heading-font:var(--font-arabic),var(--font-serif); font-family:var(--localized-body-font); }
 html[dir="rtl"] :is(h1,h2,h3,h4,h5,h6)[dir="auto"] { font-family:var(--localized-heading-font,var(--font-serif)); }
-
-/* Keyboard entry, readable RTL copy and dynamic mobile safe areas. */
-.skip-main-link { position:fixed; inset-block-start:12px; inset-inline-start:12px; z-index:200001; transform:translateY(-200%); min-height:44px; display:flex; align-items:center; padding:12px 20px; border:1px solid var(--color-border-accent); border-radius:12px; color:var(--color-primary-fg); background:var(--color-primary); }
-.skip-main-link:focus { transform:translateY(0); }
-#main-content { min-width:0; scroll-margin-block-start:110px; }
-#main-content h1[tabindex="-1"]:focus-visible { outline:2px solid var(--color-accent-text); outline-offset:6px; border-radius:4px; }
-:where([dir="rtl"]) :where(p,label,h1,h2,h3) { overflow-wrap:break-word; }
-@media(max-width:639px) { input,select,textarea { font-size:max(16px,1em); } }
-@media(prefers-reduced-motion:reduce) { .skip-main-link { transition:none; } }
