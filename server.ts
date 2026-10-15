@@ -1,3 +1,10 @@
+import { validMeasurementId } from './src/lib/measurementConfig';
+import { renderSeoDocument, renderSitemap, renderRobots } from './src/server/seoDocument';
+import { routeMetadata, publicSiteOrigin } from './src/lib/routeMetadata';
+import { createInventoryStore, createInventoryRouter, catalogWithInventory } from './src/lib/inventoryServer';
+import { InventoryError, orderStockRequirements, validateStockCapacity } from './src/lib/inventory';
+import { applyPatronReward, validActiveRewardId } from './src/lib/rewardFulfillment';
+import { streamAdminOrdersCsv } from './src/lib/adminExport';
 import { sanitizeFirestoreData } from './src/lib/firestoreData';
 import express from 'express';
 import cookieParser from 'cookie-parser';
@@ -14,18 +21,21 @@ import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import type { ConciergeLanguage } from './src/lib/conciergeFallback';
 import { commerceCors } from './src/lib/apiCors';
-import { probeCommerceDatabase } from './src/lib/commerceReadiness';
+import { probeCommerceDatabase, deploymentReadiness } from './src/lib/commerceReadiness';
 import { PRODUCTS } from './src/data/products';
-import { getCatalogServer } from './src/lib/liveCatalog';
+import { createLiveCatalog, quoteFingerprint } from './src/lib/liveCatalog';
+import { createCatalogPricingRouter } from './src/lib/catalogPricingRouter';
+import { CatalogPricingError } from './src/lib/catalogPricing';
+import { catalogConciergeContext } from './src/lib/catalogConcierge';
 import { STORE_CONFIG } from './src/config/store';
 import { CONTACT_CONFIG, buildAutomatedOrderWhatsAppUrl, buildHumanSupportWhatsAppUrl } from './src/config/contacts';
 import { getN8nOrderDispatchConfig } from './src/services/n8nOrderNotification';
 import { startOrderOutboxWorker } from './src/services/orderOutboxWorker';
 import { askN8nConsultant, getN8nAiConfig } from './src/services/n8nAIConsultant';
 import { reserveGuestAiMessage, GuestTrialLimitError } from './src/lib/aiGuestTrial';
-import { REWARDS } from './src/data/rewards';
+import { createLoyaltyRouter } from './src/lib/loyaltyRouter';
+import { deploymentIdentity } from './src/lib/deploymentIdentity';
 import { validateAndPriceOrder, validateCustomerDetails, ValidationError } from './src/lib/orderValidation';
-import { validateShippingRewardDestination } from './src/lib/shippingPolicy';
 import crypto from 'crypto';
 import {
   createDurableOrder,
@@ -45,7 +55,7 @@ import { createStoreUpdatesRouter } from './src/lib/storeUpdatesRouter';
 import { createN8nCommerceRouter } from './src/lib/n8nCommerceRouter';
 import {
   AdminOperationError, hasAdminClaim, validateAdminOrderId, validateAdminStatusInput,
-  parseAdminOrderFilters, listAdminOrders, getAdminOrder, sanitizeOrderForAdmin,
+  parseAdminOrderFilters, listAdminOrders, getAdminOrder, sanitizeOrderForAdmin, invalidateAdminOrderMetrics,
   addAdminOrderNote, updateAdminOrderPayment,
 } from './src/lib/adminOperations';
 
@@ -107,9 +117,9 @@ try {
 
 // Security & Authentication Middlewares
 async function authenticateOptionalUser(req: express.Request, res: express.Response, next: express.NextFunction) {
-  const sessionCookie = req.cookies.__session || '';
+  const sessionCookie = req.cookies?.__session || '';
   const authHeader = req.headers.authorization;
-  
+
   if (!sessionCookie && authHeader === undefined) {
     (req as any).user = null;
     return next();
@@ -134,7 +144,7 @@ async function authenticateOptionalUser(req: express.Request, res: express.Respo
       code: 'UNAUTHORIZED'
     });
   }
-  
+
 }
 
 async function requireAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
@@ -186,6 +196,7 @@ if (process.env.GOOGLE_SHEETS_ID && process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && 
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
+const measurementId = validMeasurementId(process.env.ANALYTICS_MEASUREMENT_ID) ? process.env.ANALYTICS_MEASUREMENT_ID : null;
 const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS || 0);
 if (!Number.isInteger(trustProxyHops) || trustProxyHops < 0) {
   throw new Error('TRUST_PROXY_HOPS must be a non-negative integer.');
@@ -198,11 +209,11 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://apis.google.com", "https://*.firebaseapp.com", "https://*.googleapis.com", "https://*.gstatic.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://apis.google.com", "https://*.firebaseapp.com", "https://*.googleapis.com", "https://*.gstatic.com", ...(measurementId ? ["https://www.googletagmanager.com"] : [])],
       frameSrc: ["'self'", "https://allbarka-live.firebaseapp.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://api.fontshare.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdn.fontshare.com"],
-      connectSrc: ["'self'", "https://*.firebaseio.com", "https://*.googleapis.com", "https://*.cloudfunctions.net", "https://*.firebaseapp.com"],
+      connectSrc: ["'self'", "https://*.firebaseio.com", "https://*.googleapis.com", "https://*.cloudfunctions.net", "https://*.firebaseapp.com", ...(measurementId ? ["https://www.google-analytics.com", "https://region1.google-analytics.com"] : [])],
       imgSrc: ["'self'", "data:", "https://*"],
       mediaSrc: ["'self'", "https:"],
     }
@@ -212,9 +223,18 @@ app.use(helmet({
 app.use('/api', commerceCors(process.env.FRONTEND_ORIGINS));
 // Authenticate private integrations before parsing their JSON. Their router owns
 // payload limits and safe parse errors; customer/admin bearer guards remain separate.
-app.use('/api/integrations/n8n', createN8nCommerceRouter({ getDb: () => db }));
+const pricingCatalog = createLiveCatalog({ getDb: () => db });
+const inventoryStore = createInventoryStore(() => db);
+const liveCatalog = {
+  getCachedSnapshot() { const catalog = pricingCatalog.getCachedSnapshot(); const inventory = inventoryStore.getCachedSnapshot(); return catalog && inventory ? catalogWithInventory(catalog, inventory) : null; },
+  async getSnapshot() { const [catalog, inventory] = await Promise.all([pricingCatalog.getSnapshot(), inventoryStore.getSnapshot()]); return catalogWithInventory(catalog, inventory); },
+  close() { pricingCatalog.close(); inventoryStore.close(); },
+};
+app.use('/api/integrations/n8n', createN8nCommerceRouter({ getDb: () => db, getCatalog: () => liveCatalog.getSnapshot(), getInventory: () => inventoryStore.getSnapshot(), onOrderChanged: () => orderOutboxWorker?.wake() }));
 app.use(express.json({ limit: '128kb' }));
 app.use(cookieParser());
+app.use(createCatalogPricingRouter({ getDb: () => db, requireAdmin, catalog: liveCatalog }));
+app.use(createInventoryRouter({ getDb: () => db, requireAdmin }));
 app.use(createProductMediaRouter({ getDb: () => db, requireAdmin }));
 app.use(createStoreUpdatesRouter({ getDb: () => db, requireAuth, requireAdmin }));
 
@@ -230,7 +250,7 @@ app.post('/api/auth/sessionLogin', async (req, res) => {
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
     const isProd = process.env.NODE_ENV === 'production';
     const options = { maxAge: expiresIn, httpOnly: true, secure: isProd, sameSite: 'lax' as const };
-    
+
     res.cookie('__session', sessionCookie, options);
     res.json({ status: 'success' });
   } catch (error) {
@@ -251,15 +271,6 @@ const patronChatLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, skip: req =>
 const contactLimiter = rateLimit({ windowMs: 60 * 1000, max: 5, message: apiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
 const ordersLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, message: apiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
 
-app.get('/api/catalog', async (req, res) => {
-  try {
-    const { catalog, source } = await getCatalogServer();
-    res.setHeader('X-Catalog-Source', source);
-    res.json(catalog);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch catalog' });
-  }
-});
 app.use('/api/chat', chatLimiter);
 app.use('/api/concierge', chatLimiter);
 app.use('/api/ai', chatLimiter);
@@ -273,19 +284,30 @@ const ordersDb: any[] = [];
 // 1. API: Health Check
 let orderOutboxWorker: ReturnType<typeof startOrderOutboxWorker> | null = null;
 app.get('/api/health', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
   res.json({ status: 'ok', apiActive: Boolean(getN8nAiConfig()), aiConfigured: Boolean(getN8nAiConfig()), aiProvider: 'n8n-groq', aiConnectivityVerified: false,
-    outboxWorker: orderOutboxWorker?.getState() ?? null });
+    deployment: deploymentIdentity(), outboxWorker: orderOutboxWorker?.getState() ?? null });
 });
 
 // 1.2 API: Commerce Persistence Readiness Status
 let readinessProbe: Promise<{ connected: boolean; checked: boolean }> | null = null;
 let readinessProbeExpiresAt = 0;
-app.get('/api/commerce/readiness', async (_req, res) => {
+function getCommerceProbe() {
   if (!readinessProbe || Date.now() >= readinessProbeExpiresAt) {
     readinessProbeExpiresAt = Date.now() + 30000;
     readinessProbe = probeCommerceDatabase(db);
   }
-  const probe = await readinessProbe;
+  return readinessProbe;
+}
+// Dependency checks must not require customer checkouts or write production data.
+app.get('/api/ready', async (_req, res) => {
+  const [probe, catalog] = await Promise.all([getCommerceProbe(), liveCatalog.getSnapshot().catch(() => null)]);
+  const readiness = deploymentReadiness(Boolean(adminAuth), probe.connected, catalog);
+  res.setHeader('Cache-Control', 'no-store');
+  res.status(readiness.ready ? 200 : 503).json({ ...readiness, deployment: deploymentIdentity() });
+});
+app.get('/api/commerce/readiness', async (_req, res) => {
+  const probe = await getCommerceProbe();
   res.json({
     status: 'ok',
     processRunning: true,
@@ -306,6 +328,8 @@ app.get('/api/commerce/readiness', async (_req, res) => {
   });
 });
 
+app.get('/api/site/config', (_req, res) => { res.setHeader('Cache-Control', 'public, max-age=300'); res.json({ measurementId }); });
+
 // 1.3 API: Authoritative Order Quote Calculation
 app.post('/api/orders/quote', authenticateOptionalUser, async (req, res) => {
   try {
@@ -313,10 +337,10 @@ app.post('/api/orders/quote', authenticateOptionalUser, async (req, res) => {
     const authenticatedUser = (req as any).user;
     const promoContext = await firstOrderPromoContext(db, authenticatedUser?.uid || null, discountCode);
 
-    const _catRes = await getCatalogServer();
+    const _catRes = await liveCatalog.getSnapshot();
     const validatedOrder = validateAndPriceOrder({
       catalog: _catRes.catalog,
-
+      boxes: _catRes.boxes,
       items,
       city,
       shippingMethodId,
@@ -326,16 +350,17 @@ app.post('/api/orders/quote', authenticateOptionalUser, async (req, res) => {
       promoContext,
     });
 
+    let rewardApplication;
     if (rewardId) {
       if (!authenticatedUser?.uid) throw new ValidationError('Please sign in to use a patron reward.', 'REWARD_REQUIRES_AUTH');
-      if (!db) return res.status(503).json({ error: 'Reward verification is unavailable until the order database is configured.', code: 'PERSISTENCE_UNAVAILABLE' });
-      const rewardSnap = await db.collection('users').doc(authenticatedUser.uid).collection('activeRewards').doc(String(rewardId).trim()).get();
+      if (!db) return res.status(503).json({ code: 'PERSISTENCE_UNAVAILABLE' });
+      const activeRewardId = validActiveRewardId(rewardId);
+      const rewardSnap = await db.collection('users').doc(authenticatedUser.uid).collection('activeRewards').doc(activeRewardId).get();
       if (!rewardSnap.exists) throw new ValidationError('Selected reward does not exist for this patron.', 'REWARD_NOT_FOUND');
-      const reward = rewardSnap.data();
-      if (reward?.status !== 'ACTIVE') throw new ValidationError('Selected reward is no longer active or has already been used.', 'REWARD_ALREADY_USED');
-      validateShippingRewardDestination(reward, city);
-      throw new ValidationError('This reward cannot yet be applied at checkout. It remains active; contact support for assistance.', 'REWARD_APPLICATION_UNAVAILABLE');
+      rewardApplication = applyPatronReward({ order: validatedOrder, voucher: rewardSnap.data()!, activeRewardId,
+        city, shippingMethodId, catalog: _catRes.catalog, isWholesale: Boolean(isWholesale && authenticatedUser?.wholesaleEligible) });
     }
+    if (!validatedOrder.summary.isQuoteRequest) validateStockCapacity(orderStockRequirements(validatedOrder.items, rewardApplication?.sample), await inventoryStore.getSnapshot());
 
     res.json({
       success: true,
@@ -343,11 +368,16 @@ app.post('/api/orders/quote', authenticateOptionalUser, async (req, res) => {
       items: validatedOrder.items,
       earnedPoints: validatedOrder.earnedPoints,
       generatedAt: Date.now(),
+      quoteFingerprint: quoteFingerprint({ ...validatedOrder, rewardApplication }),
+      rewardApplication,
+      catalogRevision: _catRes.revision,
     });
   } catch (error: any) {
     if (error.name === 'ValidationError') {
       return res.status(400).json({ error: error.message, code: error.code || 'VALIDATION_ERROR' });
     }
+    if (error instanceof InventoryError) return res.status(error.httpStatus).json({ code: error.code });
+    if (error instanceof CatalogPricingError) return res.status(error.httpStatus).json({ code: error.code });
     if (error.code === 'PERSISTENCE_UNAVAILABLE') return res.status(503).json({ error: error.message, code: error.code });
     res.status(500).json({ error: 'Internal server error while calculating quote.', code: 'SERVER_ERROR' });
   }
@@ -369,15 +399,14 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
       });
     }
 
-    const _catRes = await getCatalogServer();
-
     // When durable persistence (db) is not configured, do NOT create fake accepted orders
     if (!db) {
+      const _catRes = await liveCatalog.getSnapshot();
       const promoContext = await firstOrderPromoContext(null, verifiedUid, req.body.discountCode);
       const customer = validateCustomerDetails(req.body, getPromo(req.body.discountCode)?.type === 'quote');
     const validatedOrder = validateAndPriceOrder({
       catalog: _catRes.catalog,
-
+      boxes: _catRes.boxes,
         items: req.body.items,
         city: customer.city,
         shippingMethodId: req.body.shippingMethodId,
@@ -420,10 +449,10 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
       uid: verifiedUid,
       idempotencyKey,
       expectedFinalTotal,
-      priceSource: _catRes.source,
-      catalogFetchedAt: new Date().toISOString()
+      expectedQuoteFingerprint: typeof req.body.expectedQuoteFingerprint === 'string' ? req.body.expectedQuoteFingerprint : null,
     });
     savedOrderVerifiedThisProcess = true;
+    if (!result.isDuplicate) { orderOutboxWorker?.wake(); invalidateAdminOrderMetrics(db); }
 
     res.json({
       success: true,
@@ -434,6 +463,7 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
       claimToken: result.claimToken,
       totals: result.totals,
       items: result.items,
+      rewardApplication: result.rewardApplication,
       isDuplicate: result.isDuplicate,
       durablePersistenceReady: true,
       n8nNotification: { managedBy: 'durable-outbox', deliveryVerified: false }
@@ -453,6 +483,8 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
     if (error.name === 'ValidationError') {
       return res.status(400).json({ error: error.message, code: error.code || 'VALIDATION_ERROR' });
     }
+    if (error instanceof InventoryError) return res.status(error.httpStatus).json({ code: error.code });
+    if (error instanceof CatalogPricingError) return res.status(error.httpStatus).json({ code: error.code });
     if (error instanceof PersistenceUnavailableError || error.code === 'PERSISTENCE_UNAVAILABLE') {
       return res.status(503).json({ error: error.message, code: error.code });
     }
@@ -536,7 +568,8 @@ app.post('/api/coupons/preview', authenticateOptionalUser, async (req, res) => {
     if (!promo) throw new ValidationError('Promo code is required.', 'PROMO_REQUIRED');
     const user = (req as any).user;
     const promoContext = await firstOrderPromoContext(db, user?.uid || null, promo.code);
-    const validated = validateAndPriceOrder({ items, city, shippingMethodId, discountCode: promo.code,
+    const currentCatalog = await liveCatalog.getSnapshot();
+    const validated = validateAndPriceOrder({ catalog: currentCatalog.catalog, boxes: currentCatalog.boxes, items, city, shippingMethodId, discountCode: promo.code,
       giftWrapping: Boolean(giftWrapping), isWholesale: Boolean(isWholesale && user?.wholesaleEligible), promoContext });
 
     res.json({
@@ -549,6 +582,8 @@ app.post('/api/coupons/preview', authenticateOptionalUser, async (req, res) => {
     });
   } catch (e: any) {
     if (e.name === 'ValidationError') return res.status(400).json({ valid: false, error: e.message, code: e.code });
+    if (e instanceof InventoryError) return res.status(e.httpStatus).json({ valid: false, code: e.code });
+    if (e instanceof CatalogPricingError) return res.status(e.httpStatus).json({ valid: false, code: e.code });
     if (e.code === 'PERSISTENCE_UNAVAILABLE') return res.status(503).json({ valid: false, error: e.message, code: e.code });
     res.status(500).json({ valid: false, error: 'Failed to preview coupon.' });
   }
@@ -602,13 +637,18 @@ app.post('/api/admin/orders/:orderId/status', requireAdmin, async (req, res) => 
       actorEmail: user.email || 'admin',
     });
 
+    invalidateAdminOrderMetrics(db); orderOutboxWorker?.wake();
     res.json({ success: true, order: sanitizeOrderForAdmin(updated) });
   } catch (e: any) {
     adminOperationFailure(res, e);
   }
 });
 
-// Register export before the dynamic order ID route. The frontend handles CSV formatting.
+// Register exports before the dynamic order ID route.
+app.get('/api/admin/orders/export.csv', requireAdmin, async (req, res) => {
+  try { await streamAdminOrdersCsv(db, { ...parseAdminOrderFilters(req.query), page: 1, cursor: undefined }, req.query.lang, req, res); }
+  catch (error) { adminOperationFailure(res, error); }
+});
 app.get('/api/admin/orders/export', requireAdmin, async (req, res) => {
   try {
     res.setHeader('Cache-Control', 'no-store');
@@ -616,7 +656,7 @@ app.get('/api/admin/orders/export', requireAdmin, async (req, res) => {
   } catch (error) { adminOperationFailure(res, error); }
 });
 
-// Admin-only: newest-order bounded scan, matching-filter metrics, and pagination.
+// Admin-only: indexed cursor pages and cached aggregate reports.
 app.get('/api/admin/orders', requireAdmin, async (req, res) => {
   try {
     res.setHeader('Cache-Control', 'no-store');
@@ -671,96 +711,7 @@ app.post('/api/admin/orders/:orderId/payment', requireAdmin, async (req, res) =>
   } catch (error) { adminOperationFailure(res, error); }
 });
 
-// Authenticated customer loyalty profile
-app.get('/api/loyalty/profile', requireAuth, async (req, res) => {
-    try {
-        const uid = (req as any).user.uid;
-        if (!db) {
-          return res.json({
-            loyaltyPoints: 0,
-            transactions: [],
-            activeRewards: []
-          });
-        }
-
-        const userDoc = await db.collection("users").doc(uid).get();
-        const loyaltyPoints = userDoc.exists ? (userDoc.data()?.loyaltyPoints || 0) : 0;
-
-        const txSnap = await db.collection("users").doc(uid).collection("loyaltyTransactions").orderBy("createdAt", "desc").limit(10).get();
-        const transactions = txSnap.docs.map((d: any) => d.data());
-
-        const arSnap = await db.collection("users").doc(uid).collection("activeRewards").where("status", "==", "ACTIVE").get();
-        const activeRewards = arSnap.docs.map((d: any) => d.data());
-
-        res.json({
-            loyaltyPoints,
-            transactions,
-            activeRewards
-        });
-    } catch(err: any) {
-        res.status(500).json({ error: err.message, code: 'SERVER_ERROR' });
-    }
-});
-
-app.get('/api/loyalty/rewards', (req, res) => {
-    res.json(REWARDS);
-});
-
-// Authenticated customer loyalty redeem
-app.post('/api/loyalty/redeem', requireAuth, async (req, res) => {
-    try {
-        const uid = (req as any).user.uid;
-        const { rewardId } = req.body;
-        if (!rewardId) return res.status(400).json({ error: "Missing rewardId", code: 'MISSING_REWARD' });
-        if (!db) return res.status(503).json({ error: "Loyalty redemption database is currently undergoing maintenance.", code: 'DB_UNAVAILABLE' });
-
-        const reward = REWARDS.find(r => r.rewardId === rewardId);
-        if (!reward || !reward.active) return res.status(400).json({ error: "Invalid reward", code: 'INVALID_REWARD' });
-
-        let activeRewardData: any = null;
-        await db.runTransaction(async (t: any) => {
-            const userRef = db.collection("users").doc(uid);
-            const userDoc = await t.get(userRef);
-            if (!userDoc.exists) throw new Error("User not found");
-            const currentPoints = userDoc.data()?.loyaltyPoints || 0;
-            if (currentPoints < reward.pointsCost) throw new Error("Insufficient points");
-
-            const activeRewardsSnapshot = await t.get(userRef.collection("activeRewards").where("status", "==", "ACTIVE").limit(1));
-            if (!activeRewardsSnapshot.empty) {
-                throw new Error("You already have an active reward. Please use it first.");
-            }
-
-            const newPoints = currentPoints - reward.pointsCost;
-            t.set(userRef, sanitizeFirestoreData({ loyaltyPoints: newPoints }), { merge: true });
-
-            const txId = crypto.randomUUID();
-            const txRef = userRef.collection("loyaltyTransactions").doc(txId);
-            t.set(txRef, sanitizeFirestoreData({
-                transactionId: txId,
-                type: 'REDEEM',
-                points: -reward.pointsCost,
-                rewardId: reward.rewardId,
-                description: `Redeemed ${reward.name}`,
-                createdAt: Date.now()
-            }));
-
-            const arId = crypto.randomUUID();
-            const arRef = userRef.collection("activeRewards").doc(arId);
-            activeRewardData = {
-                rewardId: reward.rewardId,
-                claimedAt: Date.now(),
-                expiresAt: Date.now() + (reward.expiryDays * 24 * 60 * 60 * 1000),
-                status: 'ACTIVE',
-                rewardType: reward.rewardType
-            };
-            t.set(arRef, sanitizeFirestoreData(activeRewardData));
-        });
-
-        res.json({ success: true, activeReward: activeRewardData });
-    } catch(err: any) {
-        res.status(400).json({ error: err.message, code: 'REDEEM_FAILED' });
-    }
-});
+app.use(createLoyaltyRouter({ getDb: () => db, requireAuth }));
 
 // Authenticated guest order claim
 app.post('/api/orders/claim', requireAuth, async (req, res) => {
@@ -910,6 +861,7 @@ app.post(['/api/chat', '/api/concierge/chat'], authenticateOptionalUser, patronC
     if (!res.headersSent) res.status(503).json({ error: 'AI_UNAVAILABLE', code: 'AI_TIMEOUT', available: false });
   }, 22000);
   try {
+    const _catRes = await liveCatalog.getSnapshot();
     const isGooglePatron = (req as any).user?.firebase?.sign_in_provider === 'google.com';
     let guestMessagesRemaining: number | null = null;
     if (!isGooglePatron) {
@@ -922,15 +874,7 @@ app.post(['/api/chat', '/api/concierge/chat'], authenticateOptionalUser, patronC
       }
     }
     if (res.headersSent) return;
-  // Generate instructions dynamically from the actual PRODUCTS array
-  const _catRes = await getCatalogServer();
-  const catalogContext = _catRes.catalog.map(p => {
-    let priceStr = '';
-    for (const [weight, price] of Object.entries(p.prices)) {
-      priceStr += `${weight}: Rs. ${price}, `;
-    }
-    return `- ${p.name_en}: ${priceStr}`;
-  }).join('\n');
+  const catalogContext = catalogConciergeContext(_catRes);
 
   const systemInstruction = `You are the AI Concierge & Gourmet Dry Fruits Sommelier representing '${STORE_CONFIG.storeName}', a premium dry fruit, spices, and artisanal gifting store based in ${STORE_CONFIG.location}.
 Use the supplied catalogue for product descriptions and portion prices. Packaging and sourcing can vary by selection.
@@ -983,17 +927,11 @@ async function startServer() {
     console.timeEnd('[dev] Vite middleware');
   } else {
     const distPath = path.join(process.cwd(), 'dist');
-    const publicOrigin = new URL(process.env.APP_URL || (process.env.RAILWAY_PUBLIC_DOMAIN
-      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : `http://localhost:${PORT}`)).origin;
-    const html = readFileSync(path.join(distPath, 'index.html'), 'utf8')
-      .replaceAll('https://allbarka.com', publicOrigin)
-      .replaceAll('content="/images/generated/og-image.jpg"', `content="${publicOrigin}/images/generated/og-image.jpg"`);
-    
-    
-    app.get('/index.html', (_req, res) => {
-      res.setHeader('Cache-Control', 'no-cache');
-      res.type('html').send(html);
-    });
+    const publicOrigin = publicSiteOrigin(process.env.APP_URL || (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : undefined));
+    const template = readFileSync(path.join(distPath, 'index.html'), 'utf8');
+    app.get('/robots.txt', (_req, res) => { res.type('text/plain').setHeader('Cache-Control', 'public, max-age=300'); res.send(renderRobots(publicOrigin)); });
+    app.get('/sitemap.xml', (_req, res) => { res.type('application/xml').setHeader('Cache-Control', 'public, max-age=300'); res.send(renderSitemap(publicOrigin)); });
+    app.get('/index.html', (_req, res) => { res.setHeader('Cache-Control', 'no-cache'); res.type('html').send(renderSeoDocument(template, routeMetadata('/', { origin: publicOrigin, catalog: liveCatalog.getCachedSnapshot() }), publicOrigin)); });
     app.use(express.static(distPath, {
       index: false,
       setHeaders(res, filePath) {
@@ -1003,9 +941,10 @@ async function startServer() {
     }));
     app.get('*', (req, res) => {
       if (path.extname(req.path)) return res.status(404).type('text/plain').send('Not found');
-      if (req.path.startsWith('/admin/')) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+      const metadata = routeMetadata(req.originalUrl, { origin: publicOrigin, catalog: liveCatalog.getCachedSnapshot() });
+      if (metadata.noindex) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
       res.setHeader('Cache-Control', 'no-cache');
-      res.type('html').send(html);
+      res.status(metadata.status).type('html').send(renderSeoDocument(template, metadata, publicOrigin));
     });
   }
 
@@ -1024,9 +963,16 @@ async function startServer() {
     shuttingDown = true;
     const timer = setTimeout(() => process.exit(1), 40000);
     timer.unref();
-    await worker.stop();
-    server.close(() => { clearTimeout(timer); process.exitCode = 0; });
-    server.closeIdleConnections();
+    try {
+      // Stop accepting orders, drain API transactions, then stop notification transport/listeners.
+      const closed = new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
+      server.closeIdleConnections();
+      await closed;
+      await worker.stop();
+      liveCatalog.close();
+      if (db) await db.terminate();
+      clearTimeout(timer); process.exitCode = 0;
+    } catch { process.exitCode = 1; }
   };
   process.once('SIGTERM', shutdown);
   process.once('SIGINT', shutdown);

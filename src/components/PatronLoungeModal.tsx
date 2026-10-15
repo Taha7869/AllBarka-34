@@ -1,16 +1,17 @@
-import { sanitizeFirestoreData } from '../lib/firestoreData';
+import { commerceErrorKey } from '../contexts/commerceTranslations';
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { X, User, Package, MapPin, Phone, Crown, LogOut, Clock, Calendar, CheckCircle2, RotateCcw, ShoppingBag, AlertCircle, ShieldCheck, Bell } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCart } from '../contexts/CartContext';
-import { PRODUCTS } from '../data/products';
+import { useLiveCatalog } from '../hooks/useLiveCatalog';
 import { getReorderItems, trackingProgress, TRACKING_STEPS } from '../lib/orderPresentation';
 import { Link } from 'react-router-dom';
 import { acquireScrollLock } from '../utils/scrollLock';
 import { apiUrl } from '../lib/apiUrl';
 import { withApiDeadline } from '../lib/apiDeadline';
+import { loadLoyaltyAccount, redeemLoyaltyVoucher, LoyaltyRequestError } from '../lib/loyaltyClient';
 
 interface PatronLoungeModalProps {
   isOpen: boolean;
@@ -18,8 +19,9 @@ interface PatronLoungeModalProps {
 }
 
 export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModalProps) {
+  const catalog = useLiveCatalog();
   const { currentUser, patronProfile, logout } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { addToCart, openCart } = useCart();
   const reduceMotion = useReducedMotion();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -31,8 +33,30 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [loyaltyData, setLoyaltyData] = useState<any>(null);
   const [rewards, setRewards] = useState<any[]>([]);
-  const [redeeming, setRedeeming] = useState<string | null>(null);
+  const [loyaltyLoading, setLoyaltyLoading] = useState(false);
+  const [loyaltyError, setLoyaltyError] = useState(false);
+  const [loyaltyRevision, setLoyaltyRevision] = useState(0);
   const [showAdminWorkspace, setShowAdminWorkspace] = useState(false);
+  const [redeeming, setRedeeming] = useState<string | null>(null);
+  const [rewardFeedback, setRewardFeedback] = useState('');
+  const redemption = useRef<{ uid: string; rewardId: string; requestId: string } | null>(null);
+  const redeemController = useRef<AbortController | null>(null);
+  const sessionUid = useRef(currentUser?.uid); sessionUid.current = currentUser?.uid;
+  useEffect(() => { setRedeeming(null); setRewardFeedback(''); return () => { redeemController.current?.abort(); }; }, [currentUser?.uid, isOpen]);
+  const redeem = async (rewardId: string) => {
+    if (!currentUser || redeeming) return;
+    const uid = currentUser.uid;
+    if (redemption.current?.uid !== uid || redemption.current?.rewardId !== rewardId) redemption.current = { uid, rewardId, requestId: globalThis.crypto?.randomUUID?.() || `reward_${Date.now()}_${Math.random().toString(36).slice(2)}` };
+    const controller = new AbortController(); redeemController.current = controller; setRedeeming(rewardId); setRewardFeedback('');
+    try {
+      await redeemLoyaltyVoucher(() => currentUser.getIdToken(), rewardId, redemption.current.requestId, controller.signal);
+      if (controller.signal.aborted || sessionUid.current !== uid) return;
+      setRewardFeedback(t('commerce.rewards.ready')); setLoyaltyRevision(value => value + 1); redemption.current = null;
+    } catch (error) {
+      if (!controller.signal.aborted && sessionUid.current === uid) setRewardFeedback(t(commerceErrorKey(error instanceof LoyaltyRequestError ? error.code : 'LOYALTY_UNAVAILABLE') || 'commerce.rewards.failed'));
+    } finally { if (!controller.signal.aborted && sessionUid.current === uid) setRedeeming(null); }
+  };
+
 
   useEffect(() => {
     let active = true;
@@ -48,113 +72,21 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
 
   useEffect(() => {
     let active = true;
+    const controller = new AbortController();
     setLoyaltyData(null);
+    setRewards([]);
+    setLoyaltyError(false);
+    setLoyaltyLoading(Boolean(isOpen && currentUser));
     if (isOpen && currentUser) {
-      const fetchLoyalty = async () => {
-        try {
-          const { REWARDS } = await import('../data/rewards');
-          if (active) setRewards(REWARDS);
-
-          const [{ doc, getDoc, collection, query, orderBy, limit, getDocs, where }, { db }] = await Promise.all([
-            import('firebase/firestore'),
-            import('../lib/firebase')
-          ]);
-
-          const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-          const loyaltyPoints = userDoc.exists() ? (userDoc.data()?.loyaltyPoints || 0) : 0;
-
-          const txSnap = await getDocs(query(collection(db, "users", currentUser.uid, "loyaltyTransactions"), orderBy("createdAt", "desc"), limit(10)));
-          const transactions = txSnap.docs.map(d => d.data());
-
-          const arSnap = await getDocs(query(collection(db, "users", currentUser.uid, "activeRewards"), where("status", "==", "ACTIVE")));
-          const activeRewards = arSnap.docs.map(d => d.data());
-
-          if (active) setLoyaltyData({ loyaltyPoints, transactions, activeRewards });
-        } catch (e) {
-          console.error('Failed to fetch loyalty:', e);
-        }
-      };
-      fetchLoyalty();
+      void loadLoyaltyAccount(() => currentUser.getIdToken(), controller.signal)
+        .then(({ profile, rewards: options }) => {
+          if (active) { setLoyaltyData(profile); setRewards(options); }
+        })
+        .catch(() => { if (active) setLoyaltyError(true); })
+        .finally(() => { if (active) setLoyaltyLoading(false); });
     }
-    return () => { active = false; };
-  }, [isOpen, currentUser]);
-
-  const handleRedeem = async (rewardId: string) => {
-    if (!currentUser) return;
-    setRedeeming(rewardId);
-    try {
-      const { REWARDS } = await import('../data/rewards');
-      const reward = REWARDS.find(r => r.rewardId === rewardId);
-      if (!reward || !reward.active) throw new Error("Invalid reward");
-
-      const [{ doc, runTransaction, collection }, { db }] = await Promise.all([
-        import('firebase/firestore'),
-        import('../lib/firebase')
-      ]);
-
-      let newActiveReward = null;
-
-      await runTransaction(db, async (t) => {
-          const userRef = doc(db, "users", currentUser.uid);
-          const userDoc = await t.get(userRef);
-
-          const currentPoints = userDoc.exists() ? (userDoc.data()?.loyaltyPoints || 0) : 0;
-          if (currentPoints < reward.pointsCost) throw new Error("Insufficient points");
-
-          // Generate a pseudo-random ID since we can't easily import crypto or use doc() inside transaction for auto-id
-          const txId = Date.now().toString() + Math.random().toString(36).substr(2, 5);
-          const arId = Date.now().toString() + Math.random().toString(36).substr(2, 5);
-
-          const txRef = doc(db, "users", currentUser.uid, "loyaltyTransactions", txId);
-          const arRef = doc(db, "users", currentUser.uid, "activeRewards", arId);
-
-          t.set(userRef, sanitizeFirestoreData({ loyaltyPoints: currentPoints - reward.pointsCost }), { merge: true });
-
-          t.set(txRef, sanitizeFirestoreData({
-              transactionId: txId,
-              type: 'REDEEM',
-              points: -reward.pointsCost,
-              rewardId: reward.rewardId,
-              description: `Redeemed ${reward.name}`,
-              createdAt: Date.now()
-          }));
-
-          newActiveReward = {
-              rewardId: reward.rewardId,
-              claimedAt: Date.now(),
-              expiresAt: Date.now() + (reward.expiryDays * 24 * 60 * 60 * 1000),
-              status: 'ACTIVE',
-              rewardType: reward.rewardType
-          };
-          t.set(arRef, sanitizeFirestoreData(newActiveReward));
-      });
-
-      alert('Reward redeemed successfully! It will be applied to your next eligible order.');
-
-      // Refresh local state
-      setLoyaltyData((prev: any) => ({
-          ...prev,
-          loyaltyPoints: Math.max(0, (prev?.loyaltyPoints || 0) - reward.pointsCost),
-          activeRewards: [newActiveReward],
-          transactions: [{
-              transactionId: Date.now().toString(),
-              type: 'REDEEM',
-              points: -reward.pointsCost,
-              rewardId: reward.rewardId,
-              description: `Redeemed ${reward.name}`,
-              createdAt: Date.now()
-          }, ...(prev?.transactions || [])].slice(0, 10)
-      }));
-
-    } catch(e: any) {
-       console.error(e);
-       alert(e.message || 'An error occurred.');
-    } finally {
-       setRedeeming(null);
-    }
-  };
-
-
+    return () => { active = false; controller.abort(); };
+  }, [isOpen, currentUser, loyaltyRevision]);
 
   useEffect(() => {
     setOrders([]);
@@ -206,7 +138,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
   }, [isOpen]);
 
   const reorder = (order: any) => {
-    const items = getReorderItems(order.items || [], PRODUCTS);
+    const items = getReorderItems(order.items || [], catalog);
     if (!items.length) return;
     items.forEach(({ product, weight, quantity }) => addToCart(product, weight, quantity, undefined, { silent: true, openCart: false }));
     onClose();
@@ -338,48 +270,42 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
               <div className="bg-white dark:bg-[#1A201E] border border-[var(--color-gold,#B8935F)]/30 rounded-2xl p-5 shadow-sm mt-4">
                 <h4 className="text-sm font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7] flex items-center gap-2 mb-4">
                   <Crown size={16} className="text-[var(--color-gold,#B8935F)]" />
-                  Patron Rewards
+                  {t('commerce.rewards.title')}
                 </h4>
 
+                <p dir="auto" className="mb-4 text-xs leading-6 text-[var(--color-text-secondary)]">{t('commerce.rewards.note')}</p>
+                {loyaltyLoading && <p role="status" dir="auto" className="mb-3 text-xs">{t('loyalty.loading')}</p>}
+                {loyaltyError && <div role="alert" dir="auto" className="mb-4 text-xs"><p>{t('loyalty.loadError')}</p><button type="button" onClick={() => setLoyaltyRevision(value => value + 1)} className="focus-ring min-h-11 underline underline-offset-4">{t('loyalty.retry')}</button></div>}
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   <div className="p-3 bg-[var(--color-cream,#FAF9F5)] dark:bg-[#222A28] rounded-xl border border-[var(--color-gold,#B8935F)]/25">
-                    <p className="text-[10px] text-[var(--color-ink,#1F120F)]/60 dark:text-[#FDFBF7]/60 font-bold uppercase tracking-wider mb-0.5">Available Points</p>
-                    <p className="text-2xl font-serif font-black text-[var(--color-gold,#B8935F)]">{loyaltyData?.loyaltyPoints || 0}</p>
+                    <p className="text-[10px] text-[var(--color-ink,#1F120F)]/60 dark:text-[#FDFBF7]/60 font-bold uppercase tracking-wider mb-0.5">{t('commerce.rewards.points')}</p>
+                    <p className="text-2xl font-serif font-black text-[var(--color-gold,#B8935F)]">{loyaltyData ? loyaltyData.loyaltyPoints : '—'}</p>
                   </div>
                   <div className="p-3 bg-[var(--color-cream,#FAF9F5)] dark:bg-[#222A28] rounded-xl border border-[var(--color-gold,#B8935F)]/25">
-                    <p className="text-[10px] text-[var(--color-ink,#1F120F)]/60 dark:text-[#FDFBF7]/60 font-bold uppercase tracking-wider mb-0.5">Pending Points</p>
+                    <p className="text-[10px] text-[var(--color-ink,#1F120F)]/60 dark:text-[#FDFBF7]/60 font-bold uppercase tracking-wider mb-0.5">{t('commerce.rewards.pending')}</p>
                     <p className="text-2xl font-serif font-black text-amber-700 dark:text-amber-500">+{pendingPoints}</p>
                   </div>
                 </div>
 
-                {loyaltyData?.activeRewards && loyaltyData.activeRewards.length > 0 && (
-                  <div className="mb-6 p-3 bg-[var(--color-gold,#B8935F)]/10 border border-[var(--color-gold,#B8935F)]/20 rounded-xl">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-ink,#1F120F)] mb-1">Active Reward</p>
-                    <p className="text-sm font-bold text-[var(--color-ink,#1F120F)]">
-                      {rewards.find((r: any) => r.rewardId === loyaltyData.activeRewards[0].rewardId)?.name || 'Reward Active'}
-                    </p>
-                    <p className="text-[10px] text-[var(--color-ink,#1F120F)]/70 mt-1">Ready for your next order.</p>
-                  </div>
-                )}
-
+                {rewardFeedback && <p role="status" className="mb-4 text-xs leading-6 text-[var(--color-accent-text)]" dir="auto">{rewardFeedback}</p>}
+                {!!loyaltyData?.activeRewards?.length && <div className="mb-6 space-y-3 rounded-xl border border-[var(--color-border-accent)] p-3"><p className="text-xs font-semibold">{t('commerce.rewards.active')}</p>{loyaltyData.activeRewards.map((voucher: any) => <div key={voucher.id}><p className="text-sm font-medium">{t(`commerce.rewards.${voucher.rewardId}`)}</p><p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">{t('commerce.rewards.expiry').replace('{date}', new Date(voucher.expiresAt).toLocaleDateString(language === 'ur' ? 'ur-PK' : language === 'ar' ? 'ar-PK' : 'en-PK'))}</p><Link to="/checkout" onClick={onClose} className="focus-ring inline-flex min-h-11 items-center text-xs underline underline-offset-4">{t('commerce.rewards.choose')}</Link></div>)}</div>}
                 <div className="space-y-3 mb-6">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-ink,#1F120F)]/70 dark:text-[#FDFBF7]/70">Exchange Options</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-ink,#1F120F)]/70 dark:text-[#FDFBF7]/70">{t('commerce.rewards.options')}</p>
                   {rewards.filter((r: any) => r.active).map((reward: any) => {
-                    const canAfford = (loyaltyData?.loyaltyPoints || 0) >= reward.pointsCost;
-                    const hasActive = loyaltyData?.activeRewards && loyaltyData.activeRewards.length > 0;
                     return (
                       <div key={reward.rewardId} className="border border-[var(--color-ink,#1F120F)]/10 dark:border-[#FDFBF7]/10 rounded-xl p-3">
                         <div className="flex justify-between items-start mb-1">
-                          <p className="text-xs font-bold text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">{reward.name}</p>
+                          <p className="text-xs font-bold text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">{t(`commerce.rewards.${reward.rewardId}`, reward.name)}</p>
                           <span className="text-[10px] font-black text-[var(--color-gold,#B8935F)] bg-[var(--color-gold,#B8935F)]/10 px-1.5 py-0.5 rounded">{reward.pointsCost} pts</span>
                         </div>
-                        <p className="text-[10px] text-[var(--color-ink,#1F120F)]/60 dark:text-[#FDFBF7]/60 leading-snug mb-2">{reward.description}</p>
+                        <p className="text-[10px] text-[var(--color-ink,#1F120F)]/60 dark:text-[#FDFBF7]/60 leading-snug mb-2">{t(`commerce.rewards.desc.${reward.rewardId}`, reward.description)}</p>
                         <button
-                          onClick={() => handleRedeem(reward.rewardId)}
-                          disabled={!canAfford || hasActive || redeeming === reward.rewardId}
-                          className="w-full py-1.5 rounded-lg border border-[var(--color-gold,#B8935F)]/30 text-[9px] font-black uppercase tracking-widest transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[var(--color-gold,#B8935F)] hover:text-white text-[var(--color-ink,#1F120F)]"
+                          type="button"
+                          disabled={!!redeeming || loyaltyLoading || loyaltyError || !reward.redeemable || !loyaltyData || loyaltyData.loyaltyPoints < reward.pointsCost || loyaltyData.activeRewards.some((voucher: any) => voucher.rewardId === reward.rewardId)}
+                          onClick={() => void redeem(reward.rewardId)}
+                          className="w-full min-h-11 py-1.5 rounded-lg border border-[var(--color-gold,#B8935F)]/30 text-[9px] font-black uppercase tracking-widest transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[var(--color-gold,#B8935F)] hover:text-white text-[var(--color-ink,#1F120F)]"
                         >
-                          {redeeming === reward.rewardId ? 'Redeeming...' : (hasActive ? 'Reward Pending' : (canAfford ? 'Redeem' : 'Not Enough Points'))}
+                          {t(redeeming === reward.rewardId ? 'commerce.rewards.busy' : 'commerce.rewards.redeem')}
                         </button>
                       </div>
                     );
@@ -431,7 +357,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                 <div className="space-y-4">
                   {orders.map((order) => {
                     const progress = trackingProgress(order.status || '');
-                    const reorderItems = getReorderItems(order.items || [], PRODUCTS);
+                    const reorderItems = getReorderItems(order.items || [], catalog);
                     const totalAmt = order.totals?.total ?? order.total ?? 0;
                     const subtotalAmt = order.totals?.subtotal ?? order.subtotal ?? 0;
                     const discountAmt = order.totals?.discount ?? order.discount ?? 0;

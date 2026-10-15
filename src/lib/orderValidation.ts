@@ -131,6 +131,7 @@ export function validateCustomerDetails(input: Partial<CustomerInput>, isQuoteRe
  */
 export function validateAndPriceOrder({
   catalog = PRODUCTS,
+  boxes,
   items,
   shippingMethodId,
   discountCode,
@@ -139,7 +140,8 @@ export function validateAndPriceOrder({
   city,
   promoContext,
 }: {
-  catalog?: any[];
+  catalog?: import('../types').Product[];
+  boxes?: readonly import('./hamperCatalog').HamperBox[];
   items: any[];
   shippingMethodId: string;
   discountCode?: string | null;
@@ -176,7 +178,7 @@ export function validateAndPriceOrder({
     // Resolve canonical product ID
     const rawId = String(clientItem.productId || clientItem.id || '').trim();
     if (rawId === CUSTOM_HAMPER_PRODUCT_ID) {
-      const hamper = resolveHamper(clientItem.hamperConfiguration);
+      const hamper = resolveHamper(clientItem.hamperConfiguration, catalog, boxes);
       if (!hamper) throw new ValidationError('Please rebuild this hamper with a supported box and valid harvest selections.', 'INVALID_HAMPER_CONFIGURATION');
       const quantity = typeof clientItem.quantity === 'number' ? clientItem.quantity : Number(clientItem.quantity);
       if (!Number.isInteger(quantity) || quantity < 1 || quantity > 50) {
@@ -259,6 +261,7 @@ export function validateAndPriceOrder({
   const promo = getPromo(discountCode);
   const applied = promo ? evaluatePromo(promo, subtotal, promoContext) : { ...NO_PROMO };
   const discounted = calculateOrderSummary({
+    catalog, boxes,
     items: validatedItems.map(item => ({ unitPrice: item.price, quantity: item.quantity, productId: item.productId,
       selectedWeight: item.selectedWeight, hamperConfiguration: item.hamperConfiguration })),
     shippingMethodId: resolvedShipping, city: applied.isQuoteRequest ? 'Lahore' : destination, manualDiscount: applied.discountAmount,

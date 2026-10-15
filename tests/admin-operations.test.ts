@@ -13,6 +13,7 @@ import {
 } from '../src/lib/adminOperations';
 import { updateAdminOrderStatus } from '../src/lib/orderDatabase';
 import { resolveHamper } from '../src/lib/hamperCatalog';
+import { CommerceFirestoreFixture } from './commerce-firestore-fixture';
 
 const NOW = Date.parse('2026-10-02T00:30:00.000Z');
 const order = (overrides: Partial<CanonicalOrder> = {}): CanonicalOrder => ({
@@ -145,26 +146,20 @@ test('grouped queues match new/transit states and exclude cancelled bank payment
   assert.equal(matching({ queue: 'bank-pending', search: 'QUEUE-3' }).length, 1);
 });
 
-test('bounded list and export disclose truncation and paginate without exposing secrets', async () => {
+test('cursor lists cover orders beyond the old scan cutoff without exposing secrets', async () => {
   const orders = Array.from({ length: ADMIN_SCAN_LIMIT + 2 }, (_, index) => order({ orderId: `AB-${String(index).padStart(6, '0')}`, createdAtMs: NOW - index,
     paymentStatus: index % 2 === 0 ? 'PAID' : 'UNPAID' }));
-  const db = new FakeFirestore(orders);
-  const filters = parseAdminOrderFilters({ page: '2', limit: '3', paymentStatus: 'PAID' });
-  const result = await listAdminOrders(db.db, filters);
-  assert.equal(db.requestedLimit, ADMIN_SCAN_LIMIT + 1);
-  assert.equal(result.scannedCount, ADMIN_SCAN_LIMIT);
-  assert.equal(result.truncated, true);
-  assert.equal(result.totalCount, 2500);
-  assert.equal(result.orders.length, 3);
-  assert.equal(result.orders[0].orderId, 'AB-000006');
-  assert.equal(result.metrics.count, 2500);
-  assert.equal('claimTokenHash' in result.orders[0], false);
-  const exported = await listAdminOrders(db.db, filters, true);
-  assert.equal(exported.orders.length, 2500);
-  assert.equal(exported.truncated, true);
-  const missingPage = await listAdminOrders(db.db, { ...filters, page: 999999 });
-  assert.equal(missingPage.page, missingPage.totalPages);
-  assert.ok(missingPage.orders.length > 0);
+  const db = new CommerceFirestoreFixture(Object.fromEntries(orders.map(order => [`orders/${order.orderId}`, order])));
+  const filters = parseAdminOrderFilters({ limit: '3', paymentStatus: 'PAID' });
+  const first = await listAdminOrders(db.db, filters);
+  assert.equal(first.scannedCount, 4); assert.equal(first.truncated, false); assert.equal(first.totalCount, 2501);
+  assert.equal(first.metrics.count, 2501); assert.equal('claimTokenHash' in first.orders[0], false);
+  const result = await listAdminOrders(db.db, { ...filters, page: 2, cursor: first.nextCursor! });
+  assert.equal(result.orders[0].orderId, 'AB-000006'); assert.equal(result.orders.length, 3);
+  assert.ok(db.requestedLimits.every(limit => limit <= 4));
+  const exported = await listAdminOrders(db.db, { ...filters, page: 1, cursor: '' }, true);
+  assert.equal(exported.orders.length, 500); assert.equal(exported.truncated, true); assert.ok(exported.nextCursor);
+  await assert.rejects(listAdminOrders(db.db, { ...filters, page: 999999, cursor: '' }), errorCode('INVALID_CURSOR'));
 });
 
 test('missing database and missing order have distinct honest errors', async () => {

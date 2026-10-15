@@ -16,6 +16,7 @@ export const ORDER_OUTBOX_MAX_ATTEMPTS = 1 + ORDER_OUTBOX_MAX_RETRIES;
 export const ORDER_OUTBOX_POLL_MS = 60000;
 export const ORDER_OUTBOX_LOCK_PATH = 'outboxDispatchLocks/n8nOrderCreated';
 const MAX_DUE_SCAN = 25;
+export const ORDER_OUTBOX_BATCH_SIZE = 20;
 
 export function orderOutboxBackoffMs(attempt: number): number {
   return Math.min(15 * 60 * 1000, 30000 * (2 ** Math.max(0, Math.min(10, attempt - 1))));
@@ -34,6 +35,7 @@ export interface OrderOutboxWorkerOptions {
   getStatusConfig?: () => N8nOrderDispatchConfig;
   logger?: (message: string, metadata?: Record<string, string | number>) => void;
   pollIntervalMs?: number;
+  batchSize?: number;
   now?: () => number;
   dispatch?: (order: N8nOrderData, options: SendOrderToN8nOptions) => Promise<N8nNotificationResult>;
   dispatchStatus?: typeof sendStatusToN8n;
@@ -61,7 +63,7 @@ function safeFailureCode(result: N8nNotificationResult): string {
 
 /**
  * Firestore leases are authoritative across backend instances; the in-process guard
- * also prevents overlapping timer/manual runs. Only one event is dispatched per cycle.
+ * also prevents overlapping timer/manual runs. A bounded batch drains ready events while each transport retains its fenced lease.
  */
 export function createOrderOutboxWorker(options: OrderOutboxWorkerOptions) {
   const owner = crypto.randomUUID();
@@ -71,6 +73,11 @@ export function createOrderOutboxWorker(options: OrderOutboxWorkerOptions) {
   const getStatusConfig = options.getStatusConfig ?? getN8nStatusDispatchConfig;
   const dispatchStatus = options.dispatchStatus ?? sendStatusToN8n;
   const pollMs = Math.max(100, Math.min(60000, options.pollIntervalMs ?? ORDER_OUTBOX_POLL_MS));
+  const batchSize = Math.max(1, Math.min(25, Math.floor(options.batchSize ?? ORDER_OUTBOX_BATCH_SIZE)));
+  let lastBatch = { processed: 0, delivered: 0, failed: 0, retries: 0, moreWork: false };
+  let wakeRequested = false;
+  const pendingTimes = new Map<string, number>();
+  const listeners: Array<() => void> = [];
   let stopped = false;
   let started = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -124,6 +131,20 @@ export function createOrderOutboxWorker(options: OrderOutboxWorkerOptions) {
     });
   }
 
+  async function renewGlobalLease(db: Firestore, lease: DispatchLease, leaseMs: number): Promise<boolean> {
+    const ref = db.doc(ORDER_OUTBOX_LOCK_PATH);
+    const until = await db.runTransaction(async transaction => {
+      const snapshot = await transaction.get(ref);
+      if (!ownsLease(snapshot.data(), lease, now())) return null;
+      const next = now() + leaseMs;
+      transaction.set(ref, sanitizeFirestoreData({ owner: lease.owner, token: lease.token, leaseUntilMs: next, updatedAtMs: now() }));
+      return next;
+    });
+    if (until === null) return false;
+    lease.until = until;
+    return true;
+  }
+
   async function claimEvent(db: Firestore, ref: DocumentReference, lease: DispatchLease, enabledTypes: string[]): Promise<ClaimedEvent | OutboxRunResult | null> {
     const token = crypto.randomUUID();
     return db.runTransaction(async transaction => {
@@ -147,6 +168,10 @@ export function createOrderOutboxWorker(options: OrderOutboxWorkerOptions) {
       if (!order || order.orderId !== event.orderId) {
         transaction.set(ref, sanitizeFirestoreData(terminalEvent(event, 'FAILED', nowMs, 'CANONICAL_ORDER_MISSING')));
         return { status: 'FAILED', eventId: event.eventId, orderId: event.orderId, attempts };
+      }
+      if (event.eventType === 'ORDER_STATUS_CHANGED' && enabledTypes.includes('ORDER_CREATED') && Number.isSafeInteger(order.createdAtMs)) {
+        const creation = await transaction.get(db.collection('orderEvents').doc(`${event.orderId}_ORDER_CREATED_${order.createdAtMs}`));
+        if (creation.exists && ['PENDING', 'LEASED'].includes(creation.data()?.deliveryState)) return null;
       }
       const claimed: OutboxOrderEvent = {
         ...event, deliveryState: 'LEASED', attempts: attempts + 1, leaseOwner: lease.owner,
@@ -220,34 +245,44 @@ export function createOrderOutboxWorker(options: OrderOutboxWorkerOptions) {
     const leaseMs = Math.max(60000, Math.min(30000, Math.max(config.timeoutMs, statusConfig.timeoutMs)) * 3 + 15000);
     const lease = await step('firestore.acquire_lease', () => acquireGlobalLease(db, leaseMs));
     if (!lease) return { status: 'BUSY' };
-    let cooldownMs = 0;
+    let outcome: OutboxRunResult = { status: 'IDLE' };
     try {
-      for (const snapshot of due) {
+      for (const snapshot of due.slice(0, batchSize)) {
+        if (stopped) break;
+        if (lastBatch.processed && !await step('firestore.renew_lease', () => renewGlobalLease(db, lease, leaseMs))) {
+          return { status: 'LEASE_LOST' };
+        }
         cycleEventId = snapshot.id;
         const claim = await step('firestore.claim_event_and_read_order', () => claimEvent(db, snapshot.ref, lease, enabledTypes));
         if (!claim) continue;
-        if ('status' in claim) return claim;
+        if ('status' in claim) {
+          outcome = claim; lastBatch.processed++; if (claim.status === 'FAILED') lastBatch.failed++;
+          continue;
+        }
         let wireOrder: N8nOrderData | undefined;
         const isStatus = claim.event.eventType === 'ORDER_STATUS_CHANGED';
         const selectedConfig = isStatus ? statusConfig : config;
+        let result: N8nNotificationResult;
+        let permanentFailure = false;
         try {
           if (isStatus) projectStatusEvent(claim.event);
           else wireOrder = projectCanonicalOrderForN8n(claim.order);
+          const lock = await step('firestore.verify_lease', () => db.doc(ORDER_OUTBOX_LOCK_PATH).get());
+          if (!ownsLease(lock.data(), lease, now())) return { status: 'LEASE_LOST', eventId: claim.event.eventId, orderId: claim.event.orderId };
+          if (stopped) break;
+          cycleStep = isStatus ? 'N8N_STATUS_WEBHOOK_URL.call' : 'N8N_ORDER_WEBHOOK_URL.call';
+          try {
+            result = isStatus ? await dispatchStatus(claim.event, { config: selectedConfig, now })
+              : await dispatch(wireOrder!, { config: selectedConfig, now, eventId: claim.event.eventId });
+          } catch (error) {
+            result = { sent: false, status: 'FAILED', reason: 'ORDER_WEBHOOK_NETWORK_ERROR',
+              ...outboxErrorDetails(error, [selectedConfig.webhookUrl, selectedConfig.webhookSecret]) };
+          }
         } catch (error) {
+          if ((error as any)?.outboxLogged) throw error;
+          permanentFailure = true;
           log('ORDER_OUTBOX_WORKER_ERROR', { step: 'canonical_payload_validation', eventId: claim.event.eventId, ...outboxErrorDetails(error) });
-          return await step('firestore.mark_failed', () => completeEvent(db, claim, lease, { sent: false, status: 'FAILED', reason: 'CANONICAL_ORDER_INVALID' }, true));
-        }
-        // Recheck lease ownership immediately before crossing the network boundary.
-        const lock = await step('firestore.verify_lease', () => db.doc(ORDER_OUTBOX_LOCK_PATH).get());
-        if (!ownsLease(lock.data(), lease, now())) return { status: 'LEASE_LOST', eventId: claim.event.eventId, orderId: claim.event.orderId };
-        let result: N8nNotificationResult;
-        cycleStep = isStatus && process.env.N8N_STATUS_WEBHOOK_URL ? 'N8N_STATUS_WEBHOOK_URL.call' : 'N8N_ORDER_WEBHOOK_URL.call';
-        try {
-          result = isStatus ? await dispatchStatus(claim.event, { config: selectedConfig, now })
-            : await dispatch(wireOrder!, { config: selectedConfig, now, eventId: claim.event.eventId });
-        } catch (error) {
-          result = { sent: false, status: 'FAILED', reason: 'ORDER_WEBHOOK_NETWORK_ERROR',
-            ...outboxErrorDetails(error, [selectedConfig.webhookUrl, selectedConfig.webhookSecret]) };
+          result = { sent: false, status: 'FAILED', reason: 'CANONICAL_ORDER_INVALID' };
         }
         if (!result.sent || result.status !== 'SUCCESS') log('ORDER_OUTBOX_WORKER_ERROR', {
           step: cycleStep, eventId: claim.event.eventId, orderId: claim.event.orderId,
@@ -256,19 +291,26 @@ export function createOrderOutboxWorker(options: OrderOutboxWorkerOptions) {
           ...(result.errorMessage ? { errorMessage: result.errorMessage } : {}),
           ...(result.errorStack ? { errorStack: result.errorStack } : {}),
         });
-        // After an uncertain delivery, keep other backend instances out briefly while the receiver settles.
-        if (result.status !== 'SUCCESS' || !result.sent) cooldownMs = Math.max(30000, Math.min(60000, selectedConfig.timeoutMs * 2));
-        return await step('firestore.persist_delivery_result', () => completeEvent(db, claim, lease, result));
+        outcome = await step('firestore.persist_delivery_result', () => completeEvent(db, claim, lease, result, permanentFailure));
+        lastBatch.processed++;
+        if (outcome.status === 'DELIVERED') lastBatch.delivered++;
+        else if (outcome.status === 'FAILED') lastBatch.failed++;
+        else if (outcome.status === 'RETRY_SCHEDULED') lastBatch.retries++;
+        if (outcome.status === 'LEASE_LOST') break;
+        // An uncertain event retains its own backoff; unrelated customers are not globally delayed.
       }
-      return { status: 'IDLE' };
+      lastBatch.moreWork = lastBatch.processed > 0 && (due.length > batchSize || lastBatch.processed < Math.min(due.length, batchSize));
+      return outcome;
     } finally {
-      await step('firestore.release_lease', () => releaseGlobalLease(db, lease, cooldownMs));
+      await step('firestore.release_lease', () => releaseGlobalLease(db, lease, 0));
     }
   }
 
   function runOnce(): Promise<OutboxRunResult> {
     if (stopped) return Promise.resolve({ status: 'STOPPED' });
     if (inFlight) return Promise.resolve({ status: 'BUSY' });
+    lastBatch = { processed: 0, delivered: 0, failed: 0, retries: 0, moreWork: false };
+    wakeRequested = false;
     cyclePending = 0;
     cycleEventId = 'none';
     cycleStep = 'configuration';
@@ -278,8 +320,8 @@ export function createOrderOutboxWorker(options: OrderOutboxWorkerOptions) {
       return { status: 'ERROR' };
     }).then(result => {
       lastResult = result;
-      const delivered = result.status === 'DELIVERED' ? 1 : 0;
-      const failed = result.status === 'FAILED' ? 1 : 0;
+      const delivered = lastBatch.delivered;
+      const failed = lastBatch.failed;
       const pending = Math.max(0, cyclePending - delivered - failed);
       log(`outbox worker tick: ${pending} pending, ${delivered} delivered, ${failed} failed`, {
         status: result.status, eventId: result.eventId || cycleEventId, pending, delivered, failed,
@@ -290,26 +332,60 @@ export function createOrderOutboxWorker(options: OrderOutboxWorkerOptions) {
     return inFlight;
   }
 
-  function schedule(): void {
-    if (stopped) return;
-    timer = setTimeout(() => { void runOnce().then(schedule); }, pollMs);
+  function schedule(delay?: number): void {
+    if (stopped || !started) return;
+    if (timer) clearTimeout(timer);
+    const future = [...pendingTimes.values()].filter(time => time > now());
+    const retryDelay = future.length ? Math.max(100, Math.min(...future) - now()) : pollMs;
+    const next = delay ?? (wakeRequested || lastBatch.moreWork ? 100 : Math.min(pollMs, retryDelay));
+    timer = setTimeout(() => { timer = undefined; void runOnce().then(() => schedule()); }, next);
     timer.unref?.();
+  }
+
+  function wake(): void {
+    if (stopped) return;
+    wakeRequested = true;
+    if (started && !inFlight) schedule(0);
+  }
+
+  function watchPending(): void {
+    const db = options.getDb();
+    if (!db) return;
+    const configs = [['ORDER_CREATED', getConfig()], ['ORDER_STATUS_CHANGED', getStatusConfig()]] as const;
+    for (const [eventType, config] of configs) {
+      if (!config.enabled) continue;
+      try {
+        const query = db.collection('orderEvents').where('eventType', '==', eventType)
+          .where('deliveryState', '==', 'PENDING').orderBy('nextAttemptAtMs', 'asc').limit(1);
+        if (typeof query.onSnapshot !== 'function') continue;
+        listeners.push(query.onSnapshot(snapshot => {
+          const nextTime = snapshot.docs[0]?.data().nextAttemptAtMs;
+          if (Number.isFinite(nextTime)) pendingTimes.set(eventType, nextTime); else pendingTimes.delete(eventType);
+          if (Number.isFinite(nextTime) && nextTime <= now()) wake();
+          else if (!inFlight) schedule();
+        }, () => { pendingTimes.delete(eventType); log('ORDER_OUTBOX_LISTENER_UNAVAILABLE', { eventType }); }));
+      } catch { log('ORDER_OUTBOX_LISTENER_UNAVAILABLE', { eventType }); }
+    }
   }
 
   function start(): void {
     if (started || stopped) return;
     started = true;
-    log('ORDER_OUTBOX_WORKER_STARTED', { pollIntervalMs: pollMs, maxRetries: ORDER_OUTBOX_MAX_RETRIES });
-    void runOnce().then(schedule);
+    log('ORDER_OUTBOX_WORKER_STARTED', { pollIntervalMs: pollMs, batchSize, maxRetries: ORDER_OUTBOX_MAX_RETRIES });
+    watchPending();
+    void runOnce().then(() => schedule());
   }
 
   async function stop(): Promise<void> {
     stopped = true;
     if (timer) clearTimeout(timer);
+    listeners.forEach(unsubscribe => unsubscribe());
     await inFlight;
   }
 
-  return { runOnce, start, stop, getState: () => ({ started, stopped, running: Boolean(inFlight), lastTickAt, lastResult: lastResult?.status || null, pollIntervalMs: pollMs }) };
+  return { runOnce, wake, start, stop, getState: () => ({ started, stopped, running: Boolean(inFlight), lastTickAt,
+    lastResult: lastResult?.status || null, pollIntervalMs: pollMs, batchSize, listening: listeners.length, lastBatch: { ...lastBatch } }) };
+
 }
 
 /** Start once when the persistent Express server starts; await stop() before process shutdown. */

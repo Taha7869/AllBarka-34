@@ -80,10 +80,12 @@ export function calculateOrderSummary({
   manualDiscount = 0,
   giftWrapping = false,
   city = 'Lahore',
-  catalog
+  catalog,
+  boxes
 }: {
   items: OrderItemPriceInput[];
-  catalog?: any[];
+  catalog?: import('../types').Product[];
+  boxes?: readonly import('./hamperCatalog').HamperBox[];
   shippingMethodId?: ShippingMethodId;
   couponCode?: string | null;
   manualDiscount?: number;
@@ -95,7 +97,7 @@ export function calculateOrderSummary({
   const discount = Math.min(subtotal, Math.max(couponDiscount, sanitizePrice(manualDiscount)));
   const discountedSubtotal = Math.max(0, subtotal - discount);
   const giftWrapFee = giftWrapping ? GIFT_WRAP_FEE : 0;
-  const shippingWeightGrams = getCartShippingWeightGrams(items, catalog);
+  const shippingWeightGrams = getCartShippingWeightGrams(items, catalog, boxes);
   const shipping = calculateShipping(discountedSubtotal, shippingMethodId, giftWrapFee, city, shippingWeightGrams);
   const total = discountedSubtotal + shipping + giftWrapFee;
 

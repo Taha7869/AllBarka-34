@@ -1,18 +1,18 @@
+import { trackCommerce } from '../lib/analytics';
 import { useCatalogActivity } from '../hooks/useCatalogActivity';
 import { unitPrice } from '../lib/catalogActivity';
 import { useSavedProducts } from '../hooks/useSavedProducts';
 import React, { lazy, Suspense, useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { PRODUCTS, getProductImage } from '../data/products';
-import { useLiveCatalog } from '../hooks/useLiveCatalog';
+import { getProductImage } from '../data/products';
+import { useLiveCatalog, useCatalogState } from '../hooks/useLiveCatalog';
 import { isSingleImageCatalogProduct } from '../data/productImages';
 import { useProductMedia, useProductMediaCover } from '../contexts/ProductMediaContext';
 import { clampPhotoIndex } from '../lib/productPhotoViewer';
 import ProductVideo from '../components/ProductVideo';
 import { Product, CartItem } from '../types';
 import ProductDetailAccordion from '../components/ProductDetailAccordion';
-import SEO from '../components/SEO';
 import { ShoppingBag, ShieldCheck, Check, Sparkles, ArrowRight, Truck, Award, AlertCircle, Info, Share2, Maximize2 } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import TrustBadges from '../components/TrustBadges';
@@ -31,8 +31,9 @@ export default function ProductDetailPage() {
   const navigate = useNavigate();
   const { addToCart, setIsCartOpen } = useCart();
   const { t, language } = useLanguage();
-  
+
   const catalog = useLiveCatalog();
+  const { status: priceStatus } = useCatalogState();
   const product = catalog.find((p) => p.id === id && p.active !== false);
   const productMedia = useProductMedia(product);
   const mediaCover = useProductMediaCover();
@@ -91,10 +92,12 @@ export default function ProductDetailPage() {
   // Related selections from the current catalogue
   const relatedProducts = useMemo(() => {
     if (!product) return [];
-    const sameCategory = PRODUCTS.filter((p) => p.active !== false && p.id !== product.id && p.category === product.category);
-    const otherBestsellers = PRODUCTS.filter((p) => p.active !== false && p.id !== product.id && p.category !== product.category);
+    const sameCategory = catalog.filter((p) => p.active !== false && p.id !== product.id && p.category === product.category);
+    const otherBestsellers = catalog.filter((p) => p.active !== false && p.id !== product.id && p.category !== product.category);
     return [...sameCategory, ...otherBestsellers].slice(0, 4);
-  }, [product]);
+  }, [product, catalog]);
+
+  useEffect(() => { if (product && priceStatus === 'ready') void trackCommerce('view_item', { path: `/product/${product.id}`, language, items: [{ productId: product.id, quantity: 1, price: Math.min(...Object.values(product.prices).filter(value => value > 0)) }], value: Math.min(...Object.values(product.prices).filter(value => value > 0)) }); }, [product, priceStatus, language]);
 
   if (!product) {
     return (
@@ -107,7 +110,7 @@ export default function ProductDetailPage() {
             AllBarka Reserve
           </span>
           <h1 className="text-2xl sm:text-3xl font-serif font-bold text-[var(--color-ink,#29231D)] mb-3">
-            Product Not Found
+            {t('experience.route.notFound')}
           </h1>
           <p className="text-sm text-[var(--color-ink,#29231D)]/70 mb-8 leading-relaxed max-w-sm mx-auto">
             The luxury harvest lot or curio selection you are looking for has been retired or relocated to our archival cellar.
@@ -117,13 +120,13 @@ export default function ProductDetailPage() {
               onClick={() => navigate('/shop')}
               className="w-full sm:w-auto px-6 py-3 rounded-full bg-[var(--color-emerald,#042821)] text-[var(--color-surface,#FFFCF7)] text-xs font-bold uppercase tracking-wider hover:bg-[#03201A] transition-colors border border-[var(--color-gold,#C7982F)]/40 shadow-sm"
             >
-              Explore Full Shop
+              {t('experience.checkout.browse')}
             </button>
             <button
               onClick={() => navigate('/')}
               className="w-full sm:w-auto px-6 py-3 rounded-full bg-white text-[var(--color-ink,#29231D)] text-xs font-bold uppercase tracking-wider border border-[var(--color-gold,#C7982F)]/30 hover:border-[var(--color-gold,#C7982F)] transition-colors"
             >
-              Return Home
+              {t('home')}
             </button>
           </div>
         </div>
@@ -167,37 +170,11 @@ export default function ProductDetailPage() {
 
   return (
     <div dir="ltr" className="w-full bg-[var(--color-base,#F6F1EA)] pt-6 sm:pt-10 pb-24 select-none">
-      <SEO
-        title={getLocalized(product, 'name', language)}
-        description={getLocalized(product, 'desc', language)}
-        canonicalPath={`/product/${product.id}`}
-        type="product"
-        image={productMedia.images[0]}
-        structuredData={{
-          '@context': 'https://schema.org',
-          '@type': 'Product',
-          name: getLocalized(product, 'name', language),
-          image: productMedia.images.map(src => new URL(src, siteOrigin).href),
-          description: getLocalized(product, 'desc', language),
-          sku: product.id,
-          brand: {
-            '@type': 'Brand',
-            name: 'AllBarka'
-          },
-          ...(!product.quoteOnly && priceToUse ? { offers: {
-            '@type': 'Offer',
-            url: `${siteOrigin}/product/${product.id}`,
-            priceCurrency: 'PKR',
-            price: priceToUse,
-            availability: 'https://schema.org/InStock',
-            itemCondition: 'https://schema.org/NewCondition'
-          } } : {})
-        }}
-      />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-start">
-          
+
           {/* Left: Product Visual Showcase */}
           <div className="flex flex-col gap-3 lg:sticky lg:top-28">
             <div className="relative aspect-square rounded-3xl overflow-hidden bg-[var(--color-surface,#FFFCF7)] border border-[var(--color-gold,#C7982F)]/30 shadow-sm flex items-center justify-center p-6 group">
@@ -315,7 +292,7 @@ export default function ProductDetailPage() {
                 </div>
               )}
             </div>
-            
+
             {/* Price Row */}
             {product.quoteOnly ? <div className="my-5 rounded-xl border border-[var(--color-border-accent)] p-5 text-sm leading-7 text-[var(--color-text-secondary)]">{t('catalog.quoteDescription')}</div> : <>
             <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2 py-4 border-y border-[var(--color-accent,#C7982F)]/25 mb-6">
@@ -347,7 +324,7 @@ export default function ProductDetailPage() {
                       onClick={() => { setSelectedWeightIndex(idx); setCustomWeightSelected(false); }}
                       className={`min-h-[44px] min-w-[70px] px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer ${
                         isSelected && !customWeightSelected
-                          ? 'bg-[var(--color-primary,#042821)] border-[var(--color-primary,#042821)] text-[var(--color-text-on-emerald,#FFFCF7)] shadow-sm' 
+                          ? 'bg-[var(--color-primary,#042821)] border-[var(--color-primary,#042821)] text-[var(--color-text-on-emerald,#FFFCF7)] shadow-sm'
                           : 'bg-white dark:bg-[#1C2422] border-[var(--color-accent,#C7982F)]/30 text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)] hover:border-[var(--color-accent,#C7982F)]'
                       }`}
                     >
@@ -364,7 +341,7 @@ export default function ProductDetailPage() {
             <div className="flex flex-col gap-3 mb-8">
               {product.quoteOnly ? <Link to="/pages/contact" className="focus-ring flex min-h-12 items-center justify-center rounded-xl border border-[#c7982f]/40 bg-[#1e3a2b] px-5 text-sm font-semibold text-[#fff8e9]">{t('catalog.requestQuote')}</Link> : <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex items-center justify-center bg-white dark:bg-[#1C2422] border border-[var(--color-accent,#C7982F)]/35 rounded-xl h-12 px-2 shrink-0">
-                  <button 
+                  <button
                     type="button"
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
                     className="w-11 h-11 flex items-center justify-center text-[var(--color-text-primary,#29231D)] dark:text-white hover:text-[var(--color-accent,#C7982F)] transition-colors cursor-pointer text-lg font-bold"
@@ -375,7 +352,7 @@ export default function ProductDetailPage() {
                   <span className="w-10 text-center text-sm font-bold text-[var(--color-text-primary,#29231D)] dark:text-white">
                     {quantity}
                   </span>
-                  <button 
+                  <button
                     type="button"
                     onClick={() => setQuantity(Math.min(50, quantity + 1))}
                     className="w-11 h-11 flex items-center justify-center text-[var(--color-text-primary,#29231D)] dark:text-white hover:text-[var(--color-accent,#C7982F)] transition-colors cursor-pointer text-lg font-bold"
@@ -385,13 +362,13 @@ export default function ProductDetailPage() {
                   </button>
                 </div>
 
-                <button 
+                <button
                   type="button"
                   onClick={handleAddToCart}
                   disabled={isAdded || !priceToUse || !selectedWeight}
                   className={`flex-1 min-h-[48px] rounded-xl flex items-center justify-center gap-2.5 text-xs font-bold uppercase tracking-widest transition-all cursor-pointer shadow-sm ${
-                    isAdded 
-                      ? 'bg-[var(--color-accent,#C7982F)] text-[var(--color-text-on-gold,#121615)] shadow-md scale-[1.01]' 
+                    isAdded
+                      ? 'bg-[var(--color-accent,#C7982F)] text-[var(--color-text-on-gold,#121615)] shadow-md scale-[1.01]'
                       : 'bg-[var(--color-primary,#042821)] text-[var(--color-text-on-emerald,#FFFCF7)] hover:bg-[#03201A] border border-[var(--color-accent,#C7982F)]/40 hover:border-[var(--color-accent,#C7982F)]'
                   }`}
                 >
@@ -408,12 +385,12 @@ export default function ProductDetailPage() {
                   )}
                 </button>
               </div>}
-              
+
               {/* Internal Actions: Wishlist & Share */}
               <div className="flex flex-col min-[390px]:flex-row items-stretch gap-3">
                 <PulseHeart liked={isSaved} onChange={handleSave} label={t('wishlist', 'Wishlist')} savedLabel={t('savedProduct', 'Saved')} className="flex-1" />
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={handleShare}
                   className="flex-1 h-11 flex items-center justify-center gap-2 rounded-xl border border-[#29231D]/20 dark:border-[#F6F1EA]/20 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#635B52] dark:text-[#A8A199] hover:text-[#1E3A2B] dark:hover:text-[#FDFBF7] hover:border-[#1E3A2B] dark:hover:border-[#FDFBF7] transition-colors shadow-sm focus-ring cursor-pointer"
                 >

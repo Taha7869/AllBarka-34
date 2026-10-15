@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import type { Product } from '../types';
-import { PRODUCTS } from '../data/products';
+import { useLiveCatalog } from '../hooks/useLiveCatalog';
 import CircularCarousel from './CircularCarousel';
 import { circularCatalogue } from '../lib/circularCatalogue';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -20,8 +20,13 @@ export default function ProductSlider({
   subtitle = 'Hand-sorted premium harvest lots, freshly packed for Lahore doorstep delivery.',
   products, onAddToCart, onQuickView,
 }: ProductSliderProps) {
+  const catalog = useLiveCatalog();
   const { t } = useLanguage();
-  const catalogue = useMemo(() => circularCatalogue(products, PRODUCTS), [products]);
+  const catalogue = useMemo(() => {
+    const featured = new Set(products.map(product => product.id));
+    return circularCatalogue(products, catalog).filter(product => featured.has(product.id) && product.active !== false).slice(0, 8);
+  }, [products, catalog]);
+  const collectionCount = catalog.filter(product => product.active !== false).length;
 
   return (
     <section dir="ltr" className="boutique-bestsellers w-full py-12 sm:py-16 lg:py-20 bg-[var(--color-surface)] border-y border-[var(--color-border)]">
@@ -39,7 +44,7 @@ export default function ProductSlider({
             </p>
           </div>
           <Link to="/shop" className="focus-ring hidden min-h-11 items-center gap-3 self-end border-b border-[var(--color-gold)]/40 text-[11px] font-semibold uppercase tracking-[.14em] text-[var(--color-accent-text)] hover:text-[var(--color-ink)] transition-colors motion-reduce:transition-none sm:inline-flex">
-            <span dir="auto">{t('slider.viewAll')} ({catalogue.length})</span><ArrowRight size={13} />
+            <span dir="auto">{t('slider.viewAll')} ({collectionCount})</span><ArrowRight size={13} />
           </Link>
         </div>
 
@@ -47,7 +52,7 @@ export default function ProductSlider({
 
         <div className="mt-5 text-center sm:hidden">
           <Link to="/shop" className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-base)] px-6 text-[11px] font-semibold uppercase tracking-[.1em] text-[var(--color-ink)]">
-            <span dir="auto">{t('slider.viewAll')} ({catalogue.length})</span><ArrowRight size={13} className="ml-1.5 text-[var(--color-gold)]" />
+            <span dir="auto">{t('slider.viewAll')} ({collectionCount})</span><ArrowRight size={13} className="ml-1.5 text-[var(--color-gold)]" />
           </Link>
         </div>
       </div>

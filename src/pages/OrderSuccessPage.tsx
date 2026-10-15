@@ -124,7 +124,7 @@ export default function OrderSuccessPage() {
             onClick={() => navigate('/shop')}
             className="px-8 py-3.5 rounded-full bg-[var(--color-ink,#29231D)] text-white dark:bg-[var(--color-gold,#C7982F)] dark:text-[var(--color-ink,#29231D)] font-bold text-xs uppercase tracking-[0.2em] hover:opacity-90 transition-all cursor-pointer"
           >
-            Browse Collections
+            {t('experience.checkout.browse')}
           </button>
           <a
             href={buildHumanSupportWhatsAppUrl('Assalam-o-Alaikum, I would like to inquire about my AllBarka order status.')}
@@ -155,7 +155,7 @@ export default function OrderSuccessPage() {
             {t(isQuoteRequest ? 'checkout.quoteReceived' : 'checkout.receiptReceived')}
           </span>
           <h1 className="text-2xl sm:text-3xl font-serif font-bold text-[var(--color-ink,#29231D)]">
-            Thank You, {order.name.split(' ')[0]}
+            {t('experience.checkout.thanks')} {order.name.split(' ')[0]}
           </h1>
           <p className="text-xs sm:text-sm text-[var(--color-ink-muted,#635B52)] mt-2 max-w-md mx-auto">
             {t(isQuoteRequest ? 'checkout.quoteRequestNotice' : 'checkout.receiptSaved')}
@@ -167,7 +167,7 @@ export default function OrderSuccessPage() {
           <div className="flex flex-wrap items-center justify-between pb-4 border-b border-[var(--color-gold,#C7982F)]/15 gap-2">
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted,#635B52)] block">
-                Order Identifier
+                {t('experience.checkout.id')}
               </span>
               <span className="font-mono text-sm font-bold text-[var(--color-emerald-dark,#042821)] dark:text-[var(--color-gold,#C7982F)]">
                 {order.orderId}
@@ -175,7 +175,7 @@ export default function OrderSuccessPage() {
             </div>
             {!isQuoteRequest && <div className="text-right">
               <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted,#635B52)] block">
-                Payment Method
+                {t('experience.checkout.paymentLabel')}
               </span>
               <span className="text-xs font-bold text-[var(--color-ink,#29231D)]">
                 {order.paymentMethod === 'bank' ? 'Direct Bank Transfer' : 'Cash on Delivery (COD)'}
@@ -188,14 +188,14 @@ export default function OrderSuccessPage() {
             <div className="flex items-start gap-2">
               <MapPin size={14} className="text-[var(--color-gold,#C7982F)] shrink-0 mt-0.5" />
               <div>
-                <span className="font-bold text-[var(--color-ink,#29231D)] block">Delivery Address</span>
+                <span className="font-bold text-[var(--color-ink,#29231D)] block">{t('experience.checkout.addressLabel')}</span>
                 <span className="text-[var(--color-ink-muted,#635B52)]">{order.address}, {order.city}</span>
               </div>
             </div>
             <div className="flex items-start gap-2">
               <Clock size={14} className="text-[var(--color-gold,#C7982F)] shrink-0 mt-0.5" />
               <div>
-                <span className="font-bold text-[var(--color-ink,#29231D)] block">Contact & Slot</span>
+                <span className="font-bold text-[var(--color-ink,#29231D)] block">{t('experience.checkout.contactLabel')}</span>
                 <span className="text-[var(--color-ink-muted,#635B52)]">{order.phone} • {order.deliverySlot || 'Fastest Dispatch'}</span>
               </div>
             </div>
@@ -205,7 +205,7 @@ export default function OrderSuccessPage() {
           {Array.isArray(order.items) && order.items.length > 0 && (
             <div className="py-4 border-b border-[var(--color-gold,#C7982F)]/15">
               <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted,#635B52)] block mb-2">
-                Items ({order.items.reduce((acc, i) => acc + (i.quantity || 1), 0)})
+                {t('experience.checkout.itemsPrefix')}{order.items.reduce((acc, i) => acc + (i.quantity || 1), 0)})
               </span>
               <div className="space-y-2">
                 {order.items.map((item, idx) => (
@@ -222,30 +222,32 @@ export default function OrderSuccessPage() {
             </div>
           )}
 
+          {order.rewardApplication && ['APPLIED', 'FULFILLED'].includes(order.rewardApplication.status) && order.status !== 'CANCELLED' && <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-xs leading-6" dir={isRtl ? 'rtl' : 'ltr'}><p className="font-semibold">{t('commerce.rewards.fulfillment')}: {t(`commerce.rewards.${order.rewardApplication.rewardId}`)}</p><p>{t(`commerce.rewards.desc.${order.rewardApplication.rewardId}`)}</p></div>}
+
           {/* Totals Breakdown */}
           {isQuoteRequest ? <p role="status" className="pt-4 text-sm leading-relaxed text-[var(--color-ink,#29231D)]">{t('checkout.quoteNoPayment')}</p> : <div className="pt-4 space-y-1.5 text-xs">
             <div className="flex justify-between text-[var(--color-ink-muted,#635B52)]">
-              <span>Subtotal</span>
+              <span>{t('experience.checkout.subtotalLabel')}</span>
               <span>{formatPKR(order.subtotal)}</span>
             </div>
             {order.discount > 0 && (
               <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-medium">
-                <span>Harvest Privilege Discount</span>
+                <span>{t('experience.checkout.discount')}</span>
                 <span>-{formatPKR(order.discount)}</span>
               </div>
             )}
             {order.giftWrapFee ? (
               <div className="flex justify-between text-[var(--color-ink-muted,#635B52)]">
-                <span>Gift Packaging</span>
+                <span>{t('experience.checkout.packaging')}</span>
                 <span>{formatPKR(order.giftWrapFee)}</span>
               </div>
             ) : null}
             <div className="flex justify-between text-[var(--color-ink-muted,#635B52)]">
-              <span>Shipping</span>
+              <span>{t('experience.checkout.shippingLabel')}</span>
               <span>{order.shipping === 0 ? 'FREE' : formatPKR(order.shipping)}</span>
             </div>
             <div className="flex justify-between items-center pt-2 mt-2 border-t border-[var(--color-gold,#C7982F)]/20 font-bold text-sm text-[var(--color-emerald-dark,#042821)] dark:text-[var(--color-gold,#C7982F)]">
-              <span>Total Payable</span>
+              <span>{t('experience.checkout.total')}</span>
               <span className="font-serif text-base">{formatPKR(order.totalAmount)}</span>
             </div>
           </div>}
@@ -255,7 +257,7 @@ export default function OrderSuccessPage() {
         {/* Action Buttons */}
         {!isQuoteRequest && <section aria-labelledby="order-tracking-title" className="mb-6 rounded-2xl border border-[var(--color-gold,#C7982F)]/25 p-5" dir={isRtl ? 'rtl' : 'ltr'}>
           <h2 id="order-tracking-title" className="font-serif text-xl text-[var(--color-ink)] mb-4">{t('tracking.title')}</h2>
-          {order.status === 'CANCELLED' ? <p role="status"><span dir="ltr">CANCELLED</span> — {t('tracking.cancelled')}</p> : <ol aria-label={t('tracking.title')} className="grid grid-cols-3 sm:grid-cols-6 gap-x-2 gap-y-4 mb-5">
+          {order.status === 'CANCELLED' ? <p role="status"><span dir="ltr">{t('experience.checkout.cancelled')}</span> — {t('tracking.cancelled')}</p> : <ol aria-label={t('tracking.title')} className="grid grid-cols-3 sm:grid-cols-6 gap-x-2 gap-y-4 mb-5">
             {TRACKING_STEPS.map((step, index) => {
               const progress = trackingProgress(order.status || '');
               return <li key={step} aria-current={progress === index ? 'step' : undefined} className="text-center min-w-0">
@@ -289,7 +291,7 @@ export default function OrderSuccessPage() {
             onClick={() => navigate('/shop')}
             className="flex-1 py-3.5 px-6 rounded-full bg-[var(--color-ink,#29231D)] text-white dark:bg-[var(--color-gold,#C7982F)] dark:text-[var(--color-ink,#29231D)] font-bold text-xs uppercase tracking-wider text-center hover:opacity-90 transition-colors cursor-pointer"
           >
-            Continue Shopping
+            {t('experience.checkout.continue')}
           </button>
         </div>
         <p className="mt-3 text-xs leading-relaxed text-[var(--color-ink-muted)]">{t('checkout.trackingSendNotice')}</p>

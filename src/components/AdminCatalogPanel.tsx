@@ -1,7 +1,9 @@
+import AdminInventoryEditor from './AdminInventoryEditor';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, CheckCircle2, Image, Layers3, PackageSearch, Search, ShieldCheck, TriangleAlert, X } from 'lucide-react';
-import { PRODUCTS } from '../data/products';
+import { useCatalogState } from '../hooks/useLiveCatalog';
+import AdminPriceEditor from './AdminPriceEditor';
 import { useAdminLanguage } from '../hooks/useAdminLanguage';
 import { getLocalized } from '../utils/localize';
 import { checkCatalogAssets, filterAdminCatalog, getAdminCatalogSnapshot, type CatalogAssetResult, type CatalogIssue } from '../lib/adminCatalog';
@@ -17,9 +19,12 @@ const resultKeys: Record<CatalogAssetResult['result'], string> = {
 };
 
 export default function AdminCatalogPanel() {
+  const { catalog, boxes } = useCatalogState();
   const { language, t } = useAdminLanguage();
   const { t: mediaTranslation } = useProductMediaLanguage();
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [stockTarget, setStockTarget] = useState<string | null>(null);
+  const [priceTarget, setPriceTarget] = useState<{ kind: 'products' | 'boxes'; id: string } | null>(null);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
   const [results, setResults] = useState<Record<string, CatalogAssetResult>>({});
@@ -27,7 +32,7 @@ export default function AdminCatalogPanel() {
   const [cancelled, setCancelled] = useState(false);
   const request = useRef<AbortController | null>(null);
   const ids = useId();
-  const snapshot = useMemo(() => getAdminCatalogSnapshot(PRODUCTS), []);
+  const snapshot = useMemo(() => getAdminCatalogSnapshot(catalog), [catalog]);
   const rows = useMemo(() => filterAdminCatalog(snapshot.rows, query, category), [snapshot.rows, query, category]);
   const assetsToCheck = useMemo(() => snapshot.assets.slice(0, 256), [snapshot.assets]);
   const checked = Object.keys(results).length;
@@ -121,6 +126,7 @@ export default function AdminCatalogPanel() {
             <div>
               <p className="mb-2 text-[10px] font-semibold uppercase tracking-[.08em] text-[var(--color-text-secondary)]" dir="auto">{t('admin.catalog.prices')}</p>
               <div className="flex flex-wrap gap-2">{row.portions.map(([portion, price]) => <span key={portion} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-base)] px-3 py-2 text-xs"><bdi className="text-[var(--color-text-secondary)]">{portion}</bdi><span aria-hidden="true" className="mx-2 text-[var(--color-border)]">|</span><bdi className="font-medium">Rs. {Number.isFinite(price) ? price.toLocaleString('en-PK') : '—'}</bdi></span>)}</div>
+              <button type="button" className="focus-ring mt-3 min-h-11 rounded-xl border border-[var(--color-border)] px-4 text-xs font-semibold" onClick={() => setPriceTarget(current => current?.kind === 'products' && current.id === row.product.id ? null : { kind: 'products', id: row.product.id })} aria-expanded={priceTarget?.kind === 'products' && priceTarget.id === row.product.id} aria-controls={`${ids}-price-${row.product.id}`}>{t('pricing.edit')}</button>{!row.product.quoteOnly && <button type="button" className="focus-ring mt-3 ms-2 min-h-11 rounded-xl border border-[var(--color-border)] px-4 text-xs font-semibold" onClick={() => setStockTarget(current => current === row.product.id ? null : row.product.id)} aria-expanded={stockTarget === row.product.id} aria-controls={`${ids}-stock-${row.product.id}`}>{t('commerce.inventory.edit')}</button>}
             </div>
             <div className="min-w-0">
               <div className={`flex items-start gap-2 text-xs leading-5 ${row.issues.length || assetErrors.length ? 'text-amber-900 dark:text-amber-200' : 'text-emerald-800 dark:text-emerald-300'}`}>
@@ -136,10 +142,13 @@ export default function AdminCatalogPanel() {
               <button type="button" className="focus-ring mt-2 inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--color-border)] px-3 text-xs font-semibold" onClick={() => setEditingProductId(current => current === row.product.id ? null : row.product.id)} aria-expanded={editingProductId === row.product.id} aria-controls={`${ids}-editor-${row.product.id}`}><Image size={15} aria-hidden="true" /><span dir="auto">{mediaTranslation('media.edit')}</span></button>
             </div>
             {editingProductId === row.product.id && <div id={`${ids}-editor-${row.product.id}`} className="min-w-0 xl:col-span-3"><AdminProductMediaEditor key={row.product.id} product={row.product} onClose={() => setEditingProductId(null)} /></div>}
+            {stockTarget === row.product.id && <div id={`${ids}-stock-${row.product.id}`} className="min-w-0 xl:col-span-3"><AdminInventoryEditor key={row.product.id} target={row.product} onClose={() => setStockTarget(null)} /></div>}
+            {priceTarget?.kind === 'products' && priceTarget.id === row.product.id && <div id={`${ids}-price-${row.product.id}`} className="min-w-0 xl:col-span-3"><AdminPriceEditor key={row.product.id} kind="products" target={row.product} onClose={() => setPriceTarget(null)} /></div>}
           </li>;
         })}
       </ul>
       {rows.length === 0 && <p className="px-6 py-12 text-center text-sm text-[var(--color-text-secondary)]" dir="auto">{t('admin.catalog.noResults')}</p>}
     </div>
+    <section className="mt-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:p-6"><h2 className="font-serif text-xl" dir="auto">{t('pricing.boxes')}</h2><ul className="mt-3 divide-y divide-[var(--color-border)]">{boxes.map(box => <li key={box.id} className="py-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><p dir="auto" className="text-sm">{getLocalized(box, 'name', language)}</p><bdi className="mt-2 block text-sm text-[var(--color-accent-text)]">Rs. {box.price.toLocaleString('en-PK')}</bdi></div><button type="button" className="focus-ring min-h-11 rounded-xl border border-[var(--color-border)] px-4 text-xs font-semibold" onClick={() => setPriceTarget(current => current?.kind === 'boxes' && current.id === box.id ? null : { kind: 'boxes', id: box.id })} aria-expanded={priceTarget?.kind === 'boxes' && priceTarget.id === box.id} aria-controls={`${ids}-price-${box.id}`}>{t('pricing.edit')}</button><button type="button" className="focus-ring min-h-11 rounded-xl border border-[var(--color-border)] px-4 text-xs font-semibold" onClick={() => setStockTarget(current => current === box.id ? null : box.id)} aria-expanded={stockTarget === box.id} aria-controls={`${ids}-stock-${box.id}`}>{t('commerce.inventory.edit')}</button></div>{stockTarget === box.id && <div id={`${ids}-stock-${box.id}`} className="mt-4"><AdminInventoryEditor key={box.id} target={box} onClose={() => setStockTarget(null)} /></div>}{priceTarget?.kind === 'boxes' && priceTarget.id === box.id && <div id={`${ids}-price-${box.id}`} className="mt-4"><AdminPriceEditor key={box.id} kind="boxes" target={box} onClose={() => setPriceTarget(null)} /></div>}</li>)}</ul></section>
   </section>;
 }

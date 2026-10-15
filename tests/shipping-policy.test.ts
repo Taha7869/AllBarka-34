@@ -184,7 +184,7 @@ test('persisted order, calendar and idempotent response retain the canonical des
 
 test('outside Lahore a shipping reward cannot be consumed or write an order', async () => {
   const key = 'users/test-customer/activeRewards/reward-1';
-  const mock = mockDatabase({ [key]: { rewardType: 'SHIPPING', status: 'ACTIVE' } });
+  const mock = mockDatabase({ [key]: { rewardId: 'free_shipping', rewardType: 'SHIPPING', pointsCost: 300, expiresAt: Date.now() + 86400000, status: 'ACTIVE' } });
   await assert.rejects(createDurableOrder({ db: mock.db as never, uid: 'test-customer',
     payload: { ...destination, items: mixed, shippingMethodId: 'standard', rewardId: 'reward-1' }, idempotencyKey: 'reward-test' }), isCode('SHIPPING_REWARD_LAHORE_ONLY'));
   assert.equal(mock.records.get(key).status, 'ACTIVE');

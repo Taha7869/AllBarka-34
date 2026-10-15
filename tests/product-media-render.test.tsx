@@ -50,13 +50,13 @@ test('products with no configured film render no video or invented media control
   assert.equal(render(<ProductVideo videoUrl="javascript:alert(1)" productName="Pista" />), '');
 });
 
-test('placeholder cards and quick views show one final cover without pack controls or counters', () => {
+test('migrated cards and quick views show one final cover without pack controls or counters', () => {
   for (const id of ['ceylon-cinnamon', 'kashmiri-walnut', 'fox-nuts', 'oil-pumpkin', 'bundle-royal-feast']) {
     const product = PRODUCTS.find(product => product.id === id)!;
     for (const children of [<ProductImageGallery product={product} />, <QuickViewModal isOpen product={product} onClose={() => {}} />]) {
       const html = render(children, `/product/${id}`);
       assert.equal((html.match(/<img\b/g) || []).length, 1, id);
-      assert.ok(html.includes(`src="/images/products/${id}.svg"`), id);
+      assert.ok(html.includes(`src="/images/products/${id}-1.webp"`), id);
       assert.doesNotMatch(html, /product-gallery-arrow|product-gallery-counter|-secondary\.svg/);
     }
   }

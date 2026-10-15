@@ -11,6 +11,8 @@ export const HAMPER_BOXES = [
   { id: 'box-tin', name_en: 'Heritage Gold Keepsake Tin', name_ur: 'سنہری یادگاری دھاتی ڈبہ', name_ar: 'علبة تذكارية ذهبية معدنية', price: 950, minSelections: 3, maxSelections: 4, image: '/images/generated/hamper-gold-tin-v1.webp' },
 ] as const;
 
+export type HamperBox = Omit<typeof HAMPER_BOXES[number], 'price'> & { price: number; active?: boolean };
+
 export interface HamperConfiguration {
   version: 1;
   boxId: typeof HAMPER_BOXES[number]['id'];
@@ -52,12 +54,12 @@ function note(value: unknown, limit: number): string | null {
  * Shared storefront/server resolver. Never trusts browser prices, names or mass.
  * Reported weight is the contents' net weight; packaging has no invented mass.
  */
-export function resolveHamper(value: unknown, products: Product[] = PRODUCTS): ResolvedHamper | null {
+export function resolveHamper(value: unknown, products: readonly Product[] = PRODUCTS, boxes: readonly HamperBox[] = HAMPER_BOXES): ResolvedHamper | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const input = value as Record<string, unknown>;
   if (input.version !== 1) return null;
-  const box = HAMPER_BOXES.find(option => option.id === input.boxId);
-  if (!box || !Array.isArray(input.selections) || input.selections.length < box.minSelections || input.selections.length > box.maxSelections) return null;
+  const box = boxes.find(option => option.id === input.boxId);
+  if (!box || box.active === false || !Number.isSafeInteger(box.price) || box.price <= 0 || !Array.isArray(input.selections) || input.selections.length < box.minSelections || input.selections.length > box.maxSelections) return null;
   if (input.selections.some(id => typeof id !== 'string' || !HAMPER_SELECTION_IDS.includes(id as typeof HAMPER_SELECTION_IDS[number]))) return null;
   if (new Set(input.selections).size !== input.selections.length) return null;
   const selectedIds = input.selections as string[];
@@ -68,7 +70,7 @@ export function resolveHamper(value: unknown, products: Product[] = PRODUCTS): R
   let unitPrice: number = box.price;
   for (const id of selections) {
     const product = products.find(candidate => candidate.id === id);
-    const price = product ? hamperSelectionPrice(product) : null;
+    const price = product && product.active !== false && !product.quoteOnly ? hamperSelectionPrice(product) : null;
     if (price === null) return null;
     unitPrice += price;
   }

@@ -1,3 +1,7 @@
+import { trackCommerce, trackAcceptedPurchase, measuredCheckoutItems } from '../lib/analytics';
+import { loadLoyaltyAccount } from '../lib/loyaltyClient';
+import { commerceErrorKey } from '../contexts/commerceTranslations';
+import type { RewardApplication } from '../lib/rewardFulfillment';
 import { getLocalized } from '../utils/localize';
 import React, { useState, useEffect } from 'react';
 import { calculateOrderSummary, GIFT_WRAP_FEE, type PricingSummary } from '../lib/pricing';
@@ -52,8 +56,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
-import { PRODUCTS } from '../data/products';
-import { useLiveCatalog } from '../hooks/useLiveCatalog';
+import { useCatalogState } from '../hooks/useLiveCatalog';
 
 // Popular Lahore Neighborhoods for Rapid Delivery Pinning
 
@@ -90,7 +93,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   const mediaCover = useProductMediaCover();
   const online = useOnlineStatus();
   const reduceMotion = useReducedMotion();
-  const catalog = useLiveCatalog();
+  const { catalog, boxes: hamperBoxes, revision: catalogRevision } = useCatalogState();
   const [restoredDraft] = useState(readCheckoutDraft);
   const [draftNotice, setDraftNotice] = useState(!!restoredDraft);
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
@@ -112,7 +115,11 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   identityRef.current = currentUser?.uid || null;
   const isWholesale = false;
   // Active rewards are displayed by the account; none is automatically selected for an order.
-  const selectedRewardId: string | null = null;
+  const [selectedRewardId, setSelectedRewardId] = useState<string | null>(null);
+  const [rewardVouchers, setRewardVouchers] = useState<any[]>([]);
+  const [rewardsLoading, setRewardsLoading] = useState(false);
+  const [rewardsError, setRewardsError] = useState(false);
+  const [rewardsRefresh, setRewardsRefresh] = useState(0);
 
   // 1. All Hooks declared unconditionally at the top (Rules of Hooks)
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('details');
@@ -150,7 +157,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
 
   const [couponCode, setCouponCode] = useState(restoredDraft?.coupon || '');
   const [appliedCoupon, setAppliedCoupon] = useState(restoredDraft?.coupon || '');
-  const [quote, setQuote] = useState<{ key: string; totals: PricingSummary } | null>(null);
+  const [quote, setQuote] = useState<{ key: string; totals: PricingSummary; items?: any[]; fingerprint?: string; rewardApplication?: RewardApplication } | null>(null);
   const [quoteError, setQuoteError] = useState('');
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteRefresh, setQuoteRefresh] = useState(0);
@@ -159,9 +166,21 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   const [couponErrorMsg, setCouponErrorMsg] = useState<string | null>(null);
   const [isQuoteRequestMode, setIsQuoteRequestMode] = useState(false);
   const [activeReward, setActiveReward] = useState<any>(null);
-  const [rewardDetails, setRewardDetails] = useState<any>(null);
 
-  const quoteKey = checkoutQuoteKey({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping, discountCode: appliedCoupon, rewardId: selectedRewardId, isWholesale }, currentUser?.uid || null);
+  const quoteKey = `${catalogRevision}:${checkoutQuoteKey({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping, discountCode: appliedCoupon, rewardId: selectedRewardId, isWholesale }, currentUser?.uid || null)}`;
+  const measuredCheckout = React.useRef(false);
+  const measurementPending = React.useRef(false);
+  useEffect(() => {
+    const track = () => {
+      if (isOpen === false || quote?.key !== quoteKey || quote?.totals.isQuoteRequest || measuredCheckout.current || measurementPending.current) return;
+      const items = measuredCheckoutItems(quote.items, quote.totals.discountedSubtotal); if (!items) return;
+      measurementPending.current = true;
+      void trackCommerce('begin_checkout', { path: '/checkout', items, value: quote.totals.discountedSubtotal })
+        .then(sent => { if (sent) measuredCheckout.current = true; }).finally(() => { measurementPending.current = false; });
+    };
+    track(); window.addEventListener('allbarka-measurement-ready', track); window.addEventListener('allbarka-measurement-changed', track);
+    return () => { window.removeEventListener('allbarka-measurement-ready', track); window.removeEventListener('allbarka-measurement-changed', track); };
+  }, [quote, quoteKey, isOpen]);
   const pricingKeyRef = React.useRef(quoteKey);
   pricingKeyRef.current = quoteKey;
   const quoteStatusRef = React.useRef({ quote, loading: quoteLoading });
@@ -183,11 +202,11 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
         const result = await getOrderQuote({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping, discountCode: appliedCoupon, rewardId: selectedRewardId, isWholesale, authToken, signal: controller.signal });
         if (!active) return;
         if (result.success && result.totals) {
-          setQuote({ key: quoteKey, totals: result.totals }); setIsQuoteRequestMode(result.totals.isQuoteRequest === true);
+          setQuote({ key: quoteKey, totals: result.totals, items: result.items, fingerprint: result.quoteFingerprint, rewardApplication: result.rewardApplication }); setIsQuoteRequestMode(result.totals.isQuoteRequest === true);
           if (appliedCoupon) setCouponErrorMsg(null);
         }
         else {
-          const message = result.code === 'TIMEOUT' ? t('checkout.quoteTimeout', 'The price check timed out. Please retry.') : result.error || t('checkout.quoteFailed');
+          const message = commerceErrorKey(result.code) ? t(commerceErrorKey(result.code)!) : result.code?.startsWith('CATALOG_') ? t('pricing.unavailable') : result.code === 'TIMEOUT' ? t('checkout.quoteTimeout', 'The price check timed out. Please retry.') : result.error || t('checkout.quoteFailed');
           setQuoteError(message);
           if (appliedCoupon) { setCouponSuccessMsg(null); setCouponErrorMsg(message); }
         }
@@ -230,28 +249,16 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
     }
   }, [patronProfile]);
 
-  // Load active rewards safely
+  // Account-owned API vouchers; selection is explicit and clears on account changes.
   useEffect(() => {
-    if (currentUser) {
-      let isMounted = true;
-      import('../data/rewards').then(mod => {
-        if (isMounted) setRewardDetails(mod.REWARDS);
-      }).catch(console.error);
+    const controller = new AbortController(); let active = true;
+    setSelectedRewardId(null); setRewardVouchers([]); setRewardsError(false); setRewardsLoading(Boolean(currentUser));
+    if (currentUser) void loadLoyaltyAccount(() => currentUser.getIdToken(), controller.signal).then(({ profile }) => {
+      if (active) setRewardVouchers(profile.activeRewards);
+    }).catch(() => { if (active) setRewardsError(true); }).finally(() => { if (active) setRewardsLoading(false); });
+    return () => { active = false; controller.abort(); };
+  }, [currentUser, rewardsRefresh]);
 
-      import('firebase/firestore').then(({ collection, query, where, getDocs }) => {
-        import('../lib/firebase').then(({ db }) => {
-          const arQuery = query(collection(db, "users", currentUser.uid, "activeRewards"), where("status", "==", "ACTIVE"));
-          getDocs(arQuery).then(snap => {
-            if (isMounted && !snap.empty) {
-              setActiveReward(snap.docs[0].data());
-            }
-          }).catch(e => console.error(e));
-        }).catch(console.error);
-      }).catch(console.error);
-
-      return () => { isMounted = false; };
-    }
-  }, [currentUser]);
 
   const onClose = propsOnClose || (() => { navigate('/shop'); });
   const onClearCart = () => { clearCart(); };
@@ -283,16 +290,16 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
           <div className="w-20 h-20 bg-[var(--color-cream,#FAF9F5)] rounded-full flex items-center justify-center mx-auto mb-6">
             <ShoppingBag size={32} className="text-[var(--color-gold,#B8935F)]" />
           </div>
-          <h2 className="text-2xl font-serif font-black text-[var(--color-ink,#1F120F)] mb-3">Your Box is Empty</h2>
+          <h2 className="text-2xl font-serif font-black text-[var(--color-ink,#1F120F)] mb-3">{t('experience.checkout.empty')}</h2>
           <p className="text-[13px] text-[var(--color-ink,#1F120F)]/70 mb-8 leading-relaxed">
-            It looks like you haven't added any luxury items to your box yet. Discover our latest collections.
+            {t('experience.checkout.emptyHint')}
           </p>
           <button
             type="button"
             onClick={() => navigate('/shop')}
             className="w-full py-3.5 rounded-full bg-[var(--color-ink,#1F120F)] text-white font-bold text-xs uppercase tracking-[0.2em] hover:bg-[var(--color-gold,#B8935F)] transition-colors cursor-pointer"
           >
-            Browse Collections
+            {t('experience.checkout.browse')}
           </button>
         </div>
       </div>
@@ -412,7 +419,7 @@ const handleInputChange = (field: string, value: any) => {
         setAppliedCoupon(code); setCouponCode(code); setIsQuoteRequestMode(result.totals.isQuoteRequest === true);
         setCouponSuccessMsg(t('checkout.couponApplied'));
         if (result.totals.isQuoteRequest === true && (currentStep === 'payment' || currentStep === 'review')) setCurrentStep('review');
-      } else { setAppliedCoupon(''); setIsQuoteRequestMode(false); setCouponErrorMsg(result.code === 'TIMEOUT' ? t('checkout.quoteTimeout', 'The price check timed out. Please retry.') : result.error || t('checkout.couponNoEffect')); }
+      } else { setAppliedCoupon(''); setIsQuoteRequestMode(false); setCouponErrorMsg(commerceErrorKey(result.code) ? t(commerceErrorKey(result.code)!) : result.code?.startsWith('CATALOG_') ? t('pricing.unavailable') : result.code === 'TIMEOUT' ? t('checkout.quoteTimeout', 'The price check timed out. Please retry.') : result.error || t('checkout.couponNoEffect')); }
     } catch (error) {
       if (!controller.signal.aborted) setCouponErrorMsg(error instanceof CheckoutAuthenticationError ? t('checkout.signInAgain') : t('checkout.quoteFailed'));
     } finally {
@@ -421,10 +428,11 @@ const handleInputChange = (field: string, value: any) => {
   };
 
   const localSummary = (() => {
-    try { return calculateOrderSummary({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping }); }
+    try { return calculateOrderSummary({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping, catalog, boxes: hamperBoxes }); }
     catch { return null; }
   })();
   const verifiedQuote = quote?.key === quoteKey ? quote.totals : null;
+
   const hasEstimate = !!(verifiedQuote || localSummary);
   const summary = verifiedQuote || localSummary || { subtotal: cartItems.reduce((sum, item) => sum + parsePrice(item.unitPrice ?? item.price) * item.quantity, 0), discount: 0, discountedSubtotal: 0, shipping: 0, giftWrapFee: 0, total: 0 };
   const subtotal = summary.subtotal;
@@ -497,6 +505,7 @@ const handleInputChange = (field: string, value: any) => {
         rewardId: selectedRewardId,
         isWholesale,
         expectedFinalTotal: finalPayable,
+        expectedQuoteFingerprint: quoteStatusRef.current.quote?.fingerprint,
         authToken
       };
       const fingerprint = await checkoutFingerprint(orderPayload, submittedUid);
@@ -511,7 +520,7 @@ const handleInputChange = (field: string, value: any) => {
       if (controller.signal.aborted || identityRef.current !== submittedUid) { setSubmissionError(t('checkout.requestCancelled')); return; }
 
       if (!orderResult.success) {
-        setSubmissionError(orderResult.error || t('checkout.orderUnavailable'));
+        setSubmissionError(commerceErrorKey(orderResult.code) ? t(commerceErrorKey(orderResult.code)!) : orderResult.code?.startsWith('CATALOG_') ? t('pricing.unavailable') : orderResult.error || t('checkout.orderUnavailable'));
         setSupportAction(orderResult.supportAction || null);
         if (orderResult.code === 'QUOTE_CHANGED') {
           setQuote(null);
@@ -542,7 +551,7 @@ const handleInputChange = (field: string, value: any) => {
         freeShipping: orderResult.totals?.freeShipping === true, freeGiftWrap: orderResult.totals?.freeGiftWrap === true,
         freeGift: orderResult.totals?.freeGift === true,
         paymentMethod: isAcceptedQuote ? 'quote' : selectedPayment,
-        items: receipt.items, totals: receipt.totals, whatsappMessage: orderResult.whatsappMessage,
+        items: receipt.items, totals: receipt.totals, rewardApplication: orderResult.rewardApplication, whatsappMessage: orderResult.whatsappMessage,
         customer: { name: formData.name, phone: formData.phone, address: formData.address, city: formData.city,
           paymentMethod: isAcceptedQuote ? 'quote' : selectedPayment },
       };
@@ -554,6 +563,7 @@ const handleInputChange = (field: string, value: any) => {
       }
 
       setOrderSuccessResult({ orderId, claimToken: orderResult.claimToken || undefined, whatsappUrl, isQuoteRequest: isAcceptedQuote });
+      void trackAcceptedPurchase({ orderId, durablePersistenceReady: true, orderType: orderResult.orderType, totals: receipt.totals, items: receipt.items });
       setCurrentStep('success');
       onClearCart();
       checkoutAttemptRef.current = null;
@@ -606,17 +616,17 @@ const handleInputChange = (field: string, value: any) => {
             </div>
             <div>
               <h3 className="text-lg font-serif font-bold text-[var(--color-ink,#1F120F)] leading-tight">
-                Curated Checkout
+                {t('experience.checkout.curated')}
               </h3>
               <p className="text-[9.5px] text-[var(--color-gold,#B8935F)] font-bold uppercase tracking-widest leading-none mt-0.5">
-                AllBarka Luxury Order
+                {t('experience.checkout.order')}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-[var(--color-ink,#1F120F)]/5 hover:bg-[var(--color-ink,#1F120F)]/10 text-[var(--color-ink,#1F120F)] flex items-center justify-center transition-colors cursor-pointer"
-            aria-label="Close checkout"
+            className="w-11 h-11 rounded-full bg-[var(--color-ink,#1F120F)]/5 hover:bg-[var(--color-ink,#1F120F)]/10 text-[var(--color-ink,#1F120F)] flex items-center justify-center transition-colors cursor-pointer"
+            aria-label={t('close')}
           >
             <X size={16} />
           </button>
@@ -628,6 +638,7 @@ const handleInputChange = (field: string, value: any) => {
             {/* Step 1 */}
             <button
               type="button"
+              aria-current={currentStep === 'details' ? 'step' : undefined}
               onClick={() => setCurrentStep('details')}
               className={`flex min-h-11 items-center justify-center sm:justify-start gap-1.5 sm:gap-2 py-1.5 sm:py-2 px-1 sm:px-2.5 rounded-xl border text-center sm:text-left transition-all cursor-pointer ${
                 currentStep === 'details'
@@ -640,12 +651,13 @@ const handleInputChange = (field: string, value: any) => {
               }`}>
                 1
               </div>
-              <span className="text-[9.5px] sm:text-[10.5px] font-bold uppercase tracking-wider">Details</span>
+              <span className="text-[9.5px] sm:text-[10.5px] font-bold uppercase tracking-wider">{t('experience.checkout.details')}</span>
             </button>
 
             {/* Step 2 */}
             <button
               type="button"
+              aria-current={currentStep === 'shipping' ? 'step' : undefined}
               onClick={() => { if (validateStep1(true)) setCurrentStep('shipping'); }}
               className={`flex min-h-11 items-center justify-center sm:justify-start gap-1.5 sm:gap-2 py-1.5 sm:py-2 px-1 sm:px-2.5 rounded-xl border text-center sm:text-left transition-all cursor-pointer ${
                 currentStep === 'shipping'
@@ -658,7 +670,7 @@ const handleInputChange = (field: string, value: any) => {
               }`}>
                 2
               </div>
-              <span className="text-[9.5px] sm:text-[10.5px] font-bold uppercase tracking-wider">Shipping</span>
+              <span className="text-[9.5px] sm:text-[10.5px] font-bold uppercase tracking-wider">{t('experience.checkout.shippingLabel')}</span>
             </button>
 
             {/* Step 3 */}
@@ -680,7 +692,7 @@ const handleInputChange = (field: string, value: any) => {
               }`}>
                 3
               </div>
-              <span className="text-[9.5px] sm:text-[10.5px] font-bold uppercase tracking-wider">Review</span>
+              <span className="text-[9.5px] sm:text-[10.5px] font-bold uppercase tracking-wider">{t('experience.checkout.review')}</span>
             </button>
           </div>
         </div>
@@ -694,7 +706,15 @@ const handleInputChange = (field: string, value: any) => {
           {draftNotice && <div role="status" className="rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] p-3 text-xs"><p>{t('checkout.draftRestored')}</p><button type="button" onClick={() => { setFormData({ name: '', phone: '', address: '', city: 'Lahore', deliverySlot: 'Fastest Dispatch', giftWrapping: false, giftMessage: '', instructions: '' }); setCouponCode(''); setAppliedCoupon(''); setIsQuoteRequestMode(false); setCouponSuccessMsg(null); setCouponErrorMsg(null); setDraftNotice(false); try { sessionStorage.removeItem(CHECKOUT_DRAFT_KEY); } catch { /* private mode */ } }} className="focus-ring mt-2 min-h-11 underline underline-offset-4">{t('checkout.clearDraft')}</button></div>}
           {!online && <p role="status" className="rounded-xl border border-[var(--color-border)] p-3 text-sm">{t('checkout.offline')}</p>}
           {(currentStep === 'details' || currentStep === 'shipping') && <AddressBook customer={formData} onSelect={value => setFormData(previous => ({ ...previous, ...value }))} />}
-          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] p-3 text-xs"><p role="status" aria-live="polite">{quoteLoading ? t('checkout.checkingQuote') : quoteError || (verifiedQuote ? t('checkout.quoteVerified') : t('checkout.waitQuote'))}</p><button type="button" disabled={!online || quoteLoading} onClick={() => setQuoteRefresh(value => value + 1)} className="focus-ring min-h-11 underline underline-offset-4 disabled:opacity-40">{t('checkout.refreshQuote')}</button>{quoteError && <a href={buildHumanSupportWhatsAppUrl()} target="_blank" rel="noreferrer" className="focus-ring ms-4 inline-flex min-h-11 items-center underline underline-offset-4">{t('footer.connect')}</a>}</div>
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] p-3 text-xs"><p role="status" aria-live="polite">{quoteLoading ? t('checkout.checkingQuote') : quoteError || (verifiedQuote ? t('checkout.quoteVerified') : t('checkout.waitQuote'))}</p><button type="button" disabled={!online || quoteLoading} onClick={() => setQuoteRefresh(value => value + 1)} className="focus-ring min-h-11 underline underline-offset-4 disabled:opacity-40">{t('checkout.refreshQuote')}</button>
+
+{quoteError && <a href={buildHumanSupportWhatsAppUrl()} target="_blank" rel="noreferrer" className="focus-ring ms-4 inline-flex min-h-11 items-center underline underline-offset-4">{t('footer.connect')}</a>}</div>
+          {currentUser && !orderSuccessResult && <section className="mb-5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4" dir={language === 'en' ? 'ltr' : 'rtl'}>
+            <label htmlFor="checkout-patron-voucher" className="mb-2 block text-xs font-semibold">{t('commerce.rewards.choose')}</label>
+            {rewardsLoading ? <p role="status" className="text-xs">{t('loyalty.loading')}</p> : <select id="checkout-patron-voucher" disabled={isSubmittingOrder || isQuoteRequestMode} value={selectedRewardId || ''} onChange={event => setSelectedRewardId(event.target.value || null)} className="focus-ring min-h-11 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] px-3 text-base sm:text-sm"><option value="">{t('commerce.rewards.none')}</option>{rewardVouchers.map(voucher => <option key={voucher.id} value={voucher.id}>{t(`commerce.rewards.${voucher.rewardId}`)} — {t('commerce.rewards.expiry').replace('{date}', new Date(voucher.expiresAt).toLocaleDateString(language === 'ur' ? 'ur-PK' : language === 'ar' ? 'ar-PK' : 'en-PK'))}</option>)}</select>}
+            {rewardsError && <div role="status" className="mt-3 text-xs"><p>{t('commerce.rewards.failed')}</p><button type="button" onClick={() => setRewardsRefresh(value => value + 1)} className="focus-ring min-h-11 underline underline-offset-4">{t('loyalty.retry')}</button></div>}
+            {quote?.key === quoteKey && quote.rewardApplication && <p className="mt-3 text-xs leading-6 text-[var(--color-accent-text)]">{t('commerce.rewards.fulfillment')}: {t(`commerce.rewards.${quote.rewardApplication.rewardId}`)}</p>}
+          </section>}
           {/* One server-validated promo, available before the payment step. */}
           {currentStep !== 'success' && (
                   <div className="space-y-1.5">
@@ -757,7 +777,7 @@ const handleInputChange = (field: string, value: any) => {
               <div className="h-8 w-full rounded-xl luxury-skeleton" />
               <div className="h-14 w-full rounded-xl luxury-skeleton" />
               <p className="text-center text-[10px] uppercase font-bold tracking-widest text-[var(--color-gold,#B8935F)] animate-pulse pt-2">
-                Compiling WhatsApp Encrypted Receipt...
+                {t('experience.checkout.preparing')}
               </p>
             </div>
           )}
@@ -791,13 +811,13 @@ const handleInputChange = (field: string, value: any) => {
                             </span>
                           </div>
                           <p className="text-[9.5px] text-[var(--color-gold,#B8935F)] tracking-wide">
-                            Pre-filled recipient info & VIP loyalty points enabled
+                            {t('experience.checkout.member')}
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-1 text-[10px] font-bold text-[var(--color-gold,#B8935F)] shrink-0">
                         <ShieldCheck size={14} />
-                        <span>Verified</span>
+                        <span>{t('experience.checkout.verified')}</span>
                       </div>
                     </div>
                   ) : (
@@ -808,10 +828,10 @@ const handleInputChange = (field: string, value: any) => {
                         </div>
                         <div className="min-w-0">
                           <span className="text-[11px] font-bold text-[var(--color-ink,#1F120F)] block">
-                            Checking out as Guest
+                            {t('experience.checkout.guest')}
                           </span>
                           <span className="text-[9.5px] text-[var(--color-ink-muted,#5A5A5A)]">
-                            Instant express order without account
+                            {t('experience.checkout.guestHint')}
                           </span>
                         </div>
                       </div>
@@ -820,7 +840,7 @@ const handleInputChange = (field: string, value: any) => {
                         onClick={() => handleOpenAuth('signin')}
                         className="px-2.5 py-1 rounded-lg bg-[var(--color-cream,#FAF9F5)] hover:bg-[#B8935F] text-[var(--color-ink,#1F120F)] hover:text-white border border-[var(--color-gold,#B8935F)]/35 text-[10px] font-bold tracking-wider transition-colors shrink-0 cursor-pointer"
                       >
-                        Sign In
+                        {t('experience.checkout.signIn')}
                       </button>
                     </div>
                   )}
@@ -830,16 +850,16 @@ const handleInputChange = (field: string, value: any) => {
                     <div className="p-3 rounded-2xl bg-[#043327]/10 border border-[#D4AF37]/40 text-[#043327] flex items-center justify-between text-xs font-semibold mb-3">
                       <div className="flex items-center gap-2">
                         <Sparkles size={14} className="text-[#D4AF37]" />
-                        <span>Welcome back, <strong>{patronProfile.name}</strong>! Your saved Lahore address is auto-filled.</span>
+                        <span>{t('experience.checkout.welcome')} <strong>{patronProfile.name}</strong>{t('experience.checkout.welcomeHint')}</span>
                       </div>
-                      <span className="text-[10px] font-black uppercase text-[#D4AF37] bg-white px-2 py-0.5 rounded-full border border-[#D4AF37]/30">Auto-Filled</span>
+                      <span className="text-[10px] font-black uppercase text-[#D4AF37] bg-white px-2 py-0.5 rounded-full border border-[#D4AF37]/30">{t('experience.checkout.filled')}</span>
                     </div>
                   )}
 
                   {/* Recipient Full Name */}
                   <div className="space-y-1.5">
                     <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)]/80">
-                      Recipient Full Name *
+                      {t('experience.checkout.name')}
                     </label>
                     <div className="relative">
                       <User className="absolute left-3.5 top-3 text-[var(--color-gold,#B8935F)]" size={16} />
@@ -868,7 +888,7 @@ const handleInputChange = (field: string, value: any) => {
                   {/* Phone / WhatsApp */}
                   <div className="space-y-1.5">
                     <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)]/80">
-                      Phone / WhatsApp Number *
+                      {t('experience.checkout.phone')}
                     </label>
                     <div className="relative">
                       <Phone className="absolute left-3.5 top-3 text-[var(--color-gold,#B8935F)]" size={16} />
@@ -894,7 +914,7 @@ const handleInputChange = (field: string, value: any) => {
                       </p>
                     ) : (
                       <p className="text-[10px] text-[var(--color-ink,#1F120F)]/60 mt-1">
-                        Used for dispatch confirmation & live courier delivery updates.
+                        {t('experience.checkout.phoneHint')}
                       </p>
                     )}
                   </div>
@@ -902,7 +922,7 @@ const handleInputChange = (field: string, value: any) => {
                   {/* Special Delivery Notes */}
                   <div className="space-y-1.5">
                     <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)]/80">
-                      Special Delivery Instructions (Optional)
+                      {t('experience.checkout.instructions')}
                     </label>
                     <textarea
                       maxLength={300}
@@ -918,7 +938,7 @@ const handleInputChange = (field: string, value: any) => {
                   <div className="p-4 rounded-2xl bg-white border border-[var(--color-gold,#B8935F)]/25 space-y-2 shadow-2xs">
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-[10px] font-black uppercase tracking-wider text-[var(--color-ink,#1F120F)]/70">
-                        Selected Harvest Items
+                        {t('experience.checkout.items')}
                       </span>
                       <span className="text-[11px] font-serif font-bold text-[var(--color-gold,#B8935F)]">
                         {cartItems.length} {cartItems.length === 1 ? 'variety' : 'varieties'}
@@ -942,7 +962,7 @@ const handleInputChange = (field: string, value: any) => {
                     onClick={handleProceedToStep2}
                     className="w-full py-3.5 rounded-full bg-[var(--color-ink,#1F120F)] text-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)] text-xs font-black uppercase tracking-widest hover:bg-[var(--color-ink,#1F120F)]/90 hover:shadow-[0_4px_20px_rgba(184,147,95,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                   >
-                    <span>Continue to Shipping & Address</span>
+                    <span>{t('experience.checkout.next')}</span>
                     <ArrowRight size={14} className="text-[var(--color-gold,#B8935F)]" />
                   </button>
                 </motion.div>
@@ -962,7 +982,7 @@ const handleInputChange = (field: string, value: any) => {
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)]/80">
-                        Full Shipping Address *
+                        {t('experience.checkout.address')}
                       </label>
                     </div>
                     <div className="relative">
@@ -990,7 +1010,7 @@ const handleInputChange = (field: string, value: any) => {
                     {formData.address.includes('http') && (
                       <p className="text-[10px] text-[var(--color-gold,#B8935F)] font-bold mt-1 flex items-center gap-1">
                         <CheckCircle size={12} className="text-[var(--color-gold,#B8935F)]" />
-                        Live Google Maps link attached for precision courier routing.
+                        {t('experience.checkout.mapHint')}
                       </p>
                     )}
                   </div>
@@ -1038,7 +1058,7 @@ const handleInputChange = (field: string, value: any) => {
                   <div className="space-y-1.5">
                     <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)]/80 flex items-center gap-1.5">
                       <Clock size={13} className="text-[var(--color-gold,#B8935F)]" />
-                      Preferred Delivery Window
+                      {t('experience.checkout.slot')}
                     </label>
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       {[
@@ -1079,8 +1099,8 @@ const handleInputChange = (field: string, value: any) => {
                     <label className="flex items-start gap-3 cursor-pointer select-none">
                       <input
                         type="checkbox"
-                        checked={formData.giftWrapping || verifiedQuote?.freeGiftWrap === true}
-                        disabled={verifiedQuote?.freeGiftWrap === true}
+                        checked={formData.giftWrapping || verifiedQuote?.freeGiftWrap === true || quote?.rewardApplication?.rewardType === 'PACKAGING'}
+                        disabled={verifiedQuote?.freeGiftWrap === true || quote?.rewardApplication?.rewardType === 'PACKAGING'}
                         onChange={(e) => handleInputChange('giftWrapping', e.target.checked)}
                         className="mt-0.5 w-4 h-4 rounded text-[var(--color-ink,#1F120F)] accent-[var(--color-ink,#1F120F)] cursor-pointer"
                       />
@@ -1088,14 +1108,14 @@ const handleInputChange = (field: string, value: any) => {
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-black text-[var(--color-ink,#1F120F)] flex items-center gap-1.5">
                             <Gift size={14} className="text-[var(--color-gold,#B8935F)]" />
-                            Premium Gift Box & Handwritten Card
+                            {t('experience.checkout.gift')}
                           </span>
                           <span className="text-xs font-bold text-[var(--color-gold,#B8935F)] font-serif shrink-0">
                             {isQuoteRequestMode ? t('checkout.quoteRequestTitle') : verifiedQuote?.freeGiftWrap ? t('checkout.promoFreeGiftWrap') : `+Rs. ${GIFT_WRAP_FEE}`}
                           </span>
                         </div>
                         <p className="text-[10px] text-[var(--color-ink,#1F120F)]/65 mt-0.5 leading-relaxed">
-                          Satin luxury gold ribbon, embossed presentation sleeve, and personalized calligraphed card.
+                          {t('experience.checkout.giftHint')}
                         </p>
                       </div>
                     </label>
@@ -1103,7 +1123,7 @@ const handleInputChange = (field: string, value: any) => {
                     {(formData.giftWrapping || verifiedQuote?.freeGiftWrap) && (
                       <div className="mt-3 pt-3 border-t border-[var(--color-gold,#B8935F)]/20">
                         <label className="block text-[9.5px] font-black text-[var(--color-ink,#1F120F)]/75 uppercase tracking-widest mb-1">
-                          Custom Message on Card
+                          {t('experience.checkout.message')}
                         </label>
                     <div className="mb-2 flex flex-wrap gap-2">{['birthday', 'thanks', 'celebration'].map(key => <button type="button" key={key} onClick={() => handleInputChange('giftMessage', t(`gift.${key}Message`))} className="focus-ring min-h-11 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs">{t(`gift.${key}`)}</button>)}</div>
                         <input
@@ -1127,7 +1147,7 @@ const handleInputChange = (field: string, value: any) => {
                       className="px-4 py-3 rounded-full bg-white border border-[var(--color-gold,#B8935F)]/30 text-[var(--color-ink,#1F120F)] text-xs font-bold flex items-center gap-1.5 hover:bg-[var(--color-gold,#B8935F)]/10 cursor-pointer"
                     >
                       <ArrowLeft size={14} />
-                      <span>Back</span>
+                      <span>{t('experience.checkout.back')}</span>
                     </button>
                     <button
                       type="button"
@@ -1154,7 +1174,7 @@ const handleInputChange = (field: string, value: any) => {
                   {/* Payment Protocol Selector */}
                   {!isQuoteRequestMode && <div className="space-y-2">
                     <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)]/80">
-                      Payment Protocol *
+                      {t('experience.checkout.payment')}
                     </label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       <button
@@ -1171,10 +1191,10 @@ const handleInputChange = (field: string, value: any) => {
                       >
                         <div className="flex items-center gap-2 mb-1">
                           <CreditCard size={15} className="text-[var(--color-gold,#B8935F)]" />
-                          <span className="text-xs font-black uppercase tracking-wider">Cash on Delivery</span>
+                          <span className="text-xs font-black uppercase tracking-wider">{t('experience.checkout.cod')}</span>
                         </div>
                         <p className={`text-[10px] leading-snug ${selectedPayment === 'cod' ? 'text-[var(--color-surface,#FDFBF7)]/70' : 'text-[var(--color-ink,#1F120F)]/60'}`}>
-                          Pay upon delivery inspection in Lahore & nationwide.
+                          {t('experience.checkout.codHint')}
                         </p>
                       </button>
 
@@ -1192,7 +1212,7 @@ const handleInputChange = (field: string, value: any) => {
                       >
                         <div className="flex items-center gap-2 mb-1">
                           <Building2 size={15} className="text-[var(--color-gold,#B8935F)]" />
-                          <span className="text-xs font-black uppercase tracking-wider">Direct Bank Transfer</span>
+                          <span className="text-xs font-black uppercase tracking-wider">{t('experience.checkout.bank')}</span>
                         </div>
                         <p className={`text-[10px] leading-snug ${selectedPayment === 'bank' ? 'text-[var(--color-surface,#FDFBF7)]/70' : 'text-[var(--color-ink,#1F120F)]/60'}`}>
                           {t('payment.bankDescription')}
@@ -1213,7 +1233,7 @@ const handleInputChange = (field: string, value: any) => {
                           <span className="block mt-2">{t('checkout.quoteNoPayment')}</span>
                         </p>
                         <div className="bg-[var(--color-emerald-dark,#042821)]/5 dark:bg-[#42f5bf]/10 p-3 rounded-xl border border-[var(--color-emerald-dark,#042821)]/10 text-left mt-3">
-                          <p className="text-[10px] font-black uppercase tracking-wider mb-2 opacity-80">Reserved Items</p>
+                          <p className="text-[10px] font-black uppercase tracking-wider mb-2 opacity-80">{t('experience.checkout.reserved')}</p>
                           <div className="space-y-1.5">
                             {cartItems.map((item, idx) => (
                               <div key={idx} className="flex justify-between items-center text-[11px]">
@@ -1230,7 +1250,7 @@ const handleInputChange = (field: string, value: any) => {
                       <>
                         <div className="flex justify-between items-center pb-2 border-b border-[var(--color-gold,#B8935F)]/20">
                           <span className="text-[10px] font-black uppercase tracking-wider text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">
-                            Valuation Breakdown
+                            {t('experience.checkout.totals')}
                           </span>
                           <span className="text-[10px] font-serif font-bold text-[var(--color-gold,#B8935F)]">
                             {cartItems.length} items
@@ -1238,14 +1258,14 @@ const handleInputChange = (field: string, value: any) => {
                         </div>
 
                         <div className="flex justify-between text-[11px] text-[var(--color-ink,#1F120F)]/80 dark:text-[#FDFBF7]/80">
-                          <span>Harvest Items Subtotal</span>
+                          <span>{t('experience.checkout.subtotal')}</span>
                           <span className="font-bold text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">
                             Rs. {subtotal?.toLocaleString()}
                           </span>
                         </div>
 
                         <div className="flex justify-between text-[11px] text-[var(--color-ink,#1F120F)]/80 dark:text-[#FDFBF7]/80">
-                          <span>Shipping ({selectedMethodObj.title})</span>
+                          <span>{t('experience.checkout.shippingPrefix')}{selectedMethodObj.title})</span>
                           <span className={`font-bold ${currentShippingFee === 0 ? 'text-[var(--color-gold,#B8935F)] font-black' : 'text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]'}`}>
                             {!hasEstimate ? t('shipping.pending') : currentShippingFee === 0 ? t('shipping.free') : `Rs. ${currentShippingFee?.toLocaleString()}`}
                           </span>
@@ -1253,7 +1273,7 @@ const handleInputChange = (field: string, value: any) => {
 
                         {(formData.giftWrapping || verifiedQuote?.freeGiftWrap) && (
                           <div className="flex justify-between text-[11px] text-[var(--color-gold,#B8935F)] font-bold">
-                            <span>Luxury Gift Box & Handwritten Card</span>
+                            <span>{t('experience.checkout.giftTotal')}</span>
                             <span>{giftFeeTotal === 0 ? 'FREE' : `+Rs. ${GIFT_WRAP_FEE}`}</span>
                           </div>
                         )}
@@ -1266,7 +1286,7 @@ const handleInputChange = (field: string, value: any) => {
                         )}
 
                         <div className="pt-2 border-t border-[var(--color-gold,#B8935F)]/20 flex justify-between items-baseline">
-                          <span className="text-xs font-serif font-black text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">Total Payable</span>
+                          <span className="text-xs font-serif font-black text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">{t('experience.checkout.total')}</span>
                           <span className="text-base font-serif font-black text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">
                             {hasEstimate ? `Rs. ${finalPayable.toLocaleString()}` : t('shipping.pending')}
                           </span>
@@ -1278,17 +1298,17 @@ const handleInputChange = (field: string, value: any) => {
                   {/* Recipient & Shipping Snapshot */}
                   <div className="p-3.5 rounded-xl bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/30 text-[10px] space-y-1 text-[var(--color-ink,#1F120F)]/80">
                     <p className="font-bold text-[var(--color-ink,#1F120F)] flex items-center justify-between">
-                      <span>Recipient: {formData.name || 'Patron'}</span>
+                      <span>{t('experience.checkout.recipient')} {formData.name || 'Patron'}</span>
                       <button
                         type="button"
                         onClick={() => setCurrentStep('details')}
                         className="text-[var(--color-gold,#B8935F)] hover:underline cursor-pointer"
                       >
-                        Edit Details
+                        {t('experience.checkout.edit')}
                       </button>
                     </p>
-                    <p className="truncate">Address: {formData.address || 'Address pending'}, {formData.city}</p>
-                    <p>Delivery Slot: {formData.deliverySlot}</p>
+                    <p className="truncate">{t('experience.checkout.addressPrefix')} {formData.address || 'Address pending'}, {formData.city}</p>
+                    <p>{t('experience.checkout.slotPrefix')} {formData.deliverySlot}</p>
                   </div>
 
                   {/* Submission Error Banner */}
@@ -1297,7 +1317,7 @@ const handleInputChange = (field: string, value: any) => {
                       <div className="flex items-start gap-2">
                         <AlertCircle size={16} className="shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
                         <div className="flex-1">
-                          <p className="font-bold">Order Placement Notice</p>
+                          <p className="font-bold">{t('experience.checkout.notice')}</p>
                           <p className="text-[11px] mt-0.5 leading-relaxed">{submissionError}</p>
                         </div>
                       </div>
@@ -1323,7 +1343,7 @@ const handleInputChange = (field: string, value: any) => {
                       className="px-4 py-3 rounded-full bg-[var(--color-cream,#FAF9F5)] sm:bg-white border border-[var(--color-gold,#B8935F)]/30 text-[var(--color-ink,#1F120F)] text-[var(--color-ink,#1F120F)] dark:text-[var(--color-ink,#1F120F)] text-xs font-bold flex items-center gap-1.5 hover:bg-[var(--color-gold,#B8935F)]/10 cursor-pointer"
                     >
                       <ArrowLeft size={14} />
-                      <span>Back</span>
+                      <span>{t('experience.checkout.back')}</span>
                     </button>
                       <button
                         type="submit"
@@ -1350,7 +1370,7 @@ const handleInputChange = (field: string, value: any) => {
 
                   <div>
                     <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--color-gold,#B8935F)] block mb-1">
-                      AllBarka Reserve Order
+                      {t('experience.checkout.reserveOrder')}
                     </span>
                     <h3 className="text-2xl font-serif font-black text-[var(--color-ink,#1F120F)] mb-1">
                       {t(orderSuccessResult.isQuoteRequest ? 'checkout.quoteReceived' : 'checkout.receiptReceived')}
@@ -1363,7 +1383,7 @@ const handleInputChange = (field: string, value: any) => {
                   {/* Official Order ID Badge */}
                   <div className="bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/35 rounded-2xl p-4 shadow-2xs">
                     <p className="text-[10px] uppercase font-bold text-[var(--color-ink,#1F120F)]/60 mb-1 tracking-wider">
-                      Official Tracking Order ID
+                      {t('experience.checkout.trackingId')}
                     </p>
                     <p className="text-xl font-mono font-black text-[var(--color-ink,#1F120F)] tracking-wider">
                       {orderSuccessResult.orderId}
@@ -1375,7 +1395,7 @@ const handleInputChange = (field: string, value: any) => {
                     <div className="bg-white border border-[var(--color-gold,#B8935F)]/25 rounded-2xl p-4 text-left shadow-2xs space-y-2.5">
                       <div className="flex items-center justify-between border-b border-[var(--color-gold,#B8935F)]/15 pb-2">
                         <span className="text-[10px] font-black uppercase tracking-wider text-[var(--color-ink,#1F120F)]/70">
-                          Ordered Items ({orderItemsSnapshot.length})
+                          {t('experience.checkout.orderedPrefix')}{orderItemsSnapshot.length})
                         </span>
                         <span className="text-[10px] font-bold text-[var(--color-gold,#B8935F)]">
                           {orderSuccessResult.isQuoteRequest ? t('checkout.quoteNoPayment') : selectedPayment === 'bank' ? 'Direct Bank / Raast' : 'Cash on Delivery'}
@@ -1396,7 +1416,7 @@ const handleInputChange = (field: string, value: any) => {
 
                       {savedTotals && !orderSuccessResult.isQuoteRequest && (
                         <div className="border-t border-[var(--color-gold,#B8935F)]/15 pt-2 flex justify-between items-center text-xs">
-                          <span className="font-bold text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">Total Payable</span>
+                          <span className="font-bold text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">{t('experience.checkout.total')}</span>
                           <span className="font-serif font-black text-sm text-[var(--color-emerald,#042821)] dark:text-[var(--color-gold,#B8935F)]">
                             Rs. {savedTotals.finalPayable.toLocaleString()}
                           </span>
@@ -1445,10 +1465,10 @@ const handleInputChange = (field: string, value: any) => {
                         </div>
                         <div>
                           <h4 className="text-sm font-serif font-black text-[var(--color-ink,#1F120F)] leading-tight">
-                            Create your AllBarka account
+                            {t('experience.checkout.create')}
                           </h4>
                           <p className="text-[10.5px] text-[var(--color-ink,#1F120F)]/70 mt-1 leading-snug">
-                            Track your orders, view your purchase history and access future Patron benefits.
+                            {t('experience.checkout.createHint')}
                           </p>
                         </div>
                       </div>
@@ -1458,14 +1478,14 @@ const handleInputChange = (field: string, value: any) => {
                           onClick={() => { onClose(); if(onOpenAuth) onOpenAuth(); }}
                           className="flex-1 py-2.5 min-h-[44px] rounded-lg bg-[var(--color-ink,#1F120F)] text-[var(--color-surface,#FDFBF7)] font-black text-[10px] uppercase tracking-widest text-center cursor-pointer"
                         >
-                          Create Account
+                          {t('experience.checkout.createAction')}
                         </button>
                         <button
                           type="button"
                           onClick={onClose}
                           className="flex-1 py-2.5 min-h-[44px] rounded-lg bg-white border border-[var(--color-gold,#B8935F)]/30 text-[var(--color-ink,#1F120F)] font-bold text-[10px] uppercase tracking-widest text-center cursor-pointer"
                         >
-                          Maybe Later
+                          {t('experience.checkout.later')}
                         </button>
                       </div>
                     </div>
@@ -1487,7 +1507,7 @@ const handleInputChange = (field: string, value: any) => {
                       onClick={onClose}
                       className="w-full py-3.5 min-h-[48px] rounded-full bg-white text-[var(--color-ink,#1F120F)] border border-[var(--color-gold,#B8935F)]/30 font-bold uppercase tracking-widest hover:bg-[var(--color-gold,#B8935F)]/10 transition-colors cursor-pointer"
                     >
-                      Continue Shopping
+                      {t('experience.checkout.continue')}
                     </button>
                   </div>
                 </motion.div>
@@ -1501,7 +1521,7 @@ const handleInputChange = (field: string, value: any) => {
           <div className="px-4 sm:px-6 py-2.5 border-t border-[var(--color-gold,#B8935F)]/20 bg-white/70 flex flex-wrap items-center justify-between gap-1.5 text-[9.5px] text-[var(--color-ink,#1F120F)]/65 shrink-0">
             <span className="flex items-center gap-1.5">
               <Lock size={12} className="text-[var(--color-gold,#B8935F)]" />
-              Review your details before ordering
+              {t('experience.checkout.reviewHint')}
             </span>
             <span className="flex items-center gap-1.5">
               <ShieldCheck size={12} className="text-[var(--color-gold,#B8935F)]" />

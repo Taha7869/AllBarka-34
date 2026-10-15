@@ -4,6 +4,7 @@ import type { HamperConfiguration } from '../lib/hamperCatalog';
 import { ADMIN_STATUSES } from '../lib/adminOperations';
 import type { AppliedPromo } from '../types/promo';
 import { outboxErrorDetails } from './outboxDiagnostics';
+import { rewardFulfillmentNote, sanitizeRewardFulfillmentNote, type RewardFulfillmentNote } from '../lib/rewardFulfillment';
 import { storedOrderStatus } from '../lib/orderStatuses';
 
 export interface N8nNotificationResult {
@@ -62,6 +63,7 @@ export interface N8nOrderData extends Partial<AppliedPromo> {
     id: string; name: string; selectedWeight: string; quantity: number; price: number;
     hamperConfiguration?: HamperConfiguration;
   }>;
+  rewardApplication?: RewardFulfillmentNote;
   gifting?: { giftWrapping: boolean; giftWrapFee: number; giftMessage?: string };
   paymentMethod: string;
   createdAt: string;
@@ -150,6 +152,11 @@ export function projectCanonicalOrderForN8n(order: CanonicalOrder): N8nOrderData
     paymentMethod: order.paymentMethod, createdAt: requiredText(order.createdAt, 60),
     status, updatedAt: requiredText(order.updatedAt, 60),
   };
+  if (order.rewardApplication) {
+    const benefit = rewardFulfillmentNote(order.rewardApplication);
+    if (!benefit || isQuote) throw new Error('CANONICAL_ORDER_INVALID');
+    wireOrder.rewardApplication = benefit;
+  }
   if (order.gifting) {
     wireOrder.gifting = {
       giftWrapping: Boolean(order.gifting.giftWrapping), giftWrapFee: money(order.gifting.giftWrapFee),
@@ -217,6 +224,7 @@ export async function sendOrderToN8n(orderData: N8nOrderData, options: SendOrder
         ...(item.hamperConfiguration ? { hamperConfiguration: item.hamperConfiguration } : {}),
       })),
       ...(orderData.delivery ? { delivery: orderData.delivery } : {}),
+      ...(orderData.rewardApplication && sanitizeRewardFulfillmentNote(orderData.rewardApplication) ? { rewardApplication: sanitizeRewardFulfillmentNote(orderData.rewardApplication)! } : {}),
       ...(orderData.gifting ? { gifting: orderData.gifting } : {}),
       paymentMethod: orderData.paymentMethod, createdAt: orderData.createdAt,
       status: orderData.status, updatedAt: orderData.updatedAt,

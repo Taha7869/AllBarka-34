@@ -1,6 +1,8 @@
 # AllBarka catalogue and owner price editing
 
-The catalogue source is `src/data/products.ts`. Its first line marks the owner-editable price file. This file owns all fixed retail portions, separate custom-weight rates, product metadata and shipping billing weights. The legacy `prices` record and new `variants` array are generated from the same definition; do not maintain a second price table.
+In Firestore mode, commercial prices are owned by `products/{productId}` and `catalogBoxes/{boxId}` in the configured Firebase database. Use the authenticated administration catalogue price editor or edit the validated commercial fields in Firebase Console. See [Firestore pricing](FIRESTORE_PRICING.md) for setup, schema and release instructions.
+
+`src/data/products.ts` remains the immutable product/portion/media/shipping registry and the reviewed seed/explicit static rollback defaults. The price tables below describe those defaults; existing owner prices in Firestore are preserved during seeding. Runtime variants are derived from each validated `prices` record, rather than maintained as another independent price table.
 
 The 73 requested entries produce **57 new products**, with **32 existing products preserved**, for **89 products total**. Equivalent existing items and the repeated Char Maghaz request are reused. Different date varieties, walnut origins, golden versus green raisins, raw versus roasted cashews and masala almonds remain distinct products.
 

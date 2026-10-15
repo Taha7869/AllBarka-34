@@ -96,6 +96,7 @@ export interface CartItem {
   price: number; // Sanitized clean number in PKR (backward compatibility alias)
   quantity: number;
   wholesale?: boolean;
+  priceUnavailable?: boolean;
   hamperConfiguration?: HamperConfiguration;
 }
 
