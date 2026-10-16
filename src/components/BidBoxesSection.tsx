@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Package, Gift, Sparkles, ShoppingBag, MessageSquareQuote, Eye, Check } from 'lucide-react';
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import { useCart } from '../contexts/CartContext';
@@ -13,6 +13,7 @@ interface BidBoxesSectionProps {
 }
 
 export default function BidBoxesSection({ onQuickView, compact = false }: BidBoxesSectionProps) {
+  const navigate = useNavigate();
   const products = useCatalogProducts();
   const { addToCart, setIsCartOpen } = useCart();
   const mediaCover = useProductMediaCover();
@@ -42,22 +43,19 @@ export default function BidBoxesSection({ onQuickView, compact = false }: BidBox
     const cfg = product.bidBoxConfig;
     const mode = getMode(product.id);
     let variantKey = Object.keys(product.prices)[0] || 'Empty Box (1 pc)';
-    let unitPrice = product.prices[variantKey] || 0;
 
     if (cfg) {
       if (mode === 'empty') {
-        const tierIndex = selectedEmptyTierIdx[product.id] ?? 0;
+        const tierIndex = selectedEmptyTierIdx[product.id] ?? 2;
         const tier = cfg.emptyTiers[tierIndex] || cfg.emptyTiers[0];
         if (tier) {
           variantKey = tier.variantKey;
-          unitPrice = product.prices[variantKey] ?? tier.packPrice;
         }
       } else {
         const filledIndex = selectedFilledIdx[product.id] ?? 0;
         const filledOpt = cfg.filledOptions[filledIndex] || cfg.filledOptions[0];
         if (filledOpt) {
           variantKey = filledOpt.variantKey;
-          unitPrice = product.prices[variantKey] ?? filledOpt.price;
         }
       }
     }
@@ -137,26 +135,31 @@ export default function BidBoxesSection({ onQuickView, compact = false }: BidBox
           </div>
         </div>
 
-        {/* 8 Bid Boxes Grid */}
+        {/* All 8 Bid Boxes Grid (4-col desktop / 2-col tablet / 1-col mobile) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {bidBoxes.map(product => {
             const cfg = product.bidBoxConfig;
             if (!cfg) return null;
             const mode = getMode(product.id);
-            const emptyTierIdx = selectedEmptyTierIdx[product.id] ?? 2; // Default highlight 50 pcs (-10%) in empty mode
+            const emptyTierIdx = selectedEmptyTierIdx[product.id] ?? 2; // Default highlight 50 pcs in empty mode
             const activeEmptyTier = cfg.emptyTiers[emptyTierIdx] || cfg.emptyTiers[0];
             const filledIdx = selectedFilledIdx[product.id] ?? 0;
             const activeFilledOpt = cfg.filledOptions[filledIdx] || cfg.filledOptions[0];
 
-            const cover = mediaCover(product) || product.image || '/images/generated/gift-box-1.webp';
+            const cover = mediaCover(product) || product.image || '/images/products/bid-box-umrah-tabarruk-1.webp';
 
             return (
               <article
                 key={product.id}
-                className="group relative flex flex-col rounded-3xl border border-[#D4AF6A]/35 bg-white shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden"
+                onClick={(e) => {
+                  const target = e.target as HTMLElement;
+                  if (target.closest('a, button, input, select, textarea, [role="button"]')) return;
+                  navigate(`/product/${product.id}`);
+                }}
+                className="group relative flex flex-col rounded-3xl border border-[#D4AF6A]/35 bg-white shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden cursor-pointer"
               >
-                {/* Image Header */}
-                <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#F4EFE4]">
+                {/* Clean Image Header — ZERO text, numbers, or price overlays on the photograph */}
+                <div className="relative aspect-square w-full overflow-hidden bg-[#F4EFE4]">
                   <Link to={`/product/${product.id}`} className="block w-full h-full">
                     <img
                       src={cover}
@@ -165,48 +168,73 @@ export default function BidBoxesSection({ onQuickView, compact = false }: BidBox
                       className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
                     />
                   </Link>
-                  <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-                    <span className="rounded-full bg-[#072A20]/90 backdrop-blur-sm px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#E6C786]">
-                      {cfg.occasionTag}
-                    </span>
-                  </div>
                   {onQuickView && (
                     <button
                       type="button"
-                      onClick={() => onQuickView(product)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onQuickView(product);
+                      }}
                       aria-label={`Quick view ${product.name_en}`}
-                      className="absolute top-3 right-3 rounded-full bg-white/90 hover:bg-white p-2 text-[#072A20] shadow-md transition-all"
+                      className="absolute top-3 right-3 rounded-full bg-white/95 hover:bg-[#072A20] p-2.5 text-[#072A20] hover:text-[#F7F1E3] shadow-md transition-all opacity-95 group-hover:opacity-100"
                     >
                       <Eye size={15} />
                     </button>
                   )}
-                  {/* Bottom Dual Rate Summary Pill */}
-                  <div className="absolute inset-x-2.5 bottom-2.5 rounded-xl bg-[#072A20]/92 backdrop-blur-md px-3 py-1.5 text-[11px] text-[#F7F1E3] flex items-center justify-between border border-[#D4AF6A]/30">
-                    <span>Empty: <strong className="text-[#E6C786]">Rs. {cfg.emptyUnitStarting}</strong> <span className="opacity-75">(100+: Rs. {cfg.emptyBulk100Unit})</span></span>
-                    <span className="text-[#D4AF6A]">|</span>
-                    <span>Filled: <strong className="text-[#E6C786]">Rs. {cfg.filledMin.toLocaleString()}</strong></span>
-                  </div>
                 </div>
 
-                {/* Card Content */}
+                {/* Card Content — All badges, titles, Quick View trigger, and pricing live cleanly below the image */}
                 <div className="flex-1 flex flex-col p-4 sm:p-5 space-y-3.5">
-                  <div>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="inline-flex items-center rounded-full bg-[#072A20]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#072A20]">
+                        {cfg.occasionTag}
+                      </span>
+                      {onQuickView && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onQuickView(product);
+                          }}
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-[#8C6B1B] hover:text-[#072A20] transition-colors"
+                        >
+                          <Eye size={13} /> Quick View
+                        </button>
+                      )}
+                    </div>
+
                     <Link
                       to={`/product/${product.id}`}
-                      className="font-serif text-lg font-bold text-[#072A20] hover:text-[#8C6B1B] transition-colors line-clamp-1"
+                      className="block font-serif text-lg font-bold text-[#072A20] hover:text-[#8C6B1B] transition-colors leading-snug"
                     >
                       {product.name_en}
                     </Link>
-                    <p className="text-xs font-urdu text-[#8C6B1B] mt-0.5" dir="rtl">
+                    <p className="text-xs font-urdu text-[#8C6B1B]" dir="rtl">
                       {product.name_ur}
                     </p>
+
+                    {/* Clean Dual Rate Summary in Card Body */}
+                    <div className="rounded-xl bg-[#FAF6EE] px-3 py-1.5 text-[11px] text-[#072A20] flex flex-wrap items-center justify-between gap-1 border border-[#D4AF6A]/35">
+                      <span>
+                        Empty: <strong className="text-[#8C6B1B]">Rs. {cfg.emptyUnitStarting}</strong>{' '}
+                        <span className="text-[#566B63]">(100+: Rs. {cfg.emptyBulk100Unit})</span>
+                      </span>
+                      <span className="text-[#D4AF6A]">•</span>
+                      <span>
+                        Filled: <strong className="text-[#072A20]">Rs. {cfg.filledMin.toLocaleString()}</strong>
+                      </span>
+                    </div>
                   </div>
 
                   {/* Per-Card Empty vs Filled Mode Selector */}
                   <div className="grid grid-cols-2 gap-1.5 rounded-xl bg-[#FAF6EE] p-1 border border-[#D4AF6A]/30">
                     <button
                       type="button"
-                      onClick={() => setCardModes(prev => ({ ...prev, [product.id]: 'empty' }))}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCardModes(prev => ({ ...prev, [product.id]: 'empty' }));
+                      }}
                       className={`rounded-lg py-1.5 px-2 text-[11px] font-bold transition-all ${
                         mode === 'empty'
                           ? 'bg-[#072A20] text-[#F7F1E3] shadow-xs'
@@ -217,7 +245,10 @@ export default function BidBoxesSection({ onQuickView, compact = false }: BidBox
                     </button>
                     <button
                       type="button"
-                      onClick={() => setCardModes(prev => ({ ...prev, [product.id]: 'filled' }))}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCardModes(prev => ({ ...prev, [product.id]: 'filled' }));
+                      }}
                       className={`rounded-lg py-1.5 px-2 text-[11px] font-bold transition-all ${
                         mode === 'filled'
                           ? 'bg-[#072A20] text-[#F7F1E3] shadow-xs'

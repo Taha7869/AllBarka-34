@@ -30,6 +30,9 @@ export interface BidBoxConfig {
   filledMax: number;
   filledSummary: string;
   occasionTag: string;
+  dimensionsAndCapacity?: string;
+  emptyOptionDetails?: string;
+  filledOptionDetails?: string;
   emptyTiers: BidBoxBulkTier[];
   filledOptions: BidBoxFilledOption[];
 }

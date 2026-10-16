@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Sparkles, ShoppingBag, MessageSquareQuote, ArrowRight, Check } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Sparkles, ShoppingBag, MessageSquareQuote, ArrowRight, Check, Eye } from 'lucide-react';
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import { useCart } from '../contexts/CartContext';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
@@ -9,9 +9,11 @@ import { openCustomQuoteModal } from './CustomQuoteModal';
 
 interface DealsPackagesSectionProps {
   limit?: number;
+  onQuickView?: (product: Product) => void;
 }
 
-export default function DealsPackagesSection({ limit }: DealsPackagesSectionProps) {
+export default function DealsPackagesSection({ limit, onQuickView }: DealsPackagesSectionProps) {
+  const navigate = useNavigate();
   const products = useCatalogProducts();
   const { addToCart, setIsCartOpen } = useCart();
   const mediaCover = useProductMediaCover();
@@ -110,27 +112,68 @@ export default function DealsPackagesSection({ limit }: DealsPackagesSectionProp
             return (
               <article
                 key={product.id}
-                className="flex flex-col rounded-2xl border border-[#D4AF6A]/30 bg-[#0B3B2D]/90 overflow-hidden shadow-lg hover:border-[#D4AF6A]/70 transition-all"
+                onClick={(e) => {
+                  const target = e.target as HTMLElement;
+                  if (target.closest('a, button, input, select, textarea, [role="button"]')) return;
+                  navigate(`/product/${product.id}`);
+                }}
+                className="group relative flex flex-col rounded-2xl border border-[#D4AF6A]/30 bg-[#0B3B2D]/90 overflow-hidden shadow-lg hover:border-[#D4AF6A]/70 hover:-translate-y-1 transition-all duration-300 cursor-pointer"
               >
-                <Link to={`/product/${product.id}`} className="relative aspect-[4/3] w-full overflow-hidden bg-[#051F17] block">
-                  <img
-                    src={cover}
-                    alt={product.name_en}
-                    loading="lazy"
-                    className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-500"
-                  />
-                  {product.badge && (
-                    <span className="absolute top-3 left-3 rounded-full bg-[#D4AF6A] px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-[#072A20]">
-                      {product.badge}
-                    </span>
+                {/* Clean Image Frame — No text badges overlaid on the photograph */}
+                <div className="relative aspect-square w-full overflow-hidden bg-[#051F17]">
+                  <Link to={`/product/${product.id}`} className="block w-full h-full">
+                    <img
+                      src={cover}
+                      alt={product.name_en}
+                      loading="lazy"
+                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                    />
+                  </Link>
+                  {onQuickView && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onQuickView(product);
+                      }}
+                      aria-label={`Quick view ${product.name_en}`}
+                      className="absolute top-3 right-3 rounded-full bg-white/95 hover:bg-[#D4AF6A] p-2.5 text-[#072A20] shadow-md transition-all"
+                    >
+                      <Eye size={15} />
+                    </button>
                   )}
-                </Link>
+                </div>
 
+                {/* Card Body — Badges, Quick View trigger, full title, and actions below image */}
                 <div className="flex-1 flex flex-col p-4 space-y-3">
-                  <div>
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      {product.badge ? (
+                        <span className="inline-flex items-center rounded-full bg-[#D4AF6A]/20 border border-[#D4AF6A]/45 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-[#E6C786]">
+                          {product.badge}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center rounded-full bg-white/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#E5DEC9]">
+                          Value Package
+                        </span>
+                      )}
+                      {onQuickView && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onQuickView(product);
+                          }}
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-[#E6C786] hover:text-white transition-colors"
+                        >
+                          <Eye size={13} /> Quick View
+                        </button>
+                      )}
+                    </div>
+
                     <Link
                       to={`/product/${product.id}`}
-                      className="font-serif text-base font-bold text-white hover:text-[#E6C786] transition-colors line-clamp-1"
+                      className="block font-serif text-base font-bold text-white hover:text-[#E6C786] transition-colors leading-snug"
                     >
                       {product.name_en}
                     </Link>
@@ -139,12 +182,12 @@ export default function DealsPackagesSection({ limit }: DealsPackagesSectionProp
                     </p>
                   </div>
 
-                  <p className="text-xs text-[#E5DEC9]/80 line-clamp-2 flex-1">
+                  <p className="text-xs text-[#E5DEC9]/85 line-clamp-2 flex-1">
                     {product.contents_en || product.desc_en}
                   </p>
 
                   <div className="flex items-baseline justify-between pt-2 border-t border-white/10">
-                    <span className="text-[11px] uppercase tracking-wider text-[#E5DEC9]/70">
+                    <span className="text-[11px] uppercase tracking-wider text-[#E5DEC9]/75">
                       {firstVariant || 'Custom Quote'}
                     </span>
                     <span className="font-serif text-lg font-bold text-[#E6C786]">
@@ -156,7 +199,10 @@ export default function DealsPackagesSection({ limit }: DealsPackagesSectionProp
                     {!product.quoteOnly && price ? (
                       <button
                         type="button"
-                        onClick={() => handleAddBundle(product)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddBundle(product);
+                        }}
                         className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#D4AF6A] hover:bg-[#E6C786] text-[#072A20] py-2.5 px-3 text-xs font-extrabold uppercase tracking-wider transition-all"
                       >
                         {addedId === product.id ? (
@@ -173,14 +219,15 @@ export default function DealsPackagesSection({ limit }: DealsPackagesSectionProp
 
                     <button
                       type="button"
-                      onClick={() =>
+                      onClick={(e) => {
+                        e.stopPropagation();
                         openCustomQuoteModal({
                           productId: product.id,
                           mode: 'filled',
                           quantity: 25,
                           targetUnitPrice: price ? price * 25 : undefined,
-                        })
-                      }
+                        });
+                      }}
                       className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#D4AF6A]/45 bg-white/5 hover:bg-white/15 text-[#F7F1E3] py-2 px-3 text-[11px] font-bold uppercase tracking-wider transition-all"
                     >
                       <MessageSquareQuote size={13} className="text-[#E6C786]" />

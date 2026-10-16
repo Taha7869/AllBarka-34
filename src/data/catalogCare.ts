@@ -54,6 +54,10 @@ export function withProductCare(product: Product): Product {
     'Gift presentation, quantities and individual pack sizes are agreed with your corporate quote before packing.',
     'کارپوریٹ قیمت کی منظوری سے پہلے تحفے کی پیکنگ، تعداد اور ہر پیک کا وزن طے کیا جاتا ہے۔',
     'يُتفق على تغليف الهدايا والكميات وأحجام العبوات الفردية مع عرض الشركات قبل التعبئة.',
+  ] : product.isBidBox ? [
+    `Available portions & tiers: ${portions}. ${product.bidBoxConfig?.dimensionsAndCapacity || ''} Empty Box Option: ${product.bidBoxConfig?.emptyOptionDetails || ''} Filled Dry Fruit Option: ${product.bidBoxConfig?.filledOptionDetails || ''}`.trim(),
+    `دستیاب پیکنگ اور درجات: ${portions}۔ خالی باکس ساٹن ربن، فوڈ گریڈ لائنر اور کسٹم نام کے ٹیگ کے ساتھ یا آلبرکہ کے تازہ خشک میوہ جات سے بھرا ہوا دستیاب ہے۔ استعمال تک سیل بند رکھیں۔`,
+    `الخيارات والكميات المتاحة: ${portions}. متوفرة كصناديق فارغة مع شريط حريري وبطاقة اسم مخصصة أو معبأة طازجة بمكسرات البركة المختارة. أبقِ العبوة مغلقة حتى التقديم.`,
   ] : product.isBundle ? [
     `Fixed ${portions} selection with individually packed components. Keep each freshness seal closed until use; confirm final contents for made-to-order hampers before dispatch.`,
     `${portions} کا مقررہ انتخاب، اجزاء الگ پیکنگ میں۔ استعمال تک تازگی کی سیل بند رکھیں؛ حسبِ آرڈر ہیمپر کے آخری اجزاء روانگی سے پہلے تصدیق کریں۔`,

@@ -136,7 +136,7 @@ export default function HomePage() {
       <BidBoxesSection onQuickView={setSelectedQuickViewProduct} />
 
       {/* ── Deals & Value Packages ───────────────────────────────────────── */}
-      <DealsPackagesSection limit={8} />
+      <DealsPackagesSection limit={8} onQuickView={setSelectedQuickViewProduct} />
 
       {/* ── Service Pillars (dark emerald section) ───────────────────────── */}
       <section dir="ltr" className="editorial-care w-full overflow-hidden bg-[#042821] py-16 text-[#FFFCF7] sm:py-20">

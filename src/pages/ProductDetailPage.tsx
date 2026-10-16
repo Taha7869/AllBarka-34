@@ -221,32 +221,31 @@ export default function ProductDetailPage() {
                   className="w-full h-full object-cover rounded-2xl group-hover:scale-105 transition-transform duration-500 ease-out"
                 />
               )}
+            </div>
 
-              {/* Reference image caption for hampers */}
-              {isGiftProduct && (
-                <div className="absolute bottom-4 left-4 right-4 z-10 text-center pointer-events-none">
-                  <p className="text-[9px] italic text-[#635B52] dark:text-[#A8A199] bg-white/70 dark:bg-black/40 backdrop-blur-sm px-2 py-1 rounded inline-block w-auto mx-auto shadow-sm">
-                    Reference image — actual packaging may vary slightly.
-                  </p>
-                </div>
-              )}
-
-              {/* Tag Badge */}
-              {getLocalized(product, 'tag', language) && (
-                <div className="absolute top-4 left-4 z-10">
-                  <span className="px-3.5 py-1.5 rounded-full text-[10px] font-sans font-bold uppercase tracking-widest bg-[var(--color-primary,#042821)] text-[var(--color-text-on-emerald,#FFFCF7)] border border-[var(--color-accent,#C7982F)]/50 shadow-md">
+            {/* Clean metadata strip BELOW the image frame (no text overlays on the photo) */}
+            <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+              <div className="flex flex-wrap items-center gap-2">
+                {getLocalized(product, 'tag', language) && (
+                  <span className="px-3 py-1 rounded-full text-[10px] font-sans font-bold uppercase tracking-widest bg-[var(--color-primary,#042821)] text-[var(--color-text-on-emerald,#FFFCF7)] border border-[var(--color-accent,#C7982F)]/50 shadow-xs">
                     {getLocalized(product, 'tag', language)}
                   </span>
-                </div>
-              )}
-
-              {/* Origin Pill */}
-              {getLocalized(product, 'origin', language) && !isGiftProduct && (
-                <div className="absolute bottom-4 left-4 z-10">
-                  <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/90 dark:bg-[#1A201E]/90 text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)] border border-[var(--color-accent,#C7982F)]/30 backdrop-blur-xs shadow-xs">
+                )}
+                {product.badge && (
+                  <span className="px-3 py-1 rounded-full text-[10px] font-sans font-bold uppercase tracking-widest bg-[#C7982F]/20 text-[#806326] dark:text-[#E4C783] border border-[#C7982F]/40">
+                    {product.badge}
+                  </span>
+                )}
+                {getLocalized(product, 'origin', language) && (
+                  <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white dark:bg-[#1A201E] text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)] border border-[var(--color-accent,#C7982F)]/30">
                     {getLocalized(product, 'origin', language)}
                   </span>
-                </div>
+                )}
+              </div>
+              {isGiftProduct && (
+                <p className="text-[10px] italic text-[#635B52] dark:text-[#A8A199]">
+                  Studio reference presentation — custom ribbon &amp; crest tags tailored per order.
+                </p>
               )}
             </div>
 
@@ -288,7 +287,7 @@ export default function ProductDetailPage() {
           <div className="flex flex-col text-left">
             <div className="mb-4">
               <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] block mb-1.5">
-                Single-Origin Batch • Hand-Sorted Lahore
+                {product.isBidBox && product.bidBoxConfig ? `${product.bidBoxConfig.occasionTag} • AllBarka Bespoke Atelier` : 'Single-Origin Batch • Hand-Sorted Lahore'}
               </span>
               <h1 dir="auto" className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold text-[var(--color-primary,#042821)] dark:text-[var(--color-text-primary,#F6F1EA)] leading-tight mb-2">
                 {getLocalized(product, 'name', language)}
@@ -312,6 +311,35 @@ export default function ProductDetailPage() {
                     {t('packContents')}
                   </span>
                   <span dir="auto">{getLocalized(product, 'contents', language)}</span>
+                </div>
+              )}
+
+              {product.isBidBox && product.bidBoxConfig && (
+                <div className="mt-3 grid grid-cols-1 gap-2.5 rounded-2xl bg-[#FAF6EE] dark:bg-[#1A201E] border border-[#C7982F]/35 p-3.5 text-xs text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)]">
+                  {product.bidBoxConfig.dimensionsAndCapacity && (
+                    <div>
+                      <strong className="uppercase tracking-wider text-[10px] text-[#8C6B1B] dark:text-[#E4C783] block">
+                        Box Dimensions &amp; Capacity
+                      </strong>
+                      <span>{product.bidBoxConfig.dimensionsAndCapacity}</span>
+                    </div>
+                  )}
+                  {product.bidBoxConfig.emptyOptionDetails && (
+                    <div className="border-t border-[#C7982F]/20 pt-2">
+                      <strong className="uppercase tracking-wider text-[10px] text-[#8C6B1B] dark:text-[#E4C783] block">
+                        Option 1 — Empty Box Only (Wholesale Bulk Tiers)
+                      </strong>
+                      <span>{product.bidBoxConfig.emptyOptionDetails}</span>
+                    </div>
+                  )}
+                  {product.bidBoxConfig.filledOptionDetails && (
+                    <div className="border-t border-[#C7982F]/20 pt-2">
+                      <strong className="uppercase tracking-wider text-[10px] text-[#8C6B1B] dark:text-[#E4C783] block">
+                        Option 2 — Filled with AllBarka Dry Fruits
+                      </strong>
+                      <span>{product.bidBoxConfig.filledOptionDetails}</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -616,12 +644,12 @@ export default function ProductDetailPage() {
                           decoding="async"
                           onError={(e) => { (e.target as HTMLImageElement).src = '/images/product-placeholder.svg'; }}
                         />
-                        {getLocalized(rel, 'origin', language) && (
-                          <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-white/90 text-[var(--color-ink,#29231D)] border border-[var(--color-gold,#C7982F)]/30">
-                            {getLocalized(rel, 'origin', language)}
-                          </span>
-                        )}
                       </div>
+                      {getLocalized(rel, 'origin', language) && (
+                        <span className="inline-block mb-1 text-[9px] font-bold uppercase tracking-wider text-[var(--color-accent-text,#806326)]">
+                          {getLocalized(rel, 'origin', language)}
+                        </span>
+                      )}
                       <h3 dir="auto" className="text-sm font-serif font-bold text-[var(--color-ink,#29231D)] group-hover:text-[var(--color-gold,#C7982F)] transition-colors line-clamp-1">
                         {getLocalized(rel, 'name', language)}
                       </h3>

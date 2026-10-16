@@ -84,6 +84,28 @@ export default function QuickViewModal({ isOpen, onClose, product, onAddToCart }
         <p className="mt-3 text-sm leading-7 text-[var(--color-text-secondary)]" dir="auto">{getLocalized(product, 'desc', language)}</p>
         {getLocalized(product, 'tasteProfile', language) && <div className="mt-4 rounded-xl border border-[var(--color-border)] p-3 text-xs leading-6"><strong className="block text-[var(--color-accent-text)]">{t('tasteProfile')}</strong><span dir="auto">{getLocalized(product, 'tasteProfile', language)}</span></div>}
         {getLocalized(product, 'contents', language) && <div className="mt-3 rounded-xl border border-[var(--color-border)] p-3 text-xs leading-6"><strong className="block text-[var(--color-accent-text)]">{t('packContents')}</strong><span dir="auto">{getLocalized(product, 'contents', language)}</span></div>}
+        {product.isBidBox && product.bidBoxConfig && (
+          <div className="mt-3 space-y-2 rounded-xl border border-[#C7982F]/35 bg-[#FAF6EE] p-3 text-xs leading-5 text-[#29231D]">
+            {product.bidBoxConfig.dimensionsAndCapacity && (
+              <div>
+                <strong className="block text-[10px] uppercase tracking-wider text-[#8C6B1B]">Box Dimensions &amp; Capacity</strong>
+                <span>{product.bidBoxConfig.dimensionsAndCapacity}</span>
+              </div>
+            )}
+            {product.bidBoxConfig.emptyOptionDetails && (
+              <div className="border-t border-[#C7982F]/20 pt-1.5">
+                <strong className="block text-[10px] uppercase tracking-wider text-[#8C6B1B]">Empty Box Option (Bulk Tiers)</strong>
+                <span>{product.bidBoxConfig.emptyOptionDetails}</span>
+              </div>
+            )}
+            {product.bidBoxConfig.filledOptionDetails && (
+              <div className="border-t border-[#C7982F]/20 pt-1.5">
+                <strong className="block text-[10px] uppercase tracking-wider text-[#8C6B1B]">Filled with AllBarka Dry Fruits</strong>
+                <span>{product.bidBoxConfig.filledOptionDetails}</span>
+              </div>
+            )}
+          </div>
+        )}
         {product.quoteOnly ? <><p className="mt-5 text-sm leading-7 text-[var(--color-text-secondary)]">{t('catalog.quoteDescription')}</p><button type="button" onClick={() => { onClose(); openCustomQuoteModal({ productId: product.id, mode: 'filled', quantity: 50 }); }} className="focus-ring mt-4 flex min-h-12 w-full items-center justify-center rounded-full bg-[#1e3a2b] px-4 text-sm font-semibold text-[#fff8e9]">{t('catalog.requestQuote')}</button></> : <>
         <div className="mt-5 flex items-center justify-between gap-3"><p className="font-serif text-3xl"><bdi>Rs. {price.toLocaleString()}</bdi></p><span className="rounded-full bg-[#0e7a53]/10 px-3 py-1.5 text-xs text-[#0e7a53] dark:text-[#8cd7b1]">{t('inStock')}</span></div>
         <fieldset className="mt-5"><legend className="mb-3 text-xs font-semibold uppercase tracking-wider">{t('selectWeight')}</legend><div className="flex flex-wrap gap-2" dir="ltr">{weights.map(size => <button type="button" key={size} aria-pressed={weight === size} onClick={() => setSelectedWeight(size)} className={`focus-ring min-h-11 rounded-full border px-5 text-xs font-semibold ${weight === size ? 'border-[#1e3a2b] bg-[#1e3a2b] text-[#fff8e9]' : 'border-[var(--color-border)] hover:border-[#c7982f]'}`}>{size}</button>)}</div></fieldset>
