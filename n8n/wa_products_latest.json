@@ -1486,7 +1486,7 @@
   {
     "product_id": "ajwa-dates-250g",
     "base_product_id": "ajwa-dates",
-    "name": "Ajwa Dates Madina (Khajoor) (250g)",
+    "name": "Premium Irani Muzafati Dates (Khajoor) (250g)",
     "name_ur": "کھجور عجوا",
     "category": "nuts",
     "unit": "weight",
@@ -1494,13 +1494,13 @@
     "price": 1800,
     "wholesale_per_kg": 0,
     "stock_qty": 100,
-    "aliases": "ajwa-dates, Ajwa Dates Madina (Khajoor), کھجور عجوا, مدینہ کی عجوہ کھجور, تمور عجوة المدينة, nuts",
+    "aliases": "ajwa-dates, Premium Irani Muzafati Dates (Khajoor), کھجور عجوا, مدینہ کی عجوہ کھجور, تمور عجوة المدينة, nuts",
     "active": true
   },
   {
     "product_id": "ajwa-dates-500g",
     "base_product_id": "ajwa-dates",
-    "name": "Ajwa Dates Madina (Khajoor) (500g)",
+    "name": "Premium Irani Muzafati Dates (Khajoor) (500g)",
     "name_ur": "کھجور عجوا",
     "category": "nuts",
     "unit": "weight",
@@ -1508,13 +1508,13 @@
     "price": 3400,
     "wholesale_per_kg": 0,
     "stock_qty": 100,
-    "aliases": "ajwa-dates, Ajwa Dates Madina (Khajoor), کھجور عجوا, مدینہ کی عجوہ کھجور, تمور عجوة المدينة, nuts",
+    "aliases": "ajwa-dates, Premium Irani Muzafati Dates (Khajoor), کھجور عجوا, مدینہ کی عجوہ کھجور, تمور عجوة المدينة, nuts",
     "active": true
   },
   {
     "product_id": "medjool-dates-250g",
     "base_product_id": "medjool-dates",
-    "name": "Medjool Dates Jumbo (250g)",
+    "name": "Jumbo Panjgur Amber Dates (Khajoor) (250g)",
     "name_ur": "میڈجول کھجور",
     "category": "nuts",
     "unit": "weight",
@@ -1522,13 +1522,13 @@
     "price": 2200,
     "wholesale_per_kg": 0,
     "stock_qty": 100,
-    "aliases": "medjool-dates, Medjool Dates Jumbo, میڈجول کھجور, جمبو میجول کھجور, تمور المجهول الكبيرة, nuts",
+    "aliases": "medjool-dates, Jumbo Panjgur Amber Dates (Khajoor), میڈجول کھجور, جمبو میجول کھجور, تمور المجهول الكبيرة, nuts",
     "active": true
   },
   {
     "product_id": "medjool-dates-500g",
     "base_product_id": "medjool-dates",
-    "name": "Medjool Dates Jumbo (500g)",
+    "name": "Jumbo Panjgur Amber Dates (Khajoor) (500g)",
     "name_ur": "میڈجول کھجور",
     "category": "nuts",
     "unit": "weight",
@@ -1536,7 +1536,7 @@
     "price": 4200,
     "wholesale_per_kg": 0,
     "stock_qty": 100,
-    "aliases": "medjool-dates, Medjool Dates Jumbo, میڈجول کھجور, جمبو میجول کھجور, تمور المجهول الكبيرة, nuts",
+    "aliases": "medjool-dates, Jumbo Panjgur Amber Dates (Khajoor), میڈجول کھجور, جمبو میجول کھجور, تمور المجهول الكبيرة, nuts",
     "active": true
   },
   {
@@ -2082,7 +2082,7 @@
     "price": 200,
     "wholesale_per_kg": 170,
     "stock_qty": 100,
-    "aliases": "bid-box-umrah-tabarruk, Umrah & Hajj Tabarruk Box Set, عمرہ و حج تبرک باکس سیٹ, bid box, favor box, shadi box, nikkah box, empty box, filled dry fruit box, umrah box, hajj tabarruk, zamzam box, umrah favor, tabarruk packaging",
+    "aliases": "bid-box-umrah-tabarruk, Umrah & Hajj Tabarruk Box Set, عمرہ و حج تبرک باکس سیٹ, bid box, favor box, shadi box, nikkah box, empty box, filled dry fruit box, umrah box, hajj tabarruk, tabarruk favor, umrah favor, tabarruk packaging",
     "active": true
   },
   {
@@ -2096,7 +2096,7 @@
     "price": 2000,
     "wholesale_per_kg": 170,
     "stock_qty": 100,
-    "aliases": "bid-box-umrah-tabarruk, Umrah & Hajj Tabarruk Box Set, عمرہ و حج تبرک باکس سیٹ, bid box, favor box, shadi box, nikkah box, empty box, filled dry fruit box, umrah box, hajj tabarruk, zamzam box, umrah favor, tabarruk packaging",
+    "aliases": "bid-box-umrah-tabarruk, Umrah & Hajj Tabarruk Box Set, عمرہ و حج تبرک باکس سیٹ, bid box, favor box, shadi box, nikkah box, empty box, filled dry fruit box, umrah box, hajj tabarruk, tabarruk favor, umrah favor, tabarruk packaging",
     "active": true
   },
   {
@@ -2110,7 +2110,7 @@
     "price": 4800,
     "wholesale_per_kg": 170,
     "stock_qty": 100,
-    "aliases": "bid-box-umrah-tabarruk, Umrah & Hajj Tabarruk Box Set, عمرہ و حج تبرک باکس سیٹ, bid box, favor box, shadi box, nikkah box, empty box, filled dry fruit box, umrah box, hajj tabarruk, zamzam box, umrah favor, tabarruk packaging",
+    "aliases": "bid-box-umrah-tabarruk, Umrah & Hajj Tabarruk Box Set, عمرہ و حج تبرک باکس سیٹ, bid box, favor box, shadi box, nikkah box, empty box, filled dry fruit box, umrah box, hajj tabarruk, tabarruk favor, umrah favor, tabarruk packaging",
     "active": true
   },
   {
@@ -2124,7 +2124,7 @@
     "price": 9250,
     "wholesale_per_kg": 170,
     "stock_qty": 100,
-    "aliases": "bid-box-umrah-tabarruk, Umrah & Hajj Tabarruk Box Set, عمرہ و حج تبرک باکس سیٹ, bid box, favor box, shadi box, nikkah box, empty box, filled dry fruit box, umrah box, hajj tabarruk, zamzam box, umrah favor, tabarruk packaging",
+    "aliases": "bid-box-umrah-tabarruk, Umrah & Hajj Tabarruk Box Set, عمرہ و حج تبرک باکس سیٹ, bid box, favor box, shadi box, nikkah box, empty box, filled dry fruit box, umrah box, hajj tabarruk, tabarruk favor, umrah favor, tabarruk packaging",
     "active": true
   },
   {
@@ -2138,13 +2138,13 @@
     "price": 17000,
     "wholesale_per_kg": 170,
     "stock_qty": 100,
-    "aliases": "bid-box-umrah-tabarruk, Umrah & Hajj Tabarruk Box Set, عمرہ و حج تبرک باکس سیٹ, bid box, favor box, shadi box, nikkah box, empty box, filled dry fruit box, umrah box, hajj tabarruk, zamzam box, umrah favor, tabarruk packaging",
+    "aliases": "bid-box-umrah-tabarruk, Umrah & Hajj Tabarruk Box Set, عمرہ و حج تبرک باکس سیٹ, bid box, favor box, shadi box, nikkah box, empty box, filled dry fruit box, umrah box, hajj tabarruk, tabarruk favor, umrah favor, tabarruk packaging",
     "active": true
   },
   {
-    "product_id": "bid-box-umrah-tabarruk-filled-standard-dates-nuts-zamzam",
+    "product_id": "bid-box-umrah-tabarruk-filled-standard-irani-dates-badam-kaju-kishmish",
     "base_product_id": "bid-box-umrah-tabarruk",
-    "name": "Umrah & Hajj Tabarruk Box Set (Filled Standard (Dates, Nuts & Zamzam))",
+    "name": "Umrah & Hajj Tabarruk Box Set (Filled Standard (Irani Dates, Badam, Kaju & Kishmish))",
     "name_ur": "عمرہ و حج تبرک باکس سیٹ",
     "category": "bid-boxes",
     "unit": "piece",
@@ -2152,13 +2152,13 @@
     "price": 850,
     "wholesale_per_kg": 170,
     "stock_qty": 100,
-    "aliases": "bid-box-umrah-tabarruk, Umrah & Hajj Tabarruk Box Set, عمرہ و حج تبرک باکس سیٹ, bid box, favor box, shadi box, nikkah box, empty box, filled dry fruit box, umrah box, hajj tabarruk, zamzam box, umrah favor, tabarruk packaging",
+    "aliases": "bid-box-umrah-tabarruk, Umrah & Hajj Tabarruk Box Set, عمرہ و حج تبرک باکس سیٹ, bid box, favor box, shadi box, nikkah box, empty box, filled dry fruit box, umrah box, hajj tabarruk, tabarruk favor, umrah favor, tabarruk packaging",
     "active": true
   },
   {
-    "product_id": "bid-box-umrah-tabarruk-filled-royal-ajwa-pistachios-zamzam",
+    "product_id": "bid-box-umrah-tabarruk-filled-royal-jumbo-panjgur-dates-iranian-pista-mammra-badam-honey-nuts",
     "base_product_id": "bid-box-umrah-tabarruk",
-    "name": "Umrah & Hajj Tabarruk Box Set (Filled Royal (Ajwa, Pistachios & Zamzam))",
+    "name": "Umrah & Hajj Tabarruk Box Set (Filled Royal (Jumbo Panjgur Dates, Iranian Pista, Mammra Badam & Honey Nuts))",
     "name_ur": "عمرہ و حج تبرک باکس سیٹ",
     "category": "bid-boxes",
     "unit": "piece",
@@ -2166,7 +2166,7 @@
     "price": 1650,
     "wholesale_per_kg": 170,
     "stock_qty": 100,
-    "aliases": "bid-box-umrah-tabarruk, Umrah & Hajj Tabarruk Box Set, عمرہ و حج تبرک باکس سیٹ, bid box, favor box, shadi box, nikkah box, empty box, filled dry fruit box, umrah box, hajj tabarruk, zamzam box, umrah favor, tabarruk packaging",
+    "aliases": "bid-box-umrah-tabarruk, Umrah & Hajj Tabarruk Box Set, عمرہ و حج تبرک باکس سیٹ, bid box, favor box, shadi box, nikkah box, empty box, filled dry fruit box, umrah box, hajj tabarruk, tabarruk favor, umrah favor, tabarruk packaging",
     "active": true
   },
   {
@@ -2842,9 +2842,9 @@
     "active": true
   },
   {
-    "product_id": "bid-box-acrylic-royal-filled-royal-chilgoza-pistachio-medjool-vip",
+    "product_id": "bid-box-acrylic-royal-filled-royal-chilgoza-pistachio-panjgur-vip",
     "base_product_id": "bid-box-acrylic-royal",
-    "name": "Acrylic & Velvet Royal Bid Box (Filled Royal (Chilgoza, Pistachio & Medjool VIP))",
+    "name": "Acrylic & Velvet Royal Bid Box (Filled Royal (Chilgoza, Pistachio & Panjgur VIP))",
     "name_ur": "ایکریلک اور مخملی شاہی بِد باکس",
     "category": "bid-boxes",
     "unit": "piece",

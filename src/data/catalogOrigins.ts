@@ -2,11 +2,11 @@
 const namedOrigins: Record<string, readonly [string, string, string]> = {
   'ceylon-cinnamon': ['Ceylon · Sri Lanka', 'سیلون · سری لنکا', 'سيلان · سريلانكا'],
   'kashmiri-walnut': ['Kashmir · Walnut Kernels', 'کشمیر · اخروٹ گری', 'كشمير · لب الجوز'],
-  'ajwa-dates': ['Madina · Ajwa Dates', 'مدینہ · عجوہ کھجور', 'المدينة المنورة · تمر عجوة'],
+  'ajwa-dates': ['Irani Muzafati · Packed in Pakistan', 'ایرانی مضافاتی · پاکستان میں پیک شدہ', 'مضافاتي إيراني · معبأ في باكستان'],
   'afghan-figs': ['Afghanistan · Dried Figs', 'افغانستان · خشک انجیر', 'أفغانستان · تين مجفف'],
   'aseel-dates': ['Khairpur · Aseel Dates', 'خیرپور · اصیل کھجور', 'خيربور · تمر أصيل'],
-  // Medjool is a date variety, not proof of a country of origin.
-  'medjool-dates': ['Medjool Variety · Packed in Pakistan', 'میڈجول قسم · پاکستان میں پیک شدہ', 'صنف مجهول · معبأ في باكستان'],
+  // Amber / Panjgur is a date variety packed in Pakistan.
+  'medjool-dates': ['Amber Variety · Packed in Pakistan', 'امبر ورائٹی · پاکستان میں پیک شدہ', 'صنف العنبر · معبأ في باكستان'],
 };
 
 export function additionOrigin(id: string, category: string) {

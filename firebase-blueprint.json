@@ -46,6 +46,35 @@
         "status": { "type": "string" },
         "total": { "type": "number" }
       }
+    },
+    "InquiryQuote": {
+      "title": "InquiryQuote",
+      "description": "Unified customer inquiry, wholesale request, custom hamper, and Bid Box bargain quote record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["bid_box_quote", "wholesale", "custom_hamper", "general"] },
+        "customerName": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "city": { "type": "string" },
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "boxMode": { "type": "string", "enum": ["empty", "filled"] },
+        "quantity": { "type": "number" },
+        "eventType": { "type": "string" },
+        "customPrintText": { "type": "string" },
+        "standardPrice": { "type": "number" },
+        "offeredPrice": { "type": "number" },
+        "finalAgreedPrice": { "type": "number" },
+        "notes": { "type": "string" },
+        "adminNotes": { "type": "string" },
+        "status": { "type": "string", "enum": ["NEW", "CONTACTED", "QUOTED", "APPROVED", "CLOSED"] },
+        "whatsappUrl": { "type": "string" },
+        "whatsappReplyUrl": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
     }
   },
   "firestore": {
@@ -64,6 +93,14 @@
     "/orders/{orderId}": {
       "schema": "Order",
       "description": "Placed order records"
+    },
+    "/inquiries/{inquiryId}": {
+      "schema": "InquiryQuote",
+      "description": "Unified customer inquiries, wholesale requests, custom hampers, and Bid Box bargain quotes"
+    },
+    "/quotes/{quoteId}": {
+      "schema": "InquiryQuote",
+      "description": "Custom Bid Box and celebration favor bargain quotes"
     }
   }
 }

@@ -777,10 +777,145 @@ app.post('/api/newsletter/subscribe', async (req, res) => {
   }
 });
 
-// Boutique Inquiry & Contact API
+// Unified Inquiry & Custom Quote Types & Helpers
+type InquiryType = 'bid_box_quote' | 'wholesale' | 'custom_hamper' | 'general';
+type InquiryStatus = 'NEW' | 'CONTACTED' | 'QUOTED' | 'APPROVED' | 'CLOSED';
+
+interface InquiryRecord {
+  id: string;
+  ticketId?: string;
+  quoteId?: string;
+  type: InquiryType;
+  customerName: string;
+  phone: string;
+  email: string;
+  city: string;
+  productId: string;
+  productName: string;
+  boxMode: 'empty' | 'filled';
+  quantity: number;
+  eventType: string;
+  customPrintText: string;
+  standardPrice: number | null;
+  offeredPrice: number | null;
+  finalAgreedPrice: number | null;
+  notes: string;
+  adminNotes: string;
+  status: InquiryStatus;
+  whatsappUrl: string;
+  whatsappReplyUrl: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+const VALID_INQUIRY_TYPES: InquiryType[] = ['bid_box_quote', 'wholesale', 'custom_hamper', 'general'];
+const VALID_INQUIRY_STATUSES: InquiryStatus[] = ['NEW', 'CONTACTED', 'QUOTED', 'APPROVED', 'CLOSED'];
+const inMemoryInquiries = new Map<string, InquiryRecord>();
+
+function normalizeWhatsAppPhone(rawPhone: string): string {
+  const digits = String(rawPhone || '').replace(/[^\d]/g, '');
+  if (!digits) return '923160666083';
+  if (digits.startsWith('0092')) return digits.slice(2);
+  if (digits.startsWith('92') && digits.length >= 11) return digits;
+  if (digits.startsWith('03') && digits.length === 11) return `92${digits.slice(1)}`;
+  if (digits.startsWith('3') && digits.length === 10) return `92${digits}`;
+  return digits.length >= 10 ? digits : '923160666083';
+}
+
+function buildAdminWhatsAppPitchUrl(record: InquiryRecord): string {
+  const targetPhone = normalizeWhatsAppPhone(record.phone);
+  const modeLabel = record.boxMode === 'empty'
+    ? 'Box Only (Empty Packaging)'
+    : 'Filled with AllBarka Dry Fruits';
+  const lines = [
+    `*Assalam-o-Alaikum ${record.customerName || 'Valued Patron'}!*`,
+    `Greetings from *AllBarka Luxury Dry Fruits Concierge (Lahore)*.`,
+    ``,
+    `Thank you for your ${record.type === 'bid_box_quote' ? 'Custom Bid Box / Celebration Quote' : record.type === 'wholesale' ? 'Wholesale Inquiry' : record.type === 'custom_hamper' ? 'Custom Luxury Hamper Request' : 'Boutique Inquiry'} (*Ref #${record.id}*):`,
+    record.productName ? `• *Selection:* ${record.productName}` : '',
+    record.type === 'bid_box_quote' ? `• *Configuration:* ${modeLabel}` : '',
+    record.quantity > 1 ? `• *Quantity:* ${record.quantity} pcs` : '',
+    record.eventType ? `• *Occasion:* ${record.eventType}` : '',
+    record.standardPrice ? `• *Standard Rate:* Rs. ${Number(record.standardPrice).toLocaleString()}/pc` : '',
+    record.offeredPrice ? `• *Your Offered Budget:* Rs. ${Number(record.offeredPrice).toLocaleString()} PKR` : '',
+    record.finalAgreedPrice ? `• *AllBarka Special Approved Rate:* Rs. ${Number(record.finalAgreedPrice).toLocaleString()} PKR` : '',
+    record.adminNotes ? `• *Concierge Note:* ${record.adminNotes}` : '',
+    ``,
+    `Please reply here to confirm your order and customization details so we can schedule your fresh preparation.`,
+  ].filter(Boolean);
+  return `https://wa.me/${targetPhone}?text=${encodeURIComponent(lines.join('\n'))}`;
+}
+
+function normalizeRawInquiryDoc(raw: Record<string, any>, fallbackId?: string): InquiryRecord {
+  const id = String(raw.id || raw.quoteId || raw.ticketId || fallbackId || `ABI-${Date.now()}`);
+  const rawType = String(raw.type || (raw.quoteId ? 'bid_box_quote' : raw.topic === 'wholesale' ? 'wholesale' : 'general'));
+  const type: InquiryType = VALID_INQUIRY_TYPES.includes(rawType as InquiryType) ? (rawType as InquiryType) : 'general';
+  const rawStatus = String(raw.status || 'NEW').toUpperCase();
+  const status: InquiryStatus = VALID_INQUIRY_STATUSES.includes(rawStatus as InquiryStatus)
+    ? (rawStatus as InquiryStatus)
+    : 'NEW';
+  const contactStr = String(raw.contact || '');
+  const isEmailContact = contactStr.includes('@');
+  const phone = String(raw.phone || raw.customerPhone || (!isEmailContact ? contactStr : '') || '').trim();
+  const email = String(raw.email || (isEmailContact ? contactStr : '') || '').trim();
+  const boxMode: 'empty' | 'filled' = (raw.boxMode || raw.mode) === 'empty' ? 'empty' : 'filled';
+  const quantity = Math.max(1, Number(raw.quantity) || 1);
+  const standardPrice = raw.standardPrice != null ? Number(raw.standardPrice) : raw.referenceUnitPrice != null ? Number(raw.referenceUnitPrice) : null;
+  const offeredPrice = raw.offeredPrice != null ? Number(raw.offeredPrice) : raw.targetPricePkr != null ? Number(raw.targetPricePkr) : null;
+  const finalAgreedPrice = raw.finalAgreedPrice != null && raw.finalAgreedPrice !== '' ? Number(raw.finalAgreedPrice) : null;
+  const customPrintText = String(raw.customPrintText ?? raw.customPrinting ?? '').trim();
+  const notes = String(raw.notes ?? raw.message ?? customPrintText ?? '').trim();
+  const adminNotes = String(raw.adminNotes ?? '').trim();
+  const createdAt = typeof raw.createdAt === 'string' && raw.createdAt ? raw.createdAt : new Date().toISOString();
+  const updatedAt = typeof raw.updatedAt === 'string' && raw.updatedAt ? raw.updatedAt : createdAt;
+
+  const record: InquiryRecord = {
+    id,
+    ticketId: id,
+    quoteId: id,
+    type,
+    customerName: String(raw.customerName || raw.name || 'Valued Patron').trim(),
+    phone,
+    email,
+    city: String(raw.city || 'Lahore').trim(),
+    productId: String(raw.productId || (type === 'custom_hamper' ? 'custom-hamper' : 'general')).trim(),
+    productName: String(raw.productName || raw.topic || 'Boutique Inquiry').trim(),
+    boxMode,
+    quantity,
+    eventType: String(raw.eventType || (type === 'bid_box_quote' ? 'Nikkah' : 'General')).trim(),
+    customPrintText,
+    standardPrice: Number.isFinite(standardPrice) ? standardPrice : null,
+    offeredPrice: Number.isFinite(offeredPrice) ? offeredPrice : null,
+    finalAgreedPrice: Number.isFinite(finalAgreedPrice) ? finalAgreedPrice : null,
+    notes,
+    adminNotes,
+    status,
+    whatsappUrl: String(raw.whatsappUrl || ''),
+    whatsappReplyUrl: '',
+    createdAt,
+    updatedAt,
+  };
+  record.whatsappReplyUrl = buildAdminWhatsAppPitchUrl(record);
+  if (!record.whatsappUrl) {
+    record.whatsappUrl = `https://wa.me/923160666083?text=${encodeURIComponent(`Assalam-o-Alaikum AllBarka! Inquiry Ref #${record.id} — ${record.productName}`)}`;
+  }
+  return record;
+}
+
+async function persistInquiryRecord(record: InquiryRecord, alsoSaveToQuotes = false): Promise<void> {
+  inMemoryInquiries.set(record.id, record);
+  if (!db) return;
+  const payload = sanitizeFirestoreData({ ...record });
+  await db.collection('inquiries').doc(record.id).set(payload, { merge: true });
+  if (alsoSaveToQuotes || record.type === 'bid_box_quote') {
+    await db.collection('quotes').doc(record.id).set(payload, { merge: true });
+  }
+}
+
+// Boutique Inquiry & Contact API (Unified with inquiries schema)
 app.post('/api/contact', async (req, res) => {
   try {
-    const { name, contact, topic, message } = req.body;
+    const { name, contact, topic, message } = req.body || {};
 
     if (typeof name !== 'string' || !name.trim() || name.length > 120) {
       return res.status(400).json({ error: 'Please provide your full name.', code: 'MISSING_NAME' });
@@ -793,32 +928,98 @@ app.post('/api/contact', async (req, res) => {
     }
 
     const ticketId = `AB-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const topicStr = typeof topic === 'string' ? topic.slice(0, 100) : 'general';
+    const inquiryType: InquiryType = topicStr === 'wholesale' ? 'wholesale' : topicStr === 'wedding-favors' ? 'bid_box_quote' : 'general';
 
-    if (!db) return res.status(503).json({ success: false, error: 'Inquiry storage is temporarily unavailable. Your inquiry has not been registered.', code: 'PERSISTENCE_UNAVAILABLE' });
-    {
-      try {
-        await db.collection('inquiries').doc(ticketId).set(sanitizeFirestoreData({
-          ticketId,
-          name: name.trim(),
-          contact: contact.trim(),
-          topic: typeof topic === 'string' ? topic.slice(0, 100) : 'general',
-          message: message.trim(),
-          createdAt: new Date().toISOString(),
-          status: 'PENDING'
-        }));
-      } catch (dbErr) {
-        console.warn('Firestore inquiry storage failed');
-        return res.status(503).json({ success: false, error: 'Inquiry storage is temporarily unavailable. Please retry or contact our team.', code: 'PERSISTENCE_UNAVAILABLE' });
-      }
+    const record = normalizeRawInquiryDoc({
+      id: ticketId,
+      ticketId,
+      type: inquiryType,
+      customerName: name.trim(),
+      contact: contact.trim(),
+      productId: topicStr,
+      productName: topicStr === 'wholesale' ? 'Wholesale & Bulk Inquiry (10kg+)' : `Concierge Inquiry (${topicStr})`,
+      boxMode: 'filled',
+      quantity: 1,
+      eventType: topicStr,
+      notes: message.trim(),
+      status: 'NEW',
+      createdAt: new Date().toISOString(),
+    });
+
+    try {
+      await persistInquiryRecord(record, false);
+    } catch (dbErr) {
+      console.warn('Firestore inquiry storage warning (retained in memory):', dbErr);
     }
 
     res.json({
       success: true,
       ticketId,
+      id: ticketId,
+      inquiry: record,
       message: 'Inquiry received. Our boutique concierge will respond via WhatsApp or email within 2 to 4 business hours.'
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to submit inquiry.', code: 'SERVER_ERROR' });
+  }
+});
+
+// Unified Inquiries Endpoint (Supports Bid Box Quotes, Wholesale, Custom Hamper, General)
+app.post('/api/inquiries', async (req, res) => {
+  try {
+    const body = req.body || {};
+    const customerName = String(body.customerName || body.name || '').trim();
+    const phone = String(body.phone || body.customerPhone || body.contact || '').trim();
+    const email = String(body.email || (phone.includes('@') ? phone : '') || '').trim();
+
+    if (!customerName || customerName.length < 2 || customerName.length > 120) {
+      return res.status(400).json({ error: 'Please provide your name.', code: 'MISSING_NAME' });
+    }
+    if (!phone && !email) {
+      return res.status(400).json({ error: 'Please provide a phone number or email address.', code: 'MISSING_CONTACT' });
+    }
+
+    const rawType = String(body.type || 'general');
+    const type: InquiryType = VALID_INQUIRY_TYPES.includes(rawType as InquiryType) ? (rawType as InquiryType) : 'general';
+    const prefix = type === 'bid_box_quote' ? 'ABQ' : type === 'wholesale' ? 'ABW' : type === 'custom_hamper' ? 'ABH' : 'ABI';
+    const id = `${prefix}-${Date.now().toString(36).toUpperCase().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`;
+
+    const record = normalizeRawInquiryDoc({
+      ...body,
+      id,
+      type,
+      customerName,
+      phone: phone.includes('@') ? '' : phone,
+      email,
+      boxMode: (body.boxMode || body.mode) === 'empty' ? 'empty' : 'filled',
+      quantity: Math.max(1, Math.min(50000, Number(body.quantity) || 1)),
+      standardPrice: body.standardPrice ?? body.referenceUnitPrice ?? null,
+      offeredPrice: body.offeredPrice ?? body.targetPricePkr ?? null,
+      customPrintText: body.customPrintText ?? body.customPrinting ?? '',
+      notes: body.notes ?? body.message ?? body.customPrintText ?? body.customPrinting ?? '',
+      status: 'NEW',
+      createdAt: new Date().toISOString(),
+    });
+
+    try {
+      await persistInquiryRecord(record, type === 'bid_box_quote');
+    } catch (dbErr) {
+      console.warn('Firestore /api/inquiries persistence warning (retained in memory):', dbErr);
+    }
+
+    return res.json({
+      ok: true,
+      success: true,
+      id: record.id,
+      ticketId: record.id,
+      quoteId: record.id,
+      inquiry: record,
+      whatsappUrl: record.whatsappUrl,
+      message: 'Your inquiry has been logged with the AllBarka Concierge.',
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || 'Failed to save inquiry.', code: 'SERVER_ERROR' });
   }
 });
 
@@ -829,26 +1030,39 @@ app.post('/api/quotes', async (req, res) => {
       productId,
       productName,
       mode,
+      boxMode,
       quantity,
       eventType,
       customPrinting,
+      customPrintText,
       targetPricePkr,
+      offeredPrice,
       referenceUnitPrice,
+      standardPrice,
       customerName,
       customerPhone,
+      phone,
+      email,
+      notes,
       city,
     } = req.body || {};
 
-    if (typeof customerName !== 'string' || customerName.trim().length < 2) {
+    const resolvedName = String(customerName || '').trim();
+    const resolvedPhone = String(customerPhone || phone || '').trim();
+
+    if (resolvedName.length < 2) {
       return res.status(400).json({ error: 'Please provide your name.', code: 'MISSING_NAME' });
     }
-    if (typeof customerPhone !== 'string' || customerPhone.trim().length < 10) {
+    if (resolvedPhone.length < 10) {
       return res.status(400).json({ error: 'Please provide a valid phone number.', code: 'MISSING_PHONE' });
     }
 
     const safeQty = Math.max(1, Math.min(50000, Number(quantity) || 50));
-    const safeMode = mode === 'empty' ? 'empty' : 'filled';
+    const safeMode: 'empty' | 'filled' = (boxMode || mode) === 'empty' ? 'empty' : 'filled';
     const quoteId = `ABQ-${Date.now().toString(36).toUpperCase().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`;
+    const stdPrice = standardPrice != null ? Number(standardPrice) : referenceUnitPrice != null ? Number(referenceUnitPrice) : null;
+    const offPrice = offeredPrice != null ? Number(offeredPrice) : targetPricePkr != null ? Number(targetPricePkr) : null;
+    const printText = String(customPrintText ?? customPrinting ?? '').slice(0, 500);
 
     const modeLabel = safeMode === 'empty' ? 'Box Only (Empty Packaging)' : 'Filled with AllBarka Dry Fruits';
     const waLines = [
@@ -859,11 +1073,11 @@ app.post('/api/quotes', async (req, res) => {
       `• *Box Mode:* ${modeLabel}`,
       `• *Quantity:* ${safeQty} boxes`,
       `• *Event Type:* ${String(eventType || 'Nikkah').slice(0, 80)}`,
-      referenceUnitPrice ? `• *Standard Rate Ref:* Rs. ${Number(referenceUnitPrice).toLocaleString()}/box` : '',
-      targetPricePkr ? `• *My Target Offer / Budget:* Rs. ${Number(targetPricePkr).toLocaleString()} PKR` : '',
-      customPrinting ? `• *Custom Printing / Name Tag / Notes:* ${String(customPrinting).slice(0, 400)}` : '',
-      `• *Name:* ${customerName.trim().slice(0, 100)}`,
-      `• *Phone:* ${customerPhone.trim().slice(0, 40)}`,
+      stdPrice ? `• *Standard Rate Ref:* Rs. ${Number(stdPrice).toLocaleString()}/box` : '',
+      offPrice ? `• *My Target Offer / Budget:* Rs. ${Number(offPrice).toLocaleString()} PKR` : '',
+      printText ? `• *Custom Printing / Name Tag / Notes:* ${printText.slice(0, 400)}` : '',
+      `• *Name:* ${resolvedName.slice(0, 100)}`,
+      `• *Phone:* ${resolvedPhone.slice(0, 40)}`,
       `• *City:* ${String(city || 'Lahore').trim().slice(0, 80)}`,
       ``,
       `Please share your best final rate and customization options.`,
@@ -871,35 +1085,41 @@ app.post('/api/quotes', async (req, res) => {
 
     const whatsappUrl = `https://wa.me/923160666083?text=${encodeURIComponent(waLines.join('\n'))}`;
 
-    if (db) {
-      try {
-        await db.collection('quotes').doc(quoteId).set(
-          sanitizeFirestoreData({
-            quoteId,
-            productId: String(productId || 'custom').slice(0, 80),
-            productName: String(productName || 'Custom Bid Box').slice(0, 140),
-            mode: safeMode,
-            quantity: safeQty,
-            eventType: String(eventType || 'Nikkah').slice(0, 80),
-            customPrinting: String(customPrinting || '').slice(0, 500),
-            targetPricePkr: targetPricePkr ? Number(targetPricePkr) : null,
-            referenceUnitPrice: referenceUnitPrice ? Number(referenceUnitPrice) : null,
-            customerName: customerName.trim().slice(0, 100),
-            customerPhone: customerPhone.trim().slice(0, 40),
-            city: String(city || 'Lahore').trim().slice(0, 80),
-            whatsappUrl,
-            status: 'PENDING',
-            createdAt: new Date().toISOString(),
-          })
-        );
-      } catch (dbErr) {
-        console.warn('Firestore quote storage warning (continuing with WhatsApp handoff):', dbErr);
-      }
+    const record = normalizeRawInquiryDoc({
+      id: quoteId,
+      quoteId,
+      ticketId: quoteId,
+      type: 'bid_box_quote',
+      customerName: resolvedName.slice(0, 100),
+      phone: resolvedPhone.slice(0, 40),
+      email: String(email || '').trim().slice(0, 120),
+      city: String(city || 'Lahore').trim().slice(0, 80),
+      productId: String(productId || 'custom').slice(0, 80),
+      productName: String(productName || 'Custom Bid Box').slice(0, 140),
+      boxMode: safeMode,
+      quantity: safeQty,
+      eventType: String(eventType || 'Nikkah').slice(0, 80),
+      customPrintText: printText,
+      standardPrice: stdPrice,
+      offeredPrice: offPrice,
+      notes: String(notes || printText || '').slice(0, 1000),
+      whatsappUrl,
+      status: 'NEW',
+      createdAt: new Date().toISOString(),
+    });
+
+    try {
+      await persistInquiryRecord(record, true);
+    } catch (dbErr) {
+      console.warn('Firestore quote storage warning (continuing with WhatsApp handoff):', dbErr);
     }
 
     return res.json({
       ok: true,
+      success: true,
+      id: quoteId,
       quoteId,
+      inquiry: record,
       whatsappUrl,
       message: 'Custom quote logged. Connect on WhatsApp for immediate bargain rate confirmation.',
     });
@@ -907,6 +1127,110 @@ app.post('/api/quotes', async (req, res) => {
     return res.status(500).json({ error: err.message || 'Failed to create quote request.', code: 'SERVER_ERROR' });
   }
 });
+
+// Admin-only: List all customer inquiries and custom quotes (Bargain Desk)
+app.get('/api/admin/inquiries', requireAdmin, async (_req, res) => {
+  try {
+    res.setHeader('Cache-Control', 'no-store');
+    const merged = new Map<string, InquiryRecord>();
+    for (const [id, item] of inMemoryInquiries.entries()) {
+      merged.set(id, item);
+    }
+
+    if (db) {
+      try {
+        const [inqSnap, quoteSnap] = await Promise.all([
+          db.collection('inquiries').limit(250).get(),
+          db.collection('quotes').limit(250).get(),
+        ]);
+        for (const doc of quoteSnap.docs) {
+          const norm = normalizeRawInquiryDoc(doc.data() || {}, doc.id);
+          merged.set(norm.id, norm);
+        }
+        for (const doc of inqSnap.docs) {
+          const norm = normalizeRawInquiryDoc(doc.data() || {}, doc.id);
+          merged.set(norm.id, norm);
+        }
+      } catch (dbErr) {
+        console.warn('Admin inquiries Firestore read warning (serving memory state):', dbErr);
+      }
+    }
+
+    const inquiries = Array.from(merged.values()).sort(
+      (a, b) => Date.parse(b.createdAt || '') - Date.parse(a.createdAt || '')
+    );
+
+    return res.json({
+      ok: true,
+      success: true,
+      inquiries,
+      totalCount: inquiries.length,
+      asOf: new Date().toISOString(),
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || 'Failed to load inquiries.', code: 'SERVER_ERROR' });
+  }
+});
+
+// Admin-only: Update inquiry/quote status, admin notes, agreed price & generate 1-click WhatsApp pitch link
+const handleUpdateAdminInquiry: express.RequestHandler = async (req, res) => {
+  try {
+    const id = String(req.params.id || '').trim();
+    if (!id || id.length > 120) {
+      return res.status(400).json({ error: 'Invalid inquiry ID.', code: 'INVALID_ID' });
+    }
+
+    let existing: InquiryRecord | undefined = inMemoryInquiries.get(id);
+    if (db && !existing) {
+      const inqDoc = await db.collection('inquiries').doc(id).get();
+      if (inqDoc.exists) {
+        existing = normalizeRawInquiryDoc(inqDoc.data() || {}, id);
+      } else {
+        const quoteDoc = await db.collection('quotes').doc(id).get();
+        if (quoteDoc.exists) {
+          existing = normalizeRawInquiryDoc(quoteDoc.data() || {}, id);
+        }
+      }
+    }
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Inquiry or quote not found.', code: 'NOT_FOUND' });
+    }
+
+    const { status, adminNotes, finalAgreedPrice } = req.body || {};
+    const nextStatus: InquiryStatus = status && VALID_INQUIRY_STATUSES.includes(String(status).toUpperCase() as InquiryStatus)
+      ? (String(status).toUpperCase() as InquiryStatus)
+      : existing.status;
+    const nextAdminNotes = typeof adminNotes === 'string' ? adminNotes.trim().slice(0, 1000) : existing.adminNotes;
+    const nextAgreedPrice = finalAgreedPrice === null || finalAgreedPrice === ''
+      ? null
+      : finalAgreedPrice !== undefined && Number.isFinite(Number(finalAgreedPrice))
+        ? Math.max(0, Number(finalAgreedPrice))
+        : existing.finalAgreedPrice;
+
+    const updated: InquiryRecord = {
+      ...existing,
+      status: nextStatus,
+      adminNotes: nextAdminNotes,
+      finalAgreedPrice: nextAgreedPrice,
+      updatedAt: new Date().toISOString(),
+    };
+    updated.whatsappReplyUrl = buildAdminWhatsAppPitchUrl(updated);
+
+    await persistInquiryRecord(updated, updated.type === 'bid_box_quote');
+
+    return res.json({
+      ok: true,
+      success: true,
+      inquiry: updated,
+      whatsappReplyUrl: updated.whatsappReplyUrl,
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || 'Failed to update inquiry.', code: 'SERVER_ERROR' });
+  }
+};
+app.patch('/api/admin/inquiries/:id', requireAdmin, handleUpdateAdminInquiry);
+app.post('/api/admin/inquiries/:id', requireAdmin, handleUpdateAdminInquiry);
 
 // Live n8n wa_products Single Source of Truth Sync Endpoint
 app.get('/api/integrations/n8n/wa-products', async (req, res) => {
@@ -992,11 +1316,12 @@ Only provide product prices and store policy information present in the supplied
 Our Premium Catalog & Pricing (Single Source of Truth including Dry Fruits, Herbs & Spices, Oils, Deals/Bundles, and 8 Bespoke Bid Boxes):
 ${catalogContext}
 
-Bespoke Bid Boxes & Celebration Favors Rules:
+Bespoke Bid Boxes, Bargain Desk & Date Selections:
 - All 8 Bid Boxes (Umrah & Hajj Tabarruk Box Set, Luxury Floral Tin Bid Box, Royal Pyramid Favor Box, Classic Card Bid Box, Artisanal Jute & Jamawar Pouch/Potli, Heritage Nikkah Sweet & Dry Fruit Box, Birth Announcement Favor Box, Acrylic & Velvet Royal Bid Box) are available in BOTH modes:
   1. Box Only (Empty Packaging) with automatic bulk discounts at 25 pcs, 50+ pcs, and 100+ pcs.
   2. Filled with AllBarka Dry Fruits (Standard or Royal/VIP assortments).
-- Customers ordering for Nikkah, Baat Pakki, Umrah Tabarruk, Birth Announcements, or Corporate events can also click "Request Custom Quote / Offer Your Price" on the website or message on WhatsApp (${CONTACT_CONFIG.humanSupportWhatsApp.formatted}) to pitch their target budget/bargain rate and custom printing/name tags.
+- Date Selections: AllBarka supplies verified Pakistan-available date varieties (Irani Muzafati, Panjgur Amber, Aseel Khairpur, Kali Khajoor, Chohara). We do not supply or promise imported Zamzam water, Saudi Ajwa dates, or Medjool dates. If asked, guide patrons towards our luscious Panjgur Amber dates, soft Irani Muzafati dates, or our Umrah & Hajj Tabarruk gift boxes.
+- Bargain Desk & Custom Inquiries: Customers ordering for Nikkah, Baat Pakki, Umrah Tabarruk, Birth Announcements, Corporate events, or wholesale can click "Request Custom Quote / Offer Your Price" on the website or message our Bargain Desk on WhatsApp (${CONTACT_CONFIG.humanSupportWhatsApp.formatted}) to pitch their target budget/rate and request custom name printing.
 
 Delivery & Ordering:
 - Standard Delivery across all major Lahore neighborhoods is Rs. ${STORE_CONFIG.shipping.standardRate}.

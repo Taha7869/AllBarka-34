@@ -7,6 +7,11 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == userId;
     }
 
+    // Helper to verify authenticated store administrator
+    function isAdmin() {
+      return request.auth != null && (request.auth.token.admin == true || request.auth.token.role == 'admin');
+    }
+
     // Validate only contact fields. Existing server-managed membership/loyalty fields
     // can remain on a profile, but no browser operation may add or change them.
     function validContactFields(data) {
@@ -76,6 +81,17 @@ service cloud.firestore {
     match /content/{document=**} {
       allow read: if true;
       allow write: if false;
+    }
+
+    // Customer inquiries and custom Bid Box / wholesale quotes:
+    // Written and managed via backend API (/api/inquiries, /api/quotes, /api/admin/inquiries);
+    // authenticated admins may also read/write directly.
+    match /inquiries/{inquiryId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /quotes/{quoteId} {
+      allow read, write: if isAdmin();
     }
 
     // Default deny all other paths

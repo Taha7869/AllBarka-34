@@ -390,7 +390,7 @@ export default function CustomQuoteModal() {
                     <div>
                       <div className="text-xs font-bold">Filled with AllBarka Dry Fruits</div>
                       <div className={`text-[11px] ${mode === 'filled' ? 'text-[#E5DEC9]' : 'text-[#566B63]'}`}>
-                        Freshly packed nuts, dates, chocolates & Zamzam
+                        Freshly packed nuts, dates, and celebratory confections
                       </div>
                     </div>
                   </button>
@@ -486,7 +486,7 @@ export default function CustomQuoteModal() {
                 <textarea
                   id="quote-custom-printing"
                   rows={2}
-                  placeholder="e.g. Gold foil tag 'Ahmed & Ayesha Nikkah', Baby Boy blue ribbon, or 250g Pista + Badam + Ajwa mix..."
+                  placeholder="e.g. Gold foil tag 'Ahmed & Ayesha Nikkah', Baby Boy blue ribbon, or 250g Pista + Badam + Khajoor mix..."
                   value={customPrinting}
                   onChange={(e) => setCustomPrinting(e.target.value)}
                   className="w-full rounded-xl border border-[#D4AF6A]/50 bg-white px-3.5 py-2 text-sm text-[#072A20] focus:border-[#072A20] focus:outline-none"

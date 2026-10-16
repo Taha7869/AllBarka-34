@@ -11,7 +11,7 @@ export class AdminRequestError extends Error {
 export async function adminRequest<T>(
   getToken: () => Promise<string>,
   path: string,
-  options: { signal?: AbortSignal; body?: Record<string, unknown>; timeoutMs?: number } = {},
+  options: { signal?: AbortSignal; body?: Record<string, unknown>; timeoutMs?: number; method?: 'GET' | 'POST' | 'PATCH' } = {},
 ): Promise<T> {
   if (!path.startsWith('/api/admin/')) throw new AdminRequestError('INVALID_PATH');
   if (typeof navigator !== 'undefined' && navigator.onLine === false) throw new AdminRequestError('OFFLINE');
@@ -31,7 +31,7 @@ export async function adminRequest<T>(
     const token = await Promise.race([Promise.resolve().then(getToken), aborted]);
     if (controller.signal.aborted) throw new AdminRequestError('REQUEST_TIMEOUT');
     const response = await Promise.race([fetch(apiUrl(path), {
-      method: options.body ? 'POST' : 'GET',
+      method: options.method ?? (options.body ? 'POST' : 'GET'),
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/json', ...(options.body ? { 'Content-Type': 'application/json' } : {}) },
       body: options.body ? JSON.stringify(options.body) : undefined,
       signal: controller.signal,

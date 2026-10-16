@@ -19,9 +19,8 @@
   .mobile-royal-brand__place { font-size:5.6px; letter-spacing:.11em; }
 }
 
-/* A single quiet count keeps the photograph clear, instead of a row of dots. */
-.product-gallery-counter { position:absolute; inset-inline-end:10px; bottom:10px; pointer-events:none; display:flex; align-items:center; min-height:25px; padding:5px 9px; border:1px solid #ffffff33; border-radius:6px; background:#12392ce8; color:#fff8e9; font-size:9px; line-height:1; letter-spacing:.12em; font-variant-numeric:tabular-nums; box-shadow:0 1px 8px #04180f1a; }
-.product-gallery-counter__divider { margin:0 6px; color:#e4c783; }
+/* Zero numeric overlay over product photos for a clean luxury presentation. */
+.product-gallery-counter { display:none !important; }
 
 /* React Bits LogoLoop, measured to the first complete sequence. */
 .logoloop { position:relative; min-width:0; overflow:hidden; --logoloop-gap:40px; --logoloop-height:24px; --logoloop-fade:var(--color-base); }
