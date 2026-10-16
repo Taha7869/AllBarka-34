@@ -4,24 +4,20 @@ import { BrowserRouter, Routes, Route, useParams } from 'react-router-dom';
 // Layout & Shared UI
 import RootLayout from './layouts/RootLayout';
 import ErrorBoundary from './components/ErrorBoundary';
-import { lazyWithRetry } from './utils/lazyWithRetry';
 
-// Code-Split Route Pages
-const HomePage = lazyWithRetry(() => import('./pages/HomePage'), 'HomePage');
-const ShopPage = lazyWithRetry(() => import('./pages/ShopPage'), 'ShopPage');
-const ProductDetailPage = lazyWithRetry(() => import('./pages/ProductDetailPage'), 'ProductDetailPage');
-const CheckoutPage = lazyWithRetry(() => import('./pages/CheckoutPage'), 'CheckoutPage');
-const OrderSuccessPage = lazyWithRetry(() => import('./pages/OrderSuccessPage'), 'OrderSuccessPage');
-const InfoPage = lazyWithRetry(() => import('./pages/InfoPage'), 'InfoPage');
-const FAQPage = lazyWithRetry(() => import('./pages/FAQPage'), 'FAQPage');
-const JournalPage = lazyWithRetry(() => import('./pages/JournalPage'), 'JournalPage');
-const CartPage = lazyWithRetry(() => import('./pages/CartPage'), 'CartPage');
-const PoliciesPage = lazyWithRetry(() => import('./pages/PoliciesPage'), 'PoliciesPage');
-const AdminOrdersPage = lazyWithRetry(() => import('./pages/AdminOrdersPage'), 'AdminOrdersPage');
-const NotFoundPage = lazyWithRetry(() => import('./pages/NotFoundPage'), 'NotFoundPage');
-
-import type { InfoPageTab } from './pages/InfoPage';
-import type { PolicyTab } from './pages/PoliciesPage';
+// Direct Static Route Page Imports (Zero dynamic chunk loading errors)
+import HomePage from './pages/HomePage';
+import ShopPage from './pages/ShopPage';
+import ProductDetailPage from './pages/ProductDetailPage';
+import CheckoutPage from './pages/CheckoutPage';
+import OrderSuccessPage from './pages/OrderSuccessPage';
+import InfoPage, { type InfoPageTab } from './pages/InfoPage';
+import FAQPage from './pages/FAQPage';
+import JournalPage from './pages/JournalPage';
+import CartPage from './pages/CartPage';
+import PoliciesPage, { type PolicyTab } from './pages/PoliciesPage';
+import AdminOrdersPage from './pages/AdminOrdersPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 const PageLoadingFallback = () => (
   <div className="w-full min-h-[50vh] flex flex-col items-center justify-center py-24" aria-busy="true">

@@ -208,14 +208,32 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", (_req, res) => `'nonce-${(res as express.Response).locals.cspNonce}'`,
+      scriptSrc: [
+        "'self'",
+        (_req, res) => `'nonce-${(res as express.Response).locals.cspNonce}'`,
+        "'strict-dynamic'",
+        "https:",
         ...(process.env.NODE_ENV !== 'production' ? ["'unsafe-inline'", "'unsafe-eval'"] : []),
-        "https://apis.google.com", "https://*.firebaseapp.com", "https://*.googleapis.com", "https://*.gstatic.com"],
+        "https://apis.google.com",
+        "https://*.firebaseapp.com",
+        "https://*.googleapis.com",
+        "https://*.gstatic.com"
+      ],
+      scriptSrcElem: [
+        "'self'",
+        (_req, res) => `'nonce-${(res as express.Response).locals.cspNonce}'`,
+        "https:",
+        ...(process.env.NODE_ENV !== 'production' ? ["'unsafe-inline'"] : []),
+        "https://apis.google.com",
+        "https://*.firebaseapp.com",
+        "https://*.googleapis.com",
+        "https://*.gstatic.com"
+      ],
       frameSrc: ["'self'", "https://allbarka-live.firebaseapp.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://api.fontshare.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdn.fontshare.com"],
       connectSrc: ["'self'", "https://*.firebaseio.com", "https://*.googleapis.com", "https://*.cloudfunctions.net", "https://*.firebaseapp.com"],
-      imgSrc: ["'self'", "data:", "https://*"],
+      imgSrc: ["'self'", "data:", "https:*"],
       mediaSrc: ["'self'", "https:"],
     }
   }
@@ -1055,8 +1073,15 @@ async function startServer() {
           ? 'public, max-age=31536000, immutable' : 'public, max-age=3600');
       },
     }));
+    // Assets that do not exist on disk must immediately return 404, never falling through to SPA index.html
+    app.use('/assets', (_req, res) => {
+      res.setHeader('Cache-Control', 'no-store');
+      res.status(404).type('text/plain').send('Asset not found');
+    });
     app.get('*', async (req, res) => {
-      if (path.extname(req.path)) return res.status(404).type('text/plain').send('Not found');
+      if (req.path.startsWith('/assets/') || path.extname(req.path)) {
+        return res.status(404).type('text/plain').send('Not found');
+      }
       const metadata = routeMetadata(req.path, publicOrigin, await pageCatalog());
       if (metadata.noindex) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');

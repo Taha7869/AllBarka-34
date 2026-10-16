@@ -24,8 +24,7 @@ import CustomWeightInput from '../components/CustomWeightInput';
 import { resolveCustomWeight } from '../lib/productVariants';
 import { displayProductPrice } from '../lib/productSelection';
 import { openCustomQuoteModal } from '../components/CustomQuoteModal';
-
-const ProductPhotoViewer = lazy(() => import('../components/ProductPhotoViewer'));
+import ProductPhotoViewer from '../components/ProductPhotoViewer';
 
 export default function ProductDetailPage() {
   const PRODUCTS = useCatalogProducts();

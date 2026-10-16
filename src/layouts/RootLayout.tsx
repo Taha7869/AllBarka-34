@@ -20,19 +20,16 @@ import ThemeToggle from '../components/ThemeToggle';
 import type { InfoPageTab } from '../components/InfoPagesModal';
 import type { PolicyTab } from '../components/PolicyPagesModal';
 import type { CustomHamperCartInput } from '../components/CustomHamperBuilderModal';
-import { lazyWithRetry } from '../utils/lazyWithRetry';
 import CustomQuoteModal from '../components/CustomQuoteModal';
-
-// Code-split heavy modals and overlays
-const QuickViewModal = lazyWithRetry(() => import('../components/QuickViewModal'), 'QuickViewModal');
-const AuthModal = lazyWithRetry(() => import('../components/AuthModal'), 'AuthModal');
-const CheckoutAuthChoiceModal = lazyWithRetry(() => import('../components/CheckoutAuthChoiceModal'), 'CheckoutAuthChoiceModal');
-const PatronLoungeModal = lazyWithRetry(() => import('../components/PatronLoungeModal'), 'PatronLoungeModal');
-const InfoPagesModal = lazyWithRetry(() => import('../components/InfoPagesModal'), 'InfoPagesModal');
-const PolicyPagesModal = lazyWithRetry(() => import('../components/PolicyPagesModal'), 'PolicyPagesModal');
-const AIConcierge = lazyWithRetry(() => import('../components/AIConcierge'), 'AIConcierge');
-const CustomHamperBuilderModal = lazyWithRetry(() => import('../components/CustomHamperBuilderModal'), 'CustomHamperBuilderModal');
-const StoreUpdatesDialog = lazyWithRetry(() => import('../components/StoreUpdatesDialog'), 'StoreUpdatesDialog');
+import QuickViewModal from '../components/QuickViewModal';
+import AuthModal from '../components/AuthModal';
+import CheckoutAuthChoiceModal from '../components/CheckoutAuthChoiceModal';
+import PatronLoungeModal from '../components/PatronLoungeModal';
+import InfoPagesModal from '../components/InfoPagesModal';
+import PolicyPagesModal from '../components/PolicyPagesModal';
+import AIConcierge from '../components/AIConcierge';
+import CustomHamperBuilderModal from '../components/CustomHamperBuilderModal';
+import StoreUpdatesDialog from '../components/StoreUpdatesDialog';
 
 import LahoreExpressTimer from '../components/LahoreExpressTimer';
 import { Menu, X, ShoppingBag, User, Gift, Languages, ChevronDown } from 'lucide-react';
@@ -441,20 +438,16 @@ export default function RootLayout() {
         onClose={() => setIsCartOpen(false)}
         onCheckout={handleInitiateCheckout}
       />
-      {/* Lazy Overlays & Modals */}
-      <React.Suspense fallback={authModalOpen ? <div className="fixed inset-0 z-[20000] flex items-center justify-center bg-[#042821]/60 p-4 backdrop-blur-sm"><div className="flex items-center gap-5 rounded-2xl border border-[var(--color-border-accent)] bg-[var(--color-surface)] p-5 text-[var(--color-text-primary)]"><p role="status" dir="auto">{t('auth.working')}</p><button type="button" className="focus-ring grid h-11 w-11 place-items-center rounded-full border border-[var(--color-border)]" aria-label={t('close')} onClick={() => setAuthModalOpen(false)}><X size={18} /></button></div></div> : null}>
-        {(authModalOpen || loadedOverlays.auth) && <AuthModal isOpen={authModalOpen} initialMode={authInitialMode} onClose={() => setAuthModalOpen(false)} />}
-      </React.Suspense>
-      <React.Suspense fallback={null}>
-        {(!!selectedQuickViewProduct || loadedOverlays.quick) && <QuickViewModal product={selectedQuickViewProduct ? PRODUCTS.find(product => product.id === selectedQuickViewProduct.id) || null : null} isOpen={!!selectedQuickViewProduct} onClose={() => setSelectedQuickViewProduct(null)} onAddToCart={handleAddToCart} />}
-        {(hamperModalOpen || loadedOverlays.hamper) && <CustomHamperBuilderModal isOpen={hamperModalOpen} onClose={() => setHamperModalOpen(false)} onAddToCart={handleAddCustomHamper} />}
-        {(authChoiceModalOpen || loadedOverlays.checkout) && <CheckoutAuthChoiceModal isOpen={authChoiceModalOpen} onClose={() => setAuthChoiceModalOpen(false)} onSignIn={() => { setAuthChoiceModalOpen(false); setAuthModalOpen(true); }} onContinueAsGuest={() => { setAuthChoiceModalOpen(false); navigate('/checkout'); }} />}
-        {(patronLoungeOpen || loadedOverlays.patron) && <PatronLoungeModal isOpen={patronLoungeOpen} onClose={() => setPatronLoungeOpen(false)} />}
-        {(updatesOpen || loadedOverlays.updates) && <StoreUpdatesDialog isOpen={updatesOpen} onClose={() => setUpdatesOpen(false)} onSignIn={() => { setUpdatesOpen(false); setAuthInitialMode('signin'); setAuthModalOpen(true); }} />}
-        {(infoModalOpen || loadedOverlays.info) && <InfoPagesModal isOpen={infoModalOpen} initialTab={infoModalTab} onClose={() => setInfoModalOpen(false)} />}
-        {(policyModalOpen || loadedOverlays.policy) && <PolicyPagesModal isOpen={policyModalOpen} initialTab={policyModalTab} onClose={() => setPolicyModalOpen(false)} />}
-        {!isAdminRoute && <AIConcierge hide={isAnyModalOrDrawerOpen && !aiConciergeOpen} hasCartBar={totalItemsCount > 0 && location.pathname !== '/checkout' && location.pathname !== '/cart'} onOpenChange={setAiConciergeOpen} />}
-      </React.Suspense>
+      {/* Modals & Overlays (Direct static rendering) */}
+      {(authModalOpen || loadedOverlays.auth) && <AuthModal isOpen={authModalOpen} initialMode={authInitialMode} onClose={() => setAuthModalOpen(false)} />}
+      {(!!selectedQuickViewProduct || loadedOverlays.quick) && <QuickViewModal product={selectedQuickViewProduct ? PRODUCTS.find(product => product.id === selectedQuickViewProduct.id) || null : null} isOpen={!!selectedQuickViewProduct} onClose={() => setSelectedQuickViewProduct(null)} onAddToCart={handleAddToCart} />}
+      {(hamperModalOpen || loadedOverlays.hamper) && <CustomHamperBuilderModal isOpen={hamperModalOpen} onClose={() => setHamperModalOpen(false)} onAddToCart={handleAddCustomHamper} />}
+      {(authChoiceModalOpen || loadedOverlays.checkout) && <CheckoutAuthChoiceModal isOpen={authChoiceModalOpen} onClose={() => setAuthChoiceModalOpen(false)} onSignIn={() => { setAuthChoiceModalOpen(false); setAuthModalOpen(true); }} onContinueAsGuest={() => { setAuthChoiceModalOpen(false); navigate('/checkout'); }} />}
+      {(patronLoungeOpen || loadedOverlays.patron) && <PatronLoungeModal isOpen={patronLoungeOpen} onClose={() => setPatronLoungeOpen(false)} />}
+      {(updatesOpen || loadedOverlays.updates) && <StoreUpdatesDialog isOpen={updatesOpen} onClose={() => setUpdatesOpen(false)} onSignIn={() => { setUpdatesOpen(false); setAuthInitialMode('signin'); setAuthModalOpen(true); }} />}
+      {(infoModalOpen || loadedOverlays.info) && <InfoPagesModal isOpen={infoModalOpen} initialTab={infoModalTab} onClose={() => setInfoModalOpen(false)} />}
+      {(policyModalOpen || loadedOverlays.policy) && <PolicyPagesModal isOpen={policyModalOpen} initialTab={policyModalTab} onClose={() => setPolicyModalOpen(false)} />}
+      {!isAdminRoute && <AIConcierge hide={isAnyModalOrDrawerOpen && !aiConciergeOpen} hasCartBar={totalItemsCount > 0 && location.pathname !== '/checkout' && location.pathname !== '/cart'} onOpenChange={setAiConciergeOpen} />}
       <CustomQuoteModal />
     </div>
   );

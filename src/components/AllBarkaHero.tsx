@@ -11,9 +11,8 @@ import PlaceholdersAndVanishInput from './ui/placeholders-and-vanish-input';
 import { PRODUCTS } from '../data/products';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { getLocalized } from '../utils/localize';
+import SelectionGuide from './SelectionGuide';
 import './AllBarkaHero.css';
-
-const SelectionGuide = lazy(() => import('./SelectionGuide'));
 
 interface AllBarkaHeroProps {
   onOpenCart?: () => void;
