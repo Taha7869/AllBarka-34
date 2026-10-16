@@ -6,6 +6,34 @@ export interface ProductBadge {
   subtitle: string;
 }
 
+export interface BidBoxBulkTier {
+  qty: number;
+  label: string;
+  discountBadge?: string;
+  unitPrice: number;
+  packPrice: number;
+  variantKey: string;
+}
+
+export interface BidBoxFilledOption {
+  label: string;
+  subtitle: string;
+  price: number;
+  variantKey: string;
+}
+
+export interface BidBoxConfig {
+  emptyUnitStarting: number;
+  emptyBulk50Unit: number;
+  emptyBulk100Unit: number;
+  filledMin: number;
+  filledMax: number;
+  filledSummary: string;
+  occasionTag: string;
+  emptyTiers: BidBoxBulkTier[];
+  filledOptions: BidBoxFilledOption[];
+}
+
 export interface Product {
   id: string;
   /** Purchase-time pricing fingerprint, including direct Console edits. */
@@ -23,6 +51,8 @@ export interface Product {
   maxCustomWeightG?: number;
   fragile?: boolean;
   quoteOnly?: boolean;
+  isBidBox?: boolean;
+  bidBoxConfig?: BidBoxConfig;
   components?: string[];
   componentIds?: string[];
   badge?: string;

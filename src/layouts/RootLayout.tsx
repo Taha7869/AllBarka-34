@@ -20,17 +20,19 @@ import ThemeToggle from '../components/ThemeToggle';
 import type { InfoPageTab } from '../components/InfoPagesModal';
 import type { PolicyTab } from '../components/PolicyPagesModal';
 import type { CustomHamperCartInput } from '../components/CustomHamperBuilderModal';
+import { lazyWithRetry } from '../utils/lazyWithRetry';
+import CustomQuoteModal from '../components/CustomQuoteModal';
 
 // Code-split heavy modals and overlays
-const QuickViewModal = React.lazy(() => import('../components/QuickViewModal'));
-const AuthModal = React.lazy(() => import('../components/AuthModal'));
-const CheckoutAuthChoiceModal = React.lazy(() => import('../components/CheckoutAuthChoiceModal'));
-const PatronLoungeModal = React.lazy(() => import('../components/PatronLoungeModal'));
-const InfoPagesModal = React.lazy(() => import('../components/InfoPagesModal'));
-const PolicyPagesModal = React.lazy(() => import('../components/PolicyPagesModal'));
-const AIConcierge = React.lazy(() => import('../components/AIConcierge'));
-const CustomHamperBuilderModal = React.lazy(() => import('../components/CustomHamperBuilderModal'));
-const StoreUpdatesDialog = React.lazy(() => import('../components/StoreUpdatesDialog'));
+const QuickViewModal = lazyWithRetry(() => import('../components/QuickViewModal'), 'QuickViewModal');
+const AuthModal = lazyWithRetry(() => import('../components/AuthModal'), 'AuthModal');
+const CheckoutAuthChoiceModal = lazyWithRetry(() => import('../components/CheckoutAuthChoiceModal'), 'CheckoutAuthChoiceModal');
+const PatronLoungeModal = lazyWithRetry(() => import('../components/PatronLoungeModal'), 'PatronLoungeModal');
+const InfoPagesModal = lazyWithRetry(() => import('../components/InfoPagesModal'), 'InfoPagesModal');
+const PolicyPagesModal = lazyWithRetry(() => import('../components/PolicyPagesModal'), 'PolicyPagesModal');
+const AIConcierge = lazyWithRetry(() => import('../components/AIConcierge'), 'AIConcierge');
+const CustomHamperBuilderModal = lazyWithRetry(() => import('../components/CustomHamperBuilderModal'), 'CustomHamperBuilderModal');
+const StoreUpdatesDialog = lazyWithRetry(() => import('../components/StoreUpdatesDialog'), 'StoreUpdatesDialog');
 
 import LahoreExpressTimer from '../components/LahoreExpressTimer';
 import { Menu, X, ShoppingBag, User, Gift, Languages, ChevronDown } from 'lucide-react';
@@ -453,6 +455,7 @@ export default function RootLayout() {
         {(policyModalOpen || loadedOverlays.policy) && <PolicyPagesModal isOpen={policyModalOpen} initialTab={policyModalTab} onClose={() => setPolicyModalOpen(false)} />}
         {!isAdminRoute && <AIConcierge hide={isAnyModalOrDrawerOpen && !aiConciergeOpen} hasCartBar={totalItemsCount > 0 && location.pathname !== '/checkout' && location.pathname !== '/cart'} onOpenChange={setAiConciergeOpen} />}
       </React.Suspense>
+      <CustomQuoteModal />
     </div>
   );
 }

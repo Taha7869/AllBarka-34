@@ -4,20 +4,21 @@ import { BrowserRouter, Routes, Route, useParams } from 'react-router-dom';
 // Layout & Shared UI
 import RootLayout from './layouts/RootLayout';
 import ErrorBoundary from './components/ErrorBoundary';
+import { lazyWithRetry } from './utils/lazyWithRetry';
 
 // Code-Split Route Pages
-const HomePage = React.lazy(() => import('./pages/HomePage'));
-const ShopPage = React.lazy(() => import('./pages/ShopPage'));
-const ProductDetailPage = React.lazy(() => import('./pages/ProductDetailPage'));
-const CheckoutPage = React.lazy(() => import('./pages/CheckoutPage'));
-const OrderSuccessPage = React.lazy(() => import('./pages/OrderSuccessPage'));
-const InfoPage = React.lazy(() => import('./pages/InfoPage'));
-const FAQPage = React.lazy(() => import('./pages/FAQPage'));
-const JournalPage = React.lazy(() => import('./pages/JournalPage'));
-const CartPage = React.lazy(() => import('./pages/CartPage'));
-const PoliciesPage = React.lazy(() => import('./pages/PoliciesPage'));
-const AdminOrdersPage = React.lazy(() => import('./pages/AdminOrdersPage'));
-const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
+const HomePage = lazyWithRetry(() => import('./pages/HomePage'), 'HomePage');
+const ShopPage = lazyWithRetry(() => import('./pages/ShopPage'), 'ShopPage');
+const ProductDetailPage = lazyWithRetry(() => import('./pages/ProductDetailPage'), 'ProductDetailPage');
+const CheckoutPage = lazyWithRetry(() => import('./pages/CheckoutPage'), 'CheckoutPage');
+const OrderSuccessPage = lazyWithRetry(() => import('./pages/OrderSuccessPage'), 'OrderSuccessPage');
+const InfoPage = lazyWithRetry(() => import('./pages/InfoPage'), 'InfoPage');
+const FAQPage = lazyWithRetry(() => import('./pages/FAQPage'), 'FAQPage');
+const JournalPage = lazyWithRetry(() => import('./pages/JournalPage'), 'JournalPage');
+const CartPage = lazyWithRetry(() => import('./pages/CartPage'), 'CartPage');
+const PoliciesPage = lazyWithRetry(() => import('./pages/PoliciesPage'), 'PoliciesPage');
+const AdminOrdersPage = lazyWithRetry(() => import('./pages/AdminOrdersPage'), 'AdminOrdersPage');
+const NotFoundPage = lazyWithRetry(() => import('./pages/NotFoundPage'), 'NotFoundPage');
 
 import type { InfoPageTab } from './pages/InfoPage';
 import type { PolicyTab } from './pages/PoliciesPage';

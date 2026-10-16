@@ -11,6 +11,8 @@ import FAQSection from '../components/FAQSection';
 import ScrollReveal from '../components/motion/ScrollReveal';
 import WordScrollReveal from '../components/motion/WordScrollReveal';
 import MagneticButton from '../components/motion/MagneticButton';
+import BidBoxesSection from '../components/BidBoxesSection';
+import DealsPackagesSection from '../components/DealsPackagesSection';
 import { useLanguage } from '../contexts/LanguageContext';
 import { ShieldCheck, ThermometerSnowflake, Truck, ArrowUpRight, Play, ShoppingBag } from 'lucide-react';
 import '../styles/editorial.css';
@@ -129,6 +131,12 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ── Bespoke Bid Boxes & Celebration Favors ───────────────────────── */}
+      <BidBoxesSection onQuickView={setSelectedQuickViewProduct} />
+
+      {/* ── Deals & Value Packages ───────────────────────────────────────── */}
+      <DealsPackagesSection limit={8} />
 
       {/* ── Service Pillars (dark emerald section) ───────────────────────── */}
       <section dir="ltr" className="editorial-care w-full overflow-hidden bg-[#042821] py-16 text-[#FFFCF7] sm:py-20">

@@ -116,7 +116,9 @@ try {
       const response = await request(path);
       assert.equal(response.status, 200);
       assert.match(response.headers.get('content-type'), /text\/html/);
-      assert.equal(response.headers.get('cache-control'), 'no-cache');
+      assert.equal(response.headers.get('cache-control'), 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      assert.equal(response.headers.get('pragma'), 'no-cache');
+      assert.equal(response.headers.get('expires'), '0');
       if (path.startsWith('/admin/')) assert.equal(response.headers.get('x-robots-tag'), 'noindex, nofollow');
       const html = await response.text();
       assert.ok(html.includes('https://allbarka-launch.example/'));

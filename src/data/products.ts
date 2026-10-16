@@ -1384,10 +1384,13 @@ function declaredPortionGrams(label: string): number | null {
 }
 
 function withCatalogMetadata(product: Product): Product {
-  const shippingWeights = Object.fromEntries(Object.keys(product.prices).flatMap(label => {
-    const grams = declaredPortionGrams(label);
-    return grams === null ? [] : [[label, grams]];
-  }));
+  const shippingWeights: Record<string, number> = {
+    ...(product.shippingWeights || {}),
+    ...Object.fromEntries(Object.keys(product.prices).flatMap(label => {
+      const grams = declaredPortionGrams(label);
+      return grams === null ? [] : [[label, grams]];
+    })),
+  };
   // Preserve the established billing weight of both existing 500g + 500g duos.
   if (product.id === 'deal-1' || product.id === 'deal-2') shippingWeights['Combo (500g + 500g)'] = 1000;
   const customRate = EXISTING_CUSTOM_RATES[product.id] ?? 0;
@@ -1633,9 +1636,301 @@ export const APPROVED_CATALOG_NAMES: Record<string, readonly [string, string]> =
   'oil-apricot': ['روغن مغز خوبانی', 'زيت نوى المشمش'],
   'oil-chilgoza': ['روغن چلغوزہ', 'زيت الصنوبر'],
 };
+
+interface BidBoxDefinition {
+  id: string;
+  image: string;
+  name_en: string;
+  name_ur: string;
+  name_ar: string;
+  desc_en: string;
+  desc_ur: string;
+  desc_ar: string;
+  contents_en: string;
+  occasionTag: string;
+  emptyUnit1: number;
+  emptyUnit25: number;
+  emptyUnit50: number;
+  emptyUnit100: number;
+  filledMin: number;
+  filledMax: number;
+  filledStandardLabel: string;
+  filledRoyalLabel: string;
+  filledSummary: string;
+  shippingWeightG: number;
+  keywords: string[];
+}
+
+function createBidBoxProduct(def: BidBoxDefinition): Product {
+  const prices: Record<string, number> = {
+    'Empty Box (1 pc)': def.emptyUnit1,
+    'Empty Pack (10 pcs)': def.emptyUnit1 * 10,
+    'Empty Pack (25 pcs)': def.emptyUnit25 * 25,
+    'Empty Bulk (50 pcs)': def.emptyUnit50 * 50,
+    'Empty Bulk (100 pcs)': def.emptyUnit100 * 100,
+    [def.filledStandardLabel]: def.filledMin,
+    [def.filledRoyalLabel]: def.filledMax,
+  };
+  const shippingWeights: Record<string, number> = {
+    'Empty Box (1 pc)': 150,
+    'Empty Pack (10 pcs)': 1500,
+    'Empty Pack (25 pcs)': 3500,
+    'Empty Bulk (50 pcs)': 6500,
+    'Empty Bulk (100 pcs)': 12000,
+    [def.filledStandardLabel]: def.shippingWeightG,
+    [def.filledRoyalLabel]: def.shippingWeightG * 2,
+  };
+  return {
+    id: def.id,
+    name_en: def.name_en,
+    name_ur: def.name_ur,
+    name_ar: def.name_ar,
+    category: 'gift-boxes',
+    category_en: 'Bid Boxes & Celebration Favors',
+    category_ur: 'بِد باکسز اور تقریب کے تحائف',
+    category_ar: 'صناديق المناسبات والهدايا',
+    tag_en: def.occasionTag,
+    tag_ur: 'تقریب کا تحفہ',
+    tag_ar: 'هدية مناسبات',
+    badge: 'Empty & Filled Options',
+    image: def.image,
+    imageName: def.image,
+    prices,
+    wholesale: def.emptyUnit100,
+    isBidBox: true,
+    shippingWeightG: def.shippingWeightG,
+    shippingWeights,
+    contents_en: def.contents_en,
+    contents_ur: def.desc_ur,
+    contents_ar: def.desc_ar,
+    desc_en: def.desc_en,
+    desc_ur: def.desc_ur,
+    desc_ar: def.desc_ar,
+    origin_en: 'Handcrafted in Lahore & Filled with Mountain Harvest Dry Fruits',
+    origin_ur: 'لاہور میں دستکاروں کا تیار کردہ اور خالص خشک میوہ جات سے مزین',
+    origin_ar: 'صناعة يدوية فاخرة في لاهور مع أجود المكسرات المختارة',
+    storageTips_en: 'Store filled boxes in a cool, dry room away from direct heat and humidity.',
+    storageTips_ur: 'بھرے ہوئے ڈبوں کو نمی اور دھوپ سے دور ٹھنڈی اور خشک جگہ پر رکھیں۔',
+    storageTips_ar: 'تُحفظ الصناديق المعبأة في مكان بارد وجاف بعيداً عن الرطوبة والحرارة.',
+    packagingDetails_en: 'Available as empty flat/assembled favor packaging or freshly sealed with AllBarka dry fruits & custom event name tags.',
+    packagingDetails_ur: 'خالی ڈبے یا آلبرکہ کے تازہ خشک میوہ جات اور کسٹم نام کے ٹیگ کے ساتھ دستیاب۔',
+    packagingDetails_ar: 'متوفرة كصناديق فارغة أو معبأة طازجة بمكسرات البركة مع بطاقات أسماء مخصصة.',
+    bidBoxConfig: {
+      emptyUnitStarting: def.emptyUnit1,
+      emptyBulk50Unit: def.emptyUnit50,
+      emptyBulk100Unit: def.emptyUnit100,
+      filledMin: def.filledMin,
+      filledMax: def.filledMax,
+      filledSummary: def.filledSummary,
+      occasionTag: def.occasionTag,
+      emptyTiers: [
+        { qty: 10, label: '10 pcs', unitPrice: def.emptyUnit1, packPrice: def.emptyUnit1 * 10, variantKey: 'Empty Pack (10 pcs)' },
+        { qty: 25, label: '25 pcs', discountBadge: '-5%', unitPrice: def.emptyUnit25, packPrice: def.emptyUnit25 * 25, variantKey: 'Empty Pack (25 pcs)' },
+        { qty: 50, label: '50 pcs (-10%)', discountBadge: '-10%', unitPrice: def.emptyUnit50, packPrice: def.emptyUnit50 * 50, variantKey: 'Empty Bulk (50 pcs)' },
+        { qty: 100, label: '100+ pcs (-18%)', discountBadge: '-18%', unitPrice: def.emptyUnit100, packPrice: def.emptyUnit100 * 100, variantKey: 'Empty Bulk (100 pcs)' },
+      ],
+      filledOptions: [
+        { label: def.filledStandardLabel, subtitle: def.filledSummary, price: def.filledMin, variantKey: def.filledStandardLabel },
+        { label: def.filledRoyalLabel, subtitle: `VIP / Deluxe Assortment — ${def.filledSummary}`, price: def.filledMax, variantKey: def.filledRoyalLabel },
+      ],
+    },
+    keywords: ['bid box', 'favor box', 'shadi box', 'nikkah box', 'empty box', 'filled dry fruit box', ...def.keywords],
+  };
+}
+
+export const BID_BOX_PRODUCTS: Product[] = [
+  createBidBoxProduct({
+    id: 'bid-box-umrah-tabarruk',
+    image: '/images/products/bid-box-umrah-tabarruk-1.webp',
+    name_en: 'Umrah & Hajj Tabarruk Box Set',
+    name_ur: 'عمرہ و حج تبرک باکس سیٹ',
+    name_ar: 'طقم صناديق تبرك العمرة والحج',
+    occasionTag: 'Umrah & Hajj Tabarruk',
+    emptyUnit1: 200,
+    emptyUnit25: 192,
+    emptyUnit50: 185,
+    emptyUnit100: 170,
+    filledMin: 850,
+    filledMax: 1650,
+    filledStandardLabel: 'Filled Standard (Dates, Nuts & Zamzam)',
+    filledRoyalLabel: 'Filled Royal (Ajwa, Pistachios & Zamzam)',
+    filledSummary: 'Dates, Nuts & Zamzam bottle',
+    contents_en: 'Dedicated compartments for Madina Dates, Mixed Nuts & 60ml Zamzam Bottle (Available Empty or Filled)',
+    desc_en: 'Bespoke gold-foiled Tabarruk presentation box designed for returning Hajj and Umrah pilgrims. Order empty with bulk discounts or freshly filled with premium dates, roasted nuts, and a Zamzam bottle.',
+    desc_ur: 'حج اور عمرہ کی واپسی پر تبرک تقسیم کرنے کے لیے خصوصی گولڈ فوائل باکس۔ خالی ڈبے بلک ڈسکاؤنٹ کے ساتھ یا کھجور، میوہ جات اور آبِ زمزم کی بوتل کے ساتھ تیار دستیاب۔',
+    desc_ar: 'صندوق تبرك فاخر مذهب مصمم لهدايا العمرة والحج. متوفر فارغاً بأسعار الجملة أو معبأً بالتمور والمكسرات وماء زمزم.',
+    shippingWeightG: 450,
+    keywords: ['umrah box', 'hajj tabarruk', 'zamzam box', 'umrah favor', 'tabarruk packaging'],
+  }),
+  createBidBoxProduct({
+    id: 'bid-box-luxury-tin',
+    image: '/images/products/bid-box-luxury-tin-1.webp',
+    name_en: 'Luxury Floral Tin Bid Box',
+    name_ur: 'لگژری فلورل ٹن بِد باکس',
+    name_ar: 'صندوق معدني فاخر بنقش الزهور',
+    occasionTag: 'Wedding & Festive Keepsake',
+    emptyUnit1: 140,
+    emptyUnit25: 132,
+    emptyUnit50: 125,
+    emptyUnit100: 115,
+    filledMin: 1150,
+    filledMax: 2200,
+    filledStandardLabel: 'Filled Standard (Assorted Dry Fruits)',
+    filledRoyalLabel: 'Filled Royal (VIP 4-Nut Assortment)',
+    filledSummary: 'Assorted Dry Fruits',
+    contents_en: 'Reusable Embossed Gold & Floral Keepsake Tin (Available Empty or Filled with Assorted Dry Fruits)',
+    desc_en: 'Airtight heritage floral metal tin ideal for wedding bid, festive Eid gifting, and corporate keepsakes. Available as empty tins in bulk or filled with roasted pistachios, cashews, almonds, and figs.',
+    desc_ur: 'شادی بیاہ کی بِد اور عید کے تحائف کے لیے خوبصورت فلورل میٹل ٹن باکس۔ خالی ٹن ہول سیل ریٹ پر یا اعلیٰ خشک میوہ جات سے بھرا ہوا۔',
+    desc_ar: 'علبة معدنية مزخرفة بالزهور مثالية لهدايا الزفاف والأعياد. متوفرة فارغة بالجملة أو معبأة بتشكيلة فاخرة من المكسرات.',
+    shippingWeightG: 500,
+    keywords: ['tin box', 'floral tin', 'metal bid box', 'shadi tin box', 'keepsake tin'],
+  }),
+  createBidBoxProduct({
+    id: 'bid-box-pyramid-favor',
+    image: '/images/products/bid-box-pyramid-favor-1.webp',
+    name_en: 'Royal Pyramid Favor Box',
+    name_ur: 'رائل پیرامڈ فیور باکس',
+    name_ar: 'صندوق هدايا هرمي ملكي',
+    occasionTag: 'Mehndi & Nikkah Favors',
+    emptyUnit1: 60,
+    emptyUnit25: 55,
+    emptyUnit50: 50,
+    emptyUnit100: 45,
+    filledMin: 350,
+    filledMax: 600,
+    filledStandardLabel: 'Filled Standard (Almonds, Cashews & Pistachios)',
+    filledRoyalLabel: 'Filled Royal (Deluxe Nut & Saffron Mix)',
+    filledSummary: 'Almonds, Cashews & Pistachios',
+    contents_en: 'Gold-Tassel Pyramid Favor Box (Available Empty or Filled with Almonds, Cashews & Pistachios)',
+    desc_en: 'Elegant geometric pyramid favor box crowned with a silk tassel for Mehndi, Mayun, Nikkah, and engagement tables. Budget-friendly in bulk empty packs or filled with crunchy dry fruits.',
+    desc_ur: 'مہندی، مایوں، نکاح اور منگنی کی تقریبات کے لیے ریشمی ٹسل والا خوبصورت پیرامڈ فیور باکس۔ خالی یا بادام، کاجو اور پستہ سے بھرا ہوا۔',
+    desc_ar: 'صندوق هدايا هرمي أنيق مزين بشرشوبة حريرية لحفلات الزفاف والخطوبة. متوفر فارغاً أو معبأً باللوز والكاجو والفستق.',
+    shippingWeightG: 250,
+    keywords: ['pyramid box', 'favor box', 'mehndi favor', 'table favor', 'tassel box'],
+  }),
+  createBidBoxProduct({
+    id: 'bid-box-card-nikkah',
+    image: '/images/products/bid-box-card-nikkah-1.webp',
+    name_en: 'Classic Card Bid Box (Nikkah & Baat Pakki)',
+    name_ur: 'کلاسک کارڈ بِد باکس (نکاح و بات پکی)',
+    name_ar: 'صندوق بطاقة كلاسيكي للنكاح والمناسبات',
+    occasionTag: 'Nikkah & Baat Pakki',
+    emptyUnit1: 80,
+    emptyUnit25: 75,
+    emptyUnit50: 70,
+    emptyUnit100: 65,
+    filledMin: 550,
+    filledMax: 1100,
+    filledStandardLabel: 'Filled Standard (Dry Fruits & Confections)',
+    filledRoyalLabel: 'Filled Royal (Premium Nuts & Dates)',
+    filledSummary: 'Dry Fruits & Confections',
+    contents_en: 'Foil-Stamped Textured Card Bid Box with Ribbon Closure (Empty or Filled with Dry Fruits & Confections)',
+    desc_en: 'Timeless gold-stamped card bid box crafted for Nikkah ceremonies, Baat Pakki distributions, and Valima favors. Custom couple initials available on bulk orders.',
+    desc_ur: 'نکاح، بات پکی اور ولیمہ کی تقریب میں تقسیم کے لیے سنہری پرنٹنگ والا کلاسک کارڈ بِد باکس۔ خالی ڈبے یا خشک میوہ جات کے ساتھ۔',
+    desc_ar: 'صندوق بطاقة كلاسيكي مطبوع بالذهب لحفلات عقد القران والخطوبة. متوفر فارغاً أو معبأً بالمكسرات والحلويات.',
+    shippingWeightG: 350,
+    keywords: ['nikkah bid box', 'baat pakki box', 'card bid box', 'shadi card box', 'chuharay box'],
+  }),
+  createBidBoxProduct({
+    id: 'bid-box-jute-pouch',
+    image: '/images/products/bid-box-jute-pouch-1.webp',
+    name_en: 'Artisanal Jute & Jamawar Pouch (Potli)',
+    name_ur: 'روایتی جوٹ اور جامہ وار پوٹلی',
+    name_ar: 'كيس خيش وجاموار تقليدي فاخر',
+    occasionTag: 'Heritage Potli Favor',
+    emptyUnit1: 75,
+    emptyUnit25: 72,
+    emptyUnit50: 68,
+    emptyUnit100: 60,
+    filledMin: 450,
+    filledMax: 850,
+    filledStandardLabel: 'Filled Standard (100g Mixed Nuts)',
+    filledRoyalLabel: 'Filled Royal (250g Mixed Nuts)',
+    filledSummary: '100g–250g Mixed Nuts',
+    contents_en: 'Hand-Stitched Jute & Brocade Jamawar Drawstring Potli with Pearl Tassels (Empty or 100g–250g Mixed Nuts)',
+    desc_en: 'Traditional Lahori Jamawar and eco-luxury jute drawstring potli pouches with pearl drawstrings. Perfect for Nikkah chuharay, Mehndi favors, and winter dawat giveaways.',
+    desc_ur: 'لاہوری جامہ وار اور جوٹ کی دستکار پوٹلی موتیوں کی ڈوری کے ساتھ۔ نکاح کے چھوہاروں، مہندی اور دعوت کے تحائف کے لیے بہترین انتخاب۔',
+    desc_ar: 'أكياس بوتلي تقليدية من الخيش والجاموار المطرز برباط لؤلؤي. مثالية لتوزيعات النكاح والمكسرات المشكلة.',
+    shippingWeightG: 250,
+    keywords: ['potli', 'jute pouch', 'jamawar pouch', 'nikkah potli', 'dry fruit pouch'],
+  }),
+  createBidBoxProduct({
+    id: 'bid-box-sweet-nikkah',
+    image: '/images/products/bid-box-sweet-nikkah-1.webp',
+    name_en: 'Heritage Nikkah Sweet & Dry Fruit Box (500g / 1kg)',
+    name_ur: 'ہیریٹیج نکاح مٹھائی و ڈرائی فروٹ باکس',
+    name_ar: 'صندوق النكاح التراثي للمكسرات والحلويات',
+    occasionTag: 'Family Bid & Barat Box',
+    emptyUnit1: 180,
+    emptyUnit25: 172,
+    emptyUnit50: 165,
+    emptyUnit100: 150,
+    filledMin: 1750,
+    filledMax: 3800,
+    filledStandardLabel: 'Filled 500g Luxury Dry Fruit Mix',
+    filledRoyalLabel: 'Filled 1kg Luxury Dry Fruit Mix',
+    filledSummary: '500g/1kg Luxury Dry Fruit Mix',
+    contents_en: 'Multi-Compartment Rigid Heritage Bid Box for 500g or 1kg Assortment (Empty or Filled)',
+    desc_en: 'Generous multi-partition rigid board box designed for family-to-family Barat, Walima, and Nikkah bid distributions. Holds 500g to 1kg of premium roasted dry fruits and sweets.',
+    desc_ur: 'بارات، ولیمہ اور خاندانی بِد کے لیے آدھا کلو اور ایک کلو گنجائش والا مضبوط ہیریٹیج ڈبہ۔ خالی یا اعلیٰ خشک میوہ جات سے بھرا ہوا۔',
+    desc_ar: 'صندوق تراثي مقسم بسعة ٥٠٠ جرام أو ١ كجم لتوزيعات العائلات في الأعراس. متوفر فارغاً أو معبأً بتشكيلة المكسرات الفاخرة.',
+    shippingWeightG: 750,
+    keywords: ['sweet box', 'barat bid box', '1kg bid box', '500g bid box', 'family shadi box'],
+  }),
+  createBidBoxProduct({
+    id: 'bid-box-birth-announcement',
+    image: '/images/products/bid-box-birth-announcement-1.webp',
+    name_en: 'Birth Announcement Favor Box (Baby Boy / Girl)',
+    name_ur: 'ولادت مٹھائی و ڈرائی فروٹ فیور باکس',
+    name_ar: 'صندوق تهنئة المولود للمكسرات والشوكولاتة',
+    occasionTag: 'Aqeeqah & Baby Arrival',
+    emptyUnit1: 150,
+    emptyUnit25: 142,
+    emptyUnit50: 135,
+    emptyUnit100: 125,
+    filledMin: 950,
+    filledMax: 2900,
+    filledStandardLabel: 'Filled Standard (Dry Fruits & Chocolates)',
+    filledRoyalLabel: 'Filled Royal (Deluxe Nuts, Panjeeri & Chocolates)',
+    filledSummary: 'Dry Fruits & Chocolates',
+    contents_en: 'Pastel Blue / Blush Pink & Gold Foiled Keepsake Box with Baby Name Card Slot (Empty or Filled)',
+    desc_en: 'Celebrate the arrival of your newborn or Aqeeqah ceremony with custom-themed Baby Boy and Baby Girl favor boxes. Order empty packaging or filled with roasted nuts, panjeeri, and chocolates.',
+    desc_ur: 'نومولود کی خوشی اور عقیقہ کی تقریب کے لیے بے بی بوائے اور بے بی گرل تھیم فیور باکس۔ خالی ڈبے یا ڈرائی فروٹ، پنجیری اور چاکلیٹس کے ساتھ۔',
+    desc_ar: 'احتفل بقدوم المولود الجديد أو العقيقة مع صناديق هدايا مخصصة للمواليد. متوفرة فارغة أو معبأة بالمكسرات والشوكولاتة.',
+    shippingWeightG: 500,
+    keywords: ['birth announcement box', 'baby boy box', 'baby girl box', 'aqeeqah box', 'newborn favor'],
+  }),
+  createBidBoxProduct({
+    id: 'bid-box-acrylic-royal',
+    image: '/images/products/bid-box-acrylic-royal-1.webp',
+    name_en: 'Acrylic & Velvet Royal Bid Box',
+    name_ur: 'ایکریلک اور مخملی شاہی بِد باکس',
+    name_ar: 'صندوق ملكي من الأكريليك والمخمل',
+    occasionTag: 'VIP Royal Presentation',
+    emptyUnit1: 280,
+    emptyUnit25: 270,
+    emptyUnit50: 260,
+    emptyUnit100: 240,
+    filledMin: 1450,
+    filledMax: 3200,
+    filledStandardLabel: 'Filled Standard (VIP Dry Fruit Assortment)',
+    filledRoyalLabel: 'Filled Royal (Chilgoza, Pistachio & Medjool VIP)',
+    filledSummary: 'VIP Dry Fruit Assortment',
+    contents_en: 'Crystal-Clear Acrylic Lid with Velvet-Lined Gold Dividers (Empty or Filled with VIP Dry Fruit Assortment)',
+    desc_en: 'Our flagship crystal-clear acrylic and plush velvet presentation chest for VIP wedding trousseaus, diplomatic gifting, and luxury Nikkah favors. Showcases jewel-like roasted nuts through a clear display lid.',
+    desc_ur: 'وی آئی پی شادی، بری اور شاہی تحائف کے لیے کرسٹل ایکریلک اور مخملی خانوں والا لگژری بِد باکس۔ خالی یا اعلیٰ ترین خشک میوہ جات کے ساتھ۔',
+    desc_ar: 'صندوق ملكي بغطاء أكريليك شفاف وأقسام مبطنة بالمخمل لهدايا كبار الشخصيات والأعراس الفاخرة.',
+    shippingWeightG: 650,
+    keywords: ['acrylic box', 'velvet bid box', 'vip bid box', 'royal favor box', 'bari box'],
+  }),
+];
+
+export const BID_BOX_PRODUCT_IDS: readonly string[] = BID_BOX_PRODUCTS.map(product => product.id);
+
 export const PRODUCTS: Product[] = [
   ...EXISTING_PRODUCTS.map(withCatalogMetadata),
   ...ADDITIONS.map(defineAddition),
+  ...BID_BOX_PRODUCTS.map(withCatalogMetadata),
 ].map(product => {
   const approved = APPROVED_CATALOG_NAMES[product.id];
   return approved ? { ...product, nameUr: approved[0], nameAr: approved[1], name_ur: approved[0], name_ar: approved[1] } : product;

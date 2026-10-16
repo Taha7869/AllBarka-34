@@ -5,7 +5,7 @@ import { checkCatalogAssets, filterAdminCatalog, getAdminCatalogSnapshot, isLoca
 
 test('admin catalogue counts unique photographs rather than shared bundle references', () => {
   const snapshot = getAdminCatalogSnapshot(PRODUCTS);
-  assert.equal(snapshot.productCount, 89);
+  assert.equal(snapshot.productCount, 97);
   const newImages = PRODUCTS.filter(product => product.image?.startsWith('/images/products/')).length;
   assert.equal(snapshot.imageCount, 46 + newImages);
   assert.equal(snapshot.galleryCount, 14);

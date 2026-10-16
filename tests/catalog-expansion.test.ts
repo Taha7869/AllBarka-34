@@ -45,13 +45,13 @@ const addedSizes: Record<string, Record<string, number>> = {
   'org-panjeeri': { '250g': 900 }, 'org-saffron': { '2g': 1250 },
 };
 
-test('73 requested entries expand the original 32 into 89 unique products after equivalence deduplication', () => {
+test('73 requested entries expand the original 32 into 97 unique products including 8 Bid Boxes', () => {
   assert.equal(LEGACY_PRODUCT_IDS.length, 32);
   assert.equal(NEW_PRODUCT_IDS.length, 57);
-  assert.equal(PRODUCTS.length, 89);
+  assert.equal(PRODUCTS.length, 97);
   assert.equal(new Set(PRODUCTS.map(product => product.id)).size, PRODUCTS.length);
   assert.deepEqual(CATALOG_COUNTS, {
-    nuts: 22, 'gift-boxes': 2, 'snacks-seeds': 13, oils: 15,
+    nuts: 22, 'gift-boxes': 10, 'snacks-seeds': 13, oils: 15,
     essentials: 5, 'herbs-spices': 19, bundles: 13,
   });
 });

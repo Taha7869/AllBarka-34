@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import type { Firestore, Transaction, DocumentSnapshot } from 'firebase-admin/firestore';
 import { FieldValue } from 'firebase-admin/firestore';
-import { PRODUCTS } from '../data/products';
+import { PRODUCTS, BID_BOX_PRODUCT_IDS } from '../data/products';
 import type { Product } from '../types';
 import { CatalogError, readCatalogPricing, productFromPricing, unavailableProduct, validateCatalogPricing, type CatalogRecord } from './catalogSchema';
 import { resolveCartIdentity } from './cartInput';
@@ -29,7 +29,13 @@ function snapshotFromDocuments(snapshots: DocumentSnapshot[], now: number): Cata
   const products = snapshots.filter(document => seeds.has(document.id)).map(document => {
     const seed = seeds.get(document.id)!;
     try {
-      if (!document.exists) throw new CatalogError('MISSING_CATALOG_PRODUCT');
+      if (!document.exists) {
+        if (BID_BOX_PRODUCT_IDS.includes(document.id)) {
+          const record = storedCatalogRecord(document.id, seed);
+          return productFromPricing(seed, record.pricing, record.version);
+        }
+        throw new CatalogError('MISSING_CATALOG_PRODUCT');
+      }
       const record = storedCatalogRecord(document.id, document.data());
       return productFromPricing(seed, record.pricing, record.version);
     } catch { invalidProductIds.push(document.id); return unavailableProduct(seed); }

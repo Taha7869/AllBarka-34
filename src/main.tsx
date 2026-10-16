@@ -15,6 +15,21 @@ import { LanguageProvider } from './contexts/LanguageContext';
 import { CartProvider } from './contexts/CartContext';
 import { CatalogProvider } from './contexts/CatalogContext';
 
+if (typeof window !== 'undefined') {
+  window.addEventListener('vite:preloadError', (event) => {
+    event.preventDefault();
+    try {
+      const reloadKey = 'allbarka_vite_preload_reload';
+      if (window.sessionStorage.getItem(reloadKey) !== '1') {
+        window.sessionStorage.setItem(reloadKey, '1');
+        window.location.reload();
+      }
+    } catch {
+      window.location.reload();
+    }
+  });
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider>

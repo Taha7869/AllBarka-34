@@ -24,7 +24,7 @@ for (const product of PRODUCTS) {
 }
 const svgs = readdirSync('public/images/products').filter(file => file.endsWith('.svg')).sort();
 assert.deepEqual(svgs, NEW_PRODUCT_IDS.map(id => `${id}.svg`).sort(), 'Only one SVG per placeholder product may remain');
-assert.equal(images, 107);
-assert.equal(unique.size, 103);
+assert.equal(images, 115);
+assert.equal(unique.size, 111);
 assert.equal(LEGACY_PRODUCT_IDS.reduce((sum, id) => sum + getProductImages(PRODUCTS.find(product => product.id === id)!).length, 0), 50);
 console.log(`${PRODUCTS.length} products, ${images} image references (${unique.size} unique files); ${NEW_PRODUCT_IDS.length} single-image WebP selections; 0 missing files, 0 retired views.`);

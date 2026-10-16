@@ -13,7 +13,7 @@ import ProductVideo from '../components/ProductVideo';
 import { Product, CartItem } from '../types';
 import ProductDetailAccordion from '../components/ProductDetailAccordion';
 import SEO from '../components/SEO';
-import { ShoppingBag, ShieldCheck, Check, Sparkles, ArrowRight, Truck, Award, AlertCircle, Info, Share2, Maximize2 } from 'lucide-react';
+import { ShoppingBag, ShieldCheck, Check, Sparkles, ArrowRight, Truck, Award, AlertCircle, Info, Share2, Maximize2, MessageSquareQuote, Package, Gift } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import TrustBadges from '../components/TrustBadges';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -23,6 +23,7 @@ import { buildHumanSupportWhatsAppUrl } from '../config/contacts';
 import CustomWeightInput from '../components/CustomWeightInput';
 import { resolveCustomWeight } from '../lib/productVariants';
 import { displayProductPrice } from '../lib/productSelection';
+import { openCustomQuoteModal } from '../components/CustomQuoteModal';
 
 const ProductPhotoViewer = lazy(() => import('../components/ProductPhotoViewer'));
 
@@ -327,6 +328,109 @@ export default function ProductDetailPage() {
             </div>
 
             {unit && <p className="mb-5 text-xs text-[var(--color-text-secondary)]"><bdi>Rs. {unit.amount.toLocaleString()} / {unit.unit}</bdi></p>}
+
+            {/* Interactive Bid Box Empty vs Filled + Bulk Discount Tiers */}
+            {product.isBidBox && product.bidBoxConfig && (
+              <div className="mb-6 rounded-2xl border border-[#C7982F]/40 bg-white dark:bg-[#1A201E] p-4 space-y-3 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary,#042821)] dark:text-[#E4C783]">
+                    Box Mode: Empty Packaging vs. Filled Dry Fruits
+                  </span>
+                  <span className="text-[11px] font-semibold text-[#8C6B1B]">
+                    Automatic Bulk Discounts
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const idx = weights.indexOf(product.bidBoxConfig!.emptyTiers[2]?.variantKey || 'Empty Bulk (50 pcs)');
+                      setSelectedWeightIndex(idx >= 0 ? idx : 0);
+                      setCustomWeightSelected(false);
+                    }}
+                    className={`flex items-center gap-2.5 rounded-xl border p-3 text-left transition-all ${
+                      selectedWeight.startsWith('Empty')
+                        ? 'border-[#042821] bg-[#042821] text-white'
+                        : 'border-[#C7982F]/35 bg-[#FAF6EE] text-[#042821]'
+                    }`}
+                  >
+                    <Package size={16} className="text-[#E6C786] shrink-0" />
+                    <div>
+                      <div className="text-xs font-bold">Box Only (Empty Packaging)</div>
+                      <div className="text-[10px] opacity-80">
+                        From Rs. {product.bidBoxConfig.emptyUnitStarting}/pc • 100+ pcs: Rs. {product.bidBoxConfig.emptyBulk100Unit}/pc
+                      </div>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const idx = weights.indexOf(product.bidBoxConfig!.filledOptions[0]?.variantKey || '');
+                      setSelectedWeightIndex(idx >= 0 ? idx : 0);
+                      setCustomWeightSelected(false);
+                    }}
+                    className={`flex items-center gap-2.5 rounded-xl border p-3 text-left transition-all ${
+                      selectedWeight.startsWith('Filled')
+                        ? 'border-[#04282F] bg-[#042821] text-white'
+                        : 'border-[#C7982F]/35 bg-[#FAF6EE] text-[#042821]'
+                    }`}
+                  >
+                    <Gift size={16} className="text-[#E6C786] shrink-0" />
+                    <div>
+                      <div className="text-xs font-bold">Filled with AllBarka Dry Fruits</div>
+                      <div className="text-[10px] opacity-80">
+                        Rs. {product.bidBoxConfig.filledMin.toLocaleString()} – Rs. {product.bidBoxConfig.filledMax.toLocaleString()} ({product.bidBoxConfig.filledSummary})
+                      </div>
+                    </div>
+                  </button>
+                </div>
+
+                {selectedWeight.startsWith('Empty') && (
+                  <div className="pt-1">
+                    <div className="text-[11px] font-semibold text-[#566B63] mb-1.5">
+                      Bulk Empty Box Quantity Tiers (Unit Price Drops Automatically):
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {product.bidBoxConfig.emptyTiers.map(tier => {
+                        const idx = weights.indexOf(tier.variantKey);
+                        const active = selectedWeight === tier.variantKey;
+                        return (
+                          <button
+                            key={tier.variantKey}
+                            type="button"
+                            onClick={() => {
+                              if (idx >= 0) setSelectedWeightIndex(idx);
+                              setCustomWeightSelected(false);
+                            }}
+                            className={`rounded-xl border p-2 text-left transition-all ${
+                              active
+                                ? 'border-[#042821] bg-[#042821]/10 text-[#042821]'
+                                : 'border-[#C7982F]/30 bg-white text-[#566B63]'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold">{tier.qty === 100 ? '100+ pcs' : `${tier.qty} pcs`}</span>
+                              {tier.discountBadge && (
+                                <span className="rounded bg-emerald-700/15 px-1.5 py-0.5 text-[9px] font-extrabold text-emerald-800">
+                                  {tier.discountBadge}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] font-bold text-[#8C6B1B] mt-0.5">
+                              Rs. {tier.unitPrice}/box
+                            </div>
+                            <div className="text-[10px] opacity-75">
+                              Pack: Rs. {tier.packPrice.toLocaleString()}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Weight Selector */}
             <div className="mb-6">
               <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
@@ -361,7 +465,7 @@ export default function ProductDetailPage() {
 
             {/* Quantity & Add to Cart (minimum 44px tap targets) */}
             <div className="flex flex-col gap-3 mb-8">
-              {product.quoteOnly ? <Link to="/pages/contact" className="focus-ring flex min-h-12 items-center justify-center rounded-xl border border-[#c7982f]/40 bg-[#1e3a2b] px-5 text-sm font-semibold text-[#fff8e9]">{t('catalog.requestQuote')}</Link> : <div className="flex flex-col sm:flex-row gap-3">
+              {product.quoteOnly ? <button type="button" onClick={() => openCustomQuoteModal({ productId: product.id, mode: 'filled', quantity: 50 })} className="focus-ring flex min-h-12 items-center justify-center rounded-xl border border-[#c7982f]/40 bg-[#1e3a2b] px-5 text-sm font-semibold text-[#fff8e9]">{t('catalog.requestQuote')}</button> : <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex items-center justify-center bg-white dark:bg-[#1C2422] border border-[var(--color-accent,#C7982F)]/35 rounded-xl h-12 px-2 shrink-0">
                   <button 
                     type="button"
@@ -407,6 +511,23 @@ export default function ProductDetailPage() {
                   )}
                 </button>
               </div>}
+
+              {(product.isBidBox || product.category === 'gift-boxes' || product.category === 'bundles' || product.isBundle) && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    openCustomQuoteModal({
+                      productId: product.id,
+                      mode: selectedWeight.startsWith('Empty') ? 'empty' : 'filled',
+                      quantity: 50,
+                    })
+                  }
+                  className="w-full min-h-[46px] rounded-xl border border-[#8C6B1B] bg-[#FAF6EE] hover:bg-[#8C6B1B] text-[#8C6B1B] hover:text-white flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider transition-all shadow-xs"
+                >
+                  <MessageSquareQuote size={16} />
+                  Request Custom Quote / Offer Your Price
+                </button>
+              )}
               
               {/* Internal Actions: Wishlist & Share */}
               <div className="flex flex-col min-[390px]:flex-row items-stretch gap-3">

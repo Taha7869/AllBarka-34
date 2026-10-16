@@ -43,6 +43,7 @@ import { authenticatePatronCredentials } from './src/lib/serverAuthentication';
 import { createProductMediaRouter } from './src/lib/productMediaRouter';
 import { createCatalogRouter } from './src/lib/catalogRouter';
 import { loadAuthoritativeCatalog } from './src/lib/catalogStore';
+import { buildWaProductRows, serializeWaProductsCsv } from './src/lib/waProductsExport';
 import { CatalogError, unavailableProduct } from './src/lib/catalogSchema';
 import { redeemPatronReward } from './src/lib/loyaltyRedemption';
 import { quoteOrderForCustomer } from './src/lib/orderQuote';
@@ -803,6 +804,126 @@ app.post('/api/contact', async (req, res) => {
   }
 });
 
+// Custom Quote / Bargain Concierge API (Bid Boxes, Gift Boxes & Deals)
+app.post('/api/quotes', async (req, res) => {
+  try {
+    const {
+      productId,
+      productName,
+      mode,
+      quantity,
+      eventType,
+      customPrinting,
+      targetPricePkr,
+      referenceUnitPrice,
+      customerName,
+      customerPhone,
+      city,
+    } = req.body || {};
+
+    if (typeof customerName !== 'string' || customerName.trim().length < 2) {
+      return res.status(400).json({ error: 'Please provide your name.', code: 'MISSING_NAME' });
+    }
+    if (typeof customerPhone !== 'string' || customerPhone.trim().length < 10) {
+      return res.status(400).json({ error: 'Please provide a valid phone number.', code: 'MISSING_PHONE' });
+    }
+
+    const safeQty = Math.max(1, Math.min(50000, Number(quantity) || 50));
+    const safeMode = mode === 'empty' ? 'empty' : 'filled';
+    const quoteId = `ABQ-${Date.now().toString(36).toUpperCase().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`;
+
+    const modeLabel = safeMode === 'empty' ? 'Box Only (Empty Packaging)' : 'Filled with AllBarka Dry Fruits';
+    const waLines = [
+      `*Assalam-o-Alaikum AllBarka Concierge!*`,
+      `I would like a *Custom Quote / Bargain Rate* for my event:`,
+      `• *Quote Ref:* ${quoteId}`,
+      `• *Selected Box / Deal:* ${String(productName || productId || 'Custom Bid Box').slice(0, 120)}`,
+      `• *Box Mode:* ${modeLabel}`,
+      `• *Quantity:* ${safeQty} boxes`,
+      `• *Event Type:* ${String(eventType || 'Nikkah').slice(0, 80)}`,
+      referenceUnitPrice ? `• *Standard Rate Ref:* Rs. ${Number(referenceUnitPrice).toLocaleString()}/box` : '',
+      targetPricePkr ? `• *My Target Offer / Budget:* Rs. ${Number(targetPricePkr).toLocaleString()} PKR` : '',
+      customPrinting ? `• *Custom Printing / Name Tag / Notes:* ${String(customPrinting).slice(0, 400)}` : '',
+      `• *Name:* ${customerName.trim().slice(0, 100)}`,
+      `• *Phone:* ${customerPhone.trim().slice(0, 40)}`,
+      `• *City:* ${String(city || 'Lahore').trim().slice(0, 80)}`,
+      ``,
+      `Please share your best final rate and customization options.`,
+    ].filter(Boolean);
+
+    const whatsappUrl = `https://wa.me/923160666083?text=${encodeURIComponent(waLines.join('\n'))}`;
+
+    if (db) {
+      try {
+        await db.collection('quotes').doc(quoteId).set(
+          sanitizeFirestoreData({
+            quoteId,
+            productId: String(productId || 'custom').slice(0, 80),
+            productName: String(productName || 'Custom Bid Box').slice(0, 140),
+            mode: safeMode,
+            quantity: safeQty,
+            eventType: String(eventType || 'Nikkah').slice(0, 80),
+            customPrinting: String(customPrinting || '').slice(0, 500),
+            targetPricePkr: targetPricePkr ? Number(targetPricePkr) : null,
+            referenceUnitPrice: referenceUnitPrice ? Number(referenceUnitPrice) : null,
+            customerName: customerName.trim().slice(0, 100),
+            customerPhone: customerPhone.trim().slice(0, 40),
+            city: String(city || 'Lahore').trim().slice(0, 80),
+            whatsappUrl,
+            status: 'PENDING',
+            createdAt: new Date().toISOString(),
+          })
+        );
+      } catch (dbErr) {
+        console.warn('Firestore quote storage warning (continuing with WhatsApp handoff):', dbErr);
+      }
+    }
+
+    return res.json({
+      ok: true,
+      quoteId,
+      whatsappUrl,
+      message: 'Custom quote logged. Connect on WhatsApp for immediate bargain rate confirmation.',
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || 'Failed to create quote request.', code: 'SERVER_ERROR' });
+  }
+});
+
+// Live n8n wa_products Single Source of Truth Sync Endpoint
+app.get('/api/integrations/n8n/wa-products', async (req, res) => {
+  try {
+    let authoritativeProducts = PRODUCTS;
+    if (db) {
+      try {
+        const snapshot = await loadAuthoritativeCatalog(db);
+        const byId = new Map(snapshot.products.map(p => [p.id, p]));
+        authoritativeProducts = PRODUCTS.map(codeProd => {
+          const fromDb = byId.get(codeProd.id);
+          return fromDb && fromDb.active !== false ? fromDb : codeProd;
+        });
+      } catch {
+        authoritativeProducts = PRODUCTS;
+      }
+    }
+    const rows = buildWaProductRows(authoritativeProducts);
+    if (String(req.query.format || '').toLowerCase() === 'csv') {
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-store');
+      return res.status(200).send(serializeWaProductsCsv(rows));
+    }
+    res.setHeader('Cache-Control', 'no-store');
+    return res.json({
+      ok: true,
+      count: rows.length,
+      catalogCount: authoritativeProducts.length,
+      products: rows,
+    });
+  } catch (err: any) {
+    return res.status(500).json({ ok: false, error: err.message || 'Failed to export wa_products.', code: 'SERVER_ERROR' });
+  }
+});
+
 // 3. API: Private n8n/Groq concierge; no simulated assistant responses.
 app.post(['/api/chat', '/api/concierge/chat'], authenticateOptionalUser, patronChatLimiter, async (req, res) => {
   const userText = req.body?.userText ?? req.body?.message;
@@ -829,12 +950,20 @@ app.post(['/api/chat', '/api/concierge/chat'], authenticateOptionalUser, patronC
     }
     if (res.headersSent) return;
   const catalog = await loadAuthoritativeCatalog(db);
-  const catalogContext = catalog.products.filter(p => p.active !== false && !p.quoteOnly).map(p => {
+  const byId = new Map(catalog.products.map(p => [p.id, p]));
+  const mergedProducts = PRODUCTS.map(codeProd => {
+    const fromDb = byId.get(codeProd.id);
+    return fromDb && fromDb.active !== false ? fromDb : codeProd;
+  });
+  const catalogContext = mergedProducts.filter(p => p.active !== false && !p.quoteOnly).map(p => {
     let priceStr = '';
     for (const [weight, price] of Object.entries(p.prices)) {
       priceStr += `${weight}: Rs. ${price}, `;
     }
-    return `- ${p.name_en}: ${priceStr} (Wholesale: Rs. ${p.wholesale})`;
+    if (p.isBidBox && p.bidBoxConfig) {
+      return `- [BID BOX] ${p.name_en} (${p.id}): Empty Starting Rs. ${p.bidBoxConfig.emptyUnitStarting}/pc (50+ pcs: Rs. ${p.bidBoxConfig.emptyBulk50Unit}/pc, 100+ pcs: Rs. ${p.bidBoxConfig.emptyBulk100Unit}/pc) | Filled (${p.bidBoxConfig.filledSummary}): Rs. ${p.bidBoxConfig.filledMin} – Rs. ${p.bidBoxConfig.filledMax}. Variants: ${priceStr}`;
+    }
+    return `- ${p.name_en} (${p.category}): ${priceStr} (Wholesale: Rs. ${p.wholesale})`;
   }).join('\n');
 
   const systemInstruction = `You are the AI Concierge & Gourmet Dry Fruits Sommelier representing '${STORE_CONFIG.storeName}', a premium dry fruit, spices, and artisanal gifting store based in ${STORE_CONFIG.location}.
@@ -842,8 +971,14 @@ Use the supplied catalogue for product descriptions and portion prices. Packagin
 
 Only provide product prices and store policy information present in the supplied canonical catalog/configuration below. Never invent or approximate prices, availability, shipping fees, or policies.
 
-Our Premium Catalog & Pricing:
+Our Premium Catalog & Pricing (Single Source of Truth including Dry Fruits, Herbs & Spices, Oils, Deals/Bundles, and 8 Bespoke Bid Boxes):
 ${catalogContext}
+
+Bespoke Bid Boxes & Celebration Favors Rules:
+- All 8 Bid Boxes (Umrah & Hajj Tabarruk Box Set, Luxury Floral Tin Bid Box, Royal Pyramid Favor Box, Classic Card Bid Box, Artisanal Jute & Jamawar Pouch/Potli, Heritage Nikkah Sweet & Dry Fruit Box, Birth Announcement Favor Box, Acrylic & Velvet Royal Bid Box) are available in BOTH modes:
+  1. Box Only (Empty Packaging) with automatic bulk discounts at 25 pcs, 50+ pcs, and 100+ pcs.
+  2. Filled with AllBarka Dry Fruits (Standard or Royal/VIP assortments).
+- Customers ordering for Nikkah, Baat Pakki, Umrah Tabarruk, Birth Announcements, or Corporate events can also click "Request Custom Quote / Offer Your Price" on the website or message on WhatsApp (${CONTACT_CONFIG.humanSupportWhatsApp.formatted}) to pitch their target budget/bargain rate and custom printing/name tags.
 
 Delivery & Ordering:
 - Standard Delivery across all major Lahore neighborhoods is Rs. ${STORE_CONFIG.shipping.standardRate}.
@@ -908,7 +1043,9 @@ async function startServer() {
       res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${routes.map(route => `<url><loc>${publicOrigin}${route}</loc></url>`).join('')}</urlset>`);
     });
     app.get('/index.html', async (_req, res) => {
-      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       res.type('html').send(renderRouteDocument(html, routeMetadata('/', publicOrigin, await pageCatalog()), publicOrigin, res.locals.cspNonce));
     });
     app.use(express.static(distPath, {
@@ -922,7 +1059,9 @@ async function startServer() {
       if (path.extname(req.path)) return res.status(404).type('text/plain').send('Not found');
       const metadata = routeMetadata(req.path, publicOrigin, await pageCatalog());
       if (metadata.noindex) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
-      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       res.status(metadata.status).type('html').send(renderRouteDocument(html, metadata, publicOrigin, res.locals.cspNonce));
     });
   }

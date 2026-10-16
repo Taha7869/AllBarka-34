@@ -639,5 +639,61 @@
     ],
     "videoUrl": "",
     "videoPoster": ""
+  },
+  "bid-box-umrah-tabarruk": {
+    "images": [
+      "/images/products/bid-box-umrah-tabarruk-1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "bid-box-luxury-tin": {
+    "images": [
+      "/images/products/bid-box-luxury-tin-1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "bid-box-pyramid-favor": {
+    "images": [
+      "/images/products/bid-box-pyramid-favor-1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "bid-box-card-nikkah": {
+    "images": [
+      "/images/products/bid-box-card-nikkah-1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "bid-box-jute-pouch": {
+    "images": [
+      "/images/products/bid-box-jute-pouch-1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "bid-box-sweet-nikkah": {
+    "images": [
+      "/images/products/bid-box-sweet-nikkah-1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "bid-box-birth-announcement": {
+    "images": [
+      "/images/products/bid-box-birth-announcement-1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
+  },
+  "bid-box-acrylic-royal": {
+    "images": [
+      "/images/products/bid-box-acrylic-royal-1.webp"
+    ],
+    "videoUrl": "",
+    "videoPoster": ""
   }
 }
