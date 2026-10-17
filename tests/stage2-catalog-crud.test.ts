@@ -63,7 +63,8 @@ import {
 import {
   planCatalogMigrationV2,
   executeCatalogMigrationV2,
-  rollbackCatalogMigrationV2
+  rollbackCatalogMigrationV2,
+  resolveTargetTaxonomy
 } from '../src/lib/catalogMigrationV2';
 import { quoteOrderForCustomer } from '../src/lib/orderQuote';
 import { createDurableOrder } from '../src/lib/orderDatabase';
@@ -75,6 +76,7 @@ import {
   stripPrivateProductFields,
   validateInternalDestination,
   validateMerchandisingSettings,
+  validateCatalogPricing,
   catalogVariantId
 } from '../src/lib/catalogSchema';
 import type { Product, ProductStatus, OrderMode } from '../src/types';
@@ -167,37 +169,47 @@ function createMockFirestore(seedProducts: boolean = true) {
     }),
   });
 
+  let txLock: Promise<any> = Promise.resolve();
   const db: any = {
     collection: (name: string) => makeCollection(name),
     getAll: async (...references: any[]) => {
       return references.map(ref => makeSnapshot(ref.path, ref.id, ref));
     },
     runTransaction: async (updateFunction: (tx: any) => Promise<any>) => {
-      const stagedWrites = new Map<string, any>();
-      const tx = {
-        get: async (docRef: any) => {
-          if (stagedWrites.has(docRef.path)) {
-            const data = stagedWrites.get(docRef.path);
-            return {
-              id: docRef.id,
-              ref: docRef,
-              exists: true,
-              data: () => structuredClone(data),
-            };
-          }
-          return makeSnapshot(docRef.path, docRef.id, docRef);
-        },
-        set: (docRef: any, data: any, options?: { merge?: boolean }) => {
-          const existing = stagedWrites.has(docRef.path) ? stagedWrites.get(docRef.path) : store.get(docRef.path);
-          stagedWrites.set(docRef.path, applyMockPatch(existing, data, options?.merge ?? false));
-        },
-      };
+      let release: () => void;
+      const acquire = new Promise<void>(resolve => { release = resolve; });
+      const prevLock = txLock;
+      txLock = txLock.then(() => acquire, () => acquire);
+      await prevLock;
+      try {
+        const stagedWrites = new Map<string, any>();
+        const tx = {
+          get: async (docRef: any) => {
+            if (stagedWrites.has(docRef.path)) {
+              const data = stagedWrites.get(docRef.path);
+              return {
+                id: docRef.id,
+                ref: docRef,
+                exists: true,
+                data: () => structuredClone(data),
+              };
+            }
+            return makeSnapshot(docRef.path, docRef.id, docRef);
+          },
+          set: (docRef: any, data: any, options?: { merge?: boolean }) => {
+            const existing = stagedWrites.has(docRef.path) ? stagedWrites.get(docRef.path) : store.get(docRef.path);
+            stagedWrites.set(docRef.path, applyMockPatch(existing, data, options?.merge ?? false));
+          },
+        };
 
-      const result = await updateFunction(tx);
-      for (const [path, data] of stagedWrites.entries()) {
-        store.set(path, data);
+        const result = await updateFunction(tx);
+        for (const [path, data] of stagedWrites.entries()) {
+          store.set(path, data);
+        }
+        return result;
+      } finally {
+        release!();
       }
-      return result;
     },
     settings: () => {},
   };
@@ -572,15 +584,16 @@ test('Stage 2 - REQ-S2-004 & REQ-S2-006: Pricing editor save journey (create -> 
 });
 
 // --------------------------------------------------------------------------
-// TEST 6: Seed schemaVersion: 1 Document Read, Edit, Duplicate Compatibility
-// --------------------------------------------------------------------------
-test('Stage 2 - REQ-S2-004: Canonical schemaVersion: 1 documents support admin read, edit, and duplicate', async () => {
+// TEST 6: Seed schemaVersion: 1 Document Read, Edit, Duplicate & Quote/Order Compatibility
+// ----------------------------------------------------------------------------------------
+test('Stage 2 - REQ-S2-004: Valid canonical schemaVersion: 1 seeded product supports admin edit, catalog reload, quote and order', async () => {
   const { db, store } = createMockFirestore();
   invalidateCatalogCache();
 
-  // Seed a document directly with schemaVersion: 1 and variants (prices deleted)
-  store.set('products/badam', {
-    schemaVersion: 1,
+  // Seed a document directly with schemaVersion: 1 and valid canonical variants
+  const canonicalBadam = {
+    schemaVersion: 1 as const,
+    productId: 'badam',
     id: 'badam',
     name_en: 'Almonds Premium American (Badam Giri)',
     name_ur: 'بادام گری امریکن',
@@ -590,14 +603,28 @@ test('Stage 2 - REQ-S2-004: Canonical schemaVersion: 1 documents support admin r
     orderMode: 'standard',
     productFamily: 'badam',
     pricingMode: 'variants',
+    quoteOnly: false,
     variants: [
-      { id: '250g', label: '250g', price: 990, active: true },
-      { id: '500g', label: '500g', price: 1950, active: true },
-      { id: '1kg', label: '1kg', price: 3800, active: true },
+      { id: catalogVariantId('250g'), label: '250g', price: 990, available: true, weightGrams: 250 },
+      { id: catalogVariantId('500g'), label: '500g', price: 1950, available: true, weightGrams: 500 },
+      { id: catalogVariantId('1kg'), label: '1kg', price: 3800, available: true, weightGrams: 1000 },
     ],
+    wholesale: 800,
+    pricePer100g: 380,
+    allowCustomWeight: false,
+    minCustomWeightG: 100,
+    maxCustomWeightG: 5000,
+    shippingWeightG: null,
     revision: 10,
     updatedAt: new Date().toISOString(),
-  });
+  };
+
+  // Explicitly verify the fixture is accepted by the real validateCatalogPricing function
+  const seedBadam = PRODUCTS.find(p => p.id === 'badam')!;
+  const validatedPricing = validateCatalogPricing(canonicalBadam, seedBadam);
+  assert.equal(validatedPricing.schemaVersion, 1);
+  assert.equal(validatedPricing.variants.length, 3);
+  store.set('products/badam', canonicalBadam);
 
   // 1. Read admin product
   const record = await getAdminProductRecord(db, 'badam');
@@ -605,7 +632,7 @@ test('Stage 2 - REQ-S2-004: Canonical schemaVersion: 1 documents support admin r
   assert.equal(record.prices['250g'], 990);
   assert.equal(record.prices['1kg'], 3800);
 
-  // 2. Edit product with expectedRevision: 10
+  // 2. Edit product with expectedRevision: 10 (metadata-only edit)
   const updated = await updateAdminProduct({
     db,
     productId: 'badam',
@@ -618,7 +645,44 @@ test('Stage 2 - REQ-S2-004: Canonical schemaVersion: 1 documents support admin r
   assert.equal(updated.name_en, 'Almonds Premium American (Extra Large Badam)');
   assert.equal(updated.revision, 11);
 
-  // 3. Duplicate product
+  // 3. Reload public catalog -> verify canonical pricing preserved and flat prices derived accurately
+  const freshCatalog = await loadAuthoritativeCatalog(db, { fresh: true });
+  const badamFresh = freshCatalog.products.find(p => p.id === 'badam')!;
+  assert.equal(badamFresh.name_en, 'Almonds Premium American (Extra Large Badam)');
+  assert.equal(badamFresh.prices['250g'], 990);
+  assert.equal(badamFresh.prices['500g'], 1950);
+
+  // 4. Authoritative quote succeeds
+  const quote = await quoteOrderForCustomer(db, {
+    city: 'Lahore',
+    shippingMethodId: 'standard',
+    items: [{ id: 'badam-250g', productId: 'badam', selectedWeight: '250g', quantity: 2, price: 990 }],
+  });
+  assert.equal(quote.totals.subtotal, 1980);
+
+  // 5. Persisted order succeeds
+  const orderRes = await createDurableOrder({
+    db,
+    payload: {
+      name: 'Canonical Test Customer',
+      phone: '03001234567',
+      email: 'canonical@example.com',
+      address: 'Gulberg III',
+      city: 'Lahore',
+      shippingMethodId: 'standard',
+      paymentMethod: 'cod',
+      deliverySlot: 'Standard Delivery',
+      items: [
+        { id: 'badam-250g', productId: 'badam', selectedWeight: '250g', quantity: 2, price: 990 },
+      ],
+    },
+    uid: null,
+    idempotencyKey: 'canonical-seed-order-idempotency-001',
+  });
+  assert.equal(orderRes.status, 'ORDER_RECEIVED');
+  assert.equal(orderRes.totals.subtotal, 1980);
+
+  // 6. Duplicate product creates draft copy with preserved pricing
   const dup = await duplicateAdminProduct({
     db,
     sourceProductId: 'badam',
@@ -629,6 +693,201 @@ test('Stage 2 - REQ-S2-004: Canonical schemaVersion: 1 documents support admin r
   assert.equal(dup.status, 'draft');
   assert.equal(dup.active, false);
   assert.equal(dup.prices['250g'], 990);
+});
+
+// --------------------------------------------------------------------------
+// TEST 6b: Dynamic Product Price-Editor Save Followed by Metadata Edit
+// --------------------------------------------------------------------------
+test('Stage 2 - REQ-S2-004: Dynamic product price-editor save followed by metadata edit preserves pricing and supports quote and order', async () => {
+  const { db } = createMockFirestore();
+  invalidateCatalogCache();
+
+  // 1. Create dynamic product
+  await createAdminProduct({
+    db,
+    body: {
+      id: 'dynamic-chilgoza-raw',
+      name_en: 'Raw Pine Nuts (Chilgoza)',
+      category: 'dry-fruits',
+      prices: { '250g': 3200, '500g': 6200 },
+      status: 'published',
+      active: true,
+    },
+    actorUid: 'admin_1',
+  });
+
+  // 2. Save in price editor via updateCatalogPricing (which writes schemaVersion: 1, canonical variants, and deletes flat prices)
+  const adminRec = await getAdminCatalogRecord(db, 'dynamic-chilgoza-raw');
+  const savedPricing = await updateCatalogPricing({
+    db,
+    productId: 'dynamic-chilgoza-raw',
+    body: {
+      expectedRevision: adminRec.pricing.revision,
+      expectedVersion: adminRec.version,
+      pricing: {
+        schemaVersion: 1,
+        productId: 'dynamic-chilgoza-raw',
+        revision: adminRec.pricing.revision,
+        active: true,
+        quoteOnly: false,
+        variants: [
+          { id: catalogVariantId('250g'), label: '250g', price: 3300, available: true, weightGrams: 250 },
+          { id: catalogVariantId('500g'), label: '500g', price: 6400, available: true, weightGrams: 500 },
+        ],
+        wholesale: 2800,
+        pricePer100g: 1300,
+        allowCustomWeight: false,
+        minCustomWeightG: 100,
+        maxCustomWeightG: 5000,
+        shippingWeightG: 270,
+      },
+    },
+    actorUid: 'admin_1',
+  });
+  assert.equal(savedPricing.pricing.variants[0].price, 3300);
+
+  // 3. Metadata-only edit via updateAdminProduct (rename product)
+  const currentAdmin = await getAdminProductRecord(db, 'dynamic-chilgoza-raw');
+  const updatedAdmin = await updateAdminProduct({
+    db,
+    productId: 'dynamic-chilgoza-raw',
+    body: {
+      name_en: 'Raw Pine Nuts Special Bannu (Chilgoza)',
+      expectedRevision: currentAdmin.revision,
+    },
+    actorUid: 'admin_1',
+  });
+  assert.equal(updatedAdmin.name_en, 'Raw Pine Nuts Special Bannu (Chilgoza)');
+
+  // 4. Reload public catalog -> verify canonical pricing preserved and flat prices derived accurately
+  const freshCatalog = await loadAuthoritativeCatalog(db, { fresh: true });
+  const freshChilgoza = freshCatalog.products.find(p => p.id === 'dynamic-chilgoza-raw')!;
+  assert.equal(freshChilgoza.name_en, 'Raw Pine Nuts Special Bannu (Chilgoza)');
+  assert.equal(freshChilgoza.prices['250g'], 3300);
+  assert.equal(freshChilgoza.prices['500g'], 6400);
+
+  // 5. Authoritative quote succeeds
+  const quote = await quoteOrderForCustomer(db, {
+    city: 'Lahore',
+    shippingMethodId: 'standard',
+    items: [{ id: 'chilgoza-250g', productId: 'dynamic-chilgoza-raw', selectedWeight: '250g', quantity: 2, price: 3300 }],
+  });
+  assert.equal(quote.totals.subtotal, 6600);
+
+  // 6. Persisted order succeeds
+  const order = await createDurableOrder({
+    db,
+    payload: {
+      name: 'Customer Test',
+      email: 'test@example.com',
+      phone: '03001234567',
+      address: 'Gulberg III, Lahore',
+      city: 'Lahore',
+      shippingMethodId: 'standard',
+      paymentMethod: 'cod',
+      deliverySlot: 'Standard Delivery',
+      items: [{ id: 'chilgoza-250g', productId: 'dynamic-chilgoza-raw', selectedWeight: '250g', quantity: 2, price: 3300 }],
+    },
+    uid: null,
+    idempotencyKey: 'dynamic-chilgoza-order-001',
+  });
+  assert.equal(order.status, 'ORDER_RECEIVED');
+  assert.equal(order.totals.subtotal, 6600);
+});
+
+// --------------------------------------------------------------------------
+// TEST 6c: Variant Availability (Disabled Variant Excluded -> Quote Fails -> Re-enabled in Admin)
+// --------------------------------------------------------------------------
+test('Stage 2 - REQ-S2-004: Disabled variant is excluded from public catalog, rejected by quote/order, and usable when re-enabled in admin', async () => {
+  const { db } = createMockFirestore();
+  invalidateCatalogCache();
+
+  // 1. Create product with 2 variants, one available: true and one available: false
+  await createAdminProduct({
+    db,
+    body: {
+      id: 'variant-disable-test',
+      name_en: 'Variant Disable Test Pistachio',
+      category: 'dry-fruits',
+      status: 'published',
+      active: true,
+      variants: [
+        { label: '250g', price: 1100, available: true, weightGrams: 250 },
+        { label: '500g', price: 2100, available: false, weightGrams: 500 },
+      ],
+    },
+    actorUid: 'admin_1',
+  });
+
+  // 2. Public catalog projection must strictly exclude the disabled variant
+  const publicCatalog = await loadAuthoritativeCatalog(db, { fresh: true });
+  const publicProd = publicCatalog.products.find(p => p.id === 'variant-disable-test')!;
+  assert.equal(publicProd.prices['250g'], 1100);
+  assert.equal(publicProd.prices['500g'], undefined, 'Disabled variant must be excluded from public prices');
+  assert.equal(publicProd.variants.length, 1);
+  assert.equal(publicProd.variants[0].label, '250g');
+
+  // 3. Attempting to quote or order the disabled variant fails with ValidationError
+  await assert.rejects(async () => {
+    await quoteOrderForCustomer(db, {
+      city: 'Lahore',
+      shippingMethodId: 'standard',
+      items: [{ id: 'variant-disable-test-500g', productId: 'variant-disable-test', selectedWeight: '500g', quantity: 1, price: 2100 }],
+    });
+  }, (err: any) => err instanceof ValidationError || err.name === 'ValidationError');
+
+  // 4. Admin product record preserves both variants and disabled status
+  const adminProd = await getAdminProductRecord(db, 'variant-disable-test');
+  assert.equal(adminProd.variants.length, 2);
+  const disabledVar: any = adminProd.variants.find((v: any) => v.label === '500g')!;
+  assert.equal(disabledVar.available, false);
+
+  // 5. Admin re-enables the variant (available: true)
+  const updatedAdmin = await updateAdminProduct({
+    db,
+    productId: 'variant-disable-test',
+    body: {
+      expectedRevision: adminProd.revision,
+      variants: [
+        { label: '250g', price: 1100, available: true, weightGrams: 250 },
+        { label: '500g', price: 2100, available: true, weightGrams: 500 },
+      ],
+    },
+    actorUid: 'admin_1',
+  });
+  assert.equal(updatedAdmin.revision, adminProd.revision + 1);
+
+  // 6. Public catalog now includes the re-enabled variant
+  const reloadedCatalog = await loadAuthoritativeCatalog(db, { fresh: true });
+  const reloadedProd = reloadedCatalog.products.find(p => p.id === 'variant-disable-test')!;
+  assert.equal(reloadedProd.prices['500g'], 2100, 'Re-enabled variant must now appear in public prices');
+
+  // 7. Quote and order now succeed
+  const quote = await quoteOrderForCustomer(db, {
+    city: 'Lahore',
+    shippingMethodId: 'standard',
+    items: [{ id: 'variant-disable-test-500g', productId: 'variant-disable-test', selectedWeight: '500g', quantity: 1, price: 2100 }],
+  });
+  assert.equal(quote.totals.subtotal, 2100);
+
+  const order = await createDurableOrder({
+    db,
+    payload: {
+      name: 'Customer Test',
+      email: 'test@example.com',
+      phone: '03001234567',
+      address: 'Gulberg III, Lahore',
+      city: 'Lahore',
+      shippingMethodId: 'standard',
+      paymentMethod: 'cod',
+      deliverySlot: 'Standard Delivery',
+      items: [{ id: 'pista-500g', productId: 'variant-disable-test', selectedWeight: '500g', quantity: 1, price: 2100 }],
+    },
+    uid: null,
+    idempotencyKey: 're-enabled-variant-order-001',
+  });
+  assert.equal(order.status, 'ORDER_RECEIVED');
+  assert.equal(order.totals.subtotal, 2100);
 });
 
 // --------------------------------------------------------------------------
@@ -803,10 +1062,41 @@ test('Stage 2 - REQ-S2-004: Showcase tabs, autoplay settings, and strict interna
   // 2. Invalid internal paths reject
   assert.throws(() => validateInternalDestination('https://malicious.com'), (err: any) => err instanceof CatalogError);
   assert.throws(() => validateInternalDestination('//malicious.com'), (err: any) => err instanceof CatalogError);
+  assert.throws(() => validateInternalDestination('/shop\\evil'), (err: any) => err instanceof CatalogError);
+  assert.throws(() => validateInternalDestination('/\\evil.com'), (err: any) => err instanceof CatalogError);
   assert.throws(() => validateInternalDestination('javascript:alert(1)'), (err: any) => err instanceof CatalogError);
   assert.throws(() => validateInternalDestination('categories/dry-fruits'), (err: any) => err instanceof CatalogError);
 
-  // 3. Validate merchandising settings schema
+  // 3. Public Product Projection strictly strips internal fields via explicit allowlist
+  const rawProductWithInternalFields: any = {
+    id: 'test-margin-prod',
+    name_en: 'Margin Test Item',
+    category: 'dry-fruits',
+    prices: { '250g': 1000 },
+    variants: [{ label: '250g', price: 1000 }],
+    targetMarginPercent: 38.5,
+    referencePrice: 1400,
+    supplierCost: 615,
+    supplierName: 'Wholesale Depot',
+    supplierItemUrl: 'https://internal.supplier/item/123',
+    internalNotes: 'Secret internal margin data',
+    importBatch: 'batch_2026_01',
+    importTimestamp: '2026-10-17T00:00:00Z',
+    adminRevision: 5,
+    createdBy: 'admin_1',
+    updatedBy: 'admin_1',
+  };
+  const sanitized = stripPrivateProductFields(rawProductWithInternalFields);
+  assert.equal(sanitized.id, 'test-margin-prod');
+  assert.equal((sanitized as any).targetMarginPercent, undefined, 'targetMarginPercent must not leak in public product');
+  assert.equal((sanitized as any).referencePrice, undefined);
+  assert.equal((sanitized as any).supplierCost, undefined);
+  assert.equal((sanitized as any).internalNotes, undefined);
+  assert.equal((sanitized as any).adminRevision, undefined);
+  assert.equal((sanitized as any).createdBy, undefined);
+  assert.equal((sanitized as any).updatedBy, undefined);
+
+  // 4. Validate merchandising settings schema
   const validSettings = validateMerchandisingSettings({
     showcaseTabs: [
       { id: 'tab1', label_en: 'Tab 1', label_ur: 'ٹیب ۱', visible: true, productIds: ['badam'] },
@@ -826,17 +1116,40 @@ test('Stage 2 - REQ-S2-004: Showcase tabs, autoplay settings, and strict interna
   assert.equal(validSettings.autoplay?.intervalMs, 5000);
   assert.equal(validSettings.collections?.length, 1);
 
-  // 4. Invalid autoplay interval rejects
+  // 5. Invalid autoplay interval rejects
   assert.throws(() => validateMerchandisingSettings({
     autoplay: { enabled: true, intervalMs: -500 },
   }), (err: any) => err instanceof CatalogError);
 });
 
 // --------------------------------------------------------------------------
-// TEST 10: Safe Migration Engine: Dry Run, Run 1, Run 2 Idempotency, and Rollback
-// --------------------------------------------------------------------------
-test('Stage 2 - REQ-S2-007: Migration engine executes dry-run (0 writes), run 1, run 2 (0 updates skip), and rollback', async () => {
+// TEST 10: Safe Migration Engine: Precedence, Durable Journal, Preconditions, Restart & Merchant-Edit Safety
+// ---------------------------------------------------------------------------------------------------------
+test('Stage 2 - REQ-S2-007: Safe Migration Engine: Precedence, Durable Journal, Preconditions, Restart & Merchant-Edit Safety', async () => {
   const { db, store } = createMockFirestore(false); // Clean database without pre-seeded products
+
+  // 1. Taxonomy Precedence: Bid Box packaging must precede gift-boxes with exact per-item occasions
+  const bidBoxTaxonomy = resolveTargetTaxonomy({
+    id: 'bid-box-umrah-tabarruk',
+    name_en: 'Umrah & Hajj Tabarruk Box Set',
+    category: 'gift-boxes',
+    prices: { '1 pc': 2500 },
+    isBidBox: true,
+    active: true,
+  } as any);
+  assert.equal(bidBoxTaxonomy.productFamily, 'bid-box', 'Bid box packaging must precede general gift-boxes');
+  assert.deepEqual(bidBoxTaxonomy.collections, ['celebration-boxes']);
+  assert.deepEqual(bidBoxTaxonomy.occasions, ['umrah', 'ramadan'], 'Exact per-item occasions must be mapped');
+
+  const cardNikkahTaxonomy = resolveTargetTaxonomy({
+    id: 'bid-box-card-nikkah',
+    name_en: 'Classic Card Bid Box',
+    category: 'gift-boxes',
+    prices: { '1 pc': 450 },
+    isBidBox: true,
+    active: true,
+  } as any);
+  assert.deepEqual(cardNikkahTaxonomy.occasions, ['wedding']);
 
   // Pre-seed a legacy product that has merchant pricing but lacks V2 taxonomy fields
   store.set('products/legacy-chohara', {
@@ -844,6 +1157,8 @@ test('Stage 2 - REQ-S2-007: Migration engine executes dry-run (0 writes), run 1,
     name_en: 'Legacy Yellow Dry Chohara',
     category: 'dates',
     prices: { '500g': 1234 }, // Custom merchant price
+    revision: 1,
+    updatedAt: new Date().toISOString(),
   });
 
   const testProducts: any[] = [
@@ -861,7 +1176,7 @@ test('Stage 2 - REQ-S2-007: Migration engine executes dry-run (0 writes), run 1,
     },
   ];
 
-  // 1. Dry run: plan only, 0 database writes
+  // 2. Dry run: plan only, 0 database writes
   const dryPlan = await planCatalogMigrationV2({ db, products: testProducts });
   assert.equal(dryPlan.createsCount, 1); // new-seed-product
   assert.equal(dryPlan.updatesCount, 1); // legacy-chohara backfill
@@ -871,7 +1186,7 @@ test('Stage 2 - REQ-S2-007: Migration engine executes dry-run (0 writes), run 1,
   assert.equal(store.has('products/new-seed-product'), false);
   assert.equal(store.get('products/legacy-chohara').productFamily, undefined);
 
-  // 2. Execute Run 1: apply mutations and record before-images
+  // 3. Execute Run 1: apply mutations and record durable journal in Firestore
   const exec1 = await executeCatalogMigrationV2({
     db,
     plan: dryPlan,
@@ -880,6 +1195,14 @@ test('Stage 2 - REQ-S2-007: Migration engine executes dry-run (0 writes), run 1,
   assert.equal(exec1.executedCount, 2);
   assert.equal(exec1.createsCount, 1);
   assert.equal(exec1.updatesCount, 1);
+  assert.ok(exec1.batchId.startsWith('migration_v2_'));
+
+  // Verify durable journal exists in Firestore
+  const journalDoc = store.get(`catalogMigrationJournals/${exec1.batchId}`);
+  assert.ok(journalDoc, 'Migration journal must be durably stored in catalogMigrationJournals');
+  assert.equal(journalDoc.status, 'COMPLETED');
+  assert.equal(journalDoc.executedCount, 2);
+  assert.ok(journalDoc.beforeImages['legacy-chohara']);
 
   // Verify legacy product merchant price was preserved
   const migratedLegacy = store.get('products/legacy-chohara');
@@ -891,7 +1214,7 @@ test('Stage 2 - REQ-S2-007: Migration engine executes dry-run (0 writes), run 1,
   assert.equal(store.has('products/new-seed-product'), true);
   assert.equal(store.has('merchandising/settings'), true);
 
-  // 3. Execute Run 2 (Idempotency check against migrated DB)
+  // 4. Execute Run 2 (Idempotency check against migrated DB)
   const plan2 = await planCatalogMigrationV2({ db, products: testProducts });
   assert.equal(plan2.createsCount, 0, 'Second run must have 0 creates');
   assert.equal(plan2.updatesCount, 0, 'Second run must have 0 updates');
@@ -905,20 +1228,123 @@ test('Stage 2 - REQ-S2-007: Migration engine executes dry-run (0 writes), run 1,
   });
   assert.equal(exec2.executedCount, 0, 'Zero writes performed on second run');
 
-  // 4. Rollback: Restore exact state before Run 1
+  // 5. Subsequent Merchant Edit Protection:
+  // Simulate a merchant modifying a migrated product after migration completed!
+  const legacyBeforeMerchant = store.get('products/legacy-chohara');
+  store.set('products/legacy-chohara', {
+    ...legacyBeforeMerchant,
+    name_en: 'Merchant Custom Modified Chohara Title',
+    prices: { '500g': 1500 },
+    revision: (legacyBeforeMerchant.revision || 1) + 5, // Merchant updated revision
+    updatedAt: new Date().toISOString(),
+    migrationBatch: 'custom-merchant-edit',
+  });
+
+  // 6. Process Restart & Rollback via durable journal:
+  // Discard in-memory beforeImages; pass ONLY batchId to simulate process restart
   const rollbackResult = await rollbackCatalogMigrationV2({
     db,
-    beforeImages: exec1.beforeImages,
+    batchId: exec1.batchId,
   });
-  assert.equal(rollbackResult.deletedCount, 2); // new-seed-product and merchandising/settings
-  assert.equal(rollbackResult.restoredCount, 1); // legacy-chohara
 
-  // Verify database is restored to pre-migration state
+  // legacy-chohara had subsequent merchant edits, so rollback MUST refuse to overwrite it!
+  assert.equal(rollbackResult.skippedCount, 1, 'Subsequent merchant edits must be skipped on rollback');
+  assert.ok(rollbackResult.conflicts.some(c => c.includes('PROTECTED_MERCHANT_EDIT')), 'Conflict must be reported');
+  assert.equal(rollbackResult.deletedCount, 2, 'Untouched created items (new-seed-product, merch) are safely deleted');
+
+  // Verify merchant-edited product was NOT overwritten
+  const protectedLegacy = store.get('products/legacy-chohara');
+  assert.equal(protectedLegacy.name_en, 'Merchant Custom Modified Chohara Title');
+  assert.equal(protectedLegacy.prices['500g'], 1500);
+
+  // Verify deleted items are gone
   assert.equal(store.has('products/new-seed-product'), false);
   assert.equal(store.has('merchandising/settings'), false);
-  const restoredLegacy = store.get('products/legacy-chohara');
-  assert.equal(restoredLegacy.prices['500g'], 1234);
-  assert.equal(restoredLegacy.productFamily, undefined);
+
+  // 7. Partial execution and restart: test maxItems
+  const partialProducts: any[] = [
+    { id: 'partial-item-1', name_en: 'Partial Test Item 1', category: 'dry-fruits', prices: { '250g': 100 } },
+    { id: 'partial-item-2', name_en: 'Partial Test Item 2', category: 'dry-fruits', prices: { '250g': 200 } },
+  ];
+  const partialPlan = await planCatalogMigrationV2({ db, products: partialProducts });
+  const partialExec = await executeCatalogMigrationV2({
+    db,
+    plan: partialPlan,
+    maxItems: 1,
+    operatorUid: 'test_admin_uid',
+  });
+  assert.equal(partialExec.status, 'PARTIAL');
+  assert.equal(partialExec.executedCount, 1);
+  const partialJournal = store.get(`catalogMigrationJournals/${partialExec.batchId}`);
+  assert.equal(partialJournal.status, 'PARTIAL');
+});
+
+// --------------------------------------------------------------------------
+// TEST 10b: Atomic Concurrency Competing Writes with Promise.all
+// --------------------------------------------------------------------------
+test('Stage 2 - REQ-S2-004: Concurrent competing writes with Promise.all are atomically serialized and conflict-protected', async () => {
+  const { db } = createMockFirestore();
+  invalidateCatalogCache();
+
+  // 1. Competing createAdminProduct with colliding ID
+  const createPromise1 = createAdminProduct({
+    db,
+    body: { id: 'colliding-test-item', name_en: 'Race Item A', category: 'dry-fruits', prices: { '250g': 1000 } },
+    actorUid: 'admin_1',
+  });
+  const createPromise2 = createAdminProduct({
+    db,
+    body: { id: 'colliding-test-item', name_en: 'Race Item B', category: 'dry-fruits', prices: { '250g': 1000 } },
+    actorUid: 'admin_2',
+  });
+
+  const createResults = await Promise.allSettled([createPromise1, createPromise2]);
+  const createSuccesses = createResults.filter(r => r.status === 'fulfilled');
+  const createFailures = createResults.filter(r => r.status === 'rejected');
+  assert.equal(createSuccesses.length, 1, 'Exactly one concurrent creation must succeed');
+  assert.equal(createFailures.length, 1, 'The competing creation must fail with 409 conflict');
+  assert.equal((createFailures[0] as PromiseRejectedResult).reason.code, 'PRODUCT_ALREADY_EXISTS');
+
+  // 2. Competing updateAdminProduct with same expectedRevision
+  const updatePromise1 = updateAdminProduct({
+    db,
+    productId: 'colliding-test-item',
+    body: { name_en: 'Updated by Admin 1', expectedRevision: 1 },
+    actorUid: 'admin_1',
+  });
+  const updatePromise2 = updateAdminProduct({
+    db,
+    productId: 'colliding-test-item',
+    body: { name_en: 'Updated by Admin 2', expectedRevision: 1 },
+    actorUid: 'admin_2',
+  });
+
+  const updateResults = await Promise.allSettled([updatePromise1, updatePromise2]);
+  const updateSuccesses = updateResults.filter(r => r.status === 'fulfilled');
+  const updateFailures = updateResults.filter(r => r.status === 'rejected');
+  assert.equal(updateSuccesses.length, 1, 'Exactly one concurrent update must succeed');
+  assert.equal(updateFailures.length, 1, 'The competing update must fail with 409 revision conflict');
+  assert.equal((updateFailures[0] as PromiseRejectedResult).reason.code, 'CATALOG_REVISION_CONFLICT');
+
+  // 3. Competing updateAdminMerchandising with same expectedRevision
+  const merchSetup = await updateAdminMerchandising({ db, body: { featuredProductIds: ['badam'] }, actorUid: 'admin_1' });
+  const merchPromise1 = updateAdminMerchandising({ db, body: { featuredProductIds: ['pista'], expectedRevision: merchSetup.revision }, actorUid: 'admin_1' });
+  const merchPromise2 = updateAdminMerchandising({ db, body: { featuredProductIds: ['kaju'], expectedRevision: merchSetup.revision }, actorUid: 'admin_2' });
+
+  const merchResults = await Promise.allSettled([merchPromise1, merchPromise2]);
+  assert.equal(merchResults.filter(r => r.status === 'fulfilled').length, 1);
+  assert.equal(merchResults.filter(r => r.status === 'rejected').length, 1);
+  assert.equal((merchResults.find(r => r.status === 'rejected') as PromiseRejectedResult).reason.code, 'CATALOG_REVISION_CONFLICT');
+
+  // 4. Competing publishAdminMerchandising with same expectedDraftRevision
+  const currentDraft = await getAdminMerchandising(db, true);
+  const publishPromise1 = publishAdminMerchandising({ db, actorUid: 'admin_1', expectedDraftRevision: currentDraft.revision });
+  const publishPromise2 = publishAdminMerchandising({ db, actorUid: 'admin_2', expectedDraftRevision: currentDraft.revision });
+
+  const publishResults = await Promise.allSettled([publishPromise1, publishPromise2]);
+  assert.equal(publishResults.filter(r => r.status === 'fulfilled').length, 1);
+  assert.equal(publishResults.filter(r => r.status === 'rejected').length, 1);
+  assert.equal((publishResults.find(r => r.status === 'rejected') as PromiseRejectedResult).reason.code, 'CATALOG_REVISION_CONFLICT');
 });
 
 // --------------------------------------------------------------------------

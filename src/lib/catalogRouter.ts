@@ -82,7 +82,7 @@ export function createCatalogRouter(options: { getDb: () => Firestore | null; re
     response.setHeader('Cache-Control', 'no-store');
     const user = (request as typeof request & { user?: { uid?: string } }).user;
     try {
-      const settings = await publishAdminMerchandising({ db: options.getDb(), actorUid: user?.uid || '' });
+      const settings = await publishAdminMerchandising({ db: options.getDb(), actorUid: user?.uid || '', body: request.body });
       return response.json({ settings });
     } catch (error) {
       return fail(error, response);

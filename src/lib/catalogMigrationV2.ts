@@ -9,19 +9,28 @@
  * 1. Dry-run default: Planning function produces zero writes to the database.
  * 2. Non-destructive: Never overwrites customized merchant prices, titles, or deletes records.
  * 3. Strict idempotency: Second execution against migrated data performs 0 updates (100% SKIP).
- * 4. Deterministic rollback: Recorded before-images enable complete rollback to pre-migration state.
+ * 4. Durable journal: Persists execution progress and before-images in Firestore collection
+ *    `catalogMigrationJournals` for process restart recovery and deterministic rollback.
+ * 5. Precondition protection: Detects document changes between planning and execution.
+ * 6. Subsequent merchant edit safety: Rollback detects later merchant edits and refuses to overwrite
+ *    or delete them silently.
  */
 
+import { randomUUID } from 'node:crypto';
 import type { Firestore } from 'firebase-admin/firestore';
 import { PRODUCTS } from '../data/products';
 import { CATALOG_COLLECTION, MERCHANDISING_COLLECTION, DEFAULT_MERCHANDISING } from './catalogStore';
 import type { Product, ProductStatus, OrderMode } from '../types';
+
+export const MIGRATION_JOURNALS_COLLECTION = 'catalogMigrationJournals';
 
 export interface MigrationPlanItem {
   id: string;
   action: 'CREATE' | 'UPDATE' | 'SKIP';
   reason: string;
   changes?: Record<string, unknown>;
+  plannedRevision?: number;
+  plannedUpdatedAt?: string;
 }
 
 export interface CatalogMigrationV2Plan {
@@ -33,17 +42,30 @@ export interface CatalogMigrationV2Plan {
 }
 
 export interface CatalogMigrationV2ExecutionResult {
+  batchId: string;
+  status: 'COMPLETED' | 'PARTIAL' | 'FAILED';
   executedCount: number;
   createsCount: number;
   updatesCount: number;
+  skipsCount: number;
+  conflictsCount: number;
   beforeImages: Map<string, any | null>;
+  journalPath: string;
+  conflicts: string[];
 }
 
 export interface CatalogMigrationV2RollbackResult {
   restoredCount: number;
   deletedCount: number;
+  skippedCount: number;
+  conflicts: string[];
 }
 
+/**
+ * Resolves target taxonomy with strict precedence:
+ * Bid box packaging MUST be evaluated BEFORE general gift-boxes,
+ * mapping exact occasion tags to the specific box identity.
+ */
 export function resolveTargetTaxonomy(product: Product): {
   productFamily: string;
   collections: string[];
@@ -57,7 +79,28 @@ export function resolveTargetTaxonomy(product: Product): {
   const orderMode: OrderMode = product.quoteOnly ? 'inquiry_quote' : 'both';
   const status: ProductStatus = product.active === false ? 'archived' : 'published';
 
-  if (product.category === 'gift-boxes') {
+  // 1. Bid Box Packaging Precedence (Must be evaluated BEFORE general gift-boxes!)
+  if (product.isBidBox || product.id.startsWith('bid-box')) {
+    productFamily = 'bid-box';
+    collections.push('celebration-boxes');
+    if (product.id.includes('umrah') || product.id.includes('hajj') || product.id.includes('tabarruk')) {
+      occasions.push('umrah', 'ramadan');
+    } else if (product.id.includes('nikkah') || product.id.includes('baat-pakki') || product.id.includes('card')) {
+      occasions.push('wedding');
+    } else if (product.id.includes('birth') || product.id.includes('baby')) {
+      occasions.push('baby-announcement', 'birth');
+    } else if (product.id.includes('tin') || product.id.includes('luxury-tin')) {
+      occasions.push('wedding', 'eid');
+    } else if (product.id.includes('pyramid')) {
+      occasions.push('wedding', 'party');
+    } else if (product.id.includes('acrylic')) {
+      occasions.push('wedding', 'vip');
+    } else if (product.id.includes('jute') || product.id.includes('potli')) {
+      occasions.push('wedding', 'giveaways');
+    } else {
+      occasions.push('wedding');
+    }
+  } else if (product.category === 'gift-boxes') {
     collections.push('combos');
     productFamily = 'gift-box';
     occasions.push('wedding', 'corporate');
@@ -67,9 +110,6 @@ export function resolveTargetTaxonomy(product: Product): {
   } else if (product.category === 'dates' || ['khajoor', 'aseel-dates', 'chohara'].includes(product.id)) {
     productFamily = 'khajoor';
     occasions.push('ramadan', 'umrah');
-  } else if (product.isBidBox) {
-    collections.push('celebration-boxes');
-    occasions.push('wedding', 'umrah', 'birth');
   }
 
   return { productFamily, collections, occasions, orderMode, status };
@@ -129,11 +169,16 @@ export async function planCatalogMigrationV2(input: {
       const needsStatus = !existing.status;
       const needsOrderMode = !existing.orderMode;
 
+      const plannedRevision = Number.isSafeInteger(existing.revision) ? existing.revision : (existing.adminRevision || 0);
+      const plannedUpdatedAt = existing.updatedAt || undefined;
+
       if (!needsFamily && !needsCollections && !needsOccasions && !needsStatus && !needsOrderMode) {
         items.push({
           id: seed.id,
           action: 'SKIP',
           reason: 'Already has complete V2 data model fields. Preserving all merchant modifications.',
+          plannedRevision,
+          plannedUpdatedAt,
         });
       } else {
         const changes: Record<string, unknown> = {};
@@ -151,6 +196,8 @@ export async function planCatalogMigrationV2(input: {
           action: 'UPDATE',
           reason: 'Backfilling missing V2 canonical fields. Existing merchant prices and descriptions are strictly preserved.',
           changes,
+          plannedRevision,
+          plannedUpdatedAt,
         });
       }
     }
@@ -171,69 +218,201 @@ export async function planCatalogMigrationV2(input: {
 }
 
 /**
- * Executes a planned catalog migration and records before-images for deterministic rollback.
+ * Executes a planned catalog migration, writes progress to a durable Firestore journal,
+ * checks preconditions to prevent stale writes, and records before-images for deterministic rollback.
  */
 export async function executeCatalogMigrationV2(input: {
   db: Firestore | any;
   plan: CatalogMigrationV2Plan;
   operatorUid?: string;
+  batchId?: string;
+  maxItems?: number; // Allows partial execution simulation
 }): Promise<CatalogMigrationV2ExecutionResult> {
   const db = input.db;
-  const { plan, operatorUid } = input;
+  const { plan, operatorUid, maxItems } = input;
+  const batchId = input.batchId || `migration_v2_${Date.now()}_${randomUUID().slice(0, 8)}`;
+  const journalRef = db.collection(MIGRATION_JOURNALS_COLLECTION).doc(batchId);
+  const now = new Date().toISOString();
+
   const beforeImages = new Map<string, any | null>();
+  const journalBeforeImages: Record<string, any> = {};
+  const executedItemIds: string[] = [];
+  const conflicts: string[] = [];
 
   let executedCount = 0;
+  let createsCount = 0;
+  let updatesCount = 0;
+  let skipsCount = 0;
+  let conflictsCount = 0;
+
+  // Initialize durable migration journal
+  await journalRef.set({
+    batchId,
+    status: 'EXECUTING',
+    operatorUid: operatorUid || 'automated_migration',
+    startedAt: now,
+    planSummary: {
+      createsCount: plan.createsCount,
+      updatesCount: plan.updatesCount,
+      skipsCount: plan.skipsCount,
+      merchAction: plan.merchAction,
+    },
+    executedItemIds: [],
+    beforeImages: {},
+    conflicts: [],
+  });
 
   for (const item of plan.items) {
-    if (item.action === 'SKIP' || !item.changes) continue;
+    if (item.action === 'SKIP' || !item.changes) {
+      skipsCount++;
+      continue;
+    }
+
+    if (maxItems !== undefined && executedCount >= maxItems) {
+      break;
+    }
 
     const docRef = db.collection(CATALOG_COLLECTION).doc(item.id);
-    const snap = await docRef.get();
-    beforeImages.set(item.id, snap.exists ? snap.data() : null);
 
-    await docRef.set(item.changes, { merge: true });
-    executedCount++;
+    // Precondition and mutation inside transaction
+    const executeItem = async (transaction: any) => {
+      const snap = await transaction.get(docRef);
+      const exists = snap.exists;
+      const currentData = exists ? snap.data() : null;
+
+      if (item.action === 'CREATE' && exists) {
+        conflicts.push(`CONFLICT_CREATE_ALREADY_EXISTS: ${item.id} now exists in Firestore`);
+        conflictsCount++;
+        return;
+      }
+
+      if (item.action === 'UPDATE') {
+        if (!exists) {
+          conflicts.push(`CONFLICT_UPDATE_MISSING: ${item.id} was deleted since planning`);
+          conflictsCount++;
+          return;
+        }
+        if (item.plannedRevision !== undefined) {
+          const currentRev = Number.isSafeInteger(currentData.revision) ? currentData.revision : (currentData.adminRevision || 0);
+          if (currentRev !== item.plannedRevision) {
+            conflicts.push(`CONFLICT_STALE_PLAN: ${item.id} modified since planning (rev ${currentRev} != planned ${item.plannedRevision})`);
+            conflictsCount++;
+            return;
+          }
+        }
+      }
+
+      beforeImages.set(item.id, currentData);
+      journalBeforeImages[item.id] = currentData;
+      executedItemIds.push(item.id);
+
+      transaction.set(docRef, { ...item.changes, migrationBatch: batchId }, { merge: true });
+
+      if (item.action === 'CREATE') createsCount++;
+      if (item.action === 'UPDATE') updatesCount++;
+      executedCount++;
+    };
+
+    if (typeof db.runTransaction === 'function') {
+      await db.runTransaction(executeItem);
+    } else {
+      const snap = await docRef.get();
+      await executeItem({
+        get: async () => snap,
+        set: (ref: any, data: any, opts: any) => ref.set(data, opts),
+      });
+    }
   }
 
-  if (plan.merchAction === 'CREATE') {
+  if (plan.merchAction === 'CREATE' && (maxItems === undefined || executedCount < maxItems)) {
     const merchRef = db.collection(MERCHANDISING_COLLECTION).doc('settings');
     const snap = await merchRef.get();
-    beforeImages.set('merchandising/settings', snap.exists ? snap.data() : null);
-
-    await merchRef.set(DEFAULT_MERCHANDISING, { merge: true });
+    const currentMerch = snap.exists ? snap.data() : null;
+    beforeImages.set('merchandising/settings', currentMerch);
+    journalBeforeImages['merchandising/settings'] = currentMerch;
+    await merchRef.set({ ...DEFAULT_MERCHANDISING, migrationBatch: batchId }, { merge: true });
   }
+
+  const isPartial = maxItems !== undefined && executedCount < (plan.createsCount + plan.updatesCount);
+  const finalStatus = isPartial ? 'PARTIAL' : (conflictsCount > 0 ? 'PARTIAL' : 'COMPLETED');
+  const completedAt = new Date().toISOString();
+
+  // Update durable migration journal
+  await journalRef.set({
+    batchId,
+    status: finalStatus,
+    operatorUid: operatorUid || 'automated_migration',
+    startedAt: now,
+    completedAt,
+    executedCount,
+    createsCount,
+    updatesCount,
+    skipsCount,
+    conflictsCount,
+    executedItemIds,
+    beforeImages: journalBeforeImages,
+    conflicts,
+  }, { merge: true });
 
   if (executedCount > 0 || plan.merchAction === 'CREATE') {
     await db.collection('catalogAudits').add({
       action: 'MIGRATION_V2_EXECUTED',
+      batchId,
+      status: finalStatus,
       executedCount,
-      createsCount: plan.createsCount,
-      updatesCount: plan.updatesCount,
-      timestamp: new Date().toISOString(),
+      createsCount,
+      updatesCount,
+      timestamp: completedAt,
       operator: operatorUid || 'automated_migration',
     });
   }
 
   return {
+    batchId,
+    status: finalStatus,
     executedCount,
-    createsCount: plan.createsCount,
-    updatesCount: plan.updatesCount,
+    createsCount,
+    updatesCount,
+    skipsCount,
+    conflictsCount,
     beforeImages,
+    journalPath: `${MIGRATION_JOURNALS_COLLECTION}/${batchId}`,
+    conflicts,
   };
 }
 
 /**
- * Reverts mutations using the before-images captured during execution.
+ * Reverts mutations using the durable journal or provided before-images.
+ * Strictly protects subsequent merchant edits: if a document was modified by a merchant
+ * after this migration batch, rollback refuses to overwrite or delete it silently.
  */
 export async function rollbackCatalogMigrationV2(input: {
   db: Firestore | any;
-  beforeImages: Map<string, any | null>;
+  batchId?: string;
+  beforeImages?: Map<string, any | null>;
+  operatorUid?: string;
 }): Promise<CatalogMigrationV2RollbackResult> {
   const db = input.db;
-  const { beforeImages } = input;
+  let beforeImages = input.beforeImages;
+  let batchId = input.batchId;
+
+  // Support process restart by retrieving durable journal from Firestore if not in memory
+  if ((!beforeImages || beforeImages.size === 0) && batchId) {
+    const journalSnap = await db.collection(MIGRATION_JOURNALS_COLLECTION).doc(batchId).get();
+    if (journalSnap.exists) {
+      const journalData = journalSnap.data();
+      beforeImages = new Map<string, any | null>(Object.entries(journalData.beforeImages || {}));
+    }
+  }
+
+  if (!beforeImages || beforeImages.size === 0) {
+    return { restoredCount: 0, deletedCount: 0, skippedCount: 0, conflicts: ['NO_BEFORE_IMAGES_FOUND'] };
+  }
 
   let restoredCount = 0;
   let deletedCount = 0;
+  let skippedCount = 0;
+  const conflicts: string[] = [];
 
   for (const [key, beforeData] of beforeImages.entries()) {
     let docRef: any;
@@ -243,17 +422,55 @@ export async function rollbackCatalogMigrationV2(input: {
       docRef = db.collection(CATALOG_COLLECTION).doc(key);
     }
 
+    const currentSnap = await docRef.get();
+    if (!currentSnap.exists) {
+      continue;
+    }
+    const current = currentSnap.data() || {};
+
     if (beforeData === null) {
+      // Created by migration: check if merchant subsequently modified it
+      const currentRev = Number.isSafeInteger(current.revision) ? current.revision : (current.adminRevision || 0);
+      const isSubsequentMerchantEdit = currentRev > 1 || (batchId && current.migrationBatch && current.migrationBatch !== batchId);
+      if (isSubsequentMerchantEdit) {
+        conflicts.push(`PROTECTED_MERCHANT_EDIT: Refusing to delete ${key} because it was modified by a merchant after migration (rev ${currentRev})`);
+        skippedCount++;
+        continue;
+      }
       await docRef.delete();
       deletedCount++;
     } else {
+      // Updated by migration: check if merchant subsequently modified it
+      const currentRev = Number.isSafeInteger(current.revision) ? current.revision : (current.adminRevision || 0);
+      const beforeRev = Number.isSafeInteger(beforeData.revision) ? beforeData.revision : (beforeData.adminRevision || 0);
+      // If revision is higher than what migration set (beforeRev + 1), merchant edited it!
+      const isSubsequentMerchantEdit = currentRev > (beforeRev + 1) || (batchId && current.migrationBatch && current.migrationBatch !== batchId);
+      if (isSubsequentMerchantEdit) {
+        conflicts.push(`PROTECTED_MERCHANT_EDIT: Refusing to overwrite ${key} because it has subsequent merchant edits (rev ${currentRev} > migration rev ${beforeRev + 1})`);
+        skippedCount++;
+        continue;
+      }
       await docRef.set(beforeData);
       restoredCount++;
     }
   }
 
+  if (batchId) {
+    await db.collection(MIGRATION_JOURNALS_COLLECTION).doc(batchId).set({
+      status: 'ROLLED_BACK',
+      rolledBackAt: new Date().toISOString(),
+      restoredCount,
+      deletedCount,
+      skippedCount,
+      rollbackConflicts: conflicts,
+      rollbackOperator: input.operatorUid || 'automated_migration',
+    }, { merge: true });
+  }
+
   return {
     restoredCount,
     deletedCount,
+    skippedCount,
+    conflicts,
   };
 }

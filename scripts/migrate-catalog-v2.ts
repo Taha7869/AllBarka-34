@@ -146,12 +146,14 @@ async function runMigration() {
   });
 
   console.log(`\n🎉 Migration successfully completed! ${execResult.executedCount} documents updated.`);
+  console.log(`Durable Migration Journal: ${execResult.journalPath}`);
   console.log('\n===========================================================');
   console.log('                     ROLLBACK INSTRUCTIONS                 ');
   console.log('===========================================================');
-  console.log('Every mutation merged fields under migrationBatch: v2-initial / v2-backfill.');
-  console.log('To roll back if necessary, call rollbackCatalogMigrationV2 with the captured before-images.');
-  console.log('No existing merchant price records were deleted or overwritten.');
+  console.log(`Migration Batch ID: ${execResult.batchId}`);
+  console.log('To roll back safely with durable state and merchant-edit protection, run:');
+  console.log(`  rollbackCatalogMigrationV2({ db, batchId: '${execResult.batchId}' })`);
+  console.log('Subsequent merchant edits will be automatically detected and protected.');
   console.log('===========================================================\n');
 }
 

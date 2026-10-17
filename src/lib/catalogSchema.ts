@@ -24,7 +24,7 @@ export const catalogVariantId = (label: string) => `portion-${encodeURIComponent
 
 /** Canonical pricing has one editable variants array. Legacy prices are derived only. */
 export function validateCatalogPricing(value: unknown, seed: Product): CatalogPricing {
-  if (!object(value) || value.schemaVersion !== 1 || value.productId !== seed.id || !integer(value.revision, 0, Number.MAX_SAFE_INTEGER)
+  if (!object(value) || value.schemaVersion !== 1 || (value.productId !== seed.id && (value as any).id !== seed.id) || !integer(value.revision, 0, Number.MAX_SAFE_INTEGER)
     || typeof value.active !== 'boolean' || typeof value.quoteOnly !== 'boolean' || !Array.isArray(value.variants) || value.variants.length > 20
     || !integer(value.wholesale, 0) || !integer(value.pricePer100g, 0) || typeof value.allowCustomWeight !== 'boolean'
     || !integer(value.minCustomWeightG, 100, 5000) || !integer(value.maxCustomWeightG, 100, 5000)
@@ -72,7 +72,33 @@ export function pricingFromLegacy(value: unknown, seed: Product): CatalogPricing
   }, seed);
 }
 export function readCatalogPricing(value: unknown, seed: Product): CatalogPricing {
-  return object(value) && value.schemaVersion !== undefined ? validateCatalogPricing(value, seed) : pricingFromLegacy(value, seed);
+  if (object(value) && value.schemaVersion !== undefined) {
+    const raw = value as any;
+    const normalized = {
+      schemaVersion: 1,
+      productId: seed.id,
+      revision: Number.isSafeInteger(raw.revision) ? raw.revision : 0,
+      active: typeof raw.active === 'boolean' ? raw.active : (seed.active ?? true),
+      quoteOnly: typeof raw.quoteOnly === 'boolean' ? raw.quoteOnly : (seed.quoteOnly ?? false),
+      variants: Array.isArray(raw.variants)
+        ? raw.variants.map((v: any) => ({
+            id: v.id === catalogVariantId(v.label) ? v.id : catalogVariantId(v.label),
+            label: v.label,
+            price: Math.round(Number(v.price)),
+            available: v.available !== false,
+            weightGrams: Number.isSafeInteger(v.weightGrams) ? v.weightGrams : null,
+          }))
+        : [],
+      wholesale: Number.isSafeInteger(raw.wholesale) ? raw.wholesale : (seed.wholesale ?? 0),
+      pricePer100g: Number.isSafeInteger(raw.pricePer100g) ? raw.pricePer100g : (seed.pricePer100g ?? 0),
+      allowCustomWeight: typeof raw.allowCustomWeight === 'boolean' ? raw.allowCustomWeight : Boolean(seed.allowCustomWeight),
+      minCustomWeightG: Number.isSafeInteger(raw.minCustomWeightG) ? raw.minCustomWeightG : (seed.minCustomWeightG ?? 100),
+      maxCustomWeightG: Number.isSafeInteger(raw.maxCustomWeightG) ? raw.maxCustomWeightG : (seed.maxCustomWeightG ?? 5000),
+      shippingWeightG: raw.shippingWeightG ?? seed.shippingWeightG ?? null,
+    };
+    return validateCatalogPricing(normalized, seed);
+  }
+  return pricingFromLegacy(value, seed);
 }
 
 export function productFromPricing(seed: Product, pricing: CatalogPricing, version: string): Product {
@@ -93,17 +119,101 @@ export function unavailableProduct(seed: Product): Product {
   return { ...seed, active: false, prices: {}, variants: [], wholesale: 0, allowCustomWeight: false, pricePer100g: 0, catalogRevision: 'unavailable' };
 }
 
+export const PUBLIC_PRODUCT_FIELDS = [
+  'id',
+  'name',
+  'name_en',
+  'name_ur',
+  'name_ar',
+  'category',
+  'category_en',
+  'category_ur',
+  'category_ar',
+  'prices',
+  'variants',
+  'image',
+  'imageName',
+  'desc_en',
+  'desc_ur',
+  'desc_ar',
+  'description',
+  'active',
+  'status',
+  'orderMode',
+  'quoteOnly',
+  'wholesale',
+  'isBundle',
+  'components',
+  'contents',
+  'contents_en',
+  'contents_ur',
+  'contents_ar',
+  'inStock',
+  'stockQty',
+  'isBidBox',
+  'bidBoxConfig',
+  'allowCustomWeight',
+  'minCustomWeightG',
+  'maxCustomWeightG',
+  'pricePer100g',
+  'shippingWeightG',
+  'shippingWeights',
+  'productFamily',
+  'collections',
+  'occasions',
+  'personalization',
+  'inclusions',
+  'exclusions',
+  'moqOverride',
+  'preparationDays',
+  'displayOrder',
+  'badge',
+  'badges',
+  'keywords',
+  'nutritionalHighlights',
+  'fragile',
+  'origins',
+  'origin_en',
+  'origin_ur',
+  'origin_ar',
+  'harvest_en',
+  'harvest_ur',
+  'harvest_ar',
+  'sourcingDetails_en',
+  'sourcingDetails_ur',
+  'sourcingDetails_ar',
+  'storageTips_en',
+  'storageTips_ur',
+  'storageTips_ar',
+  'packagingDetails_en',
+  'packagingDetails_ur',
+  'packagingDetails_ar',
+  'allergenWarning_en',
+  'allergenWarning_ur',
+  'allergenWarning_ar',
+  'tasteProfile_en',
+  'tasteProfile_ur',
+  'tasteProfile_ar',
+  'recipe_en',
+  'recipe_ur',
+  'recipe_ar',
+  'health_en',
+  'health_ur',
+  'health_ar',
+  'tag_en',
+  'tag_ur',
+  'tag_ar',
+  'catalogRevision',
+] as const;
+
 export function stripPrivateProductFields(product: Product): Product {
-  const sanitized = { ...product };
-  delete sanitized.referencePrice;
-  delete sanitized.supplierCost;
-  delete sanitized.supplierName;
-  delete sanitized.supplierItemUrl;
-  delete sanitized.internalNotes;
-  delete sanitized.importBatch;
-  delete sanitized.importTimestamp;
-  delete sanitized.adminRevision;
-  return sanitized;
+  const sanitized: Record<string, unknown> = {};
+  for (const field of PUBLIC_PRODUCT_FIELDS) {
+    if (Object.hasOwn(product, field) && (product as any)[field] !== undefined) {
+      sanitized[field] = (product as any)[field];
+    }
+  }
+  return sanitized as unknown as Product;
 }
 
 export function isProductPubliclyVisible(product: Product): boolean {
@@ -132,11 +242,14 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
   const category = typeof value.category === 'string' && value.category.trim() ? value.category.trim() : 'dry-fruits';
 
   let rawPrices = object(value.prices) ? { ...(value.prices as Record<string, unknown>) } : {};
-  if (Object.keys(rawPrices).length === 0 && Array.isArray(value.variants)) {
-    for (const v of value.variants) {
+  const hasVariantsArray = Array.isArray(value.variants);
+  if (hasVariantsArray) {
+    for (const v of (value.variants as unknown[])) {
       if (object(v) && typeof v.label === 'string' && v.label.trim()) {
         const num = Number(v.price);
-        if (Number.isFinite(num) && num > 0) {
+        if (v.available === false) {
+          delete rawPrices[v.label.trim()];
+        } else if (Number.isFinite(num) && num > 0) {
           rawPrices[v.label.trim()] = Math.round(num);
         }
       }
@@ -153,7 +266,8 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
   }
 
   const quoteOnly = Boolean(value.quoteOnly);
-  if (!quoteOnly && Object.keys(prices).length === 0) {
+  const hasConfiguredVariants = hasVariantsArray && (value.variants as unknown[]).length > 0;
+  if (!quoteOnly && Object.keys(prices).length === 0 && !hasConfiguredVariants) {
     throw new CatalogError('PRODUCT_REQUIRES_PRICING', 400);
   }
 
@@ -162,7 +276,7 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
     : (value.active === false ? 'archived' : 'draft');
   const active = value.active !== undefined
     ? Boolean(value.active)
-    : (status === 'published');
+    : (status === 'published' && Object.keys(prices).length > 0);
 
   const orderMode = value.orderMode === 'standard' || value.orderMode === 'inquiry_quote' || value.orderMode === 'both'
     ? value.orderMode
@@ -446,7 +560,7 @@ export function dynamicProductFromDocument(data: unknown, id: string): Product {
 export function validateInternalDestination(path: unknown): string {
   if (typeof path !== 'string') throw new CatalogError('INVALID_DESTINATION_PATH', 400);
   const trimmed = path.trim();
-  if (!trimmed.startsWith('/') || trimmed.startsWith('//') || /^[a-z]+:/i.test(trimmed) || /[\u0000-\u001f\u007f]/.test(trimmed)) {
+  if (!trimmed.startsWith('/') || trimmed.startsWith('//') || trimmed.includes('\\') || /^[a-z]+:/i.test(trimmed) || /[\u0000-\u001f\u007f]/.test(trimmed)) {
     throw new CatalogError('INVALID_DESTINATION_PATH', 400);
   }
   return trimmed;

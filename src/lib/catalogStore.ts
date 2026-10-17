@@ -13,7 +13,8 @@ import {
   validateDynamicProduct,
   validateMerchandisingSettings,
   catalogVariantId,
-  type CatalogRecord
+  type CatalogRecord,
+  type CatalogVariant
 } from './catalogSchema';
 import { resolveCartIdentity } from './cartInput';
 import { CUSTOM_HAMPER_PRODUCT_ID, HAMPER_SELECTION_IDS, type HamperBox } from './hamperCatalog';
@@ -35,17 +36,46 @@ export function storedCatalogRecord(productId: string, value: unknown): CatalogR
       const prod = dynamicProductFromDocument(value, productId);
       // Canonical schemaVersion: 1 documents are authoritative directly
       if ((value as any).schemaVersion === 1 && Array.isArray((value as any).variants)) {
-        const pricing = validateCatalogPricing(value, prod);
-        const updatedAt = typeof (value as any).updatedAt === 'string' ? (value as any).updatedAt : null;
+        const raw = value as any;
+        const normalizedPricing = {
+          schemaVersion: 1 as const,
+          productId,
+          revision: Number(raw.revision) || 0,
+          active: typeof raw.active === 'boolean' ? raw.active : (prod.active !== false && prod.status !== 'archived'),
+          quoteOnly: typeof raw.quoteOnly === 'boolean' ? raw.quoteOnly : Boolean(prod.quoteOnly),
+          variants: raw.variants.map((v: any) => ({
+            id: v.id === catalogVariantId(v.label) ? v.id : catalogVariantId(v.label),
+            label: v.label,
+            price: Math.round(Number(v.price)),
+            available: v.available !== false,
+            weightGrams: Number.isSafeInteger(v.weightGrams) ? v.weightGrams : null,
+          })),
+          wholesale: Number.isSafeInteger(raw.wholesale) ? raw.wholesale : (prod.wholesale || 0),
+          pricePer100g: Number.isSafeInteger(raw.pricePer100g) ? raw.pricePer100g : (prod.pricePer100g || 0),
+          allowCustomWeight: typeof raw.allowCustomWeight === 'boolean' ? raw.allowCustomWeight : Boolean(prod.allowCustomWeight),
+          minCustomWeightG: Number.isSafeInteger(raw.minCustomWeightG) ? raw.minCustomWeightG : (prod.minCustomWeightG || 100),
+          maxCustomWeightG: Number.isSafeInteger(raw.maxCustomWeightG) ? raw.maxCustomWeightG : (prod.maxCustomWeightG || 5000),
+          shippingWeightG: raw.shippingWeightG ?? prod.shippingWeightG ?? null,
+        };
+        const pricing = validateCatalogPricing(normalizedPricing, prod);
+        const updatedAt = typeof raw.updatedAt === 'string' ? raw.updatedAt : null;
         return { pricing, version: fingerprint(pricing), updatedAt };
       }
-      const variants = Object.entries(prod.prices).map(([label, price]) => ({
-        id: catalogVariantId(label),
-        label,
-        price,
-        available: true,
-        weightGrams: prod.shippingWeights?.[label] ?? null,
-      }));
+      const variants = Array.isArray((value as any).variants)
+        ? (value as any).variants.map((v: any) => ({
+            id: v.id || catalogVariantId(v.label),
+            label: v.label,
+            price: Math.round(Number(v.price)),
+            available: v.available !== false,
+            weightGrams: v.weightGrams ?? null,
+          }))
+        : Object.entries(prod.prices).map(([label, price]) => ({
+            id: catalogVariantId(label),
+            label,
+            price,
+            available: true,
+            weightGrams: prod.shippingWeights?.[label] ?? null,
+          }));
       const pricing = {
         schemaVersion: 1 as const,
         productId,
@@ -240,7 +270,7 @@ export async function loadAuthoritativeCatalog(db: Firestore | null, options: { 
     for (const snap of dynamicSnapshots) snapshotMap.set(snap.id, snap);
 
     snapshots = [...snapshotMap.values()];
-  } catch {
+  } catch (error) {
     throw new CatalogError('CATALOG_STORE_UNAVAILABLE', 503);
   }
   const snapshot = snapshotFromDocuments(snapshots, now);
@@ -322,11 +352,32 @@ export async function getAdminProductRecord(db: Firestore | null, productId: str
   if (!db) throw new CatalogError('CATALOG_STORE_UNAVAILABLE', 503);
   const snapshot = await db.collection(CATALOG_COLLECTION).doc(productId).get();
   if (snapshot.exists) {
-    const data = snapshot.data();
+    const data = (snapshot.data() || {}) as Record<string, any>;
     const dynamicProd = dynamicProductFromDocument(data, productId);
+    // In admin representation, preserve ALL variants (including disabled ones) with full status
+    const allVariants = Array.isArray(data.variants)
+      ? data.variants.map((v: any) => ({
+          id: v.id || catalogVariantId(v.label),
+          label: v.label,
+          price: Math.round(Number(v.price)),
+          available: v.available !== false,
+          weightGrams: v.weightGrams ?? null,
+        }))
+      : dynamicProd.variants.map(v => ({
+          id: catalogVariantId(v.label),
+          label: v.label,
+          price: v.price,
+          available: true,
+          weightGrams: dynamicProd.shippingWeights?.[v.label] ?? null,
+        }));
+    const adminPrices: Record<string, number> = {};
+    for (const v of allVariants) adminPrices[v.label] = v.price;
+
     return {
       ...dynamicProd,
-      revision: Number(data?.revision) || 1,
+      prices: adminPrices,
+      variants: allVariants as any,
+      revision: Number(data.revision) || 1,
     };
   }
   if (seeds.has(productId)) {
@@ -350,14 +401,38 @@ export async function createAdminProduct(input: { db: Firestore | null; body: un
   const validated = validateDynamicProduct(input.body);
   const db = input.db;
   const ref = db.collection(CATALOG_COLLECTION).doc(validated.id);
-
-  const existing = await ref.get();
-  if (existing.exists) throw new CatalogError('PRODUCT_ALREADY_EXISTS', 409);
-
+  const auditRef = db.collection('catalogAudits').doc(randomUUID());
   const now = new Date().toISOString();
   const revision = 1;
+
+  const rawBody = (input.body && typeof input.body === 'object' ? input.body : {}) as Record<string, any>;
+  const variants = Array.isArray(rawBody.variants)
+    ? rawBody.variants.map((v: any) => ({
+        id: v.id || catalogVariantId(v.label),
+        label: v.label.trim(),
+        price: Math.round(Number(v.price)),
+        available: v.available !== false,
+        weightGrams: Number.isSafeInteger(v.weightGrams) ? v.weightGrams : null,
+      }))
+    : Object.entries(validated.prices).map(([label, price]) => ({
+        id: catalogVariantId(label),
+        label,
+        price,
+        available: true,
+        weightGrams: validated.shippingWeights?.[label] ?? null,
+      }));
+
   const docData = {
     ...validated,
+    schemaVersion: 1,
+    productId: validated.id,
+    variants,
+    wholesale: validated.wholesale || 0,
+    pricePer100g: validated.pricePer100g || 0,
+    allowCustomWeight: Boolean(validated.allowCustomWeight),
+    minCustomWeightG: validated.minCustomWeightG || 100,
+    maxCustomWeightG: validated.maxCustomWeightG || 5000,
+    shippingWeightG: validated.shippingWeightG ?? null,
     revision,
     adminRevision: revision,
     status: validated.status || 'draft',
@@ -368,20 +443,25 @@ export async function createAdminProduct(input: { db: Firestore | null; body: un
     updatedBy: input.actorUid,
   };
 
-  await ref.set(docData);
-  await db.collection('catalogAudits').doc(randomUUID()).set({
-    productId: validated.id,
-    action: 'PRODUCT_CREATED',
-    data: docData,
-    actorUid: input.actorUid,
-    updatedAt: now,
+  const result = await db.runTransaction(async transaction => {
+    const existingSnap = await transaction.get(ref);
+    if (existingSnap.exists || seeds.has(validated.id)) throw new CatalogError('PRODUCT_ALREADY_EXISTS', 409);
+    transaction.set(ref, docData);
+    transaction.set(auditRef, {
+      productId: validated.id,
+      action: 'PRODUCT_CREATED',
+      data: docData,
+      actorUid: input.actorUid,
+      updatedAt: now,
+    });
+    return {
+      ...dynamicProductFromDocument(docData, validated.id),
+      revision,
+    };
   });
 
   invalidateCatalogCache();
-  return {
-    ...dynamicProductFromDocument(docData, validated.id),
-    revision,
-  };
+  return result;
 }
 
 export async function updateAdminProduct(input: { db: Firestore | null; productId: string; body: unknown; actorUid: string }): Promise<Product & { revision: number }> {
@@ -406,16 +486,69 @@ export async function updateAdminProduct(input: { db: Firestore | null; productI
     }
 
     const nextRevision = currentRevision + 1;
-    const validated = validateDynamicProduct({ ...existingData, ...body, id: input.productId }, input.productId);
     const now = new Date().toISOString();
-    const updatedData = {
+
+    const isCanonical = existingData.schemaVersion === 1 || Array.isArray(existingData.variants);
+    const hasBodyVariants = Array.isArray(body.variants);
+
+    let canonicalVariants: CatalogVariant[] | undefined;
+    if (hasBodyVariants) {
+      const existingVariantsMap = new Map<string, any>(
+        Array.isArray(existingData.variants) ? existingData.variants.map((v: any) => [v.label, v]) : []
+      );
+      canonicalVariants = (body.variants as any[]).map((v: any) => {
+        const label = typeof v.label === 'string' ? v.label.trim() : '';
+        const price = Math.round(Number(v.price));
+        const existingV = existingVariantsMap.get(label);
+        const available = typeof v.available === 'boolean' ? v.available : (existingV ? existingV.available !== false : true);
+        const weightGrams = Number.isSafeInteger(v.weightGrams) ? v.weightGrams : (existingV?.weightGrams ?? null);
+        return {
+          id: v.id || catalogVariantId(label),
+          label,
+          price,
+          available,
+          weightGrams,
+        };
+      });
+    } else if (isCanonical && Array.isArray(existingData.variants)) {
+      canonicalVariants = existingData.variants.map((v: any) => ({
+        id: v.id || catalogVariantId(v.label),
+        label: v.label,
+        price: Math.round(Number(v.price)),
+        available: v.available !== false,
+        weightGrams: v.weightGrams ?? null,
+      }));
+    }
+
+    const validated = validateDynamicProduct({
+      ...existingData,
+      ...body,
+      id: input.productId,
+      variants: canonicalVariants || existingData.variants,
+    }, input.productId);
+
+    const updatedData: Record<string, any> = {
       ...existingData,
       ...validated,
+      id: input.productId,
       revision: nextRevision,
       adminRevision: nextRevision,
       updatedAt: now,
       updatedBy: input.actorUid,
     };
+
+    if (isCanonical || canonicalVariants) {
+      updatedData.schemaVersion = 1;
+      updatedData.productId = input.productId;
+      if (canonicalVariants) updatedData.variants = canonicalVariants;
+      if (existingData.wholesale !== undefined && body.wholesale === undefined) updatedData.wholesale = existingData.wholesale;
+      if (existingData.pricePer100g !== undefined && body.pricePer100g === undefined) updatedData.pricePer100g = existingData.pricePer100g;
+      if (existingData.allowCustomWeight !== undefined && body.allowCustomWeight === undefined) updatedData.allowCustomWeight = existingData.allowCustomWeight;
+      if (existingData.minCustomWeightG !== undefined && body.minCustomWeightG === undefined) updatedData.minCustomWeightG = existingData.minCustomWeightG;
+      if (existingData.maxCustomWeightG !== undefined && body.maxCustomWeightG === undefined) updatedData.maxCustomWeightG = existingData.maxCustomWeightG;
+      if (existingData.shippingWeightG !== undefined && body.shippingWeightG === undefined) updatedData.shippingWeightG = existingData.shippingWeightG;
+      if (existingData.pricingMode && !body.pricingMode) updatedData.pricingMode = existingData.pricingMode;
+    }
 
     transaction.set(ref, updatedData);
     transaction.set(db.collection('catalogAudits').doc(randomUUID()), {
@@ -443,50 +576,70 @@ export async function duplicateAdminProduct(input: { db: Firestore | null; produ
   const targetId = input.productId || input.sourceProductId;
   if (!targetId) throw new CatalogError('INVALID_PRODUCT_ID', 400);
   const db = input.db;
-  const snap = await db.collection(CATALOG_COLLECTION).doc(targetId).get();
-  const source = snap.exists ? (snap.data() as Record<string, any>) : (seeds.get(targetId) as Record<string, any> | undefined);
-  if (!source) throw new CatalogError('UNKNOWN_CATALOG_PRODUCT', 404);
+  const sourceRef = db.collection(CATALOG_COLLECTION).doc(targetId);
 
   const body = (input.body && typeof input.body === 'object' ? input.body : {}) as Record<string, any>;
+  const rawRev = input.expectedRevision !== undefined ? input.expectedRevision : body.expectedRevision;
+  const expectedRevision = rawRev !== undefined ? Number(rawRev) : undefined;
+  if (expectedRevision !== undefined && (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0)) {
+    throw new CatalogError('CATALOG_REVISION_CONFLICT', 409);
+  }
+
   const requestedId = typeof body.newProductId === 'string' && body.newProductId.trim()
     ? body.newProductId.trim()
     : `${targetId}-draft-${Date.now().toString(36)}-${randomUUID().slice(0, 4)}`;
   if (!/^[a-z0-9_-]{2,80}$/.test(requestedId)) throw new CatalogError('INVALID_PRODUCT_ID', 400);
 
   const existingRef = db.collection(CATALOG_COLLECTION).doc(requestedId);
-  const existingSnap = await existingRef.get();
-  if (existingSnap.exists) throw new CatalogError('PRODUCT_ALREADY_EXISTS', 409);
-
+  const auditRef = db.collection('catalogAudits').doc(randomUUID());
   const now = new Date().toISOString();
-  const newProductData = {
-    ...source,
-    id: requestedId,
-    name_en: `${source.name_en || source.name} (Draft Copy)`,
-    name: `${source.name_en || source.name} (Draft Copy)`,
-    status: 'draft',
-    active: false,
-    revision: 1,
-    adminRevision: 1,
-    createdAt: now,
-    updatedAt: now,
-    createdBy: input.actorUid,
-    updatedBy: input.actorUid,
-  };
 
-  await existingRef.set(newProductData);
-  await db.collection('catalogAudits').doc(randomUUID()).set({
-    productId: requestedId,
-    action: 'PRODUCT_DUPLICATED',
-    sourceProductId: targetId,
-    actorUid: input.actorUid,
-    updatedAt: now,
+  const result = await db.runTransaction(async transaction => {
+    const snap = await transaction.get(sourceRef);
+    const source = snap.exists ? (snap.data() as Record<string, any>) : (seeds.get(targetId) as Record<string, any> | undefined);
+    if (!source) throw new CatalogError('UNKNOWN_CATALOG_PRODUCT', 404);
+
+    if (expectedRevision !== undefined) {
+      const currentRev = Number.isSafeInteger(source.revision) ? source.revision : (source.adminRevision || 0);
+      if (currentRev !== expectedRevision) throw new CatalogError('CATALOG_REVISION_CONFLICT', 409);
+    }
+
+    const existingSnap = await transaction.get(existingRef);
+    if (existingSnap.exists || seeds.has(requestedId)) throw new CatalogError('PRODUCT_ALREADY_EXISTS', 409);
+
+    const newProductData = {
+      ...source,
+      id: requestedId,
+      productId: requestedId,
+      name_en: `${source.name_en || source.name} (Draft Copy)`,
+      name: `${source.name_en || source.name} (Draft Copy)`,
+      status: 'draft',
+      active: false,
+      revision: 1,
+      adminRevision: 1,
+      createdAt: now,
+      updatedAt: now,
+      createdBy: input.actorUid,
+      updatedBy: input.actorUid,
+    };
+
+    transaction.set(existingRef, newProductData);
+    transaction.set(auditRef, {
+      productId: requestedId,
+      action: 'PRODUCT_DUPLICATED',
+      sourceProductId: targetId,
+      actorUid: input.actorUid,
+      updatedAt: now,
+    });
+
+    return {
+      ...dynamicProductFromDocument(newProductData, requestedId),
+      revision: 1,
+    };
   });
 
   invalidateCatalogCache();
-  return {
-    ...dynamicProductFromDocument(newProductData, requestedId),
-    revision: 1,
-  };
+  return result;
 }
 
 export async function publishAdminProduct(input: { db: Firestore | null; productId: string; expectedRevision?: number; body?: unknown; actorUid: string }): Promise<Product & { revision: number }> {
@@ -630,60 +783,120 @@ export async function updateAdminMerchandising(input: { db: Firestore | null; bo
   const db = input.db;
   const body = (input.body && typeof input.body === 'object' ? input.body : {}) as Record<string, any>;
   const expectedRevision = body.expectedRevision !== undefined ? Number(body.expectedRevision) : undefined;
-
-  const ref = db.collection(MERCHANDISING_COLLECTION).doc('preview');
-  const snap = await ref.get();
-  const current = snap.exists ? validateMerchandisingSettings(snap.data()) : DEFAULT_MERCHANDISING;
-
-  if (expectedRevision !== undefined && current.revision !== expectedRevision) {
+  if (expectedRevision !== undefined && (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0)) {
     throw new CatalogError('CATALOG_REVISION_CONFLICT', 409);
   }
 
-  const nextRevision = (current.revision || 0) + 1;
-  const validated = validateMerchandisingSettings({
-    ...body,
-    revision: nextRevision,
-    updatedAt: new Date().toISOString(),
-    updatedBy: input.actorUid,
+  const ref = db.collection(MERCHANDISING_COLLECTION).doc('preview');
+  const auditRef = db.collection('catalogAudits').doc(randomUUID());
+
+  const result = await db.runTransaction(async transaction => {
+    const snap = await transaction.get(ref);
+    const current = snap.exists ? validateMerchandisingSettings(snap.data()) : DEFAULT_MERCHANDISING;
+
+    if (expectedRevision !== undefined && current.revision !== expectedRevision) {
+      throw new CatalogError('CATALOG_REVISION_CONFLICT', 409);
+    }
+
+    const nextRevision = (current.revision || 0) + 1;
+    const validated = validateMerchandisingSettings({
+      ...body,
+      revision: nextRevision,
+      updatedAt: new Date().toISOString(),
+      updatedBy: input.actorUid,
+    });
+
+    transaction.set(ref, validated);
+    transaction.set(auditRef, {
+      action: 'MERCHANDISING_DRAFT_UPDATED',
+      data: validated,
+      actorUid: input.actorUid,
+      updatedAt: validated.updatedAt,
+    });
+
+    return validated;
   });
 
-  await ref.set(validated);
-  await db.collection('catalogAudits').doc(randomUUID()).set({
-    action: 'MERCHANDISING_DRAFT_UPDATED',
-    data: validated,
-    actorUid: input.actorUid,
-    updatedAt: validated.updatedAt,
-  });
-
-  return validated;
+  return result;
 }
 
-export async function publishAdminMerchandising(input: { db: Firestore | null; actorUid: string }): Promise<MerchandisingSettings> {
+export async function publishAdminMerchandising(input: {
+  db: Firestore | null;
+  actorUid: string;
+  expectedDraftRevision?: number;
+  expectedLiveRevision?: number;
+  body?: unknown;
+}): Promise<MerchandisingSettings> {
   if (!input.db) throw new CatalogError('CATALOG_STORE_UNAVAILABLE', 503);
   if (!input.actorUid) throw new CatalogError('FORBIDDEN_ADMIN', 403);
   const db = input.db;
+  const body = (input.body && typeof input.body === 'object' ? input.body : {}) as Record<string, any>;
+  const rawExpectedDraft = input.expectedDraftRevision !== undefined
+    ? input.expectedDraftRevision
+    : (body.expectedDraftRevision !== undefined ? body.expectedDraftRevision : body.expectedRevision);
+  const expectedDraftRevision = rawExpectedDraft !== undefined ? Number(rawExpectedDraft) : undefined;
+  if (expectedDraftRevision !== undefined && (!Number.isSafeInteger(expectedDraftRevision) || expectedDraftRevision < 0)) {
+    throw new CatalogError('CATALOG_REVISION_CONFLICT', 409);
+  }
+
+  const rawExpectedLive = input.expectedLiveRevision !== undefined
+    ? input.expectedLiveRevision
+    : body.expectedLiveRevision;
+  const expectedLiveRevision = rawExpectedLive !== undefined ? Number(rawExpectedLive) : undefined;
+  if (expectedLiveRevision !== undefined && (!Number.isSafeInteger(expectedLiveRevision) || expectedLiveRevision < 0)) {
+    throw new CatalogError('CATALOG_REVISION_CONFLICT', 409);
+  }
+
   const draftRef = db.collection(MERCHANDISING_COLLECTION).doc('preview');
   const liveRef = db.collection(MERCHANDISING_COLLECTION).doc('settings');
+  const auditRef = db.collection('catalogAudits').doc(randomUUID());
 
-  const draftSnap = await draftRef.get();
-  const settings = draftSnap.exists ? validateMerchandisingSettings(draftSnap.data()) : DEFAULT_MERCHANDISING;
+  const result = await db.runTransaction(async transaction => {
+    const draftSnap = await transaction.get(draftRef);
+    const draft = draftSnap.exists ? validateMerchandisingSettings(draftSnap.data()) : DEFAULT_MERCHANDISING;
 
-  const now = new Date().toISOString();
-  const published = {
-    ...settings,
-    updatedAt: now,
-    updatedBy: input.actorUid,
-  };
+    if (expectedDraftRevision !== undefined && draft.revision !== expectedDraftRevision) {
+      throw new CatalogError('CATALOG_REVISION_CONFLICT', 409);
+    }
 
-  await liveRef.set(published);
-  await db.collection('catalogAudits').doc(randomUUID()).set({
-    action: 'MERCHANDISING_PUBLISHED',
-    data: published,
-    actorUid: input.actorUid,
-    updatedAt: now,
+    const liveSnap = await transaction.get(liveRef);
+    const currentLive = liveSnap.exists ? validateMerchandisingSettings(liveSnap.data()) : DEFAULT_MERCHANDISING;
+
+    if (expectedLiveRevision !== undefined && currentLive.revision !== expectedLiveRevision) {
+      throw new CatalogError('CATALOG_REVISION_CONFLICT', 409);
+    }
+
+    const now = new Date().toISOString();
+    const nextLiveRevision = (currentLive.revision || 0) + 1;
+    const published = {
+      ...draft,
+      revision: nextLiveRevision,
+      updatedAt: now,
+      updatedBy: input.actorUid,
+    };
+
+    const nextDraftRevision = (draft.revision || 0) + 1;
+    const updatedDraft = {
+      ...draft,
+      revision: nextDraftRevision,
+      updatedAt: now,
+      updatedBy: input.actorUid,
+    };
+
+    transaction.set(liveRef, published);
+    transaction.set(draftRef, updatedDraft);
+    transaction.set(auditRef, {
+      action: 'MERCHANDISING_PUBLISHED',
+      data: published,
+      sourceDraftRevision: draft.revision,
+      actorUid: input.actorUid,
+      updatedAt: now,
+    });
+
+    return published;
   });
 
-  return published;
+  return result;
 }
 
 export async function getPublicMerchandising(db: Firestore | null): Promise<MerchandisingSettings> {
@@ -692,8 +905,10 @@ export async function getPublicMerchandising(db: Firestore | null): Promise<Merc
     const snap = await db.collection(MERCHANDISING_COLLECTION).doc('settings').get();
     if (snap.exists) {
       const validated = validateMerchandisingSettings(snap.data());
-      delete (validated as any).updatedBy;
-      return validated;
+      const sanitized = { ...validated };
+      delete (sanitized as any).updatedBy;
+      delete (sanitized as any).adminNotes;
+      return sanitized;
     }
   } catch {}
   return DEFAULT_MERCHANDISING;
