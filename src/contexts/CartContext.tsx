@@ -6,6 +6,7 @@ import { useToast } from '../components/ToastManager';
 
 import { STORE_CONFIG } from '../config/store';
 import { resolveCartIdentity, resolveCartPortion, resolveCartQuantity, resolveCartUnitPrice } from '../lib/cartInput';
+import { isPackagingProduct, calculateMinOrderQuantityUnits } from '../lib/packagingMoq';
 import { useLanguage } from './LanguageContext';
 import { calculateOrderSummary, isLahoreCity } from '../lib/pricing';
 import { readCheckoutDraft } from '../lib/checkoutPreferences';
@@ -138,7 +139,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
               selectedWeight: rawWeight,
               unitPrice: unitPrice,
               price: unitPrice,
-              quantity: resolveCartQuantity(item.quantity),
+              quantity: resolveCartQuantity(item.quantity, undefined, identity.product, rawWeight),
               wholesale: identity.product ? false : !!item.wholesale,
               ...(hamper ? { hamperConfiguration: hamper.configuration } : {}),
             }];
@@ -246,8 +247,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           rawPrice = 0;
         }
       }
+      const isPackaging = identity.product ? isPackagingProduct(identity.product) : false;
       const unitPrice = hamper?.unitPrice ?? resolveCartUnitPrice(identity.product, selectedWeight, rawPrice);
-      const cleanQty = resolveCartQuantity((productOrItem as any).quantity, quantity);
+      const cleanQty = resolveCartQuantity((productOrItem as any).quantity, quantity, identity.product, selectedWeight);
       const imageSrc = hamper?.image || (identity.product ? getProductImage(identity.product) : ((productOrItem as any).image || ''));
       const isWholesale = !identity.product && typeof (productOrItem as any).wholesale === 'boolean'
         ? (productOrItem as any).wholesale
@@ -257,7 +259,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const existingIndex = prev.findIndex((item) => item.id === compositeId);
         if (existingIndex > -1) {
           const next = [...prev];
-          const newQty = Math.min(50, next[existingIndex].quantity + cleanQty);
+          const maxUnits = isPackaging ? 10000 : 50;
+          const newQty = Math.min(maxUnits, next[existingIndex].quantity + cleanQty);
           next[existingIndex] = {
             ...next[existingIndex],
             quantity: newQty,
@@ -305,8 +308,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   /**
    * Update item quantity safely.
-   * If newQty <= 0 or decremented from 1 => cleanly removed.
-   * Enforces min 1, max 50.
+   * If newQty <= 0 or decremented below 1 => cleanly removed.
+   * Enforces min MOQ for packaging, min 1 for food, max 50 for food, max 10000 for packaging.
    */
   const updateQuantity = useCallback((cartItemId: string, newQty: number) => {
     setCartItems((prev) => {
@@ -314,15 +317,21 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return prev.filter((item) => item.id !== cartItemId && `${item.productId}-${item.selectedWeight}` !== cartItemId);
       }
       if (!Number.isFinite(newQty)) return prev;
-      const clampedQty = Math.max(1, Math.min(50, Math.floor(newQty)));
       return prev.map((item) => {
         if (item.id === cartItemId || `${item.productId}-${item.selectedWeight}` === cartItemId) {
+          const identity = resolveCartIdentity(item, PRODUCTS);
+          const isPackaging = identity?.product ? isPackagingProduct(identity.product) : false;
+          const minUnits = isPackaging && identity?.product
+            ? calculateMinOrderQuantityUnits(identity.product, item.selectedWeight)
+            : 1;
+          const maxUnits = isPackaging ? 10000 : 50;
+          const clampedQty = Math.max(minUnits, Math.min(maxUnits, Math.floor(newQty)));
           return { ...item, quantity: clampedQty };
         }
         return item;
       });
     });
-  }, []);
+  }, [PRODUCTS]);
 
   /**
    * Clear entire cart.

@@ -1,5 +1,6 @@
 import type { Product } from '../types';
 import { resolveProductPrice, resolveProductVariant } from './productVariants';
+import { isPackagingProduct, calculateMinOrderQuantityUnits } from './packagingMoq';
 
 interface CartIdentityInput {
   id?: unknown;
@@ -59,10 +60,21 @@ export function resolveCartIdentity(input: CartIdentityInput, products: Product[
 }
 
 /** Explicit call-site quantity wins; otherwise keep the quantity on the item. */
-export function resolveCartQuantity(itemQuantity: unknown, explicitQuantity?: number): number {
-  const value = explicitQuantity ?? itemQuantity ?? 1;
+export function resolveCartQuantity(
+  itemQuantity: unknown,
+  explicitQuantity?: number,
+  product?: Product,
+  selectedPortion?: string
+): number {
+  const isPackaging = product ? isPackagingProduct(product) : false;
+  const minUnits = product && selectedPortion && isPackaging
+    ? calculateMinOrderQuantityUnits(product, selectedPortion)
+    : 1;
+  const maxUnits = isPackaging ? 10000 : 50;
+
+  const value = explicitQuantity ?? itemQuantity ?? minUnits;
   const number = typeof value === 'number' || typeof value === 'string' ? Number(value) : NaN;
-  return Number.isFinite(number) ? Math.max(1, Math.min(50, Math.floor(number))) : 1;
+  return Number.isFinite(number) ? Math.max(minUnits, Math.min(maxUnits, Math.floor(number))) : minUnits;
 }
 
 /** Catalog portions must resolve canonically; custom hamper labels stay intact. */

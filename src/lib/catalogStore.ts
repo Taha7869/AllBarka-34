@@ -514,7 +514,9 @@ export async function updateAdminProduct(input: { db: Firestore | null; productI
       canonicalVariants = existingData.variants.map((v: any) => ({
         id: v.id || catalogVariantId(v.label),
         label: v.label,
-        price: Math.round(Number(v.price)),
+        price: (body.prices && typeof body.prices === 'object' && body.prices[v.label] !== undefined)
+          ? Math.round(Number(body.prices[v.label]))
+          : Math.round(Number(v.price)),
         available: v.available !== false,
         weightGrams: v.weightGrams ?? null,
       }));

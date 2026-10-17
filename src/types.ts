@@ -115,7 +115,8 @@ export interface Product {
   active?: boolean;
   inStock?: boolean;
   stockQty?: number;
-  variants?: { label: string; price: number }[];
+  variants?: { label: string; price: number; available?: boolean; moqOverride?: number; minOrderQuantity?: number; [key: string]: any }[];
+  minOrderQuantity?: number;
   pricePer100g?: number;
   allowCustomWeight?: boolean;
   minCustomWeightG?: number;

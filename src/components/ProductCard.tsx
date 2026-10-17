@@ -9,6 +9,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useCart } from '../contexts/CartContext';
 import { getLocalized } from '../utils/localize';
 import MagneticButton from './motion/MagneticButton';
+import { isPackagingProduct, calculatePackagingMoq, calculateMinOrderQuantityUnits } from '../lib/packagingMoq';
 
 interface ProductCardProps {
   product: Product;
@@ -33,6 +34,11 @@ export default function ProductCard({
   const weights = Object.keys(product.prices || {}).filter(weight => Number.isFinite(product.prices[weight]) && product.prices[weight] > 0);
   const [selectedWeight, setSelectedWeight] = useState(weights[0] || '250g');
   const titleTypography = language === 'ur' ? 'font-urdu text-[20px]' : language === 'ar' ? 'font-arabic text-[23px]' : 'font-serif text-[21px] leading-[1.25]';
+
+  const isQuoteOnly = Boolean(product.quoteOnly || product.orderMode === 'inquiry_quote');
+  const isPackaging = isPackagingProduct(product);
+  const minUnits = isPackaging ? calculateMinOrderQuantityUnits(product, selectedWeight) : 1;
+  const moqPieces = isPackaging ? calculatePackagingMoq(product, selectedWeight) : 1;
 
   const unitPrice = isWholesale
     ? (product.wholesale || Object.values(product.prices)[0] || 0)
@@ -98,7 +104,7 @@ export default function ProductCard({
       {/* Weights & Action Area */}
       <div className="mt-auto space-y-4 border-t border-[var(--color-border)] pt-4">
         {/* Weight Selector */}
-        {!product.quoteOnly && <div className="flex w-full flex-wrap gap-1.5" role="group" aria-label={t('shop.portion')}>
+        {!isQuoteOnly && <div className="flex w-full flex-wrap gap-1.5" role="group" aria-label={t('shop.portion')}>
           {weights.map((w) => (
             <button
               key={w}
@@ -127,22 +133,27 @@ export default function ProductCard({
                 {t('price', 'Price')}
               </span>
               <span className="font-serif text-2xl font-medium leading-tight tracking-tight text-[var(--color-text-price)]">
-                {product.quoteOnly ? <span className="text-base">{t('catalog.requestQuote')}</span> : <bdi dir="ltr">Rs. {unitPrice?.toLocaleString()}</bdi>}
+                {isQuoteOnly ? <span className="text-base">{t('catalog.requestQuote')}</span> : <bdi dir="ltr">Rs. {unitPrice?.toLocaleString()}</bdi>}
               </span>
+              {isPackaging && !isQuoteOnly && (
+                <span className="mt-1 text-[10px] font-semibold text-[#8C6B1B] bg-[#8C6B1B]/10 px-2 py-0.5 rounded-full border border-[#8C6B1B]/20 w-fit">
+                  MOQ: {moqPieces} pcs
+                </span>
+              )}
             </div>
             {onQuickView && <button type="button" onClick={(e) => { e.stopPropagation(); onQuickView(product); }} className="focus-ring inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-lg px-2 text-[10px] font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-base)] hover:text-[var(--color-accent-text)]" aria-label={`${t('quickView')}: ${getLocalized(product, 'name', language)}`}><Eye size={15} strokeWidth={1.7} /><span dir="auto">{t('quickView')}</span></button>}
           </div>
 
           <div className="w-full">
             {/* Magnetic Add-to-Cart */}
-            {product.quoteOnly ? <Link to="/pages/contact" className="focus-ring flex min-h-[46px] items-center justify-center rounded-xl border border-[#c7982f]/35 bg-[#1e3a2b] px-3 text-xs font-semibold text-[#fff8e9]">{t('catalog.requestQuote')}</Link> : <MagneticButton
+            {isQuoteOnly ? <Link to="/pages/contact" className="focus-ring flex min-h-[46px] items-center justify-center rounded-xl border border-[#c7982f]/35 bg-[#1e3a2b] px-3 text-xs font-semibold text-[#fff8e9]">{t('catalog.requestQuote')}</Link> : <MagneticButton
               strength={3}
               onClick={(e) => {
                 e.stopPropagation();
                 if (onAddToCart) {
                   onAddToCart(product.id, selectedWeight);
                 } else {
-                  addToCart(product, selectedWeight, 1);
+                  addToCart(product, selectedWeight, minUnits);
                 }
               }}
               className="focus-ring flex min-h-[46px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#C7982F]/35 bg-[#1E3A2B] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#FFFCF7] transition-colors duration-200 hover:border-[#C7982F]/70 hover:bg-[#14281E] motion-safe:active:scale-[0.99]"
