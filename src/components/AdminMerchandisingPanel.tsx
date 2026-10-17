@@ -24,20 +24,48 @@ export default function AdminMerchandisingPanel({ isOpen, onClose }: AdminMercha
 
   const [settings, setSettings] = useState<MerchandisingSettings>(DEFAULT_MERCHANDISING);
   const [featuredIdsInput, setFeaturedIdsInput] = useState('');
+  const [liveRevision, setLiveRevision] = useState<number>(0);
+  const [lastSavedSnapshot, setLastSavedSnapshot] = useState<string>('');
+
+  const computeSnapshot = (s: MerchandisingSettings, featuredText: string) => {
+    return JSON.stringify({
+      featured: featuredText.split(',').map(s => s.trim()).filter(Boolean).join(','),
+      categoryVisibility: s.categoryVisibility || {},
+      showcaseTabs: (s.showcaseTabs || []).map(t => ({ id: t.id, productIds: (t.productIds || []).join(',') })),
+      autoplay: s.autoplay,
+      categoryOrder: s.categoryOrder || [],
+    });
+  };
+
+  const hasUnsavedChanges = lastSavedSnapshot !== '' && computeSnapshot(settings, featuredIdsInput) !== lastSavedSnapshot;
 
   const fetchSettings = useCallback(() => {
     if (!currentUser) return;
     setLoading(true);
     setError(null);
     setConflict(false);
-    adminRequest<{ settings: MerchandisingSettings }>(
+    adminRequest<{
+      settings: MerchandisingSettings;
+      draft?: MerchandisingSettings;
+      live?: MerchandisingSettings;
+      draftRevision?: number;
+      liveRevision?: number;
+    }>(
       () => currentUser.getIdToken(),
       '/api/admin/merchandising?preview=true'
     )
       .then(res => {
-        if (res.settings) {
-          setSettings(res.settings);
-          setFeaturedIdsInput((res.settings.featuredProductIds || []).join(', '));
+        const draft = res.draft || res.settings;
+        if (draft) {
+          setSettings(draft);
+          const featStr = (draft.featuredProductIds || []).join(', ');
+          setFeaturedIdsInput(featStr);
+          setLastSavedSnapshot(computeSnapshot(draft, featStr));
+          if (typeof res.liveRevision === 'number') {
+            setLiveRevision(res.liveRevision);
+          } else if (res.live?.revision !== undefined) {
+            setLiveRevision(res.live.revision);
+          }
         }
       })
       .catch(err => {
@@ -102,6 +130,7 @@ export default function AdminMerchandisingPanel({ isOpen, onClose }: AdminMercha
         }
       );
       setSettings(res.settings);
+      setLastSavedSnapshot(computeSnapshot(res.settings, featuredIdsInput));
       setSuccess('Draft merchandising settings saved successfully.');
     } catch (err: any) {
       if (err.status === 409 || err.code === 'CATALOG_REVISION_CONFLICT') {
@@ -117,24 +146,50 @@ export default function AdminMerchandisingPanel({ isOpen, onClose }: AdminMercha
 
   const handlePublish = async () => {
     if (!currentUser) return;
+    if (hasUnsavedChanges) {
+      setError('Unsaved changes detected. Please save your draft before publishing live.');
+      return;
+    }
     setPublishing(true);
     setError(null);
     setSuccess(null);
     setConflict(false);
 
     try {
-      const res = await adminRequest<{ settings: MerchandisingSettings }>(
+      const res = await adminRequest<{
+        settings: MerchandisingSettings;
+        draft: MerchandisingSettings;
+        published: MerchandisingSettings;
+        draftRevision: number;
+        liveRevision: number;
+      }>(
         () => currentUser.getIdToken(),
         '/api/admin/merchandising/publish',
         {
           method: 'POST',
-          body: {},
+          body: {
+            expectedDraftRevision: settings.revision,
+            expectedLiveRevision: liveRevision,
+          },
         }
       );
-      setSettings(res.settings);
-      setSuccess('Published live to storefront! Customer views will reflect these settings immediately.');
+      // Synchronize the UI with the resulting draft revision
+      const newDraft = res.draft || res.settings;
+      setSettings(newDraft);
+      const featStr = (newDraft.featuredProductIds || []).join(', ');
+      setFeaturedIdsInput(featStr);
+      setLastSavedSnapshot(computeSnapshot(newDraft, featStr));
+      if (typeof res.liveRevision === 'number') {
+        setLiveRevision(res.liveRevision);
+      }
+      setSuccess(`Published live to storefront! (Live Rev ${res.liveRevision}, Draft Rev ${res.draftRevision})`);
     } catch (err: any) {
-      setError(err.code || err.message || 'Failed to publish merchandising settings.');
+      if (err.status === 409 || err.code === 'CATALOG_REVISION_CONFLICT') {
+        setConflict(true);
+        setError('Revision Conflict: Merchandising draft or live settings were modified by another session. Please reload.');
+      } else {
+        setError(err.code || err.message || 'Failed to publish merchandising settings.');
+      }
     } finally {
       setPublishing(false);
     }
@@ -342,7 +397,14 @@ export default function AdminMerchandisingPanel({ isOpen, onClose }: AdminMercha
             </div>
 
             <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)] pt-2 border-t border-[var(--color-border)]">
-              <span>Revision: #{settings.revision}</span>
+              <div className="flex items-center gap-2">
+                <span>Draft Rev: #{settings.revision} | Live Rev: #{liveRevision}</span>
+                {hasUnsavedChanges && (
+                  <span className="rounded bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                    Unsaved draft edits
+                  </span>
+                )}
+              </div>
               <span>Last updated: {new Date(settings.updatedAt).toLocaleTimeString()}</span>
             </div>
 
@@ -366,7 +428,8 @@ export default function AdminMerchandisingPanel({ isOpen, onClose }: AdminMercha
               <button
                 type="button"
                 onClick={handlePublish}
-                disabled={saving || publishing}
+                disabled={saving || publishing || hasUnsavedChanges}
+                title={hasUnsavedChanges ? "Please save draft before publishing live" : undefined}
                 className="inline-flex items-center gap-1.5 rounded-xl bg-[#1e3a2b] text-[#fff8e9] dark:bg-[#c7982f] dark:text-[#1e3a2b] px-4 py-2 text-xs font-semibold hover:opacity-90 focus-ring disabled:opacity-50"
               >
                 {publishing ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}

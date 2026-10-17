@@ -820,13 +820,40 @@ export async function updateAdminMerchandising(input: { db: Firestore | null; bo
   return result;
 }
 
+export interface AdminMerchandisingBundle {
+  settings: MerchandisingSettings;
+  draft: MerchandisingSettings;
+  live: MerchandisingSettings;
+  draftRevision: number;
+  liveRevision: number;
+}
+
+export async function getAdminMerchandisingBundle(db: Firestore | null): Promise<AdminMerchandisingBundle> {
+  const draft = await getAdminMerchandising(db, true);
+  const live = await getAdminMerchandising(db, false);
+  return {
+    settings: draft,
+    draft,
+    live,
+    draftRevision: draft.revision,
+    liveRevision: live.revision,
+  };
+}
+
+export interface PublishMerchandisingResult {
+  published: MerchandisingSettings;
+  draft: MerchandisingSettings;
+  draftRevision: number;
+  liveRevision: number;
+}
+
 export async function publishAdminMerchandising(input: {
   db: Firestore | null;
   actorUid: string;
   expectedDraftRevision?: number;
   expectedLiveRevision?: number;
   body?: unknown;
-}): Promise<MerchandisingSettings> {
+}): Promise<PublishMerchandisingResult> {
   if (!input.db) throw new CatalogError('CATALOG_STORE_UNAVAILABLE', 503);
   if (!input.actorUid) throw new CatalogError('FORBIDDEN_ADMIN', 403);
   const db = input.db;
@@ -834,16 +861,22 @@ export async function publishAdminMerchandising(input: {
   const rawExpectedDraft = input.expectedDraftRevision !== undefined
     ? input.expectedDraftRevision
     : (body.expectedDraftRevision !== undefined ? body.expectedDraftRevision : body.expectedRevision);
-  const expectedDraftRevision = rawExpectedDraft !== undefined ? Number(rawExpectedDraft) : undefined;
-  if (expectedDraftRevision !== undefined && (!Number.isSafeInteger(expectedDraftRevision) || expectedDraftRevision < 0)) {
+  if (rawExpectedDraft === undefined || rawExpectedDraft === null) {
+    throw new CatalogError('CATALOG_REVISION_CONFLICT', 409);
+  }
+  const expectedDraftRevision = Number(rawExpectedDraft);
+  if (!Number.isSafeInteger(expectedDraftRevision) || expectedDraftRevision < 0) {
     throw new CatalogError('CATALOG_REVISION_CONFLICT', 409);
   }
 
   const rawExpectedLive = input.expectedLiveRevision !== undefined
     ? input.expectedLiveRevision
     : body.expectedLiveRevision;
-  const expectedLiveRevision = rawExpectedLive !== undefined ? Number(rawExpectedLive) : undefined;
-  if (expectedLiveRevision !== undefined && (!Number.isSafeInteger(expectedLiveRevision) || expectedLiveRevision < 0)) {
+  if (rawExpectedLive === undefined || rawExpectedLive === null) {
+    throw new CatalogError('CATALOG_REVISION_CONFLICT', 409);
+  }
+  const expectedLiveRevision = Number(rawExpectedLive);
+  if (!Number.isSafeInteger(expectedLiveRevision) || expectedLiveRevision < 0) {
     throw new CatalogError('CATALOG_REVISION_CONFLICT', 409);
   }
 
@@ -855,14 +888,14 @@ export async function publishAdminMerchandising(input: {
     const draftSnap = await transaction.get(draftRef);
     const draft = draftSnap.exists ? validateMerchandisingSettings(draftSnap.data()) : DEFAULT_MERCHANDISING;
 
-    if (expectedDraftRevision !== undefined && draft.revision !== expectedDraftRevision) {
+    if (draft.revision !== expectedDraftRevision) {
       throw new CatalogError('CATALOG_REVISION_CONFLICT', 409);
     }
 
     const liveSnap = await transaction.get(liveRef);
     const currentLive = liveSnap.exists ? validateMerchandisingSettings(liveSnap.data()) : DEFAULT_MERCHANDISING;
 
-    if (expectedLiveRevision !== undefined && currentLive.revision !== expectedLiveRevision) {
+    if (currentLive.revision !== expectedLiveRevision) {
       throw new CatalogError('CATALOG_REVISION_CONFLICT', 409);
     }
 
@@ -893,7 +926,12 @@ export async function publishAdminMerchandising(input: {
       updatedAt: now,
     });
 
-    return published;
+    return {
+      published,
+      draft: updatedDraft,
+      draftRevision: nextDraftRevision,
+      liveRevision: nextLiveRevision,
+    };
   });
 
   return result;

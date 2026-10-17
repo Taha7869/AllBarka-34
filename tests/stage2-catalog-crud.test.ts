@@ -187,6 +187,14 @@ function createMockFirestore(seedProducts: boolean = true) {
           get: async (docRef: any) => {
             if (stagedWrites.has(docRef.path)) {
               const data = stagedWrites.get(docRef.path);
+              if (data === '__DELETED__') {
+                return {
+                  id: docRef.id,
+                  ref: docRef,
+                  exists: false,
+                  data: () => undefined,
+                };
+              }
               return {
                 id: docRef.id,
                 ref: docRef,
@@ -198,13 +206,20 @@ function createMockFirestore(seedProducts: boolean = true) {
           },
           set: (docRef: any, data: any, options?: { merge?: boolean }) => {
             const existing = stagedWrites.has(docRef.path) ? stagedWrites.get(docRef.path) : store.get(docRef.path);
-            stagedWrites.set(docRef.path, applyMockPatch(existing, data, options?.merge ?? false));
+            stagedWrites.set(docRef.path, applyMockPatch(existing === '__DELETED__' ? undefined : existing, data, options?.merge ?? false));
+          },
+          delete: (docRef: any) => {
+            stagedWrites.set(docRef.path, '__DELETED__');
           },
         };
 
         const result = await updateFunction(tx);
         for (const [path, data] of stagedWrites.entries()) {
-          store.set(path, data);
+          if (data === '__DELETED__') {
+            store.delete(path);
+          } else {
+            store.set(path, data);
+          }
         }
         return result;
       } finally {
@@ -1336,10 +1351,21 @@ test('Stage 2 - REQ-S2-004: Concurrent competing writes with Promise.all are ato
   assert.equal(merchResults.filter(r => r.status === 'rejected').length, 1);
   assert.equal((merchResults.find(r => r.status === 'rejected') as PromiseRejectedResult).reason.code, 'CATALOG_REVISION_CONFLICT');
 
-  // 4. Competing publishAdminMerchandising with same expectedDraftRevision
+  // 4. Competing publishAdminMerchandising with same expectedDraftRevision and expectedLiveRevision
   const currentDraft = await getAdminMerchandising(db, true);
-  const publishPromise1 = publishAdminMerchandising({ db, actorUid: 'admin_1', expectedDraftRevision: currentDraft.revision });
-  const publishPromise2 = publishAdminMerchandising({ db, actorUid: 'admin_2', expectedDraftRevision: currentDraft.revision });
+  const currentLive = await getAdminMerchandising(db, false);
+  const publishPromise1 = publishAdminMerchandising({
+    db,
+    actorUid: 'admin_1',
+    expectedDraftRevision: currentDraft.revision,
+    expectedLiveRevision: currentLive.revision,
+  });
+  const publishPromise2 = publishAdminMerchandising({
+    db,
+    actorUid: 'admin_2',
+    expectedDraftRevision: currentDraft.revision,
+    expectedLiveRevision: currentLive.revision,
+  });
 
   const publishResults = await Promise.allSettled([publishPromise1, publishPromise2]);
   assert.equal(publishResults.filter(r => r.status === 'fulfilled').length, 1);
@@ -1408,4 +1434,350 @@ test('Stage 2 - REQ-S2-006: Inactive Firestore products are strictly suppressed 
   const merged = mergeAuthoritativeCatalog(PRODUCTS, snapshot.products);
   const mergedKaju = merged.find(p => p.id === 'kaju')!;
   assert.equal(mergedKaju.active, false);
+});
+
+// --------------------------------------------------------------------------
+// TEST 13: Merchandising Concurrency Protection End to End
+// --------------------------------------------------------------------------
+test('Stage 2 - REQ-S2-004: Merchandising concurrency protection end to end via HTTP router', async () => {
+  const { db } = createMockFirestore();
+  const { app, setActor } = createTestHttpServer(db);
+  invalidateCatalogCache();
+
+  const server = app.listen(0);
+  await once(server, 'listening');
+  const port = (server.address() as AddressInfo).port;
+  const baseUrl = `http://127.0.0.1:${port}`;
+
+  try {
+    setActor({ uid: 'admin_1', email: 'admin@allbarka.com', admin: true });
+
+    // 1. GET /api/admin/merchandising returns full bundle with draftRevision and liveRevision
+    const getRes = await fetch(`${baseUrl}/api/admin/merchandising`);
+    assert.equal(getRes.status, 200);
+    const bundle = await getRes.json();
+    assert.ok('draftRevision' in bundle);
+    assert.ok('liveRevision' in bundle);
+    assert.ok('draft' in bundle);
+    assert.ok('live' in bundle);
+    assert.equal(typeof bundle.draftRevision, 'number');
+    assert.equal(typeof bundle.liveRevision, 'number');
+
+    const draftRev = bundle.draftRevision;
+    const liveRev = bundle.liveRevision;
+
+    // 2. Missing revision tokens rejected with 409
+    const missingRes1 = await fetch(`${baseUrl}/api/admin/merchandising/publish`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    assert.equal(missingRes1.status, 409);
+    const missingJson1 = await missingRes1.json();
+    assert.equal(missingJson1.code, 'CATALOG_REVISION_CONFLICT');
+
+    const missingRes2 = await fetch(`${baseUrl}/api/admin/merchandising/publish`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ expectedDraftRevision: draftRev }), // Missing expectedLiveRevision
+    });
+    assert.equal(missingRes2.status, 409);
+
+    // 3. Stale revision tokens rejected with 409
+    const staleRes = await fetch(`${baseUrl}/api/admin/merchandising/publish`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ expectedDraftRevision: draftRev + 99, expectedLiveRevision: liveRev }),
+    });
+    assert.equal(staleRes.status, 409);
+
+    // 4. Two concurrent publish requests with the same tokens -> exactly one succeeds, other gets 409
+    const pubReq1 = fetch(`${baseUrl}/api/admin/merchandising/publish`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ expectedDraftRevision: draftRev, expectedLiveRevision: liveRev }),
+    });
+    const pubReq2 = fetch(`${baseUrl}/api/admin/merchandising/publish`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ expectedDraftRevision: draftRev, expectedLiveRevision: liveRev }),
+    });
+
+    const [res1, res2] = await Promise.all([pubReq1, pubReq2]);
+    const statuses = [res1.status, res2.status].sort();
+    assert.deepEqual(statuses, [200, 409], 'Exactly one publish succeeds with 200, concurrent fails with 409');
+
+    const successRes = res1.status === 200 ? res1 : res2;
+    const publishJson = await successRes.json();
+    assert.ok(publishJson.draftRevision > draftRev);
+    assert.ok(publishJson.liveRevision > liveRev);
+
+    // 5. Save-after-publish: using resulting draftRevision succeeds; using old draftRevision fails
+    const newDraftRev = publishJson.draftRevision;
+    const staleSaveRes = await fetch(`${baseUrl}/api/admin/merchandising`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        featuredProductIds: ['badam'],
+        expectedRevision: draftRev, // Old draft revision!
+      }),
+    });
+    assert.equal(staleSaveRes.status, 409);
+
+    const validSaveRes = await fetch(`${baseUrl}/api/admin/merchandising`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        featuredProductIds: ['badam', 'pista'],
+        expectedRevision: newDraftRev, // Resulting draft revision
+      }),
+    });
+    assert.equal(validSaveRes.status, 200);
+    const savedJson = await validSaveRes.json();
+    assert.deepEqual(savedJson.settings.featuredProductIds, ['badam', 'pista']);
+  } finally {
+    server.close();
+  }
+});
+
+// --------------------------------------------------------------------------
+// TEST 14: Regression Test A - Crash Recovery Using BatchId Alone
+// --------------------------------------------------------------------------
+test('Stage 2 - REQ-S2-007: Regression Test A - Fail after first committed product mutation and recover using batchId alone', async () => {
+  const { db, store } = createMockFirestore(false);
+
+  const testProducts = [
+    { id: 'crash-item-1', name_en: 'Crash Test Item 1', category: 'dry-fruits', prices: { '250g': 500 } },
+    { id: 'crash-item-2', name_en: 'Crash Test Item 2', category: 'dry-fruits', prices: { '250g': 600 } },
+  ];
+
+  const plan = await planCatalogMigrationV2({ db, products: testProducts });
+  assert.equal(plan.createsCount, 2);
+
+  const testBatchId = `test_crash_batch_${Date.now()}`;
+
+  // Execute migration with failAfterItems: 1 to simulate crash immediately after item 1 commits
+  let executionError: any = null;
+  try {
+    await executeCatalogMigrationV2({
+      db,
+      plan,
+      batchId: testBatchId,
+      failAfterItems: 1,
+    });
+  } catch (err: any) {
+    executionError = err;
+  }
+
+  assert.ok(executionError, 'Migration must fail/crash after committing first item');
+  assert.ok(executionError.message.includes('CRASH_SIMULATION'));
+
+  // Verify item 1 committed to products collection
+  assert.equal(store.has('products/crash-item-1'), true, 'Item 1 was committed before crash');
+  // Verify item 2 was NOT committed
+  assert.equal(store.has('products/crash-item-2'), false, 'Item 2 was not reached');
+
+  // Verify durable journal in Firestore contains item 1's beforeImage and executedItemIds
+  const journalDoc = store.get(`catalogMigrationJournals/${testBatchId}`);
+  assert.ok(journalDoc, 'Journal must be durably stored in Firestore despite crash');
+  assert.ok(journalDoc.executedItemIds.includes('crash-item-1'));
+  assert.ok('crash-item-1' in journalDoc.beforeImages);
+
+  // Recover by calling rollback with ONLY db and batchId (zero in-memory beforeImages)
+  const rollbackResult = await rollbackCatalogMigrationV2({
+    db,
+    batchId: testBatchId,
+  });
+
+  assert.equal(rollbackResult.status, 'COMPLETED');
+  assert.equal(rollbackResult.deletedCount, 1, 'Committed item 1 was cleanly rolled back');
+  assert.equal(rollbackResult.conflicts.length, 0);
+
+  // Verify item 1 is deleted from products collection
+  assert.equal(store.has('products/crash-item-1'), false, 'Crash item 1 is cleanly deleted');
+});
+
+// --------------------------------------------------------------------------
+// TEST 15: Regression Test B - Intervening Merchant Edit Protected
+// --------------------------------------------------------------------------
+test('Stage 2 - REQ-S2-007: Regression Test B - Existing product rev 5 -> migration rev 6 -> merchant rev 7 -> rollback preserves merchant edit', async () => {
+  const { db, store } = createMockFirestore(false);
+
+  // 1. Seed existing product with revision 5
+  store.set('products/merchant-chohara', {
+    id: 'merchant-chohara',
+    name_en: 'Original Merchant Chohara Title',
+    category: 'dates',
+    prices: { '500g': 1200 },
+    revision: 5,
+    adminRevision: 5,
+    updatedAt: new Date().toISOString(),
+  });
+
+  const products = [
+    {
+      id: 'merchant-chohara',
+      name_en: 'Seed Chohara',
+      category: 'dates',
+      prices: { '500g': 900 },
+    },
+  ];
+
+  // 2. Plan migration (plans update to revision 6)
+  const plan = await planCatalogMigrationV2({ db, products });
+  assert.equal(plan.updatesCount, 1);
+  const planItem = plan.items.find(i => i.id === 'merchant-chohara')!;
+  assert.equal(planItem.plannedRevision, 5);
+
+  // 3. Execute migration
+  const execResult = await executeCatalogMigrationV2({
+    db,
+    plan,
+    operatorUid: 'migration_admin',
+  });
+  assert.equal(execResult.executedCount, 1);
+  assert.equal(execResult.updatesCount, 1);
+
+  // Verify product is now at revision 6
+  const postMigDoc = store.get('products/merchant-chohara');
+  assert.equal(postMigDoc.revision, 6);
+  assert.equal(postMigDoc.productFamily, 'khajoor');
+
+  // 4. Merchant updates the product to revision 7 with custom title and price
+  store.set('products/merchant-chohara', {
+    ...postMigDoc,
+    name_en: 'Merchant Custom Protected Title',
+    prices: { '500g': 1800 },
+    revision: 7, // Intervening merchant edit incremented revision
+    adminRevision: 7,
+    migrationBatch: 'merchant-manual-edit',
+  });
+
+  // 5. Attempt rollback of the migration batch
+  const rollbackResult = await rollbackCatalogMigrationV2({
+    db,
+    batchId: execResult.batchId,
+  });
+
+  // Rollback must detect intervening merchant edit and refuse to overwrite
+  assert.equal(rollbackResult.status, 'PARTIAL'); // merch was deleted, product conflict skipped -> PARTIAL
+  assert.equal(rollbackResult.skippedCount, 1);
+  assert.equal(rollbackResult.restoredCount, 0);
+  assert.ok(rollbackResult.conflicts.some(c => c.includes('PROTECTED_MERCHANT_EDIT')));
+
+  // Verify product in Firestore strictly retained merchant changes
+  const preservedDoc = store.get('products/merchant-chohara');
+  assert.equal(preservedDoc.name_en, 'Merchant Custom Protected Title');
+  assert.equal(preservedDoc.prices['500g'], 1800);
+  assert.equal(preservedDoc.revision, 7);
+});
+
+// --------------------------------------------------------------------------
+// TEST 16: Regression Test C - Merchant Update Arriving During Rollback Is Preserved
+// --------------------------------------------------------------------------
+test('Stage 2 - REQ-S2-007: Regression Test C - Merchant update arriving during rollback is preserved', async () => {
+  const { db, store } = createMockFirestore(false);
+
+  store.set('products/concurrent-rollback-prod', {
+    id: 'concurrent-rollback-prod',
+    name_en: 'Initial Product',
+    category: 'dates',
+    prices: { '250g': 400 },
+    revision: 2,
+    adminRevision: 2,
+  });
+
+  const plan = await planCatalogMigrationV2({
+    db,
+    products: [{ id: 'concurrent-rollback-prod', name_en: 'Initial Product', category: 'dates', prices: { '250g': 400 } }],
+  });
+
+  const exec = await executeCatalogMigrationV2({ db, plan });
+  assert.equal(exec.updatesCount, 1);
+
+  // Hook into db.runTransaction so that right before the rollback transaction reads or commits,
+  // a merchant writes a concurrent update
+  const origRunTx = db.runTransaction;
+  let concurrentInjected = false;
+  db.runTransaction = async (cb: any) => {
+    if (!concurrentInjected) {
+      concurrentInjected = true;
+      // Merchant update arrives concurrently
+      const currentDoc = store.get('products/concurrent-rollback-prod');
+      store.set('products/concurrent-rollback-prod', {
+        ...currentDoc,
+        name_en: 'Concurrent Merchant Live Edit',
+        revision: currentDoc.revision + 1,
+        migrationBatch: 'concurrent-merchant-batch',
+      });
+    }
+    return origRunTx.call(db, cb);
+  };
+
+  try {
+    const rollback = await rollbackCatalogMigrationV2({ db, batchId: exec.batchId });
+    assert.equal(rollback.status, 'PARTIAL');
+    assert.equal(rollback.skippedCount, 1);
+    assert.ok(rollback.conflicts.some(c => c.includes('PROTECTED_MERCHANT_EDIT')));
+
+    const finalDoc = store.get('products/concurrent-rollback-prod');
+    assert.equal(finalDoc.name_en, 'Concurrent Merchant Live Edit');
+  } finally {
+    db.runTransaction = origRunTx;
+  }
+});
+
+// --------------------------------------------------------------------------
+// TEST 17: Regression Test D - Transaction Callback Retry Must Not Duplicate Accounting
+// --------------------------------------------------------------------------
+test('Stage 2 - REQ-S2-007: Regression Test D - Transaction callback retry does not duplicate accounting', async () => {
+  const { db, store } = createMockFirestore(false);
+
+  const testProducts = [
+    { id: 'retry-acc-prod', name_en: 'Retry Accounting Product', category: 'dry-fruits', prices: { '250g': 750 } },
+  ];
+
+  const plan = await planCatalogMigrationV2({ db, products: testProducts });
+  assert.equal(plan.createsCount, 1);
+
+  // Hook db.runTransaction to simulate retrying before succeeding
+  const origRunTx = db.runTransaction;
+  let attempts = 0;
+  db.runTransaction = async (cb: any) => {
+    attempts++;
+    if (attempts < 3) {
+      // Execute callback but simulate a transient retryable error before commit
+      try {
+        await cb({
+          get: async () => ({ exists: false, data: () => undefined }),
+          set: () => {},
+        });
+      } catch {
+        // ignore
+      }
+      // Re-invoke for retry
+      return db.runTransaction(cb);
+    }
+    return origRunTx.call(db, cb);
+  };
+
+  try {
+    const result = await executeCatalogMigrationV2({
+      db,
+      plan,
+      operatorUid: 'test_retry_admin',
+    });
+
+    assert.ok(attempts >= 3, 'Transaction callback must have executed multiple times');
+    assert.equal(result.executedCount, 1, 'executedCount must be exactly 1 despite retries');
+    assert.equal(result.createsCount, 1, 'createsCount must be exactly 1 despite retries');
+    assert.equal(result.updatesCount, 0);
+    assert.equal(result.beforeImages.has('retry-acc-prod'), true);
+
+    const journalDoc = store.get(`catalogMigrationJournals/${result.batchId}`);
+    assert.equal(journalDoc.executedCount, 1, 'Journal executedCount must be exactly 1');
+    assert.equal(journalDoc.createsCount, 1);
+  } finally {
+    db.runTransaction = origRunTx;
+  }
 });

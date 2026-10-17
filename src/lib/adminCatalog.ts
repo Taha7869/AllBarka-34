@@ -221,19 +221,24 @@ export async function saveAdminMerchandisingClient(settings: any, token: string)
   return data.settings;
 }
 
-export async function publishAdminMerchandisingClient(token: string): Promise<any> {
+export async function publishAdminMerchandisingClient(
+  revisions: { expectedDraftRevision: number; expectedLiveRevision: number },
+  token: string
+): Promise<{ settings: any; draft: any; published: any; draftRevision: number; liveRevision: number }> {
   const response = await fetch('/api/admin/merchandising/publish', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({}),
+    body: JSON.stringify(revisions),
   });
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
-    throw new Error(err.code || `Failed to publish merchandising (${response.status})`);
+    const error: any = new Error(err.code || `Failed to publish merchandising (${response.status})`);
+    error.status = response.status;
+    error.code = err.code;
+    throw error;
   }
-  const data = await response.json();
-  return data.settings;
+  return await response.json();
 }

@@ -55,6 +55,7 @@ export interface CatalogMigrationV2ExecutionResult {
 }
 
 export interface CatalogMigrationV2RollbackResult {
+  status: 'COMPLETED' | 'PARTIAL' | 'FAILED' | 'NOOP';
   restoredCount: number;
   deletedCount: number;
   skippedCount: number;
@@ -187,7 +188,9 @@ export async function planCatalogMigrationV2(input: {
         if (needsOccasions) changes.occasions = target.occasions;
         if (needsStatus) changes.status = existing.active === false ? 'archived' : target.status;
         if (needsOrderMode) changes.orderMode = target.orderMode;
-        if (existing.revision === undefined) changes.revision = 1;
+        const nextRev = plannedRevision + 1;
+        changes.revision = nextRev;
+        changes.adminRevision = nextRev;
         changes.updatedAt = new Date().toISOString();
         changes.migrationBatch = 'v2-backfill';
 
@@ -227,15 +230,17 @@ export async function executeCatalogMigrationV2(input: {
   operatorUid?: string;
   batchId?: string;
   maxItems?: number; // Allows partial execution simulation
+  failAfterItems?: number; // Allows crash recovery simulation
 }): Promise<CatalogMigrationV2ExecutionResult> {
   const db = input.db;
-  const { plan, operatorUid, maxItems } = input;
+  const { plan, operatorUid, maxItems, failAfterItems } = input;
   const batchId = input.batchId || `migration_v2_${Date.now()}_${randomUUID().slice(0, 8)}`;
   const journalRef = db.collection(MIGRATION_JOURNALS_COLLECTION).doc(batchId);
   const now = new Date().toISOString();
 
   const beforeImages = new Map<string, any | null>();
   const journalBeforeImages: Record<string, any> = {};
+  const journalPostRevisions: Record<string, number> = {};
   const executedItemIds: string[] = [];
   const conflicts: string[] = [];
 
@@ -259,6 +264,7 @@ export async function executeCatalogMigrationV2(input: {
     },
     executedItemIds: [],
     beforeImages: {},
+    postRevisions: {},
     conflicts: [],
   });
 
@@ -274,70 +280,154 @@ export async function executeCatalogMigrationV2(input: {
 
     const docRef = db.collection(CATALOG_COLLECTION).doc(item.id);
 
-    // Precondition and mutation inside transaction
+    // Precondition and mutation inside transaction.
+    // Pure callback: do not mutate external state inside executeItem to ensure retry safety.
     const executeItem = async (transaction: any) => {
       const snap = await transaction.get(docRef);
       const exists = snap.exists;
       const currentData = exists ? snap.data() : null;
 
       if (item.action === 'CREATE' && exists) {
-        conflicts.push(`CONFLICT_CREATE_ALREADY_EXISTS: ${item.id} now exists in Firestore`);
-        conflictsCount++;
-        return;
+        return {
+          conflict: `CONFLICT_CREATE_ALREADY_EXISTS: ${item.id} now exists in Firestore`,
+        };
       }
 
       if (item.action === 'UPDATE') {
         if (!exists) {
-          conflicts.push(`CONFLICT_UPDATE_MISSING: ${item.id} was deleted since planning`);
-          conflictsCount++;
-          return;
+          return {
+            conflict: `CONFLICT_UPDATE_MISSING: ${item.id} was deleted since planning`,
+          };
         }
         if (item.plannedRevision !== undefined) {
           const currentRev = Number.isSafeInteger(currentData.revision) ? currentData.revision : (currentData.adminRevision || 0);
           if (currentRev !== item.plannedRevision) {
-            conflicts.push(`CONFLICT_STALE_PLAN: ${item.id} modified since planning (rev ${currentRev} != planned ${item.plannedRevision})`);
-            conflictsCount++;
-            return;
+            return {
+              conflict: `CONFLICT_STALE_PLAN: ${item.id} modified since planning (rev ${currentRev} != planned ${item.plannedRevision})`,
+            };
           }
         }
       }
 
-      beforeImages.set(item.id, currentData);
-      journalBeforeImages[item.id] = currentData;
-      executedItemIds.push(item.id);
+      const postRev = item.action === 'CREATE'
+        ? 1
+        : ((Number.isSafeInteger(currentData?.revision) ? currentData.revision : (currentData?.adminRevision || 0)) + 1);
 
-      transaction.set(docRef, { ...item.changes, migrationBatch: batchId }, { merge: true });
+      const mergedChanges = {
+        ...item.changes,
+        revision: postRev,
+        adminRevision: postRev,
+        migrationBatch: batchId,
+      };
 
-      if (item.action === 'CREATE') createsCount++;
-      if (item.action === 'UPDATE') updatesCount++;
-      executedCount++;
+      // 1. Mutate product document
+      transaction.set(docRef, mergedChanges, { merge: true });
+
+      // 2. Atomically persist recovery record in the migration journal inside the SAME transaction
+      const journalSnap = await transaction.get(journalRef);
+      const currentJournal = journalSnap.exists ? journalSnap.data() : {};
+      const updatedBeforeImages = { ...(currentJournal.beforeImages || {}), [item.id]: currentData };
+      const updatedPostRevisions = { ...(currentJournal.postRevisions || {}), [item.id]: postRev };
+      const updatedExecutedIds = [...(currentJournal.executedItemIds || []), item.id];
+
+      transaction.set(journalRef, {
+        ...currentJournal,
+        beforeImages: updatedBeforeImages,
+        postRevisions: updatedPostRevisions,
+        executedItemIds: updatedExecutedIds,
+        updatedAt: new Date().toISOString(),
+      }, { merge: true });
+
+      return {
+        committed: true,
+        action: item.action,
+        itemId: item.id,
+        beforeData: currentData,
+        postRev,
+      };
     };
 
+    let itemOutcome: any;
     if (typeof db.runTransaction === 'function') {
-      await db.runTransaction(executeItem);
+      itemOutcome = await db.runTransaction(executeItem);
     } else {
       const snap = await docRef.get();
-      await executeItem({
-        get: async () => snap,
+      const jSnap = await journalRef.get();
+      itemOutcome = await executeItem({
+        get: async (ref: any) => ref.path === docRef.path ? snap : jSnap,
         set: (ref: any, data: any, opts: any) => ref.set(data, opts),
       });
     }
+
+    // Accounting performed strictly outside the retryable transaction callback
+    if (itemOutcome?.conflict) {
+      conflicts.push(itemOutcome.conflict);
+      conflictsCount++;
+    } else if (itemOutcome?.committed) {
+      beforeImages.set(item.id, itemOutcome.beforeData);
+      journalBeforeImages[item.id] = itemOutcome.beforeData;
+      journalPostRevisions[item.id] = itemOutcome.postRev;
+      executedItemIds.push(item.id);
+
+      if (itemOutcome.action === 'CREATE') createsCount++;
+      if (itemOutcome.action === 'UPDATE') updatesCount++;
+      executedCount++;
+
+      if (failAfterItems !== undefined && executedCount >= failAfterItems) {
+        throw new Error(`CRASH_SIMULATION: Process crashed after committing ${executedCount} items (batch ${batchId})`);
+      }
+    }
   }
 
+  // Merchandising initialization protected against concurrent creation
   if (plan.merchAction === 'CREATE' && (maxItems === undefined || executedCount < maxItems)) {
     const merchRef = db.collection(MERCHANDISING_COLLECTION).doc('settings');
-    const snap = await merchRef.get();
-    const currentMerch = snap.exists ? snap.data() : null;
-    beforeImages.set('merchandising/settings', currentMerch);
-    journalBeforeImages['merchandising/settings'] = currentMerch;
-    await merchRef.set({ ...DEFAULT_MERCHANDISING, migrationBatch: batchId }, { merge: true });
+
+    const executeMerch = async (transaction: any) => {
+      const snap = await transaction.get(merchRef);
+      if (snap.exists) {
+        return { concurrentExists: true };
+      }
+      transaction.set(merchRef, { ...DEFAULT_MERCHANDISING, migrationBatch: batchId }, { merge: true });
+
+      const journalSnap = await transaction.get(journalRef);
+      const currentJournal = journalSnap.exists ? journalSnap.data() : {};
+      const updatedBeforeImages = { ...(currentJournal.beforeImages || {}), 'merchandising/settings': null };
+      const updatedExecutedIds = [...(currentJournal.executedItemIds || []), 'merchandising/settings'];
+      transaction.set(journalRef, {
+        ...currentJournal,
+        beforeImages: updatedBeforeImages,
+        executedItemIds: updatedExecutedIds,
+        updatedAt: new Date().toISOString(),
+      }, { merge: true });
+
+      return { committed: true };
+    };
+
+    let merchOutcome: any;
+    if (typeof db.runTransaction === 'function') {
+      merchOutcome = await db.runTransaction(executeMerch);
+    } else {
+      const snap = await merchRef.get();
+      const jSnap = await journalRef.get();
+      merchOutcome = await executeMerch({
+        get: async (ref: any) => ref.path === merchRef.path ? snap : jSnap,
+        set: (ref: any, data: any, opts: any) => ref.set(data, opts),
+      });
+    }
+
+    if (merchOutcome?.committed) {
+      beforeImages.set('merchandising/settings', null);
+      journalBeforeImages['merchandising/settings'] = null;
+      executedItemIds.push('merchandising/settings');
+    }
   }
 
   const isPartial = maxItems !== undefined && executedCount < (plan.createsCount + plan.updatesCount);
   const finalStatus = isPartial ? 'PARTIAL' : (conflictsCount > 0 ? 'PARTIAL' : 'COMPLETED');
   const completedAt = new Date().toISOString();
 
-  // Update durable migration journal
+  // Finalize durable migration journal
   await journalRef.set({
     batchId,
     status: finalStatus,
@@ -351,6 +441,7 @@ export async function executeCatalogMigrationV2(input: {
     conflictsCount,
     executedItemIds,
     beforeImages: journalBeforeImages,
+    postRevisions: journalPostRevisions,
     conflicts,
   }, { merge: true });
 
@@ -395,6 +486,7 @@ export async function rollbackCatalogMigrationV2(input: {
   const db = input.db;
   let beforeImages = input.beforeImages;
   let batchId = input.batchId;
+  let postRevisions: Record<string, number> = {};
 
   // Support process restart by retrieving durable journal from Firestore if not in memory
   if ((!beforeImages || beforeImages.size === 0) && batchId) {
@@ -402,11 +494,14 @@ export async function rollbackCatalogMigrationV2(input: {
     if (journalSnap.exists) {
       const journalData = journalSnap.data();
       beforeImages = new Map<string, any | null>(Object.entries(journalData.beforeImages || {}));
+      if (journalData.postRevisions) {
+        postRevisions = { ...journalData.postRevisions };
+      }
     }
   }
 
   if (!beforeImages || beforeImages.size === 0) {
-    return { restoredCount: 0, deletedCount: 0, skippedCount: 0, conflicts: ['NO_BEFORE_IMAGES_FOUND'] };
+    return { status: 'NOOP', restoredCount: 0, deletedCount: 0, skippedCount: 0, conflicts: ['NO_BEFORE_IMAGES_FOUND'] };
   }
 
   let restoredCount = 0;
@@ -422,42 +517,84 @@ export async function rollbackCatalogMigrationV2(input: {
       docRef = db.collection(CATALOG_COLLECTION).doc(key);
     }
 
-    const currentSnap = await docRef.get();
-    if (!currentSnap.exists) {
-      continue;
-    }
-    const current = currentSnap.data() || {};
+    const executeRollbackItem = async (transaction: any) => {
+      const currentSnap = await transaction.get(docRef);
+      if (!currentSnap.exists) {
+        return { skipped: true, reason: 'NOT_FOUND' };
+      }
+      const current = currentSnap.data() || {};
+      const currentRev = Number.isSafeInteger(current.revision) ? current.revision : (current.adminRevision || 0);
+      const expectedPostRev = postRevisions[key];
 
-    if (beforeData === null) {
-      // Created by migration: check if merchant subsequently modified it
-      const currentRev = Number.isSafeInteger(current.revision) ? current.revision : (current.adminRevision || 0);
-      const isSubsequentMerchantEdit = currentRev > 1 || (batchId && current.migrationBatch && current.migrationBatch !== batchId);
-      if (isSubsequentMerchantEdit) {
-        conflicts.push(`PROTECTED_MERCHANT_EDIT: Refusing to delete ${key} because it was modified by a merchant after migration (rev ${currentRev})`);
-        skippedCount++;
-        continue;
+      // 1. Migration marker check: protect if migrationBatch does not match batchId
+      if (batchId && current.migrationBatch && current.migrationBatch !== batchId) {
+        return {
+          conflict: `PROTECTED_MERCHANT_EDIT: Refusing to revert ${key} because migrationBatch '${current.migrationBatch}' != batchId '${batchId}'`,
+        };
       }
-      await docRef.delete();
-      deletedCount++;
+
+      // 2. Intervening merchant edit checks
+      if (beforeData === null) {
+        // Created by migration
+        const targetRev = expectedPostRev ?? 1;
+        if (currentRev > targetRev) {
+          return {
+            conflict: `PROTECTED_MERCHANT_EDIT: Refusing to delete ${key} because it was modified by a merchant after migration (current rev ${currentRev} > migration rev ${targetRev})`,
+          };
+        }
+        transaction.delete(docRef);
+        return { deleted: true };
+      } else {
+        // Updated by migration
+        const beforeRev = Number.isSafeInteger(beforeData.revision) ? beforeData.revision : (beforeData.adminRevision || 0);
+        const targetRev = expectedPostRev ?? (beforeRev + 1);
+        if (currentRev > targetRev) {
+          return {
+            conflict: `PROTECTED_MERCHANT_EDIT: Refusing to overwrite ${key} because it has subsequent merchant edits (current rev ${currentRev} > migration rev ${targetRev})`,
+          };
+        }
+        transaction.set(docRef, beforeData);
+        return { restored: true };
+      }
+    };
+
+    let itemResult: any;
+    if (typeof db.runTransaction === 'function') {
+      itemResult = await db.runTransaction(executeRollbackItem);
     } else {
-      // Updated by migration: check if merchant subsequently modified it
-      const currentRev = Number.isSafeInteger(current.revision) ? current.revision : (current.adminRevision || 0);
-      const beforeRev = Number.isSafeInteger(beforeData.revision) ? beforeData.revision : (beforeData.adminRevision || 0);
-      // If revision is higher than what migration set (beforeRev + 1), merchant edited it!
-      const isSubsequentMerchantEdit = currentRev > (beforeRev + 1) || (batchId && current.migrationBatch && current.migrationBatch !== batchId);
-      if (isSubsequentMerchantEdit) {
-        conflicts.push(`PROTECTED_MERCHANT_EDIT: Refusing to overwrite ${key} because it has subsequent merchant edits (rev ${currentRev} > migration rev ${beforeRev + 1})`);
-        skippedCount++;
-        continue;
-      }
-      await docRef.set(beforeData);
-      restoredCount++;
+      const snap = await docRef.get();
+      itemResult = await executeRollbackItem({
+        get: async () => snap,
+        set: (ref: any, data: any) => ref.set(data),
+        delete: (ref: any) => ref.delete(),
+      });
     }
+
+    if (itemResult?.conflict) {
+      conflicts.push(itemResult.conflict);
+      skippedCount++;
+    } else if (itemResult?.restored) {
+      restoredCount++;
+    } else if (itemResult?.deleted) {
+      deletedCount++;
+    } else if (itemResult?.skipped) {
+      skippedCount++;
+    }
+  }
+
+  let status: 'COMPLETED' | 'PARTIAL' | 'FAILED' | 'NOOP' = 'COMPLETED';
+  if (conflicts.length > 0) {
+    status = (restoredCount > 0 || deletedCount > 0) ? 'PARTIAL' : 'FAILED';
+  } else if (restoredCount === 0 && deletedCount === 0 && skippedCount === 0) {
+    status = 'NOOP';
+  } else {
+    status = 'COMPLETED';
   }
 
   if (batchId) {
     await db.collection(MIGRATION_JOURNALS_COLLECTION).doc(batchId).set({
-      status: 'ROLLED_BACK',
+      status: status === 'COMPLETED' ? 'ROLLED_BACK' : (status === 'PARTIAL' ? 'PARTIAL_ROLLBACK' : 'ROLLBACK_FAILED'),
+      rollbackStatus: status,
       rolledBackAt: new Date().toISOString(),
       restoredCount,
       deletedCount,
@@ -468,6 +605,7 @@ export async function rollbackCatalogMigrationV2(input: {
   }
 
   return {
+    status,
     restoredCount,
     deletedCount,
     skippedCount,

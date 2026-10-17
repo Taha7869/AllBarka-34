@@ -15,6 +15,7 @@ import {
   publishAdminProduct,
   archiveAdminProduct,
   getAdminMerchandising,
+  getAdminMerchandisingBundle,
   updateAdminMerchandising,
   publishAdminMerchandising,
   getPublicMerchandising
@@ -59,9 +60,16 @@ export function createCatalogRouter(options: { getDb: () => Firestore | null; re
   router.get('/api/admin/merchandising', options.requireAdmin, async (request, response) => {
     response.setHeader('Cache-Control', 'no-store');
     try {
+      const bundle = await getAdminMerchandisingBundle(options.getDb());
       const preview = request.query.preview !== 'false';
-      const settings = await getAdminMerchandising(options.getDb(), preview);
-      return response.json({ settings });
+      const settings = preview ? bundle.draft : bundle.live;
+      return response.json({
+        settings,
+        draft: bundle.draft,
+        live: bundle.live,
+        draftRevision: bundle.draftRevision,
+        liveRevision: bundle.liveRevision,
+      });
     } catch (error) {
       return fail(error, response);
     }
@@ -82,8 +90,14 @@ export function createCatalogRouter(options: { getDb: () => Firestore | null; re
     response.setHeader('Cache-Control', 'no-store');
     const user = (request as typeof request & { user?: { uid?: string } }).user;
     try {
-      const settings = await publishAdminMerchandising({ db: options.getDb(), actorUid: user?.uid || '', body: request.body });
-      return response.json({ settings });
+      const result = await publishAdminMerchandising({ db: options.getDb(), actorUid: user?.uid || '', body: request.body });
+      return response.json({
+        settings: result.draft,
+        published: result.published,
+        draft: result.draft,
+        draftRevision: result.draftRevision,
+        liveRevision: result.liveRevision,
+      });
     } catch (error) {
       return fail(error, response);
     }
