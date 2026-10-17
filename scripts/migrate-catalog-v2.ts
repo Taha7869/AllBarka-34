@@ -241,6 +241,7 @@ async function runMigration() {
     executedCount++;
   }
 
+  const merchRef = db.collection(MERCHANDISING_COLLECTION).doc('settings');
   if (merchAction === 'CREATE') {
     await merchRef.set(DEFAULT_MERCHANDISING, { merge: true });
     console.log('✅ Created default merchandising/settings document.');
