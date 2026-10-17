@@ -16,13 +16,35 @@
  *    or delete them silently.
  */
 
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 import type { Firestore } from 'firebase-admin/firestore';
 import { PRODUCTS } from '../data/products';
 import { CATALOG_COLLECTION, MERCHANDISING_COLLECTION, DEFAULT_MERCHANDISING } from './catalogStore';
 import type { Product, ProductStatus, OrderMode } from '../types';
 
 export const MIGRATION_JOURNALS_COLLECTION = 'catalogMigrationJournals';
+
+/**
+ * Computes a deterministic SHA-256 fingerprint of a Firestore document object,
+ * canonically sorting all keys recursively to reliably detect direct content modifications.
+ */
+export function computeDocumentFingerprint(data: any): string {
+  if (!data || typeof data !== 'object') return '';
+  const canonicalize = (val: any): any => {
+    if (val === null || val === undefined) return null;
+    if (Array.isArray(val)) return val.map(canonicalize);
+    if (typeof val === 'object') {
+      const keys = Object.keys(val).sort();
+      const obj: Record<string, any> = {};
+      for (const k of keys) {
+        obj[k] = canonicalize(val[k]);
+      }
+      return obj;
+    }
+    return val;
+  };
+  return createHash('sha256').update(JSON.stringify(canonicalize(data))).digest('hex');
+}
 
 export interface MigrationPlanItem {
   id: string;
@@ -241,6 +263,7 @@ export async function executeCatalogMigrationV2(input: {
   const beforeImages = new Map<string, any | null>();
   const journalBeforeImages: Record<string, any> = {};
   const journalPostRevisions: Record<string, number> = {};
+  const journalPostFingerprints: Record<string, string> = {};
   const executedItemIds: string[] = [];
   const conflicts: string[] = [];
 
@@ -265,6 +288,7 @@ export async function executeCatalogMigrationV2(input: {
     executedItemIds: [],
     beforeImages: {},
     postRevisions: {},
+    postFingerprints: {},
     conflicts: [],
   });
 
@@ -282,8 +306,12 @@ export async function executeCatalogMigrationV2(input: {
 
     // Precondition and mutation inside transaction.
     // Pure callback: do not mutate external state inside executeItem to ensure retry safety.
+    // STRICT ORDERING: All transaction reads must be executed before ANY transaction writes!
     const executeItem = async (transaction: any) => {
+      // 1. ALL TRANSACTION READS EXECUTED FIRST
       const snap = await transaction.get(docRef);
+      const journalSnap = await transaction.get(journalRef);
+
       const exists = snap.exists;
       const currentData = exists ? snap.data() : null;
 
@@ -320,20 +348,28 @@ export async function executeCatalogMigrationV2(input: {
         migrationBatch: batchId,
       };
 
-      // 1. Mutate product document
+      const finalData = item.action === 'CREATE'
+        ? mergedChanges
+        : { ...currentData, ...mergedChanges };
+
+      const fingerprint = computeDocumentFingerprint(finalData);
+
+      // 2. ALL TRANSACTION WRITES EXECUTED AFTER ALL READS
+      // 2a. Mutate product document
       transaction.set(docRef, mergedChanges, { merge: true });
 
-      // 2. Atomically persist recovery record in the migration journal inside the SAME transaction
-      const journalSnap = await transaction.get(journalRef);
+      // 2b. Atomically persist recovery record in the migration journal inside the SAME transaction
       const currentJournal = journalSnap.exists ? journalSnap.data() : {};
       const updatedBeforeImages = { ...(currentJournal.beforeImages || {}), [item.id]: currentData };
       const updatedPostRevisions = { ...(currentJournal.postRevisions || {}), [item.id]: postRev };
+      const updatedPostFingerprints = { ...(currentJournal.postFingerprints || {}), [item.id]: fingerprint };
       const updatedExecutedIds = [...(currentJournal.executedItemIds || []), item.id];
 
       transaction.set(journalRef, {
         ...currentJournal,
         beforeImages: updatedBeforeImages,
         postRevisions: updatedPostRevisions,
+        postFingerprints: updatedPostFingerprints,
         executedItemIds: updatedExecutedIds,
         updatedAt: new Date().toISOString(),
       }, { merge: true });
@@ -344,6 +380,7 @@ export async function executeCatalogMigrationV2(input: {
         itemId: item.id,
         beforeData: currentData,
         postRev,
+        fingerprint,
       };
     };
 
@@ -367,6 +404,7 @@ export async function executeCatalogMigrationV2(input: {
       beforeImages.set(item.id, itemOutcome.beforeData);
       journalBeforeImages[item.id] = itemOutcome.beforeData;
       journalPostRevisions[item.id] = itemOutcome.postRev;
+      journalPostFingerprints[item.id] = itemOutcome.fingerprint;
       executedItemIds.push(item.id);
 
       if (itemOutcome.action === 'CREATE') createsCount++;
@@ -383,25 +421,39 @@ export async function executeCatalogMigrationV2(input: {
   if (plan.merchAction === 'CREATE' && (maxItems === undefined || executedCount < maxItems)) {
     const merchRef = db.collection(MERCHANDISING_COLLECTION).doc('settings');
 
+    // STRICT ORDERING: All reads before any writes
     const executeMerch = async (transaction: any) => {
+      // 1. ALL READS FIRST
       const snap = await transaction.get(merchRef);
+      const journalSnap = await transaction.get(journalRef);
+
       if (snap.exists) {
         return { concurrentExists: true };
       }
-      transaction.set(merchRef, { ...DEFAULT_MERCHANDISING, migrationBatch: batchId }, { merge: true });
 
-      const journalSnap = await transaction.get(journalRef);
+      const finalMerchRev = Number.isSafeInteger(DEFAULT_MERCHANDISING.revision) ? DEFAULT_MERCHANDISING.revision : 1;
+      const finalMerch = { ...DEFAULT_MERCHANDISING, revision: finalMerchRev, migrationBatch: batchId };
+      const fingerprint = computeDocumentFingerprint(finalMerch);
+
+      // 2. ALL WRITES AFTER ALL READS
+      transaction.set(merchRef, finalMerch, { merge: true });
+
       const currentJournal = journalSnap.exists ? journalSnap.data() : {};
       const updatedBeforeImages = { ...(currentJournal.beforeImages || {}), 'merchandising/settings': null };
+      const updatedPostRevisions = { ...(currentJournal.postRevisions || {}), 'merchandising/settings': finalMerchRev };
+      const updatedPostFingerprints = { ...(currentJournal.postFingerprints || {}), 'merchandising/settings': fingerprint };
       const updatedExecutedIds = [...(currentJournal.executedItemIds || []), 'merchandising/settings'];
+
       transaction.set(journalRef, {
         ...currentJournal,
         beforeImages: updatedBeforeImages,
+        postRevisions: updatedPostRevisions,
+        postFingerprints: updatedPostFingerprints,
         executedItemIds: updatedExecutedIds,
         updatedAt: new Date().toISOString(),
       }, { merge: true });
 
-      return { committed: true };
+      return { committed: true, fingerprint };
     };
 
     let merchOutcome: any;
@@ -417,8 +469,11 @@ export async function executeCatalogMigrationV2(input: {
     }
 
     if (merchOutcome?.committed) {
+      const finalMerchRev = Number.isSafeInteger(DEFAULT_MERCHANDISING.revision) ? DEFAULT_MERCHANDISING.revision : 1;
       beforeImages.set('merchandising/settings', null);
       journalBeforeImages['merchandising/settings'] = null;
+      journalPostRevisions['merchandising/settings'] = finalMerchRev;
+      journalPostFingerprints['merchandising/settings'] = merchOutcome.fingerprint;
       executedItemIds.push('merchandising/settings');
     }
   }
@@ -442,6 +497,7 @@ export async function executeCatalogMigrationV2(input: {
     executedItemIds,
     beforeImages: journalBeforeImages,
     postRevisions: journalPostRevisions,
+    postFingerprints: journalPostFingerprints,
     conflicts,
   }, { merge: true });
 
@@ -487,15 +543,21 @@ export async function rollbackCatalogMigrationV2(input: {
   let beforeImages = input.beforeImages;
   let batchId = input.batchId;
   let postRevisions: Record<string, number> = {};
+  let postFingerprints: Record<string, string> = {};
 
-  // Support process restart by retrieving durable journal from Firestore if not in memory
-  if ((!beforeImages || beforeImages.size === 0) && batchId) {
+  // Support process restart by retrieving durable journal from Firestore
+  if (batchId) {
     const journalSnap = await db.collection(MIGRATION_JOURNALS_COLLECTION).doc(batchId).get();
     if (journalSnap.exists) {
       const journalData = journalSnap.data();
-      beforeImages = new Map<string, any | null>(Object.entries(journalData.beforeImages || {}));
+      if ((!beforeImages || beforeImages.size === 0) && journalData.beforeImages) {
+        beforeImages = new Map<string, any | null>(Object.entries(journalData.beforeImages));
+      }
       if (journalData.postRevisions) {
         postRevisions = { ...journalData.postRevisions };
+      }
+      if (journalData.postFingerprints) {
+        postFingerprints = { ...journalData.postFingerprints };
       }
     }
   }
@@ -517,7 +579,9 @@ export async function rollbackCatalogMigrationV2(input: {
       docRef = db.collection(CATALOG_COLLECTION).doc(key);
     }
 
+    // STRICT ORDERING: All reads before any writes
     const executeRollbackItem = async (transaction: any) => {
+      // 1. ALL READS FIRST
       const currentSnap = await transaction.get(docRef);
       if (!currentSnap.exists) {
         return { skipped: true, reason: 'NOT_FOUND' };
@@ -525,34 +589,55 @@ export async function rollbackCatalogMigrationV2(input: {
       const current = currentSnap.data() || {};
       const currentRev = Number.isSafeInteger(current.revision) ? current.revision : (current.adminRevision || 0);
       const expectedPostRev = postRevisions[key];
+      const expectedFingerprint = postFingerprints[key];
 
-      // 1. Migration marker check: protect if migrationBatch does not match batchId
-      if (batchId && current.migrationBatch && current.migrationBatch !== batchId) {
+      // 1. Require recovery metadata when rolling back a batch
+      if (batchId && (expectedPostRev === undefined || !expectedFingerprint)) {
         return {
-          conflict: `PROTECTED_MERCHANT_EDIT: Refusing to revert ${key} because migrationBatch '${current.migrationBatch}' != batchId '${batchId}'`,
+          conflict: `PROTECTED_CONFLICT_MISSING_METADATA: Refusing to revert ${key} because post-migration recovery metadata is missing in journal ${batchId}`,
         };
       }
 
-      // 2. Intervening merchant edit checks
-      if (beforeData === null) {
-        // Created by migration
-        const targetRev = expectedPostRev ?? 1;
-        if (currentRev > targetRev) {
+      // 2. Exact batch ownership check: missing OR mismatched migration marker produces protected conflict
+      if (batchId) {
+        if (!current.migrationBatch) {
           return {
-            conflict: `PROTECTED_MERCHANT_EDIT: Refusing to delete ${key} because it was modified by a merchant after migration (current rev ${currentRev} > migration rev ${targetRev})`,
+            conflict: `PROTECTED_MERCHANT_EDIT: Refusing to revert ${key} because migrationBatch marker is missing (expected '${batchId}')`,
           };
         }
+        if (current.migrationBatch !== batchId) {
+          return {
+            conflict: `PROTECTED_MERCHANT_EDIT: Refusing to revert ${key} because migrationBatch '${current.migrationBatch}' != batchId '${batchId}'`,
+          };
+        }
+      }
+
+      // 3. Exact revision check
+      const targetRev = beforeData === null
+        ? (expectedPostRev ?? 1)
+        : (expectedPostRev ?? ((Number.isSafeInteger(beforeData.revision) ? beforeData.revision : (beforeData.adminRevision || 0)) + 1));
+
+      if (currentRev !== targetRev) {
+        return {
+          conflict: `PROTECTED_MERCHANT_EDIT: Refusing to revert ${key} because revision (${currentRev}) does not match post-migration revision (${targetRev})`,
+        };
+      }
+
+      // 4. Exact post-state fingerprint check: reliably detects direct Firestore content edits with same revision
+      if (expectedFingerprint) {
+        const currentFingerprint = computeDocumentFingerprint(current);
+        if (currentFingerprint !== expectedFingerprint) {
+          return {
+            conflict: `PROTECTED_MERCHANT_EDIT: Refusing to revert ${key} because document content was modified since migration (fingerprint mismatch)`,
+          };
+        }
+      }
+
+      // 2. ALL WRITES AFTER ALL READS
+      if (beforeData === null) {
         transaction.delete(docRef);
         return { deleted: true };
       } else {
-        // Updated by migration
-        const beforeRev = Number.isSafeInteger(beforeData.revision) ? beforeData.revision : (beforeData.adminRevision || 0);
-        const targetRev = expectedPostRev ?? (beforeRev + 1);
-        if (currentRev > targetRev) {
-          return {
-            conflict: `PROTECTED_MERCHANT_EDIT: Refusing to overwrite ${key} because it has subsequent merchant edits (current rev ${currentRev} > migration rev ${targetRev})`,
-          };
-        }
         transaction.set(docRef, beforeData);
         return { restored: true };
       }

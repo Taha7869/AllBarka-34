@@ -183,32 +183,23 @@ function createMockFirestore(seedProducts: boolean = true) {
       await prevLock;
       try {
         const stagedWrites = new Map<string, any>();
+        let hasWritten = false;
         const tx = {
           get: async (docRef: any) => {
-            if (stagedWrites.has(docRef.path)) {
-              const data = stagedWrites.get(docRef.path);
-              if (data === '__DELETED__') {
-                return {
-                  id: docRef.id,
-                  ref: docRef,
-                  exists: false,
-                  data: () => undefined,
-                };
-              }
-              return {
-                id: docRef.id,
-                ref: docRef,
-                exists: true,
-                data: () => structuredClone(data),
-              };
+            if (hasWritten) {
+              throw new Error(
+                `FIRESTORE_INVALID_TRANSACTION_ORDER: Firestore transactions require all reads to be executed before all writes. Attempted to read '${docRef.path}' after write operations were performed.`
+              );
             }
             return makeSnapshot(docRef.path, docRef.id, docRef);
           },
           set: (docRef: any, data: any, options?: { merge?: boolean }) => {
+            hasWritten = true;
             const existing = stagedWrites.has(docRef.path) ? stagedWrites.get(docRef.path) : store.get(docRef.path);
             stagedWrites.set(docRef.path, applyMockPatch(existing === '__DELETED__' ? undefined : existing, data, options?.merge ?? false));
           },
           delete: (docRef: any) => {
+            hasWritten = true;
             stagedWrites.set(docRef.path, '__DELETED__');
           },
         };
@@ -1780,4 +1771,178 @@ test('Stage 2 - REQ-S2-007: Regression Test D - Transaction callback retry does 
   } finally {
     db.runTransaction = origRunTx;
   }
+});
+
+// --------------------------------------------------------------------------
+// TEST 18: Shared Transaction Test Mock Rejection of Read After Write
+// --------------------------------------------------------------------------
+test('Stage 2 - REQ-S2-007: Shared transaction test mock strictly rejects any read after a write', async () => {
+  const { db } = createMockFirestore(false);
+  const docRef1 = db.collection('testCol').doc('doc1');
+  const docRef2 = db.collection('testCol').doc('doc2');
+
+  await assert.rejects(async () => {
+    await db.runTransaction(async (tx: any) => {
+      tx.set(docRef1, { foo: 'bar' });
+      // Read of a different document after a write must fail!
+      await tx.get(docRef2);
+    });
+  }, (err: any) => err.message.includes('FIRESTORE_INVALID_TRANSACTION_ORDER'));
+});
+
+// --------------------------------------------------------------------------
+// TEST 19: Rollback Protection: Missing migrationBatch Marker
+// --------------------------------------------------------------------------
+test('Stage 2 - REQ-S2-007: Rollback conflict when migrationBatch marker is missing', async () => {
+  const { db, store } = createMockFirestore(false);
+
+  store.set('products/prod-missing-marker', {
+    id: 'prod-missing-marker',
+    name_en: 'Initial Name',
+    category: 'dates',
+    prices: { '250g': 300 },
+    revision: 1,
+    adminRevision: 1,
+  });
+
+  const plan = await planCatalogMigrationV2({
+    db,
+    products: [{ id: 'prod-missing-marker', name_en: 'Initial Name', category: 'dates', prices: { '250g': 300 } }],
+  });
+
+  const exec = await executeCatalogMigrationV2({ db, plan });
+  assert.equal(exec.updatesCount, 1);
+
+  // Simulate missing migrationBatch (deleted or stripped)
+  const currentDoc = store.get('products/prod-missing-marker');
+  delete currentDoc.migrationBatch;
+  store.set('products/prod-missing-marker', currentDoc);
+
+  const rollback = await rollbackCatalogMigrationV2({ db, batchId: exec.batchId });
+  assert.equal(rollback.status, 'PARTIAL'); // merch deleted, product skipped with conflict
+  assert.equal(rollback.skippedCount, 1);
+  assert.ok(rollback.conflicts.some(c => c.includes('migrationBatch marker is missing')));
+
+  const finalDoc = store.get('products/prod-missing-marker');
+  assert.equal(finalDoc.productFamily, 'khajoor', 'Document content was not overwritten');
+});
+
+// --------------------------------------------------------------------------
+// TEST 20: Rollback Protection: Mismatched migrationBatch Marker
+// --------------------------------------------------------------------------
+test('Stage 2 - REQ-S2-007: Rollback conflict when migrationBatch marker does not match batchId', async () => {
+  const { db, store } = createMockFirestore(false);
+
+  store.set('products/prod-mismatched-marker', {
+    id: 'prod-mismatched-marker',
+    name_en: 'Initial Name',
+    category: 'dates',
+    prices: { '250g': 350 },
+    revision: 1,
+    adminRevision: 1,
+  });
+
+  const plan = await planCatalogMigrationV2({
+    db,
+    products: [{ id: 'prod-mismatched-marker', name_en: 'Initial Name', category: 'dates', prices: { '250g': 350 } }],
+  });
+
+  const exec = await executeCatalogMigrationV2({ db, plan });
+  assert.equal(exec.updatesCount, 1);
+
+  // Set mismatched migrationBatch
+  const currentDoc = store.get('products/prod-mismatched-marker');
+  currentDoc.migrationBatch = 'competing-migration-batch-999';
+  store.set('products/prod-mismatched-marker', currentDoc);
+
+  const rollback = await rollbackCatalogMigrationV2({ db, batchId: exec.batchId });
+  assert.equal(rollback.status, 'PARTIAL');
+  assert.equal(rollback.skippedCount, 1);
+  assert.ok(rollback.conflicts.some(c => c.includes("migrationBatch 'competing-migration-batch-999' != batchId")));
+
+  const finalDoc = store.get('products/prod-mismatched-marker');
+  assert.equal(finalDoc.migrationBatch, 'competing-migration-batch-999');
+});
+
+// --------------------------------------------------------------------------
+// TEST 21: Rollback Protection: Same Revision But Changed Merchant Title/Price (Post-State Fingerprint)
+// --------------------------------------------------------------------------
+test('Stage 2 - REQ-S2-007: Rollback conflict when revision is unchanged but title/price modified (fingerprint check)', async () => {
+  const { db, store } = createMockFirestore(false);
+
+  store.set('products/prod-fingerprint-test', {
+    id: 'prod-fingerprint-test',
+    name_en: 'Initial Before Title',
+    category: 'dates',
+    prices: { '250g': 500 },
+    revision: 1,
+    adminRevision: 1,
+  });
+
+  const plan = await planCatalogMigrationV2({
+    db,
+    products: [{ id: 'prod-fingerprint-test', name_en: 'Initial Before Title', category: 'dates', prices: { '250g': 500 } }],
+  });
+
+  const exec = await executeCatalogMigrationV2({ db, plan });
+  assert.equal(exec.updatesCount, 1);
+
+  // Verify journal has postFingerprints
+  const journalDoc = store.get(`catalogMigrationJournals/${exec.batchId}`);
+  assert.ok(journalDoc.postFingerprints?.['prod-fingerprint-test']);
+
+  // Simulate direct merchant edit without incrementing revision: title and price changed!
+  const currentDoc = store.get('products/prod-fingerprint-test');
+  assert.equal(currentDoc.revision, 2);
+  currentDoc.name_en = 'Direct Merchant Title Modification';
+  currentDoc.prices = { '250g': 1234 };
+  // Revision remains 2, migrationBatch remains exec.batchId
+  store.set('products/prod-fingerprint-test', currentDoc);
+
+  const rollback = await rollbackCatalogMigrationV2({ db, batchId: exec.batchId });
+  assert.equal(rollback.status, 'PARTIAL');
+  assert.equal(rollback.skippedCount, 1);
+  assert.ok(rollback.conflicts.some(c => c.includes('fingerprint mismatch')));
+
+  const finalDoc = store.get('products/prod-fingerprint-test');
+  assert.equal(finalDoc.name_en, 'Direct Merchant Title Modification');
+  assert.equal(finalDoc.prices['250g'], 1234);
+});
+
+// --------------------------------------------------------------------------
+// TEST 22: Rollback Protection: Missing Post-State Recovery Metadata
+// --------------------------------------------------------------------------
+test('Stage 2 - REQ-S2-007: Rollback conflict when post-state recovery metadata is missing', async () => {
+  const { db, store } = createMockFirestore(false);
+
+  store.set('products/prod-missing-meta', {
+    id: 'prod-missing-meta',
+    name_en: 'Initial Name',
+    category: 'dates',
+    prices: { '250g': 250 },
+    revision: 1,
+    adminRevision: 1,
+  });
+
+  const plan = await planCatalogMigrationV2({
+    db,
+    products: [{ id: 'prod-missing-meta', name_en: 'Initial Name', category: 'dates', prices: { '250g': 250 } }],
+  });
+
+  const exec = await executeCatalogMigrationV2({ db, plan });
+  assert.equal(exec.updatesCount, 1);
+
+  // Corrupt journal by deleting recovery metadata for this item
+  const journalDoc = store.get(`catalogMigrationJournals/${exec.batchId}`);
+  delete journalDoc.postFingerprints['prod-missing-meta'];
+  delete journalDoc.postRevisions['prod-missing-meta'];
+  store.set(`catalogMigrationJournals/${exec.batchId}`, journalDoc);
+
+  const rollback = await rollbackCatalogMigrationV2({ db, batchId: exec.batchId });
+  assert.equal(rollback.status, 'PARTIAL');
+  assert.equal(rollback.skippedCount, 1);
+  assert.ok(rollback.conflicts.some(c => c.includes('PROTECTED_CONFLICT_MISSING_METADATA')));
+
+  const finalDoc = store.get('products/prod-missing-meta');
+  assert.equal(finalDoc.productFamily, 'khajoor');
 });
