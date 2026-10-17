@@ -4,7 +4,6 @@ import { ArrowLeft, ArrowRight, ImageOff, LoaderCircle, RotateCcw, X, ZoomIn, Zo
 import { useLanguage } from '../contexts/LanguageContext';
 import { acquireScrollLock } from '../utils/scrollLock';
 import { changePhotoZoom, clampPhotoIndex, nextPhotoIndex, photoSwipeStep, prepareProductPhotos, type ProductPhoto } from '../lib/productPhotoViewer';
-import '../styles/product-photo-viewer.css';
 
 interface ProductPhotoViewerProps {
   images: ProductPhoto[];

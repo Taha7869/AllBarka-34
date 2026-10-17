@@ -33,25 +33,31 @@ export function storedCatalogRecord(productId: string, value: unknown): CatalogR
   if (!seed) {
     if (value && typeof value === 'object') {
       const prod = dynamicProductFromDocument(value, productId);
+      // Canonical schemaVersion: 1 documents are authoritative directly
+      if ((value as any).schemaVersion === 1 && Array.isArray((value as any).variants)) {
+        const pricing = validateCatalogPricing(value, prod);
+        const updatedAt = typeof (value as any).updatedAt === 'string' ? (value as any).updatedAt : null;
+        return { pricing, version: fingerprint(pricing), updatedAt };
+      }
       const variants = Object.entries(prod.prices).map(([label, price]) => ({
         id: catalogVariantId(label),
         label,
         price,
         available: true,
-        weightGrams: null,
+        weightGrams: prod.shippingWeights?.[label] ?? null,
       }));
       const pricing = {
         schemaVersion: 1 as const,
         productId,
         revision: Number((value as any).revision) || 1,
-        active: prod.active !== false,
+        active: prod.active !== false && prod.status !== 'archived',
         quoteOnly: Boolean(prod.quoteOnly),
         variants,
         wholesale: prod.wholesale || 0,
         pricePer100g: prod.pricePer100g || 0,
-        allowCustomWeight: false,
-        minCustomWeightG: 100,
-        maxCustomWeightG: 5000,
+        allowCustomWeight: Boolean(prod.allowCustomWeight),
+        minCustomWeightG: prod.minCustomWeightG || 100,
+        maxCustomWeightG: prod.maxCustomWeightG || 5000,
         shippingWeightG: prod.shippingWeightG ?? null,
       };
       const updatedAt = typeof (value as any).updatedAt === 'string' ? (value as any).updatedAt : null;
@@ -384,7 +390,10 @@ export async function updateAdminProduct(input: { db: Firestore | null; productI
   const db = input.db;
   const ref = db.collection(CATALOG_COLLECTION).doc(input.productId);
   const body = (input.body && typeof input.body === 'object' ? input.body : {}) as Record<string, any>;
-  const expectedRevision = body.expectedRevision !== undefined ? Number(body.expectedRevision) : undefined;
+  const expectedRevision = body.expectedRevision !== undefined ? Number(body.expectedRevision) : NaN;
+  if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0) {
+    throw new CatalogError('CATALOG_REVISION_CONFLICT', 409);
+  }
 
   const result = await db.runTransaction(async transaction => {
     const snap = await transaction.get(ref);
@@ -392,7 +401,7 @@ export async function updateAdminProduct(input: { db: Firestore | null; productI
     if (!existingData) throw new CatalogError('UNKNOWN_CATALOG_PRODUCT', 404);
 
     const currentRevision = Number.isSafeInteger(existingData.revision) ? existingData.revision : (existingData.adminRevision || 0);
-    if (expectedRevision !== undefined && currentRevision !== expectedRevision) {
+    if (currentRevision !== expectedRevision) {
       throw new CatalogError('CATALOG_REVISION_CONFLICT', 409);
     }
 
@@ -428,18 +437,20 @@ export async function updateAdminProduct(input: { db: Firestore | null; productI
   return result;
 }
 
-export async function duplicateAdminProduct(input: { db: Firestore | null; productId: string; body?: unknown; actorUid: string }): Promise<Product & { revision: number }> {
+export async function duplicateAdminProduct(input: { db: Firestore | null; productId?: string; sourceProductId?: string; expectedRevision?: number; body?: unknown; actorUid: string }): Promise<Product & { revision: number }> {
   if (!input.db) throw new CatalogError('CATALOG_STORE_UNAVAILABLE', 503);
   if (!input.actorUid) throw new CatalogError('FORBIDDEN_ADMIN', 403);
+  const targetId = input.productId || input.sourceProductId;
+  if (!targetId) throw new CatalogError('INVALID_PRODUCT_ID', 400);
   const db = input.db;
-  const snap = await db.collection(CATALOG_COLLECTION).doc(input.productId).get();
-  const source = snap.exists ? (snap.data() as Record<string, any>) : (seeds.get(input.productId) as Record<string, any> | undefined);
+  const snap = await db.collection(CATALOG_COLLECTION).doc(targetId).get();
+  const source = snap.exists ? (snap.data() as Record<string, any>) : (seeds.get(targetId) as Record<string, any> | undefined);
   if (!source) throw new CatalogError('UNKNOWN_CATALOG_PRODUCT', 404);
 
   const body = (input.body && typeof input.body === 'object' ? input.body : {}) as Record<string, any>;
   const requestedId = typeof body.newProductId === 'string' && body.newProductId.trim()
     ? body.newProductId.trim()
-    : `${input.productId}-draft-${Date.now().toString().slice(-6)}`;
+    : `${targetId}-draft-${Date.now().toString(36)}-${randomUUID().slice(0, 4)}`;
   if (!/^[a-z0-9_-]{2,80}$/.test(requestedId)) throw new CatalogError('INVALID_PRODUCT_ID', 400);
 
   const existingRef = db.collection(CATALOG_COLLECTION).doc(requestedId);
@@ -466,7 +477,7 @@ export async function duplicateAdminProduct(input: { db: Firestore | null; produ
   await db.collection('catalogAudits').doc(randomUUID()).set({
     productId: requestedId,
     action: 'PRODUCT_DUPLICATED',
-    sourceProductId: input.productId,
+    sourceProductId: targetId,
     actorUid: input.actorUid,
     updatedAt: now,
   });
@@ -478,13 +489,19 @@ export async function duplicateAdminProduct(input: { db: Firestore | null; produ
   };
 }
 
-export async function publishAdminProduct(input: { db: Firestore | null; productId: string; body?: unknown; actorUid: string }): Promise<Product & { revision: number }> {
+export async function publishAdminProduct(input: { db: Firestore | null; productId: string; expectedRevision?: number; body?: unknown; actorUid: string }): Promise<Product & { revision: number }> {
   if (!input.db) throw new CatalogError('CATALOG_STORE_UNAVAILABLE', 503);
   if (!input.actorUid) throw new CatalogError('FORBIDDEN_ADMIN', 403);
   const db = input.db;
   const ref = db.collection(CATALOG_COLLECTION).doc(input.productId);
   const body = (input.body && typeof input.body === 'object' ? input.body : {}) as Record<string, any>;
-  const expectedRevision = body?.expectedRevision !== undefined ? Number(body.expectedRevision) : undefined;
+  const rawRev = (input as any).expectedRevision !== undefined
+    ? (input as any).expectedRevision
+    : body?.expectedRevision;
+  const expectedRevision = rawRev !== undefined ? Number(rawRev) : NaN;
+  if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0) {
+    throw new CatalogError('CATALOG_REVISION_CONFLICT', 409);
+  }
 
   const result = await db.runTransaction(async transaction => {
     const snap = await transaction.get(ref);
@@ -492,7 +509,7 @@ export async function publishAdminProduct(input: { db: Firestore | null; product
     if (!existing) throw new CatalogError('UNKNOWN_CATALOG_PRODUCT', 404);
 
     const currentRevision = Number.isSafeInteger(existing.revision) ? existing.revision : (existing.adminRevision || 0);
-    if (expectedRevision !== undefined && currentRevision !== expectedRevision) {
+    if (currentRevision !== expectedRevision) {
       throw new CatalogError('CATALOG_REVISION_CONFLICT', 409);
     }
 
@@ -528,13 +545,19 @@ export async function publishAdminProduct(input: { db: Firestore | null; product
   return result;
 }
 
-export async function archiveAdminProduct(input: { db: Firestore | null; productId: string; body?: unknown; actorUid: string }): Promise<Product & { revision: number }> {
+export async function archiveAdminProduct(input: { db: Firestore | null; productId: string; expectedRevision?: number; body?: unknown; actorUid: string }): Promise<Product & { revision: number }> {
   if (!input.db) throw new CatalogError('CATALOG_STORE_UNAVAILABLE', 503);
   if (!input.actorUid) throw new CatalogError('FORBIDDEN_ADMIN', 403);
   const db = input.db;
   const ref = db.collection(CATALOG_COLLECTION).doc(input.productId);
   const body = (input.body && typeof input.body === 'object' ? input.body : {}) as Record<string, any>;
-  const expectedRevision = body?.expectedRevision !== undefined ? Number(body.expectedRevision) : undefined;
+  const rawRev = (input as any).expectedRevision !== undefined
+    ? (input as any).expectedRevision
+    : body?.expectedRevision;
+  const expectedRevision = rawRev !== undefined ? Number(rawRev) : NaN;
+  if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0) {
+    throw new CatalogError('CATALOG_REVISION_CONFLICT', 409);
+  }
 
   const result = await db.runTransaction(async transaction => {
     const snap = await transaction.get(ref);
@@ -542,7 +565,7 @@ export async function archiveAdminProduct(input: { db: Firestore | null; product
     if (!existing) throw new CatalogError('UNKNOWN_CATALOG_PRODUCT', 404);
 
     const currentRevision = Number.isSafeInteger(existing.revision) ? existing.revision : (existing.adminRevision || 0);
-    if (expectedRevision !== undefined && currentRevision !== expectedRevision) {
+    if (currentRevision !== expectedRevision) {
       throw new CatalogError('CATALOG_REVISION_CONFLICT', 409);
     }
 
@@ -578,26 +601,8 @@ export async function archiveAdminProduct(input: { db: Firestore | null; product
   return result;
 }
 
-export const DEFAULT_MERCHANDISING: MerchandisingSettings = {
-  featuredProductIds: ['badam', 'pista', 'chilgoza', 'khajoor', 'deal-1', 'deal-2'],
-  categoryOrder: ['dry-fruits', 'dates', 'seeds-snacks', 'oils', 'essentials', 'herbs-spices', 'combos', 'celebration-boxes', 'deals', 'personalized-treats'],
-  categoryVisibility: {
-    'dry-fruits': true,
-    dates: true,
-    'seeds-snacks': true,
-    oils: true,
-    essentials: true,
-    'herbs-spices': true,
-    combos: true,
-    'celebration-boxes': true,
-    deals: true,
-    'personalized-treats': true,
-  },
-  autoplayDurationMs: 6000,
-  autoplayResumeDelayMs: 3000,
-  revision: 1,
-  updatedAt: new Date(0).toISOString(),
-};
+import { DEFAULT_MERCHANDISING } from '../config/merchandising';
+export { DEFAULT_MERCHANDISING };
 
 export async function getAdminMerchandising(db: Firestore | null, preview = true): Promise<MerchandisingSettings> {
   if (!db) return DEFAULT_MERCHANDISING;

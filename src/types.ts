@@ -23,18 +23,23 @@ export interface BidBoxFilledOption {
 }
 
 export interface BidBoxConfig {
-  emptyUnitStarting: number;
-  emptyBulk50Unit: number;
-  emptyBulk100Unit: number;
-  filledMin: number;
-  filledMax: number;
-  filledSummary: string;
-  occasionTag: string;
+  emptyUnitStarting?: number;
+  emptyBulk50Unit?: number;
+  emptyBulk100Unit?: number;
+  filledMin?: number;
+  filledMax?: number;
+  filledSummary?: string;
+  occasionTag?: string;
   dimensionsAndCapacity?: string;
   emptyOptionDetails?: string;
   filledOptionDetails?: string;
-  emptyTiers: BidBoxBulkTier[];
-  filledOptions: BidBoxFilledOption[];
+  emptyTiers?: BidBoxBulkTier[];
+  filledOptions?: BidBoxFilledOption[];
+  boxStyle?: string;
+  allowsCustomDryFruits?: boolean;
+  capacityG?: number;
+  minUnits?: number;
+  [key: string]: any;
 }
 
 export type ProductStatus = 'draft' | 'published' | 'archived';
@@ -50,12 +55,49 @@ export interface ProductPersonalizationConfig {
   notes?: string;
 }
 
+export interface MerchandisingShowcaseTab {
+  id: string; // e.g. 'dry-fruits', 'pantry', 'gifts', 'celebration-boxes', 'deals'
+  label_en: string;
+  label_ur: string;
+  visible: boolean;
+  productIds: string[]; // exactly 3 admin-selected products per tab
+}
+
+export interface MerchandisingCollectionEntry {
+  collectionId: string; // e.g. 'combos', 'celebration-boxes', 'deals', 'personalized-treats'
+  title_en: string;
+  title_ur: string;
+  slug: string; // validated internal destination e.g. '/celebration-boxes'
+  image?: string;
+  badge?: string;
+  visible: boolean;
+}
+
+export interface MerchandisingOccasionEntry {
+  tag: string; // e.g. 'wedding', 'ramadan', 'eid', 'umrah', 'corporate', 'baby-announcement'
+  title_en: string;
+  title_ur: string;
+  slug: string; // validated internal destination e.g. '/occasions/wedding'
+  icon?: string;
+  visible: boolean;
+}
+
+export interface MerchandisingAutoplayConfig {
+  enabled: boolean;
+  intervalMs: number; // Rule D5 default: 6000
+  resumeDelayMs: number; // Rule D5 default: 3000
+}
+
 export interface MerchandisingSettings {
+  showcaseTabs: MerchandisingShowcaseTab[];
   featuredProductIds: string[];
   categoryOrder: string[];
   categoryVisibility: Record<string, boolean>;
+  autoplay: MerchandisingAutoplayConfig;
   autoplayDurationMs: number;
   autoplayResumeDelayMs: number;
+  collections: MerchandisingCollectionEntry[];
+  occasions: MerchandisingOccasionEntry[];
   revision: number;
   updatedAt: string;
   updatedBy?: string;
@@ -82,9 +124,12 @@ export interface Product {
   quoteOnly?: boolean;
   isBidBox?: boolean;
   bidBoxConfig?: BidBoxConfig;
-  components?: string[];
+  components?: Array<string | { productId: string; quantity?: number; unitWeightG?: number }>;
   componentIds?: string[];
+  contents?: string[];
   badge?: string;
+  revision?: number;
+  origins?: string[];
   /** Owner-editable packed shipping weight for a fixed bundle, in grams. */
   shippingWeightG?: number;
   /** Merchant-approved grams used for shipping billing, keyed by canonical portion. */
@@ -175,6 +220,7 @@ export interface Product {
   importBatch?: string;
   importTimestamp?: string;
   adminRevision?: number;
+  targetMarginPercent?: number;
 }
 
 export interface CartItem {

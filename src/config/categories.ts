@@ -147,10 +147,6 @@ export const CANONICAL_CATEGORIES: Record<string, CategoryMeta> = {
     badge: 'Bundle',
     provenance: 'Curated by AllBarka',
   },
-  combos: COMMERCIAL_COLLECTIONS['combos'],
-  'celebration-boxes': COMMERCIAL_COLLECTIONS['celebration-boxes'],
-  deals: COMMERCIAL_COLLECTIONS['deals'],
-  'personalized-treats': COMMERCIAL_COLLECTIONS['personalized-treats'],
 };
 
 export const CATEGORY_ALIASES: Record<string, string> = {

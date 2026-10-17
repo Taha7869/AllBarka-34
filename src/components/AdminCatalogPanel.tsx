@@ -1,6 +1,6 @@
 import { useCatalogProducts, useCatalogRefresh } from '../contexts/CatalogContext';
 import type { Product } from '../types';
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowUpRight,
@@ -17,9 +17,10 @@ import {
   Copy,
   Archive,
   Check,
-  Loader2
+  Loader2,
+  Edit,
+  RefreshCw
 } from 'lucide-react';
-import { PRODUCTS } from '../data/products';
 import { useAdminLanguage } from '../hooks/useAdminLanguage';
 import { getLocalized } from '../utils/localize';
 import { checkCatalogAssets, filterAdminCatalog, getAdminCatalogSnapshot, type CatalogAssetResult, type CatalogIssue } from '../lib/adminCatalog';
@@ -27,6 +28,7 @@ import AdminProductMediaEditor from './AdminProductMediaEditor';
 import { useProductMediaLanguage } from '../hooks/useProductMediaLanguage';
 import AdminCatalogPricingEditor, { useCatalogPricingLanguage } from './AdminCatalogPricingEditor';
 import AdminProductCreateModal from './AdminProductCreateModal';
+import AdminProductEditModal from './AdminProductEditModal';
 import AdminMerchandisingPanel from './AdminMerchandisingPanel';
 import { useAuth } from '../contexts/AuthContext';
 import { adminRequest } from '../lib/adminClient';
@@ -40,14 +42,20 @@ const resultKeys: Record<CatalogAssetResult['result'], string> = {
 };
 
 export default function AdminCatalogPanel() {
-  const PRODUCTS = useCatalogProducts();
+  const publicProducts = useCatalogProducts();
   const refreshCatalog = useCatalogRefresh();
   const { currentUser } = useAuth();
   const { language, t } = useAdminLanguage();
   const { t: mediaTranslation } = useProductMediaLanguage();
   const { t: pricingTranslation } = useCatalogPricingLanguage();
+
+  const [adminProducts, setAdminProducts] = useState<Product[]>([]);
+  const [loadingAdmin, setLoadingAdmin] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft' | 'archived'>('all');
+
   const [pricingProductId, setPricingProductId] = useState<string | null>(null);
-  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [editingMediaProductId, setEditingMediaProductId] = useState<string | null>(null);
+  const [productToEdit, setProductToEdit] = useState<Product | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isMerchandisingOpen, setIsMerchandisingOpen] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
@@ -59,12 +67,56 @@ export default function AdminCatalogPanel() {
   const [cancelled, setCancelled] = useState(false);
   const request = useRef<AbortController | null>(null);
   const ids = useId();
-  const snapshot = useMemo(() => getAdminCatalogSnapshot(PRODUCTS), [PRODUCTS]);
-  const rows = useMemo(() => filterAdminCatalog(snapshot.rows, query, category), [snapshot.rows, query, category]);
+
+  // Load authoritative admin products list
+  const loadAdminCatalog = useCallback(async () => {
+    if (!currentUser) return;
+    setLoadingAdmin(true);
+    try {
+      const res = await adminRequest<{ products: Product[] }>(
+        () => currentUser.getIdToken(),
+        '/api/admin/catalog/products'
+      );
+      if (Array.isArray(res.products)) {
+        setAdminProducts(res.products);
+      }
+    } catch (err: any) {
+      console.error('Failed to load admin catalog:', err);
+      // Fallback to public products if unauthenticated or offline
+      setAdminProducts(publicProducts);
+    } finally {
+      setLoadingAdmin(false);
+    }
+  }, [currentUser, publicProducts]);
+
+  useEffect(() => {
+    loadAdminCatalog();
+  }, [loadAdminCatalog]);
+
+  const effectiveProducts = adminProducts.length > 0 ? adminProducts : publicProducts;
+  const snapshot = useMemo(() => getAdminCatalogSnapshot(effectiveProducts), [effectiveProducts]);
+
+  const rows = useMemo(() => {
+    let baseRows = filterAdminCatalog(snapshot.rows, query, category);
+    if (statusFilter !== 'all') {
+      baseRows = baseRows.filter(row => {
+        const isArchived = row.product.status === 'archived' || row.product.active === false;
+        const isDraft = row.product.status === 'draft';
+        const isPublished = !isArchived && !isDraft;
+        if (statusFilter === 'published') return isPublished;
+        if (statusFilter === 'draft') return isDraft;
+        if (statusFilter === 'archived') return isArchived;
+        return true;
+      });
+    }
+    return baseRows;
+  }, [snapshot.rows, query, category, statusFilter]);
+
   const assetsToCheck = useMemo(() => snapshot.assets.slice(0, 256), [snapshot.assets]);
   const checked = Object.keys(results).length;
   const passed = Object.values(results).filter(result => result.result === 'ok').length;
   const failed = checked - passed;
+
   useEffect(() => () => { request.current?.abort(); request.current = null; }, []);
 
   const checkImages = async () => {
@@ -90,6 +142,7 @@ export default function AdminCatalogPanel() {
       }
     }
   };
+
   const cancelCheck = () => { request.current?.abort(); setCancelled(true); };
   const resultText = (result: CatalogAssetResult | undefined) => result
     ? t(resultKeys[result.result]).replace('{status}', String(result.status || '—'))
@@ -106,7 +159,7 @@ export default function AdminCatalogPanel() {
         { method: 'POST', body: {} }
       );
       setActionFeedback(`Duplicated ${product.id} as new draft.`);
-      await refreshCatalog();
+      await Promise.all([loadAdminCatalog(), refreshCatalog()]);
     } catch (err: any) {
       setActionFeedback(`Failed to duplicate: ${err.message || err.code}`);
     } finally {
@@ -122,10 +175,13 @@ export default function AdminCatalogPanel() {
       await adminRequest(
         () => currentUser.getIdToken(),
         `/api/admin/catalog/products/${encodeURIComponent(product.id)}/publish`,
-        { method: 'POST', body: {} }
+        {
+          method: 'POST',
+          body: { expectedRevision: product.adminRevision ?? product.revision ?? 0 },
+        }
       );
       setActionFeedback(`Published ${product.id} live.`);
-      await refreshCatalog();
+      await Promise.all([loadAdminCatalog(), refreshCatalog()]);
     } catch (err: any) {
       setActionFeedback(`Failed to publish: ${err.message || err.code}`);
     } finally {
@@ -142,10 +198,13 @@ export default function AdminCatalogPanel() {
       await adminRequest(
         () => currentUser.getIdToken(),
         `/api/admin/catalog/products/${encodeURIComponent(product.id)}/archive`,
-        { method: 'POST', body: {} }
+        {
+          method: 'POST',
+          body: { expectedRevision: product.adminRevision ?? product.revision ?? 0 },
+        }
       );
       setActionFeedback(`Archived ${product.id}.`);
-      await refreshCatalog();
+      await Promise.all([loadAdminCatalog(), refreshCatalog()]);
     } catch (err: any) {
       setActionFeedback(`Failed to archive: ${err.message || err.code}`);
     } finally {
@@ -162,6 +221,16 @@ export default function AdminCatalogPanel() {
       </div>
       <div className="flex flex-wrap items-center gap-3">
         {snapshot.issueCount > 0 && <span className="inline-flex items-center gap-2 rounded-full border border-amber-700/25 bg-amber-50 px-4 py-2 text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-200" dir="auto"><TriangleAlert size={15} aria-hidden="true" />{t('admin.catalog.issues').replace('{count}', String(snapshot.issueCount))}</span>}
+        <button
+          type="button"
+          onClick={() => loadAdminCatalog()}
+          disabled={loadingAdmin}
+          className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs font-semibold hover:border-[#c7982f]"
+          title="Refresh authoritative catalog from Firestore"
+        >
+          <RefreshCw size={15} className={loadingAdmin ? 'animate-spin' : ''} />
+          <span>Sync</span>
+        </button>
         <button
           type="button"
           onClick={() => setIsMerchandisingOpen(true)}
@@ -223,6 +292,28 @@ export default function AdminCatalogPanel() {
     <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]">
       <div className="flex flex-col gap-3 border-b border-[var(--color-border)] p-4 sm:flex-row sm:items-end sm:p-5">
         <label htmlFor={`${ids}-search`} className="block min-w-0 flex-1"><span className="mb-2 block text-xs font-medium" dir="auto">{t('admin.catalog.search')}</span><span className="relative block"><Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)]" size={17} aria-hidden="true" /><input id={`${ids}-search`} value={query} onChange={event => setQuery(event.target.value)} maxLength={100} type="search" dir="auto" className="focus-ring min-h-11 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] py-2 pl-10 pr-3 text-base sm:text-sm" /></span></label>
+        
+        {/* Status filter pills */}
+        <div>
+          <span className="mb-2 block text-xs font-medium" dir="auto">Status Filter</span>
+          <div className="flex items-center gap-1 p-1 bg-[var(--color-base)] rounded-xl border border-[var(--color-border)] text-xs">
+            {(['all', 'published', 'draft', 'archived'] as const).map(tab => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setStatusFilter(tab)}
+                className={`px-3 py-1.5 rounded-lg font-semibold capitalize transition-colors ${
+                  statusFilter === tab
+                    ? 'bg-[#1e3a2b] text-[#fff8e9] dark:bg-[#c7982f] dark:text-[#1e3a2b]'
+                    : 'text-[var(--color-text-secondary)] hover:text-inherit'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <label htmlFor={`${ids}-category`} className="block sm:w-60"><span className="mb-2 block text-xs font-medium" dir="auto">{t('admin.catalog.category')}</span><select id={`${ids}-category`} value={category} onChange={event => setCategory(event.target.value)} className="focus-ring min-h-11 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] px-3 text-base sm:text-sm" dir="auto"><option value="">{t('admin.catalog.all')}</option>{snapshot.categories.map(value => <option key={value} value={value}>{t(`shop.${value}`)}</option>)}</select></label>
       </div>
       <p className="px-4 py-3 text-xs text-[var(--color-text-secondary)] sm:px-5" dir="auto" role="status">{t('admin.catalog.showing').replace('{count}', String(rows.length)).replace('{total}', String(snapshot.productCount))}</p>
@@ -265,9 +356,20 @@ export default function AdminCatalogPanel() {
               
               <div className="flex flex-wrap gap-1.5 mt-2">
                 <Link to={`/product/${encodeURIComponent(row.product.id)}`} className="focus-ring inline-flex min-h-9 items-center gap-1 rounded-lg border border-[var(--color-border)] px-2.5 text-xs font-medium text-[var(--color-accent-text)]"><span dir="auto">{t('admin.catalog.open')}</span><ArrowUpRight size={13} aria-hidden="true" /></Link>
-                <button type="button" className="focus-ring inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-2.5 text-xs font-semibold" onClick={() => setEditingProductId(current => current === row.product.id ? null : row.product.id)} aria-expanded={editingProductId === row.product.id} aria-controls={`${ids}-editor-${row.product.id}`}><Image size={14} aria-hidden="true" /><span dir="auto">{mediaTranslation('media.edit')}</span></button>
+                <button type="button" className="focus-ring inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-2.5 text-xs font-semibold" onClick={() => setEditingMediaProductId(current => current === row.product.id ? null : row.product.id)} aria-expanded={editingMediaProductId === row.product.id} aria-controls={`${ids}-editor-${row.product.id}`}><Image size={14} aria-hidden="true" /><span dir="auto">{mediaTranslation('media.edit')}</span></button>
                 <button type="button" className="focus-ring inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-2.5 text-xs font-semibold" onClick={() => setPricingProductId(current => current === row.product.id ? null : row.product.id)} aria-expanded={pricingProductId === row.product.id} aria-controls={`${ids}-pricing-${row.product.id}`}><span dir="auto">{pricingTranslation('editButton')}</span></button>
                 
+                {/* Full Details Edit */}
+                <button
+                  type="button"
+                  title="Edit Product Details & Taxonomy"
+                  onClick={() => setProductToEdit(row.product)}
+                  className="focus-ring inline-flex min-h-9 items-center gap-1 rounded-lg border border-[#c7982f]/60 bg-[#c7982f]/10 text-[#c7982f] px-2.5 text-xs font-semibold hover:bg-[#c7982f]/20"
+                >
+                  <Edit size={13} />
+                  <span>Edit Details</span>
+                </button>
+
                 {/* Lifecycle CRUD actions */}
                 <button
                   type="button"
@@ -307,7 +409,7 @@ export default function AdminCatalogPanel() {
                 )}
               </div>
             </div>
-            {editingProductId === row.product.id && <div id={`${ids}-editor-${row.product.id}`} className="min-w-0 xl:col-span-3"><AdminProductMediaEditor key={row.product.id} product={row.product} onClose={() => setEditingProductId(null)} /></div>}
+            {editingMediaProductId === row.product.id && <div id={`${ids}-editor-${row.product.id}`} className="min-w-0 xl:col-span-3"><AdminProductMediaEditor key={row.product.id} product={row.product} onClose={() => setEditingMediaProductId(null)} /></div>}
             {pricingProductId === row.product.id && <div id={`${ids}-pricing-${row.product.id}`} className="min-w-0 xl:col-span-3"><AdminCatalogPricingEditor key={row.product.id} product={row.product} onClose={() => setPricingProductId(null)} /></div>}
           </li>;
         })}
@@ -318,7 +420,20 @@ export default function AdminCatalogPanel() {
     <AdminProductCreateModal
       isOpen={isCreateOpen}
       onClose={() => setIsCreateOpen(false)}
-      onCreated={() => setActionFeedback('New product created successfully!')}
+      onCreated={async () => {
+        setActionFeedback('New product created successfully!');
+        await Promise.all([loadAdminCatalog(), refreshCatalog()]);
+      }}
+    />
+
+    <AdminProductEditModal
+      isOpen={!!productToEdit}
+      product={productToEdit}
+      onClose={() => setProductToEdit(null)}
+      onSaved={async () => {
+        setActionFeedback('Product details saved successfully!');
+        await Promise.all([loadAdminCatalog(), refreshCatalog()]);
+      }}
     />
 
     <AdminMerchandisingPanel

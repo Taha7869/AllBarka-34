@@ -2,7 +2,13 @@ import type { Product } from '../types';
 import { resolveProductVariant } from './productVariants';
 
 export class CatalogError extends Error {
-  constructor(public code: string, public httpStatus = 400) { super(code); this.name = 'CatalogError'; }
+  constructor(public code: string, public httpStatus = 400) {
+    super(code);
+    this.name = 'CatalogError';
+  }
+  get status() {
+    return this.httpStatus;
+  }
 }
 export interface CatalogVariant { id: string; label: string; price: number; available: boolean; weightGrams: number | null }
 export interface CatalogPricing {
@@ -31,7 +37,9 @@ export function validateCatalogPricing(value: unknown, seed: Product): CatalogPr
       || raw.id !== catalogVariantId(raw.label) || !positive(raw.price) || typeof raw.available !== 'boolean'
       || !(raw.weightGrams === null || integer(raw.weightGrams, 0)) || seen.has(raw.label)) throw new CatalogError('INVALID_CATALOG_VARIANT');
     // A merchant can retain existing fixed bundle labels; new arbitrary units cannot enter checkout.
-    const supported = /^\d+(?:\.\d+)?\s*(?:kg|g|ml)$/i.test(raw.label) || Object.hasOwn(seed.prices, raw.label);
+    const supported = /^\d+(?:\.\d+)?\s*(?:kg|g|ml|pc|pcs|piece|pieces|pack|box|boxes)$/i.test(raw.label)
+      || Object.hasOwn(seed.prices, raw.label)
+      || /^(?:empty|filled|sample|portion|bundle|box)/i.test(raw.label);
     if (!supported || (/ml$/i.test(raw.label) && seed.category !== 'oils')) throw new CatalogError('INVALID_CATALOG_UNIT');
     seen.add(raw.label);
     return { id: raw.id as string, label: raw.label, price: raw.price as number, available: raw.available, weightGrams: raw.weightGrams as number | null };
@@ -123,7 +131,18 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
 
   const category = typeof value.category === 'string' && value.category.trim() ? value.category.trim() : 'dry-fruits';
 
-  const rawPrices = object(value.prices) ? (value.prices as Record<string, unknown>) : {};
+  let rawPrices = object(value.prices) ? { ...(value.prices as Record<string, unknown>) } : {};
+  if (Object.keys(rawPrices).length === 0 && Array.isArray(value.variants)) {
+    for (const v of value.variants) {
+      if (object(v) && typeof v.label === 'string' && v.label.trim()) {
+        const num = Number(v.price);
+        if (Number.isFinite(num) && num > 0) {
+          rawPrices[v.label.trim()] = Math.round(num);
+        }
+      }
+    }
+  }
+
   const prices: Record<string, number> = {};
   for (const [k, v] of Object.entries(rawPrices)) {
     const key = k.trim();
@@ -184,6 +203,111 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
     catalogRevision: typeof value.catalogRevision === 'string' ? value.catalogRevision : undefined,
   };
 
+  // Shipping weight and portion weights capability
+  if (value.shippingWeightG !== undefined) {
+    if (value.shippingWeightG === null) {
+      product.shippingWeightG = undefined;
+    } else if (Number.isSafeInteger(value.shippingWeightG) && (value.shippingWeightG as number) >= 0) {
+      product.shippingWeightG = value.shippingWeightG as number;
+    } else {
+      throw new CatalogError('INVALID_SHIPPING_WEIGHT', 400);
+    }
+  }
+
+  if (value.shippingWeights !== undefined) {
+    if (!object(value.shippingWeights)) throw new CatalogError('INVALID_SHIPPING_WEIGHTS', 400);
+    const weights: Record<string, number> = {};
+    for (const [k, v] of Object.entries(value.shippingWeights as Record<string, unknown>)) {
+      if (!Number.isSafeInteger(v) || (v as number) < 0) throw new CatalogError('INVALID_SHIPPING_WEIGHTS', 400);
+      weights[k] = v as number;
+    }
+    product.shippingWeights = weights;
+  } else if (Array.isArray(value.variants)) {
+    const derivedWeights: Record<string, number> = {};
+    for (const v of value.variants) {
+      if (object(v) && typeof v.label === 'string' && Number.isSafeInteger(v.weightGrams) && (v.weightGrams as number) > 0) {
+        derivedWeights[v.label] = v.weightGrams as number;
+      }
+    }
+    if (Object.keys(derivedWeights).length > 0) {
+      product.shippingWeights = derivedWeights;
+    }
+  }
+
+  // Bundle capabilities
+  if (value.isBundle !== undefined) {
+    if (typeof value.isBundle !== 'boolean') throw new CatalogError('INVALID_BUNDLE_FLAG', 400);
+    product.isBundle = value.isBundle;
+  }
+  if (value.components !== undefined) {
+    if (!Array.isArray(value.components)) throw new CatalogError('INVALID_COMPONENTS', 400);
+    product.components = value.components.map(c => {
+      if (typeof c === 'string') return c.trim();
+      if (object(c) && typeof c.productId === 'string') return c as any;
+      throw new CatalogError('INVALID_COMPONENTS', 400);
+    });
+  }
+  if (value.contents !== undefined) {
+    if (!Array.isArray(value.contents)) throw new CatalogError('INVALID_CONTENTS', 400);
+    product.contents = value.contents.filter(c => typeof c === 'string' && c.trim()).map(c => c.trim());
+  }
+  if (typeof value.contents_en === 'string') product.contents_en = value.contents_en.trim();
+  if (typeof value.contents_ur === 'string') product.contents_ur = value.contents_ur.trim();
+  if (typeof value.contents_ar === 'string') product.contents_ar = value.contents_ar.trim();
+
+  // Custom weight capabilities
+  if (value.allowCustomWeight !== undefined) {
+    if (typeof value.allowCustomWeight !== 'boolean') throw new CatalogError('INVALID_CUSTOM_WEIGHT_FLAG', 400);
+    product.allowCustomWeight = value.allowCustomWeight;
+  }
+  if (value.minCustomWeightG !== undefined) {
+    if (!Number.isSafeInteger(value.minCustomWeightG) || (value.minCustomWeightG as number) <= 0 || (value.minCustomWeightG as number) % 50 !== 0) {
+      throw new CatalogError('INVALID_CUSTOM_WEIGHT_BOUNDS', 400);
+    }
+    product.minCustomWeightG = value.minCustomWeightG as number;
+  }
+  if (value.maxCustomWeightG !== undefined) {
+    if (!Number.isSafeInteger(value.maxCustomWeightG) || (value.maxCustomWeightG as number) <= 0 || (value.maxCustomWeightG as number) % 50 !== 0) {
+      throw new CatalogError('INVALID_CUSTOM_WEIGHT_BOUNDS', 400);
+    }
+    product.maxCustomWeightG = value.maxCustomWeightG as number;
+  }
+  if (product.minCustomWeightG && product.maxCustomWeightG && product.minCustomWeightG > product.maxCustomWeightG) {
+    throw new CatalogError('INVALID_CUSTOM_WEIGHT_BOUNDS', 400);
+  }
+  if (value.pricePer100g !== undefined) {
+    if (!Number.isSafeInteger(value.pricePer100g) || (value.pricePer100g as number) < 0) {
+      throw new CatalogError('INVALID_PRICE_PER_100G', 400);
+    }
+    product.pricePer100g = value.pricePer100g as number;
+  }
+  if (product.allowCustomWeight && (!product.pricePer100g || product.pricePer100g <= 0)) {
+    throw new CatalogError('INVALID_CATALOG_CUSTOM_WEIGHT', 400);
+  }
+
+  // Inventory
+  if (value.inStock !== undefined) {
+    if (typeof value.inStock !== 'boolean') throw new CatalogError('INVALID_INSTOCK_FLAG', 400);
+    product.inStock = value.inStock;
+  }
+  if (value.stockQty !== undefined) {
+    if (!Number.isSafeInteger(value.stockQty) || (value.stockQty as number) < 0) {
+      throw new CatalogError('INVALID_STOCK_QTY', 400);
+    }
+    product.stockQty = value.stockQty as number;
+  }
+
+  // Bid Box / packaging
+  if (value.isBidBox !== undefined) {
+    if (typeof value.isBidBox !== 'boolean') throw new CatalogError('INVALID_BID_BOX_FLAG', 400);
+    product.isBidBox = value.isBidBox;
+  }
+  if (value.bidBoxConfig !== undefined) {
+    if (!object(value.bidBoxConfig)) throw new CatalogError('INVALID_BID_BOX_CONFIG', 400);
+    product.bidBoxConfig = value.bidBoxConfig as any;
+  }
+
+  // Taxonomy & collections
   if (typeof value.productFamily === 'string' && value.productFamily.trim()) {
     product.productFamily = value.productFamily.trim();
   }
@@ -218,6 +342,64 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
   }
   if (typeof value.displayOrder === 'number' && Number.isSafeInteger(value.displayOrder)) {
     product.displayOrder = value.displayOrder;
+  }
+
+  // Badges & Keywords
+  if (typeof value.badge === 'string') product.badge = value.badge.trim();
+  if (Array.isArray(value.badges)) product.badges = value.badges as any;
+  if (Array.isArray(value.keywords)) {
+    product.keywords = value.keywords.filter(k => typeof k === 'string' && k.trim()).map(k => k.trim());
+  }
+  if (Array.isArray(value.nutritionalHighlights)) {
+    product.nutritionalHighlights = value.nutritionalHighlights.filter(h => typeof h === 'string' && h.trim()).map(h => h.trim());
+  }
+  if (value.fragile !== undefined) {
+    if (typeof value.fragile !== 'boolean') throw new CatalogError('INVALID_FRAGILE_FLAG', 400);
+    product.fragile = value.fragile;
+  }
+
+  // Provenance, Harvest & Care
+  if (Array.isArray(value.origins)) {
+    product.origins = value.origins.filter(o => typeof o === 'string' && o.trim()).map(o => o.trim());
+  }
+  if (typeof value.origin_en === 'string') product.origin_en = value.origin_en.trim();
+  if (typeof value.origin_ur === 'string') product.origin_ur = value.origin_ur.trim();
+  if (typeof value.origin_ar === 'string') product.origin_ar = value.origin_ar.trim();
+  if (typeof value.harvest_en === 'string') product.harvest_en = value.harvest_en.trim();
+  if (typeof value.harvest_ur === 'string') product.harvest_ur = value.harvest_ur.trim();
+  if (typeof value.harvest_ar === 'string') product.harvest_ar = value.harvest_ar.trim();
+  if (typeof value.sourcingDetails_en === 'string') product.sourcingDetails_en = value.sourcingDetails_en.trim();
+  if (typeof value.sourcingDetails_ur === 'string') product.sourcingDetails_ur = value.sourcingDetails_ur.trim();
+  if (typeof value.sourcingDetails_ar === 'string') product.sourcingDetails_ar = value.sourcingDetails_ar.trim();
+  if (typeof value.storageTips_en === 'string') product.storageTips_en = value.storageTips_en.trim();
+  if (typeof value.storageTips_ur === 'string') product.storageTips_ur = value.storageTips_ur.trim();
+  if (typeof value.storageTips_ar === 'string') product.storageTips_ar = value.storageTips_ar.trim();
+  if (typeof value.packagingDetails_en === 'string') product.packagingDetails_en = value.packagingDetails_en.trim();
+  if (typeof value.packagingDetails_ur === 'string') product.packagingDetails_ur = value.packagingDetails_ur.trim();
+  if (typeof value.packagingDetails_ar === 'string') product.packagingDetails_ar = value.packagingDetails_ar.trim();
+  if (typeof value.allergenWarning_en === 'string') product.allergenWarning_en = value.allergenWarning_en.trim();
+  if (typeof value.allergenWarning_ur === 'string') product.allergenWarning_ur = value.allergenWarning_ur.trim();
+  if (typeof value.allergenWarning_ar === 'string') product.allergenWarning_ar = value.allergenWarning_ar.trim();
+  if (typeof value.tasteProfile_en === 'string') product.tasteProfile_en = value.tasteProfile_en.trim();
+  if (typeof value.tasteProfile_ur === 'string') product.tasteProfile_ur = value.tasteProfile_ur.trim();
+  if (typeof value.tasteProfile_ar === 'string') product.tasteProfile_ar = value.tasteProfile_ar.trim();
+  if (typeof value.recipe_en === 'string') product.recipe_en = value.recipe_en.trim();
+  if (typeof value.recipe_ur === 'string') product.recipe_ur = value.recipe_ur.trim();
+  if (typeof value.recipe_ar === 'string') product.recipe_ar = value.recipe_ar.trim();
+  if (typeof value.health_en === 'string') product.health_en = value.health_en.trim();
+  if (typeof value.health_ur === 'string') product.health_ur = value.health_ur.trim();
+  if (typeof value.health_ar === 'string') product.health_ar = value.health_ar.trim();
+  if (typeof value.tag_en === 'string') product.tag_en = value.tag_en.trim();
+  if (typeof value.tag_ur === 'string') product.tag_ur = value.tag_ur.trim();
+  if (typeof value.tag_ar === 'string') product.tag_ar = value.tag_ar.trim();
+
+  // Margins
+  if (value.targetMarginPercent !== undefined) {
+    const margin = Number(value.targetMarginPercent);
+    if (!Number.isFinite(margin) || margin < 0 || margin > 100) {
+      throw new CatalogError('INVALID_TARGET_MARGIN', 400);
+    }
+    product.targetMarginPercent = Math.round(margin * 100) / 100;
   }
 
   // Private fields (authoritative admin only)
@@ -261,17 +443,31 @@ export function dynamicProductFromDocument(data: unknown, id: string): Product {
   };
 }
 
+export function validateInternalDestination(path: unknown): string {
+  if (typeof path !== 'string') throw new CatalogError('INVALID_DESTINATION_PATH', 400);
+  const trimmed = path.trim();
+  if (!trimmed.startsWith('/') || trimmed.startsWith('//') || /^[a-z]+:/i.test(trimmed) || /[\u0000-\u001f\u007f]/.test(trimmed)) {
+    throw new CatalogError('INVALID_DESTINATION_PATH', 400);
+  }
+  return trimmed;
+}
+
 export function validateMerchandisingSettings(value: unknown): {
+  showcaseTabs: Array<{ id: string; label_en: string; label_ur: string; visible: boolean; productIds: string[] }>;
   featuredProductIds: string[];
   categoryOrder: string[];
   categoryVisibility: Record<string, boolean>;
+  autoplay: { enabled: boolean; intervalMs: number; resumeDelayMs: number };
   autoplayDurationMs: number;
   autoplayResumeDelayMs: number;
+  collections: Array<{ collectionId: string; title_en: string; title_ur: string; slug: string; image?: string; badge?: string; visible: boolean }>;
+  occasions: Array<{ tag: string; title_en: string; title_ur: string; slug: string; icon?: string; visible: boolean }>;
   revision: number;
   updatedAt: string;
   updatedBy?: string;
 } {
   if (!object(value)) throw new CatalogError('INVALID_MERCHANDISING_DATA', 400);
+
   const featuredProductIds = Array.isArray(value.featuredProductIds)
     ? value.featuredProductIds.filter(id => typeof id === 'string' && id.trim()).map(id => id.trim())
     : [];
@@ -284,12 +480,105 @@ export function validateMerchandisingSettings(value: unknown): {
       categoryVisibility[k] = Boolean(v);
     }
   }
-  const autoplayDurationMs = typeof value.autoplayDurationMs === 'number' && value.autoplayDurationMs >= 1000 && value.autoplayDurationMs <= 60000
+
+  // Autoplay config
+  const rawAutoplay = object(value.autoplay) ? (value.autoplay as Record<string, unknown>) : {};
+  if (rawAutoplay.intervalMs !== undefined) {
+    if (typeof rawAutoplay.intervalMs !== 'number' || !Number.isSafeInteger(rawAutoplay.intervalMs) || rawAutoplay.intervalMs < 1000 || rawAutoplay.intervalMs > 60000) {
+      throw new CatalogError('INVALID_AUTOPLAY_CONFIG', 400);
+    }
+  }
+  if (rawAutoplay.resumeDelayMs !== undefined) {
+    if (typeof rawAutoplay.resumeDelayMs !== 'number' || !Number.isSafeInteger(rawAutoplay.resumeDelayMs) || rawAutoplay.resumeDelayMs < 500 || rawAutoplay.resumeDelayMs > 30000) {
+      throw new CatalogError('INVALID_AUTOPLAY_CONFIG', 400);
+    }
+  }
+  if (value.autoplayDurationMs !== undefined) {
+    if (typeof value.autoplayDurationMs !== 'number' || !Number.isSafeInteger(value.autoplayDurationMs) || value.autoplayDurationMs < 1000 || value.autoplayDurationMs > 60000) {
+      throw new CatalogError('INVALID_AUTOPLAY_CONFIG', 400);
+    }
+  }
+  if (value.autoplayResumeDelayMs !== undefined) {
+    if (typeof value.autoplayResumeDelayMs !== 'number' || !Number.isSafeInteger(value.autoplayResumeDelayMs) || value.autoplayResumeDelayMs < 500 || value.autoplayResumeDelayMs > 30000) {
+      throw new CatalogError('INVALID_AUTOPLAY_CONFIG', 400);
+    }
+  }
+
+  const autoplayDurationMs = typeof value.autoplayDurationMs === 'number'
     ? value.autoplayDurationMs
-    : 6000;
-  const autoplayResumeDelayMs = typeof value.autoplayResumeDelayMs === 'number' && value.autoplayResumeDelayMs >= 500 && value.autoplayResumeDelayMs <= 30000
+    : (typeof rawAutoplay.intervalMs === 'number' ? rawAutoplay.intervalMs : 6000);
+
+  const autoplayResumeDelayMs = typeof value.autoplayResumeDelayMs === 'number'
     ? value.autoplayResumeDelayMs
-    : 3000;
+    : (typeof rawAutoplay.resumeDelayMs === 'number' ? rawAutoplay.resumeDelayMs : 3000);
+
+  const autoplay = {
+    enabled: typeof rawAutoplay.enabled === 'boolean' ? rawAutoplay.enabled : true,
+    intervalMs: autoplayDurationMs,
+    resumeDelayMs: autoplayResumeDelayMs,
+  };
+
+  // Showcase tabs
+  const showcaseTabs = Array.isArray(value.showcaseTabs)
+    ? value.showcaseTabs.map((tab: any) => {
+        if (!object(tab) || typeof tab.id !== 'string' || !tab.id.trim()) throw new CatalogError('INVALID_SHOWCASE_TAB', 400);
+        return {
+          id: tab.id.trim(),
+          label_en: typeof tab.label_en === 'string' ? tab.label_en.trim() : tab.id.trim(),
+          label_ur: typeof tab.label_ur === 'string' ? tab.label_ur.trim() : (typeof tab.label_en === 'string' ? tab.label_en.trim() : tab.id.trim()),
+          visible: tab.visible !== false,
+          productIds: Array.isArray(tab.productIds) ? tab.productIds.filter((p: any) => typeof p === 'string' && p.trim()).map((p: any) => p.trim()) : [],
+        };
+      })
+    : [];
+
+  // Collections
+  const collections = Array.isArray(value.collections)
+    ? value.collections.map((col: any) => {
+        if (!object(col)) throw new CatalogError('INVALID_COLLECTION_DATA', 400);
+        const collectionId = typeof col.collectionId === 'string' && col.collectionId.trim()
+          ? col.collectionId.trim()
+          : (typeof col.id === 'string' && col.id.trim() ? col.id.trim() : '');
+        if (!collectionId) throw new CatalogError('INVALID_COLLECTION_DATA', 400);
+        const rawSlug = col.slug || col.destination || `/shop?category=${collectionId}`;
+        const slug = validateInternalDestination(rawSlug);
+        return {
+          id: collectionId,
+          collectionId,
+          title_en: typeof col.title_en === 'string' ? col.title_en.trim() : collectionId,
+          title_ur: typeof col.title_ur === 'string' ? col.title_ur.trim() : (typeof col.title_en === 'string' ? col.title_en.trim() : collectionId),
+          slug,
+          destination: slug,
+          image: typeof col.image === 'string' && col.image.trim() ? col.image.trim() : undefined,
+          badge: typeof col.badge === 'string' && col.badge.trim() ? col.badge.trim() : undefined,
+          visible: col.visible !== false,
+        };
+      })
+    : [];
+
+  // Occasions
+  const occasions = Array.isArray(value.occasions)
+    ? value.occasions.map((occ: any) => {
+        if (!object(occ)) throw new CatalogError('INVALID_OCCASION_DATA', 400);
+        const tag = typeof occ.tag === 'string' && occ.tag.trim()
+          ? occ.tag.trim()
+          : (typeof occ.id === 'string' && occ.id.trim() ? occ.id.trim() : (typeof occ.occasionId === 'string' && occ.occasionId.trim() ? occ.occasionId.trim() : ''));
+        if (!tag) throw new CatalogError('INVALID_OCCASION_DATA', 400);
+        const rawSlug = occ.slug || occ.destination || `/occasions/${tag}`;
+        const slug = validateInternalDestination(rawSlug);
+        return {
+          id: tag,
+          tag,
+          title_en: typeof occ.title_en === 'string' ? occ.title_en.trim() : tag,
+          title_ur: typeof occ.title_ur === 'string' ? occ.title_ur.trim() : (typeof occ.title_en === 'string' ? occ.title_en.trim() : tag),
+          slug,
+          destination: slug,
+          icon: typeof occ.icon === 'string' && occ.icon.trim() ? occ.icon.trim() : undefined,
+          visible: occ.visible !== false,
+        };
+      })
+    : [];
+
   const revision = typeof value.revision === 'number' && Number.isSafeInteger(value.revision) && value.revision >= 0
     ? value.revision
     : 0;
@@ -297,11 +586,15 @@ export function validateMerchandisingSettings(value: unknown): {
   const updatedBy = typeof value.updatedBy === 'string' ? value.updatedBy : undefined;
 
   return {
+    showcaseTabs,
     featuredProductIds,
     categoryOrder,
     categoryVisibility,
+    autoplay,
     autoplayDurationMs,
     autoplayResumeDelayMs,
+    collections,
+    occasions,
     revision,
     updatedAt,
     updatedBy,
