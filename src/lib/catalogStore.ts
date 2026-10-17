@@ -160,3 +160,54 @@ export async function updateCatalogPricing(input: { db: Firestore | null; produc
   invalidateCatalogCache();
   return result;
 }
+
+/**
+ * Merges static code products with authoritative Firestore product data.
+ * - Respects active: false from Firestore (never reverting to static true).
+ * - Appends newly created dynamic Firestore products not in static code products.
+ */
+export function mergeAuthoritativeCatalog(codeProducts: Product[], firestoreProducts: Product[]): Product[] {
+  const byId = new Map(firestoreProducts.map(p => [p.id, p]));
+  const merged: Product[] = [];
+  const handledIds = new Set<string>();
+
+  for (const codeProd of codeProducts) {
+    handledIds.add(codeProd.id);
+    const fromDb = byId.get(codeProd.id);
+    if (!fromDb) {
+      merged.push(codeProd);
+    } else {
+      const active = fromDb.active !== false && (fromDb as any).inStock !== false;
+      merged.push({
+        ...codeProd,
+        ...fromDb,
+        active,
+        inStock: (fromDb as any).inStock !== false && active,
+      });
+    }
+  }
+
+  for (const dbProd of firestoreProducts) {
+    if (!handledIds.has(dbProd.id) && dbProd.id) {
+      const active = dbProd.active !== false && (dbProd as any).inStock !== false;
+      merged.push({
+        name_en: dbProd.name_en || (dbProd as any).name || dbProd.id,
+        name_ur: dbProd.name_ur || '',
+        name_ar: dbProd.name_ar || '',
+        category: dbProd.category || 'dry-fruits',
+        image: dbProd.image ?? null,
+        imageName: dbProd.imageName ?? null,
+        prices: dbProd.prices || {},
+        wholesale: dbProd.wholesale || 0,
+        desc_en: dbProd.desc_en || '',
+        desc_ur: dbProd.desc_ur || '',
+        desc_ar: dbProd.desc_ar || '',
+        ...dbProd,
+        active,
+        inStock: (dbProd as any).inStock !== false && active,
+      });
+    }
+  }
+
+  return merged;
+}

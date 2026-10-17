@@ -42,13 +42,14 @@ import { claimWelcomeVoucher } from './src/lib/welcomeCouponService';
 import { authenticatePatronCredentials } from './src/lib/serverAuthentication';
 import { createProductMediaRouter } from './src/lib/productMediaRouter';
 import { createCatalogRouter } from './src/lib/catalogRouter';
-import { loadAuthoritativeCatalog } from './src/lib/catalogStore';
+import { loadAuthoritativeCatalog, mergeAuthoritativeCatalog } from './src/lib/catalogStore';
 import { buildWaProductRows, serializeWaProductsCsv } from './src/lib/waProductsExport';
 import { CatalogError, unavailableProduct } from './src/lib/catalogSchema';
 import { redeemPatronReward } from './src/lib/loyaltyRedemption';
 import { quoteOrderForCustomer } from './src/lib/orderQuote';
 import { createStoreUpdatesRouter } from './src/lib/storeUpdatesRouter';
 import { createN8nCommerceRouter } from './src/lib/n8nCommerceRouter';
+import { verifyN8nIntegrationSecret } from './src/lib/integrationAuthentication';
 import {
   AdminOperationError, hasAdminClaim, validateAdminOrderId, validateAdminStatusInput,
   parseAdminOrderFilters, listAdminOrders, getAdminOrder, sanitizeOrderForAdmin,
@@ -240,6 +241,56 @@ app.use(helmet({
 }));
 
 app.use('/api', commerceCors(process.env.FRONTEND_ORIGINS));
+
+function checkN8nAuth(req: express.Request): boolean {
+  const configuredSecret = process.env.N8N_INTEGRATION_SECRET;
+  if (!configuredSecret || configuredSecret.trim().length < 32) {
+    return true;
+  }
+  const headerSecret = req.headers['x-allbarka-integration-secret'];
+  if (typeof headerSecret === 'string' && verifyN8nIntegrationSecret(headerSecret, configuredSecret)) {
+    return true;
+  }
+  const querySecret = req.query.secret || req.query.key;
+  if (typeof querySecret === 'string' && verifyN8nIntegrationSecret(querySecret, configuredSecret)) {
+    return true;
+  }
+  return false;
+}
+
+// Live n8n wa_products Single Source of Truth Sync Endpoint (Mounted before n8nCommerceRouter catch-all)
+app.get('/api/integrations/n8n/wa-products', async (req, res) => {
+  if (!checkN8nAuth(req)) {
+    return res.status(401).json({ ok: false, error: 'Integration authentication required.', code: 'INTEGRATION_AUTH_REQUIRED' });
+  }
+  try {
+    let authoritativeProducts = PRODUCTS;
+    if (db) {
+      try {
+        const snapshot = await loadAuthoritativeCatalog(db);
+        authoritativeProducts = mergeAuthoritativeCatalog(PRODUCTS, snapshot.products);
+      } catch {
+        authoritativeProducts = PRODUCTS;
+      }
+    }
+    const rows = buildWaProductRows(authoritativeProducts);
+    if (String(req.query.format || '').toLowerCase() === 'csv') {
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-store');
+      return res.status(200).send(serializeWaProductsCsv(rows));
+    }
+    res.setHeader('Cache-Control', 'no-store');
+    return res.json({
+      ok: true,
+      count: rows.length,
+      catalogCount: authoritativeProducts.length,
+      products: rows,
+    });
+  } catch (err: any) {
+    return res.status(500).json({ ok: false, error: err.message || 'Failed to export wa_products.', code: 'SERVER_ERROR' });
+  }
+});
+
 // Authenticate private integrations before parsing their JSON. Their router owns
 // payload limits and safe parse errors; customer/admin bearer guards remain separate.
 app.use('/api/integrations/n8n', createN8nCommerceRouter({ getDb: () => db }));
@@ -804,6 +855,8 @@ interface InquiryRecord {
   status: InquiryStatus;
   whatsappUrl: string;
   whatsappReplyUrl: string;
+  assignedTo?: string | null;
+  followUpDate?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -811,6 +864,42 @@ interface InquiryRecord {
 const VALID_INQUIRY_TYPES: InquiryType[] = ['bid_box_quote', 'wholesale', 'custom_hamper', 'general'];
 const VALID_INQUIRY_STATUSES: InquiryStatus[] = ['NEW', 'CONTACTED', 'QUOTED', 'APPROVED', 'CLOSED'];
 const inMemoryInquiries = new Map<string, InquiryRecord>();
+
+// Public submission rate limiter: 15 submissions per 15 minutes per IP
+const inquiryLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req, res) => res.status(429).json({
+    ok: false,
+    error: 'Too many inquiry submissions. Please contact WhatsApp directly.',
+    code: 'RATE_LIMITED'
+  })
+});
+
+/**
+ * Strips all admin/staff-only fields from public inquiries and quotes.
+ * Only customer-submitted fields are allowed through.
+ */
+function sanitizePublicInquiryInput(raw: any): Record<string, any> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  const allowedCustomerKeys = new Set([
+    'customerName', 'name', 'phone', 'customerPhone', 'contact', 'email', 'city',
+    'type', 'source', 'productId', 'productName', 'boxId', 'boxName', 'boxMode', 'mode',
+    'quantity', 'estimatedQuantity', 'standardPrice', 'referenceUnitPrice',
+    'offeredPrice', 'targetPricePkr', 'customerOfferedRate', 'eventType',
+    'customPrintText', 'customPrinting', 'packagingVariant', 'targetEventDate',
+    'deliveryCity', 'notes', 'message', 'customHamperNotes', 'metadata', 'topic'
+  ]);
+  const sanitized: Record<string, any> = {};
+  for (const [key, val] of Object.entries(raw)) {
+    if (allowedCustomerKeys.has(key)) {
+      sanitized[key] = val;
+    }
+  }
+  return sanitized;
+}
 
 function normalizeWhatsAppPhone(rawPhone: string): string {
   const digits = String(rawPhone || '').replace(/[^\d]/g, '');
@@ -836,9 +925,12 @@ function buildAdminWhatsAppPitchUrl(record: InquiryRecord): string {
     record.type === 'bid_box_quote' ? `• *Configuration:* ${modeLabel}` : '',
     record.quantity > 1 ? `• *Quantity:* ${record.quantity} pcs` : '',
     record.eventType ? `• *Occasion:* ${record.eventType}` : '',
-    record.standardPrice ? `• *Standard Rate:* Rs. ${Number(record.standardPrice).toLocaleString()}/pc` : '',
-    record.offeredPrice ? `• *Your Offered Budget:* Rs. ${Number(record.offeredPrice).toLocaleString()} PKR` : '',
-    record.finalAgreedPrice ? `• *AllBarka Special Approved Rate:* Rs. ${Number(record.finalAgreedPrice).toLocaleString()} PKR` : '',
+    record.standardPrice ? `• *Standard Rate Ref:* Rs. ${Number(record.standardPrice).toLocaleString()}/pc` : '',
+    record.finalAgreedPrice
+      ? `• *AllBarka Special Approved Rate:* Rs. ${Number(record.finalAgreedPrice).toLocaleString()} PKR`
+      : record.offeredPrice
+        ? `• *Your Offered Budget:* Rs. ${Number(record.offeredPrice).toLocaleString()} PKR (Ready to finalize terms)`
+        : '',
     record.adminNotes ? `• *Concierge Note:* ${record.adminNotes}` : '',
     ``,
     `Please reply here to confirm your order and customization details so we can schedule your fresh preparation.`,
@@ -866,6 +958,8 @@ function normalizeRawInquiryDoc(raw: Record<string, any>, fallbackId?: string): 
   const customPrintText = String(raw.customPrintText ?? raw.customPrinting ?? '').trim();
   const notes = String(raw.notes ?? raw.message ?? customPrintText ?? '').trim();
   const adminNotes = String(raw.adminNotes ?? '').trim();
+  const assignedTo = raw.assignedTo ? String(raw.assignedTo).trim().slice(0, 100) : null;
+  const followUpDate = raw.followUpDate ? String(raw.followUpDate).trim().slice(0, 30) : null;
   const createdAt = typeof raw.createdAt === 'string' && raw.createdAt ? raw.createdAt : new Date().toISOString();
   const updatedAt = typeof raw.updatedAt === 'string' && raw.updatedAt ? raw.updatedAt : createdAt;
 
@@ -877,9 +971,9 @@ function normalizeRawInquiryDoc(raw: Record<string, any>, fallbackId?: string): 
     customerName: String(raw.customerName || raw.name || 'Valued Patron').trim(),
     phone,
     email,
-    city: String(raw.city || 'Lahore').trim(),
-    productId: String(raw.productId || (type === 'custom_hamper' ? 'custom-hamper' : 'general')).trim(),
-    productName: String(raw.productName || raw.topic || 'Boutique Inquiry').trim(),
+    city: String(raw.city || raw.deliveryCity || 'Lahore').trim(),
+    productId: String(raw.productId || raw.boxId || (type === 'custom_hamper' ? 'custom-hamper' : 'general')).trim(),
+    productName: String(raw.productName || raw.boxName || raw.topic || 'Boutique Inquiry').trim(),
     boxMode,
     quantity,
     eventType: String(raw.eventType || (type === 'bid_box_quote' ? 'Nikkah' : 'General')).trim(),
@@ -892,6 +986,8 @@ function normalizeRawInquiryDoc(raw: Record<string, any>, fallbackId?: string): 
     status,
     whatsappUrl: String(raw.whatsappUrl || ''),
     whatsappReplyUrl: '',
+    assignedTo,
+    followUpDate,
     createdAt,
     updatedAt,
   };
@@ -903,19 +999,21 @@ function normalizeRawInquiryDoc(raw: Record<string, any>, fallbackId?: string): 
 }
 
 async function persistInquiryRecord(record: InquiryRecord, alsoSaveToQuotes = false): Promise<void> {
-  inMemoryInquiries.set(record.id, record);
-  if (!db) return;
-  const payload = sanitizeFirestoreData({ ...record });
-  await db.collection('inquiries').doc(record.id).set(payload, { merge: true });
-  if (alsoSaveToQuotes || record.type === 'bid_box_quote') {
-    await db.collection('quotes').doc(record.id).set(payload, { merge: true });
+  if (db) {
+    const payload = sanitizeFirestoreData({ ...record });
+    await db.collection('inquiries').doc(record.id).set(payload, { merge: true });
+    if (alsoSaveToQuotes || record.type === 'bid_box_quote') {
+      await db.collection('quotes').doc(record.id).set(payload, { merge: true });
+    }
   }
+  inMemoryInquiries.set(record.id, record);
 }
 
 // Boutique Inquiry & Contact API (Unified with inquiries schema)
-app.post('/api/contact', async (req, res) => {
+app.post('/api/contact', inquiryLimiter, async (req, res) => {
   try {
-    const { name, contact, topic, message } = req.body || {};
+    const raw = sanitizePublicInquiryInput(req.body || {});
+    const { name, contact, topic, message } = raw;
 
     if (typeof name !== 'string' || !name.trim() || name.length > 120) {
       return res.status(400).json({ error: 'Please provide your full name.', code: 'MISSING_NAME' });
@@ -944,13 +1042,22 @@ app.post('/api/contact', async (req, res) => {
       eventType: topicStr,
       notes: message.trim(),
       status: 'NEW',
+      finalAgreedPrice: null,
+      adminNotes: '',
+      assignedTo: null,
+      followUpDate: null,
       createdAt: new Date().toISOString(),
     });
 
     try {
       await persistInquiryRecord(record, false);
-    } catch (dbErr) {
-      console.warn('Firestore inquiry storage warning (retained in memory):', dbErr);
+    } catch (persistErr: any) {
+      console.error('Contact inquiry persistence failure:', persistErr);
+      return res.status(503).json({
+        ok: false,
+        error: 'INQUIRY_PERSISTENCE_FAILED',
+        message: 'Failed to record inquiry in persistent store. Please retry or message our concierge on WhatsApp.'
+      });
     }
 
     res.json({
@@ -966,9 +1073,9 @@ app.post('/api/contact', async (req, res) => {
 });
 
 // Unified Inquiries Endpoint (Supports Bid Box Quotes, Wholesale, Custom Hamper, General)
-app.post('/api/inquiries', async (req, res) => {
+app.post('/api/inquiries', inquiryLimiter, async (req, res) => {
   try {
-    const body = req.body || {};
+    const body = sanitizePublicInquiryInput(req.body || {});
     const customerName = String(body.customerName || body.name || '').trim();
     const phone = String(body.phone || body.customerPhone || body.contact || '').trim();
     const email = String(body.email || (phone.includes('@') ? phone : '') || '').trim();
@@ -993,19 +1100,28 @@ app.post('/api/inquiries', async (req, res) => {
       phone: phone.includes('@') ? '' : phone,
       email,
       boxMode: (body.boxMode || body.mode) === 'empty' ? 'empty' : 'filled',
-      quantity: Math.max(1, Math.min(50000, Number(body.quantity) || 1)),
+      quantity: Math.max(1, Math.min(50000, Number(body.quantity || body.estimatedQuantity) || 1)),
       standardPrice: body.standardPrice ?? body.referenceUnitPrice ?? null,
-      offeredPrice: body.offeredPrice ?? body.targetPricePkr ?? null,
+      offeredPrice: body.offeredPrice ?? body.targetPricePkr ?? body.customerOfferedRate ?? null,
       customPrintText: body.customPrintText ?? body.customPrinting ?? '',
-      notes: body.notes ?? body.message ?? body.customPrintText ?? body.customPrinting ?? '',
+      notes: body.notes ?? body.message ?? body.customPrintText ?? body.customPrinting ?? body.customHamperNotes ?? '',
       status: 'NEW',
+      finalAgreedPrice: null,
+      adminNotes: '',
+      assignedTo: null,
+      followUpDate: null,
       createdAt: new Date().toISOString(),
     });
 
     try {
       await persistInquiryRecord(record, type === 'bid_box_quote');
-    } catch (dbErr) {
-      console.warn('Firestore /api/inquiries persistence warning (retained in memory):', dbErr);
+    } catch (persistErr: any) {
+      console.error('Firestore /api/inquiries persistence failure:', persistErr);
+      return res.status(503).json({
+        ok: false,
+        error: 'INQUIRY_PERSISTENCE_FAILED',
+        message: 'Failed to record inquiry in persistent store. Please retry or message our concierge on WhatsApp.'
+      });
     }
 
     return res.json({
@@ -1024,19 +1140,22 @@ app.post('/api/inquiries', async (req, res) => {
 });
 
 // Custom Quote / Bargain Concierge API (Bid Boxes, Gift Boxes & Deals)
-app.post('/api/quotes', async (req, res) => {
+app.post('/api/quotes', inquiryLimiter, async (req, res) => {
   try {
+    const raw = sanitizePublicInquiryInput(req.body || {});
     const {
       productId,
       productName,
       mode,
       boxMode,
       quantity,
+      estimatedQuantity,
       eventType,
       customPrinting,
       customPrintText,
       targetPricePkr,
       offeredPrice,
+      customerOfferedRate,
       referenceUnitPrice,
       standardPrice,
       customerName,
@@ -1045,10 +1164,10 @@ app.post('/api/quotes', async (req, res) => {
       email,
       notes,
       city,
-    } = req.body || {};
+    } = raw;
 
-    const resolvedName = String(customerName || '').trim();
-    const resolvedPhone = String(customerPhone || phone || '').trim();
+    const resolvedName = String(customerName || raw.name || '').trim();
+    const resolvedPhone = String(customerPhone || phone || raw.contact || '').trim();
 
     if (resolvedName.length < 2) {
       return res.status(400).json({ error: 'Please provide your name.', code: 'MISSING_NAME' });
@@ -1057,11 +1176,11 @@ app.post('/api/quotes', async (req, res) => {
       return res.status(400).json({ error: 'Please provide a valid phone number.', code: 'MISSING_PHONE' });
     }
 
-    const safeQty = Math.max(1, Math.min(50000, Number(quantity) || 50));
+    const safeQty = Math.max(1, Math.min(50000, Number(quantity || estimatedQuantity) || 50));
     const safeMode: 'empty' | 'filled' = (boxMode || mode) === 'empty' ? 'empty' : 'filled';
     const quoteId = `ABQ-${Date.now().toString(36).toUpperCase().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`;
     const stdPrice = standardPrice != null ? Number(standardPrice) : referenceUnitPrice != null ? Number(referenceUnitPrice) : null;
-    const offPrice = offeredPrice != null ? Number(offeredPrice) : targetPricePkr != null ? Number(targetPricePkr) : null;
+    const offPrice = offeredPrice != null ? Number(offeredPrice) : targetPricePkr != null ? Number(targetPricePkr) : customerOfferedRate != null ? Number(customerOfferedRate) : null;
     const printText = String(customPrintText ?? customPrinting ?? '').slice(0, 500);
 
     const modeLabel = safeMode === 'empty' ? 'Box Only (Empty Packaging)' : 'Filled with AllBarka Dry Fruits';
@@ -1105,13 +1224,22 @@ app.post('/api/quotes', async (req, res) => {
       notes: String(notes || printText || '').slice(0, 1000),
       whatsappUrl,
       status: 'NEW',
+      finalAgreedPrice: null,
+      adminNotes: '',
+      assignedTo: null,
+      followUpDate: null,
       createdAt: new Date().toISOString(),
     });
 
     try {
       await persistInquiryRecord(record, true);
-    } catch (dbErr) {
-      console.warn('Firestore quote storage warning (continuing with WhatsApp handoff):', dbErr);
+    } catch (persistErr: any) {
+      console.error('Quote persistence failure:', persistErr);
+      return res.status(503).json({
+        ok: false,
+        error: 'INQUIRY_PERSISTENCE_FAILED',
+        message: 'Failed to record inquiry in persistent store. Please retry or message our concierge on WhatsApp.'
+      });
     }
 
     return res.json({
@@ -1133,16 +1261,22 @@ app.get('/api/admin/inquiries', requireAdmin, async (_req, res) => {
   try {
     res.setHeader('Cache-Control', 'no-store');
     const merged = new Map<string, InquiryRecord>();
-    for (const [id, item] of inMemoryInquiries.entries()) {
-      merged.set(id, item);
-    }
 
     if (db) {
       try {
-        const [inqSnap, quoteSnap] = await Promise.all([
-          db.collection('inquiries').limit(250).get(),
-          db.collection('quotes').limit(250).get(),
-        ]);
+        let inqSnap;
+        let quoteSnap;
+        try {
+          [inqSnap, quoteSnap] = await Promise.all([
+            db.collection('inquiries').orderBy('createdAt', 'desc').limit(250).get(),
+            db.collection('quotes').orderBy('createdAt', 'desc').limit(250).get(),
+          ]);
+        } catch {
+          [inqSnap, quoteSnap] = await Promise.all([
+            db.collection('inquiries').limit(250).get(),
+            db.collection('quotes').limit(250).get(),
+          ]);
+        }
         for (const doc of quoteSnap.docs) {
           const norm = normalizeRawInquiryDoc(doc.data() || {}, doc.id);
           merged.set(norm.id, norm);
@@ -1153,6 +1287,12 @@ app.get('/api/admin/inquiries', requireAdmin, async (_req, res) => {
         }
       } catch (dbErr) {
         console.warn('Admin inquiries Firestore read warning (serving memory state):', dbErr);
+      }
+    }
+
+    for (const [id, item] of inMemoryInquiries.entries()) {
+      if (!merged.has(id)) {
+        merged.set(id, item);
       }
     }
 
@@ -1172,7 +1312,7 @@ app.get('/api/admin/inquiries', requireAdmin, async (_req, res) => {
   }
 });
 
-// Admin-only: Update inquiry/quote status, admin notes, agreed price & generate 1-click WhatsApp pitch link
+// Admin-only: Update inquiry/quote status, admin notes, agreed price, assignedTo, followUpDate & generate 1-click WhatsApp pitch link
 const handleUpdateAdminInquiry: express.RequestHandler = async (req, res) => {
   try {
     const id = String(req.params.id || '').trim();
@@ -1180,24 +1320,32 @@ const handleUpdateAdminInquiry: express.RequestHandler = async (req, res) => {
       return res.status(400).json({ error: 'Invalid inquiry ID.', code: 'INVALID_ID' });
     }
 
-    let existing: InquiryRecord | undefined = inMemoryInquiries.get(id);
-    if (db && !existing) {
-      const inqDoc = await db.collection('inquiries').doc(id).get();
-      if (inqDoc.exists) {
-        existing = normalizeRawInquiryDoc(inqDoc.data() || {}, id);
-      } else {
-        const quoteDoc = await db.collection('quotes').doc(id).get();
-        if (quoteDoc.exists) {
-          existing = normalizeRawInquiryDoc(quoteDoc.data() || {}, id);
+    let existing: InquiryRecord | undefined;
+    if (db) {
+      try {
+        const inqDoc = await db.collection('inquiries').doc(id).get();
+        if (inqDoc.exists) {
+          existing = normalizeRawInquiryDoc(inqDoc.data() || {}, id);
+        } else {
+          const quoteDoc = await db.collection('quotes').doc(id).get();
+          if (quoteDoc.exists) {
+            existing = normalizeRawInquiryDoc(quoteDoc.data() || {}, id);
+          }
         }
+      } catch (err) {
+        console.warn('Firestore read error in admin inquiry patch:', err);
       }
+    }
+
+    if (!existing) {
+      existing = inMemoryInquiries.get(id);
     }
 
     if (!existing) {
       return res.status(404).json({ error: 'Inquiry or quote not found.', code: 'NOT_FOUND' });
     }
 
-    const { status, adminNotes, finalAgreedPrice } = req.body || {};
+    const { status, adminNotes, finalAgreedPrice, assignedTo, followUpDate } = req.body || {};
     const nextStatus: InquiryStatus = status && VALID_INQUIRY_STATUSES.includes(String(status).toUpperCase() as InquiryStatus)
       ? (String(status).toUpperCase() as InquiryStatus)
       : existing.status;
@@ -1207,12 +1355,20 @@ const handleUpdateAdminInquiry: express.RequestHandler = async (req, res) => {
       : finalAgreedPrice !== undefined && Number.isFinite(Number(finalAgreedPrice))
         ? Math.max(0, Number(finalAgreedPrice))
         : existing.finalAgreedPrice;
+    const nextAssignedTo = assignedTo !== undefined
+      ? (assignedTo ? String(assignedTo).trim().slice(0, 100) : null)
+      : existing.assignedTo;
+    const nextFollowUpDate = followUpDate !== undefined
+      ? (followUpDate ? String(followUpDate).trim().slice(0, 30) : null)
+      : existing.followUpDate;
 
     const updated: InquiryRecord = {
       ...existing,
       status: nextStatus,
       adminNotes: nextAdminNotes,
       finalAgreedPrice: nextAgreedPrice,
+      assignedTo: nextAssignedTo,
+      followUpDate: nextFollowUpDate,
       updatedAt: new Date().toISOString(),
     };
     updated.whatsappReplyUrl = buildAdminWhatsAppPitchUrl(updated);
@@ -1231,40 +1387,6 @@ const handleUpdateAdminInquiry: express.RequestHandler = async (req, res) => {
 };
 app.patch('/api/admin/inquiries/:id', requireAdmin, handleUpdateAdminInquiry);
 app.post('/api/admin/inquiries/:id', requireAdmin, handleUpdateAdminInquiry);
-
-// Live n8n wa_products Single Source of Truth Sync Endpoint
-app.get('/api/integrations/n8n/wa-products', async (req, res) => {
-  try {
-    let authoritativeProducts = PRODUCTS;
-    if (db) {
-      try {
-        const snapshot = await loadAuthoritativeCatalog(db);
-        const byId = new Map(snapshot.products.map(p => [p.id, p]));
-        authoritativeProducts = PRODUCTS.map(codeProd => {
-          const fromDb = byId.get(codeProd.id);
-          return fromDb && fromDb.active !== false ? fromDb : codeProd;
-        });
-      } catch {
-        authoritativeProducts = PRODUCTS;
-      }
-    }
-    const rows = buildWaProductRows(authoritativeProducts);
-    if (String(req.query.format || '').toLowerCase() === 'csv') {
-      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-      res.setHeader('Cache-Control', 'no-store');
-      return res.status(200).send(serializeWaProductsCsv(rows));
-    }
-    res.setHeader('Cache-Control', 'no-store');
-    return res.json({
-      ok: true,
-      count: rows.length,
-      catalogCount: authoritativeProducts.length,
-      products: rows,
-    });
-  } catch (err: any) {
-    return res.status(500).json({ ok: false, error: err.message || 'Failed to export wa_products.', code: 'SERVER_ERROR' });
-  }
-});
 
 // 3. API: Private n8n/Groq concierge; no simulated assistant responses.
 app.post(['/api/chat', '/api/concierge/chat'], authenticateOptionalUser, patronChatLimiter, async (req, res) => {
@@ -1291,12 +1413,8 @@ app.post(['/api/chat', '/api/concierge/chat'], authenticateOptionalUser, patronC
       }
     }
     if (res.headersSent) return;
-  const catalog = await loadAuthoritativeCatalog(db);
-  const byId = new Map(catalog.products.map(p => [p.id, p]));
-  const mergedProducts = PRODUCTS.map(codeProd => {
-    const fromDb = byId.get(codeProd.id);
-    return fromDb && fromDb.active !== false ? fromDb : codeProd;
-  });
+    const catalog = await loadAuthoritativeCatalog(db);
+    const mergedProducts = mergeAuthoritativeCatalog(PRODUCTS, catalog.products);
   const catalogContext = mergedProducts.filter(p => p.active !== false && !p.quoteOnly).map(p => {
     let priceStr = '';
     for (const [weight, price] of Object.entries(p.prices)) {
@@ -1373,7 +1491,10 @@ async function startServer() {
       .replaceAll('https://allbarka.com', publicOrigin)
       .replaceAll('content="/images/generated/og-image.jpg"', `content="${publicOrigin}/images/generated/og-image.jpg"`);
     const pageCatalog = async () => {
-      try { return (await loadAuthoritativeCatalog(db)).products; }
+      try {
+        const snap = await loadAuthoritativeCatalog(db);
+        return mergeAuthoritativeCatalog(PRODUCTS, snap.products);
+      }
       catch { return PRODUCTS.map(unavailableProduct); }
     };
     app.get('/robots.txt', (_req, res) => res.type('text/plain').send(

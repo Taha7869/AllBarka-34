@@ -47,6 +47,8 @@ export interface Product {
   nameAr?: string;
   description?: string;
   active?: boolean;
+  inStock?: boolean;
+  stockQty?: number;
   variants?: { label: string; price: number }[];
   pricePer100g?: number;
   allowCustomWeight?: boolean;

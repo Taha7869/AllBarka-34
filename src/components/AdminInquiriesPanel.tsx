@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   Clock,
   FileText,
+  User,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { adminRequest, AdminRequestError } from '../lib/adminClient';
@@ -48,6 +49,8 @@ export interface AdminInquiryRecord {
   status: InquiryStatus;
   whatsappUrl: string;
   whatsappReplyUrl: string;
+  assignedTo?: string | null;
+  followUpDate?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -77,6 +80,7 @@ function buildLiveWhatsAppPitch(
   const modeLabel =
     record.boxMode === 'empty' ? 'Box Only (Empty Packaging)' : 'Filled with AllBarka Dry Fruits';
   const agreedNum = draftAgreedPrice.trim() ? Number(draftAgreedPrice) : record.finalAgreedPrice;
+  const hasAgreed = agreedNum != null && Number.isFinite(agreedNum) && agreedNum > 0;
   const noteText = draftAdminNotes.trim() || record.adminNotes;
 
   const lines = [
@@ -88,11 +92,12 @@ function buildLiveWhatsAppPitch(
     record.type === 'bid_box_quote' ? `• *Configuration:* ${modeLabel}` : '',
     record.quantity > 1 ? `• *Quantity:* ${record.quantity} pcs` : '',
     record.eventType ? `• *Occasion:* ${record.eventType}` : '',
-    record.standardPrice ? `• *Standard Rate:* Rs. ${Number(record.standardPrice).toLocaleString()}/pc` : '',
-    record.offeredPrice ? `• *Your Offered Budget:* Rs. ${Number(record.offeredPrice).toLocaleString()} PKR` : '',
-    agreedNum && Number.isFinite(agreedNum)
+    record.standardPrice ? `• *Standard Rate Ref:* Rs. ${Number(record.standardPrice).toLocaleString()}/pc` : '',
+    hasAgreed
       ? `• *AllBarka Special Approved Rate:* Rs. ${Number(agreedNum).toLocaleString()} PKR`
-      : '',
+      : record.offeredPrice
+        ? `• *Your Offered Budget:* Rs. ${Number(record.offeredPrice).toLocaleString()} PKR (Ready to finalize terms)`
+        : '',
     noteText ? `• *Concierge Note:* ${noteText}` : '',
     ``,
     `Please reply here to confirm your order and customization details so we can schedule your fresh preparation.`,
@@ -121,6 +126,8 @@ export default function AdminInquiriesPanel() {
         status: InquiryStatus;
         finalAgreedPrice: string;
         adminNotes: string;
+        assignedTo: string;
+        followUpDate: string;
         saving?: boolean;
         savedMsg?: string;
         errorMsg?: string;
@@ -150,6 +157,8 @@ export default function AdminInquiriesPanel() {
                 status: item.status || 'NEW',
                 finalAgreedPrice: item.finalAgreedPrice != null ? String(item.finalAgreedPrice) : '',
                 adminNotes: item.adminNotes || '',
+                assignedTo: item.assignedTo || '',
+                followUpDate: item.followUpDate || '',
               };
             }
           }
@@ -186,6 +195,8 @@ export default function AdminInquiriesPanel() {
         item.customPrintText,
         item.notes,
         item.adminNotes,
+        item.assignedTo,
+        item.followUpDate,
       ]
         .join(' ')
         .toLowerCase();
@@ -204,13 +215,21 @@ export default function AdminInquiriesPanel() {
 
   const updateDraft = (
     id: string,
-    patch: Partial<{ status: InquiryStatus; finalAgreedPrice: string; adminNotes: string }>
+    patch: Partial<{
+      status: InquiryStatus;
+      finalAgreedPrice: string;
+      adminNotes: string;
+      assignedTo: string;
+      followUpDate: string;
+    }>
   ) => {
     setDrafts((prev) => {
       const current = prev[id] || {
         status: 'NEW' as InquiryStatus,
         finalAgreedPrice: '',
         adminNotes: '',
+        assignedTo: '',
+        followUpDate: '',
       };
       return {
         ...prev,
@@ -230,6 +249,8 @@ export default function AdminInquiriesPanel() {
       status: item.status,
       finalAgreedPrice: item.finalAgreedPrice != null ? String(item.finalAgreedPrice) : '',
       adminNotes: item.adminNotes || '',
+      assignedTo: item.assignedTo || '',
+      followUpDate: item.followUpDate || '',
     };
 
     setDrafts((prev) => ({
@@ -247,6 +268,8 @@ export default function AdminInquiriesPanel() {
             status: draft.status,
             finalAgreedPrice: draft.finalAgreedPrice.trim() ? Number(draft.finalAgreedPrice) : null,
             adminNotes: draft.adminNotes.trim(),
+            assignedTo: draft.assignedTo.trim() || null,
+            followUpDate: draft.followUpDate.trim() || null,
           },
         }
       );
@@ -260,6 +283,8 @@ export default function AdminInquiriesPanel() {
           status: res.inquiry.status,
           finalAgreedPrice: res.inquiry.finalAgreedPrice != null ? String(res.inquiry.finalAgreedPrice) : '',
           adminNotes: res.inquiry.adminNotes || '',
+          assignedTo: res.inquiry.assignedTo || '',
+          followUpDate: res.inquiry.followUpDate || '',
           saving: false,
           savedMsg: 'Saved & WhatsApp pitch updated',
         },
@@ -400,6 +425,8 @@ export default function AdminInquiriesPanel() {
               status: item.status,
               finalAgreedPrice: item.finalAgreedPrice != null ? String(item.finalAgreedPrice) : '',
               adminNotes: item.adminNotes || '',
+              assignedTo: item.assignedTo || '',
+              followUpDate: item.followUpDate || '',
             };
             const liveWhatsAppUrl = buildLiveWhatsAppPitch(
               item,
@@ -507,6 +534,18 @@ export default function AdminInquiriesPanel() {
                         <span>{item.city}</span>
                       </div>
                     )}
+                    {item.assignedTo && (
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-[#072A20] pt-0.5">
+                        <User size={13} className="text-[#8C6B1B]" />
+                        <span>Assigned: {item.assignedTo}</span>
+                      </div>
+                    )}
+                    {item.followUpDate && (
+                      <div className="flex items-center gap-1.5 text-xs text-[#8C6B1B]">
+                        <Calendar size={13} />
+                        <span>Follow-up: {item.followUpDate}</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Standard Price vs Customer Offered Price */}
@@ -564,9 +603,9 @@ export default function AdminInquiriesPanel() {
                   </div>
                 </div>
 
-                {/* Admin Action Row: Status, Final Agreed Price, Admin Notes & 1-Click WhatsApp Pitch */}
+                {/* Admin Action Row: Status, Final Agreed Price, Assigned Staff, Follow-up Date, Admin Notes & 1-Click WhatsApp Pitch */}
                 <div className="rounded-xl bg-[#072A20]/[0.03] border border-[#072A20]/15 p-4 space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     <div>
                       <label className="block text-[11px] font-bold uppercase tracking-wider text-[#072A20] mb-1">
                         Quote Status
@@ -610,16 +649,41 @@ export default function AdminInquiriesPanel() {
 
                     <div>
                       <label className="block text-[11px] font-bold uppercase tracking-wider text-[#072A20] mb-1">
-                        Concierge Note (Included in WhatsApp Pitch)
+                        Assigned Concierge
                       </label>
                       <input
                         type="text"
-                        placeholder="e.g. Includes complimentary gold Nikkah name tags"
-                        value={draft.adminNotes}
-                        onChange={(e) => updateDraft(item.id, { adminNotes: e.target.value })}
-                        className="w-full rounded-lg border border-[#D4AF6A]/50 bg-white px-3 py-2 text-xs text-[#072A20]"
+                        placeholder="e.g. Taha / Boutique Lead"
+                        value={draft.assignedTo}
+                        onChange={(e) => updateDraft(item.id, { assignedTo: e.target.value })}
+                        className="w-full rounded-lg border border-[#D4AF6A]/50 bg-white px-3 py-2 text-xs font-semibold text-[#072A20]"
                       />
                     </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-[#072A20] mb-1">
+                        Follow-up Target Date
+                      </label>
+                      <input
+                        type="date"
+                        value={draft.followUpDate}
+                        onChange={(e) => updateDraft(item.id, { followUpDate: e.target.value })}
+                        className="w-full rounded-lg border border-[#D4AF6A]/50 bg-white px-3 py-2 text-xs font-semibold text-[#072A20]"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#072A20] mb-1">
+                      Concierge Note (Included in WhatsApp Pitch)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Includes complimentary gold Nikkah name tags and fast courier delivery"
+                      value={draft.adminNotes}
+                      onChange={(e) => updateDraft(item.id, { adminNotes: e.target.value })}
+                      className="w-full rounded-lg border border-[#D4AF6A]/50 bg-white px-3 py-2 text-xs text-[#072A20]"
+                    />
                   </div>
 
                   <div className="flex flex-wrap items-center justify-between gap-3 pt-1">

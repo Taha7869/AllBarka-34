@@ -68,13 +68,20 @@ export function buildWaProductRows(catalogProducts: Product[] = PRODUCTS): WaPro
   const rows: WaProductRow[] = [];
 
   for (const product of catalogProducts) {
-    const active = product.active !== false;
+    const active = product.active !== false && (product as any).inStock !== false;
+    const stockQty = !active
+      ? 0
+      : typeof (product as any).stockQty === 'number'
+      ? Math.max(0, (product as any).stockQty)
+      : 100;
     const category = resolveWaCategory(product);
+    const displayName = product.name_en || (product as any).name || product.id;
     const aliases = Array.from(
       new Set(
         [
           product.id,
           product.name_en,
+          (product as any).name,
           product.name_ur,
           ...(product.keywords || []),
         ]
@@ -88,14 +95,14 @@ export function buildWaProductRows(catalogProducts: Product[] = PRODUCTS): WaPro
       rows.push({
         product_id: product.id,
         base_product_id: product.id,
-        name: product.name_en,
-        name_ur: product.name_ur,
+        name: displayName,
+        name_ur: product.name_ur || '',
         category,
         unit: 'piece',
         weight_g: product.shippingWeightG || 1000,
-        price: 0,
+        price: (product as any).price || 0,
         wholesale_per_kg: product.wholesale || 0,
-        stock_qty: active ? 100 : 0,
+        stock_qty: stockQty,
         aliases,
         active,
       });
@@ -112,14 +119,14 @@ export function buildWaProductRows(catalogProducts: Product[] = PRODUCTS): WaPro
       rows.push({
         product_id: productId,
         base_product_id: product.id,
-        name: entries.length === 1 ? product.name_en : `${product.name_en} (${label})`,
-        name_ur: product.name_ur,
+        name: entries.length === 1 ? displayName : `${displayName} (${label})`,
+        name_ur: product.name_ur || '',
         category,
         unit,
         weight_g: weightG,
         price: Number(price) || 0,
         wholesale_per_kg: product.wholesale || 0,
-        stock_qty: active ? 100 : 0,
+        stock_qty: stockQty,
         aliases,
         active,
       });
