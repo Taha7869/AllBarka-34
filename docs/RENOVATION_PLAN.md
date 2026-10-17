@@ -44,10 +44,10 @@ A rigorous inspection of the current repository at commit `8cf4410` confirms tha
 - **Dual Order Mode (Rule D4):** Standard priced items support instant checkout. Custom/unpriced configurations must route cleanly to `CustomQuoteModal` without injecting artificial bulk discount percentages.
 
 ### 1.6 Backend & Integration Gaps Observed
-- **Inquiry Persistence Fallback:** In `server.ts`, `persistInquiryRecord` falls back to an in-memory queue if Firestore is unavailable. The customer receives a success response even when the record was not durably written.
+- **Inquiry Persistence Behavior:** In `server.ts`, when `db` is absent (not configured or null), `persistInquiryRecord` currently permits memory-only success. A thrown Firestore write failure is a separate behavior that returns a 503 error if caught. These distinct behaviors must not be conflated without evidence; Stage 6 will address both to ensure customer drafts are preserved on actual persistence failures.
 - **wa-products Catalog Read Failure:** `/api/integrations/n8n/wa-products` falls back to compiled `PRODUCTS` if Firestore catalog loading fails, potentially exporting stale prices or reviving inactive items.
 - **mergeAuthoritativeCatalog Loader Coverage:** While `mergeAuthoritativeCatalog` supports dynamic Firestore inputs, storefront transaction loaders and context providers must be audited end-to-end to ensure inactive items are never revived.
-- **Test Suite Realism:** The existing test `tests/inquiry-and-sync-security.test.ts` tests an in-memory Express router recreation rather than verifying production route mounting in `server.ts`. Future integration tests must exercise real application handlers.
+- **Test Suite Realism & Coverage Limitation:** The existing test `tests/inquiry-and-sync-security.test.ts` tests an in-memory Express router fixture rather than verifying production route mounting in `server.ts`. This fixture-based test does NOT verify real application route wiring. Future regression tests must import and execute actual production handlers/services with injected auth/database dependencies.
 
 ---
 
@@ -95,6 +95,11 @@ Dry Fruits & Nuts  |  Dates  |  Seeds & Snacks  |  Oils  |  Desi Essentials  |  
 ### 3.2 Legacy Slug Splitting & Compatibility Strategy
 - **Legacy `/shop/nuts`:** Formerly contained both nuts and dates. A simple alias cannot cleanly represent both.
   - *Strategy:* Route `/shop/nuts` to `dry-fruits`, and display a contextual banner: *"Looking for Dates? Explore our dedicated [Dates Collection](/shop/dates)."*
+- **Audit of Actual Existing Date Products (Stable IDs Preserved):**
+  - `khajoor`: "Premium Dark Dates (Kali Khajoor)", category: `nuts`, prices: `{'250g': 240, '500g': 475, '1kg': 950}`. Verified Pakistani local harvest reserve.
+  - `aseel-dates`: "Aseel Dates Khairpur", category: `nuts`, prices: `{'500g': 600}`. Verified Pakistani single-origin Khairpur Sindh harvest.
+  - `chohara`: "Chohara (Winter Special)", category: `nuts`, prices: `{'250g': 500}`. Verified cured winter date harvest.
+  - *Strict Rule:* Do NOT claim that imported varieties (Ajwa, Medjool, Mabroom, Sukari, Safawi, Amber, Zahidi) are currently supplied or stocked merely because they appear in the proposed taxonomy. Only the 3 actual existing date products are verified. Preserve their IDs. Future varieties may be added via Stage 2 Admin CRUD once merchant sourcing is confirmed.
 - **Legacy `/shop/essentials`:** Formerly contained honey, ghee, panjeeri, saffron, and shakkar.
   - *Strategy:* Route to `essentials` (Desi Essentials), with `org-saffron` aliased to `herbs-spices`.
 - **Legacy `/shop/snacks-seeds`:** Maps cleanly to `seeds-snacks`.
@@ -104,6 +109,9 @@ Dry Fruits & Nuts  |  Dates  |  Seeds & Snacks  |  Oils  |  Desi Essentials  |  
 ### 3.3 Evidence-Based Packaging Expansion (Target: >= 30 Products across 5 Subcategories)
 
 In accordance with Section B of the Master Prompt, designs are classified strictly as **VERIFIED** (existing in catalog or directly documented), **OWNER-CONFIRMED** (instructed by business rules), or **PROPOSED** (derived from researched Pakistani market references at `https://bidbox.pk` and `https://bidboxesonline.com`).
+
+> [!IMPORTANT]
+> **Preflight Constraint:** Numeric "benchmark prices" lacking an exact verifiable product URL, matching variant, and checked date have been set to **UNKNOWN**. PROPOSED is not permission to invent a reference price. Do NOT import or publish these proposed products in Stage 2. Unsupported designs remain drafts/inquiries with explicit blockers until merchant-verified.
 
 | ID | Product Name | Subcategory | Status | Price Basis (Empty) | Sourcing / Reference Notes |
 | :--- | :--- | :--- | :---: | :---: | :--- |
