@@ -37,6 +37,30 @@ export interface BidBoxConfig {
   filledOptions: BidBoxFilledOption[];
 }
 
+export type ProductStatus = 'draft' | 'published' | 'archived';
+export type OrderMode = 'standard' | 'inquiry_quote' | 'both';
+
+export interface ProductPersonalizationConfig {
+  supported: boolean;
+  allowMonogram?: boolean;
+  allowCardMessage?: boolean;
+  allowRibbonColor?: boolean;
+  ribbonColors?: string[];
+  options?: string[];
+  notes?: string;
+}
+
+export interface MerchandisingSettings {
+  featuredProductIds: string[];
+  categoryOrder: string[];
+  categoryVisibility: Record<string, boolean>;
+  autoplayDurationMs: number;
+  autoplayResumeDelayMs: number;
+  revision: number;
+  updatedAt: string;
+  updatedBy?: string;
+}
+
 export interface Product {
   id: string;
   /** Purchase-time pricing fingerprint, including direct Console edits. */
@@ -118,6 +142,39 @@ export interface Product {
   tasteProfile_en?: string;
   tasteProfile_ur?: string;
   tasteProfile_ar?: string;
+
+  /** Canonical product family (e.g. 'badam', 'khajoor', 'tin-bid-box') */
+  productFamily?: string;
+  /** Curated commercial collection slugs (e.g. 'combos', 'celebration-boxes', 'deals', 'personalized-treats') */
+  collections?: string[];
+  /** Occasion tags (e.g. 'wedding', 'umrah', 'ramadan', 'birth', 'corporate') */
+  occasions?: string[];
+  /** Personalization options */
+  personalization?: ProductPersonalizationConfig;
+  /** Explicit inclusions for gift boxes, hampers or bundles */
+  inclusions?: string[];
+  /** Explicit exclusions or prerequisites */
+  exclusions?: string[];
+  /** Ordering workflow supported: direct checkout, inquiry quote, or both */
+  orderMode?: OrderMode;
+  /** Publication lifecycle status: 'draft' | 'published' | 'archived' */
+  status?: ProductStatus;
+  /** Custom packaging or product MOQ override */
+  moqOverride?: number;
+  /** Preparation and lead time in calendar days (e.g. 10 days for custom packaging) */
+  preparationDays?: number;
+  /** Display sorting order within category or collection */
+  displayOrder?: number;
+
+  // Private & supplier fields (authoritative admin only; stripped from public responses)
+  referencePrice?: number;
+  supplierCost?: number;
+  supplierName?: string;
+  supplierItemUrl?: string;
+  internalNotes?: string;
+  importBatch?: string;
+  importTimestamp?: string;
+  adminRevision?: number;
 }
 
 export interface CartItem {

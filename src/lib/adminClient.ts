@@ -11,7 +11,7 @@ export class AdminRequestError extends Error {
 export async function adminRequest<T>(
   getToken: () => Promise<string>,
   path: string,
-  options: { signal?: AbortSignal; body?: Record<string, unknown>; timeoutMs?: number; method?: 'GET' | 'POST' | 'PATCH' } = {},
+  options: { signal?: AbortSignal; body?: Record<string, unknown>; timeoutMs?: number; method?: 'GET' | 'POST' | 'PATCH' | 'PUT' } = {},
 ): Promise<T> {
   if (!path.startsWith('/api/admin/')) throw new AdminRequestError('INVALID_PATH');
   if (typeof navigator !== 'undefined' && navigator.onLine === false) throw new AdminRequestError('OFFLINE');

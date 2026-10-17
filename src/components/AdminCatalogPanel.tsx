@@ -1,7 +1,24 @@
-import { useCatalogProducts } from '../contexts/CatalogContext';
+import { useCatalogProducts, useCatalogRefresh } from '../contexts/CatalogContext';
+import type { Product } from '../types';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, CheckCircle2, Image, Layers3, PackageSearch, Search, ShieldCheck, TriangleAlert, X } from 'lucide-react';
+import {
+  ArrowUpRight,
+  CheckCircle2,
+  Image,
+  Layers3,
+  PackageSearch,
+  Search,
+  ShieldCheck,
+  TriangleAlert,
+  X,
+  Plus,
+  Sparkles,
+  Copy,
+  Archive,
+  Check,
+  Loader2
+} from 'lucide-react';
 import { PRODUCTS } from '../data/products';
 import { useAdminLanguage } from '../hooks/useAdminLanguage';
 import { getLocalized } from '../utils/localize';
@@ -9,6 +26,10 @@ import { checkCatalogAssets, filterAdminCatalog, getAdminCatalogSnapshot, type C
 import AdminProductMediaEditor from './AdminProductMediaEditor';
 import { useProductMediaLanguage } from '../hooks/useProductMediaLanguage';
 import AdminCatalogPricingEditor, { useCatalogPricingLanguage } from './AdminCatalogPricingEditor';
+import AdminProductCreateModal from './AdminProductCreateModal';
+import AdminMerchandisingPanel from './AdminMerchandisingPanel';
+import { useAuth } from '../contexts/AuthContext';
+import { adminRequest } from '../lib/adminClient';
 
 const issueKeys: Record<CatalogIssue, string> = {
   id: 'admin.catalog.issueId', name: 'admin.catalog.issueName', portion: 'admin.catalog.issuePortion', image: 'admin.catalog.issueImage',
@@ -20,11 +41,17 @@ const resultKeys: Record<CatalogAssetResult['result'], string> = {
 
 export default function AdminCatalogPanel() {
   const PRODUCTS = useCatalogProducts();
+  const refreshCatalog = useCatalogRefresh();
+  const { currentUser } = useAuth();
   const { language, t } = useAdminLanguage();
   const { t: mediaTranslation } = useProductMediaLanguage();
   const { t: pricingTranslation } = useCatalogPricingLanguage();
   const [pricingProductId, setPricingProductId] = useState<string | null>(null);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isMerchandisingOpen, setIsMerchandisingOpen] = useState(false);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
   const [results, setResults] = useState<Record<string, CatalogAssetResult>>({});
@@ -68,6 +95,64 @@ export default function AdminCatalogPanel() {
     ? t(resultKeys[result.result]).replace('{status}', String(result.status || '—'))
     : t('admin.catalog.assetUnchecked');
 
+  const handleDuplicateProduct = async (product: Product) => {
+    if (!currentUser) return;
+    setActionLoadingId(`dup-${product.id}`);
+    setActionFeedback(null);
+    try {
+      await adminRequest(
+        () => currentUser.getIdToken(),
+        `/api/admin/catalog/products/${encodeURIComponent(product.id)}/duplicate`,
+        { method: 'POST', body: {} }
+      );
+      setActionFeedback(`Duplicated ${product.id} as new draft.`);
+      await refreshCatalog();
+    } catch (err: any) {
+      setActionFeedback(`Failed to duplicate: ${err.message || err.code}`);
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handlePublishProduct = async (product: Product) => {
+    if (!currentUser) return;
+    setActionLoadingId(`pub-${product.id}`);
+    setActionFeedback(null);
+    try {
+      await adminRequest(
+        () => currentUser.getIdToken(),
+        `/api/admin/catalog/products/${encodeURIComponent(product.id)}/publish`,
+        { method: 'POST', body: {} }
+      );
+      setActionFeedback(`Published ${product.id} live.`);
+      await refreshCatalog();
+    } catch (err: any) {
+      setActionFeedback(`Failed to publish: ${err.message || err.code}`);
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleArchiveProduct = async (product: Product) => {
+    if (!currentUser) return;
+    if (!window.confirm(`Archive product "${product.name_en}"? It will become unavailable for purchase on the storefront.`)) return;
+    setActionLoadingId(`arc-${product.id}`);
+    setActionFeedback(null);
+    try {
+      await adminRequest(
+        () => currentUser.getIdToken(),
+        `/api/admin/catalog/products/${encodeURIComponent(product.id)}/archive`,
+        { method: 'POST', body: {} }
+      );
+      setActionFeedback(`Archived ${product.id}.`);
+      await refreshCatalog();
+    } catch (err: any) {
+      setActionFeedback(`Failed to archive: ${err.message || err.code}`);
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
   return <section aria-labelledby={`${ids}-heading`} dir="ltr" className="space-y-6 text-[var(--color-text-primary)]">
     <header className="flex flex-wrap items-start justify-between gap-4">
       <div className="max-w-xl" dir="auto">
@@ -75,8 +160,35 @@ export default function AdminCatalogPanel() {
         <h2 id={`${ids}-heading`} className="font-serif text-3xl">{t('admin.catalog.title')}</h2>
         <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">{t('admin.catalog.subtitle')}</p>
       </div>
-      {snapshot.issueCount > 0 && <span className="inline-flex items-center gap-2 rounded-full border border-amber-700/25 bg-amber-50 px-4 py-2 text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-200" dir="auto"><TriangleAlert size={15} aria-hidden="true" />{t('admin.catalog.issues').replace('{count}', String(snapshot.issueCount))}</span>}
+      <div className="flex flex-wrap items-center gap-3">
+        {snapshot.issueCount > 0 && <span className="inline-flex items-center gap-2 rounded-full border border-amber-700/25 bg-amber-50 px-4 py-2 text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-200" dir="auto"><TriangleAlert size={15} aria-hidden="true" />{t('admin.catalog.issues').replace('{count}', String(snapshot.issueCount))}</span>}
+        <button
+          type="button"
+          onClick={() => setIsMerchandisingOpen(true)}
+          className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-xs font-semibold hover:border-[#c7982f]"
+        >
+          <Sparkles size={16} className="text-[#c7982f]" />
+          <span>Merchandising</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setIsCreateOpen(true)}
+          className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#1e3a2b] text-[#fff8e9] dark:bg-[#c7982f] dark:text-[#1e3a2b] px-4 text-xs font-semibold hover:opacity-90 shadow-sm"
+        >
+          <Plus size={16} />
+          <span>Create Product</span>
+        </button>
+      </div>
     </header>
+
+    {actionFeedback && (
+      <div className="flex items-center justify-between rounded-xl bg-[var(--color-base)] border border-[var(--color-border)] px-4 py-2.5 text-xs">
+        <span>{actionFeedback}</span>
+        <button type="button" onClick={() => setActionFeedback(null)} className="text-[var(--color-text-secondary)] hover:text-inherit">
+          <X size={14} />
+        </button>
+      </div>
+    )}
 
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       {[
@@ -118,10 +230,23 @@ export default function AdminCatalogPanel() {
         {rows.map((row, index) => {
           const productResults = row.images.map(path => results[path]);
           const assetErrors = productResults.filter(result => result && result.result !== 'ok');
-          return <li key={`${row.product.id}-${index}`} className="grid gap-4 p-4 sm:p-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,.8fr)] xl:items-start">
+          const isArchived = row.product.status === 'archived' || row.product.active === false;
+          const isDraft = row.product.status === 'draft';
+          const isPublished = !isArchived && !isDraft;
+
+          return <li key={`${row.product.id}-${index}`} className="grid gap-4 p-4 sm:p-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,.9fr)] xl:items-start">
             <div className="flex min-w-0 gap-3">
               <Link to={`/product/${encodeURIComponent(row.product.id)}`} aria-label={`${t('admin.catalog.open')}: ${getLocalized(row.product, 'name', language)}`} className="focus-ring shrink-0 rounded-xl">{row.images[0] ? <img src={row.images[0]} alt="" loading="lazy" width={64} height={64} className="h-16 w-16 rounded-xl bg-[var(--color-base)] object-cover" /> : <span className="flex h-16 w-16 items-center justify-center rounded-xl border border-[#c7982f]/30 bg-[#f3efe5] font-serif text-lg text-[#1e3a2b]">AB</span>}</Link>
-              <div className="min-w-0"><Link to={`/product/${encodeURIComponent(row.product.id)}`} className="focus-ring inline-flex min-h-11 items-center rounded font-serif text-lg leading-6" dir="auto">{getLocalized(row.product, 'name', language)}</Link><p className="mt-1 break-all font-mono text-[11px] text-[var(--color-text-secondary)]">{row.product.id}</p><p className="mt-1 text-xs text-[var(--color-accent-text)]" dir="auto">{t(`shop.${row.product.category}`)}</p></div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Link to={`/product/${encodeURIComponent(row.product.id)}`} className="focus-ring inline-flex min-h-11 items-center rounded font-serif text-lg leading-6" dir="auto">{getLocalized(row.product, 'name', language)}</Link>
+                  {isDraft && <span className="rounded-full bg-amber-500/10 border border-amber-500/30 px-2.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-400">Draft</span>}
+                  {isPublished && <span className="rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">Published</span>}
+                  {isArchived && <span className="rounded-full bg-zinc-500/10 border border-zinc-500/30 px-2.5 py-0.5 text-[10px] font-semibold text-zinc-600 dark:text-zinc-400">Archived</span>}
+                </div>
+                <p className="mt-1 break-all font-mono text-[11px] text-[var(--color-text-secondary)]">{row.product.id}</p>
+                <p className="mt-1 text-xs text-[var(--color-accent-text)]" dir="auto">{t(`shop.${row.product.category}`)}</p>
+              </div>
             </div>
             <div>
               <p className="mb-2 text-[10px] font-semibold uppercase tracking-[.08em] text-[var(--color-text-secondary)]" dir="auto">{t('admin.catalog.prices')}</p>
@@ -137,9 +262,50 @@ export default function AdminCatalogPanel() {
                 <summary className="focus-ring min-h-11 cursor-pointer rounded-xl px-3 py-3 text-xs text-[var(--color-text-secondary)]"><span dir="auto">{t('admin.catalog.gallery')}</span><bdi className="ml-2">({row.images.length})</bdi>{assetErrors.length > 0 && <TriangleAlert size={13} className="ml-2 inline text-red-700 dark:text-red-300" aria-hidden="true" />}</summary>
                 <ul className="space-y-3 border-t border-[var(--color-border)] p-3">{row.images.map(path => <li key={path} className="flex min-w-0 items-start gap-3"><img src={path} alt="" loading="lazy" width={48} height={48} className="h-12 w-12 shrink-0 rounded-lg object-cover" /><div className="min-w-0"><p className="break-all font-mono text-[10px] leading-4 text-[var(--color-text-secondary)]">{path}</p><p dir="auto" className={`mt-1 text-[11px] leading-4 ${results[path]?.result && results[path]?.result !== 'ok' ? 'text-red-800 dark:text-red-300' : 'text-[var(--color-text-secondary)]'}`}>{resultText(results[path])}</p></div></li>)}</ul>
               </details>
-              <Link to={`/product/${encodeURIComponent(row.product.id)}`} className="focus-ring mt-1 inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-[var(--color-accent-text)]"><span dir="auto">{t('admin.catalog.open')}</span><ArrowUpRight size={14} aria-hidden="true" /></Link>
-              <button type="button" className="focus-ring mt-2 inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--color-border)] px-3 text-xs font-semibold" onClick={() => setEditingProductId(current => current === row.product.id ? null : row.product.id)} aria-expanded={editingProductId === row.product.id} aria-controls={`${ids}-editor-${row.product.id}`}><Image size={15} aria-hidden="true" /><span dir="auto">{mediaTranslation('media.edit')}</span></button>
-              <button type="button" className="focus-ring mt-2 inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--color-border)] px-3 text-xs font-semibold" onClick={() => setPricingProductId(current => current === row.product.id ? null : row.product.id)} aria-expanded={pricingProductId === row.product.id} aria-controls={`${ids}-pricing-${row.product.id}`}><span dir="auto">{pricingTranslation('editButton')}</span></button>
+              
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                <Link to={`/product/${encodeURIComponent(row.product.id)}`} className="focus-ring inline-flex min-h-9 items-center gap-1 rounded-lg border border-[var(--color-border)] px-2.5 text-xs font-medium text-[var(--color-accent-text)]"><span dir="auto">{t('admin.catalog.open')}</span><ArrowUpRight size={13} aria-hidden="true" /></Link>
+                <button type="button" className="focus-ring inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-2.5 text-xs font-semibold" onClick={() => setEditingProductId(current => current === row.product.id ? null : row.product.id)} aria-expanded={editingProductId === row.product.id} aria-controls={`${ids}-editor-${row.product.id}`}><Image size={14} aria-hidden="true" /><span dir="auto">{mediaTranslation('media.edit')}</span></button>
+                <button type="button" className="focus-ring inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-2.5 text-xs font-semibold" onClick={() => setPricingProductId(current => current === row.product.id ? null : row.product.id)} aria-expanded={pricingProductId === row.product.id} aria-controls={`${ids}-pricing-${row.product.id}`}><span dir="auto">{pricingTranslation('editButton')}</span></button>
+                
+                {/* Lifecycle CRUD actions */}
+                <button
+                  type="button"
+                  title="Duplicate Product as Draft"
+                  disabled={actionLoadingId === `dup-${row.product.id}`}
+                  onClick={() => handleDuplicateProduct(row.product)}
+                  className="focus-ring inline-flex min-h-9 items-center gap-1 rounded-lg border border-[var(--color-border)] px-2 text-xs font-semibold hover:border-[#c7982f] disabled:opacity-50"
+                >
+                  {actionLoadingId === `dup-${row.product.id}` ? <Loader2 size={13} className="animate-spin" /> : <Copy size={13} />}
+                  <span>Duplicate</span>
+                </button>
+
+                {!isPublished && (
+                  <button
+                    type="button"
+                    title="Publish Product to Storefront"
+                    disabled={actionLoadingId === `pub-${row.product.id}`}
+                    onClick={() => handlePublishProduct(row.product)}
+                    className="focus-ring inline-flex min-h-9 items-center gap-1 rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 px-2 text-xs font-semibold hover:bg-emerald-500/20 disabled:opacity-50"
+                  >
+                    {actionLoadingId === `pub-${row.product.id}` ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+                    <span>Publish</span>
+                  </button>
+                )}
+
+                {!isArchived && (
+                  <button
+                    type="button"
+                    title="Archive Product"
+                    disabled={actionLoadingId === `arc-${row.product.id}`}
+                    onClick={() => handleArchiveProduct(row.product)}
+                    className="focus-ring inline-flex min-h-9 items-center gap-1 rounded-lg border border-zinc-500/40 bg-zinc-500/10 text-zinc-700 dark:text-zinc-300 px-2 text-xs font-semibold hover:bg-zinc-500/20 disabled:opacity-50"
+                  >
+                    {actionLoadingId === `arc-${row.product.id}` ? <Loader2 size={13} className="animate-spin" /> : <Archive size={13} />}
+                    <span>Archive</span>
+                  </button>
+                )}
+              </div>
             </div>
             {editingProductId === row.product.id && <div id={`${ids}-editor-${row.product.id}`} className="min-w-0 xl:col-span-3"><AdminProductMediaEditor key={row.product.id} product={row.product} onClose={() => setEditingProductId(null)} /></div>}
             {pricingProductId === row.product.id && <div id={`${ids}-pricing-${row.product.id}`} className="min-w-0 xl:col-span-3"><AdminCatalogPricingEditor key={row.product.id} product={row.product} onClose={() => setPricingProductId(null)} /></div>}
@@ -148,5 +314,16 @@ export default function AdminCatalogPanel() {
       </ul>
       {rows.length === 0 && <p className="px-6 py-12 text-center text-sm text-[var(--color-text-secondary)]" dir="auto">{t('admin.catalog.noResults')}</p>}
     </div>
+
+    <AdminProductCreateModal
+      isOpen={isCreateOpen}
+      onClose={() => setIsCreateOpen(false)}
+      onCreated={() => setActionFeedback('New product created successfully!')}
+    />
+
+    <AdminMerchandisingPanel
+      isOpen={isMerchandisingOpen}
+      onClose={() => setIsMerchandisingOpen(false)}
+    />
   </section>;
 }
