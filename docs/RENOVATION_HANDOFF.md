@@ -1,92 +1,133 @@
-# AllBarka Renovation — Stage 3 Review Packet & Handoff v3.1
+# AllBarka Renovation — Stage 4 Review Packet & Handoff v4.0
 
-**Document Version:** 3.1.0  
-**Date:** October 17, 2026  
-**Baseline Git Commit:** `c61d0f0f2483403221faf1c404f1f82c38422243` (Initial Stage 3) / `8cf4410d4cc9d1a2d4840a62cf0f328c4bdaaee0` (`launch` / `main`)  
+**Document Version:** 4.0.0  
+**Date:** October 18, 2026  
+**Baseline Git Commit:** `7e340f1a` (Stage 3 Verification) -> `feat/renovation-v2`  
 **Active Working Branch:** `feat/renovation-v2` (Tracking `origin/feat/renovation-v2`)  
 **Parent / Production Branch:** `launch` (synced with `origin/launch` and `origin/main`)  
 **Applicable Instructions Read:** `C:\Users\taha\.gemini\antigravity\scratch\AllBarka-34\AGENTS.md` and `C:\Users\taha\.gemini\config\plugins\science\rules\AGENTS.md`  
-**Status:** **STAGE 3 REVIEW DEFECTS RESOLVED & VERIFIED — HALTED AT STAGE 4 ENTRY GATE**
+**Status:** **STAGE 4 NAVIGATION & DROPDOWN REDESIGN COMPLETE & VERIFIED — HALTED AT STAGE 5 ENTRY GATE**
 
 ---
 
-## 1. Stage 3 Review Defects Resolved (from `c61d0f0`)
+## 1. Stage 4 Scope & Implementation Summary
 
-### Defect 1 — `bidBoxPricing.ts` Invented Bulk Prices and Discounts
-- **Root Cause**: `resolveBidBoxConfig` previously synthesized nonexistent 10/25/50/100 pack prices using hardcoded percentage multipliers (`* 0.95`, `* 0.90`, `* 0.82`), attached hardcoded `-5%`, `-10%`, `-18%` badges, and fell back to stale `existingConfig.emptyUnitStarting`, `filledMin`, `filledMax`, and `opt.price` properties.
-- **Resolution**:
-  - Rewrote `resolveBidBoxConfig` in `src/lib/bidBoxPricing.ts` and `createBidBoxProduct` in `src/data/products.ts` to read strictly from explicitly saved, available (`v.available !== false`), positively priced variants.
-  - Removed all invented pack tiers, fallback multiplications, hardcoded discount badges, and stale `bidBoxConfig` price fallbacks.
-  - Savings badges (`-X%`) are computed exclusively from actual saved comparable unit prices (`Math.round(((baselineUnitPrice - v.unitPrice) / baselineUnitPrice) * 100)` when `v.unitPrice < baselineUnitPrice`).
-  - Updated `ProductDetailPage.tsx` so the Bid Box mode/tier card only renders when saved empty + filled modes or saved multi-piece pack tiers exist, and `"Bulk Tier Savings Available"` is shown only when `emptyTiers.some(t => Boolean(t.discountBadge))`.
+### A. Authoritative Navigation Architecture (`src/config/navigation.ts`)
+- Implemented single authoritative navigation schema for desktop and mobile headers:
+  - **Main Row (Level 1)**: `Shop | Gifts & Hampers | Celebration Boxes | Occasions | Deals`
+  - **Compact Food Row (Level 2)**: `Dry Fruits & Nuts | Dates | Seeds & Snacks | Oils | Desi Essentials | Herbs & Spices`
+  - **Corporate & Bulk Gifting**: Authoritatively placed under Gifting (`/wholesale`), accessible via desktop dropdown and mobile drawer.
+  - **Modal Action Triggers**: Declarative support for `'open-hamper-builder'` and `'open-custom-quote'` modal dispatchers.
 
-### Defect 2 — Variant MOQ Overrides Disappeared Through Persistence/Projection
-- **Root Cause**: `CatalogVariant` and `CatalogPricing` in `src/lib/catalogSchema.ts` omitted `moqOverride`, causing `validateCatalogPricing`, `readCatalogPricing`, `productFromPricing`, `updateCatalogPricing`, `getAdminProductRecord`, and `updateAdminProduct` to strip variant and product MOQ overrides during pricing saves and catalog projections.
-- **Resolution**:
-  - Added `moqOverride?: number | null` to `CatalogVariant` and `CatalogPricing` in `src/lib/catalogSchema.ts`.
-  - Added `validateMoqOverride(value)` throwing `CatalogError('INVALID_MOQ_OVERRIDE', 400)` for any non-null/non-empty value outside safe integers `[1, 10000]`.
-  - Updated `validateCatalogPricing`, `pricingFromLegacy`, `readCatalogPricing`, `productFromPricing`, `validateDynamicProduct`, `storedCatalogRecord`, `snapshotFromDocuments`, `updateCatalogPricing`, `getAdminProductRecord`, `createAdminProduct`, and `updateAdminProduct` to preserve both product and variant `moqOverride` across create, reload, metadata edits, pricing saves, public catalog projection, and authoritative order quotes, and to clear overrides when `null` is passed.
-  - Added admin UI controls for setting and clearing product and per-variant MOQ overrides in `AdminCatalogPricingEditor.tsx`, `AdminProductCreateModal.tsx`, and `AdminProductEditModal.tsx`.
+### B. Desktop Active Header & BubbleMenu (`src/components/BubbleMenu.tsx`, `src/layouts/RootLayout.tsx`)
+- **Continuous Trigger-to-Panel Pointer Bridge**: Pseudo-element bridge (`-top-3 inset-x-0 h-4`) eliminates hover dead zones between disclosure buttons and dropdown menus.
+- **Cancelable Close Debounce**: 220ms delay prevents accidental dismissal during diagonal or slow pointer travel; cancels immediately on mouse re-entry.
+- **Shared Open State**: Single `openId` state ensures hovering another top-level item immediately transitions panels without lingering stale dropdowns.
+- **Accessible Disclosure & Keyboard Navigation**:
+  - Semantic disclosure buttons declare `aria-haspopup="true"`, `aria-expanded={isOpen}`, and `aria-controls="nav-dropdown-panel-{id}"`.
+  - Destination links use semantic `<Link>` with `role="menuitem"`.
+  - `Enter` / `Space` toggles dropdown expansion.
+  - `ArrowDown` transfers focus directly into the first panel item.
+  - `Escape` closes the active panel and restores focus to the triggering button (`document.activeElement.id === nav-trigger-{id}`).
+  - Outside pointer clicks dismiss open dropdown panels immediately.
+- **RTL & Dark Mode Support**:
+  - Dynamically binds header `dir={isRtl ? 'rtl' : 'ltr'}` from `useLanguage()`.
+  - Urdu and Arabic mirror menu ordering, chevron directions, and dropdown alignment without layout clipping.
+  - Luxury cream light palette (`#FFFCF7`, `#F6F1EA`, `#042821`) and obsidian dark theme (`#1A201E`, `#121615`, `#C7982F`).
+- **Brand & Header Controls**:
+  - Retained AllBarka premium typography, crest logo linking home, search shortcut (`#header-search-btn`), custom hamper button, language selector, and dark mode toggle.
 
-### Defect 3 — Unpriced Inquiry-Only Packaging Threw During Rendering
-- **Root Cause**: `ProductCard.tsx` and `ProductDetailPage.tsx` called `calculatePackagingMoq` and `calculateMinOrderQuantityUnits` unconditionally, which threw when rendering an unpriced inquiry-only packaging product (`prices: {}`).
-- **Resolution**:
-  - Added `getPackagingMoqDisplay(product, variantLabel)` in `src/lib/packagingMoq.ts` returning `{ moqPieces: number | null; minUnits: number | null }` safely without throwing when no positive price exists, and removed the `bidBoxConfig.emptyUnitStarting` fallback from `getPublishedPerPiecePrice`.
-  - Updated `ProductCard.tsx`, `ProductDetailPage.tsx`, and `CustomQuoteModal.tsx` to render unpriced/inquiry-only products safely (`isQuoteOnly = true` when no positive available prices exist), omit numeric MOQ badges when `moqPieces === null`, and open the custom inquiry modal while keeping direct checkout blocked server-side (`QUOTE_REQUIRED` / `PRICING_UNAVAILABLE`).
-
-### Defect 4 — `pricingImport.ts` Missed Canonical Existing Prices
-- **Root Cause**: `applyReferenceImportPricing` only checked `existingProduct.prices` and singular `price`, missing canonical `existingProduct.variants` (where `updateCatalogPricing` deletes `prices`), collapsed multi-variant products to the first price, and was not wired into a transactional Firestore import path.
-- **Resolution**:
-  - Added `extractEstablishedVariants` and rewrote `applyReferenceImportPricing` in `src/lib/pricingImport.ts` to recognize established merchant prices in canonical `variants`, legacy `prices` maps, and singular `price`.
-  - Multi-variant re-imports preserve each existing variant's distinct merchant price (`sellingPrices`, `variants`) without collapsing to the first variant's price.
-  - Added explicit validation for missing `existingProduct` and contradictory import inputs (`CatalogError('CONTRADICTORY_IMPORT_INPUT', 400)`).
-  - Implemented transactional, idempotent `importReferenceProduct` in `src/lib/catalogStore.ts` (strictly read-before-write) and exposed `POST /api/admin/catalog/import` and `POST /api/admin/catalog/products/:productId/import` in `src/lib/catalogRouter.ts`.
-
----
-
-## 2. Test & Build Verification Evidence
-
-All test suites, TypeScript typechecking, React hook linter, and production build pipeline passed with zero errors:
-
-| Command / Suite | Actual Output / Result | Exit Code | Evaluation & Coverage Notes |
-| :--- | :--- | :---: | :--- |
-| `npx tsx --test tests/stage3-pricing-moq.test.ts` | **19 passed, 0 failed** | `0` | **VERIFIED:** All 13 original Stage 3 tests + 6 new regression tests covering all 4 review defects (single Rs. 1000 variant Bid Box with no invented tiers/discounts, actual savings calculation, variant MOQ 8 end-to-end persistence & clearing + invalid MOQ rejection, unpriced `prices: {}` rendering in `ProductCard` & `ProductDetailPage`, canonical Rs. 1800 preservation on Rs. 1000 re-import & repeat idempotency, multi-variant distinct price preservation & contradictory input rejection). |
-| `npx tsx --test tests/stage2-catalog-crud.test.ts` | **25 passed, 0 failed** (duration 1.92s) | `0` | **VERIFIED:** All Stage 2 data model, admin CRUD, price editor journeys, canonical seed edits, merchandising concurrency, durable migration recovery, and read-before-write transaction ordering intact. |
-| `npm run typecheck` (`tsc --noEmit`) | `allbarka@0.0.0 typecheck` (zero diagnostics) | `0` | **VERIFIED:** Clean compilation across entire repository. |
-| `npm run lint:hooks` (`eslint src`) | `allbarka@0.0.0 lint:hooks` (zero warnings, zero errors) | `0` | **VERIFIED:** All React hook dependencies satisfied. |
-| `npm run build` | Full pipeline: write-build-info, Vite v6.4.3 bundle, esbuild server.cjs (868.6kb), release privacy audit (83 artifacts checked). | `0` | **VERIFIED:** Production assets and server bundle build without errors. |
-| `npm run test:admin` | **37 passed, 0 failed** | `0` | **VERIFIED:** Admin client, catalog, presentation, and operations intact. |
-| `npm run test:advanced` | **71 passed, 0 failed** | `0` | **VERIFIED:** Cart input, advanced tools, checkout reliability, and cart shipping intact. |
-| `npm run test:shipping` | **19 passed, 0 failed** | `0` | **VERIFIED:** Shipping policy, portion billing weights, hampers, and destination tariffs intact. |
-| `npm run test:backend` | **21 passed, 0 failed** | `0` | **VERIFIED:** Backend pricing, order validation, delivery slots, and n8n webhook safety intact. |
-| `npm run test:discovery` | **14 passed, 0 failed** | `0` | **VERIFIED:** Discovery, search, and catalog card rendering intact. |
+### C. Responsive Mobile Navigation Drawer (`src/components/MobileMenu.tsx`)
+- **Accessible Accordion**: Replaced squeezed multi-row headers with an accessible slide-out drawer featuring expandable accordion panels (`aria-expanded`, `aria-controls`).
+- **Compact Food Category Grid**: Quick-access 2-column food grid inside mobile menu.
+- **Strict Master Prompt Order**:
+  1. Patron Lounge / VIP Login & Store Updates
+  2. Shopping Bag with live item count & review link
+  3. Language selector (English, اردو, العربية)
+  4. Appearance mode selector (Light, Dark, Auto)
+  5. Collections & Occasions accordion + Compact food categories + Journal
+  6. Social links (WhatsApp, Instagram)
+- **Focus Trap & Scroll Lock**: Traps keyboard focus within drawer and acquires reference-counted body scroll lock.
 
 ---
 
-## 3. Firestore Emulator Status
+## 2. Test Execution & Verification Evidence
 
-- **Status:** **BLOCKED (Emulator / firebase-tools not installed in local environment)**
-- **Audit Findings:** Neither `firebase` CLI nor `firebase-tools` are installed in the local environment (`firebase: command not found`).
-- **Production Readiness Stance:** Production readiness is **NOT** claimed for live cloud Firestore mutations. Zero production writes have been performed, zero live database operations have been executed, and all pricing, catalog, and checkout guarantees are validated via in-memory transaction mocks enforcing strict read-before-write ordering, `{ merge: true }`, and `FieldValue.delete()`.
+All test suites, TypeScript compilation, React hook linter, production build, and real browser CDP interaction tests passed with zero errors:
 
----
-
-## 4. Files Modified in Stage 3 Review Fix
-
-1. `src/lib/packagingMoq.ts`: Added `getPackagingMoqDisplay` for safe unpriced rendering and removed `bidBoxConfig.emptyUnitStarting` fallback from `getPublishedPerPiecePrice`.
-2. `src/lib/bidBoxPricing.ts`: Removed invented bulk tiers, percentage discount multipliers, hardcoded badges, and stale `bidBoxConfig` price fallbacks; computes savings strictly from saved comparable prices.
-3. `src/data/products.ts`: Updated `createBidBoxProduct` to compute savings badges strictly from actual unit price savings.
-4. `src/lib/catalogSchema.ts`: Added `moqOverride` to `CatalogVariant` and `CatalogPricing`, added `validateMoqOverride` (`INVALID_MOQ_OVERRIDE`), preserved overrides across `validateCatalogPricing`, `pricingFromLegacy`, `readCatalogPricing`, `productFromPricing`, and `validateDynamicProduct`.
-5. `src/lib/catalogStore.ts`: Preserved product and variant `moqOverride` across `storedCatalogRecord`, `snapshotFromDocuments`, `updateCatalogPricing`, `getAdminProductRecord`, `createAdminProduct`, and `updateAdminProduct`; added transactional and idempotent `importReferenceProduct`.
-6. `src/lib/pricingImport.ts`: Added `extractEstablishedVariants` recognizing canonical `variants`, preserved distinct multi-variant merchant prices on re-import, and rejected contradictory import inputs (`CONTRADICTORY_IMPORT_INPUT`).
-7. `src/lib/catalogRouter.ts`: Added `POST /api/admin/catalog/import` and `POST /api/admin/catalog/products/:productId/import` endpoints.
-8. `src/components/ProductCard.tsx`, `src/pages/ProductDetailPage.tsx`, `src/components/CustomQuoteModal.tsx`: Safe rendering and inquiry handling for unpriced (`prices: {}`) packaging products and dynamic Bid Box tier display without invented discounts.
-9. `src/components/AdminCatalogPricingEditor.tsx`, `src/components/AdminProductCreateModal.tsx`, `src/components/AdminProductEditModal.tsx`: Added admin inputs and Clear buttons for product and per-variant MOQ overrides.
-10. `tests/stage3-pricing-moq.test.ts`: Added 6 comprehensive regression tests for Defects 1–4 (total 19/19 passing).
-11. `docs/RENOVATION_REQUIREMENTS.md` & `docs/RENOVATION_HANDOFF.md`: Updated documentation to v3.1.0.
+| Suite / Check | Command | Actual Output / Result | Exit Code | Evaluation & Coverage Notes |
+| :--- | :--- | :--- | :---: | :--- |
+| **Stage 4 Navigation Unit Tests** | `node --import tsx --test --test-isolation=none tests/stage4-navigation.test.tsx` | **5 passed, 0 failed** (57.6s) | `0` | **VERIFIED:** Main row 5 items, compact food row 6 items, Corporate under Gifting, ARIA disclosure attributes, mobile accordion, RTL dir="rtl", and category aliases. |
+| **Real Browser CDP Interaction Tests** | `node scripts/test-active-navigation.mjs` | **17 passed, 0 failed** (13.2s) | `0` | **VERIFIED:** Headless Chrome CDP execution testing two-level header presence (Height 127px), dropdown hover open, diagonal pointer bridge transit, viewport clipping checks, outside click close, Enter key toggle, Escape focus restoration, compact food route navigation (`/shop/dates`), dropdown item route navigation (`/shop/celebration-boxes`), RTL language switch (`dir="rtl"`), dark mode toggle, mobile touch tap on hamburger, mobile touch tap on accordion (`Gifts & Hampers`), and mobile touch tap navigation to `/wholesale`. |
+| **Catalog Expansion Regression** | `node --import tsx --test --test-isolation=none tests/catalog-expansion.test.ts` | **8 passed, 0 failed** (255ms) | `0` | **VERIFIED:** Original 32 + 57 new + 8 Bid Boxes = 97 products total; canonical category counts verified; photos, portions, weights intact. |
+| **Catalog Categories Regression** | `node --import tsx --test --test-isolation=none tests/catalog-categories.test.tsx` | **6 passed, 0 failed** (48.7s) | `0` | **VERIFIED:** Canonical categories, gift/deal aliases, multilingual labels, discovery filtering, and corporate gifting constraints intact. |
+| **TypeScript Typecheck** | `npm run typecheck` (`tsc --noEmit`) | `allbarka@0.0.0 typecheck` (zero diagnostics) | `0` | **VERIFIED:** 100% type safety across the entire repository. |
+| **React Hook Linter** | `npm run lint:hooks` (`eslint src`) | `allbarka@0.0.0 lint:hooks` (zero warnings, zero errors) | `0` | **VERIFIED:** All hook dependency arrays and rules satisfied. |
+| **Production Build Pipeline** | `npm run build` | Full pipeline: Vite v6.4.3 client bundle (11.17s) + esbuild server.cjs (868.6kb) + Release privacy audit (83 text artifacts clean). | `0` | **VERIFIED:** Production assets and server bundle built cleanly. |
 
 ---
 
-## 5. Scope Boundary & Stopping Gate
+## 3. Real Browser Interaction & Screenshot Evidence
 
-**STOPPING POINT:** Execution is halted at the Stage 3 completion gate. We have NOT begun Stage 4, merged to `launch`/`main`, deployed, or written production data. Awaiting explicit user review and authorization before proceeding to Stage 4.
+Real headless Chrome CDP interaction tests produced the following visual artifacts in the conversation artifact directory:
+
+| Screenshot Artifact | Description & Verified Visual Criteria |
+| :--- | :--- |
+| **`stage4_desktop_dropdown.png`** | Desktop two-level header with Shop dropdown open. Continuous pointer bridge active, zero clipping, correct luxury cream palette, dark green accent, search icon, custom hamper button, and theme toggle. |
+| **`stage4_desktop_light.png`** | Desktop header in light mode with "GIFTS & HAMPERS" having keyboard focus ring outline immediately after Escape key restored focus from closed panel. |
+| **`stage4_desktop_rtl.png`** | Desktop header under Urdu locale (`ur`). Header root set to `dir="rtl"`, mirrored layout (logo on right, utility controls on left, mirrored navigation order `شاپ`, `تحائف اور ہیمپر`, `تقریبات کے ڈبے`, `مواقع و تقریبات`, `خصوصی ڈیلز`), and active gold indicator under `کھجوریں` (`/shop/dates`). |
+| **`stage4_desktop_dark.png`** | Desktop header under Dark theme. High contrast luxury dark styling (`#1A201E`), gold borders, crisp typography. |
+| **`stage4_mobile_drawer.png`** | Mobile viewport (390x844). Slide-out navigation drawer with Patron lounge, Shopping bag, Language switcher, Theme buttons, and "OUR COLLECTIONS" accessible accordion with "GIFTS & HAMPERS" expanded showing Corporate & Bulk Gifting. |
+
+---
+
+## 4. Technical Diagnoses & Explanation of Test Edits
+
+### A. Diagnosis of Hanging Test Process
+- **Root Cause**: On Windows PowerShell, executing test commands via `npx` (e.g. `npx tsx tests/stage4-navigation.test.tsx`) invokes the `npx.cmd` batch wrapper. `npx` handles stdio differently and checks terminal interactivity, which blocks when executed as a background process awaiting stdin. Furthermore, compiling the entire React 19, Motion, and Lucide tree into `node:test` takes ~45-55s on initial pass.
+- **Resolution**: Ran tests using the repo's native runner command `node --import tsx --test --test-isolation=none tests/stage4-navigation.test.tsx`. This avoids shell wrapper blocking and executes directly with clean exit codes. All duplicate node processes were confirmed terminated.
+
+### B. Explanation of `tests/catalog-expansion.test.ts` Edit
+- **Before**: Line 53 asserted `CATALOG_COUNTS` as `{ nuts: 22, 'gift-boxes': 10, ... }`.
+- **Underlying Reason**: In commit `0ebc652`, the 8 newly introduced customizable Bid Boxes were assigned canonical `category: 'celebration-boxes'` (bringing the catalog to 97 products: 22 nuts + 2 gift boxes + 8 celebration boxes + 13 snacks/seeds + 15 oils + 5 essentials + 19 herbs/spices + 13 bundles = 97).
+- **After**: Updated assertion to `{ nuts: 22, 'gift-boxes': 2, 'celebration-boxes': 8, ... }`. Assertions were strictly preserved without weakening: all 97 products are accounted for in their exact canonical categories.
+
+### C. Explanation of `tests/stage4-navigation.test.tsx` Edit
+- **Underlying Reason**: In `src/config/categories.ts`, `'dry-fruits'` is directly present in `CANONICAL_CATEGORIES` (mapped to `FOOD_CATEGORIES['dry-fruits']`). `resolveCategorySlug('dry-fruits')` checks `CANONICAL_CATEGORIES` first and returns `'dry-fruits'`. The alias `CATEGORY_ALIASES['fruits'] = 'nuts'` applies only to legacy slug `'fruits'`.
+- **Preserved Assertions**: Corrected the test to assert `resolveCategorySlug('dry-fruits') === 'dry-fruits'`, and added an explicit assertion `resolveCategorySlug('fruits') === 'nuts'` to verify the alias path. Zero checks were suppressed.
+
+---
+
+## 5. Outstanding Release Gates & Limitations
+
+1. **Firestore Emulator**:
+   - **Status**: **BLOCKED (Offline / Not installed in local workspace)**.
+   - **Release Policy**: Production readiness is **NOT** claimed for live cloud Firestore mutations. Zero production database writes, zero live deployments, and zero merges to `launch` or `main` have occurred. All data model integrity and transaction ordering guarantees remain verified through shared in-memory transaction test mocks.
+2. **Stage 5 Dependencies**:
+   - Navigation links to `/shop/celebration-boxes`, `/wholesale`, and `/shop/deals` currently mount through existing category routing with canonical aliases (`gift-boxes`, `/wholesale`). Dedicated Stage 5 pages (`CelebrationBoxesPage.tsx`, `DealsPage.tsx`, `OccasionPage.tsx`) will be introduced in Stage 5 without breaking existing URLs or product links.
+
+---
+
+## 6. Changed Files Summary
+
+- `src/config/navigation.ts` (CREATED): Shared authoritative navigation configuration for desktop and mobile.
+- `src/components/BubbleMenu.tsx` (MODIFIED): Two-level header, pointer bridge, 220ms cancelable debounce, keyboard/Escape focus restoration.
+- `src/components/MobileMenu.tsx` (MODIFIED): Mobile accordion, compact food category grid, Corporate & Bulk under Gifting.
+- `src/layouts/RootLayout.tsx` (MODIFIED): Header RTL binding, search button shortcut, active navigation derivation.
+- `src/config/categories.ts` (MODIFIED): Category aliases for `celebration-boxes` and `celebration-box`.
+- `src/contexts/catalogTranslations.ts` (MODIFIED): Multilingual strings for all navigation items in `en`, `ur`, and `ar`.
+- `tests/stage4-navigation.test.tsx` (CREATED): Unit test suite for two-level header taxonomy, disclosure, mobile drawer, RTL, and aliases.
+- `scripts/test-active-navigation.mjs` (CREATED/ENHANCED): Automated headless Chrome CDP interaction test suite and screenshot generator.
+- `tests/catalog-expansion.test.ts` (MODIFIED): Explicit canonical category counts matching 97 products.
+- `docs/RENOVATION_REQUIREMENTS.md` (MODIFIED): Updated REQ-S4-001 through REQ-S4-005 to VERIFIED.
+- `docs/RENOVATION_HANDOFF.md` (MODIFIED): Updated to v4.0.0.
+
+---
+
+## 7. Scope Boundary & Stopping Gate
+
+**STOPPING POINT:** Development and verification are strictly halted at the Stage 4 completion gate.
+- **DO NOT** begin Stage 5 (no homepage or collection-page redesigns).
+- **DO NOT** merge `feat/renovation-v2` into `launch` or `main`.
+- **DO NOT** deploy to production or write live database records.
+- Awaiting explicit user review and authorization.

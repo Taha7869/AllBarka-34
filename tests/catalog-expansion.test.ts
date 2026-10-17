@@ -51,7 +51,7 @@ test('73 requested entries expand the original 32 into 97 unique products includ
   assert.equal(PRODUCTS.length, 97);
   assert.equal(new Set(PRODUCTS.map(product => product.id)).size, PRODUCTS.length);
   assert.deepEqual(CATALOG_COUNTS, {
-    nuts: 22, 'gift-boxes': 10, 'snacks-seeds': 13, oils: 15,
+    nuts: 22, 'gift-boxes': 2, 'celebration-boxes': 8, 'snacks-seeds': 13, oils: 15,
     essentials: 5, 'herbs-spices': 19, bundles: 13,
   });
 });

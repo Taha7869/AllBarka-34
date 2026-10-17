@@ -168,6 +168,8 @@ export const CATEGORY_ALIASES: Record<string, string> = {
   'bid-boxes': 'gift-boxes',
   'favor-boxes': 'gift-boxes',
   favors: 'gift-boxes',
+  'celebration-boxes': 'gift-boxes',
+  'celebration-box': 'gift-boxes',
   oil: 'oils',
   'cold-pressed': 'oils',
   tail: 'oils',

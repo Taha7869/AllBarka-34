@@ -32,7 +32,7 @@ import CustomHamperBuilderModal from '../components/CustomHamperBuilderModal';
 import StoreUpdatesDialog from '../components/StoreUpdatesDialog';
 
 import LahoreExpressTimer from '../components/LahoreExpressTimer';
-import { Menu, X, ShoppingBag, User, Gift, Languages, ChevronDown } from 'lucide-react';
+import { Menu, X, ShoppingBag, User, Gift, Languages, ChevronDown, Search } from 'lucide-react';
 import { AllBarkaHeaderLogo } from '../components/AllBarkaLogo';
 import MobileHeaderBrand from '../components/MobileHeaderBrand';
 import Breadcrumbs from '../components/Breadcrumbs';
@@ -50,7 +50,7 @@ export default function RootLayout() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin/');
   const { currentUser, patronProfile, logout } = useAuth();
-  const { language, setLanguage, t } = useLanguage();
+  const { language, setLanguage, isRtl, t } = useLanguage();
   
   const mobileMenuTriggerRef = React.useRef<HTMLButtonElement>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -61,13 +61,15 @@ export default function RootLayout() {
 
   // Derive active navigation state from actual route
   const activeNavItem = React.useMemo(() => {
-    if (location.pathname === '/') return 'Home';
-    if (location.pathname.startsWith('/shop/combos') || location.pathname.startsWith('/gifting')) return 'Gift Boxes';
-    if (location.pathname === '/shop/herbs-spices' || location.pathname === '/category/herbs-spices') return 'Herbs & Spices';
-    if (location.pathname.startsWith('/shop') || location.pathname.startsWith('/product') || location.pathname.startsWith('/category') || location.pathname.startsWith('/wholesale')) return 'Shop';
-    if (location.pathname.startsWith('/journal')) return 'Journal';
-    if (location.pathname.startsWith('/pages/contact') || location.pathname === '/contact') return 'Contact';
-    return 'Home';
+    if (location.pathname === '/') return 'home';
+    if (location.pathname.startsWith('/shop/celebration-boxes')) return 'celebration-boxes';
+    if (location.pathname.startsWith('/shop/deals') || location.pathname.startsWith('/shop/bundles')) return 'deals';
+    if (location.pathname.startsWith('/shop/combos') || location.pathname.startsWith('/gifting')) return 'gifting';
+    if (location.pathname === '/shop/herbs-spices' || location.pathname === '/category/herbs-spices') return 'herbs-spices';
+    if (location.pathname.startsWith('/shop') || location.pathname.startsWith('/product') || location.pathname.startsWith('/category') || location.pathname.startsWith('/wholesale')) return 'shop';
+    if (location.pathname.startsWith('/journal')) return 'journal';
+    if (location.pathname.startsWith('/pages/contact') || location.pathname === '/contact') return 'contact';
+    return 'home';
   }, [location.pathname]);
 
   // Modals state
@@ -91,13 +93,16 @@ export default function RootLayout() {
     };
     const handleOpenLounge = () => setPatronLoungeOpen(true);
     const handleOpenUpdates = () => setUpdatesOpen(true);
+    const handleOpenHamper = () => setHamperModalOpen(true);
     window.addEventListener('open-auth-modal', handleOpenAuth);
     window.addEventListener('open-patron-lounge', handleOpenLounge);
     window.addEventListener('open-store-updates', handleOpenUpdates);
+    window.addEventListener('open-hamper-builder', handleOpenHamper);
     return () => {
       window.removeEventListener('open-auth-modal', handleOpenAuth);
       window.removeEventListener('open-patron-lounge', handleOpenLounge);
       window.removeEventListener('open-store-updates', handleOpenUpdates);
+      window.removeEventListener('open-hamper-builder', handleOpenHamper);
     };
   }, []);
   
@@ -230,17 +235,17 @@ export default function RootLayout() {
       {/* Header Navigation */}
       <header 
         id="main-navigation-header"
-        dir="ltr"
+        dir={isRtl ? 'rtl' : 'ltr'}
         className={`sticky top-0 left-0 right-0 z-[100] w-full transition-all duration-300 ${
           isScrolled 
-            ? 'h-[60px] sm:h-[68px] bg-[var(--color-surface)]/85 dark:bg-[var(--color-base)]/85 backdrop-blur-xl shadow-[var(--shadow-card)] border-b border-[var(--color-border)]'
-            : 'h-[68px] sm:h-20 bg-[var(--color-base)]/95 dark:bg-[var(--color-base)]/95 backdrop-blur-md shadow-none border-b border-transparent'
+            ? 'py-2 bg-[var(--color-surface)]/90 dark:bg-[var(--color-base)]/90 backdrop-blur-xl shadow-[var(--shadow-card)] border-b border-[var(--color-border)]'
+            : 'py-2.5 sm:py-3 bg-[var(--color-base)]/95 dark:bg-[var(--color-base)]/95 backdrop-blur-md shadow-none border-b border-transparent'
         }`}
       >
         {!online && <div role="status" className="fixed inset-x-0 top-0 z-[20000] border-b border-[#c7982f] bg-[#092e23] px-4 py-2 text-center text-xs text-[#fff8e9]">{t('checkout.offline')}</div>}
       {!isAdminRoute && <ScrollProgressBar showGlow={false} />}
-        <div className="w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 h-full flex flex-col justify-center">
-          <div className="flex justify-between items-center gap-2 sm:gap-4 w-full h-full">
+        <div className="w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 flex flex-col justify-center">
+          <div className="flex justify-between items-center gap-2 sm:gap-4 w-full">
             
             {/* Leading Brand Mark: Desktop shows full logo, Mobile shows crest + animated intro */}
             <div className="flex items-center shrink-0">
@@ -258,7 +263,7 @@ export default function RootLayout() {
             </div>
             
             {/* Center Navigation (Desktop Only) */}
-            <div className="hidden xl:flex flex-1 justify-center px-4">
+            <div className="hidden lg:flex flex-1 justify-center px-2">
               <BubbleMenu 
                 activeItem={activeNavItem} 
                 onItemClick={(item) => navigate(item.path)} 
@@ -267,6 +272,26 @@ export default function RootLayout() {
 
             {/* Trailing Utility Controls */}
             <div className="flex items-center gap-1.5 sm:gap-3 justify-end shrink-0">
+              {/* Search button */}
+              <button
+                id="header-search-btn"
+                type="button"
+                onClick={() => {
+                  const search = document.querySelector<HTMLInputElement>('#hero-search-input, #category-plp-container input[type="search"]');
+                  if (search) {
+                    search.focus();
+                    search.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                  } else {
+                    navigate('/shop');
+                  }
+                }}
+                className="min-w-[40px] min-h-[40px] rounded-xl flex items-center justify-center transition-all duration-200 border border-[#29231D]/10 dark:border-[#C7982F]/25 bg-[#F6F1EA]/60 dark:bg-[#1A201E]/60 hover:bg-[#C7982F]/15 text-[#042821] dark:text-[#FFFCF7] focus-ring cursor-pointer"
+                aria-label={t('nav.search', 'Search catalogue')}
+                title={t('nav.search', 'Search catalogue')}
+              >
+                <Search size={16} className="text-[#C7982F]" />
+              </button>
+
               {/* Custom Gift Hamper Builder Button */}
               <button
                 type="button"
@@ -275,7 +300,7 @@ export default function RootLayout() {
                 aria-label={t('nav.customHamper')}
               >
                 <Gift size={15} className="text-[#C7982F]" />
-                <span className="hidden lg:inline">{t('nav.customHamper')}</span>
+                <span className="hidden xl:inline">{t('nav.customHamper')}</span>
               </button>
 
               {/* Language selector (Desktop only; mobile uses MobileMenu) */}
