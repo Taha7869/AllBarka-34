@@ -81,40 +81,67 @@ export function parsePiecesPerPack(variantLabel: string | undefined | null): num
  */
 export function getPublishedPerPiecePrice(product: Product, variantLabel?: string): number | null {
   const prices = product.prices || {};
-
-  if (variantLabel && Object.hasOwn(prices, variantLabel)) {
-    const packPrice = prices[variantLabel];
-    if (!Number.isFinite(packPrice) || packPrice <= 0) return null;
-    const pieces = parsePiecesPerPack(variantLabel);
-    return Math.round((packPrice / pieces) * 100) / 100;
-  }
-
-  // Search variants array if available
-  if (Array.isArray(product.variants) && variantLabel) {
-    const v = product.variants.find((item: any) => item.label === variantLabel);
-    if (v && Number.isFinite(v.price) && v.price > 0 && v.available !== false) {
-      const pieces = parsePiecesPerPack(variantLabel);
-      return Math.round((v.price / pieces) * 100) / 100;
+  const disabledLabels = new Set<string>();
+  if (Array.isArray(product.variants)) {
+    for (const v of product.variants) {
+      if (v && typeof v.label === 'string' && v.available === false) {
+        disabledLabels.add(v.label);
+      }
     }
   }
 
-  // Fallback: look for 1 pc variant or starting unit price
-  if (prices['Empty Box (1 pc)'] && Number.isFinite(prices['Empty Box (1 pc)']) && prices['Empty Box (1 pc)'] > 0) {
+  if (variantLabel) {
+    if (disabledLabels.has(variantLabel)) {
+      return null;
+    }
+    if (Object.hasOwn(prices, variantLabel)) {
+      const packPrice = prices[variantLabel];
+      if (!Number.isFinite(packPrice) || packPrice <= 0) return null;
+      const pieces = parsePiecesPerPack(variantLabel);
+      return Math.round((packPrice / pieces) * 100) / 100;
+    }
+    if (Array.isArray(product.variants)) {
+      const v = product.variants.find((item: any) => item.label === variantLabel);
+      if (v && Number.isFinite(v.price) && v.price > 0 && v.available !== false) {
+        const pieces = parsePiecesPerPack(variantLabel);
+        return Math.round((v.price / pieces) * 100) / 100;
+      }
+    }
+    return null;
+  }
+
+  // Fallback when no specific variantLabel is requested: look for available 1 pc variant first
+  if (
+    !disabledLabels.has('Empty Box (1 pc)') &&
+    prices['Empty Box (1 pc)'] &&
+    Number.isFinite(prices['Empty Box (1 pc)']) &&
+    prices['Empty Box (1 pc)'] > 0
+  ) {
     return prices['Empty Box (1 pc)'];
   }
 
-  if (product.bidBoxConfig?.emptyUnitStarting && Number.isFinite(product.bidBoxConfig.emptyUnitStarting) && product.bidBoxConfig.emptyUnitStarting > 0) {
-    return product.bidBoxConfig.emptyUnitStarting;
-  }
-
-  // Use the minimum per-piece price across available variants
+  // Use the minimum per-piece price across explicitly saved, available variants
   let minPiecePrice: number | null = null;
   for (const [label, price] of Object.entries(prices)) {
+    if (disabledLabels.has(label)) continue;
     if (Number.isFinite(price) && price > 0) {
       const pieces = parsePiecesPerPack(label);
       const piecePrice = price / pieces;
       if (minPiecePrice === null || piecePrice < minPiecePrice) {
         minPiecePrice = piecePrice;
+      }
+    }
+  }
+
+  if (minPiecePrice === null && Array.isArray(product.variants)) {
+    for (const v of product.variants) {
+      if (!v || v.available === false || typeof v.label !== 'string') continue;
+      if (Number.isFinite(v.price) && v.price > 0) {
+        const pieces = parsePiecesPerPack(v.label);
+        const piecePrice = v.price / pieces;
+        if (minPiecePrice === null || piecePrice < minPiecePrice) {
+          minPiecePrice = piecePrice;
+        }
       }
     }
   }
@@ -185,6 +212,29 @@ export function calculateMinOrderQuantityUnits(product: Product, variantLabel?: 
   const piecesPerPack = parsePiecesPerPack(variantLabel);
 
   return Math.max(1, Math.ceil(moqPieces / piecesPerPack));
+}
+
+/**
+ * Safe, non-throwing MOQ resolver for UI rendering (ProductCard, ProductDetailPage).
+ * Returns `{ moqPieces: null, minUnits: null }` for unpriced/inquiry-only packaging products
+ * that have neither an explicit MOQ override nor a positive published price.
+ */
+export function getPackagingMoqDisplay(
+  product: Product,
+  variantLabel?: string
+): { moqPieces: number | null; minUnits: number | null } {
+  if (!isPackagingProduct(product)) {
+    return { moqPieces: 1, minUnits: 1 };
+  }
+
+  try {
+    const moqPieces = calculatePackagingMoq(product, variantLabel);
+    const piecesPerPack = parsePiecesPerPack(variantLabel);
+    const minUnits = Math.max(1, Math.ceil(moqPieces / piecesPerPack));
+    return { moqPieces, minUnits };
+  } catch {
+    return { moqPieces: null, minUnits: null };
+  }
 }
 
 /**

@@ -7,79 +7,138 @@
  */
 
 import type { Product, BidBoxConfig, BidBoxBulkTier, BidBoxFilledOption } from '../types';
+import { parsePiecesPerPack } from './packagingMoq';
 
 export function resolveBidBoxConfig(product: Product): BidBoxConfig | undefined {
-  if (!product.isBidBox && product.category !== 'celebration-boxes') {
+  if (!product.isBidBox && product.category !== 'celebration-boxes' && product.productFamily !== 'bid-box') {
     return product.bidBoxConfig;
   }
 
-  const existingConfig = product.bidBoxConfig || {} as Partial<BidBoxConfig>;
-  const prices = product.prices || {};
+  const existingConfig = (product.bidBoxConfig || {}) as Partial<BidBoxConfig>;
+  const rawPrices = product.prices || {};
 
-  // 1. Resolve unit piece prices from canonical prices
-  const unit1Price = prices['Empty Box (1 pc)']
-    ?? (prices['Empty Pack (10 pcs)'] ? Math.round(prices['Empty Pack (10 pcs)'] / 10) : undefined)
-    ?? (prices['Empty Pack (25 pcs)'] ? Math.round(prices['Empty Pack (25 pcs)'] / 25) : undefined)
-    ?? (prices['Empty Bulk (50 pcs)'] ? Math.round(prices['Empty Bulk (50 pcs)'] / 50) : undefined)
-    ?? existingConfig.emptyUnitStarting
-    ?? 0;
+  // Identify any explicitly disabled variants from product.variants
+  const disabledLabels = new Set<string>();
+  if (Array.isArray(product.variants)) {
+    for (const v of product.variants) {
+      if (v && typeof v.label === 'string' && v.available === false) {
+        disabledLabels.add(v.label);
+      }
+    }
+  }
 
-  const pack10Price = prices['Empty Pack (10 pcs)'] ?? (unit1Price * 10);
-  const unit10Price = Math.round(pack10Price / 10);
+  // Collect only explicitly saved, available, positively priced variants
+  const availablePrices = new Map<string, number>();
+  for (const [label, price] of Object.entries(rawPrices)) {
+    if (disabledLabels.has(label)) continue;
+    if (typeof price === 'number' && Number.isFinite(price) && price > 0) {
+      availablePrices.set(label, price);
+    }
+  }
 
-  const pack25Price = prices['Empty Pack (25 pcs)'] ?? (Math.round((unit1Price * 0.95)) * 25);
-  const unit25Price = Math.round(pack25Price / 25);
+  if (availablePrices.size === 0 && Array.isArray(product.variants)) {
+    for (const v of product.variants) {
+      if (!v || v.available === false || typeof v.label !== 'string') continue;
+      if (typeof v.price === 'number' && Number.isFinite(v.price) && v.price > 0) {
+        availablePrices.set(v.label, v.price);
+      }
+    }
+  }
 
-  const pack50Price = prices['Empty Bulk (50 pcs)'] ?? (Math.round((unit1Price * 0.90)) * 50);
-  const unit50Price = Math.round(pack50Price / 50);
+  // 1. Resolve empty box / pack variants strictly from saved available variants
+  interface ParsedEmptyVariant {
+    variantKey: string;
+    qty: number;
+    packPrice: number;
+    unitPrice: number;
+  }
 
-  const pack100Price = prices['Empty Bulk (100 pcs)'] ?? (Math.round((unit1Price * 0.82)) * 100);
-  const unit100Price = Math.round(pack100Price / 100);
+  const emptyVariants: ParsedEmptyVariant[] = [];
+  const filledEntries: Array<[string, number]> = [];
 
-  const emptyUnitStarting = prices['Empty Box (1 pc)']
-    ?? (prices['Empty Pack (10 pcs)'] ? unit10Price : undefined)
-    ?? (prices['Empty Pack (25 pcs)'] ? unit25Price : undefined)
-    ?? (prices['Empty Bulk (50 pcs)'] ? unit50Price : undefined)
-    ?? unit1Price;
+  const existingFilledMap = new Map<string, BidBoxFilledOption>();
+  if (Array.isArray(existingConfig.filledOptions)) {
+    for (const opt of existingConfig.filledOptions) {
+      if (opt && typeof opt.variantKey === 'string') {
+        existingFilledMap.set(opt.variantKey, opt);
+      }
+    }
+  }
 
-  // 2. Resolve filled options dynamically from non-empty variant keys
-  const filledVariants = Object.entries(prices).filter(([key, val]) =>
-    !key.toLowerCase().startsWith('empty') && Number.isFinite(val) && val > 0
-  );
+  for (const [label, price] of availablePrices.entries()) {
+    const trimmed = label.trim();
+    const isFilledLabel =
+      !/^empty\b/i.test(trimmed) &&
+      (/\bfilled\b|\bassorted\b|\bwith\s+dry\s+fruits\b/i.test(trimmed) || existingFilledMap.has(label));
+    if (!isFilledLabel) {
+      const qty = parsePiecesPerPack(label);
+      const unitPrice = Math.round((price / qty) * 100) / 100;
+      emptyVariants.push({
+        variantKey: label,
+        qty,
+        packPrice: price,
+        unitPrice: Number.isInteger(unitPrice) ? unitPrice : Math.round(unitPrice),
+      });
+    } else {
+      filledEntries.push([label, price]);
+    }
+  }
 
-  let filledMin = existingConfig.filledMin || 0;
-  let filledMax = existingConfig.filledMax || 0;
+  emptyVariants.sort((a, b) => a.qty - b.qty || a.packPrice - b.packPrice);
 
-  if (filledVariants.length > 0) {
-    const sortedPrices = filledVariants.map(([, p]) => p).sort((a, b) => a - b);
+  const baselineUnitPrice = emptyVariants.length > 0 ? emptyVariants[0].unitPrice : undefined;
+  const emptyUnitStarting = baselineUnitPrice;
+
+  const empty50 = emptyVariants.find(v => v.qty === 50);
+  const empty100 = emptyVariants.find(v => v.qty === 100);
+  const emptyBulk50Unit = empty50 ? empty50.unitPrice : undefined;
+  const emptyBulk100Unit = empty100 ? empty100.unitPrice : undefined;
+
+  // Build emptyTiers only from actually saved multi-piece empty pack variants (never invent tiers)
+  const emptyTiers: BidBoxBulkTier[] = emptyVariants
+    .filter(v => v.qty > 1)
+    .map(v => {
+      const savingsPct =
+        baselineUnitPrice !== undefined && baselineUnitPrice > 0 && v.unitPrice < baselineUnitPrice
+          ? Math.round(((baselineUnitPrice - v.unitPrice) / baselineUnitPrice) * 100)
+          : 0;
+      const discountBadge = savingsPct > 0 ? `-${savingsPct}%` : undefined;
+      const qtyLabel = v.qty >= 100 ? `${v.qty}+ pcs` : `${v.qty} pcs`;
+      const label = discountBadge ? `${qtyLabel} (${discountBadge})` : qtyLabel;
+
+      return {
+        qty: v.qty,
+        label,
+        ...(discountBadge ? { discountBadge } : {}),
+        unitPrice: v.unitPrice,
+        packPrice: v.packPrice,
+        variantKey: v.variantKey,
+      };
+    });
+
+  // 2. Resolve filled options strictly from saved available non-empty variants
+  const filledOptions: BidBoxFilledOption[] = filledEntries.map(([key, price]) => {
+    const existingOpt = existingFilledMap.get(key);
+    return {
+      label: existingOpt?.label || key,
+      subtitle: existingOpt?.subtitle || existingConfig.filledSummary || 'AllBarka Dry Fruits & Dates Assortment',
+      price,
+      variantKey: key,
+    };
+  });
+
+  let filledMin: number | undefined = undefined;
+  let filledMax: number | undefined = undefined;
+  if (filledOptions.length > 0) {
+    const sortedPrices = filledOptions.map(o => o.price).sort((a, b) => a - b);
     filledMin = sortedPrices[0];
     filledMax = sortedPrices[sortedPrices.length - 1];
   }
 
-  const emptyTiers: BidBoxBulkTier[] = [
-    { qty: 10, label: '10 pcs', unitPrice: unit10Price, packPrice: pack10Price, variantKey: 'Empty Pack (10 pcs)' },
-    { qty: 25, label: '25 pcs', discountBadge: '-5%', unitPrice: unit25Price, packPrice: pack25Price, variantKey: 'Empty Pack (25 pcs)' },
-    { qty: 50, label: '50 pcs (-10%)', discountBadge: '-10%', unitPrice: unit50Price, packPrice: pack50Price, variantKey: 'Empty Bulk (50 pcs)' },
-    { qty: 100, label: '100+ pcs (-18%)', discountBadge: '-18%', unitPrice: unit100Price, packPrice: pack100Price, variantKey: 'Empty Bulk (100 pcs)' },
-  ];
-
-  const filledOptions: BidBoxFilledOption[] = existingConfig.filledOptions && existingConfig.filledOptions.length > 0
-    ? existingConfig.filledOptions.map(opt => ({
-        ...opt,
-        price: prices[opt.variantKey] ?? opt.price,
-      }))
-    : filledVariants.map(([key, price]) => ({
-        label: key,
-        subtitle: existingConfig.filledSummary || 'AllBarka Dry Fruits & Dates Assortment',
-        price,
-        variantKey: key,
-      }));
-
   return {
-    ...existingConfig,
     emptyUnitStarting,
-    emptyBulk50Unit: unit50Price,
-    emptyBulk100Unit: unit100Price,
+    emptyBulk50Unit,
+    emptyBulk100Unit,
     filledMin,
     filledMax,
     filledSummary: existingConfig.filledSummary || 'Irani & Panjgur Dates with Roasted Nuts',
@@ -91,3 +150,4 @@ export function resolveBidBoxConfig(product: Product): BidBoxConfig | undefined 
     filledOptionDetails: existingConfig.filledOptionDetails,
   };
 }
+

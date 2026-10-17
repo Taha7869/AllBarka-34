@@ -9,16 +9,19 @@ import {
   productFromPricing,
   unavailableProduct,
   validateCatalogPricing,
+  validateMoqOverride,
   dynamicProductFromDocument,
   validateDynamicProduct,
   validateMerchandisingSettings,
   catalogVariantId,
   type CatalogRecord,
-  type CatalogVariant
+  type CatalogVariant,
+  type CatalogPricing
 } from './catalogSchema';
 import { resolveCartIdentity } from './cartInput';
 import { CUSTOM_HAMPER_PRODUCT_ID, HAMPER_SELECTION_IDS, type HamperBox } from './hamperCatalog';
 import { HAMPER_BOX_SEEDS, validateHamperBoxPricing, boxFromPricing, type HamperBoxRecord } from './hamperBoxSchema';
+import { applyReferenceImportPricing, type ReferencePricingResult } from './pricingImport';
 
 export const CATALOG_CACHE_MS = 15_000;
 export const CATALOG_COLLECTION = 'products';
@@ -37,38 +40,54 @@ export function storedCatalogRecord(productId: string, value: unknown): CatalogR
       // Canonical schemaVersion: 1 documents are authoritative directly
       if ((value as any).schemaVersion === 1 && Array.isArray((value as any).variants)) {
         const raw = value as any;
+        const rawProdMoq =
+          raw.moqOverride !== undefined
+            ? raw.moqOverride
+            : raw.minOrderQuantity !== undefined
+              ? raw.minOrderQuantity
+              : prod.moqOverride;
         const normalizedPricing = {
           schemaVersion: 1 as const,
           productId,
           revision: Number(raw.revision) || 0,
           active: typeof raw.active === 'boolean' ? raw.active : (prod.active !== false && prod.status !== 'archived'),
           quoteOnly: typeof raw.quoteOnly === 'boolean' ? raw.quoteOnly : Boolean(prod.quoteOnly),
-          variants: raw.variants.map((v: any) => ({
-            id: v.id === catalogVariantId(v.label) ? v.id : catalogVariantId(v.label),
-            label: v.label,
-            price: Math.round(Number(v.price)),
-            available: v.available !== false,
-            weightGrams: Number.isSafeInteger(v.weightGrams) ? v.weightGrams : null,
-          })),
+          variants: raw.variants.map((v: any) => {
+            const varMoq = v?.moqOverride !== undefined ? v.moqOverride : v?.minOrderQuantity;
+            return {
+              id: v.id === catalogVariantId(v.label) ? v.id : catalogVariantId(v.label),
+              label: v.label,
+              price: Math.round(Number(v.price)),
+              available: v.available !== false,
+              weightGrams: Number.isSafeInteger(v.weightGrams) ? v.weightGrams : null,
+              ...(varMoq !== undefined ? { moqOverride: varMoq } : {}),
+            };
+          }),
           wholesale: Number.isSafeInteger(raw.wholesale) ? raw.wholesale : (prod.wholesale || 0),
           pricePer100g: Number.isSafeInteger(raw.pricePer100g) ? raw.pricePer100g : (prod.pricePer100g || 0),
           allowCustomWeight: typeof raw.allowCustomWeight === 'boolean' ? raw.allowCustomWeight : Boolean(prod.allowCustomWeight),
           minCustomWeightG: Number.isSafeInteger(raw.minCustomWeightG) ? raw.minCustomWeightG : (prod.minCustomWeightG || 100),
           maxCustomWeightG: Number.isSafeInteger(raw.maxCustomWeightG) ? raw.maxCustomWeightG : (prod.maxCustomWeightG || 5000),
           shippingWeightG: raw.shippingWeightG ?? prod.shippingWeightG ?? null,
+          ...(rawProdMoq !== undefined ? { moqOverride: rawProdMoq } : {}),
         };
         const pricing = validateCatalogPricing(normalizedPricing, prod);
         const updatedAt = typeof raw.updatedAt === 'string' ? raw.updatedAt : null;
         return { pricing, version: fingerprint(pricing), updatedAt };
       }
       const variants = Array.isArray((value as any).variants)
-        ? (value as any).variants.map((v: any) => ({
-            id: v.id || catalogVariantId(v.label),
-            label: v.label,
-            price: Math.round(Number(v.price)),
-            available: v.available !== false,
-            weightGrams: v.weightGrams ?? null,
-          }))
+        ? (value as any).variants.map((v: any) => {
+            const varMoq = v?.moqOverride !== undefined ? v.moqOverride : v?.minOrderQuantity;
+            const validatedVarMoq = validateMoqOverride(varMoq);
+            return {
+              id: v.id || catalogVariantId(v.label),
+              label: v.label,
+              price: Math.round(Number(v.price)),
+              available: v.available !== false,
+              weightGrams: v.weightGrams ?? null,
+              ...(typeof validatedVarMoq === 'number' ? { moqOverride: validatedVarMoq } : {}),
+            };
+          })
         : Object.entries(prod.prices).map(([label, price]) => ({
             id: catalogVariantId(label),
             label,
@@ -89,6 +108,7 @@ export function storedCatalogRecord(productId: string, value: unknown): CatalogR
         minCustomWeightG: prod.minCustomWeightG || 100,
         maxCustomWeightG: prod.maxCustomWeightG || 5000,
         shippingWeightG: prod.shippingWeightG ?? null,
+        ...(typeof prod.moqOverride === 'number' ? { moqOverride: prod.moqOverride } : {}),
       };
       const updatedAt = typeof (value as any).updatedAt === 'string' ? (value as any).updatedAt : null;
       return { pricing, version: fingerprint(pricing), updatedAt };
@@ -137,7 +157,7 @@ function snapshotFromDocuments(snapshots: DocumentSnapshot[], now: number): Cata
           personalization: raw.personalization || base.personalization,
           inclusions: Array.isArray(raw.inclusions) ? raw.inclusions : base.inclusions,
           exclusions: Array.isArray(raw.exclusions) ? raw.exclusions : base.exclusions,
-          moqOverride: typeof raw.moqOverride === 'number' ? raw.moqOverride : base.moqOverride,
+          moqOverride: raw.moqOverride === null ? undefined : (typeof raw.moqOverride === 'number' ? raw.moqOverride : base.moqOverride),
           preparationDays: typeof raw.preparationDays === 'number' ? raw.preparationDays : base.preparationDays,
           displayOrder: typeof raw.displayOrder === 'number' ? raw.displayOrder : base.displayOrder,
           catalogRevision: record.version,
@@ -337,11 +357,74 @@ export async function updateCatalogPricing(input: { db: Firestore | null; produc
     if (current.pricing.revision !== body.expectedRevision || current.version !== body.expectedVersion || current.pricing.revision >= Number.MAX_SAFE_INTEGER) throw new CatalogError('CATALOG_REVISION_CONFLICT', 409);
     const targetProduct = seed || dynamicProductFromDocument(snapshot.data(), input.productId);
     const requested = validateCatalogPricing(body.pricing, targetProduct);
-    const pricing = { ...requested, revision: current.pricing.revision + 1 };
+
+    const existingVarByLabel = new Map<string, CatalogVariant>(
+      current.pricing.variants.map(cv => [cv.label, cv])
+    );
+    const mergedVariants: CatalogVariant[] = requested.variants.map(v => {
+      const existingVar = existingVarByLabel.get(v.label);
+      const resolvedVarMoq =
+        v.moqOverride === null
+          ? undefined
+          : typeof v.moqOverride === 'number'
+            ? v.moqOverride
+            : typeof existingVar?.moqOverride === 'number'
+              ? existingVar.moqOverride
+              : undefined;
+      return {
+        id: v.id,
+        label: v.label,
+        price: v.price,
+        available: v.available,
+        weightGrams: v.weightGrams,
+        ...(typeof resolvedVarMoq === 'number' ? { moqOverride: resolvedVarMoq } : {}),
+      };
+    });
+
+    const resolvedProductMoq =
+      requested.moqOverride === null
+        ? undefined
+        : typeof requested.moqOverride === 'number'
+          ? requested.moqOverride
+          : typeof current.pricing.moqOverride === 'number'
+            ? current.pricing.moqOverride
+            : undefined;
+
+    const pricing: CatalogPricing = {
+      ...requested,
+      variants: mergedVariants,
+      revision: current.pricing.revision + 1,
+    };
+    if (typeof resolvedProductMoq === 'number') {
+      pricing.moqOverride = resolvedProductMoq;
+    } else {
+      delete pricing.moqOverride;
+    }
+
     // Preserve legacy merchandising metadata, remove obsolete duplicate prices and keep actor identity private.
-    transaction.set(reference, { ...pricing, updatedAt, prices: FieldValue.delete(), price: FieldValue.delete(), updatedBy: FieldValue.delete() }, { merge: true });
-    transaction.set(audit, { productId: input.productId, action: 'PRICING_UPDATED', previous: current.pricing, pricing,
-      previousVersion: current.version, actorUid: input.actorUid, updatedAt });
+    transaction.set(
+      reference,
+      {
+        ...pricing,
+        updatedAt,
+        prices: FieldValue.delete(),
+        price: FieldValue.delete(),
+        updatedBy: FieldValue.delete(),
+        ...(resolvedProductMoq === undefined
+          ? { moqOverride: FieldValue.delete(), minOrderQuantity: FieldValue.delete() }
+          : { moqOverride: resolvedProductMoq }),
+      },
+      { merge: true }
+    );
+    transaction.set(audit, {
+      productId: input.productId,
+      action: 'PRICING_UPDATED',
+      previous: current.pricing,
+      pricing,
+      previousVersion: current.version,
+      actorUid: input.actorUid,
+      updatedAt,
+    });
     return { pricing, version: fingerprint(pricing), updatedAt };
   });
   invalidateCatalogCache();
@@ -354,21 +437,26 @@ export async function getAdminProductRecord(db: Firestore | null, productId: str
   if (snapshot.exists) {
     const data = (snapshot.data() || {}) as Record<string, any>;
     const dynamicProd = dynamicProductFromDocument(data, productId);
-    // In admin representation, preserve ALL variants (including disabled ones) with full status
+    // In admin representation, preserve ALL variants (including disabled ones) with full status and MOQ overrides
     const allVariants = Array.isArray(data.variants)
-      ? data.variants.map((v: any) => ({
-          id: v.id || catalogVariantId(v.label),
-          label: v.label,
-          price: Math.round(Number(v.price)),
-          available: v.available !== false,
-          weightGrams: v.weightGrams ?? null,
-        }))
+      ? data.variants.map((v: any) => {
+          const varMoq = v?.moqOverride !== undefined ? v.moqOverride : v?.minOrderQuantity;
+          return {
+            id: v.id || catalogVariantId(v.label),
+            label: v.label,
+            price: Math.round(Number(v.price)),
+            available: v.available !== false,
+            weightGrams: v.weightGrams ?? null,
+            ...(typeof varMoq === 'number' && Number.isSafeInteger(varMoq) && varMoq > 0 ? { moqOverride: varMoq } : {}),
+          };
+        })
       : dynamicProd.variants.map(v => ({
           id: catalogVariantId(v.label),
           label: v.label,
           price: v.price,
           available: true,
           weightGrams: dynamicProd.shippingWeights?.[v.label] ?? null,
+          ...(typeof v.moqOverride === 'number' ? { moqOverride: v.moqOverride } : {}),
         }));
     const adminPrices: Record<string, number> = {};
     for (const v of allVariants) adminPrices[v.label] = v.price;
@@ -407,13 +495,18 @@ export async function createAdminProduct(input: { db: Firestore | null; body: un
 
   const rawBody = (input.body && typeof input.body === 'object' ? input.body : {}) as Record<string, any>;
   const variants = Array.isArray(rawBody.variants)
-    ? rawBody.variants.map((v: any) => ({
-        id: v.id || catalogVariantId(v.label),
-        label: v.label.trim(),
-        price: Math.round(Number(v.price)),
-        available: v.available !== false,
-        weightGrams: Number.isSafeInteger(v.weightGrams) ? v.weightGrams : null,
-      }))
+    ? rawBody.variants.map((v: any) => {
+        const rawVarMoq = v?.moqOverride !== undefined ? v.moqOverride : v?.minOrderQuantity;
+        const validatedVarMoq = validateMoqOverride(rawVarMoq);
+        return {
+          id: v.id || catalogVariantId(v.label.trim()),
+          label: v.label.trim(),
+          price: Math.round(Number(v.price)),
+          available: v.available !== false,
+          weightGrams: Number.isSafeInteger(v.weightGrams) ? v.weightGrams : null,
+          ...(typeof validatedVarMoq === 'number' ? { moqOverride: validatedVarMoq } : {}),
+        };
+      })
     : Object.entries(validated.prices).map(([label, price]) => ({
         id: catalogVariantId(label),
         label,
@@ -422,7 +515,7 @@ export async function createAdminProduct(input: { db: Firestore | null; body: un
         weightGrams: validated.shippingWeights?.[label] ?? null,
       }));
 
-  const docData = {
+  const docData: Record<string, any> = {
     ...validated,
     schemaVersion: 1,
     productId: validated.id,
@@ -454,8 +547,10 @@ export async function createAdminProduct(input: { db: Firestore | null; body: un
       actorUid: input.actorUid,
       updatedAt: now,
     });
+    const projected = dynamicProductFromDocument(docData, validated.id);
     return {
-      ...dynamicProductFromDocument(docData, validated.id),
+      ...projected,
+      variants: variants as any,
       revision,
     };
   });
@@ -502,31 +597,63 @@ export async function updateAdminProduct(input: { db: Firestore | null; productI
         const existingV = existingVariantsMap.get(label);
         const available = typeof v.available === 'boolean' ? v.available : (existingV ? existingV.available !== false : true);
         const weightGrams = Number.isSafeInteger(v.weightGrams) ? v.weightGrams : (existingV?.weightGrams ?? null);
+        const rawVarMoq = v.moqOverride !== undefined ? v.moqOverride : v.minOrderQuantity;
+        const validatedVarMoq = validateMoqOverride(rawVarMoq);
+        const existingVarMoq = existingV?.moqOverride !== undefined ? existingV.moqOverride : existingV?.minOrderQuantity;
+        const finalVarMoq =
+          validatedVarMoq === null
+            ? undefined
+            : typeof validatedVarMoq === 'number'
+              ? validatedVarMoq
+              : typeof existingVarMoq === 'number' && Number.isSafeInteger(existingVarMoq) && existingVarMoq > 0
+                ? existingVarMoq
+                : undefined;
         return {
           id: v.id || catalogVariantId(label),
           label,
           price,
           available,
           weightGrams,
+          ...(typeof finalVarMoq === 'number' ? { moqOverride: finalVarMoq } : {}),
         };
       });
     } else if (isCanonical && Array.isArray(existingData.variants)) {
-      canonicalVariants = existingData.variants.map((v: any) => ({
-        id: v.id || catalogVariantId(v.label),
-        label: v.label,
-        price: (body.prices && typeof body.prices === 'object' && body.prices[v.label] !== undefined)
-          ? Math.round(Number(body.prices[v.label]))
-          : Math.round(Number(v.price)),
-        available: v.available !== false,
-        weightGrams: v.weightGrams ?? null,
-      }));
+      canonicalVariants = existingData.variants.map((v: any) => {
+        const existingVarMoq = v?.moqOverride !== undefined ? v.moqOverride : v?.minOrderQuantity;
+        return {
+          id: v.id || catalogVariantId(v.label),
+          label: v.label,
+          price: (body.prices && typeof body.prices === 'object' && body.prices[v.label] !== undefined)
+            ? Math.round(Number(body.prices[v.label]))
+            : Math.round(Number(v.price)),
+          available: v.available !== false,
+          weightGrams: v.weightGrams ?? null,
+          ...(typeof existingVarMoq === 'number' && Number.isSafeInteger(existingVarMoq) && existingVarMoq > 0
+            ? { moqOverride: existingVarMoq }
+            : {}),
+        };
+      });
     }
+
+    const rawBodyMoq = body.moqOverride !== undefined ? body.moqOverride : body.minOrderQuantity;
+    const validatedBodyMoq = validateMoqOverride(rawBodyMoq);
+    const existingProdMoq =
+      existingData.moqOverride !== undefined ? existingData.moqOverride : existingData.minOrderQuantity;
+    const finalProdMoq =
+      validatedBodyMoq === null
+        ? undefined
+        : typeof validatedBodyMoq === 'number'
+          ? validatedBodyMoq
+          : typeof existingProdMoq === 'number' && Number.isSafeInteger(existingProdMoq) && existingProdMoq > 0
+            ? existingProdMoq
+            : undefined;
 
     const validated = validateDynamicProduct({
       ...existingData,
       ...body,
       id: input.productId,
       variants: canonicalVariants || existingData.variants,
+      moqOverride: finalProdMoq ?? null,
     }, input.productId);
 
     const updatedData: Record<string, any> = {
@@ -538,6 +665,13 @@ export async function updateAdminProduct(input: { db: Firestore | null; productI
       updatedAt: now,
       updatedBy: input.actorUid,
     };
+
+    if (finalProdMoq === undefined) {
+      delete updatedData.moqOverride;
+      delete updatedData.minOrderQuantity;
+    } else {
+      updatedData.moqOverride = finalProdMoq;
+    }
 
     if (isCanonical || canonicalVariants) {
       updatedData.schemaVersion = 1;
@@ -562,8 +696,10 @@ export async function updateAdminProduct(input: { db: Firestore | null; productI
       updatedAt: now,
     });
 
+    const projected = dynamicProductFromDocument(updatedData, input.productId);
     return {
-      ...dynamicProductFromDocument(updatedData, input.productId),
+      ...projected,
+      ...(canonicalVariants ? { variants: canonicalVariants as any } : {}),
       revision: nextRevision,
     };
   });
@@ -749,6 +885,200 @@ export async function archiveAdminProduct(input: { db: Firestore | null; product
     return {
       ...dynamicProductFromDocument(updated, input.productId),
       revision: nextRevision,
+    };
+  });
+
+  invalidateCatalogCache();
+  return result;
+}
+
+export interface ImportReferenceProductResult {
+  product: Product & { revision: number };
+  importResult: ReferencePricingResult;
+}
+
+export async function importReferenceProduct(input: {
+  db: Firestore | null;
+  productId?: string;
+  body: unknown;
+  actorUid: string;
+}): Promise<ImportReferenceProductResult> {
+  if (!input.db) throw new CatalogError('CATALOG_STORE_UNAVAILABLE', 503);
+  if (!input.actorUid) throw new CatalogError('FORBIDDEN_ADMIN', 403);
+  if (!input.body || typeof input.body !== 'object' || Array.isArray(input.body)) {
+    throw new CatalogError('CONTRADICTORY_IMPORT_INPUT', 400, 'Import payload must be a valid object.');
+  }
+
+  const body = input.body as Record<string, any>;
+  const rawProductId = input.productId || body.productId || body.id;
+  const productId = typeof rawProductId === 'string' ? rawProductId.trim() : '';
+  if (!/^[a-z0-9_-]{2,80}$/.test(productId)) {
+    throw new CatalogError('INVALID_PRODUCT_ID', 400);
+  }
+
+  if (body.expectedRevision !== undefined) {
+    const expRev = Number(body.expectedRevision);
+    if (!Number.isSafeInteger(expRev) || expRev < 0) {
+      throw new CatalogError('CATALOG_REVISION_CONFLICT', 409);
+    }
+  }
+
+  const db = input.db;
+  const ref = db.collection(CATALOG_COLLECTION).doc(productId);
+  const auditRef = db.collection('catalogAudits').doc(randomUUID());
+
+  const result = await db.runTransaction(async transaction => {
+    // Strictly read before any writes
+    const snap = await transaction.get(ref);
+    const existingData = snap.exists
+      ? (snap.data() as Record<string, any>)
+      : (seeds.get(productId) as Record<string, any> | undefined) || null;
+
+    const currentRevision = existingData
+      ? Number.isSafeInteger(existingData.revision)
+        ? existingData.revision
+        : existingData.adminRevision || 0
+      : 0;
+
+    if (body.expectedRevision !== undefined && existingData && currentRevision !== Number(body.expectedRevision)) {
+      throw new CatalogError('CATALOG_REVISION_CONFLICT', 409);
+    }
+
+    const importVariantsInput = Array.isArray(body.referenceVariants)
+      ? body.referenceVariants
+      : Array.isArray(body.variants) &&
+          body.variants.length > 0 &&
+          body.variants.every((v: any) => v && typeof v === 'object' && v.referencePrice !== undefined)
+        ? body.variants
+        : undefined;
+
+    const importResult = applyReferenceImportPricing({
+      referencePrice: body.referencePrice,
+      referencePrices: body.referencePrices,
+      variants: importVariantsInput,
+      variantLabel: body.variantLabel,
+      sourceUrl: body.sourceUrl || body.supplierItemUrl,
+      importBatch: body.importBatch,
+      existingProduct: existingData,
+      forceRecompute: body.forceRecompute,
+      isNewImport: body.isNewImport,
+    });
+
+    // Check if this is an idempotent repeat import where canonical variants and private audit metadata are already persisted
+    if (snap.exists && existingData && importResult.preservedExistingPrice) {
+      const existingVarsJson = JSON.stringify(
+        Array.isArray(existingData.variants)
+          ? existingData.variants.map((v: any) => ({
+              id: v.id || catalogVariantId(v.label),
+              label: v.label,
+              price: Math.round(Number(v.price)),
+              available: v.available !== false,
+              weightGrams: v.weightGrams ?? null,
+              ...(typeof v.moqOverride === 'number' ? { moqOverride: v.moqOverride } : {}),
+            }))
+          : []
+      );
+      const nextVarsJson = JSON.stringify(
+        importResult.variants.map(v => ({
+          id: v.id,
+          label: v.label,
+          price: v.price,
+          available: v.available,
+          weightGrams: v.weightGrams,
+          ...(typeof v.moqOverride === 'number' ? { moqOverride: v.moqOverride } : {}),
+        }))
+      );
+      const metadataUnchanged =
+        existingVarsJson === nextVarsJson &&
+        existingData.referencePrice === importResult.referencePrice &&
+        (existingData.importBatch || undefined) === (importResult.importBatch || undefined) &&
+        (existingData.supplierItemUrl || undefined) === (importResult.sourceUrl || undefined) &&
+        Boolean(existingData.importTimestamp);
+
+      if (metadataUnchanged) {
+        const projected = dynamicProductFromDocument(existingData, productId);
+        return {
+          product: {
+            ...projected,
+            variants: importResult.variants as any,
+            revision: currentRevision || 1,
+          },
+          importResult,
+        };
+      }
+    }
+
+    const now = new Date().toISOString();
+    const nextRevision = snap.exists ? currentRevision + 1 : 1;
+
+    const baseNameEn =
+      (typeof body.name_en === 'string' && body.name_en.trim()) ||
+      (typeof body.name === 'string' && body.name.trim()) ||
+      existingData?.name_en ||
+      existingData?.name ||
+      productId;
+
+    const mergedCandidate: Record<string, any> = {
+      ...(existingData || {}),
+      ...body,
+      id: productId,
+      productId,
+      name_en: baseNameEn,
+      name: baseNameEn,
+      category:
+        (typeof body.category === 'string' && body.category.trim()) ||
+        existingData?.category ||
+        'dry-fruits',
+      variants: importResult.variants,
+      prices: importResult.sellingPrices,
+      referencePrice: importResult.referencePrice,
+      ...(importResult.sourceUrl ? { supplierItemUrl: importResult.sourceUrl } : {}),
+      ...(importResult.importBatch ? { importBatch: importResult.importBatch } : {}),
+      importTimestamp: importResult.importTimestamp,
+    };
+
+    const validated = validateDynamicProduct(mergedCandidate, productId);
+    const docData: Record<string, any> = {
+      ...(existingData || {}),
+      ...validated,
+      id: productId,
+      productId,
+      schemaVersion: 1,
+      variants: importResult.variants,
+      prices: importResult.sellingPrices,
+      referencePrice: importResult.referencePrice,
+      ...(importResult.sourceUrl ? { supplierItemUrl: importResult.sourceUrl } : {}),
+      ...(importResult.importBatch ? { importBatch: importResult.importBatch } : {}),
+      importTimestamp: importResult.importTimestamp,
+      revision: nextRevision,
+      adminRevision: nextRevision,
+      status: validated.status || existingData?.status || 'draft',
+      active: (validated.status || existingData?.status || 'draft') === 'published' && validated.active !== false,
+      createdAt: existingData?.createdAt || now,
+      updatedAt: now,
+      createdBy: existingData?.createdBy || input.actorUid,
+      updatedBy: input.actorUid,
+    };
+
+    transaction.set(ref, docData);
+    transaction.set(auditRef, {
+      productId,
+      action: importResult.isNewImport ? 'PRODUCT_IMPORTED' : 'PRODUCT_IMPORT_SYNCED',
+      previous: existingData,
+      updated: docData,
+      importResult,
+      actorUid: input.actorUid,
+      updatedAt: now,
+    });
+
+    const projected = dynamicProductFromDocument(docData, productId);
+    return {
+      product: {
+        ...projected,
+        variants: importResult.variants as any,
+        revision: nextRevision,
+      },
+      importResult,
     };
   });
 

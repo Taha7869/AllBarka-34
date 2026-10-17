@@ -55,6 +55,10 @@ export default function AdminProductEditModal({ isOpen, product, onClose, onSave
 
   // Logistics & Pricing
   const [moqOverride, setMoqOverride] = useState('');
+  const [variantMoqOverrides, setVariantMoqOverrides] = useState<
+    Array<{ id?: string; label: string; price: number; available?: boolean; weightGrams?: number; moqOverride: string }>
+  >([]);
+  const [variantsTouched, setVariantsTouched] = useState(false);
   const [preparationDays, setPreparationDays] = useState('');
   const [shippingWeightG, setShippingWeightG] = useState('');
   const [displayOrder, setDisplayOrder] = useState('');
@@ -110,7 +114,20 @@ export default function AdminProductEditModal({ isOpen, product, onClose, onSave
         notes: p.personalization?.notes || '',
       });
 
-      setMoqOverride(p.moqOverride !== undefined ? String(p.moqOverride) : '');
+      setMoqOverride(p.moqOverride !== undefined && p.moqOverride !== null ? String(p.moqOverride) : '');
+      setVariantMoqOverrides(
+        Array.isArray(p.variants)
+          ? p.variants.map(v => ({
+              id: v.id,
+              label: v.label,
+              price: v.price,
+              available: v.available,
+              weightGrams: v.weightGrams,
+              moqOverride: v.moqOverride !== undefined && v.moqOverride !== null ? String(v.moqOverride) : '',
+            }))
+          : []
+      );
+      setVariantsTouched(false);
       setPreparationDays(p.preparationDays !== undefined ? String(p.preparationDays) : '');
       setShippingWeightG(p.shippingWeightG !== undefined ? String(p.shippingWeightG) : '');
       setDisplayOrder(p.displayOrder !== undefined ? String(p.displayOrder) : '');
@@ -136,6 +153,20 @@ export default function AdminProductEditModal({ isOpen, product, onClose, onSave
       setCategory(p.category || 'dry-fruits');
       setOrderMode(p.orderMode || (p.quoteOnly ? 'inquiry_quote' : 'standard'));
       setStatus(p.status || (p.active === false ? 'archived' : 'published'));
+      setMoqOverride(p.moqOverride !== undefined && p.moqOverride !== null ? String(p.moqOverride) : '');
+      setVariantMoqOverrides(
+        Array.isArray(p.variants)
+          ? p.variants.map(v => ({
+              id: v.id,
+              label: v.label,
+              price: v.price,
+              available: v.available,
+              weightGrams: v.weightGrams,
+              moqOverride: v.moqOverride !== undefined && v.moqOverride !== null ? String(v.moqOverride) : '',
+            }))
+          : []
+      );
+      setVariantsTouched(false);
       setImage(p.image || '');
       setImageName(p.imageName || '');
     } finally {
@@ -190,7 +221,19 @@ export default function AdminProductEditModal({ isOpen, product, onClose, onSave
       inclusions: parseList(inclusionsInput, '\n'),
       exclusions: parseList(exclusionsInput, '\n'),
       personalization: personalization.supported ? personalization : undefined,
-      moqOverride: moqOverride ? parseInt(moqOverride, 10) : undefined,
+      moqOverride: moqOverride.trim() !== '' ? Number(moqOverride) : null,
+      ...(variantsTouched
+        ? {
+            variants: variantMoqOverrides.map(v => ({
+              id: v.id,
+              label: v.label,
+              price: v.price,
+              available: v.available !== false,
+              ...(v.weightGrams !== undefined ? { weightGrams: v.weightGrams } : {}),
+              moqOverride: v.moqOverride.trim() !== '' ? Number(v.moqOverride) : null,
+            })),
+          }
+        : {}),
       preparationDays: preparationDays ? parseInt(preparationDays, 10) : undefined,
       shippingWeightG: shippingWeightG ? parseInt(shippingWeightG, 10) : undefined,
       displayOrder: displayOrder ? parseInt(displayOrder, 10) : undefined,
@@ -583,10 +626,22 @@ export default function AdminProductEditModal({ isOpen, product, onClose, onSave
                 <div className="space-y-4 text-xs">
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div>
-                      <label className="block font-medium mb-1">MOQ Override</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block font-medium">MOQ Override</label>
+                        {moqOverride.trim() !== '' && (
+                          <button
+                            type="button"
+                            onClick={() => setMoqOverride('')}
+                            className="text-[11px] font-semibold text-red-600 dark:text-red-400 hover:underline"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
                       <input
                         type="number"
                         min="1"
+                        max="10000"
                         value={moqOverride}
                         onChange={e => setMoqOverride(e.target.value)}
                         placeholder="Default"
@@ -626,6 +681,54 @@ export default function AdminProductEditModal({ isOpen, product, onClose, onSave
                       />
                     </div>
                   </div>
+
+                  {variantMoqOverrides.length > 0 && (
+                    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] p-3 space-y-2">
+                      <p className="font-semibold text-[11px] text-[var(--color-text-secondary)] uppercase tracking-wider">
+                        Per-Variant MOQ Overrides (Optional)
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        {variantMoqOverrides.map((variant, idx) => (
+                          <div key={variant.id || variant.label} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-2">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-medium truncate" title={variant.label}>
+                                {variant.label}
+                              </span>
+                              {variant.moqOverride.trim() !== '' && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setVariantsTouched(true);
+                                    setVariantMoqOverrides(prev =>
+                                      prev.map((v, i) => (i === idx ? { ...v, moqOverride: '' } : v))
+                                    );
+                                  }}
+                                  className="text-[11px] font-semibold text-red-600 dark:text-red-400 hover:underline"
+                                >
+                                  Clear
+                                </button>
+                              )}
+                            </div>
+                            <input
+                              type="number"
+                              min="1"
+                              max="10000"
+                              value={variant.moqOverride}
+                              onChange={e => {
+                                const val = e.target.value;
+                                setVariantsTouched(true);
+                                setVariantMoqOverrides(prev =>
+                                  prev.map((v, i) => (i === idx ? { ...v, moqOverride: val } : v))
+                                );
+                              }}
+                              placeholder="Formula MOQ"
+                              className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-base)] px-2.5 py-1.5 text-xs focus:border-[#c7982f] focus:outline-none"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>

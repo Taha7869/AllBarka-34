@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { X, Sparkles, Package, Gift, MessageCircle, CheckCircle2, Tag, Calendar, Layers, ShieldCheck } from 'lucide-react';
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import { Product } from '../types';
+import { resolveBidBoxConfig } from '../lib/bidBoxPricing';
 
 export interface CustomQuoteModalInit {
   productId?: string;
@@ -54,7 +55,7 @@ function buildWhatsAppQuoteUrl(params: {
     `• *Box Mode:* ${modeLabel}`,
     `• *Quantity:* ${params.quantity} boxes`,
     `• *Event Type:* ${params.eventType}`,
-    `• *Standard Rate Ref:* Rs. ${params.referenceUnitPrice.toLocaleString()}/box`,
+    params.referenceUnitPrice > 0 ? `• *Standard Rate Ref:* Rs. ${params.referenceUnitPrice.toLocaleString()}/box` : `• *Standard Rate Ref:* Custom Inquiry`,
     params.targetPricePkr ? `• *My Target Offer / Budget:* Rs. ${Number(params.targetPricePkr).toLocaleString()} PKR` : '',
     params.customPrinting ? `• *Custom Printing / Name Tag / Notes:* ${params.customPrinting}` : '',
     params.customerName ? `• *Name:* ${params.customerName}` : '',
@@ -72,9 +73,12 @@ export default function CustomQuoteModal() {
   const [isOpen, setIsOpen] = useState(false);
 
   const eligibleProducts = useMemo(() => {
-    const bidBoxes = products.filter(p => p.isBidBox);
+    const bidBoxes = products.filter(p => p.isBidBox || p.category === 'celebration-boxes');
     const dealsAndBundles = products.filter(
-      p => !p.isBidBox && (p.category === 'gift-boxes' || p.category === 'bundles' || p.isBundle)
+      p =>
+        !p.isBidBox &&
+        p.category !== 'celebration-boxes' &&
+        (p.category === 'gift-boxes' || p.category === 'bundles' || p.isBundle || p.quoteOnly || p.orderMode === 'inquiry_quote' || p.orderMode === 'both')
     );
     return [...bidBoxes, ...dealsAndBundles];
   }, [products]);
@@ -100,7 +104,7 @@ export default function CustomQuoteModal() {
     const handleOpen = (event: Event) => {
       const custom = event as CustomEvent<CustomQuoteModalInit>;
       const detail = custom.detail || {};
-      const defaultId = detail.productId && eligibleProducts.some(p => p.id === detail.productId)
+      const defaultId = detail.productId
         ? detail.productId
         : eligibleProducts[0]?.id || 'bid-box-umrah-tabarruk';
       setSelectedProductId(defaultId);
@@ -118,24 +122,26 @@ export default function CustomQuoteModal() {
   }, [eligibleProducts]);
 
   const selectedProduct: Product | undefined = useMemo(
-    () => eligibleProducts.find(p => p.id === selectedProductId) || eligibleProducts[0],
-    [eligibleProducts, selectedProductId]
+    () => products.find(p => p.id === selectedProductId) || eligibleProducts.find(p => p.id === selectedProductId) || eligibleProducts[0],
+    [products, eligibleProducts, selectedProductId]
   );
 
   const referenceUnitPrice = useMemo(() => {
     if (!selectedProduct) return 0;
-    const cfg = selectedProduct.bidBoxConfig;
+    const cfg = resolveBidBoxConfig(selectedProduct);
     if (cfg) {
       if (mode === 'empty') {
-        if (quantity >= 100) return cfg.emptyBulk100Unit;
-        if (quantity >= 50) return cfg.emptyBulk50Unit;
-        if (quantity >= 25) return cfg.emptyTiers.find(t => t.qty === 25)?.unitPrice || cfg.emptyUnitStarting;
-        return cfg.emptyUnitStarting;
+        const emptyTiers = cfg.emptyTiers || [];
+        if (quantity >= 100 && cfg.emptyBulk100Unit) return cfg.emptyBulk100Unit;
+        if (quantity >= 50 && cfg.emptyBulk50Unit) return cfg.emptyBulk50Unit;
+        const tier25 = emptyTiers.find(t => t.qty === 25);
+        if (quantity >= 25 && tier25?.unitPrice) return tier25.unitPrice;
+        if (typeof cfg.emptyUnitStarting === 'number' && cfg.emptyUnitStarting > 0) return cfg.emptyUnitStarting;
       }
-      return cfg.filledMin;
+      if (typeof cfg.filledMin === 'number' && cfg.filledMin > 0) return cfg.filledMin;
     }
-    const firstPrice = Object.values(selectedProduct.prices || {})[0];
-    return typeof firstPrice === 'number' ? firstPrice : 1500;
+    const firstPrice = Object.values(selectedProduct.prices || {}).find(v => typeof v === 'number' && Number.isFinite(v) && v > 0);
+    return typeof firstPrice === 'number' ? firstPrice : 0;
   }, [selectedProduct, mode, quantity]);
 
   if (!isOpen) return null;

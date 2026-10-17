@@ -2,25 +2,42 @@ import type { Product } from '../types';
 import { resolveProductVariant } from './productVariants';
 
 export class CatalogError extends Error {
-  constructor(public code: string, public httpStatus = 400) {
-    super(code);
+  constructor(public code: string, public httpStatus = 400, message?: string) {
+    super(message || code);
     this.name = 'CatalogError';
   }
   get status() {
     return this.httpStatus;
   }
 }
-export interface CatalogVariant { id: string; label: string; price: number; available: boolean; weightGrams: number | null }
+export interface CatalogVariant {
+  id: string;
+  label: string;
+  price: number;
+  available: boolean;
+  weightGrams: number | null;
+  moqOverride?: number | null;
+}
 export interface CatalogPricing {
   schemaVersion: 1; productId: string; revision: number; active: boolean; quoteOnly: boolean;
   variants: CatalogVariant[]; wholesale: number; pricePer100g: number; allowCustomWeight: boolean;
   minCustomWeightG: number; maxCustomWeightG: number; shippingWeightG: number | null;
+  moqOverride?: number | null;
 }
 export interface CatalogRecord { pricing: CatalogPricing; version: string; updatedAt: string | null }
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value);
 const integer = (value: unknown, minimum: number, maximum = 10_000_000): value is number => Number.isSafeInteger(value) && (value as number) >= minimum && (value as number) <= maximum;
 const positive = (value: unknown) => integer(value, 1);
 export const catalogVariantId = (label: string) => `portion-${encodeURIComponent(label)}`;
+
+export function validateMoqOverride(value: unknown): number | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
+  if (typeof value !== 'number' || !integer(value, 1, 10_000)) {
+    throw new CatalogError('INVALID_MOQ_OVERRIDE', 400);
+  }
+  return value;
+}
 
 /** Canonical pricing has one editable variants array. Legacy prices are derived only. */
 export function validateCatalogPricing(value: unknown, seed: Product): CatalogPricing {
@@ -30,6 +47,10 @@ export function validateCatalogPricing(value: unknown, seed: Product): CatalogPr
     || !integer(value.minCustomWeightG, 100, 5000) || !integer(value.maxCustomWeightG, 100, 5000)
     || value.minCustomWeightG > value.maxCustomWeightG || value.minCustomWeightG % 50 || value.maxCustomWeightG % 50
     || !(value.shippingWeightG === null || integer(value.shippingWeightG, 0))) throw new CatalogError('INVALID_CATALOG_PRICING');
+
+  const rawProductMoq = value.moqOverride !== undefined ? value.moqOverride : (value as any).minOrderQuantity;
+  const productMoq = validateMoqOverride(rawProductMoq);
+
   const seen = new Set<string>();
   const variants = value.variants.map((raw): CatalogVariant => {
     if (!object(raw) || typeof raw.label !== 'string' || !raw.label.trim() || raw.label.length > 40
@@ -41,15 +62,35 @@ export function validateCatalogPricing(value: unknown, seed: Product): CatalogPr
       || Object.hasOwn(seed.prices, raw.label)
       || /^(?:empty|filled|sample|portion|bundle|box)/i.test(raw.label);
     if (!supported || (/ml$/i.test(raw.label) && seed.category !== 'oils')) throw new CatalogError('INVALID_CATALOG_UNIT');
+    const rawVarMoq = raw.moqOverride !== undefined ? raw.moqOverride : (raw as any).minOrderQuantity;
+    const varMoq = validateMoqOverride(rawVarMoq);
     seen.add(raw.label);
-    return { id: raw.id as string, label: raw.label, price: raw.price as number, available: raw.available, weightGrams: raw.weightGrams as number | null };
+    return {
+      id: raw.id as string,
+      label: raw.label,
+      price: raw.price as number,
+      available: raw.available,
+      weightGrams: raw.weightGrams as number | null,
+      ...(varMoq !== undefined ? { moqOverride: varMoq } : {}),
+    };
   });
   if (!value.quoteOnly && variants.length === 0) throw new CatalogError('INVALID_CATALOG_PRICING');
   if (value.allowCustomWeight && (!positive(value.pricePer100g) || seed.isBundle || ['oils', 'bundles', 'gift-boxes'].includes(seed.category))) throw new CatalogError('INVALID_CATALOG_CUSTOM_WEIGHT');
-  return { schemaVersion: 1, productId: seed.id, revision: value.revision as number, active: value.active, quoteOnly: value.quoteOnly,
-    variants, wholesale: value.wholesale as number, pricePer100g: value.pricePer100g as number,
-    allowCustomWeight: value.allowCustomWeight, minCustomWeightG: value.minCustomWeightG as number,
-    maxCustomWeightG: value.maxCustomWeightG as number, shippingWeightG: value.shippingWeightG as number | null };
+  return {
+    schemaVersion: 1,
+    productId: seed.id,
+    revision: value.revision as number,
+    active: value.active,
+    quoteOnly: value.quoteOnly,
+    variants,
+    wholesale: value.wholesale as number,
+    pricePer100g: value.pricePer100g as number,
+    allowCustomWeight: value.allowCustomWeight,
+    minCustomWeightG: value.minCustomWeightG as number,
+    maxCustomWeightG: value.maxCustomWeightG as number,
+    shippingWeightG: value.shippingWeightG as number | null,
+    ...(productMoq !== undefined ? { moqOverride: productMoq } : {}),
+  };
 }
 
 /** Adopt existing live Product documents without replacing their prices with compiled defaults. */
@@ -57,23 +98,62 @@ export function pricingFromLegacy(value: unknown, seed: Product): CatalogPricing
   if (!object(value) || (value.id !== undefined && value.id !== seed.id) || !object(value.prices)) throw new CatalogError('INVALID_CATALOG_PRICING');
   const candidate = { ...seed, ...value, id: seed.id } as Product;
   const prices = value.prices as Record<string, unknown>;
+  const existingVarMap = new Map<string, any>();
+  if (Array.isArray(seed.variants)) {
+    for (const v of seed.variants) {
+      if (v && typeof v.label === 'string') existingVarMap.set(v.label, v);
+    }
+  }
+  if (Array.isArray((value as any).variants)) {
+    for (const v of (value as any).variants) {
+      if (v && typeof v.label === 'string') existingVarMap.set(v.label, v);
+    }
+  }
   const variants = Object.entries(prices).map(([label, price]) => {
     if (!positive(price)) throw new CatalogError('INVALID_CATALOG_VARIANT');
     const weightGrams = resolveProductVariant({ ...candidate, active: true, quoteOnly: false, prices: { [label]: price } }, label)?.weightGrams ?? null;
-    return { id: catalogVariantId(label), label, price, available: true, weightGrams };
+    const existingVar = existingVarMap.get(label);
+    const varMoq = existingVar?.moqOverride !== undefined ? existingVar.moqOverride : existingVar?.minOrderQuantity;
+    return {
+      id: catalogVariantId(label),
+      label,
+      price,
+      available: existingVar?.available !== false,
+      weightGrams,
+      ...(varMoq !== undefined ? { moqOverride: varMoq } : {}),
+    };
   });
-  return validateCatalogPricing({ schemaVersion: 1, productId: seed.id, revision: value.revision ?? 0,
-    active: value.active ?? seed.active ?? true, quoteOnly: value.quoteOnly ?? seed.quoteOnly ?? false,
-    variants, wholesale: value.wholesale ?? seed.wholesale ?? 0, pricePer100g: value.pricePer100g ?? seed.pricePer100g ?? 0,
+  const rawProductMoq =
+    (value as any).moqOverride !== undefined
+      ? (value as any).moqOverride
+      : (value as any).minOrderQuantity !== undefined
+        ? (value as any).minOrderQuantity
+        : (seed.moqOverride ?? seed.minOrderQuantity);
+  return validateCatalogPricing({
+    schemaVersion: 1,
+    productId: seed.id,
+    revision: value.revision ?? 0,
+    active: value.active ?? seed.active ?? true,
+    quoteOnly: value.quoteOnly ?? seed.quoteOnly ?? false,
+    variants,
+    wholesale: value.wholesale ?? seed.wholesale ?? 0,
+    pricePer100g: value.pricePer100g ?? seed.pricePer100g ?? 0,
     allowCustomWeight: value.allowCustomWeight ?? seed.allowCustomWeight ?? false,
     minCustomWeightG: value.minCustomWeightG ?? seed.minCustomWeightG ?? 100,
     maxCustomWeightG: value.maxCustomWeightG ?? seed.maxCustomWeightG ?? 5000,
     shippingWeightG: value.shippingWeightG ?? seed.shippingWeightG ?? null,
+    ...(rawProductMoq !== undefined ? { moqOverride: rawProductMoq } : {}),
   }, seed);
 }
 export function readCatalogPricing(value: unknown, seed: Product): CatalogPricing {
   if (object(value) && value.schemaVersion !== undefined) {
     const raw = value as any;
+    const rawProductMoq =
+      raw.moqOverride !== undefined
+        ? raw.moqOverride
+        : raw.minOrderQuantity !== undefined
+          ? raw.minOrderQuantity
+          : (seed.moqOverride ?? seed.minOrderQuantity);
     const normalized = {
       schemaVersion: 1,
       productId: seed.id,
@@ -81,13 +161,17 @@ export function readCatalogPricing(value: unknown, seed: Product): CatalogPricin
       active: typeof raw.active === 'boolean' ? raw.active : (seed.active ?? true),
       quoteOnly: typeof raw.quoteOnly === 'boolean' ? raw.quoteOnly : (seed.quoteOnly ?? false),
       variants: Array.isArray(raw.variants)
-        ? raw.variants.map((v: any) => ({
-            id: v.id === catalogVariantId(v.label) ? v.id : catalogVariantId(v.label),
-            label: v.label,
-            price: Math.round(Number(v.price)),
-            available: v.available !== false,
-            weightGrams: Number.isSafeInteger(v.weightGrams) ? v.weightGrams : null,
-          }))
+        ? raw.variants.map((v: any) => {
+            const varMoq = v?.moqOverride !== undefined ? v.moqOverride : v?.minOrderQuantity;
+            return {
+              id: v.id === catalogVariantId(v.label) ? v.id : catalogVariantId(v.label),
+              label: v.label,
+              price: Math.round(Number(v.price)),
+              available: v.available !== false,
+              weightGrams: Number.isSafeInteger(v.weightGrams) ? v.weightGrams : null,
+              ...(varMoq !== undefined ? { moqOverride: varMoq } : {}),
+            };
+          })
         : [],
       wholesale: Number.isSafeInteger(raw.wholesale) ? raw.wholesale : (seed.wholesale ?? 0),
       pricePer100g: Number.isSafeInteger(raw.pricePer100g) ? raw.pricePer100g : (seed.pricePer100g ?? 0),
@@ -95,6 +179,7 @@ export function readCatalogPricing(value: unknown, seed: Product): CatalogPricin
       minCustomWeightG: Number.isSafeInteger(raw.minCustomWeightG) ? raw.minCustomWeightG : (seed.minCustomWeightG ?? 100),
       maxCustomWeightG: Number.isSafeInteger(raw.maxCustomWeightG) ? raw.maxCustomWeightG : (seed.maxCustomWeightG ?? 5000),
       shippingWeightG: raw.shippingWeightG ?? seed.shippingWeightG ?? null,
+      ...(rawProductMoq !== undefined ? { moqOverride: rawProductMoq } : {}),
     };
     return validateCatalogPricing(normalized, seed);
   }
@@ -103,13 +188,32 @@ export function readCatalogPricing(value: unknown, seed: Product): CatalogPricin
 
 export function productFromPricing(seed: Product, pricing: CatalogPricing, version: string): Product {
   const available = pricing.variants.filter(variant => variant.available);
-  return { ...seed, active: pricing.active, quoteOnly: pricing.quoteOnly,
+  const resolvedProductMoq =
+    pricing.moqOverride === null
+      ? undefined
+      : typeof pricing.moqOverride === 'number'
+        ? pricing.moqOverride
+        : seed.moqOverride;
+  return {
+    ...seed,
+    active: pricing.active,
+    quoteOnly: pricing.quoteOnly,
     prices: Object.fromEntries(available.map(variant => [variant.label, variant.price])),
-    variants: available.map(variant => ({ label: variant.label, price: variant.price })), wholesale: pricing.wholesale,
-    pricePer100g: pricing.pricePer100g, allowCustomWeight: pricing.allowCustomWeight,
-    minCustomWeightG: pricing.minCustomWeightG, maxCustomWeightG: pricing.maxCustomWeightG,
+    variants: available.map(variant => ({
+      label: variant.label,
+      price: variant.price,
+      ...(typeof variant.moqOverride === 'number' ? { moqOverride: variant.moqOverride } : {}),
+    })),
+    wholesale: pricing.wholesale,
+    pricePer100g: pricing.pricePer100g,
+    allowCustomWeight: pricing.allowCustomWeight,
+    minCustomWeightG: pricing.minCustomWeightG,
+    maxCustomWeightG: pricing.maxCustomWeightG,
     shippingWeightG: pricing.shippingWeightG ?? undefined,
-    shippingWeights: Object.fromEntries(pricing.variants.filter(variant => variant.weightGrams !== null).map(variant => [variant.label, variant.weightGrams!])),
+    shippingWeights: Object.fromEntries(
+      pricing.variants.filter(variant => variant.weightGrams !== null).map(variant => [variant.label, variant.weightGrams!])
+    ),
+    moqOverride: resolvedProductMoq,
     catalogRevision: version,
   };
 }
@@ -243,14 +347,21 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
 
   let rawPrices = object(value.prices) ? { ...(value.prices as Record<string, unknown>) } : {};
   const hasVariantsArray = Array.isArray(value.variants);
+  const variantMoqByLabel = new Map<string, number>();
   if (hasVariantsArray) {
     for (const v of (value.variants as unknown[])) {
       if (object(v) && typeof v.label === 'string' && v.label.trim()) {
+        const trimmedLabel = v.label.trim();
+        const rawVarMoq = v.moqOverride !== undefined ? v.moqOverride : (v as any).minOrderQuantity;
+        const validatedVarMoq = validateMoqOverride(rawVarMoq);
+        if (typeof validatedVarMoq === 'number') {
+          variantMoqByLabel.set(trimmedLabel, validatedVarMoq);
+        }
         const num = Number(v.price);
         if (v.available === false) {
-          delete rawPrices[v.label.trim()];
+          delete rawPrices[trimmedLabel];
         } else if (Number.isFinite(num) && num > 0) {
-          rawPrices[v.label.trim()] = Math.round(num);
+          rawPrices[trimmedLabel] = Math.round(num);
         }
       }
     }
@@ -265,7 +376,7 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
     prices[key] = Math.round(num);
   }
 
-  const quoteOnly = Boolean(value.quoteOnly);
+  const quoteOnly = Boolean(value.quoteOnly) || value.orderMode === 'inquiry_quote';
   const hasConfiguredVariants = hasVariantsArray && (value.variants as unknown[]).length > 0;
   if (!quoteOnly && Object.keys(prices).length === 0 && !hasConfiguredVariants) {
     throw new CatalogError('PRODUCT_REQUIRES_PRICING', 400);
@@ -293,7 +404,14 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
   const desc_ur = typeof value.desc_ur === 'string' ? value.desc_ur.trim() : desc_en;
   const desc_ar = typeof value.desc_ar === 'string' ? value.desc_ar.trim() : desc_en;
 
-  const variants = Object.entries(prices).map(([label, price]) => ({ label, price }));
+  const variants = Object.entries(prices).map(([label, price]) => {
+    const varMoq = variantMoqByLabel.get(label);
+    return {
+      label,
+      price,
+      ...(typeof varMoq === 'number' ? { moqOverride: varMoq } : {}),
+    };
+  });
 
   const product: Product = {
     id: rawId,
@@ -448,8 +566,10 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
   if (Array.isArray(value.exclusions)) {
     product.exclusions = value.exclusions.filter(e => typeof e === 'string' && e.trim()).map(e => e.trim());
   }
-  if (typeof value.moqOverride === 'number' && Number.isSafeInteger(value.moqOverride) && value.moqOverride > 0) {
-    product.moqOverride = value.moqOverride;
+  const rawProductMoq = value.moqOverride !== undefined ? value.moqOverride : (value as any).minOrderQuantity;
+  const validatedProductMoq = validateMoqOverride(rawProductMoq);
+  if (typeof validatedProductMoq === 'number') {
+    product.moqOverride = validatedProductMoq;
   }
   if (typeof value.preparationDays === 'number' && Number.isSafeInteger(value.preparationDays) && value.preparationDays >= 0) {
     product.preparationDays = value.preparationDays;

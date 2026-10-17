@@ -1757,12 +1757,27 @@ function createBidBoxProduct(def: BidBoxDefinition): Product {
       dimensionsAndCapacity: def.dimensionsAndCapacity,
       emptyOptionDetails: def.emptyOptionDetails,
       filledOptionDetails: def.filledOptionDetails,
-      emptyTiers: [
-        { qty: 10, label: '10 pcs', unitPrice: def.emptyUnit1, packPrice: def.emptyUnit1 * 10, variantKey: 'Empty Pack (10 pcs)' },
-        { qty: 25, label: '25 pcs', discountBadge: '-5%', unitPrice: def.emptyUnit25, packPrice: def.emptyUnit25 * 25, variantKey: 'Empty Pack (25 pcs)' },
-        { qty: 50, label: '50 pcs (-10%)', discountBadge: '-10%', unitPrice: def.emptyUnit50, packPrice: def.emptyUnit50 * 50, variantKey: 'Empty Bulk (50 pcs)' },
-        { qty: 100, label: '100+ pcs (-18%)', discountBadge: '-18%', unitPrice: def.emptyUnit100, packPrice: def.emptyUnit100 * 100, variantKey: 'Empty Bulk (100 pcs)' },
-      ],
+      emptyTiers: ([
+        { qty: 10, unitPrice: def.emptyUnit1, packPrice: def.emptyUnit1 * 10, variantKey: 'Empty Pack (10 pcs)' },
+        { qty: 25, unitPrice: def.emptyUnit25, packPrice: def.emptyUnit25 * 25, variantKey: 'Empty Pack (25 pcs)' },
+        { qty: 50, unitPrice: def.emptyUnit50, packPrice: def.emptyUnit50 * 50, variantKey: 'Empty Bulk (50 pcs)' },
+        { qty: 100, unitPrice: def.emptyUnit100, packPrice: def.emptyUnit100 * 100, variantKey: 'Empty Bulk (100 pcs)' },
+      ] as const).map(tier => {
+        const savingsPct =
+          def.emptyUnit1 > 0 && tier.unitPrice < def.emptyUnit1
+            ? Math.round(((def.emptyUnit1 - tier.unitPrice) / def.emptyUnit1) * 100)
+            : 0;
+        const discountBadge = savingsPct > 0 ? `-${savingsPct}%` : undefined;
+        const qtyLabel = tier.qty >= 100 ? `${tier.qty}+ pcs` : `${tier.qty} pcs`;
+        return {
+          qty: tier.qty,
+          label: discountBadge ? `${qtyLabel} (${discountBadge})` : qtyLabel,
+          ...(discountBadge ? { discountBadge } : {}),
+          unitPrice: tier.unitPrice,
+          packPrice: tier.packPrice,
+          variantKey: tier.variantKey,
+        };
+      }),
       filledOptions: [
         { label: def.filledStandardLabel, subtitle: def.filledSummary, price: def.filledMin, variantKey: def.filledStandardLabel },
         { label: def.filledRoyalLabel, subtitle: `VIP / Deluxe Assortment — ${def.filledSummary}`, price: def.filledMax, variantKey: def.filledRoyalLabel },

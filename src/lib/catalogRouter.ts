@@ -14,6 +14,7 @@ import {
   duplicateAdminProduct,
   publishAdminProduct,
   archiveAdminProduct,
+  importReferenceProduct,
   getAdminMerchandising,
   getAdminMerchandisingBundle,
   updateAdminMerchandising,
@@ -180,6 +181,29 @@ export function createCatalogRouter(options: { getDb: () => Firestore | null; re
     try {
       const product = await archiveAdminProduct({ db: options.getDb(), productId: request.params.productId, body: request.body, actorUid: user?.uid || '' });
       return response.json({ product });
+    } catch (error) {
+      return fail(error, response);
+    }
+  });
+
+  // Admin Catalog: Reference Import (atomic 5% initial markup, preserves established merchant prices & private audit metadata on re-import)
+  router.post('/api/admin/catalog/import', options.requireAdmin, async (request, response) => {
+    response.setHeader('Cache-Control', 'no-store');
+    const user = (request as typeof request & { user?: { uid?: string } }).user;
+    try {
+      const result = await importReferenceProduct({ db: options.getDb(), body: request.body, actorUid: user?.uid || '' });
+      return response.status(result.importResult.isNewImport ? 201 : 200).json(result);
+    } catch (error) {
+      return fail(error, response);
+    }
+  });
+
+  router.post('/api/admin/catalog/products/:productId/import', options.requireAdmin, async (request, response) => {
+    response.setHeader('Cache-Control', 'no-store');
+    const user = (request as typeof request & { user?: { uid?: string } }).user;
+    try {
+      const result = await importReferenceProduct({ db: options.getDb(), productId: request.params.productId, body: request.body, actorUid: user?.uid || '' });
+      return response.status(result.importResult.isNewImport ? 201 : 200).json(result);
     } catch (error) {
       return fail(error, response);
     }

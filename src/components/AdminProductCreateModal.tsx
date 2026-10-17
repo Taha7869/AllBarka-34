@@ -23,9 +23,10 @@ export default function AdminProductCreateModal({ isOpen, onClose, onCreated }: 
   const [productFamily, setProductFamily] = useState('');
   const [orderMode, setOrderMode] = useState<OrderMode>('standard');
   const [status, setStatus] = useState<ProductStatus>('draft');
-  const [portions, setPortions] = useState<{ label: string; price: string }[]>([
-    { label: '250g', price: '1200' },
-    { label: '500g', price: '2300' },
+  const [moqOverride, setMoqOverride] = useState('');
+  const [portions, setPortions] = useState<{ label: string; price: string; moqOverride: string }[]>([
+    { label: '250g', price: '1200', moqOverride: '' },
+    { label: '500g', price: '2300', moqOverride: '' },
   ]);
   const [wholesale, setWholesale] = useState('');
   const [referencePrice, setReferencePrice] = useState('');
@@ -40,14 +41,14 @@ export default function AdminProductCreateModal({ isOpen, onClose, onCreated }: 
   if (!isOpen) return null;
 
   const handleAddPortion = () => {
-    setPortions(prev => [...prev, { label: '', price: '' }]);
+    setPortions(prev => [...prev, { label: '', price: '', moqOverride: '' }]);
   };
 
   const handleRemovePortion = (index: number) => {
     setPortions(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handlePortionChange = (index: number, field: 'label' | 'price', value: string) => {
+  const handlePortionChange = (index: number, field: 'label' | 'price' | 'moqOverride', value: string) => {
     setPortions(prev => {
       const copy = [...prev];
       copy[index] = { ...copy[index], [field]: value };
@@ -73,12 +74,39 @@ export default function AdminProductCreateModal({ isOpen, onClose, onCreated }: 
       return;
     }
 
+    let parsedProductMoq: number | undefined = undefined;
+    if (moqOverride.trim() !== '') {
+      const numMoq = Number(moqOverride);
+      if (!Number.isSafeInteger(numMoq) || numMoq < 1 || numMoq > 10000) {
+        setError('Product MOQ override must be a positive whole number between 1 and 10,000.');
+        return;
+      }
+      parsedProductMoq = numMoq;
+    }
+
     const prices: Record<string, number> = {};
+    const variants: { label: string; price: number; available: boolean; moqOverride?: number }[] = [];
     for (const p of portions) {
       const label = p.label.trim();
       const num = Number(p.price);
       if (label && Number.isFinite(num) && num > 0) {
-        prices[label] = Math.round(num);
+        const roundedPrice = Math.round(num);
+        prices[label] = roundedPrice;
+        let parsedVarMoq: number | undefined = undefined;
+        if (p.moqOverride && p.moqOverride.trim() !== '') {
+          const numVarMoq = Number(p.moqOverride);
+          if (!Number.isSafeInteger(numVarMoq) || numVarMoq < 1 || numVarMoq > 10000) {
+            setError(`MOQ override for "${label}" must be a positive whole number between 1 and 10,000.`);
+            return;
+          }
+          parsedVarMoq = numVarMoq;
+        }
+        variants.push({
+          label,
+          price: roundedPrice,
+          available: true,
+          ...(parsedVarMoq !== undefined ? { moqOverride: parsedVarMoq } : {}),
+        });
       }
     }
 
@@ -97,12 +125,14 @@ export default function AdminProductCreateModal({ isOpen, onClose, onCreated }: 
       name_ar: nameAr.trim() || nameEn.trim(),
       category: category.trim(),
       prices,
+      variants,
       orderMode,
       status,
       active: status === 'published',
       quoteOnly: orderMode === 'inquiry_quote',
       wholesale: wholesale ? Math.round(Number(wholesale)) : 0,
       productFamily: productFamily.trim() || undefined,
+      moqOverride: parsedProductMoq,
       referencePrice: referencePrice ? Number(referencePrice) : undefined,
       supplierCost: supplierCost ? Number(supplierCost) : undefined,
       supplierName: supplierName.trim() || undefined,
@@ -284,11 +314,40 @@ export default function AdminProductCreateModal({ isOpen, onClose, onCreated }: 
             </div>
           </div>
 
+          {/* Product MOQ Override */}
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-base)]/40 p-4">
+            <div className="flex items-center justify-between mb-1">
+              <label htmlFor="create-product-moq" className="block text-xs font-semibold text-[var(--color-text-secondary)]">
+                Product MOQ Override (pcs, optional — leave blank for formula)
+              </label>
+              {moqOverride !== '' && (
+                <button
+                  type="button"
+                  onClick={() => setMoqOverride('')}
+                  className="text-xs font-semibold text-red-600 hover:underline"
+                >
+                  Clear Override
+                </button>
+              )}
+            </div>
+            <input
+              id="create-product-moq"
+              type="number"
+              min={1}
+              max={10000}
+              step={1}
+              value={moqOverride}
+              onChange={e => setMoqOverride(e.target.value)}
+              placeholder="e.g. 10 (optional)"
+              className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] px-3 py-2 text-sm focus-ring"
+            />
+          </div>
+
           {/* Portions and Pricing */}
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-base)]/50 p-4">
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-accent-text)]">
-                Portion Pricing (PKR)
+                Portion Pricing (PKR) &amp; Variant MOQ Overrides
               </span>
               <button
                 type="button"
@@ -300,13 +359,13 @@ export default function AdminProductCreateModal({ isOpen, onClose, onCreated }: 
             </div>
             <div className="space-y-2">
               {portions.map((p, index) => (
-                <div key={index} className="flex items-center gap-2">
+                <div key={index} className="flex flex-wrap items-center gap-2">
                   <input
                     type="text"
                     value={p.label}
                     onChange={e => handlePortionChange(index, 'label', e.target.value)}
                     placeholder="e.g. 250g, 500g, 1kg, 1 pc"
-                    className="flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-base)] px-3 py-1.5 text-xs focus-ring"
+                    className="flex-1 min-w-[140px] rounded-lg border border-[var(--color-border)] bg-[var(--color-base)] px-3 py-1.5 text-xs focus-ring"
                   />
                   <span className="text-xs text-[var(--color-text-secondary)]">Rs.</span>
                   <input
@@ -314,8 +373,28 @@ export default function AdminProductCreateModal({ isOpen, onClose, onCreated }: 
                     value={p.price}
                     onChange={e => handlePortionChange(index, 'price', e.target.value)}
                     placeholder="Price"
-                    className="w-32 rounded-lg border border-[var(--color-border)] bg-[var(--color-base)] px-3 py-1.5 text-xs focus-ring"
+                    className="w-28 rounded-lg border border-[var(--color-border)] bg-[var(--color-base)] px-3 py-1.5 text-xs focus-ring"
                   />
+                  <input
+                    type="number"
+                    min={1}
+                    max={10000}
+                    step={1}
+                    value={p.moqOverride}
+                    onChange={e => handlePortionChange(index, 'moqOverride', e.target.value)}
+                    placeholder="MOQ pcs (opt)"
+                    aria-label={`Variant MOQ override for ${p.label || `portion ${index + 1}`}`}
+                    className="w-28 rounded-lg border border-[var(--color-border)] bg-[var(--color-base)] px-2.5 py-1.5 text-xs focus-ring"
+                  />
+                  {p.moqOverride !== '' && (
+                    <button
+                      type="button"
+                      onClick={() => handlePortionChange(index, 'moqOverride', '')}
+                      className="text-[11px] font-semibold text-red-600 hover:underline"
+                    >
+                      Clear MOQ
+                    </button>
+                  )}
                   {portions.length > 1 && (
                     <button
                       type="button"
