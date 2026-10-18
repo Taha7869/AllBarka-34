@@ -104,8 +104,7 @@
         "variants": [
           {
             "label": "Empty Box (1 pc)",
-            "price": 105,
-            "moqOverride": 25
+            "price": 105
           }
         ],
         "active": false,
@@ -120,7 +119,6 @@
         "desc_ar": "A 3-inch circular keepsake presentation tin wrapped with an ornamental Mughal floral motif, designed for celebratory favor distribution, Nikkah giveaways, and elegant event gifting.\n\nWhat is Included:\n1 × Circular metal tinplate base container with rolled-rim friction slip-fit lid.\n\nOffering Status:\nSupplied completely empty as standard for DIY event favor packing. Optional AllBarka dry fruit fillings (such as whole roasted almonds, jumbo cashews, or pistachios) are available upon request for an additional filling quotation. Candies, chocolates, and regional confectionery are customer-requested options subject to team sourcing confirmation and quote.\n\nCustomization Options:\nCustomizable top surface lettering for couple names, event dates, or short celebratory messages.\n\nPreparation & Fulfillment:\nMinimum 10 calendar days after final design approval and receipt of advance payment.",
         "isBidBox": true,
         "bidBoxConfig": {
-          "minUnits": 25,
           "leadTimeDays": 10,
           "emptyTiers": [
             {
@@ -134,12 +132,16 @@
           "packagingSubcategory": "tin"
         },
         "packagingSubcategory": "tin",
-        "moqOverride": 25,
         "preparationDays": 10
       },
       "canonicalSubcategory": "tin",
       "authoritativePrice": 105,
       "displayPrice": 105,
+      "piecesPerPack": 1,
+      "perPiecePrice": 105,
+      "derivedMoqPieces": 25,
+      "derivedMinUnits": 25,
+      "hasExplicitMoqOverride": false,
       "moq": 25,
       "mediaAudit": {
         "mediaStatus": "approved_draft",
@@ -169,8 +171,7 @@
         "variants": [
           {
             "label": "Empty Box (1 pc)",
-            "price": 105,
-            "moqOverride": 25
+            "price": 105
           }
         ],
         "active": false,
@@ -185,7 +186,6 @@
         "desc_ar": "An enchanting botanical garden themed circular metal keepsake tin, crafted for wedding favors, spring gatherings, and celebratory distributions.\n\nWhat is Included:\n1 × Circular metal tinplate container with matching slip-fit lid.\n\nOffering Status:\nSupplied completely empty as standard. Curated AllBarka dry fruit fillings (such as roasted almonds, walnuts, or cashews) may be added upon request for an additional quotation. Confectionery and chocolates are customer-requested options subject to sourcing confirmation.\n\nCustomization Options:\nPersonalized sticker labels for couple names and event dates available upon advance order.\n\nPreparation & Fulfillment:\nMinimum 10 calendar days after final design approval and receipt of advance payment.",
         "isBidBox": true,
         "bidBoxConfig": {
-          "minUnits": 25,
           "leadTimeDays": 10,
           "emptyTiers": [
             {
@@ -199,12 +199,16 @@
           "packagingSubcategory": "tin"
         },
         "packagingSubcategory": "tin",
-        "moqOverride": 25,
         "preparationDays": 10
       },
       "canonicalSubcategory": "tin",
       "authoritativePrice": 105,
       "displayPrice": 105,
+      "piecesPerPack": 1,
+      "perPiecePrice": 105,
+      "derivedMoqPieces": 25,
+      "derivedMinUnits": 25,
+      "hasExplicitMoqOverride": false,
       "moq": 25,
       "mediaAudit": {
         "mediaStatus": "approved_draft",
@@ -234,8 +238,7 @@
         "variants": [
           {
             "label": "Empty Box (1 pc)",
-            "price": 105,
-            "moqOverride": 25
+            "price": 105
           }
         ],
         "active": false,
@@ -250,7 +253,6 @@
         "desc_ar": "A festive floral circular keepsake tin featuring a distinctive rolled gold-toned rim, designed for celebratory favor distribution and commemorative milestones.\n\nWhat is Included:\n1 × Circular metal tinplate container with gold-accented slip lid.\n\nOffering Status:\nSupplied completely empty as standard. Optional dry fruit fillings are quoted separately upon request. Chocolates and sweets are customer-requested options subject to team confirmation and quote.\n\nCustomization Options:\nPersonalized event tags and commemorative label proofing available on qualifying bulk orders.\n\nPreparation & Fulfillment:\nMinimum 10 calendar days after final design approval and receipt of advance payment.",
         "isBidBox": true,
         "bidBoxConfig": {
-          "minUnits": 25,
           "leadTimeDays": 10,
           "emptyTiers": [
             {
@@ -264,12 +266,16 @@
           "packagingSubcategory": "tin"
         },
         "packagingSubcategory": "tin",
-        "moqOverride": 25,
         "preparationDays": 10
       },
       "canonicalSubcategory": "tin",
       "authoritativePrice": 105,
       "displayPrice": 105,
+      "piecesPerPack": 1,
+      "perPiecePrice": 105,
+      "derivedMoqPieces": 25,
+      "derivedMinUnits": 25,
+      "hasExplicitMoqOverride": false,
       "moq": 25,
       "mediaAudit": {
         "mediaStatus": "approved_draft",
@@ -299,8 +305,7 @@
         "variants": [
           {
             "label": "Empty Box (1 pc)",
-            "price": 105,
-            "moqOverride": 25
+            "price": 105
           }
         ],
         "active": false,
@@ -315,7 +320,6 @@
         "desc_ar": "A sophisticated square keepsake tin wrapped in a deep emerald green geometric pattern, offering a structured contemporary alternative to traditional circular favor tins.\n\nWhat is Included:\n1 × Square metal tinplate container with slip-fit lid.\n\nOffering Status:\nSupplied completely empty as standard. AllBarka dry fruit fillings are available upon request for an additional quotation. Confectionery items are customer-requested options subject to sourcing confirmation and quote.\n\nCustomization Options:\nCustom printed belly bands or commemorative lid decals available for bulk event orders.\n\nPreparation & Fulfillment:\nMinimum 10 calendar days after final design approval and receipt of advance payment.",
         "isBidBox": true,
         "bidBoxConfig": {
-          "minUnits": 25,
           "leadTimeDays": 10,
           "emptyTiers": [
             {
@@ -329,12 +333,16 @@
           "packagingSubcategory": "tin"
         },
         "packagingSubcategory": "tin",
-        "moqOverride": 25,
         "preparationDays": 10
       },
       "canonicalSubcategory": "tin",
       "authoritativePrice": 105,
       "displayPrice": 105,
+      "piecesPerPack": 1,
+      "perPiecePrice": 105,
+      "derivedMoqPieces": 25,
+      "derivedMinUnits": 25,
+      "hasExplicitMoqOverride": false,
       "moq": 25,
       "mediaAudit": {
         "mediaStatus": "approved_draft",
@@ -364,8 +372,7 @@
         "variants": [
           {
             "label": "Empty Box (1 pc)",
-            "price": 105,
-            "moqOverride": 25
+            "price": 105
           }
         ],
         "active": false,
@@ -380,7 +387,6 @@
         "desc_ar": "An understated, neutral beige and ivory floral keepsake tin suited for modern pastel wedding aesthetics, Nikkah giveaways, and elegant return favors.\n\nWhat is Included:\n1 × Circular metal tinplate container with slip-on cover.\n\nOffering Status:\nSupplied completely empty as standard. Optional premium dry fruit fillings (such as whole roasted almonds, cashews, or pistachios) are quoted separately upon request. Chocolates and sweets are customer-requested options subject to team confirmation.\n\nCustomization Options:\nCustomizable names and dates on lid label upon advance order confirmation.\n\nPreparation & Fulfillment:\nMinimum 10 calendar days after final design approval and receipt of advance payment.",
         "isBidBox": true,
         "bidBoxConfig": {
-          "minUnits": 25,
           "leadTimeDays": 10,
           "emptyTiers": [
             {
@@ -394,12 +400,16 @@
           "packagingSubcategory": "tin"
         },
         "packagingSubcategory": "tin",
-        "moqOverride": 25,
         "preparationDays": 10
       },
       "canonicalSubcategory": "tin",
       "authoritativePrice": 105,
       "displayPrice": 105,
+      "piecesPerPack": 1,
+      "perPiecePrice": 105,
+      "derivedMoqPieces": 25,
+      "derivedMinUnits": 25,
+      "hasExplicitMoqOverride": false,
       "moq": 25,
       "mediaAudit": {
         "mediaStatus": "approved_draft",
@@ -429,8 +439,7 @@
         "variants": [
           {
             "label": "Empty Box (1 pc)",
-            "price": 126,
-            "moqOverride": 25
+            "price": 126
           }
         ],
         "active": false,
@@ -445,7 +454,6 @@
         "desc_ar": "A charming 3×3×2 inch square metal tinplate keepsake box decorated in gentle pastel powder-blue hues, crafted for baby boy birth announcements and Aqeeqah favors.\n\nWhat is Included:\n1 × Square metal tinplate container with slip-fit lid.\n\nOffering Status:\nSupplied completely empty as standard. Curated AllBarka dry fruit fillings are available upon request for an additional quotation. Confections, sweets, or traditional panjeeri are customer-requested options subject to sourcing confirmation and quote.\n\nCustomization Options:\nBaby name, birth date, and blessing inscriptions customizable on lid graphics.\n\nPreparation & Fulfillment:\nMinimum 10 calendar days after final design approval and receipt of advance payment.",
         "isBidBox": true,
         "bidBoxConfig": {
-          "minUnits": 25,
           "leadTimeDays": 10,
           "emptyTiers": [
             {
@@ -459,12 +467,16 @@
           "packagingSubcategory": "tin"
         },
         "packagingSubcategory": "tin",
-        "moqOverride": 25,
         "preparationDays": 10
       },
       "canonicalSubcategory": "tin",
       "authoritativePrice": 126,
       "displayPrice": 126,
+      "piecesPerPack": 1,
+      "perPiecePrice": 126,
+      "derivedMoqPieces": 25,
+      "derivedMinUnits": 25,
+      "hasExplicitMoqOverride": false,
       "moq": 25,
       "mediaAudit": {
         "mediaStatus": "approved_draft",
@@ -506,8 +518,7 @@
         "variants": [
           {
             "label": "Empty Set (1 set)",
-            "price": 210,
-            "moqOverride": 24
+            "price": 210
           }
         ],
         "active": false,
@@ -522,7 +533,6 @@
         "desc_ar": "A curated three-piece pilgrimage favor suite offering returning Hajj and Umrah pilgrims an elegant, unified presentation for sharing blessed keepsakes.\n\nWhat is Included:\n1 × Structured ivory gift bag with carry handles (6 × 8 × 3 in), 1 × Circular metal tinplate keepsake box with slip lid (3 in dia × 2 in height), 1 × Clear presentation bottle with gold-toned screw cap (120ml capacity).\n\nOffering Status:\nAll three items are supplied completely empty. The 120ml clear bottle is an empty presentation container intended for customer-provided Zamzam water; AllBarka does not sell, pre-fill, or supply Zamzam water. The tin box is supplied empty; optional Madina Ajwa date or dry fruit fillings are quoted separately upon request. Sweets and chocolates are customer-requested options subject to sourcing confirmation and quote.\n\nCustomization Options:\nPilgrim name and return date personalization on presentation tags upon request.\n\nPreparation & Fulfillment:\nMinimum 10 calendar days after final design approval and receipt of advance payment.",
         "isBidBox": true,
         "bidBoxConfig": {
-          "minUnits": 24,
           "leadTimeDays": 10,
           "emptyTiers": [
             {
@@ -536,12 +546,16 @@
           "packagingSubcategory": "tabarruk"
         },
         "packagingSubcategory": "tabarruk",
-        "moqOverride": 24,
         "preparationDays": 10
       },
       "canonicalSubcategory": "tabarruk",
       "authoritativePrice": 210,
       "displayPrice": 210,
+      "piecesPerPack": 1,
+      "perPiecePrice": 210,
+      "derivedMoqPieces": 24,
+      "derivedMinUnits": 24,
+      "hasExplicitMoqOverride": false,
       "moq": 24,
       "mediaAudit": {
         "mediaStatus": "approved_draft",
@@ -571,8 +585,7 @@
         "variants": [
           {
             "label": "Empty Set (1 set)",
-            "price": 210,
-            "moqOverride": 24
+            "price": 210
           }
         ],
         "active": false,
@@ -587,7 +600,6 @@
         "desc_ar": "A distinguished heritage pilgrimage set combining an ivory window presentation box, an empty clear water flask with gold cap, and an empty circular favor tin.\n\nWhat is Included:\n1 × Matching structured gift bag, 1 × Circular keepsake metal favor tin, 1 × Clear transparent presentation bottle with gold cap.\n\nOffering Status:\nSupplied completely empty. The bottle is an empty vessel intended exclusively for customer-provided Zamzam water; AllBarka does not sell or supply Zamzam water. The tin box is supplied empty; optional dry fruit or date fillings are available upon request for an additional quote. Sweets and confections are customer-requested options subject to sourcing confirmation.\n\nCustomization Options:\nCommemorative tags for pilgrim names and return year available on advance bulk orders.\n\nPreparation & Fulfillment:\nMinimum 10 calendar days after final design approval and receipt of advance payment.",
         "isBidBox": true,
         "bidBoxConfig": {
-          "minUnits": 24,
           "leadTimeDays": 10,
           "emptyTiers": [
             {
@@ -601,12 +613,16 @@
           "packagingSubcategory": "tabarruk"
         },
         "packagingSubcategory": "tabarruk",
-        "moqOverride": 24,
         "preparationDays": 10
       },
       "canonicalSubcategory": "tabarruk",
       "authoritativePrice": 210,
       "displayPrice": 210,
+      "piecesPerPack": 1,
+      "perPiecePrice": 210,
+      "derivedMoqPieces": 24,
+      "derivedMinUnits": 24,
+      "hasExplicitMoqOverride": false,
       "moq": 24,
       "mediaAudit": {
         "mediaStatus": "approved_draft",
@@ -636,8 +652,7 @@
         "variants": [
           {
             "label": "Empty Set (1 set)",
-            "price": 210,
-            "moqOverride": 24
+            "price": 210
           }
         ],
         "active": false,
@@ -652,7 +667,6 @@
         "desc_ar": "A distinguished pilgrimage favor suite decorated with crescent moon motifs, comprising a matching structured carrier bag, a circular keepsake favor tin, and an empty 120ml bottle with screw cap for customer-provided Zamzam water.\n\nWhat is Included:\n1 × Matching structured carrier bag, 1 × Circular metal favor tin (3-inch diameter), 1 × Clear presentation bottle (120ml capacity) with screw cap.\n\nOffering Status:\nSupplied completely empty as standard for DIY packing. The bottle is an empty vessel intended exclusively for customer-provided Zamzam water; AllBarka does not sell or supply Zamzam water. Authentic Ajwa dates or dry fruit fillings are available upon request for an additional quotation. Confectionery is a customer-requested option subject to sourcing confirmation.\n\nCustomization Options:\nCustomized pilgrim homecoming message tags included with advance bulk booking.\n\nPreparation & Fulfillment:\nMinimum 10 calendar days after final design approval and receipt of advance payment.",
         "isBidBox": true,
         "bidBoxConfig": {
-          "minUnits": 24,
           "leadTimeDays": 10,
           "emptyTiers": [
             {
@@ -666,12 +680,16 @@
           "packagingSubcategory": "tabarruk"
         },
         "packagingSubcategory": "tabarruk",
-        "moqOverride": 24,
         "preparationDays": 10
       },
       "canonicalSubcategory": "tabarruk",
       "authoritativePrice": 210,
       "displayPrice": 210,
+      "piecesPerPack": 1,
+      "perPiecePrice": 210,
+      "derivedMoqPieces": 24,
+      "derivedMinUnits": 24,
+      "hasExplicitMoqOverride": false,
       "moq": 24,
       "mediaAudit": {
         "mediaStatus": "needs_revision",
@@ -702,8 +720,7 @@
         "variants": [
           {
             "label": "Empty Set (1 set)",
-            "price": 420,
-            "moqOverride": 12
+            "price": 420
           }
         ],
         "active": false,
@@ -718,7 +735,6 @@
         "desc_ar": "A festive presentation suite featuring a large structured carrier bag and matching chest-format ('Tijori') presentation box, designed for pilgrimage homecoming favor distribution.\n\nWhat is Included:\n1 × Large structured Tijori-pattern carrier bag, 1 × Matching Tijori chest-style presentation box.\n\nOffering Status:\nSupplied completely empty as standard for DIY favor packing. Optional AllBarka dry fruit fillings or authentic Ajwa dates are quoted separately upon request. Decorative hardware latches, custom velvet linings, or additional vessels are unverified proposed concepts not included in the standard reference suite. Confectionery is a customer-requested option subject to sourcing confirmation and quote.\n\nCustomization Options:\nPilgrim family name in calligraphy on outer presentation tag upon request.\n\nPreparation & Fulfillment:\nMinimum 10 calendar days after final design approval and receipt of advance payment.",
         "isBidBox": true,
         "bidBoxConfig": {
-          "minUnits": 12,
           "leadTimeDays": 10,
           "emptyTiers": [
             {
@@ -732,12 +748,16 @@
           "packagingSubcategory": "tabarruk"
         },
         "packagingSubcategory": "tabarruk",
-        "moqOverride": 12,
         "preparationDays": 10
       },
       "canonicalSubcategory": "tabarruk",
       "authoritativePrice": 420,
       "displayPrice": 420,
+      "piecesPerPack": 1,
+      "perPiecePrice": 420,
+      "derivedMoqPieces": 12,
+      "derivedMinUnits": 12,
+      "hasExplicitMoqOverride": false,
       "moq": 12,
       "mediaAudit": {
         "mediaStatus": "needs_revision",
@@ -768,8 +788,7 @@
         "variants": [
           {
             "label": "Empty Set (1 set)",
-            "price": 367.5,
-            "moqOverride": 14
+            "price": 367.5
           }
         ],
         "active": false,
@@ -784,7 +803,6 @@
         "desc_ar": "A structured three-piece pilgrimage set featuring an elongated 7×12 inch carrier bag, a 3×3×2 inch square metal favor tin, and an empty 120ml clear bottle with gold cap.\n\nWhat is Included:\n1 × Elongated paper gift bag (7 × 12 in), 1 × Square metal tinplate box (3 × 3 × 2 in), 1 × Clear presentation bottle (120ml capacity).\n\nOffering Status:\nAll components are supplied completely empty. The bottle is an empty vessel intended exclusively for customer-provided Zamzam water; AllBarka does not sell or supply Zamzam water. The square tin is supplied empty; optional Ajwa date or dry fruit fillings are available upon request for an additional quotation. Confectionery is a customer-requested option subject to sourcing confirmation.\n\nCustomization Options:\nPilgrim names and event dates can be added to the carrier bag and tin wrapper upon request.\n\nPreparation & Fulfillment:\nMinimum 10 calendar days after final design approval and receipt of advance payment.",
         "isBidBox": true,
         "bidBoxConfig": {
-          "minUnits": 14,
           "leadTimeDays": 10,
           "emptyTiers": [
             {
@@ -798,12 +816,16 @@
           "packagingSubcategory": "tabarruk"
         },
         "packagingSubcategory": "tabarruk",
-        "moqOverride": 14,
         "preparationDays": 10
       },
       "canonicalSubcategory": "tabarruk",
       "authoritativePrice": 367.5,
       "displayPrice": 368,
+      "piecesPerPack": 1,
+      "perPiecePrice": 367.5,
+      "derivedMoqPieces": 14,
+      "derivedMinUnits": 14,
+      "hasExplicitMoqOverride": false,
       "moq": 14,
       "mediaAudit": {
         "mediaStatus": "blocked_by_quota",
@@ -881,8 +903,7 @@
         "variants": [
           {
             "label": "Empty Box (1 pc)",
-            "price": 78.75,
-            "moqOverride": 25
+            "price": 78.75
           }
         ],
         "active": false,
@@ -897,7 +918,6 @@
         "desc_ar": "A classic 3.5-inch rigid cardstock favor box finished with a handcrafted paper floral accent, crafted for Nikkah, Baat Pakki, engagement favors, and wedding guest gifting.\n\nWhat is Included:\n1 × Two-piece rigid cardstock box (base and telescoping slip lid) with handcrafted floral adornment.\n\nOffering Status:\nSupplied completely empty as standard. Curated AllBarka dry fruit fillings (such as whole almonds, cashews, or pistachios) are available upon request as optional quoted add-ons. Confections and chocolates are customer-requested options subject to sourcing confirmation and quote.\n\nCustomization Options:\nCouple name and event date printed favor tags available on bulk orders.\n\nPreparation & Fulfillment:\nMinimum 10 calendar days after final design approval and receipt of advance payment.",
         "isBidBox": true,
         "bidBoxConfig": {
-          "minUnits": 25,
           "leadTimeDays": 10,
           "emptyTiers": [
             {
@@ -911,12 +931,16 @@
           "packagingSubcategory": "wedding"
         },
         "packagingSubcategory": "wedding",
-        "moqOverride": 25,
         "preparationDays": 10
       },
       "canonicalSubcategory": "wedding",
       "authoritativePrice": 78.75,
       "displayPrice": 79,
+      "piecesPerPack": 1,
+      "perPiecePrice": 78.75,
+      "derivedMoqPieces": 25,
+      "derivedMinUnits": 25,
+      "hasExplicitMoqOverride": false,
       "moq": 25,
       "mediaAudit": {
         "mediaStatus": "approved_draft",
@@ -946,8 +970,7 @@
         "variants": [
           {
             "label": "Empty Box (1 pc)",
-            "price": 31.5,
-            "moqOverride": 25
+            "price": 31.5
           }
         ],
         "active": false,
@@ -962,7 +985,6 @@
         "desc_ar": "An affordable, decorative 3×3×3 inch triangular cardstock favor box featuring delicate floral graphics and an apex ribbon closure, suited for large wedding guest distributions.\n\nWhat is Included:\n1 × Foldable cardstock pyramid box with ribbon tie.\n\nOffering Status:\nSupplied completely empty as standard. Optional dry fruit fillings are quoted separately upon request. Candies and chocolates are customer-requested options subject to team confirmation and quote.\n\nCustomization Options:\nCustom ribbon colors to match wedding palette upon advance order.\n\nPreparation & Fulfillment:\nMinimum 10 calendar days after final design approval and receipt of advance payment.",
         "isBidBox": true,
         "bidBoxConfig": {
-          "minUnits": 25,
           "leadTimeDays": 10,
           "emptyTiers": [
             {
@@ -976,12 +998,16 @@
           "packagingSubcategory": "wedding"
         },
         "packagingSubcategory": "wedding",
-        "moqOverride": 25,
         "preparationDays": 10
       },
       "canonicalSubcategory": "wedding",
       "authoritativePrice": 31.5,
       "displayPrice": 32,
+      "piecesPerPack": 1,
+      "perPiecePrice": 31.5,
+      "derivedMoqPieces": 25,
+      "derivedMinUnits": 25,
+      "hasExplicitMoqOverride": false,
       "moq": 25,
       "mediaAudit": {
         "mediaStatus": "blocked_by_quota",
@@ -1011,8 +1037,7 @@
         "variants": [
           {
             "label": "Empty Box (1 pc)",
-            "price": 63,
-            "moqOverride": 25
+            "price": 63
           }
         ],
         "active": false,
@@ -1027,7 +1052,6 @@
         "desc_ar": "A rustic 4×5.5 inch natural jute drawstring favor pouch, ideal for traditional Mehndi giveaways, Dholki favors, and artisanal event presentation.\n\nWhat is Included:\n1 × Natural jute drawstring pouch with dual pull cords.\n\nOffering Status:\nSupplied completely empty as standard. Dry fruit pairings are available upon request for an additional quote. Sweets and confections are customer-requested options subject to sourcing confirmation.\n\nCustomization Options:\nCustom printed hangtags or wooden bead attachments available on bulk orders.\n\nPreparation & Fulfillment:\nMinimum 10 calendar days after final design approval and receipt of advance payment.",
         "isBidBox": true,
         "bidBoxConfig": {
-          "minUnits": 25,
           "leadTimeDays": 10,
           "emptyTiers": [
             {
@@ -1041,12 +1065,16 @@
           "packagingSubcategory": "wedding"
         },
         "packagingSubcategory": "wedding",
-        "moqOverride": 25,
         "preparationDays": 10
       },
       "canonicalSubcategory": "wedding",
       "authoritativePrice": 63,
       "displayPrice": 63,
+      "piecesPerPack": 1,
+      "perPiecePrice": 63,
+      "derivedMoqPieces": 25,
+      "derivedMinUnits": 25,
+      "hasExplicitMoqOverride": false,
       "moq": 25,
       "mediaAudit": {
         "mediaStatus": "blocked_by_quota",
@@ -1076,8 +1104,7 @@
         "variants": [
           {
             "label": "Empty Box (1 pc)",
-            "price": 84,
-            "moqOverride": 25
+            "price": 84
           }
         ],
         "active": false,
@@ -1092,7 +1119,6 @@
         "desc_ar": "A refined two-piece favor box combining a metallic gold-sheen telescoping lid with an off-white base, designed for formal wedding and Nikkah guest gifting.\n\nWhat is Included:\n1 × Two-piece rigid card box (gold lid and off-white base).\n\nOffering Status:\nSupplied completely empty as standard. Curated AllBarka dry fruit fillings may be quoted upon request. Confectionery items are customer-requested options subject to sourcing confirmation and quote.\n\nCustomization Options:\nPersonalized monogram stamping available on qualifying orders.\n\nPreparation & Fulfillment:\nMinimum 10 calendar days after final design approval and receipt of advance payment.",
         "isBidBox": true,
         "bidBoxConfig": {
-          "minUnits": 25,
           "leadTimeDays": 10,
           "emptyTiers": [
             {
@@ -1106,12 +1132,16 @@
           "packagingSubcategory": "wedding"
         },
         "packagingSubcategory": "wedding",
-        "moqOverride": 25,
         "preparationDays": 10
       },
       "canonicalSubcategory": "wedding",
       "authoritativePrice": 84,
       "displayPrice": 84,
+      "piecesPerPack": 1,
+      "perPiecePrice": 84,
+      "derivedMoqPieces": 25,
+      "derivedMinUnits": 25,
+      "hasExplicitMoqOverride": false,
       "moq": 25,
       "mediaAudit": {
         "mediaStatus": "blocked_by_quota",
@@ -1153,8 +1183,7 @@
         "variants": [
           {
             "label": "Empty Box (1 pc)",
-            "price": 273,
-            "moqOverride": 19
+            "price": 273
           }
         ],
         "active": false,
@@ -1169,7 +1198,6 @@
         "desc_ar": "A generous 6×6×2 inch square rigid presentation box offering 500g capacity for baby announcements, Aqeeqah celebrations, and family gifting.\n\nWhat is Included:\n1 × Square rigid presentation box with telescoping lid.\n\nOffering Status:\nSupplied completely empty as standard. Curated AllBarka dry fruit fillings are available upon request for an additional quotation. Confectionery, sweets, or panjeeri are customer-requested options subject to sourcing confirmation and quote.\n\nCustomization Options:\nFull baby announcement typography proofing included with advance booking.\n\nPreparation & Fulfillment:\nMinimum 10 calendar days after final design approval and receipt of advance payment.",
         "isBidBox": true,
         "bidBoxConfig": {
-          "minUnits": 19,
           "leadTimeDays": 10,
           "emptyTiers": [
             {
@@ -1183,12 +1211,16 @@
           "packagingSubcategory": "baby"
         },
         "packagingSubcategory": "baby",
-        "moqOverride": 19,
         "preparationDays": 10
       },
       "canonicalSubcategory": "baby",
       "authoritativePrice": 273,
       "displayPrice": 273,
+      "piecesPerPack": 1,
+      "perPiecePrice": 273,
+      "derivedMoqPieces": 19,
+      "derivedMinUnits": 19,
+      "hasExplicitMoqOverride": false,
       "moq": 19,
       "mediaAudit": {
         "mediaStatus": "approved_draft",
@@ -1218,8 +1250,7 @@
         "variants": [
           {
             "label": "Empty Box (1 pc)",
-            "price": 105,
-            "moqOverride": 25
+            "price": 105
           }
         ],
         "active": false,
@@ -1234,7 +1265,6 @@
         "desc_ar": "A delicate 3-inch circular cylinder favor box designed for intimate baby arrival announcements, hospital visits, and Aqeeqah favor distributions.\n\nWhat is Included:\n1 × Circular favor container with slip-on lid.\n\nOffering Status:\nSupplied completely empty as standard. Optional dry fruit fillings are quoted separately. Sweets and candies are customer-requested options subject to sourcing confirmation.\n\nCustomization Options:\nCustom printed baby name lid decal available on qualifying orders.\n\nPreparation & Fulfillment:\nMinimum 10 calendar days after final design approval and receipt of advance payment.",
         "isBidBox": true,
         "bidBoxConfig": {
-          "minUnits": 25,
           "leadTimeDays": 10,
           "emptyTiers": [
             {
@@ -1248,12 +1278,16 @@
           "packagingSubcategory": "baby"
         },
         "packagingSubcategory": "baby",
-        "moqOverride": 25,
         "preparationDays": 10
       },
       "canonicalSubcategory": "baby",
       "authoritativePrice": 105,
       "displayPrice": 105,
+      "piecesPerPack": 1,
+      "perPiecePrice": 105,
+      "derivedMoqPieces": 25,
+      "derivedMinUnits": 25,
+      "hasExplicitMoqOverride": false,
       "moq": 25,
       "mediaAudit": {
         "mediaStatus": "blocked_by_quota",
@@ -1283,8 +1317,7 @@
         "variants": [
           {
             "label": "Empty Box (1 pc)",
-            "price": 157.5,
-            "moqOverride": 25
+            "price": 157.5
           }
         ],
         "active": false,
@@ -1299,7 +1332,6 @@
         "desc_ar": "A compact rigid announcement box with 250g capacity, suited for individual family and colleague distributions.\n\nWhat is Included:\n1 × Compact rigid card announcement box.\n\nOffering Status:\nSupplied completely empty as standard. Dry fruit pairings are available upon request for an additional quote. Sweets, confections, and panjeeri are customer-requested options subject to sourcing confirmation.\n\nCustomization Options:\nNewborn name and birth announcement tag customization available.\n\nPreparation & Fulfillment:\nMinimum 10 calendar days after final design approval and receipt of advance payment.",
         "isBidBox": true,
         "bidBoxConfig": {
-          "minUnits": 25,
           "leadTimeDays": 10,
           "emptyTiers": [
             {
@@ -1313,12 +1345,16 @@
           "packagingSubcategory": "baby"
         },
         "packagingSubcategory": "baby",
-        "moqOverride": 25,
         "preparationDays": 10
       },
       "canonicalSubcategory": "baby",
       "authoritativePrice": 157.5,
       "displayPrice": 158,
+      "piecesPerPack": 1,
+      "perPiecePrice": 157.5,
+      "derivedMoqPieces": 25,
+      "derivedMinUnits": 25,
+      "hasExplicitMoqOverride": false,
       "moq": 25,
       "mediaAudit": {
         "mediaStatus": "blocked_by_quota",
@@ -1348,8 +1384,7 @@
         "variants": [
           {
             "label": "Empty Box (1 pc)",
-            "price": 399,
-            "moqOverride": 13
+            "price": 399
           }
         ],
         "active": false,
@@ -1364,7 +1399,6 @@
         "desc_ar": "An exquisite 7×5×2 inch rectangular presentation box in blush floral styling, designed to celebrate the birth of a baby girl with close family and guests.\n\nWhat is Included:\n1 × Rectangular rigid announcement box with fitted lid.\n\nOffering Status:\nSupplied completely empty as standard. Premium dry fruit fillings are quoted upon request. Confectionery and sweets are customer-requested options subject to sourcing confirmation and quote.\n\nCustomization Options:\nPersonalized baby girl name and date calligraphy included on lid.\n\nPreparation & Fulfillment:\nMinimum 10 calendar days after final design approval and receipt of advance payment.",
         "isBidBox": true,
         "bidBoxConfig": {
-          "minUnits": 13,
           "leadTimeDays": 10,
           "emptyTiers": [
             {
@@ -1378,12 +1412,16 @@
           "packagingSubcategory": "baby"
         },
         "packagingSubcategory": "baby",
-        "moqOverride": 13,
         "preparationDays": 10
       },
       "canonicalSubcategory": "baby",
       "authoritativePrice": 399,
       "displayPrice": 399,
+      "piecesPerPack": 1,
+      "perPiecePrice": 399,
+      "derivedMoqPieces": 13,
+      "derivedMinUnits": 13,
+      "hasExplicitMoqOverride": false,
       "moq": 13,
       "mediaAudit": {
         "mediaStatus": "blocked_by_quota",
@@ -1413,8 +1451,7 @@
         "variants": [
           {
             "label": "Empty Box (1 pc)",
-            "price": 462,
-            "moqOverride": 11
+            "price": 462
           }
         ],
         "active": false,
@@ -1429,7 +1466,6 @@
         "desc_ar": "A grand 9×7×2 inch presentation box offering full 1kg capacity for large family baby announcements, Aqeeqah sweets, and celebration gifting.\n\nWhat is Included:\n1 × Large rigid presentation box with telescoping lid.\n\nOffering Status:\nSupplied completely empty as standard. Curated AllBarka dry fruit fillings may be added upon request for an additional quotation. Confectionery, mithai, and panjeeri are customer-requested options subject to sourcing confirmation and quote.\n\nCustomization Options:\nPersonalized family announcement inscription on lid graphics.\n\nPreparation & Fulfillment:\nMinimum 10 calendar days after final design approval and receipt of advance payment.",
         "isBidBox": true,
         "bidBoxConfig": {
-          "minUnits": 11,
           "leadTimeDays": 10,
           "emptyTiers": [
             {
@@ -1443,12 +1479,16 @@
           "packagingSubcategory": "baby"
         },
         "packagingSubcategory": "baby",
-        "moqOverride": 11,
         "preparationDays": 10
       },
       "canonicalSubcategory": "baby",
       "authoritativePrice": 462,
       "displayPrice": 462,
+      "piecesPerPack": 1,
+      "perPiecePrice": 462,
+      "derivedMoqPieces": 11,
+      "derivedMinUnits": 11,
+      "hasExplicitMoqOverride": false,
       "moq": 11,
       "mediaAudit": {
         "mediaStatus": "blocked_by_quota",
@@ -1481,23 +1521,19 @@
         "variants": [
           {
             "label": "250 gram",
-            "price": 157.5,
-            "moqOverride": 25
+            "price": 157.5
           },
           {
             "label": "Half kg",
-            "price": 262.5,
-            "moqOverride": 20
+            "price": 262.5
           },
           {
             "label": "1 kg",
-            "price": 367.5,
-            "moqOverride": 14
+            "price": 367.5
           },
           {
             "label": "2 kg",
-            "price": 472.5,
-            "moqOverride": 11
+            "price": 472.5
           }
         ],
         "active": false,
@@ -1512,7 +1548,6 @@
         "desc_ar": "A tiered baby announcement presentation box family offering four proportional capacities (250g, 500g, 1kg, 2kg) to accommodate both intimate favors and grand family gifting.\n\nWhat is Included:\n1 × Rigid baby announcement box in selected size tier.\n\nOffering Status:\nSupplied completely empty as standard for DIY packing. Optional AllBarka dry fruit fillings may be quoted upon request. Confectionery and panjeeri are customer-requested options subject to sourcing confirmation and quote.\n\nCustomization Options:\nLid typography proofing available for baby name and birth date.\n\nPreparation & Fulfillment:\nMinimum 10 calendar days after final design approval and receipt of advance payment.",
         "isBidBox": true,
         "bidBoxConfig": {
-          "minUnits": 11,
           "leadTimeDays": 10,
           "emptyTiers": [
             {
@@ -1547,13 +1582,17 @@
           "packagingSubcategory": "baby"
         },
         "packagingSubcategory": "baby",
-        "moqOverride": 11,
         "preparationDays": 10
       },
       "canonicalSubcategory": "baby",
       "authoritativePrice": 157.5,
       "displayPrice": 158,
-      "moq": 11,
+      "piecesPerPack": 1,
+      "perPiecePrice": 157.5,
+      "derivedMoqPieces": 25,
+      "derivedMinUnits": 25,
+      "hasExplicitMoqOverride": false,
+      "moq": 25,
       "mediaAudit": {
         "mediaStatus": "deferred",
         "draftJpgMaster": null,
@@ -1594,8 +1633,7 @@
         "variants": [
           {
             "label": "Empty Box (1 pc)",
-            "price": 315,
-            "moqOverride": 16
+            "price": 315
           }
         ],
         "active": false,
@@ -1610,7 +1648,6 @@
         "desc_ar": "A minimalist 3×3×3 inch clear acrylic cube favor box with clean slip-over lid, crafted for modern Nikkah distributions, luxury confectionery, and keepsake favors.\n\nWhat is Included:\n1 × Clear acrylic cube base with matching slip-over acrylic lid.\n\nOffering Status:\nSupplied completely empty as standard. Curated AllBarka dry fruit fillings (such as whole roasted almonds, cashews, or pistachios) are available upon request for an additional quotation. Confectionery and chocolates are customer-requested options subject to sourcing confirmation and quote.\n\nCustomization Options:\nCustom decal lettering with couple names and event dates (WhatsApp proofing included upon order confirmation).\n\nPreparation & Fulfillment:\nMinimum 10 calendar days after final design approval and receipt of advance payment.",
         "isBidBox": true,
         "bidBoxConfig": {
-          "minUnits": 16,
           "leadTimeDays": 10,
           "emptyTiers": [
             {
@@ -1624,12 +1661,16 @@
           "packagingSubcategory": "acrylic"
         },
         "packagingSubcategory": "acrylic",
-        "moqOverride": 16,
         "preparationDays": 10
       },
       "canonicalSubcategory": "acrylic",
       "authoritativePrice": 315,
       "displayPrice": 315,
+      "piecesPerPack": 1,
+      "perPiecePrice": 315,
+      "derivedMoqPieces": 16,
+      "derivedMinUnits": 16,
+      "hasExplicitMoqOverride": false,
       "moq": 16,
       "mediaAudit": {
         "mediaStatus": "approved_draft",
@@ -1683,6 +1724,6 @@
       "skipReason": "Unverified concept \"acrylic-box-grand-trousseau-chest\" excluded from catalog draft creation."
     }
   ],
-  "timestamp": "2026-10-18T21:58:18.356Z",
+  "timestamp": "2026-10-18T22:12:31.565Z",
   "branch": "feat/renovation-v2"
 }

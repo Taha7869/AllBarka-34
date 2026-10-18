@@ -6,9 +6,11 @@
  * Key guarantees:
  * - Subcategory mapping: explicit mapping to 'tin' | 'tabarruk' | 'wedding' | 'baby' | 'acrylic'
  * - Exact decimal selling-price preservation (authoritative prices retain exact decimals; integer rounding is display-only)
+ * - Selling price validation: requires actual approved proposed selling price (NEVER falls back to source_price_pkr)
+ * - Pack price basis honoring: parses and validates price_basis, preserving pack price, per-piece price, and minimum pack units; rejects ambiguous free text
+ * - Dynamic MOQ rule: NEVER freezes calculated MOQ as an admin override (retains overrides only when genuinely supplied)
  * - Idempotency and re-import safety (no duplicate drafts, no compounded 5% markups)
  * - Existing inventory preservation (skips existing products without altering saved fields or filled offerings)
- * - Authoritative MOQ engine integration (per-variant MOQ, treating 250g as capacity not pieces)
  * - Strict media segregation: docs/ draft paths NEVER placed in live storefront fields (image/imageName remain null)
  * - Unverified concept exclusion: proposed concepts are excluded from draft creation
  * - Explicit publication blockers tracking: distinguishes schema validity from publication readiness
@@ -23,7 +25,11 @@ import {
   stripPrivateProductFields,
   CatalogError,
 } from './catalogSchema';
-import { calculatePackagingMoq, parsePiecesPerPack } from './packagingMoq';
+import {
+  calculatePackagingMoq,
+  calculateMinOrderQuantityUnits,
+  parsePiecesPerPack,
+} from './packagingMoq';
 
 export type CanonicalPackagingSubcategory = 'tin' | 'tabarruk' | 'wedding' | 'baby' | 'acrylic';
 
@@ -74,6 +80,14 @@ export interface DraftMediaAuditInfo {
   notes?: string;
 }
 
+export interface ParsedPriceBasis {
+  piecesPerPack: number;
+  unitType: 'pc' | 'set' | 'pack';
+  capacityLabel?: string;
+  isMultiSizeFamily?: boolean;
+  raw: string;
+}
+
 export interface AdapterProductResult {
   recordId: string;
   action:
@@ -86,7 +100,12 @@ export interface AdapterProductResult {
   canonicalSubcategory?: CanonicalPackagingSubcategory | null;
   authoritativePrice?: number;
   displayPrice?: number;
-  moq?: number;
+  piecesPerPack?: number;
+  perPiecePrice?: number;
+  derivedMoqPieces?: number;
+  derivedMinUnits?: number;
+  hasExplicitMoqOverride?: boolean;
+  moq?: number; // derivedMoqPieces for display/summary
   mediaAudit: DraftMediaAuditInfo;
   isPublishable: boolean;
   publicationBlockers: string[];
@@ -157,6 +176,105 @@ export function resolveCanonicalPackagingSubcategory(rawSubcat: unknown): Canoni
     );
   }
   return mapped;
+}
+
+/**
+ * Parses and validates the price_basis string.
+ *
+ * Supported formats:
+ * - "1 pc", "1 piece", "1 pc (250g capacity)" -> pieces = 1, unitType = 'pc'
+ * - "1 set" -> pieces = 1, unitType = 'set'
+ * - "10 pcs", "pack of 10", "25 pieces", "50 boxes" -> pieces = N, unitType = 'pack'
+ * - "Variable multi-size family (4 sizes)" -> isMultiSizeFamily = true
+ *
+ * Unsupported or ambiguous free-text (e.g. "wholesale lot", "bulk order", "per crate")
+ * throws a CatalogError('INVALID_PRICE_BASIS').
+ */
+export function parsePriceBasis(rawBasis: unknown): ParsedPriceBasis {
+  if (typeof rawBasis !== 'string' || !rawBasis.trim()) {
+    throw new CatalogError(
+      'INVALID_PRICE_BASIS',
+      400,
+      'Price basis (price_basis) is required and cannot be empty.'
+    );
+  }
+
+  const trimmed = rawBasis.trim();
+
+  // 1. Variable multi-size family
+  if (/^variable\b/i.test(trimmed) || /multi-size/i.test(trimmed)) {
+    return {
+      piecesPerPack: 1,
+      unitType: 'pc',
+      isMultiSizeFamily: true,
+      raw: trimmed,
+    };
+  }
+
+  // 2. Separate capacity in parentheses, e.g. "(250g capacity)", "(half kg / 500g capacity)", "(1 kg capacity)"
+  let capacityLabel: string | undefined;
+  const capMatch = /\(([^)]*(?:g|kg|gram|capacity)[^)]*)\)/i.exec(trimmed);
+  if (capMatch) {
+    capacityLabel = capMatch[1].trim();
+  }
+
+  // Core count string without the parenthetical capacity
+  const coreString = trimmed.replace(/\([^)]*\)/g, '').trim();
+
+  // 3. Single piece: "1 pc", "1 piece"
+  if (/^1\s*(?:pc|piece)\b/i.test(coreString)) {
+    return {
+      piecesPerPack: 1,
+      unitType: 'pc',
+      capacityLabel,
+      raw: trimmed,
+    };
+  }
+
+  // 4. Single set: "1 set"
+  if (/^1\s*set\b/i.test(coreString)) {
+    return {
+      piecesPerPack: 1,
+      unitType: 'set',
+      capacityLabel,
+      raw: trimmed,
+    };
+  }
+
+  // 5. Pack of N: "pack of 10", "box of 25"
+  const packOfMatch = /^(?:pack\s+of\s+|box\s+of\s+)(\d+)\b/i.exec(coreString);
+  if (packOfMatch) {
+    const qty = parseInt(packOfMatch[1], 10);
+    if (Number.isSafeInteger(qty) && qty > 0) {
+      return {
+        piecesPerPack: qty,
+        unitType: 'pack',
+        capacityLabel,
+        raw: trimmed,
+      };
+    }
+  }
+
+  // 6. N pieces / pcs / boxes: "10 pcs", "25 pieces", "50 boxes"
+  const countPcsMatch = /^(\d+)\s*(?:-?\s*pieces?|-?\s*pcs?|-?\s*pack|-?\s*boxes?)\b/i.exec(coreString);
+  if (countPcsMatch) {
+    const qty = parseInt(countPcsMatch[1], 10);
+    if (Number.isSafeInteger(qty) && qty > 0) {
+      return {
+        piecesPerPack: qty,
+        unitType: qty === 1 ? 'pc' : 'pack',
+        capacityLabel,
+        raw: trimmed,
+      };
+    }
+  }
+
+  // Ambiguous or unsupported free text
+  throw new CatalogError(
+    'INVALID_PRICE_BASIS',
+    400,
+    `Unsupported or ambiguous price_basis: "${trimmed}". Expected explicit piece or pack definition (e.g. '1 pc', '1 set', '10 pcs', 'pack of 25', or 'Variable multi-size family'). Free-text descriptions and unvalidated units are rejected.`
+  );
 }
 
 /**
@@ -245,13 +363,13 @@ export function adaptResearchRecordToDraft(
     };
   }
 
-  // Resolve subcategory
+  // Resolve subcategory early
   let canonicalSubcat: CanonicalPackagingSubcategory | null = null;
   try {
     canonicalSubcat = resolveCanonicalPackagingSubcategory(
       record.subcategory_id || record.research_subcategory_id || record.category
     );
-  } catch (err: any) {
+  } catch {
     canonicalSubcat = null;
   }
 
@@ -299,19 +417,33 @@ export function adaptResearchRecordToDraft(
 
   // 6. Authoritative pricing & exact decimal preservation
   // Proposed selling prices in the manifest ALREADY include the one-time 5% markup.
-  // We NEVER add another 5% markup.
-  const authoritativeSellingPrice = Number(
-    record.proposed_selling_price_pkr ?? record.proposed_price_pkr ?? record.source_price_pkr ?? 0
-  );
+  // We NEVER add another 5% markup, and we NEVER fall back to source_price_pkr!
+  const rawProposed = record.proposed_selling_price_pkr ?? record.proposed_price_pkr;
 
+  if (rawProposed === undefined || rawProposed === null) {
+    return {
+      recordId: rawId,
+      action: 'invalid_schema',
+      canonicalSubcategory: canonicalSubcat,
+      mediaAudit: { mediaStatus: 'missing' },
+      isPublishable: false,
+      publicationBlockers: ['MISSING_PROPOSED_SELLING_PRICE: Product is missing an approved proposed selling price.'],
+      schemaErrors: [
+        `Missing approved proposed selling price (proposed_selling_price_pkr). Source benchmark prices (source_price_pkr) cannot be used as an automatic selling price without explicit merchant markup approval.`,
+      ],
+    };
+  }
+
+  const authoritativeSellingPrice = Number(rawProposed);
   if (!Number.isFinite(authoritativeSellingPrice) || authoritativeSellingPrice <= 0) {
     return {
       recordId: rawId,
       action: 'invalid_schema',
+      canonicalSubcategory: canonicalSubcat,
       mediaAudit: { mediaStatus: 'missing' },
       isPublishable: false,
       publicationBlockers: ['INVALID_PRICE: Product must have a positive authoritative selling price.'],
-      schemaErrors: [`Invalid proposed selling price: ${record.proposed_selling_price_pkr}`],
+      schemaErrors: [`Invalid proposed selling price: ${rawProposed}. Must be a finite positive number.`],
     };
   }
 
@@ -319,7 +451,23 @@ export function adaptResearchRecordToDraft(
   const exactPrice = Math.round(authoritativeSellingPrice * 100) / 100;
   const displayPrice = Math.round(exactPrice);
 
-  // 7. Media Audit & Publication Blockers
+  // 7. Parse and validate price_basis
+  let parsedBasis: ParsedPriceBasis;
+  try {
+    parsedBasis = parsePriceBasis(record.price_basis);
+  } catch (err: any) {
+    return {
+      recordId: rawId,
+      action: 'invalid_schema',
+      canonicalSubcategory: canonicalSubcat,
+      mediaAudit: { mediaStatus: 'missing' },
+      isPublishable: false,
+      publicationBlockers: ['INVALID_PRICE_BASIS'],
+      schemaErrors: [err.message || 'Invalid or unsupported price_basis.'],
+    };
+  }
+
+  // 8. Media Audit & Publication Blockers
   const publicationBlockers: string[] = [];
   let mediaAuditStatus: MediaAuditStatus = 'missing';
 
@@ -374,30 +522,63 @@ export function adaptResearchRecordToDraft(
     notes: record.media?.technical_note || record.media?.publication_blocker,
   };
 
-  // 8. Variants and Packaging MOQ calculation
-  const isTabarrukSet = canonicalSubcat === 'tabarruk';
-  const defaultVariantLabel = isTabarrukSet ? 'Empty Set (1 set)' : 'Empty Box (1 pc)';
+  // 9. Check for genuine explicit admin/record MOQ override
+  // DO NOT freeze calculated MOQ as an override!
+  // Retain overrides ONLY when genuinely supplied as approved override input.
+  const explicitOverride =
+    typeof record.explicit_moq_override === 'number' && Number.isSafeInteger(record.explicit_moq_override) && record.explicit_moq_override > 0
+      ? record.explicit_moq_override
+      : typeof record.moq_override === 'number' && Number.isSafeInteger(record.moq_override) && record.moq_override > 0
+      ? record.moq_override
+      : undefined;
 
-  // Build prices map
+  const hasExplicitOverride = explicitOverride !== undefined;
+
+  // 10. Variants and Packaging MOQ calculation
+  const isTabarrukSet = canonicalSubcat === 'tabarruk';
   const prices: Record<string, number> = {};
   const variants: any[] = [];
   const emptyTiers: BidBoxBulkTier[] = [];
 
+  let piecesPerPack = parsedBasis.piecesPerPack;
+  let perPiecePrice = Math.round((exactPrice / piecesPerPack) * 100) / 100;
+  let primaryVariantLabel = '';
+
   // Check if variable multi-size tiers are verified (e.g. baby-box-017)
   const sizeTiers = record.verified_specifications?.verified_size_tiers;
-  if (Array.isArray(sizeTiers) && sizeTiers.length > 0) {
+  if (parsedBasis.isMultiSizeFamily) {
+    if (!Array.isArray(sizeTiers) || sizeTiers.length === 0) {
+      return {
+        recordId: rawId,
+        action: 'invalid_schema',
+        canonicalSubcategory: canonicalSubcat,
+        mediaAudit,
+        isPublishable: false,
+        publicationBlockers: ['MISSING_VARIABLE_SIZE_TIERS'],
+        schemaErrors: ['Variable multi-size family requires verified_size_tiers in verified_specifications.'],
+      };
+    }
+
+    primaryVariantLabel = String(sizeTiers[0].size || 'Standard').trim();
+
     for (const tier of sizeTiers) {
       const tierLabel = String(tier.size || 'Standard').trim();
       const tierPrice = Math.round(Number(tier.proposed_pkr ?? exactPrice) * 100) / 100;
       prices[tierLabel] = tierPrice;
 
-      // Calculate variant MOQ: min(25, max(1, ceil(5000 / tierPrice)))
-      const tierMoq = Math.min(25, Math.max(1, Math.ceil(5000 / tierPrice)));
+      // Variant has moqOverride ONLY if genuinely supplied in tier data
+      const tierExplicitOverride =
+        typeof tier.explicit_moq_override === 'number' && Number.isSafeInteger(tier.explicit_moq_override) && tier.explicit_moq_override > 0
+          ? tier.explicit_moq_override
+          : typeof tier.moq_override === 'number' && Number.isSafeInteger(tier.moq_override) && tier.moq_override > 0
+          ? tier.moq_override
+          : undefined;
+
       variants.push({
         label: tierLabel,
         price: tierPrice,
         available: true,
-        moqOverride: tierMoq,
+        ...(tierExplicitOverride !== undefined ? { moqOverride: tierExplicitOverride } : {}),
       });
 
       emptyTiers.push({
@@ -409,48 +590,50 @@ export function adaptResearchRecordToDraft(
       });
     }
   } else {
-    // Single-size standard offering
-    prices[defaultVariantLabel] = exactPrice;
+    // Single-size or explicit pack offering
+    if (parsedBasis.unitType === 'pack') {
+      primaryVariantLabel = `Empty Pack (${piecesPerPack} pcs)`;
+    } else if (parsedBasis.unitType === 'set') {
+      primaryVariantLabel = 'Empty Set (1 set)';
+    } else {
+      primaryVariantLabel = 'Empty Box (1 pc)';
+    }
 
-    // Calculate packaging MOQ via authoritative formula
-    // For 250g capacity box, parsePiecesPerPack returns 1 (it's 1 box, not 250 pieces)
-    const piecesPerPack = parsePiecesPerPack(defaultVariantLabel);
-    const perPiecePrice = exactPrice / piecesPerPack;
-    const calculatedMoq = Math.min(25, Math.max(1, Math.ceil(5000 / perPiecePrice)));
+    prices[primaryVariantLabel] = exactPrice;
 
+    // Do NOT freeze computed MOQ into variant.moqOverride!
     variants.push({
-      label: defaultVariantLabel,
+      label: primaryVariantLabel,
       price: exactPrice,
       available: true,
-      moqOverride: calculatedMoq,
+      ...(hasExplicitOverride ? { moqOverride: explicitOverride } : {}),
     });
 
     emptyTiers.push({
-      qty: 1,
-      label: defaultVariantLabel,
-      unitPrice: exactPrice,
+      qty: piecesPerPack,
+      label: primaryVariantLabel,
+      unitPrice: perPiecePrice,
       packPrice: exactPrice,
-      variantKey: defaultVariantLabel,
+      variantKey: primaryVariantLabel,
     });
   }
 
-  // Overall product MOQ is the minimum of variant MOQs
-  const productMoq = variants.reduce((min, v) => Math.min(min, v.moqOverride || 25), 25);
-
-  // 9. Clean customer-facing descriptions
+  // 11. Clean customer-facing descriptions
   const cleanDescription = buildCleanCustomerCopy(record.customer_copy, record.lead_time);
 
-  // 10. Assemble BidBoxConfig
+  // 12. Assemble BidBoxConfig
+  // Do NOT freeze computed MOQ into bidBoxConfig.minUnits unless explicit override was supplied
   const bidBoxConfig: BidBoxConfig = {
-    minUnits: productMoq,
+    ...(hasExplicitOverride ? { minUnits: explicitOverride } : {}),
     leadTimeDays: 10,
     emptyTiers,
     packagingSubcategory: canonicalSubcat,
   };
 
-  // 11. Assemble raw candidate Product
+  // 13. Assemble raw candidate Product
   // NOTE: product.image and product.imageName MUST REMAIN NULL!
   // Docs draft paths (docs/assets/drafts/...) MUST NEVER ENTER STOREFRONT MEDIA FIELDS!
+  // DO NOT persist computed MOQ as moqOverride or minOrderQuantity unless genuinely supplied!
   const candidateProduct: Product = {
     id: rawId,
     name_en: String(record.name || rawId).trim(),
@@ -473,12 +656,11 @@ export function adaptResearchRecordToDraft(
     desc_ar: cleanDescription,
     isBidBox: true,
     bidBoxConfig,
-    moqOverride: productMoq,
-    minOrderQuantity: productMoq,
+    ...(hasExplicitOverride ? { moqOverride: explicitOverride, minOrderQuantity: explicitOverride } : {}),
     preparationDays: 10,
   };
 
-  // 12. Validate candidate with existing schema validator
+  // 14. Validate candidate with existing schema validator
   let validatedProduct: Product;
   try {
     validatedProduct = validateDynamicProduct(candidateProduct);
@@ -486,11 +668,24 @@ export function adaptResearchRecordToDraft(
     return {
       recordId: rawId,
       action: 'invalid_schema',
+      canonicalSubcategory: canonicalSubcat,
       mediaAudit,
       isPublishable: false,
       publicationBlockers: ['SCHEMA_VALIDATION_FAILURE'],
       schemaErrors: [err.message || 'Product failed validateDynamicProduct schema validation'],
     };
+  }
+
+  // 15. Derive automatic MOQ and min units dynamically using the authoritative engine
+  // This is derived for the dry-run report and is NOT persisted as a frozen override!
+  let derivedMoqPieces = 25;
+  let derivedMinUnits = 1;
+  try {
+    derivedMoqPieces = calculatePackagingMoq(validatedProduct, primaryVariantLabel);
+    derivedMinUnits = calculateMinOrderQuantityUnits(validatedProduct, primaryVariantLabel);
+  } catch {
+    derivedMoqPieces = 25;
+    derivedMinUnits = 1;
   }
 
   return {
@@ -500,7 +695,12 @@ export function adaptResearchRecordToDraft(
     canonicalSubcategory: canonicalSubcat,
     authoritativePrice: exactPrice,
     displayPrice,
-    moq: productMoq,
+    piecesPerPack,
+    perPiecePrice,
+    derivedMoqPieces,
+    derivedMinUnits,
+    hasExplicitMoqOverride: hasExplicitOverride,
+    moq: derivedMoqPieces, // derived information for summary/report
     mediaAudit,
     isPublishable: false, // drafts are never publishable without physical stock & merchant review
     publicationBlockers,
@@ -719,7 +919,13 @@ export function formatDryRunReportMarkdown(report: DryRunReport): string {
     } else if (r.action === 'proposed_draft') {
       lines.push(`- **Subcategory**: \`${r.canonicalSubcategory}\``);
       lines.push(`- **Authoritative Price**: Rs. ${r.authoritativePrice?.toFixed(2)} (Display: Rs. ${r.displayPrice})`);
-      lines.push(`- **Authoritative MOQ**: **${r.moq} pcs / units**`);
+      if (r.piecesPerPack && r.piecesPerPack > 1) {
+        lines.push(`- **Pack Basis**: **${r.piecesPerPack} pcs per pack** (Pack price: Rs. ${r.authoritativePrice?.toFixed(2)}, Per-piece: Rs. ${r.perPiecePrice?.toFixed(2)})`);
+        lines.push(`- **Derived MOQ (Pieces)**: ${r.derivedMoqPieces} pieces (Minimum order: **${r.derivedMinUnits} packs** = ${Number(r.derivedMinUnits) * Number(r.piecesPerPack)} pcs)`);
+      } else {
+        lines.push(`- **Derived MOQ (Pieces)**: **${r.derivedMoqPieces} pieces** (Single box / set)`);
+      }
+      lines.push(`- **Explicit MOQ Override**: ${r.hasExplicitMoqOverride ? 'YES (Frozen by explicit merchant input)' : 'NO (Dynamic rule applies)'}`);
       lines.push(`- **Media Status**: \`${r.mediaAudit.mediaStatus}\``);
       lines.push(`- **Storefront Media Fields**: \`image: null\`, \`imageName: null\` (docs/ paths strictly kept outside live storefront)`);
       lines.push(`- **Draft State**: \`active: false\`, \`status: "draft"\``);

@@ -1,7 +1,7 @@
 # Stage 5C3 Catalog Ingestion Dry-Run Report
 
 **Branch**: `feat/renovation-v2`  
-**Execution Time**: 2026-10-18T21:58:18.356Z  
+**Execution Time**: 2026-10-18T22:12:31.565Z  
 **Environment**: In-Memory Fixture Dry Run (Zero Live Ingestion / Zero Firestore Writes)
 
 ---
@@ -74,7 +74,8 @@ A record can be a completely valid unpublished draft while being strictly blocke
 
 - **Subcategory**: `tin`
 - **Authoritative Price**: Rs. 105.00 (Display: Rs. 105)
-- **Authoritative MOQ**: **25 pcs / units**
+- **Derived MOQ (Pieces)**: **25 pieces** (Single box / set)
+- **Explicit MOQ Override**: NO (Dynamic rule applies)
 - **Media Status**: `approved_draft`
 - **Storefront Media Fields**: `image: null`, `imageName: null` (docs/ paths strictly kept outside live storefront)
 - **Draft State**: `active: false`, `status: "draft"`
@@ -88,7 +89,8 @@ A record can be a completely valid unpublished draft while being strictly blocke
 
 - **Subcategory**: `tin`
 - **Authoritative Price**: Rs. 105.00 (Display: Rs. 105)
-- **Authoritative MOQ**: **25 pcs / units**
+- **Derived MOQ (Pieces)**: **25 pieces** (Single box / set)
+- **Explicit MOQ Override**: NO (Dynamic rule applies)
 - **Media Status**: `approved_draft`
 - **Storefront Media Fields**: `image: null`, `imageName: null` (docs/ paths strictly kept outside live storefront)
 - **Draft State**: `active: false`, `status: "draft"`
@@ -102,7 +104,8 @@ A record can be a completely valid unpublished draft while being strictly blocke
 
 - **Subcategory**: `tin`
 - **Authoritative Price**: Rs. 105.00 (Display: Rs. 105)
-- **Authoritative MOQ**: **25 pcs / units**
+- **Derived MOQ (Pieces)**: **25 pieces** (Single box / set)
+- **Explicit MOQ Override**: NO (Dynamic rule applies)
 - **Media Status**: `approved_draft`
 - **Storefront Media Fields**: `image: null`, `imageName: null` (docs/ paths strictly kept outside live storefront)
 - **Draft State**: `active: false`, `status: "draft"`
@@ -116,7 +119,8 @@ A record can be a completely valid unpublished draft while being strictly blocke
 
 - **Subcategory**: `tin`
 - **Authoritative Price**: Rs. 105.00 (Display: Rs. 105)
-- **Authoritative MOQ**: **25 pcs / units**
+- **Derived MOQ (Pieces)**: **25 pieces** (Single box / set)
+- **Explicit MOQ Override**: NO (Dynamic rule applies)
 - **Media Status**: `approved_draft`
 - **Storefront Media Fields**: `image: null`, `imageName: null` (docs/ paths strictly kept outside live storefront)
 - **Draft State**: `active: false`, `status: "draft"`
@@ -130,7 +134,8 @@ A record can be a completely valid unpublished draft while being strictly blocke
 
 - **Subcategory**: `tin`
 - **Authoritative Price**: Rs. 105.00 (Display: Rs. 105)
-- **Authoritative MOQ**: **25 pcs / units**
+- **Derived MOQ (Pieces)**: **25 pieces** (Single box / set)
+- **Explicit MOQ Override**: NO (Dynamic rule applies)
 - **Media Status**: `approved_draft`
 - **Storefront Media Fields**: `image: null`, `imageName: null` (docs/ paths strictly kept outside live storefront)
 - **Draft State**: `active: false`, `status: "draft"`
@@ -144,7 +149,8 @@ A record can be a completely valid unpublished draft while being strictly blocke
 
 - **Subcategory**: `tin`
 - **Authoritative Price**: Rs. 126.00 (Display: Rs. 126)
-- **Authoritative MOQ**: **25 pcs / units**
+- **Derived MOQ (Pieces)**: **25 pieces** (Single box / set)
+- **Explicit MOQ Override**: NO (Dynamic rule applies)
 - **Media Status**: `approved_draft`
 - **Storefront Media Fields**: `image: null`, `imageName: null` (docs/ paths strictly kept outside live storefront)
 - **Draft State**: `active: false`, `status: "draft"`
@@ -163,7 +169,8 @@ A record can be a completely valid unpublished draft while being strictly blocke
 
 - **Subcategory**: `tabarruk`
 - **Authoritative Price**: Rs. 210.00 (Display: Rs. 210)
-- **Authoritative MOQ**: **24 pcs / units**
+- **Derived MOQ (Pieces)**: **24 pieces** (Single box / set)
+- **Explicit MOQ Override**: NO (Dynamic rule applies)
 - **Media Status**: `approved_draft`
 - **Storefront Media Fields**: `image: null`, `imageName: null` (docs/ paths strictly kept outside live storefront)
 - **Draft State**: `active: false`, `status: "draft"`
@@ -177,7 +184,8 @@ A record can be a completely valid unpublished draft while being strictly blocke
 
 - **Subcategory**: `tabarruk`
 - **Authoritative Price**: Rs. 210.00 (Display: Rs. 210)
-- **Authoritative MOQ**: **24 pcs / units**
+- **Derived MOQ (Pieces)**: **24 pieces** (Single box / set)
+- **Explicit MOQ Override**: NO (Dynamic rule applies)
 - **Media Status**: `approved_draft`
 - **Storefront Media Fields**: `image: null`, `imageName: null` (docs/ paths strictly kept outside live storefront)
 - **Draft State**: `active: false`, `status: "draft"`
@@ -191,7 +199,8 @@ A record can be a completely valid unpublished draft while being strictly blocke
 
 - **Subcategory**: `tabarruk`
 - **Authoritative Price**: Rs. 210.00 (Display: Rs. 210)
-- **Authoritative MOQ**: **24 pcs / units**
+- **Derived MOQ (Pieces)**: **24 pieces** (Single box / set)
+- **Explicit MOQ Override**: NO (Dynamic rule applies)
 - **Media Status**: `needs_revision`
 - **Storefront Media Fields**: `image: null`, `imageName: null` (docs/ paths strictly kept outside live storefront)
 - **Draft State**: `active: false`, `status: "draft"`
@@ -205,7 +214,8 @@ A record can be a completely valid unpublished draft while being strictly blocke
 
 - **Subcategory**: `tabarruk`
 - **Authoritative Price**: Rs. 420.00 (Display: Rs. 420)
-- **Authoritative MOQ**: **12 pcs / units**
+- **Derived MOQ (Pieces)**: **12 pieces** (Single box / set)
+- **Explicit MOQ Override**: NO (Dynamic rule applies)
 - **Media Status**: `needs_revision`
 - **Storefront Media Fields**: `image: null`, `imageName: null` (docs/ paths strictly kept outside live storefront)
 - **Draft State**: `active: false`, `status: "draft"`
@@ -219,7 +229,8 @@ A record can be a completely valid unpublished draft while being strictly blocke
 
 - **Subcategory**: `tabarruk`
 - **Authoritative Price**: Rs. 367.50 (Display: Rs. 368)
-- **Authoritative MOQ**: **14 pcs / units**
+- **Derived MOQ (Pieces)**: **14 pieces** (Single box / set)
+- **Explicit MOQ Override**: NO (Dynamic rule applies)
 - **Media Status**: `blocked_by_quota`
 - **Storefront Media Fields**: `image: null`, `imageName: null` (docs/ paths strictly kept outside live storefront)
 - **Draft State**: `active: false`, `status: "draft"`
@@ -253,7 +264,8 @@ A record can be a completely valid unpublished draft while being strictly blocke
 
 - **Subcategory**: `wedding`
 - **Authoritative Price**: Rs. 78.75 (Display: Rs. 79)
-- **Authoritative MOQ**: **25 pcs / units**
+- **Derived MOQ (Pieces)**: **25 pieces** (Single box / set)
+- **Explicit MOQ Override**: NO (Dynamic rule applies)
 - **Media Status**: `approved_draft`
 - **Storefront Media Fields**: `image: null`, `imageName: null` (docs/ paths strictly kept outside live storefront)
 - **Draft State**: `active: false`, `status: "draft"`
@@ -267,7 +279,8 @@ A record can be a completely valid unpublished draft while being strictly blocke
 
 - **Subcategory**: `wedding`
 - **Authoritative Price**: Rs. 31.50 (Display: Rs. 32)
-- **Authoritative MOQ**: **25 pcs / units**
+- **Derived MOQ (Pieces)**: **25 pieces** (Single box / set)
+- **Explicit MOQ Override**: NO (Dynamic rule applies)
 - **Media Status**: `blocked_by_quota`
 - **Storefront Media Fields**: `image: null`, `imageName: null` (docs/ paths strictly kept outside live storefront)
 - **Draft State**: `active: false`, `status: "draft"`
@@ -281,7 +294,8 @@ A record can be a completely valid unpublished draft while being strictly blocke
 
 - **Subcategory**: `wedding`
 - **Authoritative Price**: Rs. 63.00 (Display: Rs. 63)
-- **Authoritative MOQ**: **25 pcs / units**
+- **Derived MOQ (Pieces)**: **25 pieces** (Single box / set)
+- **Explicit MOQ Override**: NO (Dynamic rule applies)
 - **Media Status**: `blocked_by_quota`
 - **Storefront Media Fields**: `image: null`, `imageName: null` (docs/ paths strictly kept outside live storefront)
 - **Draft State**: `active: false`, `status: "draft"`
@@ -295,7 +309,8 @@ A record can be a completely valid unpublished draft while being strictly blocke
 
 - **Subcategory**: `wedding`
 - **Authoritative Price**: Rs. 84.00 (Display: Rs. 84)
-- **Authoritative MOQ**: **25 pcs / units**
+- **Derived MOQ (Pieces)**: **25 pieces** (Single box / set)
+- **Explicit MOQ Override**: NO (Dynamic rule applies)
 - **Media Status**: `blocked_by_quota`
 - **Storefront Media Fields**: `image: null`, `imageName: null` (docs/ paths strictly kept outside live storefront)
 - **Draft State**: `active: false`, `status: "draft"`
@@ -314,7 +329,8 @@ A record can be a completely valid unpublished draft while being strictly blocke
 
 - **Subcategory**: `baby`
 - **Authoritative Price**: Rs. 273.00 (Display: Rs. 273)
-- **Authoritative MOQ**: **19 pcs / units**
+- **Derived MOQ (Pieces)**: **19 pieces** (Single box / set)
+- **Explicit MOQ Override**: NO (Dynamic rule applies)
 - **Media Status**: `approved_draft`
 - **Storefront Media Fields**: `image: null`, `imageName: null` (docs/ paths strictly kept outside live storefront)
 - **Draft State**: `active: false`, `status: "draft"`
@@ -328,7 +344,8 @@ A record can be a completely valid unpublished draft while being strictly blocke
 
 - **Subcategory**: `baby`
 - **Authoritative Price**: Rs. 105.00 (Display: Rs. 105)
-- **Authoritative MOQ**: **25 pcs / units**
+- **Derived MOQ (Pieces)**: **25 pieces** (Single box / set)
+- **Explicit MOQ Override**: NO (Dynamic rule applies)
 - **Media Status**: `blocked_by_quota`
 - **Storefront Media Fields**: `image: null`, `imageName: null` (docs/ paths strictly kept outside live storefront)
 - **Draft State**: `active: false`, `status: "draft"`
@@ -342,7 +359,8 @@ A record can be a completely valid unpublished draft while being strictly blocke
 
 - **Subcategory**: `baby`
 - **Authoritative Price**: Rs. 157.50 (Display: Rs. 158)
-- **Authoritative MOQ**: **25 pcs / units**
+- **Derived MOQ (Pieces)**: **25 pieces** (Single box / set)
+- **Explicit MOQ Override**: NO (Dynamic rule applies)
 - **Media Status**: `blocked_by_quota`
 - **Storefront Media Fields**: `image: null`, `imageName: null` (docs/ paths strictly kept outside live storefront)
 - **Draft State**: `active: false`, `status: "draft"`
@@ -356,7 +374,8 @@ A record can be a completely valid unpublished draft while being strictly blocke
 
 - **Subcategory**: `baby`
 - **Authoritative Price**: Rs. 399.00 (Display: Rs. 399)
-- **Authoritative MOQ**: **13 pcs / units**
+- **Derived MOQ (Pieces)**: **13 pieces** (Single box / set)
+- **Explicit MOQ Override**: NO (Dynamic rule applies)
 - **Media Status**: `blocked_by_quota`
 - **Storefront Media Fields**: `image: null`, `imageName: null` (docs/ paths strictly kept outside live storefront)
 - **Draft State**: `active: false`, `status: "draft"`
@@ -370,7 +389,8 @@ A record can be a completely valid unpublished draft while being strictly blocke
 
 - **Subcategory**: `baby`
 - **Authoritative Price**: Rs. 462.00 (Display: Rs. 462)
-- **Authoritative MOQ**: **11 pcs / units**
+- **Derived MOQ (Pieces)**: **11 pieces** (Single box / set)
+- **Explicit MOQ Override**: NO (Dynamic rule applies)
 - **Media Status**: `blocked_by_quota`
 - **Storefront Media Fields**: `image: null`, `imageName: null` (docs/ paths strictly kept outside live storefront)
 - **Draft State**: `active: false`, `status: "draft"`
@@ -384,7 +404,8 @@ A record can be a completely valid unpublished draft while being strictly blocke
 
 - **Subcategory**: `baby`
 - **Authoritative Price**: Rs. 157.50 (Display: Rs. 158)
-- **Authoritative MOQ**: **11 pcs / units**
+- **Derived MOQ (Pieces)**: **25 pieces** (Single box / set)
+- **Explicit MOQ Override**: NO (Dynamic rule applies)
 - **Media Status**: `deferred`
 - **Storefront Media Fields**: `image: null`, `imageName: null` (docs/ paths strictly kept outside live storefront)
 - **Draft State**: `active: false`, `status: "draft"`
@@ -403,7 +424,8 @@ A record can be a completely valid unpublished draft while being strictly blocke
 
 - **Subcategory**: `acrylic`
 - **Authoritative Price**: Rs. 315.00 (Display: Rs. 315)
-- **Authoritative MOQ**: **16 pcs / units**
+- **Derived MOQ (Pieces)**: **16 pieces** (Single box / set)
+- **Explicit MOQ Override**: NO (Dynamic rule applies)
 - **Media Status**: `approved_draft`
 - **Storefront Media Fields**: `image: null`, `imageName: null` (docs/ paths strictly kept outside live storefront)
 - **Draft State**: `active: false`, `status: "draft"`

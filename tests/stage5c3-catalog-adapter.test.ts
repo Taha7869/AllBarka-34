@@ -2,7 +2,7 @@
  * Stage 5C3 Catalog Adapter Regression Tests
  *
  * Verifies:
- * 1. Subcategory mapping and schema validation across all 5 subcategories.
+ * 1. Subcategory mapping and schema validation across all 5 canonical subcategories.
  * 2. Exact decimal selling-price preservation (Rs. 78.75 remains 78.75; no compounding).
  * 3. Existing catalog products skipped without altering prices, variants, media, or filled options.
  * 4. Re-import idempotency and duplicate input ID deduplication.
@@ -10,6 +10,9 @@
  * 6. Public catalog projection isolation (drafts have active=false, status='draft', invisible to storefront).
  * 7. Unverified concepts strictly excluded (Group D acrylic concepts).
  * 8. Missing and rejected media cannot silently become publishable (docs/ paths never enter image field).
+ * 9. Defect 1: Do not freeze automatic MOQ as an admin override (dynamic adaptation on price edit).
+ * 10. Defect 2: Honor or reject pack price basis (preserve pack price, per-piece price, min pack units; reject ambiguous text).
+ * 11. Defect 3: Require actual approved proposed selling price (reject missing/fallback to source_price_pkr).
  */
 
 import assert from 'node:assert/strict';
@@ -18,6 +21,7 @@ import {
   adaptResearchRecordToDraft,
   adaptManifestToDraftCatalog,
   resolveCanonicalPackagingSubcategory,
+  parsePriceBasis,
   DESCRIPTIVE_TO_CANONICAL_SUBCATEGORY,
   EXISTING_PACKAGING_IDS,
 } from '../src/lib/draftCatalogAdapter';
@@ -28,7 +32,11 @@ import {
   VALID_PACKAGING_SUBCATEGORIES,
   CatalogError,
 } from '../src/lib/catalogSchema';
-import { calculatePackagingMoq, parsePiecesPerPack } from '../src/lib/packagingMoq';
+import {
+  calculatePackagingMoq,
+  calculateMinOrderQuantityUnits,
+  parsePiecesPerPack,
+} from '../src/lib/packagingMoq';
 import { PRODUCTS } from '../src/data/products';
 
 test('Regression 1: Subcategory mapping and validation across all 5 canonical subcategories', () => {
@@ -72,6 +80,7 @@ test('Regression 2: Exact decimal selling-price preservation and anti-compoundin
     name: 'Floral Cardstock Favor Box (3.5x3.5x2 in)',
     source_price_pkr: 75.0,
     proposed_selling_price_pkr: 78.75,
+    price_basis: '1 pc',
     customer_copy: {
       summary: 'Cardstock favor box.',
     },
@@ -98,6 +107,7 @@ test('Regression 2: Exact decimal selling-price preservation and anti-compoundin
     subcategory_id: 'wedding-favor-boxes-pouches',
     name: 'Floral Cardstock Pyramid Favor Box',
     proposed_selling_price_pkr: 31.5,
+    price_basis: '1 pc',
   });
   assert.equal(pyramid.authoritativePrice, 31.5);
   assert.equal(pyramid.product?.prices['Empty Box (1 pc)'], 31.5);
@@ -107,6 +117,7 @@ test('Regression 2: Exact decimal selling-price preservation and anti-compoundin
     subcategory_id: 'hajj-umrah-tabarruk-sets',
     name: 'Safaa 3-Piece Pilgrimage Set',
     proposed_selling_price_pkr: 367.5,
+    price_basis: '1 set',
   });
   assert.equal(safaa.authoritativePrice, 367.5);
   assert.equal(safaa.product?.prices['Empty Set (1 set)'], 367.5);
@@ -128,6 +139,7 @@ test('Regression 3: Existing/admin products skipped without modifying saved fiel
     subcategory_id: 'hajj-umrah-tabarruk-sets',
     name: 'Generic Empty Umrah Tabarruk Set',
     proposed_selling_price_pkr: 200.0,
+    price_basis: '1 set',
     customer_copy: {
       summary: 'Generic empty packaging wording.',
     },
@@ -158,6 +170,7 @@ test('Regression 4: Re-import idempotency and duplicate input IDs handling', () 
       subcategory_id: 'signature-tin-boxes',
       name: 'Mughal Floral Keepsake Tin',
       proposed_selling_price_pkr: 105.0,
+      price_basis: '1 pc',
     },
     {
       // Duplicate entry with same ID in the same batch
@@ -165,6 +178,7 @@ test('Regression 4: Re-import idempotency and duplicate input IDs handling', () 
       subcategory_id: 'signature-tin-boxes',
       name: 'Duplicate Mughal Floral Tin',
       proposed_selling_price_pkr: 105.0,
+      price_basis: '1 pc',
     },
   ];
 
@@ -190,9 +204,16 @@ test('Regression 5: Authoritative packaging MOQ calculation and pack capacity ha
     subcategory_id: 'signature-tin-boxes',
     name: 'Mughal Floral Circular Keepsake Tin',
     proposed_selling_price_pkr: 105.0,
+    price_basis: '1 pc',
   });
   assert.equal(tin002.moq, 25);
-  assert.equal(tin002.product?.bidBoxConfig?.minUnits, 25);
+  assert.equal(tin002.derivedMoqPieces, 25);
+  assert.equal(tin002.derivedMinUnits, 25);
+  // Automatic MOQ is NOT frozen onto product or variants
+  assert.equal(tin002.product?.moqOverride, undefined);
+  assert.equal(tin002.product?.bidBoxConfig?.minUnits, undefined);
+  assert.equal(tin002.product?.variants?.[0].moqOverride, undefined);
+  assert.equal(calculatePackagingMoq(tin002.product!, 'Empty Box (1 pc)'), 25);
 
   // 2. Rs. 273.00 -> ceil(5000 / 273) = 19
   const babyHalfKg = adaptResearchRecordToDraft({
@@ -200,9 +221,12 @@ test('Regression 5: Authoritative packaging MOQ calculation and pack capacity ha
     subcategory_id: 'baby-announcement-boxes',
     name: 'Half Kg Square Baby Announcement Box',
     proposed_selling_price_pkr: 273.0,
+    price_basis: '1 pc (half kg / 500g capacity)',
   });
   assert.equal(babyHalfKg.moq, 19);
-  assert.equal(babyHalfKg.product?.bidBoxConfig?.minUnits, 19);
+  assert.equal(babyHalfKg.derivedMoqPieces, 19);
+  assert.equal(babyHalfKg.product?.moqOverride, undefined);
+  assert.equal(calculatePackagingMoq(babyHalfKg.product!, 'Empty Box (1 pc)'), 19);
 
   // 3. Rs. 462.00 -> ceil(5000 / 462) = 11
   const baby1kg = adaptResearchRecordToDraft({
@@ -210,9 +234,12 @@ test('Regression 5: Authoritative packaging MOQ calculation and pack capacity ha
     subcategory_id: 'baby-announcement-boxes',
     name: 'Baby Boy 1kg Announcement Sweet Box',
     proposed_selling_price_pkr: 462.0,
+    price_basis: '1 pc (1 kg capacity)',
   });
   assert.equal(baby1kg.moq, 11);
-  assert.equal(baby1kg.product?.bidBoxConfig?.minUnits, 11);
+  assert.equal(baby1kg.derivedMoqPieces, 11);
+  assert.equal(baby1kg.product?.moqOverride, undefined);
+  assert.equal(calculatePackagingMoq(baby1kg.product!, 'Empty Box (1 pc)'), 11);
 
   // 4. "250g box capacity" must be treated as capacity, NOT 250 pieces!
   const baby250g = adaptResearchRecordToDraft({
@@ -220,13 +247,16 @@ test('Regression 5: Authoritative packaging MOQ calculation and pack capacity ha
     subcategory_id: 'baby-announcement-boxes',
     name: 'Compact 250g Card Baby Announcement Box',
     proposed_selling_price_pkr: 157.5,
+    price_basis: '1 pc (250g capacity)',
   });
   // Pieces per pack for "Empty Box (1 pc)" is 1 piece holding 250g, NOT 250 pieces
   assert.equal(parsePiecesPerPack('Empty Box (1 pc)'), 1);
   assert.equal(parsePiecesPerPack('250g Capacity Box'), 1);
   // MOQ calculation: ceil(5000 / 157.50) = 32 -> capped at 25 pcs
   assert.equal(baby250g.moq, 25);
+  assert.equal(baby250g.derivedMoqPieces, 25);
   assert.equal(baby250g.product?.bidBoxConfig?.emptyTiers[0].qty, 1);
+  assert.equal(calculatePackagingMoq(baby250g.product!, 'Empty Box (1 pc)'), 25);
 
   // 5. Multi-size tiers (baby-box-017)
   const multiSize = adaptResearchRecordToDraft({
@@ -234,6 +264,7 @@ test('Regression 5: Authoritative packaging MOQ calculation and pack capacity ha
     subcategory_id: 'baby-announcement-boxes',
     name: 'Multi-Size Baby Announcement Box Family',
     proposed_selling_price_pkr: 157.5,
+    price_basis: 'Variable multi-size family (4 size tiers)',
     asset_status: 'deferred_unverified_variable_family',
     verified_specifications: {
       verified_size_tiers: [
@@ -247,13 +278,15 @@ test('Regression 5: Authoritative packaging MOQ calculation and pack capacity ha
   assert.equal(multiSize.action, 'proposed_draft');
   assert.equal(multiSize.product?.variants?.length, 4);
   assert.equal(multiSize.product?.prices['250 gram'], 157.5);
-  assert.equal(multiSize.product?.variants?.[0].moqOverride, 25);
+  // Variants do NOT freeze calculated MOQ into moqOverride
+  assert.equal(multiSize.product?.variants?.[0].moqOverride, undefined);
+  assert.equal(calculatePackagingMoq(multiSize.product!, '250 gram'), 25);
   assert.equal(multiSize.product?.prices['Half kg'], 262.5);
-  assert.equal(multiSize.product?.variants?.[1].moqOverride, 20); // ceil(5000/262.5) = 20
+  assert.equal(calculatePackagingMoq(multiSize.product!, 'Half kg'), 20); // ceil(5000/262.5) = 20
   assert.equal(multiSize.product?.prices['1 kg'], 367.5);
-  assert.equal(multiSize.product?.variants?.[2].moqOverride, 14); // ceil(5000/367.5) = 14
+  assert.equal(calculatePackagingMoq(multiSize.product!, '1 kg'), 14); // ceil(5000/367.5) = 14
   assert.equal(multiSize.product?.prices['2 kg'], 472.5);
-  assert.equal(multiSize.product?.variants?.[3].moqOverride, 11); // ceil(5000/472.5) = 11
+  assert.equal(calculatePackagingMoq(multiSize.product!, '2 kg'), 11); // ceil(5000/472.5) = 11
 });
 
 test('Regression 6: Public catalog projection isolation (drafts strictly excluded from public view)', () => {
@@ -262,6 +295,7 @@ test('Regression 6: Public catalog projection isolation (drafts strictly exclude
     subcategory_id: 'signature-tin-boxes',
     name: 'Mughal Floral Keepsake Tin',
     proposed_selling_price_pkr: 105.0,
+    price_basis: '1 pc',
   });
 
   const p = draft.product!;
@@ -301,6 +335,7 @@ test('Regression 8: Missing and rejected media cannot silently become publishabl
     subcategory_id: 'hajj-umrah-tabarruk-sets',
     name: 'Medina Moon Tabarruk Set',
     proposed_selling_price_pkr: 210.0,
+    price_basis: '1 set',
     asset_status: 'needs_revision',
   });
   assert.equal(set012.action, 'proposed_draft');
@@ -317,6 +352,7 @@ test('Regression 8: Missing and rejected media cannot silently become publishabl
     subcategory_id: 'hajj-umrah-tabarruk-sets',
     name: 'Tijori Grand Presentation Tabarruk Suite',
     proposed_selling_price_pkr: 420.0,
+    price_basis: '1 set',
     asset_status: 'needs_revision',
   });
   assert.equal(tijori.mediaAudit.mediaStatus, 'needs_revision');
@@ -330,6 +366,7 @@ test('Regression 8: Missing and rejected media cannot silently become publishabl
     subcategory_id: 'wedding-favor-boxes-pouches',
     name: 'Floral Pyramid Box',
     proposed_selling_price_pkr: 31.5,
+    price_basis: '1 pc',
     asset_status: 'blocked_by_upstream_quota_exhaustion',
   });
   assert.equal(blocked.mediaAudit.mediaStatus, 'blocked_by_quota');
@@ -342,7 +379,13 @@ test('Regression 8: Missing and rejected media cannot silently become publishabl
     subcategory_id: 'baby-announcement-boxes',
     name: 'Multi-Size Baby Announcement Box Family',
     proposed_selling_price_pkr: 157.5,
+    price_basis: 'Variable multi-size family (4 size tiers)',
     asset_status: 'deferred_unverified_variable_family',
+    verified_specifications: {
+      verified_size_tiers: [
+        { size: '250 gram', proposed_pkr: 157.5, display_pkr: 158 },
+      ],
+    },
   });
   assert.equal(deferred.mediaAudit.mediaStatus, 'deferred');
   assert.equal(deferred.isPublishable, false);
@@ -354,6 +397,7 @@ test('Regression 8: Missing and rejected media cannot silently become publishabl
     subcategory_id: 'signature-tin-boxes',
     name: 'Mughal Floral Circular Keepsake Tin',
     proposed_selling_price_pkr: 105.0,
+    price_basis: '1 pc',
     asset_status: 'draft_concept_render_complete',
     media: {
       draft_jpg_master: 'docs/assets/drafts/pilot-tin-box-002.jpg',
@@ -368,4 +412,254 @@ test('Regression 8: Missing and rejected media cannot silently become publishabl
   assert.equal(approved.product?.image, null);
   assert.equal(approved.product?.imageName, null);
   assert.equal(approved.mediaAudit.draftWebpDerivative, 'docs/assets/drafts/pilot-tin-box-002.webp');
+});
+
+test('Regression 9: Defect 1 - Do not freeze automatic MOQ as an admin override', () => {
+  // Reproduction vector:
+  // Import a single-piece packaging draft at Rs. 1000 -> initial calculated MOQ is 5
+  const draft1000 = adaptResearchRecordToDraft({
+    stable_id: 'test-single-box-1000',
+    subcategory_id: 'signature-tin-boxes',
+    name: 'Single Luxury Tin Box',
+    proposed_selling_price_pkr: 1000.0,
+    price_basis: '1 pc',
+  });
+
+  assert.equal(draft1000.action, 'proposed_draft');
+  const prod = draft1000.product!;
+
+  // 1. Verify computed MOQ is NOT persisted as an override
+  assert.equal(prod.moqOverride, undefined);
+  assert.equal(prod.minOrderQuantity, undefined);
+  assert.equal(prod.bidBoxConfig?.minUnits, undefined);
+  assert.equal(prod.variants?.[0].moqOverride, undefined);
+
+  // Initial calculation via authoritative engine: ceil(5000 / 1000) = 5
+  assert.equal(calculatePackagingMoq(prod, 'Empty Box (1 pc)'), 5);
+
+  // 2. Simulate merchant/admin editing selling price to Rs. 500:
+  // If moqOverride were frozen, calculatePackagingMoq would still return 5.
+  // With dynamic adaptation, it must return 10!
+  prod.prices['Empty Box (1 pc)'] = 500;
+  prod.variants![0].price = 500;
+  if (prod.bidBoxConfig?.emptyTiers?.[0]) {
+    prod.bidBoxConfig.emptyTiers[0].unitPrice = 500;
+    prod.bidBoxConfig.emptyTiers[0].packPrice = 500;
+  }
+
+  const updatedMoq = calculatePackagingMoq(prod, 'Empty Box (1 pc)');
+  assert.equal(updatedMoq, 10, 'Expected MOQ to dynamically adapt to 10 after price edit to Rs. 500');
+
+  // Edit price to Rs. 150: ceil(5000 / 150) = 34 -> capped at 25
+  prod.prices['Empty Box (1 pc)'] = 150;
+  prod.variants![0].price = 150;
+  assert.equal(calculatePackagingMoq(prod, 'Empty Box (1 pc)'), 25);
+
+  // Edit price to Rs. 6000: ceil(5000 / 6000) = 1
+  prod.prices['Empty Box (1 pc)'] = 6000;
+  prod.variants![0].price = 6000;
+  assert.equal(calculatePackagingMoq(prod, 'Empty Box (1 pc)'), 1);
+
+  // 3. Genuine explicit override input IS preserved across price edits
+  const draftExplicit = adaptResearchRecordToDraft({
+    stable_id: 'test-explicit-override',
+    subcategory_id: 'signature-tin-boxes',
+    name: 'Explicit Override Box',
+    proposed_selling_price_pkr: 1000.0,
+    price_basis: '1 pc',
+    explicit_moq_override: 15, // genuinely supplied merchant override
+  });
+
+  assert.equal(draftExplicit.action, 'proposed_draft');
+  const explicitProd = draftExplicit.product!;
+  assert.equal(explicitProd.moqOverride, 15);
+  assert.equal(explicitProd.bidBoxConfig?.minUnits, 15);
+  assert.equal(explicitProd.variants?.[0].moqOverride, 15);
+  assert.equal(calculatePackagingMoq(explicitProd, 'Empty Box (1 pc)'), 15);
+
+  // Price edit does NOT override an approved explicit merchant override
+  explicitProd.prices['Empty Box (1 pc)'] = 500;
+  explicitProd.variants![0].price = 500;
+  assert.equal(
+    calculatePackagingMoq(explicitProd, 'Empty Box (1 pc)'),
+    15,
+    'Explicit merchant override must persist across price edits'
+  );
+});
+
+test('Regression 10: Defect 2 - Honor or reject pack price basis', () => {
+  // 1. Valid price_basis parsing tests
+  assert.deepEqual(parsePriceBasis('1 pc'), {
+    piecesPerPack: 1,
+    unitType: 'pc',
+    capacityLabel: undefined,
+    raw: '1 pc',
+  });
+  assert.deepEqual(parsePriceBasis('1 piece'), {
+    piecesPerPack: 1,
+    unitType: 'pc',
+    capacityLabel: undefined,
+    raw: '1 piece',
+  });
+  assert.deepEqual(parsePriceBasis('1 set'), {
+    piecesPerPack: 1,
+    unitType: 'set',
+    capacityLabel: undefined,
+    raw: '1 set',
+  });
+  assert.deepEqual(parsePriceBasis('1 pc (250g capacity)'), {
+    piecesPerPack: 1,
+    unitType: 'pc',
+    capacityLabel: '250g capacity',
+    raw: '1 pc (250g capacity)',
+  });
+  assert.deepEqual(parsePriceBasis('1 pc (half kg / 500g capacity)'), {
+    piecesPerPack: 1,
+    unitType: 'pc',
+    capacityLabel: 'half kg / 500g capacity',
+    raw: '1 pc (half kg / 500g capacity)',
+  });
+  assert.deepEqual(parsePriceBasis('10 pcs'), {
+    piecesPerPack: 10,
+    unitType: 'pack',
+    capacityLabel: undefined,
+    raw: '10 pcs',
+  });
+  assert.deepEqual(parsePriceBasis('pack of 10'), {
+    piecesPerPack: 10,
+    unitType: 'pack',
+    capacityLabel: undefined,
+    raw: 'pack of 10',
+  });
+  assert.deepEqual(parsePriceBasis('25 pieces'), {
+    piecesPerPack: 25,
+    unitType: 'pack',
+    capacityLabel: undefined,
+    raw: '25 pieces',
+  });
+  assert.deepEqual(parsePriceBasis('50 boxes'), {
+    piecesPerPack: 50,
+    unitType: 'pack',
+    capacityLabel: undefined,
+    raw: '50 boxes',
+  });
+  assert.deepEqual(parsePriceBasis('Variable multi-size family (4 size tiers)'), {
+    piecesPerPack: 1,
+    unitType: 'pc',
+    isMultiSizeFamily: true,
+    raw: 'Variable multi-size family (4 size tiers)',
+  });
+
+  // 2. Reject ambiguous or unsupported free text
+  assert.throws(
+    () => parsePriceBasis('wholesale lot'),
+    (err: any) => err instanceof CatalogError && err.code === 'INVALID_PRICE_BASIS'
+  );
+  assert.throws(
+    () => parsePriceBasis('per crate'),
+    (err: any) => err instanceof CatalogError && err.code === 'INVALID_PRICE_BASIS'
+  );
+  assert.throws(
+    () => parsePriceBasis('bulk order carton'),
+    (err: any) => err instanceof CatalogError && err.code === 'INVALID_PRICE_BASIS'
+  );
+  assert.throws(
+    () => parsePriceBasis(''),
+    (err: any) => err instanceof CatalogError && err.code === 'INVALID_PRICE_BASIS'
+  );
+  assert.throws(
+    () => parsePriceBasis(null),
+    (err: any) => err instanceof CatalogError && err.code === 'INVALID_PRICE_BASIS'
+  );
+
+  // 3. Adapter behavior with ambiguous price basis: returns invalid_schema with INVALID_PRICE_BASIS
+  const invalidBasisDraft = adaptResearchRecordToDraft({
+    stable_id: 'test-bad-basis',
+    subcategory_id: 'signature-tin-boxes',
+    name: 'Ambiguous Basis Box',
+    proposed_selling_price_pkr: 1000.0,
+    price_basis: 'wholesale lot',
+  });
+  assert.equal(invalidBasisDraft.action, 'invalid_schema');
+  assert.ok(invalidBasisDraft.publicationBlockers.includes('INVALID_PRICE_BASIS'));
+  assert.ok(invalidBasisDraft.schemaErrors?.[0].includes('Unsupported or ambiguous price_basis'));
+
+  // 4. Pack price basis honoring: Rs. 1000 ten-piece pack ("10 pcs")
+  // A Rs. 1000 ten-piece pack must NOT become a Rs. 1000 single box!
+  const packDraft = adaptResearchRecordToDraft({
+    stable_id: 'wedding-favor-pack-10',
+    subcategory_id: 'wedding-favor-boxes-pouches',
+    name: 'Pastel Favor Box Pack of 10',
+    proposed_selling_price_pkr: 1000.0,
+    price_basis: '10 pcs',
+  });
+
+  assert.equal(packDraft.action, 'proposed_draft');
+  assert.equal(packDraft.piecesPerPack, 10);
+  assert.equal(packDraft.authoritativePrice, 1000.0);
+  assert.equal(packDraft.perPiecePrice, 100.0); // 1000 / 10 = 100
+
+  const packProd = packDraft.product!;
+  assert.equal(packProd.prices['Empty Pack (10 pcs)'], 1000.0);
+  assert.equal(packProd.variants?.[0].label, 'Empty Pack (10 pcs)');
+  assert.equal(packProd.variants?.[0].price, 1000.0);
+
+  // Empty tiers configuration must reflect pack quantity and per-piece price
+  assert.equal(packProd.bidBoxConfig?.emptyTiers[0].qty, 10);
+  assert.equal(packProd.bidBoxConfig?.emptyTiers[0].unitPrice, 100.0);
+  assert.equal(packProd.bidBoxConfig?.emptyTiers[0].packPrice, 1000.0);
+
+  // Authoritative packaging MOQ:
+  // At Rs. 100 per piece, required pieces = min(25, max(1, ceil(5000 / 100))) = 25 pieces
+  assert.equal(calculatePackagingMoq(packProd, 'Empty Pack (10 pcs)'), 25);
+  // Required packs = ceil(25 pieces / 10 pieces per pack) = 3 packs (3 x 10 = 30 pcs >= 25 MOQ)
+  assert.equal(calculateMinOrderQuantityUnits(packProd, 'Empty Pack (10 pcs)'), 3);
+  assert.equal(packDraft.derivedMoqPieces, 25);
+  assert.equal(packDraft.derivedMinUnits, 3);
+});
+
+test('Regression 11: Defect 3 - Require actual approved proposed selling price', () => {
+  // 1. Missing proposed_selling_price_pkr (even with source_price_pkr present)
+  // Must NOT fall back to source_price_pkr!
+  const missingSellingPrice = adaptResearchRecordToDraft({
+    stable_id: 'test-missing-proposed',
+    subcategory_id: 'signature-tin-boxes',
+    name: 'Unpriced Research Box',
+    source_price_pkr: 100.0, // Benchmark price present
+    // proposed_selling_price_pkr is omitted
+    price_basis: '1 pc',
+  });
+
+  assert.equal(missingSellingPrice.action, 'invalid_schema');
+  assert.equal(missingSellingPrice.product, undefined);
+  assert.ok(
+    missingSellingPrice.publicationBlockers.some((b) => b.includes('MISSING_PROPOSED_SELLING_PRICE')),
+    'Expected blocker for missing proposed selling price'
+  );
+  assert.ok(
+    missingSellingPrice.schemaErrors?.some((e) =>
+      e.includes('Source benchmark prices (source_price_pkr) cannot be used as an automatic selling price')
+    )
+  );
+
+  // 2. Zero or negative proposed selling price is rejected
+  const zeroPrice = adaptResearchRecordToDraft({
+    stable_id: 'test-zero-price',
+    subcategory_id: 'signature-tin-boxes',
+    name: 'Zero Price Box',
+    proposed_selling_price_pkr: 0,
+    price_basis: '1 pc',
+  });
+  assert.equal(zeroPrice.action, 'invalid_schema');
+  assert.ok(zeroPrice.publicationBlockers.some((b) => b.includes('INVALID_PRICE')));
+
+  const negativePrice = adaptResearchRecordToDraft({
+    stable_id: 'test-negative-price',
+    subcategory_id: 'signature-tin-boxes',
+    name: 'Negative Price Box',
+    proposed_selling_price_pkr: -100,
+    price_basis: '1 pc',
+  });
+  assert.equal(negativePrice.action, 'invalid_schema');
+  assert.ok(negativePrice.publicationBlockers.some((b) => b.includes('INVALID_PRICE')));
 });
