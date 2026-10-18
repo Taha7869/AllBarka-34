@@ -18,7 +18,7 @@ import type { Product } from '../types';
 import { useCart } from '../contexts/CartContext';
 import { useSavedProducts } from '../hooks/useSavedProducts';
 import { getLocalized } from '../utils/localize';
-import { CANONICAL_CATEGORIES, resolveCategorySlug, OCCASION_TAGS, getCategoryMeta } from '../config/categories';
+import { CANONICAL_CATEGORIES, CUSTOMER_FACING_CATEGORIES, resolveCategorySlug, OCCASION_TAGS, getCategoryMeta } from '../config/categories';
 import { CATALOG_SORTS, readCatalogFilters, searchCatalog, startingPrice, type CatalogSort } from '../lib/catalogDiscovery';
 import { applyCatalogFilterDraft, beginCatalogFilterDraft, filterCatalogSelection, type CatalogFilterDraft } from '../lib/catalogFilterDraft';
 import BidBoxesSection from './BidBoxesSection';
@@ -152,7 +152,20 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
     </header>
     {isWholesale && <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--color-border)] p-4"><p className="max-w-lg text-sm leading-6">{t('shop.wholesaleCopy')}</p><a href={buildHumanSupportWhatsAppUrl('I would like to enquire about wholesale products.')} target="_blank" rel="noreferrer" className="focus-ring inline-flex min-h-11 items-center rounded-full bg-[#1e3a2b] px-5 text-xs text-[#fff8e9]">{t('shop.wholesaleEnquiry')}</a></div>}
     <nav aria-label={t('category')} className="catalog-category-nav mb-6 flex gap-2 overflow-x-auto pb-2">
-      {['all', ...Object.keys(CANONICAL_CATEGORIES)].map(id => <button key={id} type="button" onClick={() => selectCategory(id)} aria-pressed={category === id} className={`min-h-11 shrink-0 rounded-full border px-5 text-xs font-semibold transition-colors ${category === id ? 'border-[#1e3a2b] bg-[#1e3a2b] text-[#fff8e9]' : 'border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[#c7982f]'}`}>{t(`shop.${id}`, getCategoryMeta(id)?.name || id)}</button>)}
+      {['all', ...CUSTOMER_FACING_CATEGORIES].map(id => {
+        const isActive = category === id || (category === 'nuts' && id === 'dry-fruits') || (category === 'snacks-seeds' && id === 'seeds-snacks') || (category === 'combos' && id === 'gift-boxes');
+        return (
+          <button
+            key={id}
+            type="button"
+            onClick={() => selectCategory(id)}
+            aria-pressed={isActive}
+            className={`min-h-11 shrink-0 rounded-full border px-5 text-xs font-semibold transition-colors ${isActive ? 'border-[#1e3a2b] bg-[#1e3a2b] text-[#fff8e9]' : 'border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[#c7982f]'}`}
+          >
+            {t(`shop.${id}`, getCategoryMeta(id)?.name || id)}
+          </button>
+        );
+      })}
       <button type="button" onClick={() => openCustomQuoteModal({ mode: 'filled', quantity: 50 })} className="min-h-11 shrink-0 rounded-full border border-[#8C6B1B] bg-[#FAF6EE] px-5 text-xs font-bold text-[#8C6B1B] transition-colors hover:bg-[#8C6B1B] hover:text-white">Bid Boxes &amp; Custom Quote</button>
     </nav>
     {(category === 'gift-boxes' || category === 'bundles') && !filters.query && (

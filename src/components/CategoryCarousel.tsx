@@ -18,7 +18,6 @@ const collectionPresentation = [
   { id: 'oils', name: 'Cold-Pressed Oils', image: '/images/generated/category-oils-tile-v1.webp', altKey: 'imageAlt.categoryOils', link: '/shop/oils' },
   { id: 'essentials', name: 'Desi Essentials', image: '/images/generated/category-essentials-tile-v1.webp', altKey: 'imageAlt.categoryEssentials', link: '/shop/essentials' },
 ];
-/** Preserve the established collection art/order; new canonical collections join automatically. */
 export const PANTRY_CATEGORIES = [
   ...collectionPresentation,
   ...Object.values(CANONICAL_CATEGORIES).filter(category => !collectionPresentation.some(item => item.id === category.id)).map(category => {
@@ -26,7 +25,18 @@ export const PANTRY_CATEGORIES = [
     return { id: category.id, name: category.name, image: cover?.image === null ? '' : cover ? getProductImage(cover) : '', altKey: `catalog.alt.${category.id}`, link: `/shop/${category.id}` };
   }),
 ];
-const categories = PANTRY_CATEGORIES;
+
+/**
+ * Deduplicated category list for customer presentation.
+ * Filters out legacy internal alias keys (nuts, snacks-seeds) so they don't render duplicate cards.
+ */
+const displayedCategories = PANTRY_CATEGORIES.filter(
+  category =>
+    (category.id !== 'nuts' || !PANTRY_CATEGORIES.some(c => c.id === 'dry-fruits')) &&
+    (category.id !== 'snacks-seeds' || !PANTRY_CATEGORIES.some(c => c.id === 'seeds-snacks'))
+);
+const categories = displayedCategories;
+
 
 export default function CategoryCarousel() {
   const { t } = useLanguage();

@@ -151,6 +151,24 @@ export const CANONICAL_CATEGORIES: Record<string, CategoryMeta> = {
   },
 };
 
+/**
+ * Deduplicated customer-facing categories for pills, guides, and footer links.
+ * Excludes legacy internal aliases (nuts, snacks-seeds) while preserving them in CANONICAL_CATEGORIES & CATEGORY_ALIASES.
+ */
+export const CUSTOMER_FACING_CATEGORIES = [
+  'dry-fruits',
+  'dates',
+  'seeds-snacks',
+  'oils',
+  'essentials',
+  'herbs-spices',
+  'celebration-boxes',
+  'deals',
+  'gift-boxes',
+  'bundles',
+] as const;
+
+
 export const CATEGORY_ALIASES: Record<string, string> = {
   fruits: 'nuts',
   'dry-fruits': 'nuts',

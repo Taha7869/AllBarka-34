@@ -11,8 +11,7 @@ import PlaceholdersAndVanishInput from './ui/placeholders-and-vanish-input';
 import { PRODUCTS } from '../data/products';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { getLocalized } from '../utils/localize';
-import SelectionGuide from './SelectionGuide';
-import './AllBarkaHero.css';
+const SelectionGuide = lazy(() => import('./SelectionGuide'));
 
 interface AllBarkaHeroProps {
   onOpenCart?: () => void;
@@ -82,8 +81,8 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
         </h1>
         <p className="heritage-hero-description">{t('heroSubtitle')}</p>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-          <Link to="/shop" className="focus-ring inline-flex min-h-12 items-center gap-3 rounded-full bg-[#e4c783] px-7 text-xs font-semibold text-[#092e23] transition-colors hover:bg-[#f1dca9]">{t('boutique.shop')}<ArrowRight size={16} /></Link>
-          <Link to="/gifting" className="focus-ring inline-flex min-h-12 items-center gap-3 rounded-full border border-[#e4c783]/50 px-6 text-xs font-semibold text-[#fff8e9] transition-colors hover:bg-white/10">{t('boutique.gifting')}</Link>
+          <Link to="/shop/dry-fruits" className="focus-ring inline-flex min-h-12 items-center gap-3 rounded-full bg-[#e4c783] px-7 text-xs font-semibold text-[#092e23] transition-colors hover:bg-[#f1dca9]">{t('hero.shopDryFruits', 'Shop Dry Fruits')}<ArrowRight size={16} /></Link>
+          <Link to="/gifting" className="focus-ring inline-flex min-h-12 items-center gap-3 rounded-full border border-[#e4c783]/50 px-6 text-xs font-semibold text-[#fff8e9] transition-colors hover:bg-white/10">{t('hero.exploreGifts', 'Explore Gifts')}</Link>
         </div>
 
         <div
