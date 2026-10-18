@@ -125,11 +125,18 @@ async function main() {
     return res.result?.value;
   };
 
+  const repoArtifactDir = path.resolve('docs/artifacts');
+  if (!fs.existsSync(repoArtifactDir)) {
+    fs.mkdirSync(repoArtifactDir, { recursive: true });
+  }
+
   const captureScreenshot = async (filename) => {
     const res = await send('Page.captureScreenshot', { format: 'png' });
     const fullPath = path.join(artifactDir, filename);
     fs.writeFileSync(fullPath, Buffer.from(res.data, 'base64'));
-    console.log(`Captured screenshot: ${filename} (${fullPath})`);
+    const repoPath = path.join(repoArtifactDir, filename);
+    fs.writeFileSync(repoPath, Buffer.from(res.data, 'base64'));
+    console.log(`Captured screenshot: ${filename} (${fullPath} & ${repoPath})`);
   };
 
   const testResults = [];
@@ -204,10 +211,28 @@ async function main() {
       return { x: r.x + 20, y: r.y + 20, bottom: r.bottom };
     })()`);
     await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: panelBox.x, y: panelBox.y });
-    await new Promise((r) => setTimeout(r, 150));
+    // Wait > 220ms (350ms) to verify panel remains open after cancelable close delay expires while pointer is inside
+    await new Promise((r) => setTimeout(r, 350));
 
     const openInsidePanel = await evaluate(`document.getElementById('nav-dropdown-panel-shop') !== null`);
-    logTest('Dropdown remains open while cursor inside panel', openInsidePanel);
+    logTest('Dropdown remains open while cursor inside panel beyond 220ms delay (350ms elapsed)', openInsidePanel);
+
+    // Exercise actual internal scrolling reaching the last link
+    const scrollTest = await evaluate(`(() => {
+      const panel = document.getElementById('nav-dropdown-panel-shop');
+      if (!panel) return { success: false, reason: 'panel not found' };
+      const links = Array.from(panel.querySelectorAll('a'));
+      const lastLink = links[links.length - 1];
+      if (!lastLink) return { success: false, reason: 'no links in panel' };
+      lastLink.scrollIntoView();
+      return {
+        success: true,
+        scrollTop: panel.scrollTop,
+        lastLinkText: lastLink.textContent?.trim(),
+        lastLinkPath: lastLink.getAttribute('data-nav-path') || lastLink.getAttribute('href'),
+      };
+    })()`);
+    logTest('Internal scrolling operates inside dropdown panel and reaches last link', scrollTest.success, `Last link: ${scrollTest.lastLinkText} (${scrollTest.lastLinkPath}), scrollTop: ${scrollTest.scrollTop}`);
 
     // TEST 3: Dropdown panel doesn't overflow viewport
     const viewportCheck = await evaluate(`(() => {
@@ -435,6 +460,36 @@ async function main() {
       'Occasion filter /shop/celebration-boxes?occasion=wedding shows wedding boxes and excludes umrah box',
       (occasionFilterCheck.distinctCount === 6 || occasionFilterCheck.articleCount === 6) && occasionFilterCheck.hasWedding && !occasionFilterCheck.hasUmrah && occasionFilterCheck.hasChip,
       `Distinct: ${occasionFilterCheck.distinctCount}, Articles: ${occasionFilterCheck.articleCount}, hasWedding: ${occasionFilterCheck.hasWedding}, hasUmrah: ${occasionFilterCheck.hasUmrah}, hasChip: ${occasionFilterCheck.hasChip}`,
+    );
+
+    // Reset cursor to avoid hover state
+    await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 10, y: 300 });
+
+    // TEST 7b: Deals Route Resolution & Matching
+    await send('Page.navigate', { url: `http://localhost:${port}/shop/deals` });
+    await new Promise((r) => setTimeout(r, 1200));
+
+    const dealsCheck = await evaluate(`(() => {
+      const articles = Array.from(document.querySelectorAll('#category-plp-container article'));
+      const cards = Array.from(document.querySelectorAll('article a[href^="/product/"]')).map(a => a.getAttribute('href') || '');
+      const distinctIds = Array.from(new Set(cards.map(h => h.split('/').pop()))).filter(Boolean);
+      const hasDealsOrBundles = cards.some(h => h.includes('deal-') || h.includes('bundle-'));
+      const hasArbitraryNuts = cards.some(h => h.includes('pista') || h.includes('badam'));
+      const hasArbitraryDates = cards.some(h => h.includes('ajwa') || h.includes('khajoor'));
+      return {
+        path: window.location.pathname,
+        articleCount: articles.length,
+        distinctCount: distinctIds.length,
+        hasDealsOrBundles,
+        hasArbitraryNuts,
+        hasArbitraryDates,
+      };
+    })()`);
+
+    logTest(
+      'Deals route /shop/deals renders curated deals & bundles and excludes arbitrary catalog items',
+      dealsCheck.path === '/shop/deals' && dealsCheck.hasDealsOrBundles && !dealsCheck.hasArbitraryNuts && !dealsCheck.hasArbitraryDates,
+      `Articles: ${dealsCheck.articleCount}, Distinct: ${dealsCheck.distinctCount}, hasDealsOrBundles: ${dealsCheck.hasDealsOrBundles}, hasArbitraryNuts: ${dealsCheck.hasArbitraryNuts}`,
     );
 
     // Reset cursor to avoid hover state

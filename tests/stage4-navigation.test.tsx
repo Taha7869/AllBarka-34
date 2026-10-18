@@ -159,7 +159,7 @@ test('5. Navigation destinations resolve meaningfully and preserve existing taxo
   assert.equal(resolveCategorySlug('bid-boxes'), 'celebration-boxes');
   assert.equal(resolveCategorySlug('celebration-box'), 'celebration-boxes');
   assert.equal(resolveCategorySlug('combos'), 'gift-boxes');
-  assert.equal(resolveCategorySlug('deals'), 'gift-boxes');
+  assert.equal(resolveCategorySlug('deals'), 'deals');
   assert.equal(resolveCategorySlug('dry-fruits'), 'dry-fruits');
   assert.equal(resolveCategorySlug('fruits'), 'nuts');
   assert.equal(resolveCategorySlug('dates'), 'dates');
@@ -233,4 +233,144 @@ test('7. Occasion matching filters products by approved occasion metadata', asyn
   );
   assert.equal(birthBoxes.length, 1, 'Birth occasion must return 1 Birth announcement box');
   assert.equal(birthBoxes[0].id, 'bid-box-birth-announcement');
+});
+
+test('8. Authoritative occasion matching strictly honors product.occasions over badges, heuristics and legacy tags', async () => {
+  const { productMatchesOccasion, productMatchesCategory, normalizeOccasionSlug } = await import('../src/config/categories');
+
+  // Normalization of aliases
+  assert.equal(normalizeOccasionSlug('nikkah'), 'wedding');
+  assert.equal(normalizeOccasionSlug('Wedding'), 'wedding');
+  assert.equal(normalizeOccasionSlug('hajj'), 'umrah');
+  assert.equal(normalizeOccasionSlug('baby'), 'birth');
+  assert.equal(normalizeOccasionSlug('aqeeqah'), 'birth');
+  assert.equal(normalizeOccasionSlug('eid'), 'ramadan');
+
+  // Requirement: occasions:['wedding'] with tag_en:'Premium' matches wedding
+  const weddingWithBadge = {
+    id: 'prod-test-wedding',
+    occasions: ['wedding'],
+    tag_en: 'Premium',
+  };
+  assert.equal(productMatchesOccasion(weddingWithBadge, 'wedding'), true, 'Must match wedding');
+  assert.equal(productMatchesOccasion(weddingWithBadge, 'birth'), false, 'Must not match birth');
+  assert.equal(productMatchesOccasion(weddingWithBadge, 'corporate'), false, 'Must not match corporate');
+
+  // Requirement: occasions:['birth'] with legacy occasionTag:'Wedding' matches birth and excludes wedding
+  const birthWithLegacyWedding = {
+    id: 'prod-test-birth',
+    occasions: ['birth'],
+    bidBoxConfig: { occasionTag: 'Wedding & Festive Keepsake' },
+    occasionTag: 'Wedding & Festive Keepsake',
+    tag_en: 'Wedding Special',
+  };
+  assert.equal(productMatchesOccasion(birthWithLegacyWedding, 'birth'), true, 'Must match birth from canonical occasions');
+  assert.equal(productMatchesOccasion(birthWithLegacyWedding, 'wedding'), false, 'Must exclude wedding because canonical occasions is authoritative');
+
+  // Requirement: occasions:[] does not gain eligibility from a combo/bundle ID or keywords
+  const emptyOccasionsCombo = {
+    id: 'combo-wedding-bundle-box',
+    name_en: 'Royal Nikkah Wedding Combo Box',
+    occasions: [],
+    keywords: ['wedding', 'nikkah', 'combo', 'bundle'],
+    bidBoxConfig: { occasionTag: 'Wedding & Festive Keepsake' },
+    tag_en: 'Wedding',
+  };
+  assert.equal(productMatchesOccasion(emptyOccasionsCombo, 'wedding'), false, 'Explicit empty array [] must NEVER gain eligibility from ID, name, keywords, or legacy tags');
+  assert.equal(productMatchesOccasion(emptyOccasionsCombo, 'birth'), false);
+  assert.equal(productMatchesOccasion(emptyOccasionsCombo, 'all'), true);
+  assert.equal(productMatchesOccasion(emptyOccasionsCombo, null), true);
+
+  // Requirement: category + occasion remains an intersection
+  const celebrationWedding = {
+    id: 'bid-box-card-nikkah',
+    category: 'celebration-boxes',
+    occasions: ['wedding'],
+  };
+  const bundleWedding = {
+    id: 'bundle-nikkah-gift',
+    category: 'bundles',
+    occasions: ['wedding'],
+  };
+  // celebration-boxes + wedding intersection
+  assert.equal(
+    productMatchesCategory(celebrationWedding, 'celebration-boxes') && productMatchesOccasion(celebrationWedding, 'wedding'),
+    true
+  );
+  assert.equal(
+    productMatchesCategory(bundleWedding, 'celebration-boxes') && productMatchesOccasion(bundleWedding, 'wedding'),
+    false
+  );
+  // bundles + wedding intersection
+  assert.equal(
+    productMatchesCategory(bundleWedding, 'bundles') && productMatchesOccasion(bundleWedding, 'wedding'),
+    true
+  );
+  assert.equal(
+    productMatchesCategory(celebrationWedding, 'bundles') && productMatchesOccasion(celebrationWedding, 'wedding'),
+    false
+  );
+});
+
+test('9. Admin save/reload updates product occasions and changes actual PLP filtered results', async () => {
+  const { filterCatalogSelection } = await import('../src/lib/catalogFilterDraft');
+  const { readCatalogFilters } = await import('../src/lib/catalogDiscovery');
+  const { PRODUCTS } = await import('../src/data/products');
+
+  // Initial catalog state: product has occasions: ['wedding']
+  const initialProduct = {
+    ...PRODUCTS[0],
+    id: 'prod-admin-test-1',
+    name_en: 'Artisanal Keepsake Box',
+    category: 'celebration-boxes',
+    occasions: ['wedding'],
+    prices: { 'Standard': 1500 },
+    active: true,
+  };
+  const catalogBefore = [initialProduct];
+
+  const weddingFilters = { ...readCatalogFilters(new URLSearchParams()), occasion: 'wedding' };
+  const birthFilters = { ...readCatalogFilters(new URLSearchParams()), occasion: 'birth' };
+  const context = { category: 'celebration-boxes', isWholesale: false, savedIds: [], sharedIds: null };
+
+  const plpBeforeWedding = filterCatalogSelection(catalogBefore, weddingFilters, context);
+  const plpBeforeBirth = filterCatalogSelection(catalogBefore, birthFilters, context);
+  assert.equal(plpBeforeWedding.length, 1, 'Product appears in wedding before admin edit');
+  assert.equal(plpBeforeBirth.length, 0, 'Product absent from birth before admin edit');
+
+  // Admin saves update: merchant changes occasion from wedding to birth
+  const updatedProduct = {
+    ...initialProduct,
+    occasions: ['birth'],
+  };
+  const catalogAfter = [updatedProduct];
+
+  const plpAfterWedding = filterCatalogSelection(catalogAfter, weddingFilters, context);
+  const plpAfterBirth = filterCatalogSelection(catalogAfter, birthFilters, context);
+  assert.equal(plpAfterWedding.length, 0, 'Product no longer appears in wedding after admin edit');
+  assert.equal(plpAfterBirth.length, 1, 'Product now appears in birth after admin edit');
+});
+
+test('10. Deals route resolution and matching returns only curated bundles and deals without arbitrary products', async () => {
+  const { PRODUCTS } = await import('../src/data/products');
+  const { productMatchesCategory, resolveCategorySlug } = await import('../src/config/categories');
+
+  // Route slug resolution
+  assert.equal(resolveCategorySlug('deals'), 'deals', '/shop/deals resolves to deals category');
+
+  // Match products for 'deals'
+  const dealsProducts = PRODUCTS.filter((p) => productMatchesCategory(p, 'deals'));
+  assert.equal(dealsProducts.length, 15, 'Deals must match exactly the 13 curated bundles plus deal-1 and deal-2');
+
+  const dealIds = dealsProducts.map((p) => p.id);
+  assert.ok(dealIds.includes('deal-1'), 'deal-1 is included in deals');
+  assert.ok(dealIds.includes('deal-2'), 'deal-2 is included in deals');
+  assert.ok(dealIds.includes('bundle-daily-grind'), 'bundle is included in deals');
+
+  // Crucial: Arbitrary nuts, dates, oils, spices must NOT match deals
+  assert.ok(!dealIds.includes('pista'), 'Pista must NOT match deals');
+  assert.ok(!dealIds.includes('ajwa-dates'), 'Ajwa dates must NOT match deals');
+  assert.ok(!dealIds.includes('cold-pressed-mustard-oil'), 'Mustard oil must NOT match deals');
+  assert.ok(!dealIds.includes('saffron-super-negin'), 'Saffron must NOT match deals');
+  assert.ok(!dealIds.includes('bid-box-luxury-tin'), 'Standard bid box must NOT match deals');
 });

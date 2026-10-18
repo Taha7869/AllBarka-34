@@ -138,6 +138,7 @@ export const CANONICAL_CATEGORIES: Record<string, CategoryMeta> = {
     provenance: 'Hand-Curated in Lahore',
   },
   'celebration-boxes': COMMERCIAL_COLLECTIONS['celebration-boxes'],
+  deals: COMMERCIAL_COLLECTIONS['deals'],
   'herbs-spices': FOOD_CATEGORIES['herbs-spices'],
   bundles: {
     id: 'bundles',
@@ -163,7 +164,6 @@ export const CATEGORY_ALIASES: Record<string, string> = {
   berries: 'snacks-seeds',
   nimko: 'snacks-seeds',
   combos: 'gift-boxes',
-  deals: 'gift-boxes',
   gifting: 'gift-boxes',
   gifts: 'gift-boxes',
   'bid-boxes': 'celebration-boxes',
@@ -226,9 +226,14 @@ export function productMatchesCategory(
     return prodCat === 'gift-boxes';
   }
 
-  // Bundles / Deals
-  if (target === 'bundles' || target === 'deals') {
+  // Bundles
+  if (target === 'bundles') {
     return prodCat === 'bundles';
+  }
+
+  // Deals
+  if (target === 'deals') {
+    return prodCat === 'bundles' || prodCat === 'deals' || product.id === 'deal-1' || product.id === 'deal-2' || !!(product as any).collections?.includes('deals');
   }
 
   // Check alias match
@@ -238,74 +243,94 @@ export function productMatchesCategory(
   return false;
 }
 
+export const OCCASION_ALIASES: Record<string, string> = {
+  wedding: 'wedding',
+  nikkah: 'wedding',
+  shadi: 'wedding',
+  shaadi: 'wedding',
+  'baat-pakki': 'wedding',
+  'baat pakki': 'wedding',
+  mehndi: 'wedding',
+  barat: 'wedding',
+  walima: 'wedding',
+  umrah: 'umrah',
+  hajj: 'umrah',
+  tabarruk: 'umrah',
+  ziyarat: 'umrah',
+  birth: 'birth',
+  baby: 'birth',
+  aqeeqah: 'birth',
+  'baby-announcement': 'birth',
+  newborn: 'birth',
+  ramadan: 'ramadan',
+  eid: 'ramadan',
+  ramzan: 'ramadan',
+  iftar: 'ramadan',
+  corporate: 'corporate',
+  executive: 'corporate',
+  business: 'corporate',
+};
+
+export function normalizeOccasionSlug(occasion?: string | null): string | null {
+  if (!occasion) return null;
+  const raw = occasion.trim().toLowerCase();
+  const kebab = raw.replace(/[\s_]+/g, '-');
+  return OCCASION_ALIASES[kebab] || OCCASION_ALIASES[raw] || kebab;
+}
+
+/**
+ * Documented fallback mapping used ONLY when canonical product.occasions is absent (null/undefined).
+ */
+export const LEGACY_OCCASION_TAG_MAP: Record<string, string> = {
+  'umrah & hajj tabarruk': 'umrah',
+  'wedding & festive keepsake': 'wedding',
+  'mehndi & nikkah favors': 'wedding',
+  'nikkah & baat pakki': 'wedding',
+  'heritage potli favor': 'wedding',
+  'family bid & barat box': 'wedding',
+  'aqeeqah & baby arrival': 'birth',
+  'vip royal presentation': 'wedding',
+  wedding: 'wedding',
+  nikkah: 'wedding',
+  umrah: 'umrah',
+  birth: 'birth',
+  aqeeqah: 'birth',
+  ramadan: 'ramadan',
+  corporate: 'corporate',
+};
+
 /**
  * Checks whether a product matches a requested occasion filter.
- * Inspects approved occasion metadata (bidBoxConfig.occasionTag, tag_en, etc.)
+ *
+ * Rules:
+ * 1. Authoritative: canonical product.occasions array (including an explicit empty array []).
+ *    An unrelated promotional badge (e.g. tag_en: 'Premium') or legacy tag does not override eligibility.
+ * 2. Legacy fallback: when canonical occasions is absent (undefined / null), inspects documented
+ *    LEGACY_OCCASION_TAG_MAP on product.bidBoxConfig?.occasionTag or product.occasionTag.
+ * 3. Speculative ID/name/badge-based eligibility is completely removed.
  */
 export function productMatchesOccasion(
-  product: { id: string; bidBoxConfig?: any; tag_en?: string; keywords?: string[]; name_en?: string; category?: string },
+  product: { id: string; occasions?: string[]; bidBoxConfig?: any; occasionTag?: string; tag_en?: string; [key: string]: any },
   occasion?: string | null
 ): boolean {
   if (!occasion || occasion === 'all') return true;
-  const occ = occasion.trim().toLowerCase();
+  const target = normalizeOccasionSlug(occasion);
+  if (!target) return true;
 
-  // 1. Primary: Approved occasion metadata on the product
-  const primaryTag = [
-    product.bidBoxConfig?.occasionTag || '',
-    product.tag_en || '',
-  ].join(' ').toLowerCase();
-
-  if (primaryTag) {
-    if (occ === 'wedding' || occ === 'nikkah') {
-      return (
-        primaryTag.includes('nikkah') ||
-        primaryTag.includes('wedding') ||
-        primaryTag.includes('shadi') ||
-        primaryTag.includes('baat pakki') ||
-        primaryTag.includes('barat') ||
-        primaryTag.includes('mehndi') ||
-        primaryTag.includes('potli') ||
-        primaryTag.includes('royal presentation')
-      );
-    }
-    if (occ === 'umrah' || occ === 'hajj' || occ === 'tabarruk') {
-      return primaryTag.includes('umrah') || primaryTag.includes('hajj') || primaryTag.includes('tabarruk') || primaryTag.includes('zamzam');
-    }
-    if (occ === 'birth' || occ === 'baby' || occ === 'aqeeqah') {
-      return primaryTag.includes('birth') || primaryTag.includes('baby') || primaryTag.includes('aqeeqah') || primaryTag.includes('arrival');
-    }
-    if (occ === 'ramadan' || occ === 'eid') {
-      return primaryTag.includes('ramadan') || primaryTag.includes('eid');
-    }
-    if (occ === 'corporate') {
-      return primaryTag.includes('corporate') || primaryTag.includes('executive');
-    }
+  // 1. Authoritative: canonical product.occasions array (including explicit empty array [])
+  if (Array.isArray(product.occasions)) {
+    return product.occasions.some(occ => normalizeOccasionSlug(occ) === target);
   }
 
-  // 2. Secondary: Keywords and product identity for standard catalog items
-  const secondaryText = [
-    product.name_en || '',
-    product.id || '',
-    ...(product.keywords || []),
-  ].join(' ').toLowerCase();
-
-  if (occ === 'umrah') {
-    return product.id.includes('ajwa') || secondaryText.includes('zamzam') || secondaryText.includes('tabarruk');
-  }
-  if (occ === 'birth') {
-    return product.id === 'org-panjeeri' || secondaryText.includes('baby') || secondaryText.includes('aqeeqah');
-  }
-  if (occ === 'ramadan') {
-    return product.id.includes('date') || product.id === 'khajoor' || product.id.startsWith('combo-');
-  }
-  if (occ === 'wedding') {
-    return product.id.startsWith('combo-') || secondaryText.includes('nikkah');
-  }
-  if (occ === 'corporate') {
-    return product.id.startsWith('combo-') || product.id.startsWith('bundle-');
+  // 2. Legacy fallback ONLY when canonical occasions is absent (undefined / null)
+  const rawLegacyTag = product.bidBoxConfig?.occasionTag || product.occasionTag;
+  if (typeof rawLegacyTag === 'string' && rawLegacyTag.trim()) {
+    const legacyKey = rawLegacyTag.trim().toLowerCase();
+    const mapped = LEGACY_OCCASION_TAG_MAP[legacyKey] || normalizeOccasionSlug(legacyKey);
+    return mapped === target;
   }
 
-  return secondaryText.includes(occ);
+  return false;
 }
 
 /**
@@ -334,7 +359,7 @@ export function getCategoryMeta(categoryId: string): CategoryMeta {
       provenance: 'Orchards of Pakistan & Global Origins',
     };
   }
-  return CANONICAL_CATEGORIES[categoryId] || {
+  return CANONICAL_CATEGORIES[categoryId] || COMMERCIAL_COLLECTIONS[categoryId] || {
     id: categoryId,
     name: 'Curated Selections',
     shortName: 'Curated',

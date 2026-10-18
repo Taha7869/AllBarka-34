@@ -45,7 +45,7 @@ test('new canonical categories keep historical gift/deal aliases stable', () => 
   }
   assert.equal(resolveCategorySlug('spices'), 'herbs-spices');
   assert.equal(resolveCategorySlug('combos'), 'gift-boxes');
-  assert.equal(resolveCategorySlug('deals'), 'gift-boxes');
+  assert.equal(resolveCategorySlug('deals'), 'deals');
 });
 
 test('desktop, mobile, hero pills, pantry and ribbon expose both new collections in every language', () => {

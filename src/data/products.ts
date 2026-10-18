@@ -1669,6 +1669,7 @@ interface BidBoxDefinition {
   dimensionsAndCapacity: string;
   emptyOptionDetails: string;
   filledOptionDetails: string;
+  occasions?: string[];
   occasionTag: string;
   emptyUnit1: number;
   emptyUnit25: number;
@@ -1721,6 +1722,13 @@ function createBidBoxProduct(def: BidBoxDefinition): Product {
     image: def.image,
     imageName: def.image,
     prices,
+    occasions: def.occasions || [
+      def.occasionTag.toLowerCase().includes('umrah')
+        ? 'umrah'
+        : def.occasionTag.toLowerCase().includes('aqeeqah') || def.occasionTag.toLowerCase().includes('baby')
+        ? 'birth'
+        : 'wedding',
+    ],
     wholesale: def.emptyUnit100,
     isBidBox: true,
     shippingWeightG: def.shippingWeightG,
