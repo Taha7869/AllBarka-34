@@ -1,7 +1,7 @@
 # Stage 5C3 Catalog Ingestion Dry-Run Report
 
 **Branch**: `feat/renovation-v2`  
-**Execution Time**: 2026-10-18T22:12:31.565Z  
+**Execution Time**: 2026-10-18T22:26:04.146Z  
 **Environment**: In-Memory Fixture Dry Run (Zero Live Ingestion / Zero Firestore Writes)
 
 ---
@@ -12,7 +12,7 @@
 | :--- | :---: | :--- |
 | **Total Records Processed** | **33** | 30 catalog roster items + 3 Group D unverified concepts |
 | **Proposed for Creation (Drafts)** | **22** | Validated via `validateDynamicProduct` (status=`draft`, active=`false`) |
-| **Existing Catalog Records Skipped** | **8** | Active packaging IDs preserved with existing prices, variants, and media |
+| **Existing Catalog Records Skipped** | **8** | Existing inventory preserved; publication state verified only when product state supplied |
 | **Duplicates Skipped in Batch** | **0** | Re-import idempotency protected; no compounded pricing |
 | **Unverified Concepts Excluded** | **3** | Group D proposed acrylic concepts strictly excluded |
 | **Schema Validation Errors** | **0** | 0 schema errors; all candidate drafts meet validation rules |
@@ -21,7 +21,7 @@
 
 ## 2. Category Breakdown & Shortfall Analysis
 
-| Subcategory | Target | Active Existing | Proposed Drafts | Verified Total | Needs Revision | Quota Blocked | Deferred | Gap / Shortfall |
+| Subcategory | Target | Existing Inventory | Proposed Drafts | Verified Total | Needs Revision | Quota Blocked | Deferred | Gap / Shortfall |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **tin** | 6 | 1 | 6 | **7** | 0 | 0 | 0 | **0 (Met)** |
 | **tabarruk** | 6 | 1 | 5 | **6** | 2 | 1 | 0 | **0 (Met)** |
@@ -40,7 +40,8 @@
 
 ### Media Audit Totals
 
-- **Active Storefront Assets (Existing)**: 8
+- **Active Storefront Assets (Verified Live)**: 0
+- **Existing Inventory Assets (Unverified from ID only)**: 8
 - **Approved Draft Concept Renders**: 11
 - **Needs Revision Concept Renders**: 2 (`tabarruk-set-012` [component mismatch], `tabarruk-set-tijori` [concept feature disparity])
 - **Quota-Blocked Image Generation Tasks**: 8 (pending upstream `gemini-3.1-flash-image` quota reset)
@@ -52,6 +53,7 @@ A record can be a completely valid unpublished draft while being strictly blocke
 
 | Blocker Code | Affected Records | Description |
 | :--- | :---: | :--- |
+| `EXISTING_INVENTORY_UNVERIFIED` | **8** | Prevents premature publication to public storefront |
 | `SUPPLIER_SAMPLE_UNCONFIRMED` | **11** | Prevents premature publication to public storefront |
 | `DRAFT_STATUS_UNPUBLISHED` | **22** | Prevents premature publication to public storefront |
 | `MEDIA_NEEDS_REVISION` | **2** | Prevents premature publication to public storefront |
@@ -67,8 +69,8 @@ A record can be a completely valid unpublished draft while being strictly blocke
 
 ### `bid-box-luxury-tin` — Action: `skipped_existing`
 
-- **Status**: Existing Catalog Product (Active)
-- **Preservation**: Product "bid-box-luxury-tin" already exists in live catalog. Existing prices, variants, filled options, and media preserved unchanged.
+- **Status**: Existing Catalog Product (Publication State Unknown (ID Match Only))
+- **Preservation**: Product "bid-box-luxury-tin" exists in catalog inventory. ID match proves existence only; live pricing, variants, active status, and media are preserved unchanged without inferring publication eligibility.
 
 ### `tin-box-002` — Action: `proposed_draft`
 
@@ -162,8 +164,8 @@ A record can be a completely valid unpublished draft while being strictly blocke
 
 ### `bid-box-umrah-tabarruk` — Action: `skipped_existing`
 
-- **Status**: Existing Catalog Product (Active)
-- **Preservation**: Product "bid-box-umrah-tabarruk" already exists in live catalog. Existing prices, variants, filled options, and media preserved unchanged.
+- **Status**: Existing Catalog Product (Publication State Unknown (ID Match Only))
+- **Preservation**: Product "bid-box-umrah-tabarruk" exists in catalog inventory. ID match proves existence only; live pricing, variants, active status, and media are preserved unchanged without inferring publication eligibility.
 
 ### `tabarruk-set-004` — Action: `proposed_draft`
 
@@ -242,23 +244,23 @@ A record can be a completely valid unpublished draft while being strictly blocke
 
 ### `bid-box-pyramid-favor` — Action: `skipped_existing`
 
-- **Status**: Existing Catalog Product (Active)
-- **Preservation**: Product "bid-box-pyramid-favor" already exists in live catalog. Existing prices, variants, filled options, and media preserved unchanged.
+- **Status**: Existing Catalog Product (Publication State Unknown (ID Match Only))
+- **Preservation**: Product "bid-box-pyramid-favor" exists in catalog inventory. ID match proves existence only; live pricing, variants, active status, and media are preserved unchanged without inferring publication eligibility.
 
 ### `bid-box-card-nikkah` — Action: `skipped_existing`
 
-- **Status**: Existing Catalog Product (Active)
-- **Preservation**: Product "bid-box-card-nikkah" already exists in live catalog. Existing prices, variants, filled options, and media preserved unchanged.
+- **Status**: Existing Catalog Product (Publication State Unknown (ID Match Only))
+- **Preservation**: Product "bid-box-card-nikkah" exists in catalog inventory. ID match proves existence only; live pricing, variants, active status, and media are preserved unchanged without inferring publication eligibility.
 
 ### `bid-box-jute-pouch` — Action: `skipped_existing`
 
-- **Status**: Existing Catalog Product (Active)
-- **Preservation**: Product "bid-box-jute-pouch" already exists in live catalog. Existing prices, variants, filled options, and media preserved unchanged.
+- **Status**: Existing Catalog Product (Publication State Unknown (ID Match Only))
+- **Preservation**: Product "bid-box-jute-pouch" exists in catalog inventory. ID match proves existence only; live pricing, variants, active status, and media are preserved unchanged without inferring publication eligibility.
 
 ### `bid-box-sweet-nikkah` — Action: `skipped_existing`
 
-- **Status**: Existing Catalog Product (Active)
-- **Preservation**: Product "bid-box-sweet-nikkah" already exists in live catalog. Existing prices, variants, filled options, and media preserved unchanged.
+- **Status**: Existing Catalog Product (Publication State Unknown (ID Match Only))
+- **Preservation**: Product "bid-box-sweet-nikkah" exists in catalog inventory. ID match proves existence only; live pricing, variants, active status, and media are preserved unchanged without inferring publication eligibility.
 
 ### `wedding-card-box-001` — Action: `proposed_draft`
 
@@ -322,8 +324,8 @@ A record can be a completely valid unpublished draft while being strictly blocke
 
 ### `bid-box-birth-announcement` — Action: `skipped_existing`
 
-- **Status**: Existing Catalog Product (Active)
-- **Preservation**: Product "bid-box-birth-announcement" already exists in live catalog. Existing prices, variants, filled options, and media preserved unchanged.
+- **Status**: Existing Catalog Product (Publication State Unknown (ID Match Only))
+- **Preservation**: Product "bid-box-birth-announcement" exists in catalog inventory. ID match proves existence only; live pricing, variants, active status, and media are preserved unchanged without inferring publication eligibility.
 
 ### `baby-box-half-kg` — Action: `proposed_draft`
 
@@ -417,8 +419,8 @@ A record can be a completely valid unpublished draft while being strictly blocke
 
 ### `bid-box-acrylic-royal` — Action: `skipped_existing`
 
-- **Status**: Existing Catalog Product (Active)
-- **Preservation**: Product "bid-box-acrylic-royal" already exists in live catalog. Existing prices, variants, filled options, and media preserved unchanged.
+- **Status**: Existing Catalog Product (Publication State Unknown (ID Match Only))
+- **Preservation**: Product "bid-box-acrylic-royal" exists in catalog inventory. ID match proves existence only; live pricing, variants, active status, and media are preserved unchanged without inferring publication eligibility.
 
 ### `acrylic-box-cube-3in` — Action: `proposed_draft`
 

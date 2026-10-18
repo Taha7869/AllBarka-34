@@ -7,10 +7,12 @@
  * - Subcategory mapping: explicit mapping to 'tin' | 'tabarruk' | 'wedding' | 'baby' | 'acrylic'
  * - Exact decimal selling-price preservation (authoritative prices retain exact decimals; integer rounding is display-only)
  * - Selling price validation: requires actual approved proposed selling price (NEVER falls back to source_price_pkr)
- * - Pack price basis honoring: parses and validates price_basis, preserving pack price, per-piece price, and minimum pack units; rejects ambiguous free text
+ * - Pack price basis honoring: strictly parses and validates price_basis (matching entire string), preserving pack price, per-piece price, and minimum pack units; rejects ambiguous, conflicting or trailing quantity text
+ * - Variable multi-size tiers validation: validates variable tiers BEFORE constructing prices/variants (rejects empty labels without inventing "Standard", rejects duplicate labels without overwriting, requires positive proposed_pkr per tier without fallback to baseline)
  * - Dynamic MOQ rule: NEVER freezes calculated MOQ as an admin override (retains overrides only when genuinely supplied)
- * - Idempotency and re-import safety (no duplicate drafts, no compounded 5% markups)
- * - Existing inventory preservation (skips existing products without altering saved fields or filled offerings)
+ * - Authoritative MOQ derivation error handling: reports blocker/error if MOQ derivation throws, never silently guessing defaults of 25 pcs / 1 pack
+ * - Existing inventory verification: existing-ID inventory proves existence only; does not infer active status or publication eligibility without validated product state
+ * - Idempotency and re-import safety (no duplicate drafts, no compounded 5% markups; re-import against updated inventory proposes 0 creations)
  * - Strict media segregation: docs/ draft paths NEVER placed in live storefront fields (image/imageName remain null)
  * - Unverified concept exclusion: proposed concepts are excluded from draft creation
  * - Explicit publication blockers tracking: distinguishes schema validity from publication readiness
@@ -65,6 +67,7 @@ export const EXISTING_PACKAGING_IDS = new Set<string>([
 
 export type MediaAuditStatus =
   | 'active_existing'
+  | 'existing_inventory_unverified'
   | 'approved_draft'
   | 'needs_revision'
   | 'blocked_by_quota'
@@ -107,7 +110,8 @@ export interface AdapterProductResult {
   hasExplicitMoqOverride?: boolean;
   moq?: number; // derivedMoqPieces for display/summary
   mediaAudit: DraftMediaAuditInfo;
-  isPublishable: boolean;
+  isPublishable: boolean | null;
+  publicationState?: 'publishable' | 'unpublishable' | 'unknown';
   publicationBlockers: string[];
   schemaErrors?: string[];
   skipReason?: string;
@@ -115,11 +119,15 @@ export interface AdapterProductResult {
 
 export interface AdapterOptions {
   existingIds?: Set<string>;
+  existingProducts?: Map<string, Product> | Record<string, Product>;
+  moqCalculator?: (product: Product, variantLabel?: string) => number;
+  minUnitsCalculator?: (product: Product, variantLabel?: string) => number;
   allowCompounding?: boolean; // strictly false
 }
 
 export interface CategoryDryRunSummary {
   existingActive: number;
+  existingInventory: number;
   proposedDrafts: number;
   needsRevisionRenders: number;
   blockedQuotaRenders: number;
@@ -138,6 +146,7 @@ export interface DryRunSummary {
   byCategory: Record<CanonicalPackagingSubcategory, CategoryDryRunSummary>;
   mediaAuditTotals: {
     activeExistingAssets: number;
+    existingInventoryUnverified: number;
     approvedDraftRenders: number;
     needsRevisionRenders: number;
     blockedByQuotaTasks: number;
@@ -179,16 +188,19 @@ export function resolveCanonicalPackagingSubcategory(rawSubcat: unknown): Canoni
 }
 
 /**
- * Parses and validates the price_basis string.
+ * Parses and validates the price_basis string strictly matching the entire expression.
  *
  * Supported formats:
- * - "1 pc", "1 piece", "1 pc (250g capacity)" -> pieces = 1, unitType = 'pc'
+ * - "1 pc", "1 piece" -> pieces = 1, unitType = 'pc'
+ * - "1 pc (250g capacity)", "1 pc (half kg / 500g capacity)" -> pieces = 1, unitType = 'pc', capacityLabel preserved
  * - "1 set" -> pieces = 1, unitType = 'set'
- * - "10 pcs", "pack of 10", "25 pieces", "50 boxes" -> pieces = N, unitType = 'pack'
- * - "Variable multi-size family (4 sizes)" -> isMultiSizeFamily = true
+ * - "10 pcs", "pack of 10", "25 pieces", "50 boxes", "10-piece pack" -> pieces = N, unitType = 'pack'
+ * - "Variable multi-size family (4 size tiers)", "Variable multi-size family" -> isMultiSizeFamily = true
  *
- * Unsupported or ambiguous free-text (e.g. "wholesale lot", "bulk order", "per crate")
- * throws a CatalogError('INVALID_PRICE_BASIS').
+ * Strictly rejects:
+ * - Conflicting expressions (e.g. "1 pc per 10-piece pack")
+ * - Trailing/unparsed quantity descriptions (e.g. "1 pc (250g capacity) with extra lot")
+ * - Unsupported or ambiguous free-text (e.g. "wholesale lot", "bulk order", "per crate")
  */
 export function parsePriceBasis(rawBasis: unknown): ParsedPriceBasis {
   if (typeof rawBasis !== 'string' || !rawBasis.trim()) {
@@ -201,8 +213,9 @@ export function parsePriceBasis(rawBasis: unknown): ParsedPriceBasis {
 
   const trimmed = rawBasis.trim();
 
-  // 1. Variable multi-size family
-  if (/^variable\b/i.test(trimmed) || /multi-size/i.test(trimmed)) {
+  // 1. Variable multi-size family: require exact full match
+  const multiSizeMatch = /^variable\s+multi-size\s+family(?:\s*\([^)]+\))?$/i.exec(trimmed);
+  if (multiSizeMatch) {
     return {
       piecesPerPack: 1,
       unitType: 'pc',
@@ -211,18 +224,37 @@ export function parsePriceBasis(rawBasis: unknown): ParsedPriceBasis {
     };
   }
 
-  // 2. Separate capacity in parentheses, e.g. "(250g capacity)", "(half kg / 500g capacity)", "(1 kg capacity)"
+  // 2. Separate capacity in parentheses strictly at the end: e.g. "1 pc (250g capacity)"
+  let coreString = trimmed;
   let capacityLabel: string | undefined;
-  const capMatch = /\(([^)]*(?:g|kg|gram|capacity)[^)]*)\)/i.exec(trimmed);
-  if (capMatch) {
-    capacityLabel = capMatch[1].trim();
+
+  const capEndMatch = /^(.+?)\s*\(([^)]+)\)$/.exec(trimmed);
+  if (capEndMatch) {
+    const rawCap = capEndMatch[2].trim();
+    // Validate capacity annotation: must contain mass/capacity indicator (g, kg, gram, capacity)
+    // and must NOT contain conflicting quantity words like "pcs", "pieces", "pack"
+    if (!/(?:g|kg|gram|capacity)\b/i.test(rawCap) || /(?:pcs|pieces|pack|boxes)\b/i.test(rawCap)) {
+      throw new CatalogError(
+        'INVALID_PRICE_BASIS',
+        400,
+        `Unsupported or conflicting capacity annotation in price_basis: "${trimmed}".`
+      );
+    }
+    capacityLabel = rawCap;
+    coreString = capEndMatch[1].trim();
   }
 
-  // Core count string without the parenthetical capacity
-  const coreString = trimmed.replace(/\([^)]*\)/g, '').trim();
+  // If there are still parentheses in coreString, reject as invalid/malformed
+  if (/\(|\)/.test(coreString)) {
+    throw new CatalogError(
+      'INVALID_PRICE_BASIS',
+      400,
+      `Malformed price_basis containing unexpected parentheses: "${trimmed}".`
+    );
+  }
 
-  // 3. Single piece: "1 pc", "1 piece"
-  if (/^1\s*(?:pc|piece)\b/i.test(coreString)) {
+  // 3. Single piece: strictly "1 pc" or "1 piece"
+  if (/^1\s*(?:pc|piece)$/i.test(coreString)) {
     return {
       piecesPerPack: 1,
       unitType: 'pc',
@@ -231,8 +263,8 @@ export function parsePriceBasis(rawBasis: unknown): ParsedPriceBasis {
     };
   }
 
-  // 4. Single set: "1 set"
-  if (/^1\s*set\b/i.test(coreString)) {
+  // 4. Single set: strictly "1 set"
+  if (/^1\s*set$/i.test(coreString)) {
     return {
       piecesPerPack: 1,
       unitType: 'set',
@@ -241,8 +273,8 @@ export function parsePriceBasis(rawBasis: unknown): ParsedPriceBasis {
     };
   }
 
-  // 5. Pack of N: "pack of 10", "box of 25"
-  const packOfMatch = /^(?:pack\s+of\s+|box\s+of\s+)(\d+)\b/i.exec(coreString);
+  // 5. Pack of N / Box of N: strictly "pack of N" or "box of N"
+  const packOfMatch = /^(?:pack|box)\s+of\s+(\d+)$/i.exec(coreString);
   if (packOfMatch) {
     const qty = parseInt(packOfMatch[1], 10);
     if (Number.isSafeInteger(qty) && qty > 0) {
@@ -255,8 +287,8 @@ export function parsePriceBasis(rawBasis: unknown): ParsedPriceBasis {
     }
   }
 
-  // 6. N pieces / pcs / boxes: "10 pcs", "25 pieces", "50 boxes"
-  const countPcsMatch = /^(\d+)\s*(?:-?\s*pieces?|-?\s*pcs?|-?\s*pack|-?\s*boxes?)\b/i.exec(coreString);
+  // 6. N pieces / pcs / boxes / pack: strictly "N pcs", "N pieces", "N boxes", "N-piece pack", "N-pc pack"
+  const countPcsMatch = /^(\d+)(?:-?\s*(?:pieces?|pcs?|boxes?)|-piece\s+pack|-pc\s+pack)$/i.exec(coreString);
   if (countPcsMatch) {
     const qty = parseInt(countPcsMatch[1], 10);
     if (Number.isSafeInteger(qty) && qty > 0) {
@@ -269,11 +301,11 @@ export function parsePriceBasis(rawBasis: unknown): ParsedPriceBasis {
     }
   }
 
-  // Ambiguous or unsupported free text
+  // Ambiguous, conflicting, or unsupported free text (e.g. "1 pc per 10-piece pack", "wholesale lot")
   throw new CatalogError(
     'INVALID_PRICE_BASIS',
     400,
-    `Unsupported or ambiguous price_basis: "${trimmed}". Expected explicit piece or pack definition (e.g. '1 pc', '1 set', '10 pcs', 'pack of 25', or 'Variable multi-size family'). Free-text descriptions and unvalidated units are rejected.`
+    `Unsupported or ambiguous price_basis: "${trimmed}". Expected explicit piece or pack definition (e.g. '1 pc', '1 set', '10 pcs', 'pack of 25', or 'Variable multi-size family'). Free-text descriptions, conflicting quantities, and unvalidated units are rejected.`
   );
 }
 
@@ -346,6 +378,7 @@ export function adaptResearchRecordToDraft(
         notes: 'Unverified concept; excluded from catalog draft creation pending supplier quote and physical sampling.',
       },
       isPublishable: false,
+      publicationState: 'unpublishable',
       publicationBlockers: ['UNVERIFIED_CONCEPT: Excluded from catalog pending physical sampling and verified supplier quote.'],
       skipReason: `Unverified concept "${conceptId}" excluded from catalog draft creation.`,
     };
@@ -358,6 +391,7 @@ export function adaptResearchRecordToDraft(
       action: 'invalid_schema',
       mediaAudit: { mediaStatus: 'missing' },
       isPublishable: false,
+      publicationState: 'unpublishable',
       publicationBlockers: ['INVALID_PRODUCT_ID: ID does not meet format requirements.'],
       schemaErrors: [`Invalid product ID: "${rawId}". Must match ^[a-z0-9_-]{2,80}$`],
     };
@@ -374,18 +408,63 @@ export function adaptResearchRecordToDraft(
   }
 
   // 3. Skip existing products (preserves existing prices, variants, media, and filled options without modification)
+  // NOTE: Existing-ID inventory proves existence only! Do not infer active status, verified media, or publication eligibility
+  // unless actual validated product state is explicitly supplied in options.existingProducts.
   if (existingIds.has(rawId)) {
+    const existingProduct =
+      options.existingProducts instanceof Map
+        ? options.existingProducts.get(rawId)
+        : options.existingProducts?.[rawId];
+
+    if (existingProduct) {
+      const isPublic = isProductPubliclyVisible(existingProduct);
+      const hasImage = Boolean(existingProduct.image);
+      const isPublishable =
+        isPublic &&
+        hasImage &&
+        existingProduct.status !== 'draft' &&
+        existingProduct.status !== 'archived';
+      const blockers: string[] = [];
+      if (!isPublishable) {
+        if (!isPublic) blockers.push('EXISTING_PRODUCT_INACTIVE: Product is marked inactive (active=false).');
+        if (existingProduct.status === 'draft' || existingProduct.status === 'archived') {
+          blockers.push(`EXISTING_PRODUCT_STATUS: Product status is "${existingProduct.status}".`);
+        }
+        if (!hasImage) blockers.push('EXISTING_PRODUCT_MISSING_IMAGE: Product lacks active storefront image.');
+      }
+
+      return {
+        recordId: rawId,
+        action: 'skipped_existing',
+        canonicalSubcategory: canonicalSubcat,
+        product: existingProduct,
+        mediaAudit: {
+          mediaStatus: hasImage ? 'active_existing' : 'missing',
+          activeStorefrontImage: existingProduct.image || null,
+          notes: 'Verified from supplied active product state.',
+        },
+        isPublishable,
+        publicationState: isPublishable ? 'publishable' : 'unpublishable',
+        publicationBlockers: blockers,
+        skipReason: `Product "${rawId}" exists in live catalog with verified product state. Live prices, variants, filled options, and media are preserved unchanged.`,
+      };
+    }
+
+    // Default when only existing IDs are known: existence only, publication state unknown
     return {
       recordId: rawId,
       action: 'skipped_existing',
       canonicalSubcategory: canonicalSubcat,
       mediaAudit: {
-        mediaStatus: 'active_existing',
-        activeStorefrontImage: record.media?.active_storefront_image || `/images/products/${rawId}-1.webp`,
+        mediaStatus: 'existing_inventory_unverified',
+        notes: 'Product ID matches catalog inventory; active media and publication eligibility are not verified from ID alone.',
       },
-      isPublishable: true,
-      publicationBlockers: [],
-      skipReason: `Product "${rawId}" already exists in live catalog. Existing prices, variants, filled options, and media preserved unchanged.`,
+      isPublishable: null,
+      publicationState: 'unknown',
+      publicationBlockers: [
+        'EXISTING_INVENTORY_UNVERIFIED: Existing-ID match proves inventory existence only; live active status, media verification, and publication eligibility are unknown without authoritative product state.',
+      ],
+      skipReason: `Product "${rawId}" exists in catalog inventory. ID match proves existence only; live pricing, variants, active status, and media are preserved unchanged without inferring publication eligibility.`,
     };
   }
 
@@ -397,6 +476,7 @@ export function adaptResearchRecordToDraft(
       canonicalSubcategory: canonicalSubcat,
       mediaAudit: { mediaStatus: 'missing' },
       isPublishable: false,
+      publicationState: 'unpublishable',
       publicationBlockers: ['DUPLICATE_IN_BATCH: Product ID already processed in this batch.'],
       skipReason: `Duplicate product ID "${rawId}" detected in current import batch. Deduplicated to prevent price compounding.`,
     };
@@ -410,6 +490,7 @@ export function adaptResearchRecordToDraft(
       action: 'invalid_schema',
       mediaAudit: { mediaStatus: 'missing' },
       isPublishable: false,
+      publicationState: 'unpublishable',
       publicationBlockers: ['INVALID_PACKAGING_SUBCATEGORY'],
       schemaErrors: [`Invalid packaging subcategory: "${record.subcategory_id || record.category}"`],
     };
@@ -427,6 +508,7 @@ export function adaptResearchRecordToDraft(
       canonicalSubcategory: canonicalSubcat,
       mediaAudit: { mediaStatus: 'missing' },
       isPublishable: false,
+      publicationState: 'unpublishable',
       publicationBlockers: ['MISSING_PROPOSED_SELLING_PRICE: Product is missing an approved proposed selling price.'],
       schemaErrors: [
         `Missing approved proposed selling price (proposed_selling_price_pkr). Source benchmark prices (source_price_pkr) cannot be used as an automatic selling price without explicit merchant markup approval.`,
@@ -442,6 +524,7 @@ export function adaptResearchRecordToDraft(
       canonicalSubcategory: canonicalSubcat,
       mediaAudit: { mediaStatus: 'missing' },
       isPublishable: false,
+      publicationState: 'unpublishable',
       publicationBlockers: ['INVALID_PRICE: Product must have a positive authoritative selling price.'],
       schemaErrors: [`Invalid proposed selling price: ${rawProposed}. Must be a finite positive number.`],
     };
@@ -462,6 +545,7 @@ export function adaptResearchRecordToDraft(
       canonicalSubcategory: canonicalSubcat,
       mediaAudit: { mediaStatus: 'missing' },
       isPublishable: false,
+      publicationState: 'unpublishable',
       publicationBlockers: ['INVALID_PRICE_BASIS'],
       schemaErrors: [err.message || 'Invalid or unsupported price_basis.'],
     };
@@ -535,7 +619,6 @@ export function adaptResearchRecordToDraft(
   const hasExplicitOverride = explicitOverride !== undefined;
 
   // 10. Variants and Packaging MOQ calculation
-  const isTabarrukSet = canonicalSubcat === 'tabarruk';
   const prices: Record<string, number> = {};
   const variants: any[] = [];
   const emptyTiers: BidBoxBulkTier[] = [];
@@ -554,16 +637,69 @@ export function adaptResearchRecordToDraft(
         canonicalSubcategory: canonicalSubcat,
         mediaAudit,
         isPublishable: false,
+        publicationState: 'unpublishable',
         publicationBlockers: ['MISSING_VARIABLE_SIZE_TIERS'],
         schemaErrors: ['Variable multi-size family requires verified_size_tiers in verified_specifications.'],
       };
     }
 
-    primaryVariantLabel = String(sizeTiers[0].size || 'Standard').trim();
+    // Validate variable tiers BEFORE constructing prices/variants
+    const tierErrors: string[] = [];
+    const seenNormalizedLabels = new Set<string>();
+
+    for (let i = 0; i < sizeTiers.length; i++) {
+      const tier = sizeTiers[i];
+      if (!tier || typeof tier !== 'object') {
+        tierErrors.push(`Size tier at index ${i} must be a valid object.`);
+        continue;
+      }
+
+      // 1. Reject empty labels; do not invent "Standard"
+      const rawLabel = tier.size ?? tier.label;
+      if (typeof rawLabel !== 'string' || !rawLabel.trim()) {
+        tierErrors.push(`Size tier at index ${i} is missing a non-empty size/label.`);
+        continue;
+      }
+
+      const trimmedLabel = rawLabel.trim();
+      const normalized = trimmedLabel.toLowerCase();
+
+      // 2. Reject duplicate normalized labels; never silently overwrite prices
+      if (seenNormalizedLabels.has(normalized)) {
+        tierErrors.push(`Duplicate size tier label "${trimmedLabel}" detected at index ${i}. Duplicate labels are prohibited.`);
+      } else {
+        seenNormalizedLabels.add(normalized);
+      }
+
+      // 3. Require a finite positive proposed_pkr for EVERY tier (no fallback to product baseline price)
+      if (tier.proposed_pkr === undefined || tier.proposed_pkr === null) {
+        tierErrors.push(`Size tier "${trimmedLabel}" is missing required proposed_pkr. Fallback to product baseline price is prohibited.`);
+      } else {
+        const tierPriceNum = Number(tier.proposed_pkr);
+        if (!Number.isFinite(tierPriceNum) || tierPriceNum <= 0) {
+          tierErrors.push(`Size tier "${trimmedLabel}" has invalid proposed_pkr: ${tier.proposed_pkr}. Must be a finite positive number.`);
+        }
+      }
+    }
+
+    if (tierErrors.length > 0) {
+      return {
+        recordId: rawId,
+        action: 'invalid_schema',
+        canonicalSubcategory: canonicalSubcat,
+        mediaAudit,
+        isPublishable: false,
+        publicationState: 'unpublishable',
+        publicationBlockers: ['INVALID_VARIABLE_SIZE_TIERS'],
+        schemaErrors: tierErrors,
+      };
+    }
+
+    primaryVariantLabel = String(sizeTiers[0].size ?? sizeTiers[0].label).trim();
 
     for (const tier of sizeTiers) {
-      const tierLabel = String(tier.size || 'Standard').trim();
-      const tierPrice = Math.round(Number(tier.proposed_pkr ?? exactPrice) * 100) / 100;
+      const tierLabel = String(tier.size ?? tier.label).trim();
+      const tierPrice = Math.round(Number(tier.proposed_pkr) * 100) / 100;
       prices[tierLabel] = tierPrice;
 
       // Variant has moqOverride ONLY if genuinely supplied in tier data
@@ -671,6 +807,7 @@ export function adaptResearchRecordToDraft(
       canonicalSubcategory: canonicalSubcat,
       mediaAudit,
       isPublishable: false,
+      publicationState: 'unpublishable',
       publicationBlockers: ['SCHEMA_VALIDATION_FAILURE'],
       schemaErrors: [err.message || 'Product failed validateDynamicProduct schema validation'],
     };
@@ -678,14 +815,25 @@ export function adaptResearchRecordToDraft(
 
   // 15. Derive automatic MOQ and min units dynamically using the authoritative engine
   // This is derived for the dry-run report and is NOT persisted as a frozen override!
-  let derivedMoqPieces = 25;
-  let derivedMinUnits = 1;
+  // If derivation throws, report error/blocker instead of silently guessing defaults of 25 pcs / 1 unit!
+  const moqFn = options.moqCalculator || calculatePackagingMoq;
+  const minUnitsFn = options.minUnitsCalculator || calculateMinOrderQuantityUnits;
+  let derivedMoqPieces: number;
+  let derivedMinUnits: number;
   try {
-    derivedMoqPieces = calculatePackagingMoq(validatedProduct, primaryVariantLabel);
-    derivedMinUnits = calculateMinOrderQuantityUnits(validatedProduct, primaryVariantLabel);
-  } catch {
-    derivedMoqPieces = 25;
-    derivedMinUnits = 1;
+    derivedMoqPieces = moqFn(validatedProduct, primaryVariantLabel);
+    derivedMinUnits = minUnitsFn(validatedProduct, primaryVariantLabel);
+  } catch (err: any) {
+    return {
+      recordId: rawId,
+      action: 'invalid_schema',
+      canonicalSubcategory: canonicalSubcat,
+      mediaAudit,
+      isPublishable: false,
+      publicationState: 'unpublishable',
+      publicationBlockers: [`MOQ_DERIVATION_FAILED: ${err.message || 'Authoritative packaging MOQ derivation threw an error.'}`],
+      schemaErrors: [`MOQ derivation failed: ${err.message || 'Unable to derive authoritative packaging MOQ.'}`],
+    };
   }
 
   return {
@@ -703,6 +851,7 @@ export function adaptResearchRecordToDraft(
     moq: derivedMoqPieces, // derived information for summary/report
     mediaAudit,
     isPublishable: false, // drafts are never publishable without physical stock & merchant review
+    publicationState: 'unpublishable',
     publicationBlockers,
   };
 }
@@ -714,7 +863,6 @@ export function adaptManifestToDraftCatalog(
   manifest: any,
   options: AdapterOptions = {}
 ): { results: AdapterProductResult[]; summary: DryRunSummary } {
-  const existingIds = options.existingIds || EXISTING_PACKAGING_IDS;
   const productsList = Array.isArray(manifest.products) ? manifest.products : [];
   const conceptsList = Array.isArray(manifest.unverified_concepts_group_d)
     ? manifest.unverified_concepts_group_d
@@ -727,27 +875,28 @@ export function adaptManifestToDraftCatalog(
 
   // 1. Process roster products
   for (const item of productsList) {
-    const res = adaptResearchRecordToDraft(item, { existingIds }, seenBatchIds);
+    const res = adaptResearchRecordToDraft(item, options, seenBatchIds);
     results.push(res);
   }
 
   // 2. Process and strictly exclude unverified concepts (Group D)
   for (const item of conceptsList) {
-    const res = adaptResearchRecordToDraft(item, { existingIds }, seenBatchIds);
+    const res = adaptResearchRecordToDraft(item, options, seenBatchIds);
     results.push(res);
   }
 
   // 3. Build summary statistics derived strictly from actual records
   const categorySummary: Record<CanonicalPackagingSubcategory, CategoryDryRunSummary> = {
-    tin: { existingActive: 0, proposedDrafts: 0, needsRevisionRenders: 0, blockedQuotaRenders: 0, deferredFamilies: 0, publishableDrafts: 0, shortfallAgainstTarget6: 0 },
-    tabarruk: { existingActive: 0, proposedDrafts: 0, needsRevisionRenders: 0, blockedQuotaRenders: 0, deferredFamilies: 0, publishableDrafts: 0, shortfallAgainstTarget6: 0 },
-    wedding: { existingActive: 0, proposedDrafts: 0, needsRevisionRenders: 0, blockedQuotaRenders: 0, deferredFamilies: 0, publishableDrafts: 0, shortfallAgainstTarget6: 0 },
-    baby: { existingActive: 0, proposedDrafts: 0, needsRevisionRenders: 0, blockedQuotaRenders: 0, deferredFamilies: 0, publishableDrafts: 0, shortfallAgainstTarget6: 0 },
-    acrylic: { existingActive: 0, proposedDrafts: 0, needsRevisionRenders: 0, blockedQuotaRenders: 0, deferredFamilies: 0, publishableDrafts: 0, shortfallAgainstTarget6: 0 },
+    tin: { existingActive: 0, existingInventory: 0, proposedDrafts: 0, needsRevisionRenders: 0, blockedQuotaRenders: 0, deferredFamilies: 0, publishableDrafts: 0, shortfallAgainstTarget6: 0 },
+    tabarruk: { existingActive: 0, existingInventory: 0, proposedDrafts: 0, needsRevisionRenders: 0, blockedQuotaRenders: 0, deferredFamilies: 0, publishableDrafts: 0, shortfallAgainstTarget6: 0 },
+    wedding: { existingActive: 0, existingInventory: 0, proposedDrafts: 0, needsRevisionRenders: 0, blockedQuotaRenders: 0, deferredFamilies: 0, publishableDrafts: 0, shortfallAgainstTarget6: 0 },
+    baby: { existingActive: 0, existingInventory: 0, proposedDrafts: 0, needsRevisionRenders: 0, blockedQuotaRenders: 0, deferredFamilies: 0, publishableDrafts: 0, shortfallAgainstTarget6: 0 },
+    acrylic: { existingActive: 0, existingInventory: 0, proposedDrafts: 0, needsRevisionRenders: 0, blockedQuotaRenders: 0, deferredFamilies: 0, publishableDrafts: 0, shortfallAgainstTarget6: 0 },
   };
 
   const mediaAuditTotals = {
     activeExistingAssets: 0,
+    existingInventoryUnverified: 0,
     approvedDraftRenders: 0,
     needsRevisionRenders: 0,
     blockedByQuotaTasks: 0,
@@ -771,7 +920,10 @@ export function adaptManifestToDraftCatalog(
     } else if (r.action === 'skipped_existing') {
       skippedExistingCount++;
       if (r.canonicalSubcategory) {
-        categorySummary[r.canonicalSubcategory].existingActive++;
+        categorySummary[r.canonicalSubcategory].existingInventory++;
+        if (r.isPublishable === true) {
+          categorySummary[r.canonicalSubcategory].existingActive++;
+        }
       }
     } else if (r.action === 'skipped_duplicate_in_batch') {
       skippedDuplicatesCount++;
@@ -784,6 +936,8 @@ export function adaptManifestToDraftCatalog(
     // Media totals
     if (r.mediaAudit.mediaStatus === 'active_existing') {
       mediaAuditTotals.activeExistingAssets++;
+    } else if (r.mediaAudit.mediaStatus === 'existing_inventory_unverified') {
+      mediaAuditTotals.existingInventoryUnverified++;
     } else if (r.mediaAudit.mediaStatus === 'approved_draft') {
       mediaAuditTotals.approvedDraftRenders++;
     } else if (r.mediaAudit.mediaStatus === 'needs_revision') {
@@ -806,7 +960,7 @@ export function adaptManifestToDraftCatalog(
 
   // Calculate shortfall against target of 6 products per category
   for (const cat of VALID_PACKAGING_SUBCATEGORIES) {
-    const verifiedTotal = categorySummary[cat].existingActive + categorySummary[cat].proposedDrafts;
+    const verifiedTotal = categorySummary[cat].existingInventory + categorySummary[cat].proposedDrafts;
     const gap = Math.max(0, 6 - verifiedTotal);
     categorySummary[cat].shortfallAgainstTarget6 = gap;
   }
@@ -823,7 +977,7 @@ export function adaptManifestToDraftCatalog(
     publicationBlockersSummary,
     acrylicShortfall: {
       target: 6,
-      actualVerified: categorySummary.acrylic.existingActive + categorySummary.acrylic.proposedDrafts,
+      actualVerified: categorySummary.acrylic.existingInventory + categorySummary.acrylic.proposedDrafts,
       shortfall: categorySummary.acrylic.shortfallAgainstTarget6,
       proposedConceptsExcluded: excludedConceptsCount,
     },
@@ -835,9 +989,20 @@ export function adaptManifestToDraftCatalog(
 /**
  * Executes a full Stage 5C3 Dry Run against a manifest using an in-memory fixture inventory.
  */
-export function runDraftCatalogDryRun(manifest: any, existingIds?: Set<string>): DryRunReport {
-  const ids = existingIds || EXISTING_PACKAGING_IDS;
-  const { results, summary } = adaptManifestToDraftCatalog(manifest, { existingIds: ids });
+export function runDraftCatalogDryRun(
+  manifest: any,
+  existingIdsOrOptions?: Set<string> | AdapterOptions
+): DryRunReport {
+  let options: AdapterOptions = {};
+  if (existingIdsOrOptions instanceof Set) {
+    options = { existingIds: existingIdsOrOptions };
+  } else if (existingIdsOrOptions && typeof existingIdsOrOptions === 'object') {
+    options = existingIdsOrOptions;
+  } else {
+    options = { existingIds: EXISTING_PACKAGING_IDS };
+  }
+
+  const { results, summary } = adaptManifestToDraftCatalog(manifest, options);
 
   return {
     summary,
@@ -865,21 +1030,21 @@ export function formatDryRunReportMarkdown(report: DryRunReport): string {
   lines.push('| :--- | :---: | :--- |');
   lines.push(`| **Total Records Processed** | **${summary.totalRecordsProcessed}** | 30 catalog roster items + 3 Group D unverified concepts |`);
   lines.push(`| **Proposed for Creation (Drafts)** | **${summary.proposedDraftsCount}** | Validated via \`validateDynamicProduct\` (status=\`draft\`, active=\`false\`) |`);
-  lines.push(`| **Existing Catalog Records Skipped** | **${summary.skippedExistingCount}** | Active packaging IDs preserved with existing prices, variants, and media |`);
+  lines.push(`| **Existing Catalog Records Skipped** | **${summary.skippedExistingCount}** | Existing inventory preserved; publication state verified only when product state supplied |`);
   lines.push(`| **Duplicates Skipped in Batch** | **${summary.skippedDuplicatesCount}** | Re-import idempotency protected; no compounded pricing |`);
   lines.push(`| **Unverified Concepts Excluded** | **${summary.excludedConceptsCount}** | Group D proposed acrylic concepts strictly excluded |`);
   lines.push(`| **Schema Validation Errors** | **${summary.invalidSchemaCount}** | 0 schema errors; all candidate drafts meet validation rules |\n`);
 
   lines.push('---\n');
   lines.push('## 2. Category Breakdown & Shortfall Analysis\n');
-  lines.push('| Subcategory | Target | Active Existing | Proposed Drafts | Verified Total | Needs Revision | Quota Blocked | Deferred | Gap / Shortfall |');
+  lines.push('| Subcategory | Target | Existing Inventory | Proposed Drafts | Verified Total | Needs Revision | Quota Blocked | Deferred | Gap / Shortfall |');
   lines.push('| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |');
 
   for (const cat of VALID_PACKAGING_SUBCATEGORIES) {
     const s = summary.byCategory[cat];
-    const total = s.existingActive + s.proposedDrafts;
+    const total = s.existingInventory + s.proposedDrafts;
     lines.push(
-      `| **${cat}** | 6 | ${s.existingActive} | ${s.proposedDrafts} | **${total}** | ${s.needsRevisionRenders} | ${s.blockedQuotaRenders} | ${s.deferredFamilies} | **${s.shortfallAgainstTarget6 === 0 ? '0 (Met)' : `${s.shortfallAgainstTarget6} Short`}** |`
+      `| **${cat}** | 6 | ${s.existingInventory} | ${s.proposedDrafts} | **${total}** | ${s.needsRevisionRenders} | ${s.blockedQuotaRenders} | ${s.deferredFamilies} | **${s.shortfallAgainstTarget6 === 0 ? '0 (Met)' : `${s.shortfallAgainstTarget6} Short`}** |`
     );
   }
   lines.push('\n');
@@ -890,7 +1055,8 @@ export function formatDryRunReportMarkdown(report: DryRunReport): string {
   lines.push('---\n');
   lines.push('## 3. Media Audit & Publication Blockers\n');
   lines.push('### Media Audit Totals\n');
-  lines.push(`- **Active Storefront Assets (Existing)**: ${summary.mediaAuditTotals.activeExistingAssets}`);
+  lines.push(`- **Active Storefront Assets (Verified Live)**: ${summary.mediaAuditTotals.activeExistingAssets}`);
+  lines.push(`- **Existing Inventory Assets (Unverified from ID only)**: ${summary.mediaAuditTotals.existingInventoryUnverified}`);
   lines.push(`- **Approved Draft Concept Renders**: ${summary.mediaAuditTotals.approvedDraftRenders}`);
   lines.push(`- **Needs Revision Concept Renders**: ${summary.mediaAuditTotals.needsRevisionRenders} (\`tabarruk-set-012\` [component mismatch], \`tabarruk-set-tijori\` [concept feature disparity])`);
   lines.push(`- **Quota-Blocked Image Generation Tasks**: ${summary.mediaAuditTotals.blockedByQuotaTasks} (pending upstream \`gemini-3.1-flash-image\` quota reset)`);
@@ -911,7 +1077,12 @@ export function formatDryRunReportMarkdown(report: DryRunReport): string {
   for (const r of results) {
     lines.push(`### \`${r.recordId}\` — Action: \`${r.action}\`\n`);
     if (r.action === 'skipped_existing') {
-      lines.push(`- **Status**: Existing Catalog Product (Active)`);
+      const pubDesc = r.isPublishable === true
+        ? 'Verified Active & Published'
+        : r.isPublishable === false
+        ? 'Unpublished / Inactive'
+        : 'Publication State Unknown (ID Match Only)';
+      lines.push(`- **Status**: Existing Catalog Product (${pubDesc})`);
       lines.push(`- **Preservation**: ${r.skipReason}\n`);
     } else if (r.action === 'excluded_unverified_concept') {
       lines.push(`- **Status**: Group D Proposed Concept`);

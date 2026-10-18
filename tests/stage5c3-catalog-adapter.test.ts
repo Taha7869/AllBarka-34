@@ -4,15 +4,17 @@
  * Verifies:
  * 1. Subcategory mapping and schema validation across all 5 canonical subcategories.
  * 2. Exact decimal selling-price preservation (Rs. 78.75 remains 78.75; no compounding).
- * 3. Existing catalog products skipped without altering prices, variants, media, or filled options.
- * 4. Re-import idempotency and duplicate input ID deduplication.
+ * 3. Existing-ID inventory proves existence only (publication state unknown unless validated product state supplied).
+ * 4. Realistic re-import regression: pass 1 proposes drafts -> add to inventory -> pass 2 proposes zero creations.
  * 5. Authoritative packaging MOQ calculation and pack capacity handling (250g box = 1 pc, not 250 pcs).
  * 6. Public catalog projection isolation (drafts have active=false, status='draft', invisible to storefront).
  * 7. Unverified concepts strictly excluded (Group D acrylic concepts).
  * 8. Missing and rejected media cannot silently become publishable (docs/ paths never enter image field).
  * 9. Defect 1: Do not freeze automatic MOQ as an admin override (dynamic adaptation on price edit).
- * 10. Defect 2: Honor or reject pack price basis (preserve pack price, per-piece price, min pack units; reject ambiguous text).
+ * 10. Defect 2: Strict price_basis matching (rejects "1 pc per 10-piece pack", trailing text, conflicting text).
  * 11. Defect 3: Require actual approved proposed selling price (reject missing/fallback to source_price_pkr).
+ * 12. Pre-validation of variable tiers (rejects empty labels without inventing Standard, rejects duplicate labels, requires proposed_pkr).
+ * 13. Authoritative MOQ derivation error reporting (reports blocker/error when derivation throws; never guesses defaults).
  */
 
 import assert from 'node:assert/strict';
@@ -128,12 +130,10 @@ test('Regression 2: Exact decimal selling-price preservation and anti-compoundin
   assert.notEqual(safaa.product?.prices['Empty Set (1 set)'], 367.5 * 1.05);
 });
 
-test('Regression 3: Existing/admin products skipped without modifying saved fields or filled options', () => {
-  // Existing product: bid-box-umrah-tabarruk has custom filled options in live catalog
+test('Regression 3: Existing-ID inventory proves existence only (publication state unknown unless validated product state supplied)', () => {
   const existingSeed = PRODUCTS.find((p) => p.id === 'bid-box-umrah-tabarruk')!;
   assert.ok(existingSeed);
 
-  // Simulate an incoming research record trying to re-import the existing product
   const incomingRecord = {
     stable_id: 'bid-box-umrah-tabarruk',
     subcategory_id: 'hajj-umrah-tabarruk-sets',
@@ -145,13 +145,31 @@ test('Regression 3: Existing/admin products skipped without modifying saved fiel
     },
   };
 
-  const result = adaptResearchRecordToDraft(incomingRecord, {
+  // Case A: ID match only (existingIds Set provided, but NO existingProducts state)
+  // Must prove existence ONLY: publication state unknown, unverified media status
+  const idOnlyResult = adaptResearchRecordToDraft(incomingRecord, {
     existingIds: EXISTING_PACKAGING_IDS,
   });
 
-  assert.equal(result.action, 'skipped_existing');
-  assert.equal(result.product, undefined); // No draft product produced
-  assert.ok(result.skipReason?.includes('already exists in live catalog'));
+  assert.equal(idOnlyResult.action, 'skipped_existing');
+  assert.equal(idOnlyResult.product, undefined);
+  assert.equal(idOnlyResult.isPublishable, null); // Unknown, not inferred
+  assert.equal(idOnlyResult.publicationState, 'unknown');
+  assert.equal(idOnlyResult.mediaAudit.mediaStatus, 'existing_inventory_unverified');
+  assert.ok(idOnlyResult.publicationBlockers.some((b) => b.includes('EXISTING_INVENTORY_UNVERIFIED')));
+
+  // Case B: Authoritative validated product state supplied
+  // Publication eligibility and media status verified from actual product
+  const verifiedResult = adaptResearchRecordToDraft(incomingRecord, {
+    existingIds: EXISTING_PACKAGING_IDS,
+    existingProducts: new Map([[existingSeed.id, existingSeed]]),
+  });
+
+  assert.equal(verifiedResult.action, 'skipped_existing');
+  assert.equal(verifiedResult.isPublishable, true);
+  assert.equal(verifiedResult.publicationState, 'publishable');
+  assert.equal(verifiedResult.mediaAudit.mediaStatus, 'active_existing');
+  assert.equal(verifiedResult.publicationBlockers.length, 0);
 
   // The existing catalog seed remains completely intact
   assert.equal(existingSeed.name_en, 'Umrah & Hajj Tabarruk Box Set');
@@ -163,7 +181,7 @@ test('Regression 3: Existing/admin products skipped without modifying saved fiel
   );
 });
 
-test('Regression 4: Re-import idempotency and duplicate input IDs handling', () => {
+test('Regression 4: Realistic re-import regression (first pass proposes drafts -> inventory updated -> second pass proposes zero creations)', () => {
   const records = [
     {
       stable_id: 'tin-box-002',
@@ -173,27 +191,50 @@ test('Regression 4: Re-import idempotency and duplicate input IDs handling', () 
       price_basis: '1 pc',
     },
     {
-      // Duplicate entry with same ID in the same batch
-      stable_id: 'tin-box-002',
-      subcategory_id: 'signature-tin-boxes',
-      name: 'Duplicate Mughal Floral Tin',
-      proposed_selling_price_pkr: 105.0,
+      stable_id: 'wedding-card-box-001',
+      subcategory_id: 'wedding-favor-boxes-pouches',
+      name: 'Floral Cardstock Favor Box',
+      proposed_selling_price_pkr: 78.75,
       price_basis: '1 pc',
     },
   ];
 
-  const { results, summary } = adaptManifestToDraftCatalog({ products: records });
+  // Pass 1: Against baseline inventory containing only pre-existing products
+  const initialExistingIds = new Set(['bid-box-luxury-tin']);
+  const run1 = adaptManifestToDraftCatalog({ products: records }, { existingIds: initialExistingIds });
 
-  assert.equal(results.length, 2);
-  assert.equal(results[0].action, 'proposed_draft');
-  assert.equal(results[1].action, 'skipped_duplicate_in_batch');
-  assert.equal(summary.proposedDraftsCount, 1);
-  assert.equal(summary.skippedDuplicatesCount, 1);
+  assert.equal(run1.summary.proposedDraftsCount, 2);
+  assert.equal(run1.summary.skippedExistingCount, 0);
+  assert.equal(run1.results[0].action, 'proposed_draft');
+  assert.equal(run1.results[1].action, 'proposed_draft');
 
-  // Idempotency: Running the same manifest again produces identical counts
-  const run2 = adaptManifestToDraftCatalog({ products: records });
-  assert.equal(run2.summary.proposedDraftsCount, 1);
-  assert.equal(run2.summary.skippedDuplicatesCount, 1);
+  const draftTin = run1.results[0].product!;
+  const draftWedding = run1.results[1].product!;
+  assert.ok(draftTin && draftWedding);
+
+  // Update simulated inventory with newly created draft products
+  const simulatedInventory = new Map<string, any>([
+    ['bid-box-luxury-tin', PRODUCTS.find((p) => p.id === 'bid-box-luxury-tin')!],
+    ['tin-box-002', draftTin],
+    ['wedding-card-box-001', draftWedding],
+  ]);
+  const updatedExistingIds = new Set(simulatedInventory.keys());
+
+  // Pass 2: Re-run with the SAME input records against the updated inventory
+  const run2 = adaptManifestToDraftCatalog(
+    { products: records },
+    { existingIds: updatedExistingIds, existingProducts: simulatedInventory }
+  );
+
+  // Second pass MUST propose ZERO creations!
+  assert.equal(run2.summary.proposedDraftsCount, 0, 'Re-import must propose 0 creations');
+  assert.equal(run2.summary.skippedExistingCount, 2, 'All records must be skipped as existing inventory');
+  assert.equal(run2.results[0].action, 'skipped_existing');
+  assert.equal(run2.results[1].action, 'skipped_existing');
+
+  // Verify saved data in simulated inventory was preserved without modification or re-application of markups
+  assert.equal(draftTin.prices['Empty Box (1 pc)'], 105.0);
+  assert.equal(draftWedding.prices['Empty Box (1 pc)'], 78.75);
 });
 
 test('Regression 5: Authoritative packaging MOQ calculation and pack capacity handling', () => {
@@ -249,7 +290,6 @@ test('Regression 5: Authoritative packaging MOQ calculation and pack capacity ha
     proposed_selling_price_pkr: 157.5,
     price_basis: '1 pc (250g capacity)',
   });
-  // Pieces per pack for "Empty Box (1 pc)" is 1 piece holding 250g, NOT 250 pieces
   assert.equal(parsePiecesPerPack('Empty Box (1 pc)'), 1);
   assert.equal(parsePiecesPerPack('250g Capacity Box'), 1);
   // MOQ calculation: ceil(5000 / 157.50) = 32 -> capped at 25 pcs
@@ -405,7 +445,6 @@ test('Regression 8: Missing and rejected media cannot silently become publishabl
     },
   });
   assert.equal(approved.mediaAudit.mediaStatus, 'approved_draft');
-  // Even with approved concept renders, physical warehouse stock confirmation is pending
   assert.equal(approved.isPublishable, false);
   assert.ok(approved.publicationBlockers.some((b) => b.includes('SUPPLIER_SAMPLE_UNCONFIRMED')));
   // Storefront media fields remain null; docs/ path kept in mediaAudit only
@@ -487,7 +526,7 @@ test('Regression 9: Defect 1 - Do not freeze automatic MOQ as an admin override'
   );
 });
 
-test('Regression 10: Defect 2 - Honor or reject pack price basis', () => {
+test('Regression 10: Defect 2 - Strict price_basis matching (rejects "1 pc per 10-piece pack", trailing text, conflicting text)', () => {
   // 1. Valid price_basis parsing tests
   assert.deepEqual(parsePriceBasis('1 pc'), {
     piecesPerPack: 1,
@@ -550,7 +589,28 @@ test('Regression 10: Defect 2 - Honor or reject pack price basis', () => {
     raw: 'Variable multi-size family (4 size tiers)',
   });
 
-  // 2. Reject ambiguous or unsupported free text
+  // 2. Strict rejection of prefix matches, trailing words, conflicting quantities
+  // The prefix regex defect accepted "1 pc per 10-piece pack" as 1 pc; must now strictly reject!
+  assert.throws(
+    () => parsePriceBasis('1 pc per 10-piece pack'),
+    (err: any) => err instanceof CatalogError && err.code === 'INVALID_PRICE_BASIS'
+  );
+  assert.throws(
+    () => parsePriceBasis('1 pc wholesale'),
+    (err: any) => err instanceof CatalogError && err.code === 'INVALID_PRICE_BASIS'
+  );
+  assert.throws(
+    () => parsePriceBasis('1 pc (250g capacity) with extra lot'),
+    (err: any) => err instanceof CatalogError && err.code === 'INVALID_PRICE_BASIS'
+  );
+  assert.throws(
+    () => parsePriceBasis('1 pc (10 pcs)'), // Conflicting quantity word in capacity annotation
+    (err: any) => err instanceof CatalogError && err.code === 'INVALID_PRICE_BASIS'
+  );
+  assert.throws(
+    () => parsePriceBasis('10 pcs per crate'),
+    (err: any) => err instanceof CatalogError && err.code === 'INVALID_PRICE_BASIS'
+  );
   assert.throws(
     () => parsePriceBasis('wholesale lot'),
     (err: any) => err instanceof CatalogError && err.code === 'INVALID_PRICE_BASIS'
@@ -578,14 +638,13 @@ test('Regression 10: Defect 2 - Honor or reject pack price basis', () => {
     subcategory_id: 'signature-tin-boxes',
     name: 'Ambiguous Basis Box',
     proposed_selling_price_pkr: 1000.0,
-    price_basis: 'wholesale lot',
+    price_basis: '1 pc per 10-piece pack',
   });
   assert.equal(invalidBasisDraft.action, 'invalid_schema');
   assert.ok(invalidBasisDraft.publicationBlockers.includes('INVALID_PRICE_BASIS'));
   assert.ok(invalidBasisDraft.schemaErrors?.[0].includes('Unsupported or ambiguous price_basis'));
 
   // 4. Pack price basis honoring: Rs. 1000 ten-piece pack ("10 pcs")
-  // A Rs. 1000 ten-piece pack must NOT become a Rs. 1000 single box!
   const packDraft = adaptResearchRecordToDraft({
     stable_id: 'wedding-favor-pack-10',
     subcategory_id: 'wedding-favor-boxes-pouches',
@@ -597,7 +656,7 @@ test('Regression 10: Defect 2 - Honor or reject pack price basis', () => {
   assert.equal(packDraft.action, 'proposed_draft');
   assert.equal(packDraft.piecesPerPack, 10);
   assert.equal(packDraft.authoritativePrice, 1000.0);
-  assert.equal(packDraft.perPiecePrice, 100.0); // 1000 / 10 = 100
+  assert.equal(packDraft.perPiecePrice, 100.0);
 
   const packProd = packDraft.product!;
   assert.equal(packProd.prices['Empty Pack (10 pcs)'], 1000.0);
@@ -610,7 +669,6 @@ test('Regression 10: Defect 2 - Honor or reject pack price basis', () => {
   assert.equal(packProd.bidBoxConfig?.emptyTiers[0].packPrice, 1000.0);
 
   // Authoritative packaging MOQ:
-  // At Rs. 100 per piece, required pieces = min(25, max(1, ceil(5000 / 100))) = 25 pieces
   assert.equal(calculatePackagingMoq(packProd, 'Empty Pack (10 pcs)'), 25);
   // Required packs = ceil(25 pieces / 10 pieces per pack) = 3 packs (3 x 10 = 30 pcs >= 25 MOQ)
   assert.equal(calculateMinOrderQuantityUnits(packProd, 'Empty Pack (10 pcs)'), 3);
@@ -625,8 +683,7 @@ test('Regression 11: Defect 3 - Require actual approved proposed selling price',
     stable_id: 'test-missing-proposed',
     subcategory_id: 'signature-tin-boxes',
     name: 'Unpriced Research Box',
-    source_price_pkr: 100.0, // Benchmark price present
-    // proposed_selling_price_pkr is omitted
+    source_price_pkr: 100.0,
     price_basis: '1 pc',
   });
 
@@ -662,4 +719,152 @@ test('Regression 11: Defect 3 - Require actual approved proposed selling price',
   });
   assert.equal(negativePrice.action, 'invalid_schema');
   assert.ok(negativePrice.publicationBlockers.some((b) => b.includes('INVALID_PRICE')));
+});
+
+test('Regression 12: Validate variable tiers BEFORE constructing prices/variants', () => {
+  // Failure 1: Empty size label must be rejected, NEVER invent "Standard"
+  const emptyLabelDraft = adaptResearchRecordToDraft({
+    stable_id: 'baby-box-empty-label',
+    subcategory_id: 'baby-announcement-boxes',
+    name: 'Baby Box With Empty Tier Label',
+    proposed_selling_price_pkr: 157.5,
+    price_basis: 'Variable multi-size family (2 sizes)',
+    verified_specifications: {
+      verified_size_tiers: [
+        { size: '', proposed_pkr: 157.5 },
+        { size: 'Half kg', proposed_pkr: 262.5 },
+      ],
+    },
+  });
+  assert.equal(emptyLabelDraft.action, 'invalid_schema');
+  assert.equal(emptyLabelDraft.product, undefined);
+  assert.ok(emptyLabelDraft.publicationBlockers.includes('INVALID_VARIABLE_SIZE_TIERS'));
+  assert.ok(
+    emptyLabelDraft.schemaErrors?.some((e) => e.includes('missing a non-empty size/label')),
+    'Expected error rejecting empty label'
+  );
+
+  // Failure 2: Duplicate normalized labels (Small=100, Small=200) must be rejected, NEVER silently overwrite
+  const dupTierDraft = adaptResearchRecordToDraft({
+    stable_id: 'baby-box-dup-labels',
+    subcategory_id: 'baby-announcement-boxes',
+    name: 'Baby Box With Duplicate Tier Labels',
+    proposed_selling_price_pkr: 157.5,
+    price_basis: 'Variable multi-size family (2 sizes)',
+    verified_specifications: {
+      verified_size_tiers: [
+        { size: 'Small', proposed_pkr: 100 },
+        { size: 'small', proposed_pkr: 200 },
+      ],
+    },
+  });
+  assert.equal(dupTierDraft.action, 'invalid_schema');
+  assert.equal(dupTierDraft.product, undefined);
+  assert.ok(dupTierDraft.publicationBlockers.includes('INVALID_VARIABLE_SIZE_TIERS'));
+  assert.ok(
+    dupTierDraft.schemaErrors?.some((e) => e.includes('Duplicate size tier label "small" detected')),
+    'Expected error rejecting duplicate tier label'
+  );
+
+  // Failure 3: Missing proposed_pkr on a tier must be rejected, NEVER inherit baseline 150
+  const missingTierPriceDraft = adaptResearchRecordToDraft({
+    stable_id: 'baby-box-missing-tier-price',
+    subcategory_id: 'baby-announcement-boxes',
+    name: 'Baby Box Missing Tier Price',
+    proposed_selling_price_pkr: 150.0,
+    price_basis: 'Variable multi-size family (2 sizes)',
+    verified_specifications: {
+      verified_size_tiers: [
+        { size: 'Small' }, // missing proposed_pkr
+        { size: 'Medium', proposed_pkr: 250 },
+      ],
+    },
+  });
+  assert.equal(missingTierPriceDraft.action, 'invalid_schema');
+  assert.equal(missingTierPriceDraft.product, undefined);
+  assert.ok(missingTierPriceDraft.publicationBlockers.includes('INVALID_VARIABLE_SIZE_TIERS'));
+  assert.ok(
+    missingTierPriceDraft.schemaErrors?.some((e) => e.includes('missing required proposed_pkr')),
+    'Expected error rejecting missing tier proposed_pkr'
+  );
+
+  // Failure 4: Invalid / negative proposed_pkr on a tier
+  const negTierPriceDraft = adaptResearchRecordToDraft({
+    stable_id: 'baby-box-neg-tier-price',
+    subcategory_id: 'baby-announcement-boxes',
+    name: 'Baby Box Negative Tier Price',
+    proposed_selling_price_pkr: 150.0,
+    price_basis: 'Variable multi-size family (1 size)',
+    verified_specifications: {
+      verified_size_tiers: [
+        { size: 'Small', proposed_pkr: -50 },
+      ],
+    },
+  });
+  assert.equal(negTierPriceDraft.action, 'invalid_schema');
+  assert.ok(negTierPriceDraft.schemaErrors?.some((e) => e.includes('invalid proposed_pkr')));
+});
+
+test('Regression 13: Authoritative MOQ derivation error reporting (reports blocker/error when derivation throws; never guesses defaults)', () => {
+  // If an unpriced or invalid variant is passed to MOQ derivation:
+  // e.g. A product marked as packaging with isBidBox=true but where prices map has no positive entry
+  // for the variant, calculatePackagingMoq throws.
+  const brokenProductRecord = {
+    stable_id: 'test-broken-moq',
+    subcategory_id: 'signature-tin-boxes',
+    name: 'Broken MOQ Tin Box',
+    proposed_selling_price_pkr: 100.0,
+    price_basis: '1 pc',
+  };
+
+  // Normal call derives MOQ without error:
+  const normalDraft = adaptResearchRecordToDraft(brokenProductRecord);
+  assert.equal(normalDraft.action, 'proposed_draft');
+  assert.equal(normalDraft.derivedMoqPieces, 25);
+  assert.equal(normalDraft.derivedMinUnits, 25);
+
+  // Test error handling by passing an invalid record where size tiers are corrupted after validation
+  const emptyTiersFamily = adaptResearchRecordToDraft({
+    stable_id: 'test-empty-tiers-family',
+    subcategory_id: 'signature-tin-boxes',
+    name: 'Empty Tiers Family',
+    proposed_selling_price_pkr: 100.0,
+    price_basis: 'Variable multi-size family (0 sizes)',
+    verified_specifications: {
+      verified_size_tiers: [],
+    },
+  });
+  assert.equal(emptyTiersFamily.action, 'invalid_schema');
+  assert.ok(emptyTiersFamily.publicationBlockers.includes('MISSING_VARIABLE_SIZE_TIERS'));
+
+  // Test that when calculatePackagingMoq throws for a candidate product, the adapter catches it
+  // and returns action: 'invalid_schema' with MOQ_DERIVATION_FAILED, never defaults of 25 / 1
+  const throwingAdapterTest = adaptResearchRecordToDraft(
+    {
+      stable_id: 'test-derivation-throw',
+      subcategory_id: 'signature-tin-boxes',
+      name: 'Throwing Derivation Box',
+      proposed_selling_price_pkr: 100.0,
+      price_basis: '1 pc',
+    },
+    {
+      moqCalculator: () => {
+        throw new Error('Pricing engine calculation failed unexpectedly');
+      },
+    }
+  );
+
+  assert.equal(throwingAdapterTest.action, 'invalid_schema');
+  assert.equal(throwingAdapterTest.product, undefined);
+  assert.ok(
+    throwingAdapterTest.publicationBlockers.some((b) => b.includes('MOQ_DERIVATION_FAILED')),
+    'Expected blocker for MOQ_DERIVATION_FAILED'
+  );
+  assert.ok(
+    throwingAdapterTest.schemaErrors?.some((e) => e.includes('Pricing engine calculation failed unexpectedly')),
+    'Expected schema error reporting the derivation exception'
+  );
+  // Must NOT guess defaults
+  assert.equal(throwingAdapterTest.derivedMoqPieces, undefined);
+  assert.equal(throwingAdapterTest.derivedMinUnits, undefined);
 });

@@ -8,7 +8,8 @@
     "invalidSchemaCount": 0,
     "byCategory": {
       "tin": {
-        "existingActive": 1,
+        "existingActive": 0,
+        "existingInventory": 1,
         "proposedDrafts": 6,
         "needsRevisionRenders": 0,
         "blockedQuotaRenders": 0,
@@ -17,7 +18,8 @@
         "shortfallAgainstTarget6": 0
       },
       "tabarruk": {
-        "existingActive": 1,
+        "existingActive": 0,
+        "existingInventory": 1,
         "proposedDrafts": 5,
         "needsRevisionRenders": 2,
         "blockedQuotaRenders": 1,
@@ -26,7 +28,8 @@
         "shortfallAgainstTarget6": 0
       },
       "wedding": {
-        "existingActive": 4,
+        "existingActive": 0,
+        "existingInventory": 4,
         "proposedDrafts": 4,
         "needsRevisionRenders": 0,
         "blockedQuotaRenders": 3,
@@ -35,7 +38,8 @@
         "shortfallAgainstTarget6": 0
       },
       "baby": {
-        "existingActive": 1,
+        "existingActive": 0,
+        "existingInventory": 1,
         "proposedDrafts": 6,
         "needsRevisionRenders": 0,
         "blockedQuotaRenders": 4,
@@ -44,7 +48,8 @@
         "shortfallAgainstTarget6": 0
       },
       "acrylic": {
-        "existingActive": 1,
+        "existingActive": 0,
+        "existingInventory": 1,
         "proposedDrafts": 1,
         "needsRevisionRenders": 0,
         "blockedQuotaRenders": 0,
@@ -54,13 +59,15 @@
       }
     },
     "mediaAuditTotals": {
-      "activeExistingAssets": 8,
+      "activeExistingAssets": 0,
+      "existingInventoryUnverified": 8,
       "approvedDraftRenders": 11,
       "needsRevisionRenders": 2,
       "blockedByQuotaTasks": 8,
       "deferredVariableFamilies": 1
     },
     "publicationBlockersSummary": {
+      "EXISTING_INVENTORY_UNVERIFIED": 8,
       "SUPPLIER_SAMPLE_UNCONFIRMED": 11,
       "DRAFT_STATUS_UNPUBLISHED": 22,
       "MEDIA_NEEDS_REVISION": 2,
@@ -81,12 +88,15 @@
       "action": "skipped_existing",
       "canonicalSubcategory": "tin",
       "mediaAudit": {
-        "mediaStatus": "active_existing",
-        "activeStorefrontImage": "/images/products/bid-box-luxury-tin-1.webp"
+        "mediaStatus": "existing_inventory_unverified",
+        "notes": "Product ID matches catalog inventory; active media and publication eligibility are not verified from ID alone."
       },
-      "isPublishable": true,
-      "publicationBlockers": [],
-      "skipReason": "Product \"bid-box-luxury-tin\" already exists in live catalog. Existing prices, variants, filled options, and media preserved unchanged."
+      "isPublishable": null,
+      "publicationState": "unknown",
+      "publicationBlockers": [
+        "EXISTING_INVENTORY_UNVERIFIED: Existing-ID match proves inventory existence only; live active status, media verification, and publication eligibility are unknown without authoritative product state."
+      ],
+      "skipReason": "Product \"bid-box-luxury-tin\" exists in catalog inventory. ID match proves existence only; live pricing, variants, active status, and media are preserved unchanged without inferring publication eligibility."
     },
     {
       "recordId": "tin-box-002",
@@ -150,6 +160,7 @@
         "depiction": "Empty cylindrical metal tinplate container with slip-fit lid resting beside base on warm honed travertine."
       },
       "isPublishable": false,
+      "publicationState": "unpublishable",
       "publicationBlockers": [
         "SUPPLIER_SAMPLE_UNCONFIRMED: Concept render approved; awaiting physical supplier sample and stock receipt confirmation.",
         "DRAFT_STATUS_UNPUBLISHED: Product is currently an unpublished draft (active=false, status=draft); pending merchant sign-off."
@@ -217,6 +228,7 @@
         "depiction": "Empty circular metal tinplate favor box with botanical garden wrap on warm honed travertine with slip-fit lid beside base."
       },
       "isPublishable": false,
+      "publicationState": "unpublishable",
       "publicationBlockers": [
         "SUPPLIER_SAMPLE_UNCONFIRMED: Concept render approved; awaiting physical supplier sample and stock receipt confirmation.",
         "DRAFT_STATUS_UNPUBLISHED: Product is currently an unpublished draft (active=false, status=draft); pending merchant sign-off."
@@ -284,6 +296,7 @@
         "depiction": "Empty special edition floral circular keepsake tin with rolled gold-toned rim on cream limestone, lid beside base."
       },
       "isPublishable": false,
+      "publicationState": "unpublishable",
       "publicationBlockers": [
         "SUPPLIER_SAMPLE_UNCONFIRMED: Concept render approved; awaiting physical supplier sample and stock receipt confirmation.",
         "DRAFT_STATUS_UNPUBLISHED: Product is currently an unpublished draft (active=false, status=draft); pending merchant sign-off."
@@ -351,6 +364,7 @@
         "depiction": "Empty emerald green geometric patterned square metal tinplate box on textured warm travertine with lid resting flat beside base."
       },
       "isPublishable": false,
+      "publicationState": "unpublishable",
       "publicationBlockers": [
         "SUPPLIER_SAMPLE_UNCONFIRMED: Concept render approved; awaiting physical supplier sample and stock receipt confirmation.",
         "DRAFT_STATUS_UNPUBLISHED: Product is currently an unpublished draft (active=false, status=draft); pending merchant sign-off."
@@ -418,6 +432,7 @@
         "depiction": "Empty circular beige floral keepsake tin on subtle warm natural linen, lid beside base showing empty metallic cavity."
       },
       "isPublishable": false,
+      "publicationState": "unpublishable",
       "publicationBlockers": [
         "SUPPLIER_SAMPLE_UNCONFIRMED: Concept render approved; awaiting physical supplier sample and stock receipt confirmation.",
         "DRAFT_STATUS_UNPUBLISHED: Product is currently an unpublished draft (active=false, status=draft); pending merchant sign-off."
@@ -485,6 +500,7 @@
         "depiction": "Empty pastel blue square keepsake favor tin decorated with celestial motifs on warm ivory stone, lid beside base."
       },
       "isPublishable": false,
+      "publicationState": "unpublishable",
       "publicationBlockers": [
         "SUPPLIER_SAMPLE_UNCONFIRMED: Concept render approved; awaiting physical supplier sample and stock receipt confirmation.",
         "DRAFT_STATUS_UNPUBLISHED: Product is currently an unpublished draft (active=false, status=draft); pending merchant sign-off."
@@ -495,12 +511,15 @@
       "action": "skipped_existing",
       "canonicalSubcategory": "tabarruk",
       "mediaAudit": {
-        "mediaStatus": "active_existing",
-        "activeStorefrontImage": "/images/products/bid-box-umrah-tabarruk-1.webp"
+        "mediaStatus": "existing_inventory_unverified",
+        "notes": "Product ID matches catalog inventory; active media and publication eligibility are not verified from ID alone."
       },
-      "isPublishable": true,
-      "publicationBlockers": [],
-      "skipReason": "Product \"bid-box-umrah-tabarruk\" already exists in live catalog. Existing prices, variants, filled options, and media preserved unchanged."
+      "isPublishable": null,
+      "publicationState": "unknown",
+      "publicationBlockers": [
+        "EXISTING_INVENTORY_UNVERIFIED: Existing-ID match proves inventory existence only; live active status, media verification, and publication eligibility are unknown without authoritative product state."
+      ],
+      "skipReason": "Product \"bid-box-umrah-tabarruk\" exists in catalog inventory. ID match proves existence only; live pricing, variants, active status, and media are preserved unchanged without inferring publication eligibility."
     },
     {
       "recordId": "tabarruk-set-004",
@@ -564,6 +583,7 @@
         "depiction": "Empty 3-piece pilgrimage favor suite (ivory bag, empty circular tin with lid ajar, visibly empty clear glass Zamzam bottle with gold cap) on warm travertine."
       },
       "isPublishable": false,
+      "publicationState": "unpublishable",
       "publicationBlockers": [
         "SUPPLIER_SAMPLE_UNCONFIRMED: Concept render approved; awaiting physical supplier sample and stock receipt confirmation.",
         "DRAFT_STATUS_UNPUBLISHED: Product is currently an unpublished draft (active=false, status=draft); pending merchant sign-off."
@@ -631,6 +651,7 @@
         "depiction": "Empty two-piece rigid presentation gift box in ivory with clear window, holding one visibly empty glass bottle with gold cap and one empty favor tin on warm honed travertine."
       },
       "isPublishable": false,
+      "publicationState": "unpublishable",
       "publicationBlockers": [
         "SUPPLIER_SAMPLE_UNCONFIRMED: Concept render approved; awaiting physical supplier sample and stock receipt confirmation.",
         "DRAFT_STATUS_UNPUBLISHED: Product is currently an unpublished draft (active=false, status=draft); pending merchant sign-off."
@@ -699,6 +720,7 @@
         "notes": "Component mismatch: Generated render depicts rigid gift box and hexagonal glass jar; reference specifies matching carrier bag, circular tin, and 120ml bottle. Excluded from publication candidates pending re-render."
       },
       "isPublishable": false,
+      "publicationState": "unpublishable",
       "publicationBlockers": [
         "MEDIA_NEEDS_REVISION: Component mismatch: Generated render depicts rigid gift box and hexagonal glass jar; reference specifies matching carrier bag, circular tin, and 120ml bottle. Excluded from publication candidates pending re-render.",
         "DRAFT_STATUS_UNPUBLISHED: Product is currently an unpublished draft (active=false, status=draft); pending merchant sign-off."
@@ -767,6 +789,7 @@
         "notes": "Feature disparity: Generated render depicts elaborate domed chest with brass latch hardware, velvet interior lining, dual favor tins, and glass flask; source reference is a structured Tijori-pattern carrier bag and matching favor box suite. Elaborate hardware, lining, and extra vessels are unverified proposed concepts excluded from confirmed reference contents."
       },
       "isPublishable": false,
+      "publicationState": "unpublishable",
       "publicationBlockers": [
         "MEDIA_NEEDS_REVISION: Feature disparity: Generated render depicts elaborate domed chest with brass latch hardware, velvet interior lining, dual favor tins, and glass flask; source reference is a structured Tijori-pattern carrier bag and matching favor box suite. Elaborate hardware, lining, and extra vessels are unverified proposed concepts excluded from confirmed reference contents.",
         "DRAFT_STATUS_UNPUBLISHED: Product is currently an unpublished draft (active=false, status=draft); pending merchant sign-off."
@@ -834,6 +857,7 @@
         "notes": "Image generation blocked by upstream Gemini Image API capacity exhaustion (429 RESOURCE_EXHAUSTED). Will be generated upon quota reset."
       },
       "isPublishable": false,
+      "publicationState": "unpublishable",
       "publicationBlockers": [
         "MEDIA_BLOCKED_BY_QUOTA: Asset generation blocked by upstream Gemini Image API capacity exhaustion (429 RESOURCE_EXHAUSTED).",
         "DRAFT_STATUS_UNPUBLISHED: Product is currently an unpublished draft (active=false, status=draft); pending merchant sign-off."
@@ -844,48 +868,60 @@
       "action": "skipped_existing",
       "canonicalSubcategory": "wedding",
       "mediaAudit": {
-        "mediaStatus": "active_existing",
-        "activeStorefrontImage": "/images/products/bid-box-pyramid-favor-1.webp"
+        "mediaStatus": "existing_inventory_unverified",
+        "notes": "Product ID matches catalog inventory; active media and publication eligibility are not verified from ID alone."
       },
-      "isPublishable": true,
-      "publicationBlockers": [],
-      "skipReason": "Product \"bid-box-pyramid-favor\" already exists in live catalog. Existing prices, variants, filled options, and media preserved unchanged."
+      "isPublishable": null,
+      "publicationState": "unknown",
+      "publicationBlockers": [
+        "EXISTING_INVENTORY_UNVERIFIED: Existing-ID match proves inventory existence only; live active status, media verification, and publication eligibility are unknown without authoritative product state."
+      ],
+      "skipReason": "Product \"bid-box-pyramid-favor\" exists in catalog inventory. ID match proves existence only; live pricing, variants, active status, and media are preserved unchanged without inferring publication eligibility."
     },
     {
       "recordId": "bid-box-card-nikkah",
       "action": "skipped_existing",
       "canonicalSubcategory": "wedding",
       "mediaAudit": {
-        "mediaStatus": "active_existing",
-        "activeStorefrontImage": "/images/products/bid-box-card-nikkah-1.webp"
+        "mediaStatus": "existing_inventory_unverified",
+        "notes": "Product ID matches catalog inventory; active media and publication eligibility are not verified from ID alone."
       },
-      "isPublishable": true,
-      "publicationBlockers": [],
-      "skipReason": "Product \"bid-box-card-nikkah\" already exists in live catalog. Existing prices, variants, filled options, and media preserved unchanged."
+      "isPublishable": null,
+      "publicationState": "unknown",
+      "publicationBlockers": [
+        "EXISTING_INVENTORY_UNVERIFIED: Existing-ID match proves inventory existence only; live active status, media verification, and publication eligibility are unknown without authoritative product state."
+      ],
+      "skipReason": "Product \"bid-box-card-nikkah\" exists in catalog inventory. ID match proves existence only; live pricing, variants, active status, and media are preserved unchanged without inferring publication eligibility."
     },
     {
       "recordId": "bid-box-jute-pouch",
       "action": "skipped_existing",
       "canonicalSubcategory": "wedding",
       "mediaAudit": {
-        "mediaStatus": "active_existing",
-        "activeStorefrontImage": "/images/products/bid-box-jute-pouch-1.webp"
+        "mediaStatus": "existing_inventory_unverified",
+        "notes": "Product ID matches catalog inventory; active media and publication eligibility are not verified from ID alone."
       },
-      "isPublishable": true,
-      "publicationBlockers": [],
-      "skipReason": "Product \"bid-box-jute-pouch\" already exists in live catalog. Existing prices, variants, filled options, and media preserved unchanged."
+      "isPublishable": null,
+      "publicationState": "unknown",
+      "publicationBlockers": [
+        "EXISTING_INVENTORY_UNVERIFIED: Existing-ID match proves inventory existence only; live active status, media verification, and publication eligibility are unknown without authoritative product state."
+      ],
+      "skipReason": "Product \"bid-box-jute-pouch\" exists in catalog inventory. ID match proves existence only; live pricing, variants, active status, and media are preserved unchanged without inferring publication eligibility."
     },
     {
       "recordId": "bid-box-sweet-nikkah",
       "action": "skipped_existing",
       "canonicalSubcategory": "wedding",
       "mediaAudit": {
-        "mediaStatus": "active_existing",
-        "activeStorefrontImage": "/images/products/bid-box-sweet-nikkah-1.webp"
+        "mediaStatus": "existing_inventory_unverified",
+        "notes": "Product ID matches catalog inventory; active media and publication eligibility are not verified from ID alone."
       },
-      "isPublishable": true,
-      "publicationBlockers": [],
-      "skipReason": "Product \"bid-box-sweet-nikkah\" already exists in live catalog. Existing prices, variants, filled options, and media preserved unchanged."
+      "isPublishable": null,
+      "publicationState": "unknown",
+      "publicationBlockers": [
+        "EXISTING_INVENTORY_UNVERIFIED: Existing-ID match proves inventory existence only; live active status, media verification, and publication eligibility are unknown without authoritative product state."
+      ],
+      "skipReason": "Product \"bid-box-sweet-nikkah\" exists in catalog inventory. ID match proves existence only; live pricing, variants, active status, and media are preserved unchanged without inferring publication eligibility."
     },
     {
       "recordId": "wedding-card-box-001",
@@ -949,6 +985,7 @@
         "depiction": "Empty two-piece rigid cardstock favor box in ivory adorned with handcrafted paper flower embellishment on lid, resting on warm travertine."
       },
       "isPublishable": false,
+      "publicationState": "unpublishable",
       "publicationBlockers": [
         "SUPPLIER_SAMPLE_UNCONFIRMED: Concept render approved; awaiting physical supplier sample and stock receipt confirmation.",
         "DRAFT_STATUS_UNPUBLISHED: Product is currently an unpublished draft (active=false, status=draft); pending merchant sign-off."
@@ -1016,6 +1053,7 @@
         "notes": "Image generation blocked by upstream Gemini Image API capacity exhaustion (429 RESOURCE_EXHAUSTED). Will be generated upon quota reset."
       },
       "isPublishable": false,
+      "publicationState": "unpublishable",
       "publicationBlockers": [
         "MEDIA_BLOCKED_BY_QUOTA: Asset generation blocked by upstream Gemini Image API capacity exhaustion (429 RESOURCE_EXHAUSTED).",
         "DRAFT_STATUS_UNPUBLISHED: Product is currently an unpublished draft (active=false, status=draft); pending merchant sign-off."
@@ -1083,6 +1121,7 @@
         "notes": "Image generation blocked by upstream Gemini Image API capacity exhaustion (429 RESOURCE_EXHAUSTED). Will be generated upon quota reset."
       },
       "isPublishable": false,
+      "publicationState": "unpublishable",
       "publicationBlockers": [
         "MEDIA_BLOCKED_BY_QUOTA: Asset generation blocked by upstream Gemini Image API capacity exhaustion (429 RESOURCE_EXHAUSTED).",
         "DRAFT_STATUS_UNPUBLISHED: Product is currently an unpublished draft (active=false, status=draft); pending merchant sign-off."
@@ -1150,6 +1189,7 @@
         "notes": "Image generation blocked by upstream Gemini Image API capacity exhaustion (429 RESOURCE_EXHAUSTED). Will be generated upon quota reset."
       },
       "isPublishable": false,
+      "publicationState": "unpublishable",
       "publicationBlockers": [
         "MEDIA_BLOCKED_BY_QUOTA: Asset generation blocked by upstream Gemini Image API capacity exhaustion (429 RESOURCE_EXHAUSTED).",
         "DRAFT_STATUS_UNPUBLISHED: Product is currently an unpublished draft (active=false, status=draft); pending merchant sign-off."
@@ -1160,12 +1200,15 @@
       "action": "skipped_existing",
       "canonicalSubcategory": "baby",
       "mediaAudit": {
-        "mediaStatus": "active_existing",
-        "activeStorefrontImage": "/images/products/bid-box-birth-announcement-1.webp"
+        "mediaStatus": "existing_inventory_unverified",
+        "notes": "Product ID matches catalog inventory; active media and publication eligibility are not verified from ID alone."
       },
-      "isPublishable": true,
-      "publicationBlockers": [],
-      "skipReason": "Product \"bid-box-birth-announcement\" already exists in live catalog. Existing prices, variants, filled options, and media preserved unchanged."
+      "isPublishable": null,
+      "publicationState": "unknown",
+      "publicationBlockers": [
+        "EXISTING_INVENTORY_UNVERIFIED: Existing-ID match proves inventory existence only; live active status, media verification, and publication eligibility are unknown without authoritative product state."
+      ],
+      "skipReason": "Product \"bid-box-birth-announcement\" exists in catalog inventory. ID match proves existence only; live pricing, variants, active status, and media are preserved unchanged without inferring publication eligibility."
     },
     {
       "recordId": "baby-box-half-kg",
@@ -1229,6 +1272,7 @@
         "depiction": "Empty square baby announcement sweet box in pastel tones on warm crema limestone with lid resting beside base."
       },
       "isPublishable": false,
+      "publicationState": "unpublishable",
       "publicationBlockers": [
         "SUPPLIER_SAMPLE_UNCONFIRMED: Concept render approved; awaiting physical supplier sample and stock receipt confirmation.",
         "DRAFT_STATUS_UNPUBLISHED: Product is currently an unpublished draft (active=false, status=draft); pending merchant sign-off."
@@ -1296,6 +1340,7 @@
         "notes": "Image generation blocked by upstream Gemini Image API capacity exhaustion (429 RESOURCE_EXHAUSTED). Will be generated upon quota reset."
       },
       "isPublishable": false,
+      "publicationState": "unpublishable",
       "publicationBlockers": [
         "MEDIA_BLOCKED_BY_QUOTA: Asset generation blocked by upstream Gemini Image API capacity exhaustion (429 RESOURCE_EXHAUSTED).",
         "DRAFT_STATUS_UNPUBLISHED: Product is currently an unpublished draft (active=false, status=draft); pending merchant sign-off."
@@ -1363,6 +1408,7 @@
         "notes": "Image generation blocked by upstream Gemini Image API capacity exhaustion (429 RESOURCE_EXHAUSTED). Will be generated upon quota reset."
       },
       "isPublishable": false,
+      "publicationState": "unpublishable",
       "publicationBlockers": [
         "MEDIA_BLOCKED_BY_QUOTA: Asset generation blocked by upstream Gemini Image API capacity exhaustion (429 RESOURCE_EXHAUSTED).",
         "DRAFT_STATUS_UNPUBLISHED: Product is currently an unpublished draft (active=false, status=draft); pending merchant sign-off."
@@ -1430,6 +1476,7 @@
         "notes": "Image generation blocked by upstream Gemini Image API capacity exhaustion (429 RESOURCE_EXHAUSTED). Will be generated upon quota reset."
       },
       "isPublishable": false,
+      "publicationState": "unpublishable",
       "publicationBlockers": [
         "MEDIA_BLOCKED_BY_QUOTA: Asset generation blocked by upstream Gemini Image API capacity exhaustion (429 RESOURCE_EXHAUSTED).",
         "DRAFT_STATUS_UNPUBLISHED: Product is currently an unpublished draft (active=false, status=draft); pending merchant sign-off."
@@ -1497,6 +1544,7 @@
         "notes": "Image generation blocked by upstream Gemini Image API capacity exhaustion (429 RESOURCE_EXHAUSTED). Will be generated upon quota reset."
       },
       "isPublishable": false,
+      "publicationState": "unpublishable",
       "publicationBlockers": [
         "MEDIA_BLOCKED_BY_QUOTA: Asset generation blocked by upstream Gemini Image API capacity exhaustion (429 RESOURCE_EXHAUSTED).",
         "DRAFT_STATUS_UNPUBLISHED: Product is currently an unpublished draft (active=false, status=draft); pending merchant sign-off."
@@ -1600,6 +1648,7 @@
         "notes": "Visual asset generation explicitly deferred because source vendor lists 4 size tiers with variation pricing but omits specific L×W×H physical dimensions for each size tier."
       },
       "isPublishable": false,
+      "publicationState": "unpublishable",
       "publicationBlockers": [
         "VARIABLE_FAMILY_UNVERIFIED_DIMENSIONS: Variable family size tiers lack physical dimensional measurements per size tier.",
         "DRAFT_STATUS_UNPUBLISHED: Product is currently an unpublished draft (active=false, status=draft); pending merchant sign-off."
@@ -1610,12 +1659,15 @@
       "action": "skipped_existing",
       "canonicalSubcategory": "acrylic",
       "mediaAudit": {
-        "mediaStatus": "active_existing",
-        "activeStorefrontImage": "/images/products/bid-box-acrylic-royal-1.webp"
+        "mediaStatus": "existing_inventory_unverified",
+        "notes": "Product ID matches catalog inventory; active media and publication eligibility are not verified from ID alone."
       },
-      "isPublishable": true,
-      "publicationBlockers": [],
-      "skipReason": "Product \"bid-box-acrylic-royal\" already exists in live catalog. Existing prices, variants, filled options, and media preserved unchanged."
+      "isPublishable": null,
+      "publicationState": "unknown",
+      "publicationBlockers": [
+        "EXISTING_INVENTORY_UNVERIFIED: Existing-ID match proves inventory existence only; live active status, media verification, and publication eligibility are unknown without authoritative product state."
+      ],
+      "skipReason": "Product \"bid-box-acrylic-royal\" exists in catalog inventory. ID match proves existence only; live pricing, variants, active status, and media are preserved unchanged without inferring publication eligibility."
     },
     {
       "recordId": "acrylic-box-cube-3in",
@@ -1679,6 +1731,7 @@
         "depiction": "Empty 3x3x3 inch clear acrylic cube with slip-over lid propped beside base on warm honed travertine, highlighting pristine empty chamber."
       },
       "isPublishable": false,
+      "publicationState": "unpublishable",
       "publicationBlockers": [
         "SUPPLIER_SAMPLE_UNCONFIRMED: Concept render approved; awaiting physical supplier sample and stock receipt confirmation.",
         "DRAFT_STATUS_UNPUBLISHED: Product is currently an unpublished draft (active=false, status=draft); pending merchant sign-off."
@@ -1692,6 +1745,7 @@
         "notes": "Unverified concept; excluded from catalog draft creation pending supplier quote and physical sampling."
       },
       "isPublishable": false,
+      "publicationState": "unpublishable",
       "publicationBlockers": [
         "UNVERIFIED_CONCEPT: Excluded from catalog pending physical sampling and verified supplier quote."
       ],
@@ -1705,6 +1759,7 @@
         "notes": "Unverified concept; excluded from catalog draft creation pending supplier quote and physical sampling."
       },
       "isPublishable": false,
+      "publicationState": "unpublishable",
       "publicationBlockers": [
         "UNVERIFIED_CONCEPT: Excluded from catalog pending physical sampling and verified supplier quote."
       ],
@@ -1718,12 +1773,13 @@
         "notes": "Unverified concept; excluded from catalog draft creation pending supplier quote and physical sampling."
       },
       "isPublishable": false,
+      "publicationState": "unpublishable",
       "publicationBlockers": [
         "UNVERIFIED_CONCEPT: Excluded from catalog pending physical sampling and verified supplier quote."
       ],
       "skipReason": "Unverified concept \"acrylic-box-grand-trousseau-chest\" excluded from catalog draft creation."
     }
   ],
-  "timestamp": "2026-10-18T22:12:31.565Z",
+  "timestamp": "2026-10-18T22:26:04.146Z",
   "branch": "feat/renovation-v2"
 }

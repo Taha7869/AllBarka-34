@@ -46,17 +46,18 @@ async function main() {
   console.log('--------------------------------------------------------------');
   console.log('Category Breakdown (Verified Roster):');
   for (const [cat, data] of Object.entries(summary.byCategory)) {
-    const total = data.existingActive + data.proposedDrafts;
+    const total = data.existingInventory + data.proposedDrafts;
     const statusStr = data.shortfallAgainstTarget6 === 0 ? 'Target met' : `${data.shortfallAgainstTarget6} short`;
-    console.log(`  ${cat.padEnd(10)}: ${total} total (${data.existingActive} active + ${data.proposedDrafts} proposed drafts) -> ${statusStr}`);
+    console.log(`  ${cat.padEnd(10)}: ${total} total (${data.existingInventory} existing inventory + ${data.proposedDrafts} proposed drafts) -> ${statusStr}`);
   }
   console.log('--------------------------------------------------------------');
   console.log('Media Audit Totals:');
-  console.log(`- Active Storefront Images:     ${summary.mediaAuditTotals.activeExistingAssets}`);
-  console.log(`- Approved Concept Renders:     ${summary.mediaAuditTotals.approvedDraftRenders}`);
-  console.log(`- Needs Revision Renders:       ${summary.mediaAuditTotals.needsRevisionRenders}`);
-  console.log(`- Quota Blocked Image Tasks:    ${summary.mediaAuditTotals.blockedByQuotaTasks}`);
-  console.log(`- Deferred Variable Families:   ${summary.mediaAuditTotals.deferredVariableFamilies}`);
+  console.log(`- Active Storefront Assets (Verified Live): ${summary.mediaAuditTotals.activeExistingAssets}`);
+  console.log(`- Existing Inventory (Unverified ID Match): ${summary.mediaAuditTotals.existingInventoryUnverified}`);
+  console.log(`- Approved Concept Renders:              ${summary.mediaAuditTotals.approvedDraftRenders}`);
+  console.log(`- Needs Revision Renders:                ${summary.mediaAuditTotals.needsRevisionRenders}`);
+  console.log(`- Quota Blocked Image Tasks:             ${summary.mediaAuditTotals.blockedByQuotaTasks}`);
+  console.log(`- Deferred Variable Families:            ${summary.mediaAuditTotals.deferredVariableFamilies}`);
   console.log('--------------------------------------------------------------');
   console.log(`Acrylic Shortfall:              ${summary.acrylicShortfall.shortfall} products short of target 6`);
   console.log(`                                (2 verified products; 3 concepts excluded)`);
