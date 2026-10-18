@@ -21,8 +21,6 @@ import { getLocalized } from '../utils/localize';
 import { CANONICAL_CATEGORIES, CUSTOMER_FACING_CATEGORIES, resolveCategorySlug, OCCASION_TAGS, getCategoryMeta } from '../config/categories';
 import { CATALOG_SORTS, readCatalogFilters, searchCatalog, startingPrice, type CatalogSort } from '../lib/catalogDiscovery';
 import { applyCatalogFilterDraft, beginCatalogFilterDraft, filterCatalogSelection, type CatalogFilterDraft } from '../lib/catalogFilterDraft';
-import BidBoxesSection from './BidBoxesSection';
-import DealsPackagesSection from './DealsPackagesSection';
 import { openCustomQuoteModal } from './CustomQuoteModal';
 
 export interface CategoryPLPProps {
@@ -168,12 +166,6 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
       })}
       <button type="button" onClick={() => openCustomQuoteModal({ mode: 'filled', quantity: 50 })} className="min-h-11 shrink-0 rounded-full border border-[#8C6B1B] bg-[#FAF6EE] px-5 text-xs font-bold text-[#8C6B1B] transition-colors hover:bg-[#8C6B1B] hover:text-white">Bid Boxes &amp; Custom Quote</button>
     </nav>
-    {(category === 'gift-boxes' || category === 'bundles') && !filters.query && (
-      <div className="mb-10 space-y-8 rounded-3xl overflow-hidden">
-        <BidBoxesSection compact onQuickView={onQuickView} />
-        <DealsPackagesSection limit={8} onQuickView={onQuickView} />
-      </div>
-    )}
     <div className={`catalog-quick-controls mb-5 flex flex-col gap-3 lg:flex-row ${isModal ? 'catalog-quick-controls-modal' : ''}`}>
       <div className="relative flex-1" onFocusCapture={() => setSearchOpen(true)}
         onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setSearchOpen(false); }}

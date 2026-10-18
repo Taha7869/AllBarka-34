@@ -1,84 +1,103 @@
-# AllBarka Renovation — Stage 5A Review Packet & Handoff v5.4
+# AllBarka Renovation — Stage 5B Review Packet & Handoff v5.5
 
-**Document Version:** 5.4.0  
+**Document Version:** 5.5.0  
 **Date:** October 18, 2026  
-**Baseline Git Commit:** `cfd267b` -> `feat/renovation-v2`  
+**Baseline Git Commit:** `8b47974` -> `feat/renovation-v2`  
 **Active Working Branch:** `feat/renovation-v2` (Tracking `origin/feat/renovation-v2`)  
 **Parent / Production Branch:** `launch` (synced with `origin/launch` and `origin/main`)  
 **Applicable Instructions Read:** `C:\Users\taha\.gemini\antigravity\scratch\AllBarka-34\AGENTS.md` and `C:\Users\taha\.gemini\config\plugins\science\rules\AGENTS.md`  
-**Status:** **STAGE 5A HOMEPAGE, BOUTIQUE SELECTIONS & MERCHANDISING LIFECYCLE COMPLETE & VERIFIED — HALTED AT STAGE 5A COMPLETION GATE**
+**Status:** **STAGE 5B DEDICATED DESTINATIONS & COLLECTION PAGES COMPLETE & VERIFIED — HALTED AT STAGE 5B COMPLETION GATE**
 
 ---
 
 ## 1. Stage 5 Scope Boundaries
 
 Stage 5 is split into three discrete, reviewable milestones:
-- **Stage 5A (Implemented & Fully Verified Here):** Homepage, Boutique Selections showcase, autoplay lifecycle, collection alias normalization & visibility conflict resolution, merchant occasion titles, and real browser provider-fetch integration.
-- **Stage 5B (Explicitly Pending):** Dedicated collection/occasion destinations (`/shop/celebration-boxes`, `/shop/deals`, `/gifting`).
-- **Stage 5C (Explicitly Pending):** Verified packaging catalog, descriptions, and original studio photography assets.
+- **Stage 5A (Completed & Verified):** Homepage, Boutique Selections showcase, autoplay lifecycle, collection alias normalization & visibility conflict resolution, merchant occasion titles, and real browser provider-fetch integration.
+- **Stage 5B (Implemented & Fully Verified Here):** Dedicated collection & occasion destinations (`/shop/celebration-boxes`, `/gifting`, `/shop/deals`, `/occasions`, `/wholesale`) with working legacy aliases, transparent wholesale policies, honest empty states, and direct checkout / inquiry flows.
+- **Stage 5C (Explicitly Pending):** Verified packaging catalog expansion (minimum 6 distinct products per subcategory), comprehensive descriptions, and original studio photography assets.
+- **Stage 6 & AI Architecture (Explicitly Pending):** Production release gates, emulator sign-off, live deployments.
 
 > [!IMPORTANT]
-> **Strict Halt Gate:** Stage 5A is fully implemented and verified. Stage 5B and Stage 5C remain explicitly pending. Zero live production database writes, zero merges to `launch`/`main`, and zero production deployments have occurred. Firestore Emulator remains an outstanding release gate.
+> **Strict Halt Gate:** Stage 5B is fully implemented and verified. Stage 5C and Stage 6 remain explicitly pending. Zero live production database writes, zero merges to `launch`/`main`, and zero production deployments have occurred. Firestore Emulator remains an outstanding release gate.
 
 ---
 
-## 2. Collection Alias Normalization & Conflict Resolution
+## 2. Dedicated Destinations Implemented in Stage 5B
 
-### 2.1 Problem Solved
-Previously, `CategoryCarousel` keyed its `collectionsMap` by raw `collectionId` while resolving candidate cards using canonical category keys. When an administrator configured a legacy alias (such as `{ collectionId: 'nuts', visible: false }`), the canonical category `dry-fruits` would fail to match the raw key `nuts`, causing the hidden dry fruits collection card to silently reappear on the homepage.
+### 2.1 Celebration Boxes (`/shop/celebration-boxes`, aliases: `/shop/bid-boxes`, `/category/celebration-boxes`)
+- **Approved Subcategories Filter:**
+  1. *Signature Tin Boxes* (`bid-box-luxury-tin`) — 1 product
+  2. *Hajj & Umrah Tabarruk Sets* (`bid-box-umrah-tabarruk`) — 1 product
+  3. *Wedding Favor Boxes & Pouches* (`bid-box-card-nikkah`, `bid-box-pyramid-favor`, `bid-box-jute-pouch`, `bid-box-sweet-nikkah`) — 4 products
+  4. *Baby Announcement Boxes* (`bid-box-birth-announcement`) — 1 product
+  5. *Personalized Acrylic Boxes* (`bid-box-acrylic-royal`) — 1 product
+  *Total:* Exactly 8 verified products in catalog (no invented items or inflated counts; expanded catalog remains Stage 5C).
+- **Mandatory Advisories:**
+  - *10 Calendar-Day Preparation Notice:* Artisanal custom printing/assembly requires a minimum of 10 calendar days lead time before courier dispatch; transit applies separately upon completion (no guaranteed Day-10 delivery).
+  - *Tabarruk Bottles Empty Notice:* Zamzam bottles and Tabarruk vials in all sets are supplied empty unless sacred Zamzam or specific fillings are explicitly listed in package inclusions.
+- **Packaging vs. Filled Options:**
+  - Mode switch: "All Options", "Empty Packaging Only", "Freshly Filled with Dry Fruits".
+  - Empty packaging tiers derived dynamically via `resolveBidBoxConfig` (e.g. 25, 50, 100+ pcs with volume discounts).
+  - Filled options display starting prices and roastery fillings.
+- **Customer Flow & Actions:**
+  - Direct checkout enabled via "Add to Bag" for all standard eligible tiers.
+  - "Custom Quote / Large Order (>100 pcs)" launches `openCustomQuoteModal` with selected product and mode.
+  - Cross-sell banner to whole dry fruits (`/shop/dry-fruits`) to fill customer-sourced boxes, and luxury finished hampers (`/gifting`).
 
-### 2.2 Canonical Key Normalization
-In `src/config/categories.ts`:
-- Added and exported `COLLECTION_ALIASES`:
-  - `nuts` ↔ `dry-fruits`
-  - `snacks-seeds` ↔ `seeds-snacks`
-  - `bundles` ↔ `combos`
-  - `gift-boxes` ↔ `gifts`
-- Exported `canonicalCollectionKey(id)` to reduce any alias to its canonical representation.
-- Exported `COLLECTION_EQUIVALENCE_GROUPS` and `getEquivalentCollectionIds(id)` to retrieve all equivalent identifiers for any category or collection.
+### 2.2 Gifts & Hampers, Including Baskets (`/gifting`, aliases: `/shop/gift-boxes`, `/shop/combos`)
+- **Luxury Lahore Roastery Header:** Eyebrow "Handcrafted in Lahore", title "Luxury Gifts & Curated Hampers", subtitle describing artisanal boxes and wicker baskets.
+- **Bespoke Hamper Builder Feature Card:**
+  - Explains custom curation (Sheesham Wooden Chest, Emerald Velvet Coffer, Gold Keepsake Tin).
+  - "Launch Hamper Builder" button dispatches `open-hamper-builder` event opening the global builder modal.
+- **Corporate Executive Gifting Sidecard:**
+  - Inquiries for personalized company logo branding and scheduled nationwide courier dispatch.
+  - "Request Corporate Inquiry" CTA launches `openCustomQuoteModal({ mode: 'filled', eventType: 'Corporate' })`.
+- **Occasion Filter Pills:** Filter gift sets across All Gifts, Wedding (`wedding`), Umrah (`umrah`), Ramadan/Eid (`ramadan`), and Corporate (`corporate`).
+- **Product Cards:** Live catalog prices, pack variant selectors, and direct checkout via "Add to Bag".
 
-### 2.3 Deterministic Conflict Handling in `CategoryCarousel`
-In `src/components/CategoryCarousel.tsx`:
-- Keyed `normalizedCollections` by `canonicalCollectionKey(col.collectionId)`.
-- When multiple entries target equivalent collections (e.g. `nuts` and `dry-fruits`):
-  - **Hidden Precedence Rule:** `const isHidden = existing.visible === false || col.visible === false;`
-  - If any equivalent entry is marked `visible: false`, the hidden state strictly prevails across the entire group.
-  - Custom overrides (titles, images, destinations, badges) are merged deterministically without duplicate cards.
-- Evaluated category visibility across all equivalent aliases (`isCategoryVisible(cKey)` checks both canonical and legacy keys in `categoryVisibility`).
-- Iterated canonical items (`PANTRY_CATEGORIES`) with `seenCanonicalKeys.add(cKey)` unconditionally once visited, guaranteeing no duplicate slides are ever created.
-- Normalized `order.map(id => canonicalCollectionKey(id))` for deterministic ordering.
-- Preserved distinct commercial collections (`celebration-boxes`, `deals`, `combos`, `personalized-treats`).
+### 2.3 Deals & Value Packages (`/shop/deals`, alias: `/shop/bundles`)
+- **Farm-Direct Savings Header:** Eyebrow "Farm-Direct Savings", title "Value Packages & Curated Deals".
+- **Verified Pricing Integrity Notice:** Prominently highlights that all bundle savings badges and discount calculations are derived directly from individual variant component rates with zero artificial markups or unverified strikethroughs.
+- **Sub-Filter Chips:**
+  - *All Deals & Packages*
+  - *Tasting Duos & Pairs* (`deal-1`, `deal-2`, `bundle-daily-grind`, `bundle-tasting-flight`)
+  - *Festive Family Hampers* (`bundle-silver-hamper`, `bundle-gold-hamper`, `bundle-platinum-hamper`, `bundle-royal-feast`)
+  - *Wellness & Pantry Reserves* (`bundle-brain-fuel`, `bundle-winter-warrior`, `bundle-immunity-shield`, `bundle-sunrise-seeds`, `bundle-mystery-box`)
+- **Direct Checkout:** Direct checkout enabled with live pricing, strikethrough comparison where verified, and Add to Bag.
+
+### 2.4 Occasions Destination (`/occasions`, `/occasions/:occasion`, `/shop?occasion=...`, `/shop?filter=occasions`)
+- **Occasion Switcher Tabs:**
+  - All Occasions
+  - Nikkah & Wedding (`wedding`)
+  - Umrah & Hajj Tabarruk (`umrah`)
+  - Ramadan & Eid (`ramadan`)
+  - Birth Announcement & Aqeeqah (`birth`)
+  - Corporate & Executive (`corporate`)
+- **Category Intersection & Accurate Counts:**
+  - Evaluates intersection: `productMatchesOccasion(p, occasion) && productMatchesCategory(p, category)`.
+  - Displays live accurate count (`{count} products found`).
+  - **Honest Empty State:** When a combination yields 0 results (e.g. Birth + Oils), displays honest empty state with "Reset Occasion Filter" button.
+- **URL Synchronization:** Synchronizes pathname (`/occasions/:occasion`) and search parameters, supporting browser back/forward history.
+
+### 2.5 Corporate & Bulk Wholesale (`/wholesale`)
+- **Transparent Wholesale Policy Cards:**
+  1. *Food Exemption (MOQ = 1):* All food products (dry fruits, nuts, dates, cold-pressed oils) carry an MOQ of 1 pack; volume weights available on request.
+  2. *Packaging Volume Tiers:* Event packaging and empty favor boxes feature automated volume tiers at 25, 50, and 100+ pieces with up to 25% factory discount.
+  3. *10-Day Preparation Lead Time:* Custom printed logo tags, foil monograms, and assembled packaging require a minimum of 10 calendar days lead time before courier dispatch.
+- **Concierge Actions:**
+  - "Request Corporate Quote" CTA -> `openCustomQuoteModal`.
+  - "Chat with Corporate Concierge" -> WhatsApp direct link.
+  - Concierge response guarantee: replies within 2 business hours with digital mockups and tiered quote sheets.
+- **Catalog Products:** Displays wholesale-eligible products with MOQ and volume tier badges.
 
 ---
 
-## 3. Real Browser Provider-Fetch Verification
+## 3. Removal of Competing Duplicate Grids
 
-### 3.1 Service/SSR Flow vs Client HTTP Fetch Distinction
-- **Test 6 (`stage5a-admin-integration.test.tsx`):** Accurately re-labeled as Service/SSR flow (`admin save -> preview isolation -> publish -> public fetch -> storefront render (SSR with initialSettings)`).
-- **Test 7 (`stage5a-admin-integration.test.tsx`):** Added a dedicated browser/client-mounted integration test that does **NOT** inject `initialSettings` or direct component props into the rendered page:
-  1. Spins up an Express HTTP server with `createCatalogRouter` backed by in-memory atomic Firestore fixture on a dynamic port (`0`).
-  2. Serves actual production build assets from `dist` and `index.html`.
-  3. Launches a real Playwright Chromium browser session navigating to `http://127.0.0.1:<port>/`.
-  4. Verifies initial storefront state matches live published settings.
-  5. Admin saves a draft with custom collection titles, custom image, destination link, hidden collections, custom occasion title, custom occasion route, hidden occasion, and custom autoplay interval/resume delay.
-  6. Verifies public draft isolation: public storefront re-fetching `/api/merchandising` does not leak draft updates prior to publication.
-  7. Admin publishes draft to live via `publishAdminMerchandising`.
-  8. Client browser triggers `MerchandisingProvider` fetch/refresh (`cache: 'no-store'`) and page reloads.
-  9. Asserts all DOM changes rendered in real browser:
-     - Collection title: `"Mega Spring Flash Deals"`
-     - Collection image: `img[src="/assets/categories/deals.png"]` (real static asset)
-     - Collection destination: `a[href="/shop/deals?promo=spring-mega"]`
-     - Hidden collection: `combos` absent from pantry
-     - Collection ordering: Deals positioned before Oils according to published `categoryOrder`
-     - Custom occasion title: `"Royal Grand Nikkah Hampers"`
-     - Custom occasion route: `a[href*="tier=royal"]`
-     - Hidden occasion: `umrah` absent from occasions section
-     - Autoplay settings in DOM: `data-interval="8888"`, `data-resume-delay="4444"`
-
-### 3.2 Autoplay Precedence & Store Merge Fix
-- In `src/lib/catalogSchema.ts`: Corrected precedence so modern canonical `rawAutoplay.intervalMs` and `rawAutoplay.resumeDelayMs` take precedence over legacy top-level `value.autoplayDurationMs` / `value.autoplayResumeDelayMs`.
-- In `src/lib/catalogStore.ts`: Updated `updateAdminMerchandising` to spread `...current` before `...body`, ensuring partial admin updates do not wipe out existing configuration (e.g. `showcaseTabs`).
-- In `src/contexts/MerchandisingContext.tsx`: Added `cache: 'no-store'` to fetch request to prevent stale browser HTTP caching of `/api/merchandising`.
+- In `src/components/CategoryPLP.tsx`: Removed lines 171-176 that stacked `BidBoxesSection` and `DealsPackagesSection` inside the PLP whenever category was `gift-boxes` or `bundles`.
+- Dedicated destinations now render as clean, distinct views routed through `ShopPage.tsx`.
+- Standard food categories (`dry-fruits`, `dates`, `seeds-snacks`, `oils`, `essentials`) and search queries continue to use `CategoryPLP`.
 
 ---
 
@@ -88,51 +107,64 @@ All automated suites, controlled-clock tests, integration tests, TypeScript comp
 
 | Suite / Check | Command | Actual Output / Result | Exit Code | Evaluation & Coverage Notes |
 | :--- | :--- | :--- | :---: | :--- |
-| **Admin Merchandising Integration** | `node --import tsx --test --test-isolation=none tests/stage5a-admin-integration.test.tsx` | **8 passed, 0 failed** (61.2s) | `0` | **VERIFIED:** (1) Admin lifecycle: draft save -> draft isolation -> publish promotion -> public retrieval; (2) CategoryCarousel published title, image, destination, visibility, order; (2b) CategoryCarousel alias normalization & deterministic conflict handling for `nuts`/`dry-fruits` and `snacks-seeds`/`seeds-snacks`; (3) BoutiqueSelections product filter & tab cap; (4) FindGiftOccasionSection hidden filtering & routes; (5) Custom merchant occasion title overrides translation keys; (6) Service/SSR integrated flow; (7) Real browser/client-mounted HTTP provider-fetch verification. |
-| **Controlled-Clock Lifecycle Suite** | `node --test tests/stage5a-controlled-clock.test.mjs` | **11 passed, 0 failed** (37.7s) | `0` | **VERIFIED:** 11 scenarios using Playwright virtual clock: (1) Initial advance at 6000ms; (2) Sustained hover pauses indefinitely (18000ms); (3) Exact 3000ms resume delay + 6000ms interval = 9000ms first advance; (4) Repeated enter/exit resets delay; (5) Manual pause until Play; (6) Play while hovered maintains hover protection; (7) Hidden document pauses rotation; return restarts fresh countdown without jump; (8) Reduced motion defaults to paused, and explicit Play opts into rotation with hover/delay/visibility protections; (9) Asynchronously loaded `enabled = false` pauses rotation; (10) Empty tabs hidden, rotation disabled when <= 1 tab; (11) Unmount cleanup clears all timers without leaks. |
-| **Stage 5A Homepage Unit Tests** | `node --import tsx --test --test-isolation=none tests/stage5a-homepage.test.tsx` | **6 passed, 0 failed** (52.5s) | `0` | **VERIFIED:** 6-part homepage structure, old grid removal, Boutique Selections 5 tabs with verified products, live price reading (zero stored prices), 5 occasion destination routes, category deduplication, and multilingual translations in EN, UR, and AR. |
-| **Stage 4 Navigation Regressions** | `node --import tsx --test --test-isolation=none tests/stage4-navigation.test.tsx` | **12 passed, 0 failed** (49.5s) | `0` | **VERIFIED:** Regression check for header taxonomy, disclosure buttons, mobile accordion, RTL/Dark mode, route resolution, occasion matching, and single active indicator. |
-| **Stage 3 Pricing & MOQ Regressions** | `node --import tsx --test --test-isolation=none tests/stage3-pricing-moq.test.ts` | **19 passed, 0 failed** (51.8s) | `0` | **VERIFIED:** Rules D1 & D2, food exemption, packaging MOQ, reference markup idempotency, and bid box pricing integrity. |
-| **Real Browser CDP Tests** | `node scripts/test-stage5a-homepage.mjs` | **9 passed, 0 failed** (18.2s) | `0` | **VERIFIED:** Real headless Chrome CDP execution on fresh `dist` build: (1) Hero CTAs; (2) Explore Collections cards; (3) Boutique Selections 5 tabs, initial tab 3 cards; (4) Initial tab selected; (5) Old grids absent; (6) Interactive tab switching; (7) Play/Pause toggle; (8) Occasion destination cards; (9) Service pillars, reviews, and FAQ mounted. Captured 6 screenshots. |
+| **Stage 5B Dedicated Destinations** | `node --import tsx --test --test-isolation=none tests/stage5b-destinations.test.tsx` | **9 passed, 0 failed** (56.2s) | `0` | **VERIFIED:** (1) Celebration boxes 5 approved subcategories and exact 8 verified products; (2) 10-day preparation notice and empty Tabarruk bottle advisory; (3) Legacy `/shop/bid-boxes` alias resolution; (4) Gifts & Hampers builder entry, corporate CTA, and legacy aliases; (5) Deals verified savings notice and filter chips; (6) Occasions switcher tabs, category intersection, and honest empty state; (7) Corporate & Wholesale policies, food exemption, and lead time; (8) Trilingual & RTL support across Urdu and Arabic; (9) Duplicate homepage grids absent from PLP. |
+| **Controlled-Clock Lifecycle Suite** | `node --test tests/stage5a-controlled-clock.test.mjs` | **11 passed, 0 failed** (36.5s) | `0` | **VERIFIED:** All 11 virtual clock rotation and pause scenarios intact: initial advance, sustained hover, 3000ms resume delay, repeated hover reset, manual pause until Play, Play while hovered, document visibility lifecycle, reduced motion, disabled autoplay setting, empty tabs, and unmount cleanup. |
+| **Admin Merchandising Integration** | `node --import tsx --test --test-isolation=none tests/stage5a-admin-integration.test.tsx` | **8 passed, 0 failed** (58.2s) | `0` | **VERIFIED:** Admin lifecycle, published collection title/image/destination, alias normalization, product tab limit, hidden occasions, custom occasion title, SSR flow, and real browser client-mounted provider HTTP fetch. |
+| **Stage 5A Homepage Unit Tests** | `node --import tsx --test --test-isolation=none tests/stage5a-homepage.test.tsx` | **6 passed, 0 failed** (52.8s) | `0` | **VERIFIED:** 6-part homepage structure, old grid removal, Boutique Selections 5 tabs, live price reading, occasion routes, and trilingual translations. |
+| **Stage 4 Navigation Regressions** | `node --import tsx --test --test-isolation=none tests/stage4-navigation.test.tsx` | **12 passed, 0 failed** (51.6s) | `0` | **VERIFIED:** Two-level header taxonomy, disclosure triggers, mobile accordion, RTL/Dark mode, route resolution, occasion matching, and single active indicator. |
+| **Stage 3 Pricing & MOQ Regressions** | `node --import tsx --test --test-isolation=none tests/stage3-pricing-moq.test.ts` | **19 passed, 0 failed** (53.2s) | `0` | **VERIFIED:** Rules D1 & D2, food exemption (MOQ = 1), packaging MOQ, reference markup idempotency, and bid box pricing integrity. |
 | **TypeScript Typecheck** | `npm run typecheck` (`tsc --noEmit`) | `allbarka@0.0.0 typecheck` (zero diagnostics) | `0` | **VERIFIED:** 100% type safety across the entire repository. |
 | **React Hook Linter** | `npm run lint:hooks` (`eslint src`) | `allbarka@0.0.0 lint:hooks` (zero warnings, zero errors) | `0` | **VERIFIED:** All hook dependency arrays and rules satisfied. |
-| **Production Build Pipeline** | `npm run build` | Full pipeline: Vite client bundle (12.79s) + esbuild server.cjs (870.1kb) + Release privacy audit (84 text artifacts clean). | `0` | **VERIFIED:** Production bundle built cleanly with zero private credential leaks. |
+| **Production Build Pipeline** | `npm run build` | Full pipeline: Vite client bundle (12.13s) + esbuild server.cjs (870.1kb) + Release privacy audit (84 text artifacts clean). | `0` | **VERIFIED:** Production bundle built cleanly with zero private credential leaks. |
+| **Real Browser Visual Verification** | `node scripts/test-stage5b-destinations.mjs` | **12 screenshots captured** (35.4s) | `0` | **VERIFIED:** Real headless Chrome CDP execution on fresh `dist` build across Desktop Light, Desktop Dark, Mobile, and Urdu RTL across all 5 destinations. |
 
 ---
 
-## 5. Real Browser Visual Artifacts
+## 5. Visual Artifacts Captured
 
-Real headless Chrome CDP interaction tests produced the following visual artifacts stored in both the conversation artifact directory (`C:\Users\taha\.gemini\antigravity\brain\f408ee7a-7513-4e1a-b8e1-251273bc99e6`) and the repository artifact directory (`docs/artifacts/`):
+All 12 visual artifacts have been captured and saved to `<appDataDir>\brain\f408ee7a-7513-4e1a-b8e1-251273bc99e6/` and committed to `docs/artifacts/`:
 
-| Screenshot Artifact | Repository Path | Description & Verified Visual Criteria |
-| :--- | :--- | :--- |
-| **`stage5a_homepage_desktop_light.png`** | `docs/artifacts/stage5a_homepage_desktop_light.png` | Desktop light mode view of the dry-fruit hero with brand crest, "Nature's finest, delivered with Pure Elegance", and two CTAs ("Shop Dry Fruits" & "Explore Gifts"). |
-| **`stage5a_boutique_selections.png`** | `docs/artifacts/stage5a_boutique_selections.png` | Desktop view of Boutique Selections showing "Single Sourced & Hand Picked" eyebrow, "Boutique Selections" title, Play/Pause control, View Collection link, 5 tab pills, and 3 dry fruit product cards (Pistachio, Almonds, Pine Nuts) with real catalog prices. |
-| **`stage5a_homepage_occasions.png`** | `docs/artifacts/stage5a_homepage_occasions.png` | Desktop view of "Find a Gift for Your Occasion" showing 5 compact destination cards with badges and icons, followed by "Quiet luxury, backed by everyday care" service pillars. |
-| **`stage5a_homepage_mobile.png`** | `docs/artifacts/stage5a_homepage_mobile.png` | Mobile viewport (390x844) showing clean, responsive header, language switcher, centered brand crest, and stacked CTAs. |
-| **`stage5a_homepage_rtl_urdu.png`** | `docs/artifacts/stage5a_homepage_rtl_urdu.png` | Mobile view under Urdu locale (`ur`) with `dir="rtl"`, authentic Nastaliq typography, "خشک میوہ جات دیکھیں" and "تحائف دریافت کریں" CTAs, and mirrored controls. |
-| **`stage5a_homepage_dark.png`** | `docs/artifacts/stage5a_homepage_dark.png` | Dark mode view showing high-contrast emerald/charcoal surface, crisp white typography, and gold accent buttons. |
-
----
-
-## 6. Changed Files Summary
-
-- `src/config/categories.ts`: Added `COLLECTION_ALIASES`, `canonicalCollectionKey`, `COLLECTION_EQUIVALENCE_GROUPS`, and `getEquivalentCollectionIds`.
-- `src/components/CategoryCarousel.tsx`: Implemented canonical alias normalization, conflict resolution (hidden precedence), and equivalent ID deduplication across both `categoryVisibility` and `collections` entries.
-- `src/components/BoutiqueSelections.tsx`: Exposed `data-interval` and `data-resume-delay` attributes for runtime inspection.
-- `src/contexts/MerchandisingContext.tsx`: Added `cache: 'no-store'` to `/api/merchandising` fetch call and attached `window.__refreshMerchandising` for browser integration testing.
-- `src/lib/catalogRouter.ts`: Set `Cache-Control: no-cache, must-revalidate` on `GET /api/merchandising`.
-- `src/lib/catalogSchema.ts`: Fixed autoplay interval and resume delay precedence so nested canonical `rawAutoplay.intervalMs` and `rawAutoplay.resumeDelayMs` override legacy top-level defaults.
-- `src/lib/catalogStore.ts`: Merged `...current` before `...body` in `updateAdminMerchandising` transaction so partial updates preserve existing configuration.
-- `tests/stage5a-admin-integration.test.tsx`: Added Test 2b (alias normalization and deterministic conflict handling) and Test 7 (browser/client-mounted HTTP provider-fetch verification), while labeling Test 6 as Service/SSR flow.
-- `docs/RENOVATION_HANDOFF.md`: Updated to Stage 5A Review Packet v5.4.0.
+1. `stage5b_celebration_desktop_light.png` — Celebration Boxes desktop light view with 10-day notice, Tabarruk bottle advisory, 5 subcategory pills, mode switcher, and product grid.
+2. `stage5b_celebration_desktop_dark.png` — Celebration Boxes desktop dark theme.
+3. `stage5b_celebration_urdu_rtl.png` — Celebration Boxes Urdu translation with RTL layout.
+4. `stage5b_celebration_mobile.png` — Celebration Boxes mobile responsive view (390×844).
+5. `stage5b_gifting_desktop_light.png` — Gifts & Hampers desktop light view with Hamper Builder card, Corporate CTA, and gift sets.
+6. `stage5b_gifting_mobile.png` — Gifts & Hampers mobile responsive view.
+7. `stage5b_deals_desktop_light.png` — Deals & Value Packages desktop light view with Verified Pricing Integrity banner and filter chips.
+8. `stage5b_deals_mobile.png` — Deals & Value Packages mobile responsive view.
+9. `stage5b_occasions_desktop_light.png` — Occasions desktop light view with occasion switcher tabs and category intersection.
+10. `stage5b_occasions_mobile.png` — Occasions mobile responsive view.
+11. `stage5b_wholesale_desktop_light.png` — Corporate & Bulk Wholesale desktop light view with transparent policy cards (Food Exemption MOQ=1, Packaging Tiers, 10-Day Lead Time) and concierge CTAs.
+12. `stage5b_wholesale_mobile.png` — Corporate & Bulk Wholesale mobile responsive view.
 
 ---
 
-## 7. Stopping Gate & Next Steps
+## 6. Files Created and Modified
 
-**HALTED AT STAGE 5A REVIEW GATE:**
-- **DO NOT** begin Stage 5B (Dedicated collection/occasion destinations) or Stage 5C (Packaging catalog & photography).
-- **DO NOT** merge `feat/renovation-v2` into `launch` or `main`.
-- **DO NOT** deploy or write live database records.
-- Awaiting user review and authorization to proceed to Stage 5B.
+### Created Files:
+- `src/contexts/destinationTranslations.ts`: Trilingual (EN, UR, AR) dictionary for all 5 destinations, 10-day lead time notice, Tabarruk bottle notice, subcategories, modes, builder CTAs, wholesale policies, and empty states.
+- `src/components/DestinationHeader.tsx`: Reusable luxury emerald/gold header with eyebrow, title, description, and advisory alert banners.
+- `src/components/CelebrationBoxesDestination.tsx`: Celebration Boxes destination with 5 approved subcategories, 8 verified products, 10-day preparation notice, Tabarruk bottle notice, empty wholesale tiers & filled options, and custom quote CTA.
+- `src/components/GiftsHampersDestination.tsx`: Gifts & Hampers destination with Bespoke Hamper Builder card, Corporate Gifting CTA, occasion filters, and direct checkout.
+- `src/components/DealsDestination.tsx`: Deals destination with Verified Pricing Integrity notice, bundle category filters, and live checkout.
+- `src/components/OccasionsDestination.tsx`: Occasions destination with occasion switcher tabs, category intersection, honest empty state with reset, and URL synchronization.
+- `src/components/WholesaleDestination.tsx`: Wholesale destination with Food Exemption (MOQ = 1), Packaging Volume Tiers (25, 50, 100+ pcs), 10-Day Preparation notice, and concierge quote CTAs.
+- `tests/stage5b-destinations.test.tsx`: 9 automated tests covering routes, subcategories, product counts, notices, legacy aliases, filter intersection, trilingual support, and grid deduplication.
+- `scripts/test-stage5b-destinations.mjs`: Real browser CDP screenshot capture script.
+
+### Modified Files:
+- `src/contexts/LanguageContext.tsx`: Imported and registered `destinationTranslations` in the fallback translation chain.
+- `src/components/SEO.tsx`: Guarded `window.location?.origin` safely for SSR/test environments.
+- `src/components/CategoryPLP.tsx`: Removed duplicate stacked sections (`BidBoxesSection` and `DealsPackagesSection`).
+- `src/pages/ShopPage.tsx`: Routed dedicated destinations cleanly based on pathname and parameters while serving `CategoryPLP` for standard food categories and search queries.
+- `src/App.tsx`: Registered `/occasions` and `/occasions/:occasion` routes.
+
+---
+
+## 7. Outstanding Tasks & Next Stage
+
+- **Stage 5C (Next):** Verified packaging catalog expansion (minimum 6 distinct products per subcategory), comprehensive specifications, and original studio photography assets.
+- **Stage 6 & AI Integration:** Outstanding Firestore emulator release gate, live deployment, production release checks.
+
+> [!NOTE]
+> All work for Stage 5B is completed, verified with passing automated test suites, clean typecheck, clean lint, successful production build, and committed visual artifacts. Awaiting user instruction before proceeding to Stage 5C.

@@ -76,6 +76,8 @@ export default function App() {
               <Route path="faq" element={<FAQPage />} />
               <Route path="wholesale" element={<ShopPage />} />
               <Route path="gifting" element={<ShopPage />} />
+              <Route path="occasions" element={<ShopPage />} />
+              <Route path="occasions/:occasion" element={<ShopPage />} />
               <Route path="cart" element={<CartPage />} />
               <Route path="admin/orders" element={<AdminOrdersPage />} />
               <Route path="*" element={<NotFoundPage />} />

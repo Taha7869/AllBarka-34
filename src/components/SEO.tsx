@@ -20,7 +20,7 @@ export default function SEO({
 }: SEOProps) {
   const location = useLocation();
   const currentPath = canonicalPath || location.pathname;
-  const siteOrigin = typeof window === 'undefined' ? 'https://allbarka.com' : window.location.origin;
+  const siteOrigin = (typeof window !== 'undefined' && window.location?.origin) ? window.location.origin : 'https://allbarka.com';
   const canonicalUrl = `${siteOrigin}${currentPath.startsWith('/') ? currentPath : `/${currentPath}`}`;
   const fullTitle = title 
     ? `${title} — AllBarka Premium Dry Fruits`
