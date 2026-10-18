@@ -9,7 +9,7 @@ import { CartItem, Product } from '../types';
 
 import ScrollProgressBar from '../components/ScrollProgressBar';
 import GradualBlur from '../components/GradualBlur';
-import BubbleMenu from '../components/BubbleMenu';
+import BubbleMenu, { getPrimaryActiveSectionId } from '../components/BubbleMenu';
 import MobileMenu from '../components/MobileMenu';
 import Footer from '../components/Footer';
 import CartDrawer from '../components/CartDrawer';
@@ -59,18 +59,10 @@ export default function RootLayout() {
 
   const { cartItems, isCartOpen, setIsCartOpen, totalItemsCount, addToCart } = useCart();
 
-  // Derive active navigation state from actual route
+  // Derive active navigation state from actual route & search query
   const activeNavItem = React.useMemo(() => {
-    if (location.pathname === '/') return 'home';
-    if (location.pathname.startsWith('/shop/celebration-boxes')) return 'celebration-boxes';
-    if (location.pathname.startsWith('/shop/deals') || location.pathname.startsWith('/shop/bundles')) return 'deals';
-    if (location.pathname.startsWith('/shop/combos') || location.pathname.startsWith('/gifting')) return 'gifting';
-    if (location.pathname === '/shop/herbs-spices' || location.pathname === '/category/herbs-spices') return 'herbs-spices';
-    if (location.pathname.startsWith('/shop') || location.pathname.startsWith('/product') || location.pathname.startsWith('/category') || location.pathname.startsWith('/wholesale')) return 'shop';
-    if (location.pathname.startsWith('/journal')) return 'journal';
-    if (location.pathname.startsWith('/pages/contact') || location.pathname === '/contact') return 'contact';
-    return 'home';
-  }, [location.pathname]);
+    return getPrimaryActiveSectionId(location.pathname, location.search) || undefined;
+  }, [location.pathname, location.search]);
 
   // Modals state
   const [authModalOpen, setAuthModalOpen] = useState(false);

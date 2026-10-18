@@ -374,3 +374,78 @@ test('10. Deals route resolution and matching returns only curated bundles and d
   assert.ok(!dealIds.includes('saffron-super-negin'), 'Saffron must NOT match deals');
   assert.ok(!dealIds.includes('bid-box-luxury-tin'), 'Standard bid box must NOT match deals');
 });
+
+test('11. Customer-facing category translations exist in EN, UR, and AR without raw keys', async () => {
+  const { catalogTranslations } = await import('../src/contexts/catalogTranslations');
+  const { CANONICAL_CATEGORIES } = await import('../src/config/categories');
+
+  const requiredKeys = [
+    'shop.dry-fruits',
+    'shop.dates',
+    'shop.seeds-snacks',
+    'shop.celebration-boxes',
+    'shop.deals',
+    'shop.gifting',
+    'shop.combos',
+    'shop.nuts',
+    'shop.snacks-seeds',
+    'shop.oils',
+    'shop.essentials',
+    'shop.herbs-spices',
+    'shop.bundles',
+  ];
+
+  for (const lang of ['en', 'ur', 'ar'] as const) {
+    const dict = catalogTranslations[lang];
+    assert.ok(dict, `Translation dictionary for ${lang} must exist`);
+
+    for (const key of requiredKeys) {
+      const val = dict[key];
+      assert.ok(val && typeof val === 'string', `Translation for ${key} in ${lang} must be non-empty string`);
+      assert.ok(!val.startsWith('shop.'), `Translation for ${key} in ${lang} must not be a raw translation key`);
+    }
+
+    // Verify all CANONICAL_CATEGORIES have valid translations in each language
+    for (const catId of Object.keys(CANONICAL_CATEGORIES)) {
+      const catKey = `shop.${catId}`;
+      const val = dict[catKey];
+      assert.ok(val, `Category ${catId} must have translation under ${catKey} in ${lang}`);
+    }
+  }
+});
+
+test('12. Authoritative primary active navigation resolution and single aria-current indicator', async () => {
+  const { getPrimaryActiveSectionId } = await import('../src/components/BubbleMenu');
+
+  // Path & query checks
+  assert.equal(getPrimaryActiveSectionId('/shop', ''), 'shop', '/shop without query must activate shop');
+  assert.equal(getPrimaryActiveSectionId('/shop', '?occasion=wedding'), 'occasions', '/shop?occasion=wedding must activate occasions, not shop');
+  assert.equal(getPrimaryActiveSectionId('/shop', '?occasion=birth'), 'occasions', '/shop?occasion=birth must activate occasions');
+  assert.equal(getPrimaryActiveSectionId('/shop', '?occasion=all'), 'shop', '/shop?occasion=all must activate shop');
+  assert.equal(getPrimaryActiveSectionId('/shop/dry-fruits', ''), 'shop', '/shop/dry-fruits must activate shop in main row');
+  assert.equal(getPrimaryActiveSectionId('/shop/dates', ''), 'shop', '/shop/dates must activate shop in main row');
+  assert.equal(getPrimaryActiveSectionId('/shop/celebration-boxes', ''), 'celebration-boxes', '/shop/celebration-boxes activates celebration-boxes');
+  assert.equal(getPrimaryActiveSectionId('/shop/celebration-boxes', '?occasion=wedding'), 'celebration-boxes', '/shop/celebration-boxes?occasion=wedding activates celebration-boxes');
+  assert.equal(getPrimaryActiveSectionId('/shop/bid-boxes', ''), 'celebration-boxes', '/shop/bid-boxes activates celebration-boxes');
+  assert.equal(getPrimaryActiveSectionId('/gifting', ''), 'gifting', '/gifting activates gifting');
+  assert.equal(getPrimaryActiveSectionId('/shop/combos', ''), 'gifting', '/shop/combos activates gifting');
+  assert.equal(getPrimaryActiveSectionId('/wholesale', ''), 'gifting', '/wholesale activates gifting');
+  assert.equal(getPrimaryActiveSectionId('/shop/deals', ''), 'deals', '/shop/deals activates deals');
+  assert.equal(getPrimaryActiveSectionId('/shop/bundles', ''), 'deals', '/shop/bundles activates deals');
+
+  // Verify BubbleMenu rendered markup: exactly one primary item has aria-current="page" on /shop
+  const shopHtml = render(<BubbleMenu />, 'en', '/shop');
+  assert.match(shopHtml, /id="nav-trigger-shop"[^>]*aria-current="page"/, 'Shop trigger must have aria-current="page" on /shop');
+  assert.doesNotMatch(shopHtml, /id="nav-trigger-occasions"[^>]*aria-current="page"/, 'Occasions must not be active on /shop');
+
+  // On /shop?occasion=wedding: Occasions has aria-current="page", Shop does NOT
+  const occasionHtml = render(<BubbleMenu />, 'en', '/shop?occasion=wedding');
+  assert.match(occasionHtml, /id="nav-trigger-occasions"[^>]*aria-current="page"/, 'Occasions trigger must have aria-current="page" on /shop?occasion=wedding');
+  assert.doesNotMatch(occasionHtml, /id="nav-trigger-shop"[^>]*aria-current="page"/, 'Shop trigger must NOT have aria-current="page" on /shop?occasion=wedding');
+
+  // On /shop/dry-fruits: Shop has aria-current="page" AND compact food row dry-fruits has aria-current="page"
+  const foodHtml = render(<BubbleMenu />, 'en', '/shop/dry-fruits');
+  assert.match(foodHtml, /id="nav-trigger-shop"[^>]*aria-current="page"/, 'Shop must have aria-current="page" on /shop/dry-fruits');
+  assert.match(foodHtml, /data-nav-path="\/shop\/dry-fruits"[^>]*aria-current="page"/, 'Compact food link for dry-fruits must have aria-current="page"');
+});
+

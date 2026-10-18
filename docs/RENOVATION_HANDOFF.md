@@ -1,8 +1,8 @@
-# AllBarka Renovation — Stage 4 Review Packet & Handoff v4.2
+# AllBarka Renovation — Stage 4 Review Packet & Handoff v4.3
 
-**Document Version:** 4.2.0  
+**Document Version:** 4.3.0  
 **Date:** October 18, 2026  
-**Baseline Git Commit:** `2578f9a` -> `feat/renovation-v2`  
+**Baseline Git Commit:** `58183df` -> `feat/renovation-v2`  
 **Active Working Branch:** `feat/renovation-v2` (Tracking `origin/feat/renovation-v2`)  
 **Parent / Production Branch:** `launch` (synced with `origin/launch` and `origin/main`)  
 **Applicable Instructions Read:** `C:\Users\taha\.gemini\antigravity\scratch\AllBarka-34\AGENTS.md` and `C:\Users\taha\.gemini\config\plugins\science\rules\AGENTS.md`  
@@ -10,35 +10,49 @@
 
 ---
 
-## 1. Resolution of Reviewed Gaps
+## 1. Resolution of Reviewed Visible Gaps
 
-### A. Authoritative Occasion Matching
-- **Issue Identified**: `productMatchesOccasion` previously ignored the canonical `product.occasions` array, instead falling back to display badges (`tag_en`), names, and speculative ID heuristics (e.g. `id.includes('ajwa')`, `id.startsWith('combo-')`). This allowed unrelated promotional badges to override eligibility and granted unearned occasion matches to items with empty occasions (`[]`).
+### A. Customer-Facing Category Translations & Safe Display Fallbacks
+- **Issue Identified**: Committed screenshots previously exposed raw translation keys (`shop.dry-fruits`, `shop.dates`, `shop.seeds-snacks`) on category buttons when rendered from `CANONICAL_CATEGORIES`.
 - **Resolution**:
-  - **Strict Precedence for Canonical Occasions**: `productMatchesOccasion` in `src/config/categories.ts` checks `Array.isArray(product.occasions)` first. If present, it strictly matches against `normalizeOccasionSlug(occ)` and ignores badges, names, and IDs. An explicit empty array (`occasions: []`) strictly returns `false` for any specific occasion (returning `true` only for `'all'` or `null`).
-  - **Alias Normalization**: Exported `normalizeOccasionSlug()` supporting aliases for `wedding` (`nikkah`, `shadi`, `baat-pakki`, `mehndi`, `barat`, `walima`), `umrah` (`hajj`, `tabarruk`, `ziyarat`), `birth` (`baby`, `aqeeqah`, `newborn`), `ramadan` (`eid`, `ramzan`, `iftar`), and `corporate` (`executive`, `business`).
-  - **Promotional Badge Disentanglement**: Promotional badges (e.g. `tag_en: 'Premium'`) no longer grant or override occasion eligibility.
-  - **Removal of Speculative Heuristics**: Completely eliminated keyword and ID prefix/contains guesswork (`combo-`, `ajwa`, etc.).
-  - **Documented Legacy Fallback**: Exported `LEGACY_OCCASION_TAG_MAP` used **only** when `product.occasions` is `undefined` or `null`.
-  - **Category + Occasion Intersection**: Category and occasion filters remain a strict logical intersection (`productMatchesCategory && productMatchesOccasion`).
-  - **Admin Save / Reload Integrity**: Verified that updating a product's canonical `occasions` array alters PLP results dynamically upon catalog reload.
+  - **Complete Multilingual Dictionary**: Added complete, verified translations across English (`en`), Urdu (`ur`), and Arabic (`ar`) in `src/contexts/catalogTranslations.ts` for all canonical categories:
+    - `shop.dry-fruits`: "Dry fruits & nuts" / "خشک میوہ جات" / "فواكه مجففة ومكسرات"
+    - `shop.dates`: "Dates" / "کھجوریں" / "تمور"
+    - `shop.seeds-snacks`: "Seeds & snacks" / "بیج اور اسنیکس" / "وجبات خفيفة وبذور"
+    - `shop.celebration-boxes`: "Celebration boxes" / "تقریبات کے ڈبے" / "صناديق الاحتفالات"
+    - `shop.deals`: "Deals & bundles" / "خصوصی ڈیلز" / "عروض خاصة"
+    - `shop.gifting` & `shop.combos`: "Gifts & hampers" / "تحائف اور ہیمپر" / "الهدايا والباقات"
+  - **Safe Display-Name Fallbacks**: Implemented `t('shop.' + id, getCategoryMeta(id)?.name || id)` across all consumer components:
+    - `src/components/CategoryPLP.tsx`: Category filter pills, title `<h1>`, and drawer sheet header.
+    - `src/components/SelectionGuide.tsx`: Category preference choice buttons.
+    - `src/components/CategoryQuickPills.tsx`: Boutique carousel category pills with `item.label` fallback.
+    - `src/components/Footer.tsx`: Footer collection links with `getCategoryMeta` fallback.
+  - **Zero Duplicate Object Keys**: Cleaned duplicate keys across translation blocks ensuring clean compilation without TypeScript `TS1117` diagnostics.
 
-### B. Deals Routing & Consistent Catalog Matching
-- **Issue Identified**: `resolveCategorySlug('deals')` previously resolved to `'gift-boxes'`, preventing `/shop/deals` from reaching the `deals` matching branch and conflating generic gift boxes with promotional deals. Furthermore, `bundles` matching had erroneously matched `isBundle` products belonging to `gift-boxes` (`deal-1` and `deal-2`).
+### B. Single Authoritative Primary Active Navigation State
+- **Issue Identified**: On `/shop`, both Shop and Occasions were highlighted because `isMainItemActive` stripped query parameters from occasion dropdown links (`sub.path.split('?')[0] === '/shop'`).
 - **Resolution**:
-  - `resolveCategorySlug('deals')` resolves strictly to `'deals'`.
-  - Removed `deals: 'gift-boxes'` from `CATEGORY_ALIASES`.
-  - Disentangled `bundles` vs. `deals` in `productMatchesCategory`:
-    - `target === 'bundles'`: strictly matches products with `product.category === 'bundles'` (the 13 curated bundles).
-    - `target === 'deals'`: matches `category === 'bundles' || category === 'deals' || id === 'deal-1' || id === 'deal-2' || collections.includes('deals')` (the 15 curated bundle & deal offerings).
-    - Arbitrary nuts (`pista`), dates (`ajwa-dates`), oils (`cold-pressed-mustard-oil`), and spices are strictly excluded from `/shop/deals`. Zero fictional discounts or unverified tiers are displayed.
+  - **Authoritative Resolution Function**: Implemented `getPrimaryActiveSectionId(pathname, search, activeItem)` in `src/components/BubbleMenu.tsx` and reused it in `src/layouts/RootLayout.tsx`:
+    - `/shop` (without occasion query) -> resolves strictly to `'shop'`.
+    - `/shop?occasion=wedding` (or any valid occasion query) -> resolves strictly to `'occasions'`.
+    - `/shop/celebration-boxes` (even with `?occasion=...`) or `/shop/bid-boxes` -> resolves to `'celebration-boxes'`.
+    - `/shop/deals` or `/shop/bundles` -> resolves to `'deals'`.
+    - `/gifting`, `/shop/combos`, `/shop/gift-boxes`, `/wholesale` -> resolves to `'gifting'`.
+    - `/shop/dry-fruits`, `/shop/dates`, etc. -> resolves to `'shop'` in Level 1 while activating the specific food indicator in Level 2.
+  - **Visual & ARIA Styling Separation**:
+    - **Current Page**: Receives `aria-current="page"`, active gold border (`border-[#C7982F]/40`), gold background (`bg-[#C7982F]/15 dark:bg-[#C7982F]/25`), and text shadow.
+    - **Open Disclosure (Not Current Page)**: Receives open disclosure styling (`bg-[#C7982F]/10 dark:bg-[#C7982F]/15`) without active border or shadow, and strictly does **not** receive `aria-current="page"`.
+    - **Resting / Hover**: Clean hover styles (`hover:bg-[#C7982F]/10 hover:text-[#042821]`).
+  - **Level 2 Compact Food Row**: Verified that `/shop/dry-fruits` and `/shop/dates` highlight the corresponding compact food link with an underline indicator and `aria-current="page"`.
 
-### C. Dropdown Focus, Viewport & Mobile Behavior
-- **Focus-Aware Mouse-Leave Delay**: `scheduleCloseDelay` verifies whether keyboard focus remains inside the disclosure container (`navContainerRef.current?.contains(document.activeElement)`). If focus remains inside, disclosure dismissal is withheld.
-- **Focus Transition Between Groups**: Moving keyboard focus to another trigger button immediately dismisses any open disclosure from a sibling group.
-- **Route-Change Dismissal**: Immediate cleanup timer and disclosure dismissal upon route changes (`location.pathname`, `location.search`).
-- **Bounded Viewport Height & Internal Scrolling**: Added bounded viewport height (`min(420px, calc(100vh - 140px))`) with `overflow-y-auto overscroll-contain`.
-- **Semantic Mobile Navigation**: Converted mobile destination items, compact food categories, and `/journal` to semantic `<Link>` anchors (`<a data-nav-path="...">`). Retained `<button>` for disclosures and action triggers.
+### C. Strengthened Internal-Scroll Browser Assertion
+- **Issue Identified**: Previous test ran in an 800px high viewport where `maxHeight` was 420px, rendering all dropdown items without overflow (`panel.scrollHeight === panel.clientHeight`), meaning `scrollTop` was always 0.
+- **Resolution**:
+  - **Short Viewport Test**: Emulates a 380px high viewport (`maxHeight: min(420px, calc(100vh - 140px)) = 240px`).
+  - **Overflow Verification**: Verifies `preScrollMetrics.hasOverflow === true` (`scrollHeight: 317px > clientHeight: 238px`) and `lastLinkClipped === true` before scroll.
+  - **Scroll Verification**: Calls `lastLink.scrollIntoView({ block: 'nearest' })` and verifies `scrollTop` increases (`0 -> 71px`).
+  - **Bounding Box Containment**: Verifies the last link's bounding box is inside the panel's visible client area (`isInsideVisibleArea === true`).
+  - **Interactive Activation**: Clicks the last link (`/gifting`) and verifies that route changes to `/gifting` and the disclosure closes.
 
 ---
 
@@ -48,16 +62,12 @@ All test suites, TypeScript compilation, React hook linter, production build, an
 
 | Suite / Check | Command | Actual Output / Result | Exit Code | Evaluation & Coverage Notes |
 | :--- | :--- | :--- | :---: | :--- |
-| **Real Browser CDP Interaction Tests** | `node scripts/test-active-navigation.mjs` | **27 passed, 0 failed** (17.2s) | `0` | **VERIFIED:** Real headless Chrome CDP execution testing: (1) Two-level header presence (Height 127px); (2) Main row triggers (5); (3) Compact food row (6 items); (4) Dropdown hover open; (5) Slow diagonal pointer bridge transit; (6) Cursor inside panel stability beyond 220ms delay (350ms elapsed); (7) Internal scrolling reaches last link in panel; (8) Viewport clipping checks; (9) Outside click dismissal; (10) Space key open; (11) Space key close toggle; (12) Tab key into panel items; (13) Mouse leave focus retention (>220ms); (14) Focus transition between disclosure groups; (15) Escape closes & restores focus; (16) Short viewport height bounding (Height: 260px, MaxHeight: 260px, Fits: true); (17) `/shop/dry-fruits` renders nuts products (`pista`, `badam`); (18) `/shop/celebration-boxes` dropdown navigation closes menu; (19) `/shop/dates` renders 5 date products; (20) Occasion filter `/shop/celebration-boxes?occasion=wedding` shows 6 wedding boxes, excludes Umrah box, displays chip; (21) `/shop/deals` route renders curated deals & bundles and excludes arbitrary catalog items; (22) Urdu switches `dir="rtl"`; (23) Arabic switches `dir="rtl"` with Arabic text; (24) Dark mode toggle (`documentElement` class `dark`); (25) Mobile menu opens via real touch tap; (26) Mobile accordion expands on touch (Corporate & Bulk under Gifting); (27) Mobile touch navigation routes to `/wholesale` and closes drawer. |
-| **Stage 4 Navigation Unit Tests** | `node --import tsx --test --test-isolation=none tests/stage4-navigation.test.tsx` | **10 passed, 0 failed** (47.0s) | `0` | **VERIFIED:** Taxonomy matching, BubbleMenu disclosure ARIA attributes, MobileMenu anchors & buttons, dark mode / RTL layout, destination aliases, `productMatchesCategory` (22 nuts, 13 snacks, 8 celebration boxes, 5 dates), `productMatchesOccasion` (6 wedding, 1 umrah, 1 birth), authoritative occasion overrides & `[]` non-eligibility, admin save/reload PLP reactivity, and `/shop/deals` product curation. |
-| **Catalog Filter Draft Tests** | `node --import tsx --test --test-isolation=none tests/catalog-filter-draft.test.ts` | **6 passed, 0 failed** (204ms) | `0` | **VERIFIED:** Staged edits, apply commits, reset isolation, shared selection handling, catalogue preview matches committed results, multilingual labels. |
-| **Catalog Expansion Regression** | `node --import tsx --test --test-isolation=none tests/catalog-expansion.test.ts` | **8 passed, 0 failed** (200ms) | `0` | **VERIFIED:** 97 unique products (32 original + 57 new + 8 Bid Boxes); canonical category counts intact; photos, portions, weights preserved. |
-| **Catalog Categories Regression** | `node --import tsx --test --test-isolation=none tests/catalog-categories.test.tsx` | **6 passed, 0 failed** (46.5s) | `0` | **VERIFIED:** Canonical categories, gift/deal aliases, multilingual labels, discovery filtering, and corporate gifting constraints intact. |
-| **Stage 3 Pricing & MOQ Suite** | `node --import tsx --test --test-isolation=none tests/stage3-pricing-moq.test.ts` | **19 passed, 0 failed** (48.2s) | `0` | **VERIFIED:** Rule D1 packaging MOQ formula, admin variant overrides, food exemptions, single canonical price source, zero invented tiers, 5% reference markup idempotency, unpriced inquiry rendering. |
-| **Stage 2 Catalog CRUD Suite** | `node --import tsx --test --test-isolation=none tests/stage2-catalog-crud.test.ts` | **25 passed, 0 failed** (1.6s) | `0` | **VERIFIED:** Product lifecycle, draft invisibility, price editor saves, merchandising concurrency protection, migration precedence, journal persistence, rollback conflict protection, and crash recovery. |
+| **Real Browser CDP Interaction Tests** | `node scripts/test-active-navigation.mjs` | **33 passed, 0 failed** (19.8s) | `0` | **VERIFIED:** Real headless Chrome CDP execution: (1) Two-level header presence (Height 127px); (2) Main row triggers (5); (3) Compact food row (6 items); (4) Dropdown hover open; (5) Slow diagonal pointer bridge transit; (6) Cursor inside panel stability beyond 220ms delay (350ms elapsed); (7) Viewport clipping checks at 1280x800; (8) Short viewport forces dropdown internal overflow (`scrollHeight: 317px > clientHeight: 238px`); (9) Dropdown internal scroll increases `scrollTop` (0 -> 71px) and places last link inside visible bounding box; (10) Activating last link navigates to `/gifting` and closes panel; (11) Outside click dismissal; (12) Space key open; (13) Space key close toggle; (14) Tab key into panel items; (15) Mouse leave focus retention (>220ms); (16) Focus transition between disclosure groups; (17) Escape closes & restores focus; (18) Short viewport height bounding; (19) `/shop/dry-fruits` renders nuts products (`pista`, `badam`); (20) `/shop/celebration-boxes` dropdown navigation closes menu; (21) `/shop/dates` renders 5 date products; (22) Occasion filter `/shop/celebration-boxes?occasion=wedding` shows 6 wedding boxes, excludes Umrah box; (23) `/shop/deals` route renders curated deals & bundles and excludes arbitrary catalog items; (24) On `/shop`, Shop is active and Occasions is NOT active; (25) On `/shop?occasion=wedding`, Occasions is active and Shop is NOT active; (26) On `/shop/dry-fruits`, main Shop trigger and compact food link are both active; (27) Visible category navigation buttons display readable translations with zero raw keys; (28) Urdu switches `dir="rtl"`; (29) Arabic switches `dir="rtl"` with Arabic text; (30) Dark mode toggle (`documentElement` class `dark`); (31) Mobile menu opens via real touch tap; (32) Mobile accordion expands on touch (Corporate & Bulk under Gifting); (33) Mobile touch navigation routes to `/wholesale` and closes drawer. |
+| **Stage 4 Navigation Unit Tests** | `node --import tsx --test --test-isolation=none tests/stage4-navigation.test.tsx` | **12 passed, 0 failed** (45.3s) | `0` | **VERIFIED:** Header taxonomy, disclosure button ARIA attributes, mobile accordion, dark mode / RTL layout, destination aliases, `productMatchesCategory` (22 nuts, 13 snacks, 8 celebration boxes, 5 dates), `productMatchesOccasion` (6 wedding, 1 umrah, 1 birth), authoritative occasion overrides & `[]` non-eligibility, admin save/reload PLP reactivity, deals curation, multilingual category translations without raw keys, and authoritative primary active section resolution. |
+| **Catalog Categories Regression** | `node --import tsx --test --test-isolation=none tests/catalog-categories.test.tsx` | **6 passed, 0 failed** (45.4s) | `0` | **VERIFIED:** Canonical categories, gift/deal aliases, multilingual labels, discovery filtering, and corporate gifting constraints intact. |
 | **TypeScript Typecheck** | `npm run typecheck` (`tsc --noEmit`) | `allbarka@0.0.0 typecheck` (zero diagnostics) | `0` | **VERIFIED:** 100% type safety across the entire repository. |
 | **React Hook Linter** | `npm run lint:hooks` (`eslint src`) | `allbarka@0.0.0 lint:hooks` (zero warnings, zero errors) | `0` | **VERIFIED:** All hook dependency arrays and rules satisfied. |
-| **Production Build Pipeline** | `npm run build` | Full pipeline: Vite v6.4.3 client bundle (8.96s) + esbuild server.cjs (870.3kb) + Release privacy audit (83 text artifacts clean). | `0` | **VERIFIED:** Production assets and server bundle built cleanly. |
+| **Production Build Pipeline** | `npm run build` | Full pipeline: Vite v6.4.3 client bundle (9.23s) + esbuild server.cjs (870.3kb) + Release privacy audit (83 text artifacts clean). | `0` | **VERIFIED:** Production assets and server bundle built cleanly. |
 
 ---
 
@@ -67,33 +77,59 @@ Real headless Chrome CDP interaction tests produced the following visual artifac
 
 | Screenshot Artifact | Repository Path | Description & Verified Visual Criteria |
 | :--- | :--- | :--- |
-| **`stage4_desktop_dropdown.png`** | `docs/artifacts/stage4_desktop_dropdown.png` | Desktop two-level header with Shop dropdown open. Continuous pointer bridge active, zero clipping, correct luxury cream palette, dark green accent, search icon, custom hamper button, and theme toggle. |
-| **`stage4_desktop_light.png`** | `docs/artifacts/stage4_desktop_light.png` | Desktop header in light mode with "GIFTS & HAMPERS" having keyboard focus ring outline immediately after Escape key restored focus from closed panel. |
-| **`stage4_desktop_rtl.png`** | `docs/artifacts/stage4_desktop_rtl.png` | Desktop header under Urdu locale (`ur`). Header root set to `dir="rtl"`, mirrored layout (logo on right, utility controls on left, mirrored navigation order `شاپ`, `تحائف اور ہیمپر`, `تقریبات کے ڈبے`, `مواقع و تقریبات`, `خصوصی ڈیلز`), and active gold indicator under `کھجوریں` (`/shop/dates`). |
-| **`stage4_desktop_dark.png`** | `docs/artifacts/stage4_desktop_dark.png` | Desktop header under Dark theme. High contrast luxury dark styling (`#1A201E`), gold borders, crisp typography. |
+| **`stage4_desktop_dropdown.png`** | `docs/artifacts/stage4_desktop_dropdown.png` | Desktop two-level header with Shop dropdown open. Continuous pointer bridge active, zero clipping, correct luxury cream palette, dark green accent, search icon, custom hamper button, and theme toggle. Category buttons below hero display human-readable labels ("All selections", "Dry fruits & nuts", "Dates", "Seeds & snacks", "Cold-pressed oils", "Desi essentials", "Snacks & seeds", "Gift boxes"). |
+| **`stage4_desktop_light.png`** | `docs/artifacts/stage4_desktop_light.png` | Desktop header in light mode with "GIFTS & HAMPERS" having keyboard focus ring outline immediately after Escape key restored focus from closed panel. Only Shop has the solid active page indicator. |
+| **`stage4_desktop_rtl.png`** | `docs/artifacts/stage4_desktop_rtl.png` | Desktop header under Urdu locale (`ur`). Header root set to `dir="rtl"`, mirrored layout (logo on right, utility controls on left, mirrored navigation order `شاپ`, `تحائف اور ہیمپر`, `تقریبات کے ڈبے`, `مواقع و تقریبات`, `خصوصی ڈیلز`), and active gold indicator under `کھجوریں` (`/shop/dates`). All category buttons display readable Urdu translations (`تمام مصنوعات`, `خشک میوہ جات`, `کھجوریں`, `بیج اور اسنیکس`, `کولڈ پریسڈ تیل`, `دیسی ضروریات`, `نمکین اور بیج`, `تحفے کے ڈبے`, `تقریبات کے ڈبے`). |
+| **`stage4_desktop_dark.png`** | `docs/artifacts/stage4_desktop_dark.png` | Desktop header under Dark theme. High contrast luxury dark styling (`#1A201E`), gold borders, crisp typography, Shop active indicator, and `Dry Fruits & Nuts` active food indicator. |
 | **`stage4_mobile_drawer.png`** | `docs/artifacts/stage4_mobile_drawer.png` | Mobile viewport (390x844). Slide-out navigation drawer with Patron lounge, Shopping bag, Language switcher, Theme buttons, and "OUR COLLECTIONS" accessible accordion with "GIFTS & HAMPERS" expanded showing Corporate & Bulk Gifting. |
 
 ---
 
-## 4. Outstanding Release Gates & Limitations
+## 4. Stage 5 Dependencies & Zero Dead Links
 
-1. **Firestore Emulator**:
-   - **Status**: **BLOCKED (Offline / Not installed in local workspace)**.
-   - **Release Policy**: Production readiness is **NOT** claimed for live cloud Firestore mutations. Zero production database writes, zero live deployments, and zero merges to `launch` or `main` have occurred. All data model integrity and transaction ordering guarantees remain verified through shared in-memory transaction test mocks.
-2. **Stage 5 Dependencies**:
-   - Navigation links to `/shop/celebration-boxes`, `/wholesale`, and `/shop/deals` currently mount through existing category routing with canonical aliases (`gift-boxes`, `/wholesale`). Dedicated Stage 5 pages (`CelebrationBoxesPage.tsx`, `DealsPage.tsx`, `OccasionPage.tsx`) will be introduced in Stage 5 without breaking existing URLs or product links.
+All 24 navigation destination paths in `MAIN_NAV_ITEMS` and `COMPACT_FOOD_NAV_ITEMS` are active, valid, and verified in real browser navigation without 404s:
+- `/shop`: Shop PLP
+- `/shop/dry-fruits`, `/shop/dates`, `/shop/seeds-snacks`, `/shop/oils`, `/shop/essentials`, `/shop/herbs-spices`: Canonical Category PLPs
+- `/gifting`: Gifting page & hamper introduction
+- `/shop/combos`: Curated luxury combos
+- `/gifting#builder`: Opens interactive Custom Hamper Builder
+- `/wholesale`: Corporate & Bulk Gifting enquiry and wholesale tier structure
+- `/shop/celebration-boxes`: All bespoke celebration boxes & packaging
+- `/shop/celebration-boxes?occasion=wedding`: Nikkah & Wedding favors
+- `/shop/celebration-boxes?occasion=umrah`: Umrah & Hajj tabarruk boxes
+- `/shop/celebration-boxes?occasion=birth`: Birth & Aqeeqah announcement favor boxes
+- `/shop/celebration-boxes#custom`: Triggers Custom Quote modal
+- `/shop?occasion=wedding`, `...=umrah`, `...=ramadan`, `...=birth`: Occasion-filtered catalog collections
+- `/shop/deals`: AllBarka Value Packages & Deals
+- `/shop/bundles`: Curated Bundles
+
+### Stage 5 Roadmap & Future Dependencies:
+1. **Dedicated Collection Page Templates**:
+   - `CelebrationBoxesPage.tsx`: Dedicated celebration favor catalog page with custom packaging options and filled vs. empty box toggle.
+   - `DealsPage.tsx`: Dedicated bundle builder and seasonal special promotion view.
+   - `OccasionLandingPage.tsx`: Editorial gift curation for Nikkah, Umrah, Ramadan, and Birth celebrations.
+   - *Current Implementation*: Currently routes through `CategoryPLP.tsx` with canonical resolution and occasion filtering without introducing dead links.
+2. **Product Detail Page (PDP) & Packaging Visualizer**:
+   - High-fidelity 3D / multi-angle presentation for bespoke tins, acrylic chests, and favor boxes.
+   - Per-variant MOQ validation with tier pricing quotes.
+3. **Firestore Emulator Release Gate**:
+   - Emulator verification remains an outstanding release gate before live production database writes or deployment.
 
 ---
 
 ## 5. Changed Files Summary
 
-- `src/config/categories.ts`: Authoritative `productMatchesOccasion` (canonical `occasions` array precedence, `[]` non-matching, `normalizeOccasionSlug`, `LEGACY_OCCASION_TAG_MAP`), `productMatchesCategory` (disentangled `bundles` vs `deals`), `resolveCategorySlug` (resolves `deals`), `CANONICAL_CATEGORIES` (canonical `deals` entry).
-- `src/data/products.ts`: Added `occasions?: string[]` to `BidBoxDefinition` and populated canonical `occasions` array in `createBidBoxProduct`.
-- `tests/stage4-navigation.test.tsx`: Added regression tests 8, 9, 10 for authoritative occasions, category+occasion intersection, admin save/reload reactivity, and deals curation; updated test 5 for `resolveCategorySlug('deals') === 'deals'`.
-- `tests/catalog-categories.test.tsx`: Updated `resolveCategorySlug('deals')` assertion to `'deals'`.
-- `scripts/test-active-navigation.mjs`: Added dual artifact saving to `docs/artifacts/`, pointer transit wait beyond 220ms (350ms elapsed), internal scrolling test reaching last link, and live browser `/shop/deals` route navigation and matching test.
-- `docs/artifacts/*`: Generated 5 real browser screenshots.
-- `docs/RENOVATION_HANDOFF.md`: Updated handoff documentation to v4.2.0.
+- `src/contexts/catalogTranslations.ts`: Added complete translations for `dry-fruits`, `dates`, `seeds-snacks`, `celebration-boxes`, `deals`, `gifting`, and `combos` across `en`, `ur`, and `ar`. Removed duplicate keys.
+- `src/components/CategoryPLP.tsx`: Added `getCategoryMeta(id)?.name || id` fallback to category filter buttons and headers.
+- `src/components/SelectionGuide.tsx`: Added `getCategoryMeta(id)?.name || id` fallback to collection choice buttons.
+- `src/components/CategoryQuickPills.tsx`: Added `item.label` fallback to `t('shop.' + item.id)`.
+- `src/components/Footer.tsx`: Added `getCategoryMeta` fallback to collection links.
+- `src/components/BubbleMenu.tsx`: Exported `getPrimaryActiveSectionId()`, separated active styling (`aria-current="page"`) from open disclosure styling, and added `aria-current` to compact food links.
+- `src/layouts/RootLayout.tsx`: Updated `activeNavItem` calculation to use `getPrimaryActiveSectionId(location.pathname, location.search)`.
+- `tests/stage4-navigation.test.tsx`: Added Test 11 (multilingual category translations without raw keys) and Test 12 (authoritative primary active navigation resolution and single `aria-current="page"` indicator).
+- `scripts/test-active-navigation.mjs`: Added short-viewport (380px) internal scroll test verifying `hasOverflow`, `scrollTop > 0`, bounding box containment, and activation navigation; added active section checks for `/shop`, `/shop?occasion=wedding`, and `/shop/dry-fruits`; added category button translation checks.
+- `docs/artifacts/*`: Updated all 5 real browser screenshots.
+- `docs/RENOVATION_HANDOFF.md`: Updated handoff documentation to v4.3.0.
 
 ---
 
@@ -104,4 +140,3 @@ Real headless Chrome CDP interaction tests produced the following visual artifac
 - **DO NOT** merge `feat/renovation-v2` into `launch` or `main`.
 - **DO NOT** deploy to production or write live database records.
 - Awaiting explicit user review and authorization.
-

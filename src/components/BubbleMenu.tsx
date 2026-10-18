@@ -20,6 +20,64 @@ export interface BubbleMenuProps {
   showFoodRow?: boolean;
 }
 
+/**
+ * Resolves a single authoritative primary active section for main navigation.
+ * Precedence:
+ * 1. Explicit activeItem override prop
+ * 2. Celebration boxes (/shop/celebration-boxes, /shop/bid-boxes)
+ * 3. Deals (/shop/deals, /shop/bundles)
+ * 4. Gifting (/gifting, /shop/combos, /shop/gift-boxes, /wholesale)
+ * 5. Occasions (when an occasion query parameter is present on /shop or category PLP)
+ * 6. Shop (general /shop, food category routes, or canonical /category/*)
+ */
+export function getPrimaryActiveSectionId(
+  pathname: string,
+  search: string,
+  activeItem?: string
+): string | null {
+  if (activeItem) {
+    const normalized = activeItem.toLowerCase().trim();
+    if (normalized === 'shop' || normalized === 'all') return 'shop';
+    if (normalized === 'gifting' || normalized === 'gifts & hampers') return 'gifting';
+    if (normalized === 'celebration-boxes' || normalized === 'celebration boxes') return 'celebration-boxes';
+    if (normalized === 'occasions') return 'occasions';
+    if (normalized === 'deals') return 'deals';
+  }
+
+  const searchParams = new URLSearchParams(search);
+  const occasion = searchParams.get('occasion');
+
+  // Specific commercial / feature sections take precedence
+  if (pathname.startsWith('/shop/celebration-boxes') || pathname.startsWith('/shop/bid-boxes')) {
+    return 'celebration-boxes';
+  }
+
+  if (pathname.startsWith('/shop/deals') || pathname.startsWith('/shop/bundles')) {
+    return 'deals';
+  }
+
+  if (
+    pathname.startsWith('/gifting') ||
+    pathname.startsWith('/shop/combos') ||
+    pathname.startsWith('/shop/gift-boxes') ||
+    pathname.startsWith('/wholesale')
+  ) {
+    return 'gifting';
+  }
+
+  // Occasions filtering on /shop or category PLP:
+  if (occasion && occasion !== 'all') {
+    return 'occasions';
+  }
+
+  // Food categories and general /shop
+  if (pathname === '/shop' || pathname.startsWith('/shop/') || pathname.startsWith('/category/')) {
+    return 'shop';
+  }
+
+  return null;
+}
+
 export default function BubbleMenu({
   items,
   activeItem,
@@ -117,19 +175,23 @@ export default function BubbleMenu({
 
   // Resolve active path / item
   const currentPath = location.pathname;
+  const primaryActiveId = getPrimaryActiveSectionId(location.pathname, location.search, activeItem);
 
   const isMainItemActive = (item: NavItem): boolean => {
-    if (activeItem && (activeItem.toLowerCase() === item.id.toLowerCase() || activeItem === item.defaultLabel)) {
-      return true;
-    }
-    if (item.path === '/shop' && currentPath === '/shop') return true;
-    if (item.path !== '/shop' && currentPath.startsWith(item.path)) return true;
-    if (item.dropdownItems?.some((sub) => sub.path.split('?')[0] === currentPath)) return true;
-    return false;
+    return primaryActiveId === item.id;
   };
 
   const isFoodItemActive = (item: FoodCategoryItem): boolean => {
-    return currentPath === item.path || currentPath === `/category/${item.slug}`;
+    if (currentPath === item.path || currentPath === `/category/${item.slug}`) {
+      return true;
+    }
+    if (item.id === 'dry-fruits' && (currentPath === '/shop/nuts' || currentPath === '/category/nuts')) {
+      return true;
+    }
+    if (item.id === 'seeds-snacks' && (currentPath === '/shop/snacks-seeds' || currentPath === '/category/snacks-seeds')) {
+      return true;
+    }
+    return false;
   };
 
   // Execute sub-item custom action if defined
@@ -194,6 +256,7 @@ export default function BubbleMenu({
                   type="button"
                   aria-haspopup="true"
                   aria-expanded={isOpen}
+                  aria-current={isActive ? 'page' : undefined}
                   aria-controls={`nav-dropdown-panel-${item.id}`}
                   data-nav-path={item.path}
                   onFocus={() => {
@@ -210,6 +273,8 @@ export default function BubbleMenu({
                   className={`focus-ring group relative z-10 flex cursor-pointer items-center gap-1 rounded-full px-3.5 py-1.5 font-sans text-[11px] font-semibold tracking-[0.06em] outline-none transition-all duration-200 ${
                     isActive
                       ? 'border border-[#C7982F]/40 bg-[#C7982F]/15 text-[#042821] shadow-xs dark:bg-[#C7982F]/25 dark:text-[#FFFCF7]'
+                      : isOpen
+                      ? 'bg-[#C7982F]/10 text-[#042821] dark:bg-[#C7982F]/15 dark:text-[#FFFCF7]'
                       : 'text-[#29231D]/80 hover:bg-[#C7982F]/10 hover:text-[#042821] dark:text-[#F6F1EA]/80 dark:hover:bg-[#C7982F]/15 dark:hover:text-[#FFFCF7]'
                   }`}
                 >
@@ -226,6 +291,7 @@ export default function BubbleMenu({
                 <Link
                   to={item.path}
                   data-nav-path={item.path}
+                  aria-current={isActive ? 'page' : undefined}
                   onFocus={() => {
                     cancelCloseDelay();
                     if (openId) setOpenId(null);
@@ -324,6 +390,7 @@ export default function BubbleMenu({
                 <Link
                   to={food.path}
                   data-nav-path={food.path}
+                  aria-current={isFoodActive ? 'page' : undefined}
                   className={`focus-ring transition-colors duration-150 py-0.5 cursor-pointer ${
                     isFoodActive
                       ? 'border-b-2 border-[#C7982F] font-bold text-[#806326] dark:text-[#E4C783]'

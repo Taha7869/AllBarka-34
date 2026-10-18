@@ -217,36 +217,125 @@ async function main() {
     const openInsidePanel = await evaluate(`document.getElementById('nav-dropdown-panel-shop') !== null`);
     logTest('Dropdown remains open while cursor inside panel beyond 220ms delay (350ms elapsed)', openInsidePanel);
 
-    // Exercise actual internal scrolling reaching the last link
-    const scrollTest = await evaluate(`(() => {
-      const panel = document.getElementById('nav-dropdown-panel-shop');
-      if (!panel) return { success: false, reason: 'panel not found' };
-      const links = Array.from(panel.querySelectorAll('a'));
-      const lastLink = links[links.length - 1];
-      if (!lastLink) return { success: false, reason: 'no links in panel' };
-      lastLink.scrollIntoView();
-      return {
-        success: true,
-        scrollTop: panel.scrollTop,
-        lastLinkText: lastLink.textContent?.trim(),
-        lastLinkPath: lastLink.getAttribute('data-nav-path') || lastLink.getAttribute('href'),
-      };
-    })()`);
-    logTest('Internal scrolling operates inside dropdown panel and reaches last link', scrollTest.success, `Last link: ${scrollTest.lastLinkText} (${scrollTest.lastLinkPath}), scrollTop: ${scrollTest.scrollTop}`);
-
-    // TEST 3: Dropdown panel doesn't overflow viewport
+    // TEST 3: Dropdown panel doesn't overflow viewport at standard 1280x800 desktop
     const viewportCheck = await evaluate(`(() => {
       const panel = document.getElementById('nav-dropdown-panel-shop');
       if (!panel) return false;
       const r = panel.getBoundingClientRect();
       return r.left >= 0 && r.right <= window.innerWidth && r.bottom <= window.innerHeight;
     })()`);
-    logTest('Dropdown panel fits within viewport without clipping', viewportCheck);
+    logTest('Dropdown panel fits within viewport without clipping at 1280x800', viewportCheck);
 
-    // Capture screenshot with dropdown open
+    // Capture screenshot with dropdown open in desktop light mode
     await captureScreenshot('stage4_desktop_dropdown.png');
 
+    // TEST 3b: STRENGTHENED INTERNAL-SCROLL ASSERTION IN SHORT VIEWPORT WHERE OVERFLOW EXISTS
+    // Switch to short viewport height (380px) so maxHeight (calc(100vh - 140px) = 240px) forces internal scrolling
+    await send('Emulation.setDeviceMetricsOverride', {
+      width: 1280,
+      height: 380,
+      deviceScaleFactor: 1,
+      mobile: false,
+    });
+    await new Promise((r) => setTimeout(r, 120));
+
+    // Ensure shop dropdown is open in this short viewport
+    await evaluate(`(() => {
+      if (!document.getElementById('nav-dropdown-panel-shop')) {
+        document.getElementById('nav-trigger-shop')?.click();
+      }
+    })()`);
+    await new Promise((r) => setTimeout(r, 120));
+
+    // 1. Measure initial pre-scroll metrics: verify overflow actually exists
+    const preScrollMetrics = await evaluate(`(() => {
+      const panel = document.getElementById('nav-dropdown-panel-shop');
+      if (!panel) return { found: false };
+      const links = Array.from(panel.querySelectorAll('a'));
+      const lastLink = links[links.length - 1];
+      const panelRect = panel.getBoundingClientRect();
+      const lastRect = lastLink ? lastLink.getBoundingClientRect() : null;
+      return {
+        found: true,
+        scrollHeight: panel.scrollHeight,
+        clientHeight: panel.clientHeight,
+        hasOverflow: panel.scrollHeight > panel.clientHeight,
+        scrollTopBefore: panel.scrollTop,
+        lastLinkClipped: lastRect ? lastRect.bottom > panelRect.bottom : false,
+      };
+    })()`);
+
+    logTest(
+      'Short viewport forces dropdown internal overflow (scrollHeight > clientHeight)',
+      preScrollMetrics.found && preScrollMetrics.hasOverflow && preScrollMetrics.lastLinkClipped,
+      `scrollHeight: ${preScrollMetrics.scrollHeight}px, clientHeight: ${preScrollMetrics.clientHeight}px, lastLinkClipped: ${preScrollMetrics.lastLinkClipped}`,
+    );
+
+    // 2. Perform internal scroll targeting the last link and verify scrollTop increases and link is within visible bounds
+    const postScrollMetrics = await evaluate(`(() => {
+      const panel = document.getElementById('nav-dropdown-panel-shop');
+      if (!panel) return { found: false };
+      const links = Array.from(panel.querySelectorAll('a'));
+      const lastLink = links[links.length - 1];
+      if (!lastLink) return { found: false };
+      lastLink.scrollIntoView({ block: 'nearest' });
+      const panelRect = panel.getBoundingClientRect();
+      const lastRect = lastLink.getBoundingClientRect();
+      const isInsideVisibleArea = lastRect.top >= panelRect.top && lastRect.bottom <= panelRect.bottom + 2;
+      return {
+        found: true,
+        scrollTopAfter: panel.scrollTop,
+        isInsideVisibleArea,
+        lastLinkPath: lastLink.getAttribute('data-nav-path') || lastLink.getAttribute('href'),
+        lastLinkText: lastLink.textContent?.trim(),
+      };
+    })()`);
+
+    const scrollAssertionPassed =
+      preScrollMetrics.hasOverflow &&
+      postScrollMetrics.scrollTopAfter > 0 &&
+      postScrollMetrics.isInsideVisibleArea;
+
+    logTest(
+      'Dropdown internal scroll increases scrollTop and places last link inside visible bounding box',
+      scrollAssertionPassed,
+      `scrollTop: ${preScrollMetrics.scrollTopBefore} -> ${postScrollMetrics.scrollTopAfter}px, insideVisible: ${postScrollMetrics.isInsideVisibleArea}, link: ${postScrollMetrics.lastLinkText}`,
+    );
+
+    // 3. Activate the last link inside the scrolled panel to verify it can be activated and triggers navigation
+    await evaluate(`(() => {
+      const panel = document.getElementById('nav-dropdown-panel-shop');
+      const links = Array.from(panel?.querySelectorAll('a') || []);
+      const lastLink = links[links.length - 1];
+      lastLink?.click();
+    })()`);
+    await new Promise((r) => setTimeout(r, 600));
+
+    const activationCheck = await evaluate(`(() => {
+      const panelClosed = document.getElementById('nav-dropdown-panel-shop') === null;
+      const onGifting = window.location.pathname === '/gifting';
+      return { panelClosed, onGifting };
+    })()`);
+
+    logTest(
+      'Activating last link in scrolled dropdown navigates and closes panel',
+      activationCheck.panelClosed && activationCheck.onGifting,
+      `Navigated to: ${activationCheck.onGifting ? '/gifting' : window.location.pathname}, Panel closed: ${activationCheck.panelClosed}`,
+    );
+
+    // Restore desktop height to 800px and navigate back to /shop
+    await send('Emulation.setDeviceMetricsOverride', {
+      width: 1280,
+      height: 800,
+      deviceScaleFactor: 1,
+      mobile: false,
+    });
+    await send('Page.navigate', { url: `http://localhost:${port}/shop` });
+    await new Promise((r) => setTimeout(r, 600));
+
     // TEST 4: Outside click dismissal
+    await evaluate(`document.getElementById('nav-trigger-shop')?.click()`);
+    await new Promise((r) => setTimeout(r, 120));
     await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: 10, y: 300, button: 'left', clickCount: 1 });
     await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: 10, y: 300, button: 'left', clickCount: 1 });
     await new Promise((r) => setTimeout(r, 100));
@@ -490,6 +579,81 @@ async function main() {
       'Deals route /shop/deals renders curated deals & bundles and excludes arbitrary catalog items',
       dealsCheck.path === '/shop/deals' && dealsCheck.hasDealsOrBundles && !dealsCheck.hasArbitraryNuts && !dealsCheck.hasArbitraryDates,
       `Articles: ${dealsCheck.articleCount}, Distinct: ${dealsCheck.distinctCount}, hasDealsOrBundles: ${dealsCheck.hasDealsOrBundles}, hasArbitraryNuts: ${dealsCheck.hasArbitraryNuts}`,
+    );
+
+    // TEST 7c: Primary Active Navigation Resolution & Single Indicator
+    // Navigate back to /shop
+    await send('Page.navigate', { url: `http://localhost:${port}/shop` });
+    await new Promise((r) => setTimeout(r, 600));
+
+    const shopActiveState = await evaluate(`(() => {
+      const shopTrigger = document.getElementById('nav-trigger-shop');
+      const occasionsTrigger = document.getElementById('nav-trigger-occasions');
+      return {
+        shopHasCurrent: shopTrigger?.getAttribute('aria-current') === 'page',
+        occasionsHasCurrent: occasionsTrigger?.getAttribute('aria-current') === 'page',
+      };
+    })()`);
+    logTest(
+      'On /shop, Shop is the single active section and Occasions is NOT active',
+      shopActiveState.shopHasCurrent && !shopActiveState.occasionsHasCurrent,
+      `Shop active: ${shopActiveState.shopHasCurrent}, Occasions active: ${shopActiveState.occasionsHasCurrent}`,
+    );
+
+    // Navigate to /shop?occasion=wedding
+    await send('Page.navigate', { url: `http://localhost:${port}/shop?occasion=wedding` });
+    await new Promise((r) => setTimeout(r, 600));
+
+    const occasionActiveState = await evaluate(`(() => {
+      const shopTrigger = document.getElementById('nav-trigger-shop');
+      const occasionsTrigger = document.getElementById('nav-trigger-occasions');
+      return {
+        shopHasCurrent: shopTrigger?.getAttribute('aria-current') === 'page',
+        occasionsHasCurrent: occasionsTrigger?.getAttribute('aria-current') === 'page',
+      };
+    })()`);
+    logTest(
+      'On /shop?occasion=wedding, Occasions is active and Shop is NOT active',
+      occasionActiveState.occasionsHasCurrent && !occasionActiveState.shopHasCurrent,
+      `Occasions active: ${occasionActiveState.occasionsHasCurrent}, Shop active: ${occasionActiveState.shopHasCurrent}`,
+    );
+
+    // Navigate to /shop/dry-fruits
+    await send('Page.navigate', { url: `http://localhost:${port}/shop/dry-fruits` });
+    await new Promise((r) => setTimeout(r, 600));
+
+    const foodActiveState = await evaluate(`(() => {
+      const shopTrigger = document.getElementById('nav-trigger-shop');
+      const dryFruitsLink = document.querySelector('a[data-nav-path="/shop/dry-fruits"]');
+      return {
+        shopHasCurrent: shopTrigger?.getAttribute('aria-current') === 'page',
+        foodHasCurrent: dryFruitsLink?.getAttribute('aria-current') === 'page',
+      };
+    })()`);
+    logTest(
+      'On /shop/dry-fruits, main Shop trigger and compact food link are both appropriately marked',
+      foodActiveState.shopHasCurrent && foodActiveState.foodHasCurrent,
+      `Shop active: ${foodActiveState.shopHasCurrent}, Food link active: ${foodActiveState.foodHasCurrent}`,
+    );
+
+    // TEST 7d: Customer-facing Category Translations (no raw shop.* keys in UI)
+    const categoryButtonLabels = await evaluate(`(() => {
+      const buttons = Array.from(document.querySelectorAll('.catalog-category-nav button')).map(b => b.textContent?.trim() || '');
+      const rawKeyButtons = buttons.filter(txt => txt.startsWith('shop.'));
+      return {
+        count: buttons.length,
+        buttons,
+        rawKeyButtons,
+        hasNoRawKeys: rawKeyButtons.length === 0,
+        hasDryFruits: buttons.some(b => b.toLowerCase().includes('dry fruits') || b.includes('خشک میوہ جات') || b.includes('فواكه مجففة')),
+        hasDates: buttons.some(b => b.toLowerCase().includes('dates') || b.includes('کھجوریں') || b.includes('تمور')),
+        hasSeedsSnacks: buttons.some(b => b.toLowerCase().includes('seeds') || b.includes('بیج اور اسنیکس') || b.includes('وجبات خفيفة')),
+      };
+    })()`);
+    logTest(
+      'Visible category navigation buttons display readable translations with zero raw keys',
+      categoryButtonLabels.hasNoRawKeys && categoryButtonLabels.hasDryFruits && categoryButtonLabels.hasDates && categoryButtonLabels.hasSeedsSnacks,
+      `Buttons: [${categoryButtonLabels.buttons.slice(0, 5).join(', ')}...], Raw keys: ${categoryButtonLabels.rawKeyButtons.length}`,
     );
 
     // Reset cursor to avoid hover state
