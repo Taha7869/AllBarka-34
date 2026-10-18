@@ -152,6 +152,7 @@ function snapshotFromDocuments(snapshots: DocumentSnapshot[], now: number): Cata
           status,
           orderMode: raw.orderMode || base.orderMode || (base.quoteOnly ? 'inquiry_quote' : 'standard'),
           productFamily: raw.productFamily || base.productFamily,
+          packagingSubcategory: raw.packagingSubcategory !== undefined ? (raw.packagingSubcategory || undefined) : base.packagingSubcategory,
           collections: Array.isArray(raw.collections) ? raw.collections : base.collections,
           occasions: Array.isArray(raw.occasions) ? raw.occasions : base.occasions,
           personalization: raw.personalization || base.personalization,
@@ -671,6 +672,15 @@ export async function updateAdminProduct(input: { db: Firestore | null; productI
       delete updatedData.minOrderQuantity;
     } else {
       updatedData.moqOverride = finalProdMoq;
+    }
+
+    if (body.packagingSubcategory === null || body.packagingSubcategory === '' || body.packagingSubcategory === 'none') {
+      delete updatedData.packagingSubcategory;
+      if (updatedData.bidBoxConfig && typeof updatedData.bidBoxConfig === 'object') {
+        const nextCfg = { ...updatedData.bidBoxConfig };
+        delete nextCfg.packagingSubcategory;
+        updatedData.bidBoxConfig = nextCfg;
+      }
     }
 
     if (isCanonical || canonicalVariants) {

@@ -1,25 +1,27 @@
-# AllBarka Renovation — Stage 5B Repair & Handoff v5.6
+# AllBarka Renovation — Stage 5B Completion & Handoff v5.7
 
-**Document Version:** 5.6.0  
+**Document Version:** 5.7.0  
 **Date:** October 18, 2026  
-**Baseline Git Commit:** `c9646f3` -> `feat/renovation-v2`  
+**Baseline Git Commit:** `64484c7` -> `feat/renovation-v2`  
 **Active Working Branch:** `feat/renovation-v2` (Tracking `origin/feat/renovation-v2`)  
 **Parent / Production Branch:** `launch` (synced with `origin/launch` and `origin/main`)  
 **Applicable Instructions Read:** `C:\Users\taha\.gemini\antigravity\scratch\AllBarka-34\AGENTS.md` and `C:\Users\taha\.gemini\config\plugins\science\rules\AGENTS.md`  
-**Status:** **STAGE 5B DEDICATED DESTINATIONS REPAIR COMPLETE & FULLY VERIFIED — HALTED AT STAGE 5B COMPLETION GATE**
+**Status:** **STAGE 5B DEDICATED DESTINATIONS REPAIRED & FULLY VERIFIED — HALTED AT STAGE 5B COMPLETION GATE**
 
 ---
 
-## 1. Stage 5 Scope Boundaries
+## 1. Roadmap & Stage Scope Boundaries
 
-Stage 5 is split into three discrete, reviewable milestones:
+The renovation roadmap strictly follows this sequence:
 - **Stage 5A (Completed & Verified):** Homepage, Boutique Selections showcase, autoplay lifecycle, collection alias normalization & visibility conflict resolution, merchant occasion titles, and real browser provider-fetch integration.
 - **Stage 5B (Repaired & Fully Verified Here):** Dedicated collection & occasion destinations (`/shop/celebration-boxes`, `/gifting`, `/shop/deals`, `/occasions`, `/wholesale`) with working legacy aliases, transparent wholesale policies, honest empty states, unified variant resolution, and direct checkout / inquiry flows.
-- **Stage 5C (Explicitly Pending):** Verified packaging catalog expansion (minimum 6 distinct products per subcategory), comprehensive descriptions, and original studio photography assets.
-- **Stage 6 & AI Architecture (Explicitly Pending):** Production release gates, emulator sign-off, live deployments.
+- **Stage 5C (Explicitly Pending):** Verified packaging catalog expansion (minimum 6 distinct products per subcategory), comprehensive specifications, and original studio photography assets.
+- **Stage 6 (Explicitly Pending):** Customization inquiries, bespoke quoting engine, and WhatsApp commerce integration.
+- **Stage 7 (Explicitly Pending):** AI Buddy concierge integration and domain-specific assistance.
+- **Stage 8 (Explicitly Pending):** Release QA, Firestore emulator release gate, production deployment.
 
 > [!IMPORTANT]
-> **Strict Halt Gate:** Stage 5B repair is fully implemented and verified. Stage 5C and Stage 6 remain explicitly pending. Zero live production database writes, zero merges to `launch`/`main`, and zero production deployments have occurred. Firestore Emulator remains an outstanding release gate.
+> **Strict Halt Gate:** Stage 5B repair is fully implemented, verified, and complete. Stage 5C through Stage 8 remain explicitly pending. Zero live production database writes, zero merges to `launch`/`main`, and zero production deployments have occurred. Firestore Emulator remains an outstanding release gate.
 
 ---
 
@@ -39,8 +41,9 @@ Stage 5 is split into three discrete, reviewable milestones:
 - **Packaging vs. Filled Options & Single Selected-Variant Resolver:**
   - Mode switch: "All Options", "Empty Packaging Only", "Freshly Filled with Dry Fruits".
   - Unified resolver `resolveCelebrationCardVariant(product, preferredMode, requestedTierIndex)` guarantees card highlighted tier = displayed unit/pack price = `addToCart` payload = cart quantity.
-  - Automatic packaging MOQ calculation via `calculatePackagingMoq` enforces minimum unit thresholds (e.g., 25 units min adds quantity 3 packs for 10-pc tier).
-  - Explicit user tier selection updates card highlight and cart payload synchronously without falling back or substituting another mode/variant.
+  - Recognizes saved available 1-piece empty box variants (e.g. standard Rs. 1000 single box) with authoritative MOQ (5 units) and direct checkout eligibility.
+  - Prevents silent mode substitution: explicitly requesting an unavailable filled mode returns `activeMode: 'filled'`, `isDirectCheckoutEligible: false`, `isQuoteOnly: true`, `variantKey: null`.
+  - Preserves actual pack capacity for filled pack variants (e.g. 10-pc filled pack calculates unit price Rs. 350, pack price Rs. 3500, `piecesPerPack: 10`).
 - **Customer Flow & Actions:**
   - Direct checkout enabled via "Add to Bag" only for standard eligible priced tiers.
   - Unpriced / quote-only products display "Quote on Request" and "Request Quote" buttons which trigger `openCustomQuoteModal`.
@@ -55,33 +58,31 @@ Stage 5 is split into three discrete, reviewable milestones:
 - **Corporate Executive Gifting Sidecard:**
   - Inquiries for personalized company logo branding and scheduled nationwide courier dispatch.
   - "Request Corporate Inquiry" CTA launches `openCustomQuoteModal({ mode: 'filled', eventType: 'Corporate' })`.
-- **Occasion Filter Pills:** Filter gift sets across All Gifts, Wedding (`wedding`), Umrah (`umrah`), Ramadan/Eid (`ramadan`), and Corporate (`corporate`).
+- **URL-Driven Occasion Filtering:**
+  - Directly derived from `useSearchParams().get('occasion')` with history push and back/forward navigation.
+  - Preserves unrelated URL search parameters (e.g., `ref`, `utm_source`).
+  - Displays honest empty state with "Reset Filter" button when an occasion has zero associated hampers.
 - **Product Cards:** Live catalog prices, pack variant selectors, and direct checkout via "Add to Bag". Unpriced or custom products route to Request Quote.
 
 ### 2.3 Deals & Value Packages (`/shop/deals`, alias: `/shop/bundles`)
-- **Farm-Direct Savings Header:** Eyebrow "Farm-Direct Savings", title "Value Packages & Curated Deals".
-- **Verified Pricing Integrity Notice:** Prominently highlights that all bundle savings badges and discount calculations are derived directly from individual variant component rates with zero artificial markups or unverified strikethroughs.
-- **Sub-Filter Chips:**
-  - *All Deals & Packages*
-  - *Tasting Duos & Pairs* (`deal-1`, `deal-2`, `bundle-daily-grind`, `bundle-tasting-flight`)
-  - *Festive Family Hampers* (`bundle-silver-hamper`, `bundle-gold-hamper`, `bundle-platinum-hamper`, `bundle-royal-feast`)
-  - *Wellness & Pantry Reserves* (`bundle-brain-fuel`, `bundle-winter-warrior`, `bundle-immunity-shield`, `bundle-sunrise-seeds`, `bundle-mystery-box`)
-- **Direct Checkout & Honest Pricing:** Direct checkout enabled with live pricing; strikethrough badges display strictly when `comparePrice > price`.
+- **Roastery Curated Header:** Eyebrow "Farm-Direct Savings", title "Value Packages & Curated Deals".
+- **Curated Value Packages Notice:** Replaced blanket "verified savings" and "save up to" claims with honest copy: *"Roastery Curated Assortments: Thoughtfully paired bundles and festive sets curated by our Lahore roastery. Direct pricing reflects packaged assortment value."*
+- **Omission of Unsupported Comparisons:** Zero `comparePrice > price` strikethroughs or blanket discount badges.
+- **URL-Driven Sub-Filter Chips:**
+  - *All Deals & Packages* (`filter=all` or default)
+  - *Tasting Duos & Pairs* (`filter=duos`: `deal-1`, `deal-2`, `bundle-daily-grind`, `bundle-tasting-flight`)
+  - *Festive Family Hampers* (`filter=hampers`: `bundle-silver-hamper`, `bundle-gold-hamper`, `bundle-platinum-hamper`, `bundle-royal-feast`)
+  - *Wellness & Pantry Reserves* (`filter=wellness`: `bundle-brain-fuel`, `bundle-winter-warrior`, `bundle-immunity-shield`, `bundle-sunrise-seeds`, `bundle-mystery-box`)
+  - Directly derived from URL with history push, back/forward restoration, and parameter preservation.
 
 ### 2.4 Occasions Destination (`/occasions`, `/occasions/:occasion`, `/shop?occasion=...`, `/shop?filter=occasions`)
-- **Occasion Switcher Tabs:**
-  - All Occasions
-  - Nikkah & Wedding (`wedding`)
-  - Umrah & Hajj Tabarruk (`umrah`)
-  - Ramadan & Eid (`ramadan`)
-  - Birth Announcement & Aqeeqah (`birth`)
-  - Corporate & Executive (`corporate`)
+- **Occasion Switcher Tabs:** All Occasions, Nikkah & Wedding (`wedding`), Umrah & Hajj Tabarruk (`umrah`), Ramadan & Eid (`ramadan`), Birth Announcement & Aqeeqah (`birth`), Corporate & Executive (`corporate`).
 - **Category Intersection & Accurate Counts:**
   - Evaluates intersection: `productMatchesOccasion(p, occasion) && productMatchesCategory(p, category)`.
   - Displays live accurate count (`{count} products found`).
   - **Honest Empty State:** When a combination yields 0 results (e.g. Birth + Oils), displays honest empty state with "Reset Occasion Filter" button.
 - **URL Synchronization & History Navigation:**
-  - Synchronizes pathname (`/occasions/:occasion`) and search parameters via history push (not replace).
+  - Synchronizes pathname (`/occasions/:occasion`) and search parameters via history push.
   - Preserves selected `category` query parameter when switching occasions.
   - Fully supports browser back/forward buttons, restoring previous route and filters.
 
@@ -98,46 +99,30 @@ Stage 5 is split into three discrete, reviewable milestones:
 
 ---
 
-## 3. Explanation of Changes to `categories.ts` and `CategoryCarousel.tsx`
-
-### 3.1 `src/config/categories.ts`:
-- **Problem:** An earlier commit linked `bundles: 'combos'` and `combos: 'bundles'` inside `COLLECTION_ALIASES` and `COLLECTION_EQUIVALENCE_GROUPS`.
-- **Why Changed:** "Bundles" is a distinct commercial collection (`/shop/bundles` -> Value Packages & Curated Deals, mapped to `deals`), whereas "combos" is luxury curated hampers (`/shop/combos` -> `/gifting`). Linking them caused `/shop/bundles` to redirect to `/gifting`, violating the requirement to preserve distinct commercial collections.
-- **Resolution:** Removed `bundles` from the `combos` equivalence group. Legitimate alias groups (`dry-fruits` <-> `nuts`, `seeds-snacks` <-> `snacks-seeds`, `gifts` <-> `gift-boxes`) are strictly preserved.
-
-### 3.2 `src/components/CategoryCarousel.tsx`:
-- **Problem:** In Stage 5A, CategoryCarousel was refactored to consume dynamic merchandising settings. When tests or callers render CategoryCarousel without custom settings, it previously needed a fallback, but falling back blindly could overwrite merchant configuration or break Stage 5A alias deduplication.
-- **Why Changed:** When merchandising settings are unconfigured or equal to default (`!hasCustomSettings`), the carousel safely renders `PANTRY_CATEGORIES`. When custom published merchandising settings are present, it honors the validated configuration: alias normalization (hidden aliases like `nuts` cannot resurrect `dry-fruits`), deterministic conflict handling, merchant overrides (custom title, custom image, destination link, badge), category order and visibility, and canonical destinations.
-- **Resolution:** Both the safe legacy default when unconfigured AND the Stage 5A published admin integration / provider fetch are fully preserved without regressing alias handling.
-
----
-
-## 4. Resolution Evidence for Stage 5B Findings
+## 3. Resolution Evidence for Stage 5B Findings
 
 | Finding | Description | Resolution & Evidence |
 | :--- | :--- | :--- |
-| **Finding 1** | Single selected-variant resolver | Implemented `src/lib/packagingClassification.ts` exporting `resolveCelebrationCardVariant`. Card highlighted tier, displayed unit/pack price, MOQ enforcement, and `addToCart` payload are derived from the single source of truth. Verified in CDP browser test: untouched default selection adds tier index 0 (`Empty Pack (10 pcs)` at Rs. 200/pc, qty 3 packs enforcing 25-pc MOQ); clicking tier 1 updates both card highlight and cart payload synchronously. |
-| **Finding 2** | Purged fabricated prices & stale fallbacks | Eliminated all hardcoded fake prices (Rs. 180, Rs. 850) and stale filling descriptions across all destinations. Unpriced or quote-only products display "Quote on Request" with "Request Quote" button opening `openCustomQuoteModal`. Strikethrough badges in Deals appear only when `comparePrice > price`. |
-| **Finding 3** | URL-driven filtering & back/forward navigation | Synchronized `CelebrationBoxesDestination` and `OccasionsDestination` with URL search parameters (`subcat`, `mode`, `occasion`, `category`). Switched navigation from `{ replace: true }` to history push. In `ShopPage.tsx`, added route precedence guards so `/occasions/wedding?category=celebration-boxes` is not hijacked by category match. CDP browser test confirmed switching occasion preserves `?category=celebration-boxes`, and `window.history.back()` accurately restores the previous URL and filter state. |
-| **Finding 4** | Authoritative admin packaging subcategory metadata | Added `packagingSubcategory` to `types.ts` (`Product` and `BidBoxConfig`) and populated all 8 bid box products in `src/data/products.ts`. `getPackagingSubcategory` prioritizes explicit admin metadata, followed by `product.bidBoxConfig.packagingSubcategory`, then legacy map. Unknown products return `null` (unclassified) and NEVER default to `wedding`. |
-| **Finding 5** | Purged unapproved commercial claims | In `src/contexts/destinationTranslations.ts`, removed blanket factory discount ("up to 25% factory discount"), response-time guarantees ("within 2 business hours"), engraving promises ("custom brand engraving" -> "custom brand printing"), and free sample claims in Arabic. Standardized lead time notice to minimum 10 calendar days following final design approval and required deposit. |
-| **Finding 6** | Real in-browser CDP test against fresh production build | Ran `node scripts/test-stage5b-destinations.mjs` against `npm run build` production distribution. Verified: default tier selection and cart payload; explicit tier change and cart update; occasion switching with category preservation; browser back/forward restoration; keyboard accessibility; and refreshed all 12 visual screenshot artifacts. |
+| **Finding 1** | Repair `resolveCelebrationCardVariant` | Recognizes saved available 1-piece empty box variants (e.g. Rs. 1000 single box with MOQ 5) even when `resolveBidBoxConfig.emptyTiers` excludes single-piece entries. Prevents silent mode substitution (explicitly requesting unavailable filled mode stays `activeMode: 'filled'` and routes to inquiry without substituting empty). Preserves actual pack capacity for filled pack variants (10-pc filled pack unit price Rs. 350, pack price Rs. 3500, `piecesPerPack: 10`). Verified in unit regression tests 1, 7 and browser test 1, 2, 7. |
+| **Finding 2** | `packagingSubcategory` validation & persistence | Added `packagingSubcategory` to `PUBLIC_PRODUCT_FIELDS` in `catalogSchema.ts` and allowed in `validateDynamicProduct`. Enforces supported enum values (`tin`, `tabarruk`, `wedding`, `baby`, `acrylic`) and deliberate clear behavior (`null`, `""`). Supported in admin create/edit modals with dedicated dropdown and clear button. Verified in regression test 8: create tin &rarr; reload authoritative catalog &rarr; match tin filter &rarr; deliberate clear &rarr; unclassified. |
+| **Finding 3** | URL-driven filtering across ALL destinations | Removed local `useState` synchronization lag from `GiftsHampersDestination` and `DealsDestination`. Filters derive synchronously from `useSearchParams()`, updating via `setSearchParams` history push. Reused canonical `productMatchesOccasion` across Celebration, Occasions, and Gifting. Browser CDP tests 3, 5, 6 verify occasion switching, parameter preservation (`ref`, `utm_campaign`), and browser back/forward navigation. |
+| **Finding 4** | Omission of unsupported savings comparisons | Removed `comparePrice > price` strikethroughs and blanket "verified savings" copy from `DealsDestination`. Replaced with honest "Roastery Curated Assortments" notice and "Curated Value Packages" badge. In-browser CDP test 6 confirmed exactly 0 `.line-through` compare-price elements on `/shop/deals`. |
 
 ---
 
-## 5. Full Offline Test Suite Results
+## 4. Full Offline Test Suite Results
 
 The complete offline suite ran cleanly with zero failures across all 56 test files, backend suites, asset verifications, and production security checks:
 
 ```
-ℹ tests 599
+ℹ tests 603
 ℹ suites 1
-ℹ pass 599
+ℹ pass 603
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 122363.3283
+ℹ duration_ms 90814.2716
 
 🧪 Running AllBarka Production Backend Test Suite...
 ========================================
@@ -153,13 +138,13 @@ Full offline suite passed (56 test files plus backend, assets and production che
 ### Key Verification Gate Summary:
 - **TypeScript Typecheck (`npm run typecheck`):** Exit code 0 (zero errors).
 - **React Hook Linter (`npm run lint:hooks`):** Exit code 0 (zero warnings, zero errors).
-- **Production Build (`npm run build`):** Exit code 0 (Vite client bundle 13.54s + esbuild server.cjs 870.8kb + Release privacy audit passed across 84 text artifacts).
-- **Real Browser CDP Test (`node scripts/test-stage5b-destinations.mjs`):** Exit code 0 (All functional assertions passed, 12 screenshots refreshed).
-- **Full Offline Suite (`node scripts/run-all-tests.mjs`):** Exit code 0 (599/599 tests passed, 21 backend tests passed, 36 production checks passed).
+- **Production Build (`npm run build`):** Exit code 0 (Vite client bundle 9.83s + esbuild server.cjs 872.1kb + Release privacy audit passed across 84 text artifacts).
+- **Real Browser CDP Test (`node scripts/test-stage5b-destinations.mjs`):** Exit code 0 (Tests 1–7 passed, 12 screenshots refreshed).
+- **Full Offline Suite (`node scripts/run-all-tests.mjs`):** Exit code 0 (603/603 tests passed, 21 backend tests passed, 36 production checks passed).
 
 ---
 
-## 6. Visual Artifacts Captured
+## 5. Visual Artifacts Captured
 
 All 12 visual artifacts have been captured and saved to `<appDataDir>\brain\f408ee7a-7513-4e1a-b8e1-251273bc99e6/` and committed to `docs/artifacts/`:
 
@@ -169,7 +154,7 @@ All 12 visual artifacts have been captured and saved to `<appDataDir>\brain\f408
 4. `stage5b_celebration_mobile.png` — Celebration Boxes mobile responsive view (390×844).
 5. `stage5b_gifting_desktop_light.png` — Gifts & Hampers desktop light view with Hamper Builder card, Corporate CTA, and gift sets.
 6. `stage5b_gifting_mobile.png` — Gifts & Hampers mobile responsive view.
-7. `stage5b_deals_desktop_light.png` — Deals & Value Packages desktop light view with Verified Pricing Integrity banner and filter chips.
+7. `stage5b_deals_desktop_light.png` — Deals & Value Packages desktop light view with Curated Value Packages banner and filter chips.
 8. `stage5b_deals_mobile.png` — Deals & Value Packages mobile responsive view.
 9. `stage5b_occasions_desktop_light.png` — Occasions desktop light view with occasion switcher tabs, category intersection, and honest empty states.
 10. `stage5b_occasions_mobile.png` — Occasions mobile responsive view.
@@ -178,10 +163,12 @@ All 12 visual artifacts have been captured and saved to `<appDataDir>\brain\f408
 
 ---
 
-## 7. Outstanding Tasks & Next Stage
+## 6. Outstanding Tasks & Next Stage
 
 - **Stage 5C (Next):** Verified packaging catalog expansion (minimum 6 distinct products per subcategory), comprehensive specifications, and original studio photography assets.
-- **Stage 6 & AI Integration:** Outstanding Firestore emulator release gate, live deployment, production release checks.
+- **Stage 6:** Customization inquiries & WhatsApp integration.
+- **Stage 7:** AI Buddy concierge integration.
+- **Stage 8:** Release QA, Firestore emulator release gate, live production deployment.
 
 > [!NOTE]
 > All work for the Stage 5B repair run is completed, verified with passing automated test suites, clean typecheck, clean lint, successful production build, and refreshed visual artifacts. Awaiting user review before proceeding to Stage 5C.

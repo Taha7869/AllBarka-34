@@ -6,11 +6,13 @@
  * 2. Unclassified status for unknown products (NEVER defaults to wedding).
  * 3. Single selected-variant resolver for card highlight, displayed price, MOQ,
  *    and addToCart payload without silent substitutions or fabricated rates.
+ * 4. Recognizes saved available 1-piece empty variants even when bulk tiers exclude single-piece.
+ * 5. Preserves actual pack capacity for filled pack variants.
  */
 
 import type { Product, BidBoxBulkTier, BidBoxFilledOption } from '../types';
 import { resolveBidBoxConfig } from './bidBoxPricing';
-import { calculatePackagingMoq } from './packagingMoq';
+import { calculatePackagingMoq, parsePiecesPerPack } from './packagingMoq';
 
 export type CelebrationSubcategory = 'all' | 'tin' | 'tabarruk' | 'wedding' | 'baby' | 'acrylic';
 
@@ -96,12 +98,71 @@ export interface ResolvedCelebrationCardVariant {
  */
 export function resolveCelebrationCardVariant(
   product: Product,
-  preferredMode: 'empty' | 'filled',
+  preferredMode?: 'empty' | 'filled' | 'all',
   requestedTierIndex?: number
 ): ResolvedCelebrationCardVariant {
   const cfg = resolveBidBoxConfig(product);
-  const emptyTiers = cfg?.emptyTiers || [];
+  let emptyTiers: BidBoxBulkTier[] = [...(cfg?.emptyTiers || [])];
   const filledOptions = cfg?.filledOptions || [];
+
+  // Identify any disabled variants
+  const disabledLabels = new Set<string>();
+  if (Array.isArray(product.variants)) {
+    for (const v of product.variants) {
+      if (v && typeof v.label === 'string' && v.available === false) {
+        disabledLabels.add(v.label);
+      }
+    }
+  }
+
+  // If resolveBidBoxConfig.emptyTiers excluded single-piece variants (e.g. standard 1-piece box),
+  // recognize saved available empty variants from raw prices and variants.
+  if (emptyTiers.length === 0) {
+    const rawPrices = product.prices || {};
+    const filledKeys = new Set(filledOptions.map(o => o.variantKey));
+
+    for (const [label, price] of Object.entries(rawPrices)) {
+      if (disabledLabels.has(label)) continue;
+      if (typeof price !== 'number' || !Number.isFinite(price) || price <= 0) continue;
+      const isFilled =
+        filledKeys.has(label) ||
+        (!/^empty\b/i.test(label) && /\bfilled\b|\bassorted\b|\bwith\s+dry\s+fruits\b/i.test(label));
+      if (!isFilled) {
+        const qty = parsePiecesPerPack(label);
+        const unitPrice = Math.round((price / qty) * 100) / 100;
+        emptyTiers.push({
+          qty,
+          label: label,
+          unitPrice: Number.isInteger(unitPrice) ? unitPrice : Math.round(unitPrice),
+          packPrice: price,
+          variantKey: label,
+        });
+      }
+    }
+
+    if (emptyTiers.length === 0 && Array.isArray(product.variants)) {
+      for (const v of product.variants) {
+        if (!v || v.available === false || typeof v.label !== 'string') continue;
+        if (typeof v.price !== 'number' || !Number.isFinite(v.price) || v.price <= 0) continue;
+        const isFilled =
+          filledKeys.has(v.label) ||
+          (!/^empty\b/i.test(v.label) && /\bfilled\b|\bassorted\b|\bwith\s+dry\s+fruits\b/i.test(v.label));
+        if (!isFilled) {
+          const qty = parsePiecesPerPack(v.label);
+          const unitPrice = Math.round((v.price / qty) * 100) / 100;
+          emptyTiers.push({
+            qty,
+            label: v.label,
+            unitPrice: Number.isInteger(unitPrice) ? unitPrice : Math.round(unitPrice),
+            packPrice: v.price,
+            variantKey: v.label,
+          });
+        }
+      }
+    }
+
+    emptyTiers.sort((a, b) => a.qty - b.qty || a.packPrice - b.packPrice);
+  }
 
   const hasEmpty = emptyTiers.length > 0;
   const hasFilled = filledOptions.length > 0;
@@ -110,85 +171,123 @@ export function resolveCelebrationCardVariant(
   if (hasEmpty) availableModes.push('empty');
   if (hasFilled) availableModes.push('filled');
 
-  // Determine active mode without silent substitution
+  // Determine active mode without silent substitution:
+  // If user explicitly requested 'filled' or 'empty', honor that request (never silently substitute the other mode).
+  // If preferredMode is 'all' or undefined, pick first available mode (empty first, then filled).
   let activeMode: 'empty' | 'filled';
-  if (preferredMode === 'empty' && hasEmpty) {
+  if (preferredMode === 'empty') {
     activeMode = 'empty';
-  } else if (preferredMode === 'filled' && hasFilled) {
-    activeMode = 'filled';
-  } else if (hasEmpty) {
-    activeMode = 'empty';
-  } else if (hasFilled) {
+  } else if (preferredMode === 'filled') {
     activeMode = 'filled';
   } else {
-    activeMode = preferredMode;
+    activeMode = hasEmpty ? 'empty' : (hasFilled ? 'filled' : 'empty');
   }
 
   const isQuoteOnly =
     product.quoteOnly === true ||
-    product.orderMode === 'inquiry_quote' ||
-    (!hasEmpty && !hasFilled && Object.keys(product.prices || {}).length === 0);
+    product.orderMode === 'inquiry_quote';
 
-  if (activeMode === 'empty' && hasEmpty) {
-    const rawIdx = typeof requestedTierIndex === 'number' && Number.isInteger(requestedTierIndex) ? requestedTierIndex : 0;
-    const safeIdx = Math.max(0, Math.min(rawIdx, emptyTiers.length - 1));
-    const tier = emptyTiers[safeIdx];
-    const pieces = tier.qty || 1;
-    let moq = 1;
-    try {
-      moq = calculatePackagingMoq(product, tier.variantKey);
-    } catch {
-      moq = product.bidBoxConfig?.minUnits || 1;
+  // 1. Empty Mode
+  if (activeMode === 'empty') {
+    if (hasEmpty) {
+      const rawIdx = typeof requestedTierIndex === 'number' && Number.isInteger(requestedTierIndex) ? requestedTierIndex : 0;
+      const safeIdx = Math.max(0, Math.min(rawIdx, emptyTiers.length - 1));
+      const tier = emptyTiers[safeIdx];
+      const pieces = tier.qty || 1;
+      let moq = 1;
+      try {
+        moq = calculatePackagingMoq(product, tier.variantKey);
+      } catch {
+        moq = product.bidBoxConfig?.minUnits || 1;
+      }
+
+      return {
+        availableModes,
+        activeMode: 'empty',
+        selectedTierIndex: safeIdx,
+        variantKey: tier.variantKey,
+        unitPrice: tier.unitPrice > 0 ? tier.unitPrice : null,
+        packPrice: tier.packPrice > 0 ? tier.packPrice : null,
+        piecesPerPack: pieces,
+        moq,
+        discountBadge: tier.discountBadge,
+        isQuoteOnly,
+        isDirectCheckoutEligible: !isQuoteOnly && tier.packPrice > 0,
+        emptyTiers,
+        filledOptions,
+      };
     }
 
+    // Explicitly requested empty mode is unavailable on this product
     return {
       availableModes,
       activeMode: 'empty',
-      selectedTierIndex: safeIdx,
-      variantKey: tier.variantKey,
-      unitPrice: tier.unitPrice > 0 ? tier.unitPrice : null,
-      packPrice: tier.packPrice > 0 ? tier.packPrice : null,
-      piecesPerPack: pieces,
-      moq,
-      discountBadge: tier.discountBadge,
-      isQuoteOnly,
-      isDirectCheckoutEligible: !isQuoteOnly && tier.packPrice > 0,
-      emptyTiers,
+      selectedTierIndex: 0,
+      variantKey: null,
+      unitPrice: null,
+      packPrice: null,
+      piecesPerPack: 1,
+      moq: product.bidBoxConfig?.minUnits || 25,
+      isQuoteOnly: true,
+      isDirectCheckoutEligible: false,
+      emptyTiers: [],
       filledOptions,
     };
   }
 
-  if (activeMode === 'filled' && hasFilled) {
-    const rawIdx = typeof requestedTierIndex === 'number' && Number.isInteger(requestedTierIndex) ? requestedTierIndex : 0;
-    const safeIdx = Math.max(0, Math.min(rawIdx, filledOptions.length - 1));
-    const option = filledOptions[safeIdx];
-    let moq = 1;
-    try {
-      moq = calculatePackagingMoq(product, option.variantKey);
-    } catch {
-      moq = product.bidBoxConfig?.minUnits || 1;
+  // 2. Filled Mode
+  if (activeMode === 'filled') {
+    if (hasFilled) {
+      const rawIdx = typeof requestedTierIndex === 'number' && Number.isInteger(requestedTierIndex) ? requestedTierIndex : 0;
+      const safeIdx = Math.max(0, Math.min(rawIdx, filledOptions.length - 1));
+      const option = filledOptions[safeIdx];
+      const pieces = parsePiecesPerPack(option.variantKey);
+      const unitPrice = pieces > 1 ? Math.round((option.price / pieces) * 100) / 100 : option.price;
+      const packPrice = option.price;
+      let moq = 1;
+      try {
+        moq = calculatePackagingMoq(product, option.variantKey);
+      } catch {
+        moq = product.bidBoxConfig?.minUnits || 1;
+      }
+
+      // Only use genuine descriptions, NEVER fabricate fallbacks
+      const fillingsDescription =
+        option.subtitle ||
+        (cfg?.filledSummary !== 'Irani & Panjgur Dates with Roasted Nuts' ? cfg?.filledSummary : undefined) ||
+        (product.contents && product.contents.length > 0 ? product.contents.join(', ') : undefined);
+
+      return {
+        availableModes,
+        activeMode: 'filled',
+        selectedTierIndex: safeIdx,
+        variantKey: option.variantKey,
+        unitPrice: unitPrice > 0 ? unitPrice : null,
+        packPrice: packPrice > 0 ? packPrice : null,
+        piecesPerPack: pieces,
+        moq,
+        fillingsDescription,
+        isQuoteOnly,
+        isDirectCheckoutEligible: !isQuoteOnly && option.price > 0,
+        emptyTiers,
+        filledOptions,
+      };
     }
 
-    // Only use genuine descriptions, NEVER fabricate fallbacks
-    const fillingsDescription =
-      option.subtitle ||
-      (cfg?.filledSummary !== 'Irani & Panjgur Dates with Roasted Nuts' ? cfg?.filledSummary : undefined) ||
-      (product.contents && product.contents.length > 0 ? product.contents.join(', ') : undefined);
-
+    // Explicitly requested filled mode is unavailable on this product
     return {
       availableModes,
       activeMode: 'filled',
-      selectedTierIndex: safeIdx,
-      variantKey: option.variantKey,
-      unitPrice: option.price > 0 ? option.price : null,
-      packPrice: option.price > 0 ? option.price : null,
+      selectedTierIndex: 0,
+      variantKey: null,
+      unitPrice: null,
+      packPrice: null,
       piecesPerPack: 1,
-      moq,
-      fillingsDescription,
-      isQuoteOnly,
-      isDirectCheckoutEligible: !isQuoteOnly && option.price > 0,
+      moq: product.bidBoxConfig?.minUnits || 25,
+      isQuoteOnly: true,
+      isDirectCheckoutEligible: false,
       emptyTiers,
-      filledOptions,
+      filledOptions: [],
     };
   }
 
@@ -205,7 +304,7 @@ export function resolveCelebrationCardVariant(
 
   return {
     availableModes,
-    activeMode,
+    activeMode: 'empty',
     selectedTierIndex: 0,
     variantKey: firstVariantKey,
     unitPrice: firstPrice,

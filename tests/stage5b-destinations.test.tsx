@@ -25,7 +25,78 @@ import {
   resolveCelebrationCardVariant,
 } from '../src/lib/packagingClassification';
 import { destinationTranslations } from '../src/contexts/destinationTranslations';
+import { validateDynamicProduct, VALID_PACKAGING_SUBCATEGORIES, CatalogError } from '../src/lib/catalogSchema';
+import { createAdminProduct, loadAuthoritativeCatalog, updateAdminProduct } from '../src/lib/catalogStore';
 import type { Product } from '../src/types';
+
+function createMockFirestore() {
+  const store = new Map<string, any>();
+
+  const makeSnapshot = (path: string, id: string, docRef: any) => ({
+    id,
+    ref: docRef,
+    exists: store.has(path),
+    data: () => (store.has(path) ? structuredClone(store.get(path)) : undefined),
+  });
+
+  const makeDocRef = (path: string) => {
+    const id = path.split('/').at(-1)!;
+    const ref: any = {
+      id,
+      path,
+      get: async () => makeSnapshot(path, id, ref),
+      set: async (data: any, options?: { merge?: boolean }) => {
+        const existing = store.get(path);
+        if (options?.merge && existing) {
+          store.set(path, { ...existing, ...structuredClone(data) });
+        } else {
+          store.set(path, structuredClone(data));
+        }
+      },
+      delete: async () => {
+        store.delete(path);
+      },
+      collection: (subCol: string) => makeCollection(`${path}/${subCol}`),
+    };
+    return ref;
+  };
+
+  const makeCollection = (colPath: string) => ({
+    path: colPath,
+    doc: (docId?: string) => makeDocRef(`${colPath}/${docId || 'auto_' + Math.random().toString(36).slice(2)}`),
+    add: async (data: any) => {
+      const id = 'auto_' + Math.random().toString(36).slice(2);
+      const path = `${colPath}/${id}`;
+      store.set(path, structuredClone(data));
+      return makeDocRef(path);
+    },
+    get: async () => {
+      const docs: any[] = [];
+      const prefix = `${colPath}/`;
+      for (const [key] of store.entries()) {
+        if (key.startsWith(prefix) && !key.slice(prefix.length).includes('/')) {
+          const id = key.slice(prefix.length);
+          docs.push(makeSnapshot(key, id, makeDocRef(key)));
+        }
+      }
+      return { docs, empty: docs.length === 0, size: docs.length };
+    },
+  });
+
+  const mockDb: any = {
+    collection: (col: string) => makeCollection(col),
+    runTransaction: async (updateFunction: (transaction: any) => Promise<any>) => {
+      const transaction: any = {
+        get: async (ref: any) => ref.get(),
+        set: (ref: any, data: any, options?: any) => ref.set(data, options),
+        delete: (ref: any) => ref.delete(),
+      };
+      return await updateFunction(transaction);
+    },
+  };
+
+  return mockDb;
+}
 
 function renderApp(path = '/', language: LanguageCode = 'en') {
   const windowDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'window');
@@ -296,7 +367,7 @@ test('Regression 6: Dedicated destinations render proper headers, policies, and 
   // Deals & Value Packages
   const htmlDeals = renderApp('/shop/deals');
   assert.ok(htmlDeals.includes('Value Packages &amp; Curated Deals') || htmlDeals.includes('Value Packages & Curated Deals'));
-  assert.ok(htmlDeals.includes('Verified Pricing Integrity'));
+  assert.ok(htmlDeals.includes('Roastery Curated Assortments') || htmlDeals.includes('Curated Value Packages'));
 
   // Wholesale
   const htmlWholesale = renderApp('/wholesale');
@@ -310,3 +381,196 @@ test('Regression 6: Dedicated destinations render proper headers, policies, and 
   assert.equal(htmlShop.includes('id="bespoke-bid-boxes"'), false);
   assert.equal(htmlShop.includes('id="deals-value-packages"'), false);
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REGRESSION 7: resolveCelebrationCardVariant 1-Piece Variants, Mode Integrity & Pack Capacity
+// ─────────────────────────────────────────────────────────────────────────────
+test('Regression 7: resolveCelebrationCardVariant recognizes 1-piece empty boxes, enforces MOQ, and prevents silent mode substitution', () => {
+  // 1. Single-piece empty variant (e.g. standard Rs. 1000 1-piece box)
+  const singlePieceBox = {
+    id: 'bid-box-single-standard-1000',
+    name_en: 'Standard Single Gift Box',
+    name_ur: 'معیاری اکیلا گفٹ باکس',
+    name_ar: 'علبة هدايا مفردة قياسية',
+    category: 'celebration-boxes',
+    packagingSubcategory: 'wedding',
+    isBidBox: true,
+    prices: {
+      'Empty Box (1 pc)': 1000,
+    },
+    variants: [
+      { id: 'v1', label: 'Empty Box (1 pc)', price: 1000, available: true },
+    ],
+  } as unknown as Product;
+
+  const resolvedEmpty = resolveCelebrationCardVariant(singlePieceBox, 'empty', 0);
+  assert.equal(resolvedEmpty.activeMode, 'empty', 'Must resolve empty mode');
+  assert.equal(resolvedEmpty.emptyTiers.length, 1, 'Must recognize saved 1-piece empty variant');
+  assert.equal(resolvedEmpty.variantKey, 'Empty Box (1 pc)', 'Variant key matches');
+  assert.equal(resolvedEmpty.unitPrice, 1000, 'Unit price is 1000');
+  assert.equal(resolvedEmpty.packPrice, 1000, 'Pack price is 1000');
+  assert.equal(resolvedEmpty.piecesPerPack, 1, 'Pieces per pack is 1');
+  assert.equal(resolvedEmpty.isDirectCheckoutEligible, true, 'Direct checkout eligible');
+  assert.equal(resolvedEmpty.moq, 5, 'Authoritative MOQ for Rs. 1000 box is 5 pcs');
+
+  // 2. Prevent silent substitution: explicitly requesting unavailable filled mode must NOT substitute empty
+  const resolvedFilledOnEmptyOnly = resolveCelebrationCardVariant(singlePieceBox, 'filled', 0);
+  assert.equal(resolvedFilledOnEmptyOnly.activeMode, 'filled', 'Active mode must stay filled as requested');
+  assert.equal(resolvedFilledOnEmptyOnly.isDirectCheckoutEligible, false, 'Direct checkout must be false for unavailable filled mode');
+  assert.equal(resolvedFilledOnEmptyOnly.isQuoteOnly, true, 'Must route to quoteOnly inquiry');
+  assert.equal(resolvedFilledOnEmptyOnly.variantKey, null, 'No variant key for unavailable filled option');
+
+  // 3. Preserve actual pack capacity for filled pack variants
+  const filledPackBox = {
+    id: 'bid-box-filled-multipack',
+    name_en: 'Festive Filled Favor Pack',
+    category: 'celebration-boxes',
+    packagingSubcategory: 'tin',
+    isBidBox: true,
+    bidBoxConfig: {
+      filledOptions: [
+        {
+          label: 'Filled Pack (10 pcs)',
+          subtitle: 'Kerman Pistachios & Ajwa Dates',
+          price: 3500,
+          variantKey: 'Filled Pack (10 pcs)',
+        },
+      ],
+    },
+    prices: {
+      'Filled Pack (10 pcs)': 3500,
+    },
+    variants: [
+      { id: 'v1', label: 'Filled Pack (10 pcs)', price: 3500, available: true },
+    ],
+  } as unknown as Product;
+
+  const resolvedFilledPack = resolveCelebrationCardVariant(filledPackBox, 'filled', 0);
+  assert.equal(resolvedFilledPack.piecesPerPack, 10, 'Preserves actual pack capacity of 10 pcs');
+  assert.equal(resolvedFilledPack.packPrice, 3500, 'Pack price is 3500');
+  assert.equal(resolvedFilledPack.unitPrice, 350, 'Unit price is 350 per piece (3500 / 10)');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REGRESSION 8: packagingSubcategory Validation, Public Allowlist & Persistence
+// ─────────────────────────────────────────────────────────────────────────────
+test('Regression 8: packagingSubcategory validates values, clears deliberately, and persists through admin -> public catalog', async () => {
+  // 1. Validation of supported values
+  assert.deepEqual(VALID_PACKAGING_SUBCATEGORIES, ['tin', 'tabarruk', 'wedding', 'baby', 'acrylic']);
+
+  // Valid dynamic product with tin
+  const validTin = validateDynamicProduct({
+    id: 'test-valid-tin',
+    name_en: 'Test Valid Tin Box',
+    category: 'celebration-boxes',
+    packagingSubcategory: 'tin',
+    prices: { 'Empty Pack (10 pcs)': 1500 },
+  });
+  assert.equal(validTin.packagingSubcategory, 'tin', 'Valid subcategory preserved');
+
+  // Deliberate clear behavior
+  const clearedSubcat = validateDynamicProduct({
+    id: 'test-cleared-tin',
+    name_en: 'Test Cleared Tin Box',
+    category: 'celebration-boxes',
+    packagingSubcategory: null,
+    prices: { 'Empty Pack (10 pcs)': 1500 },
+  });
+  assert.equal(clearedSubcat.packagingSubcategory, undefined, 'Null clears packagingSubcategory');
+
+  // Rejection of unsupported subcategory
+  assert.throws(
+    () => {
+      validateDynamicProduct({
+        id: 'test-invalid-subcat',
+        name_en: 'Test Invalid Box',
+        category: 'celebration-boxes',
+        packagingSubcategory: 'unsupported-category',
+        prices: { 'Empty Pack (10 pcs)': 1500 },
+      });
+    },
+    (err: any) => err instanceof CatalogError && err.code === 'INVALID_PACKAGING_SUBCATEGORY',
+    'Must throw INVALID_PACKAGING_SUBCATEGORY for unsupported values'
+  );
+
+  // 2. Full Admin Create -> Read -> Public Catalog -> Subcategory Filter Persistence
+  const db = createMockFirestore();
+  const created = await createAdminProduct({
+    db,
+    body: {
+      id: 'admin-persisted-tin-box',
+      name_en: 'Admin Persisted Luxury Tin Box',
+      category: 'celebration-boxes',
+      packagingSubcategory: 'tin',
+      status: 'published',
+      prices: { 'Empty Pack (10 pcs)': 2200 },
+    },
+    actorUid: 'admin-test-uid',
+  });
+
+  assert.equal(created.packagingSubcategory, 'tin', 'Created product has packagingSubcategory tin');
+
+  // Reload authoritative catalog
+  const catalogSnapshot = await loadAuthoritativeCatalog(db);
+  const loadedProduct = catalogSnapshot.products.find(p => p.id === 'admin-persisted-tin-box');
+  assert.ok(loadedProduct, 'Product must be found in reloaded catalog');
+  assert.equal(loadedProduct.packagingSubcategory, 'tin', 'Reloaded product retains packagingSubcategory');
+  assert.equal(productMatchesPackagingSubcategory(loadedProduct, 'tin'), true, 'Matches tin subcategory filter');
+  assert.equal(productMatchesPackagingSubcategory(loadedProduct, 'wedding'), false, 'Does not match wedding');
+
+  // Deliberate clear via updateAdminProduct
+  await updateAdminProduct({
+    db,
+    productId: 'admin-persisted-tin-box',
+    body: {
+      expectedRevision: created.revision,
+      packagingSubcategory: null,
+    },
+    actorUid: 'admin-test-uid',
+  });
+
+  const catalogSnapshotAfterClear = await loadAuthoritativeCatalog(db);
+  const clearedProduct = catalogSnapshotAfterClear.products.find(p => p.id === 'admin-persisted-tin-box');
+  assert.ok(clearedProduct, 'Cleared product still exists in catalog');
+  assert.equal(clearedProduct.packagingSubcategory, undefined, 'packagingSubcategory successfully cleared');
+  assert.equal(getPackagingSubcategory(clearedProduct), null, 'getPackagingSubcategory returns null (unclassified)');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REGRESSION 9: URL-Driven Filtering Across ALL Destinations
+// ─────────────────────────────────────────────────────────────────────────────
+test('Regression 9: Gifts & Hampers and Deals destinations consume URL params and preserve unrelated query params', () => {
+  // Gifts & Hampers with occasion filter and unrelated tracking parameter
+  const giftingWeddingHtml = renderApp('/gifting?occasion=wedding&utm_source=spring_campaign');
+  assert.ok(giftingWeddingHtml.includes('Luxury Gifts &amp; Curated Hampers') || giftingWeddingHtml.includes('Luxury Gifts & Curated Hampers'));
+
+  // Deals & Value Packages with filter and unrelated parameter
+  const dealsDuosHtml = renderApp('/shop/deals?filter=duos&partner_id=corporate_club');
+  assert.ok(dealsDuosHtml.includes('Tasting Duos &amp; Pairs') || dealsDuosHtml.includes('Tasting Duos & Pairs'));
+
+  // Deals with wellness filter
+  const dealsWellnessHtml = renderApp('/shop/deals?filter=wellness');
+  assert.ok(dealsWellnessHtml.includes('Wellness &amp; Pantry Reserves') || dealsWellnessHtml.includes('Wellness & Pantry Reserves'));
+
+  // Celebration Boxes with canonical occasion matching (?occasion=wedding)
+  const celebrationOccasionHtml = renderApp('/shop/celebration-boxes?occasion=wedding');
+  assert.ok(celebrationOccasionHtml.includes('Celebration &amp; Bid Boxes') || celebrationOccasionHtml.includes('Celebration & Bid Boxes'));
+  assert.ok(celebrationOccasionHtml.includes('Classic Card Bid Box'));
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REGRESSION 10: Omit Unsupported Savings Comparisons and Blanket Claims
+// ─────────────────────────────────────────────────────────────────────────────
+test('Regression 10: Deals destination omits unsupported strikethrough comparisons and blanket savings copy', () => {
+  const dealsHtml = renderApp('/shop/deals');
+
+  // Must not have blanket "Verified Pricing Integrity" or "All bundle savings badges" claim without evidence
+  assert.equal(dealsHtml.includes('Verified Pricing Integrity: All bundle savings badges'), false, 'Blanket verified savings copy removed');
+
+  // Must show honest roastery curated copy
+  assert.ok(dealsHtml.includes('Roastery Curated Assortments') || dealsHtml.includes('Curated Value Packages'), 'Honest roastery curated copy present');
+
+  // No unsupported line-through comparePrice on bundle cards
+  assert.equal(dealsHtml.includes('line-through'), false, 'Unsupported comparePrice strikethroughs omitted');
+});
+

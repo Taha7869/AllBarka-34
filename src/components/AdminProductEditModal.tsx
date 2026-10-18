@@ -35,6 +35,7 @@ export default function AdminProductEditModal({ isOpen, product, onClose, onSave
   const [descAr, setDescAr] = useState('');
   const [category, setCategory] = useState('dry-fruits');
   const [productFamily, setProductFamily] = useState('');
+  const [packagingSubcategory, setPackagingSubcategory] = useState('');
   const [orderMode, setOrderMode] = useState<OrderMode>('standard');
   const [status, setStatus] = useState<ProductStatus>('draft');
 
@@ -98,6 +99,7 @@ export default function AdminProductEditModal({ isOpen, product, onClose, onSave
       setDescAr(p.desc_ar || '');
       setCategory(p.category || 'dry-fruits');
       setProductFamily(p.productFamily || '');
+      setPackagingSubcategory(p.packagingSubcategory || '');
       setOrderMode(p.orderMode || (p.quoteOnly ? 'inquiry_quote' : 'standard'));
       setStatus(p.status || (p.active === false ? 'archived' : 'published'));
 
@@ -151,6 +153,8 @@ export default function AdminProductEditModal({ isOpen, product, onClose, onSave
       setNameAr(p.name_ar || p.nameAr || '');
       setDescEn(p.desc_en || p.description || '');
       setCategory(p.category || 'dry-fruits');
+      setProductFamily(p.productFamily || '');
+      setPackagingSubcategory(p.packagingSubcategory || '');
       setOrderMode(p.orderMode || (p.quoteOnly ? 'inquiry_quote' : 'standard'));
       setStatus(p.status || (p.active === false ? 'archived' : 'published'));
       setMoqOverride(p.moqOverride !== undefined && p.moqOverride !== null ? String(p.moqOverride) : '');
@@ -212,6 +216,7 @@ export default function AdminProductEditModal({ isOpen, product, onClose, onSave
       desc_ar: descAr.trim() || descEn.trim(),
       category: category.trim(),
       productFamily: productFamily.trim() || undefined,
+      packagingSubcategory: packagingSubcategory.trim() ? packagingSubcategory.trim() : null,
       orderMode,
       status,
       active: status === 'published',
@@ -438,6 +443,33 @@ export default function AdminProductEditModal({ isOpen, product, onClose, onSave
                         placeholder="e.g. badam, khajoor, bid-box"
                         className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] px-3 py-2 text-sm focus:border-[#c7982f] focus:outline-none"
                       />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block font-medium">Packaging Subcategory (Celebration Boxes)</label>
+                        {packagingSubcategory && (
+                          <button
+                            type="button"
+                            onClick={() => setPackagingSubcategory('')}
+                            className="text-xs text-red-600 hover:underline font-semibold"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+                      <select
+                        value={packagingSubcategory}
+                        onChange={e => setPackagingSubcategory(e.target.value)}
+                        className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] px-3 py-2 text-sm focus:border-[#c7982f] focus:outline-none"
+                      >
+                        <option value="">None / Unclassified (Default)</option>
+                        <option value="tin">Signature Tin Boxes</option>
+                        <option value="tabarruk">Hajj & Umrah Tabarruk Sets</option>
+                        <option value="wedding">Wedding Favor Boxes & Pouches</option>
+                        <option value="baby">Baby Announcement Boxes</option>
+                        <option value="acrylic">Personalized Acrylic Boxes</option>
+                      </select>
                     </div>
 
                     <div>

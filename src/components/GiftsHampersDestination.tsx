@@ -34,8 +34,8 @@ export default function GiftsHampersDestination({
   const mediaCover = useProductMediaCover();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const occasionParam = searchParams.get('occasion') || 'all';
-  const [selectedOccasion, setSelectedOccasion] = useState<string>(occasionParam);
+  const occasionParam = (searchParams.get('occasion') || 'all').trim().toLowerCase();
+  const selectedOccasion = occasionParam;
   const [selectedWeight, setSelectedWeight] = useState<Record<string, string>>({});
   const [addedId, setAddedId] = useState<string | null>(null);
 
@@ -65,14 +65,13 @@ export default function GiftsHampersDestination({
   }, [giftProducts, selectedOccasion]);
 
   const handleOccasionChange = (occ: string) => {
-    setSelectedOccasion(occ);
     const next = new URLSearchParams(searchParams);
-    if (occ === 'all') {
+    if (!occ || occ === 'all') {
       next.delete('occasion');
     } else {
       next.set('occasion', occ);
     }
-    setSearchParams(next, { replace: true });
+    setSearchParams(next);
   };
 
   const handleLaunchBuilder = () => {
@@ -207,8 +206,26 @@ export default function GiftsHampersDestination({
       </nav>
 
       {/* Products Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-        {filteredProducts.map(product => {
+      {filteredProducts.length === 0 ? (
+        <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] p-12 text-center shadow-sm">
+          <Gift size={40} className="mx-auto text-[#c7982f] mb-4" />
+          <h3 className="font-serif text-lg font-bold text-[var(--color-text)]">
+            {t('dest.occasions.emptyTitle')}
+          </h3>
+          <p className="mt-2 text-sm text-[var(--color-text-muted)] max-w-md mx-auto">
+            {t('dest.occasions.emptyCopy')}
+          </p>
+          <button
+            type="button"
+            onClick={() => handleOccasionChange('all')}
+            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#072a20] px-5 py-2.5 text-xs font-bold text-[#fff8e9] hover:bg-[#124b3b] dark:bg-[#c7982f] dark:text-[#072a20] dark:hover:bg-[#d8a93e] transition-colors"
+          >
+            {t('dest.occasions.resetOccasion')}
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          {filteredProducts.map(product => {
           const coverImg = mediaCover[product.id] || product.image;
           const priceKeys = Object.keys(product.prices);
           const currentWeight = selectedWeight[product.id] || priceKeys[0] || '1 box';
@@ -359,6 +376,7 @@ export default function GiftsHampersDestination({
           );
         })}
       </div>
+      )}
     </div>
   );
 }

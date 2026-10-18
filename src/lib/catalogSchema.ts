@@ -307,8 +307,11 @@ export const PUBLIC_PRODUCT_FIELDS = [
   'tag_en',
   'tag_ur',
   'tag_ar',
+  'packagingSubcategory',
   'catalogRevision',
 ] as const;
+
+export const VALID_PACKAGING_SUBCATEGORIES = ['tin', 'tabarruk', 'wedding', 'baby', 'acrylic'] as const;
 
 export function stripPrivateProductFields(product: Product): Product {
   const sanitized: Record<string, unknown> = {};
@@ -542,6 +545,24 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
   // Taxonomy & collections
   if (typeof value.productFamily === 'string' && value.productFamily.trim()) {
     product.productFamily = value.productFamily.trim();
+  }
+
+  // Packaging subcategory (Celebration Boxes) with deliberate clear behavior
+  if (value.packagingSubcategory !== undefined) {
+    if (value.packagingSubcategory === null || value.packagingSubcategory === '') {
+      product.packagingSubcategory = undefined;
+    } else if (typeof value.packagingSubcategory === 'string') {
+      const normalized = value.packagingSubcategory.trim().toLowerCase();
+      if (normalized === '' || normalized === 'none') {
+        product.packagingSubcategory = undefined;
+      } else if ((VALID_PACKAGING_SUBCATEGORIES as readonly string[]).includes(normalized)) {
+        product.packagingSubcategory = normalized;
+      } else {
+        throw new CatalogError('INVALID_PACKAGING_SUBCATEGORY', 400);
+      }
+    } else {
+      throw new CatalogError('INVALID_PACKAGING_SUBCATEGORY', 400);
+    }
   }
   if (Array.isArray(value.collections)) {
     product.collections = value.collections.filter(c => typeof c === 'string' && c.trim()).map(c => c.trim());

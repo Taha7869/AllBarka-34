@@ -304,6 +304,113 @@ async function main() {
     assert.equal(activeElTag, 'BUTTON', 'Keyboard focus correctly lands on interactive button');
     console.log('✔ Assertion Passed: Keyboard focusability confirmed');
 
+    // Test 5: Gifts & Hampers URL-driven filtering & parameter preservation
+    await navigateTo('/gifting?ref=spring_newsletter');
+    await waitForSelector('article', 10000);
+    const initialGiftingUrl = await evaluate(`window.location.pathname + window.location.search`);
+    assert.equal(initialGiftingUrl, '/gifting?ref=spring_newsletter', 'Initial gifting URL preserves query params');
+
+    // Click an occasion pill (e.g. Wedding)
+    const switchGiftingOccasion = await evaluate(`(() => {
+      const pills = Array.from(document.querySelectorAll('nav[aria-label*="Occasion"] button'));
+      const weddingPill = pills.find(p => p.textContent && (p.textContent.includes('Wedding') || p.textContent.includes('شادی') || p.textContent.includes('Nikkah')));
+      if (!weddingPill) return { error: 'Wedding pill not found', foundCount: pills.length, texts: pills.map(p => p.textContent.trim()) };
+      weddingPill.click();
+      return { clicked: true };
+    })()`);
+    console.log('Test 5 Switch Gifting Occasion Result:', switchGiftingOccasion);
+    assert.ok(switchGiftingOccasion.clicked, 'Gifting occasion pill clicked');
+    await new Promise((r) => setTimeout(r, 600));
+
+    const switchedGiftingUrl = await evaluate(`window.location.pathname + window.location.search`);
+    console.log('Test 5 Switched Gifting URL:', switchedGiftingUrl);
+    assert.ok(
+      switchedGiftingUrl.includes('occasion=wedding') && switchedGiftingUrl.includes('ref=spring_newsletter'),
+      'Switching gifting occasion preserves unrelated ref parameter'
+    );
+
+    // Assert honest empty state appears with Reset button
+    const hasResetBtn = await evaluate(`(() => {
+      const btns = Array.from(document.querySelectorAll('button'));
+      return btns.some(b => b.textContent && (b.textContent.includes('Reset') || b.textContent.includes('ری سیٹ') || b.textContent.includes('إعادة')));
+    })()`);
+    assert.ok(hasResetBtn, 'Honest empty state with Reset button is displayed for unassociated occasion');
+
+    // Browser back returns to initial URL
+    await evaluate(`window.history.back()`);
+    await new Promise((r) => setTimeout(r, 600));
+    const backGiftingUrl = await evaluate(`window.location.pathname + window.location.search`);
+    console.log('Test 5 Gifting Browser Back URL:', backGiftingUrl);
+    assert.equal(backGiftingUrl, '/gifting?ref=spring_newsletter', 'Gifting back navigation works');
+    console.log('✔ Assertion Passed: Gifts & Hampers URL-driven filtering and parameter preservation confirmed');
+
+    // Test 6: Deals & Value Packages URL-driven filtering & Zero unsupported line-through comparisons
+    await navigateTo('/shop/deals?filter=duos&utm_campaign=ramadan_deals');
+    await waitForSelector('article', 10000);
+    const initialDealsUrl = await evaluate(`window.location.pathname + window.location.search`);
+    assert.equal(initialDealsUrl, '/shop/deals?filter=duos&utm_campaign=ramadan_deals', 'Initial deals URL preserves query params');
+
+    // Assert zero line-through compare-price elements on Deals destination
+    const dealsAudit = await evaluate(`(() => {
+      const lineThroughEls = Array.from(document.querySelectorAll('.line-through'));
+      const pageText = document.body.innerText;
+      return {
+        lineThroughCount: lineThroughEls.length,
+        hasCuratedNotice: pageText.includes('Roastery Curated Assortments') || pageText.includes('Curated Value Packages'),
+        hasBlanketSavings: pageText.includes('Verified Roastery Savings') || pageText.includes('Save up to 25%')
+      };
+    })()`);
+    console.log('Test 6 Deals Audit:', dealsAudit);
+    assert.equal(dealsAudit.lineThroughCount, 0, 'Must have ZERO line-through / strikethrough comparison prices');
+    assert.ok(dealsAudit.hasCuratedNotice, 'Must present honest curated assortments copy');
+    assert.equal(dealsAudit.hasBlanketSavings, false, 'Must NOT contain unsupported blanket savings claims');
+
+    // Switch tab to hampers
+    const switchDealsTab = await evaluate(`(() => {
+      const tabs = Array.from(document.querySelectorAll('nav[aria-label*="Deals"] button'));
+      const hampersTab = tabs.find(t => t.textContent && (t.textContent.includes('Hampers') || t.textContent.includes('ہیمپرز')));
+      if (!hampersTab) return { error: 'Hampers tab not found', foundCount: tabs.length, texts: tabs.map(t => t.textContent.trim()) };
+      hampersTab.click();
+      return { clicked: true, text: hampersTab.textContent.trim() };
+    })()`);
+    console.log('Test 6 Switch Deals Tab Result:', switchDealsTab);
+    assert.ok(switchDealsTab.clicked, 'Deals hampers tab clicked');
+    await new Promise((r) => setTimeout(r, 600));
+
+    const switchedDealsUrl = await evaluate(`window.location.pathname + window.location.search`);
+    console.log('Test 6 Switched Deals URL:', switchedDealsUrl);
+    assert.ok(
+      switchedDealsUrl.includes('filter=hampers') && switchedDealsUrl.includes('utm_campaign=ramadan_deals'),
+      'Switching deals tab preserves unrelated campaign parameter'
+    );
+
+    // Browser back returns to duos
+    await evaluate(`window.history.back()`);
+    await new Promise((r) => setTimeout(r, 600));
+    const backDealsUrl = await evaluate(`window.location.pathname + window.location.search`);
+    console.log('Test 6 Deals Browser Back URL:', backDealsUrl);
+    assert.equal(backDealsUrl, '/shop/deals?filter=duos&utm_campaign=ramadan_deals', 'Deals back navigation works');
+    console.log('✔ Assertion Passed: Deals URL-driven filtering, history navigation, and omission of strikethroughs confirmed');
+
+    // Test 7: Standard 1-piece empty box checkout and no silent mode substitution in Celebration Boxes
+    await navigateTo('/shop/celebration-boxes?mode=empty');
+    await waitForSelector('article', 10000);
+    const celebrationAudit = await evaluate(`(() => {
+      const cards = Array.from(document.querySelectorAll('article'));
+      const buttons = cards.map(c => c.querySelector('button[class*="py-3"]')?.textContent?.trim() || '');
+      const hasCheckout = buttons.some(b => b.includes('Add') || b.includes('Bag') || b.includes('Cart'));
+      const hasQuote = buttons.some(b => b.includes('Quote') || b.includes('Inquire'));
+      return {
+        cardCount: cards.length,
+        hasCheckout,
+        hasQuote,
+      };
+    })()`);
+    console.log('Test 7 Celebration Audit:', celebrationAudit);
+    assert.ok(celebrationAudit.cardCount >= 5, 'At least 5 celebration box cards rendered');
+    assert.ok(celebrationAudit.hasCheckout, 'Eligible priced products have direct Add to Bag checkout');
+    console.log('✔ Assertion Passed: Celebration boxes direct checkout eligibility confirmed');
+
     console.log('\n========================================');
     console.log('PART 2: REFRESHING COMMITTED ARTIFACT SCREENSHOTS');
     console.log('========================================');

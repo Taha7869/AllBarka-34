@@ -26,6 +26,7 @@ import {
 } from '../lib/packagingClassification';
 import { openCustomQuoteModal } from './CustomQuoteModal';
 import DestinationHeader, { DestinationNotice } from './DestinationHeader';
+import { productMatchesOccasion } from '../config/categories';
 
 export { getPackagingSubcategory, productMatchesPackagingSubcategory } from '../lib/packagingClassification';
 export type { CelebrationSubcategory } from '../lib/packagingClassification';
@@ -87,10 +88,9 @@ export default function CelebrationBoxesDestination({
         return false;
       }
 
-      // 2. Occasion filter
+      // 2. Occasion filter (canonical occasion normalization)
       if (occasionFilter !== 'all') {
-        const occs = (p.occasions || []).map(o => o.toLowerCase());
-        if (!occs.includes(occasionFilter.toLowerCase())) {
+        if (!productMatchesOccasion(p, occasionFilter)) {
           return false;
         }
       }
@@ -160,7 +160,8 @@ export default function CelebrationBoxesDestination({
       return;
     }
 
-    addToCart(product, cardVariant.variantKey, 1);
+    const qtyToAdd = cardVariant.piecesPerPack === 1 && cardVariant.moq > 1 ? cardVariant.moq : 1;
+    addToCart(product, cardVariant.variantKey, qtyToAdd);
     setAddedId(product.id);
     setTimeout(() => setAddedId(prev => (prev === product.id ? null : prev)), 1600);
     setIsCartOpen(true);
@@ -274,10 +275,10 @@ export default function CelebrationBoxesDestination({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
         {filteredProducts.map(product => {
           const coverImg = mediaCover[product.id] || product.image;
-          const preferredMode = selectedCardModes[product.id] || (modeFilter === 'empty' ? 'empty' : 'filled');
+          const preferredMode = selectedCardModes[product.id] || (modeFilter === 'empty' ? 'empty' : (modeFilter === 'filled' ? 'filled' : undefined));
           const requestedTier = selectedTierIdx[product.id];
           const cardVariant = resolveCelebrationCardVariant(product, preferredMode, requestedTier);
-          const subcat = getPackagingSubcategory(product) || 'wedding';
+          const subcat = getPackagingSubcategory(product);
 
           return (
             <article
@@ -295,9 +296,11 @@ export default function CelebrationBoxesDestination({
 
                 {/* Subcategory & Occasion Badges */}
                 <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-                  <span className="rounded-full bg-[#072a20]/90 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#e6c786]">
-                    {t(`dest.celebration.subcat.${subcat}`)}
-                  </span>
+                  {subcat && (
+                    <span className="rounded-full bg-[#072a20]/90 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#e6c786]">
+                      {t(`dest.celebration.subcat.${subcat}`)}
+                    </span>
+                  )}
                   {product.occasions && product.occasions.length > 0 && (
                     <span className="rounded-full bg-white/90 backdrop-blur-md px-2.5 py-1 text-[10px] font-semibold text-[#072a20] capitalize">
                       {product.occasions[0]}

@@ -23,6 +23,7 @@ export default function AdminProductCreateModal({ isOpen, onClose, onCreated }: 
   const [productFamily, setProductFamily] = useState('');
   const [orderMode, setOrderMode] = useState<OrderMode>('standard');
   const [status, setStatus] = useState<ProductStatus>('draft');
+  const [packagingSubcategory, setPackagingSubcategory] = useState('');
   const [moqOverride, setMoqOverride] = useState('');
   const [portions, setPortions] = useState<{ label: string; price: string; moqOverride: string }[]>([
     { label: '250g', price: '1200', moqOverride: '' },
@@ -132,6 +133,7 @@ export default function AdminProductCreateModal({ isOpen, onClose, onCreated }: 
       quoteOnly: orderMode === 'inquiry_quote',
       wholesale: wholesale ? Math.round(Number(wholesale)) : 0,
       productFamily: productFamily.trim() || undefined,
+      packagingSubcategory: packagingSubcategory.trim() || undefined,
       moqOverride: parsedProductMoq,
       referencePrice: referencePrice ? Number(referencePrice) : undefined,
       supplierCost: supplierCost ? Number(supplierCost) : undefined,
@@ -281,6 +283,24 @@ export default function AdminProductCreateModal({ isOpen, onClose, onCreated }: 
                 className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] px-3 py-2 text-sm focus-ring"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-[var(--color-text-secondary)] mb-1">
+              Packaging Subcategory (Celebration Boxes)
+            </label>
+            <select
+              value={packagingSubcategory}
+              onChange={e => setPackagingSubcategory(e.target.value)}
+              className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] px-3 py-2 text-sm focus-ring"
+            >
+              <option value="">None / Unclassified (Default)</option>
+              <option value="tin">Signature Tin Boxes</option>
+              <option value="tabarruk">Hajj & Umrah Tabarruk Sets</option>
+              <option value="wedding">Wedding Favor Boxes & Pouches</option>
+              <option value="baby">Baby Announcement Boxes</option>
+              <option value="acrylic">Personalized Acrylic Boxes</option>
+            </select>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
