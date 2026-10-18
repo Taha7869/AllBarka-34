@@ -1132,6 +1132,7 @@ export async function updateAdminMerchandising(input: { db: Firestore | null; bo
 
     const nextRevision = (current.revision || 0) + 1;
     const validated = validateMerchandisingSettings({
+      ...current,
       ...body,
       revision: nextRevision,
       updatedAt: new Date().toISOString(),

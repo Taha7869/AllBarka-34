@@ -1,8 +1,8 @@
-# AllBarka Renovation — Stage 5A Review Packet & Handoff v5.3
+# AllBarka Renovation — Stage 5A Review Packet & Handoff v5.4
 
-**Document Version:** 5.3.0  
+**Document Version:** 5.4.0  
 **Date:** October 18, 2026  
-**Baseline Git Commit:** `8164bda` -> `feat/renovation-v2`  
+**Baseline Git Commit:** `cfd267b` -> `feat/renovation-v2`  
 **Active Working Branch:** `feat/renovation-v2` (Tracking `origin/feat/renovation-v2`)  
 **Parent / Production Branch:** `launch` (synced with `origin/launch` and `origin/main`)  
 **Applicable Instructions Read:** `C:\Users\taha\.gemini\antigravity\scratch\AllBarka-34\AGENTS.md` and `C:\Users\taha\.gemini\config\plugins\science\rules\AGENTS.md`  
@@ -13,7 +13,7 @@
 ## 1. Stage 5 Scope Boundaries
 
 Stage 5 is split into three discrete, reviewable milestones:
-- **Stage 5A (Implemented & Fully Verified Here):** Homepage, Boutique Selections showcase, autoplay lifecycle, collection integration, merchant occasion titles, and published merchandising integration.
+- **Stage 5A (Implemented & Fully Verified Here):** Homepage, Boutique Selections showcase, autoplay lifecycle, collection alias normalization & visibility conflict resolution, merchant occasion titles, and real browser provider-fetch integration.
 - **Stage 5B (Explicitly Pending):** Dedicated collection/occasion destinations (`/shop/celebration-boxes`, `/shop/deals`, `/gifting`).
 - **Stage 5C (Explicitly Pending):** Verified packaging catalog, descriptions, and original studio photography assets.
 
@@ -22,78 +22,63 @@ Stage 5 is split into three discrete, reviewable milestones:
 
 ---
 
-## 2. Homepage Structure & Section Assembly
+## 2. Collection Alias Normalization & Conflict Resolution
 
-The approved 6-part homepage structure is implemented in `src/pages/HomePage.tsx`:
+### 2.1 Problem Solved
+Previously, `CategoryCarousel` keyed its `collectionsMap` by raw `collectionId` while resolving candidate cards using canonical category keys. When an administrator configured a legacy alias (such as `{ collectionId: 'nuts', visible: false }`), the canonical category `dry-fruits` would fail to match the raw key `nuts`, causing the hidden dry fruits collection card to silently reappear on the homepage.
 
-1. **Dry-Fruit-Led Premium Hero (`src/components/AllBarkaHero.tsx`)**:
-   - Retains AllBarka's signature high-resolution dry fruit backdrop and heritage branding.
-   - **Primary CTA**: "Shop Dry Fruits" (`/shop/dry-fruits`), deep amber gold button.
-   - **Secondary CTA**: "Explore Gifts" (`/gifting`), subtle translucent bordered pill.
-   - Integrated predictive search and language switcher (`en`, `ur`, `ar`).
-2. **Explore Our Collections (`src/components/CategoryCarousel.tsx`)**:
-   - Compact destination cards presenting deduplicated customer-facing collections and categories.
-   - **Dynamic Collection-Entry Integration**: Directly maps published `settings.collections` alongside canonical categories. Renders published collection title (`title_en`/`title_ur`), custom image, destination URL, and promotional badge (`col.badge`).
-   - **Canonical Equivalence Deduplication**: Normalizes and deduplicates aliases across `nuts` ↔ `dry-fruits`, `snacks-seeds` ↔ `seeds-snacks`, `bundles` ↔ `combos`, and `gift-boxes` ↔ `gifts` so no duplicate cards are rendered.
-   - **Deterministic Precedence**: Orders slides deterministically using `settings.categoryOrder` (or safe default order), and respects visibility flags in both `settings.categoryVisibility` and individual collection entries (`col.visible !== false`).
-   - Retains safe legacy defaults only when settings are absent, not when explicitly empty or hidden.
-3. **Boutique Selections (`src/components/BoutiqueSelections.tsx`)**:
-   - The **SINGLE** homepage product showcase.
-   - Replaced old `ProductSlider` ("Boutique Bestsellers").
-   - Old large product grids (`BidBoxesSection` and `DealsPackagesSection`) were permanently removed from `HomePage.tsx` without recreating equivalent grids under other headings.
-   - 5 approved tabs (Dry Fruits, Pantry, Gifts, Celebration Boxes, Deals) with at most 3 admin-selected products per tab.
-4. **Find a Gift for Your Occasion (`src/components/FindGiftOccasionSection.tsx`)**:
-   - Compact destination links highlighting core blessed occasions, dynamically populated and filtered from published settings (`settings.occasions`).
-   - **Merchant-Saved Title Precedence**: Merchant-saved localized titles (`title_en`, `title_ur`) take highest precedence over hardcoded translation dictionary keys (`occasion.weddingTitle`).
-   - **Safe Fallback Chain**: If a merchant-saved title is empty/absent, falls back gracefully to `t(meta.titleKey, meta.defaultTitle)` → `meta.defaultTitle` → `occId`. Tested and verified with custom titles such as "Bespoke Royal Nikkah Favors" and "Imperial Nikkah Hampers".
-5. **Compact Genuine Feedback & Essential Service Information / FAQ**:
-   - Editorial service pillars (`ShieldCheck`, `ThermometerSnowflake`, `Truck`) with "Our Standards" link.
-   - `AllBarkaMovingReviews`: Genuine customer feedback carousel showing average ratings, published review counts, and freshness guarantees (no fake claims or invented reviews).
-   - `FAQSection`: Compact expandable accordion addressing freshness, vacuum sealing, and wholesale tiers.
-6. **Footer**:
-   - Rendered globally by `RootLayout.tsx` with updated deduplicated collection links.
+### 2.2 Canonical Key Normalization
+In `src/config/categories.ts`:
+- Added and exported `COLLECTION_ALIASES`:
+  - `nuts` ↔ `dry-fruits`
+  - `snacks-seeds` ↔ `seeds-snacks`
+  - `bundles` ↔ `combos`
+  - `gift-boxes` ↔ `gifts`
+- Exported `canonicalCollectionKey(id)` to reduce any alias to its canonical representation.
+- Exported `COLLECTION_EQUIVALENCE_GROUPS` and `getEquivalentCollectionIds(id)` to retrieve all equivalent identifiers for any category or collection.
+
+### 2.3 Deterministic Conflict Handling in `CategoryCarousel`
+In `src/components/CategoryCarousel.tsx`:
+- Keyed `normalizedCollections` by `canonicalCollectionKey(col.collectionId)`.
+- When multiple entries target equivalent collections (e.g. `nuts` and `dry-fruits`):
+  - **Hidden Precedence Rule:** `const isHidden = existing.visible === false || col.visible === false;`
+  - If any equivalent entry is marked `visible: false`, the hidden state strictly prevails across the entire group.
+  - Custom overrides (titles, images, destinations, badges) are merged deterministically without duplicate cards.
+- Evaluated category visibility across all equivalent aliases (`isCategoryVisible(cKey)` checks both canonical and legacy keys in `categoryVisibility`).
+- Iterated canonical items (`PANTRY_CATEGORIES`) with `seenCanonicalKeys.add(cKey)` unconditionally once visited, guaranteeing no duplicate slides are ever created.
+- Normalized `order.map(id => canonicalCollectionKey(id))` for deterministic ordering.
+- Preserved distinct commercial collections (`celebration-boxes`, `deals`, `combos`, `personalized-treats`).
 
 ---
 
-## 3. Boutique Selections Lifecycle & Settings Integration
+## 3. Real Browser Provider-Fetch Verification
 
-### 3.1 Timer Ownership & Exact Timing
-- **Separated Timer References**:
-  - `autoplayTimerRef`: Exclusively owns the active rotation countdown (e.g. 6000ms).
-  - `hoverResumeTimerRef`: Exclusively owns the post-hover resume delay timer (e.g. 3000ms).
-- **Exact First-Advance Timing**:
-  - When pointer exits the showcase, `isResumePending` becomes `true` and `hoverResumeTimerRef` starts for 3000ms.
-  - While `isResumePending` is active, rotation is strictly paused.
-  - After 3000ms, `isResumePending` clears to `false`, and React schedules a fresh 6000ms rotation interval.
-  - Total elapsed time from pointer exit to first slide rotation: **exactly 9000ms** (3000ms delay + 6000ms interval).
-  - Re-entering the showcase before the 3000ms delay expires cancels `hoverResumeTimerRef`; the full 3000ms delay must restart upon next exit.
+### 3.1 Service/SSR Flow vs Client HTTP Fetch Distinction
+- **Test 6 (`stage5a-admin-integration.test.tsx`):** Accurately re-labeled as Service/SSR flow (`admin save -> preview isolation -> publish -> public fetch -> storefront render (SSR with initialSettings)`).
+- **Test 7 (`stage5a-admin-integration.test.tsx`):** Added a dedicated browser/client-mounted integration test that does **NOT** inject `initialSettings` or direct component props into the rendered page:
+  1. Spins up an Express HTTP server with `createCatalogRouter` backed by in-memory atomic Firestore fixture on a dynamic port (`0`).
+  2. Serves actual production build assets from `dist` and `index.html`.
+  3. Launches a real Playwright Chromium browser session navigating to `http://127.0.0.1:<port>/`.
+  4. Verifies initial storefront state matches live published settings.
+  5. Admin saves a draft with custom collection titles, custom image, destination link, hidden collections, custom occasion title, custom occasion route, hidden occasion, and custom autoplay interval/resume delay.
+  6. Verifies public draft isolation: public storefront re-fetching `/api/merchandising` does not leak draft updates prior to publication.
+  7. Admin publishes draft to live via `publishAdminMerchandising`.
+  8. Client browser triggers `MerchandisingProvider` fetch/refresh (`cache: 'no-store'`) and page reloads.
+  9. Asserts all DOM changes rendered in real browser:
+     - Collection title: `"Mega Spring Flash Deals"`
+     - Collection image: `img[src="/assets/categories/deals.png"]` (real static asset)
+     - Collection destination: `a[href="/shop/deals?promo=spring-mega"]`
+     - Hidden collection: `combos` absent from pantry
+     - Collection ordering: Deals positioned before Oils according to published `categoryOrder`
+     - Custom occasion title: `"Royal Grand Nikkah Hampers"`
+     - Custom occasion route: `a[href*="tier=royal"]`
+     - Hidden occasion: `umrah` absent from occasions section
+     - Autoplay settings in DOM: `data-interval="8888"`, `data-resume-delay="4444"`
 
-### 3.2 Visibility Lifecycle
-- Document visibility is tracked reactively via `isDocumentVisible` state (`!document.hidden`).
-- When `document.hidden` becomes true:
-  - All rotation countdowns and resume timers are canceled.
-  - Autoplay does NOT rotate in the background.
-- Upon tab return:
-  - A fresh countdown begins without an immediate slide skip or advance.
-  - Explicit manual pause states (`isInteracted`) are strictly preserved across visibility transitions.
-
-### 3.3 Reduced-Motion & Play Button Consistency
-- **Default State**: Under reduced motion (`prefers-reduced-motion: reduce`), autoplay defaults strictly to **paused** (`isEffectivelyPlaying = false`).
-- **Explicit Play Opt-In**: The user can explicitly opt into tab rotation by clicking the Play button (`userPlayOverride = true`).
-- **Guaranteed Protections Under Opt-In**:
-  - Hover protection remains 100% active (pointer over showcase or Play button pauses countdown).
-  - Hover exit triggers the full 3000ms resume delay before starting the 6000ms countdown (9000ms first advance).
-  - Document visibility hiding pauses rotation and return begins a fresh interval.
-  - Explicit Pause button immediately pauses playback indefinitely.
-- **Decorative Motion**: Tab panels utilize `motion-reduce:transition-none` to eliminate disorienting slide transitions while allowing controlled tab switching.
-- **Button State**: `aria-pressed`, label, and icons accurately reflect the actual playback state at all times.
-
-### 3.4 Catalog Filtering & Pricing Integrity
-- Showcase tabs read live catalog prices (`useCatalogProducts()` / `products` prop).
-- Zero prices are stored in merchandising settings.
-- Inactive (`active: false`), archived (`status: 'archived'`), and out-of-stock (`inStock: false`) products are strictly omitted.
-- Maximum 3 admin-selected products per tab.
-- Empty tabs (0 active products) are omitted from the tablist; rotation is disabled if <= 1 tab remains.
+### 3.2 Autoplay Precedence & Store Merge Fix
+- In `src/lib/catalogSchema.ts`: Corrected precedence so modern canonical `rawAutoplay.intervalMs` and `rawAutoplay.resumeDelayMs` take precedence over legacy top-level `value.autoplayDurationMs` / `value.autoplayResumeDelayMs`.
+- In `src/lib/catalogStore.ts`: Updated `updateAdminMerchandising` to spread `...current` before `...body`, ensuring partial admin updates do not wipe out existing configuration (e.g. `showcaseTabs`).
+- In `src/contexts/MerchandisingContext.tsx`: Added `cache: 'no-store'` to fetch request to prevent stale browser HTTP caching of `/api/merchandising`.
 
 ---
 
@@ -103,15 +88,15 @@ All automated suites, controlled-clock tests, integration tests, TypeScript comp
 
 | Suite / Check | Command | Actual Output / Result | Exit Code | Evaluation & Coverage Notes |
 | :--- | :--- | :--- | :---: | :--- |
-| **Controlled-Clock Lifecycle Suite** | `node --test tests/stage5a-controlled-clock.test.mjs` | **11 passed, 0 failed** (37.4s) | `0` | **VERIFIED:** 11 scenarios using Playwright virtual clock: (1) Initial advance at 6000ms; (2) Sustained hover pauses indefinitely (18000ms); (3) Exact 3000ms resume delay + 6000ms interval = 9000ms first advance; (4) Repeated enter/exit resets delay; (5) Manual pause until Play; (6) Play while hovered maintains hover protection; (7) Hidden document pauses rotation; return restarts fresh countdown without jump; (8) Reduced motion defaults to paused, and explicit Play opts into rotation with hover/delay/visibility protections; (9) Asynchronously loaded `enabled = false` pauses rotation; (10) Empty tabs hidden, rotation disabled when <= 1 tab; (11) Unmount cleanup clears all timers without leaks. |
-| **Admin Merchandising Integration** | `node --import tsx --test --test-isolation=none tests/stage5a-admin-integration.test.tsx` | **6 passed, 0 failed** (64.4s) | `0` | **VERIFIED:** (1) Admin draft save -> draft isolation -> publish promotion -> public retrieval; (2) `CategoryCarousel` renders published collection title, custom image, destination, visibility, and order; (3) `BoutiqueSelections` filters inactive/unpublished products and caps at 3; (4) `FindGiftOccasionSection` filters hidden occasions and preserves validated routes; (5) Custom merchant occasion title honors saved localized title over translated default (e.g. Wedding); (6) Full end-to-end integrated flow via `MerchandisingProvider` (`admin save → preview isolation → publish → public fetch → homepage refresh`) asserting collection title/image/link/visibility/order, custom occasion title/route/visibility, and autoplay settings. |
-| **Stage 5A Homepage Unit Tests** | `node --import tsx --test --test-isolation=none tests/stage5a-homepage.test.tsx` | **6 passed, 0 failed** (60.1s) | `0` | **VERIFIED:** 6-part homepage structure, old grid removal, Boutique Selections 5 tabs with verified products, live price reading (zero stored prices), 5 occasion destination routes, category deduplication, and multilingual translations in EN, UR, and AR. |
-| **Stage 4 Navigation Regressions** | `node --import tsx --test --test-isolation=none tests/stage4-navigation.test.tsx` | **12 passed, 0 failed** (58.7s) | `0` | **VERIFIED:** Regression check for header taxonomy, disclosure buttons, mobile accordion, RTL/Dark mode, route resolution, occasion matching, and single active indicator. |
+| **Admin Merchandising Integration** | `node --import tsx --test --test-isolation=none tests/stage5a-admin-integration.test.tsx` | **8 passed, 0 failed** (61.2s) | `0` | **VERIFIED:** (1) Admin lifecycle: draft save -> draft isolation -> publish promotion -> public retrieval; (2) CategoryCarousel published title, image, destination, visibility, order; (2b) CategoryCarousel alias normalization & deterministic conflict handling for `nuts`/`dry-fruits` and `snacks-seeds`/`seeds-snacks`; (3) BoutiqueSelections product filter & tab cap; (4) FindGiftOccasionSection hidden filtering & routes; (5) Custom merchant occasion title overrides translation keys; (6) Service/SSR integrated flow; (7) Real browser/client-mounted HTTP provider-fetch verification. |
+| **Controlled-Clock Lifecycle Suite** | `node --test tests/stage5a-controlled-clock.test.mjs` | **11 passed, 0 failed** (37.7s) | `0` | **VERIFIED:** 11 scenarios using Playwright virtual clock: (1) Initial advance at 6000ms; (2) Sustained hover pauses indefinitely (18000ms); (3) Exact 3000ms resume delay + 6000ms interval = 9000ms first advance; (4) Repeated enter/exit resets delay; (5) Manual pause until Play; (6) Play while hovered maintains hover protection; (7) Hidden document pauses rotation; return restarts fresh countdown without jump; (8) Reduced motion defaults to paused, and explicit Play opts into rotation with hover/delay/visibility protections; (9) Asynchronously loaded `enabled = false` pauses rotation; (10) Empty tabs hidden, rotation disabled when <= 1 tab; (11) Unmount cleanup clears all timers without leaks. |
+| **Stage 5A Homepage Unit Tests** | `node --import tsx --test --test-isolation=none tests/stage5a-homepage.test.tsx` | **6 passed, 0 failed** (52.5s) | `0` | **VERIFIED:** 6-part homepage structure, old grid removal, Boutique Selections 5 tabs with verified products, live price reading (zero stored prices), 5 occasion destination routes, category deduplication, and multilingual translations in EN, UR, and AR. |
+| **Stage 4 Navigation Regressions** | `node --import tsx --test --test-isolation=none tests/stage4-navigation.test.tsx` | **12 passed, 0 failed** (49.5s) | `0` | **VERIFIED:** Regression check for header taxonomy, disclosure buttons, mobile accordion, RTL/Dark mode, route resolution, occasion matching, and single active indicator. |
 | **Stage 3 Pricing & MOQ Regressions** | `node --import tsx --test --test-isolation=none tests/stage3-pricing-moq.test.ts` | **19 passed, 0 failed** (51.8s) | `0` | **VERIFIED:** Rules D1 & D2, food exemption, packaging MOQ, reference markup idempotency, and bid box pricing integrity. |
 | **Real Browser CDP Tests** | `node scripts/test-stage5a-homepage.mjs` | **9 passed, 0 failed** (18.2s) | `0` | **VERIFIED:** Real headless Chrome CDP execution on fresh `dist` build: (1) Hero CTAs; (2) Explore Collections cards; (3) Boutique Selections 5 tabs, initial tab 3 cards; (4) Initial tab selected; (5) Old grids absent; (6) Interactive tab switching; (7) Play/Pause toggle; (8) Occasion destination cards; (9) Service pillars, reviews, and FAQ mounted. Captured 6 screenshots. |
 | **TypeScript Typecheck** | `npm run typecheck` (`tsc --noEmit`) | `allbarka@0.0.0 typecheck` (zero diagnostics) | `0` | **VERIFIED:** 100% type safety across the entire repository. |
 | **React Hook Linter** | `npm run lint:hooks` (`eslint src`) | `allbarka@0.0.0 lint:hooks` (zero warnings, zero errors) | `0` | **VERIFIED:** All hook dependency arrays and rules satisfied. |
-| **Production Build Pipeline** | `npm run build` | Full pipeline: Vite client bundle (17.77s) + esbuild server.cjs (870.1kb) + Release privacy audit (84 text artifacts clean). | `0` | **VERIFIED:** Production bundle built cleanly with zero private credential leaks. |
+| **Production Build Pipeline** | `npm run build` | Full pipeline: Vite client bundle (12.79s) + esbuild server.cjs (870.1kb) + Release privacy audit (84 text artifacts clean). | `0` | **VERIFIED:** Production bundle built cleanly with zero private credential leaks. |
 
 ---
 
@@ -132,13 +117,15 @@ Real headless Chrome CDP interaction tests produced the following visual artifac
 
 ## 6. Changed Files Summary
 
-- `src/components/BoutiqueSelections.tsx`: Separated `autoplayTimerRef` and `hoverResumeTimerRef`; implemented 3000ms delay + 6000ms interval = 9000ms first advance; added reactive `isDocumentVisible` lifecycle; enabled explicit Play opt-in under reduced motion while preserving reduced motion defaults and hover/delay/visibility protections; added `motion-reduce:transition-none` to tab panels.
-- `src/components/CategoryCarousel.tsx`: Connected to `useMerchandisingSettings()`; maps published `settings.collections` alongside canonical categories; implements canonical equivalence deduplication (`nuts`/`dry-fruits`, `snacks-seeds`/`seeds-snacks`, `bundles`/`combos`, `gift-boxes`/`gifts`); orders slides by `categoryOrder`; respects visibility in `settings.categoryVisibility` and collection entries; renders published titles, custom images, destinations, and badges.
-- `src/components/FindGiftOccasionSection.tsx`: Prioritizes merchant-saved localized titles (`title_en`, `title_ur`) over translation keys; supports custom occasion titles (e.g. "Bespoke Royal Nikkah Favors", "Imperial Nikkah Hampers"); filters hidden occasions; preserves custom destinations.
-- `tests/stage5a-controlled-clock.test.mjs`: Added full lifecycle testing for Scenario 8 (reduced motion default paused, explicit Play opt-in, hover protection, 3000ms resume delay + 6000ms countdown = 9000ms advance, visibility change, and explicit Pause).
-- `tests/stage5a-admin-integration.test.tsx`: Added Test 5 (custom merchant occasion title overrides translation keys with empty title fallback) and Test 6 (end-to-end integrated flow from admin draft save -> preview isolation -> publish -> public fetch -> storefront refresh).
-- `docs/artifacts/*`: 6 refreshed real browser screenshots.
-- `docs/RENOVATION_HANDOFF.md`: Updated to Stage 5A Review Packet v5.3.0.
+- `src/config/categories.ts`: Added `COLLECTION_ALIASES`, `canonicalCollectionKey`, `COLLECTION_EQUIVALENCE_GROUPS`, and `getEquivalentCollectionIds`.
+- `src/components/CategoryCarousel.tsx`: Implemented canonical alias normalization, conflict resolution (hidden precedence), and equivalent ID deduplication across both `categoryVisibility` and `collections` entries.
+- `src/components/BoutiqueSelections.tsx`: Exposed `data-interval` and `data-resume-delay` attributes for runtime inspection.
+- `src/contexts/MerchandisingContext.tsx`: Added `cache: 'no-store'` to `/api/merchandising` fetch call and attached `window.__refreshMerchandising` for browser integration testing.
+- `src/lib/catalogRouter.ts`: Set `Cache-Control: no-cache, must-revalidate` on `GET /api/merchandising`.
+- `src/lib/catalogSchema.ts`: Fixed autoplay interval and resume delay precedence so nested canonical `rawAutoplay.intervalMs` and `rawAutoplay.resumeDelayMs` override legacy top-level defaults.
+- `src/lib/catalogStore.ts`: Merged `...current` before `...body` in `updateAdminMerchandising` transaction so partial updates preserve existing configuration.
+- `tests/stage5a-admin-integration.test.tsx`: Added Test 2b (alias normalization and deterministic conflict handling) and Test 7 (browser/client-mounted HTTP provider-fetch verification), while labeling Test 6 as Service/SSR flow.
+- `docs/RENOVATION_HANDOFF.md`: Updated to Stage 5A Review Packet v5.4.0.
 
 ---
 

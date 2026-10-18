@@ -34,6 +34,7 @@ export function MerchandisingProvider({
     try {
       const res = await fetch(apiUrl('/api/merchandising'), {
         headers: { Accept: 'application/json' },
+        cache: 'no-store',
       });
       if (res.ok) {
         const data = await res.json();
@@ -50,6 +51,9 @@ export function MerchandisingProvider({
   }, []);
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).__refreshMerchandising = refresh;
+    }
     if (initialSettings) {
       setSettings(initialSettings);
       return;

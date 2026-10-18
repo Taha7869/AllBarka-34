@@ -3,6 +3,11 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { renderToString } from 'react-dom/server';
 import { MemoryRouter } from 'react-router-dom';
+import path from 'node:path';
+import { once } from 'node:events';
+import { type AddressInfo } from 'node:net';
+import express from 'express';
+import { chromium } from 'playwright-core';
 import {
   getPublicMerchandising,
   getAdminMerchandisingBundle,
@@ -10,6 +15,7 @@ import {
   publishAdminMerchandising,
   MERCHANDISING_COLLECTION,
 } from '../src/lib/catalogStore';
+import { createCatalogRouter } from '../src/lib/catalogRouter';
 import { DEFAULT_MERCHANDISING } from '../src/config/merchandising';
 import { PRODUCTS } from '../src/data/products';
 import HomePage from '../src/pages/HomePage';
@@ -313,6 +319,168 @@ test('2. CategoryCarousel renders published collection title, custom image, dest
   assert.ok(dealsIndex !== -1 && oilsIndex !== -1 && dealsIndex < oilsIndex, 'CategoryOrder must determine slide ordering');
 });
 
+test('2b. CategoryCarousel alias normalization and deterministic conflict handling: nuts/dry-fruits and snacks-seeds/seeds-snacks', async () => {
+  // Case A: Hidden legacy 'nuts' in collections must hide the dry-fruits card completely (cannot resurrect via equivalent ID)
+  const settingsNutsHidden: MerchandisingSettings = {
+    ...DEFAULT_MERCHANDISING,
+    collections: [
+      { collectionId: 'nuts', visible: false, title_en: 'Hidden Nuts' },
+    ] as any,
+  };
+  const htmlNutsHidden = renderWithProviders(<CategoryCarousel settings={settingsNutsHidden} />);
+  assert.ok(!htmlNutsHidden.includes('href="/shop/dry-fruits"'), 'Hidden legacy nuts must NOT allow dry-fruits card to appear');
+  assert.ok(!htmlNutsHidden.includes('href="/shop/nuts"'), 'Hidden legacy nuts must NOT allow nuts card to appear');
+  assert.ok(!htmlNutsHidden.includes('Hidden Nuts'), 'Hidden legacy nuts title must NOT appear');
+
+  // Case B: Hidden canonical 'dry-fruits' in collections must hide dry-fruits completely
+  const settingsDryFruitsHidden: MerchandisingSettings = {
+    ...DEFAULT_MERCHANDISING,
+    collections: [
+      { collectionId: 'dry-fruits', visible: false, title_en: 'Hidden Dry Fruits' },
+    ] as any,
+  };
+  const htmlDryFruitsHidden = renderWithProviders(<CategoryCarousel settings={settingsDryFruitsHidden} />);
+  assert.ok(!htmlDryFruitsHidden.includes('href="/shop/dry-fruits"'), 'Hidden dry-fruits must NOT appear');
+  assert.ok(!htmlDryFruitsHidden.includes('href="/shop/nuts"'), 'Hidden dry-fruits must NOT appear');
+
+  // Case C: Conflicting entries: one visible and one hidden -> hidden takes precedence deterministically
+  const settingsConflictNuts: MerchandisingSettings = {
+    ...DEFAULT_MERCHANDISING,
+    collections: [
+      { collectionId: 'nuts', visible: false },
+      { collectionId: 'dry-fruits', visible: true, title_en: 'Visible Dry Fruits' },
+    ] as any,
+  };
+  const htmlConflictNuts = renderWithProviders(<CategoryCarousel settings={settingsConflictNuts} />);
+  assert.ok(!htmlConflictNuts.includes('href="/shop/dry-fruits"'), 'Conflicting alias entries: hidden nuts must prevent dry-fruits from reappearing');
+  assert.ok(!htmlConflictNuts.includes('Visible Dry Fruits'), 'Conflicting visible title must NOT appear when equivalent alias is hidden');
+
+  // Case D: CategoryVisibility { nuts: false } or { 'dry-fruits': false }
+  const settingsVisNutsHidden: MerchandisingSettings = {
+    ...DEFAULT_MERCHANDISING,
+    categoryVisibility: { nuts: false },
+  };
+  const htmlVisNutsHidden = renderWithProviders(<CategoryCarousel settings={settingsVisNutsHidden} />);
+  assert.ok(!htmlVisNutsHidden.includes('href="/shop/dry-fruits"'), 'categoryVisibility.nuts = false must hide dry-fruits');
+
+  const settingsVisDfHidden: MerchandisingSettings = {
+    ...DEFAULT_MERCHANDISING,
+    categoryVisibility: { 'dry-fruits': false },
+  };
+  const htmlVisDfHidden = renderWithProviders(<CategoryCarousel settings={settingsVisDfHidden} />);
+  assert.ok(!htmlVisDfHidden.includes('href="/shop/dry-fruits"'), 'categoryVisibility["dry-fruits"] = false must hide dry-fruits');
+
+  // Case E: Saved title/image/link overrides on 'nuts' rendered once on dry-fruits
+  const settingsNutsOverride: MerchandisingSettings = {
+    ...DEFAULT_MERCHANDISING,
+    collections: [
+      {
+        collectionId: 'nuts',
+        title_en: 'Royal Dry Fruits & Nuts',
+        image: '/images/nuts-royal.webp',
+        slug: '/shop/dry-fruits?promo=royal',
+        visible: true,
+      },
+    ] as any,
+  };
+  const htmlNutsOverride = renderWithProviders(<CategoryCarousel settings={settingsNutsOverride} />);
+  assert.ok(
+    htmlNutsOverride.includes('Royal Dry Fruits &amp; Nuts') || htmlNutsOverride.includes('Royal Dry Fruits & Nuts'),
+    'Saved title on nuts must be rendered'
+  );
+  assert.ok(htmlNutsOverride.includes('/images/nuts-royal.webp'), 'Saved image on nuts must be rendered');
+  assert.ok(htmlNutsOverride.includes('href="/shop/dry-fruits?promo=royal"'), 'Saved slug on nuts must be rendered');
+  // Must render exactly once (no duplicate card)
+  const matchesRoyal = htmlNutsOverride.match(/href="\/shop\/dry-fruits\?promo=royal"/g);
+  assert.equal(matchesRoyal?.length, 1, 'Only one card must be rendered for nuts/dry-fruits');
+
+  // Case F: Hidden legacy 'snacks-seeds' in collections
+  const settingsSnacksHidden: MerchandisingSettings = {
+    ...DEFAULT_MERCHANDISING,
+    collections: [
+      { collectionId: 'snacks-seeds', visible: false, title_en: 'Hidden Snacks' },
+    ] as any,
+  };
+  const htmlSnacksHidden = renderWithProviders(<CategoryCarousel settings={settingsSnacksHidden} />);
+  assert.ok(!htmlSnacksHidden.includes('href="/shop/seeds-snacks"'), 'Hidden legacy snacks-seeds must NOT allow seeds-snacks card to appear');
+  assert.ok(!htmlSnacksHidden.includes('href="/shop/snacks-seeds"'), 'Hidden legacy snacks-seeds must NOT appear');
+
+  // Case G: Hidden canonical 'seeds-snacks' in collections
+  const settingsSeedsHidden: MerchandisingSettings = {
+    ...DEFAULT_MERCHANDISING,
+    collections: [
+      { collectionId: 'seeds-snacks', visible: false },
+    ] as any,
+  };
+  const htmlSeedsHidden = renderWithProviders(<CategoryCarousel settings={settingsSeedsHidden} />);
+  assert.ok(!htmlSeedsHidden.includes('href="/shop/seeds-snacks"'), 'Hidden seeds-snacks must NOT appear');
+
+  // Case H: Conflicting snacks-seeds and seeds-snacks
+  const settingsConflictSnacks: MerchandisingSettings = {
+    ...DEFAULT_MERCHANDISING,
+    collections: [
+      { collectionId: 'snacks-seeds', visible: true, title_en: 'Visible Snacks' },
+      { collectionId: 'seeds-snacks', visible: false },
+    ] as any,
+  };
+  const htmlConflictSnacks = renderWithProviders(<CategoryCarousel settings={settingsConflictSnacks} />);
+  assert.ok(!htmlConflictSnacks.includes('href="/shop/seeds-snacks"'), 'Conflicting snacks-seeds: hidden must take precedence');
+  assert.ok(!htmlConflictSnacks.includes('Visible Snacks'), 'Visible title must not leak when alias is hidden');
+
+  // Case I: CategoryVisibility for snacks-seeds
+  const settingsVisSnacksHidden: MerchandisingSettings = {
+    ...DEFAULT_MERCHANDISING,
+    categoryVisibility: { 'snacks-seeds': false },
+  };
+  const htmlVisSnacksHidden = renderWithProviders(<CategoryCarousel settings={settingsVisSnacksHidden} />);
+  assert.ok(!htmlVisSnacksHidden.includes('href="/shop/seeds-snacks"'), 'categoryVisibility["snacks-seeds"] = false must hide seeds-snacks');
+
+  // Case J: Saved title/image/link overrides on 'snacks-seeds'
+  const settingsSnacksOverride: MerchandisingSettings = {
+    ...DEFAULT_MERCHANDISING,
+    collections: [
+      {
+        collectionId: 'snacks-seeds',
+        title_en: 'Artisan Seeds & Superfoods',
+        image: '/images/seeds-artisan.webp',
+        slug: '/shop/seeds-snacks?artisan=true',
+        visible: true,
+      },
+    ] as any,
+  };
+  const htmlSnacksOverride = renderWithProviders(<CategoryCarousel settings={settingsSnacksOverride} />);
+  assert.ok(
+    htmlSnacksOverride.includes('Artisan Seeds &amp; Superfoods') || htmlSnacksOverride.includes('Artisan Seeds & Superfoods'),
+    'Saved title on snacks-seeds must be rendered'
+  );
+  assert.ok(htmlSnacksOverride.includes('/images/seeds-artisan.webp'), 'Saved image on snacks-seeds must be rendered');
+  assert.ok(htmlSnacksOverride.includes('href="/shop/seeds-snacks?artisan=true"'), 'Saved link on snacks-seeds must be rendered');
+
+  // Case K: Ordering normalization with legacy alias IDs in categoryOrder
+  const settingsOrderLegacy: MerchandisingSettings = {
+    ...DEFAULT_MERCHANDISING,
+    categoryOrder: ['snacks-seeds', 'nuts', 'oils'],
+  };
+  const htmlOrderLegacy = renderWithProviders(<CategoryCarousel settings={settingsOrderLegacy} />);
+  const seedsPos = htmlOrderLegacy.indexOf('href="/shop/seeds-snacks"');
+  const nutsPos = htmlOrderLegacy.indexOf('href="/shop/dry-fruits"');
+  const oilsPos = htmlOrderLegacy.indexOf('href="/shop/oils"');
+  assert.ok(seedsPos !== -1 && nutsPos !== -1 && oilsPos !== -1, 'All ordered cards must be present');
+  assert.ok(seedsPos < nutsPos && nutsPos < oilsPos, 'categoryOrder with legacy IDs must order slides deterministically');
+
+  // Case L: Distinct commercial collections (celebration-boxes, deals, combos) remain distinct
+  const settingsCommercial: MerchandisingSettings = {
+    ...DEFAULT_MERCHANDISING,
+    collections: [
+      { collectionId: 'celebration-boxes', title_en: 'Festive Celebration Chests', visible: true },
+      { collectionId: 'deals', title_en: 'Super Deals Hub', visible: true },
+    ] as any,
+  };
+  const htmlCommercial = renderWithProviders(<CategoryCarousel settings={settingsCommercial} />);
+  assert.ok(htmlCommercial.includes('Festive Celebration Chests'), 'Celebration boxes distinct collection rendered');
+  assert.ok(htmlCommercial.includes('Super Deals Hub'), 'Deals distinct collection rendered');
+});
+
 test('3. BoutiqueSelections filters inactive/unpublished products and limits to 3 per tab', async () => {
   // Create a test catalog with active and inactive products
   const testCatalog: Product[] = [
@@ -505,7 +673,7 @@ test('5. Custom merchant occasion title honors saved localized title over transl
   assert.ok(htmlUr.includes('ولادت خوشی بیڈ باکس'), 'Merchant-saved title_ur must be rendered in Urdu');
 });
 
-test('6. End-to-end integrated flow via MerchandisingProvider: admin save -> preview isolation -> publish -> public fetch -> homepage refresh', async () => {
+test('6. Service/SSR integrated flow: admin save -> preview isolation -> publish -> public fetch -> storefront render (SSR with initialSettings)', async () => {
   const { db } = createMockFirestore();
 
   // Step 1: Initial public state
@@ -635,4 +803,190 @@ test('6. End-to-end integrated flow via MerchandisingProvider: admin save -> pre
     'Custom occasion route must be rendered'
   );
   assert.ok(!htmlRefreshed.includes('occasion=umrah'), 'Hidden occasion must NOT be rendered on homepage');
+});
+
+test('7. Browser/client-mounted provider-fetch verification with real local HTTP routes: admin draft save -> public draft isolation -> publish -> MerchandisingProvider HTTP fetch/refresh -> rendered homepage', async () => {
+  const { db } = createMockFirestore();
+
+  // Create isolated Express app mounting real catalogRouter with mock db
+  const app = express();
+  app.use(express.json());
+  app.use(createCatalogRouter({ getDb: () => db, requireAdmin: (_req, _res, next) => next() }));
+  const distDir = path.resolve('dist');
+  app.use(express.static(distDir));
+  app.get('*', (_req, res) => res.sendFile(path.join(distDir, 'index.html')));
+
+  const server = app.listen(0);
+  await once(server, 'listening');
+  const port = (server.address() as AddressInfo).port;
+
+  let browser: any = null;
+  try {
+    browser = await chromium.launch({ channel: 'chrome', headless: true }).catch(() =>
+      chromium.launch({ channel: 'msedge', headless: true })
+    );
+    const page = await browser.newPage();
+
+    // Step 1: Initial client mount — NO initialSettings or direct settings injected
+    // Browser client loads real bundle, mounts <MerchandisingProvider>, fetches GET /api/merchandising
+    await page.goto(`http://localhost:${port}/`);
+    await page.waitForSelector('#boutique-selections');
+    await page.waitForSelector('#allbarka-pantry');
+    await page.waitForSelector('#gift-for-occasion');
+
+    // Verify initial public state in browser (matches DEFAULT_MERCHANDISING)
+    const initialDealsCount = await page.locator('text="Mega Spring Flash Deals"').count();
+    assert.equal(initialDealsCount, 0, 'Initial storefront must NOT contain unconfigured flash deals');
+    const initialNikkahCount = await page.locator('text="Royal Grand Nikkah Hampers"').count();
+    assert.equal(initialNikkahCount, 0, 'Initial storefront must NOT contain custom grand nikkah hampers');
+
+    // Step 2: Admin draft save
+    const bundle = await getAdminMerchandisingBundle(db);
+    const draftUpdate = {
+      ...DEFAULT_MERCHANDISING,
+      expectedRevision: bundle.draftRevision,
+      categoryOrder: ['deals', 'dry-fruits', 'oils'],
+      categoryVisibility: {
+        deals: true,
+        'dry-fruits': true,
+        oils: true,
+        combos: false, // Hidden collection
+      },
+      collections: [
+        {
+          collectionId: 'deals',
+          title_en: 'Mega Spring Flash Deals',
+          title_ur: 'بہار کی زبردست ڈیلز',
+          slug: '/shop/deals?promo=spring-mega',
+          image: '/assets/categories/deals.png',
+          visible: true,
+          badge: 'Flash Deal',
+        },
+        {
+          collectionId: 'combos',
+          title_en: 'Curated Combos',
+          title_ur: 'منتخب بنڈلز',
+          slug: '/shop/combos',
+          visible: false,
+        },
+      ],
+      occasions: [
+        {
+          tag: 'wedding',
+          title_en: 'Royal Grand Nikkah Hampers',
+          title_ur: 'شاہی نکاح ہیمپرز',
+          slug: '/shop/celebration-boxes?occasion=wedding&tier=royal',
+          visible: true,
+        },
+        {
+          tag: 'umrah',
+          title_en: 'Umrah & Hajj',
+          title_ur: 'عمرہ و حج',
+          slug: '/shop/celebration-boxes?occasion=umrah',
+          visible: false,
+        },
+      ],
+      autoplay: { enabled: true, intervalMs: 8888, resumeDelayMs: 4444 },
+      adminNotes: 'Spring 2026 Live Campaign',
+    };
+
+    const savedDraft = await updateAdminMerchandising({
+      db,
+      body: draftUpdate,
+      actorUid: 'admin-lead-789',
+    });
+    assert.equal(savedDraft.revision, bundle.draftRevision + 1);
+
+    // Step 3: Public Draft Isolation
+    // MerchandisingProvider refresh must NOT receive draft changes
+    await page.evaluate(async () => {
+      if (typeof (window as any).__refreshMerchandising === 'function') {
+        await (window as any).__refreshMerchandising();
+      }
+    });
+
+    const leakCollectionCount = await page.locator('text="Mega Spring Flash Deals"').count();
+    assert.equal(leakCollectionCount, 0, 'Storefront must NOT leak draft collection title before publish');
+    const leakOccasionCount = await page.locator('text="Royal Grand Nikkah Hampers"').count();
+    assert.equal(leakOccasionCount, 0, 'Storefront must NOT leak draft occasion title before publish');
+
+    // Step 4: Admin publishes draft to live
+    const publishResult = await publishAdminMerchandising({
+      db,
+      actorUid: 'admin-lead-789',
+      body: {
+        expectedDraftRevision: savedDraft.revision,
+        expectedLiveRevision: bundle.liveRevision,
+      },
+    });
+    assert.equal(publishResult.liveRevision, bundle.liveRevision + 1);
+
+    // Step 5: MerchandisingProvider HTTP fetch / refresh
+    // First trigger real in-place refresh via provider callback
+    await page.evaluate(async () => {
+      if (typeof (window as any).__refreshMerchandising === 'function') {
+        await (window as any).__refreshMerchandising();
+      }
+    });
+
+    // Also reload page to test clean client mount fetching GET /api/merchandising
+    await page.reload();
+    await page.waitForSelector('#boutique-selections');
+    await page.waitForSelector('#allbarka-pantry');
+    await page.waitForSelector('#gift-for-occasion');
+
+    // Step 6: Assert rendered homepage changes after real HTTP refresh
+    // A. Collection title
+    await page.locator('text="Mega Spring Flash Deals"').first().waitFor({ state: 'attached' });
+    const publishedTitleCount = await page.locator('text="Mega Spring Flash Deals"').count();
+    assert.ok(publishedTitleCount > 0, 'Published collection title must be rendered in browser after refresh');
+
+    // B. Collection image
+    const customImgCount = await page.locator('img[src="/assets/categories/deals.png"]').count();
+    assert.ok(customImgCount > 0, 'Published custom image must be rendered in browser after refresh');
+
+    // C. Collection destination link
+    const customLinkCount = await page.locator('a[href="/shop/deals?promo=spring-mega"]').count();
+    assert.ok(customLinkCount > 0, 'Published custom destination link must be rendered in browser after refresh');
+
+    // D. Hidden collection must NOT be rendered
+    const hiddenCombosCount = await page.locator('#allbarka-pantry a[href="/shop/combos"]').count();
+    assert.equal(hiddenCombosCount, 0, 'Hidden collection combos must NOT be rendered in browser');
+
+    // E. Collection ordering
+    const orderCheck = await page.evaluate(() => {
+      const pantry = document.getElementById('allbarka-pantry');
+      if (!pantry) return { dealsPos: -1, oilsPos: -1 };
+      const html = pantry.innerHTML;
+      return {
+        dealsPos: html.indexOf('Mega Spring Flash Deals'),
+        oilsPos: html.indexOf('href="/shop/oils"'),
+      };
+    });
+    assert.ok(
+      orderCheck.dealsPos !== -1 && orderCheck.oilsPos !== -1 && orderCheck.dealsPos < orderCheck.oilsPos,
+      'Deals must appear before Oils according to published categoryOrder in browser'
+    );
+
+    // F. Custom occasion title
+    const customOccasionTitleCount = await page.locator('text="Royal Grand Nikkah Hampers"').count();
+    assert.ok(customOccasionTitleCount > 0, 'Custom merchant occasion title must be rendered in browser after refresh');
+
+    // G. Custom occasion destination link
+    const customOccasionLink = await page.locator('#gift-for-occasion a[href*="tier=royal"]').count();
+    assert.ok(customOccasionLink > 0, 'Custom occasion destination link must be rendered in browser after refresh');
+
+    // H. Hidden occasion must NOT be rendered
+    const hiddenOccasionCount = await page.locator('#gift-for-occasion a[href*="occasion=umrah"]').count();
+    assert.equal(hiddenOccasionCount, 0, 'Hidden occasion umrah must NOT be rendered in browser after refresh');
+
+    // I. Autoplay settings applied to DOM
+    const appliedInterval = await page.getAttribute('#boutique-selections', 'data-interval');
+    assert.equal(appliedInterval, '8888', 'Published autoplay intervalMs must be applied to DOM after refresh');
+    const appliedResumeDelay = await page.getAttribute('#boutique-selections', 'data-resume-delay');
+    assert.equal(appliedResumeDelay, '4444', 'Published autoplay resumeDelayMs must be applied to DOM after refresh');
+  } finally {
+    if (browser) await browser.close();
+    server.close();
+  }
 });

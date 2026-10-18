@@ -6,7 +6,7 @@ import useEmblaCarousel from 'embla-carousel-react';
 import { useReducedMotion } from 'motion/react';
 import { canRotatePantry, pantryCardProjection, pantryRotationDistance } from '../lib/pantryMotion';
 import { visibleCardFraction } from '../lib/circularCatalogue';
-import { CANONICAL_CATEGORIES } from '../config/categories';
+import { CANONICAL_CATEGORIES, canonicalCollectionKey, getEquivalentCollectionIds } from '../config/categories';
 import { PRODUCTS, getProductImage } from '../data/products';
 import { useMerchandisingSettings } from '../contexts/MerchandisingContext';
 import { DEFAULT_MERCHANDISING } from '../config/merchandising';
@@ -73,26 +73,54 @@ export default function CategoryCarousel({ settings: propSettings }: CategoryCar
       ? activeSettings.collections
       : DEFAULT_MERCHANDISING.collections;
 
-    // 1. Build lookup for published collections
-    const collectionsMap = new Map<string, typeof rawCollections[number]>();
+    // 1. Build normalized lookup for published collections keyed by canonicalCollectionKey
+    const normalizedCollections = new Map<string, {
+      collectionId: string;
+      title_en?: string;
+      title_ur?: string;
+      image?: string;
+      slug?: string;
+      visible?: boolean;
+      badge?: string;
+    }>();
+
     for (const col of rawCollections) {
-      collectionsMap.set(col.collectionId, col);
+      const cKey = canonicalCollectionKey(col.collectionId);
+      const existing = normalizedCollections.get(cKey);
+
+      if (!existing) {
+        normalizedCollections.set(cKey, { ...col });
+      } else {
+        // Deterministic conflict resolution:
+        // A hidden equivalent must never be resurrected by a conflicting visible alias
+        const isHidden = existing.visible === false || col.visible === false;
+        const isExplicitlyVisible = existing.visible === true || col.visible === true;
+        const resolvedVisibility = isHidden ? false : (isExplicitlyVisible ? true : undefined);
+
+        // Overrides: prefer modern canonical ID, or non-empty overrides
+        const preferCol = (col.collectionId === cKey);
+        normalizedCollections.set(cKey, {
+          collectionId: (col.collectionId === cKey) ? col.collectionId : existing.collectionId,
+          title_en: preferCol ? (col.title_en || existing.title_en) : (existing.title_en || col.title_en),
+          title_ur: preferCol ? (col.title_ur || existing.title_ur) : (existing.title_ur || col.title_ur),
+          image: preferCol ? (col.image || existing.image) : (existing.image || col.image),
+          slug: preferCol ? (col.slug || existing.slug) : (existing.slug || col.slug),
+          badge: preferCol ? (col.badge || existing.badge) : (existing.badge || col.badge),
+          visible: resolvedVisibility,
+        });
+      }
     }
 
-    // Canonical equivalence resolver
-    const canonicalKey = (id: string) => {
-      if (id === 'nuts') return 'dry-fruits';
-      if (id === 'snacks-seeds') return 'seeds-snacks';
-      if (id === 'bundles') return 'combos';
-      if (id === 'gift-boxes') return 'gifts';
-      return id;
-    };
+    const isVisible = (cKey: string) => {
+      const col = normalizedCollections.get(cKey);
+      if (col?.visible === false) return false;
 
-    const isVisible = (id: string, colVisible?: boolean) => {
-      if (colVisible === false) return false;
-      const cKey = canonicalKey(id);
-      if (visibility[id] === false) return false;
-      if (visibility[cKey] === false) return false;
+      // Check all equivalent aliases in categoryVisibility
+      const aliases = getEquivalentCollectionIds(cKey);
+      for (const alias of aliases) {
+        if (visibility[alias] === false) return false;
+      }
+
       return true;
     };
 
@@ -102,24 +130,27 @@ export default function CategoryCarousel({ settings: propSettings }: CategoryCar
 
     // A. Start with base pantry categories
     for (const cat of PANTRY_CATEGORIES) {
-      const cKey = canonicalKey(cat.id);
+      const cKey = canonicalCollectionKey(cat.id);
       if (seenCanonicalKeys.has(cKey)) continue;
-
-      const col = collectionsMap.get(cKey) || collectionsMap.get(cat.id);
-      if (!isVisible(cat.id, col?.visible)) continue;
-
       seenCanonicalKeys.add(cKey);
 
+      if (!isVisible(cKey)) continue;
+
+      const col = normalizedCollections.get(cKey);
       const colTitle = col
         ? (language === 'ur' ? (col.title_ur || col.title_en) : (col.title_en || col.title_ur))
         : undefined;
+
+      const defaultLink = (cKey === 'dry-fruits') ? '/shop/dry-fruits'
+        : (cKey === 'seeds-snacks') ? '/shop/seeds-snacks'
+        : cat.link || `/shop/${cat.id}`;
 
       slideCandidates.push({
         id: col?.collectionId || cat.id,
         name: colTitle || cat.name,
         title: colTitle,
         image: col?.image || cat.image || DEFAULT_COLLECTION_IMAGES[cKey] || DEFAULT_COLLECTION_IMAGES[cat.id] || '',
-        link: col?.slug || cat.link || `/shop/${cat.id}`,
+        link: col?.slug || defaultLink,
         altKey: cat.altKey,
         badge: col?.badge,
       });
@@ -127,37 +158,36 @@ export default function CategoryCarousel({ settings: propSettings }: CategoryCar
 
     // B. Add any published collections not already present in base pantry categories
     for (const col of rawCollections) {
-      const cKey = canonicalKey(col.collectionId);
+      const cKey = canonicalCollectionKey(col.collectionId);
       if (seenCanonicalKeys.has(cKey)) continue;
-      if (!isVisible(col.collectionId, col.visible)) continue;
-
       seenCanonicalKeys.add(cKey);
 
+      if (!isVisible(cKey)) continue;
+
+      const colEntry = normalizedCollections.get(cKey) || col;
       const colTitle = language === 'ur'
-        ? (col.title_ur || col.title_en)
-        : (col.title_en || col.title_ur);
+        ? (colEntry.title_ur || colEntry.title_en)
+        : (colEntry.title_en || colEntry.title_ur);
 
       slideCandidates.push({
-        id: col.collectionId,
-        name: colTitle || col.collectionId,
+        id: colEntry.collectionId,
+        name: colTitle || colEntry.collectionId,
         title: colTitle,
-        image: col.image || DEFAULT_COLLECTION_IMAGES[cKey] || DEFAULT_COLLECTION_IMAGES[col.collectionId] || '',
-        link: col.slug || `/shop/${col.collectionId}`,
-        altKey: `catalog.alt.${col.collectionId}`,
-        badge: col.badge,
+        image: colEntry.image || DEFAULT_COLLECTION_IMAGES[cKey] || DEFAULT_COLLECTION_IMAGES[colEntry.collectionId] || '',
+        link: colEntry.slug || `/shop/${colEntry.collectionId}`,
+        altKey: `catalog.alt.${colEntry.collectionId}`,
+        badge: colEntry.badge,
       });
     }
 
-    // 3. Deterministic Ordering
+    // 3. Deterministic Ordering: normalize ordering IDs
     if (!order.length) return slideCandidates;
 
+    const normalizedOrder = order.map(id => canonicalCollectionKey(id));
     const getOrderPos = (id: string) => {
-      const cKey = canonicalKey(id);
-      let idx = order.indexOf(id);
-      if (idx !== -1) return idx;
-      idx = order.indexOf(cKey);
-      if (idx !== -1) return idx;
-      return 999;
+      const cKey = canonicalCollectionKey(id);
+      const idx = normalizedOrder.indexOf(cKey);
+      return idx !== -1 ? idx : 999;
     };
 
     return [...slideCandidates].sort((a, b) => {
@@ -203,6 +233,10 @@ export default function CategoryCarousel({ settings: propSettings }: CategoryCar
     observer.observe(emblaApi.rootNode());
     return () => observer.disconnect();
   }, [emblaApi]);
+
+  useEffect(() => {
+    if (emblaApi) emblaApi.reInit();
+  }, [emblaApi, categories]);
 
   useEffect(() => {
     const sync = () => setPageVisible(!document.hidden);

@@ -738,13 +738,13 @@ export function validateMerchandisingSettings(value: unknown): {
     }
   }
 
-  const autoplayDurationMs = typeof value.autoplayDurationMs === 'number'
-    ? value.autoplayDurationMs
-    : (typeof rawAutoplay.intervalMs === 'number' ? rawAutoplay.intervalMs : 6000);
+  const autoplayDurationMs = typeof rawAutoplay.intervalMs === 'number'
+    ? rawAutoplay.intervalMs
+    : (typeof value.autoplayDurationMs === 'number' ? value.autoplayDurationMs : 6000);
 
-  const autoplayResumeDelayMs = typeof value.autoplayResumeDelayMs === 'number'
-    ? value.autoplayResumeDelayMs
-    : (typeof rawAutoplay.resumeDelayMs === 'number' ? rawAutoplay.resumeDelayMs : 3000);
+  const autoplayResumeDelayMs = typeof rawAutoplay.resumeDelayMs === 'number'
+    ? rawAutoplay.resumeDelayMs
+    : (typeof value.autoplayResumeDelayMs === 'number' ? value.autoplayResumeDelayMs : 3000);
 
   const autoplay = {
     enabled: typeof rawAutoplay.enabled === 'boolean' ? rawAutoplay.enabled : true,

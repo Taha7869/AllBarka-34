@@ -346,6 +346,8 @@ export default function BoutiqueSelections({
   return (
     <section
       id="boutique-selections"
+      data-interval={intervalMs}
+      data-resume-delay={resumeDelayMs}
       aria-label={t('boutique.showcaseTitle', 'Boutique Selections')}
       dir={isRtl ? 'rtl' : 'ltr'}
       className="boutique-selections w-full border-y border-[var(--color-border)] bg-[var(--color-surface)] py-12 sm:py-16 lg:py-20 text-[var(--color-ink)]"

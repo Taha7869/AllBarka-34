@@ -169,6 +169,39 @@ export const CUSTOMER_FACING_CATEGORIES = [
 ] as const;
 
 
+export const COLLECTION_ALIASES: Record<string, string> = {
+  nuts: 'dry-fruits',
+  'dry-fruits': 'dry-fruits',
+  fruits: 'dry-fruits',
+  'snacks-seeds': 'seeds-snacks',
+  'seeds-snacks': 'seeds-snacks',
+  snacks: 'seeds-snacks',
+  seeds: 'seeds-snacks',
+  bundles: 'combos',
+  combos: 'combos',
+  'gift-boxes': 'gifts',
+  gifts: 'gifts',
+  gifting: 'gifts',
+};
+
+export function canonicalCollectionKey(id?: string | null): string {
+  if (!id) return '';
+  const norm = id.trim().toLowerCase();
+  return COLLECTION_ALIASES[norm] || norm;
+}
+
+export const COLLECTION_EQUIVALENCE_GROUPS: Record<string, string[]> = {
+  'dry-fruits': ['dry-fruits', 'nuts', 'fruits'],
+  'seeds-snacks': ['seeds-snacks', 'snacks-seeds', 'snacks', 'seeds'],
+  combos: ['combos', 'bundles'],
+  gifts: ['gifts', 'gift-boxes', 'gifting'],
+};
+
+export function getEquivalentCollectionIds(id: string): string[] {
+  const cKey = canonicalCollectionKey(id);
+  return COLLECTION_EQUIVALENCE_GROUPS[cKey] || [id];
+}
+
 export const CATEGORY_ALIASES: Record<string, string> = {
   fruits: 'nuts',
   'dry-fruits': 'nuts',

@@ -48,7 +48,7 @@ export function createCatalogRouter(options: { getDb: () => Firestore | null; re
   // Public Merchandising Settings
   router.get('/api/merchandising', async (_request, response) => {
     try {
-      response.setHeader('Cache-Control', 'public, max-age=60, must-revalidate');
+      response.setHeader('Cache-Control', 'no-cache, must-revalidate');
       const settings = await getPublicMerchandising(options.getDb());
       return response.json({ settings });
     } catch (error) {
