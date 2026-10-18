@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion, type Variants } from 'motion/react';
 import { 
   X, 
@@ -414,20 +414,17 @@ export default function MobileMenu({
                                 ? catalogTranslations[language]?.['shop.bundles'] || t('shop.bundles', drop.defaultLabel)
                                 : t(drop.labelKey, drop.defaultLabel);
 
-                            return (
+                            return drop.action ? (
                               <button
                                 key={drop.id}
                                 type="button"
                                 data-nav-path={drop.path}
                                 onClick={() => {
+                                  onClose();
                                   if (drop.action === 'open-hamper-builder') {
-                                    onClose();
                                     window.dispatchEvent(new CustomEvent('open-hamper-builder'));
                                   } else if (drop.action === 'open-custom-quote') {
-                                    onClose();
                                     openCustomQuoteModal({ mode: 'filled', quantity: 50 });
-                                  } else {
-                                    handleDestination(drop.path, labelText);
                                   }
                                 }}
                                 className="w-full min-h-[38px] flex items-center justify-between px-3 py-1.5 rounded-lg text-xs text-[#29231D]/85 dark:text-[#F6F1EA]/85 hover:bg-[#C7982F]/15 hover:text-[#042821] dark:hover:text-[#FFFCF7] transition-colors text-start cursor-pointer"
@@ -441,6 +438,26 @@ export default function MobileMenu({
                                   <ChevronRight size={12} className="text-[#C7982F]/50 shrink-0 rtl:rotate-180" />
                                 )}
                               </button>
+                            ) : (
+                              <Link
+                                key={drop.id}
+                                to={drop.path}
+                                data-nav-path={drop.path}
+                                onClick={() => {
+                                  onClose();
+                                  if (onNavItemClick) onNavItemClick(labelText);
+                                }}
+                                className="w-full min-h-[38px] flex items-center justify-between px-3 py-1.5 rounded-lg text-xs text-[#29231D]/85 dark:text-[#F6F1EA]/85 hover:bg-[#C7982F]/15 hover:text-[#042821] dark:hover:text-[#FFFCF7] transition-colors text-start cursor-pointer"
+                              >
+                                <span className="truncate">{labelText}</span>
+                                {drop.badge ? (
+                                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#C7982F]/20 text-[#806326] dark:text-[#E4C783]">
+                                    {drop.badge}
+                                  </span>
+                                ) : (
+                                  <ChevronRight size={12} className="text-[#C7982F]/50 shrink-0 rtl:rotate-180" />
+                                )}
+                              </Link>
                             );
                           })}
                         </div>
@@ -462,16 +479,19 @@ export default function MobileMenu({
                           : t(food.labelKey, food.defaultLabel);
 
                       return (
-                        <button
+                        <Link
                           key={food.id}
-                          type="button"
+                          to={food.path}
                           data-nav-path={food.path}
-                          onClick={() => handleDestination(food.path, foodLabel)}
+                          onClick={() => {
+                            onClose();
+                            if (onNavItemClick) onNavItemClick(foodLabel);
+                          }}
                           className="min-h-[40px] flex items-center justify-between px-3 py-2 rounded-xl bg-[#F6F1EA]/70 dark:bg-[#222A28]/70 border border-[#C7982F]/20 hover:border-[#C7982F] text-xs font-semibold text-[#042821] dark:text-[#FFFCF7] text-start transition-all cursor-pointer"
                         >
                           <span className="truncate">{foodLabel}</span>
                           <ChevronRight size={11} className="text-[#C7982F] shrink-0 rtl:rotate-180" />
-                        </button>
+                        </Link>
                       );
                     })}
                   </div>
@@ -479,9 +499,9 @@ export default function MobileMenu({
 
                 {/* Additional Boutique Pages */}
                 <div className="mt-4 space-y-1">
-                  <button
-                    type="button"
-                    onClick={() => handleDestination('/journal')}
+                  <Link
+                    to="/journal"
+                    onClick={() => onClose()}
                     className="w-full min-h-[42px] flex items-center justify-between px-3 py-2 rounded-xl text-xs text-[#29231D]/85 dark:text-[#F6F1EA]/85 hover:bg-[#C7982F]/10 transition-colors text-start cursor-pointer"
                   >
                     <span className="flex items-center gap-1.5 font-medium">
@@ -489,7 +509,7 @@ export default function MobileMenu({
                       {t('journal', 'The Harvest Chronicle')}
                     </span>
                     <ChevronRight size={13} className="text-[#C7982F]/50 rtl:rotate-180" />
-                  </button>
+                  </Link>
                 </div>
               </div>
 

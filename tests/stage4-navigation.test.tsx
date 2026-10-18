@@ -102,7 +102,7 @@ test('2. Desktop BubbleMenu renders disclosure buttons with aria-expanded/aria-c
   }
 });
 
-test('3. MobileMenu renders an accessible accordion instead of squeezing desktop rows', () => {
+test('3. MobileMenu renders an accessible accordion with anchors for destinations and buttons for disclosure/actions', () => {
   const html = render(<MobileMenu isOpen onClose={() => {}} />);
 
   // Each main item must have an accordion disclosure button with aria-expanded and aria-controls
@@ -117,19 +117,21 @@ test('3. MobileMenu renders an accessible accordion instead of squeezing desktop
     );
   }
 
-  // Compact Food Categories section must be present in mobile drawer
+  // Navigation destinations must be rendered as semantic anchors (<a ... data-nav-path="...">)
+  assert.match(
+    html,
+    /<a[^>]*data-nav-path="\/wholesale"[^>]*>/,
+    'Corporate & Bulk under Gifting must be rendered as a semantic link anchor'
+  );
+
+  // Compact Food Categories section must be present in mobile drawer as semantic anchors
   for (const food of COMPACT_FOOD_NAV_ITEMS) {
-    assert.ok(
-      html.includes(`data-nav-path="${food.path}"`),
-      `Mobile menu must offer quick food category link for ${food.id}`
+    assert.match(
+      html,
+      new RegExp(`<a[^>]*data-nav-path="${food.path}"[^>]*>`),
+      `Mobile menu must render semantic link anchor for ${food.id} with path ${food.path}`
     );
   }
-
-  // Corporate & Bulk under Gifting is present in mobile menu
-  assert.ok(
-    html.includes(`data-nav-path="/wholesale"`),
-    'Mobile menu must include Corporate & Bulk under gifting'
-  );
 });
 
 test('4. Dark mode styling and Urdu/Arabic RTL layout support', () => {
@@ -152,8 +154,10 @@ test('4. Dark mode styling and Urdu/Arabic RTL layout support', () => {
 });
 
 test('5. Navigation destinations resolve meaningfully and preserve existing taxonomy aliases', () => {
-  // Aliases resolution
-  assert.equal(resolveCategorySlug('celebration-boxes'), 'gift-boxes');
+  // Canonical category and aliases resolution
+  assert.equal(resolveCategorySlug('celebration-boxes'), 'celebration-boxes');
+  assert.equal(resolveCategorySlug('bid-boxes'), 'celebration-boxes');
+  assert.equal(resolveCategorySlug('celebration-box'), 'celebration-boxes');
   assert.equal(resolveCategorySlug('combos'), 'gift-boxes');
   assert.equal(resolveCategorySlug('deals'), 'gift-boxes');
   assert.equal(resolveCategorySlug('dry-fruits'), 'dry-fruits');
@@ -176,4 +180,57 @@ test('5. Navigation destinations resolve meaningfully and preserve existing taxo
       }
     }
   }
+});
+
+test('6. Category matching function maps navigation targets to catalog products without empty results', async () => {
+  const { PRODUCTS } = await import('../src/data/products');
+  const { productMatchesCategory } = await import('../src/config/categories');
+
+  // Dry fruits matches all 22 products with category 'nuts'
+  const dryFruitsMatches = PRODUCTS.filter((p) => productMatchesCategory(p, 'dry-fruits'));
+  assert.equal(dryFruitsMatches.length, 22, 'dry-fruits must match all 22 nuts/dry-fruit products');
+
+  // Seeds and snacks matches all 13 products with category 'snacks-seeds'
+  const seedsSnacksMatches = PRODUCTS.filter((p) => productMatchesCategory(p, 'seeds-snacks'));
+  assert.equal(seedsSnacksMatches.length, 13, 'seeds-snacks must match all 13 snacks-seeds products');
+
+  // Celebration boxes matches all 8 Bid Box products
+  const celebrationMatches = PRODUCTS.filter((p) => productMatchesCategory(p, 'celebration-boxes'));
+  assert.equal(celebrationMatches.length, 8, 'celebration-boxes must match all 8 celebration products');
+
+  // Dates matches the 5 date products
+  const dateMatches = PRODUCTS.filter((p) => productMatchesCategory(p, 'dates'));
+  assert.equal(dateMatches.length, 5, 'dates must match the 5 date products');
+  const dateIds = dateMatches.map((p) => p.id);
+  assert.ok(dateIds.includes('ajwa-dates'));
+  assert.ok(dateIds.includes('medjool-dates'));
+  assert.ok(dateIds.includes('khajoor'));
+});
+
+test('7. Occasion matching filters products by approved occasion metadata', async () => {
+  const { PRODUCTS } = await import('../src/data/products');
+  const { productMatchesOccasion, productMatchesCategory } = await import('../src/config/categories');
+
+  // Wedding celebration boxes: exactly 6
+  const weddingBoxes = PRODUCTS.filter(
+    (p) => productMatchesCategory(p, 'celebration-boxes') && productMatchesOccasion(p, 'wedding')
+  );
+  assert.equal(weddingBoxes.length, 6, 'Wedding occasion must return 6 wedding celebration boxes');
+  assert.ok(weddingBoxes.some((p) => p.id === 'bid-box-card-nikkah'));
+  assert.ok(weddingBoxes.every((p) => p.id !== 'bid-box-umrah-tabarruk'));
+  assert.ok(weddingBoxes.every((p) => p.id !== 'bid-box-birth-announcement'));
+
+  // Umrah celebration boxes: exactly 1
+  const umrahBoxes = PRODUCTS.filter(
+    (p) => productMatchesCategory(p, 'celebration-boxes') && productMatchesOccasion(p, 'umrah')
+  );
+  assert.equal(umrahBoxes.length, 1, 'Umrah occasion must return 1 Umrah tabarruk box');
+  assert.equal(umrahBoxes[0].id, 'bid-box-umrah-tabarruk');
+
+  // Birth celebration boxes: exactly 1
+  const birthBoxes = PRODUCTS.filter(
+    (p) => productMatchesCategory(p, 'celebration-boxes') && productMatchesOccasion(p, 'birth')
+  );
+  assert.equal(birthBoxes.length, 1, 'Birth occasion must return 1 Birth announcement box');
+  assert.equal(birthBoxes[0].id, 'bid-box-birth-announcement');
 });

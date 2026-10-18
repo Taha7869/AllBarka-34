@@ -1,11 +1,15 @@
 import type { Product } from '../types';
 import { readCatalogFilters, searchCatalog, startingPrice } from './catalogDiscovery';
+import { productMatchesCategory, productMatchesOccasion } from '../config/categories';
 
-export type CatalogFilterDraft = ReturnType<typeof readCatalogFilters> & { shared: string | null };
+export type CatalogFilterDraft = ReturnType<typeof readCatalogFilters> & { shared: string | null; occasion?: string | null };
 
 /** Drafts are detached values: editing or discarding one never touches the URL. */
 export function beginCatalogFilterDraft(params: URLSearchParams): CatalogFilterDraft {
-  return { ...readCatalogFilters(params), shared: params.get('shared') };
+  const draft: CatalogFilterDraft = { ...readCatalogFilters(params), shared: params.get('shared') };
+  const occasion = params.get('occasion');
+  if (occasion) draft.occasion = occasion;
+  return draft;
 }
 
 export function resetCatalogFilterDraft(): CatalogFilterDraft {
@@ -23,10 +27,11 @@ export function applyCatalogFilterDraft(params: URLSearchParams, draft: CatalogF
     special: draft.special ? '1' : null,
     saved: draft.saved ? '1' : null,
     shared: draft.shared,
+    occasion: !draft.occasion || draft.occasion === 'all' ? null : draft.occasion,
   };
   for (const [key, value] of Object.entries(changes)) {
     // An explicitly empty shared selection is different from an unfiltered catalogue.
-    if (value !== null && (value !== '' || key === 'shared')) next.set(key, value);
+    if (value !== null && value !== undefined && (value !== '' || key === 'shared')) next.set(key, value);
     else next.delete(key);
   }
   return next;
@@ -34,11 +39,12 @@ export function applyCatalogFilterDraft(params: URLSearchParams, draft: CatalogF
 
 export function filterCatalogSelection(
   products: Product[],
-  filters: ReturnType<typeof readCatalogFilters>,
+  filters: ReturnType<typeof readCatalogFilters> & { occasion?: string | null },
   context: { category: string; isWholesale: boolean; savedIds: readonly string[]; sharedIds: readonly string[] | null },
 ): Product[] {
   return searchCatalog(products, filters.query).filter(product =>
-    (context.category === 'all' || product.category === context.category) &&
+    productMatchesCategory(product, context.category) &&
+    productMatchesOccasion(product, filters.occasion) &&
     (context.sharedIds === null || context.sharedIds.includes(product.id)) &&
     (filters.origin === 'all' || product.origin_en === filters.origin) &&
     (!context.isWholesale || product.wholesale > 0) &&

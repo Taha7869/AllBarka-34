@@ -43,10 +43,14 @@ export default function BubbleMenu({
     }
   }, []);
 
-  // Grace period before closing: prevents premature dismissal during slow or diagonal mouse movement
+  // Grace period before closing: prevents premature dismissal during slow or diagonal mouse movement.
+  // CRITICAL: Must not dismiss while keyboard focus remains within the active trigger or panel.
   const scheduleCloseDelay = useCallback((delayMs = 220) => {
     cancelCloseDelay();
     closeTimeoutRef.current = setTimeout(() => {
+      if (navContainerRef.current && navContainerRef.current.contains(document.activeElement)) {
+        return; // Retain menu open because user has keyboard focus inside
+      }
       setOpenId(null);
     }, delayMs);
   }, [cancelCloseDelay]);
@@ -57,6 +61,12 @@ export default function BubbleMenu({
       cancelCloseDelay();
     };
   }, [cancelCloseDelay]);
+
+  // Immediately close open menu on ANY route change (navigation, back/forward, external links)
+  useEffect(() => {
+    cancelCloseDelay();
+    setOpenId(null);
+  }, [location.pathname, location.search, cancelCloseDelay]);
 
   // Outside pointer click dismisses open dropdown
   useEffect(() => {
@@ -186,6 +196,12 @@ export default function BubbleMenu({
                   aria-expanded={isOpen}
                   aria-controls={`nav-dropdown-panel-${item.id}`}
                   data-nav-path={item.path}
+                  onFocus={() => {
+                    cancelCloseDelay();
+                    if (openId && openId !== item.id) {
+                      setOpenId(null);
+                    }
+                  }}
                   onClick={() => {
                     cancelCloseDelay();
                     setOpenId((prev) => (prev === item.id ? null : item.id));
@@ -210,6 +226,10 @@ export default function BubbleMenu({
                 <Link
                   to={item.path}
                   data-nav-path={item.path}
+                  onFocus={() => {
+                    cancelCloseDelay();
+                    if (openId) setOpenId(null);
+                  }}
                   onClick={() => {
                     cancelCloseDelay();
                     setOpenId(null);
@@ -225,7 +245,7 @@ export default function BubbleMenu({
                 </Link>
               )}
 
-              {/* DROPDOWN PANEL with Continuous Pointer Bridge & Focus Restoration */}
+              {/* DROPDOWN PANEL with Continuous Pointer Bridge, Bounded Viewport Height & Focus Restoration */}
               {item.hasDropdown && isOpen && (
                 <div
                   id={`nav-dropdown-panel-${item.id}`}
@@ -241,7 +261,8 @@ export default function BubbleMenu({
                       triggerRefs.current[item.id]?.focus();
                     }
                   }}
-                  className="absolute left-1/2 top-full z-[150] mt-1.5 w-64 -translate-x-1/2 rounded-2xl border border-[#C7982F]/25 bg-[#FFFCF7] p-2 shadow-2xl backdrop-blur-xl dark:border-[#C7982F]/20 dark:bg-[#1A201E]"
+                  style={{ maxHeight: 'min(420px, calc(100vh - 140px))' }}
+                  className="absolute left-1/2 top-full z-[150] mt-1.5 w-64 -translate-x-1/2 rounded-2xl border border-[#C7982F]/25 bg-[#FFFCF7] p-2 shadow-2xl backdrop-blur-xl dark:border-[#C7982F]/20 dark:bg-[#1A201E] overflow-y-auto overscroll-contain"
                 >
                   {/* Invisible pointer bridge connecting trigger and panel */}
                   <div

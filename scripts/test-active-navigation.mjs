@@ -6,7 +6,10 @@ import { spawn } from 'node:child_process';
 
 const distDir = path.resolve('dist');
 const port = 4567;
-const artifactDir = 'C:\\Users\\taha\\.gemini\\antigravity\\brain\\f408ee7a-7513-4e1a-b8e1-251273bc99e6';
+const artifactDir = process.env.SCREENSHOT_DIR || 'C:\\Users\\taha\\.gemini\\antigravity\\brain\\f408ee7a-7513-4e1a-b8e1-251273bc99e6';
+if (!fs.existsSync(artifactDir)) {
+  fs.mkdirSync(artifactDir, { recursive: true });
+}
 
 const mimeTypes = {
   '.html': 'text/html',
@@ -226,30 +229,278 @@ async function main() {
     const closedAfterOutsideClick = await evaluate(`document.getElementById('nav-dropdown-panel-shop') === null`);
     logTest('Dropdown closes on outside click', closedAfterOutsideClick);
 
-    // TEST 5: Keyboard navigation & focus restoration
+    // TEST 5: Keyboard navigation & focus behavior
+    // 5a. Space key trigger toggle
     await evaluate(`document.getElementById('nav-trigger-gifting').focus()`);
-    // Press Space or Enter to open
+    await send('Input.dispatchKeyEvent', { type: 'rawKeyDown', key: ' ', code: 'Space' });
+    await send('Input.dispatchKeyEvent', { type: 'keyUp', key: ' ', code: 'Space' });
+    await new Promise((r) => setTimeout(r, 80));
+
+    const giftingOpenedBySpace = await evaluate(`document.getElementById('nav-trigger-gifting')?.getAttribute('aria-expanded') === 'true'`);
+    logTest('Space key opens dropdown menu', giftingOpenedBySpace);
+
+    await send('Input.dispatchKeyEvent', { type: 'rawKeyDown', key: ' ', code: 'Space' });
+    await send('Input.dispatchKeyEvent', { type: 'keyUp', key: ' ', code: 'Space' });
+    await new Promise((r) => setTimeout(r, 80));
+
+    const giftingClosedBySpace = await evaluate(`document.getElementById('nav-dropdown-panel-gifting') === null`);
+    logTest('Space key toggles dropdown menu closed', giftingClosedBySpace);
+
+    // Re-open with Space
+    await send('Input.dispatchKeyEvent', { type: 'rawKeyDown', key: ' ', code: 'Space' });
+    await send('Input.dispatchKeyEvent', { type: 'keyUp', key: ' ', code: 'Space' });
+    await new Promise((r) => setTimeout(r, 80));
+
+    // 5b. Tab moves focus into dropdown panel
+    await send('Input.dispatchKeyEvent', { type: 'rawKeyDown', key: 'Tab', code: 'Tab' });
+    await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Tab', code: 'Tab' });
+    await new Promise((r) => setTimeout(r, 80));
+
+    const focusInsideGiftingPanel = await evaluate(`(() => {
+      const panel = document.getElementById('nav-dropdown-panel-gifting');
+      return !!panel && panel.contains(document.activeElement);
+    })()`);
+    logTest('Tab key moves focus into dropdown panel items', focusInsideGiftingPanel);
+
+    // 5c. Pointer leave retention (> 220ms delay while focus retained inside)
+    await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 10, y: 10 });
+    await new Promise((r) => setTimeout(r, 300)); // Wait > 220ms
+
+    const retainedWithFocusOnMouseLeave = await evaluate(`document.getElementById('nav-dropdown-panel-gifting') !== null`);
+    logTest('Dropdown remains open when mouse leaves if keyboard focus is retained inside', retainedWithFocusOnMouseLeave);
+
+    // 5d. Focus transition between disclosure groups
+    await evaluate(`document.getElementById('nav-trigger-occasions').focus()`);
+    await new Promise((r) => setTimeout(r, 80));
+
+    const previousPanelDismissedOnFocusShift = await evaluate(`document.getElementById('nav-dropdown-panel-gifting') === null`);
+    logTest('Focus shifting to another trigger dismisses previous disclosure', previousPanelDismissedOnFocusShift);
+
+    // 5e. Escape key closes panel and restores focus to trigger
     await send('Input.dispatchKeyEvent', { type: 'rawKeyDown', key: 'Enter', code: 'Enter' });
     await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Enter', code: 'Enter' });
     await new Promise((r) => setTimeout(r, 80));
 
-    const giftingOpenedByKeyboard = await evaluate(`document.getElementById('nav-trigger-gifting')?.getAttribute('aria-expanded') === 'true'`);
-    logTest('Dropdown toggles open on Enter key', giftingOpenedByKeyboard);
-
-    // Press Escape to close and verify focus restoration
     await send('Input.dispatchKeyEvent', { type: 'rawKeyDown', key: 'Escape', code: 'Escape' });
     await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape' });
     await new Promise((r) => setTimeout(r, 80));
 
-    const focusRestored = await evaluate(`(() => {
-      const closed = document.getElementById('nav-dropdown-panel-gifting') === null;
-      const activeIsTrigger = document.activeElement?.id === 'nav-trigger-gifting';
+    const escapeRestoresFocus = await evaluate(`(() => {
+      const closed = document.getElementById('nav-dropdown-panel-occasions') === null;
+      const activeIsTrigger = document.activeElement?.id === 'nav-trigger-occasions';
       return closed && activeIsTrigger;
     })()`);
-    logTest('Escape closes dropdown and restores focus to trigger', focusRestored);
+    logTest('Escape closes dropdown and restores focus to trigger', escapeRestoresFocus);
 
     // Capture desktop light screenshot
     await captureScreenshot('stage4_desktop_light.png');
+
+    // TEST 5b: Short Viewport Height Bounding & Internal Scrolling
+    await send('Emulation.setDeviceMetricsOverride', {
+      width: 1280,
+      height: 400,
+      deviceScaleFactor: 1,
+      mobile: false,
+    });
+    await evaluate(`document.getElementById('nav-trigger-shop')?.click()`);
+    await new Promise((r) => setTimeout(r, 120));
+
+    const shortViewportMetrics = await evaluate(`(() => {
+      const panel = document.getElementById('nav-dropdown-panel-shop');
+      if (!panel) return null;
+      const rect = panel.getBoundingClientRect();
+      const style = window.getComputedStyle(panel);
+      return {
+        height: rect.height,
+        maxHeight: style.maxHeight,
+        overflowY: style.overflowY,
+        fitsInViewport: rect.bottom <= window.innerHeight + 5,
+        scrollHeight: panel.scrollHeight,
+        clientHeight: panel.clientHeight,
+      };
+    })()`);
+
+    logTest(
+      'Dropdown panel bounds height to viewport on short screens',
+      !!shortViewportMetrics && shortViewportMetrics.fitsInViewport && shortViewportMetrics.overflowY === 'auto',
+      `Height: ${shortViewportMetrics?.height}px, MaxHeight: ${shortViewportMetrics?.maxHeight}, Fits: ${shortViewportMetrics?.fitsInViewport}`,
+    );
+
+    // Close shop dropdown and restore desktop height to 800px
+    await evaluate(`document.getElementById('nav-trigger-shop')?.click()`);
+    await send('Emulation.setDeviceMetricsOverride', {
+      width: 1280,
+      height: 800,
+      deviceScaleFactor: 1,
+      mobile: false,
+    });
+    await new Promise((r) => setTimeout(r, 150));
+
+    // TEST 6: Category Navigation & Product Content Verification
+    // 6a. Compact food row link -> /shop/dry-fruits (maps to nuts category)
+    await evaluate(`(() => {
+      const link = document.querySelector('div[role="navigation"] a[data-nav-path="/shop/dry-fruits"]');
+      link?.click();
+    })()`);
+    await new Promise((r) => setTimeout(r, 800));
+
+    const dryFruitsProducts = await evaluate(`(() => {
+      const cards = Array.from(document.querySelectorAll('article a[href^="/product/"]')).map(a => a.getAttribute('href') || '');
+      return {
+        path: window.location.pathname,
+        count: cards.length,
+        hasPista: cards.some(h => h.includes('pista')),
+        hasBadam: cards.some(h => h.includes('badam')),
+      };
+    })()`);
+    logTest(
+      'Category navigation /shop/dry-fruits renders nuts products (pista, badam)',
+      dryFruitsProducts.path === '/shop/dry-fruits' && dryFruitsProducts.hasPista && dryFruitsProducts.hasBadam,
+      `Cards: ${dryFruitsProducts.count}, hasPista: ${dryFruitsProducts.hasPista}, hasBadam: ${dryFruitsProducts.hasBadam}`,
+    );
+
+    // 6b. Dropdown item link -> /shop/celebration-boxes
+    await evaluate(`document.getElementById('nav-trigger-celebration-boxes')?.click()`);
+    await new Promise((r) => setTimeout(r, 100));
+    await evaluate(`(() => {
+      const link = document.querySelector('#nav-dropdown-panel-celebration-boxes a[data-nav-path="/shop/celebration-boxes"]');
+      link?.click();
+    })()`);
+    await new Promise((r) => setTimeout(r, 800));
+
+    const celebrationProducts = await evaluate(`(() => {
+      const cards = Array.from(document.querySelectorAll('article a[href^="/product/"]')).map(a => a.getAttribute('href') || '');
+      const closed = document.getElementById('nav-dropdown-panel-celebration-boxes') === null;
+      return {
+        path: window.location.pathname,
+        closed,
+        count: cards.length,
+        hasNikkah: cards.some(h => h.includes('bid-box-card-nikkah')),
+        hasUmrah: cards.some(h => h.includes('bid-box-umrah-tabarruk')),
+      };
+    })()`);
+    logTest(
+      'Dropdown item navigation to /shop/celebration-boxes renders celebration box products and closes menu',
+      celebrationProducts.path === '/shop/celebration-boxes' && celebrationProducts.closed && celebrationProducts.hasNikkah && celebrationProducts.hasUmrah,
+      `Cards: ${celebrationProducts.count}, Closed: ${celebrationProducts.closed}`,
+    );
+
+    // 6c. Compact food row link -> /shop/dates
+    await evaluate(`(() => {
+      const link = document.querySelector('div[role="navigation"] a[data-nav-path="/shop/dates"]');
+      link?.click();
+    })()`);
+    await new Promise((r) => setTimeout(r, 800));
+
+    const datesProducts = await evaluate(`(() => {
+      const articles = Array.from(document.querySelectorAll('#category-plp-container article'));
+      const cards = Array.from(document.querySelectorAll('article a[href^="/product/"]')).map(a => a.getAttribute('href') || '');
+      const distinctIds = Array.from(new Set(cards.map(h => h.split('/').pop()))).filter(Boolean);
+      return {
+        path: window.location.pathname,
+        articleCount: articles.length,
+        distinctCount: distinctIds.length,
+        hasAjwa: cards.some(h => h.includes('ajwa') || h.includes('khajoor')),
+      };
+    })()`);
+    logTest(
+      'Category navigation /shop/dates renders date products',
+      datesProducts.path === '/shop/dates' && datesProducts.hasAjwa && (datesProducts.distinctCount === 5 || datesProducts.articleCount === 5),
+      `Articles: ${datesProducts.articleCount}, Distinct: ${datesProducts.distinctCount}, hasAjwa: ${datesProducts.hasAjwa}`,
+    );
+
+    // TEST 7: Occasion Filtering Verification
+    // Direct navigate to /shop/celebration-boxes?occasion=wedding
+    await send('Page.navigate', { url: `http://localhost:${port}/shop/celebration-boxes?occasion=wedding` });
+    await new Promise((r) => setTimeout(r, 1200));
+
+    const occasionFilterCheck = await evaluate(`(() => {
+      const articles = Array.from(document.querySelectorAll('#category-plp-container article'));
+      const cards = Array.from(document.querySelectorAll('article a[href^="/product/"]')).map(a => a.getAttribute('href') || '');
+      const distinctIds = Array.from(new Set(cards.map(h => h.split('/').pop()))).filter(Boolean);
+      const hasWedding = cards.some(h => h.includes('bid-box-card-nikkah'));
+      const hasUmrah = cards.some(h => h.includes('bid-box-umrah-tabarruk'));
+      const chipBtn = document.querySelector('button[aria-label*="Nikkah" i], button[aria-label*="wedding" i], button[aria-label*="Pakki" i]');
+      const hasChip = !!chipBtn || document.body.textContent?.includes('Nikkah & Baat Pakki') || (document.body.textContent?.toLowerCase().includes('wedding') ?? false);
+      return {
+        articleCount: articles.length,
+        distinctCount: distinctIds.length,
+        hasWedding,
+        hasUmrah,
+        hasChip: !!hasChip,
+      };
+    })()`);
+
+    logTest(
+      'Occasion filter /shop/celebration-boxes?occasion=wedding shows wedding boxes and excludes umrah box',
+      (occasionFilterCheck.distinctCount === 6 || occasionFilterCheck.articleCount === 6) && occasionFilterCheck.hasWedding && !occasionFilterCheck.hasUmrah && occasionFilterCheck.hasChip,
+      `Distinct: ${occasionFilterCheck.distinctCount}, Articles: ${occasionFilterCheck.articleCount}, hasWedding: ${occasionFilterCheck.hasWedding}, hasUmrah: ${occasionFilterCheck.hasUmrah}, hasChip: ${occasionFilterCheck.hasChip}`,
+    );
+
+    // Reset cursor to avoid hover state
+    await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 10, y: 300 });
+
+    // TEST 8: RTL (Urdu & Arabic)
+    // 8a. Switch to Urdu
+    await evaluate(`(() => {
+      const sel = document.getElementById('desktop-language-select');
+      if (sel) {
+        sel.value = 'ur';
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    })()`);
+    await new Promise((r) => setTimeout(r, 400));
+
+    const urduHeaderDir = await evaluate(`document.getElementById('main-navigation-header')?.getAttribute('dir')`);
+    logTest('Urdu switches header direction to dir="rtl"', urduHeaderDir === 'rtl');
+    await captureScreenshot('stage4_desktop_rtl.png');
+
+    // 8b. Switch to Arabic
+    await evaluate(`(() => {
+      const sel = document.getElementById('desktop-language-select');
+      if (sel) {
+        sel.value = 'ar';
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    })()`);
+    await new Promise((r) => setTimeout(r, 400));
+
+    const arabicHeaderCheck = await evaluate(`(() => {
+      const header = document.getElementById('main-navigation-header');
+      const dir = header?.getAttribute('dir');
+      const text = header?.textContent || '';
+      const hasArabic = /[\u0600-\u06FF]/.test(text);
+      return { dir, hasArabic };
+    })()`);
+    logTest('Arabic switches header direction to dir="rtl" and renders Arabic text', arabicHeaderCheck.dir === 'rtl' && arabicHeaderCheck.hasArabic);
+
+    // Reset language to English
+    await evaluate(`(() => {
+      const sel = document.getElementById('desktop-language-select');
+      if (sel) {
+        sel.value = 'en';
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    })()`);
+    await new Promise((r) => setTimeout(r, 300));
+
+    // TEST 9: Dark Mode
+    await evaluate(`(() => {
+      const themeBtn = document.querySelector('header button[aria-label*="theme" i], header button[aria-label*="Theme" i]');
+      themeBtn?.click();
+    })()`);
+    await new Promise((r) => setTimeout(r, 300));
+
+    const darkModeActive = await evaluate(`document.documentElement.classList.contains('dark')`);
+    logTest('Theme toggle enables dark mode (documentElement class "dark")', darkModeActive);
+    await captureScreenshot('stage4_desktop_dark.png');
+
+    // Toggle back to light mode
+    await evaluate(`(() => {
+      const themeBtn = document.querySelector('header button[aria-label*="theme" i], header button[aria-label*="Theme" i]');
+      themeBtn?.click();
+    })()`);
+    await new Promise((r) => setTimeout(r, 200));
 
     // Helper for real touch tap emulation
     const touchTap = async (x, y) => {
@@ -263,69 +514,6 @@ async function main() {
         touchPoints: [],
       });
     };
-
-    // TEST 6: Route change via compact food row
-    await evaluate(`(() => {
-      const link = document.querySelector('div[role="navigation"] a[data-nav-path="/shop/dates"]');
-      link?.click();
-    })()`);
-    await new Promise((r) => setTimeout(r, 300));
-
-    const currentPath = await evaluate(`window.location.pathname`);
-    logTest('Route navigation to /shop/dates succeeds', currentPath === '/shop/dates');
-
-    // TEST 7: Route change via dropdown menu link
-    await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 200, y: 300 }); // reset cursor
-    await evaluate(`document.getElementById('nav-trigger-celebration-boxes')?.click()`);
-    await new Promise((r) => setTimeout(r, 100));
-
-    const celebrationOpen = await evaluate(`document.getElementById('nav-dropdown-panel-celebration-boxes') !== null`);
-    logTest('Celebration boxes dropdown opens on click', celebrationOpen);
-
-    await evaluate(`(() => {
-      const link = document.querySelector('#nav-dropdown-panel-celebration-boxes a[data-nav-path="/shop/celebration-boxes"]');
-      link?.click();
-    })()`);
-    await new Promise((r) => setTimeout(r, 300));
-
-    const celebrationNavResult = await evaluate(`(() => {
-      const pathMatches = window.location.pathname === '/shop/celebration-boxes';
-      const dropdownClosed = document.getElementById('nav-dropdown-panel-celebration-boxes') === null;
-      return pathMatches && dropdownClosed;
-    })()`);
-    logTest('Dropdown item navigation to /shop/celebration-boxes closes menu and updates route', celebrationNavResult);
-
-    // TEST 8: RTL (Urdu / Arabic)
-    await evaluate(`(() => {
-      const sel = document.getElementById('desktop-language-select');
-      if (sel) {
-        sel.value = 'ur';
-        sel.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-    })()`);
-    await new Promise((r) => setTimeout(r, 300));
-
-    const rtlHeaderDir = await evaluate(`document.getElementById('main-navigation-header')?.getAttribute('dir')`);
-    logTest('RTL language switches header direction to dir="rtl"', rtlHeaderDir === 'rtl');
-    await captureScreenshot('stage4_desktop_rtl.png');
-
-    // Reset language
-    await evaluate(`(() => {
-      const sel = document.getElementById('desktop-language-select');
-      if (sel) {
-        sel.value = 'en';
-        sel.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-    })()`);
-    await new Promise((r) => setTimeout(r, 200));
-
-    // TEST 9: Dark Mode
-    await evaluate(`(() => {
-      const themeBtn = document.querySelector('header button[aria-label*="theme"], header button[aria-label*="Theme"]');
-      themeBtn?.click();
-    })()`);
-    await new Promise((r) => setTimeout(r, 200));
-    await captureScreenshot('stage4_desktop_dark.png');
 
     // TEST 10: Mobile Viewport, Touch Emulation, Drawer & Accordion
     await send('Emulation.setDeviceMetricsOverride', {

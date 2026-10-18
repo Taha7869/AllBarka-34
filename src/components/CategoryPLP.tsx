@@ -18,7 +18,7 @@ import type { Product } from '../types';
 import { useCart } from '../contexts/CartContext';
 import { useSavedProducts } from '../hooks/useSavedProducts';
 import { getLocalized } from '../utils/localize';
-import { CANONICAL_CATEGORIES, resolveCategorySlug } from '../config/categories';
+import { CANONICAL_CATEGORIES, resolveCategorySlug, OCCASION_TAGS } from '../config/categories';
 import { CATALOG_SORTS, readCatalogFilters, searchCatalog, startingPrice, type CatalogSort } from '../lib/catalogDiscovery';
 import { applyCatalogFilterDraft, beginCatalogFilterDraft, filterCatalogSelection, type CatalogFilterDraft } from '../lib/catalogFilterDraft';
 import BidBoxesSection from './BidBoxesSection';
@@ -60,6 +60,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
   const sheetFilterId = useId();
   const activeParams = isModal ? localParams : params;
   const filters = readCatalogFilters(activeParams);
+  const occasion = activeParams.get('occasion');
   const sharedIds = useMemo(() => readSharedSelections(activeParams.get('shared'), PRODUCTS), [activeParams, PRODUCTS]);
   const listView = activeParams.get('view') === 'list';
   const [visibleCount, setVisibleCount] = useState(12);
@@ -68,7 +69,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
   const suggestions = useMemo(() => filters.query.trim() ? searchCatalog(PRODUCTS, filters.query).slice(0, 5) : [], [filters.query, PRODUCTS]);
   const category = resolveCategorySlug(isModal ? modalCategory : initialCategory) || 'all';
   const filterSignature = activeParams.toString();
-  useEffect(() => { setVisibleCount(12); }, [category, filters.query, filters.origin, filters.budget, filters.sort, filters.saved, filters.special]);
+  useEffect(() => { setVisibleCount(12); }, [category, filters.query, filters.origin, filters.budget, filters.sort, filters.saved, filters.special, occasion]);
   // Browser navigation or a new collection cancels the draft instead of committing stale choices.
   useEffect(() => { setFilterDraft(null); }, [filterSignature, category]);
   useEffect(() => {
@@ -102,7 +103,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
     const next = new URLSearchParams(params); next.delete('category');
     navigate({ pathname: id === 'all' ? '/shop' : `/shop/${id}`, search: next.toString() }, { preventScrollReset: true });
   };
-  const clear = () => update({ search: null, budget: null, origin: null, special: null, saved: null, sort: null, shared: null });
+  const clear = () => update({ search: null, budget: null, origin: null, special: null, saved: null, sort: null, shared: null, occasion: null });
   const openFilters = () => {
     setSearchOpen(false);
     if (window.matchMedia('(max-width: 1023px)').matches) setFilterDraft(beginCatalogFilterDraft(activeParams));
@@ -116,7 +117,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
   };
   const origins = useMemo(() => [...new Map(PRODUCTS.filter(p => p.active !== false && p.origin_en).map(p => [p.origin_en, getLocalized(p, 'origin', language)])).entries()], [language, PRODUCTS]);
   const products = useMemo(() => {
-    const found = filterCatalogSelection(PRODUCTS, { query: filters.query, origin: filters.origin, budget: filters.budget, special: filters.special, saved: filters.saved, sort: filters.sort }, { category, isWholesale, savedIds, sharedIds });
+    const found = filterCatalogSelection(PRODUCTS, { query: filters.query, origin: filters.origin, budget: filters.budget, special: filters.special, saved: filters.saved, sort: filters.sort, occasion }, { category, isWholesale, savedIds, sharedIds });
     if (category === 'all' && filters.sort === 'featured') {
       const order = Object.keys(CANONICAL_CATEGORIES);
       return found.sort((a, b) => order.indexOf(a.category) - order.indexOf(b.category));
@@ -125,12 +126,14 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
       : filters.sort === 'price-asc' ? startingPrice(a) - startingPrice(b)
       : filters.sort === 'price-desc' ? startingPrice(b) - startingPrice(a)
       : filters.sort === 'name-asc' ? getLocalized(a, 'name', language).localeCompare(getLocalized(b, 'name', language), language) : 0);
-  }, [category, filters.query, filters.origin, filters.special, filters.saved, filters.budget, filters.sort, isWholesale, savedIds, language, sharedIds, PRODUCTS]);
+  }, [category, filters.query, filters.origin, filters.special, filters.saved, filters.budget, filters.sort, occasion, isWholesale, savedIds, language, sharedIds, PRODUCTS]);
   const previewCount = (draft: CatalogFilterDraft) => filterCatalogSelection(PRODUCTS, draft, { category, isWholesale, savedIds, sharedIds: readSharedSelections(draft.shared, PRODUCTS) }).length;
   const draftOrigins = filterDraft ? [['all', t('shop.anyOrigin')], ...origins].map(([id, label]) => ({ id, label, count: previewCount({ ...filterDraft, origin: id }) })) : [];
+  const occasionTitle = OCCASION_TAGS.find(o => o.id === occasion)?.name || occasion;
   const chips = [
     ...(sharedIds !== null ? [{ key: 'shared', label: t('shop.sharedSelections') }] : []),
     ...(filters.query ? [{ key: 'search', label: filters.query }] : []),
+    ...(occasion && occasion !== 'all' ? [{ key: 'occasion', label: `${t('nav.occasions', 'Occasion')}: ${occasionTitle}` }] : []),
     ...(filters.origin !== 'all' ? [{ key: 'origin', label: origins.find(([id]) => id === filters.origin)?.[1] || filters.origin }] : []),
     ...(filters.budget < 10000 ? [{ key: 'budget', label: `≤ Rs. ${filters.budget.toLocaleString()}` }] : []),
     ...(filters.special ? [{ key: 'special', label: t('shop.special') }] : []),
@@ -230,7 +233,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
           {onQuickView && <button type="button" onClick={() => onQuickView(product)} className="focus-ring flex min-h-11 w-full items-center justify-center gap-2 rounded-xl text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-base)] hover:text-[var(--color-accent-text)]"><Eye size={15} />{t('shop.quick')}</button>}</div>
         </div>
       </article></React.Fragment>;
-    })}</div> : <div className="rounded-3xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-16 text-center"><Search size={30} className="mx-auto mb-5 text-[var(--color-accent-text)]" /><h2 className="font-serif text-3xl">{t('shop.empty')}</h2><p className="mx-auto mt-3 max-w-sm text-sm leading-7 text-[var(--color-text-secondary)]">{t('shop.emptyCopy')}</p><button type="button" onClick={clear} className="mt-6 min-h-12 rounded-full bg-[#1e3a2b] px-6 text-sm text-white">{t('shop.clear')}</button><Link to="/shop" className="mx-auto mt-2 flex min-h-11 w-fit items-center gap-2 text-xs" onClick={() => { if (isModal) { clear(); setModalCategory('all'); } }}>{t('shop.all')}<ArrowUpRight size={15} /></Link></div>}
+    })}</div> : <div className="rounded-3xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-16 text-center"><Search size={30} className="mx-auto mb-5 text-[var(--color-accent-text)]" /><h2 className="font-serif text-3xl">{t('shop.empty')}</h2><p className="mx-auto mt-3 max-w-sm text-sm leading-7 text-[var(--color-text-secondary)]">{occasion && occasion !== 'all' ? `No products currently match "${occasionTitle}" in this view. Browse all items or discover our signature collections.` : t('shop.emptyCopy')}</p><button type="button" onClick={clear} className="mt-6 min-h-12 rounded-full bg-[#1e3a2b] px-6 text-sm text-white">{t('shop.clear')}</button><Link to="/shop" className="mx-auto mt-2 flex min-h-11 w-fit items-center gap-2 text-xs" onClick={() => { if (isModal) { clear(); setModalCategory('all'); } }}>{t('shop.all')}<ArrowUpRight size={15} /></Link></div>}
     {products.length > visibleCount && <div className="mt-8 text-center"><button type="button" onClick={() => setVisibleCount(count => count + 12)} className="focus-ring min-h-12 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-7 text-sm font-semibold">{t('shop.loadMore')} ({products.length - visibleCount})</button><p className="mt-3 text-xs text-[var(--color-text-secondary)]">{visibleCount} / {products.length}</p></div>}
     <CatalogTools mode="recent" />
   </section>;
