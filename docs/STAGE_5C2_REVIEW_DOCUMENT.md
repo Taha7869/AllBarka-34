@@ -108,22 +108,14 @@ Below is the visual contact sheet displaying all completed 1024×1024 empty vess
 **Customer Copy Summary**: A distinguished heritage pilgrimage set combining an ivory window presentation box, an empty clear water flask with gold cap, and an empty circular favor tin.
 
 #### `tabarruk-set-012` — Medina Moon Tabarruk Box & Bag Set
-- **Asset Type**: AI-Generated Concept Render (1024×1024, Empty Vessels)
-- **Master JPG**: [docs/assets/drafts/draft-tabarruk-set-012.jpg](docs/assets/drafts/draft-tabarruk-set-012.jpg)  
-- **Optimized WebP**: [docs/assets/drafts/draft-tabarruk-set-012.webp](docs/assets/drafts/draft-tabarruk-set-012.webp)  
-- **Depiction**: Empty emerald green rigid two-piece gift box with gold rim and satin ribbon, fitted insert holding one empty hexagonal glass jar and one empty circular metal tin on cream limestone.
-![Medina Moon Tabarruk Box & Bag Set](/docs/assets/drafts/draft-tabarruk-set-012.webp)
+- **Asset Status**: ⚠️ **Generation Blocked by Upstream Quota** (`gemini-3.1-flash-image` quota reset pending)
 - **Display Price**: Rs. 210 | **Packaging MOQ**: 24 units
-**Customer Copy Summary**: An opulent emerald green pilgrimage favor suite decorated with crescent moon motifs and gold-accented rims, designed for homecoming receptions.
+**Customer Copy Summary**: A distinguished pilgrimage favor suite decorated with crescent moon motifs, comprising a matching structured carrier bag, a circular keepsake favor tin, and an empty 120ml bottle with screw cap for customer-provided Zamzam water.
 
 #### `tabarruk-set-tijori` — Tijori Grand Presentation Tabarruk Suite
-- **Asset Type**: AI-Generated Concept Render (1024×1024, Empty Vessels)
-- **Master JPG**: [docs/assets/drafts/draft-tabarruk-set-tijori.jpg](docs/assets/drafts/draft-tabarruk-set-tijori.jpg)  
-- **Optimized WebP**: [docs/assets/drafts/draft-tabarruk-set-tijori.webp](docs/assets/drafts/draft-tabarruk-set-tijori.webp)  
-- **Depiction**: Empty domed treasure chest trunk in burgundy paper with gold foil line art, propped open displaying velvet-lined interior holding two empty circular tins and one empty clear flask on travertine.
-![Tijori Grand Presentation Tabarruk Suite](/docs/assets/drafts/draft-tabarruk-set-tijori.webp)
+- **Asset Status**: ⚠️ **Generation Blocked by Upstream Quota** (`gemini-3.1-flash-image` quota reset pending)
 - **Display Price**: Rs. 420 | **Packaging MOQ**: 12 units
-**Customer Copy Summary**: An imposing chest-format ('Tijori') pilgrimage presentation suite crafted from rigid burgundy board with gold-foil filigree, designed for high-profile family homecoming gifting.
+**Customer Copy Summary**: A festive presentation suite featuring a large structured carrier bag and matching chest-format ('Tijori') presentation box, designed for pilgrimage homecoming favor distribution.
 
 #### `tabarruk-set-no43` — Safaa 3-Piece Pilgrimage Set
 - **Asset Status**: ⚠️ **Generation Blocked by Upstream Quota** (`gemini-3.1-flash-image` quota reset pending)
@@ -506,23 +498,23 @@ Commemorative tags for pilgrim names and return year available on advance bulk o
 ### Product 11: `tabarruk-set-012` — Medina Moon Tabarruk Box & Bag Set
 - **Category / Subcategory**: Celebration Boxes (`celebration-boxes`) / `hajj-umrah-tabarruk-sets` (Storefront filter: `tabarruk`)
 - **Evidence Status**: `verified_reference`
-- **Asset Status**: `draft_concept_render_complete`
+- **Asset Status**: `needs_revision`
 - **Source Reference**: https://bidboxesonline.com/bidbox/hajj-set-box-012/
 - **Price Basis & Unit**: 1 set
 - **Source Sale Price**: Rs. 200.00
 - **Proposed Selling Price**: Rs. 210.00 (Display: **Rs. 210**)
 - **Packaging MOQ**: **24 pcs / units**
 - **Lead Time**: Minimum 10 calendar days after final design approval and receipt of advance payment.
-- **Pending Technical Fields (Internal)**: exact_component_dimensions_inches, jar_volume_ml
+- **Pending Technical Fields (Internal)**: exact_component_dimensions_inches, bottle_wall_thickness_mm
 
 **Customer Copy**:
-> An opulent emerald green pilgrimage favor suite decorated with crescent moon motifs and gold-accented rims, designed for homecoming receptions.
+> A distinguished pilgrimage favor suite decorated with crescent moon motifs, comprising a matching structured carrier bag, a circular keepsake favor tin, and an empty 120ml bottle with screw cap for customer-provided Zamzam water.
 
 **What is Included**:
-1 × Emerald green gift box and matching carrier bag, 1 × Circular favor tin, 1 × Miniature empty glass jar with gold screw cap.
+1 × Matching structured carrier bag, 1 × Circular metal favor tin (3-inch diameter), 1 × Clear presentation bottle (120ml capacity) with screw cap.
 
 **Offering Status & Food Policy**:
-Supplied completely empty. The jar and tin are empty vessels for DIY packing; AllBarka does not sell or supply Zamzam water. Authentic Ajwa dates or dry fruit fillings are available upon request for an additional quotation. Confectionery is a customer-requested option subject to sourcing confirmation.
+Supplied completely empty as standard for DIY packing. The bottle is an empty vessel intended exclusively for customer-provided Zamzam water; AllBarka does not sell or supply Zamzam water. Authentic Ajwa dates or dry fruit fillings are available upon request for an additional quotation. Confectionery is a customer-requested option subject to sourcing confirmation.
 
 **Customization Policy**:
 Customized pilgrim homecoming message tags included with advance bulk booking.
@@ -532,7 +524,7 @@ Customized pilgrim homecoming message tags included with advance bulk booking.
 ### Product 12: `tabarruk-set-tijori` — Tijori Grand Presentation Tabarruk Suite
 - **Category / Subcategory**: Celebration Boxes (`celebration-boxes`) / `hajj-umrah-tabarruk-sets` (Storefront filter: `tabarruk`)
 - **Evidence Status**: `verified_reference`
-- **Asset Status**: `draft_concept_render_complete`
+- **Asset Status**: `needs_revision`
 - **Source Reference**: https://bidboxesonline.com/bidbox/tijori-big-bag-set-002/
 - **Price Basis & Unit**: 1 set
 - **Source Sale Price**: Rs. 400.00
@@ -542,16 +534,16 @@ Customized pilgrim homecoming message tags included with advance bulk booking.
 - **Pending Technical Fields (Internal)**: bag_and_chest_dimensions_inches, board_caliper_pt
 
 **Customer Copy**:
-> An imposing chest-format ('Tijori') pilgrimage presentation suite crafted from rigid burgundy board with gold-foil filigree, designed for high-profile family homecoming gifting.
+> A festive presentation suite featuring a large structured carrier bag and matching chest-format ('Tijori') presentation box, designed for pilgrimage homecoming favor distribution.
 
 **What is Included**:
-1 × Domed Tijori rigid trunk box with front latch, 1 × Large matching structured carrier bag, 2 × Circular keepsake tins, 1 × Clear presentation flask with gold cap.
+1 × Large structured Tijori-pattern carrier bag, 1 × Matching Tijori chest-style presentation box.
 
 **Offering Status & Food Policy**:
-Supplied completely empty. All vessels are empty containers; Zamzam water is never sold or provided by AllBarka. Optional premium Ajwa dates or dry fruit assortments may be added upon request for an additional quotation. Confectionery items are customer-requested options subject to sourcing confirmation and quote.
+Supplied completely empty as standard for DIY favor packing. Optional AllBarka dry fruit fillings or authentic Ajwa dates are quoted separately upon request. Decorative hardware latches, custom velvet linings, or additional vessels are unverified proposed concepts not included in the standard reference suite. Confectionery is a customer-requested option subject to sourcing confirmation and quote.
 
 **Customization Policy**:
-Pilgrim family name in gold-foil calligraphy on outer chest band upon request.
+Pilgrim family name in calligraphy on outer presentation tag upon request.
 
 ---
 

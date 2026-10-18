@@ -28,6 +28,8 @@ export interface CatalogRecord { pricing: CatalogPricing; version: string; updat
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value);
 const integer = (value: unknown, minimum: number, maximum = 10_000_000): value is number => Number.isSafeInteger(value) && (value as number) >= minimum && (value as number) <= maximum;
 const positive = (value: unknown) => integer(value, 1);
+const positivePrice = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value) && (value as number) > 0 && (value as number) <= 10_000_000;
 export const catalogVariantId = (label: string) => `portion-${encodeURIComponent(label)}`;
 
 export function validateMoqOverride(value: unknown): number | null | undefined {
@@ -55,7 +57,7 @@ export function validateCatalogPricing(value: unknown, seed: Product): CatalogPr
   const variants = value.variants.map((raw): CatalogVariant => {
     if (!object(raw) || typeof raw.label !== 'string' || !raw.label.trim() || raw.label.length > 40
       || /[\u0000-\u001f\u007f]/.test(raw.label) || raw.label !== raw.label.trim()
-      || raw.id !== catalogVariantId(raw.label) || !positive(raw.price) || typeof raw.available !== 'boolean'
+      || raw.id !== catalogVariantId(raw.label) || !positivePrice(raw.price) || typeof raw.available !== 'boolean'
       || !(raw.weightGrams === null || integer(raw.weightGrams, 0)) || seen.has(raw.label)) throw new CatalogError('INVALID_CATALOG_VARIANT');
     // A merchant can retain existing fixed bundle labels; new arbitrary units cannot enter checkout.
     const supported = /^\d+(?:\.\d+)?\s*(?:kg|g|ml|pc|pcs|piece|pieces|pack|box|boxes)$/i.test(raw.label)
@@ -166,7 +168,7 @@ export function readCatalogPricing(value: unknown, seed: Product): CatalogPricin
             return {
               id: v.id === catalogVariantId(v.label) ? v.id : catalogVariantId(v.label),
               label: v.label,
-              price: Math.round(Number(v.price)),
+              price: Math.round(Number(v.price) * 100) / 100,
               available: v.available !== false,
               weightGrams: Number.isSafeInteger(v.weightGrams) ? v.weightGrams : null,
               ...(varMoq !== undefined ? { moqOverride: varMoq } : {}),
@@ -364,7 +366,7 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
         if (v.available === false) {
           delete rawPrices[trimmedLabel];
         } else if (Number.isFinite(num) && num > 0) {
-          rawPrices[trimmedLabel] = Math.round(num);
+          rawPrices[trimmedLabel] = Math.round(num * 100) / 100;
         }
       }
     }
@@ -376,7 +378,7 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
     if (!key || key.length > 40) throw new CatalogError('INVALID_PORTION_KEY', 400);
     const num = Number(v);
     if (!Number.isFinite(num) || num <= 0) throw new CatalogError('INVALID_PORTION_PRICE', 400);
-    prices[key] = Math.round(num);
+    prices[key] = Math.round(num * 100) / 100;
   }
 
   const quoteOnly = Boolean(value.quoteOnly) || value.orderMode === 'inquiry_quote';

@@ -5,7 +5,7 @@
   "generated_date": "2026-10-19",
   "asset_disclosure": "All draft visual assets depicted herein are AI-generated concept renders created for visual planning and catalog design review. They do NOT represent physical stock or confirmed supplier inventory. Active existing catalog assets represent currently deployed storefront media.",
   "storage_policy": "All draft concept renders (JPG masters and WebP derivatives) reside strictly in docs/assets/drafts/ outside public/. No draft images are bundled into the client build or mapped into live products.ts.",
-  "markup_policy": "Proposed Selling Price = Verified Source Sale Price * 1.05 for new reference items (5% markup rounded to nearest PKR; existing items retain authoritative catalog prices).",
+  "markup_policy": "Proposed Selling Price = Verified Source Sale Price * 1.05. Authoritative prices retain exact decimals (e.g. Rs. 78.75, Rs. 31.50, Rs. 367.50). Integer rounding (e.g. Rs. 79, Rs. 32, Rs. 368) is for display only. Existing items retain authoritative catalog prices.",
   "moq_formula": "Packaging MOQ = min(25, max(1, ceil(5000 / proposed_selling_price)))",
   "lead_time_policy": "Minimum 10 calendar days after final design approval and receipt of the required advance payment; courier transit time is separate.",
   "copy_compliance_rules": {
@@ -19,7 +19,8 @@
     "total_actual_roster_products": 30,
     "breakdown_by_status": {
       "existing_catalog_active": 8,
-      "verified_reference_render_complete": 13,
+      "verified_reference_render_approved": 11,
+      "verified_reference_render_needs_revision": 2,
       "verified_reference_blocked_by_quota": 8,
       "partially_verified_variable_family_deferred": 1
     },
@@ -476,7 +477,8 @@
       "storefront_subcategory": "tabarruk",
       "name": "Medina Moon Tabarruk Box & Bag Set",
       "status": "verified_reference",
-      "asset_status": "draft_concept_render_complete",
+      "asset_status": "needs_revision",
+      "publication_candidate": false,
       "source_url": "https://bidboxesonline.com/bidbox/hajj-set-box-012/",
       "price_basis": "1 set",
       "source_sale_price_pkr": 200.0,
@@ -490,25 +492,38 @@
         "asset_type": "ai_generated_concept_render",
         "dimensions": "1024x1024",
         "aspect_ratio": "1:1",
-        "depiction": "Empty emerald green rigid two-piece gift box with gold rim and satin ribbon, fitted insert holding one empty hexagonal glass jar and one empty circular metal tin on cream limestone."
+        "depiction": "Empty emerald green rigid two-piece gift box with gold rim and satin ribbon, fitted insert holding one empty hexagonal glass jar and one empty circular metal tin on cream limestone.",
+        "asset_status": "needs_revision",
+        "publication_blocker": "Component mismatch: Generated render depicts rigid gift box and hexagonal glass jar; reference specifies matching carrier bag, circular tin, and 120ml bottle. Excluded from publication candidates pending re-render."
       },
       "verified_specifications": {
-        "vessel_type": "Pilgrimage favor set",
+        "vessel_type": "3-piece pilgrimage favor suite",
         "finish": "Crescent moon and Islamic architectural motif on bag and tin",
         "components": [
-          "Matching gift bag",
-          "favor tin",
-          "empty glass/PET jar with gold cap"
+          {
+            "item": "Carrier Bag",
+            "material": "Structured matching paper bag with handles"
+          },
+          {
+            "item": "Favor Tin",
+            "dimensions": "3 inches diameter × 2 inches height",
+            "material": "Circular metal tinplate"
+          },
+          {
+            "item": "Presentation Bottle",
+            "capacity": "120 ml",
+            "material": "Clear transparent bottle with screw cap (empty vessel)"
+          }
         ]
       },
       "pending_technical_fields": [
         "exact_component_dimensions_inches",
-        "jar_volume_ml"
+        "bottle_wall_thickness_mm"
       ],
       "customer_copy": {
-        "summary": "An opulent emerald green pilgrimage favor suite decorated with crescent moon motifs and gold-accented rims, designed for homecoming receptions.",
-        "what_is_included": "1 × Emerald green gift box and matching carrier bag, 1 × Circular favor tin, 1 × Miniature empty glass jar with gold screw cap.",
-        "offering_status": "Supplied completely empty. The jar and tin are empty vessels for DIY packing; AllBarka does not sell or supply Zamzam water. Authentic Ajwa dates or dry fruit fillings are available upon request for an additional quotation. Confectionery is a customer-requested option subject to sourcing confirmation.",
+        "summary": "A distinguished pilgrimage favor suite decorated with crescent moon motifs, comprising a matching structured carrier bag, a circular keepsake favor tin, and an empty 120ml bottle with screw cap for customer-provided Zamzam water.",
+        "what_is_included": "1 × Matching structured carrier bag, 1 × Circular metal favor tin (3-inch diameter), 1 × Clear presentation bottle (120ml capacity) with screw cap.",
+        "offering_status": "Supplied completely empty as standard for DIY packing. The bottle is an empty vessel intended exclusively for customer-provided Zamzam water; AllBarka does not sell or supply Zamzam water. Authentic Ajwa dates or dry fruit fillings are available upon request for an additional quotation. Confectionery is a customer-requested option subject to sourcing confirmation.",
         "customization_policy": "Customized pilgrim homecoming message tags included with advance bulk booking."
       }
     },
@@ -519,7 +534,8 @@
       "storefront_subcategory": "tabarruk",
       "name": "Tijori Grand Presentation Tabarruk Suite",
       "status": "verified_reference",
-      "asset_status": "draft_concept_render_complete",
+      "asset_status": "needs_revision",
+      "publication_candidate": false,
       "source_url": "https://bidboxesonline.com/bidbox/tijori-big-bag-set-002/",
       "price_basis": "1 set",
       "source_sale_price_pkr": 400.0,
@@ -533,22 +549,38 @@
         "asset_type": "ai_generated_concept_render",
         "dimensions": "1024x1024",
         "aspect_ratio": "1:1",
-        "depiction": "Empty domed treasure chest trunk in burgundy paper with gold foil line art, propped open displaying velvet-lined interior holding two empty circular tins and one empty clear flask on travertine."
+        "depiction": "Empty domed treasure chest trunk in burgundy paper with gold foil line art, propped open displaying velvet-lined interior holding two empty circular tins and one empty clear flask on travertine.",
+        "asset_status": "needs_revision",
+        "publication_blocker": "Feature disparity: Generated render depicts elaborate domed chest with brass latch hardware, velvet interior lining, dual favor tins, and glass flask; source reference is a structured Tijori-pattern carrier bag and matching favor box suite. Elaborate hardware, lining, and extra vessels are unverified proposed concepts excluded from confirmed reference contents."
       },
       "verified_specifications": {
-        "vessel_type": "Large format Tijori chest-style presentation bag and favor box suite",
-        "geometry": "Domed treasure chest trunk box and oversized carrier bag",
-        "intended_use": "Grand presentation favor set for VIP pilgrimage homecoming"
+        "vessel_type": "Large format Tijori chest-style presentation bag and matching favor box suite",
+        "components": [
+          {
+            "item": "Carrier Bag",
+            "material": "Large structured paper carrier bag with Tijori pattern"
+          },
+          {
+            "item": "Tijori Presentation Box",
+            "material": "Rigid printed card presentation box"
+          }
+        ],
+        "unsupported_proposed_concepts": [
+          "Brass latch hardware",
+          "Plush velvet interior lining",
+          "Additional circular tins (rendered 2, verified standard 0-1)",
+          "Clear glass flask"
+        ]
       },
       "pending_technical_fields": [
         "bag_and_chest_dimensions_inches",
         "board_caliper_pt"
       ],
       "customer_copy": {
-        "summary": "An imposing chest-format ('Tijori') pilgrimage presentation suite crafted from rigid burgundy board with gold-foil filigree, designed for high-profile family homecoming gifting.",
-        "what_is_included": "1 × Domed Tijori rigid trunk box with front latch, 1 × Large matching structured carrier bag, 2 × Circular keepsake tins, 1 × Clear presentation flask with gold cap.",
-        "offering_status": "Supplied completely empty. All vessels are empty containers; Zamzam water is never sold or provided by AllBarka. Optional premium Ajwa dates or dry fruit assortments may be added upon request for an additional quotation. Confectionery items are customer-requested options subject to sourcing confirmation and quote.",
-        "customization_policy": "Pilgrim family name in gold-foil calligraphy on outer chest band upon request."
+        "summary": "A festive presentation suite featuring a large structured carrier bag and matching chest-format ('Tijori') presentation box, designed for pilgrimage homecoming favor distribution.",
+        "what_is_included": "1 × Large structured Tijori-pattern carrier bag, 1 × Matching Tijori chest-style presentation box.",
+        "offering_status": "Supplied completely empty as standard for DIY favor packing. Optional AllBarka dry fruit fillings or authentic Ajwa dates are quoted separately upon request. Decorative hardware latches, custom velvet linings, or additional vessels are unverified proposed concepts not included in the standard reference suite. Confectionery is a customer-requested option subject to sourcing confirmation and quote.",
+        "customization_policy": "Pilgrim family name in calligraphy on outer presentation tag upon request."
       }
     },
     {
