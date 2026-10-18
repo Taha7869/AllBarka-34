@@ -22,7 +22,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { adminRequest, AdminRequestError } from '../lib/adminClient';
 import { formatAdminCurrency, formatAdminDate } from '../lib/adminPresentation';
 import { useAdminLanguage } from '../hooks/useAdminLanguage';
-import { formatFillingsLabel } from '../lib/inquiryWhatsApp';
+import { formatFillingsLabel, buildAdminWhatsAppPitchUrl } from '../lib/inquiryWhatsApp';
 
 export type InquiryType = 'bid_box_quote' | 'wholesale' | 'custom_hamper' | 'general';
 export type InquiryStatus = 'NEW' | 'CONTACTED' | 'QUOTED' | 'APPROVED' | 'CLOSED';
@@ -86,55 +86,11 @@ function buildLiveWhatsAppPitch(
   draftAgreedPrice: string,
   draftAdminNotes: string
 ): string {
-  const digits = String(record.phone || '').replace(/[^\d]/g, '');
-  let targetPhone = '923160666083';
-  if (digits.startsWith('0092')) targetPhone = digits.slice(2);
-  else if (digits.startsWith('92') && digits.length >= 11) targetPhone = digits;
-  else if (digits.startsWith('03') && digits.length === 11) targetPhone = `92${digits.slice(1)}`;
-  else if (digits.startsWith('3') && digits.length === 10) targetPhone = `92${digits}`;
-  else if (digits.length >= 10) targetPhone = digits;
-
-  const modeLabel =
-    record.boxMode === 'empty'
-      ? 'Box Only (Empty Packaging)'
-      : record.boxMode === 'custom'
-      ? 'Bespoke Packaging & Custom Fillings'
-      : 'Filled with AllBarka Dry Fruits';
-  const agreedNum = draftAgreedPrice.trim() ? Number(draftAgreedPrice) : record.finalAgreedPrice;
-  const hasAgreed = agreedNum != null && Number.isFinite(agreedNum) && agreedNum > 0;
-  const noteText = draftAdminNotes.trim() || record.adminNotes;
-
-  const isTabarruk =
-    record.productId.toLowerCase().includes('tabarruk') ||
-    record.productName.toLowerCase().includes('tabarruk');
-
-  const lines = [
-    `*Assalam-o-Alaikum ${record.customerName || 'Valued Patron'}!*`,
-    `Greetings from *AllBarka Luxury Dry Fruits Concierge (Lahore)*.`,
-    ``,
-    `Thank you for your ${TYPE_LABELS[record.type] || 'Boutique Inquiry'} (*Ref #${record.id}*):`,
-    record.productName ? `• *Selection:* ${record.productName}` : '',
-    record.packagingVariant ? `• *Variant / Portion:* ${record.packagingVariant}` : '',
-    record.type === 'bid_box_quote' ? `• *Configuration:* ${modeLabel}` : '',
-    isTabarruk ? `• *Tabarruk Packaging Notice:* Bottles are empty for customer-provided Zamzam water; packaging is empty by default` : '',
-    record.quantity > 1 ? `• *Quantity:* ${record.quantity} ${record.quantityUnit || 'pcs'}` : '',
-    record.eventType ? `• *Occasion:* ${record.eventType}` : '',
-    record.targetEventDate ? `• *Target Event Date:* ${record.targetEventDate}` : '',
-    record.preferredFillings && record.preferredFillings.length > 0 ? `• *Fillings Selected:* ${formatFillingsLabel(record.preferredFillings)}` : '',
-    record.monogramText ? `• *Monogram / Tag:* ${record.monogramText}` : '',
-    record.cardMessage ? `• *Card Message:* ${record.cardMessage}` : '',
-    record.standardPrice ? `• *Standard Rate Ref:* Rs. ${Number(record.standardPrice).toLocaleString()}/${record.quantityUnit === 'packs' ? 'pack' : 'pc'}` : '',
-    hasAgreed
-      ? `• *AllBarka Special Approved Rate:* Rs. ${Number(agreedNum).toLocaleString()} PKR`
-      : record.offeredPrice
-        ? `• *Your Offered Budget:* Rs. ${Number(record.offeredPrice).toLocaleString()} PKR (${record.budgetType === 'per_piece' ? 'per piece' : 'total budget'})`
-        : '',
-    noteText ? `• *Concierge Note:* ${noteText}` : '',
-    ``,
-    `Please reply here to confirm your order and customization details so we can schedule your fresh preparation.`,
-  ].filter(Boolean);
-
-  return `https://wa.me/${targetPhone}?text=${encodeURIComponent(lines.join('\n'))}`;
+  return buildAdminWhatsAppPitchUrl({
+    ...record,
+    finalAgreedPrice: draftAgreedPrice.trim() ? Number(draftAgreedPrice) : record.finalAgreedPrice,
+    adminNotes: draftAdminNotes.trim() || record.adminNotes,
+  });
 }
 
 export default function AdminInquiriesPanel() {

@@ -19,8 +19,7 @@ import {
 } from 'lucide-react';
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import { Product, CustomQuoteModalInit } from '../types';
-import { resolveBidBoxConfig } from '../lib/bidBoxPricing';
-import { calculatePackagingMoq, isPackagingProduct } from '../lib/packagingMoq';
+import { resolveInquiryProductVariant } from '../lib/inquiryResolution';
 import {
   buildCustomerInquiryWhatsAppUrl,
   MANDATORY_LEAD_TIME_NOTICE,
@@ -174,49 +173,19 @@ export default function CustomQuoteModal() {
     return priceKeys;
   }, [selectedProduct]);
 
-  // Is Tabarruk product
-  const isTabarruk = useMemo(() => {
-    if (!selectedProduct) return false;
-    const id = (selectedProduct.id || '').toLowerCase();
-    const name = (selectedProduct.name_en || '').toLowerCase();
-    const subcat = (selectedProduct.packagingSubcategory || '').toLowerCase();
-    return id.includes('tabarruk') || name.includes('tabarruk') || subcat === 'tabarruk';
-  }, [selectedProduct]);
+  // Authoritative Resolution via shared browser-safe resolver
+  const resolution = useMemo(() => {
+    return resolveInquiryProductVariant({
+      catalog: products,
+      productId: selectedProduct?.id || selectedProductId,
+      requestedVariantLabel: selectedVariantLabel || null,
+      boxMode: mode,
+      quantity,
+    });
+  }, [products, selectedProduct, selectedProductId, selectedVariantLabel, mode, quantity]);
 
-  // Authoritative MOQ Check
-  const packagingMoqInfo = useMemo(() => {
-    if (!selectedProduct || !isPackagingProduct(selectedProduct)) {
-      return { isPackaging: false, moq: 1, isUnpriced: false };
-    }
-    try {
-      const moq = calculatePackagingMoq(selectedProduct, selectedVariantLabel || undefined);
-      return { isPackaging: true, moq, isUnpriced: false };
-    } catch {
-      return { isPackaging: true, moq: null, isUnpriced: true };
-    }
-  }, [selectedProduct, selectedVariantLabel]);
-
-  // Reference Unit Price
-  const referenceUnitPrice = useMemo(() => {
-    if (!selectedProduct) return 0;
-    const cfg = resolveBidBoxConfig(selectedProduct);
-    if (cfg) {
-      if (mode === 'empty') {
-        const emptyTiers = cfg.emptyTiers || [];
-        if (quantity >= 100 && cfg.emptyBulk100Unit) return cfg.emptyBulk100Unit;
-        if (quantity >= 50 && cfg.emptyBulk50Unit) return cfg.emptyBulk50Unit;
-        const tier25 = emptyTiers.find(t => t.qty === 25);
-        if (quantity >= 25 && tier25?.unitPrice) return tier25.unitPrice;
-        if (typeof cfg.emptyUnitStarting === 'number' && cfg.emptyUnitStarting > 0) return cfg.emptyUnitStarting;
-      }
-      if (typeof cfg.filledMin === 'number' && cfg.filledMin > 0) return cfg.filledMin;
-    }
-    if (selectedVariantLabel && selectedProduct.prices?.[selectedVariantLabel]) {
-      return selectedProduct.prices[selectedVariantLabel];
-    }
-    const firstPrice = Object.values(selectedProduct.prices || {}).find(v => typeof v === 'number' && Number.isFinite(v) && v > 0);
-    return typeof firstPrice === 'number' ? firstPrice : 0;
-  }, [selectedProduct, selectedVariantLabel, mode, quantity]);
+  const isTabarruk = resolution.isTabarruk;
+  const referenceUnitPrice = resolution.standardPrice ?? 0;
 
   if (!isOpen) return null;
 
@@ -224,11 +193,13 @@ export default function CustomQuoteModal() {
   const liveUnsavedWhatsAppUrl = buildCustomerInquiryWhatsAppUrl({
     quoteId: null,
     isUnsavedDraft: true,
-    productName: selectedProduct?.name_en || 'Custom Event Packaging / Gifting',
+    productName: resolution.productName,
     productId: selectedProduct?.id || selectedProductId,
-    packagingVariant: selectedVariantLabel || null,
+    packagingVariant: resolution.packagingVariant,
     mode,
     quantity,
+    quantityUnit: resolution.quantityUnit,
+    piecesPerPack: resolution.piecesPerPack,
     eventType,
     targetEventDate: targetEventDate || null,
     preferredFillings,
@@ -236,13 +207,19 @@ export default function CustomQuoteModal() {
     monogramText,
     cardMessage,
     customPrinting,
+    customPrintText: customPrinting,
     budgetType,
     targetPricePkr,
-    referenceUnitPrice,
+    referenceUnitPrice: resolution.standardPrice,
+    perPiecePrice: resolution.perPiecePrice,
+    requiresTeamQuote: resolution.requiresTeamQuote,
+    belowMoq: resolution.belowMoq,
+    moqRequired: resolution.moqRequired,
     customerName,
     customerPhone,
     city,
-    isTabarruk,
+    isTabarruk: resolution.isTabarruk,
+    leadTimeNoticeAcknowledged: leadTimeAcknowledged,
   });
 
   const toggleFilling = (fillingId: string) => {
@@ -269,20 +246,21 @@ export default function CustomQuoteModal() {
       const res = await submitCustomQuoteInquiry({
         submissionKey: submissionKey || undefined,
         productId: selectedProduct?.id || selectedProductId,
-        productName: selectedProduct?.name_en || 'Custom Packaging Request',
-        packagingVariant: selectedVariantLabel || undefined,
+        productName: resolution.productName,
+        packagingVariant: resolution.packagingVariant || undefined,
         boxMode: mode,
         quantity,
         eventType,
         targetEventDate: targetEventDate || undefined,
-        preferredFillings,
+        preferredFillings: preferredFillings.length > 0 ? preferredFillings : undefined,
         customFillingsNotes: customFillingsNotes.trim() || undefined,
         monogramText: monogramText.trim() || undefined,
         cardMessage: cardMessage.trim() || undefined,
         customPrinting: customPrinting.trim() || undefined,
+        customPrintText: customPrinting.trim() || undefined,
         budgetType,
         targetPricePkr: targetPricePkr ? Number(targetPricePkr) : null,
-        referenceUnitPrice,
+        referenceUnitPrice: resolution.standardPrice,
         customerName: customerName.trim(),
         customerPhone: customerPhone.trim(),
         email: customerEmail.trim() || undefined,
@@ -295,11 +273,13 @@ export default function CustomQuoteModal() {
         res.whatsappUrl ||
         buildCustomerInquiryWhatsAppUrl({
           quoteId,
-          productName: selectedProduct?.name_en || 'Custom Packaging Request',
+          productName: resolution.productName,
           productId: selectedProduct?.id || selectedProductId,
-          packagingVariant: selectedVariantLabel || null,
+          packagingVariant: resolution.packagingVariant,
           mode,
           quantity,
+          quantityUnit: resolution.quantityUnit,
+          piecesPerPack: resolution.piecesPerPack,
           eventType,
           targetEventDate: targetEventDate || null,
           preferredFillings,
@@ -307,13 +287,18 @@ export default function CustomQuoteModal() {
           monogramText,
           cardMessage,
           customPrinting,
+          customPrintText: customPrinting,
           budgetType,
           targetPricePkr,
-          referenceUnitPrice,
+          referenceUnitPrice: resolution.standardPrice,
+          perPiecePrice: resolution.perPiecePrice,
+          requiresTeamQuote: resolution.requiresTeamQuote,
+          belowMoq: resolution.belowMoq,
+          moqRequired: resolution.moqRequired,
           customerName,
           customerPhone,
           city,
-          isTabarruk,
+          isTabarruk: resolution.isTabarruk,
           leadTimeNoticeAcknowledged: leadTimeAcknowledged,
         });
 
@@ -668,23 +653,40 @@ export default function CustomQuoteModal() {
                 <div>
                   <label htmlFor="quote-quantity-input" className="block text-xs font-bold uppercase tracking-wider text-[#072A20] mb-1.5">
                     <Layers size={13} className="inline mr-1 text-[#8C6B1B]" />
-                    3. Quantity (Boxes / Pieces)
+                    3. Quantity ({resolution.quantityUnit === 'packs' ? `Packs — ${resolution.piecesPerPack} pcs/pack` : resolution.quantityUnit === 'sets' ? 'Sets' : 'Boxes / Pieces'})
                   </label>
                   <div className="flex flex-wrap gap-1.5 mb-2">
-                    {QUANTITY_PRESETS.map(preset => (
-                      <button
-                        key={preset}
-                        type="button"
-                        onClick={() => setQuantity(preset)}
-                        className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
-                          quantity === preset
-                            ? 'bg-[#8C6B1B] text-white'
-                            : 'bg-white border border-[#D4AF6A]/40 text-[#072A20] hover:bg-[#D4AF6A]/15'
-                        }`}
-                      >
-                        {preset === 500 ? '500+' : `${preset} pcs`}
-                      </button>
-                    ))}
+                    {resolution.quantityUnit === 'packs' ? (
+                      [1, 2, 4, 10, 20].map(preset => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setQuantity(preset)}
+                          className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
+                            quantity === preset
+                              ? 'bg-[#8C6B1B] text-white'
+                              : 'bg-white border border-[#D4AF6A]/40 text-[#072A20] hover:bg-[#D4AF6A]/15'
+                          }`}
+                        >
+                          {preset} {preset === 1 ? 'pack' : 'packs'} ({preset * resolution.piecesPerPack} pcs)
+                        </button>
+                      ))
+                    ) : (
+                      QUANTITY_PRESETS.map(preset => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setQuantity(preset)}
+                          className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
+                            quantity === preset
+                              ? 'bg-[#8C6B1B] text-white'
+                              : 'bg-white border border-[#D4AF6A]/40 text-[#072A20] hover:bg-[#D4AF6A]/15'
+                          }`}
+                        >
+                          {preset === 500 ? '500+' : `${preset} ${resolution.quantityUnit === 'sets' ? 'sets' : 'pcs'}`}
+                        </button>
+                      ))
+                    )}
                   </div>
                   <input
                     id="quote-quantity-input"
@@ -697,26 +699,25 @@ export default function CustomQuoteModal() {
                   />
 
                   {/* MOQ Indicator */}
-                  {packagingMoqInfo.isPackaging && (
-                    <div className="mt-1.5 text-[11px]">
-                      {packagingMoqInfo.isUnpriced ? (
-                        <span className="text-[#8C6B1B] font-medium">
-                          • Quantity pending team confirmation (Custom / unpriced configuration)
+                  <div className="mt-1.5 text-[11px]">
+                    {resolution.requiresTeamQuote && !resolution.standardPrice ? (
+                      <span className="text-[#8C6B1B] font-medium">
+                        • Pricing &amp; minimums subject to concierge review (Custom / unpriced configuration)
+                      </span>
+                    ) : resolution.moqRequired != null ? (
+                      <div>
+                        <span className="text-[#566B63]">
+                          • Authoritative Minimum: <strong>{resolution.moqRequired} pcs</strong>
+                          {resolution.minPacksRequired ? ` (${resolution.minPacksRequired} pack${resolution.minPacksRequired > 1 ? 's' : ''})` : ''}
                         </span>
-                      ) : packagingMoqInfo.moq != null ? (
-                        <div>
-                          <span className="text-[#566B63]">
-                            • Authoritative MOQ: <strong>{packagingMoqInfo.moq} pcs</strong>
+                        {resolution.belowMoq && (
+                          <span className="block text-amber-800 font-medium mt-0.5">
+                            Order is below standard minimum ({resolution.moqRequired} pcs). Small-batch review requested.
                           </span>
-                          {quantity < packagingMoqInfo.moq && (
-                            <span className="block text-amber-800 font-medium mt-0.5">
-                              Orders below {packagingMoqInfo.moq} pcs require small-batch confirmation.
-                            </span>
-                          )}
-                        </div>
-                      ) : null}
-                    </div>
-                  )}
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
 
                 {/* 4. Event / Occasion Type & Target Event Date */}
@@ -894,6 +895,25 @@ export default function CustomQuoteModal() {
                     </button>
                   </div>
                 </div>
+                <div className="flex items-center gap-2 py-1 text-xs">
+                  <span className="text-[#566B63]">Catalog Reference Rate:</span>
+                  {resolution.requiresTeamQuote || !resolution.standardPrice ? (
+                    <span className="font-semibold text-[#8C6B1B]">Custom Quote on Request (Team Review)</span>
+                  ) : resolution.quantityUnit === 'packs' ? (
+                    <span className="font-bold text-[#072A20]">
+                      Rs. {Number(resolution.standardPrice).toLocaleString()} / pack
+                      {resolution.perPiecePrice ? (
+                        <span className="text-[11px] font-normal text-[#566B63] ml-1">
+                          (Rs. {resolution.perPiecePrice} / pc)
+                        </span>
+                      ) : null}
+                    </span>
+                  ) : (
+                    <span className="font-bold text-[#072A20]">
+                      Rs. {Number(resolution.standardPrice).toLocaleString()} / {resolution.quantityUnit === 'sets' ? 'set' : 'pc'}
+                    </span>
+                  )}
+                </div>
                 <p className="text-[11px] text-[#566B63]">
                   Pitch your target budget in PKR. Our senior concierge actively reviews and accommodates reasonable bulk offers for family and corporate events.
                 </p>
@@ -904,9 +924,11 @@ export default function CustomQuoteModal() {
                     type="number"
                     min={1}
                     placeholder={
-                      budgetType === 'total'
-                        ? `e.g. ${Math.round(referenceUnitPrice * quantity * 0.9)} (Target total PKR)`
-                        : `e.g. ${Math.round(referenceUnitPrice * 0.9)} (Target per-piece PKR)`
+                      resolution.standardPrice
+                        ? budgetType === 'total'
+                          ? `e.g. ${Math.round(resolution.standardPrice * quantity * 0.9)} (Target total PKR)`
+                          : `e.g. ${Math.round((resolution.perPiecePrice || resolution.standardPrice) * 0.9)} (Target ${resolution.quantityUnit === 'packs' ? 'per pack' : 'per piece'} PKR)`
+                        : `Target offer in PKR`
                     }
                     value={targetPricePkr}
                     onChange={(e) => setTargetPricePkr(e.target.value)}

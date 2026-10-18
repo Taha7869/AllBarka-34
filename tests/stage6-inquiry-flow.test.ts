@@ -20,6 +20,7 @@ import {
   TABARRUK_EMPTY_DEFAULT_NOTICE,
   formatFillingsLabel,
   buildCustomerInquiryWhatsAppUrl,
+  buildAdminWhatsAppPitchUrl,
 } from '../src/lib/inquiryWhatsApp';
 import { submitCustomQuoteInquiry } from '../src/lib/storefrontSubmissions';
 import type { Product, InquiryRecord } from '../src/types';
@@ -210,7 +211,7 @@ function createMockFirestore(options?: { throwOnCommit?: boolean }) {
 
 function createTestServer(options: {
   db: any;
-  catalog?: Product[];
+  catalog?: Product[] | (() => Product[] | Promise<Product[]>);
   adminAllowed?: boolean;
 }) {
   const app = express();
@@ -223,9 +224,15 @@ function createTestServer(options: {
     next();
   };
 
+  const catalogOption = options.catalog;
+  const getCatalogFn: () => Product[] | Promise<Product[]> =
+    typeof catalogOption === 'function'
+      ? catalogOption
+      : () => (Array.isArray(catalogOption) ? catalogOption : TEST_CATALOG);
+
   const router = createInquiriesRouter({
     getDb: () => options.db,
-    getCatalog: () => options.catalog || TEST_CATALOG,
+    getCatalog: getCatalogFn,
     requireAdmin,
   });
 
@@ -716,4 +723,342 @@ test('endpoint: admin authorization and public data isolation', async () => {
   } finally {
     await new Promise<void>(resolve => serverAdmin.close(() => resolve()));
   }
+});
+
+// ============================================================================
+// 4. AUTHORITATIVE CATALOG RESOLUTION & DYNAMIC UPDATES
+// ============================================================================
+
+test('endpoint: dynamic catalog updates and additions reflect immediately without server restart', async () => {
+  const mockDb = createMockFirestore();
+  const liveCatalog: Product[] = JSON.parse(JSON.stringify(TEST_CATALOG));
+  const app = createTestServer({
+    db: mockDb,
+    catalog: () => liveCatalog,
+  });
+  const server = app.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  const port = (server.address() as any).port;
+
+  try {
+    // 1. Initial inquiry for bid-box-luxury-tin has price 350
+    const res1 = await fetch(`http://127.0.0.1:${port}/api/quotes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerName: 'Fatima',
+        customerPhone: '03160666083',
+        productId: 'bid-box-luxury-tin',
+        packagingVariant: 'Empty Box (1 pc)',
+        boxMode: 'empty',
+        quantity: 10,
+      }),
+    });
+    const json1 = await res1.json();
+    assert.equal(json1.ok, true);
+    assert.equal(json1.inquiry.standardPrice, 350);
+
+    // 2. Admin dynamically updates price from 350 to 520
+    const tinProd = liveCatalog.find(p => p.id === 'bid-box-luxury-tin')!;
+    tinProd.prices = { ...tinProd.prices, 'Empty Box (1 pc)': 520 };
+    tinProd.variants = (tinProd.variants || []).map(v => (v.label === 'Empty Box (1 pc)' ? { ...v, price: 520 } : v));
+
+    const res2 = await fetch(`http://127.0.0.1:${port}/api/quotes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerName: 'Fatima',
+        customerPhone: '03160666083',
+        productId: 'bid-box-luxury-tin',
+        packagingVariant: 'Empty Box (1 pc)',
+        boxMode: 'empty',
+        quantity: 10,
+      }),
+    });
+    const json2 = await res2.json();
+    assert.equal(json2.ok, true);
+    assert.equal(json2.inquiry.standardPrice, 520, 'Price update reflects immediately without rebuilding');
+    assert.ok(json2.inquiry.whatsappReplyUrl.includes('520'));
+
+    // 3. Admin adds a brand new product dynamically
+    const newProd: Product = {
+      id: 'dynamic-new-velvet-box',
+      name_en: 'Royal Velvet Coffer',
+      name_ur: '',
+      name_ar: '',
+      category: 'celebration-boxes',
+      image: null,
+      imageName: null,
+      prices: { 'Empty Box (1 pc)': 1200 },
+      variants: [{ label: 'Empty Box (1 pc)', price: 1200, available: true }],
+      wholesale: 950,
+      desc_en: '',
+      desc_ur: '',
+      desc_ar: '',
+      active: true,
+      inStock: true,
+      isBidBox: true,
+    };
+    liveCatalog.push(newProd);
+
+    const res3 = await fetch(`http://127.0.0.1:${port}/api/quotes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerName: 'Fatima',
+        customerPhone: '03160666083',
+        productId: 'dynamic-new-velvet-box',
+        packagingVariant: 'Empty Box (1 pc)',
+        boxMode: 'empty',
+        quantity: 10,
+      }),
+    });
+    const json3 = await res3.json();
+    assert.equal(json3.ok, true);
+    assert.equal(json3.inquiry.isVerifiedCatalogProduct, true);
+    assert.equal(json3.inquiry.productName, 'Royal Velvet Coffer');
+    assert.equal(json3.inquiry.standardPrice, 1200);
+  } finally {
+    await new Promise<void>(resolve => server.close(() => resolve()));
+  }
+});
+
+test('endpoint: catalog resolution failure returns HTTP 503 CATALOG_UNAVAILABLE without falling back to compiled prices', async () => {
+  const mockDb = createMockFirestore();
+  const app = createTestServer({
+    db: mockDb,
+    catalog: () => {
+      throw new Error('Firestore catalog query timed out');
+    },
+  });
+  const server = app.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  const port = (server.address() as any).port;
+
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/api/quotes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerName: 'Amina',
+        customerPhone: '03160666083',
+        productId: 'bid-box-luxury-tin',
+        quantity: 20,
+      }),
+    });
+    assert.equal(res.status, 503);
+    const json = await res.json();
+    assert.equal(json.ok, false);
+    assert.equal(json.code, 'CATALOG_UNAVAILABLE');
+    assert.equal(json.error, 'CATALOG_UNAVAILABLE');
+  } finally {
+    await new Promise<void>(resolve => server.close(() => resolve()));
+  }
+});
+
+// ============================================================================
+// 5. NO SILENT VARIANT SUBSTITUTION & MODE CONSTRAINTS
+// ============================================================================
+
+test('inquiryService & endpoint: no silent variant substitution for unavailable or nonexistent variants', async () => {
+  const catalogWithDisabled: Product[] = [
+    {
+      id: 'bid-box-acrylic',
+      name_en: 'Acrylic Favor Box',
+      name_ur: '',
+      name_ar: '',
+      category: 'celebration-boxes',
+      image: null,
+      imageName: null,
+      prices: {
+        'Empty Box (1 pc)': 250,
+        'Filled Box (1 pc)': 550,
+        'Discontinued Luxury Edition': 800,
+      },
+      variants: [
+        { label: 'Empty Box (1 pc)', price: 250, available: true },
+        { label: 'Filled Box (1 pc)', price: 550, available: true },
+        { label: 'Discontinued Luxury Edition', price: 800, available: false },
+      ],
+      wholesale: 200,
+      desc_en: '',
+      desc_ur: '',
+      desc_ar: '',
+      active: true,
+      inStock: true,
+      isBidBox: true,
+    },
+    {
+      id: 'inactive-catalog-box',
+      name_en: 'Archived Gift Coffer',
+      name_ur: '',
+      name_ar: '',
+      category: 'celebration-boxes',
+      image: null,
+      imageName: null,
+      prices: { 'Empty Box (1 pc)': 500 },
+      variants: [{ label: 'Empty Box (1 pc)', price: 500, available: true }],
+      wholesale: 400,
+      desc_en: '',
+      desc_ur: '',
+      desc_ar: '',
+      active: false, // inactive product
+      inStock: true,
+      isBidBox: true,
+    },
+  ];
+
+  // 1. Nonexistent variant label
+  const nonexistent = resolveInquiryProductVariant({
+    catalog: catalogWithDisabled,
+    productId: 'bid-box-acrylic',
+    requestedVariantLabel: 'Nonexistent Gold Lid Variant',
+    boxMode: 'empty',
+    quantity: 25,
+  });
+  assert.equal(nonexistent.unresolvedVariant, true);
+  assert.equal(nonexistent.requiresTeamQuote, true);
+  assert.equal(nonexistent.standardPrice, null, 'Must NOT substitute with Empty Box (1 pc)');
+  assert.equal(nonexistent.perPiecePrice, null);
+  assert.equal(nonexistent.packagingVariant, 'Nonexistent Gold Lid Variant', 'Preserve customer requested label');
+
+  // 2. Disabled variant (available: false)
+  const disabled = resolveInquiryProductVariant({
+    catalog: catalogWithDisabled,
+    productId: 'bid-box-acrylic',
+    requestedVariantLabel: 'Discontinued Luxury Edition',
+    boxMode: 'empty',
+    quantity: 25,
+  });
+  assert.equal(disabled.unresolvedVariant, true);
+  assert.equal(disabled.requiresTeamQuote, true);
+  assert.equal(disabled.standardPrice, null, 'Must NOT substitute disabled variant');
+
+  // 3. Mode mismatch: requested empty mode with filled variant
+  const modeMismatch = resolveInquiryProductVariant({
+    catalog: catalogWithDisabled,
+    productId: 'bid-box-acrylic',
+    requestedVariantLabel: 'Filled Box (1 pc)',
+    boxMode: 'empty', // Mismatch!
+    quantity: 25,
+  });
+  assert.equal(modeMismatch.requiresTeamQuote, true);
+  assert.equal(modeMismatch.standardPrice, null, 'Mode mismatch must require team quote');
+
+  // 4. Inactive product
+  const inactive = resolveInquiryProductVariant({
+    catalog: catalogWithDisabled,
+    productId: 'inactive-catalog-box',
+    requestedVariantLabel: 'Empty Box (1 pc)',
+    boxMode: 'empty',
+    quantity: 25,
+  });
+  assert.equal(inactive.requiresTeamQuote, true);
+  assert.equal(inactive.standardPrice, null, 'Inactive product must require team quote');
+});
+
+// ============================================================================
+// 6. CUSTOM PRINTING ALIAS END-TO-END
+// ============================================================================
+
+test('endpoint: customPrinting and customPrintText alias survives end-to-end identically', async () => {
+  const mockDb = createMockFirestore();
+  const app = createTestServer({ db: mockDb });
+  const server = app.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  const port = (server.address() as any).port;
+
+  try {
+    // 1. Hash equivalence
+    const hash1 = computeInquiryPayloadHash({
+      customerName: 'Zainab',
+      phone: '03160666083',
+      city: 'Lahore',
+      productId: 'bid-box-luxury-tin',
+      customPrinting: 'Foil stamped monogram "Z & H"',
+      quantity: 50,
+      boxMode: 'empty',
+      eventType: 'Nikkah',
+    });
+    const hash2 = computeInquiryPayloadHash({
+      customerName: 'Zainab',
+      phone: '03160666083',
+      city: 'Lahore',
+      productId: 'bid-box-luxury-tin',
+      customPrintText: 'Foil stamped monogram "Z & H"',
+      quantity: 50,
+      boxMode: 'empty',
+      eventType: 'Nikkah',
+    });
+    assert.equal(hash1, hash2, 'Aliases must produce identical payload hash for idempotency');
+
+    // 2. Submit with customPrinting
+    const res = await fetch(`http://127.0.0.1:${port}/api/quotes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerName: 'Zainab',
+        customerPhone: '03160666083',
+        productId: 'bid-box-luxury-tin',
+        customPrinting: 'Foil stamped monogram "Z & H"',
+        packagingVariant: 'Empty Box (1 pc)',
+        boxMode: 'empty',
+        quantity: 50,
+      }),
+    });
+    const json = await res.json();
+    assert.equal(json.ok, true);
+    assert.equal(json.inquiry.customPrintText, 'Foil stamped monogram "Z & H"');
+    assert.ok(json.inquiry.whatsappReplyUrl.includes(encodeURIComponent('Foil stamped monogram "Z & H"')));
+  } finally {
+    await new Promise<void>(resolve => server.close(() => resolve()));
+  }
+});
+
+// ============================================================================
+// 7. PACK RATES & QUANTITY FORMATTING IN WHATSAPP
+// ============================================================================
+
+test('inquiryWhatsApp: pack rates and quantities never label pack prices as /pc', () => {
+  // Customer WhatsApp URL
+  const custUrl = buildCustomerInquiryWhatsAppUrl({
+    productName: 'Luxury Tin Bid Box',
+    productId: 'bid-box-luxury-tin',
+    packagingVariant: 'Empty Pack (25 pcs)',
+    mode: 'empty',
+    quantity: 4,
+    quantityUnit: 'packs',
+    piecesPerPack: 25,
+    referenceUnitPrice: 7500,
+    perPiecePrice: 300,
+    eventType: 'Nikkah',
+    customerName: 'Usman',
+    customerPhone: '03160666083',
+    city: 'Lahore',
+  });
+  const decodedCust = decodeURIComponent(custUrl);
+  assert.match(decodedCust, /Quantity:\* 4 packs \(100 pcs total, 25 pcs\/pack\)/);
+  assert.match(decodedCust, /Standard Rate Ref:\* Rs\. 7,500\/pack \(Rs\. 300\/pc\)/);
+  assert.doesNotMatch(decodedCust, /Standard Rate Ref:\* Rs\. 7,500\/pc/);
+
+  // Admin WhatsApp URL
+  const adminUrl = buildAdminWhatsAppPitchUrl({
+    id: 'ABQ-999',
+    type: 'bid_box_quote',
+    customerName: 'Usman',
+    phone: '03160666083',
+    productName: 'Luxury Tin Bid Box',
+    packagingVariant: 'Empty Pack (25 pcs)',
+    boxMode: 'empty',
+    quantity: 4,
+    quantityUnit: 'packs',
+    piecesPerPack: 25,
+    standardPrice: 7500,
+    perPiecePrice: 300,
+    eventType: 'Nikkah',
+  });
+  const decodedAdmin = decodeURIComponent(adminUrl);
+  assert.match(decodedAdmin, /Quantity:\* 4 packs \(100 pcs total, 25 pcs\/pack\)/);
+  assert.match(decodedAdmin, /Standard Rate Ref:\* Rs\. 7,500\/pack \(Rs\. 300\/pc\)/);
+  assert.doesNotMatch(decodedAdmin, /Standard Rate Ref:\* Rs\. 7,500\/pc/);
 });

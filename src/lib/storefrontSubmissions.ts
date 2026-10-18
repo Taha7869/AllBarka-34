@@ -18,6 +18,7 @@ export interface CustomQuoteSubmissionInput {
   monogramText?: string;
   cardMessage?: string;
   customPrinting?: string;
+  customPrintText?: string;
   budgetType?: 'per_piece' | 'total';
   targetPricePkr?: number | null;
   referenceUnitPrice?: number | null;

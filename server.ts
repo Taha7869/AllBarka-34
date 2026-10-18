@@ -339,7 +339,13 @@ app.use('/api/concierge', chatLimiter);
 app.use('/api/ai', chatLimiter);
 app.use(createInquiriesRouter({
   getDb: () => db,
-  getCatalog: () => PRODUCTS,
+  getCatalog: async () => {
+    if (!db) {
+      throw new Error('CATALOG_STORE_UNAVAILABLE');
+    }
+    const snapshot = await loadAuthoritativeCatalog(db, { fresh: true });
+    return mergeAuthoritativeCatalog(PRODUCTS, snapshot.products);
+  },
   requireAdmin,
   inquiryLimiter: contactLimiter,
 }));

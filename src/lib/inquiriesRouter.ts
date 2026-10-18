@@ -2,6 +2,7 @@ import { Router, type RequestHandler } from 'express';
 import type { Firestore } from 'firebase-admin/firestore';
 import type { InquiryRecord, InquiryStatus, InquiryType, Product } from '../types';
 import { PRODUCTS } from '../data/products';
+import { loadAuthoritativeCatalog, mergeAuthoritativeCatalog } from './catalogStore';
 import {
   isValidPhone,
   isValidQuantity,
@@ -22,7 +23,7 @@ import { buildCustomerInquiryWhatsAppUrl } from './inquiryWhatsApp';
 
 export interface InquiriesRouterOptions {
   getDb: () => Firestore | null;
-  getCatalog?: () => Product[];
+  getCatalog?: () => Product[] | Promise<Product[]>;
   requireAdmin?: RequestHandler;
   inMemoryStore?: Map<string, InquiryRecord>;
   inquiryLimiter?: RequestHandler;
@@ -30,10 +31,22 @@ export interface InquiriesRouterOptions {
 
 export function createInquiriesRouter(options: InquiriesRouterOptions) {
   const router = Router();
-  const getCatalog = options.getCatalog || (() => PRODUCTS);
   const inMemory = options.inMemoryStore || new Map<string, InquiryRecord>();
   const adminGuard = options.requireAdmin || ((_req, _res, next) => next());
   const limiter = options.inquiryLimiter || ((_req, _res, next) => next());
+
+  // Asynchronous authoritative catalog resolver
+  // Never falls back to compiled selling prices if authoritative resolution fails
+  const resolveCatalog = options.getCatalog
+    ? async () => await options.getCatalog!()
+    : async () => {
+        const db = options.getDb();
+        if (!db) {
+          throw new Error('CATALOG_STORE_UNAVAILABLE');
+        }
+        const snapshot = await loadAuthoritativeCatalog(db, { fresh: true });
+        return mergeAuthoritativeCatalog(PRODUCTS, snapshot.products);
+      };
 
   // 1. Boutique / Contact API
   router.post('/api/contact', limiter, async (req, res) => {
@@ -50,10 +63,10 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
       }
 
       const raw = sanitizePublicInquiryInput(req.body || {});
-      const name = String(raw.customerName || raw.name || '').trim();
-      const contact = String(raw.contact || raw.customerPhone || raw.phone || raw.email || '').trim();
-      const message = String(raw.notes || raw.message || '').trim();
-      const topic = String(raw.topic || raw.eventType || 'general').trim();
+      const name = String(raw.customerName ?? raw.name ?? '').trim();
+      const contact = String(raw.contact ?? raw.customerPhone ?? raw.phone ?? raw.email ?? '').trim();
+      const message = String(raw.notes ?? raw.message ?? raw.customPrintText ?? raw.customPrinting ?? '').trim();
+      const topic = String(raw.topic ?? raw.eventType ?? raw.occasion ?? 'general').trim();
 
       if (name.length < 2 || name.length > 100) {
         return res.status(400).json({ error: 'Please provide your full name (at least 2 characters).', code: 'MISSING_NAME' });
@@ -79,12 +92,14 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         customerName: name,
         phone,
         email,
-        city: String(raw.city || raw.deliveryCity || 'Lahore').trim().slice(0, 80),
+        city: String(raw.city ?? raw.deliveryCity ?? 'Lahore').trim().slice(0, 80),
         productId: topic,
         productName: topic === 'wholesale' ? 'Wholesale & Bulk Inquiry (10kg+)' : `Concierge Inquiry (${topic})`,
         packagingVariant: null,
         boxMode: 'filled',
         quantity: 1,
+        quantityUnit: 'pieces',
+        piecesPerPack: 1,
         eventType: topic,
         targetEventDate: null,
         budgetType: null,
@@ -94,6 +109,8 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         cardMessage: '',
         customPrintText: '',
         standardPrice: null,
+        packPrice: null,
+        perPiecePrice: null,
         offeredPrice: null,
         finalAgreedPrice: null,
         notes: message,
@@ -142,10 +159,19 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         });
       }
 
+      // Normalize all aliases once
       const body = sanitizePublicInquiryInput(req.body || {});
-      const customerName = String(body.customerName || body.name || '').trim();
-      const phone = String(body.phone || body.customerPhone || body.contact || '').trim();
-      const email = String(body.email || (phone.includes('@') ? phone : '') || '').trim();
+      const customerName = String(body.customerName ?? body.name ?? '').trim();
+      const phone = String(body.phone ?? body.customerPhone ?? body.contact ?? '').trim();
+      const email = String(body.email ?? (phone.includes('@') ? phone : '') ?? '').trim();
+      const rawQuantity = body.quantity ?? body.estimatedQuantity;
+      const customPrintText = String(body.customPrintText ?? body.customPrinting ?? '').trim();
+      const requestedVariant = body.packagingVariant ?? body.variantLabel ?? body.portion ?? null;
+      const city = String(body.city ?? body.deliveryCity ?? 'Lahore').trim();
+      const rawEventType = String(body.eventType ?? body.occasion ?? body.topic ?? 'General').trim();
+      const budgetVal = body.targetPricePkr ?? body.offeredPrice ?? body.customerOfferedRate ?? null;
+      const notes = String(body.notes ?? body.message ?? body.customHamperNotes ?? '').trim();
+      const submissionKey = String(req.headers['idempotency-key'] ?? body.submissionKey ?? body.idempotencyKey ?? '').trim() || undefined;
 
       if (customerName.length < 2 || customerName.length > 100) {
         return res.status(400).json({ error: 'Please provide your name (at least 2 characters).', code: 'MISSING_NAME' });
@@ -156,51 +182,65 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         return res.status(400).json({ error: 'Please provide a valid phone number (at least 10 digits).', code: 'MISSING_PHONE' });
       }
 
-      const rawQuantity = Number(body.quantity || body.estimatedQuantity);
       if (!isValidQuantity(rawQuantity)) {
         return res.status(400).json({ error: 'Quantity must be a positive integer between 1 and 50,000.', code: 'INVALID_QUANTITY' });
       }
 
-      if (body.targetPricePkr != null && !isValidBudget(body.targetPricePkr)) {
+      if (budgetVal != null && !isValidBudget(budgetVal)) {
         return res.status(400).json({ error: 'Target budget must be a positive number.', code: 'INVALID_BUDGET' });
       }
 
       const rawType = String(body.type || 'general');
       const type: InquiryType = VALID_INQUIRY_TYPES.includes(rawType as InquiryType) ? (rawType as InquiryType) : 'general';
 
-      const rawMode = String(body.boxMode || body.mode || '').toLowerCase();
+      const rawMode = String(body.boxMode ?? body.mode ?? '').toLowerCase();
       const boxMode: 'empty' | 'filled' | 'custom' =
         rawMode === 'empty' ? 'empty' : rawMode === 'custom' ? 'custom' : 'filled';
 
-      const catalog = getCatalog();
-      const productId = String(body.productId || body.boxId || (type === 'custom_hamper' ? 'custom-hamper' : 'general')).trim();
+      let catalog: Product[];
+      try {
+        catalog = await resolveCatalog();
+      } catch (catErr: any) {
+        console.warn('Authoritative catalog resolution error:', catErr);
+        return res.status(503).json({
+          ok: false,
+          success: false,
+          error: 'CATALOG_UNAVAILABLE',
+          code: 'CATALOG_UNAVAILABLE',
+          message: 'Authoritative catalog pricing is temporarily unavailable. Please retry shortly or message our concierge on WhatsApp.',
+        });
+      }
+
+      const productId = String(body.productId ?? body.boxId ?? (type === 'custom_hamper' ? 'custom-hamper' : 'general')).trim();
       const resolution = resolveInquiryProductVariant({
         catalog,
         productId,
-        requestedVariantLabel: body.packagingVariant || body.variantLabel || body.portion || null,
+        requestedVariantLabel: requestedVariant,
         boxMode,
         quantity: rawQuantity,
       });
 
-      const submissionKey = String(req.headers['idempotency-key'] || body.submissionKey || body.idempotencyKey || '').trim() || undefined;
+      const offPrice = budgetVal != null ? Number(budgetVal) : null;
+      const eventType = rawEventType || (type === 'bid_box_quote' ? 'Nikkah' : 'General');
+
       const payloadHash = submissionKey
         ? computeInquiryPayloadHash({
             customerName,
-            phone: isEmailOnly ? '' : phone,
-            city: String(body.city || body.deliveryCity || 'Lahore'),
+            phone,
+            city,
             productId,
             packagingVariant: resolution.packagingVariant,
             boxMode,
             quantity: rawQuantity,
-            eventType: String(body.eventType || 'General'),
+            eventType,
             targetEventDate: body.targetEventDate ? String(body.targetEventDate).slice(0, 30) : null,
             preferredFillings: Array.isArray(body.preferredFillings) ? body.preferredFillings : [],
             customFillingsNotes: body.customFillingsNotes || '',
             monogramText: body.monogramText || '',
             cardMessage: body.cardMessage || '',
-            customPrintText: body.customPrintText || body.customPrinting || '',
+            customPrintText,
             budgetType: body.budgetType || null,
-            targetPricePkr: body.targetPricePkr != null ? Number(body.targetPricePkr) : null,
+            targetPricePkr: offPrice,
             leadTimeNoticeAcknowledged: Boolean(body.leadTimeNoticeAcknowledged),
           })
         : undefined;
@@ -215,15 +255,15 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         quantity: rawQuantity,
         quantityUnit: resolution.quantityUnit,
         piecesPerPack: resolution.piecesPerPack,
-        eventType: String(body.eventType || (type === 'bid_box_quote' ? 'Nikkah' : 'General')).slice(0, 80),
+        eventType: eventType.slice(0, 80),
         targetEventDate: body.targetEventDate ? String(body.targetEventDate).slice(0, 30) : null,
         preferredFillings: Array.isArray(body.preferredFillings) ? body.preferredFillings : [],
         customFillingsNotes: body.customFillingsNotes ? String(body.customFillingsNotes).slice(0, 500) : '',
         monogramText: body.monogramText ? String(body.monogramText).slice(0, 200) : '',
         cardMessage: body.cardMessage ? String(body.cardMessage).slice(0, 500) : '',
-        customPrinting: body.customPrintText ? String(body.customPrintText).slice(0, 500) : '',
+        customPrintText,
         budgetType: body.budgetType === 'per_piece' || body.budgetType === 'total' ? body.budgetType : null,
-        targetPricePkr: body.targetPricePkr != null ? Number(body.targetPricePkr) : null,
+        targetPricePkr: offPrice,
         referenceUnitPrice: resolution.standardPrice,
         perPiecePrice: resolution.perPiecePrice,
         requiresTeamQuote: resolution.requiresTeamQuote,
@@ -232,7 +272,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         leadTimeNoticeAcknowledged: Boolean(body.leadTimeNoticeAcknowledged),
         customerName: customerName.slice(0, 100),
         customerPhone: isEmailOnly ? '' : phone.slice(0, 40),
-        city: String(body.city || body.deliveryCity || 'Lahore').trim().slice(0, 80),
+        city: city.slice(0, 80),
         isTabarruk: resolution.isTabarruk,
       });
 
@@ -244,24 +284,35 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         customerName: customerName.slice(0, 100),
         phone: isEmailOnly ? '' : phone.slice(0, 40),
         email: email.slice(0, 120),
-        city: String(body.city || body.deliveryCity || 'Lahore').trim().slice(0, 80),
+        city: city.slice(0, 80),
         productId,
         productName: resolution.productName,
         packagingVariant: resolution.packagingVariant,
         boxMode,
         quantity: rawQuantity,
-        eventType: String(body.eventType || (type === 'bid_box_quote' ? 'Nikkah' : 'General')).trim().slice(0, 80),
+        quantityUnit: resolution.quantityUnit,
+        piecesPerPack: resolution.piecesPerPack,
+        eventType: eventType.slice(0, 80),
         targetEventDate: body.targetEventDate ? String(body.targetEventDate).trim().slice(0, 30) : null,
         budgetType: body.budgetType === 'per_piece' || body.budgetType === 'total' ? body.budgetType : null,
         preferredFillings: Array.isArray(body.preferredFillings) ? body.preferredFillings.slice(0, 10) : [],
         customFillingsNotes: body.customFillingsNotes ? String(body.customFillingsNotes).trim().slice(0, 500) : '',
         monogramText: body.monogramText ? String(body.monogramText).trim().slice(0, 200) : '',
         cardMessage: body.cardMessage ? String(body.cardMessage).trim().slice(0, 500) : '',
-        customPrintText: body.customPrintText ? String(body.customPrintText).trim().slice(0, 500) : '',
+        customPrintText,
         standardPrice: resolution.standardPrice,
-        offeredPrice: body.targetPricePkr != null ? Number(body.targetPricePkr) : body.offeredPrice != null ? Number(body.offeredPrice) : null,
+        packPrice: resolution.packPrice,
+        perPiecePrice: resolution.perPiecePrice,
+        requiresTeamQuote: resolution.requiresTeamQuote,
+        unresolvedVariant: resolution.unresolvedVariant,
+        belowMoq: resolution.belowMoq,
+        moqRequired: resolution.moqRequired,
+        minPacksRequired: resolution.minPacksRequired,
+        isVerifiedCatalogProduct: resolution.isVerifiedCatalogProduct,
+        submissionKey: submissionKey || null,
+        offeredPrice: offPrice,
         finalAgreedPrice: null,
-        notes: String(body.notes || body.message || body.customPrintText || '').trim().slice(0, 1000),
+        notes: (notes || customPrintText).slice(0, 1000),
         adminNotes: '',
         status: 'NEW',
         whatsappUrl,
@@ -319,9 +370,19 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         });
       }
 
+      // Normalize all aliases once
       const raw = sanitizePublicInquiryInput(req.body || {});
-      const resolvedName = String(raw.customerName || raw.name || '').trim();
-      const resolvedPhone = String(raw.customerPhone || raw.phone || raw.contact || '').trim();
+      const resolvedName = String(raw.customerName ?? raw.name ?? '').trim();
+      const resolvedPhone = String(raw.phone ?? raw.customerPhone ?? raw.contact ?? '').trim();
+      const email = String(raw.email ?? (resolvedPhone.includes('@') ? resolvedPhone : '') ?? '').trim();
+      const rawQuantity = raw.quantity ?? raw.estimatedQuantity;
+      const customPrintText = String(raw.customPrintText ?? raw.customPrinting ?? '').trim();
+      const requestedVariant = raw.packagingVariant ?? raw.variantLabel ?? raw.portion ?? null;
+      const city = String(raw.city ?? raw.deliveryCity ?? 'Lahore').trim();
+      const rawEventType = String(raw.eventType ?? raw.occasion ?? raw.topic ?? 'Nikkah').trim();
+      const budgetVal = raw.targetPricePkr ?? raw.offeredPrice ?? raw.customerOfferedRate ?? null;
+      const notes = String(raw.notes ?? raw.message ?? raw.customHamperNotes ?? '').trim();
+      const submissionKey = String(req.headers['idempotency-key'] ?? raw.submissionKey ?? raw.idempotencyKey ?? '').trim() || undefined;
 
       if (resolvedName.length < 2 || resolvedName.length > 100) {
         return res.status(400).json({ error: 'Please provide your name (at least 2 characters).', code: 'MISSING_NAME' });
@@ -330,24 +391,33 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         return res.status(400).json({ error: 'Please provide a valid phone number (at least 10 digits).', code: 'MISSING_PHONE' });
       }
 
-      const rawQuantity = Number(raw.quantity || raw.estimatedQuantity);
       if (!isValidQuantity(rawQuantity)) {
         return res.status(400).json({ error: 'Quantity must be a positive integer between 1 and 50,000.', code: 'INVALID_QUANTITY' });
       }
 
-      const budgetVal = raw.targetPricePkr != null ? raw.targetPricePkr : raw.offeredPrice != null ? raw.offeredPrice : null;
       if (budgetVal != null && !isValidBudget(budgetVal)) {
         return res.status(400).json({ error: 'Target budget must be a positive number.', code: 'INVALID_BUDGET' });
       }
 
-      const rawMode = String(raw.boxMode || raw.mode || '').toLowerCase();
+      const rawMode = String(raw.boxMode ?? raw.mode ?? '').toLowerCase();
       const safeMode: 'empty' | 'filled' | 'custom' =
         rawMode === 'empty' ? 'empty' : rawMode === 'custom' ? 'custom' : 'filled';
 
-      const catalog = getCatalog();
-      const productId = String(raw.productId || 'custom').trim();
-      const requestedVariant = raw.packagingVariant || raw.variantLabel || raw.portion || null;
+      let catalog: Product[];
+      try {
+        catalog = await resolveCatalog();
+      } catch (catErr: any) {
+        console.warn('Authoritative catalog resolution error:', catErr);
+        return res.status(503).json({
+          ok: false,
+          success: false,
+          error: 'CATALOG_UNAVAILABLE',
+          code: 'CATALOG_UNAVAILABLE',
+          message: 'Authoritative catalog pricing is temporarily unavailable. Please retry shortly or message our concierge on WhatsApp.',
+        });
+      }
 
+      const productId = String(raw.productId || 'custom').trim();
       const resolution = resolveInquiryProductVariant({
         catalog,
         productId,
@@ -356,25 +426,25 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         quantity: rawQuantity,
       });
 
-      const submissionKey = String(req.headers['idempotency-key'] || raw.submissionKey || raw.idempotencyKey || '').trim() || undefined;
       const offPrice = budgetVal != null ? Number(budgetVal) : null;
+      const eventType = rawEventType || 'Nikkah';
 
       const payloadHash = submissionKey
         ? computeInquiryPayloadHash({
             customerName: resolvedName,
             phone: resolvedPhone,
-            city: String(raw.city || 'Lahore'),
+            city,
             productId,
             packagingVariant: resolution.packagingVariant,
             boxMode: safeMode,
             quantity: rawQuantity,
-            eventType: String(raw.eventType || 'Nikkah'),
+            eventType,
             targetEventDate: raw.targetEventDate ? String(raw.targetEventDate).slice(0, 30) : null,
             preferredFillings: Array.isArray(raw.preferredFillings) ? raw.preferredFillings : [],
             customFillingsNotes: raw.customFillingsNotes || '',
             monogramText: raw.monogramText || '',
             cardMessage: raw.cardMessage || '',
-            customPrintText: raw.customPrintText || raw.customPrinting || '',
+            customPrintText,
             budgetType: raw.budgetType || null,
             targetPricePkr: offPrice,
             leadTimeNoticeAcknowledged: Boolean(raw.leadTimeNoticeAcknowledged),
@@ -391,13 +461,13 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         quantity: rawQuantity,
         quantityUnit: resolution.quantityUnit,
         piecesPerPack: resolution.piecesPerPack,
-        eventType: String(raw.eventType || 'Nikkah').slice(0, 80),
+        eventType: eventType.slice(0, 80),
         targetEventDate: raw.targetEventDate ? String(raw.targetEventDate).slice(0, 30) : null,
         preferredFillings: Array.isArray(raw.preferredFillings) ? raw.preferredFillings : [],
         customFillingsNotes: raw.customFillingsNotes ? String(raw.customFillingsNotes).slice(0, 500) : '',
         monogramText: raw.monogramText ? String(raw.monogramText).slice(0, 200) : '',
         cardMessage: raw.cardMessage ? String(raw.cardMessage).slice(0, 500) : '',
-        customPrinting: raw.customPrintText ? String(raw.customPrintText).slice(0, 500) : '',
+        customPrintText,
         budgetType: raw.budgetType === 'per_piece' || raw.budgetType === 'total' ? raw.budgetType : null,
         targetPricePkr: offPrice,
         referenceUnitPrice: resolution.standardPrice,
@@ -408,7 +478,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         leadTimeNoticeAcknowledged: Boolean(raw.leadTimeNoticeAcknowledged),
         customerName: resolvedName.slice(0, 100),
         customerPhone: resolvedPhone.slice(0, 40),
-        city: String(raw.city || 'Lahore').trim().slice(0, 80),
+        city: city.slice(0, 80),
         isTabarruk: resolution.isTabarruk,
       });
 
@@ -419,25 +489,36 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         type: 'bid_box_quote',
         customerName: resolvedName.slice(0, 100),
         phone: resolvedPhone.slice(0, 40),
-        email: String(raw.email || '').trim().slice(0, 120),
-        city: String(raw.city || 'Lahore').trim().slice(0, 80),
+        email: email.slice(0, 120),
+        city: city.slice(0, 80),
         productId,
         productName: resolution.productName,
         packagingVariant: resolution.packagingVariant,
         boxMode: safeMode,
         quantity: rawQuantity,
-        eventType: String(raw.eventType || 'Nikkah').trim().slice(0, 80),
+        quantityUnit: resolution.quantityUnit,
+        piecesPerPack: resolution.piecesPerPack,
+        eventType: eventType.slice(0, 80),
         targetEventDate: raw.targetEventDate ? String(raw.targetEventDate).trim().slice(0, 30) : null,
         budgetType: raw.budgetType === 'per_piece' || raw.budgetType === 'total' ? raw.budgetType : null,
         preferredFillings: Array.isArray(raw.preferredFillings) ? raw.preferredFillings.slice(0, 10) : [],
         customFillingsNotes: raw.customFillingsNotes ? String(raw.customFillingsNotes).trim().slice(0, 500) : '',
         monogramText: raw.monogramText ? String(raw.monogramText).trim().slice(0, 200) : '',
         cardMessage: raw.cardMessage ? String(raw.cardMessage).trim().slice(0, 500) : '',
-        customPrintText: raw.customPrintText ? String(raw.customPrintText).trim().slice(0, 500) : '',
+        customPrintText,
         standardPrice: resolution.standardPrice,
+        packPrice: resolution.packPrice,
+        perPiecePrice: resolution.perPiecePrice,
+        requiresTeamQuote: resolution.requiresTeamQuote,
+        unresolvedVariant: resolution.unresolvedVariant,
+        belowMoq: resolution.belowMoq,
+        moqRequired: resolution.moqRequired,
+        minPacksRequired: resolution.minPacksRequired,
+        isVerifiedCatalogProduct: resolution.isVerifiedCatalogProduct,
+        submissionKey: submissionKey || null,
         offeredPrice: offPrice,
         finalAgreedPrice: null,
-        notes: String(raw.notes || raw.customPrintText || '').trim().slice(0, 1000),
+        notes: (notes || customPrintText).slice(0, 1000),
         adminNotes: '',
         status: 'NEW',
         whatsappUrl,
@@ -529,9 +610,14 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
     }
   });
 
-  // 5. Admin-only: Update inquiry
-  const handleAdminUpdate = async (req: any, res: any) => {
+  // 5. Admin-only: Update inquiry/quote status, admin notes, agreed price, assignedTo, followUpDate & generate 1-click WhatsApp pitch link
+  const handleAdminUpdate: RequestHandler = async (req, res) => {
     try {
+      const id = String(req.params.id || '').trim();
+      if (!id || id.length > 120) {
+        return res.status(400).json({ error: 'Invalid inquiry ID.', code: 'INVALID_ID' });
+      }
+
       const db = options.getDb();
       if (!db) {
         return res.status(503).json({
@@ -540,11 +626,6 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
           code: 'PERSISTENCE_UNAVAILABLE',
           message: 'Database is currently unavailable for admin updates.',
         });
-      }
-
-      const id = String(req.params.id || '').trim();
-      if (!id || id.length > 120) {
-        return res.status(400).json({ error: 'Invalid inquiry ID.', code: 'INVALID_ID' });
       }
 
       let existing: InquiryRecord | undefined;

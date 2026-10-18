@@ -39,6 +39,7 @@ export interface CustomerInquiryWhatsAppParams {
   customFillingsNotes?: string;
   monogramText?: string;
   cardMessage?: string;
+  customPrintText?: string;
   customPrinting?: string;
   budgetType?: 'per_piece' | 'total' | null;
   targetPricePkr?: number | string | null;
@@ -54,6 +55,34 @@ export interface CustomerInquiryWhatsAppParams {
   isTabarruk?: boolean;
 }
 
+export interface AdminWhatsAppPitchParams {
+  id: string;
+  type?: string;
+  customerName?: string;
+  phone?: string;
+  productId?: string;
+  productName?: string;
+  packagingVariant?: string | null;
+  boxMode?: 'empty' | 'filled' | 'custom';
+  quantity?: number;
+  quantityUnit?: 'pieces' | 'packs' | 'sets';
+  piecesPerPack?: number;
+  eventType?: string;
+  targetEventDate?: string | null;
+  preferredFillings?: string[];
+  monogramText?: string;
+  cardMessage?: string;
+  customPrintText?: string;
+  customPrinting?: string;
+  standardPrice?: number | null;
+  perPiecePrice?: number | null;
+  offeredPrice?: number | null;
+  budgetType?: 'per_piece' | 'total' | null;
+  finalAgreedPrice?: number | string | null;
+  adminNotes?: string | null;
+  isTabarruk?: boolean;
+}
+
 export function formatFillingsLabel(fillings?: string[]): string {
   if (!fillings || fillings.length === 0) return '';
   const labelMap: Record<string, string> = {
@@ -64,6 +93,16 @@ export function formatFillingsLabel(fillings?: string[]): string {
     other: 'Special Custom Fillings (Sourcing-dependent request)',
   };
   return fillings.map(f => labelMap[f] || f).join(', ');
+}
+
+export function normalizeWhatsAppTargetPhone(rawPhone?: string | null): string {
+  const digits = String(rawPhone || '').replace(/[^\d]/g, '');
+  if (digits.startsWith('0092')) return digits.slice(2);
+  if (digits.startsWith('92') && digits.length >= 11) return digits;
+  if (digits.startsWith('03') && digits.length === 11) return `92${digits.slice(1)}`;
+  if (digits.startsWith('3') && digits.length === 10) return `92${digits}`;
+  if (digits.length >= 10) return digits;
+  return CANONICAL_WHATSAPP_PHONE;
 }
 
 export function buildCustomerInquiryWhatsAppUrl(params: CustomerInquiryWhatsAppParams): string {
@@ -129,8 +168,9 @@ export function buildCustomerInquiryWhatsAppUrl(params: CustomerInquiryWhatsAppP
   if (params.cardMessage?.trim()) {
     lines.push(`• *Card / Ribbon Message:* ${params.cardMessage.trim()}`);
   }
-  if (params.customPrinting?.trim()) {
-    lines.push(`• *Design & Printing Notes:* ${params.customPrinting.trim()}`);
+  const printText = (params.customPrintText ?? params.customPrinting)?.trim();
+  if (printText) {
+    lines.push(`• *Design & Printing Notes:* ${printText}`);
   }
 
   // Reference pricing with pack/piece clarity
@@ -139,6 +179,8 @@ export function buildCustomerInquiryWhatsAppUrl(params: CustomerInquiryWhatsAppP
   } else if (params.quantityUnit === 'packs') {
     const perPiece = params.perPiecePrice ? ` (Rs. ${Number(params.perPiecePrice).toLocaleString()}/pc)` : '';
     lines.push(`• *Standard Rate Ref:* Rs. ${Number(params.referenceUnitPrice).toLocaleString()}/pack${perPiece}`);
+  } else if (params.quantityUnit === 'sets') {
+    lines.push(`• *Standard Rate Ref:* Rs. ${Number(params.referenceUnitPrice).toLocaleString()}/set`);
   } else {
     lines.push(`• *Standard Rate Ref:* Rs. ${Number(params.referenceUnitPrice).toLocaleString()}/pc`);
   }
@@ -163,4 +205,97 @@ export function buildCustomerInquiryWhatsAppUrl(params: CustomerInquiryWhatsAppP
 
   const cleanText = lines.filter(Boolean).join('\n');
   return `https://wa.me/${CANONICAL_WHATSAPP_PHONE}?text=${encodeURIComponent(cleanText)}`;
+}
+
+export function buildAdminWhatsAppPitchUrl(params: AdminWhatsAppPitchParams): string {
+  const targetPhone = normalizeWhatsAppTargetPhone(params.phone);
+  const modeLabel =
+    params.boxMode === 'empty'
+      ? 'Box Only (Empty Packaging)'
+      : params.boxMode === 'custom'
+      ? 'Bespoke Packaging & Custom Fillings'
+      : 'Filled with AllBarka Dry Fruits';
+
+  const agreedNum =
+    params.finalAgreedPrice != null && String(params.finalAgreedPrice).trim() !== ''
+      ? Number(params.finalAgreedPrice)
+      : null;
+  const hasAgreed = agreedNum != null && Number.isFinite(agreedNum) && agreedNum > 0;
+  const noteText = params.adminNotes ? String(params.adminNotes).trim() : '';
+
+  const isTabarruk =
+    params.isTabarruk ||
+    String(params.productId || '').toLowerCase().includes('tabarruk') ||
+    String(params.productName || '').toLowerCase().includes('tabarruk');
+
+  const printText = (params.customPrintText ?? params.customPrinting)?.trim();
+
+  const lines: string[] = [
+    `*Assalam-o-Alaikum ${params.customerName || 'Valued Patron'}!*`,
+    `Greetings from *AllBarka Luxury Dry Fruits Concierge (Lahore)*.`,
+    ``,
+    `Thank you for your ${
+      params.type === 'bid_box_quote'
+        ? 'Custom Bid Box / Celebration Quote'
+        : params.type === 'wholesale'
+        ? 'Wholesale Inquiry'
+        : params.type === 'custom_hamper'
+        ? 'Custom Luxury Hamper Request'
+        : 'Boutique Inquiry'
+    } (*Ref #${params.id}*):`,
+    params.productName ? `• *Selection:* ${params.productName}` : '',
+    params.packagingVariant ? `• *Variant / Portion:* ${params.packagingVariant}` : '',
+    params.boxMode ? `• *Configuration:* ${modeLabel}` : '',
+    isTabarruk ? `• *Tabarruk Packaging Notice:* Bottles are empty for customer-provided Zamzam water; packaging is empty by default` : '',
+  ];
+
+  // Quantity formatting
+  const qty = Number(params.quantity || 1);
+  if (qty > 1 || params.quantityUnit === 'packs') {
+    if (params.quantityUnit === 'packs') {
+      const totalPcs = params.piecesPerPack && params.piecesPerPack > 1 ? ` (${qty * params.piecesPerPack} pcs total, ${params.piecesPerPack} pcs/pack)` : '';
+      lines.push(`• *Quantity:* ${qty} pack${qty > 1 ? 's' : ''}${totalPcs}`);
+    } else if (params.quantityUnit === 'sets') {
+      lines.push(`• *Quantity:* ${qty} set${qty > 1 ? 's' : ''}`);
+    } else {
+      lines.push(`• *Quantity:* ${qty} pcs`);
+    }
+  }
+
+  if (params.eventType) lines.push(`• *Occasion:* ${params.eventType}`);
+  if (params.targetEventDate) lines.push(`• *Target Event Date:* ${params.targetEventDate}`);
+  if (params.preferredFillings && params.preferredFillings.length > 0) {
+    lines.push(`• *Fillings Selected:* ${formatFillingsLabel(params.preferredFillings)}`);
+  }
+  if (params.monogramText?.trim()) lines.push(`• *Monogram / Tag:* ${params.monogramText.trim()}`);
+  if (params.cardMessage?.trim()) lines.push(`• *Card Message:* ${params.cardMessage.trim()}`);
+  if (printText) lines.push(`• *Design & Printing Notes:* ${printText}`);
+
+  // Standard rate reference: MUST NOT label a pack price as "/pc"
+  if (params.standardPrice && Number(params.standardPrice) > 0) {
+    if (params.quantityUnit === 'packs') {
+      const perPiece = params.perPiecePrice ? ` (Rs. ${Number(params.perPiecePrice).toLocaleString()}/pc)` : '';
+      lines.push(`• *Standard Rate Ref:* Rs. ${Number(params.standardPrice).toLocaleString()}/pack${perPiece}`);
+    } else if (params.quantityUnit === 'sets') {
+      lines.push(`• *Standard Rate Ref:* Rs. ${Number(params.standardPrice).toLocaleString()}/set`);
+    } else {
+      lines.push(`• *Standard Rate Ref:* Rs. ${Number(params.standardPrice).toLocaleString()}/pc`);
+    }
+  }
+
+  if (hasAgreed) {
+    lines.push(`• *AllBarka Special Approved Rate:* Rs. ${Number(agreedNum).toLocaleString()} PKR`);
+  } else if (params.offeredPrice && Number(params.offeredPrice) > 0) {
+    const bType = params.budgetType === 'per_piece' ? 'per piece' : 'total budget';
+    lines.push(`• *Your Offered Budget:* Rs. ${Number(params.offeredPrice).toLocaleString()} PKR (${bType})`);
+  }
+
+  if (noteText) lines.push(`• *Concierge Note:* ${noteText}`);
+
+  lines.push(
+    ``,
+    `Please reply here to confirm your order and customization details so we can schedule your fresh preparation.`
+  );
+
+  return `https://wa.me/${targetPhone}?text=${encodeURIComponent(lines.filter(Boolean).join('\n'))}`;
 }

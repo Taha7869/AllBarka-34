@@ -351,10 +351,13 @@ export interface InquiryRecord {
   cardMessage?: string;
   customPrintText: string;
   standardPrice: number | null;
+  packPrice?: number | null;
   perPiecePrice?: number | null;
   requiresTeamQuote?: boolean;
+  unresolvedVariant?: boolean;
   belowMoq?: boolean;
   moqRequired?: number | null;
+  minPacksRequired?: number | null;
   isVerifiedCatalogProduct?: boolean;
   submissionKey?: string | null;
   offeredPrice: number | null;
