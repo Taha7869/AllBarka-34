@@ -49,15 +49,15 @@ const EVENT_TYPES = [
   'Other Celebration',
 ] as const;
 
-const QUANTITY_PRESETS = [25, 50, 100, 200, 300, 500] as const;
-
 const FILLING_OPTIONS = [
-  { id: 'dry_fruits', label: 'Fresh Dry Fruits & Roasted Nuts (Almonds, Pistachios, Cashews)' },
-  { id: 'dates', label: 'Premium Royal Dates (Ajwa, Medjool, Mabroom)' },
-  { id: 'chocolates', label: 'Chocolates & Artisan Truffles (Custom-sourced)' },
-  { id: 'candies', label: 'Celebration Candies & Confections (Custom-sourced)' },
-  { id: 'other', label: 'Special Custom Fillings / Panjeeri / Tea' },
+  { id: 'dry_fruits', label: 'AllBarka Luxury Dry Fruits & Roasted Nuts (Almonds, Pistachios, Cashews)' },
+  { id: 'dates', label: 'Verified Catalog Dates (Madina Ajwa, Medjool, Panjgur Amber)' },
+  { id: 'chocolates', label: 'Chocolates & Artisan Truffles (Custom-sourced on request)' },
+  { id: 'candies', label: 'Celebration Candies & Confections (Custom-sourced on request)' },
+  { id: 'other', label: 'Special Custom Fillings / Panjeeri / Tea (Sourcing-dependent request)' },
 ] as const;
+
+const QUANTITY_PRESETS = [25, 50, 100, 200, 300, 500] as const;
 
 export default function CustomQuoteModal() {
   const products = useCatalogProducts();
@@ -75,6 +75,9 @@ export default function CustomQuoteModal() {
     return [...bidBoxes, ...dealsAndBundles];
   }, [products]);
 
+  // Stable Submission Key across retries of the same inquiry
+  const [submissionKey, setSubmissionKey] = useState<string>('');
+
   // Form State
   const [selectedProductId, setSelectedProductId] = useState<string>('bid-box-umrah-tabarruk');
   const [selectedVariantLabel, setSelectedVariantLabel] = useState<string>('');
@@ -82,10 +85,10 @@ export default function CustomQuoteModal() {
   const [quantity, setQuantity] = useState<number>(50);
   const [eventType, setEventType] = useState<string>('Nikkah');
   const [targetEventDate, setTargetEventDate] = useState<string>('');
-  const [leadTimeAcknowledged, setLeadTimeAcknowledged] = useState<boolean>(true);
+  const [leadTimeAcknowledged, setLeadTimeAcknowledged] = useState<boolean>(false);
 
   // Fillings & Personalization
-  const [preferredFillings, setPreferredFillings] = useState<string[]>(['dry_fruits']);
+  const [preferredFillings, setPreferredFillings] = useState<string[]>([]);
   const [customFillingsNotes, setCustomFillingsNotes] = useState<string>('');
   const [monogramText, setMonogramText] = useState<string>('');
   const [cardMessage, setCardMessage] = useState<string>('');
@@ -113,30 +116,39 @@ export default function CustomQuoteModal() {
     const handleOpen = (event: Event) => {
       const custom = event as CustomEvent<CustomQuoteModalInit>;
       const detail = custom.detail || {};
-      const defaultId = detail.productId
-        ? detail.productId
-        : eligibleProducts[0]?.id || 'bid-box-umrah-tabarruk';
 
-      setSelectedProductId(defaultId);
-      if (detail.variantLabel) {
-        setSelectedVariantLabel(detail.variantLabel);
-      } else if (detail.portion) {
-        setSelectedVariantLabel(detail.portion);
-      }
+      // 1. Generate fresh submission key for each new inquiry
+      const newKey = globalThis.crypto?.randomUUID
+        ? crypto.randomUUID()
+        : 'sub_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+      setSubmissionKey(newKey);
+
+      // 2. Set product identity without silent fallback to unrelated first item
+      const initialId = detail.productId || (eligibleProducts[0]?.id ?? '');
+      setSelectedProductId(initialId);
+
+      // 3. Reset product-specific variant, occasion, fillings, design text, event date and budget
+      // Contact details (customerName, customerPhone, customerEmail, city) remain preserved
+      setSelectedVariantLabel(detail.variantLabel || detail.portion || '');
       setMode(detail.mode || 'empty');
-      setQuantity(detail.quantity && detail.quantity > 0 ? detail.quantity : 50);
-      if (detail.eventType) {
-        setEventType(detail.eventType);
-      } else if (detail.occasion) {
-        setEventType(detail.occasion);
-      }
-      if (detail.targetUnitPrice) {
+      setQuantity(detail.quantity && detail.quantity > 0 ? Math.round(detail.quantity) : 50);
+      setEventType(detail.eventType || detail.occasion || 'Nikkah');
+      setTargetEventDate('');
+      setLeadTimeAcknowledged(false);
+      setPreferredFillings([]);
+      setCustomFillingsNotes('');
+      setMonogramText('');
+      setCardMessage('');
+      setCustomPrinting(detail.notes || '');
+
+      if (detail.targetUnitPrice && Number.isFinite(detail.targetUnitPrice) && detail.targetUnitPrice > 0) {
         setTargetPricePkr(String(detail.targetUnitPrice));
         setBudgetType('per_piece');
+      } else {
+        setTargetPricePkr('');
+        setBudgetType('total');
       }
-      if (detail.notes) {
-        setCustomPrinting(detail.notes);
-      }
+
       setSubmittedQuote(null);
       setErrorMsg(null);
       setIsOpen(true);
@@ -146,10 +158,11 @@ export default function CustomQuoteModal() {
     return () => window.removeEventListener('open-custom-quote-modal', handleOpen);
   }, [eligibleProducts]);
 
-  const selectedProduct: Product | undefined = useMemo(
-    () => products.find(p => p.id === selectedProductId) || eligibleProducts.find(p => p.id === selectedProductId) || eligibleProducts[0],
-    [products, eligibleProducts, selectedProductId]
-  );
+  // Product resolution without silent fallback to unrelated first item
+  const selectedProduct: Product | undefined = useMemo(() => {
+    if (!selectedProductId) return undefined;
+    return products.find(p => p.id === selectedProductId) || eligibleProducts.find(p => p.id === selectedProductId);
+  }, [products, eligibleProducts, selectedProductId]);
 
   // Available variants for the selected product
   const availableVariants = useMemo(() => {
@@ -254,8 +267,9 @@ export default function CustomQuoteModal() {
     setSubmitting(true);
     try {
       const res = await submitCustomQuoteInquiry({
+        submissionKey: submissionKey || undefined,
         productId: selectedProduct?.id || selectedProductId,
-        productName: selectedProduct?.name_en || 'Custom Bid Box',
+        productName: selectedProduct?.name_en || 'Custom Packaging Request',
         packagingVariant: selectedVariantLabel || undefined,
         boxMode: mode,
         quantity,
@@ -281,7 +295,7 @@ export default function CustomQuoteModal() {
         res.whatsappUrl ||
         buildCustomerInquiryWhatsAppUrl({
           quoteId,
-          productName: selectedProduct?.name_en || 'Custom Bid Box',
+          productName: selectedProduct?.name_en || 'Custom Packaging Request',
           productId: selectedProduct?.id || selectedProductId,
           packagingVariant: selectedVariantLabel || null,
           mode,
@@ -300,15 +314,20 @@ export default function CustomQuoteModal() {
           customerPhone,
           city,
           isTabarruk,
+          leadTimeNoticeAcknowledged: leadTimeAcknowledged,
         });
 
       setSubmittedQuote({ quoteId, whatsappUrl });
     } catch (err: any) {
-      // PRESERVE FORM INPUTS! Do not generate fake quote ID
-      setErrorMsg(
-        err?.message ||
-          'We could not save your inquiry right now due to a temporary storage issue. Your entered details have been preserved below.'
-      );
+      // PRESERVE FORM INPUTS and existing submissionKey! Do not generate fake quote ID
+      if (err?.code === 'IDEMPOTENCY_PAYLOAD_MISMATCH' || err?.status === 409) {
+        setErrorMsg('An inquiry was already recorded with this key under different details. You can start a fresh inquiry or keep your changes.');
+      } else {
+        setErrorMsg(
+          err?.message ||
+            'We could not save your inquiry right now due to a temporary storage issue. Your entered details have been preserved below.'
+        );
+      }
     } finally {
       setSubmitting(false);
     }
@@ -468,6 +487,19 @@ export default function CustomQuoteModal() {
                       <RefreshCw size={13} className={submitting ? 'animate-spin' : ''} />
                       Retry Saving Quote
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const freshKey = globalThis.crypto?.randomUUID
+                          ? crypto.randomUUID()
+                          : 'sub_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+                        setSubmissionKey(freshKey);
+                        setErrorMsg(null);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-amber-400 bg-white text-amber-900 px-3 py-1.5 text-xs font-semibold hover:bg-amber-100"
+                    >
+                      Start Fresh Inquiry
+                    </button>
                     <a
                       href={liveUnsavedWhatsAppUrl}
                       target="_blank"
@@ -506,11 +538,28 @@ export default function CustomQuoteModal() {
                     id="quote-product-select"
                     value={selectedProductId}
                     onChange={(e) => {
-                      setSelectedProductId(e.target.value);
-                      setSelectedVariantLabel('');
+                      const newId = e.target.value;
+                      setSelectedProductId(newId);
+                      const newProd = products.find(p => p.id === newId) || eligibleProducts.find(p => p.id === newId);
+                      if (newProd) {
+                        let firstVar = '';
+                        if (Array.isArray(newProd.variants) && newProd.variants.length > 0) {
+                          firstVar = newProd.variants[0].label;
+                        } else if (newProd.prices && Object.keys(newProd.prices).length > 0) {
+                          firstVar = Object.keys(newProd.prices)[0];
+                        }
+                        setSelectedVariantLabel(firstVar);
+                      } else {
+                        setSelectedVariantLabel('');
+                      }
                     }}
                     className="w-full rounded-xl border border-[#D4AF6A]/50 bg-white px-3.5 py-2.5 text-sm font-medium text-[#072A20] focus:border-[#072A20] focus:outline-none"
                   >
+                    {!eligibleProducts.some(p => p.id === selectedProductId) && (
+                      <option value={selectedProductId}>
+                        Custom Request / Unlisted Product ({selectedProductId})
+                      </option>
+                    )}
                     <optgroup label="Bespoke Celebration Boxes & Packaging">
                       {eligibleProducts
                         .filter(p => p.isBidBox || p.category === 'celebration-boxes')

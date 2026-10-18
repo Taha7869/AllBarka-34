@@ -340,6 +340,8 @@ export interface InquiryRecord {
   packagingVariant?: string | null;
   boxMode: 'empty' | 'filled' | 'custom';
   quantity: number;
+  quantityUnit?: 'pieces' | 'packs' | 'sets';
+  piecesPerPack?: number;
   eventType: string;
   targetEventDate?: string | null;
   budgetType?: 'per_piece' | 'total' | null;
@@ -349,6 +351,12 @@ export interface InquiryRecord {
   cardMessage?: string;
   customPrintText: string;
   standardPrice: number | null;
+  perPiecePrice?: number | null;
+  requiresTeamQuote?: boolean;
+  belowMoq?: boolean;
+  moqRequired?: number | null;
+  isVerifiedCatalogProduct?: boolean;
+  submissionKey?: string | null;
   offeredPrice: number | null;
   finalAgreedPrice: number | null;
   notes: string;

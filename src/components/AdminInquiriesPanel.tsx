@@ -41,6 +41,8 @@ export interface AdminInquiryRecord {
   packagingVariant?: string | null;
   boxMode: 'empty' | 'filled' | 'custom';
   quantity: number;
+  quantityUnit?: 'pieces' | 'packs' | 'sets';
+  piecesPerPack?: number;
   eventType: string;
   targetEventDate?: string | null;
   budgetType?: 'per_piece' | 'total' | null;
@@ -50,6 +52,12 @@ export interface AdminInquiryRecord {
   cardMessage?: string;
   customPrintText: string;
   standardPrice: number | null;
+  perPiecePrice?: number | null;
+  requiresTeamQuote?: boolean;
+  belowMoq?: boolean;
+  moqRequired?: number | null;
+  isVerifiedCatalogProduct?: boolean;
+  submissionKey?: string | null;
   offeredPrice: number | null;
   finalAgreedPrice: number | null;
   notes: string;
@@ -96,6 +104,10 @@ function buildLiveWhatsAppPitch(
   const hasAgreed = agreedNum != null && Number.isFinite(agreedNum) && agreedNum > 0;
   const noteText = draftAdminNotes.trim() || record.adminNotes;
 
+  const isTabarruk =
+    record.productId.toLowerCase().includes('tabarruk') ||
+    record.productName.toLowerCase().includes('tabarruk');
+
   const lines = [
     `*Assalam-o-Alaikum ${record.customerName || 'Valued Patron'}!*`,
     `Greetings from *AllBarka Luxury Dry Fruits Concierge (Lahore)*.`,
@@ -104,13 +116,14 @@ function buildLiveWhatsAppPitch(
     record.productName ? `• *Selection:* ${record.productName}` : '',
     record.packagingVariant ? `• *Variant / Portion:* ${record.packagingVariant}` : '',
     record.type === 'bid_box_quote' ? `• *Configuration:* ${modeLabel}` : '',
-    record.quantity > 1 ? `• *Quantity:* ${record.quantity} pcs` : '',
+    isTabarruk ? `• *Tabarruk Packaging Notice:* Bottles are empty for customer-provided Zamzam water; packaging is empty by default` : '',
+    record.quantity > 1 ? `• *Quantity:* ${record.quantity} ${record.quantityUnit || 'pcs'}` : '',
     record.eventType ? `• *Occasion:* ${record.eventType}` : '',
     record.targetEventDate ? `• *Target Event Date:* ${record.targetEventDate}` : '',
     record.preferredFillings && record.preferredFillings.length > 0 ? `• *Fillings Selected:* ${formatFillingsLabel(record.preferredFillings)}` : '',
     record.monogramText ? `• *Monogram / Tag:* ${record.monogramText}` : '',
     record.cardMessage ? `• *Card Message:* ${record.cardMessage}` : '',
-    record.standardPrice ? `• *Standard Rate Ref:* Rs. ${Number(record.standardPrice).toLocaleString()}/pc` : '',
+    record.standardPrice ? `• *Standard Rate Ref:* Rs. ${Number(record.standardPrice).toLocaleString()}/${record.quantityUnit === 'packs' ? 'pack' : 'pc'}` : '',
     hasAgreed
       ? `• *AllBarka Special Approved Rate:* Rs. ${Number(agreedNum).toLocaleString()} PKR`
       : record.offeredPrice

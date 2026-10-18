@@ -1,10 +1,11 @@
 import { apiUrl } from './apiUrl';
 import { withApiDeadline } from './apiDeadline';
 
-interface SubmissionOptions { timeoutMs?: number; signal?: AbortSignal; }
+interface SubmissionOptions { timeoutMs?: number; signal?: AbortSignal; headers?: Record<string, string>; }
 interface InquiryInput { name: string; contact: string; topic: string; message: string; }
 
 export interface CustomQuoteSubmissionInput {
+  submissionKey?: string;
   productId: string;
   productName: string;
   packagingVariant?: string;
@@ -38,7 +39,11 @@ async function submitForm(path: string, body: unknown, options: SubmissionOption
   return withApiDeadline(async signal => {
     const response = await fetch(apiUrl(path), {
       method: 'POST', signal,
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        ...(options.headers || {}),
+      },
       body: JSON.stringify(body),
     });
     const data = await response.json().catch(() => null);
@@ -71,7 +76,14 @@ export async function submitCustomQuoteInquiry(
   input: CustomQuoteSubmissionInput,
   options: SubmissionOptions = {}
 ): Promise<CustomQuoteSubmissionResult> {
-  const data = await submitForm('/api/quotes', input, options);
+  const customHeaders: Record<string, string> = {};
+  if (input.submissionKey) {
+    customHeaders['Idempotency-Key'] = input.submissionKey;
+  }
+  const data = await submitForm('/api/quotes', input, {
+    ...options,
+    headers: { ...customHeaders, ...(options.headers || {}) },
+  });
   const quoteId = String(data.quoteId || data.id || '').trim();
   if (!quoteId || quoteId.length > 120) {
     throw new Error('SUBMISSION_UNCONFIRMED');
