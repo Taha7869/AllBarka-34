@@ -136,24 +136,45 @@ export default function FindGiftOccasionSection({ settings: propSettings }: Find
           icon: Sparkles,
         };
 
-        const defaultTitle =
-          language === 'ur' && (occ as any).title_ur
-            ? (occ as any).title_ur
-            : (occ as any).title_en || (occ as any).defaultTitle || meta.defaultTitle;
+        // 1. Merchant-saved localized title has highest precedence
+        const rawSavedTitle =
+          language === 'ur'
+            ? ((occ as any).title_ur || (occ as any).title_en || (occ as any).defaultTitle)
+            : ((occ as any).title_en || (occ as any).title_ur || (occ as any).defaultTitle);
+
+        const savedTitle = typeof rawSavedTitle === 'string' ? rawSavedTitle.trim() : '';
+
+        // 2. If merchant-saved title is present and non-empty, use it.
+        // Otherwise, fallback to translated default if key exists, then meta.defaultTitle, then occId.
+        const displayTitle =
+          savedTitle.length > 0
+            ? savedTitle
+            : (t(meta.titleKey, meta.defaultTitle) || meta.defaultTitle || occId);
+
+        // Subtitle precedence
+        const rawSavedSub =
+          language === 'ur'
+            ? ((occ as any).subtitle_ur || (occ as any).subtitle_en || (occ as any).defaultSubtitle)
+            : ((occ as any).subtitle_en || (occ as any).subtitle_ur || (occ as any).defaultSubtitle);
+        const savedSub = typeof rawSavedSub === 'string' ? rawSavedSub.trim() : '';
+        const displaySubtitle =
+          savedSub.length > 0
+            ? savedSub
+            : (t(meta.subtitleKey, meta.defaultSubtitle) || meta.defaultSubtitle || '');
 
         return {
           id: occId,
           titleKey: meta.titleKey,
-          defaultTitle,
+          defaultTitle: displayTitle,
           subtitleKey: meta.subtitleKey,
-          defaultSubtitle: meta.defaultSubtitle,
+          defaultSubtitle: displaySubtitle,
           path: (occ as any).slug || (occ as any).destination || meta.path,
           badgeKey: meta.badgeKey,
-          defaultBadge: meta.defaultBadge,
+          defaultBadge: (occ as any).badge || meta.defaultBadge,
           icon: meta.icon,
         };
       });
-  }, [activeSettings, language]);
+  }, [activeSettings, language, t]);
 
   if (occasions.length === 0) {
     return null;
@@ -190,6 +211,7 @@ export default function FindGiftOccasionSection({ settings: propSettings }: Find
             <Link
               key={id}
               to={path}
+              aria-label={defaultTitle}
               className="focus-ring group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:border-[#C7982F]/70 hover:shadow-sm"
             >
               <div>
@@ -205,10 +227,10 @@ export default function FindGiftOccasionSection({ settings: propSettings }: Find
                 </div>
 
                 <h3 className="font-serif text-lg font-semibold leading-snug text-[var(--color-ink)] group-hover:text-[#C7982F] transition-colors">
-                  {t(titleKey, defaultTitle)}
+                  {defaultTitle}
                 </h3>
                 <p className="mt-1.5 text-xs leading-relaxed text-[var(--color-text-secondary)]">
-                  {t(subtitleKey, defaultSubtitle)}
+                  {defaultSubtitle}
                 </p>
               </div>
 

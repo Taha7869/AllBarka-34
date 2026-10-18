@@ -185,7 +185,6 @@ export default function BoutiqueSelections({
     isShowcasePlaying &&
     !isHovered &&
     !isResumePending &&
-    !prefersReduced &&
     isDocumentVisible;
 
   // Cycle to next tab
@@ -450,7 +449,7 @@ export default function BoutiqueSelections({
           role="tabpanel"
           id={`boutique-panel-${componentId}-${currentTab.id}`}
           aria-labelledby={`boutique-tab-${componentId}-${currentTab.id}`}
-          className="w-full min-h-[460px] transition-opacity duration-300"
+          className="w-full min-h-[460px] transition-opacity duration-300 motion-reduce:transition-none"
           tabIndex={0}
           onFocusCapture={handleManualInteraction}
         >

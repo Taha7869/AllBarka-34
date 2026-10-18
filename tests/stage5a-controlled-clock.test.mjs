@@ -325,7 +325,7 @@ describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () =
     await context.close();
   });
 
-  test('8. Reduced motion: defaults to paused state without autoplaying', async () => {
+  test('8. Reduced motion: defaults to paused state, and explicit Play opts into rotation respecting hover/visibility', async () => {
     const context = await browser.newContext({
       reducedMotion: 'reduce',
     });
@@ -337,9 +337,63 @@ describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () =
     assert.equal(await getActiveTabId(page), 'dry-fruits');
     assert.equal(await isAutoplayPlaying(page), false, 'Must default to paused when reduced motion is preferred');
 
-    // Advance 25,000ms
+    // Advance 20,000ms without explicit Play - must remain paused
+    await page.clock.runFor(20000);
+    assert.equal(await getActiveTabId(page), 'dry-fruits', 'Must not advance under reduced motion by default');
+
+    // 1. Explicit Play opts into rotation
+    await page.click('button[aria-label="Play showcase autoplay"]');
+    assert.equal(await isAutoplayPlaying(page), true, 'Button state must reflect active playback after explicit Play');
+
+    // Pointer is hovering over the Play button right after click -> rotation must remain protected!
+    await page.clock.runFor(10000);
+    assert.equal(await getActiveTabId(page), 'dry-fruits', 'Must NOT advance while pointer remains hovering over button');
+
+    // 2. Pointer leaves the showcase -> 3000ms resume delay + 6000ms countdown = 9000ms first advance
+    await page.hover('footer');
+    await page.clock.runFor(3000);
+    await page.evaluate(() => new Promise(r => setTimeout(r, 0)));
+
+    await page.clock.runFor(5800);
+    assert.equal(await getActiveTabId(page), 'dry-fruits', 'Still counting down 6000ms after resume delay');
+
+    await page.clock.runFor(300);
+    assert.equal(await getActiveTabId(page), 'pantry', 'Advances to pantry after explicit Play and delay');
+
+    // 3. Hovering pauses rotation again even under reduced motion opt-in
+    await page.hover('#boutique-selections');
+    await page.clock.runFor(15000);
+    assert.equal(await getActiveTabId(page), 'pantry', 'Hover must pause rotation even when opted into playback');
+
+    // 4. Leave showcase and verify visibility protection under reduced motion opt-in
+    await page.hover('footer');
+    await page.clock.runFor(3000);
+    await page.evaluate(() => new Promise(r => setTimeout(r, 0)));
+
+    // Document hidden
+    await page.evaluate(() => {
+      Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
     await page.clock.runFor(25000);
-    assert.equal(await getActiveTabId(page), 'dry-fruits', 'Must not advance under reduced motion');
+    assert.equal(await getActiveTabId(page), 'pantry', 'Must NOT advance while document is hidden');
+
+    // Document visible
+    await page.evaluate(() => {
+      Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await page.clock.runFor(5800);
+    assert.equal(await getActiveTabId(page), 'pantry', 'Fresh countdown on return');
+    await page.clock.runFor(300);
+    assert.equal(await getActiveTabId(page), 'gifts', 'Advances after fresh interval on return');
+
+    // 5. Explicit Pause pauses indefinitely
+    await page.click('button[aria-label="Pause showcase autoplay"]');
+    assert.equal(await isAutoplayPlaying(page), false, 'Button reflects paused state after explicit Pause');
+    await page.hover('footer');
+    await page.clock.runFor(25000);
+    assert.equal(await getActiveTabId(page), 'gifts', 'Remains paused after explicit Pause');
 
     await context.close();
   });

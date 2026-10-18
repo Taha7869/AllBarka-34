@@ -29,39 +29,143 @@ export const PANTRY_CATEGORIES = [
   }),
 ];
 
+const DEFAULT_COLLECTION_IMAGES: Record<string, string> = {
+  all: '/assets/categories/all_items.png',
+  bundles: '/assets/categories/deals.png',
+  combos: '/assets/categories/deals.png',
+  nuts: '/assets/categories/dry_fruits.png',
+  'dry-fruits': '/assets/categories/dry_fruits.png',
+  'snacks-seeds': '/assets/categories/snacks.png',
+  'seeds-snacks': '/assets/categories/snacks.png',
+  'gift-boxes': '/assets/categories/gifts.png',
+  gifts: '/assets/categories/gifts.png',
+  oils: '/images/generated/category-oils-tile-v1.webp',
+  essentials: '/images/generated/category-essentials-tile-v1.webp',
+  'celebration-boxes': '/assets/categories/gifts.png',
+  deals: '/assets/categories/deals.png',
+  'personalized-treats': '/assets/categories/all_items.png',
+};
+
 export interface CategoryCarouselProps {
   settings?: MerchandisingSettings;
 }
 
+export interface CarouselSlideItem {
+  id: string;
+  name: string;
+  title?: string;
+  image: string;
+  link: string;
+  altKey: string;
+  badge?: string;
+}
+
 export default function CategoryCarousel({ settings: propSettings }: CategoryCarouselProps = {}) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const contextSettings = useMerchandisingSettings();
   const activeSettings = propSettings || contextSettings || DEFAULT_MERCHANDISING;
 
   const categories = React.useMemo(() => {
     const visibility = activeSettings.categoryVisibility || {};
     const order = activeSettings.categoryOrder || [];
+    // Safe legacy defaults only where settings.collections is absent, not explicitly empty
+    const rawCollections = activeSettings.collections !== undefined
+      ? activeSettings.collections
+      : DEFAULT_MERCHANDISING.collections;
 
-    const filtered = PANTRY_CATEGORIES.filter(cat => {
-      // Deduplicate legacy internal alias keys if canonical exists
-      if (cat.id === 'nuts' && PANTRY_CATEGORIES.some(c => c.id === 'dry-fruits')) return false;
-      if (cat.id === 'snacks-seeds' && PANTRY_CATEGORIES.some(c => c.id === 'seeds-snacks')) return false;
-      if (visibility[cat.id] === false) return false;
-      if (cat.id === 'nuts' && visibility['dry-fruits'] === false) return false;
-      if (cat.id === 'snacks-seeds' && visibility['seeds-snacks'] === false) return false;
+    // 1. Build lookup for published collections
+    const collectionsMap = new Map<string, typeof rawCollections[number]>();
+    for (const col of rawCollections) {
+      collectionsMap.set(col.collectionId, col);
+    }
+
+    // Canonical equivalence resolver
+    const canonicalKey = (id: string) => {
+      if (id === 'nuts') return 'dry-fruits';
+      if (id === 'snacks-seeds') return 'seeds-snacks';
+      if (id === 'bundles') return 'combos';
+      if (id === 'gift-boxes') return 'gifts';
+      return id;
+    };
+
+    const isVisible = (id: string, colVisible?: boolean) => {
+      if (colVisible === false) return false;
+      const cKey = canonicalKey(id);
+      if (visibility[id] === false) return false;
+      if (visibility[cKey] === false) return false;
       return true;
-    });
+    };
 
-    if (!order.length) return filtered;
+    // 2. Assemble candidate slides
+    const slideCandidates: CarouselSlideItem[] = [];
+    const seenCanonicalKeys = new Set<string>();
 
-    return [...filtered].sort((a, b) => {
-      const idxA = order.indexOf(a.id);
-      const idxB = order.indexOf(b.id);
-      const posA = idxA === -1 ? 999 : idxA;
-      const posB = idxB === -1 ? 999 : idxB;
+    // A. Start with base pantry categories
+    for (const cat of PANTRY_CATEGORIES) {
+      const cKey = canonicalKey(cat.id);
+      if (seenCanonicalKeys.has(cKey)) continue;
+
+      const col = collectionsMap.get(cKey) || collectionsMap.get(cat.id);
+      if (!isVisible(cat.id, col?.visible)) continue;
+
+      seenCanonicalKeys.add(cKey);
+
+      const colTitle = col
+        ? (language === 'ur' ? (col.title_ur || col.title_en) : (col.title_en || col.title_ur))
+        : undefined;
+
+      slideCandidates.push({
+        id: col?.collectionId || cat.id,
+        name: colTitle || cat.name,
+        title: colTitle,
+        image: col?.image || cat.image || DEFAULT_COLLECTION_IMAGES[cKey] || DEFAULT_COLLECTION_IMAGES[cat.id] || '',
+        link: col?.slug || cat.link || `/shop/${cat.id}`,
+        altKey: cat.altKey,
+        badge: col?.badge,
+      });
+    }
+
+    // B. Add any published collections not already present in base pantry categories
+    for (const col of rawCollections) {
+      const cKey = canonicalKey(col.collectionId);
+      if (seenCanonicalKeys.has(cKey)) continue;
+      if (!isVisible(col.collectionId, col.visible)) continue;
+
+      seenCanonicalKeys.add(cKey);
+
+      const colTitle = language === 'ur'
+        ? (col.title_ur || col.title_en)
+        : (col.title_en || col.title_ur);
+
+      slideCandidates.push({
+        id: col.collectionId,
+        name: colTitle || col.collectionId,
+        title: colTitle,
+        image: col.image || DEFAULT_COLLECTION_IMAGES[cKey] || DEFAULT_COLLECTION_IMAGES[col.collectionId] || '',
+        link: col.slug || `/shop/${col.collectionId}`,
+        altKey: `catalog.alt.${col.collectionId}`,
+        badge: col.badge,
+      });
+    }
+
+    // 3. Deterministic Ordering
+    if (!order.length) return slideCandidates;
+
+    const getOrderPos = (id: string) => {
+      const cKey = canonicalKey(id);
+      let idx = order.indexOf(id);
+      if (idx !== -1) return idx;
+      idx = order.indexOf(cKey);
+      if (idx !== -1) return idx;
+      return 999;
+    };
+
+    return [...slideCandidates].sort((a, b) => {
+      const posA = getOrderPos(a.id);
+      const posB = getOrderPos(b.id);
       return posA - posB;
     });
-  }, [activeSettings]);
+  }, [activeSettings, language]);
   const reducedMotion = Boolean(useReducedMotion());
   const sectionRef = useRef<HTMLElement>(null);
   const interactionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -221,18 +325,26 @@ export default function CategoryCarousel({ settings: propSettings }: CategoryCar
             <div className="editorial-pantry-track">
               {categories.map((category, index) => (
                 <div key={category.id} className="editorial-pantry-slide" aria-hidden={!visible.has(index)} inert={!visible.has(index)}>
-                  <Link to={category.link} draggable={false} aria-label={t(`pantry.${category.id}`)}
+                  <Link to={category.link} draggable={false} aria-label={category.title || t(`pantry.${category.id}`, category.name)}
                     className="editorial-category group relative block w-full overflow-hidden border border-[var(--color-border-accent)] bg-[var(--color-surface)] focus-ring hover:border-[#C7982F]/60 pointer-events-auto select-none">
-                    {category.image ? <img src={category.image} alt={t(category.altKey, category.name)} draggable={false}
+                    {category.image ? <img src={category.image} alt={category.title || t(category.altKey, category.name)} draggable={false}
                       onError={event => { const node = event.currentTarget; node.onerror = null; node.src = '/images/product-placeholder.svg'; }}
                       className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:transform-none"
-                      loading="lazy" decoding="async" /> : <div role="img" aria-label={category.name} className="absolute inset-0 flex items-center justify-center bg-[#173a2c] font-serif text-3xl text-[#e4c783]">AllBarka</div>}
+                      loading="lazy" decoding="async" /> : <div role="img" aria-label={category.title || category.name} className="absolute inset-0 flex items-center justify-center bg-[#173a2c] font-serif text-3xl text-[#e4c783]">AllBarka</div>}
                     <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-emerald)]/95 via-[var(--color-emerald)]/30 to-transparent pointer-events-none" />
-                    {index < 2 && <span className="absolute left-4 top-4 rounded-full border border-white/25 bg-[var(--color-emerald)]/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-[var(--color-ivory)] backdrop-blur-md pointer-events-none z-10">{t(index === 0 ? 'pantry.start' : 'pantry.value')}</span>}
+                    {category.badge ? (
+                      <span className="absolute left-4 top-4 rounded-full border border-white/25 bg-[var(--color-emerald)]/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-[var(--color-ivory)] backdrop-blur-md pointer-events-none z-10">
+                        {category.badge}
+                      </span>
+                    ) : index < 2 ? (
+                      <span className="absolute left-4 top-4 rounded-full border border-white/25 bg-[var(--color-emerald)]/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-[var(--color-ivory)] backdrop-blur-md pointer-events-none z-10">
+                        {t(index === 0 ? 'pantry.start' : 'pantry.value')}
+                      </span>
+                    ) : null}
                     <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-5 pointer-events-none z-10">
                       <div className="min-w-0">
-                        <span dir="auto" className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#e4c783] sm:text-[10px]">{t(`pantry.${category.id}Eyebrow`)}</span>
-                        <h3 dir="auto" className="font-serif text-2xl font-medium leading-tight text-[#FFFCF7] drop-shadow-md">{t(`pantry.${category.id}`)}</h3>
+                        <span dir="auto" className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#e4c783] sm:text-[10px]">{category.badge || t(`pantry.${category.id}Eyebrow`, 'Collection')}</span>
+                        <h3 dir="auto" className="font-serif text-2xl font-medium leading-tight text-[#FFFCF7] drop-shadow-md">{category.title || t(`pantry.${category.id}`, category.name)}</h3>
                       </div>
                       <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#FFFCF7]/25 bg-[#FFFCF7]/10 text-[#FFFCF7] backdrop-blur-md transition-colors group-hover:border-[var(--color-gold)] group-hover:bg-[var(--color-gold)] group-hover:text-[#042821] motion-reduce:transition-none"><ArrowUpRight size={17} aria-hidden="true" /></span>
                     </div>

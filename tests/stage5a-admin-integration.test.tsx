@@ -12,6 +12,8 @@ import {
 } from '../src/lib/catalogStore';
 import { DEFAULT_MERCHANDISING } from '../src/config/merchandising';
 import { PRODUCTS } from '../src/data/products';
+import HomePage from '../src/pages/HomePage';
+import { MerchandisingProvider } from '../src/contexts/MerchandisingContext';
 import BoutiqueSelections from '../src/components/BoutiqueSelections';
 import CategoryCarousel from '../src/components/CategoryCarousel';
 import FindGiftOccasionSection from '../src/components/FindGiftOccasionSection';
@@ -122,7 +124,11 @@ function createMockFirestore() {
   return { db: mockDb, store };
 }
 
-function renderWithProviders(element: React.ReactElement, catalog: Product[] = PRODUCTS) {
+function renderWithProviders(
+  element: React.ReactElement,
+  catalog: Product[] = PRODUCTS,
+  language: LanguageCode = 'en'
+) {
   const windowDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'window');
   const storageDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
   Object.defineProperty(globalThis, 'window', {
@@ -143,7 +149,7 @@ function renderWithProviders(element: React.ReactElement, catalog: Product[] = P
   });
   Object.defineProperty(globalThis, 'localStorage', {
     configurable: true,
-    value: { getItem: (key: string) => (key === 'allbarka_language' ? 'en' : null) },
+    value: { getItem: (key: string) => (key === 'allbarka_language' ? language : null) },
   });
   try {
     return renderToString(
@@ -252,29 +258,59 @@ test('1. Admin Merchandising lifecycle: draft save -> draft isolation -> publish
   assert.equal((publicAfterPublish as any).adminNotes, undefined, 'Admin notes must be stripped from public settings');
 });
 
-test('2. CategoryCarousel respects published category order and category visibility', async () => {
+test('2. CategoryCarousel renders published collection title, custom image, destination, visibility, and order', async () => {
   const publishedSettings: MerchandisingSettings = {
     ...DEFAULT_MERCHANDISING,
-    categoryOrder: ['oils', 'dates', 'essentials', 'dry-fruits'],
+    categoryOrder: ['deals', 'oils', 'dates', 'dry-fruits'],
     categoryVisibility: {
+      deals: true,
       oils: true,
       dates: true,
-      essentials: false, // Hidden
+      essentials: false, // Hidden category
+      combos: false, // Hidden collection
       'dry-fruits': true,
       nuts: true,
     },
+    collections: [
+      {
+        collectionId: 'deals',
+        title_en: 'Mega Spring Deals',
+        title_ur: 'بہار کی خصوصی ڈیلز',
+        image: '/images/custom-deals-banner.webp',
+        slug: '/shop/deals?promo=spring-mega',
+        visible: true,
+        badge: 'Spring Deal',
+      },
+      {
+        collectionId: 'combos',
+        title_en: 'Curated Combos',
+        title_ur: 'منتخب بنڈلز',
+        slug: '/shop/combos',
+        visible: false, // Hidden via collection visibility
+      },
+    ],
   };
 
   const html = renderWithProviders(<CategoryCarousel settings={publishedSettings} />);
 
-  // Visible categories must appear in the rendered HTML
+  // 1. Published collection title, image, destination, and badge must be rendered
+  assert.ok(html.includes('Mega Spring Deals'), 'Published collection title must be rendered');
+  assert.ok(html.includes('/images/custom-deals-banner.webp'), 'Published custom collection image must be rendered');
+  assert.ok(html.includes('href="/shop/deals?promo=spring-mega"'), 'Published custom destination must be rendered');
+  assert.ok(html.includes('Spring Deal'), 'Published collection badge must be rendered');
+
+  // 2. Visible categories must appear in the rendered HTML
   assert.ok(html.includes('href="/shop/oils"'), 'Oils must be present');
   assert.ok(html.includes('href="/shop/dates"'), 'Dates must be present');
-  assert.ok(html.includes('href="/shop/dry-fruits"') || html.includes('href="/shop/nuts"'), 'Dry fruits must be present');
 
-  // Hidden category must NOT appear as a slide
-  // We explicitly hid essentials
-  assert.ok(!html.includes('href="/shop/essentials"'), 'Hidden category essentials must NOT be rendered in carousel');
+  // 3. Hidden category (essentials) and hidden collection (combos) must NOT appear
+  assert.ok(!html.includes('href="/shop/essentials"'), 'Hidden category essentials must NOT be rendered');
+  assert.ok(!html.includes('href="/shop/combos"'), 'Hidden collection combos must NOT be rendered');
+
+  // 4. Order precedence: deals must appear before oils according to categoryOrder
+  const dealsIndex = html.indexOf('Mega Spring Deals');
+  const oilsIndex = html.indexOf('href="/shop/oils"');
+  assert.ok(dealsIndex !== -1 && oilsIndex !== -1 && dealsIndex < oilsIndex, 'CategoryOrder must determine slide ordering');
 });
 
 test('3. BoutiqueSelections filters inactive/unpublished products and limits to 3 per tab', async () => {
@@ -426,4 +462,177 @@ test('4. FindGiftOccasionSection filters hidden occasions and preserves validate
   // Hidden occasions must NOT be rendered
   assert.ok(!html.includes('occasion=umrah'), 'Hidden Umrah occasion must NOT be rendered');
   assert.ok(!html.includes('/wholesale'), 'Hidden Corporate occasion must NOT be rendered');
+});
+
+test('5. Custom merchant occasion title honors saved localized title over translated default (e.g. Wedding)', async () => {
+  const settingsWithCustomTitles: MerchandisingSettings = {
+    ...DEFAULT_MERCHANDISING,
+    occasions: [
+      {
+        tag: 'wedding',
+        title_en: 'Bespoke Royal Nikkah Favors',
+        title_ur: 'شاہی بیڈ باکسز نکاح',
+        slug: '/shop/celebration-boxes?occasion=wedding',
+        visible: true,
+      },
+      {
+        tag: 'birth',
+        title_en: 'Baby Joy Favors',
+        title_ur: 'ولادت خوشی بیڈ باکس',
+        slug: '/shop/celebration-boxes?occasion=birth',
+        visible: true,
+      },
+      {
+        tag: 'ramadan',
+        title_en: '', // Empty custom title -> must fallback to translated default
+        title_ur: '',
+        slug: '/shop?occasion=ramadan',
+        visible: true,
+      },
+    ],
+  };
+
+  // English render: merchant title_en must be rendered, NOT the hardcoded 'Wedding & Nikkah' translation key!
+  const htmlEn = renderWithProviders(<FindGiftOccasionSection settings={settingsWithCustomTitles} />, PRODUCTS, 'en');
+  assert.ok(htmlEn.includes('Bespoke Royal Nikkah Favors'), 'Merchant-saved title_en must be rendered');
+  assert.ok(!htmlEn.includes('Wedding &amp; Nikkah') && !htmlEn.includes('Wedding & Nikkah'), 'Translation dictionary key must NOT override merchant title');
+  assert.ok(htmlEn.includes('Baby Joy Favors'), 'Baby Joy Favors title must be rendered');
+  assert.ok(htmlEn.includes('Ramadan &amp; Eid') || htmlEn.includes('Ramadan & Eid'), 'Empty merchant title must fallback cleanly to translated default');
+
+  // Urdu render: merchant title_ur must be rendered
+  const htmlUr = renderWithProviders(<FindGiftOccasionSection settings={settingsWithCustomTitles} />, PRODUCTS, 'ur');
+  assert.ok(htmlUr.includes('شاہی بیڈ باکسز نکاح'), 'Merchant-saved title_ur must be rendered in Urdu');
+  assert.ok(htmlUr.includes('ولادت خوشی بیڈ باکس'), 'Merchant-saved title_ur must be rendered in Urdu');
+});
+
+test('6. End-to-end integrated flow via MerchandisingProvider: admin save -> preview isolation -> publish -> public fetch -> homepage refresh', async () => {
+  const { db } = createMockFirestore();
+
+  // Step 1: Initial public state
+  const live0 = await getPublicMerchandising(db);
+  assert.deepEqual(live0.showcaseTabs, DEFAULT_MERCHANDISING.showcaseTabs);
+
+  // Storefront rendered with MerchandisingProvider (no direct settings prop on child sections)
+  const initialHtml = renderWithProviders(
+    <MerchandisingProvider initialSettings={live0}>
+      <HomePage />
+    </MerchandisingProvider>
+  );
+
+  assert.ok(initialHtml.includes('/shop/combos') || initialHtml.includes('/shop/bundles'), 'Initial live collection link rendered');
+  assert.ok(initialHtml.includes('Wedding &amp; Nikkah') || initialHtml.includes('Wedding & Nikkah'), 'Initial live occasion title rendered');
+
+  // Step 2: Admin saves draft via updateAdminMerchandising
+  const bundle = await getAdminMerchandisingBundle(db);
+  const draftUpdate = {
+    expectedRevision: bundle.draftRevision,
+    categoryOrder: ['deals', 'oils', 'dates', 'dry-fruits'],
+    categoryVisibility: {
+      deals: true,
+      oils: true,
+      dates: true,
+      'dry-fruits': true,
+      combos: false, // Hidden collection
+      essentials: false,
+    },
+    collections: [
+      {
+        collectionId: 'deals',
+        title_en: 'Flash Spring Deals',
+        title_ur: 'بہار فلیش ڈیلز',
+        image: '/images/flash-deals.webp',
+        slug: '/shop/deals?promo=flash-spring',
+        visible: true,
+        badge: 'Hot Deal',
+      },
+      {
+        collectionId: 'combos',
+        title_en: 'Curated Combos',
+        title_ur: 'منتخب بنڈلز',
+        slug: '/shop/combos',
+        visible: false, // Hidden via collection
+      },
+    ],
+    occasions: [
+      {
+        tag: 'wedding',
+        title_en: 'Imperial Nikkah Hampers',
+        title_ur: 'شاہی نکاح ہیمپرز',
+        slug: '/shop/celebration-boxes?occasion=wedding&tier=imperial',
+        visible: true,
+      },
+      {
+        tag: 'umrah',
+        title_en: 'Umrah & Hajj',
+        title_ur: 'عمرہ و حج',
+        slug: '/shop/celebration-boxes?occasion=umrah',
+        visible: false, // Hidden occasion
+      },
+    ],
+    autoplay: { enabled: true, intervalMs: 8888, resumeDelayMs: 4444 },
+    adminNotes: 'Spring promotion campaign',
+  };
+
+  const savedDraft = await updateAdminMerchandising({
+    db,
+    body: draftUpdate,
+    actorUid: 'admin-lead-789',
+  });
+  assert.equal(savedDraft.revision, bundle.draftRevision + 1);
+
+  // Step 3: Preview Isolation — Public retrieval MUST NOT leak draft changes
+  const publicDuringDraft = await getPublicMerchandising(db);
+  const htmlDuringDraft = renderWithProviders(
+    <MerchandisingProvider initialSettings={publicDuringDraft}>
+      <HomePage />
+    </MerchandisingProvider>
+  );
+
+  assert.ok(!htmlDuringDraft.includes('Flash Spring Deals'), 'Public storefront must NOT leak draft collection title');
+  assert.ok(!htmlDuringDraft.includes('/images/flash-deals.webp'), 'Public storefront must NOT leak draft image');
+  assert.ok(!htmlDuringDraft.includes('Imperial Nikkah Hampers'), 'Public storefront must NOT leak draft occasion title');
+
+  // Step 4: Admin publishes draft to live
+  const publishResult = await publishAdminMerchandising({
+    db,
+    actorUid: 'admin-lead-789',
+    body: {
+      expectedDraftRevision: savedDraft.revision,
+      expectedLiveRevision: bundle.liveRevision,
+    },
+  });
+  assert.equal(publishResult.liveRevision, bundle.liveRevision + 1);
+
+  // Step 5: Public fetch after publish
+  const publicAfterPublish = await getPublicMerchandising(db);
+  assert.equal(publicAfterPublish.autoplay?.intervalMs, 8888);
+  assert.equal(publicAfterPublish.collections[0].title_en, 'Flash Spring Deals');
+
+  // Step 6: Storefront re-rendered with refreshed published settings
+  const htmlRefreshed = renderWithProviders(
+    <MerchandisingProvider initialSettings={publicAfterPublish}>
+      <HomePage />
+    </MerchandisingProvider>
+  );
+
+  // A. Collection changes
+  assert.ok(htmlRefreshed.includes('Flash Spring Deals'), 'Published collection title must be rendered on homepage');
+  assert.ok(htmlRefreshed.includes('/images/flash-deals.webp'), 'Published custom image must be rendered on homepage');
+  assert.ok(htmlRefreshed.includes('href="/shop/deals?promo=flash-spring"'), 'Published custom destination must be rendered');
+  assert.ok(!htmlRefreshed.includes('href="/shop/combos"'), 'Hidden collection must NOT be rendered on homepage');
+
+  // B. Collection ordering
+  const pantrySection = htmlRefreshed.slice(htmlRefreshed.indexOf('id="allbarka-pantry"'));
+  const dealsPos = pantrySection.indexOf('Flash Spring Deals');
+  const oilsPos = pantrySection.indexOf('href="/shop/oils"');
+  assert.ok(dealsPos !== -1 && oilsPos !== -1 && dealsPos < oilsPos, 'Published collection order must be reflected on homepage');
+
+  // C. Occasion changes
+  assert.ok(htmlRefreshed.includes('Imperial Nikkah Hampers'), 'Custom merchant occasion title must be rendered on homepage');
+  assert.ok(
+    htmlRefreshed.includes('/shop/celebration-boxes?occasion=wedding&amp;tier=imperial') ||
+    htmlRefreshed.includes('/shop/celebration-boxes?occasion=wedding&tier=imperial'),
+    'Custom occasion route must be rendered'
+  );
+  assert.ok(!htmlRefreshed.includes('occasion=umrah'), 'Hidden occasion must NOT be rendered on homepage');
 });
