@@ -363,7 +363,9 @@ export default function GiftsHampersDestination({
                     onClick={() =>
                       openCustomQuoteModal({
                         productId: product.id,
+                        variantLabel: currentWeight,
                         mode: 'filled',
+                        quantity: 25,
                       })
                     }
                     className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#c7982f] py-3 text-xs font-bold text-[#072a20] hover:bg-[#d8a93e] transition-colors shadow-sm"

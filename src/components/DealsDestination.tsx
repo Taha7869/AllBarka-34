@@ -290,6 +290,7 @@ export default function DealsDestination({ onQuickView }: DealsDestinationProps)
                       onClick={() =>
                         openCustomQuoteModal({
                           productId: product.id,
+                          variantLabel: primaryVariant,
                           mode: 'filled',
                           quantity: 25,
                         })

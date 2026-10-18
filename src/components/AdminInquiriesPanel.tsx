@@ -22,6 +22,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { adminRequest, AdminRequestError } from '../lib/adminClient';
 import { formatAdminCurrency, formatAdminDate } from '../lib/adminPresentation';
 import { useAdminLanguage } from '../hooks/useAdminLanguage';
+import { formatFillingsLabel } from '../lib/inquiryWhatsApp';
 
 export type InquiryType = 'bid_box_quote' | 'wholesale' | 'custom_hamper' | 'general';
 export type InquiryStatus = 'NEW' | 'CONTACTED' | 'QUOTED' | 'APPROVED' | 'CLOSED';
@@ -37,9 +38,16 @@ export interface AdminInquiryRecord {
   city: string;
   productId: string;
   productName: string;
-  boxMode: 'empty' | 'filled';
+  packagingVariant?: string | null;
+  boxMode: 'empty' | 'filled' | 'custom';
   quantity: number;
   eventType: string;
+  targetEventDate?: string | null;
+  budgetType?: 'per_piece' | 'total' | null;
+  preferredFillings?: string[];
+  customFillingsNotes?: string;
+  monogramText?: string;
+  cardMessage?: string;
   customPrintText: string;
   standardPrice: number | null;
   offeredPrice: number | null;
@@ -51,6 +59,7 @@ export interface AdminInquiryRecord {
   whatsappReplyUrl: string;
   assignedTo?: string | null;
   followUpDate?: string | null;
+  leadTimeNoticeAcknowledged?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -78,7 +87,11 @@ function buildLiveWhatsAppPitch(
   else if (digits.length >= 10) targetPhone = digits;
 
   const modeLabel =
-    record.boxMode === 'empty' ? 'Box Only (Empty Packaging)' : 'Filled with AllBarka Dry Fruits';
+    record.boxMode === 'empty'
+      ? 'Box Only (Empty Packaging)'
+      : record.boxMode === 'custom'
+      ? 'Bespoke Packaging & Custom Fillings'
+      : 'Filled with AllBarka Dry Fruits';
   const agreedNum = draftAgreedPrice.trim() ? Number(draftAgreedPrice) : record.finalAgreedPrice;
   const hasAgreed = agreedNum != null && Number.isFinite(agreedNum) && agreedNum > 0;
   const noteText = draftAdminNotes.trim() || record.adminNotes;
@@ -89,14 +102,19 @@ function buildLiveWhatsAppPitch(
     ``,
     `Thank you for your ${TYPE_LABELS[record.type] || 'Boutique Inquiry'} (*Ref #${record.id}*):`,
     record.productName ? `• *Selection:* ${record.productName}` : '',
+    record.packagingVariant ? `• *Variant / Portion:* ${record.packagingVariant}` : '',
     record.type === 'bid_box_quote' ? `• *Configuration:* ${modeLabel}` : '',
     record.quantity > 1 ? `• *Quantity:* ${record.quantity} pcs` : '',
     record.eventType ? `• *Occasion:* ${record.eventType}` : '',
+    record.targetEventDate ? `• *Target Event Date:* ${record.targetEventDate}` : '',
+    record.preferredFillings && record.preferredFillings.length > 0 ? `• *Fillings Selected:* ${formatFillingsLabel(record.preferredFillings)}` : '',
+    record.monogramText ? `• *Monogram / Tag:* ${record.monogramText}` : '',
+    record.cardMessage ? `• *Card Message:* ${record.cardMessage}` : '',
     record.standardPrice ? `• *Standard Rate Ref:* Rs. ${Number(record.standardPrice).toLocaleString()}/pc` : '',
     hasAgreed
       ? `• *AllBarka Special Approved Rate:* Rs. ${Number(agreedNum).toLocaleString()} PKR`
       : record.offeredPrice
-        ? `• *Your Offered Budget:* Rs. ${Number(record.offeredPrice).toLocaleString()} PKR (Ready to finalize terms)`
+        ? `• *Your Offered Budget:* Rs. ${Number(record.offeredPrice).toLocaleString()} PKR (${record.budgetType === 'per_piece' ? 'per piece' : 'total budget'})`
         : '',
     noteText ? `• *Concierge Note:* ${noteText}` : '',
     ``,
@@ -453,19 +471,31 @@ export default function AdminInquiriesPanel() {
                       {TYPE_LABELS[item.type] || item.type}
                     </span>
 
-                    {/* Empty vs Filled Badge */}
+                    {/* Empty vs Filled vs Custom Badge */}
                     {(item.type === 'bid_box_quote' || item.boxMode) && (
                       <span
                         className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full border ${
                           item.boxMode === 'empty'
                             ? 'bg-amber-50 border-amber-300 text-amber-900'
+                            : item.boxMode === 'custom'
+                            ? 'bg-purple-50 border-purple-300 text-purple-900'
                             : 'bg-emerald-50 border-emerald-300 text-emerald-900'
                         }`}
                       >
-                        {item.boxMode === 'empty' ? <Package size={13} /> : <Gift size={13} />}
+                        {item.boxMode === 'empty' ? <Package size={13} /> : item.boxMode === 'custom' ? <Sparkles size={13} /> : <Gift size={13} />}
                         {item.boxMode === 'empty'
                           ? 'Box Only (Empty)'
+                          : item.boxMode === 'custom'
+                          ? 'Custom Pack & Sourced Fillings'
                           : 'Filled with Dry Fruits'}
+                      </span>
+                    )}
+
+                    {/* Packaging Variant Badge */}
+                    {item.packagingVariant && (
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-900">
+                        <Tag size={12} />
+                        {item.packagingVariant}
                       </span>
                     )}
 
@@ -482,6 +512,14 @@ export default function AdminInquiriesPanel() {
                       <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-50 border border-purple-200 text-purple-900">
                         <Calendar size={13} />
                         {item.eventType}
+                      </span>
+                    )}
+
+                    {/* Target Event Date Badge */}
+                    {item.targetEventDate && (
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-900">
+                        <Calendar size={13} />
+                        Date: {item.targetEventDate}
                       </span>
                     )}
                   </div>
@@ -555,6 +593,7 @@ export default function AdminInquiriesPanel() {
                     </span>
                     <div className="font-semibold text-sm text-[#072A20]">
                       {item.productName}
+                      {item.packagingVariant ? ` (${item.packagingVariant})` : ''}
                     </div>
                     <div className="text-xs text-[#566B63] space-y-1 pt-1">
                       <div className="flex justify-between">
@@ -575,29 +614,49 @@ export default function AdminInquiriesPanel() {
                         <span className="font-semibold">Customer Offered Budget:</span>
                         <strong className="font-bold">
                           {item.offeredPrice
-                            ? `${formatAdminCurrency(item.offeredPrice)} PKR`
+                            ? `${formatAdminCurrency(item.offeredPrice)} PKR${item.budgetType === 'per_piece' ? '/pc' : ' total'}`
                             : 'Open / Requesting Rate'}
                         </strong>
                       </div>
                     </div>
                   </div>
 
-                  {/* Custom Print & Patron Notes */}
+                  {/* Custom Print, Fillings & Patron Requirements */}
                   <div className="rounded-xl bg-[#FAF6EE]/60 border border-[#D4AF6A]/25 p-3.5 space-y-1.5">
                     <span className="text-[10px] font-bold uppercase tracking-widest text-[#8C6B1B] block">
                       Custom Printing & Requirements
                     </span>
-                    {item.customPrintText ? (
+                    {item.monogramText ? (
                       <p className="text-xs text-[#072A20] font-medium leading-relaxed">
-                        <strong>Custom Tag/Print:</strong> {item.customPrintText}
+                        <strong>Monogram / Name Tag:</strong> {item.monogramText}
                       </p>
                     ) : null}
-                    {item.notes && item.notes !== item.customPrintText ? (
+                    {item.cardMessage ? (
+                      <p className="text-xs text-[#072A20] font-medium leading-relaxed">
+                        <strong>Card / Ribbon:</strong> {item.cardMessage}
+                      </p>
+                    ) : null}
+                    {item.preferredFillings && item.preferredFillings.length > 0 ? (
+                      <p className="text-xs text-[#8C6B1B] font-medium leading-relaxed">
+                        <strong>Fillings Selected:</strong> {formatFillingsLabel(item.preferredFillings)}
+                      </p>
+                    ) : null}
+                    {item.customFillingsNotes ? (
+                      <p className="text-xs text-[#3E564D] leading-relaxed">
+                        <strong>Fillings Notes:</strong> {item.customFillingsNotes}
+                      </p>
+                    ) : null}
+                    {item.customPrintText && item.customPrintText !== item.monogramText ? (
+                      <p className="text-xs text-[#072A20] font-medium leading-relaxed">
+                        <strong>Custom Printing:</strong> {item.customPrintText}
+                      </p>
+                    ) : null}
+                    {item.notes && item.notes !== item.customPrintText && item.notes !== item.customFillingsNotes ? (
                       <p className="text-xs text-[#3E564D] leading-relaxed">{item.notes}</p>
                     ) : null}
-                    {!item.customPrintText && !item.notes && (
+                    {!item.monogramText && !item.cardMessage && (!item.preferredFillings || item.preferredFillings.length === 0) && !item.customPrintText && !item.notes && (
                       <p className="text-xs italic text-[#566B63]">
-                        No custom text specified — confirm couple name/event tag on WhatsApp.
+                        Standard specifications — finalize couple name/event tag on WhatsApp.
                       </p>
                     )}
                   </div>

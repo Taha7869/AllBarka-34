@@ -322,3 +322,55 @@ export interface ActiveReward {
   status: 'ACTIVE' | 'USED' | 'EXPIRED' | 'CANCELLED';
   rewardType?: string;
 }
+
+export type InquiryType = 'bid_box_quote' | 'wholesale' | 'custom_hamper' | 'general';
+export type InquiryStatus = 'NEW' | 'CONTACTED' | 'QUOTED' | 'APPROVED' | 'CLOSED';
+
+export interface InquiryRecord {
+  id: string;
+  ticketId: string;
+  quoteId: string;
+  type: InquiryType;
+  customerName: string;
+  phone: string;
+  email: string;
+  city: string;
+  productId: string;
+  productName: string;
+  packagingVariant?: string | null;
+  boxMode: 'empty' | 'filled' | 'custom';
+  quantity: number;
+  eventType: string;
+  targetEventDate?: string | null;
+  budgetType?: 'per_piece' | 'total' | null;
+  preferredFillings?: string[];
+  customFillingsNotes?: string;
+  monogramText?: string;
+  cardMessage?: string;
+  customPrintText: string;
+  standardPrice: number | null;
+  offeredPrice: number | null;
+  finalAgreedPrice: number | null;
+  notes: string;
+  adminNotes: string;
+  status: InquiryStatus;
+  whatsappUrl: string;
+  whatsappReplyUrl: string;
+  assignedTo?: string | null;
+  followUpDate?: string | null;
+  leadTimeNoticeAcknowledged?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CustomQuoteModalInit {
+  productId?: string;
+  mode?: 'empty' | 'filled' | 'custom';
+  quantity?: number;
+  eventType?: string;
+  occasion?: string;
+  targetUnitPrice?: number;
+  variantLabel?: string;
+  portion?: string;
+  notes?: string;
+}

@@ -398,8 +398,10 @@ export default function OccasionsDestination({
                       onClick={() =>
                         openCustomQuoteModal({
                           productId: product.id,
+                          variantLabel: primaryVariant,
                           mode: 'filled',
                           quantity: 25,
+                          eventType: selectedOccasion !== 'all' ? selectedOccasion : undefined,
                         })
                       }
                       className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#c7982f] py-3 text-xs font-bold text-[#072a20] hover:bg-[#d8a93e] transition-colors shadow-sm"

@@ -161,7 +161,12 @@ export default function ProductCard({
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  openCustomQuoteModal({ productId: product.id, mode: 'filled', quantity: moqPieces ?? 50 });
+                  openCustomQuoteModal({
+                    productId: product.id,
+                    variantLabel: selectedWeight,
+                    mode: selectedWeight?.startsWith('Empty') ? 'empty' : 'filled',
+                    quantity: moqPieces ?? 50,
+                  });
                 }}
                 className="focus-ring flex w-full min-h-[46px] cursor-pointer items-center justify-center rounded-xl border border-[#c7982f]/35 bg-[#1e3a2b] px-3 text-xs font-semibold text-[#fff8e9]"
               >

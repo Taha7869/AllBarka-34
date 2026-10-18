@@ -580,7 +580,7 @@ export default function ProductDetailPage() {
 
             {/* Quantity & Add to Cart (minimum 44px tap targets) */}
             <div className="flex flex-col gap-3 mb-8">
-              {isQuoteOnly ? <button type="button" onClick={() => openCustomQuoteModal({ productId: product.id, mode: 'filled', quantity: 50 })} className="focus-ring flex min-h-12 items-center justify-center rounded-xl border border-[#c7982f]/40 bg-[#1e3a2b] px-5 text-sm font-semibold text-[#fff8e9]">{t('catalog.requestQuote')}</button> : <div className="flex flex-col sm:flex-row gap-3">
+              {isQuoteOnly ? <button type="button" onClick={() => openCustomQuoteModal({ productId: product.id, variantLabel: selectedWeight, mode: selectedWeight?.startsWith('Empty') ? 'empty' : 'filled', quantity: quantity })} className="focus-ring flex min-h-12 items-center justify-center rounded-xl border border-[#c7982f]/40 bg-[#1e3a2b] px-5 text-sm font-semibold text-[#fff8e9]">{t('catalog.requestQuote')}</button> : <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex items-center justify-center bg-white dark:bg-[#1C2422] border border-[var(--color-accent,#C7982F)]/35 rounded-xl h-12 px-2 shrink-0">
                   <button 
                     type="button"
@@ -633,8 +633,9 @@ export default function ProductDetailPage() {
                   onClick={() =>
                     openCustomQuoteModal({
                       productId: product.id,
-                      mode: selectedWeight.startsWith('Empty') ? 'empty' : 'filled',
-                      quantity: 50,
+                      variantLabel: selectedWeight,
+                      mode: selectedWeight?.startsWith('Empty') ? 'empty' : 'filled',
+                      quantity: quantity,
                     })
                   }
                   className="w-full min-h-[46px] rounded-xl border border-[#8C6B1B] bg-[#FAF6EE] hover:bg-[#8C6B1B] text-[#8C6B1B] hover:text-white flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider transition-all shadow-xs"

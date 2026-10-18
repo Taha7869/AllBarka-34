@@ -497,6 +497,7 @@ export default function CelebrationBoxesDestination({
                       onClick={() =>
                         openCustomQuoteModal({
                           productId: product.id,
+                          variantLabel: cardVariant.emptyTiers[cardVariant.selectedTierIndex]?.label,
                           mode: cardVariant.activeMode,
                           quantity: cardVariant.moq,
                         })
@@ -513,6 +514,7 @@ export default function CelebrationBoxesDestination({
                     onClick={() =>
                       openCustomQuoteModal({
                         productId: product.id,
+                        variantLabel: cardVariant.emptyTiers[cardVariant.selectedTierIndex]?.label,
                         mode: cardVariant.activeMode,
                         quantity: 100,
                       })

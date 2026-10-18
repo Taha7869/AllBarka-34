@@ -1,16 +1,36 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { X, Sparkles, Package, Gift, MessageCircle, CheckCircle2, Tag, Calendar, Layers, ShieldCheck } from 'lucide-react';
+import {
+  X,
+  Sparkles,
+  Package,
+  Gift,
+  MessageCircle,
+  CheckCircle2,
+  Tag,
+  Calendar,
+  Layers,
+  ShieldCheck,
+  AlertCircle,
+  Info,
+  Clock,
+  HeartHandshake,
+  RefreshCw,
+  FileText,
+} from 'lucide-react';
 import { useCatalogProducts } from '../contexts/CatalogContext';
-import { Product } from '../types';
+import { Product, CustomQuoteModalInit } from '../types';
 import { resolveBidBoxConfig } from '../lib/bidBoxPricing';
+import { calculatePackagingMoq, isPackagingProduct } from '../lib/packagingMoq';
+import {
+  buildCustomerInquiryWhatsAppUrl,
+  MANDATORY_LEAD_TIME_NOTICE,
+  NON_CATALOG_FILLINGS_DISCLAIMER,
+  TABARRUK_EMPTY_DEFAULT_NOTICE,
+  formatFillingsLabel,
+} from '../lib/inquiryWhatsApp';
+import { submitCustomQuoteInquiry } from '../lib/storefrontSubmissions';
 
-export interface CustomQuoteModalInit {
-  productId?: string;
-  mode?: 'empty' | 'filled';
-  quantity?: number;
-  eventType?: string;
-  targetUnitPrice?: number;
-}
+export type { CustomQuoteModalInit };
 
 export function openCustomQuoteModal(detail: CustomQuoteModalInit = {}): void {
   if (typeof window !== 'undefined') {
@@ -23,76 +43,65 @@ const EVENT_TYPES = [
   'Baat Pakki',
   'Umrah / Hajj Tabarruk',
   'Birth Announcement',
-  'Corporate',
+  'Corporate & Bulk Gifting',
   'Walima / Barat',
   'Eid / Festive Gifting',
+  'Other Celebration',
 ] as const;
 
 const QUANTITY_PRESETS = [25, 50, 100, 200, 300, 500] as const;
 
-function buildWhatsAppQuoteUrl(params: {
-  quoteId?: string;
-  productName: string;
-  productId: string;
-  mode: 'empty' | 'filled';
-  quantity: number;
-  eventType: string;
-  targetPricePkr: string;
-  referenceUnitPrice: number;
-  customPrinting: string;
-  customerName: string;
-  customerPhone: string;
-  city: string;
-}): string {
-  const modeLabel = params.mode === 'empty'
-    ? 'Box Only (Empty Packaging)'
-    : 'Filled with AllBarka Dry Fruits';
-  const lines = [
-    `*Assalam-o-Alaikum AllBarka Concierge!*`,
-    `I would like a *Custom Quote / Bargain Rate* for my event:`,
-    params.quoteId ? `• *Quote Ref:* ${params.quoteId}` : '',
-    `• *Selected Box / Deal:* ${params.productName} (${params.productId})`,
-    `• *Box Mode:* ${modeLabel}`,
-    `• *Quantity:* ${params.quantity} boxes`,
-    `• *Event Type:* ${params.eventType}`,
-    params.referenceUnitPrice > 0 ? `• *Standard Rate Ref:* Rs. ${params.referenceUnitPrice.toLocaleString()}/box` : `• *Standard Rate Ref:* Custom Inquiry`,
-    params.targetPricePkr ? `• *My Target Offer / Budget:* Rs. ${Number(params.targetPricePkr).toLocaleString()} PKR` : '',
-    params.customPrinting ? `• *Custom Printing / Name Tag / Notes:* ${params.customPrinting}` : '',
-    params.customerName ? `• *Name:* ${params.customerName}` : '',
-    params.customerPhone ? `• *Phone:* ${params.customerPhone}` : '',
-    params.city ? `• *City:* ${params.city}` : '',
-    ``,
-    `Please share your best final rate and customization options.`,
-  ].filter(Boolean);
-
-  return `https://wa.me/923160666083?text=${encodeURIComponent(lines.join('\n'))}`;
-}
+const FILLING_OPTIONS = [
+  { id: 'dry_fruits', label: 'Fresh Dry Fruits & Roasted Nuts (Almonds, Pistachios, Cashews)' },
+  { id: 'dates', label: 'Premium Royal Dates (Ajwa, Medjool, Mabroom)' },
+  { id: 'chocolates', label: 'Chocolates & Artisan Truffles (Custom-sourced)' },
+  { id: 'candies', label: 'Celebration Candies & Confections (Custom-sourced)' },
+  { id: 'other', label: 'Special Custom Fillings / Panjeeri / Tea' },
+] as const;
 
 export default function CustomQuoteModal() {
   const products = useCatalogProducts();
   const [isOpen, setIsOpen] = useState(false);
 
   const eligibleProducts = useMemo(() => {
-    const bidBoxes = products.filter(p => p.isBidBox || p.category === 'celebration-boxes');
+    const bidBoxes = products.filter(p => (p.isBidBox || p.category === 'celebration-boxes') && p.active !== false);
     const dealsAndBundles = products.filter(
       p =>
         !p.isBidBox &&
         p.category !== 'celebration-boxes' &&
+        p.active !== false &&
         (p.category === 'gift-boxes' || p.category === 'bundles' || p.isBundle || p.quoteOnly || p.orderMode === 'inquiry_quote' || p.orderMode === 'both')
     );
     return [...bidBoxes, ...dealsAndBundles];
   }, [products]);
 
+  // Form State
   const [selectedProductId, setSelectedProductId] = useState<string>('bid-box-umrah-tabarruk');
-  const [mode, setMode] = useState<'empty' | 'filled'>('Filled'.toLowerCase() as 'empty' | 'filled');
+  const [selectedVariantLabel, setSelectedVariantLabel] = useState<string>('');
+  const [mode, setMode] = useState<'empty' | 'filled' | 'custom'>('empty');
   const [quantity, setQuantity] = useState<number>(50);
   const [eventType, setEventType] = useState<string>('Nikkah');
+  const [targetEventDate, setTargetEventDate] = useState<string>('');
+  const [leadTimeAcknowledged, setLeadTimeAcknowledged] = useState<boolean>(true);
+
+  // Fillings & Personalization
+  const [preferredFillings, setPreferredFillings] = useState<string[]>(['dry_fruits']);
+  const [customFillingsNotes, setCustomFillingsNotes] = useState<string>('');
+  const [monogramText, setMonogramText] = useState<string>('');
+  const [cardMessage, setCardMessage] = useState<string>('');
   const [customPrinting, setCustomPrinting] = useState<string>('');
+
+  // Budget
+  const [budgetType, setBudgetType] = useState<'per_piece' | 'total'>('total');
   const [targetPricePkr, setTargetPricePkr] = useState<string>('');
+
+  // Contact Info (persisted in component state across opens)
   const [customerName, setCustomerName] = useState<string>('');
   const [customerPhone, setCustomerPhone] = useState<string>('');
+  const [customerEmail, setCustomerEmail] = useState<string>('');
   const [city, setCity] = useState<string>('Lahore');
 
+  // Submission State
   const [submitting, setSubmitting] = useState(false);
   const [submittedQuote, setSubmittedQuote] = useState<{
     quoteId: string;
@@ -107,11 +116,27 @@ export default function CustomQuoteModal() {
       const defaultId = detail.productId
         ? detail.productId
         : eligibleProducts[0]?.id || 'bid-box-umrah-tabarruk';
+
       setSelectedProductId(defaultId);
+      if (detail.variantLabel) {
+        setSelectedVariantLabel(detail.variantLabel);
+      } else if (detail.portion) {
+        setSelectedVariantLabel(detail.portion);
+      }
       setMode(detail.mode || 'empty');
       setQuantity(detail.quantity && detail.quantity > 0 ? detail.quantity : 50);
-      if (detail.eventType) setEventType(detail.eventType);
-      if (detail.targetUnitPrice) setTargetPricePkr(String(detail.targetUnitPrice));
+      if (detail.eventType) {
+        setEventType(detail.eventType);
+      } else if (detail.occasion) {
+        setEventType(detail.occasion);
+      }
+      if (detail.targetUnitPrice) {
+        setTargetPricePkr(String(detail.targetUnitPrice));
+        setBudgetType('per_piece');
+      }
+      if (detail.notes) {
+        setCustomPrinting(detail.notes);
+      }
       setSubmittedQuote(null);
       setErrorMsg(null);
       setIsOpen(true);
@@ -126,6 +151,39 @@ export default function CustomQuoteModal() {
     [products, eligibleProducts, selectedProductId]
   );
 
+  // Available variants for the selected product
+  const availableVariants = useMemo(() => {
+    if (!selectedProduct) return [];
+    if (Array.isArray(selectedProduct.variants) && selectedProduct.variants.length > 0) {
+      return selectedProduct.variants.map(v => v.label);
+    }
+    const priceKeys = Object.keys(selectedProduct.prices || {});
+    return priceKeys;
+  }, [selectedProduct]);
+
+  // Is Tabarruk product
+  const isTabarruk = useMemo(() => {
+    if (!selectedProduct) return false;
+    const id = (selectedProduct.id || '').toLowerCase();
+    const name = (selectedProduct.name_en || '').toLowerCase();
+    const subcat = (selectedProduct.packagingSubcategory || '').toLowerCase();
+    return id.includes('tabarruk') || name.includes('tabarruk') || subcat === 'tabarruk';
+  }, [selectedProduct]);
+
+  // Authoritative MOQ Check
+  const packagingMoqInfo = useMemo(() => {
+    if (!selectedProduct || !isPackagingProduct(selectedProduct)) {
+      return { isPackaging: false, moq: 1, isUnpriced: false };
+    }
+    try {
+      const moq = calculatePackagingMoq(selectedProduct, selectedVariantLabel || undefined);
+      return { isPackaging: true, moq, isUnpriced: false };
+    } catch {
+      return { isPackaging: true, moq: null, isUnpriced: true };
+    }
+  }, [selectedProduct, selectedVariantLabel]);
+
+  // Reference Unit Price
   const referenceUnitPrice = useMemo(() => {
     if (!selectedProduct) return 0;
     const cfg = resolveBidBoxConfig(selectedProduct);
@@ -140,26 +198,45 @@ export default function CustomQuoteModal() {
       }
       if (typeof cfg.filledMin === 'number' && cfg.filledMin > 0) return cfg.filledMin;
     }
+    if (selectedVariantLabel && selectedProduct.prices?.[selectedVariantLabel]) {
+      return selectedProduct.prices[selectedVariantLabel];
+    }
     const firstPrice = Object.values(selectedProduct.prices || {}).find(v => typeof v === 'number' && Number.isFinite(v) && v > 0);
     return typeof firstPrice === 'number' ? firstPrice : 0;
-  }, [selectedProduct, mode, quantity]);
+  }, [selectedProduct, selectedVariantLabel, mode, quantity]);
 
   if (!isOpen) return null;
 
-  const liveWhatsAppUrl = buildWhatsAppQuoteUrl({
-    quoteId: submittedQuote?.quoteId,
-    productName: selectedProduct?.name_en || 'Custom Bid Box / Gift Selection',
+  // Live Unsaved Draft WhatsApp URL for direct messaging
+  const liveUnsavedWhatsAppUrl = buildCustomerInquiryWhatsAppUrl({
+    quoteId: null,
+    isUnsavedDraft: true,
+    productName: selectedProduct?.name_en || 'Custom Event Packaging / Gifting',
     productId: selectedProduct?.id || selectedProductId,
+    packagingVariant: selectedVariantLabel || null,
     mode,
     quantity,
     eventType,
+    targetEventDate: targetEventDate || null,
+    preferredFillings,
+    customFillingsNotes,
+    monogramText,
+    cardMessage,
+    customPrinting,
+    budgetType,
     targetPricePkr,
     referenceUnitPrice,
-    customPrinting,
     customerName,
     customerPhone,
     city,
+    isTabarruk,
   });
+
+  const toggleFilling = (fillingId: string) => {
+    setPreferredFillings(prev =>
+      prev.includes(fillingId) ? prev.filter(f => f !== fillingId) : [...prev, fillingId]
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,59 +253,62 @@ export default function CustomQuoteModal() {
 
     setSubmitting(true);
     try {
-      const response = await fetch('/api/quotes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          productId: selectedProduct?.id || selectedProductId,
-          productName: selectedProduct?.name_en || 'Custom Bid Box',
-          mode,
-          quantity,
-          eventType,
-          customPrinting: customPrinting.trim(),
-          targetPricePkr: targetPricePkr ? Number(targetPricePkr) : null,
-          referenceUnitPrice,
-          customerName: customerName.trim(),
-          customerPhone: customerPhone.trim(),
-          city: city.trim() || 'Lahore',
-        }),
-      });
-      const data = await response.json().catch(() => null);
-      const quoteId = data?.quoteId || `ABQ-${Date.now().toString(36).toUpperCase().slice(-6)}`;
-      const whatsappUrl = data?.whatsappUrl || buildWhatsAppQuoteUrl({
-        quoteId,
-        productName: selectedProduct?.name_en || 'Custom Bid Box',
+      const res = await submitCustomQuoteInquiry({
         productId: selectedProduct?.id || selectedProductId,
-        mode,
+        productName: selectedProduct?.name_en || 'Custom Bid Box',
+        packagingVariant: selectedVariantLabel || undefined,
+        boxMode: mode,
         quantity,
         eventType,
-        targetPricePkr,
+        targetEventDate: targetEventDate || undefined,
+        preferredFillings,
+        customFillingsNotes: customFillingsNotes.trim() || undefined,
+        monogramText: monogramText.trim() || undefined,
+        cardMessage: cardMessage.trim() || undefined,
+        customPrinting: customPrinting.trim() || undefined,
+        budgetType,
+        targetPricePkr: targetPricePkr ? Number(targetPricePkr) : null,
         referenceUnitPrice,
-        customPrinting,
-        customerName,
-        customerPhone,
-        city,
+        customerName: customerName.trim(),
+        customerPhone: customerPhone.trim(),
+        email: customerEmail.trim() || undefined,
+        city: city.trim() || 'Lahore',
+        leadTimeNoticeAcknowledged: leadTimeAcknowledged,
       });
-      setSubmittedQuote({ quoteId, whatsappUrl });
-    } catch {
-      const fallbackId = `ABQ-${Date.now().toString(36).toUpperCase().slice(-6)}`;
-      setSubmittedQuote({
-        quoteId: fallbackId,
-        whatsappUrl: buildWhatsAppQuoteUrl({
-          quoteId: fallbackId,
+
+      const quoteId = res.quoteId;
+      const whatsappUrl =
+        res.whatsappUrl ||
+        buildCustomerInquiryWhatsAppUrl({
+          quoteId,
           productName: selectedProduct?.name_en || 'Custom Bid Box',
           productId: selectedProduct?.id || selectedProductId,
+          packagingVariant: selectedVariantLabel || null,
           mode,
           quantity,
           eventType,
+          targetEventDate: targetEventDate || null,
+          preferredFillings,
+          customFillingsNotes,
+          monogramText,
+          cardMessage,
+          customPrinting,
+          budgetType,
           targetPricePkr,
           referenceUnitPrice,
-          customPrinting,
           customerName,
           customerPhone,
           city,
-        }),
-      });
+          isTabarruk,
+        });
+
+      setSubmittedQuote({ quoteId, whatsappUrl });
+    } catch (err: any) {
+      // PRESERVE FORM INPUTS! Do not generate fake quote ID
+      setErrorMsg(
+        err?.message ||
+          'We could not save your inquiry right now due to a temporary storage issue. Your entered details have been preserved below.'
+      );
     } finally {
       setSubmitting(false);
     }
@@ -252,7 +332,7 @@ export default function CustomQuoteModal() {
               Request Custom Quote / Bargain Your Price
             </h2>
             <p className="text-xs sm:text-sm text-[#E5DEC9]/85 mt-1">
-              Ordering for Nikkah, Baat Pakki, Umrah Tabarruk, or Corporate Events? Pitch your target budget & get custom wholesale rates.
+              Ordering for Nikkah, Baat Pakki, Umrah Tabarruk, or Corporate Events? Specify your configuration & get custom wholesale rates.
             </p>
           </div>
           <button
@@ -268,43 +348,81 @@ export default function CustomQuoteModal() {
         {/* Body */}
         <div className="p-5 sm:p-6 overflow-y-auto space-y-5">
           {submittedQuote ? (
+            /* SUCCESS CONFIRMATION STATE (Durable persistence confirmed) */
             <div className="rounded-2xl border border-[#1B5E43]/30 bg-white p-6 text-center space-y-4 shadow-sm">
               <div className="mx-auto w-14 h-14 rounded-full bg-[#0B3B2D]/10 text-[#0B3B2D] flex items-center justify-center">
                 <CheckCircle2 size={30} className="text-[#127A4D]" />
               </div>
               <div className="space-y-1">
                 <span className="text-xs uppercase tracking-[0.2em] font-bold text-[#8C6B1B]">
-                  Quote Logged • Ref #{submittedQuote.quoteId}
+                  Quote Saved & Logged • Ref #{submittedQuote.quoteId}
                 </span>
                 <h3 className="font-serif text-2xl font-bold text-[#072A20]">
-                  Your Custom Offer Is Ready for Instant WhatsApp Review!
+                  Your Custom Request Is Saved!
                 </h3>
                 <p className="text-sm text-[#3E564D] max-w-lg mx-auto">
-                  We have saved your request for <strong>{quantity} × {selectedProduct?.name_en}</strong> ({mode === 'empty' ? 'Empty Boxes' : 'Filled with AllBarka Dry Fruits'}). Tap below to send directly to our senior pricing desk on WhatsApp for immediate bargain confirmation.
+                  We have durably logged your inquiry for{' '}
+                  <strong>
+                    {quantity} × {selectedProduct?.name_en}
+                  </strong>{' '}
+                  ({mode === 'empty' ? 'Box Only' : mode === 'custom' ? 'Custom Set' : 'Filled with AllBarka Dry Fruits'}). Tap below to continue on WhatsApp with our concierge to finalize your rate and design approvals.
                 </p>
               </div>
 
-              <div className="rounded-xl bg-[#FAF6EE] border border-[#D4AF6A]/40 p-4 text-left text-xs sm:text-sm space-y-1.5">
+              {/* Summary Review Card */}
+              <div className="rounded-xl bg-[#FAF6EE] border border-[#D4AF6A]/40 p-4 text-left text-xs sm:text-sm space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-[#566B63]">Box / Package:</span>
-                  <span className="font-semibold text-[#072A20]">{selectedProduct?.name_en}</span>
+                  <span className="text-[#566B63]">Box / Selection:</span>
+                  <span className="font-semibold text-[#072A20]">
+                    {selectedProduct?.name_en}
+                    {selectedVariantLabel ? ` (${selectedVariantLabel})` : ''}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#566B63]">Configuration:</span>
-                  <span className="font-semibold text-[#072A20]">{mode === 'empty' ? 'Box Only (Empty Packaging)' : 'Filled with AllBarka Dry Fruits'}</span>
+                  <span className="font-semibold text-[#072A20]">
+                    {mode === 'empty'
+                      ? 'Box Only (Empty Packaging)'
+                      : mode === 'custom'
+                      ? 'Custom Packaging & Sourced Fillings'
+                      : 'Filled with AllBarka Dry Fruits'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#566B63]">Quantity & Event:</span>
-                  <span className="font-semibold text-[#072A20]">{quantity} pcs • {eventType}</span>
+                  <span className="font-semibold text-[#072A20]">
+                    {quantity} pcs • {eventType}
+                  </span>
                 </div>
+                {targetEventDate && (
+                  <div className="flex justify-between">
+                    <span className="text-[#566B63]">Target Event Date:</span>
+                    <span className="font-semibold text-[#072A20]">{targetEventDate}</span>
+                  </div>
+                )}
+                {preferredFillings.length > 0 && mode !== 'empty' && (
+                  <div className="flex justify-between">
+                    <span className="text-[#566B63]">Fillings Selected:</span>
+                    <span className="font-semibold text-[#072A20]">{formatFillingsLabel(preferredFillings)}</span>
+                  </div>
+                )}
+                {monogramText && (
+                  <div className="flex justify-between">
+                    <span className="text-[#566B63]">Monogram / Tag:</span>
+                    <span className="font-semibold text-[#072A20]">{monogramText}</span>
+                  </div>
+                )}
                 {targetPricePkr && (
-                  <div className="flex justify-between text-[#8C6B1B]">
-                    <span className="font-medium">Your Target Budget / Offer:</span>
-                    <span className="font-bold">Rs. {Number(targetPricePkr).toLocaleString()} PKR</span>
+                  <div className="flex justify-between text-[#8C6B1B] border-t border-[#D4AF6A]/30 pt-1.5">
+                    <span className="font-medium">Target Offer / Budget:</span>
+                    <span className="font-bold">
+                      Rs. {Number(targetPricePkr).toLocaleString()} PKR ({budgetType === 'per_piece' ? 'per piece' : 'total budget'})
+                    </span>
                   </div>
                 )}
               </div>
 
+              {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
                 <a
                   href={submittedQuote.whatsappUrl}
@@ -313,7 +431,7 @@ export default function CustomQuoteModal() {
                   className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[#128C7E] hover:bg-[#0E7266] text-white font-semibold py-3.5 px-6 shadow-lg transition-all text-sm sm:text-base"
                 >
                   <MessageCircle size={19} />
-                  Send Quote Request on WhatsApp
+                  Continue on WhatsApp
                 </a>
                 <button
                   type="button"
@@ -323,92 +441,185 @@ export default function CustomQuoteModal() {
                   Edit Details
                 </button>
               </div>
+
+              <p className="text-[11px] text-[#566B63]">
+                Note: Opening WhatsApp pre-fills your inquiry message; send it in WhatsApp to connect with our senior pricing concierge.
+              </p>
             </div>
           ) : (
+            /* FORM STATE */
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Error Banner with Honest Unsaved Fallback */}
               {errorMsg && (
-                <div className="rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-xs font-medium text-red-800">
-                  {errorMsg}
+                <div className="rounded-2xl border border-amber-300 bg-amber-50/90 p-4 text-xs text-amber-900 space-y-2.5">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle size={18} className="text-amber-700 shrink-0 mt-0.5" />
+                    <div>
+                      <strong className="block font-semibold">Persistence Notice:</strong>
+                      <span>{errorMsg}</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 pt-1 border-t border-amber-200">
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-amber-800 text-white px-3 py-1.5 text-xs font-semibold hover:bg-amber-900"
+                    >
+                      <RefreshCw size={13} className={submitting ? 'animate-spin' : ''} />
+                      Retry Saving Quote
+                    </button>
+                    <a
+                      href={liveUnsavedWhatsAppUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#128C7E] text-white px-3 py-1.5 text-xs font-semibold hover:bg-[#0E7266]"
+                    >
+                      <MessageCircle size={13} />
+                      Message Concierge on WhatsApp (Unsaved Draft)
+                    </a>
+                  </div>
                 </div>
               )}
 
-              {/* 1. Select Box or Deal */}
-              <div>
-                <label htmlFor="quote-product-select" className="block text-xs font-bold uppercase tracking-wider text-[#072A20] mb-1.5">
-                  1. Select Bid Box, Gift Box or Value Deal
-                </label>
-                <select
-                  id="quote-product-select"
-                  value={selectedProductId}
-                  onChange={(e) => setSelectedProductId(e.target.value)}
-                  className="w-full rounded-xl border border-[#D4AF6A]/50 bg-white px-3.5 py-2.5 text-sm font-medium text-[#072A20] focus:border-[#072A20] focus:outline-none"
-                >
-                  <optgroup label="Bespoke Bid Boxes & Celebration Favors">
-                    {eligibleProducts.filter(p => p.isBidBox).map(product => (
-                      <option key={product.id} value={product.id}>
-                        {product.name_en} — Empty from Rs. {product.bidBoxConfig?.emptyUnitStarting} | Filled from Rs. {product.bidBoxConfig?.filledMin}
+              {/* Tabarruk Default Empty Mode Notice */}
+              {isTabarruk && (
+                <div className="rounded-2xl border border-[#D4AF6A]/60 bg-[#FAF6EE] p-3.5 text-xs text-[#072A20] flex items-start gap-2.5 shadow-xs">
+                  <Info size={17} className="text-[#8C6B1B] shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="block font-bold text-[#8C6B1B] uppercase tracking-wider text-[11px]">
+                      Tabarruk Packaging Notice
+                    </strong>
+                    <span className="text-[12px] leading-relaxed text-[#3E564D]">
+                      {TABARRUK_EMPTY_DEFAULT_NOTICE}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* 1. Product & Variant Selection */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-2">
+                  <label htmlFor="quote-product-select" className="block text-xs font-bold uppercase tracking-wider text-[#072A20] mb-1.5">
+                    1. Select Packaging, Gift Box or Deal
+                  </label>
+                  <select
+                    id="quote-product-select"
+                    value={selectedProductId}
+                    onChange={(e) => {
+                      setSelectedProductId(e.target.value);
+                      setSelectedVariantLabel('');
+                    }}
+                    className="w-full rounded-xl border border-[#D4AF6A]/50 bg-white px-3.5 py-2.5 text-sm font-medium text-[#072A20] focus:border-[#072A20] focus:outline-none"
+                  >
+                    <optgroup label="Bespoke Celebration Boxes & Packaging">
+                      {eligibleProducts
+                        .filter(p => p.isBidBox || p.category === 'celebration-boxes')
+                        .map(product => (
+                          <option key={product.id} value={product.id}>
+                            {product.name_en}
+                          </option>
+                        ))}
+                    </optgroup>
+                    <optgroup label="Gifts, Deals & Curated Hampers">
+                      {eligibleProducts
+                        .filter(p => !p.isBidBox && p.category !== 'celebration-boxes')
+                        .map(product => (
+                          <option key={product.id} value={product.id}>
+                            {product.name_en}
+                          </option>
+                        ))}
+                    </optgroup>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="quote-variant-select" className="block text-xs font-bold uppercase tracking-wider text-[#072A20] mb-1.5">
+                    Size / Variant
+                  </label>
+                  <select
+                    id="quote-variant-select"
+                    value={selectedVariantLabel}
+                    onChange={(e) => setSelectedVariantLabel(e.target.value)}
+                    className="w-full rounded-xl border border-[#D4AF6A]/50 bg-white px-3 py-2.5 text-sm font-medium text-[#072A20] focus:border-[#072A20] focus:outline-none"
+                  >
+                    <option value="">Default Size / Pack</option>
+                    {availableVariants.map(v => (
+                      <option key={v} value={v}>
+                        {v}
                       </option>
                     ))}
-                  </optgroup>
-                  <optgroup label="Deals, Hampers & Value Packages">
-                    {eligibleProducts.filter(p => !p.isBidBox).map(product => (
-                      <option key={product.id} value={product.id}>
-                        {product.name_en}
-                      </option>
-                    ))}
-                  </optgroup>
-                </select>
+                  </select>
+                </div>
               </div>
 
-              {/* 2. Mode Toggle: Empty vs Filled */}
+              {/* 2. Packaging Mode Selection */}
               <div>
                 <span className="block text-xs font-bold uppercase tracking-wider text-[#072A20] mb-1.5">
                   2. Packaging Mode
                 </span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => setMode('empty')}
-                    className={`flex items-center gap-3 rounded-xl border p-3 text-left transition-all ${
+                    className={`flex items-start gap-2.5 rounded-xl border p-3 text-left transition-all ${
                       mode === 'empty'
                         ? 'border-[#072A20] bg-[#072A20] text-white shadow-sm'
                         : 'border-[#D4AF6A]/40 bg-white text-[#072A20] hover:border-[#072A20]/50'
                     }`}
                   >
-                    <Package size={18} className={mode === 'empty' ? 'text-[#E6C786]' : 'text-[#8C6B1B]'} />
+                    <Package size={17} className={mode === 'empty' ? 'text-[#E6C786]' : 'text-[#8C6B1B]'} />
                     <div>
-                      <div className="text-xs font-bold">Box Only (Empty Packaging)</div>
-                      <div className={`text-[11px] ${mode === 'empty' ? 'text-[#E5DEC9]' : 'text-[#566B63]'}`}>
-                        Wholesale empty boxes with tiered discounts
+                      <div className="text-xs font-bold">Box Only</div>
+                      <div className={`text-[10px] ${mode === 'empty' ? 'text-[#E5DEC9]' : 'text-[#566B63]'}`}>
+                        Empty packaging wholesale
                       </div>
                     </div>
                   </button>
+
                   <button
                     type="button"
                     onClick={() => setMode('filled')}
-                    className={`flex items-center gap-3 rounded-xl border p-3 text-left transition-all ${
+                    className={`flex items-start gap-2.5 rounded-xl border p-3 text-left transition-all ${
                       mode === 'filled'
                         ? 'border-[#072A20] bg-[#072A20] text-white shadow-sm'
                         : 'border-[#D4AF6A]/40 bg-white text-[#072A20] hover:border-[#072A20]/50'
                     }`}
                   >
-                    <Gift size={18} className={mode === 'filled' ? 'text-[#E6C786]' : 'text-[#8C6B1B]'} />
+                    <Gift size={17} className={mode === 'filled' ? 'text-[#E6C786]' : 'text-[#8C6B1B]'} />
                     <div>
-                      <div className="text-xs font-bold">Filled with AllBarka Dry Fruits</div>
-                      <div className={`text-[11px] ${mode === 'filled' ? 'text-[#E5DEC9]' : 'text-[#566B63]'}`}>
-                        Freshly packed nuts, dates, and celebratory confections
+                      <div className="text-xs font-bold">Filled with AllBarka</div>
+                      <div className={`text-[10px] ${mode === 'filled' ? 'text-[#E5DEC9]' : 'text-[#566B63]'}`}>
+                        Fresh nuts &amp; royal dates
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setMode('custom')}
+                    className={`flex items-start gap-2.5 rounded-xl border p-3 text-left transition-all ${
+                      mode === 'custom'
+                        ? 'border-[#072A20] bg-[#072A20] text-white shadow-sm'
+                        : 'border-[#D4AF6A]/40 bg-white text-[#072A20] hover:border-[#072A20]/50'
+                    }`}
+                  >
+                    <Sparkles size={17} className={mode === 'custom' ? 'text-[#E6C786]' : 'text-[#8C6B1B]'} />
+                    <div>
+                      <div className="text-xs font-bold">Custom Sourced</div>
+                      <div className={`text-[10px] ${mode === 'custom' ? 'text-[#E5DEC9]' : 'text-[#566B63]'}`}>
+                        Chocolates, confections, tea
                       </div>
                     </div>
                   </button>
                 </div>
               </div>
 
-              {/* 3. Quantity & Event Type */}
+              {/* 3. Quantity & Authoritative MOQ */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="quote-quantity-input" className="block text-xs font-bold uppercase tracking-wider text-[#072A20] mb-1.5">
                     <Layers size={13} className="inline mr-1 text-[#8C6B1B]" />
-                    3. Quantity (Boxes / Packs)
+                    3. Quantity (Boxes / Pieces)
                   </label>
                   <div className="flex flex-wrap gap-1.5 mb-2">
                     {QUANTITY_PRESETS.map(preset => (
@@ -429,77 +640,233 @@ export default function CustomQuoteModal() {
                   <input
                     id="quote-quantity-input"
                     type="number"
-                    min={5}
+                    min={1}
                     max={10000}
                     value={quantity}
-                    onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 10))}
+                    onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
                     className="w-full rounded-xl border border-[#D4AF6A]/50 bg-white px-3.5 py-2 text-sm font-semibold text-[#072A20]"
                   />
+
+                  {/* MOQ Indicator */}
+                  {packagingMoqInfo.isPackaging && (
+                    <div className="mt-1.5 text-[11px]">
+                      {packagingMoqInfo.isUnpriced ? (
+                        <span className="text-[#8C6B1B] font-medium">
+                          • Quantity pending team confirmation (Custom / unpriced configuration)
+                        </span>
+                      ) : packagingMoqInfo.moq != null ? (
+                        <div>
+                          <span className="text-[#566B63]">
+                            • Authoritative MOQ: <strong>{packagingMoqInfo.moq} pcs</strong>
+                          </span>
+                          {quantity < packagingMoqInfo.moq && (
+                            <span className="block text-amber-800 font-medium mt-0.5">
+                              Orders below {packagingMoqInfo.moq} pcs require small-batch confirmation.
+                            </span>
+                          )}
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
                 </div>
 
-                <div>
-                  <label htmlFor="quote-event-type" className="block text-xs font-bold uppercase tracking-wider text-[#072A20] mb-1.5">
-                    <Calendar size={13} className="inline mr-1 text-[#8C6B1B]" />
-                    4. Event / Occasion Type
-                  </label>
-                  <select
-                    id="quote-event-type"
-                    value={eventType}
-                    onChange={(e) => setEventType(e.target.value)}
-                    className="w-full rounded-xl border border-[#D4AF6A]/50 bg-white px-3.5 py-2.5 text-sm font-medium text-[#072A20]"
-                  >
-                    {EVENT_TYPES.map(ev => (
-                      <option key={ev} value={ev}>{ev}</option>
-                    ))}
-                  </select>
-                  <div className="mt-2 rounded-lg bg-[#072A20]/5 border border-[#D4AF6A]/30 px-3 py-2 text-xs text-[#072A20]">
-                    Standard Tier Rate: <strong>Rs. {referenceUnitPrice.toLocaleString()}/box</strong>
-                    <span className="block text-[11px] text-[#566B63]">
-                      Est. Standard Total ({quantity} pcs): Rs. {(referenceUnitPrice * quantity).toLocaleString()}
-                    </span>
+                {/* 4. Event / Occasion Type & Target Event Date */}
+                <div className="space-y-3">
+                  <div>
+                    <label htmlFor="quote-event-type" className="block text-xs font-bold uppercase tracking-wider text-[#072A20] mb-1.5">
+                      <Calendar size={13} className="inline mr-1 text-[#8C6B1B]" />
+                      4. Event / Occasion
+                    </label>
+                    <select
+                      id="quote-event-type"
+                      value={eventType}
+                      onChange={(e) => setEventType(e.target.value)}
+                      className="w-full rounded-xl border border-[#D4AF6A]/50 bg-white px-3.5 py-2 text-sm font-medium text-[#072A20]"
+                    >
+                      {EVENT_TYPES.map(ev => (
+                        <option key={ev} value={ev}>
+                          {ev}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="quote-event-date" className="block text-xs font-bold uppercase tracking-wider text-[#072A20] mb-1">
+                      <Clock size={13} className="inline mr-1 text-[#8C6B1B]" />
+                      Target Event Date (Optional)
+                    </label>
+                    <input
+                      id="quote-event-date"
+                      type="date"
+                      value={targetEventDate}
+                      onChange={(e) => setTargetEventDate(e.target.value)}
+                      className="w-full rounded-xl border border-[#D4AF6A]/50 bg-white px-3 py-1.5 text-xs text-[#072A20]"
+                    />
                   </div>
                 </div>
               </div>
 
-              {/* 5. Target Budget / Offer Price (Bargain) */}
-              <div className="rounded-2xl border border-[#D4AF6A]/60 bg-white p-3.5 shadow-sm">
-                <label htmlFor="quote-target-budget" className="block text-xs font-bold uppercase tracking-wider text-[#8C6B1B] mb-1">
-                  <Tag size={13} className="inline mr-1" />
-                  5. Your Target Budget / Offer Price (PKR) — Bargain With Us
+              {/* 10-Calendar-Day Preparation Notice */}
+              <div className="rounded-xl border border-[#D4AF6A]/50 bg-[#FAF6EE] p-3 text-xs text-[#072A20] space-y-1.5">
+                <div className="flex items-start gap-2">
+                  <Clock size={15} className="text-[#8C6B1B] shrink-0 mt-0.5" />
+                  <span className="text-[11px] leading-relaxed">
+                    <strong>Lead Time Notice:</strong> {MANDATORY_LEAD_TIME_NOTICE}
+                  </span>
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer pt-1 text-[11px] font-medium text-[#566B63]">
+                  <input
+                    type="checkbox"
+                    checked={leadTimeAcknowledged}
+                    onChange={(e) => setLeadTimeAcknowledged(e.target.checked)}
+                    className="rounded border-[#D4AF6A] text-[#072A20] focus:ring-0"
+                  />
+                  <span>I acknowledge the required 10-calendar-day preparation lead time</span>
                 </label>
-                <p className="text-[11px] text-[#566B63] mb-2">
-                  Enter your target total budget or target offer in PKR. Our team actively matches reasonable bulk offers for weddings & family events.
+              </div>
+
+              {/* 5. Preferred Fillings Selection (when mode !== 'empty') */}
+              {mode !== 'empty' && (
+                <div className="rounded-2xl border border-[#D4AF6A]/50 bg-white p-3.5 space-y-2.5">
+                  <span className="block text-xs font-bold uppercase tracking-wider text-[#072A20]">
+                    5. Preferred Fillings &amp; Inclusions
+                  </span>
+                  <div className="space-y-1.5">
+                    {FILLING_OPTIONS.map(opt => (
+                      <label key={opt.id} className="flex items-center gap-2 text-xs text-[#072A20] cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={preferredFillings.includes(opt.id)}
+                          onChange={() => toggleFilling(opt.id)}
+                          className="rounded border-[#D4AF6A] text-[#072A20] focus:ring-0"
+                        />
+                        <span>{opt.label}</span>
+                      </label>
+                    ))}
+                  </div>
+
+                  {/* Sourced Fillings Disclaimer */}
+                  <div className="rounded-lg bg-[#FAF6EE] p-2.5 text-[11px] text-[#566B63] border border-[#D4AF6A]/30">
+                    <Info size={13} className="inline mr-1 text-[#8C6B1B]" />
+                    {NON_CATALOG_FILLINGS_DISCLAIMER}
+                  </div>
+
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="Special fillings notes (e.g. 50g Ajwa + 50g Irani Pistachio per box)..."
+                      value={customFillingsNotes}
+                      onChange={(e) => setCustomFillingsNotes(e.target.value)}
+                      className="w-full rounded-xl border border-[#D4AF6A]/40 bg-[#FAF6EE]/50 px-3 py-1.5 text-xs text-[#072A20]"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* 6. Custom Branding, Monogram & Card Message */}
+              <div className="rounded-2xl border border-[#D4AF6A]/50 bg-white p-3.5 space-y-3">
+                <span className="block text-xs font-bold uppercase tracking-wider text-[#072A20]">
+                  6. Monogram, Name Tag &amp; Custom Message
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label htmlFor="quote-monogram-text" className="block text-[11px] font-semibold text-[#566B63] mb-1">
+                      Couple / Baby / Corporate Name Tag
+                    </label>
+                    <input
+                      id="quote-monogram-text"
+                      type="text"
+                      placeholder="e.g. Ahmed &amp; Ayesha"
+                      value={monogramText}
+                      onChange={(e) => setMonogramText(e.target.value)}
+                      className="w-full rounded-xl border border-[#D4AF6A]/40 px-3 py-1.5 text-xs text-[#072A20]"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="quote-card-message" className="block text-[11px] font-semibold text-[#566B63] mb-1">
+                      Ribbon or Card Greeting Message
+                    </label>
+                    <input
+                      id="quote-card-message"
+                      type="text"
+                      placeholder="e.g. JazakAllah Khair for celebrating with us"
+                      value={cardMessage}
+                      onChange={(e) => setCardMessage(e.target.value)}
+                      className="w-full rounded-xl border border-[#D4AF6A]/40 px-3 py-1.5 text-xs text-[#072A20]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <textarea
+                    rows={2}
+                    placeholder="Additional design preferences (e.g. Emerald ribbon, gold foil calligraphy, specific box colors)..."
+                    value={customPrinting}
+                    onChange={(e) => setCustomPrinting(e.target.value)}
+                    className="w-full rounded-xl border border-[#D4AF6A]/40 px-3 py-2 text-xs text-[#072A20]"
+                  />
+                </div>
+
+                {/* Artwork Sharing Notice */}
+                <div className="flex items-start gap-2 text-[11px] text-[#566B63] bg-[#FAF6EE] p-2.5 rounded-lg border border-[#D4AF6A]/30">
+                  <FileText size={14} className="text-[#8C6B1B] shrink-0 mt-0.5" />
+                  <span>
+                    Need custom logo or monogram printing? Share your high-resolution artwork or vector file directly with our concierge on WhatsApp after submitting.
+                  </span>
+                </div>
+              </div>
+
+              {/* 7. Target Budget / Offer Price (Bargain Desk) */}
+              <div className="rounded-2xl border border-[#D4AF6A]/60 bg-white p-3.5 shadow-sm space-y-2">
+                <div className="flex items-center justify-between">
+                  <label htmlFor="quote-target-budget" className="text-xs font-bold uppercase tracking-wider text-[#8C6B1B]">
+                    <Tag size={13} className="inline mr-1" />
+                    7. Your Target Budget / Offer Price (PKR)
+                  </label>
+                  <div className="inline-flex rounded-lg border border-[#D4AF6A]/40 p-0.5 text-[11px]">
+                    <button
+                      type="button"
+                      onClick={() => setBudgetType('total')}
+                      className={`px-2 py-0.5 rounded-md font-semibold transition-colors ${
+                        budgetType === 'total' ? 'bg-[#8C6B1B] text-white' : 'text-[#566B63]'
+                      }`}
+                    >
+                      Total Budget
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBudgetType('per_piece')}
+                      className={`px-2 py-0.5 rounded-md font-semibold transition-colors ${
+                        budgetType === 'per_piece' ? 'bg-[#8C6B1B] text-white' : 'text-[#566B63]'
+                      }`}
+                    >
+                      Per Piece
+                    </button>
+                  </div>
+                </div>
+                <p className="text-[11px] text-[#566B63]">
+                  Pitch your target budget in PKR. Our senior concierge actively reviews and accommodates reasonable bulk offers for family and corporate events.
                 </p>
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-[#8C6B1B]">PKR</span>
                   <input
                     id="quote-target-budget"
                     type="number"
-                    min={100}
-                    placeholder={`e.g. ${Math.round(referenceUnitPrice * quantity * 0.9)} (Total target budget in PKR)`}
+                    min={1}
+                    placeholder={
+                      budgetType === 'total'
+                        ? `e.g. ${Math.round(referenceUnitPrice * quantity * 0.9)} (Target total PKR)`
+                        : `e.g. ${Math.round(referenceUnitPrice * 0.9)} (Target per-piece PKR)`
+                    }
                     value={targetPricePkr}
                     onChange={(e) => setTargetPricePkr(e.target.value)}
-                    className="w-full rounded-xl border border-[#D4AF6A]/50 bg-[#FAF6EE]/60 pl-12 pr-4 py-2.5 text-sm font-semibold text-[#072A20] focus:border-[#8C6B1B] focus:outline-none"
+                    className="w-full rounded-xl border border-[#D4AF6A]/50 bg-[#FAF6EE]/60 pl-12 pr-4 py-2 text-sm font-semibold text-[#072A20] focus:border-[#8C6B1B] focus:outline-none"
                   />
                 </div>
               </div>
 
-              {/* 6. Custom Printing / Name Tags */}
-              <div>
-                <label htmlFor="quote-custom-printing" className="block text-xs font-bold uppercase tracking-wider text-[#072A20] mb-1">
-                  6. Custom Printing, Couple Name Tag or Dry Fruit Preferences (Optional)
-                </label>
-                <textarea
-                  id="quote-custom-printing"
-                  rows={2}
-                  placeholder="e.g. Gold foil tag 'Ahmed & Ayesha Nikkah', Baby Boy blue ribbon, or 250g Pista + Badam + Khajoor mix..."
-                  value={customPrinting}
-                  onChange={(e) => setCustomPrinting(e.target.value)}
-                  className="w-full rounded-xl border border-[#D4AF6A]/50 bg-white px-3.5 py-2 text-sm text-[#072A20] focus:border-[#072A20] focus:outline-none"
-                />
-              </div>
-
-              {/* 7. Customer Contact Info */}
+              {/* 8. Patron Contact Details */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label htmlFor="quote-customer-name" className="block text-[11px] font-bold uppercase tracking-wider text-[#072A20] mb-1">
@@ -536,7 +903,7 @@ export default function CustomQuoteModal() {
                   <input
                     id="quote-customer-city"
                     type="text"
-                    placeholder="Lahore, Islamabad, Karachi..."
+                    placeholder="Lahore, Islamabad..."
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     className="w-full rounded-xl border border-[#D4AF6A]/50 bg-white px-3 py-2 text-sm text-[#072A20]"
@@ -549,19 +916,19 @@ export default function CustomQuoteModal() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[#072A20] hover:bg-[#0D3F30] text-[#F7F1E3] font-semibold py-3.5 px-5 shadow-md transition-all text-sm"
+                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[#072A20] hover:bg-[#0D3F30] text-[#F7F1E3] font-semibold py-3.5 px-5 shadow-md transition-all text-sm disabled:opacity-60"
                 >
                   <ShieldCheck size={18} className="text-[#E6C786]" />
-                  {submitting ? 'Saving Quote Request...' : 'Submit & Lock Custom Quote'}
+                  {submitting ? 'Saving Custom Quote...' : 'Submit & Save Custom Quote'}
                 </button>
                 <a
-                  href={liveWhatsAppUrl}
+                  href={liveUnsavedWhatsAppUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#128C7E] hover:bg-[#0E7266] text-white font-semibold py-3.5 px-5 shadow-md transition-all text-sm"
                 >
                   <MessageCircle size={18} />
-                  Bargain Directly on WhatsApp
+                  Bargain on WhatsApp
                 </a>
               </div>
             </form>

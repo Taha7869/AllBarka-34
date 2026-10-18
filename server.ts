@@ -55,6 +55,10 @@ import {
   parseAdminOrderFilters, listAdminOrders, getAdminOrder, sanitizeOrderForAdmin,
   addAdminOrderNote, updateAdminOrderPayment,
 } from './src/lib/adminOperations';
+import {
+  buildCustomerInquiryWhatsAppUrl,
+  formatFillingsLabel,
+} from './src/lib/inquiryWhatsApp';
 
 // Load environment variables
 if (process.env.ALLBARKA_SKIP_LOCAL_ENV !== 'true') dotenv.config({ quiet: true });
@@ -843,9 +847,16 @@ interface InquiryRecord {
   city: string;
   productId: string;
   productName: string;
-  boxMode: 'empty' | 'filled';
+  packagingVariant?: string | null;
+  boxMode: 'empty' | 'filled' | 'custom';
   quantity: number;
   eventType: string;
+  targetEventDate?: string | null;
+  budgetType?: 'per_piece' | 'total' | null;
+  preferredFillings?: string[];
+  customFillingsNotes?: string;
+  monogramText?: string;
+  cardMessage?: string;
   customPrintText: string;
   standardPrice: number | null;
   offeredPrice: number | null;
@@ -857,6 +868,7 @@ interface InquiryRecord {
   whatsappReplyUrl: string;
   assignedTo?: string | null;
   followUpDate?: string | null;
+  leadTimeNoticeAcknowledged?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -889,8 +901,10 @@ function sanitizePublicInquiryInput(raw: any): Record<string, any> {
     'type', 'source', 'productId', 'productName', 'boxId', 'boxName', 'boxMode', 'mode',
     'quantity', 'estimatedQuantity', 'standardPrice', 'referenceUnitPrice',
     'offeredPrice', 'targetPricePkr', 'customerOfferedRate', 'eventType',
-    'customPrintText', 'customPrinting', 'packagingVariant', 'targetEventDate',
-    'deliveryCity', 'notes', 'message', 'customHamperNotes', 'metadata', 'topic'
+    'customPrintText', 'customPrinting', 'packagingVariant', 'variantLabel', 'portion', 'targetEventDate',
+    'deliveryCity', 'notes', 'message', 'customHamperNotes', 'metadata', 'topic',
+    'budgetType', 'preferredFillings', 'customFillingsNotes', 'monogramText', 'cardMessage',
+    'leadTimeNoticeAcknowledged'
   ]);
   const sanitized: Record<string, any> = {};
   for (const [key, val] of Object.entries(raw)) {
@@ -915,6 +929,8 @@ function buildAdminWhatsAppPitchUrl(record: InquiryRecord): string {
   const targetPhone = normalizeWhatsAppPhone(record.phone);
   const modeLabel = record.boxMode === 'empty'
     ? 'Box Only (Empty Packaging)'
+    : record.boxMode === 'custom'
+    ? 'Bespoke Packaging & Custom Fillings'
     : 'Filled with AllBarka Dry Fruits';
   const lines = [
     `*Assalam-o-Alaikum ${record.customerName || 'Valued Patron'}!*`,
@@ -922,9 +938,14 @@ function buildAdminWhatsAppPitchUrl(record: InquiryRecord): string {
     ``,
     `Thank you for your ${record.type === 'bid_box_quote' ? 'Custom Bid Box / Celebration Quote' : record.type === 'wholesale' ? 'Wholesale Inquiry' : record.type === 'custom_hamper' ? 'Custom Luxury Hamper Request' : 'Boutique Inquiry'} (*Ref #${record.id}*):`,
     record.productName ? `• *Selection:* ${record.productName}` : '',
+    record.packagingVariant ? `• *Variant / Portion:* ${record.packagingVariant}` : '',
     record.type === 'bid_box_quote' ? `• *Configuration:* ${modeLabel}` : '',
     record.quantity > 1 ? `• *Quantity:* ${record.quantity} pcs` : '',
     record.eventType ? `• *Occasion:* ${record.eventType}` : '',
+    record.targetEventDate ? `• *Target Event Date:* ${record.targetEventDate}` : '',
+    record.preferredFillings && record.preferredFillings.length > 0 ? `• *Fillings Selected:* ${formatFillingsLabel(record.preferredFillings)}` : '',
+    record.monogramText ? `• *Monogram / Tag:* ${record.monogramText}` : '',
+    record.cardMessage ? `• *Card Message:* ${record.cardMessage}` : '',
     record.standardPrice ? `• *Standard Rate Ref:* Rs. ${Number(record.standardPrice).toLocaleString()}/pc` : '',
     record.finalAgreedPrice
       ? `• *AllBarka Special Approved Rate:* Rs. ${Number(record.finalAgreedPrice).toLocaleString()} PKR`
@@ -950,7 +971,9 @@ function normalizeRawInquiryDoc(raw: Record<string, any>, fallbackId?: string): 
   const isEmailContact = contactStr.includes('@');
   const phone = String(raw.phone || raw.customerPhone || (!isEmailContact ? contactStr : '') || '').trim();
   const email = String(raw.email || (isEmailContact ? contactStr : '') || '').trim();
-  const boxMode: 'empty' | 'filled' = (raw.boxMode || raw.mode) === 'empty' ? 'empty' : 'filled';
+  const rawMode = String(raw.boxMode || raw.mode || '').toLowerCase();
+  const boxMode: 'empty' | 'filled' | 'custom' =
+    rawMode === 'empty' ? 'empty' : rawMode === 'custom' ? 'custom' : 'filled';
   const quantity = Math.max(1, Number(raw.quantity) || 1);
   const standardPrice = raw.standardPrice != null ? Number(raw.standardPrice) : raw.referenceUnitPrice != null ? Number(raw.referenceUnitPrice) : null;
   const offeredPrice = raw.offeredPrice != null ? Number(raw.offeredPrice) : raw.targetPricePkr != null ? Number(raw.targetPricePkr) : null;
@@ -963,6 +986,21 @@ function normalizeRawInquiryDoc(raw: Record<string, any>, fallbackId?: string): 
   const createdAt = typeof raw.createdAt === 'string' && raw.createdAt ? raw.createdAt : new Date().toISOString();
   const updatedAt = typeof raw.updatedAt === 'string' && raw.updatedAt ? raw.updatedAt : createdAt;
 
+  const packagingVariant = raw.packagingVariant || raw.variantLabel || raw.portion
+    ? String(raw.packagingVariant || raw.variantLabel || raw.portion).trim().slice(0, 80)
+    : null;
+  const targetEventDate = raw.targetEventDate ? String(raw.targetEventDate).trim().slice(0, 30) : null;
+  const rawBudgetType = String(raw.budgetType || '').toLowerCase();
+  const budgetType: 'per_piece' | 'total' | null =
+    rawBudgetType === 'per_piece' || rawBudgetType === 'total' ? (rawBudgetType as 'per_piece' | 'total') : null;
+  const preferredFillings = Array.isArray(raw.preferredFillings)
+    ? raw.preferredFillings.map((f: any) => String(f).trim().slice(0, 50)).filter(Boolean).slice(0, 10)
+    : [];
+  const customFillingsNotes = String(raw.customFillingsNotes || '').trim().slice(0, 500);
+  const monogramText = String(raw.monogramText || '').trim().slice(0, 200);
+  const cardMessage = String(raw.cardMessage || '').trim().slice(0, 500);
+  const leadTimeNoticeAcknowledged = Boolean(raw.leadTimeNoticeAcknowledged);
+
   const record: InquiryRecord = {
     id,
     ticketId: id,
@@ -974,9 +1012,16 @@ function normalizeRawInquiryDoc(raw: Record<string, any>, fallbackId?: string): 
     city: String(raw.city || raw.deliveryCity || 'Lahore').trim(),
     productId: String(raw.productId || raw.boxId || (type === 'custom_hamper' ? 'custom-hamper' : 'general')).trim(),
     productName: String(raw.productName || raw.boxName || raw.topic || 'Boutique Inquiry').trim(),
+    packagingVariant,
     boxMode,
     quantity,
     eventType: String(raw.eventType || (type === 'bid_box_quote' ? 'Nikkah' : 'General')).trim(),
+    targetEventDate,
+    budgetType,
+    preferredFillings,
+    customFillingsNotes,
+    monogramText,
+    cardMessage,
     customPrintText,
     standardPrice: Number.isFinite(standardPrice) ? standardPrice : null,
     offeredPrice: Number.isFinite(offeredPrice) ? offeredPrice : null,
@@ -988,6 +1033,7 @@ function normalizeRawInquiryDoc(raw: Record<string, any>, fallbackId?: string): 
     whatsappReplyUrl: '',
     assignedTo,
     followUpDate,
+    leadTimeNoticeAcknowledged,
     createdAt,
     updatedAt,
   };
@@ -1172,6 +1218,16 @@ app.post('/api/quotes', inquiryLimiter, async (req, res) => {
       email,
       notes,
       city,
+      packagingVariant,
+      variantLabel,
+      portion,
+      targetEventDate,
+      budgetType,
+      preferredFillings,
+      customFillingsNotes,
+      monogramText,
+      cardMessage,
+      leadTimeNoticeAcknowledged,
     } = raw;
 
     const resolvedName = String(customerName || raw.name || '').trim();
@@ -1185,32 +1241,47 @@ app.post('/api/quotes', inquiryLimiter, async (req, res) => {
     }
 
     const safeQty = Math.max(1, Math.min(50000, Number(quantity || estimatedQuantity) || 50));
-    const safeMode: 'empty' | 'filled' = (boxMode || mode) === 'empty' ? 'empty' : 'filled';
+    const rawMode = String(boxMode || mode || '').toLowerCase();
+    const safeMode: 'empty' | 'filled' | 'custom' =
+      rawMode === 'empty' ? 'empty' : rawMode === 'custom' ? 'custom' : 'filled';
     const quoteId = `ABQ-${Date.now().toString(36).toUpperCase().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`;
     const stdPrice = standardPrice != null ? Number(standardPrice) : referenceUnitPrice != null ? Number(referenceUnitPrice) : null;
     const offPrice = offeredPrice != null ? Number(offeredPrice) : targetPricePkr != null ? Number(targetPricePkr) : customerOfferedRate != null ? Number(customerOfferedRate) : null;
     const printText = String(customPrintText ?? customPrinting ?? '').slice(0, 500);
 
-    const modeLabel = safeMode === 'empty' ? 'Box Only (Empty Packaging)' : 'Filled with AllBarka Dry Fruits';
-    const waLines = [
-      `*Assalam-o-Alaikum AllBarka Concierge!*`,
-      `I would like a *Custom Quote / Bargain Rate* for my event:`,
-      `• *Quote Ref:* ${quoteId}`,
-      `• *Selected Box / Deal:* ${String(productName || productId || 'Custom Bid Box').slice(0, 120)}`,
-      `• *Box Mode:* ${modeLabel}`,
-      `• *Quantity:* ${safeQty} boxes`,
-      `• *Event Type:* ${String(eventType || 'Nikkah').slice(0, 80)}`,
-      stdPrice ? `• *Standard Rate Ref:* Rs. ${Number(stdPrice).toLocaleString()}/box` : '',
-      offPrice ? `• *My Target Offer / Budget:* Rs. ${Number(offPrice).toLocaleString()} PKR` : '',
-      printText ? `• *Custom Printing / Name Tag / Notes:* ${printText.slice(0, 400)}` : '',
-      `• *Name:* ${resolvedName.slice(0, 100)}`,
-      `• *Phone:* ${resolvedPhone.slice(0, 40)}`,
-      `• *City:* ${String(city || 'Lahore').trim().slice(0, 80)}`,
-      ``,
-      `Please share your best final rate and customization options.`,
-    ].filter(Boolean);
+    const resolvedPackagingVariant = packagingVariant || variantLabel || portion || null;
+    const resolvedFillings = Array.isArray(preferredFillings)
+      ? preferredFillings.map((f: any) => String(f).trim().slice(0, 50)).filter(Boolean)
+      : [];
+    const resolvedBudgetType: 'per_piece' | 'total' | null =
+      budgetType === 'per_piece' || budgetType === 'total' ? budgetType : null;
 
-    const whatsappUrl = `https://wa.me/923160666083?text=${encodeURIComponent(waLines.join('\n'))}`;
+    const isTabarruk =
+      String(productId || '').toLowerCase().includes('tabarruk') ||
+      String(productName || '').toLowerCase().includes('tabarruk');
+
+    const whatsappUrl = buildCustomerInquiryWhatsAppUrl({
+      quoteId,
+      productName: String(productName || productId || 'Custom Bid Box').slice(0, 120),
+      productId: String(productId || 'custom').slice(0, 80),
+      packagingVariant: resolvedPackagingVariant ? String(resolvedPackagingVariant).slice(0, 80) : null,
+      mode: safeMode,
+      quantity: safeQty,
+      eventType: String(eventType || 'Nikkah').slice(0, 80),
+      targetEventDate: targetEventDate ? String(targetEventDate).slice(0, 30) : null,
+      preferredFillings: resolvedFillings,
+      customFillingsNotes: customFillingsNotes ? String(customFillingsNotes).slice(0, 500) : '',
+      monogramText: monogramText ? String(monogramText).slice(0, 200) : '',
+      cardMessage: cardMessage ? String(cardMessage).slice(0, 500) : '',
+      customPrinting: printText,
+      budgetType: resolvedBudgetType,
+      targetPricePkr: offPrice,
+      referenceUnitPrice: stdPrice,
+      customerName: resolvedName.slice(0, 100),
+      customerPhone: resolvedPhone.slice(0, 40),
+      city: String(city || 'Lahore').trim().slice(0, 80),
+      isTabarruk,
+    });
 
     const record = normalizeRawInquiryDoc({
       id: quoteId,
@@ -1223,9 +1294,16 @@ app.post('/api/quotes', inquiryLimiter, async (req, res) => {
       city: String(city || 'Lahore').trim().slice(0, 80),
       productId: String(productId || 'custom').slice(0, 80),
       productName: String(productName || 'Custom Bid Box').slice(0, 140),
+      packagingVariant: resolvedPackagingVariant ? String(resolvedPackagingVariant).slice(0, 80) : null,
       boxMode: safeMode,
       quantity: safeQty,
       eventType: String(eventType || 'Nikkah').slice(0, 80),
+      targetEventDate: targetEventDate ? String(targetEventDate).slice(0, 30) : null,
+      budgetType: resolvedBudgetType,
+      preferredFillings: resolvedFillings,
+      customFillingsNotes: customFillingsNotes ? String(customFillingsNotes).slice(0, 500) : '',
+      monogramText: monogramText ? String(monogramText).slice(0, 200) : '',
+      cardMessage: cardMessage ? String(cardMessage).slice(0, 500) : '',
       customPrintText: printText,
       standardPrice: stdPrice,
       offeredPrice: offPrice,
@@ -1236,6 +1314,7 @@ app.post('/api/quotes', inquiryLimiter, async (req, res) => {
       adminNotes: '',
       assignedTo: null,
       followUpDate: null,
+      leadTimeNoticeAcknowledged: Boolean(leadTimeNoticeAcknowledged),
       createdAt: new Date().toISOString(),
     });
 
