@@ -1682,6 +1682,7 @@ interface BidBoxDefinition {
   filledSummary: string;
   shippingWeightG: number;
   keywords: string[];
+  packagingSubcategory?: string;
 }
 
 function createBidBoxProduct(def: BidBoxDefinition): Product {
@@ -1731,6 +1732,7 @@ function createBidBoxProduct(def: BidBoxDefinition): Product {
     ],
     wholesale: def.emptyUnit100,
     isBidBox: true,
+    packagingSubcategory: def.packagingSubcategory,
     shippingWeightG: def.shippingWeightG,
     shippingWeights,
     contents_en: def.contents_en,
@@ -1762,6 +1764,7 @@ function createBidBoxProduct(def: BidBoxDefinition): Product {
       filledMax: def.filledMax,
       filledSummary: def.filledSummary,
       occasionTag: def.occasionTag,
+      packagingSubcategory: def.packagingSubcategory,
       dimensionsAndCapacity: def.dimensionsAndCapacity,
       emptyOptionDetails: def.emptyOptionDetails,
       filledOptionDetails: def.filledOptionDetails,
@@ -1798,6 +1801,7 @@ function createBidBoxProduct(def: BidBoxDefinition): Product {
 export const BID_BOX_PRODUCTS: Product[] = [
   createBidBoxProduct({
     id: 'bid-box-umrah-tabarruk',
+    packagingSubcategory: 'tabarruk',
     image: '/images/products/bid-box-umrah-tabarruk-1.webp',
     name_en: 'Umrah & Hajj Tabarruk Box Set',
     name_ur: 'عمرہ و حج تبرک باکس سیٹ',
@@ -1826,6 +1830,7 @@ export const BID_BOX_PRODUCTS: Product[] = [
   }),
   createBidBoxProduct({
     id: 'bid-box-luxury-tin',
+    packagingSubcategory: 'tin',
     image: '/images/products/bid-box-luxury-tin-1.webp',
     name_en: 'Luxury Floral Tin Bid Box',
     name_ur: 'لگژری فلورل ٹن بِد باکس',
@@ -1854,6 +1859,7 @@ export const BID_BOX_PRODUCTS: Product[] = [
   }),
   createBidBoxProduct({
     id: 'bid-box-pyramid-favor',
+    packagingSubcategory: 'wedding',
     image: '/images/products/bid-box-pyramid-favor-1.webp',
     name_en: 'Royal Pyramid Favor Box',
     name_ur: 'رائل پیرامڈ فیور باکس',
@@ -1882,6 +1888,7 @@ export const BID_BOX_PRODUCTS: Product[] = [
   }),
   createBidBoxProduct({
     id: 'bid-box-card-nikkah',
+    packagingSubcategory: 'wedding',
     image: '/images/products/bid-box-card-nikkah-1.webp',
     name_en: 'Classic Card Bid Box (Nikkah & Baat Pakki)',
     name_ur: 'کلاسک کارڈ بِد باکس (نکاح و بات پکی)',
@@ -1910,6 +1917,7 @@ export const BID_BOX_PRODUCTS: Product[] = [
   }),
   createBidBoxProduct({
     id: 'bid-box-jute-pouch',
+    packagingSubcategory: 'wedding',
     image: '/images/products/bid-box-jute-pouch-1.webp',
     name_en: 'Artisanal Jute & Jamawar Pouch (Potli)',
     name_ur: 'روایتی جوٹ اور جامہ وار پوٹلی',
@@ -1938,6 +1946,7 @@ export const BID_BOX_PRODUCTS: Product[] = [
   }),
   createBidBoxProduct({
     id: 'bid-box-sweet-nikkah',
+    packagingSubcategory: 'wedding',
     image: '/images/products/bid-box-sweet-nikkah-1.webp',
     name_en: 'Heritage Nikkah Sweet & Dry Fruit Box (500g / 1kg)',
     name_ur: 'ہیریٹیج نکاح مٹھائی و ڈرائی فروٹ باکس',
@@ -1966,6 +1975,7 @@ export const BID_BOX_PRODUCTS: Product[] = [
   }),
   createBidBoxProduct({
     id: 'bid-box-birth-announcement',
+    packagingSubcategory: 'baby',
     image: '/images/products/bid-box-birth-announcement-1.webp',
     name_en: 'Birth Announcement Favor Box (Baby Boy / Girl)',
     name_ur: 'ولادت مٹھائی و ڈرائی فروٹ فیور باکس',
@@ -1994,6 +2004,7 @@ export const BID_BOX_PRODUCTS: Product[] = [
   }),
   createBidBoxProduct({
     id: 'bid-box-acrylic-royal',
+    packagingSubcategory: 'acrylic',
     image: '/images/products/bid-box-acrylic-royal-1.webp',
     name_en: 'Acrylic & Velvet Royal Bid Box',
     name_ur: 'ایکریلک اور مخملی شاہی بِد باکس',

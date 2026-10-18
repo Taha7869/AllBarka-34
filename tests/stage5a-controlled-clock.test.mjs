@@ -96,6 +96,7 @@ describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () =
       Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
       document.dispatchEvent(new Event('visibilitychange'));
     });
+    await page.evaluate(() => new Promise(r => setTimeout(r, 0)));
 
     assert.equal(await getActiveTabId(page), 'dry-fruits', 'Initial tab must be dry-fruits');
 

@@ -177,8 +177,6 @@ export const COLLECTION_ALIASES: Record<string, string> = {
   'seeds-snacks': 'seeds-snacks',
   snacks: 'seeds-snacks',
   seeds: 'seeds-snacks',
-  bundles: 'combos',
-  combos: 'combos',
   'gift-boxes': 'gifts',
   gifts: 'gifts',
   gifting: 'gifts',
@@ -193,7 +191,6 @@ export function canonicalCollectionKey(id?: string | null): string {
 export const COLLECTION_EQUIVALENCE_GROUPS: Record<string, string[]> = {
   'dry-fruits': ['dry-fruits', 'nuts', 'fruits'],
   'seeds-snacks': ['seeds-snacks', 'snacks-seeds', 'snacks', 'seeds'],
-  combos: ['combos', 'bundles'],
   gifts: ['gifts', 'gift-boxes', 'gifting'],
 };
 

@@ -21,7 +21,7 @@ const collectionPresentation = [
   { id: 'oils', name: 'Cold-Pressed Oils', image: '/images/generated/category-oils-tile-v1.webp', altKey: 'imageAlt.categoryOils', link: '/shop/oils' },
   { id: 'essentials', name: 'Desi Essentials', image: '/images/generated/category-essentials-tile-v1.webp', altKey: 'imageAlt.categoryEssentials', link: '/shop/essentials' },
 ];
-export const PANTRY_CATEGORIES = [
+export const PANTRY_CATEGORIES: CarouselSlideItem[] = [
   ...collectionPresentation,
   ...Object.values(CANONICAL_CATEGORIES).filter(category => !collectionPresentation.some(item => item.id === category.id)).map(category => {
     const cover = PRODUCTS.find(product => product.active !== false && product.category === category.id);
@@ -63,9 +63,13 @@ export interface CarouselSlideItem {
 export default function CategoryCarousel({ settings: propSettings }: CategoryCarouselProps = {}) {
   const { t, language } = useLanguage();
   const contextSettings = useMerchandisingSettings();
-  const activeSettings = propSettings || contextSettings || DEFAULT_MERCHANDISING;
+  const hasCustomSettings = Boolean(propSettings || (contextSettings && contextSettings !== DEFAULT_MERCHANDISING));
+  const activeSettings = propSettings || contextSettings;
 
-  const categories = React.useMemo(() => {
+  const categories = React.useMemo<CarouselSlideItem[]>(() => {
+    if (!hasCustomSettings || !activeSettings) {
+      return PANTRY_CATEGORIES;
+    }
     const visibility = activeSettings.categoryVisibility || {};
     const order = activeSettings.categoryOrder || [];
     // Safe legacy defaults only where settings.collections is absent, not explicitly empty
@@ -195,7 +199,7 @@ export default function CategoryCarousel({ settings: propSettings }: CategoryCar
       const posB = getOrderPos(b.id);
       return posA - posB;
     });
-  }, [activeSettings, language]);
+  }, [activeSettings, hasCustomSettings, language]);
   const reducedMotion = Boolean(useReducedMotion());
   const sectionRef = useRef<HTMLElement>(null);
   const interactionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

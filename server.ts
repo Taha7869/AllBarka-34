@@ -1025,6 +1025,14 @@ app.post('/api/contact', inquiryLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Please enter your message (at least 5 characters).', code: 'MESSAGE_TOO_SHORT' });
     }
 
+    if (!db) {
+      return res.status(503).json({
+        success: false,
+        error: 'Inquiry storage is temporarily unavailable. Your inquiry has not been registered.',
+        code: 'PERSISTENCE_UNAVAILABLE'
+      });
+    }
+
     const ticketId = `AB-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
     const topicStr = typeof topic === 'string' ? topic.slice(0, 100) : 'general';
     const inquiryType: InquiryType = topicStr === 'wholesale' ? 'wholesale' : topicStr === 'wedding-favors' ? 'bid_box_quote' : 'general';

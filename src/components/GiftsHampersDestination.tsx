@@ -84,6 +84,11 @@ export default function GiftsHampersDestination({
   const handleAddToCart = (product: Product) => {
     const keys = Object.keys(product.prices);
     const chosenWeight = selectedWeight[product.id] || keys[0] || '1 box';
+    const price = product.prices[chosenWeight] || Object.values(product.prices)[0] || 0;
+    if (product.quoteOnly || product.orderMode === 'inquiry_quote' || price <= 0) {
+      openCustomQuoteModal({ productId: product.id, mode: 'filled' });
+      return;
+    }
     addToCart(product, chosenWeight, 1);
     setAddedId(product.id);
     setTimeout(() => setAddedId(prev => (prev === product.id ? null : prev)), 1600);
@@ -235,10 +240,18 @@ export default function GiftsHampersDestination({
                   )}
                 </div>
 
-                {/* Direct Checkout Badge */}
-                <div className="absolute bottom-3 left-3">
-                  <span className="rounded-full bg-emerald-900/90 backdrop-blur-md px-2.5 py-1 text-[10px] font-semibold text-emerald-200">
-                    {t('dest.common.directCheckout')}
+                {/* Direct Checkout vs Inquiry Badge */}
+                <div className="absolute bottom-3 left-3 flex flex-wrap items-center gap-1.5">
+                  <span
+                    className={`rounded-full backdrop-blur-md px-2.5 py-1 text-[10px] font-semibold ${
+                      !product.quoteOnly && product.orderMode !== 'inquiry_quote' && price > 0
+                        ? 'bg-emerald-900/90 text-emerald-200'
+                        : 'bg-amber-900/90 text-amber-200'
+                    }`}
+                  >
+                    {!product.quoteOnly && product.orderMode !== 'inquiry_quote' && price > 0
+                      ? t('dest.common.directCheckout')
+                      : t('dest.common.customInquiry')}
                   </span>
                 </div>
 
@@ -298,28 +311,49 @@ export default function GiftsHampersDestination({
                     Price
                   </span>
                   <span className="font-serif text-xl font-bold text-[var(--color-text)]">
-                    Rs. {price.toLocaleString()}
+                    {price > 0 ? (
+                      `Rs. ${price.toLocaleString()}`
+                    ) : (
+                      <span className="text-xs font-normal text-[var(--color-text-muted)]">
+                        Quote on Request
+                      </span>
+                    )}
                   </span>
                 </div>
 
-                {/* Direct Add to Cart Action */}
-                <button
-                  type="button"
-                  onClick={() => handleAddToCart(product)}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#072a20] py-3 text-xs font-bold text-[#fff8e9] hover:bg-[#124b3b] dark:bg-[#c7982f] dark:text-[#072a20] dark:hover:bg-[#d8a93e] transition-colors shadow-sm"
-                >
-                  {addedId === product.id ? (
-                    <>
-                      <Check size={14} className="text-emerald-400" />
-                      Added to Bag!
-                    </>
-                  ) : (
-                    <>
-                      <ShoppingBag size={14} />
-                      Add to Bag
-                    </>
-                  )}
-                </button>
+                {/* Direct Add to Cart Action vs Custom Quote */}
+                {!product.quoteOnly && product.orderMode !== 'inquiry_quote' && price > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => handleAddToCart(product)}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#072a20] py-3 text-xs font-bold text-[#fff8e9] hover:bg-[#124b3b] dark:bg-[#c7982f] dark:text-[#072a20] dark:hover:bg-[#d8a93e] transition-colors shadow-sm"
+                  >
+                    {addedId === product.id ? (
+                      <>
+                        <Check size={14} className="text-emerald-400" />
+                        Added to Bag!
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingBag size={14} />
+                        Add to Bag
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      openCustomQuoteModal({
+                        productId: product.id,
+                        mode: 'filled',
+                      })
+                    }
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#c7982f] py-3 text-xs font-bold text-[#072a20] hover:bg-[#d8a93e] transition-colors shadow-sm"
+                  >
+                    Request Quote / Offer Your Rate
+                  </button>
+                )}
               </div>
             </article>
           );

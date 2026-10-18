@@ -41,6 +41,8 @@ export default function ShopPage() {
 
   const isCelebrationRoute =
     !searchQuery &&
+    !isOccasionsRoute &&
+    !isWholesaleRoute &&
     (resolvedCategory === 'celebration-boxes' ||
       location.pathname.startsWith('/shop/celebration-boxes') ||
       location.pathname.startsWith('/shop/bid-boxes') ||
@@ -48,6 +50,8 @@ export default function ShopPage() {
 
   const isGiftingDestination =
     !searchQuery &&
+    !isOccasionsRoute &&
+    !isWholesaleRoute &&
     (isGiftingRoute ||
       resolvedCategory === 'gift-boxes' ||
       resolvedCategory === 'combos' ||
@@ -56,6 +60,8 @@ export default function ShopPage() {
 
   const isDealsRoute =
     !searchQuery &&
+    !isOccasionsRoute &&
+    !isWholesaleRoute &&
     (resolvedCategory === 'deals' ||
       resolvedCategory === 'bundles' ||
       location.pathname.startsWith('/shop/deals') ||

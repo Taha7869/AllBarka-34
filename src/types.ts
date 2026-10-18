@@ -39,6 +39,7 @@ export interface BidBoxConfig {
   allowsCustomDryFruits?: boolean;
   capacityG?: number;
   minUnits?: number;
+  packagingSubcategory?: 'tin' | 'tabarruk' | 'wedding' | 'baby' | 'acrylic' | string;
   [key: string]: any;
 }
 
@@ -125,6 +126,7 @@ export interface Product {
   quoteOnly?: boolean;
   isBidBox?: boolean;
   bidBoxConfig?: BidBoxConfig;
+  packagingSubcategory?: 'tin' | 'tabarruk' | 'wedding' | 'baby' | 'acrylic' | string;
   components?: Array<string | { productId: string; quantity?: number; unitWeightG?: number }>;
   componentIds?: string[];
   contents?: string[];

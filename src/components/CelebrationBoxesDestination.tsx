@@ -17,30 +17,25 @@ import { useCart } from '../contexts/CartContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { Product } from '../types';
-import { resolveBidBoxConfig } from '../lib/bidBoxPricing';
+import {
+  getPackagingSubcategory,
+  productMatchesPackagingSubcategory,
+  resolveCelebrationCardVariant,
+  CelebrationSubcategory,
+  ResolvedCelebrationCardVariant,
+} from '../lib/packagingClassification';
 import { openCustomQuoteModal } from './CustomQuoteModal';
 import DestinationHeader, { DestinationNotice } from './DestinationHeader';
 
-export type CelebrationSubcategory = 'all' | 'tin' | 'tabarruk' | 'wedding' | 'baby' | 'acrylic';
+export { getPackagingSubcategory, productMatchesPackagingSubcategory } from '../lib/packagingClassification';
+export type { CelebrationSubcategory } from '../lib/packagingClassification';
 
-export function getCelebrationSubcategory(productId: string): CelebrationSubcategory {
-  switch (productId) {
-    case 'bid-box-luxury-tin':
-      return 'tin';
-    case 'bid-box-umrah-tabarruk':
-      return 'tabarruk';
-    case 'bid-box-card-nikkah':
-    case 'bid-box-pyramid-favor':
-    case 'bid-box-jute-pouch':
-    case 'bid-box-sweet-nikkah':
-      return 'wedding';
-    case 'bid-box-birth-announcement':
-      return 'baby';
-    case 'bid-box-acrylic-royal':
-      return 'acrylic';
-    default:
-      return 'wedding';
+// Backward-compatible alias for existing imports
+export function getCelebrationSubcategory(productIdOrProduct: string | Product): CelebrationSubcategory {
+  if (typeof productIdOrProduct === 'string') {
+    return (getPackagingSubcategory({ id: productIdOrProduct }) as CelebrationSubcategory) || 'wedding';
   }
+  return (getPackagingSubcategory(productIdOrProduct) as CelebrationSubcategory) || 'wedding';
 }
 
 interface CelebrationBoxesDestinationProps {
@@ -56,14 +51,27 @@ export default function CelebrationBoxesDestination({
   const mediaCover = useProductMediaCover();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const subcategoryParam = (searchParams.get('subcat') as CelebrationSubcategory) || 'all';
-  const modeParam = (searchParams.get('mode') as 'all' | 'empty' | 'filled') || 'all';
+  // URL-driven filter parameters (reactive)
+  const rawSubcat = searchParams.get('subcat') || 'all';
+  const selectedSubcat: CelebrationSubcategory = [
+    'tin',
+    'tabarruk',
+    'wedding',
+    'baby',
+    'acrylic',
+  ].includes(rawSubcat)
+    ? (rawSubcat as CelebrationSubcategory)
+    : 'all';
 
-  const [selectedSubcat, setSelectedSubcat] = useState<CelebrationSubcategory>(subcategoryParam);
-  const [modeFilter, setModeFilter] = useState<'all' | 'empty' | 'filled'>(modeParam);
+  const rawMode = searchParams.get('mode') || 'all';
+  const modeFilter: 'all' | 'empty' | 'filled' =
+    rawMode === 'empty' || rawMode === 'filled' ? rawMode : 'all';
+
+  const occasionFilter = searchParams.get('occasion') || 'all';
+
+  // Per-product card overrides
   const [selectedCardModes, setSelectedCardModes] = useState<Record<string, 'empty' | 'filled'>>({});
   const [selectedTierIdx, setSelectedTierIdx] = useState<Record<string, number>>({});
-  const [selectedFilledIdx, setSelectedFilledIdx] = useState<Record<string, number>>({});
   const [addedId, setAddedId] = useState<string | null>(null);
 
   // Authoritative celebration boxes list from catalog
@@ -71,32 +79,53 @@ export default function CelebrationBoxesDestination({
     return products.filter(p => (p.isBidBox || p.category === 'celebration-boxes') && p.active !== false);
   }, [products]);
 
-  // Filter by subcategory
+  // URL-driven filtering: Subcategory, Occasion, and Mode
   const filteredProducts = useMemo(() => {
-    if (selectedSubcat === 'all') return celebrationBoxes;
-    return celebrationBoxes.filter(p => getCelebrationSubcategory(p.id) === selectedSubcat);
-  }, [celebrationBoxes, selectedSubcat]);
+    return celebrationBoxes.filter(p => {
+      // 1. Subcategory filter
+      if (!productMatchesPackagingSubcategory(p, selectedSubcat)) {
+        return false;
+      }
+
+      // 2. Occasion filter
+      if (occasionFilter !== 'all') {
+        const occs = (p.occasions || []).map(o => o.toLowerCase());
+        if (!occs.includes(occasionFilter.toLowerCase())) {
+          return false;
+        }
+      }
+
+      // 3. Mode filter
+      if (modeFilter === 'empty') {
+        const v = resolveCelebrationCardVariant(p, 'empty');
+        if (!v.availableModes.includes('empty')) return false;
+      } else if (modeFilter === 'filled') {
+        const v = resolveCelebrationCardVariant(p, 'filled');
+        if (!v.availableModes.includes('filled')) return false;
+      }
+
+      return true;
+    });
+  }, [celebrationBoxes, selectedSubcat, occasionFilter, modeFilter]);
 
   const handleSubcatChange = (subcat: CelebrationSubcategory) => {
-    setSelectedSubcat(subcat);
     const next = new URLSearchParams(searchParams);
     if (subcat === 'all') {
       next.delete('subcat');
     } else {
       next.set('subcat', subcat);
     }
-    setSearchParams(next, { replace: true });
+    setSearchParams(next);
   };
 
   const handleModeChange = (mode: 'all' | 'empty' | 'filled') => {
-    setModeFilter(mode);
     const next = new URLSearchParams(searchParams);
     if (mode === 'all') {
       next.delete('mode');
     } else {
       next.set('mode', mode);
     }
-    setSearchParams(next, { replace: true });
+    setSearchParams(next);
   };
 
   const notices: DestinationNotice[] = [
@@ -121,28 +150,17 @@ export default function CelebrationBoxesDestination({
     { id: 'acrylic', labelKey: 'dest.celebration.subcat.acrylic' },
   ];
 
-  const handleAddToCart = (product: Product) => {
-    const cfg = resolveBidBoxConfig(product);
-    const cardMode = selectedCardModes[product.id] || (modeFilter === 'empty' ? 'empty' : 'filled');
-    let variantKey = Object.keys(product.prices)[0] || 'Empty Box (1 pc)';
-
-    if (cfg) {
-      if (cardMode === 'empty') {
-        const tierIndex = selectedTierIdx[product.id] ?? (cfg.emptyTiers.length > 1 ? 1 : 0);
-        const tier = cfg.emptyTiers[tierIndex] || cfg.emptyTiers[0];
-        if (tier) {
-          variantKey = tier.variantKey;
-        }
-      } else {
-        const filledIndex = selectedFilledIdx[product.id] ?? 0;
-        const filledOpt = cfg.filledOptions[filledIndex] || cfg.filledOptions[0];
-        if (filledOpt) {
-          variantKey = filledOpt.variantKey;
-        }
-      }
+  const handleAddToCart = (product: Product, cardVariant: ResolvedCelebrationCardVariant) => {
+    if (!cardVariant.isDirectCheckoutEligible || !cardVariant.variantKey) {
+      openCustomQuoteModal({
+        productId: product.id,
+        mode: cardVariant.activeMode,
+        quantity: cardVariant.moq,
+      });
+      return;
     }
 
-    addToCart(product, variantKey, 1);
+    addToCart(product, cardVariant.variantKey, 1);
     setAddedId(product.id);
     setTimeout(() => setAddedId(prev => (prev === product.id ? null : prev)), 1600);
     setIsCartOpen(true);
@@ -169,7 +187,7 @@ export default function CelebrationBoxesDestination({
           const count =
             cat.id === 'all'
               ? celebrationBoxes.length
-              : celebrationBoxes.filter(p => getCelebrationSubcategory(p.id) === cat.id).length;
+              : celebrationBoxes.filter(p => getPackagingSubcategory(p) === cat.id).length;
 
           return (
             <button
@@ -255,10 +273,11 @@ export default function CelebrationBoxesDestination({
       {/* Product Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
         {filteredProducts.map(product => {
-          const cfg = resolveBidBoxConfig(product);
           const coverImg = mediaCover[product.id] || product.image;
-          const currentMode = selectedCardModes[product.id] || (modeFilter === 'empty' ? 'empty' : 'filled');
-          const subcat = getCelebrationSubcategory(product.id);
+          const preferredMode = selectedCardModes[product.id] || (modeFilter === 'empty' ? 'empty' : 'filled');
+          const requestedTier = selectedTierIdx[product.id];
+          const cardVariant = resolveCelebrationCardVariant(product, preferredMode, requestedTier);
+          const subcat = getPackagingSubcategory(product) || 'wedding';
 
           return (
             <article
@@ -286,10 +305,21 @@ export default function CelebrationBoxesDestination({
                   )}
                 </div>
 
-                {/* Direct Checkout / Inquiry Badge */}
-                <div className="absolute bottom-3 left-3">
-                  <span className="rounded-full bg-emerald-900/90 backdrop-blur-md px-2.5 py-1 text-[10px] font-semibold text-emerald-200">
-                    {t('dest.common.directCheckout')}
+                {/* Direct Checkout vs Inquiry Badge & MOQ Badge */}
+                <div className="absolute bottom-3 left-3 flex flex-wrap items-center gap-1.5">
+                  <span
+                    className={`rounded-full backdrop-blur-md px-2.5 py-1 text-[10px] font-semibold ${
+                      cardVariant.isDirectCheckoutEligible
+                        ? 'bg-emerald-900/90 text-emerald-200'
+                        : 'bg-amber-900/90 text-amber-200'
+                    }`}
+                  >
+                    {cardVariant.isDirectCheckoutEligible
+                      ? t('dest.common.directCheckout')
+                      : t('dest.common.customInquiry')}
+                  </span>
+                  <span className="rounded-full bg-black/75 backdrop-blur-md px-2 py-1 text-[10px] font-bold text-[#e6c786]">
+                    MOQ: {cardVariant.moq} pcs
                   </span>
                 </div>
 
@@ -332,50 +362,60 @@ export default function CelebrationBoxesDestination({
                     <div className="inline-flex rounded-lg border border-[var(--color-border)] p-0.5 bg-[var(--color-surface)]">
                       <button
                         type="button"
+                        disabled={!cardVariant.availableModes.includes('empty')}
                         onClick={() =>
                           setSelectedCardModes(prev => ({ ...prev, [product.id]: 'empty' }))
                         }
                         className={`rounded px-2 py-0.5 text-[11px] font-semibold transition-colors ${
-                          currentMode === 'empty'
+                          cardVariant.activeMode === 'empty'
                             ? 'bg-[#072a20] text-[#fff8e9] dark:bg-[#c7982f] dark:text-[#072a20]'
                             : 'text-[var(--color-text-muted)]'
-                        }`}
+                        } ${!cardVariant.availableModes.includes('empty') ? 'opacity-40 cursor-not-allowed' : ''}`}
                       >
                         Box Only
                       </button>
                       <button
                         type="button"
+                        disabled={!cardVariant.availableModes.includes('filled')}
                         onClick={() =>
                           setSelectedCardModes(prev => ({ ...prev, [product.id]: 'filled' }))
                         }
                         className={`rounded px-2 py-0.5 text-[11px] font-semibold transition-colors ${
-                          currentMode === 'filled'
+                          cardVariant.activeMode === 'filled'
                             ? 'bg-[#072a20] text-[#fff8e9] dark:bg-[#c7982f] dark:text-[#072a20]'
                             : 'text-[var(--color-text-muted)]'
-                        }`}
+                        } ${!cardVariant.availableModes.includes('filled') ? 'opacity-40 cursor-not-allowed' : ''}`}
                       >
                         Filled
                       </button>
                     </div>
                   </div>
 
-                  {/* Mode-specific Pricing & Tiers */}
-                  {currentMode === 'empty' ? (
+                  {/* Mode-specific Pricing & Tiers (Derived via single resolver) */}
+                  {cardVariant.activeMode === 'empty' ? (
                     <div>
                       <div className="flex items-baseline justify-between">
                         <span className="text-xs text-[var(--color-text-muted)]">
-                          Starting at
+                          Price
                         </span>
                         <span className="font-serif text-base font-bold text-[var(--color-text)]">
-                          Rs. {cfg?.emptyUnitStarting?.toLocaleString() || '180'}
-                          <span className="text-xs font-normal text-[var(--color-text-muted)]"> / pc</span>
+                          {cardVariant.unitPrice !== null ? (
+                            <>
+                              Rs. {cardVariant.unitPrice.toLocaleString()}
+                              <span className="text-xs font-normal text-[var(--color-text-muted)]"> / pc</span>
+                            </>
+                          ) : (
+                            <span className="text-xs font-normal text-[var(--color-text-muted)]">
+                              Quote on Request
+                            </span>
+                          )}
                         </span>
                       </div>
                       {/* Bulk Tier Chips */}
-                      {cfg && cfg.emptyTiers.length > 0 && (
+                      {cardVariant.emptyTiers.length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-1.5">
-                          {cfg.emptyTiers.map((tier, idx) => {
-                            const isSelected = (selectedTierIdx[product.id] ?? 0) === idx;
+                          {cardVariant.emptyTiers.map((tier, idx) => {
+                            const isSelected = cardVariant.selectedTierIndex === idx;
                             return (
                               <button
                                 key={tier.qty}
@@ -403,46 +443,75 @@ export default function CelebrationBoxesDestination({
                     <div>
                       <div className="flex items-baseline justify-between">
                         <span className="text-xs text-[var(--color-text-muted)]">
-                          Filled with Dry Fruits
+                          Filled Option
                         </span>
                         <span className="font-serif text-base font-bold text-[var(--color-text)]">
-                          Rs. {cfg?.filledMin?.toLocaleString() || '850'}
-                          <span className="text-xs font-normal text-[var(--color-text-muted)]"> / box</span>
+                          {cardVariant.unitPrice !== null ? (
+                            <>
+                              Rs. {cardVariant.unitPrice.toLocaleString()}
+                              <span className="text-xs font-normal text-[var(--color-text-muted)]"> / box</span>
+                            </>
+                          ) : (
+                            <span className="text-xs font-normal text-[var(--color-text-muted)]">
+                              Quote on Request
+                            </span>
+                          )}
                         </span>
                       </div>
-                      <p className="mt-1 text-[11px] text-[#8C6B1B] dark:text-[#e6c786]">
-                        {cfg?.filledSummary || 'Irani & Panjgur Dates with Roasted Nuts'}
-                      </p>
+                      {/* Fillings Description - genuine metadata only, no fabricated fallbacks */}
+                      {cardVariant.fillingsDescription && (
+                        <p className="mt-1 text-[11px] text-[#8C6B1B] dark:text-[#e6c786]">
+                          {cardVariant.fillingsDescription}
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
 
-                {/* Actions: Add to Cart & Custom Quote */}
+                {/* Actions: Add to Cart (when eligible) or Custom Quote */}
                 <div className="space-y-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => handleAddToCart(product)}
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#072a20] py-3 text-xs font-bold text-[#fff8e9] hover:bg-[#124b3b] dark:bg-[#c7982f] dark:text-[#072a20] dark:hover:bg-[#d8a93e] transition-colors shadow-sm"
-                  >
-                    {addedId === product.id ? (
-                      <>
-                        <Check size={14} className="text-emerald-400" />
-                        Added to Bag!
-                      </>
-                    ) : (
-                      <>
-                        <ShoppingBag size={14} />
-                        Add to Bag ({currentMode === 'empty' ? 'Packaging' : 'Filled'})
-                      </>
-                    )}
-                  </button>
+                  {cardVariant.isDirectCheckoutEligible ? (
+                    <button
+                      type="button"
+                      onClick={() => handleAddToCart(product, cardVariant)}
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#072a20] py-3 text-xs font-bold text-[#fff8e9] hover:bg-[#124b3b] dark:bg-[#c7982f] dark:text-[#072a20] dark:hover:bg-[#d8a93e] transition-colors shadow-sm"
+                    >
+                      {addedId === product.id ? (
+                        <>
+                          <Check size={14} className="text-emerald-400" />
+                          Added to Bag!
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingBag size={14} />
+                          Add to Bag ({cardVariant.activeMode === 'empty' ? 'Packaging' : 'Filled'})
+                        </>
+                      )}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openCustomQuoteModal({
+                          productId: product.id,
+                          mode: cardVariant.activeMode,
+                          quantity: cardVariant.moq,
+                        })
+                      }
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#c7982f] py-3 text-xs font-bold text-[#072a20] hover:bg-[#d8a93e] transition-colors shadow-sm"
+                    >
+                      <MessageSquareQuote size={14} />
+                      Request Quote / Offer Your Rate
+                    </button>
+                  )}
 
                   <button
                     type="button"
                     onClick={() =>
                       openCustomQuoteModal({
                         productId: product.id,
-                        mode: currentMode,
+                        mode: cardVariant.activeMode,
+                        quantity: 100,
                       })
                     }
                     className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] py-2 text-[11px] font-semibold text-[var(--color-text-muted)] hover:border-[#c7982f] hover:text-[#c7982f] transition-colors"

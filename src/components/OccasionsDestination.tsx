@@ -55,18 +55,24 @@ export default function OccasionsDestination({
   // Sync state with URL changes
   useEffect(() => {
     const slug = normalizeOccasionSlug(
-      routeOccasion || queryOccasion || initialOccasion || 'all'
+      routeOccasion || searchParams.get('occasion') || initialOccasion || 'all'
     ) || 'all';
     setSelectedOccasion(slug);
-  }, [routeOccasion, queryOccasion, initialOccasion]);
+  }, [routeOccasion, searchParams, initialOccasion]);
+
+  useEffect(() => {
+    setSelectedCategory(searchParams.get('category') || 'all');
+  }, [searchParams]);
 
   const handleOccasionChange = (occ: string) => {
     setSelectedOccasion(occ);
+    const search = searchParams.toString();
+    const queryPart = search ? `?${search}` : '';
     if (location.pathname.startsWith('/occasions')) {
       if (occ === 'all') {
-        navigate('/occasions', { replace: true });
+        navigate(`/occasions${queryPart}`);
       } else {
-        navigate(`/occasions/${occ}`, { replace: true });
+        navigate(`/occasions/${occ}${queryPart}`);
       }
     } else {
       const next = new URLSearchParams(searchParams);
@@ -75,7 +81,7 @@ export default function OccasionsDestination({
       } else {
         next.set('occasion', occ);
       }
-      setSearchParams(next, { replace: true });
+      setSearchParams(next);
     }
   };
 
@@ -115,7 +121,8 @@ export default function OccasionsDestination({
 
   const handleAddToCart = (product: Product) => {
     const firstVariant = Object.keys(product.prices || {})[0] || 'Standard';
-    if (product.quoteOnly) {
+    const price = product.prices?.[firstVariant] || 0;
+    if (product.quoteOnly || product.orderMode === 'inquiry_quote' || price <= 0) {
       openCustomQuoteModal({ productId: product.id, mode: 'filled', quantity: 25 });
       return;
     }
@@ -306,6 +313,21 @@ export default function OccasionsDestination({
                     </span>
                   </div>
 
+                  {/* Direct Checkout vs Inquiry Badge */}
+                  <div className="absolute bottom-3 left-3 flex flex-wrap items-center gap-1.5">
+                    <span
+                      className={`rounded-full backdrop-blur-md px-2.5 py-1 text-[10px] font-semibold ${
+                        !product.quoteOnly && product.orderMode !== 'inquiry_quote' && price > 0
+                          ? 'bg-emerald-900/90 text-emerald-200'
+                          : 'bg-amber-900/90 text-amber-200'
+                      }`}
+                    >
+                      {!product.quoteOnly && product.orderMode !== 'inquiry_quote' && price > 0
+                        ? t('dest.common.directCheckout')
+                        : t('dest.common.customInquiry')}
+                    </span>
+                  </div>
+
                   {/* Quick View Button */}
                   {onQuickView && (
                     <button
@@ -342,27 +364,49 @@ export default function OccasionsDestination({
                       {primaryVariant}
                     </span>
                     <span className="font-serif text-xl font-bold text-[var(--color-text)]">
-                      Rs. {price.toLocaleString()}
+                      {price > 0 ? (
+                        `Rs. ${price.toLocaleString()}`
+                      ) : (
+                        <span className="text-xs font-normal text-[var(--color-text-muted)]">
+                          Quote on Request
+                        </span>
+                      )}
                     </span>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => handleAddToCart(product)}
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#072a20] py-3 text-xs font-bold text-[#fff8e9] hover:bg-[#124b3b] dark:bg-[#c7982f] dark:text-[#072a20] dark:hover:bg-[#d8a93e] transition-colors shadow-sm"
-                  >
-                    {addedId === product.id ? (
-                      <>
-                        <Check size={14} className="text-emerald-400" />
-                        Added to Bag!
-                      </>
-                    ) : (
-                      <>
-                        <ShoppingBag size={14} />
-                        Add to Bag
-                      </>
-                    )}
-                  </button>
+                  {!product.quoteOnly && product.orderMode !== 'inquiry_quote' && price > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => handleAddToCart(product)}
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#072a20] py-3 text-xs font-bold text-[#fff8e9] hover:bg-[#124b3b] dark:bg-[#c7982f] dark:text-[#072a20] dark:hover:bg-[#d8a93e] transition-colors shadow-sm"
+                    >
+                      {addedId === product.id ? (
+                        <>
+                          <Check size={14} className="text-emerald-400" />
+                          Added to Bag!
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingBag size={14} />
+                          Add to Bag
+                        </>
+                      )}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openCustomQuoteModal({
+                          productId: product.id,
+                          mode: 'filled',
+                          quantity: 25,
+                        })
+                      }
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#c7982f] py-3 text-xs font-bold text-[#072a20] hover:bg-[#d8a93e] transition-colors shadow-sm"
+                    >
+                      Request Quote / Offer Your Rate
+                    </button>
+                  )}
                 </div>
               </article>
             );

@@ -67,9 +67,21 @@ export default function WholesaleDestination({ onQuickView }: WholesaleDestinati
   ];
 
   const handleAddToCart = (product: Product) => {
-    const firstVariant = Object.keys(product.prices || {})[0] || 'Standard';
-    if (product.quoteOnly) {
-      openCustomQuoteModal({ productId: product.id, mode: 'filled', quantity: 50 });
+    const isPackaging = product.isBidBox || product.category === 'celebration-boxes';
+    const cfg = isPackaging ? resolveBidBoxConfig(product) : undefined;
+    const firstVariant = isPackaging && cfg && cfg.emptyTiers.length > 0
+      ? cfg.emptyTiers[0].variantKey
+      : Object.keys(product.prices || {})[0] || 'Standard';
+    const price = isPackaging && cfg && cfg.emptyTiers.length > 0
+      ? cfg.emptyTiers[0].packPrice
+      : product.prices?.[firstVariant] || 0;
+
+    if (product.quoteOnly || product.orderMode === 'inquiry_quote' || price <= 0) {
+      openCustomQuoteModal({
+        productId: product.id,
+        mode: isPackaging ? 'empty' : 'filled',
+        quantity: isPackaging ? 50 : 25,
+      });
       return;
     }
     addToCart(product, firstVariant, 1);
@@ -300,23 +312,40 @@ export default function WholesaleDestination({ onQuickView }: WholesaleDestinati
 
                 {/* Actions */}
                 <div className="space-y-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => handleAddToCart(product)}
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#072a20] py-3 text-xs font-bold text-[#fff8e9] hover:bg-[#124b3b] dark:bg-[#c7982f] dark:text-[#072a20] dark:hover:bg-[#d8a93e] transition-colors shadow-sm"
-                  >
-                    {addedId === product.id ? (
-                      <>
-                        <Check size={14} className="text-emerald-400" />
-                        Added to Bag!
-                      </>
-                    ) : (
-                      <>
-                        <ShoppingBag size={14} />
-                        Add to Bag
-                      </>
-                    )}
-                  </button>
+                  {!product.quoteOnly && product.orderMode !== 'inquiry_quote' && ((isPackaging && cfg && cfg.emptyTiers.length > 0) || (!isPackaging && price > 0)) ? (
+                    <button
+                      type="button"
+                      onClick={() => handleAddToCart(product)}
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#072a20] py-3 text-xs font-bold text-[#fff8e9] hover:bg-[#124b3b] dark:bg-[#c7982f] dark:text-[#072a20] dark:hover:bg-[#d8a93e] transition-colors shadow-sm"
+                    >
+                      {addedId === product.id ? (
+                        <>
+                          <Check size={14} className="text-emerald-400" />
+                          Added to Bag!
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingBag size={14} />
+                          Add to Bag
+                        </>
+                      )}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openCustomQuoteModal({
+                          productId: product.id,
+                          mode: isPackaging ? 'empty' : 'filled',
+                          quantity: isPackaging ? 50 : 25,
+                        })
+                      }
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#c7982f] py-3 text-xs font-bold text-[#072a20] hover:bg-[#d8a93e] transition-colors shadow-sm"
+                    >
+                      <Briefcase size={14} />
+                      Request Commercial Quote
+                    </button>
+                  )}
 
                   <button
                     type="button"
