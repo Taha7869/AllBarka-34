@@ -8,6 +8,9 @@ import { canRotatePantry, pantryCardProjection, pantryRotationDistance } from '.
 import { visibleCardFraction } from '../lib/circularCatalogue';
 import { CANONICAL_CATEGORIES } from '../config/categories';
 import { PRODUCTS, getProductImage } from '../data/products';
+import { useMerchandisingSettings } from '../contexts/MerchandisingContext';
+import { DEFAULT_MERCHANDISING } from '../config/merchandising';
+import type { MerchandisingSettings } from '../types';
 
 const collectionPresentation = [
   { id: 'all', name: 'All Items', image: '/assets/categories/all_items.png', altKey: 'imageAlt.hero', link: '/shop' },
@@ -26,20 +29,39 @@ export const PANTRY_CATEGORIES = [
   }),
 ];
 
-/**
- * Deduplicated category list for customer presentation.
- * Filters out legacy internal alias keys (nuts, snacks-seeds) so they don't render duplicate cards.
- */
-const displayedCategories = PANTRY_CATEGORIES.filter(
-  category =>
-    (category.id !== 'nuts' || !PANTRY_CATEGORIES.some(c => c.id === 'dry-fruits')) &&
-    (category.id !== 'snacks-seeds' || !PANTRY_CATEGORIES.some(c => c.id === 'seeds-snacks'))
-);
-const categories = displayedCategories;
+export interface CategoryCarouselProps {
+  settings?: MerchandisingSettings;
+}
 
-
-export default function CategoryCarousel() {
+export default function CategoryCarousel({ settings: propSettings }: CategoryCarouselProps = {}) {
   const { t } = useLanguage();
+  const contextSettings = useMerchandisingSettings();
+  const activeSettings = propSettings || contextSettings || DEFAULT_MERCHANDISING;
+
+  const categories = React.useMemo(() => {
+    const visibility = activeSettings.categoryVisibility || {};
+    const order = activeSettings.categoryOrder || [];
+
+    const filtered = PANTRY_CATEGORIES.filter(cat => {
+      // Deduplicate legacy internal alias keys if canonical exists
+      if (cat.id === 'nuts' && PANTRY_CATEGORIES.some(c => c.id === 'dry-fruits')) return false;
+      if (cat.id === 'snacks-seeds' && PANTRY_CATEGORIES.some(c => c.id === 'seeds-snacks')) return false;
+      if (visibility[cat.id] === false) return false;
+      if (cat.id === 'nuts' && visibility['dry-fruits'] === false) return false;
+      if (cat.id === 'snacks-seeds' && visibility['seeds-snacks'] === false) return false;
+      return true;
+    });
+
+    if (!order.length) return filtered;
+
+    return [...filtered].sort((a, b) => {
+      const idxA = order.indexOf(a.id);
+      const idxB = order.indexOf(b.id);
+      const posA = idxA === -1 ? 999 : idxA;
+      const posB = idxB === -1 ? 999 : idxB;
+      return posA - posB;
+    });
+  }, [activeSettings]);
   const reducedMotion = Boolean(useReducedMotion());
   const sectionRef = useRef<HTMLElement>(null);
   const interactionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

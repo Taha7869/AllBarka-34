@@ -1,12 +1,16 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, Heart, Moon, Compass, Baby, Building2, Sparkles } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useMerchandisingSettings } from '../contexts/MerchandisingContext';
+import { DEFAULT_MERCHANDISING } from '../config/merchandising';
+import type { MerchandisingSettings } from '../types';
 
 export interface OccasionDestination {
   id: string;
   titleKey: string;
   defaultTitle: string;
+  titleUr?: string;
   subtitleKey: string;
   defaultSubtitle: string;
   path: string;
@@ -15,9 +19,17 @@ export interface OccasionDestination {
   icon: React.ComponentType<{ size?: number; className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }>;
 }
 
-export const OCCASION_DESTINATIONS: OccasionDestination[] = [
-  {
-    id: 'wedding',
+const OCCASION_META_MAP: Record<string, {
+  titleKey: string;
+  defaultTitle: string;
+  subtitleKey: string;
+  defaultSubtitle: string;
+  path: string;
+  badgeKey?: string;
+  defaultBadge?: string;
+  icon: React.ComponentType<{ size?: number; className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }>;
+}> = {
+  wedding: {
     titleKey: 'occasion.weddingTitle',
     defaultTitle: 'Wedding & Nikkah',
     subtitleKey: 'occasion.weddingSub',
@@ -27,8 +39,7 @@ export const OCCASION_DESTINATIONS: OccasionDestination[] = [
     defaultBadge: 'Nikkah Favors',
     icon: Heart,
   },
-  {
-    id: 'umrah',
+  umrah: {
     titleKey: 'occasion.umrahTitle',
     defaultTitle: 'Umrah & Hajj',
     subtitleKey: 'occasion.umrahSub',
@@ -38,8 +49,7 @@ export const OCCASION_DESTINATIONS: OccasionDestination[] = [
     defaultBadge: 'Tabarruk',
     icon: Compass,
   },
-  {
-    id: 'ramadan',
+  ramadan: {
     titleKey: 'occasion.ramadanTitle',
     defaultTitle: 'Ramadan & Eid',
     subtitleKey: 'occasion.ramadanSub',
@@ -49,8 +59,17 @@ export const OCCASION_DESTINATIONS: OccasionDestination[] = [
     defaultBadge: 'Festive',
     icon: Moon,
   },
-  {
-    id: 'birth',
+  eid: {
+    titleKey: 'occasion.ramadanTitle',
+    defaultTitle: 'Ramadan & Eid',
+    subtitleKey: 'occasion.ramadanSub',
+    defaultSubtitle: 'Iftar boxes & festive gift hampers',
+    path: '/shop?occasion=ramadan',
+    badgeKey: 'occasion.badgeSeasonal',
+    defaultBadge: 'Festive',
+    icon: Moon,
+  },
+  birth: {
     titleKey: 'occasion.birthTitle',
     defaultTitle: 'Birth & Aqeeqah',
     subtitleKey: 'occasion.birthSub',
@@ -60,8 +79,17 @@ export const OCCASION_DESTINATIONS: OccasionDestination[] = [
     defaultBadge: 'Aqeeqah',
     icon: Baby,
   },
-  {
-    id: 'corporate',
+  'baby-announcement': {
+    titleKey: 'occasion.birthTitle',
+    defaultTitle: 'Birth & Aqeeqah',
+    subtitleKey: 'occasion.birthSub',
+    defaultSubtitle: 'Baby arrival & announcement boxes',
+    path: '/shop/celebration-boxes?occasion=birth',
+    badgeKey: 'occasion.badgeCelebration',
+    defaultBadge: 'Aqeeqah',
+    icon: Baby,
+  },
+  corporate: {
     titleKey: 'occasion.corporateTitle',
     defaultTitle: 'Corporate Gifting',
     subtitleKey: 'occasion.corporateSub',
@@ -71,10 +99,65 @@ export const OCCASION_DESTINATIONS: OccasionDestination[] = [
     defaultBadge: 'Bulk Tiers',
     icon: Building2,
   },
+};
+
+export const OCCASION_DESTINATIONS: OccasionDestination[] = [
+  { id: 'wedding', ...OCCASION_META_MAP.wedding },
+  { id: 'umrah', ...OCCASION_META_MAP.umrah },
+  { id: 'ramadan', ...OCCASION_META_MAP.ramadan },
+  { id: 'birth', ...OCCASION_META_MAP.birth },
+  { id: 'corporate', ...OCCASION_META_MAP.corporate },
 ];
 
-export default function FindGiftOccasionSection() {
-  const { t, isRtl } = useLanguage();
+export interface FindGiftOccasionSectionProps {
+  settings?: MerchandisingSettings;
+}
+
+export default function FindGiftOccasionSection({ settings: propSettings }: FindGiftOccasionSectionProps = {}) {
+  const { t, language, isRtl } = useLanguage();
+  const contextSettings = useMerchandisingSettings();
+  const activeSettings = propSettings || contextSettings || DEFAULT_MERCHANDISING;
+
+  // Resolve occasion cards dynamically from published settings
+  const occasions: OccasionDestination[] = useMemo(() => {
+    const rawOccasions = activeSettings.occasions || DEFAULT_MERCHANDISING.occasions;
+    return rawOccasions
+      .filter(occ => occ.visible !== false)
+      .map(occ => {
+        const occId = (occ as any).id || (occ as any).tag || '';
+        const meta = OCCASION_META_MAP[occId] || OCCASION_META_MAP[(occ as any).tag] || {
+          titleKey: `occasion.${occId}Title`,
+          defaultTitle: (occ as any).defaultTitle || (occ as any).title_en || occId,
+          subtitleKey: `occasion.${occId}Sub`,
+          defaultSubtitle: (occ as any).defaultSubtitle || 'Bespoke gifts & favors',
+          path: (occ as any).slug || (occ as any).destination || `/occasions/${occId}`,
+          badgeKey: undefined,
+          defaultBadge: undefined,
+          icon: Sparkles,
+        };
+
+        const defaultTitle =
+          language === 'ur' && (occ as any).title_ur
+            ? (occ as any).title_ur
+            : (occ as any).title_en || (occ as any).defaultTitle || meta.defaultTitle;
+
+        return {
+          id: occId,
+          titleKey: meta.titleKey,
+          defaultTitle,
+          subtitleKey: meta.subtitleKey,
+          defaultSubtitle: meta.defaultSubtitle,
+          path: (occ as any).slug || (occ as any).destination || meta.path,
+          badgeKey: meta.badgeKey,
+          defaultBadge: meta.defaultBadge,
+          icon: meta.icon,
+        };
+      });
+  }, [activeSettings, language]);
+
+  if (occasions.length === 0) {
+    return null;
+  }
 
   return (
     <section
@@ -103,7 +186,7 @@ export default function FindGiftOccasionSection() {
 
         {/* Compact Destination Links Grid */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          {OCCASION_DESTINATIONS.map(({ id, titleKey, defaultTitle, subtitleKey, defaultSubtitle, path, badgeKey, defaultBadge, icon: Icon }) => (
+          {occasions.map(({ id, titleKey, defaultTitle, subtitleKey, defaultSubtitle, path, badgeKey, defaultBadge, icon: Icon }) => (
             <Link
               key={id}
               to={path}

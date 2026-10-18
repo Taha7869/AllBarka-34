@@ -8,8 +8,8 @@ import { HAMPER_BOX_SEEDS, boxFromPricing, validateHamperBoxPricing } from '../l
 
 const seeds = PRODUCTS.map(product => ({ ...product }));
 const CatalogContext = createContext({ products: PRODUCTS, refresh: async () => {} });
-export function CatalogProvider({ children }: { children: ReactNode }) {
-  const [products, setProducts] = useState<Product[]>(PRODUCTS);
+export function CatalogProvider({ children, initialProducts }: { children: ReactNode; initialProducts?: Product[] }) {
+  const [products, setProducts] = useState<Product[]>(() => initialProducts || PRODUCTS);
   const active = useRef(false);
   const inFlight = useRef<AbortController | null>(null);
   const version = useRef('');

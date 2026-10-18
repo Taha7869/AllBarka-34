@@ -5,12 +5,13 @@ import { useReducedMotion } from 'motion/react';
 import type { Product, MerchandisingSettings } from '../types';
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useMerchandisingSettings } from '../contexts/MerchandisingContext';
 import { DEFAULT_MERCHANDISING } from '../config/merchandising';
 import ProductCard from './ProductCard';
-import { apiUrl } from '../lib/apiUrl';
 
-interface BoutiqueSelectionsProps {
+export interface BoutiqueSelectionsProps {
   settings?: MerchandisingSettings;
+  products?: Product[];
   onAddToCart?: (productId: string, weight: string) => void;
   onQuickView?: (product: Product) => void;
 }
@@ -32,46 +33,20 @@ const TAB_DESTINATIONS: Record<string, string> = {
 
 export default function BoutiqueSelections({
   settings: propSettings,
+  products: propProducts,
   onAddToCart,
   onQuickView,
 }: BoutiqueSelectionsProps) {
   const { t, language, isRtl } = useLanguage();
-  const PRODUCTS = useCatalogProducts();
+  const catalogProducts = useCatalogProducts();
+  const PRODUCTS = propProducts || catalogProducts;
+  const contextSettings = useMerchandisingSettings();
+  const activeSettings = propSettings || contextSettings || DEFAULT_MERCHANDISING;
+
   const prefersReduced = Boolean(useReducedMotion());
   const componentId = useId();
 
-  // 1. Merchandising settings: prop > fetched state > DEFAULT_MERCHANDISING
-  const [activeSettings, setActiveSettings] = useState<MerchandisingSettings>(
-    propSettings || DEFAULT_MERCHANDISING
-  );
-
-  useEffect(() => {
-    if (propSettings) {
-      setActiveSettings(propSettings);
-      return;
-    }
-    let cancelled = false;
-    const fetchMerchandising = async () => {
-      try {
-        const res = await fetch(apiUrl('/api/merchandising'), {
-          headers: { Accept: 'application/json' },
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!cancelled && data?.settings && Array.isArray(data.settings.showcaseTabs)) {
-          setActiveSettings(data.settings);
-        }
-      } catch {
-        // Fallback remains DEFAULT_MERCHANDISING
-      }
-    };
-    void fetchMerchandising();
-    return () => {
-      cancelled = true;
-    };
-  }, [propSettings]);
-
-  // 2. Resolve tabs and products from authoritative catalog
+  // 1. Resolve tabs and products from authoritative catalog
   // - Skip inactive/unpublished products
   // - Never duplicate products to fill slots
   // - Limit to 3 admin-selected products per tab
@@ -91,6 +66,7 @@ export default function BoutiqueSelections({
             prod &&
             prod.active !== false &&
             (prod as any).status !== 'archived' &&
+            (prod as any).inStock !== false &&
             !seenIds.has(prod.id)
           ) {
             seenIds.add(prod.id);
@@ -118,7 +94,7 @@ export default function BoutiqueSelections({
       .filter(tab => tab.products.length > 0);
   }, [activeSettings, PRODUCTS, language]);
 
-  // 3. Initial valid tab: Dry Fruits & Nuts first if available, else first valid tab
+  // 2. Initial valid tab: Dry Fruits & Nuts first if available, else first valid tab
   const [selectedTabId, setSelectedTabId] = useState<string>(() => {
     const dryFruits = resolvedTabs.find(t => t.id === 'dry-fruits');
     return dryFruits ? dryFruits.id : (resolvedTabs[0]?.id || 'dry-fruits');
@@ -138,7 +114,7 @@ export default function BoutiqueSelections({
     [resolvedTabs, selectedTabId]
   );
 
-  // 4. Autoplay timing configuration
+  // 3. Autoplay timing configuration
   const intervalMs =
     activeSettings.autoplay?.intervalMs ??
     activeSettings.autoplayDurationMs ??
@@ -148,35 +124,69 @@ export default function BoutiqueSelections({
     activeSettings.autoplayResumeDelayMs ??
     3000;
 
-  // 5. Autoplay state machine:
-  // - prefers-reduced-motion defaults autoplay off
-  // - isPlaying: explicit user play/pause state
+  // 4. Autoplay state machine:
+  // - userPlayOverride: null (use default) | true (explicit play) | false (explicit pause)
   // - isInteracted: manual tab select, keyboard focus, touch swipe, product click pauses until explicit Play
-  // - isHovered: pointer hover pauses throughout
-  // - hoverResumeTimeout: 3000ms delay after pointer exit before resuming
-  const [isPlaying, setIsPlaying] = useState<boolean>(() => {
-    if (prefersReduced) return false;
-    return activeSettings.autoplay?.enabled !== false;
-  });
+  // - isHovered: pointer hover pauses throughout; Play while hovered does not falsify hover state!
+  // - isResumePending: true during 3000ms delay after pointer exit
+  // - isDocumentVisible: reactive document visibility state
+  const [userPlayOverride, setUserPlayOverride] = useState<boolean | null>(null);
   const [isInteracted, setIsInteracted] = useState<boolean>(false);
   const [isHovered, setIsHovered] = useState<boolean>(false);
   const [isResumePending, setIsResumePending] = useState<boolean>(false);
 
-  const hoverResumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const autoplayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isTablistFocusedRef = useRef<boolean>(false);
+  // Document visibility state
+  const [isDocumentVisible, setIsDocumentVisible] = useState<boolean>(() =>
+    typeof document === 'undefined' ? true : !document.hidden
+  );
 
-  // Clear timers helper
-  const clearAllTimers = useCallback(() => {
+  const autoplayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hoverResumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Separated timer cleanups
+  const clearAutoplayTimer = useCallback(() => {
     if (autoplayTimerRef.current) {
       clearTimeout(autoplayTimerRef.current);
       autoplayTimerRef.current = null;
     }
+  }, []);
+
+  const clearHoverResumeTimer = useCallback(() => {
     if (hoverResumeTimerRef.current) {
       clearTimeout(hoverResumeTimerRef.current);
       hoverResumeTimerRef.current = null;
     }
   }, []);
+
+  // Cleanup all timers on unmount
+  useEffect(() => {
+    return () => {
+      clearAutoplayTimer();
+      clearHoverResumeTimer();
+    };
+  }, [clearAutoplayTimer, clearHoverResumeTimer]);
+
+  // Autoplay eligibility logic
+  const isRotationPossible = resolvedTabs.length > 1;
+  const adminAutoplayEnabled = activeSettings.autoplay?.enabled !== false;
+  const isEffectivelyPlaying =
+    userPlayOverride !== null
+      ? userPlayOverride
+      : (!prefersReduced && adminAutoplayEnabled);
+
+  // Is showcase actively in playing state for UI disclosure
+  const isShowcasePlaying =
+    isRotationPossible &&
+    isEffectivelyPlaying &&
+    !isInteracted;
+
+  // Can the countdown timer actually run right now?
+  const canAutoplayRun =
+    isShowcasePlaying &&
+    !isHovered &&
+    !isResumePending &&
+    !prefersReduced &&
+    isDocumentVisible;
 
   // Cycle to next tab
   const advanceToNextTab = useCallback(() => {
@@ -188,38 +198,63 @@ export default function BoutiqueSelections({
     });
   }, [resolvedTabs]);
 
+  // Document visibility listener
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      const visible = !document.hidden;
+      setIsDocumentVisible(visible);
+      if (!visible) {
+        // Tab hidden: cancel countdown and resume delay immediately
+        clearAutoplayTimer();
+        clearHoverResumeTimer();
+        setIsResumePending(false);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [clearAutoplayTimer, clearHoverResumeTimer]);
+
   // Pointer hover handlers
   const handleMouseEnter = useCallback(() => {
     setIsHovered(true);
+    // Cancel pending resume timer immediately
+    clearHoverResumeTimer();
     setIsResumePending(false);
-    if (hoverResumeTimerRef.current) {
-      clearTimeout(hoverResumeTimerRef.current);
-      hoverResumeTimerRef.current = null;
-    }
-    if (autoplayTimerRef.current) {
-      clearTimeout(autoplayTimerRef.current);
-      autoplayTimerRef.current = null;
-    }
-  }, []);
+    // Cancel running rotation countdown
+    clearAutoplayTimer();
+  }, [clearHoverResumeTimer, clearAutoplayTimer]);
 
   const handleMouseLeave = useCallback(() => {
     setIsHovered(false);
-    if (!isPlaying || isInteracted) return;
+    if (!isEffectivelyPlaying || isInteracted || !isRotationPossible || !isDocumentVisible) {
+      return;
+    }
 
-    // Wait 3000ms after pointer exit before starting autoplay interval
+    // Start the hover resume delay
+    clearHoverResumeTimer();
     setIsResumePending(true);
-    if (hoverResumeTimerRef.current) clearTimeout(hoverResumeTimerRef.current);
     hoverResumeTimerRef.current = setTimeout(() => {
       setIsResumePending(false);
       hoverResumeTimerRef.current = null;
     }, resumeDelayMs);
-  }, [isPlaying, isInteracted, resumeDelayMs]);
+  }, [
+    isEffectivelyPlaying,
+    isInteracted,
+    isRotationPossible,
+    isDocumentVisible,
+    resumeDelayMs,
+    clearHoverResumeTimer,
+  ]);
 
   // Manual interaction handler (tab selection, focus, touch swipe, card click)
   const handleManualInteraction = useCallback(() => {
     setIsInteracted(true);
-    clearAllTimers();
-  }, [clearAllTimers]);
+    clearAutoplayTimer();
+    clearHoverResumeTimer();
+    setIsResumePending(false);
+  }, [clearAutoplayTimer, clearHoverResumeTimer]);
 
   // Tab click
   const handleSelectTab = useCallback(
@@ -232,74 +267,46 @@ export default function BoutiqueSelections({
 
   // Explicit Play / Pause toggle
   const handleTogglePlayPause = useCallback(() => {
-    if (isPlaying && !isInteracted) {
-      // User pauses
-      setIsPlaying(false);
-      clearAllTimers();
-    } else {
-      // User explicitly plays: clears manual interaction pause and starts playing
-      setIsInteracted(false);
-      setIsPlaying(true);
-      setIsHovered(false);
+    if (isShowcasePlaying) {
+      // User explicitly pauses
+      setUserPlayOverride(false);
+      setIsInteracted(true);
+      clearAutoplayTimer();
+      clearHoverResumeTimer();
       setIsResumePending(false);
+    } else {
+      // User explicitly plays
+      setUserPlayOverride(true);
+      setIsInteracted(false);
+      setIsResumePending(false);
+      clearHoverResumeTimer();
+      // CRITICAL: DO NOT falsify isHovered!
+      // If pointer is hovering over the component or button, isHovered stays true,
+      // keeping the entire hover duration protected until pointer exits.
     }
-  }, [isPlaying, isInteracted, clearAllTimers]);
+  }, [isShowcasePlaying, clearAutoplayTimer, clearHoverResumeTimer]);
 
-  // Autoplay countdown effect
+  // Dedicated Autoplay countdown effect
+  // Note: ONLY owns autoplayTimerRef; NEVER touches hoverResumeTimerRef!
   useEffect(() => {
-    clearAllTimers();
+    clearAutoplayTimer();
 
-    const canAutoplay =
-      isPlaying &&
-      !isInteracted &&
-      !isHovered &&
-      !isResumePending &&
-      !prefersReduced &&
-      resolvedTabs.length > 1;
-
-    if (!canAutoplay) return;
+    if (!canAutoplayRun) return;
 
     autoplayTimerRef.current = setTimeout(() => {
       advanceToNextTab();
     }, intervalMs);
 
     return () => {
-      if (autoplayTimerRef.current) {
-        clearTimeout(autoplayTimerRef.current);
-        autoplayTimerRef.current = null;
-      }
+      clearAutoplayTimer();
     };
   }, [
-    isPlaying,
-    isInteracted,
-    isHovered,
-    isResumePending,
-    prefersReduced,
-    selectedTabId,
-    resolvedTabs,
+    canAutoplayRun,
     intervalMs,
+    selectedTabId,
     advanceToNextTab,
-    clearAllTimers,
+    clearAutoplayTimer,
   ]);
-
-  // Document visibility change listener
-  // Pause on document.hidden; do not immediately advance on return!
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        clearAllTimers();
-      } else {
-        // Returned to tab: do NOT immediately advance!
-        // Reset timers so interval starts fresh
-        clearAllTimers();
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      clearAllTimers();
-    };
-  }, [clearAllTimers]);
 
   // Keyboard navigation for tablist (Arrow keys, Home, End)
   const handleTablistKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -371,15 +378,18 @@ export default function BoutiqueSelections({
             <button
               type="button"
               onClick={handleTogglePlayPause}
+              disabled={!isRotationPossible}
               aria-label={
-                isPlaying && !isInteracted
+                isShowcasePlaying
                   ? t('boutique.pauseShowcase', 'Pause showcase autoplay')
                   : t('boutique.playShowcase', 'Play showcase autoplay')
               }
-              aria-pressed={isPlaying && !isInteracted}
-              className="focus-ring inline-flex min-h-9 items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-base)] px-3.5 py-1.5 text-xs font-semibold text-[var(--color-ink)] transition-colors hover:border-[#C7982F] hover:text-[#C7982F]"
+              aria-pressed={isShowcasePlaying}
+              className={`focus-ring inline-flex min-h-9 items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-base)] px-3.5 py-1.5 text-xs font-semibold text-[var(--color-ink)] transition-colors hover:border-[#C7982F] hover:text-[#C7982F] ${
+                !isRotationPossible ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
             >
-              {isPlaying && !isInteracted ? (
+              {isShowcasePlaying ? (
                 <>
                   <Pause size={13} className="text-[#C7982F]" aria-hidden="true" />
                   <span>{t('boutique.pause', 'Pause')}</span>
@@ -407,13 +417,7 @@ export default function BoutiqueSelections({
           role="tablist"
           aria-label={t('boutique.showcaseTabs', 'Boutique collection tabs')}
           onKeyDown={handleTablistKeyDown}
-          onFocusCapture={() => {
-            isTablistFocusedRef.current = true;
-            handleManualInteraction();
-          }}
-          onBlurCapture={() => {
-            isTablistFocusedRef.current = false;
-          }}
+          onFocusCapture={handleManualInteraction}
           className="mb-8 flex gap-2 overflow-x-auto pb-2 scrollbar-none"
         >
           {resolvedTabs.map(tab => {
@@ -423,6 +427,7 @@ export default function BoutiqueSelections({
                 key={tab.id}
                 role="tab"
                 id={`boutique-tab-${componentId}-${tab.id}`}
+                data-tab-id={tab.id}
                 aria-selected={isActive}
                 aria-controls={`boutique-panel-${componentId}-${tab.id}`}
                 tabIndex={isActive ? 0 : -1}

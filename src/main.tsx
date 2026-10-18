@@ -17,6 +17,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { CartProvider } from './contexts/CartContext';
 import { CatalogProvider } from './contexts/CatalogContext';
+import { MerchandisingProvider } from './contexts/MerchandisingContext';
 
 if (typeof window !== 'undefined') {
   window.addEventListener('vite:preloadError', (event) => {
@@ -38,9 +39,9 @@ createRoot(document.getElementById('root')!).render(
     <ThemeProvider>
       <LanguageProvider>
         <AuthProvider>
-          <CatalogProvider><ProductMediaProvider><CartProvider>
+          <CatalogProvider><MerchandisingProvider><ProductMediaProvider><CartProvider>
             <App />
-          </CartProvider></ProductMediaProvider></CatalogProvider>
+          </CartProvider></ProductMediaProvider></MerchandisingProvider></CatalogProvider>
         </AuthProvider>
       </LanguageProvider>
     </ThemeProvider>

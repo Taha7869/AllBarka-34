@@ -12,6 +12,7 @@ import ScrollReveal from '../components/motion/ScrollReveal';
 import WordScrollReveal from '../components/motion/WordScrollReveal';
 import MagneticButton from '../components/motion/MagneticButton';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useMerchandisingSettings } from '../contexts/MerchandisingContext';
 import { ShieldCheck, ThermometerSnowflake, Truck, ArrowUpRight, ShoppingBag } from 'lucide-react';
 
 interface OutletContextType {
@@ -29,6 +30,7 @@ const servicePillars = [
 export default function HomePage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const merchandisingSettings = useMerchandisingSettings();
   const outlet = useOutletContext<OutletContextType>() || ({} as Partial<OutletContextType>);
   const setCartOpen = outlet.setCartOpen ?? (() => {});
   const setSelectedQuickViewProduct = outlet.setSelectedQuickViewProduct ?? (() => {});
@@ -84,7 +86,7 @@ export default function HomePage() {
 
       {/* ── 2. Explore Our Collections (Compact destination cards) ───────── */}
       <ScrollReveal className="w-full">
-        <CategoryCarousel />
+        <CategoryCarousel settings={merchandisingSettings} />
       </ScrollReveal>
 
       {/* ── Section Divider ──────────────────────────────────────────────── */}
@@ -95,6 +97,7 @@ export default function HomePage() {
       {/* ── 3. Boutique Selections (The SINGLE homepage product showcase) ─── */}
       <ScrollReveal className="w-full" index={0}>
         <BoutiqueSelections
+          settings={merchandisingSettings}
           onAddToCart={handleAddToCart}
           onQuickView={setSelectedQuickViewProduct}
         />
@@ -107,7 +110,7 @@ export default function HomePage() {
 
       {/* ── 4. Find a Gift for Your Occasion (Compact destination links) ─── */}
       <ScrollReveal className="w-full" index={0}>
-        <FindGiftOccasionSection />
+        <FindGiftOccasionSection settings={merchandisingSettings} />
       </ScrollReveal>
 
       {/* ── 5. Compact genuine feedback & essential service information/FAQ ─ */}
