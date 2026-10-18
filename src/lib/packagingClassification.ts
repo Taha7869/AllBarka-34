@@ -38,26 +38,45 @@ export const PACKAGING_SUBCATEGORY_LEGACY_MAP: Readonly<Record<string, string>> 
 export function getPackagingSubcategory(product: Partial<Product> | null | undefined): string | null {
   if (!product) return null;
 
-  // 1. Explicit product metadata
-  if (typeof product.packagingSubcategory === 'string' && product.packagingSubcategory.trim()) {
-    return product.packagingSubcategory.trim().toLowerCase();
+  // 1. Explicit deliberate clearing: null, 'none', or empty string
+  // If the product was explicitly cleared by the admin, it MUST remain unclassified.
+  // Legacy fallback must NEVER resurrect a deliberately cleared product!
+  if (product.packagingSubcategory === null || product.packagingSubcategory === 'none' || product.packagingSubcategory === '') {
+    return null;
+  }
+  if (
+    product.bidBoxConfig &&
+    (product.bidBoxConfig.packagingSubcategory === null ||
+      product.bidBoxConfig.packagingSubcategory === 'none' ||
+      product.bidBoxConfig.packagingSubcategory === '')
+  ) {
+    return null;
   }
 
-  // 2. Explicit bidBoxConfig metadata
+  // 2. Explicit product metadata
+  if (typeof product.packagingSubcategory === 'string' && product.packagingSubcategory.trim()) {
+    const val = product.packagingSubcategory.trim().toLowerCase();
+    if (val === 'none') return null;
+    return val;
+  }
+
+  // 3. Explicit bidBoxConfig metadata
   if (
     product.bidBoxConfig &&
     typeof product.bidBoxConfig.packagingSubcategory === 'string' &&
     product.bidBoxConfig.packagingSubcategory.trim()
   ) {
-    return product.bidBoxConfig.packagingSubcategory.trim().toLowerCase();
+    const val = product.bidBoxConfig.packagingSubcategory.trim().toLowerCase();
+    if (val === 'none') return null;
+    return val;
   }
 
-  // 3. Documented legacy fallback for existing products
+  // 4. Documented legacy fallback for existing products ONLY when classification has never been explicitly assigned or cleared
   if (product.id && PACKAGING_SUBCATEGORY_LEGACY_MAP[product.id]) {
     return PACKAGING_SUBCATEGORY_LEGACY_MAP[product.id];
   }
 
-  // 4. Unknown products remain unclassified
+  // 5. Unknown products remain unclassified
   return null;
 }
 

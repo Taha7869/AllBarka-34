@@ -550,11 +550,11 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
   // Packaging subcategory (Celebration Boxes) with deliberate clear behavior
   if (value.packagingSubcategory !== undefined) {
     if (value.packagingSubcategory === null || value.packagingSubcategory === '') {
-      product.packagingSubcategory = undefined;
+      product.packagingSubcategory = null;
     } else if (typeof value.packagingSubcategory === 'string') {
       const normalized = value.packagingSubcategory.trim().toLowerCase();
       if (normalized === '' || normalized === 'none') {
-        product.packagingSubcategory = undefined;
+        product.packagingSubcategory = null;
       } else if ((VALID_PACKAGING_SUBCATEGORIES as readonly string[]).includes(normalized)) {
         product.packagingSubcategory = normalized;
       } else {

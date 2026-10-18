@@ -476,7 +476,7 @@ test('Regression 8: packagingSubcategory validates values, clears deliberately, 
     packagingSubcategory: null,
     prices: { 'Empty Pack (10 pcs)': 1500 },
   });
-  assert.equal(clearedSubcat.packagingSubcategory, undefined, 'Null clears packagingSubcategory');
+  assert.equal(clearedSubcat.packagingSubcategory, null, 'Null sets packagingSubcategory to null (deliberate clear)');
 
   // Rejection of unsupported subcategory
   assert.throws(
@@ -532,8 +532,63 @@ test('Regression 8: packagingSubcategory validates values, clears deliberately, 
   const catalogSnapshotAfterClear = await loadAuthoritativeCatalog(db);
   const clearedProduct = catalogSnapshotAfterClear.products.find(p => p.id === 'admin-persisted-tin-box');
   assert.ok(clearedProduct, 'Cleared product still exists in catalog');
-  assert.equal(clearedProduct.packagingSubcategory, undefined, 'packagingSubcategory successfully cleared');
+  assert.equal(clearedProduct.packagingSubcategory, null, 'packagingSubcategory successfully cleared to null');
   assert.equal(getPackagingSubcategory(clearedProduct), null, 'getPackagingSubcategory returns null (unclassified)');
+
+  // 3. Actual Legacy ID Regression: bid-box-luxury-tin
+  // Step A: Untouched legacy product receives intended fallback
+  const untouchedCatalog = await loadAuthoritativeCatalog(db);
+  const untouchedLegacy = untouchedCatalog.products.find(p => p.id === 'bid-box-luxury-tin');
+  assert.ok(untouchedLegacy, 'Untouched legacy product must exist in catalog');
+  assert.equal(getPackagingSubcategory(untouchedLegacy), 'tin', 'Untouched legacy product receives intended fallback (tin)');
+  assert.equal(productMatchesPackagingSubcategory(untouchedLegacy, 'tin'), true, 'Untouched legacy matches tin filter');
+
+  // Step B: Explicitly assign another subcategory (e.g. wedding)
+  const currentLegacyRevision = Number.isSafeInteger(untouchedLegacy.revision) ? untouchedLegacy.revision! : 0;
+  const updatedLegacy = await updateAdminProduct({
+    db,
+    productId: 'bid-box-luxury-tin',
+    body: {
+      expectedRevision: currentLegacyRevision,
+      packagingSubcategory: 'wedding',
+    },
+    actorUid: 'admin-test-uid',
+  });
+  assert.equal(updatedLegacy.packagingSubcategory, 'wedding', 'Explicitly assigned subcategory');
+
+  const catalogWithAssigned = await loadAuthoritativeCatalog(db);
+  const assignedLegacy = catalogWithAssigned.products.find(p => p.id === 'bid-box-luxury-tin');
+  assert.ok(assignedLegacy, 'Assigned legacy product exists');
+  assert.equal(getPackagingSubcategory(assignedLegacy), 'wedding', 'Assigned subcategory takes effect');
+  assert.equal(productMatchesPackagingSubcategory(assignedLegacy, 'wedding'), true, 'Matches wedding filter');
+  assert.equal(productMatchesPackagingSubcategory(assignedLegacy, 'tin'), false, 'Does not match tin filter');
+
+  // Step C: Clear subcategory through admin update path
+  await updateAdminProduct({
+    db,
+    productId: 'bid-box-luxury-tin',
+    body: {
+      expectedRevision: updatedLegacy.revision,
+      packagingSubcategory: null,
+    },
+    actorUid: 'admin-test-uid',
+  });
+
+  // Step D: Reload public catalog and verify it remains unclassified (legacy fallback must NOT resurrect)
+  const catalogAfterLegacyClear = await loadAuthoritativeCatalog(db);
+  const clearedLegacy = catalogAfterLegacyClear.products.find(p => p.id === 'bid-box-luxury-tin');
+  assert.ok(clearedLegacy, 'Cleared legacy product exists');
+  assert.equal(clearedLegacy.packagingSubcategory, null, 'Deliberately cleared subcategory is persistently null');
+  assert.equal(getPackagingSubcategory(clearedLegacy), null, 'getPackagingSubcategory returns null (unclassified)');
+  assert.equal(productMatchesPackagingSubcategory(clearedLegacy, 'tin'), false, 'Legacy fallback does NOT resurrect tin filter');
+  assert.equal(productMatchesPackagingSubcategory(clearedLegacy, 'wedding'), false, 'Does not match wedding');
+  assert.equal(productMatchesPackagingSubcategory(clearedLegacy, 'all'), true, 'Appears in all boxes');
+
+  // Step E: Verify another untouched legacy product (e.g. bid-box-umrah-tabarruk) still receives intended fallback
+  const untouchedTabarruk = catalogAfterLegacyClear.products.find(p => p.id === 'bid-box-umrah-tabarruk');
+  assert.ok(untouchedTabarruk, 'Untouched tabarruk exists');
+  assert.equal(getPackagingSubcategory(untouchedTabarruk), 'tabarruk', 'Untouched tabarruk still receives legacy fallback');
+  assert.equal(productMatchesPackagingSubcategory(untouchedTabarruk, 'tabarruk'), true, 'Untouched tabarruk matches tabarruk filter');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

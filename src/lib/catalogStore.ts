@@ -14,6 +14,7 @@ import {
   validateDynamicProduct,
   validateMerchandisingSettings,
   catalogVariantId,
+  VALID_PACKAGING_SUBCATEGORIES,
   type CatalogRecord,
   type CatalogVariant,
   type CatalogPricing
@@ -152,7 +153,12 @@ function snapshotFromDocuments(snapshots: DocumentSnapshot[], now: number): Cata
           status,
           orderMode: raw.orderMode || base.orderMode || (base.quoteOnly ? 'inquiry_quote' : 'standard'),
           productFamily: raw.productFamily || base.productFamily,
-          packagingSubcategory: raw.packagingSubcategory !== undefined ? (raw.packagingSubcategory || undefined) : base.packagingSubcategory,
+          packagingSubcategory: raw.packagingSubcategory !== undefined ? raw.packagingSubcategory : base.packagingSubcategory,
+          bidBoxConfig: base.bidBoxConfig || raw.bidBoxConfig ? {
+            ...(base.bidBoxConfig || {}),
+            ...(raw.bidBoxConfig || {}),
+            ...(raw.packagingSubcategory !== undefined ? { packagingSubcategory: raw.packagingSubcategory } : {}),
+          } : undefined,
           collections: Array.isArray(raw.collections) ? raw.collections : base.collections,
           occasions: Array.isArray(raw.occasions) ? raw.occasions : base.occasions,
           personalization: raw.personalization || base.personalization,
@@ -674,12 +680,26 @@ export async function updateAdminProduct(input: { db: Firestore | null; productI
       updatedData.moqOverride = finalProdMoq;
     }
 
-    if (body.packagingSubcategory === null || body.packagingSubcategory === '' || body.packagingSubcategory === 'none') {
-      delete updatedData.packagingSubcategory;
-      if (updatedData.bidBoxConfig && typeof updatedData.bidBoxConfig === 'object') {
-        const nextCfg = { ...updatedData.bidBoxConfig };
-        delete nextCfg.packagingSubcategory;
-        updatedData.bidBoxConfig = nextCfg;
+    if (body.packagingSubcategory !== undefined) {
+      if (body.packagingSubcategory === null || body.packagingSubcategory === '' || body.packagingSubcategory === 'none') {
+        updatedData.packagingSubcategory = null;
+        if (updatedData.bidBoxConfig && typeof updatedData.bidBoxConfig === 'object') {
+          updatedData.bidBoxConfig = {
+            ...updatedData.bidBoxConfig,
+            packagingSubcategory: null,
+          };
+        }
+      } else if (typeof body.packagingSubcategory === 'string') {
+        const normalized = body.packagingSubcategory.trim().toLowerCase();
+        if ((VALID_PACKAGING_SUBCATEGORIES as readonly string[]).includes(normalized)) {
+          updatedData.packagingSubcategory = normalized;
+          if (updatedData.bidBoxConfig && typeof updatedData.bidBoxConfig === 'object') {
+            updatedData.bidBoxConfig = {
+              ...updatedData.bidBoxConfig,
+              packagingSubcategory: normalized,
+            };
+          }
+        }
       }
     }
 
