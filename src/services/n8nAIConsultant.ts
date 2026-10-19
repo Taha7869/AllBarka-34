@@ -13,6 +13,7 @@ export interface ConsultantReply {
   supportUrl?: string;
   recommendedProductIds?: string[];
   inquiryPrefill?: Record<string, any> | null;
+  latencyMs?: number;
 }
 
 export const HUMAN_SUPPORT_URL = 'https://wa.me/923160666083';
@@ -89,13 +90,19 @@ export async function askN8nConsultant(input: ConsultantRequest): Promise<Consul
   });
   try {
     return await Promise.race([deadline, (async () => {
+      const bridgeStart = Date.now();
       const response = await fetch(config.url, {
         method: 'POST', redirect: 'error', signal: controller.signal,
         headers: { 'Content-Type': 'application/json', 'X-AllBarka-Webhook-Secret': config.secret },
         body: JSON.stringify({ source: 'website', message: input.message.trim(), history: normalizeConciergeHistory(input.history), system: input.system }),
       });
+      const bridgeElapsed = Date.now() - bridgeStart;
       if (!response.ok) throw new Error(response.status === 429 ? 'AI_RATE_LIMITED' : 'AI_UNAVAILABLE');
-      return extractN8nReply(await response.json());
+      const parsed = extractN8nReply(await response.json());
+      if (parsed) {
+        parsed.latencyMs = bridgeElapsed;
+      }
+      return parsed;
     })()]);
   } finally { clearTimeout(timer); }
 }

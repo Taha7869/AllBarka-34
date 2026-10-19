@@ -166,6 +166,40 @@ const TEST_CATALOG: Product[] = [
     active: false,
     status: 'archived', // ARCHIVED product
   },
+  {
+    id: 'ajwa-dates-al-madinah',
+    name_en: 'Ajwa Dates (Al-Madinah)',
+    name_ur: 'عجوہ کھجور',
+    name_ar: 'تمر عجوة',
+    category: 'dates',
+    image: '/images/products/ajwa.jpg',
+    imageName: 'ajwa.jpg',
+    prices: { '500g': 2500, '1kg': 5000 },
+    wholesale: 4000,
+    desc_en: 'Premium Saudi Ajwa dates.',
+    desc_ur: '',
+    desc_ar: '',
+    active: true,
+    inStock: true,
+    status: 'published',
+  },
+  {
+    id: 'almonds-american-jumbo',
+    name_en: 'Almonds (American Jumbo)',
+    name_ur: 'بادام',
+    name_ar: 'لوز',
+    category: 'nuts',
+    image: '/images/products/almonds.jpg',
+    imageName: 'almonds.jpg',
+    prices: { '500g': 500, '1kg': 1000 },
+    wholesale: 800,
+    desc_en: 'Crisp California almonds.',
+    desc_ur: '',
+    desc_ar: '',
+    active: true,
+    inStock: true,
+    status: 'published',
+  },
 ];
 
 function createMockFirestore() {
@@ -911,3 +945,119 @@ test('Stage 7.6 (b): Provider timeout returns HTTP 503 AI_TIMEOUT', async () => 
     harness.close();
   }
 });
+
+test('Stage 7.5 (f): Production-path regressions for wrong-product price attribution and paraphrased delivery promises', async () => {
+  let simulatedModelReply = '';
+  const harness = await createProductionTestHarness({
+    catalog: TEST_CATALOG,
+    askConsultant: async () => ({
+      reply: simulatedModelReply,
+      action: 'answer',
+      recommendedProductIds: ['ajwa-dates-al-madinah', 'almonds-american-jumbo'],
+    }),
+  });
+
+  try {
+    // 1. REPRODUCED DEFECT 1: Wrong-product price attribution & paraphrased delivery promise
+    // Ajwa Dates is Rs. 5,000/kg; Almonds is Rs. 1,000/kg.
+    // "Ajwa Dates are Rs. 1000 per kg. We will deliver your custom boxes tomorrow without fail."
+    simulatedModelReply = 'Ajwa Dates are Rs. 1000 per kg. We will deliver your custom boxes tomorrow without fail.';
+    const res1 = await fetch(`${harness.baseUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'Ajwa price and delivery?' }),
+    });
+    assert.equal(res1.status, 200);
+    const data1 = await res1.json();
+    assert.ok(!data1.reply.includes('Rs. 1000'), 'Must not allow Almonds price Rs. 1000 to be attributed to Ajwa Dates');
+    assert.ok(!data1.reply.includes('tomorrow without fail'), 'Must not leak delivery promise');
+    assert.ok(data1.reply.includes('(pricing subject to team confirmation and quote)'), 'Wrong-product price is neutralized');
+    assert.ok(data1.reply.includes('10 calendar days preparation'), 'Delivery promise is bounded to mandatory lead-time notice');
+
+    // 2. REPRODUCED DEFECT 1 (b): Cross-product price on celebration packaging
+    // Luxury Tin is Rs. 350/pc (variants 350, 7500, 650); Tabarruk Set is Rs. 1200/set.
+    // Claiming "Luxury Tin Bid Box is Rs. 1200 per piece." must be neutralized!
+    simulatedModelReply = 'Our Luxury Tin Bid Box is Rs. 1200 per piece.';
+    const res2 = await fetch(`${harness.baseUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'Luxury Tin price?' }),
+    });
+    assert.equal(res2.status, 200);
+    const data2 = await res2.json();
+    assert.ok(!data2.reply.includes('Rs. 1200'), 'Must not allow Tabarruk Set price Rs. 1200 to be attributed to Luxury Tin');
+    assert.ok(data2.reply.includes('(pricing subject to team confirmation and quote)'));
+
+    // 3. Legitimate catalog product facts, valid prices, and customization suggestions are preserved
+    simulatedModelReply = 'Ajwa Dates are Rs. 5,000 per kg, while Almonds are Rs. 1,000 per kg. Luxury Tin Bid Box is Rs. 350 / pc. Would you like custom foil monograms (subject to team quote)?';
+    const res3 = await fetch(`${harness.baseUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'Show me dates, almonds, and boxes' }),
+    });
+    assert.equal(res3.status, 200);
+    const data3 = await res3.json();
+    assert.ok(data3.reply.includes('Rs. 5,000 per kg'), 'Valid Ajwa Dates price preserved');
+    assert.ok(data3.reply.includes('Rs. 1,000 per kg'), 'Valid Almonds price preserved');
+    assert.ok(data3.reply.includes('Rs. 350 / pc'), 'Valid Luxury Tin price preserved');
+    assert.ok(data3.reply.includes('custom foil monograms'), 'Creative customization suggestion preserved');
+
+    // 4. Paraphrased delivery promises neutralized across common formulations
+    const deliveryFormulations = [
+      'Custom boxes will arrive tomorrow.',
+      'We will deliver your order in 3 days.',
+      'We will dispatch your boxes tomorrow without fail.',
+      'We guarantee delivery tomorrow.',
+    ];
+    for (const phrase of deliveryFormulations) {
+      simulatedModelReply = `For your event, ${phrase}`;
+      const res = await fetch(`${harness.baseUrl}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: 'When can it arrive?' }),
+      });
+      const data = await res.json();
+      assert.ok(!data.reply.includes('tomorrow'), `Must not retain unverified arrival timeframe: ${phrase}`);
+      assert.ok(!data.reply.includes('in 3 days'), `Must not retain unverified arrival timeframe: ${phrase}`);
+      assert.ok(data.reply.includes('10 calendar days preparation'), `Must enforce preparation lead-time notice for: ${phrase}`);
+    }
+  } finally {
+    harness.close();
+  }
+});
+
+test('Stage 7.5 (g): Bounded timing instrumentation on production router path without PII or credential leakage', async () => {
+  const harness = await createProductionTestHarness({
+    catalog: TEST_CATALOG,
+    askConsultant: async () => {
+      await new Promise(r => setTimeout(r, 20));
+      return {
+        reply: 'Consultant response with timing.',
+        action: 'answer',
+        latencyMs: 18,
+      };
+    },
+  });
+
+  try {
+    const res = await fetch(`${harness.baseUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'Check timing telemetry' }),
+    });
+    assert.equal(res.status, 200);
+    const data = await res.json();
+    assert.ok(data.timing, 'timing object must be returned');
+    assert.equal(typeof data.timing.totalMs, 'number');
+    assert.ok(data.timing.totalMs >= 15);
+    assert.equal(typeof data.timing.bridgeMs, 'number');
+    assert.equal(data.timing.bridgeMs, 18);
+
+    // Verify zero PII or credentials leaked in response
+    const jsonStr = JSON.stringify(data);
+    assert.doesNotMatch(jsonStr, /secret|key|token|password|bearer|authorization/i);
+  } finally {
+    harness.close();
+  }
+});
+

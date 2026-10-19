@@ -723,9 +723,24 @@ export function validateAndSanitizeAssistantReply(options: SanitizeReplyOptions)
   const simpleStockPattern = /\b(\d+[\d,]*)\s+in\s+stock\b/gi;
   sanitized = sanitized.replace(simpleStockPattern, '(artisanal selections are prepared to order; exact inventory confirmed by team)');
 
-  // 5. Reject / sanitize delivery commitments / guarantees
-  const deliveryPromisePattern = /\b(?:delivery\s+guaranteed\s+(?:tomorrow|today|in\s+\d+\s+days?)|guaranteed\s+delivery\s+(?:tomorrow|today|in\s+\d+\s+days?)|guaranteed\s+(?:tomorrow|next-day)\s+delivery|same-day\s+delivery\s+guaranteed|we\s+guarantee\s+delivery\s+tomorrow)\b/gi;
-  sanitized = sanitized.replace(deliveryPromisePattern, '(delivery timelines are confirmed upon order review; custom celebration orders require 10 calendar days preparation)');
+  // 5. Reject / sanitize delivery commitments / guarantees / prompt promises
+  // Any sentence or clause asserting or promising delivery/dispatch/arrival timing or guarantees
+  // (e.g. "We will deliver your custom boxes tomorrow without fail.", "We can deliver tomorrow.",
+  // "Delivery guaranteed tomorrow.", "Custom boxes will arrive tomorrow.")
+  // must be strictly bounded to canonical lead time: celebration orders require 10 calendar days.
+  const deliveryPromiseReplacement = '(delivery timelines are confirmed upon order review; custom celebration orders require 10 calendar days preparation)';
+  const sentences = sanitized.split(/(?<=[.!?\n])/);
+  sanitized = sentences.map(s => {
+    const hasDelivery = /\b(?:deliver(?:y|ed|ing|s)?|dispatch(?:ed|ing|es)?|arriv(?:e|al|ing|es)?|ship(?:ping|ped|s)?)\b/i.test(s);
+    const hasTimeframe = /\b(?:tomorrow|today|tonight|next[\s-]day|same[\s-]day|without\s+fail|guarantee(?:d)?|promptly|immediately|in\s+\d+\s+days?|within\s+\d+\s+days?)\b/i.test(s);
+    if (hasDelivery && hasTimeframe) {
+      return s.replace(/\b(?:(?:we\s+(?:will|can|shall|guarantee|promise)\s+)?\b(?:deliver(?:y|ed|ing|s)?|dispatch(?:ed|ing|es)?|arriv(?:e|al|ing|es)?|ship(?:ping|ped|s)?|send|guarantee\s+delivery)\b[^.!?\n]*\b(?:tomorrow|today|tonight|next[\s-]day|same[\s-]day|without\s+fail|guarantee(?:d)?|in\s+\d+\s+days?|within\s+\d+\s+days?)(?:\s+without\s+fail)?|(?:delivery|dispatch|arrival|shipping|guarantee)\s+[^.!?\n]*\b(?:tomorrow|today|tonight|next[\s-]day|same[\s-]day|without\s+fail|guarantee(?:d)?|in\s+\d+\s+days?|within\s+\d+\s+days?)(?:\s+without\s+fail)?)/gi, deliveryPromiseReplacement);
+    }
+    return s;
+  }).join('');
+
+  const urduDeliveryPromisePattern = /(?:کل|آج|یقینی|بغیر\s*کسی\s*تاخیر|فوری|گارنٹی)\s*(?:ڈیلیوری|ڈلیوری|پہنچانے|بھیجنے|پہنچائیں|پہنچا\s*دیں)/g;
+  sanitized = sanitized.replace(urduDeliveryPromisePattern, '(آرڈر پروسیسنگ اور کسٹم سیلیبریشن کے لیے 10 یوم درکار ہیں)');
 
   // 6. Separate customer proposed budget from approved store prices
   const approvedBudgetPattern = /\b(?:our\s+approved\s+price\s+is|approved\s+(?:price|rate)\s+(?:is|:)|confirmed\s+(?:price|rate)\s+(?:is|:)|we\s+(?:can\s+)?approve\s+a\s+price\s+of)\s*(?:Rs\.?|PKR|Rs)?\s*(\d[\d,]*)\b/gi;
@@ -759,36 +774,85 @@ export function validateAndSanitizeAssistantReply(options: SanitizeReplyOptions)
     return match;
   });
 
-  // 8. Commercial product price grounding:
-  const productPrices = new Set<number>();
-  for (const p of visible) {
+  // 8. Bounded commercial response contract:
+  // - Product commercial facts must strictly reference a validated public product ID and available variant.
+  // - Application code derives valid prices, units, and packaging MOQ from authoritative catalog data.
+  // - Cross-product price attribution (e.g. Almonds price 1000 claimed for Ajwa Dates) is strictly neutralized.
+  // - Store shipping rules are accepted only in authoritative shipping contexts.
+  // - Customer budget remains a customer proposal; non-catalog items require team quote.
+  // - Bounded contract boundary: free-form prose is limited to conversational assistance and creative suggestions.
+  //   Arbitrary natural-language prose is never claimed as authoritative commercial truth; authoritative facts
+  //   are conveyed exclusively through validated structured blocks (recommendations, inquiryPrefill, store policy).
+
+  interface ProductPriceProfile {
+    id: string;
+    names: string[];
+    prices: Set<number>;
+  }
+
+  const productProfiles: ProductPriceProfile[] = visible.map(p => {
+    const prices = new Set<number>();
     if (p.prices) {
       for (const val of Object.values(p.prices)) {
         if (typeof val === 'number' && Number.isFinite(val) && val > 0) {
-          productPrices.add(Math.round(val));
+          prices.add(Math.round(val));
         }
       }
     }
     if (Array.isArray(p.variants)) {
       for (const v of p.variants) {
         if (v && typeof v.price === 'number' && Number.isFinite(v.price) && v.price > 0 && v.available !== false) {
-          productPrices.add(Math.round(v.price));
+          prices.add(Math.round(v.price));
           const ppp = parsePiecesPerPack(v.label);
           if (ppp > 1) {
-            productPrices.add(Math.round(v.price / ppp));
+            prices.add(Math.round(v.price / ppp));
           }
         }
       }
     }
-  }
 
-  for (const rec of recommendations) {
-    if (rec.startingPrice) productPrices.add(Math.round(rec.startingPrice));
-  }
-  if (inquiryPrefill) {
-    if (inquiryPrefill.standardPrice) productPrices.add(Math.round(inquiryPrefill.standardPrice));
-    if (inquiryPrefill.packagingSubtotal) productPrices.add(Math.round(inquiryPrefill.packagingSubtotal));
-  }
+    const nameTokens = new Set<string>();
+    if (p.id) nameTokens.add(p.id.toLowerCase().trim());
+    if (p.name_en) {
+      const en = p.name_en.toLowerCase().trim();
+      nameTokens.add(en);
+      const stripped = en.replace(/[()]/g, ' ').replace(/\s+/g, ' ').trim();
+      nameTokens.add(stripped);
+      for (const part of p.name_en.split(/[()]/)) {
+        const clean = part.toLowerCase().trim();
+        if (clean.length >= 3) nameTokens.add(clean);
+      }
+      if (/ajwa/i.test(en)) nameTokens.add('ajwa');
+      if (/mabroom/i.test(en)) nameTokens.add('mabroom');
+      if (/amber/i.test(en)) nameTokens.add('amber');
+      if (/safawi/i.test(en)) nameTokens.add('safawi');
+      if (/medjool/i.test(en)) nameTokens.add('medjool');
+      if (/pista|pistachio/i.test(en)) { nameTokens.add('pista'); nameTokens.add('pistachio'); nameTokens.add('pistachios'); }
+      if (/almond|badam/i.test(en)) { nameTokens.add('almond'); nameTokens.add('almonds'); nameTokens.add('badam'); }
+      if (/cashew|kaju/i.test(en)) { nameTokens.add('cashew'); nameTokens.add('cashews'); nameTokens.add('kaju'); }
+      if (/walnut|akhrot/i.test(en)) { nameTokens.add('walnut'); nameTokens.add('walnuts'); nameTokens.add('akhrot'); }
+      if (/tin/i.test(en)) { nameTokens.add('tin'); nameTokens.add('tin box'); nameTokens.add('luxury tin'); }
+      if (/tabarruk/i.test(en)) { nameTokens.add('tabarruk'); nameTokens.add('tabarruk set'); nameTokens.add('tabarruk box'); }
+      if (/coffer/i.test(en)) { nameTokens.add('coffer'); nameTokens.add('wooden coffer'); }
+    }
+    if (p.name_ur) {
+      nameTokens.add(p.name_ur.trim());
+      for (const part of p.name_ur.split(/\s+/)) {
+        if (part.length >= 3) nameTokens.add(part);
+      }
+    }
+    if (p.name_ar) {
+      nameTokens.add(p.name_ar.trim());
+    }
+
+    const sortedNames = Array.from(nameTokens).filter(Boolean).sort((a, b) => b.length - a.length);
+
+    return {
+      id: p.id,
+      names: sortedNames,
+      prices,
+    };
+  });
 
   const storeShippingRates = new Set<number>([
     STORE_CONFIG.shipping.standardRate, // 250
@@ -798,57 +862,96 @@ export function validateAndSanitizeAssistantReply(options: SanitizeReplyOptions)
     STORE_CONFIG.shipping.freeThreshold, // 3000
   ]);
 
-  // Neutralize remaining ungrounded numeric price mentions
-  const priceRegex = /\b(?:Rs\.?|PKR|Rs)\s*(\d[\d,]*)(?:\s*(?:\/|\s*per\s*|\s*each\s*)(?:pc|piece|box|pack|kg|g|set))?/gi;
-  sanitized = sanitized.replace(priceRegex, (match, digits, offset) => {
-    const num = parseInt(digits.replace(/,/g, ''), 10);
-    if (!Number.isFinite(num)) {
+  function verifyPriceClaim(num: number, offset: number, matchText: string, currentText: string): string {
+    if (!Number.isFinite(num) || num <= 0) {
       return '(pricing subject to team confirmation and quote)';
     }
 
-    const surroundingText = sanitized.slice(Math.max(0, offset - 60), Math.min(sanitized.length, offset + match.length + 60));
-    const isNonCatalogContext = /\b(?:chocolates?|cand(?:y|ies)|macarons?|mithai|panjeeri|sweets|truffles|چاکلیٹ|مٹھائی|پنجیری)\b/i.test(surroundingText);
+    // Extract local clause context around match (delimited by punctuation or line break, up to 100 chars)
+    const beforeText = currentText.slice(Math.max(0, offset - 100), offset);
+    const afterText = currentText.slice(offset + matchText.length, Math.min(currentText.length, offset + matchText.length + 100));
+
+    const clauseStartMatch = /[.!?;:\n]([^.!?;:\n]*)$/.exec(beforeText);
+    const clauseBefore = clauseStartMatch ? clauseStartMatch[1] : beforeText;
+
+    const clauseEndMatch = /^([^.!?;:\n]*)[.!?;:\n]/.exec(afterText);
+    const clauseAfter = clauseEndMatch ? clauseEndMatch[1] : afterText;
+
+    const clause = (clauseBefore + ' ' + matchText + ' ' + clauseAfter).toLowerCase();
+
+    // 1. Non-catalog filling check in clause
+    const isNonCatalogContext = /\b(?:chocolates?|cand(?:y|ies)|macarons?|mithai|panjeeri|sweets|truffles|چاکلیٹ|مٹھائی|پنجیری)\b/i.test(clause);
     if (isNonCatalogContext) {
       return '(custom non-catalog fillings require team consultation and quote; no fixed store pricing is claimed)';
     }
 
-    if (productPrices.has(num)) {
-      return match;
+    // 2. Customer proposed budget check in clause
+    const isBudgetClaim = /\b(?:approved\s+price|approved\s+rate|our\s+price\s+is|confirmed\s+price|customer\s+budget)\b/i.test(clause);
+    if (isBudgetClaim) {
+      return '(customer proposed budget; final pricing requires team confirmation)';
     }
 
+    // 3. Store shipping rates check
     if (storeShippingRates.has(num)) {
-      if (/(?:shipping|delivery|courier|transit|freight|lahore|nationwide)/i.test(surroundingText)) {
-        return match;
+      if (/(?:shipping|delivery|courier|transit|freight|lahore|nationwide)/i.test(clause)) {
+        return matchText;
       }
     }
 
+    // 4. Match products referenced in this clause
+    const referencedProducts = productProfiles.filter(prof =>
+      prof.names.some(n => {
+        if (/^[a-z0-9\s_-]+$/i.test(n)) {
+          const escaped = n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          return new RegExp(`\\b${escaped}\\b`, 'i').test(clause);
+        }
+        return clause.includes(n);
+      })
+    );
+
+    if (referencedProducts.length > 0) {
+      // Clause explicitly refers to one or more products. Price is valid ONLY if at least one referenced product has this price.
+      const isPriceGroundedForProduct = referencedProducts.some(p => p.prices.has(num));
+      if (isPriceGroundedForProduct) {
+        return matchText;
+      }
+      // Product mentioned does not have this price (e.g. Ajwa Dates with 1000, or Luxury Tin with 1200) -> Neutralize!
+      return '(pricing subject to team confirmation and quote)';
+    }
+
+    // 5. If no specific product is named in this clause:
+    // Check if inquiry prefill or recommendation context grounds this price
+    if (inquiryPrefill) {
+      const isPrefillPrice =
+        (inquiryPrefill.standardPrice && Math.round(inquiryPrefill.standardPrice) === num) ||
+        (inquiryPrefill.packagingSubtotal && Math.round(inquiryPrefill.packagingSubtotal) === num);
+      if (isPrefillPrice && /(?:subtotal|packaging|quote|estimate|inquiry|selection|box)/i.test(clause)) {
+        return matchText;
+      }
+    }
+
+    if (recommendations && recommendations.length > 0) {
+      const isRecPrice = recommendations.some(r => r.startingPrice && Math.round(r.startingPrice) === num);
+      if (isRecPrice && /(?:recommend|option|selection|starting|starting\s+at)/i.test(clause)) {
+        return matchText;
+      }
+    }
+
+    // No verified product or store fact grounds this price
     return '(pricing subject to team confirmation and quote)';
+  }
+
+  // Neutralize ungrounded numeric price mentions
+  const priceRegex = /\b(?:Rs\.?|PKR|Rs)\s*(\d[\d,]*)(?:\s*(?:\/|\s*per\s*|\s*each\s*)(?:pc|piece|box|pack|kg|g|set))?/gi;
+  sanitized = sanitized.replace(priceRegex, (match, digits, offset) => {
+    const num = parseInt(digits.replace(/,/g, ''), 10);
+    return verifyPriceClaim(num, offset, match, sanitized);
   });
 
   const reversePriceRegex = /\b(\d[\d,]*)\s*(?:rupees|rupay|pkr)\b/gi;
   sanitized = sanitized.replace(reversePriceRegex, (match, digits, offset) => {
     const num = parseInt(digits.replace(/,/g, ''), 10);
-    if (!Number.isFinite(num)) {
-      return '(pricing subject to team confirmation and quote)';
-    }
-
-    const surroundingText = sanitized.slice(Math.max(0, offset - 60), Math.min(sanitized.length, offset + match.length + 60));
-    const isNonCatalogContext = /\b(?:chocolates?|cand(?:y|ies)|macarons?|mithai|panjeeri|sweets|truffles|چاکلیٹ|مٹھائی|پنجیری)\b/i.test(surroundingText);
-    if (isNonCatalogContext) {
-      return '(custom non-catalog fillings require team consultation and quote; no fixed store pricing is claimed)';
-    }
-
-    if (productPrices.has(num)) {
-      return match;
-    }
-
-    if (storeShippingRates.has(num)) {
-      if (/(?:shipping|delivery|courier|transit|freight|lahore|nationwide)/i.test(surroundingText)) {
-        return match;
-      }
-    }
-
-    return '(pricing subject to team confirmation and quote)';
+    return verifyPriceClaim(num, offset, match, sanitized);
   });
 
   return sanitized.trim();

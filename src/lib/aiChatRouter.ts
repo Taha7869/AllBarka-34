@@ -31,6 +31,7 @@ export function createAiChatRouter(options: AiChatRouterOptions) {
   const timeoutMs = options.timeoutMs ?? 22000;
 
   router.post(['/api/chat', '/api/concierge/chat'], authMiddleware, limiterMiddleware, async (req, res) => {
+    const requestStartTime = Date.now();
     const userText = req.body?.userText ?? req.body?.message;
     const rawLang = req.body?.language;
     const language: 'en' | 'ur' | 'ar' = ['ur', 'ar'].includes(rawLang) ? rawLang : 'en';
@@ -148,6 +149,8 @@ export function createAiChatRouter(options: AiChatRouterOptions) {
         language,
       });
 
+      const totalElapsedMs = Date.now() - requestStartTime;
+
       return res.json({
         ...answer,
         reply: sanitizedReply,
@@ -155,6 +158,10 @@ export function createAiChatRouter(options: AiChatRouterOptions) {
         recommendations,
         inquiryPrefill,
         guestMessagesRemaining,
+        timing: {
+          bridgeMs: (answer as any).latencyMs ?? null,
+          totalMs: totalElapsedMs,
+        },
       });
     } catch (error) {
       if (res.headersSent) return;
