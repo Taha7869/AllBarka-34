@@ -11,6 +11,8 @@ export interface ConsultantReply {
   available: true;
   modelUsed: 'n8n-groq';
   supportUrl?: string;
+  recommendedProductIds?: string[];
+  inquiryPrefill?: Record<string, any> | null;
 }
 
 export const HUMAN_SUPPORT_URL = 'https://wa.me/923160666083';
@@ -42,8 +44,25 @@ export function extractN8nReply(value: unknown, depth = 0): ConsultantReply | nu
     } catch { return null; }
   }
   const action = result.action === 'human' ? 'human' : 'answer';
-  return { text, reply: text, action, available: true, modelUsed: 'n8n-groq',
-    ...(action === 'human' ? { supportUrl: HUMAN_SUPPORT_URL } : {}) };
+  const rawIds = result.recommendedProductIds ?? result.recommendations ?? result.productIds;
+  const recommendedProductIds = Array.isArray(rawIds)
+    ? rawIds.filter((id): id is string => typeof id === 'string' && Boolean(id.trim())).map(id => id.trim())
+    : undefined;
+  const inquiryPrefill =
+    result.inquiryPrefill && typeof result.inquiryPrefill === 'object' && !Array.isArray(result.inquiryPrefill)
+      ? result.inquiryPrefill
+      : null;
+
+  return {
+    text,
+    reply: text,
+    action,
+    available: true,
+    modelUsed: 'n8n-groq',
+    ...(action === 'human' ? { supportUrl: HUMAN_SUPPORT_URL } : {}),
+    ...(recommendedProductIds && recommendedProductIds.length > 0 ? { recommendedProductIds } : {}),
+    ...(inquiryPrefill ? { inquiryPrefill } : {}),
+  };
 }
 
 export function getN8nAiConfig(env: NodeJS.ProcessEnv = process.env) {

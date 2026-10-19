@@ -384,4 +384,14 @@ export interface CustomQuoteModalInit {
   variantLabel?: string;
   portion?: string;
   notes?: string;
+  targetEventDate?: string;
+  preferredFillings?: string[];
+  customFillingsNotes?: string;
+  monogramText?: string;
+  cardMessage?: string;
+  customPrintText?: string;
+  customPrinting?: string;
+  city?: string;
+  budgetType?: 'per_piece' | 'total';
+  targetPricePkr?: number | string;
 }

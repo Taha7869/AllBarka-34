@@ -132,20 +132,27 @@ export default function CustomQuoteModal() {
       setMode(detail.mode || 'empty');
       setQuantity(detail.quantity && detail.quantity > 0 ? Math.round(detail.quantity) : 50);
       setEventType(detail.eventType || detail.occasion || 'Nikkah');
-      setTargetEventDate('');
+      setTargetEventDate(detail.targetEventDate ? String(detail.targetEventDate).trim() : '');
       setLeadTimeAcknowledged(false);
-      setPreferredFillings([]);
-      setCustomFillingsNotes('');
-      setMonogramText('');
-      setCardMessage('');
-      setCustomPrinting(detail.notes || '');
+      setPreferredFillings(Array.isArray(detail.preferredFillings) ? detail.preferredFillings : []);
+      setCustomFillingsNotes(detail.customFillingsNotes ? String(detail.customFillingsNotes).trim() : '');
+      setMonogramText(detail.monogramText ? String(detail.monogramText).trim() : '');
+      setCardMessage(detail.cardMessage ? String(detail.cardMessage).trim() : '');
+      const printNote = (detail.customPrintText ?? detail.customPrinting ?? detail.notes ?? '').trim();
+      setCustomPrinting(printNote);
+      if (detail.city) {
+        setCity(String(detail.city).trim());
+      }
 
-      if (detail.targetUnitPrice && Number.isFinite(detail.targetUnitPrice) && detail.targetUnitPrice > 0) {
+      if (detail.targetPricePkr != null && String(detail.targetPricePkr).trim() !== '') {
+        setTargetPricePkr(String(detail.targetPricePkr).trim());
+        setBudgetType(detail.budgetType === 'per_piece' ? 'per_piece' : 'total');
+      } else if (detail.targetUnitPrice && Number.isFinite(detail.targetUnitPrice) && detail.targetUnitPrice > 0) {
         setTargetPricePkr(String(detail.targetUnitPrice));
         setBudgetType('per_piece');
       } else {
         setTargetPricePkr('');
-        setBudgetType('total');
+        setBudgetType(detail.budgetType || 'total');
       }
 
       setSubmittedQuote(null);

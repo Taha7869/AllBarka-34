@@ -6,13 +6,23 @@ import {
   Sparkles, 
   RefreshCw,
   MessageCircle,
-  AlertCircle
+  AlertCircle,
+  Package,
+  FileText
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useDragScroll } from '../hooks/useDragScroll';
 import { useLanguage } from '../contexts/LanguageContext';
 import { buildHumanSupportWhatsAppUrl } from '../config/contacts';
-import type { ChatMessage } from '../services/aiConcierge';
+import { openCustomQuoteModal } from './CustomQuoteModal';
+import type { ValidatedProductRecommendation, ValidatedInquiryPrefill } from '../lib/aiBuddyResolution';
+
+export interface BuddyMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  recommendations?: ValidatedProductRecommendation[];
+  inquiryPrefill?: ValidatedInquiryPrefill | null;
+}
 
 interface AIConciergeProps {
   hide?: boolean;
@@ -25,7 +35,7 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
   const { t, language } = useLanguage();
   const reducedMotion = useReducedMotion();
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<BuddyMessage[]>([]);
   const [greeting, setGreeting] = useState<'welcome' | 'reset'>('welcome');
   const [streamingText, setStreamingText] = useState('');
   const [inputText, setInputText] = useState('');
@@ -43,7 +53,7 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const accountRef = useRef(currentUser?.uid ?? null);
   const chipsScrollRef = useDragScroll<HTMLDivElement>();
-  const displayMessages: ChatMessage[] = [
+  const displayMessages: BuddyMessage[] = [
     { role: 'assistant', content: t(`concierge.${greeting}`) },
     ...messages,
   ];
@@ -106,7 +116,7 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
     const textToSend = (customText ?? inputText).trim();
     if (!textToSend || sendingRef.current) return;
     sendingRef.current = true;
-    const userMsg: ChatMessage = { role: 'user', content: textToSend };
+    const userMsg: BuddyMessage = { role: 'user', content: textToSend };
     const conversation = retry ? messages : [...messages, userMsg];
     if (!retry) setMessages(conversation);
     if (!customText) setInputText('');
@@ -143,7 +153,15 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
         })(),
       ]);
       if (requestRef.current === controller && !controller.signal.aborted) {
-        setMessages(previous => [...previous, { role: 'assistant', content: responseText }]);
+        setMessages(previous => [
+          ...previous,
+          {
+            role: 'assistant',
+            content: responseText,
+            recommendations: result.recommendations,
+            inquiryPrefill: result.inquiryPrefill,
+          },
+        ]);
         setHumanRequested(result.action === 'human');
         setStreamingText('');
         lastFailedTextRef.current = '';
@@ -274,12 +292,98 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
               <p dir="auto" className="text-[11px] leading-relaxed text-[var(--color-ink-muted)]">{t('concierge.aiNotice')}</p>
               {displayMessages.map((msg, index) => (
                 <div key={index} className={`flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[85%] p-3.5 rounded-2xl text-[13px] leading-relaxed shadow-sm
+                  <div className={`max-w-[88%] p-3.5 rounded-2xl text-[13px] leading-relaxed shadow-sm
                     ${msg.role === 'user' 
                       ? 'bg-gradient-to-br from-[var(--color-gold-light,#D4B483)] to-[var(--color-gold,#B8935F)] text-[#29231D] rounded-br-none'
                       : 'bg-[var(--color-primary,#1E3A2B)] text-white rounded-bl-none'}`
                   }>
                     <p dir="auto" className="whitespace-pre-wrap text-start">{msg.content}</p>
+
+                    {/* Curated Product Recommendations */}
+                    {msg.recommendations && msg.recommendations.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-white/20 flex flex-col gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-gold-light,#D4B483)]">
+                          {t('concierge.recommendedProducts', 'Curated Selections')}
+                        </span>
+                        <div className="flex flex-col gap-2">
+                          {msg.recommendations.map(rec => (
+                            <a
+                              key={rec.productId}
+                              href={rec.url}
+                              onClick={() => setIsOpen(false)}
+                              className="flex items-center gap-2.5 p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors text-white group"
+                            >
+                              {rec.image ? (
+                                <img src={rec.image} alt={rec.productName} className="w-10 h-10 rounded-lg object-cover bg-white/5 shrink-0" />
+                              ) : (
+                                <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
+                                  <Package size={18} className="text-[var(--color-gold-light,#D4B483)]" />
+                                </div>
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <h4 className="text-xs font-serif font-bold truncate group-hover:text-[var(--color-gold-light,#D4B483)] transition-colors">
+                                  {rec.productName}
+                                </h4>
+                                <div className="flex items-center gap-1.5 text-[11px] text-white/80">
+                                  <span className="font-semibold">{rec.displayPrice}</span>
+                                  {rec.moq && (
+                                    <span className="text-[9.5px] bg-white/15 px-1.5 py-0.5 rounded text-white/90">
+                                      MOQ {rec.moq} pcs
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Custom Quote Inquiry Draft Card */}
+                    {msg.inquiryPrefill && (
+                      <div className="mt-3 pt-3 border-t border-white/20 flex flex-col gap-2">
+                        <div className="p-3 rounded-xl bg-white/10 border border-[var(--color-gold-light,#D4B483)]/40 flex flex-col gap-1.5 text-white">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-gold-light,#D4B483)] flex items-center gap-1">
+                              <Sparkles size={11} /> {t('concierge.inquiryDraft', 'Custom Quote Draft')}
+                            </span>
+                            {msg.inquiryPrefill.isUrgentEvent && (
+                              <span className="text-[9.5px] bg-amber-500/30 text-amber-200 px-1.5 py-0.5 rounded font-bold">
+                                Urgent Lead Time
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs font-serif font-bold">
+                            {msg.inquiryPrefill.productName} ({msg.inquiryPrefill.quantity} {msg.inquiryPrefill.quantityUnit})
+                          </p>
+                          <div className="text-[11px] text-white/85 space-y-0.5">
+                            <p>• Mode: {msg.inquiryPrefill.boxMode === 'empty' ? 'Box Only (Empty)' : msg.inquiryPrefill.boxMode === 'custom' ? 'Custom Packaging & Fillings' : 'Filled Packaging'}</p>
+                            <p>• Occasion: {msg.inquiryPrefill.eventType}</p>
+                            {msg.inquiryPrefill.targetEventDate && <p>• Event Date: {msg.inquiryPrefill.targetEventDate}</p>}
+                            {msg.inquiryPrefill.packagingSubtotal != null && (
+                              <p className="font-semibold text-[var(--color-gold-light,#D4B483)]">
+                                • Packaging Subtotal: Rs. {msg.inquiryPrefill.packagingSubtotal.toLocaleString()}
+                              </p>
+                            )}
+                          </div>
+                          {msg.inquiryPrefill.packagingSubtotalNotice && (
+                            <p className="text-[9.5px] italic text-white/70">
+                              *{msg.inquiryPrefill.packagingSubtotalNotice}
+                            </p>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              openCustomQuoteModal(msg.inquiryPrefill!.modalInit);
+                            }}
+                            className="mt-1 w-full min-h-11 flex items-center justify-center gap-2 text-xs font-bold bg-gradient-to-r from-[var(--color-gold-light,#D4B483)] to-[var(--color-gold,#B8935F)] text-[#29231D] py-2 px-3 rounded-lg hover:brightness-105 active:scale-95 transition-all shadow-md cursor-pointer"
+                          >
+                            <FileText size={14} />
+                            {t('concierge.reviewInquiry', 'Review & Submit Custom Quote')}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

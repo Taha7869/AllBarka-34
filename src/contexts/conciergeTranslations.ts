@@ -9,6 +9,9 @@ export const conciergeTranslations = {
     'concierge.retry': 'Retry message',
     'concierge.googleTrial': 'Continue with Google',
     'concierge.humanSupport': 'Open WhatsApp to speak with our team. No support message has been sent yet.',
+    'concierge.recommendedProducts': 'Curated Selections',
+    'concierge.inquiryDraft': 'Custom Quote Draft',
+    'concierge.reviewInquiry': 'Review & Submit Custom Quote',
   },
   ur: {
     'concierge.aiNotice': 'اے آئی سے غلطی ہو سکتی ہے۔ ذاتی صحت کے مشورے کے لیے مستند معالج سے رابطہ کریں۔',
@@ -20,6 +23,9 @@ export const conciergeTranslations = {
     'concierge.retry': 'پیغام دوبارہ بھیجیں',
     'concierge.googleTrial': 'گوگل کے ساتھ جاری رکھیں',
     'concierge.humanSupport': 'ہماری ٹیم سے بات کرنے کے لیے واٹس ایپ کھولیں۔ ابھی سپورٹ پیغام نہیں بھیجا گیا۔',
+    'concierge.recommendedProducts': 'منتخب اشیاء',
+    'concierge.inquiryDraft': 'حسبِ ضرورت کوٹیشن کا مسودہ',
+    'concierge.reviewInquiry': 'کوٹیشن کا جائزہ لیں اور بھیجیں',
   },
   ar: {
     'concierge.aiNotice': 'قد يخطئ الذكاء الاصطناعي. للاستشارة الصحية الشخصية، تواصل مع طبيب مؤهل.',
@@ -31,5 +37,8 @@ export const conciergeTranslations = {
     'concierge.retry': 'إعادة إرسال الرسالة',
     'concierge.googleTrial': 'المتابعة باستخدام جوجل',
     'concierge.humanSupport': 'افتح واتساب للتحدث مع فريقنا. لم تُرسل أي رسالة دعم بعد.',
+    'concierge.recommendedProducts': 'تشكيلة مختارة',
+    'concierge.inquiryDraft': 'مسودة عرض أسعار مخصص',
+    'concierge.reviewInquiry': 'مراجعة وطلب عرض السعر',
   },
 };
