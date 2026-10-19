@@ -326,11 +326,15 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
                                 </h4>
                                 <div className="flex items-center gap-1.5 text-[11px] text-white/80">
                                   <span className="font-semibold">{rec.displayPrice}</span>
-                                  {rec.moq && (
+                                  {rec.moqDisplay ? (
                                     <span className="text-[9.5px] bg-white/15 px-1.5 py-0.5 rounded text-white/90">
-                                      MOQ {rec.moq} pcs
+                                      {rec.moqDisplay}
                                     </span>
-                                  )}
+                                  ) : rec.moq ? (
+                                    <span className="text-[9.5px] bg-white/15 px-1.5 py-0.5 rounded text-white/90">
+                                      MOQ {rec.moq} {rec.quantityUnit || 'pcs'}
+                                    </span>
+                                  ) : null}
                                 </div>
                               </div>
                             </a>
@@ -362,7 +366,7 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
                             {msg.inquiryPrefill.targetEventDate && <p>• Event Date: {msg.inquiryPrefill.targetEventDate}</p>}
                             {msg.inquiryPrefill.packagingSubtotal != null && (
                               <p className="font-semibold text-[var(--color-gold-light,#D4B483)]">
-                                • Packaging Subtotal: Rs. {msg.inquiryPrefill.packagingSubtotal.toLocaleString()}
+                                • {msg.inquiryPrefill.boxMode === 'filled' ? 'Catalog Subtotal' : 'Packaging Subtotal'}: Rs. {msg.inquiryPrefill.packagingSubtotal.toLocaleString()}
                               </p>
                             )}
                           </div>

@@ -6,8 +6,14 @@
  */
 
 import type { Product, CustomQuoteModalInit } from '../types';
-import { isPackagingProduct, calculatePackagingMoq, parsePiecesPerPack } from './packagingMoq';
+import {
+  isPackagingProduct,
+  calculatePackagingMoq,
+  parsePiecesPerPack,
+  getPackagingMoqDisplay,
+} from './packagingMoq';
 import { resolveInquiryProductVariant } from './inquiryResolution';
+import { isProductPubliclyVisible, stripPrivateProductFields } from './catalogSchema';
 import {
   MANDATORY_LEAD_TIME_NOTICE,
   TABARRUK_EMPTY_DEFAULT_NOTICE,
@@ -26,7 +32,8 @@ export interface ValidatedProductRecommendation {
   displayPrice: string;
   isPackaging: boolean;
   moq?: number | null;
-  quantityUnit?: 'pieces' | 'packs' | 'sets';
+  moqDisplay?: string;
+  quantityUnit?: 'pieces' | 'packs' | 'sets' | 'portions';
   variantsCount: number;
 }
 
@@ -62,24 +69,22 @@ export interface ValidatedInquiryPrefill {
 /**
  * Filter products to only published, active, customer-visible items.
  * Strictly excludes drafts, internal notes, supplier prices, and archived items.
+ * Projects only public fields to prevent private supplier/draft leakage.
  */
 export function getCustomerVisibleCatalog(catalog: Product[]): Product[] {
   if (!Array.isArray(catalog)) return [];
-  return catalog.filter(p => {
-    if (!p || typeof p !== 'object') return false;
-    if (p.active === false) return false;
-    if (p.status === 'draft' || p.status === 'archived') return false;
-    // Exclude unpriced items that lack selling prices or variants
-    const hasPrices = p.prices && Object.keys(p.prices).length > 0;
-    const hasVariants = Array.isArray(p.variants) && p.variants.some(v => v && v.available !== false && typeof v.price === 'number' && v.price > 0);
-    if (!hasPrices && !hasVariants && !p.isBidBox) return false;
-    return true;
-  });
+  return catalog
+    .filter(p => {
+      if (!p || typeof p !== 'object') return false;
+      return isProductPubliclyVisible(p);
+    })
+    .map(stripPrivateProductFields);
 }
 
 /**
  * Builds authoritative, sanitized catalog context for the AI Buddy prompt.
  * Contains only public final selling prices, units, and packaging MOQ.
+ * Handles quote-only and unpriced products individually without throwing.
  */
 export function buildBuddyCatalogContext(catalog: Product[]): {
   contextText: string;
@@ -98,19 +103,43 @@ export function buildBuddyCatalogContext(catalog: Product[]): {
   const lines: string[] = [];
   for (const p of visible) {
     const isPkg = isPackagingProduct(p);
-    const moq = isPkg ? calculatePackagingMoq(p) : null;
-    const moqText = moq ? ` (MOQ: ${moq} pcs)` : ' (Standard retail: no MOQ)';
+    const isQuoteOnly = Boolean(
+      p.quoteOnly ||
+      p.orderMode === 'inquiry_quote'
+    );
+
+    let moqText = ' (Standard retail: no MOQ)';
+    if (isPkg) {
+      const moqInfo = getPackagingMoqDisplay(p);
+      if (moqInfo.moqPieces) {
+        moqText = ` (MOQ: ${moqInfo.moqPieces} pcs)`;
+      } else {
+        moqText = ' (MOQ: Team Quote on Request)';
+      }
+    }
 
     const priceEntries: string[] = [];
-    if (Array.isArray(p.variants) && p.variants.length > 0) {
-      for (const v of p.variants) {
-        if (!v || v.available === false || typeof v.price !== 'number' || v.price <= 0) continue;
-        priceEntries.push(`${v.label}: Rs. ${v.price.toLocaleString()}`);
-      }
-    } else if (p.prices && Object.keys(p.prices).length > 0) {
-      for (const [portion, price] of Object.entries(p.prices)) {
-        if (typeof price !== 'number' || price <= 0) continue;
-        priceEntries.push(`${portion}: Rs. ${price.toLocaleString()}`);
+    if (!isQuoteOnly) {
+      if (Array.isArray(p.variants) && p.variants.length > 0) {
+        for (const v of p.variants) {
+          if (!v || v.available === false || (v as any).inStock === false || typeof v.price !== 'number' || v.price <= 0) continue;
+          const pieces = parsePiecesPerPack(v.label);
+          if (pieces > 1) {
+            priceEntries.push(`${v.label}: Rs. ${v.price.toLocaleString()} per pack of ${pieces} pcs (Rs. ${Math.round(v.price / pieces)}/pc)`);
+          } else {
+            priceEntries.push(`${v.label}: Rs. ${v.price.toLocaleString()}`);
+          }
+        }
+      } else if (p.prices && Object.keys(p.prices).length > 0) {
+        for (const [portion, price] of Object.entries(p.prices)) {
+          if (typeof price !== 'number' || price <= 0) continue;
+          const pieces = parsePiecesPerPack(portion);
+          if (pieces > 1) {
+            priceEntries.push(`${portion}: Rs. ${price.toLocaleString()} per pack of ${pieces} pcs (Rs. ${Math.round(price / pieces)}/pc)`);
+          } else {
+            priceEntries.push(`${portion}: Rs. ${price.toLocaleString()}`);
+          }
+        }
       }
     }
 
@@ -229,8 +258,10 @@ You must return a single valid JSON object with the following schema:
 }
 
 /**
- * Validates recommended product IDs against the authoritative catalog.
- * Drops nonexistent, draft, inactive, or uncataloged products.
+ * Validates recommended product IDs against the authoritative public catalog.
+ * Drops nonexistent, draft, inactive, or archived products.
+ * Never displays quote-only items as directly purchasable.
+ * Ties display price, units, and MOQ to the same identified variant.
  */
 export function validateAiRecommendations(
   catalog: Product[],
@@ -238,9 +269,9 @@ export function validateAiRecommendations(
 ): ValidatedProductRecommendation[] {
   if (!Array.isArray(catalog) || !Array.isArray(rawIds)) return [];
 
+  const visible = getCustomerVisibleCatalog(catalog);
   const validMap = new Map<string, Product>();
-  for (const p of catalog) {
-    if (!p || p.active === false || p.status === 'draft' || p.status === 'archived') continue;
+  for (const p of visible) {
     validMap.set(p.id.toLowerCase().trim(), p);
   }
 
@@ -257,29 +288,105 @@ export function validateAiRecommendations(
     if (!product) continue;
 
     const isPkg = isPackagingProduct(product);
-    const moq = isPkg ? calculatePackagingMoq(product) : null;
+    const isQuoteOnly = Boolean(
+      product.quoteOnly ||
+      product.orderMode === 'inquiry_quote'
+    );
 
-    // Calculate starting price
-    let lowestPrice: number | null = null;
-    let variantsCount = 0;
-    if (Array.isArray(product.variants) && product.variants.length > 0) {
-      for (const v of product.variants) {
-        if (v && v.available !== false && typeof v.price === 'number' && v.price > 0) {
-          variantsCount++;
-          if (lowestPrice === null || v.price < lowestPrice) lowestPrice = v.price;
+    interface ValidatedVariant {
+      label: string;
+      price: number;
+      piecesPerPack: number;
+    }
+    const availableVariants: ValidatedVariant[] = [];
+
+    if (!isQuoteOnly) {
+      if (Array.isArray(product.variants) && product.variants.length > 0) {
+        for (const v of product.variants) {
+          if (!v || v.available === false || (v as any).inStock === false) continue;
+          if (typeof v.price === 'number' && Number.isFinite(v.price) && v.price > 0) {
+            availableVariants.push({
+              label: v.label,
+              price: v.price,
+              piecesPerPack: parsePiecesPerPack(v.label),
+            });
+          }
         }
-      }
-    } else if (product.prices) {
-      for (const price of Object.values(product.prices)) {
-        if (typeof price === 'number' && price > 0) {
-          variantsCount++;
-          if (lowestPrice === null || price < lowestPrice) lowestPrice = price;
+      } else if (product.prices) {
+        for (const [portion, price] of Object.entries(product.prices)) {
+          if (typeof price === 'number' && Number.isFinite(price) && price > 0) {
+            availableVariants.push({
+              label: portion,
+              price,
+              piecesPerPack: parsePiecesPerPack(portion),
+            });
+          }
         }
       }
     }
 
-    const displayPrice = lowestPrice !== null ? `Rs. ${lowestPrice.toLocaleString()}` : 'Quote on request';
-    const url = isPkg ? `/celebration-boxes?product=${encodeURIComponent(product.id)}` : `/product/${encodeURIComponent(product.id)}`;
+    const url = `/product/${encodeURIComponent(product.id)}`;
+
+    if (isQuoteOnly || availableVariants.length === 0) {
+      const moqOverride = product.moqOverride ?? product.minOrderQuantity ?? null;
+      results.push({
+        productId: product.id,
+        productName: product.name_en || product.name || 'AllBarka Selection',
+        url,
+        category: product.category,
+        image: product.image || null,
+        startingPrice: null,
+        displayPrice: 'Quote on request',
+        isPackaging: isPkg,
+        moq: moqOverride,
+        moqDisplay: moqOverride ? `MOQ ${moqOverride} pcs` : undefined,
+        quantityUnit: isPkg ? 'pieces' : 'portions',
+        variantsCount: 0,
+      });
+      if (results.length >= 3) break;
+      continue;
+    }
+
+    // Tie display price, units, and MOQ to the primary identified variant
+    availableVariants.sort((a, b) => (a.price / a.piecesPerPack) - (b.price / b.piecesPerPack));
+    const primary = availableVariants[0];
+    const piecesPerPack = primary.piecesPerPack;
+    const isPack = piecesPerPack > 1;
+    const isSet = /set/i.test(primary.label) || /set/i.test(product.name_en) || product.packagingSubcategory === 'tabarruk';
+
+    let quantityUnit: 'pieces' | 'packs' | 'sets' | 'portions' = 'pieces';
+    let displayPrice = '';
+    if (isPkg) {
+      if (isPack) {
+        quantityUnit = 'packs';
+        const perPiece = Math.round((primary.price / piecesPerPack) * 100) / 100;
+        displayPrice = `Rs. ${primary.price.toLocaleString()} per pack of ${piecesPerPack} pcs (Rs. ${perPiece}/pc)`;
+      } else if (isSet) {
+        quantityUnit = 'sets';
+        displayPrice = `Rs. ${primary.price.toLocaleString()} per set`;
+      } else {
+        quantityUnit = 'pieces';
+        displayPrice = `Rs. ${primary.price.toLocaleString()} / pc`;
+      }
+    } else {
+      quantityUnit = 'portions';
+      displayPrice = `Rs. ${primary.price.toLocaleString()} (${primary.label})`;
+    }
+
+    let moq: number | null = null;
+    let moqDisplay: string | undefined = undefined;
+    if (isPkg) {
+      const moqInfo = getPackagingMoqDisplay(product, primary.label);
+      if (moqInfo.moqPieces) {
+        if (isPack && moqInfo.minUnits) {
+          moq = moqInfo.minUnits;
+          moqDisplay = `MOQ ${moqInfo.minUnits} pack (${moqInfo.moqPieces} pcs)`;
+        } else {
+          moq = moqInfo.moqPieces;
+          moqDisplay = `MOQ ${moqInfo.moqPieces} pcs`;
+        }
+      }
+    }
 
     results.push({
       productId: product.id,
@@ -287,12 +394,13 @@ export function validateAiRecommendations(
       url,
       category: product.category,
       image: product.image || null,
-      startingPrice: lowestPrice,
+      startingPrice: primary.price,
       displayPrice,
       isPackaging: isPkg,
       moq,
-      quantityUnit: isPkg ? 'pieces' : 'pieces',
-      variantsCount,
+      moqDisplay,
+      quantityUnit,
+      variantsCount: availableVariants.length,
     });
 
     if (results.length >= 3) break;
@@ -304,6 +412,8 @@ export function validateAiRecommendations(
 /**
  * Validates and normalizes inquiry prefill parameters from AI output.
  * Ensures model cannot forge prices, respects packaging MOQ, and flags urgent dates.
+ * Applies public catalog restrictions strictly: draft/archived products are rejected/unresolved.
+ * Sets canonical product ID into modalInit.productId.
  */
 export function validateInquiryPrefill(
   catalog: Product[],
@@ -324,15 +434,18 @@ export function validateInquiryPrefill(
 
   const requestedVariant = prefill.packagingVariant ? String(prefill.packagingVariant).trim() : null;
 
-  // Resolve against authoritative catalog via shared resolver
+  // Enforce public catalog visibility: draft and archived products are completely excluded
+  const publicCatalog = getCustomerVisibleCatalog(catalog);
+
   const resolution = resolveInquiryProductVariant({
-    catalog,
+    catalog: publicCatalog,
     productId: rawProductId,
     requestedVariantLabel: requestedVariant,
     boxMode,
     quantity,
   });
 
+  const canonicalProductId = resolution.isVerifiedCatalogProduct ? resolution.productId : 'custom';
   const eventType = String(prefill.eventType || prefill.occasion || 'Nikkah').trim();
   const targetEventDate = prefill.targetEventDate ? String(prefill.targetEventDate).trim().slice(0, 30) : null;
 
@@ -364,7 +477,16 @@ export function validateInquiryPrefill(
   const customPrintText = String(prefill.customPrintText ?? prefill.customPrinting ?? '').trim().slice(0, 300);
   const city = String(prefill.city || 'Lahore').trim().slice(0, 50);
 
-  // Determine packaging subtotal
+  const hasPersonalization = Boolean(monogramText || cardMessage || customPrintText || customFillingsNotes);
+  const hasNonCatalogFillings =
+    preferredFillings.includes('chocolates') ||
+    preferredFillings.includes('candies') ||
+    preferredFillings.includes('other');
+  const hasUnpricedAdditions =
+    boxMode === 'custom' ||
+    hasNonCatalogFillings ||
+    hasPersonalization;
+
   let packagingSubtotal: number | null = null;
   let packagingSubtotalNotice: string | undefined;
 
@@ -374,19 +496,24 @@ export function validateInquiryPrefill(
     } else {
       packagingSubtotal = Math.round(resolution.standardPrice * quantity);
     }
-    packagingSubtotalNotice = 'Packaging subtotal only (excludes unpriced custom fillings, printing & courier transit).';
+
+    if (boxMode === 'filled') {
+      packagingSubtotalNotice = hasUnpricedAdditions
+        ? 'Catalog selection subtotal for base filled items. Unpriced customizations (monogram/printing/custom fillings) and courier transit require team quote.'
+        : 'Catalog selection subtotal for base filled items (courier transit calculated at order confirmation).';
+    } else if (boxMode === 'empty') {
+      packagingSubtotalNotice = hasUnpricedAdditions
+        ? 'Packaging subtotal for empty boxes. Unpriced customizations (monogram/printing), fillings and courier transit require team quote.'
+        : 'Packaging subtotal only (excludes custom printing, monograms, fillings and courier transit).';
+    } else {
+      packagingSubtotalNotice = 'Base packaging subtotal only. Custom fillings, printing and transit require team quote.';
+    }
   }
 
-  const hasUnpricedAdditions =
-    boxMode === 'custom' ||
-    preferredFillings.includes('chocolates') ||
-    preferredFillings.includes('candies') ||
-    preferredFillings.includes('other') ||
-    Boolean(customFillingsNotes) ||
-    Boolean(customPrintText);
-
+  // Pass canonical product ID into modalInit.productId
   const modalInit: CustomQuoteModalInit = {
-    productId: resolution.isVerifiedCatalogProduct ? resolution.productName : rawProductId,
+    productId: canonicalProductId,
+    productName: resolution.productName,
     mode: boxMode,
     quantity,
     eventType,
@@ -407,7 +534,7 @@ export function validateInquiryPrefill(
   };
 
   return {
-    productId: resolution.isVerifiedCatalogProduct ? rawProductId : 'custom',
+    productId: canonicalProductId,
     productName: resolution.productName,
     packagingVariant: resolution.packagingVariant,
     boxMode,
@@ -445,4 +572,134 @@ export function sanitizeBuddyPrompt(userText: string): string {
     .replace(/[\u0000-\u0008\u000B-\u000C\u000E-\u001F]/g, '')
     .trim()
     .slice(0, 1000);
+}
+
+export interface SanitizeReplyOptions {
+  replyText: string;
+  catalog: Product[];
+  recommendations?: ValidatedProductRecommendation[];
+  inquiryPrefill?: ValidatedInquiryPrefill | null;
+  isCatalogFailure?: boolean;
+  language?: 'en' | 'ur' | 'ar';
+}
+
+/**
+ * Enforces application-level commercial validation on assistant replies.
+ * - Detects and neutralizes unsupported commercial claims (fake prices, fake discounts, certifications)
+ * - Restricts URLs to verified WhatsApp and canonical product routes
+ * - Enforces unpriced guidance during catalog outages
+ */
+export function validateAndSanitizeAssistantReply(options: SanitizeReplyOptions): string {
+  const {
+    replyText,
+    catalog,
+    recommendations = [],
+    inquiryPrefill = null,
+    isCatalogFailure = false,
+    language = 'en',
+  } = options;
+
+  if (isCatalogFailure) {
+    if (language === 'ur') {
+      return 'ہمارا لائیو کیٹلاگ فی الوقت دیکھ بھال کے تحت ہے۔ تازہ ترین قیمتوں اور کسٹم آرڈرز کے لیے برائے مہربانی ہماری لاہور ٹیم سے واٹس ایپ پر رابطہ کریں: https://wa.me/923160666083';
+    }
+    if (language === 'ar') {
+      return 'نظام الأسعار المباشر غير متصل حالياً للصيانة. يرجى التواصل مع فريقنا في لاهور عبر واتساب للحصول على الأسعار الحالية: https://wa.me/923160666083';
+    }
+    return 'Our live catalogue and pricing system is temporarily offline for maintenance. For real-time rates, custom celebration quotes, and order availability, please connect directly with our Lahore concierge on WhatsApp: https://wa.me/923160666083';
+  }
+
+  if (typeof replyText !== 'string' || !replyText.trim()) {
+    return 'How may I assist you with AllBarka gourmet dry fruits and bespoke celebration packaging today?';
+  }
+
+  let sanitized = replyText;
+
+  // 1. Build set of verified prices from visible catalog, recommendations, prefill, and store shipping
+  const verifiedPrices = new Set<number>([
+    150, 250, 350, 3000, 5000 // Store standard shipping rates & thresholds
+  ]);
+
+  const visible = getCustomerVisibleCatalog(catalog);
+  for (const p of visible) {
+    if (p.prices) {
+      for (const val of Object.values(p.prices)) {
+        if (typeof val === 'number' && Number.isFinite(val) && val > 0) {
+          verifiedPrices.add(val);
+          verifiedPrices.add(Math.round(val));
+        }
+      }
+    }
+    if (Array.isArray(p.variants)) {
+      for (const v of p.variants) {
+        if (v && typeof v.price === 'number' && Number.isFinite(v.price) && v.price > 0) {
+          verifiedPrices.add(v.price);
+          verifiedPrices.add(Math.round(v.price));
+          const ppp = parsePiecesPerPack(v.label);
+          if (ppp > 1) {
+            verifiedPrices.add(Math.round(v.price / ppp));
+          }
+        }
+      }
+    }
+  }
+
+  for (const rec of recommendations) {
+    if (rec.startingPrice) {
+      verifiedPrices.add(rec.startingPrice);
+      verifiedPrices.add(Math.round(rec.startingPrice));
+    }
+  }
+
+  if (inquiryPrefill) {
+    if (inquiryPrefill.standardPrice) verifiedPrices.add(Math.round(inquiryPrefill.standardPrice));
+    if (inquiryPrefill.packagingSubtotal) verifiedPrices.add(Math.round(inquiryPrefill.packagingSubtotal));
+    if (inquiryPrefill.targetPricePkr) verifiedPrices.add(Math.round(inquiryPrefill.targetPricePkr));
+  }
+
+  // 2. Reject / sanitize invented discounts and coupon codes
+  // e.g. "Apply FAKE90 for 90% off", "coupon code SAVE50", "get 50% discount"
+  const couponDiscountPattern = /\b(?:apply\s+[A-Za-z0-9_-]{3,15}\s*(?:for\s*)?(?:\d+%\s*off)?|\d+%\s*(?:off|discount)|coupon\s*code\s*[A-Za-z0-9_-]+|promo\s*code\s*[A-Za-z0-9_-]+|discount\s*code\s*[A-Za-z0-9_-]+|special\s+discount\s+of\s+\d+%)\b/gi;
+  if (couponDiscountPattern.test(sanitized)) {
+    sanitized = sanitized.replace(couponDiscountPattern, '(promotional discounts are confirmed exclusively at checkout)');
+  }
+
+  // 3. Reject / sanitize invented certifications
+  // e.g. "Guaranteed halal", "certified halal", "100% halal certified", "FDA approved", "ISO certified"
+  const certificationPattern = /\b(?:guaranteed\s+halal|certified\s+halal|halal\s+certified|100%\s*halal(?:\s+certified)?|fda\s+approved|iso\s*certified|sanad\s+yafta|tasdeeq\s+shuda)\b/gi;
+  if (certificationPattern.test(sanitized)) {
+    sanitized = sanitized.replace(certificationPattern, 'AllBarka artisanal selection (official certifications are not claimed; contact our team for sourcing details)');
+  }
+
+  // 4. Reject / sanitize unsupported price claims in prose
+  // Matches e.g. "Chocolates cost Rs. 25 each", "for Rs 25", "at Rs. 25", "25 rupees"
+  const priceRegex = /\b(?:Rs\.?|PKR|Rs|rupees|rupay)\s*(\d[\d,]*)(?:\s*(?:\/|\s*per\s*|\s*each\s*)(?:pc|piece|box|pack|kg|g))?/gi;
+  sanitized = sanitized.replace(priceRegex, (match, digits) => {
+    const num = parseInt(digits.replace(/,/g, ''), 10);
+    if (!Number.isFinite(num) || !verifiedPrices.has(num)) {
+      return '(pricing subject to team confirmation and quote)';
+    }
+    return match;
+  });
+
+  const reversePriceRegex = /\b(\d[\d,]*)\s*(?:rupees|rupay|pkr)\b/gi;
+  sanitized = sanitized.replace(reversePriceRegex, (match, digits) => {
+    const num = parseInt(digits.replace(/,/g, ''), 10);
+    if (!Number.isFinite(num) || !verifiedPrices.has(num)) {
+      return '(pricing subject to team confirmation and quote)';
+    }
+    return match;
+  });
+
+  // 5. Sanitize URLs: normalize any internal links to /product/:id and enforce official WhatsApp
+  sanitized = sanitized.replace(/\/celebration-boxes\?product=([a-zA-Z0-9_-]+)/g, '/product/$1');
+  sanitized = sanitized.replace(/https?:\/\/(?!wa\.me\/923160666083)[^\s)]+/g, (url) => {
+    if (url.includes('/product/')) {
+      const match = /\/product\/([a-zA-Z0-9_-]+)/.exec(url);
+      return match ? `/product/${match[1]}` : 'https://wa.me/923160666083';
+    }
+    return 'https://wa.me/923160666083';
+  });
+
+  return sanitized.trim();
 }

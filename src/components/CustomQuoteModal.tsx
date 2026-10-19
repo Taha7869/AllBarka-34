@@ -385,7 +385,7 @@ export default function CustomQuoteModal() {
                 <div className="flex justify-between">
                   <span className="text-[#566B63]">Box / Selection:</span>
                   <span className="font-semibold text-[#072A20]">
-                    {selectedProduct?.name_en}
+                    {selectedProduct?.name_en || (selectedProductId === 'custom' ? 'Custom Packaging Request' : resolution.productName)}
                     {selectedVariantLabel ? ` (${selectedVariantLabel})` : ''}
                   </span>
                 </div>
@@ -549,7 +549,7 @@ export default function CustomQuoteModal() {
                   >
                     {!eligibleProducts.some(p => p.id === selectedProductId) && (
                       <option value={selectedProductId}>
-                        Custom Request / Unlisted Product ({selectedProductId})
+                        {selectedProductId === 'custom' ? 'Custom Packaging Request' : `Custom Request / Unlisted Product (${selectedProductId})`}
                       </option>
                     )}
                     <optgroup label="Bespoke Celebration Boxes & Packaging">

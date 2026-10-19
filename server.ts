@@ -25,12 +25,7 @@ import { getN8nOrderDispatchConfig } from './src/services/n8nOrderNotification';
 import { startOrderOutboxWorker } from './src/services/orderOutboxWorker';
 import { askN8nConsultant, getN8nAiConfig } from './src/services/n8nAIConsultant';
 import { reserveGuestAiMessage, GuestTrialLimitError } from './src/lib/aiGuestTrial';
-import {
-  buildBuddySystemInstruction,
-  validateAiRecommendations,
-  validateInquiryPrefill,
-  sanitizeBuddyPrompt,
-} from './src/lib/aiBuddyResolution';
+import { createAiChatRouter } from './src/lib/aiChatRouter';
 import { REWARDS } from './src/data/rewards';
 import { validateAndPriceOrder, validateCustomerDetails, ValidationError } from './src/lib/orderValidation';
 import crypto from 'crypto';
@@ -849,75 +844,11 @@ app.post('/api/newsletter/subscribe', async (req, res) => {
 
 
 // 3. API: Private n8n/Groq concierge; no simulated assistant responses.
-app.post(['/api/chat', '/api/concierge/chat'], authenticateOptionalUser, patronChatLimiter, async (req, res) => {
-  const userText = req.body?.userText ?? req.body?.message;
-  const language: ConciergeLanguage = ['ur', 'ar'].includes(req.body?.language) ? req.body.language : 'en';
-  const messages = req.body?.messages ?? req.body?.history;
-  if (typeof userText !== 'string' || !userText.trim() || userText.length > 1000) {
-    return res.status(400).json({ error: 'INVALID_MESSAGE', code: 'INVALID_MESSAGE', available: false });
-  }
-  if (!getN8nAiConfig()) return res.status(503).json({ error: 'AI_UNAVAILABLE', code: 'AI_UNAVAILABLE', available: false });
-  const deadline = setTimeout(() => {
-    if (!res.headersSent) res.status(503).json({ error: 'AI_UNAVAILABLE', code: 'AI_TIMEOUT', available: false });
-  }, 22000);
-  try {
-    const isGooglePatron = (req as any).user?.firebase?.sign_in_provider === 'google.com';
-    let guestMessagesRemaining: number | null = null;
-    if (!isGooglePatron) {
-      try {
-        guestMessagesRemaining = await reserveGuestAiMessage(db, req.ip || req.socket.remoteAddress || '', String(req.headers['user-agent'] || ''), process.env.AI_GUEST_HASH_SECRET || '');
-      } catch (error) {
-        if (res.headersSent) return;
-        if (error instanceof GuestTrialLimitError) return res.status(429).json({ error: 'AI_GUEST_TRIAL_EXHAUSTED', code: 'AI_GUEST_TRIAL_EXHAUSTED', available: false, guestMessagesRemaining: 0 });
-        return res.status(503).json({ error: 'AI_UNAVAILABLE', code: 'AI_GUEST_TRIAL_UNAVAILABLE', available: false });
-      }
-    }
-    if (res.headersSent) return;
-    let mergedProducts: Product[] = [];
-    let isCatalogFailure = false;
-    try {
-      if (!db) {
-        throw new Error('DATABASE_OFFLINE');
-      }
-      const catalog = await loadAuthoritativeCatalog(db, { fresh: true });
-      mergedProducts = mergeAuthoritativeCatalog(PRODUCTS, catalog.products);
-    } catch (catErr) {
-      console.warn('AI Buddy catalog resolution failure:', catErr);
-      isCatalogFailure = true;
-      mergedProducts = [];
-    }
-
-    const systemInstruction = buildBuddySystemInstruction({
-      catalog: mergedProducts,
-      language: language === 'ar' ? 'ar' : language === 'ur' ? 'ur' : 'en',
-      isCatalogFailure,
-    });
-
-    const sanitizedMessage = sanitizeBuddyPrompt(userText);
-    const answer = await askN8nConsultant({
-      message: sanitizedMessage,
-      history: messages,
-      system: systemInstruction,
-    });
-
-    if (res.headersSent) return;
-    if (!answer) return res.status(503).json({ error: 'AI_UNAVAILABLE', code: 'AI_UNAVAILABLE', available: false });
-
-    const recommendations = validateAiRecommendations(mergedProducts, answer.recommendedProductIds);
-    const inquiryPrefill = validateInquiryPrefill(mergedProducts, answer.inquiryPrefill);
-
-    return res.json({
-      ...answer,
-      recommendations,
-      inquiryPrefill,
-      guestMessagesRemaining,
-    });
-  } catch (error) {
-    if (res.headersSent) return;
-    const code = error instanceof Error && error.message === 'AI_RATE_LIMITED' ? 'AI_RATE_LIMITED' : error instanceof Error && error.message === 'AI_TIMEOUT' ? 'AI_TIMEOUT' : 'AI_UNAVAILABLE';
-    return res.status(code === 'AI_RATE_LIMITED' ? 429 : 503).json({ error: code === 'AI_RATE_LIMITED' ? code : 'AI_UNAVAILABLE', code, available: false });
-  } finally { clearTimeout(deadline); }
-});
+app.use(createAiChatRouter({
+  getDb: () => db,
+  authenticateOptionalUser,
+  patronChatLimiter,
+}));
 
 // Vite Middleware & Static Asset pipeline integration
 async function startServer() {

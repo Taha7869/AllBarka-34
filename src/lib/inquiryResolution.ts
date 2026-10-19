@@ -10,6 +10,7 @@ export interface ResolveInquiryParams {
 }
 
 export interface InquiryVariantResolution {
+  productId: string;
   productName: string;
   isVerifiedCatalogProduct: boolean;
   packagingVariant: string | null;
@@ -104,6 +105,7 @@ export function resolveInquiryProductVariant(params: ResolveInquiryParams): Inqu
 
   if (!catalogProduct) {
     return {
+      productId: 'custom',
       productName: 'Custom Packaging Request',
       isVerifiedCatalogProduct: false,
       packagingVariant: requestedVariantLabel ? String(requestedVariantLabel).slice(0, 80) : null,
@@ -254,6 +256,7 @@ export function resolveInquiryProductVariant(params: ResolveInquiryParams): Inqu
   }
 
   return {
+    productId: catalogProduct.id,
     productName: catalogProduct.name_en,
     isVerifiedCatalogProduct: isPublicActive,
     packagingVariant: selectedLabel,

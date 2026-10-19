@@ -376,6 +376,7 @@ export interface InquiryRecord {
 
 export interface CustomQuoteModalInit {
   productId?: string;
+  productName?: string;
   mode?: 'empty' | 'filled' | 'custom';
   quantity?: number;
   eventType?: string;
