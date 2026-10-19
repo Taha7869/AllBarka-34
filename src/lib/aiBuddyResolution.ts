@@ -124,22 +124,12 @@ export function buildBuddyCatalogContext(catalog: Product[]): {
       if (Array.isArray(p.variants) && p.variants.length > 0) {
         for (const v of p.variants) {
           if (!v || v.available === false || (v as any).inStock === false || typeof v.price !== 'number' || v.price <= 0) continue;
-          const pieces = parsePiecesPerPack(v.label);
-          if (pieces > 1) {
-            priceEntries.push(`${v.label}: Rs. ${v.price.toLocaleString()} per pack of ${pieces} pcs (Rs. ${Math.round(v.price / pieces)}/pc)`);
-          } else {
-            priceEntries.push(`${v.label}: Rs. ${v.price.toLocaleString()}`);
-          }
+          priceEntries.push(`${v.label}: ${formatProductPriceBasis(p, v.label, v.price)}`);
         }
       } else if (p.prices && Object.keys(p.prices).length > 0) {
         for (const [portion, price] of Object.entries(p.prices)) {
           if (typeof price !== 'number' || price <= 0) continue;
-          const pieces = parsePiecesPerPack(portion);
-          if (pieces > 1) {
-            priceEntries.push(`${portion}: Rs. ${price.toLocaleString()} per pack of ${pieces} pcs (Rs. ${Math.round(price / pieces)}/pc)`);
-          } else {
-            priceEntries.push(`${portion}: Rs. ${price.toLocaleString()}`);
-          }
+          priceEntries.push(`${portion}: ${formatProductPriceBasis(p, portion, price)}`);
         }
       }
     }
@@ -1022,15 +1012,39 @@ export function detectLanguageMode(userText: string, declaredLang?: 'en' | 'ur' 
   return 'en';
 }
 
+/**
+ * Formats the verified price basis for a product.
+ * - Ordinary food items (dates, nuts, dry fruits) use their portion (e.g. 1kg, 500g, 250g) as the basis and never append piece/pack wording.
+ * - Packaging products use piece ("/ pc"), pack ("per pack of N pcs (Rs. X/pc)"), or set ("per set").
+ */
+export function formatProductPriceBasis(product: Product, label: string, price: number): string {
+  const isPkg = isPackagingProduct(product);
+  if (!isPkg) {
+    return `Rs. ${price.toLocaleString()}`;
+  }
+  const pieces = parsePiecesPerPack(label);
+  if (pieces > 1) {
+    return `Rs. ${price.toLocaleString()} per pack of ${pieces} pcs (Rs. ${Math.round(price / pieces)}/pc)`;
+  }
+  const isSet =
+    /set/i.test(label) ||
+    /set/i.test(product.name_en || '') ||
+    product.packagingSubcategory === 'tabarruk';
+  if (isSet) {
+    return `Rs. ${price.toLocaleString()} per set`;
+  }
+  return `Rs. ${price.toLocaleString()} / pc`;
+}
+
 export const FOOTNOTE_DISCLAIMER =
   '[Authoritative commercial data rendered from AllBarka verified catalog and store policies. Conversational suggestions are AI-assisted.]';
 
 export const POLICY_TEMPLATES: Record<string, Record<LanguageMode, string>> = {
   lead_time: {
     en: `• Preparation & Lead Time: ${MANDATORY_LEAD_TIME_NOTICE}`,
-    roman_ur: `• Tayyari aur Dispatch Time: Custom celebration orders ke liye kam az kam 10 calendar days darkar hain.`,
-    ur: `• تیاری کا وقت: کسٹم سیلیبریشن باکسز کی تیاری کے لیے کم از کم 10 یوم درکار ہیں۔`,
-    ar: `• وقت التحضير والتسليم: تتطلب طلبات المناسبات الخاصة ما لا يقل عن 10 أيام تقويمية.`,
+    roman_ur: `• Tayyari aur Dispatch Time: Final design approval aur matlooba advance adaigi ke baad kam az kam 10 calendar days darkar hain; courier transit ka waqt alag hai.`,
+    ur: `• تیاری اور ڈلیوری: حتمی ڈیزائن منظوری اور مطلوبہ ایڈوانس ادائیگی کی وصولی کے بعد کم از کم 10 یوم درکار ہیں؛ کوریئر ٹرانزٹ کا وقت الگ ہے۔`,
+    ar: `• وقت التحضير والتسليم: ما لا يقل عن 10 أيام تقويمية بعد اعتماد التصميم النهائي واستلام الدفعة المقدمة المطلوبة؛ وقت شحن التوصيل منفصل.`,
   },
   shipping_rates: {
     en: `• Shipping Rates: Lahore standard Rs. ${STORE_CONFIG.shipping.standardRate} (Free in Lahore on merchandise >= Rs. ${STORE_CONFIG.shipping.freeThreshold}). Nationwide delivery: Rs. ${STORE_CONFIG.shipping.nationwidePerKg}/kg (min Rs. ${STORE_CONFIG.shipping.nationwideMinimum}).`,
@@ -1090,16 +1104,49 @@ export const CUSTOMIZATION_TEMPLATES: Record<string, Record<LanguageMode, string
     ar: `• صندوق فاخر: صندوق خشبي تذكاري أو مخملي.`,
   },
   dates_filling: {
-    en: `• Filling Pairing: Premium Saudi dates (Ajwa Al-Madinah, Mabroom, Safawi).`,
-    roman_ur: `• Dates Filling: Aala darjay ki Saudi khajoor (Ajwa, Mabroom, Safawi).`,
-    ur: `• کھجور فلنگ: مدینہ منورہ کی اعلیٰ معیار کی عجوہ، مبروم یا صفاوی کھجور۔`,
-    ar: `• تعبئة التمور: تمور فاخرة (عجوة المدينة، مبروم، صفاوي).`,
+    en: `• Optional Fillings: Dates filling (optional addition; specific variety and pricing confirmed by team upon custom quote).`,
+    roman_ur: `• Optional Fillings: Khajoor ki filling (optional addition; variety aur final qeemat team quote ke mutabiq hogi).`,
+    ur: `• اختیاری فلنگز: کھجور کی فلنگ (اختیاری اضافہ؛ قسم اور حتمی قیمت ٹیم کوٹیشن کے بعد طے ہوگی)۔`,
+    ar: `• تعبئة اختيارية: تعبئة تمور (إضافة اختيارية؛ يتم تأكيد الصنف والسعر مع الفريق).`,
   },
   dry_fruits_filling: {
-    en: `• Filling Pairing: Gourmet roasted dry fruits (saffron pistachios, jumbo cashews, almonds).`,
-    roman_ur: `• Dry Fruits Filling: Roasted pistachios (pista), jumbo kaju, aur badam.`,
-    ur: `• خشک میوہ جات فلنگ: زعفرانی پستہ، کاجو اور بادام۔`,
-    ar: `• تعبئة المكسرات: فستق محمص بالزعفران، كاجو جامبو ولوز فاخر.`,
+    en: `• Optional Fillings: Dry fruits and nuts filling (optional addition; specific selection and pricing confirmed by team upon custom quote).`,
+    roman_ur: `• Optional Fillings: Dry fruits aur nuts ki filling (optional addition; selection aur final qeemat team quote ke mutabiq hogi).`,
+    ur: `• اختیاری فلنگز: خشک میوہ جات اور گری دار میوے (اختیاری اضافہ؛ انتخاب اور حتمی قیمت ٹیم کوٹیشن کے بعد طے ہوگی)۔`,
+    ar: `• تعبئة اختيارية: تعبئة مكسرات وفواكه مجففة (إضافة اختيارية؛ يتم تأكيد التشكيلة والسعر مع الفريق).`,
+  },
+};
+
+export type ApprovedOpeningIntent =
+  | 'greeting_celebration'
+  | 'greeting_gourmet'
+  | 'greeting_quote'
+  | 'greeting_general';
+
+export const OPENING_TEMPLATES: Record<ApprovedOpeningIntent, Record<LanguageMode, string>> = {
+  greeting_celebration: {
+    en: 'Warm celebration greetings from AllBarka! Here are our verified luxury packaging options and custom celebration details for your event:',
+    roman_ur: 'AllBarka celebration concierge mein khush-amdeed! Aap ke event ke liye verified luxury packaging aur custom celebration tafseelat yeh hain:',
+    ur: 'البرکہ سیلیبریشن سروس میں خوش آمدید! آپ کی تقریب کے لیے تصدیق شدہ لگژری پیکجنگ اور کسٹم تفصیلات درج ذیل ہیں:',
+    ar: 'أهلاً بكم في خدمة مناسبات البركة! إليكم خيارات التغليف الفاخر المعتمدة وتفاصيل مناسبتكم:',
+  },
+  greeting_gourmet: {
+    en: 'Welcome to AllBarka! Here are our verified gourmet dates, dry fruits, and healthy essentials:',
+    roman_ur: 'AllBarka mein khush-amdeed! Hamari verified dates, dry fruits aur healthy products ki tafseelat yeh hain:',
+    ur: 'البرکہ میں خوش آمدید! ہماری تصدیق شدہ کھجوروں، خشک میوہ جات اور پروڈکٹس کی تفصیلات درج ذیل ہیں:',
+    ar: 'مرحباً بكم في البركة! إليكم تفاصيل التمور الفاخرة والمكسرات والمنتجات المعتمدة لدينا:',
+  },
+  greeting_quote: {
+    en: 'Thank you for reaching out for a custom celebration quote. Here are the verified options and parameters for your inquiry:',
+    roman_ur: 'Custom celebration quote ke liye rabta karne ka shukriya. Aap ki inquiry ke mutabiq verified tafseelat yeh hain:',
+    ur: 'کسٹم سیلیبریشن کوٹیشن کے لیے رابطہ کرنے کا شکریہ۔ آپ کی انکوائری کے مطابق تصدیق شدہ تفصیلات درج ذیل ہیں:',
+    ar: 'شكراً لتواصلكم لطلب عرض سعر مخصص. إليكم الخيارات والمعلومات المعتمدة لطلبكم:',
+  },
+  greeting_general: {
+    en: 'Welcome to AllBarka! Here is the verified commercial information from our catalog and store policies:',
+    roman_ur: 'AllBarka mein khush-amdeed! Hamaray catalog aur store policies ki verified commercial maloomat yeh hain:',
+    ur: 'البرکہ میں خوش آمدید! ہمارے کیٹلاگ اور پالیسیوں کے مطابق تصدیق شدہ معلومات درج ذیل ہیں:',
+    ar: 'مرحباً بكم في البركة! إليكم المعلومات التجارية المعتمدة من الكتالوج وسياسات المتجر:',
   },
 };
 
@@ -1145,6 +1192,7 @@ export const QUESTION_TEMPLATES: Record<string, Record<LanguageMode, string>> = 
 export interface RenderCommercialAnswerOptions {
   answer: {
     action?: 'answer' | 'human';
+    openingIntent?: ApprovedOpeningIntent;
     conversationalOpening?: string | null;
     selectedProducts?: ProductSelectionReference[];
     suggestedCustomizations?: string[];
@@ -1166,8 +1214,8 @@ export interface RenderCommercialAnswerOptions {
 /**
  * Deterministically renders commercial facts, prices, portions, store policies,
  * and customization options directly from authoritative application data.
- * The AI model provides conversational opening and typed references; application
- * code owns commercial truth and never allows ungrounded prose to override facts.
+ * The AI model provides structured intents and references; application code owns
+ * commercial truth and never allows ungrounded model prose or legacy text to override facts.
  */
 export function renderDeterministicCommercialAnswer(options: RenderCommercialAnswerOptions): string {
   const {
@@ -1196,39 +1244,23 @@ export function renderDeterministicCommercialAnswer(options: RenderCommercialAns
     catalogMap.set(p.id.toLowerCase().trim(), p);
   }
 
-  const sections: string[] = [];
-
-  // 1. Conversational Opening / Advice
-  const rawOpening = answer.conversationalOpening || answer.reply || answer.text || '';
-  if (rawOpening.trim()) {
-    const sanitizedOpening = validateAndSanitizeAssistantReply({
-      replyText: rawOpening,
-      catalog: visible,
-      recommendations,
-      inquiryPrefill,
-      isCatalogFailure: false,
-      language,
-    });
-    if (sanitizedOpening.trim()) {
-      sections.push(sanitizedOpening.trim());
-    }
-  }
-
-  // 2. Verified Commercial Product Facts
+  // 1. Resolve Verified Product References First
   interface ResolvedProductRef {
     product: Product;
     variantLabel?: string | null;
   }
   const resolvedProducts: ResolvedProductRef[] = [];
-  const seenIds = new Set<string>();
+  const seenKeys = new Set<string>();
 
   if (Array.isArray(answer.selectedProducts)) {
     for (const sel of answer.selectedProducts) {
       if (!sel || !sel.productId) continue;
       const cleanId = sel.productId.toLowerCase().trim();
+      const variantKey = (sel.variantLabel || '').toLowerCase().trim();
+      const key = `${cleanId}:${variantKey}`;
       const prod = catalogMap.get(cleanId);
-      if (prod && !seenIds.has(cleanId)) {
-        seenIds.add(cleanId);
+      if (prod && !seenKeys.has(key)) {
+        seenKeys.add(key);
         resolvedProducts.push({ product: prod, variantLabel: sel.variantLabel });
       }
     }
@@ -1237,21 +1269,85 @@ export function renderDeterministicCommercialAnswer(options: RenderCommercialAns
   for (const rec of recommendations) {
     const cleanId = rec.productId.toLowerCase().trim();
     const prod = catalogMap.get(cleanId);
-    if (prod && !seenIds.has(cleanId)) {
-      seenIds.add(cleanId);
+    if (prod && !resolvedProducts.some(r => r.product.id.toLowerCase().trim() === cleanId)) {
       resolvedProducts.push({ product: prod });
     }
   }
 
   if (inquiryPrefill && inquiryPrefill.productId && inquiryPrefill.productId !== 'custom') {
     const cleanId = inquiryPrefill.productId.toLowerCase().trim();
+    const variantKey = (inquiryPrefill.packagingVariant || '').toLowerCase().trim();
+    const key = `${cleanId}:${variantKey}`;
     const prod = catalogMap.get(cleanId);
-    if (prod && !seenIds.has(cleanId)) {
-      seenIds.add(cleanId);
+    if (prod && !seenKeys.has(key)) {
+      seenKeys.add(key);
       resolvedProducts.push({ product: prod, variantLabel: inquiryPrefill.packagingVariant });
     }
   }
 
+  const sections: string[] = [];
+
+  const isStructuredAnswer = Boolean(
+    (Array.isArray(answer.selectedProducts) && answer.selectedProducts.length > 0) ||
+    Boolean(answer.openingIntent) ||
+    (Array.isArray(answer.suggestedCustomizations) && answer.suggestedCustomizations.length > 0) ||
+    (Array.isArray(answer.missingInfoQuestions) && answer.missingInfoQuestions.length > 0) ||
+    (answer.inquiryPrefill && Object.keys(answer.inquiryPrefill).length > 0)
+  );
+
+  if (isStructuredAnswer) {
+    // 2. Application-Owned Conversational Opening (Never arbitrary model prose)
+    let selectedOpeningIntent: ApprovedOpeningIntent;
+    const validIntents: ApprovedOpeningIntent[] = [
+      'greeting_celebration',
+      'greeting_gourmet',
+      'greeting_quote',
+      'greeting_general',
+    ];
+    if (answer.openingIntent && validIntents.includes(answer.openingIntent)) {
+      selectedOpeningIntent = answer.openingIntent;
+    } else if (inquiryPrefill && Object.keys(inquiryPrefill).length > 0) {
+      selectedOpeningIntent = 'greeting_quote';
+    } else if (
+      (Array.isArray(answer.suggestedCustomizations) && answer.suggestedCustomizations.length > 0) ||
+      resolvedProducts.some(r => isPackagingProduct(r.product))
+    ) {
+      selectedOpeningIntent = 'greeting_celebration';
+    } else if (resolvedProducts.some(r => !isPackagingProduct(r.product))) {
+      selectedOpeningIntent = 'greeting_gourmet';
+    } else {
+      selectedOpeningIntent = 'greeting_general';
+    }
+
+    const openingText =
+      OPENING_TEMPLATES[selectedOpeningIntent]?.[langMode] ||
+      OPENING_TEMPLATES[selectedOpeningIntent]?.en;
+    if (openingText) {
+      sections.push(openingText);
+    }
+  } else {
+    // Legacy response safe fallback: sanitize legacy prose through validateAndSanitizeAssistantReply
+    const rawLegacyReply = answer.reply || answer.text || '';
+    if (rawLegacyReply.trim()) {
+      const sanitizedLegacy = validateAndSanitizeAssistantReply({
+        replyText: rawLegacyReply,
+        catalog: visible,
+        recommendations,
+        inquiryPrefill,
+        isCatalogFailure: false,
+        language,
+      });
+      if (sanitizedLegacy.trim()) {
+        sections.push(sanitizedLegacy.trim());
+      }
+    } else {
+      const defaultOpening =
+        OPENING_TEMPLATES.greeting_general[langMode] || OPENING_TEMPLATES.greeting_general.en;
+      sections.push(defaultOpening);
+    }
+  }
+
+  // 3. Verified Commercial Product Facts
   const productFactLines: string[] = [];
 
   for (const item of resolvedProducts) {
@@ -1279,25 +1375,14 @@ export function renderDeterministicCommercialAnswer(options: RenderCommercialAns
           if (Array.isArray(p.variants)) {
             for (const v of p.variants) {
               if (v.available !== false && (v as any).inStock !== false && v.price > 0) {
-                const pieces = parsePiecesPerPack(v.label);
-                if (pieces > 1) {
-                  availableList.push(`${v.label}: Rs. ${v.price.toLocaleString()} per pack of ${pieces} pcs (Rs. ${Math.round(v.price / pieces)}/pc)`);
-                } else {
-                  availableList.push(`${v.label}: Rs. ${v.price.toLocaleString()}`);
-                }
+                availableList.push(`${v.label}: ${formatProductPriceBasis(p, v.label, v.price)}`);
               }
             }
           }
           productFactLines.push(`• ${prodName}: '${matchedVariant.label}' is currently unavailable. Available options: ${availableList.join(', ')}`);
           continue;
         } else {
-          const pieces = parsePiecesPerPack(matchedVariant.label);
-          let priceStr = '';
-          if (pieces > 1) {
-            priceStr = `Rs. ${matchedVariant.price.toLocaleString()} per pack of ${pieces} pcs (Rs. ${Math.round(matchedVariant.price / pieces)}/pc)`;
-          } else {
-            priceStr = `Rs. ${matchedVariant.price.toLocaleString()} / pc`;
-          }
+          const priceStr = formatProductPriceBasis(p, matchedVariant.label, matchedVariant.price);
           let moqStr = '';
           if (isPkg) {
             const moqInfo = getPackagingMoqDisplay(p, matchedVariant.label);
@@ -1312,14 +1397,15 @@ export function renderDeterministicCommercialAnswer(options: RenderCommercialAns
 
       if (p.prices && p.prices[reqLabel] !== undefined) {
         const pr = p.prices[reqLabel];
-        const pieces = parsePiecesPerPack(reqLabel);
-        let priceStr = '';
-        if (pieces > 1) {
-          priceStr = `Rs. ${pr.toLocaleString()} per pack of ${pieces} pcs (Rs. ${Math.round(pr / pieces)}/pc)`;
-        } else {
-          priceStr = `Rs. ${pr.toLocaleString()}`;
+        const priceStr = formatProductPriceBasis(p, reqLabel, pr);
+        let moqStr = '';
+        if (isPkg) {
+          const moqInfo = getPackagingMoqDisplay(p, reqLabel);
+          if (moqInfo.displayText) {
+            moqStr = ` [${moqInfo.displayText}]`;
+          }
         }
-        productFactLines.push(`• ${prodName} — ${reqLabel}: ${priceStr}`);
+        productFactLines.push(`• ${prodName} — ${reqLabel}: ${priceStr}${moqStr}`);
         continue;
       }
     }
@@ -1329,18 +1415,13 @@ export function renderDeterministicCommercialAnswer(options: RenderCommercialAns
     if (Array.isArray(p.variants) && p.variants.length > 0) {
       for (const v of p.variants) {
         if (v && v.available !== false && (v as any).inStock !== false && v.price > 0) {
-          const pieces = parsePiecesPerPack(v.label);
-          if (pieces > 1) {
-            variantSummaries.push(`${v.label}: Rs. ${v.price.toLocaleString()} per pack of ${pieces} pcs (Rs. ${Math.round(v.price / pieces)}/pc)`);
-          } else {
-            variantSummaries.push(`${v.label}: Rs. ${v.price.toLocaleString()}`);
-          }
+          variantSummaries.push(`${v.label}: ${formatProductPriceBasis(p, v.label, v.price)}`);
         }
       }
     } else if (p.prices) {
       for (const [portion, price] of Object.entries(p.prices)) {
         if (typeof price === 'number' && price > 0) {
-          variantSummaries.push(`${portion}: Rs. ${price.toLocaleString()}`);
+          variantSummaries.push(`${portion}: ${formatProductPriceBasis(p, portion, price)}`);
         }
       }
     }
@@ -1357,7 +1438,7 @@ export function renderDeterministicCommercialAnswer(options: RenderCommercialAns
     }
   }
 
-  // 3. Customer Proposed Budget vs Store Price
+  // 4. Customer Proposed Budget vs Store Price
   if (inquiryPrefill?.targetPricePkr) {
     const budgetVal = inquiryPrefill.targetPricePkr.toLocaleString();
     if (langMode === 'ur') {
@@ -1367,11 +1448,11 @@ export function renderDeterministicCommercialAnswer(options: RenderCommercialAns
     } else if (langMode === 'ar') {
       productFactLines.push(`• ميزانية العميل المقترحة: ${budgetVal} روبية (السعر النهائي يخضع لموافقة الفريق وعرض السعر)`);
     } else {
-      productFactLines.push(`• Proposed Customer Budget: Rs. ${budgetVal} (${inquiryPrefill.budgetType === 'per_piece' ? 'per piece target' : 'total target'}, customer proposed target — final pricing requires team quote)`);
+      productFactLines.push(`• Proposed Customer Budget: Rs. ${budgetVal} (${inquiryPrefill.budgetType === 'per_piece' ? 'per piece target' : 'total target'}, customer proposed budget; final pricing requires team confirmation)`);
     }
   }
 
-  // 4. Packaging Subtotal (if prefill subtotal is computed)
+  // 5. Packaging Subtotal (if prefill subtotal is computed)
   if (inquiryPrefill?.packagingSubtotal) {
     const subtotalVal = inquiryPrefill.packagingSubtotal.toLocaleString();
     productFactLines.push(`• Packaging Subtotal: Rs. ${subtotalVal} (${inquiryPrefill.quantity} ${inquiryPrefill.quantityUnit} = ${inquiryPrefill.totalPieces} pieces)`);
@@ -1380,7 +1461,7 @@ export function renderDeterministicCommercialAnswer(options: RenderCommercialAns
     }
   }
 
-  // 5. Store Policies
+  // 6. Store Policies
   const policyLines: string[] = [];
   const policiesToRender = new Set<string>(answer.applicablePolicies || []);
   if (resolvedProducts.some(r => isPackagingProduct(r.product)) || inquiryPrefill) {
@@ -1400,18 +1481,33 @@ export function renderDeterministicCommercialAnswer(options: RenderCommercialAns
     }
   }
 
-  // 6. Customization Suggestions
+  // 7. Customization Suggestions (Generic / Optional, with public catalog selections if available)
   const customLines: string[] = [];
   if (Array.isArray(answer.suggestedCustomizations)) {
     for (const custId of answer.suggestedCustomizations) {
-      const tpl = CUSTOMIZATION_TEMPLATES[custId]?.[langMode] || CUSTOMIZATION_TEMPLATES[custId]?.en;
+      let tpl = CUSTOMIZATION_TEMPLATES[custId]?.[langMode] || CUSTOMIZATION_TEMPLATES[custId]?.en;
       if (tpl) {
+        if (custId === 'dates_filling') {
+          const publicDates = visible
+            .filter(p => p.category === 'dates')
+            .map(p => (langMode === 'ur' && p.name_ur) ? p.name_ur : (langMode === 'ar' && p.name_ar) ? p.name_ar : (p.name_en || p.name));
+          if (publicDates.length > 0) {
+            tpl += ` (Catalog options: ${publicDates.slice(0, 3).join(', ')})`;
+          }
+        } else if (custId === 'dry_fruits_filling') {
+          const publicNuts = visible
+            .filter(p => p.category === 'nuts' || p.category === 'dry-fruits')
+            .map(p => (langMode === 'ur' && p.name_ur) ? p.name_ur : (langMode === 'ar' && p.name_ar) ? p.name_ar : (p.name_en || p.name));
+          if (publicNuts.length > 0) {
+            tpl += ` (Catalog options: ${publicNuts.slice(0, 3).join(', ')})`;
+          }
+        }
         customLines.push(tpl);
       }
     }
   }
 
-  // 7. Follow-up Questions
+  // 8. Follow-up Questions
   const questionLines: string[] = [];
   if (Array.isArray(answer.missingInfoQuestions)) {
     for (const qId of answer.missingInfoQuestions) {
@@ -1437,7 +1533,6 @@ export function renderDeterministicCommercialAnswer(options: RenderCommercialAns
     commercialBlocks.push(questionLines.join('\n'));
   }
 
-  // Append commercial blocks to sections if any exist and are not already in opening
   if (commercialBlocks.length > 0) {
     sections.push(commercialBlocks.join('\n\n'));
   }
@@ -1454,11 +1549,6 @@ export function renderDeterministicCommercialAnswer(options: RenderCommercialAns
 
   if (!sections.some(s => s.includes('https://wa.me/923160666083'))) {
     sections.push(contactText);
-  }
-
-  // Footnote explicitly documenting application-rendered facts vs AI assistance
-  if (!sections.some(s => s.includes(FOOTNOTE_DISCLAIMER))) {
-    sections.push(FOOTNOTE_DISCLAIMER);
   }
 
   return sections.join('\n\n');

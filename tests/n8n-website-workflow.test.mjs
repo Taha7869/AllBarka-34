@@ -85,9 +85,10 @@ test('chat carries canonical server instructions and current Groq JSON schema wi
   assert.ok(result.aiBody.messages[0].content.includes('Do not diagnose'));
   const schema = result.aiBody.response_format.json_schema.schema;
   assert.deepEqual(schema.required, [
-    'action', 'reply', 'conversationalOpening', 'selectedProducts', 'suggestedCustomizations',
+    'action', 'reply', 'openingIntent', 'conversationalOpening', 'selectedProducts', 'suggestedCustomizations',
     'applicablePolicies', 'missingInfoQuestions', 'recommendedProductIds', 'inquiryPrefill'
   ]);
+  assert.ok(schema.properties.openingIntent);
   assert.ok(schema.properties.selectedProducts);
   assert.ok(schema.properties.suggestedCustomizations);
   assert.ok(schema.properties.applicablePolicies);
@@ -122,6 +123,7 @@ test('valid website replies preserve the existing text/reply contract and curren
 test('website reply extractor forwards structured recommendations, intent selections, and inquiry prefill when present', () => {
   const structuredContent = {
     action: 'answer',
+    openingIntent: 'greeting_celebration',
     conversationalOpening: 'Warm celebration greetings from AllBarka.',
     selectedProducts: [{ productId: 'bid-box-luxury-tin', variantLabel: 'Empty Pack (25 pcs)' }],
     suggestedCustomizations: ['monogram', 'custom_ribbon'],
@@ -146,6 +148,7 @@ test('website reply extractor forwards structured recommendations, intent select
   const result = run('Extract Website Reply', response);
   assert.equal(result.httpStatus, 200);
   assert.equal(result.responseBody.action, 'answer');
+  assert.equal(result.responseBody.openingIntent, 'greeting_celebration');
   assert.equal(result.responseBody.conversationalOpening, 'Warm celebration greetings from AllBarka.');
   assert.deepEqual(result.responseBody.selectedProducts, [{ productId: 'bid-box-luxury-tin', variantLabel: 'Empty Pack (25 pcs)' }]);
   assert.deepEqual(result.responseBody.suggestedCustomizations, ['monogram', 'custom_ribbon']);

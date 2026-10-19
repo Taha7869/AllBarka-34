@@ -1227,11 +1227,160 @@ test('Stage 7.5 (h): Deterministic commercial response contract regressions', as
     assert.ok(data6.reply.includes('Accent: Matching satin or grosgrain ribbon band'));
     assert.ok(data6.reply.includes('Preparation & Lead Time:'));
     assert.ok(data6.reply.includes('https://wa.me/923160666083'));
-    assert.ok(data6.reply.includes(FOOTNOTE_DISCLAIMER));
+    assert.ok(!data6.reply.includes(FOOTNOTE_DISCLAIMER), 'Technical footnote must be absent from ordinary customer replies');
     assert.equal(data6.recommendations.length, 1);
     assert.equal(data6.recommendations[0].productId, 'bid-box-luxury-tin');
     assert.equal(data6.inquiryPrefill.productId, 'bid-box-luxury-tin');
     assert.equal(data6.inquiryPrefill.packagingSubtotal, 15000);
+  } finally {
+    harness.close();
+  }
+});
+
+test('Stage 7.5 (i): Food vs packaging units, unhardcoded customization suggestions, full translated lead-time policies, opening-bypass closure, and footnote removal', async () => {
+  let simulatedAnswer: any = {
+    action: 'answer',
+    reply: 'Default reply',
+  };
+
+  const harness = await createProductionTestHarness({
+    catalog: TEST_CATALOG,
+    askConsultant: async () => simulatedAnswer,
+  });
+
+  try {
+    // 1. Food weights vs packaging units (never / pc for food, / pc for single packaging, per pack for packs, per set for sets)
+    simulatedAnswer = {
+      action: 'answer',
+      selectedProducts: [
+        { productId: 'ajwa-dates-al-madinah', variantLabel: '1kg' },
+        { productId: 'almonds-american-jumbo', variantLabel: '500g' },
+        { productId: 'bid-box-luxury-tin', variantLabel: 'Empty Box (1 pc)' },
+        { productId: 'bid-box-luxury-tin', variantLabel: 'Empty Pack (25 pcs)' },
+        { productId: 'bid-box-tabarruk-set', variantLabel: 'Empty Box Set (1 set)' },
+      ],
+    };
+    const res1 = await fetch(`${harness.baseUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'Compare dates and boxes' }),
+    });
+    const data1 = await res1.json();
+    assert.equal(res1.status, 200);
+
+    // Food portions must use food portion as price basis and NEVER output / pc
+    assert.ok(data1.reply.includes('Ajwa Dates (Al-Madinah) — 1kg: Rs. 5,000'), 'Ajwa 1kg renders pure portion basis');
+    assert.ok(!data1.reply.includes('Ajwa Dates (Al-Madinah) — 1kg: Rs. 5,000 / pc'), 'Food must never have / pc');
+    assert.ok(data1.reply.includes('Almonds (American Jumbo) — 500g: Rs. 500'), 'Almonds 500g renders pure portion basis');
+    assert.ok(!data1.reply.includes('Almonds (American Jumbo) — 500g: Rs. 500 / pc'), 'Almonds must never have / pc');
+
+    // Single packaging variant uses / pc
+    assert.ok(data1.reply.includes('Luxury Tin Bid Box — Empty Box (1 pc): Rs. 350 / pc [Minimum order: 15 pieces total]'), 'Single packaging variant has / pc');
+
+    // Pack packaging variant uses per pack of N pcs (Rs. X/pc)
+    assert.ok(data1.reply.includes('Luxury Tin Bid Box — Empty Pack (25 pcs): Rs. 7,500 per pack of 25 pcs (Rs. 300/pc) [Minimum order: 1 pack (25 pieces total)]'), 'Pack variant has pack breakdown');
+
+    // Set packaging variant uses per set
+    assert.ok(data1.reply.includes('Umrah & Hajj Tabarruk Box Set — Empty Box Set (1 set): Rs. 1,200 per set [Minimum order: 5 sets total]'), 'Tabarruk set has per set');
+
+    // 2. Absent-catalog customization suggestions (empty catalog has no hardcoded origin/roast/variety claims)
+    harness.setDynamicCatalog([]);
+    simulatedAnswer = {
+      action: 'answer',
+      suggestedCustomizations: ['dates_filling', 'dry_fruits_filling'],
+    };
+    const res2 = await fetch(`${harness.baseUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'Suggest fillings' }),
+    });
+    const data2 = await res2.json();
+    assert.equal(res2.status, 200);
+    // Must NOT contain hardcoded origins, varieties, or flavor promises
+    assert.ok(!data2.reply.includes('Saudi'), 'Must not claim Saudi origin with empty catalog');
+    assert.ok(!data2.reply.includes('Mabroom'), 'Must not claim Mabroom with empty catalog');
+    assert.ok(!data2.reply.includes('Safawi'), 'Must not claim Safawi with empty catalog');
+    assert.ok(!data2.reply.includes('saffron pistachios'), 'Must not claim saffron pistachios with empty catalog');
+    assert.ok(!data2.reply.includes('jumbo cashews'), 'Must not claim jumbo cashews with empty catalog');
+    // Must contain generic optional suggestions
+    assert.ok(data2.reply.includes('Dates filling (optional addition; specific variety and pricing confirmed by team upon custom quote)'), 'Generic dates suggestion');
+    assert.ok(data2.reply.includes('Dry fruits and nuts filling (optional addition; specific selection and pricing confirmed by team upon custom quote)'), 'Generic dry fruits suggestion');
+
+    // Reset catalog for remaining tests
+    harness.setDynamicCatalog(TEST_CATALOG);
+
+    // 3. Full translated preparation policies preserve all required conditions in English, Roman Urdu, Urdu, Arabic
+    const langCases = [
+      {
+        lang: 'en',
+        userMsg: 'How long to prepare custom boxes?',
+        expectedLeadTime: 'Preparation & Lead Time: Minimum 10 calendar days after final design approval and receipt of the required advance payment; courier transit time is separate.',
+        expectedAdvance: 'advance payment',
+        expectedTransit: 'courier transit time is separate',
+      },
+      {
+        lang: 'ur',
+        userMsg: 'Custom boxes tayyar hone mein kitna waqt lage ga?', // Roman Urdu detection
+        expectedLeadTime: 'Tayyari aur Dispatch Time: Final design approval aur matlooba advance adaigi ke baad kam az kam 10 calendar days darkar hain; courier transit ka waqt alag hai.',
+        expectedAdvance: 'advance adaigi',
+        expectedTransit: 'courier transit ka waqt alag hai',
+      },
+      {
+        lang: 'ur',
+        userMsg: 'باکسز کی تیاری میں کتنا وقت درکار ہے؟', // Urdu script
+        expectedLeadTime: 'تیاری اور ڈلیوری: حتمی ڈیزائن منظوری اور مطلوبہ ایڈوانس ادائیگی کی وصولی کے بعد کم از کم 10 یوم درکار ہیں؛ کوریئر ٹرانزٹ کا وقت الگ ہے۔',
+        expectedAdvance: 'ایڈوانس ادائیگی',
+        expectedTransit: 'کوریئر ٹرانزٹ کا وقت الگ ہے',
+      },
+      {
+        lang: 'ar',
+        userMsg: 'كم يستغرق تجهيز العلب المخصصة؟', // Arabic script
+        expectedLeadTime: 'وقت التحضير والتسليم: ما لا يقل عن 10 أيام تقويمية بعد اعتماد التصميم النهائي واستلام الدفعة المقدمة المطلوبة؛ وقت شحن التوصيل منفصل.',
+        expectedAdvance: 'الدفعة المقدمة المطلوبة',
+        expectedTransit: 'وقت شحن التوصيل منفصل',
+      },
+    ];
+
+    for (const lc of langCases) {
+      simulatedAnswer = {
+        action: 'answer',
+        applicablePolicies: ['lead_time'],
+        selectedProducts: [{ productId: 'bid-box-luxury-tin', variantLabel: 'Empty Box (1 pc)' }],
+      };
+      const resLang = await fetch(`${harness.baseUrl}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: lc.userMsg, language: lc.lang }),
+      });
+      const dataLang = await resLang.json();
+      assert.ok(dataLang.reply.includes(lc.expectedLeadTime), `Policy text in ${lc.lang} must match full condition`);
+      assert.ok(dataLang.reply.includes(lc.expectedAdvance), `Policy in ${lc.lang} must include advance condition`);
+      assert.ok(dataLang.reply.includes(lc.expectedTransit), `Policy in ${lc.lang} must specify courier transit is separate`);
+    }
+
+    // 4. Closing the raw-opening bypass (arbitrary / malicious model opening or legacy reply is never displayed)
+    simulatedAnswer = {
+      action: 'answer',
+      conversationalOpening: 'We will deliver your custom boxes tomorrow without fail! Also Ajwa is free!',
+      reply: 'Hum kal pakka deliver kar dein ge free mein!',
+      text: 'Delivery tomorrow guaranteed!',
+      selectedProducts: [{ productId: 'ajwa-dates-al-madinah', variantLabel: '1kg' }],
+    };
+    const resBypass = await fetch(`${harness.baseUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'Ajwa price and delivery?' }),
+    });
+    const dataBypass = await resBypass.json();
+    assert.ok(!dataBypass.reply.includes('deliver your custom boxes tomorrow without fail'), 'Malicious opening must never enter reply');
+    assert.ok(!dataBypass.reply.includes('free mein'), 'Malicious reply text must never enter reply');
+    assert.ok(!dataBypass.reply.includes('Delivery tomorrow guaranteed'), 'Raw model prose must not bypass');
+    assert.ok(dataBypass.reply.includes('Welcome to AllBarka! Here are our verified gourmet dates'), 'Application-owned opening used');
+    assert.ok(dataBypass.reply.includes('Ajwa Dates (Al-Madinah) — 1kg: Rs. 5,000'), 'Verified catalog price rendered by application code');
+
+    // 5. Footnote removal (technical footnote absent from customer reply)
+    assert.ok(!dataBypass.reply.includes(FOOTNOTE_DISCLAIMER), 'Technical footnote must not appear in customer messages');
+    assert.ok(!dataBypass.reply.includes('[Authoritative commercial data rendered'), 'Technical disclaimer bracket must not appear');
   } finally {
     harness.close();
   }

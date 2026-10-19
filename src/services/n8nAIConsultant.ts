@@ -1,3 +1,5 @@
+import type { ApprovedOpeningIntent } from '../lib/aiBuddyResolution';
+
 export interface ConsultantRequest {
   message: string;
   history: unknown;
@@ -16,6 +18,7 @@ export interface ConsultantReply {
   available: true;
   modelUsed: 'n8n-groq';
   supportUrl?: string;
+  openingIntent?: ApprovedOpeningIntent;
   conversationalOpening?: string;
   selectedProducts?: ProductSelectionReference[];
   suggestedCustomizations?: string[];
@@ -55,6 +58,13 @@ export function extractN8nReply(value: unknown, depth = 0): ConsultantReply | nu
     } catch { return null; }
   }
   const action = result.action === 'human' ? 'human' : 'answer';
+  const rawOpeningIntent = result.openingIntent;
+  const validOpeningIntents = ['greeting_celebration', 'greeting_gourmet', 'greeting_quote', 'greeting_general'];
+  const openingIntent: ApprovedOpeningIntent | undefined =
+    typeof rawOpeningIntent === 'string' && validOpeningIntents.includes(rawOpeningIntent.trim())
+      ? (rawOpeningIntent.trim() as ApprovedOpeningIntent)
+      : undefined;
+
   const conversationalOpening =
     typeof result.conversationalOpening === 'string' && result.conversationalOpening.trim()
       ? result.conversationalOpening.trim().slice(0, 1000)
@@ -101,6 +111,7 @@ export function extractN8nReply(value: unknown, depth = 0): ConsultantReply | nu
     available: true,
     modelUsed: 'n8n-groq',
     ...(action === 'human' ? { supportUrl: HUMAN_SUPPORT_URL } : {}),
+    ...(openingIntent ? { openingIntent } : {}),
     ...(conversationalOpening ? { conversationalOpening } : {}),
     ...(selectedProducts && selectedProducts.length > 0 ? { selectedProducts } : {}),
     ...(suggestedCustomizations && suggestedCustomizations.length > 0 ? { suggestedCustomizations } : {}),
