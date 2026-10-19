@@ -12,6 +12,10 @@ import {
   validateInquiryPrefill,
   validateAndSanitizeAssistantReply,
   sanitizeBuddyPrompt,
+  OFFICIAL_WHATSAPP_URL,
+  isExactOfficialWhatsAppUrl,
+  resolveCanonicalProductUrl,
+  sanitizeTextUrls,
 } from '../src/lib/aiBuddyResolution';
 import { extractN8nReply } from '../src/services/n8nAIConsultant';
 import { createAiChatRouter } from '../src/lib/aiChatRouter';
@@ -542,7 +546,37 @@ test('Stage 7.4 (b): Pack price, unit, and MOQ consistency for multi-piece packa
   assert.ok(rec.displayPrice.includes('per pack of 25 pcs'));
   assert.ok(rec.displayPrice.includes('(Rs. 300/pc)'));
   assert.equal(rec.moq, 1);
-  assert.equal(rec.moqDisplay, 'MOQ 1 pack (17 pcs)');
+  assert.equal(rec.moqDisplay, 'Minimum order: 1 pack (25 pieces total)');
+
+  // 10-piece pack with a 25-piece threshold: MOQ is 3 packs (30 pieces total)
+  const pack10Catalog: Product[] = [
+    {
+      id: 'bulk-10pc-box',
+      name_en: 'Pack 10 Favor Box',
+      name_ur: '',
+      name_ar: '',
+      category: 'celebration-boxes',
+      isBidBox: true,
+      image: null,
+      imageName: null,
+      prices: {
+        'Empty Pack (10 pcs)': 1000, // Rs. 100/pc -> threshold 25 pcs -> 3 packs (30 pcs total)
+      },
+      variants: [
+        { label: 'Empty Pack (10 pcs)', price: 1000, available: true },
+      ],
+      wholesale: 800,
+      desc_en: 'Pack 10.',
+      desc_ur: '',
+      desc_ar: '',
+      active: true,
+      inStock: true,
+      status: 'published',
+    },
+  ];
+  const recs10 = validateAiRecommendations(pack10Catalog, ['bulk-10pc-box']);
+  assert.equal(recs10[0].moq, 3);
+  assert.equal(recs10[0].moqDisplay, 'Minimum order: 3 packs (30 pieces total)');
 });
 
 test('Stage 7.4 (c): Filled vs empty subtotal semantics & unpriced personalization', () => {
@@ -592,7 +626,15 @@ test('Stage 7.5: Application-enforced response contract neutralizes malicious/in
   // 1. Invented price Rs. 25 for non-catalog chocolates must be neutralized
   assert.ok(!sanitized.includes('Rs. 25'));
   assert.ok(!sanitized.includes('25 each'));
-  assert.ok(sanitized.includes('pricing subject to team confirmation and quote'));
+  assert.ok(sanitized.includes('custom non-catalog fillings require team consultation and quote'));
+
+  // 1b. Non-filling ungrounded price claim receives generic pricing quote notice
+  const ungroundedBox = validateAndSanitizeAssistantReply({
+    replyText: 'We also have unlisted favor coffers at Rs. 9999.',
+    catalog: TEST_CATALOG,
+  });
+  assert.ok(!ungroundedBox.includes('Rs. 9999'));
+  assert.ok(ungroundedBox.includes('pricing subject to team confirmation and quote'));
 
   // 2. Unsupported halal certification claim must be neutralized
   assert.ok(!sanitized.toLowerCase().includes('guaranteed halal'));
@@ -631,6 +673,173 @@ test('Stage 7.5 (c): Catalog outage enforces unpriced guidance and verified What
   assert.ok(!sanitized.includes('Rs. 2,500'));
   assert.ok(sanitized.includes('offline'));
   assert.ok(sanitized.includes('https://wa.me/923160666083'));
+});
+
+test('Stage 7.2 (b): Link destination validation allows only verified public products and exact WhatsApp URL', () => {
+  // 1. Valid public product route is preserved
+  const validProductText = 'You can view our box at /product/bid-box-luxury-tin.';
+  const sanitizedValid = validateAndSanitizeAssistantReply({
+    replyText: validProductText,
+    catalog: TEST_CATALOG,
+  });
+  assert.ok(sanitizedValid.includes('/product/bid-box-luxury-tin.'));
+
+  // 2. Nonexistent product route is redirected to official WhatsApp
+  const fakeProductText = 'Check out our special coffer at /product/nonexistent-item or https://fake.example/product/nonexistent-item';
+  const sanitizedFake = validateAndSanitizeAssistantReply({
+    replyText: fakeProductText,
+    catalog: TEST_CATALOG,
+  });
+  assert.ok(!sanitizedFake.includes('/product/nonexistent-item'));
+  assert.ok(!sanitizedFake.includes('fake.example'));
+  assert.ok(sanitizedFake.includes(OFFICIAL_WHATSAPP_URL));
+
+  // 3. Lookalike WhatsApp domain (e.g. wa.me/923160666083.attacker.com) is strictly rejected
+  const lookalikeText = 'Contact us on WhatsApp: https://wa.me/923160666083.attacker.com';
+  const sanitizedLookalike = validateAndSanitizeAssistantReply({
+    replyText: lookalikeText,
+    catalog: TEST_CATALOG,
+  });
+  assert.ok(!sanitizedLookalike.includes('attacker.com'));
+  assert.ok(sanitizedLookalike.includes(OFFICIAL_WHATSAPP_URL));
+
+  // 4. Exact official WhatsApp URL with trailing punctuation is preserved cleanly
+  const exactWaText = 'Please message our concierge: https://wa.me/923160666083.';
+  const sanitizedWa = validateAndSanitizeAssistantReply({
+    replyText: exactWaText,
+    catalog: TEST_CATALOG,
+  });
+  assert.ok(sanitizedWa.includes('https://wa.me/923160666083.'));
+
+  // 5. Direct unit verification of helper functions
+  assert.equal(isExactOfficialWhatsAppUrl('https://wa.me/923160666083'), true);
+  assert.equal(isExactOfficialWhatsAppUrl('https://wa.me/923160666083.'), true);
+  assert.equal(isExactOfficialWhatsAppUrl('https://wa.me/923160666083.attacker.com'), false);
+  assert.equal(isExactOfficialWhatsAppUrl('https://wa.me/923001234567'), false);
+  assert.equal(resolveCanonicalProductUrl('/product/bid-box-luxury-tin', TEST_CATALOG), '/product/bid-box-luxury-tin');
+  assert.equal(resolveCanonicalProductUrl('/product/draft-tin-box-secret', TEST_CATALOG), null);
+  assert.equal(resolveCanonicalProductUrl('/product/nonexistent-box', TEST_CATALOG), null);
+});
+
+test('Stage 7.5 (d): Grounded commercial facts eliminate numeric allowlisting reproductions', () => {
+  // Test catalog with single Rs. 500 product
+  const catalogWith500Only: Product[] = [
+    {
+      id: 'box-500',
+      name_en: 'Standard Favor Box',
+      name_ur: '',
+      name_ar: '',
+      category: 'celebration-boxes',
+      isBidBox: true,
+      image: null,
+      imageName: null,
+      prices: { 'Empty Box (1 pc)': 500 },
+      variants: [{ label: 'Empty Box (1 pc)', price: 500, available: true }],
+      wholesale: 400,
+      desc_en: 'Box.',
+      desc_ur: '',
+      desc_ar: '',
+      active: true,
+      inStock: true,
+      status: 'published',
+    },
+  ];
+
+  // Reproduction A: Catalog has only Rs. 500 box -> "Chocolates cost Rs. 500 each."
+  // Previously passed because 500 was in global verifiedPrices. Must now be neutralized!
+  const replyA = validateAndSanitizeAssistantReply({
+    replyText: 'For your event, Chocolates cost Rs. 500 each.',
+    catalog: catalogWith500Only,
+  });
+  assert.ok(!replyA.includes('Rs. 500'));
+  assert.ok(!replyA.includes('500 each'));
+  assert.ok(replyA.includes('custom non-catalog fillings require team consultation and quote'));
+
+  // Reproduction B: "Chocolates cost Rs. 150 each."
+  // Previously passed because 150 was hardcoded shipping amount. Must now be neutralized!
+  const replyB = validateAndSanitizeAssistantReply({
+    replyText: 'Chocolates cost Rs. 150 each.',
+    catalog: catalogWith500Only,
+  });
+  assert.ok(!replyB.includes('Rs. 150'));
+  assert.ok(!replyB.includes('150 each'));
+  assert.ok(replyB.includes('custom non-catalog fillings require team consultation and quote'));
+
+  // Reproduction C: Customer budget 1234 allows "Our approved price is Rs. 1234."
+  // Previously passed because budget was added to verifiedPrices. Must now be neutralized!
+  const replyC = validateAndSanitizeAssistantReply({
+    replyText: 'Our approved price is Rs. 1234.',
+    catalog: catalogWith500Only,
+    inquiryPrefill: {
+      productId: 'box-500',
+      productName: 'Standard Favor Box',
+      boxMode: 'empty',
+      quantity: 50,
+      quantityUnit: 'pieces',
+      piecesPerPack: 1,
+      totalPieces: 50,
+      eventType: 'Nikkah',
+      targetPricePkr: 1234,
+      requiresTeamQuote: false,
+      leadTimeNotice: '',
+      modalInit: {} as any,
+    },
+  });
+  assert.ok(!replyC.includes('Our approved price'));
+  assert.ok(replyC.includes('customer proposed budget'));
+
+  // Reproduction D: "Chocolates cost twenty five rupees each."
+  // Non-catalog filling with English word numbers must be neutralized!
+  const replyD = validateAndSanitizeAssistantReply({
+    replyText: 'Chocolates cost twenty five rupees each.',
+    catalog: catalogWith500Only,
+  });
+  assert.ok(!replyD.includes('twenty five rupees'));
+  assert.ok(replyD.includes('custom non-catalog fillings require team consultation and quote'));
+
+  // Reproduction E: Urdu non-catalog filling price: "چاکلیٹ کی قیمت ۲۵ روپے ہے۔"
+  const replyE = validateAndSanitizeAssistantReply({
+    replyText: 'چاکلیٹ کی قیمت ۲۵ روپے ہے۔',
+    catalog: catalogWith500Only,
+    language: 'ur',
+  });
+  assert.ok(!replyE.includes('۲۵ روپے'));
+  assert.ok(replyE.includes('کسٹم فلنگز'));
+
+  // Reproduction F: "We have 900 chocolates in stock, certified organic and delivery guaranteed tomorrow."
+  const replyF = validateAndSanitizeAssistantReply({
+    replyText: 'We have 900 chocolates in stock, certified organic and delivery guaranteed tomorrow.',
+    catalog: catalogWith500Only,
+  });
+  assert.ok(!replyF.includes('900 chocolates in stock'));
+  assert.ok(!replyF.includes('certified organic'));
+  assert.ok(!replyF.includes('delivery guaranteed tomorrow'));
+  assert.ok(replyF.includes('artisanal selections are prepared to order'));
+  assert.ok(replyF.includes('official certifications are not claimed'));
+  assert.ok(replyF.includes('delivery timelines are confirmed upon order review'));
+});
+
+test('Stage 7.5 (e): Valid catalog product facts, prices, and store shipping are preserved in prose', () => {
+  // 1. Valid product price
+  const reply1 = validateAndSanitizeAssistantReply({
+    replyText: 'Our Luxury Tin Bid Box is Rs. 350 / pc.',
+    catalog: TEST_CATALOG,
+  });
+  assert.ok(reply1.includes('Rs. 350 / pc'));
+
+  // 2. Valid multi-portion pistachio price
+  const reply2 = validateAndSanitizeAssistantReply({
+    replyText: 'Roasted Iranian Pistachios are Rs. 2,500 per 500g.',
+    catalog: TEST_CATALOG,
+  });
+  assert.ok(reply2.includes('Rs. 2,500 per 500g'));
+
+  // 3. Valid store shipping rate in shipping context
+  const reply3 = validateAndSanitizeAssistantReply({
+    replyText: 'Standard delivery in Lahore is Rs. 250.',
+    catalog: TEST_CATALOG,
+  });
+  assert.ok(reply3.includes('Rs. 250'));
 });
 
 test('Stage 7.6: Dynamic admin price update is reflected through the real catalog-loading dependency', async () => {

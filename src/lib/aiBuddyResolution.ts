@@ -339,7 +339,7 @@ export function validateAiRecommendations(
         displayPrice: 'Quote on request',
         isPackaging: isPkg,
         moq: moqOverride,
-        moqDisplay: moqOverride ? `MOQ ${moqOverride} pcs` : undefined,
+        moqDisplay: moqOverride ? `Minimum order: ${moqOverride} pieces total` : undefined,
         quantityUnit: isPkg ? 'pieces' : 'portions',
         variantsCount: 0,
       });
@@ -378,13 +378,10 @@ export function validateAiRecommendations(
     if (isPkg) {
       const moqInfo = getPackagingMoqDisplay(product, primary.label);
       if (moqInfo.moqPieces) {
-        if (isPack && moqInfo.minUnits) {
-          moq = moqInfo.minUnits;
-          moqDisplay = `MOQ ${moqInfo.minUnits} pack (${moqInfo.moqPieces} pcs)`;
-        } else {
-          moq = moqInfo.moqPieces;
-          moqDisplay = `MOQ ${moqInfo.moqPieces} pcs`;
-        }
+        moq = isPack && moqInfo.minUnits ? moqInfo.minUnits : moqInfo.moqPieces;
+        moqDisplay = moqInfo.displayText || (isPack && moqInfo.minUnits
+          ? `Minimum order: ${moqInfo.minUnits} ${moqInfo.minUnits === 1 ? 'pack' : 'packs'} (${moqInfo.totalPieces || moqInfo.minUnits * piecesPerPack} pieces total)`
+          : `Minimum order: ${moqInfo.moqPieces} ${isSet ? 'sets' : 'pieces'} total`);
       }
     }
 
@@ -583,9 +580,98 @@ export interface SanitizeReplyOptions {
   language?: 'en' | 'ur' | 'ar';
 }
 
+export const OFFICIAL_WHATSAPP_URL = 'https://wa.me/923160666083';
+
+/**
+ * Validates whether a URL strictly points to the official AllBarka WhatsApp concierge.
+ * Trailing punctuation (periods, commas, parens) is stripped prior to URL parsing.
+ * Strictly prevents lookalikes, subdomains, arbitrary queries, or foreign hosts.
+ */
+export function isExactOfficialWhatsAppUrl(rawUrl: string): boolean {
+  if (!rawUrl || typeof rawUrl !== 'string') return false;
+  const cleaned = rawUrl.trim().replace(/[.,;:!?)]+$/, '');
+  try {
+    const candidate = cleaned.startsWith('http://') || cleaned.startsWith('https://')
+      ? cleaned
+      : `https://${cleaned}`;
+    const parsed = new URL(candidate);
+    if (parsed.hostname.toLowerCase() !== 'wa.me') return false;
+    const path = parsed.pathname.replace(/\/+$/, '');
+    if (path !== '/923160666083') return false;
+    if (parsed.port || parsed.username || parsed.password) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Resolves a product link candidate to a canonical route /product/:id.
+ * Validates against customer-visible catalog. Returns null if invalid or draft/archived.
+ */
+export function resolveCanonicalProductUrl(rawUrlOrPath: string, catalog: Product[]): string | null {
+  if (!rawUrlOrPath || typeof rawUrlOrPath !== 'string') return null;
+  const cleaned = rawUrlOrPath.trim().replace(/[.,;:!?)]+$/, '');
+
+  let extractedId: string | null = null;
+  // Match /celebration-boxes?product=<id>
+  const legacyMatch = /[?&]product=([a-zA-Z0-9_-]+)/i.exec(cleaned);
+  if (legacyMatch) {
+    extractedId = legacyMatch[1];
+  } else {
+    // Match /product/<id> or https://.../product/<id>
+    const productMatch = /\/product\/([a-zA-Z0-9_-]+)/i.exec(cleaned);
+    if (productMatch) {
+      extractedId = productMatch[1];
+    }
+  }
+
+  if (!extractedId) return null;
+
+  const visible = getCustomerVisibleCatalog(catalog);
+  const targetId = extractedId.toLowerCase().trim();
+  const matched = visible.find(p => p.id.toLowerCase().trim() === targetId);
+  if (matched) {
+    return `/product/${encodeURIComponent(matched.id)}`;
+  }
+
+  return null;
+}
+
+/**
+ * Sanitizes all URLs and internal paths within assistant reply text.
+ * Strictly permits only:
+ * 1. The exact official WhatsApp concierge: https://wa.me/923160666083
+ * 2. Canonical public product routes: /product/<verified-public-id>
+ * Any foreign, invalid, lookalike, or nonexistent product URL is safely redirected to official WhatsApp.
+ */
+export function sanitizeTextUrls(text: string, visibleCatalog: Product[]): string {
+  if (typeof text !== 'string' || !text) return '';
+
+  const urlRegex = /(?:https?:\/\/[^\s<>"')]+|\/(?:product|celebration-boxes)[^\s<>"')]*)/gi;
+
+  return text.replace(urlRegex, (matched) => {
+    const punctMatch = /([.,;:!?)]+)$/.exec(matched);
+    const trailingPunct = punctMatch ? punctMatch[1] : '';
+    const cleanUrl = trailingPunct ? matched.slice(0, -trailingPunct.length) : matched;
+
+    if (isExactOfficialWhatsAppUrl(cleanUrl)) {
+      return `${OFFICIAL_WHATSAPP_URL}${trailingPunct}`;
+    }
+
+    const canonicalRoute = resolveCanonicalProductUrl(cleanUrl, visibleCatalog);
+    if (canonicalRoute) {
+      return `${canonicalRoute}${trailingPunct}`;
+    }
+
+    // Invalid product URL (e.g. /product/nonexistent-item), lookalike, or foreign URL
+    return `${OFFICIAL_WHATSAPP_URL}${trailingPunct}`;
+  });
+}
+
 /**
  * Enforces application-level commercial validation on assistant replies.
- * - Detects and neutralizes unsupported commercial claims (fake prices, fake discounts, certifications)
+ * - Detects and neutralizes unsupported commercial claims (fake prices, fake discounts, certifications, stock claims, delivery promises)
  * - Restricts URLs to verified WhatsApp and canonical product routes
  * - Enforces unpriced guidance during catalog outages
  */
@@ -614,30 +700,82 @@ export function validateAndSanitizeAssistantReply(options: SanitizeReplyOptions)
   }
 
   let sanitized = replyText;
-
-  // 1. Build set of verified prices from visible catalog, recommendations, prefill, and store shipping
-  const verifiedPrices = new Set<number>([
-    150, 250, 350, 3000, 5000 // Store standard shipping rates & thresholds
-  ]);
-
   const visible = getCustomerVisibleCatalog(catalog);
+
+  // 1. Sanitize URLs strictly against official destinations
+  sanitized = sanitizeTextUrls(sanitized, visible);
+
+  // 2. Reject / sanitize invented discounts and coupon codes
+  const couponDiscountPattern = /\b(?:apply\s+[A-Za-z0-9_-]{3,15}\s*(?:for\s*)?(?:\d+%\s*off)?|\d+%\s*(?:off|discount)|coupon\s*code\s*[A-Za-z0-9_-]+|promo\s*code\s*[A-Za-z0-9_-]+|discount\s*code\s*[A-Za-z0-9_-]+|special\s+discount\s+of\s+\d+%)\b/gi;
+  if (couponDiscountPattern.test(sanitized)) {
+    sanitized = sanitized.replace(couponDiscountPattern, '(promotional discounts are confirmed exclusively at checkout)');
+  }
+
+  // 3. Reject / sanitize invented certifications (certified organic, halal, etc.)
+  const certificationPattern = /\b(?:certified\s+organic|organic\s+certified|guaranteed\s+halal|certified\s+halal|halal\s+certified|100%\s*halal(?:\s+certified)?|fda\s+approved|iso\s*certified|sanad\s+yafta|tasdeeq\s+shuda|تصدیق\s*شدہ|حلال\s*مصدقہ|سند\s*یافتہ)\b/gi;
+  if (certificationPattern.test(sanitized)) {
+    sanitized = sanitized.replace(certificationPattern, 'AllBarka artisanal selection (official certifications are not claimed; contact our team for sourcing details)');
+  }
+
+  // 4. Reject / sanitize invented stock claims (e.g. "900 chocolates in stock", "50 in stock")
+  const stockClaimPattern = /\b(?:we\s+have\s+)?(\d+[\d,]*)\s*(?:chocolates?|cand(?:y|ies)|boxes|tin\s+boxes|tins|items|pieces|units|packs|coffers|favors)?\s*(?:in\s+stock|available\s+in\s+stock|ready\s+in\s+stock|in\s+our\s+inventory)\b/gi;
+  sanitized = sanitized.replace(stockClaimPattern, '(artisanal selections are prepared to order; exact inventory confirmed by team)');
+  const simpleStockPattern = /\b(\d+[\d,]*)\s+in\s+stock\b/gi;
+  sanitized = sanitized.replace(simpleStockPattern, '(artisanal selections are prepared to order; exact inventory confirmed by team)');
+
+  // 5. Reject / sanitize delivery commitments / guarantees
+  const deliveryPromisePattern = /\b(?:delivery\s+guaranteed\s+(?:tomorrow|today|in\s+\d+\s+days?)|guaranteed\s+delivery\s+(?:tomorrow|today|in\s+\d+\s+days?)|guaranteed\s+(?:tomorrow|next-day)\s+delivery|same-day\s+delivery\s+guaranteed|we\s+guarantee\s+delivery\s+tomorrow)\b/gi;
+  sanitized = sanitized.replace(deliveryPromisePattern, '(delivery timelines are confirmed upon order review; custom celebration orders require 10 calendar days preparation)');
+
+  // 6. Separate customer proposed budget from approved store prices
+  const approvedBudgetPattern = /\b(?:our\s+approved\s+price\s+is|approved\s+(?:price|rate)\s+(?:is|:)|confirmed\s+(?:price|rate)\s+(?:is|:)|we\s+(?:can\s+)?approve\s+a\s+price\s+of)\s*(?:Rs\.?|PKR|Rs)?\s*(\d[\d,]*)\b/gi;
+  sanitized = sanitized.replace(approvedBudgetPattern, '(customer proposed budget; final pricing requires team confirmation)');
+
+  // 7. Non-catalog fillings price claims neutralization (English digits/words, Roman Urdu, Urdu numerals/words)
+  const numberWords = '(?:twenty[\\s-]five|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|one|two|three|four|five|six|seven|eight|nine|ten)';
+  const fillingKeywords = '(?:chocolates?|cand(?:y|ies)|macarons?|mithai|panjeeri|sweets|truffles)';
+
+  const fillingThenPrice = new RegExp(
+    `\\b(${fillingKeywords})\\b[^\\n.!?]{0,50}?\\b(?:cost|priced at|at|are|is|for|rate is|price is)?\\s*(?:(?:Rs\\.?|PKR|Rs)\\s*\\d[\\d,]*|\\d[\\d,]*\\s*(?:rupees|rupay|pkr)|(?:Rs\\.?|PKR|Rs)\\s*${numberWords}|${numberWords}\\s*(?:rupees|rupay|pkr)|${numberWords})(?:\\s*(?:\\/|\\s*per\\s*|\\s*each\\s*)(?:pc|piece|box|pack|kg|g|item))?`,
+    'gi'
+  );
+  sanitized = sanitized.replace(fillingThenPrice, (match, fillingName) => {
+    return `${fillingName} (custom non-catalog fillings require team consultation and quote; no fixed store pricing is claimed)`;
+  });
+
+  const priceFirstFillingPattern = new RegExp(
+    `\\b(?:for\\s+)?(?:cost\\s+of|price\\s+(?:of|for)|at\\s+rate\\s+of)?\\s*(?:(?:Rs\\.?|PKR|Rs)\\s*\\d[\\d,]*|\\d[\\d,]*\\s*(?:rupees|rupay|pkr)|(?:Rs\\.?|PKR|Rs)\\s*${numberWords}|${numberWords}\\s*(?:rupees|rupay|pkr))\\s*(?:per|\\/|for)?\\s*(${fillingKeywords})\\b`,
+    'gi'
+  );
+  sanitized = sanitized.replace(priceFirstFillingPattern, (match, fillingName) => {
+    return `${fillingName} (custom non-catalog fillings require team consultation and quote; no fixed store pricing is claimed)`;
+  });
+
+  const urduFillingPricePattern = /(?:چاکلیٹ|مٹھائی|پنجیری|ٹافیاں|کینڈی)\s*(?:کی\s+قیمت|کی\s+شرح)?\s*(?:ہے|:)?\s*(?:[۰-۹\d]+|پچیس|بیس|تیس|پچاس)?\s*(?:روپے|روپئے)?(?:\s*فی\s*(?:عدد|پیس))?/g;
+  sanitized = sanitized.replace(urduFillingPricePattern, (match) => {
+    if (/[۰-۹\d]|پچیس|بیس|تیس|پچاس|روپے|روپئے/.test(match)) {
+      return 'چاکلیٹ (کسٹم فلنگز کے لیے ٹیم سے کوٹیشن درکار ہے؛ کوئی فکسڈ قیمت لاگو نہیں)';
+    }
+    return match;
+  });
+
+  // 8. Commercial product price grounding:
+  const productPrices = new Set<number>();
   for (const p of visible) {
     if (p.prices) {
       for (const val of Object.values(p.prices)) {
         if (typeof val === 'number' && Number.isFinite(val) && val > 0) {
-          verifiedPrices.add(val);
-          verifiedPrices.add(Math.round(val));
+          productPrices.add(Math.round(val));
         }
       }
     }
     if (Array.isArray(p.variants)) {
       for (const v of p.variants) {
-        if (v && typeof v.price === 'number' && Number.isFinite(v.price) && v.price > 0) {
-          verifiedPrices.add(v.price);
-          verifiedPrices.add(Math.round(v.price));
+        if (v && typeof v.price === 'number' && Number.isFinite(v.price) && v.price > 0 && v.available !== false) {
+          productPrices.add(Math.round(v.price));
           const ppp = parsePiecesPerPack(v.label);
           if (ppp > 1) {
-            verifiedPrices.add(Math.round(v.price / ppp));
+            productPrices.add(Math.round(v.price / ppp));
           }
         }
       }
@@ -645,60 +783,72 @@ export function validateAndSanitizeAssistantReply(options: SanitizeReplyOptions)
   }
 
   for (const rec of recommendations) {
-    if (rec.startingPrice) {
-      verifiedPrices.add(rec.startingPrice);
-      verifiedPrices.add(Math.round(rec.startingPrice));
-    }
+    if (rec.startingPrice) productPrices.add(Math.round(rec.startingPrice));
   }
-
   if (inquiryPrefill) {
-    if (inquiryPrefill.standardPrice) verifiedPrices.add(Math.round(inquiryPrefill.standardPrice));
-    if (inquiryPrefill.packagingSubtotal) verifiedPrices.add(Math.round(inquiryPrefill.packagingSubtotal));
-    if (inquiryPrefill.targetPricePkr) verifiedPrices.add(Math.round(inquiryPrefill.targetPricePkr));
+    if (inquiryPrefill.standardPrice) productPrices.add(Math.round(inquiryPrefill.standardPrice));
+    if (inquiryPrefill.packagingSubtotal) productPrices.add(Math.round(inquiryPrefill.packagingSubtotal));
   }
 
-  // 2. Reject / sanitize invented discounts and coupon codes
-  // e.g. "Apply FAKE90 for 90% off", "coupon code SAVE50", "get 50% discount"
-  const couponDiscountPattern = /\b(?:apply\s+[A-Za-z0-9_-]{3,15}\s*(?:for\s*)?(?:\d+%\s*off)?|\d+%\s*(?:off|discount)|coupon\s*code\s*[A-Za-z0-9_-]+|promo\s*code\s*[A-Za-z0-9_-]+|discount\s*code\s*[A-Za-z0-9_-]+|special\s+discount\s+of\s+\d+%)\b/gi;
-  if (couponDiscountPattern.test(sanitized)) {
-    sanitized = sanitized.replace(couponDiscountPattern, '(promotional discounts are confirmed exclusively at checkout)');
-  }
+  const storeShippingRates = new Set<number>([
+    STORE_CONFIG.shipping.standardRate, // 250
+    STORE_CONFIG.shipping.expressRate,  // 350
+    STORE_CONFIG.shipping.nationwidePerKg, // 150
+    STORE_CONFIG.shipping.nationwideMinimum, // 250
+    STORE_CONFIG.shipping.freeThreshold, // 3000
+  ]);
 
-  // 3. Reject / sanitize invented certifications
-  // e.g. "Guaranteed halal", "certified halal", "100% halal certified", "FDA approved", "ISO certified"
-  const certificationPattern = /\b(?:guaranteed\s+halal|certified\s+halal|halal\s+certified|100%\s*halal(?:\s+certified)?|fda\s+approved|iso\s*certified|sanad\s+yafta|tasdeeq\s+shuda)\b/gi;
-  if (certificationPattern.test(sanitized)) {
-    sanitized = sanitized.replace(certificationPattern, 'AllBarka artisanal selection (official certifications are not claimed; contact our team for sourcing details)');
-  }
-
-  // 4. Reject / sanitize unsupported price claims in prose
-  // Matches e.g. "Chocolates cost Rs. 25 each", "for Rs 25", "at Rs. 25", "25 rupees"
-  const priceRegex = /\b(?:Rs\.?|PKR|Rs|rupees|rupay)\s*(\d[\d,]*)(?:\s*(?:\/|\s*per\s*|\s*each\s*)(?:pc|piece|box|pack|kg|g))?/gi;
-  sanitized = sanitized.replace(priceRegex, (match, digits) => {
+  // Neutralize remaining ungrounded numeric price mentions
+  const priceRegex = /\b(?:Rs\.?|PKR|Rs)\s*(\d[\d,]*)(?:\s*(?:\/|\s*per\s*|\s*each\s*)(?:pc|piece|box|pack|kg|g|set))?/gi;
+  sanitized = sanitized.replace(priceRegex, (match, digits, offset) => {
     const num = parseInt(digits.replace(/,/g, ''), 10);
-    if (!Number.isFinite(num) || !verifiedPrices.has(num)) {
+    if (!Number.isFinite(num)) {
       return '(pricing subject to team confirmation and quote)';
     }
-    return match;
+
+    const surroundingText = sanitized.slice(Math.max(0, offset - 60), Math.min(sanitized.length, offset + match.length + 60));
+    const isNonCatalogContext = /\b(?:chocolates?|cand(?:y|ies)|macarons?|mithai|panjeeri|sweets|truffles|چاکلیٹ|مٹھائی|پنجیری)\b/i.test(surroundingText);
+    if (isNonCatalogContext) {
+      return '(custom non-catalog fillings require team consultation and quote; no fixed store pricing is claimed)';
+    }
+
+    if (productPrices.has(num)) {
+      return match;
+    }
+
+    if (storeShippingRates.has(num)) {
+      if (/(?:shipping|delivery|courier|transit|freight|lahore|nationwide)/i.test(surroundingText)) {
+        return match;
+      }
+    }
+
+    return '(pricing subject to team confirmation and quote)';
   });
 
   const reversePriceRegex = /\b(\d[\d,]*)\s*(?:rupees|rupay|pkr)\b/gi;
-  sanitized = sanitized.replace(reversePriceRegex, (match, digits) => {
+  sanitized = sanitized.replace(reversePriceRegex, (match, digits, offset) => {
     const num = parseInt(digits.replace(/,/g, ''), 10);
-    if (!Number.isFinite(num) || !verifiedPrices.has(num)) {
+    if (!Number.isFinite(num)) {
       return '(pricing subject to team confirmation and quote)';
     }
-    return match;
-  });
 
-  // 5. Sanitize URLs: normalize any internal links to /product/:id and enforce official WhatsApp
-  sanitized = sanitized.replace(/\/celebration-boxes\?product=([a-zA-Z0-9_-]+)/g, '/product/$1');
-  sanitized = sanitized.replace(/https?:\/\/(?!wa\.me\/923160666083)[^\s)]+/g, (url) => {
-    if (url.includes('/product/')) {
-      const match = /\/product\/([a-zA-Z0-9_-]+)/.exec(url);
-      return match ? `/product/${match[1]}` : 'https://wa.me/923160666083';
+    const surroundingText = sanitized.slice(Math.max(0, offset - 60), Math.min(sanitized.length, offset + match.length + 60));
+    const isNonCatalogContext = /\b(?:chocolates?|cand(?:y|ies)|macarons?|mithai|panjeeri|sweets|truffles|چاکلیٹ|مٹھائی|پنجیری)\b/i.test(surroundingText);
+    if (isNonCatalogContext) {
+      return '(custom non-catalog fillings require team consultation and quote; no fixed store pricing is claimed)';
     }
-    return 'https://wa.me/923160666083';
+
+    if (productPrices.has(num)) {
+      return match;
+    }
+
+    if (storeShippingRates.has(num)) {
+      if (/(?:shipping|delivery|courier|transit|freight|lahore|nationwide)/i.test(surroundingText)) {
+        return match;
+      }
+    }
+
+    return '(pricing subject to team confirmation and quote)';
   });
 
   return sanitized.trim();

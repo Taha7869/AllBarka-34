@@ -141,8 +141,8 @@ export default function ProductDetailPage() {
   const priceToUse = typeof candidatePrice === 'number' && Number.isFinite(candidatePrice) && candidatePrice > 0 ? candidatePrice : null;
   const unit = !isQuoteOnly && priceToUse ? unitPrice(priceToUse, selectedWeight) : null;
 
-  const { moqPieces, minUnits: resolvedMinUnits } = useMemo(() => {
-    if (!product) return { moqPieces: 1 as number | null, minUnits: 1 as number | null };
+  const { moqPieces, minUnits: resolvedMinUnits, displayText: moqDisplayText } = useMemo(() => {
+    if (!product) return { moqPieces: 1 as number | null, minUnits: 1 as number | null, displayText: null as string | null };
     return getPackagingMoqDisplay(product, selectedWeight || undefined);
   }, [product, selectedWeight]);
 
@@ -404,7 +404,7 @@ export default function ProductDetailPage() {
               </span>
               {isPackaging && moqPieces !== null && (
                 <span className="text-xs font-semibold text-[#8C6B1B] bg-[#8C6B1B]/10 px-2.5 py-1 rounded-full border border-[#8C6B1B]/20">
-                  MOQ: {moqPieces} pcs ({minUnits} {minUnits === 1 ? 'pack' : 'units'})
+                  {moqDisplayText || `MOQ: ${moqPieces} pcs (${minUnits} ${minUnits === 1 ? 'pack' : 'units'})`}
                 </span>
               )}
             </div>

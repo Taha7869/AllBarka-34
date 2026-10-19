@@ -214,26 +214,98 @@ export function calculateMinOrderQuantityUnits(product: Product, variantLabel?: 
   return Math.max(1, Math.ceil(moqPieces / piecesPerPack));
 }
 
+export interface PackagingMoqDisplay {
+  moqPieces: number | null;
+  minUnits: number | null;
+  piecesPerPack: number;
+  totalPieces: number | null;
+  displayText: string | null;
+}
+
 /**
- * Safe, non-throwing MOQ resolver for UI rendering (ProductCard, ProductDetailPage).
- * Returns `{ moqPieces: null, minUnits: null }` for unpriced/inquiry-only packaging products
- * that have neither an explicit MOQ override nor a positive published price.
+ * Formats canonical MOQ text according to AllBarka packaging rules:
+ * - Multi-piece pack (piecesPerPack > 1):
+ *   "Minimum order: ${minUnits} ${minUnits === 1 ? 'pack' : 'packs'} (${totalPieces} pieces total)"
+ *   e.g. 1 pack of 25 pcs with 17 threshold -> "Minimum order: 1 pack (25 pieces total)"
+ *   e.g. 3 packs of 10 pcs with 25 threshold -> "Minimum order: 3 packs (30 pieces total)"
+ * - Single-piece or set:
+ *   e.g. "Minimum order: ${minUnits} ${unitWord} total"
+ */
+export function formatPackagingMoqText(params: {
+  moqPieces: number | null;
+  minUnits: number | null;
+  piecesPerPack?: number;
+  isSet?: boolean;
+}): string | null {
+  const { moqPieces, minUnits, piecesPerPack = 1, isSet = false } = params;
+  if (moqPieces === null || minUnits === null) {
+    return null;
+  }
+
+  if (piecesPerPack > 1) {
+    const packWord = minUnits === 1 ? 'pack' : 'packs';
+    const totalPieces = minUnits * piecesPerPack;
+    return `Minimum order: ${minUnits} ${packWord} (${totalPieces} pieces total)`;
+  }
+
+  if (isSet) {
+    const setWord = minUnits === 1 ? 'set' : 'sets';
+    return `Minimum order: ${minUnits} ${setWord} total`;
+  }
+
+  const pieceWord = minUnits === 1 ? 'piece' : 'pieces';
+  return `Minimum order: ${minUnits} ${pieceWord} total`;
+}
+
+/**
+ * Safe, non-throwing MOQ resolver for UI rendering (ProductCard, ProductDetailPage, AI Buddy).
+ * Returns `{ moqPieces: null, minUnits: null, piecesPerPack: 1, totalPieces: null, displayText: null }`
+ * for unpriced/inquiry-only packaging products that have neither an explicit MOQ override nor a positive published price.
  */
 export function getPackagingMoqDisplay(
   product: Product,
   variantLabel?: string
-): { moqPieces: number | null; minUnits: number | null } {
+): PackagingMoqDisplay {
   if (!isPackagingProduct(product)) {
-    return { moqPieces: 1, minUnits: 1 };
+    return {
+      moqPieces: 1,
+      minUnits: 1,
+      piecesPerPack: 1,
+      totalPieces: 1,
+      displayText: 'Minimum order: 1 piece total',
+    };
   }
 
   try {
     const moqPieces = calculatePackagingMoq(product, variantLabel);
     const piecesPerPack = parsePiecesPerPack(variantLabel);
     const minUnits = Math.max(1, Math.ceil(moqPieces / piecesPerPack));
-    return { moqPieces, minUnits };
+    const totalPieces = minUnits * piecesPerPack;
+    const isSet =
+      /set/i.test(variantLabel || '') ||
+      /set/i.test(product.name_en || '') ||
+      product.packagingSubcategory === 'tabarruk';
+    const displayText = formatPackagingMoqText({
+      moqPieces,
+      minUnits,
+      piecesPerPack,
+      isSet,
+    });
+    return {
+      moqPieces,
+      minUnits,
+      piecesPerPack,
+      totalPieces,
+      displayText,
+    };
   } catch {
-    return { moqPieces: null, minUnits: null };
+    return {
+      moqPieces: null,
+      minUnits: null,
+      piecesPerPack: 1,
+      totalPieces: null,
+      displayText: null,
+    };
   }
 }
 
