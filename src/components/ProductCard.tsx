@@ -100,7 +100,7 @@ export default function ProductCard({
       <ProductImageGallery product={product} />
 
       {/* Product Details */}
-      <div dir={language === 'en' ? 'ltr' : 'rtl'} className="min-w-0 flex-1 space-y-2 pb-5 pt-1 text-start">
+      <div dir={language === 'en' ? 'ltr' : 'rtl'} className="min-w-0 flex-1 space-y-2 pb-4 pt-1 text-start">
         <Link to={`/product/${product.id}`} className="block max-w-full focus-ring rounded-sm w-fit">
           <h3 lang={language} className={`whitespace-normal break-words [overflow-wrap:anywhere] font-medium text-[var(--color-text-primary)] transition-colors hover:text-[var(--color-accent-text)] ${titleTypography}`}>
             {getLocalized(product, 'name', language)}
@@ -109,6 +109,12 @@ export default function ProductCard({
         <p className="line-clamp-2 text-xs leading-6 text-[var(--color-text-secondary)]">
           {language !== 'en' && getLocalized(product, 'desc', language) === product.desc_en ? t('slider.cardCopy') : getLocalized(product, 'desc', language)}
         </p>
+        <Link
+          to={`/product/${product.id}`}
+          className="focus-ring inline-flex items-center gap-1 pt-0.5 text-[11px] font-semibold text-[var(--color-accent-text)] hover:underline"
+        >
+          <span>{t('dest.common.viewDetails', 'View Details')}</span>
+        </Link>
       </div>
 
       {/* Weights & Action Area */}

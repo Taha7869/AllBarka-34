@@ -255,7 +255,7 @@ export default function RootLayout() {
             </div>
             
             {/* Center Navigation (Desktop Only) */}
-            <div className="hidden lg:flex flex-1 justify-center px-2">
+            <div className="hidden xl:flex flex-1 justify-center px-2">
               <BubbleMenu 
                 activeItem={activeNavItem} 
                 onItemClick={(item) => navigate(item.path)} 
@@ -263,7 +263,7 @@ export default function RootLayout() {
             </div>
 
             {/* Trailing Utility Controls */}
-            <div className="flex items-center gap-1.5 sm:gap-3 justify-end shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2.5 justify-end shrink-0">
               {/* Search button */}
               <button
                 id="header-search-btn"
@@ -284,26 +284,15 @@ export default function RootLayout() {
                 <Search size={16} className="text-[#C7982F]" />
               </button>
 
-              {/* Custom Gift Hamper Builder Button */}
-              <button
-                type="button"
-                onClick={() => setHamperModalOpen(true)}
-                className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl transition-all duration-200 border border-[#C7982F]/30 bg-[#C7982F]/10 hover:bg-[#C7982F]/20 text-[#806326] dark:text-[#E4C783] text-xs font-semibold tracking-wide cursor-pointer focus-ring"
-                aria-label={t('nav.customHamper')}
-              >
-                <Gift size={15} className="text-[#C7982F]" />
-                <span className="hidden xl:inline">{t('nav.customHamper')}</span>
-              </button>
-
               {/* Language selector (Desktop only; mobile uses MobileMenu) */}
-              <div className="relative hidden lg:flex items-center min-h-[44px] rounded-xl border border-[#29231D]/10 dark:border-[#C7982F]/25 bg-[#F6F1EA]/60 dark:bg-[#1A201E]/60 text-[#042821] dark:text-[#FFFCF7] focus-within:ring-2 focus-within:ring-[#C7982F]/35">
-                <Languages size={16} className="absolute start-2.5 text-[#C7982F] pointer-events-none" aria-hidden="true" />
+              <div className="relative hidden md:flex items-center min-h-[42px] rounded-xl border border-[#29231D]/10 dark:border-[#C7982F]/25 bg-[#F6F1EA]/60 dark:bg-[#1A201E]/60 text-[#042821] dark:text-[#FFFCF7] focus-within:ring-2 focus-within:ring-[#C7982F]/35">
+                <Languages size={15} className="absolute start-2.5 text-[#C7982F] pointer-events-none" aria-hidden="true" />
                 <label htmlFor="desktop-language-select" className="sr-only">{t('nav.language')}</label>
                 <select
                   id="desktop-language-select"
                   value={language}
                   onChange={(event) => setLanguage(event.target.value as LanguageCode)}
-                  className="h-[42px] w-[112px] appearance-none cursor-pointer rounded-xl bg-transparent ps-8 pe-7 text-xs font-semibold focus:outline-none"
+                  className="h-[40px] w-[104px] appearance-none cursor-pointer rounded-xl bg-transparent ps-8 pe-6 text-xs font-semibold focus:outline-none"
                   aria-label={t('nav.language')}
                 >
                   <option value="en">English</option>
@@ -314,7 +303,7 @@ export default function RootLayout() {
               </div>
 
               {/* Theme Toggle (Mobile & Desktop) */}
-              <ThemeToggle className="min-w-[44px] min-h-[44px] border-[#29231D]/10 dark:border-[#C7982F]/25 bg-[#F6F1EA]/60 dark:bg-[#1A201E]/60 hover:bg-[#C7982F]/15 text-[#042821] dark:text-[#FFFCF7]" />
+              <ThemeToggle className="min-w-[42px] min-h-[42px] border-[#29231D]/10 dark:border-[#C7982F]/25 bg-[#F6F1EA]/60 dark:bg-[#1A201E]/60 hover:bg-[#C7982F]/15 text-[#042821] dark:text-[#FFFCF7]" />
 
               {/* Patron VIP Lounge / Login (Desktop only) */}
               <div className="hidden sm:flex items-center gap-1.5">
@@ -325,7 +314,7 @@ export default function RootLayout() {
                   aria-label={currentUser ? t('patronLounge') : t('vipLogin')}
                 >
                   <div className="bg-[#C7982F]/15 p-1 rounded-lg">
-                    <User size={16} className="text-[#C7982F]" />
+                    <User size={15} className="text-[#C7982F]" />
                   </div>
                   <span className="text-xs font-semibold tracking-wide whitespace-nowrap">
                     {currentUser ? (patronProfile?.name?.split(' ')[0] || t('patronLounge')) : t('nav.patron')}

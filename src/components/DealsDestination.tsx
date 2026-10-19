@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Tag,
   ShoppingBag,
   Check,
   Eye,
   MessageSquareQuote,
+  ArrowRight,
 } from 'lucide-react';
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import { useCart } from '../contexts/CartContext';
@@ -24,6 +25,7 @@ export default function DealsDestination({ onQuickView }: DealsDestinationProps)
   const products = useCatalogProducts();
   const { addToCart, setIsCartOpen } = useCart();
   const mediaCover = useProductMediaCover();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const rawFilter = (searchParams.get('filter') || 'all').trim().toLowerCase();
@@ -175,23 +177,35 @@ export default function DealsDestination({ onQuickView }: DealsDestinationProps)
             const priceKeys = Object.keys(product.prices || {});
             const primaryVariant = priceKeys[0] || '1 pack';
             const price = product.prices?.[primaryVariant] || 0;
+            const isInquiryOnly = Boolean(product.quoteOnly || product.orderMode === 'inquiry_quote' || price <= 0);
 
             return (
               <article
                 key={product.id}
-                className="flex flex-col rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group"
+                onClick={(event) => {
+                  if (!(event.target as HTMLElement).closest('a, button, input, select, textarea, [role="button"]')) {
+                    navigate(`/product/${product.id}`);
+                  }
+                }}
+                className="flex flex-col cursor-pointer rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-md hover:border-[var(--color-border-accent)] hover:shadow-xl transition-all duration-300 overflow-hidden group"
               >
                 {/* Product Image Frame */}
                 <div className="relative aspect-square w-full overflow-hidden bg-[#FAF6EE] dark:bg-[#061811]">
-                  <img
-                    src={coverImg}
-                    alt={product.name_en}
-                    loading="lazy"
-                    className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
-                  />
+                  <Link
+                    to={`/product/${product.id}`}
+                    aria-label={language === 'ur' && product.name_ur ? product.name_ur : product.name_en}
+                    className="focus-ring block h-full w-full"
+                  >
+                    <img
+                      src={coverImg}
+                      alt={product.name_en}
+                      loading="lazy"
+                      className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                    />
+                  </Link>
 
                   {/* Authentic Tags & Badges only */}
-                  <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                  <div className="pointer-events-none absolute top-3 left-3 flex flex-wrap gap-1.5">
                     {product.badge && (
                       <span className="rounded-full bg-[#c7982f] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#072a20] shadow-sm">
                         {product.badge}
@@ -204,27 +218,24 @@ export default function DealsDestination({ onQuickView }: DealsDestinationProps)
                     )}
                   </div>
 
-                  {/* Direct Checkout vs Inquiry Badge */}
-                  <div className="absolute bottom-3 left-3 flex flex-wrap items-center gap-1.5">
-                    <span
-                      className={`rounded-full backdrop-blur-md px-2.5 py-1 text-[10px] font-semibold ${
-                        !product.quoteOnly && product.orderMode !== 'inquiry_quote' && price > 0
-                          ? 'bg-emerald-900/90 text-emerald-200'
-                          : 'bg-amber-900/90 text-amber-200'
-                      }`}
-                    >
-                      {!product.quoteOnly && product.orderMode !== 'inquiry_quote' && price > 0
-                        ? t('dest.common.directCheckout')
-                        : t('dest.common.customInquiry')}
-                    </span>
-                  </div>
+                  {/* Inquiry Badge (only shown when quote-only) */}
+                  {isInquiryOnly && (
+                    <div className="pointer-events-none absolute bottom-3 left-3 flex flex-wrap items-center gap-1.5">
+                      <span className="rounded-full bg-amber-900/90 backdrop-blur-md px-2.5 py-1 text-[10px] font-semibold text-amber-200">
+                        {t('dest.common.customInquiry')}
+                      </span>
+                    </div>
+                  )}
 
                   {/* Quick View Button */}
                   {onQuickView && (
                     <button
                       type="button"
-                      onClick={() => onQuickView(product)}
-                      className="absolute top-3 right-3 rounded-full bg-white/90 p-2 text-[#072a20] opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-white"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onQuickView(product);
+                      }}
+                      className="focus-ring absolute top-3 right-3 rounded-full bg-white/90 p-2 text-[#072a20] opacity-100 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100 transition-opacity shadow-md hover:bg-white cursor-pointer"
                       title="Quick view"
                       aria-label={`Quick view ${product.name_en}`}
                     >
@@ -239,7 +250,7 @@ export default function DealsDestination({ onQuickView }: DealsDestinationProps)
                     <h2 className="font-serif text-lg sm:text-xl font-bold text-[var(--color-text)] leading-snug">
                       <Link
                         to={`/product/${product.id}`}
-                        className="hover:text-[#c7982f] transition-colors"
+                        className="focus-ring rounded-sm hover:text-[#c7982f] transition-colors"
                       >
                         {language === 'ur' && product.name_ur ? product.name_ur : product.name_en}
                       </Link>
@@ -247,6 +258,28 @@ export default function DealsDestination({ onQuickView }: DealsDestinationProps)
                     <p className="mt-1.5 text-xs text-[var(--color-text-muted)] line-clamp-2 leading-relaxed">
                       {product.description || (product as any).description_en || ''}
                     </p>
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <Link
+                        to={`/product/${product.id}`}
+                        className="focus-ring inline-flex items-center gap-1 text-[11px] font-semibold text-[#8C6B1B] dark:text-[#e6c786] hover:underline"
+                      >
+                        <span>{t('dest.common.viewDetails', 'View Details')}</span>
+                        <ArrowRight size={12} />
+                      </Link>
+                      {onQuickView && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onQuickView(product);
+                          }}
+                          className="focus-ring inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-base)] hover:text-[#c7982f] transition-colors cursor-pointer"
+                        >
+                          <Eye size={13} />
+                          <span>{t('quickView', 'Quick View')}</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* Price Display: Authoritative prices only without unsupported strikethroughs */}
@@ -266,11 +299,14 @@ export default function DealsDestination({ onQuickView }: DealsDestinationProps)
                   </div>
 
                   {/* Direct Add to Cart Action vs Custom Quote */}
-                  {!product.quoteOnly && product.orderMode !== 'inquiry_quote' && price > 0 ? (
+                  {!isInquiryOnly ? (
                     <button
                       type="button"
-                      onClick={() => handleAddToCart(product)}
-                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#072a20] py-3 text-xs font-bold text-[#fff8e9] hover:bg-[#124b3b] dark:bg-[#c7982f] dark:text-[#072a20] dark:hover:bg-[#d8a93e] transition-colors shadow-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddToCart(product);
+                      }}
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#072a20] py-3 text-xs font-bold text-[#fff8e9] hover:bg-[#124b3b] dark:bg-[#c7982f] dark:text-[#072a20] dark:hover:bg-[#d8a93e] transition-colors shadow-sm cursor-pointer"
                     >
                       {addedId === product.id ? (
                         <>
@@ -287,15 +323,16 @@ export default function DealsDestination({ onQuickView }: DealsDestinationProps)
                   ) : (
                     <button
                       type="button"
-                      onClick={() =>
+                      onClick={(e) => {
+                        e.stopPropagation();
                         openCustomQuoteModal({
                           productId: product.id,
                           variantLabel: primaryVariant,
                           mode: 'filled',
                           quantity: 25,
-                        })
-                      }
-                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#c7982f] py-3 text-xs font-bold text-[#072a20] hover:bg-[#d8a93e] transition-colors shadow-sm"
+                        });
+                      }}
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#c7982f] py-3 text-xs font-bold text-[#072a20] hover:bg-[#d8a93e] transition-colors shadow-sm cursor-pointer"
                     >
                       <MessageSquareQuote size={14} />
                       Request Quote / Offer Your Rate

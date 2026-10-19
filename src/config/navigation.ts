@@ -58,9 +58,9 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
     path: '/gifting',
     hasDropdown: true,
     dropdownItems: [
+      { id: 'custom-hamper', labelKey: 'nav.customHamperBuilder', defaultLabel: 'Custom Hamper Builder', path: '/gifting#builder', badge: 'Bespoke', action: 'open-hamper-builder' },
       { id: 'all-gifts', labelKey: 'nav.allGifts', defaultLabel: 'All Gifts & Hampers', path: '/gifting' },
       { id: 'combos', labelKey: 'nav.signatureCombos', defaultLabel: 'Signature Luxury Combos', path: '/shop/combos' },
-      { id: 'custom-hamper', labelKey: 'nav.customHamperBuilder', defaultLabel: 'Custom Hamper Builder', path: '/gifting#builder', action: 'open-hamper-builder' },
       { id: 'corporate-bulk', labelKey: 'nav.corporateGifting', defaultLabel: 'Corporate & Bulk Gifting', path: '/wholesale' },
     ],
   },

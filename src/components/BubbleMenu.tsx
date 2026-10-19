@@ -83,7 +83,7 @@ export default function BubbleMenu({
   activeItem,
   onItemClick,
   className = '',
-  showFoodRow = true,
+  showFoodRow = false,
 }: BubbleMenuProps) {
   const { t, isRtl } = useLanguage();
   const location = useLocation();
@@ -229,10 +229,10 @@ export default function BubbleMenu({
       aria-label={t('nav.main', 'Main navigation')}
       onBlur={handleContainerBlur}
       dir={isRtl ? 'rtl' : 'ltr'}
-      className={`pointer-events-auto flex flex-col items-center gap-1.5 transition-colors duration-300 ${className}`}
+      className={`pointer-events-auto flex flex-col items-center gap-1 transition-colors duration-300 ${className}`}
     >
-      {/* LEVEL 1: Main Navigation Row */}
-      <div className="flex items-center gap-1 rounded-full border border-[#C7982F]/25 bg-[#FFFCF7]/90 px-3 py-1 shadow-[0_2px_12px_rgba(41,35,29,0.04)] backdrop-blur-md dark:bg-[#1A201E]/90 dark:shadow-[0_2px_12px_rgba(0,0,0,0.3)]">
+      {/* LEVEL 1: Single Clean Desktop Navigation Row */}
+      <div className="flex items-center gap-3 xl:gap-5 px-2 py-1 bg-transparent dark:bg-transparent">
         {mainNavItems.map((item) => {
           const isOpen = openId === item.id;
           const isActive = isMainItemActive(item);
@@ -270,18 +270,18 @@ export default function BubbleMenu({
                     setOpenId((prev) => (prev === item.id ? null : item.id));
                   }}
                   onKeyDown={(e) => handleKeyDown(e, item.id)}
-                  className={`focus-ring group relative z-10 flex cursor-pointer items-center gap-1 rounded-full px-3.5 py-1.5 font-sans text-[11px] font-semibold tracking-[0.06em] outline-none transition-all duration-200 ${
+                  className={`focus-ring group relative z-10 flex cursor-pointer items-center gap-1.5 whitespace-nowrap px-2 py-2 font-sans text-[12px] font-medium tracking-[0.04em] outline-none transition-colors duration-200 ${
                     isActive
-                      ? 'border border-[#C7982F]/40 bg-[#C7982F]/15 text-[#042821] shadow-xs dark:bg-[#C7982F]/25 dark:text-[#FFFCF7]'
+                      ? 'border-b-2 border-[#C7982F] font-semibold text-[#042821] dark:text-[#FFFCF7]'
                       : isOpen
-                      ? 'bg-[#C7982F]/10 text-[#042821] dark:bg-[#C7982F]/15 dark:text-[#FFFCF7]'
-                      : 'text-[#29231D]/80 hover:bg-[#C7982F]/10 hover:text-[#042821] dark:text-[#F6F1EA]/80 dark:hover:bg-[#C7982F]/15 dark:hover:text-[#FFFCF7]'
+                      ? 'text-[#042821] dark:text-[#FFFCF7]'
+                      : 'text-[#29231D]/80 hover:text-[#042821] dark:text-[#F6F1EA]/80 dark:hover:text-[#FFFCF7]'
                   }`}
                 >
-                  <span className="uppercase">{t(item.labelKey, item.defaultLabel)}</span>
+                  <span className="whitespace-nowrap">{t(item.labelKey, item.defaultLabel)}</span>
                   <ChevronDown
-                    size={12}
-                    className={`text-[#C7982F] transition-transform duration-200 ${
+                    size={13}
+                    className={`text-[#C7982F] transition-transform duration-200 shrink-0 ${
                       isOpen ? 'rotate-180' : 'group-hover:translate-y-0.5'
                     }`}
                     aria-hidden="true"
@@ -301,13 +301,13 @@ export default function BubbleMenu({
                     setOpenId(null);
                     onItemClick?.({ id: item.id, label: t(item.labelKey, item.defaultLabel), path: item.path });
                   }}
-                  className={`focus-ring relative z-10 block cursor-pointer rounded-full px-3.5 py-1.5 font-sans text-[11px] font-semibold uppercase tracking-[0.06em] outline-none transition-all duration-200 ${
+                  className={`focus-ring relative z-10 block cursor-pointer whitespace-nowrap px-2 py-2 font-sans text-[12px] font-medium tracking-[0.04em] outline-none transition-colors duration-200 ${
                     isActive
-                      ? 'border border-[#C7982F]/40 bg-[#C7982F]/15 text-[#042821] shadow-xs dark:bg-[#C7982F]/25 dark:text-[#FFFCF7]'
-                      : 'text-[#29231D]/80 hover:bg-[#C7982F]/10 hover:text-[#042821] dark:text-[#F6F1EA]/80 dark:hover:bg-[#C7982F]/15 dark:hover:text-[#FFFCF7]'
+                      ? 'border-b-2 border-[#C7982F] font-semibold text-[#042821] dark:text-[#FFFCF7]'
+                      : 'text-[#29231D]/80 hover:text-[#042821] dark:text-[#F6F1EA]/80 dark:hover:text-[#FFFCF7]'
                   }`}
                 >
-                  <span>{t(item.labelKey, item.defaultLabel)}</span>
+                  <span className="whitespace-nowrap">{t(item.labelKey, item.defaultLabel)}</span>
                 </Link>
               )}
 
@@ -344,24 +344,34 @@ export default function BubbleMenu({
                   </div>
 
                   {/* Dropdown Items (semantic links/buttons) */}
-                  <div className="flex flex-col space-y-0.5">
-                    {item.dropdownItems?.map((dropItem) => (
-                      <Link
-                        key={dropItem.id}
-                        to={dropItem.path}
-                        role="menuitem"
-                        data-nav-path={dropItem.path}
-                        onClick={() => handleSubItemClick(dropItem)}
-                        className="focus-ring flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold text-[#042821] transition-colors hover:bg-[#C7982F]/15 dark:text-[#FFFCF7] dark:hover:bg-[#C7982F]/20"
-                      >
-                        <span className="truncate">{t(dropItem.labelKey, dropItem.defaultLabel)}</span>
-                        {dropItem.badge && (
-                          <span className="rounded-full bg-[#C7982F]/20 px-2 py-0.5 text-[9px] font-bold text-[#806326] dark:text-[#E4C783]">
-                            {dropItem.badge}
+                  <div className="flex flex-col space-y-1">
+                    {item.dropdownItems?.map((dropItem) => {
+                      const isActionFeature = dropItem.action === 'open-hamper-builder';
+                      return (
+                        <Link
+                          key={dropItem.id}
+                          to={dropItem.path}
+                          role="menuitem"
+                          data-nav-path={dropItem.path}
+                          onClick={() => handleSubItemClick(dropItem)}
+                          className={`focus-ring flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold transition-colors ${
+                            isActionFeature
+                              ? 'mb-1 border border-[#C7982F]/40 bg-[#C7982F]/15 text-[#042821] hover:bg-[#C7982F]/25 dark:bg-[#C7982F]/20 dark:text-[#FFFCF7] dark:hover:bg-[#C7982F]/30'
+                              : 'text-[#042821] hover:bg-[#C7982F]/15 dark:text-[#FFFCF7] dark:hover:bg-[#C7982F]/20'
+                          }`}
+                        >
+                          <span className="flex items-center gap-2 truncate">
+                            {isActionFeature && <Gift size={14} className="text-[#C7982F] shrink-0" aria-hidden="true" />}
+                            <span className="truncate">{t(dropItem.labelKey, dropItem.defaultLabel)}</span>
                           </span>
-                        )}
-                      </Link>
-                    ))}
+                          {dropItem.badge && (
+                            <span className="rounded-full bg-[#C7982F]/25 px-2 py-0.5 text-[9px] font-bold text-[#806326] dark:text-[#E4C783]">
+                              {dropItem.badge}
+                            </span>
+                          )}
+                        </Link>
+                      );
+                    })}
                   </div>
                 </div>
               )}

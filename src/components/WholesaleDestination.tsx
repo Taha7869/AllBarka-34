@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Briefcase,
   ShieldCheck,
@@ -32,6 +32,7 @@ export default function WholesaleDestination({ onQuickView }: WholesaleDestinati
   const products = useCatalogProducts();
   const { addToCart, setIsCartOpen } = useCart();
   const mediaCover = useProductMediaCover();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'all' | 'packaging' | 'food'>('all');
   const [addedId, setAddedId] = useState<string | null>(null);
 
@@ -229,19 +230,30 @@ export default function WholesaleDestination({ onQuickView }: WholesaleDestinati
           return (
             <article
               key={product.id}
-              className="flex flex-col rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group"
+              onClick={(event) => {
+                if (!(event.target as HTMLElement).closest('a, button, input, select, textarea, [role="button"]')) {
+                  navigate(`/product/${product.id}`);
+                }
+              }}
+              className="flex flex-col cursor-pointer rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-md hover:border-[var(--color-border-accent)] hover:shadow-xl transition-all duration-300 overflow-hidden group"
             >
               {/* Product Image Frame */}
               <div className="relative aspect-square w-full overflow-hidden bg-[#FAF6EE] dark:bg-[#061811]">
-                <img
-                  src={coverImg}
-                  alt={product.name_en}
-                  loading="lazy"
-                  className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
-                />
+                <Link
+                  to={`/product/${product.id}`}
+                  aria-label={language === 'ur' && product.name_ur ? product.name_ur : product.name_en}
+                  className="focus-ring block h-full w-full"
+                >
+                  <img
+                    src={coverImg}
+                    alt={product.name_en}
+                    loading="lazy"
+                    className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                  />
+                </Link>
 
                 {/* Tier / MOQ Badge */}
-                <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                <div className="pointer-events-none absolute top-3 left-3 flex flex-wrap gap-1.5">
                   <span className="rounded-full bg-[#072a20]/90 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#e6c786]">
                     {isPackaging ? 'Tiered Wholesale' : 'MOQ = 1 Pack'}
                   </span>
@@ -251,8 +263,11 @@ export default function WholesaleDestination({ onQuickView }: WholesaleDestinati
                 {onQuickView && (
                   <button
                     type="button"
-                    onClick={() => onQuickView(product)}
-                    className="absolute top-3 right-3 rounded-full bg-white/90 p-2 text-[#072a20] opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-white"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onQuickView(product);
+                    }}
+                    className="focus-ring absolute top-3 right-3 rounded-full bg-white/90 p-2 text-[#072a20] opacity-100 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100 transition-opacity shadow-md hover:bg-white cursor-pointer"
                     title="Quick view"
                     aria-label={`Quick view ${product.name_en}`}
                   >
@@ -267,7 +282,7 @@ export default function WholesaleDestination({ onQuickView }: WholesaleDestinati
                   <h2 className="font-serif text-lg sm:text-xl font-bold text-[var(--color-text)] leading-snug">
                     <Link
                       to={`/product/${product.id}`}
-                      className="hover:text-[#c7982f] transition-colors"
+                      className="focus-ring rounded-sm hover:text-[#c7982f] transition-colors"
                     >
                       {language === 'ur' && product.name_ur ? product.name_ur : product.name_en}
                     </Link>
@@ -275,6 +290,28 @@ export default function WholesaleDestination({ onQuickView }: WholesaleDestinati
                   <p className="mt-1.5 text-xs text-[var(--color-text-muted)] line-clamp-2 leading-relaxed">
                     {product.description || (product as any).description_en || ''}
                   </p>
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <Link
+                      to={`/product/${product.id}`}
+                      className="focus-ring inline-flex items-center gap-1 text-[11px] font-semibold text-[#8C6B1B] dark:text-[#e6c786] hover:underline"
+                    >
+                      <span>{t('dest.common.viewDetails', 'View Details')}</span>
+                      <ArrowRight size={12} />
+                    </Link>
+                    {onQuickView && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onQuickView(product);
+                        }}
+                        className="focus-ring inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-base)] hover:text-[#c7982f] transition-colors cursor-pointer"
+                      >
+                        <Eye size={13} />
+                        <span>{t('quickView', 'Quick View')}</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Packaging Volume Tiers preview or food pricing */}
@@ -289,12 +326,7 @@ export default function WholesaleDestination({ onQuickView }: WholesaleDestinati
                           key={tier.qty}
                           className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-0.5 text-[10px] font-bold text-[var(--color-text)]"
                         >
-                          {tier.qty} pcs: Rs. {tier.unitPrice}/pc
-                          {tier.discountBadge && (
-                            <span className="ml-1 text-[#8C6B1B] dark:text-[#e6c786]">
-                              {tier.discountBadge}
-                            </span>
-                          )}
+                          {tier.qty} pcs · Rs. {tier.unitPrice}/pc
                         </span>
                       ))}
                     </div>
@@ -302,10 +334,16 @@ export default function WholesaleDestination({ onQuickView }: WholesaleDestinati
                 ) : (
                   <div className="flex items-baseline justify-between border-t border-[var(--color-border)] pt-3">
                     <span className="text-xs text-[var(--color-text-muted)]">
-                      Starting price ({primaryVariant})
+                      {primaryVariant}
                     </span>
                     <span className="font-serif text-xl font-bold text-[var(--color-text)]">
-                      Rs. {price.toLocaleString()}
+                      {price > 0 ? (
+                        `Rs. ${price.toLocaleString()}`
+                      ) : (
+                        <span className="text-xs font-normal text-[var(--color-text-muted)]">
+                          Quote on Request
+                        </span>
+                      )}
                     </span>
                   </div>
                 )}
@@ -315,8 +353,11 @@ export default function WholesaleDestination({ onQuickView }: WholesaleDestinati
                   {!product.quoteOnly && product.orderMode !== 'inquiry_quote' && ((isPackaging && cfg && cfg.emptyTiers.length > 0) || (!isPackaging && price > 0)) ? (
                     <button
                       type="button"
-                      onClick={() => handleAddToCart(product)}
-                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#072a20] py-3 text-xs font-bold text-[#fff8e9] hover:bg-[#124b3b] dark:bg-[#c7982f] dark:text-[#072a20] dark:hover:bg-[#d8a93e] transition-colors shadow-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddToCart(product);
+                      }}
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#072a20] py-3 text-xs font-bold text-[#fff8e9] hover:bg-[#124b3b] dark:bg-[#c7982f] dark:text-[#072a20] dark:hover:bg-[#d8a93e] transition-colors shadow-sm cursor-pointer"
                     >
                       {addedId === product.id ? (
                         <>
@@ -333,14 +374,15 @@ export default function WholesaleDestination({ onQuickView }: WholesaleDestinati
                   ) : (
                     <button
                       type="button"
-                      onClick={() =>
+                      onClick={(e) => {
+                        e.stopPropagation();
                         openCustomQuoteModal({
                           productId: product.id,
                           mode: isPackaging ? 'empty' : 'filled',
                           quantity: isPackaging ? 50 : 25,
-                        })
-                      }
-                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#c7982f] py-3 text-xs font-bold text-[#072a20] hover:bg-[#d8a93e] transition-colors shadow-sm"
+                        });
+                      }}
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#c7982f] py-3 text-xs font-bold text-[#072a20] hover:bg-[#d8a93e] transition-colors shadow-sm cursor-pointer"
                     >
                       <Briefcase size={14} />
                       Request Commercial Quote
@@ -349,14 +391,15 @@ export default function WholesaleDestination({ onQuickView }: WholesaleDestinati
 
                   <button
                     type="button"
-                    onClick={() =>
+                    onClick={(e) => {
+                      e.stopPropagation();
                       openCustomQuoteModal({
                         productId: product.id,
                         mode: isPackaging ? 'empty' : 'filled',
                         quantity: 100,
-                      })
-                    }
-                    className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] py-2 text-[11px] font-semibold text-[var(--color-text-muted)] hover:border-[#c7982f] hover:text-[#c7982f] transition-colors"
+                      });
+                    }}
+                    className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] py-2 text-[11px] font-semibold text-[var(--color-text-muted)] hover:border-[#c7982f] hover:text-[#c7982f] transition-colors cursor-pointer"
                   >
                     <Briefcase size={13} />
                     Request Custom Commercial Quote

@@ -72,7 +72,7 @@ test('1. Two-level header taxonomy: Main row and Compact food row match the appr
   assert.equal(corporateUnderGifting.path, '/wholesale');
 });
 
-test('2. Desktop BubbleMenu renders disclosure buttons with aria-expanded/aria-controls and destination anchors', () => {
+test('2. Desktop BubbleMenu renders a single clean navigation row by default with disclosure buttons, aria-expanded/aria-controls, and prominent Custom Hamper inside Gifts & Hampers', () => {
   const html = render(<BubbleMenu activeItem="Shop" />);
 
   // Main row items with dropdowns must be disclosure buttons with aria-haspopup, aria-expanded, aria-controls
@@ -93,13 +93,28 @@ test('2. Desktop BubbleMenu renders disclosure buttons with aria-expanded/aria-c
     }
   }
 
-  // Compact food row items must be rendered as navigation destinations
+  // Default desktop header must NOT render the secondary food-category row
+  assert.ok(
+    !html.includes('role="navigation" aria-label='),
+    'Secondary food-category row must be omitted by default on desktop'
+  );
+
+  // All food categories remain accessible inside the Shop dropdown config
+  const shopItem = MAIN_NAV_ITEMS.find((item) => item.id === 'shop');
+  assert.ok(shopItem?.dropdownItems, 'Shop dropdown items must exist');
   for (const food of COMPACT_FOOD_NAV_ITEMS) {
     assert.ok(
-      html.includes(`data-nav-path="${food.path}"`),
-      `Compact food row must render link for ${food.id} with path ${food.path}`
+      shopItem.dropdownItems.some((sub) => sub.path === food.path),
+      `Shop dropdown must retain food category path ${food.path}`
     );
   }
+
+  // Custom Hamper is a prominent action inside Gifts & Hampers dropdown
+  const giftingItem = MAIN_NAV_ITEMS.find((item) => item.id === 'gifting');
+  const customHamperSub = giftingItem?.dropdownItems?.find((sub) => sub.id === 'custom-hamper');
+  assert.ok(customHamperSub, 'Custom Hamper must be in Gifts & Hampers dropdown');
+  assert.equal(customHamperSub.action, 'open-hamper-builder');
+  assert.equal(giftingItem?.dropdownItems?.[0]?.id, 'custom-hamper', 'Custom Hamper must be the prominent first action in Gifts & Hampers');
 });
 
 test('3. MobileMenu renders an accessible accordion with anchors for destinations and buttons for disclosure/actions', () => {
@@ -443,9 +458,8 @@ test('12. Authoritative primary active navigation resolution and single aria-cur
   assert.match(occasionHtml, /id="nav-trigger-occasions"[^>]*aria-current="page"/, 'Occasions trigger must have aria-current="page" on /shop?occasion=wedding');
   assert.doesNotMatch(occasionHtml, /id="nav-trigger-shop"[^>]*aria-current="page"/, 'Shop trigger must NOT have aria-current="page" on /shop?occasion=wedding');
 
-  // On /shop/dry-fruits: Shop has aria-current="page" AND compact food row dry-fruits has aria-current="page"
+  // On /shop/dry-fruits: Shop has aria-current="page" in the single-row desktop header
   const foodHtml = render(<BubbleMenu />, 'en', '/shop/dry-fruits');
   assert.match(foodHtml, /id="nav-trigger-shop"[^>]*aria-current="page"/, 'Shop must have aria-current="page" on /shop/dry-fruits');
-  assert.match(foodHtml, /data-nav-path="\/shop\/dry-fruits"[^>]*aria-current="page"/, 'Compact food link for dry-fruits must have aria-current="page"');
 });
 

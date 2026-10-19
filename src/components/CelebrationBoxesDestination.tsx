@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Package,
   Gift,
@@ -50,6 +50,7 @@ export default function CelebrationBoxesDestination({
   const products = useCatalogProducts();
   const { addToCart, setIsCartOpen } = useCart();
   const mediaCover = useProductMediaCover();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // URL-driven filter parameters (reactive)
@@ -283,19 +284,30 @@ export default function CelebrationBoxesDestination({
           return (
             <article
               key={product.id}
-              className="flex flex-col rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group"
+              onClick={(event) => {
+                if (!(event.target as HTMLElement).closest('a, button, input, select, textarea, [role="button"]')) {
+                  navigate(`/product/${product.id}`);
+                }
+              }}
+              className="flex flex-col cursor-pointer rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-md hover:border-[var(--color-border-accent)] hover:shadow-xl transition-all duration-300 overflow-hidden group"
             >
               {/* Product Image Frame */}
               <div className="relative aspect-square w-full overflow-hidden bg-[#FAF6EE] dark:bg-[#061811]">
-                <img
-                  src={coverImg}
-                  alt={product.name_en}
-                  loading="lazy"
-                  className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
-                />
+                <Link
+                  to={`/product/${product.id}`}
+                  aria-label={language === 'ur' && product.name_ur ? product.name_ur : product.name_en}
+                  className="focus-ring block h-full w-full"
+                >
+                  <img
+                    src={coverImg}
+                    alt={product.name_en}
+                    loading="lazy"
+                    className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                  />
+                </Link>
 
                 {/* Subcategory & Occasion Badges */}
-                <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                <div className="pointer-events-none absolute top-3 left-3 flex flex-wrap gap-1.5">
                   {subcat && (
                     <span className="rounded-full bg-[#072a20]/90 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#e6c786]">
                       {t(`dest.celebration.subcat.${subcat}`)}
@@ -308,30 +320,27 @@ export default function CelebrationBoxesDestination({
                   )}
                 </div>
 
-                {/* Direct Checkout vs Inquiry Badge & MOQ Badge */}
-                <div className="absolute bottom-3 left-3 flex flex-wrap items-center gap-1.5">
-                  <span
-                    className={`rounded-full backdrop-blur-md px-2.5 py-1 text-[10px] font-semibold ${
-                      cardVariant.isDirectCheckoutEligible
-                        ? 'bg-emerald-900/90 text-emerald-200'
-                        : 'bg-amber-900/90 text-amber-200'
-                    }`}
-                  >
-                    {cardVariant.isDirectCheckoutEligible
-                      ? t('dest.common.directCheckout')
-                      : t('dest.common.customInquiry')}
-                  </span>
-                  <span className="rounded-full bg-black/75 backdrop-blur-md px-2 py-1 text-[10px] font-bold text-[#e6c786]">
+                {/* MOQ & Quote-Only Status Badge (no implementation-facing Direct Checkout Eligible badge) */}
+                <div className="pointer-events-none absolute bottom-3 left-3 flex flex-wrap items-center gap-1.5">
+                  {!cardVariant.isDirectCheckoutEligible && (
+                    <span className="rounded-full bg-amber-900/90 backdrop-blur-md px-2.5 py-1 text-[10px] font-semibold text-amber-200">
+                      {t('dest.common.customInquiry')}
+                    </span>
+                  )}
+                  <span className="rounded-full bg-black/75 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-[#e6c786]">
                     MOQ: {cardVariant.moq} pcs
                   </span>
                 </div>
 
-                {/* Quick View Button */}
+                {/* Quick View Button (discoverable on touch & keyboard focus) */}
                 {onQuickView && (
                   <button
                     type="button"
-                    onClick={() => onQuickView(product)}
-                    className="absolute top-3 right-3 rounded-full bg-white/90 p-2 text-[#072a20] opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-white"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onQuickView(product);
+                    }}
+                    className="focus-ring absolute top-3 right-3 rounded-full bg-white/90 p-2 text-[#072a20] opacity-100 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100 transition-opacity shadow-md hover:bg-white cursor-pointer"
                     title="Quick view"
                     aria-label={`Quick view ${product.name_en}`}
                   >
@@ -346,7 +355,7 @@ export default function CelebrationBoxesDestination({
                   <h2 className="font-serif text-lg sm:text-xl font-bold text-[var(--color-text)] leading-snug">
                     <Link
                       to={`/product/${product.id}`}
-                      className="hover:text-[#c7982f] transition-colors"
+                      className="focus-ring rounded-sm hover:text-[#c7982f] transition-colors"
                     >
                       {language === 'ur' && product.name_ur ? product.name_ur : product.name_en}
                     </Link>
@@ -354,6 +363,28 @@ export default function CelebrationBoxesDestination({
                   <p className="mt-1.5 text-xs text-[var(--color-text-muted)] line-clamp-2 leading-relaxed">
                     {product.description || (product as any).description_en || ''}
                   </p>
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <Link
+                      to={`/product/${product.id}`}
+                      className="focus-ring inline-flex items-center gap-1 text-[11px] font-semibold text-[#8C6B1B] dark:text-[#e6c786] hover:underline"
+                    >
+                      <span>{t('dest.common.viewDetails', 'View Details')}</span>
+                      <ArrowRight size={12} />
+                    </Link>
+                    {onQuickView && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onQuickView(product);
+                        }}
+                        className="focus-ring inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-base)] hover:text-[#c7982f] transition-colors cursor-pointer"
+                      >
+                        <Eye size={13} />
+                        <span>{t('quickView', 'Quick View')}</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Packaging vs Filled Selector on the Card */}
@@ -366,10 +397,11 @@ export default function CelebrationBoxesDestination({
                       <button
                         type="button"
                         disabled={!cardVariant.availableModes.includes('empty')}
-                        onClick={() =>
-                          setSelectedCardModes(prev => ({ ...prev, [product.id]: 'empty' }))
-                        }
-                        className={`rounded px-2 py-0.5 text-[11px] font-semibold transition-colors ${
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedCardModes(prev => ({ ...prev, [product.id]: 'empty' }));
+                        }}
+                        className={`rounded px-2 py-0.5 text-[11px] font-semibold transition-colors cursor-pointer ${
                           cardVariant.activeMode === 'empty'
                             ? 'bg-[#072a20] text-[#fff8e9] dark:bg-[#c7982f] dark:text-[#072a20]'
                             : 'text-[var(--color-text-muted)]'
@@ -380,10 +412,11 @@ export default function CelebrationBoxesDestination({
                       <button
                         type="button"
                         disabled={!cardVariant.availableModes.includes('filled')}
-                        onClick={() =>
-                          setSelectedCardModes(prev => ({ ...prev, [product.id]: 'filled' }))
-                        }
-                        className={`rounded px-2 py-0.5 text-[11px] font-semibold transition-colors ${
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedCardModes(prev => ({ ...prev, [product.id]: 'filled' }));
+                        }}
+                        className={`rounded px-2 py-0.5 text-[11px] font-semibold transition-colors cursor-pointer ${
                           cardVariant.activeMode === 'filled'
                             ? 'bg-[#072a20] text-[#fff8e9] dark:bg-[#c7982f] dark:text-[#072a20]'
                             : 'text-[var(--color-text-muted)]'
@@ -399,7 +432,7 @@ export default function CelebrationBoxesDestination({
                     <div>
                       <div className="flex items-baseline justify-between">
                         <span className="text-xs text-[var(--color-text-muted)]">
-                          Price
+                          Empty Box Price
                         </span>
                         <span className="font-serif text-base font-bold text-[var(--color-text)]">
                           {cardVariant.unitPrice !== null ? (
@@ -423,19 +456,17 @@ export default function CelebrationBoxesDestination({
                               <button
                                 key={tier.qty}
                                 type="button"
-                                onClick={() =>
-                                  setSelectedTierIdx(prev => ({ ...prev, [product.id]: idx }))
-                                }
-                                className={`rounded-md border px-2 py-1 text-[10px] font-bold transition-all ${
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedTierIdx(prev => ({ ...prev, [product.id]: idx }));
+                                }}
+                                className={`rounded-md border px-2 py-1 text-[10px] font-bold transition-all cursor-pointer ${
                                   isSelected
                                     ? 'border-[#072a20] bg-[#072a20] text-[#fff8e9] dark:border-[#c7982f] dark:bg-[#c7982f] dark:text-[#072a20]'
                                     : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)]'
                                 }`}
                               >
-                                {tier.qty} pcs: Rs. {tier.unitPrice}/pc
-                                {tier.discountBadge && (
-                                  <span className="ml-1 text-[#e6c786]">{tier.discountBadge}</span>
-                                )}
+                                {tier.qty} pcs · Rs. {tier.unitPrice}/pc
                               </button>
                             );
                           })}
@@ -446,7 +477,7 @@ export default function CelebrationBoxesDestination({
                     <div>
                       <div className="flex items-baseline justify-between">
                         <span className="text-xs text-[var(--color-text-muted)]">
-                          Filled Option
+                          Filled Box Price
                         </span>
                         <span className="font-serif text-base font-bold text-[var(--color-text)]">
                           {cardVariant.unitPrice !== null ? (
@@ -476,8 +507,11 @@ export default function CelebrationBoxesDestination({
                   {cardVariant.isDirectCheckoutEligible ? (
                     <button
                       type="button"
-                      onClick={() => handleAddToCart(product, cardVariant)}
-                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#072a20] py-3 text-xs font-bold text-[#fff8e9] hover:bg-[#124b3b] dark:bg-[#c7982f] dark:text-[#072a20] dark:hover:bg-[#d8a93e] transition-colors shadow-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddToCart(product, cardVariant);
+                      }}
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#072a20] py-3 text-xs font-bold text-[#fff8e9] hover:bg-[#124b3b] dark:bg-[#c7982f] dark:text-[#072a20] dark:hover:bg-[#d8a93e] transition-colors shadow-sm cursor-pointer"
                     >
                       {addedId === product.id ? (
                         <>
@@ -494,15 +528,16 @@ export default function CelebrationBoxesDestination({
                   ) : (
                     <button
                       type="button"
-                      onClick={() =>
+                      onClick={(e) => {
+                        e.stopPropagation();
                         openCustomQuoteModal({
                           productId: product.id,
                           variantLabel: cardVariant.emptyTiers[cardVariant.selectedTierIndex]?.label,
                           mode: cardVariant.activeMode,
                           quantity: cardVariant.moq,
-                        })
-                      }
-                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#c7982f] py-3 text-xs font-bold text-[#072a20] hover:bg-[#d8a93e] transition-colors shadow-sm"
+                        });
+                      }}
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#c7982f] py-3 text-xs font-bold text-[#072a20] hover:bg-[#d8a93e] transition-colors shadow-sm cursor-pointer"
                     >
                       <MessageSquareQuote size={14} />
                       Request Quote / Offer Your Rate
@@ -511,15 +546,16 @@ export default function CelebrationBoxesDestination({
 
                   <button
                     type="button"
-                    onClick={() =>
+                    onClick={(e) => {
+                      e.stopPropagation();
                       openCustomQuoteModal({
                         productId: product.id,
                         variantLabel: cardVariant.emptyTiers[cardVariant.selectedTierIndex]?.label,
                         mode: cardVariant.activeMode,
                         quantity: 100,
-                      })
-                    }
-                    className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] py-2 text-[11px] font-semibold text-[var(--color-text-muted)] hover:border-[#c7982f] hover:text-[#c7982f] transition-colors"
+                      });
+                    }}
+                    className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] py-2 text-[11px] font-semibold text-[var(--color-text-muted)] hover:border-[#c7982f] hover:text-[#c7982f] transition-colors cursor-pointer"
                   >
                     <MessageSquareQuote size={13} />
                     Custom Quote / Large Order (&gt;100 pcs)

@@ -629,3 +629,32 @@ test('Regression 10: Deals destination omits unsupported strikethrough compariso
   assert.equal(dealsHtml.includes('line-through'), false, 'Unsupported comparePrice strikethroughs omitted');
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// REGRESSION 11: Consistent Card Navigation, View Details Links & Clean Badges
+// ─────────────────────────────────────────────────────────────────────────────
+test('Regression 11: Product cards across destinations expose canonical /product/:id links, View Details, and omit Direct Checkout Eligible clutter', () => {
+  const celebrationHtml = renderApp('/shop/celebration-boxes');
+  assert.ok(celebrationHtml.includes('href="/product/bid-box-luxury-tin"'), 'Celebration card links to /product/bid-box-luxury-tin');
+  assert.ok(celebrationHtml.includes('View Details'), 'Celebration card exposes View Details link');
+  assert.equal(celebrationHtml.includes('Direct Checkout Eligible'), false, 'Celebration card omits implementation-facing Direct Checkout Eligible badge');
+
+  const giftingHtml = renderApp('/gifting');
+  assert.ok(giftingHtml.includes('href="/product/bundle-silver-hamper"'), 'Gifting card links to /product/bundle-silver-hamper');
+  assert.ok(giftingHtml.includes('View Details'), 'Gifting card exposes View Details link');
+  assert.equal(giftingHtml.includes('Direct Checkout Eligible'), false, 'Gifting card omits Direct Checkout Eligible badge');
+
+  const dealsHtml = renderApp('/shop/deals');
+  assert.ok(dealsHtml.includes('href="/product/bundle-daily-grind"'), 'Deals card links to /product/bundle-daily-grind');
+  assert.ok(dealsHtml.includes('View Details'), 'Deals card exposes View Details link');
+  assert.equal(dealsHtml.includes('Direct Checkout Eligible'), false, 'Deals card omits Direct Checkout Eligible badge');
+
+  const occasionsHtml = renderApp('/occasions/wedding');
+  assert.ok(occasionsHtml.includes('href="/product/'), 'Occasions card links to canonical /product/:id');
+  assert.ok(occasionsHtml.includes('View Details'), 'Occasions card exposes View Details link');
+  assert.equal(occasionsHtml.includes('Direct Checkout Eligible'), false, 'Occasions card omits Direct Checkout Eligible badge');
+
+  const wholesaleHtml = renderApp('/wholesale');
+  assert.ok(wholesaleHtml.includes('href="/product/'), 'Wholesale card links to canonical /product/:id');
+  assert.ok(wholesaleHtml.includes('View Details'), 'Wholesale card exposes View Details link');
+  assert.equal(wholesaleHtml.includes('Direct Checkout Eligible'), false, 'Wholesale card omits Direct Checkout Eligible badge');
+});
