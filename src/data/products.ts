@@ -1683,27 +1683,34 @@ interface BidBoxDefinition {
   shippingWeightG: number;
   keywords: string[];
   packagingSubcategory?: string;
+  quoteOnly?: boolean;
+  orderMode?: 'standard' | 'inquiry_quote' | 'both';
 }
 
 function createBidBoxProduct(def: BidBoxDefinition): Product {
-  const prices: Record<string, number> = {
-    'Empty Box (1 pc)': def.emptyUnit1,
-    'Empty Pack (10 pcs)': def.emptyUnit1 * 10,
-    'Empty Pack (25 pcs)': def.emptyUnit25 * 25,
-    'Empty Bulk (50 pcs)': def.emptyUnit50 * 50,
-    'Empty Bulk (100 pcs)': def.emptyUnit100 * 100,
-    [def.filledStandardLabel]: def.filledMin,
-    [def.filledRoyalLabel]: def.filledMax,
-  };
-  const shippingWeights: Record<string, number> = {
-    'Empty Box (1 pc)': 150,
-    'Empty Pack (10 pcs)': 1500,
-    'Empty Pack (25 pcs)': 3500,
-    'Empty Bulk (50 pcs)': 6500,
-    'Empty Bulk (100 pcs)': 12000,
-    [def.filledStandardLabel]: def.shippingWeightG,
-    [def.filledRoyalLabel]: def.shippingWeightG * 2,
-  };
+  const isQuoteOnly = def.quoteOnly === true || def.orderMode === 'inquiry_quote';
+  const prices: Record<string, number> = isQuoteOnly
+    ? {}
+    : {
+        'Empty Box (1 pc)': def.emptyUnit1,
+        'Empty Pack (10 pcs)': def.emptyUnit1 * 10,
+        'Empty Pack (25 pcs)': def.emptyUnit25 * 25,
+        'Empty Bulk (50 pcs)': def.emptyUnit50 * 50,
+        'Empty Bulk (100 pcs)': def.emptyUnit100 * 100,
+        [def.filledStandardLabel]: def.filledMin,
+        [def.filledRoyalLabel]: def.filledMax,
+      };
+  const shippingWeights: Record<string, number> = isQuoteOnly
+    ? {}
+    : {
+        'Empty Box (1 pc)': 150,
+        'Empty Pack (10 pcs)': 1500,
+        'Empty Pack (25 pcs)': 3500,
+        'Empty Bulk (50 pcs)': 6500,
+        'Empty Bulk (100 pcs)': 12000,
+        [def.filledStandardLabel]: def.shippingWeightG,
+        [def.filledRoyalLabel]: def.shippingWeightG * 2,
+      };
   return {
     id: def.id,
     name_en: def.name_en,
@@ -1716,13 +1723,15 @@ function createBidBoxProduct(def: BidBoxDefinition): Product {
     health_en: def.health_en,
     health_ur: def.health_en,
     health_ar: def.health_en,
-    tag_en: def.occasionTag,
-    tag_ur: 'تقریب کا تحفہ',
-    tag_ar: 'هدية مناسبات',
-    badge: 'Empty & Filled Options',
+    tag_en: isQuoteOnly ? 'Custom Inquiry / Quote' : def.occasionTag,
+    tag_ur: isQuoteOnly ? 'کسٹم کوٹیشن' : 'تقریب کا تحفہ',
+    tag_ar: isQuoteOnly ? 'طلب عرض سعر' : 'هدية مناسبات',
+    badge: isQuoteOnly ? 'Custom Inquiry / Quote' : 'Empty & Filled Options',
     image: def.image,
     imageName: def.image,
     prices,
+    quoteOnly: isQuoteOnly,
+    orderMode: def.orderMode || (isQuoteOnly ? 'inquiry_quote' : 'both'),
     occasions: def.occasions || [
       def.occasionTag.toLowerCase().includes('umrah')
         ? 'umrah'
@@ -1730,7 +1739,7 @@ function createBidBoxProduct(def: BidBoxDefinition): Product {
         ? 'birth'
         : 'wedding',
     ],
-    wholesale: def.emptyUnit100,
+    wholesale: isQuoteOnly ? 0 : def.emptyUnit100,
     isBidBox: true,
     packagingSubcategory: def.packagingSubcategory,
     shippingWeightG: def.shippingWeightG,
@@ -1747,52 +1756,68 @@ function createBidBoxProduct(def: BidBoxDefinition): Product {
     origin_en: 'Handcrafted in Lahore & Filled with Mountain Harvest Dry Fruits',
     origin_ur: 'لاہور میں دستکاروں کا تیار کردہ اور خالص خشک میوہ جات سے مزین',
     origin_ar: 'صناعة يدوية فاخرة في لاهور مع أجود المكسرات المختارة',
-    harvest_en: 'Made-to-Order Event Reserve • Custom Name Tag Included',
-    harvest_ur: 'حسبِ آرڈر تقریب کے لیے تازہ تیاری • کسٹم نام کے ٹیگ کے ساتھ',
-    harvest_ar: 'تجهيز خاص حسب الطلب للمناسبات • مع بطاقة اسم مخصصة',
+    harvest_en: isQuoteOnly
+      ? 'Bespoke Event Consultation • Quoted Upon Request'
+      : 'Made-to-Order Event Reserve • Custom Name Tag Included',
+    harvest_ur: isQuoteOnly
+      ? 'حسبِ ضرورت تقریب کی مشاورت • قیمت کی تصدیق بذریعہ کوٹیشن'
+      : 'حسبِ آرڈر تقریب کے لیے تازہ تیاری • کسٹم نام کے ٹیگ کے ساتھ',
+    harvest_ar: isQuoteOnly
+      ? 'استشارة خاصة للمناسبات • تسعير مخصص عند الطلب'
+      : 'تجهيز خاص حسب الطلب للمناسبات • مع بطاقة اسم مخصصة',
     storageTips_en: 'Store filled boxes in a cool, dry room away from direct heat and humidity.',
     storageTips_ur: 'بھرے ہوئے ڈبوں کو نمی اور دھوپ سے دور ٹھنڈی اور خشک جگہ پر رکھیں۔',
     storageTips_ar: 'تُحفظ الصناديق المعبأة في مكان بارد وجاف بعيداً عن الرطوبة والحرارة.',
-    packagingDetails_en: 'Available as empty flat/assembled favor packaging or freshly sealed with AllBarka dry fruits & custom event name tags.',
-    packagingDetails_ur: 'خالی ڈبے یا آلبرکہ کے تازہ خشک میوہ جات اور کسٹم نام کے ٹیگ کے ساتھ دستیاب۔',
-    packagingDetails_ar: 'متوفرة كصناديق فارغة أو معبأة طازجة بمكسرات البركة مع بطاقات أسماء مخصصة.',
+    packagingDetails_en: isQuoteOnly
+      ? 'Photograph illustrates a filled multi-compartment presentation concept. Final box dimensions, materials, compartment layout, and empty or filled pricing are confirmed via custom quotation.'
+      : 'Product photograph illustrates filled presentation; empty box pricing covers packaging only, while filled options include AllBarka dry fruits as specified.',
+    packagingDetails_ur: isQuoteOnly
+      ? 'تصویر بھرے ہوئے پریزنٹیشن باکس کا تصور پیش کرتی ہے۔ حتمی سائز، میٹریل اور خالی یا بھرے ہوئے باکس کی قیمت کسٹم کوٹیشن کے ذریعے طے کی جاتی ہے۔'
+      : 'تصویر میں بھرا ہوا باکس دکھایا گیا ہے؛ خالی ڈبے کی قیمت میں صرف پیکنگ شامل ہے جبکہ بھرے ہوئے آپشنز میں آلبرکہ کے خشک میوہ جات شامل ہیں۔',
+    packagingDetails_ar: isQuoteOnly
+      ? 'توضح الصورة نموذج تقديم معبأ؛ يتم تأكيد الأبعاد النهائية والمواد وأسعار الصناديق الفارغة أو المعبأة عبر عرض سعر مخصص.'
+      : 'توضح الصورة نموذج التقديم المعبأ؛ يشمل سعر الصندوق الفارغ التغليف فقط بينما تشمل الخيارات المعبأة مكسرات البركة المحددة.',
     bidBoxConfig: {
-      emptyUnitStarting: def.emptyUnit1,
-      emptyBulk50Unit: def.emptyUnit50,
-      emptyBulk100Unit: def.emptyUnit100,
-      filledMin: def.filledMin,
-      filledMax: def.filledMax,
+      emptyUnitStarting: isQuoteOnly ? 0 : def.emptyUnit1,
+      emptyBulk50Unit: isQuoteOnly ? 0 : def.emptyUnit50,
+      emptyBulk100Unit: isQuoteOnly ? 0 : def.emptyUnit100,
+      filledMin: isQuoteOnly ? 0 : def.filledMin,
+      filledMax: isQuoteOnly ? 0 : def.filledMax,
       filledSummary: def.filledSummary,
       occasionTag: def.occasionTag,
       packagingSubcategory: def.packagingSubcategory,
       dimensionsAndCapacity: def.dimensionsAndCapacity,
       emptyOptionDetails: def.emptyOptionDetails,
       filledOptionDetails: def.filledOptionDetails,
-      emptyTiers: ([
-        { qty: 10, unitPrice: def.emptyUnit1, packPrice: def.emptyUnit1 * 10, variantKey: 'Empty Pack (10 pcs)' },
-        { qty: 25, unitPrice: def.emptyUnit25, packPrice: def.emptyUnit25 * 25, variantKey: 'Empty Pack (25 pcs)' },
-        { qty: 50, unitPrice: def.emptyUnit50, packPrice: def.emptyUnit50 * 50, variantKey: 'Empty Bulk (50 pcs)' },
-        { qty: 100, unitPrice: def.emptyUnit100, packPrice: def.emptyUnit100 * 100, variantKey: 'Empty Bulk (100 pcs)' },
-      ] as const).map(tier => {
-        const savingsPct =
-          def.emptyUnit1 > 0 && tier.unitPrice < def.emptyUnit1
-            ? Math.round(((def.emptyUnit1 - tier.unitPrice) / def.emptyUnit1) * 100)
-            : 0;
-        const discountBadge = savingsPct > 0 ? `-${savingsPct}%` : undefined;
-        const qtyLabel = tier.qty >= 100 ? `${tier.qty}+ pcs` : `${tier.qty} pcs`;
-        return {
-          qty: tier.qty,
-          label: discountBadge ? `${qtyLabel} (${discountBadge})` : qtyLabel,
-          ...(discountBadge ? { discountBadge } : {}),
-          unitPrice: tier.unitPrice,
-          packPrice: tier.packPrice,
-          variantKey: tier.variantKey,
-        };
-      }),
-      filledOptions: [
-        { label: def.filledStandardLabel, subtitle: def.filledSummary, price: def.filledMin, variantKey: def.filledStandardLabel },
-        { label: def.filledRoyalLabel, subtitle: `VIP / Deluxe Assortment — ${def.filledSummary}`, price: def.filledMax, variantKey: def.filledRoyalLabel },
-      ],
+      emptyTiers: isQuoteOnly
+        ? []
+        : ([
+            { qty: 10, unitPrice: def.emptyUnit1, packPrice: def.emptyUnit1 * 10, variantKey: 'Empty Pack (10 pcs)' },
+            { qty: 25, unitPrice: def.emptyUnit25, packPrice: def.emptyUnit25 * 25, variantKey: 'Empty Pack (25 pcs)' },
+            { qty: 50, unitPrice: def.emptyUnit50, packPrice: def.emptyUnit50 * 50, variantKey: 'Empty Bulk (50 pcs)' },
+            { qty: 100, unitPrice: def.emptyUnit100, packPrice: def.emptyUnit100 * 100, variantKey: 'Empty Bulk (100 pcs)' },
+          ] as const).map(tier => {
+            const savingsPct =
+              def.emptyUnit1 > 0 && tier.unitPrice < def.emptyUnit1
+                ? Math.round(((def.emptyUnit1 - tier.unitPrice) / def.emptyUnit1) * 100)
+                : 0;
+            const discountBadge = savingsPct > 0 ? `-${savingsPct}%` : undefined;
+            const qtyLabel = tier.qty >= 100 ? `${tier.qty}+ pcs` : `${tier.qty} pcs`;
+            return {
+              qty: tier.qty,
+              label: discountBadge ? `${qtyLabel} (${discountBadge})` : qtyLabel,
+              ...(discountBadge ? { discountBadge } : {}),
+              unitPrice: tier.unitPrice,
+              packPrice: tier.packPrice,
+              variantKey: tier.variantKey,
+            };
+          }),
+      filledOptions: isQuoteOnly
+        ? []
+        : [
+            { label: def.filledStandardLabel, subtitle: def.filledSummary, price: def.filledMin, variantKey: def.filledStandardLabel },
+            { label: def.filledRoyalLabel, subtitle: `VIP / Deluxe Assortment — ${def.filledSummary}`, price: def.filledMax, variantKey: def.filledRoyalLabel },
+          ],
     },
     keywords: ['bid box', 'favor box', 'shadi box', 'nikkah box', 'empty box', 'filled dry fruit box', ...def.keywords],
   };
@@ -2005,29 +2030,31 @@ export const BID_BOX_PRODUCTS: Product[] = [
   createBidBoxProduct({
     id: 'bid-box-acrylic-royal',
     packagingSubcategory: 'acrylic',
+    quoteOnly: true,
+    orderMode: 'inquiry_quote',
     image: '/images/products/bid-box-acrylic-royal-1.webp',
     name_en: 'Acrylic & Velvet Royal Bid Box',
     name_ur: 'ایکریلک اور مخملی شاہی بِد باکس',
     name_ar: 'صندوق ملكي من الأكريليك والمخمل',
     occasionTag: 'VIP Royal Presentation',
-    health_en: 'CRYSTAL ACRYLIC & VELVET • VIP ROYAL GIFT',
-    emptyUnit1: 280,
-    emptyUnit25: 270,
-    emptyUnit50: 260,
-    emptyUnit100: 240,
-    filledMin: 1450,
-    filledMax: 3200,
-    filledStandardLabel: 'Filled Standard (VIP Dry Fruit Assortment)',
-    filledRoyalLabel: 'Filled Royal (Chilgoza, Pistachio & Panjgur VIP)',
-    filledSummary: 'VIP Dry Fruit Assortment',
-    dimensionsAndCapacity: 'Dimensions: 20cm × 20cm × 7.5cm 4mm crystal-clear cast acrylic chest with emerald/burgundy velvet base, antique gold clasp hardware & 4 gold dividers • Capacity: 400g–700g.',
-    emptyOptionDetails: 'Includes optical-grade clear acrylic hinged chest, plush velvet base liner, 4 removable gold-trimmed dividers, gold metal lock clasp, satin ribbon, and custom engraved-style gold acrylic/foil tag (Starting Rs. 280; 50+ pcs Rs. 260; 100+ pcs Rs. 240).',
-    filledOptionDetails: 'Filled Standard (Rs. 1,450): 400g VIP 4-compartment assortment of Iranian Pistachios, W240 King Cashews, Golden Almonds & Afghan Anjeer. Filled Royal (Rs. 3,200): 600g Crown Assortment of Hand-Selected Pine Nuts (Chilgoza), Jumbo Panjgur Amber Dates, Iranian Pistachios & King Cashews.',
-    contents_en: '4mm Crystal-Clear Acrylic Hinged Chest with Velvet Base, Gold Clasp & 4 Dividers (Available Empty in Bulk or Filled with 400g–600g VIP Dry Fruit & Chilgoza Assortment)',
-    tasteProfile_en: 'Jewel-like display of Western Himalayan chilgoza pine nuts, jumbo Panjgur amber dates, Kerman pistachios, and buttery W240 cashews.',
-    desc_en: 'Our most opulent presentation piece for VIP Nikkah favors, Bari trousseaus, and royal diplomatic gifting. Crafted from thick optical-grade cast acrylic with a plush emerald and burgundy velvet base, gold metal clasp hardware, and four metallic gold dividers that showcase jewel-like dry fruits in full view. Available as empty acrylic chests at tiered bulk rates or filled with our flagship Chilgoza, Panjgur date, pistachio, and cashew reserves.',
-    desc_ur: 'وی آئی پی نکاح، بری، ولیمہ اور شاہی تحائف کے لیے شفاف کرسٹل ایکریلک اور مخملی بیس سے تیار کردہ ہمارا سب سے شاندار بِد باکس، جس میں سنہری لاک اور چار گولڈ ڈیوائیڈرز شامل ہیں۔ خالی ایکریلک باکس ہول سیل ڈسکاؤنٹ کے ساتھ یا چلغوزہ، پنجگور کھجور، پستہ اور کاجو سے بھرا ہوا دستیاب۔',
-    desc_ar: 'أفخم صناديق التقديم الملكية المصنوعة من الأكريليك الشفاف الكريستالي مع قاعدة مبطنة بالمخمل الفاخر وقفل ذهبي وأربعة أقسام تعرض المكسرات كالمجوهرات. متوفر فارغاً بالجملة أو معبأً بالصنوبر وتمر بنججور الفاخر والفستق والكاجو.',
+    health_en: 'BESPOKE ACRYLIC PRESENTATION • CUSTOM QUOTE',
+    emptyUnit1: 0,
+    emptyUnit25: 0,
+    emptyUnit50: 0,
+    emptyUnit100: 0,
+    filledMin: 0,
+    filledMax: 0,
+    filledStandardLabel: 'Custom Filled Quotation',
+    filledRoyalLabel: 'Custom VIP Quotation',
+    filledSummary: 'Quoted upon consultation based on selected box size and AllBarka dry fruit assortment',
+    dimensionsAndCapacity: 'Box dimensions, compartment layout, and capacity are confirmed per custom order specification.',
+    emptyOptionDetails: 'Available via custom quotation. Empty box pricing, minimum order quantity, and production lead time are confirmed after reviewing your required size and quantity.',
+    filledOptionDetails: 'Optional AllBarka dry fruit and date fillings are quoted separately based on your selected assortment and portion weights.',
+    contents_en: 'Multi-compartment clear acrylic presentation box concept (Photograph shows a filled presentation example; box specifications, empty packaging rates, and optional dry fruit fillings are quoted upon inquiry)',
+    tasteProfile_en: 'Custom-selected AllBarka dry fruits and dates, quoted and prepared according to your event brief.',
+    desc_en: 'A multi-compartment clear acrylic presentation chest concept for Nikkah favors, Bari trousseaus, and formal event gifting. The product photograph illustrates a filled presentation example; exact box dimensions, compartment configuration, empty packaging rates, and optional AllBarka dry fruit fillings are confirmed through a custom quotation.',
+    desc_ur: 'نکاح، بری اور خاص تقریبات کے تحائف کے لیے شفاف ایکریلک پریزنٹیشن باکس۔ تصویر میں بھرا ہوا نمونہ دکھایا گیا ہے؛ ڈبے کا حتمی سائز، خانوں کی ترتیب، خالی باکس کی قیمت اور خشک میوہ جات کی تفصیل کسٹم کوٹیشن کے ذریعے طے کی جاتی ہے۔',
+    desc_ar: 'صندوق تقديم شفاف متعدد الأقسام لهدايا النكاح والمناسبات الخاصة. توضح الصورة نموذجاً معبأً للعرض؛ يتم تأكيد الأبعاد النهائية وتفاصيل الصندوق الفارغ أو المعبأ عبر عرض سعر مخصص.',
     shippingWeightG: 650,
     keywords: ['acrylic box', 'velvet bid box', 'vip bid box', 'royal favor box', 'bari box'],
   }),

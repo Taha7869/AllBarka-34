@@ -868,3 +868,153 @@ test('Regression 13: Authoritative MOQ derivation error reporting (reports block
   assert.equal(throwingAdapterTest.derivedMoqPieces, undefined);
   assert.equal(throwingAdapterTest.derivedMinUnits, undefined);
 });
+
+test('Regression 14: bid-box-acrylic-royal is inquiry/quote-only without unsupported Rs. 280 tiers or unverified specs, and 22 draft candidates prepare as editable admin drafts in isolated fixture', async () => {
+  const fs = await import('node:fs');
+  const path = await import('node:path');
+  const { createAdminProduct, loadAuthoritativeCatalog, updateAdminProduct } = await import('../src/lib/catalogStore');
+  const { resolveCelebrationCardVariant } = await import('../src/lib/packagingClassification');
+
+  // 1. Verify bid-box-acrylic-royal in PRODUCTS is inquiry/quote-only
+  const acrylicRoyal = PRODUCTS.find((p) => p.id === 'bid-box-acrylic-royal')!;
+  assert.ok(acrylicRoyal, 'bid-box-acrylic-royal must exist in seed catalog');
+  assert.equal(acrylicRoyal.quoteOnly, true, 'bid-box-acrylic-royal must be quoteOnly');
+  assert.equal(acrylicRoyal.orderMode, 'inquiry_quote', 'bid-box-acrylic-royal must have orderMode inquiry_quote');
+  assert.deepEqual(acrylicRoyal.prices, {}, 'bid-box-acrylic-royal must have no direct checkout prices');
+  assert.equal(acrylicRoyal.variants?.length ?? 0, 0, 'bid-box-acrylic-royal must have no priced variants');
+  assert.equal(acrylicRoyal.bidBoxConfig?.emptyTiers.length ?? 0, 0, 'bid-box-acrylic-royal must have no empty tiers');
+  assert.equal(acrylicRoyal.bidBoxConfig?.filledOptions?.length ?? 0, 0, 'bid-box-acrylic-royal must have no priced filled options');
+
+  // Verify no unsupported Rs. 280 or unverified physical specs (20cm, 4mm, 400g-700g, optical-grade) remain in public copy
+  const copyBlob = [
+    acrylicRoyal.desc_en,
+    acrylicRoyal.desc_ur,
+    acrylicRoyal.desc_ar,
+    acrylicRoyal.contents_en,
+    acrylicRoyal.bidBoxConfig?.dimensionsAndCapacity,
+    acrylicRoyal.bidBoxConfig?.emptyOptionDetails,
+    acrylicRoyal.bidBoxConfig?.filledOptionDetails,
+  ].join(' ');
+  assert.equal(copyBlob.includes('280'), false, 'Must not contain unsupported Rs. 280 price');
+  assert.equal(copyBlob.includes('20cm'), false, 'Must not claim unverified 20cm x 20cm x 7.5cm dimensions');
+  assert.equal(copyBlob.includes('4mm'), false, 'Must not claim unverified 4mm thickness');
+  assert.equal(copyBlob.includes('optical-grade'), false, 'Must not claim unverified optical-grade cast acrylic');
+  assert.equal(copyBlob.includes('400g'), false, 'Must not claim unverified 400g-700g capacity');
+
+  // Verify storefront card resolver routes bid-box-acrylic-royal strictly to quote/inquiry
+  const resolvedCard = resolveCelebrationCardVariant(acrylicRoyal, 'empty');
+  assert.equal(resolvedCard.isQuoteOnly, true);
+  assert.equal(resolvedCard.isDirectCheckoutEligible, false);
+  assert.equal(resolvedCard.unitPrice, null);
+  assert.equal(resolvedCard.packPrice, null);
+
+  // 2. Load the 22 draft candidates from docs/STAGE_5C2_ASSET_MANIFEST.json and persist as editable admin drafts in isolated mock Firestore
+  const manifestPath = path.resolve(process.cwd(), 'docs/STAGE_5C2_ASSET_MANIFEST.json');
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  const existingMap = new Map(PRODUCTS.filter((p) => p.category === 'celebration-boxes').map((p) => [p.id, p]));
+  const adapted = adaptManifestToDraftCatalog(manifest, {
+    existingIds: EXISTING_PACKAGING_IDS,
+    existingProducts: existingMap,
+  });
+
+  assert.equal(adapted.summary.proposedDraftsCount, 22, 'All 22 verified draft candidates are proposed');
+  assert.equal(adapted.summary.skippedExistingCount, 8, 'All 8 existing celebration seed products are skipped');
+  assert.equal(adapted.summary.excludedConceptsCount, 3, 'All 3 unverified acrylic concepts are excluded');
+  assert.equal(adapted.summary.acrylicShortfall.shortfall, 4, 'Explicit 4-product shortfall in acrylic category');
+
+  // Isolated mock Firestore fixture
+  const store = new Map<string, any>();
+  const makeSnapshot = (docPath: string, id: string, docRef: any) => ({
+    id,
+    ref: docRef,
+    exists: store.has(docPath),
+    data: () => (store.has(docPath) ? structuredClone(store.get(docPath)) : undefined),
+  });
+  const makeDocRef = (docPath: string): any => {
+    const id = docPath.split('/').at(-1)!;
+    const ref: any = {
+      id,
+      path: docPath,
+      get: async () => makeSnapshot(docPath, id, ref),
+      set: async (data: any, opts?: { merge?: boolean }) => {
+        const existing = store.get(docPath);
+        if (opts?.merge && existing) store.set(docPath, { ...existing, ...structuredClone(data) });
+        else store.set(docPath, structuredClone(data));
+      },
+      delete: async () => store.delete(docPath),
+      collection: (sub: string) => makeCollection(`${docPath}/${sub}`),
+    };
+    return ref;
+  };
+  const makeCollection = (colPath: string): any => ({
+    path: colPath,
+    doc: (docId?: string) => makeDocRef(`${colPath}/${docId || 'auto_' + Math.random().toString(36).slice(2)}`),
+    add: async (data: any) => {
+      const id = 'auto_' + Math.random().toString(36).slice(2);
+      const p = `${colPath}/${id}`;
+      store.set(p, structuredClone(data));
+      return makeDocRef(p);
+    },
+    get: async () => {
+      const docs: any[] = [];
+      const prefix = `${colPath}/`;
+      for (const [k] of store.entries()) {
+        if (k.startsWith(prefix) && !k.slice(prefix.length).includes('/')) {
+          const id = k.slice(prefix.length);
+          docs.push(makeSnapshot(k, id, makeDocRef(k)));
+        }
+      }
+      return { docs, empty: docs.length === 0, size: docs.length };
+    },
+  });
+  const mockDb: any = {
+    collection: (col: string) => makeCollection(col),
+    runTransaction: async (fn: (tx: any) => Promise<any>) =>
+      fn({
+        get: async (ref: any) => ref.get(),
+        set: (ref: any, data: any, opts?: any) => ref.set(data, opts),
+        delete: (ref: any) => ref.delete(),
+      }),
+  };
+
+  const draftResults = adapted.results.filter((r) => r.action === 'proposed_draft' && r.product);
+  assert.equal(draftResults.length, 22);
+
+  let createdTinRevision = 1;
+  for (const draft of draftResults) {
+    const created = await createAdminProduct({
+      db: mockDb,
+      body: {
+        ...draft.product,
+        status: 'draft',
+        active: false,
+      },
+      actorUid: 'stage5c-fixture-audit',
+    });
+    assert.equal(created.status, 'draft', `${created.id} must remain status=draft`);
+    assert.equal(created.active, false, `${created.id} must remain active=false`);
+    assert.equal(isProductPubliclyVisible(created), false, `${created.id} must NOT be publicly visible`);
+    if (created.id === 'tin-box-002') {
+      createdTinRevision = created.revision!;
+    }
+  }
+
+  // Verify admin editability on a prepared draft (e.g. tin-box-002) without re-applying 5% markup
+  const loadedBeforeEdit = await loadAuthoritativeCatalog(mockDb);
+  const tinDraft = loadedBeforeEdit.products.find((p) => p.id === 'tin-box-002')!;
+  assert.ok(tinDraft);
+  assert.equal(tinDraft.status, 'draft');
+  assert.equal(tinDraft.prices['Empty Box (1 pc)'], 105);
+
+  const editedDraft = await updateAdminProduct({
+    db: mockDb,
+    productId: 'tin-box-002',
+    body: {
+      expectedRevision: createdTinRevision,
+      prices: { 'Empty Box (1 pc)': 115 },
+    },
+    actorUid: 'stage5c-fixture-audit',
+  });
+  assert.equal(editedDraft.prices['Empty Box (1 pc)'], 115, 'Admin edit saves exact merchant price without re-applying 5% markup');
+  assert.equal(editedDraft.status, 'draft', 'Remains draft until explicitly published');
+});
