@@ -1150,6 +1150,13 @@ export const OPENING_TEMPLATES: Record<ApprovedOpeningIntent, Record<LanguageMod
   },
 };
 
+export const SAFE_FOLLOWUP_GUIDANCE: Record<LanguageMode, string> = {
+  en: 'For verified catalog options, packaging inquiries, or custom event orders, please let us know your required items, quantity, or target date.',
+  roman_ur: 'Verified catalog options, packaging inquiries ya custom celebration orders ke liye barah-e-karam apni matlooba items, taadad ya tareekh batayein.',
+  ur: 'تصدیق شدہ کیٹلاگ آپشنز، پیکجنگ اور کسٹم آرڈرز کے لیے براہ کرم اپنی مطلوبہ اشیاء، تعداد یا تقریب کی تاریخ سے آگاہ فرمائیں۔',
+  ar: 'للحصول على خيارات الكتالوج المعتمدة أو استفسارات التغليف أو طلبات المناسبات، يرجى تزويدنا بالمنتجات المطلوبة أو الكمية أو تاريخ المناسبة.',
+};
+
 export const QUESTION_TEMPLATES: Record<string, Record<LanguageMode, string>> = {
   ask_event_date: {
     en: `Could you share your target event date to help us verify schedule feasibility?`,
@@ -1326,25 +1333,16 @@ export function renderDeterministicCommercialAnswer(options: RenderCommercialAns
       sections.push(openingText);
     }
   } else {
-    // Legacy response safe fallback: sanitize legacy prose through validateAndSanitizeAssistantReply
-    const rawLegacyReply = answer.reply || answer.text || '';
-    if (rawLegacyReply.trim()) {
-      const sanitizedLegacy = validateAndSanitizeAssistantReply({
-        replyText: rawLegacyReply,
-        catalog: visible,
-        recommendations,
-        inquiryPrefill,
-        isCatalogFailure: false,
-        language,
-      });
-      if (sanitizedLegacy.trim()) {
-        sections.push(sanitizedLegacy.trim());
-      }
-    } else {
-      const defaultOpening =
-        OPENING_TEMPLATES.greeting_general[langMode] || OPENING_TEMPLATES.greeting_general.en;
-      sections.push(defaultOpening);
-    }
+    // When structured fields are absent (legacy response envelope):
+    // Use application-owned localized greeting_general opening and safe follow-up guidance.
+    // Raw answer.reply and answer.text are never displayed through regex sanitization.
+    const defaultOpening =
+      OPENING_TEMPLATES.greeting_general[langMode] || OPENING_TEMPLATES.greeting_general.en;
+    sections.push(defaultOpening);
+
+    const safeFollowup =
+      SAFE_FOLLOWUP_GUIDANCE[langMode] || SAFE_FOLLOWUP_GUIDANCE.en;
+    sections.push(safeFollowup);
   }
 
   // 3. Verified Commercial Product Facts

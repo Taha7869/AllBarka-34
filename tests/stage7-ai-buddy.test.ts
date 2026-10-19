@@ -949,84 +949,71 @@ test('Stage 7.6 (b): Provider timeout returns HTTP 503 AI_TIMEOUT', async () => 
   }
 });
 
-test('Stage 7.5 (f): Production-path regressions for wrong-product price attribution and paraphrased delivery promises', async () => {
-  let simulatedModelReply = '';
-  const harness = await createProductionTestHarness({
+test('Stage 7.5 (f): Regressions for wrong-product price attribution and paraphrased delivery promises in prose sanitizer', () => {
+  // 1. REPRODUCED DEFECT 1: Wrong-product price attribution & paraphrased delivery promise
+  // Ajwa Dates is Rs. 5,000/kg; Almonds is Rs. 1,000/kg.
+  // "Ajwa Dates are Rs. 1000 per kg. We will deliver your custom boxes tomorrow without fail."
+  const reply1 = validateAndSanitizeAssistantReply({
+    replyText: 'Ajwa Dates are Rs. 1000 per kg. We will deliver your custom boxes tomorrow without fail.',
     catalog: TEST_CATALOG,
-    askConsultant: async () => ({
-      reply: simulatedModelReply,
-      action: 'answer',
-      recommendedProductIds: ['ajwa-dates-al-madinah', 'almonds-american-jumbo'],
-    }),
   });
+  assert.ok(!reply1.includes('Rs. 1000'), 'Must not allow Almonds price Rs. 1000 to be attributed to Ajwa Dates');
+  assert.ok(!reply1.includes('tomorrow without fail'), 'Must not leak delivery promise');
+  assert.ok(reply1.includes('(pricing subject to team confirmation and quote)'), 'Wrong-product price is neutralized');
+  assert.ok(reply1.includes('10 calendar days preparation'), 'Delivery promise is bounded to mandatory lead-time notice');
 
-  try {
-    // 1. REPRODUCED DEFECT 1: Wrong-product price attribution & paraphrased delivery promise
-    // Ajwa Dates is Rs. 5,000/kg; Almonds is Rs. 1,000/kg.
-    // "Ajwa Dates are Rs. 1000 per kg. We will deliver your custom boxes tomorrow without fail."
-    simulatedModelReply = 'Ajwa Dates are Rs. 1000 per kg. We will deliver your custom boxes tomorrow without fail.';
-    const res1 = await fetch(`${harness.baseUrl}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: 'Ajwa price and delivery?' }),
+  // 2. REPRODUCED DEFECT 1 (b): Cross-product price on celebration packaging
+  // Luxury Tin is Rs. 350/pc (variants 350, 7500, 650); Tabarruk Set is Rs. 1200/set.
+  // Claiming "Luxury Tin Bid Box is Rs. 1200 per piece." must be neutralized!
+  const reply2 = validateAndSanitizeAssistantReply({
+    replyText: 'Our Luxury Tin Bid Box is Rs. 1200 per piece.',
+    catalog: TEST_CATALOG,
+  });
+  assert.ok(!reply2.includes('Rs. 1200'), 'Must not allow Tabarruk Set price Rs. 1200 to be attributed to Luxury Tin');
+  assert.ok(reply2.includes('(pricing subject to team confirmation and quote)'));
+
+  // 3. Legitimate catalog product facts, valid prices, and customization suggestions are preserved
+  const reply3 = validateAndSanitizeAssistantReply({
+    replyText: 'Ajwa Dates are Rs. 5,000 per kg, while Almonds are Rs. 1,000 per kg. Luxury Tin Bid Box is Rs. 350 / pc. Would you like custom foil monograms (subject to team quote)?',
+    catalog: TEST_CATALOG,
+  });
+  assert.ok(reply3.includes('Rs. 5,000 per kg'), 'Valid Ajwa Dates price preserved');
+  assert.ok(reply3.includes('Rs. 1,000 per kg'), 'Valid Almonds price preserved');
+  assert.ok(reply3.includes('Rs. 350 / pc'), 'Valid Luxury Tin price preserved');
+  assert.ok(reply3.includes('custom foil monograms'), 'Creative customization suggestion preserved');
+
+  // 4. Paraphrased delivery promises neutralized across common formulations
+  const deliveryFormulations = [
+    'Custom boxes will arrive tomorrow.',
+    'We will deliver your order in 3 days.',
+    'We will dispatch your boxes tomorrow without fail.',
+    'We guarantee delivery tomorrow.',
+  ];
+  for (const phrase of deliveryFormulations) {
+    const sanitized = validateAndSanitizeAssistantReply({
+      replyText: `For your event, ${phrase}`,
+      catalog: TEST_CATALOG,
     });
-    assert.equal(res1.status, 200);
-    const data1 = await res1.json();
-    assert.ok(!data1.reply.includes('Rs. 1000'), 'Must not allow Almonds price Rs. 1000 to be attributed to Ajwa Dates');
-    assert.ok(!data1.reply.includes('tomorrow without fail'), 'Must not leak delivery promise');
-    assert.ok(data1.reply.includes('(pricing subject to team confirmation and quote)'), 'Wrong-product price is neutralized');
-    assert.ok(data1.reply.includes('10 calendar days preparation'), 'Delivery promise is bounded to mandatory lead-time notice');
-
-    // 2. REPRODUCED DEFECT 1 (b): Cross-product price on celebration packaging
-    // Luxury Tin is Rs. 350/pc (variants 350, 7500, 650); Tabarruk Set is Rs. 1200/set.
-    // Claiming "Luxury Tin Bid Box is Rs. 1200 per piece." must be neutralized!
-    simulatedModelReply = 'Our Luxury Tin Bid Box is Rs. 1200 per piece.';
-    const res2 = await fetch(`${harness.baseUrl}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: 'Luxury Tin price?' }),
-    });
-    assert.equal(res2.status, 200);
-    const data2 = await res2.json();
-    assert.ok(!data2.reply.includes('Rs. 1200'), 'Must not allow Tabarruk Set price Rs. 1200 to be attributed to Luxury Tin');
-    assert.ok(data2.reply.includes('(pricing subject to team confirmation and quote)'));
-
-    // 3. Legitimate catalog product facts, valid prices, and customization suggestions are preserved
-    simulatedModelReply = 'Ajwa Dates are Rs. 5,000 per kg, while Almonds are Rs. 1,000 per kg. Luxury Tin Bid Box is Rs. 350 / pc. Would you like custom foil monograms (subject to team quote)?';
-    const res3 = await fetch(`${harness.baseUrl}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: 'Show me dates, almonds, and boxes' }),
-    });
-    assert.equal(res3.status, 200);
-    const data3 = await res3.json();
-    assert.ok(data3.reply.includes('Rs. 5,000 per kg'), 'Valid Ajwa Dates price preserved');
-    assert.ok(data3.reply.includes('Rs. 1,000 per kg'), 'Valid Almonds price preserved');
-    assert.ok(data3.reply.includes('Rs. 350 / pc'), 'Valid Luxury Tin price preserved');
-    assert.ok(data3.reply.includes('custom foil monograms'), 'Creative customization suggestion preserved');
-
-    // 4. Paraphrased delivery promises neutralized across common formulations
-    const deliveryFormulations = [
-      'Custom boxes will arrive tomorrow.',
-      'We will deliver your order in 3 days.',
-      'We will dispatch your boxes tomorrow without fail.',
-      'We guarantee delivery tomorrow.',
-    ];
-    for (const phrase of deliveryFormulations) {
-      simulatedModelReply = `For your event, ${phrase}`;
-      const res = await fetch(`${harness.baseUrl}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: 'When can it arrive?' }),
-      });
-      const data = await res.json();
-      assert.ok(!data.reply.includes('tomorrow'), `Must not retain unverified arrival timeframe: ${phrase}`);
-      assert.ok(!data.reply.includes('in 3 days'), `Must not retain unverified arrival timeframe: ${phrase}`);
-      assert.ok(data.reply.includes('10 calendar days preparation'), `Must enforce preparation lead-time notice for: ${phrase}`);
-    }
-  } finally {
-    harness.close();
+    assert.ok(!sanitized.includes('tomorrow'), `Must not retain unverified arrival timeframe: ${phrase}`);
+    assert.ok(!sanitized.includes('in 3 days'), `Must not retain unverified arrival timeframe: ${phrase}`);
+    assert.ok(sanitized.includes('10 calendar days preparation'), `Must enforce preparation lead-time notice for: ${phrase}`);
   }
+
+  // 5. Wrong portion price attribution in prose
+  const reply5 = validateAndSanitizeAssistantReply({
+    replyText: 'Ajwa Dates are Rs. 1250 per kg.',
+    catalog: TEST_CATALOG,
+  });
+  assert.ok(!reply5.includes('Rs. 1250 per kg'));
+  assert.ok(reply5.includes('(pricing subject to team confirmation and quote)'));
+
+  // 6. Cross-product price attribution in prose
+  const reply6 = validateAndSanitizeAssistantReply({
+    replyText: 'Ajwa Dates and Almonds are Rs. 1000 per kg each.',
+    catalog: TEST_CATALOG,
+  });
+  assert.ok(!reply6.includes('Rs. 1000 per kg each'));
+  assert.ok(reply6.includes('(pricing subject to team confirmation and quote)'));
 });
 
 test('Stage 7.5 (g): Bounded timing instrumentation on production router path without PII or credential leakage', async () => {
@@ -1086,7 +1073,8 @@ test('Stage 7.5 (h): Deterministic commercial response contract regressions', as
     const data1 = await res1.json();
     assert.equal(res1.status, 200);
     assert.ok(!data1.reply.includes('Rs. 1250 per kg'), 'Must not allow 250g price Rs. 1250 to be attributed to 1kg');
-    assert.ok(data1.reply.includes('(pricing subject to team confirmation and quote)'), 'Wrong portion price is neutralized');
+    assert.ok(data1.reply.includes('Welcome to AllBarka! Here is the verified commercial information'), 'Application-owned opening used');
+    assert.ok(data1.reply.includes('https://wa.me/923160666083'), 'WhatsApp concierge link included');
 
     // And structured intent selection resolves 1kg directly to Rs. 5,000 from authoritative catalog:
     simulatedAnswer = {
@@ -1115,7 +1103,7 @@ test('Stage 7.5 (h): Deterministic commercial response contract regressions', as
     });
     const data2 = await res2.json();
     assert.ok(!data2.reply.includes('Rs. 1000 per kg each'), 'Must not accept Almonds price for Ajwa Dates');
-    assert.ok(data2.reply.includes('(pricing subject to team confirmation and quote)'));
+    assert.ok(data2.reply.includes('Welcome to AllBarka! Here is the verified commercial information'), 'Application-owned opening used');
 
     // And structured intent renders distinct verified prices for each product:
     simulatedAnswer = {
@@ -1196,7 +1184,7 @@ test('Stage 7.5 (h): Deterministic commercial response contract regressions', as
     });
     const data5 = await res5.json();
     assert.ok(!data5.reply.includes('kal pakka deliver'), 'Must not permit Roman Urdu delivery promise');
-    assert.ok(data5.reply.includes('10 calendar days preparation'), 'Neutralized with mandatory 10 calendar days lead time');
+    assert.ok(data5.reply.includes('AllBarka mein khush-amdeed! Hamaray catalog aur store policies'), 'Roman Urdu opening rendered');
 
     // 6. Legitimate product selections, suggestions, and inquiry handoff
     simulatedAnswer = {
@@ -1381,6 +1369,67 @@ test('Stage 7.5 (i): Food vs packaging units, unhardcoded customization suggesti
     // 5. Footnote removal (technical footnote absent from customer reply)
     assert.ok(!dataBypass.reply.includes(FOOTNOTE_DISCLAIMER), 'Technical footnote must not appear in customer messages');
     assert.ok(!dataBypass.reply.includes('[Authoritative commercial data rendered'), 'Technical disclaimer bracket must not appear');
+  } finally {
+    harness.close();
+  }
+});
+
+test('Stage 7.5 (j): Production-router regression for legacy reply containing unsupported price or delivery claim', async () => {
+  let simulatedAnswer: any = null;
+  const harness = await createProductionTestHarness({
+    catalog: TEST_CATALOG,
+    askConsultant: async () => simulatedAnswer,
+  });
+
+  try {
+    // 1. English legacy response with unsupported price and delivery promise
+    simulatedAnswer = {
+      action: 'answer',
+      reply: 'Ajwa Dates are Rs. 1000 per kg and we will deliver your custom boxes tomorrow without fail.',
+      text: 'Ajwa Dates are Rs. 1000 per kg and we will deliver your custom boxes tomorrow without fail.',
+    };
+
+    const resEn = await fetch(`${harness.baseUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'What is the price of Ajwa and when can you deliver?' }),
+    });
+    assert.equal(resEn.status, 200);
+    const dataEn = await resEn.json();
+
+    // Envelope parsing remains compatible: res.status 200, action is 'answer'
+    assert.equal(dataEn.action, 'answer');
+    assert.equal(dataEn.reply, dataEn.text);
+
+    // Unsupported price and delivery promise are completely excluded from customer reply
+    assert.ok(!dataEn.reply.includes('Rs. 1000'), 'Unsupported price must never enter customer-facing reply');
+    assert.ok(!dataEn.reply.includes('tomorrow without fail'), 'Unsupported delivery promise must never enter customer-facing reply');
+    assert.ok(!dataEn.reply.includes('Ajwa Dates are Rs. 1000'), 'Raw model prose must not bypass as verified commercial content');
+
+    // Localized application-owned greeting_general, safe follow-up guidance, and WhatsApp concierge link
+    assert.ok(dataEn.reply.includes('Welcome to AllBarka! Here is the verified commercial information from our catalog and store policies:'), 'Application-owned greeting_general opening rendered');
+    assert.ok(dataEn.reply.includes('For verified catalog options, packaging inquiries, or custom event orders'), 'Application-owned safe follow-up guidance rendered');
+    assert.ok(dataEn.reply.includes('https://wa.me/923160666083'), 'Official WhatsApp link rendered');
+
+    // 2. Roman Urdu legacy response with unsupported price and delivery promise
+    simulatedAnswer = {
+      action: 'answer',
+      reply: 'Ajwa 500 rupay kilo hai aur hum kal pakka deliver kar dein ge.',
+    };
+
+    const resUr = await fetch(`${harness.baseUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'Ajwa ki price kya hai aur delivery kab tak hogi?' }),
+    });
+    assert.equal(resUr.status, 200);
+    const dataUr = await resUr.json();
+
+    assert.ok(!dataUr.reply.includes('500 rupay'), 'Unsupported Roman Urdu price must not enter customer reply');
+    assert.ok(!dataUr.reply.includes('kal pakka deliver'), 'Unsupported Roman Urdu delivery claim must not enter customer reply');
+    assert.ok(dataUr.reply.includes('AllBarka mein khush-amdeed! Hamaray catalog aur store policies ki verified commercial maloomat yeh hain:'), 'Roman Urdu greeting_general opening rendered');
+    assert.ok(dataUr.reply.includes('Verified catalog options, packaging inquiries'), 'Roman Urdu safe follow-up guidance rendered');
+    assert.ok(dataUr.reply.includes('https://wa.me/923160666083'), 'WhatsApp concierge link rendered');
   } finally {
     harness.close();
   }
