@@ -21,6 +21,7 @@ import {
 } from './inquiryWhatsApp';
 import { STORE_CONFIG } from '../config/store';
 import { CONTACT_CONFIG } from '../config/contacts';
+import type { ProductSelectionReference } from '../services/n8nAIConsultant';
 
 export interface ValidatedProductRecommendation {
   productId: string;
@@ -235,9 +236,15 @@ SECURITY & UNTRUSTED DATA:
 RESPONSE STRUCTURE:
 You must return a single valid JSON object with the following schema:
 {
-  "reply": "Your articulate, conversational response to the customer",
   "action": "answer" or "human",
-  "recommendedProductIds": ["id1", "id2"], // Optional: 1-3 valid catalog IDs from the list above
+  "conversationalOpening": "Warm conversational greeting or event styling advice (no authoritative prices, delivery promises, or unapproved claims)",
+  "selectedProducts": [ // 1-3 referenced catalog products with requested portion/variant
+    { "productId": "valid-catalog-id", "variantLabel": "1kg" or "Empty Pack (25 pcs)" }
+  ],
+  "suggestedCustomizations": ["monogram", "custom_ribbon"], // Optional approved customization IDs
+  "applicablePolicies": ["lead_time", "shipping_rates"], // Optional approved store policy IDs
+  "missingInfoQuestions": ["ask_event_date", "ask_quantity"], // Optional missing information questions
+  "recommendedProductIds": ["id1", "id2"], // Optional: 1-3 valid catalog IDs
   "inquiryPrefill": { // Optional: if customer provides or agrees on event details for a custom quote
     "productId": "valid-catalog-id or 'custom'",
     "packagingVariant": "Empty Box (1 pc) or Empty Pack (25 pcs)",
@@ -253,7 +260,8 @@ You must return a single valid JSON object with the following schema:
     "cardMessage": "Best Wishes",
     "customPrintText": "Gold foil stamping",
     "city": "Lahore"
-  }
+  },
+  "reply": "Warm conversational response to the customer (legacy fallback)"
 }`;
 }
 
@@ -742,6 +750,12 @@ export function validateAndSanitizeAssistantReply(options: SanitizeReplyOptions)
   const urduDeliveryPromisePattern = /(?:کل|آج|یقینی|بغیر\s*کسی\s*تاخیر|فوری|گارنٹی)\s*(?:ڈیلیوری|ڈلیوری|پہنچانے|بھیجنے|پہنچائیں|پہنچا\s*دیں)/g;
   sanitized = sanitized.replace(urduDeliveryPromisePattern, '(آرڈر پروسیسنگ اور کسٹم سیلیبریشن کے لیے 10 یوم درکار ہیں)');
 
+  // Roman Urdu delivery commitment neutralization
+  const romanUrduDeliveryPattern = /\b(?:(?:hum|ham|allbarka|team)\s+[^.!?\n]*\b)?(?:kal|aaj|fauran|fawran|pakka)\s+[^.!?\n]*\b(?:deliver|delivery|bhejj?|pahuncha|kar\s+dein\s+ge|kar\s+denge|ho\s+jaye\s*gi)\b[^.!?\n]*/gi;
+  sanitized = sanitized.replace(romanUrduDeliveryPattern, deliveryPromiseReplacement);
+  const romanUrduGeneralDelivery = /\b(?:kal\s+pakka\s+deliver|pakka\s+deliver|kal\s+deliver)\b/gi;
+  sanitized = sanitized.replace(romanUrduGeneralDelivery, deliveryPromiseReplacement);
+
   // 6. Separate customer proposed budget from approved store prices
   const approvedBudgetPattern = /\b(?:our\s+approved\s+price\s+is|approved\s+(?:price|rate)\s+(?:is|:)|confirmed\s+(?:price|rate)\s+(?:is|:)|we\s+(?:can\s+)?approve\s+a\s+price\s+of)\s*(?:Rs\.?|PKR|Rs)?\s*(\d[\d,]*)\b/gi;
   sanitized = sanitized.replace(approvedBudgetPattern, '(customer proposed budget; final pricing requires team confirmation)');
@@ -788,24 +802,39 @@ export function validateAndSanitizeAssistantReply(options: SanitizeReplyOptions)
     id: string;
     names: string[];
     prices: Set<number>;
+    portionPrices: Map<string, number>;
   }
 
   const productProfiles: ProductPriceProfile[] = visible.map(p => {
     const prices = new Set<number>();
+    const portionPrices = new Map<string, number>();
+
     if (p.prices) {
-      for (const val of Object.values(p.prices)) {
+      for (const [portion, val] of Object.entries(p.prices)) {
         if (typeof val === 'number' && Number.isFinite(val) && val > 0) {
-          prices.add(Math.round(val));
+          const rounded = Math.round(val);
+          prices.add(rounded);
+          portionPrices.set(portion.toLowerCase().trim(), rounded);
+          if (/(?:^|\b)(?:1\s*kg|1000\s*g|kg)(?:\b|$)/i.test(portion)) portionPrices.set('kg', rounded);
+          if (/(?:^|\b)(?:500\s*g|half\s*kg)(?:\b|$)/i.test(portion)) portionPrices.set('500g', rounded);
+          if (/(?:^|\b)(?:250\s*g|quarter\s*kg)(?:\b|$)/i.test(portion)) portionPrices.set('250g', rounded);
         }
       }
     }
     if (Array.isArray(p.variants)) {
       for (const v of p.variants) {
-        if (v && typeof v.price === 'number' && Number.isFinite(v.price) && v.price > 0 && v.available !== false) {
-          prices.add(Math.round(v.price));
+        if (v && typeof v.price === 'number' && Number.isFinite(v.price) && v.price > 0 && v.available !== false && (v as any).inStock !== false) {
+          const rounded = Math.round(v.price);
+          prices.add(rounded);
+          portionPrices.set(v.label.toLowerCase().trim(), rounded);
           const ppp = parsePiecesPerPack(v.label);
           if (ppp > 1) {
-            prices.add(Math.round(v.price / ppp));
+            const perPc = Math.round(v.price / ppp);
+            prices.add(perPc);
+            portionPrices.set('piece', perPc);
+            portionPrices.set('pack', rounded);
+          } else {
+            portionPrices.set('piece', rounded);
           }
         }
       }
@@ -851,6 +880,7 @@ export function validateAndSanitizeAssistantReply(options: SanitizeReplyOptions)
       id: p.id,
       names: sortedNames,
       prices,
+      portionPrices,
     };
   });
 
@@ -867,14 +897,14 @@ export function validateAndSanitizeAssistantReply(options: SanitizeReplyOptions)
       return '(pricing subject to team confirmation and quote)';
     }
 
-    // Extract local clause context around match (delimited by punctuation or line break, up to 100 chars)
+    // Extract local clause context around match (delimited by punctuation, coordinating conjunctions, up to 100 chars)
     const beforeText = currentText.slice(Math.max(0, offset - 100), offset);
     const afterText = currentText.slice(offset + matchText.length, Math.min(currentText.length, offset + matchText.length + 100));
 
-    const clauseStartMatch = /[.!?;:\n]([^.!?;:\n]*)$/.exec(beforeText);
+    const clauseStartMatch = /(?:[.!?;:\n,]|(?:\b(?:while|whereas|aur|lekin)\b))([^.!?;:\n,]*)$/i.exec(beforeText);
     const clauseBefore = clauseStartMatch ? clauseStartMatch[1] : beforeText;
 
-    const clauseEndMatch = /^([^.!?;:\n]*)[.!?;:\n]/.exec(afterText);
+    const clauseEndMatch = /^([^.!?;:\n,]*?)(?:[.!?;:\n,]|(?:\b(?:while|whereas|aur|lekin)\b)|$)/i.exec(afterText);
     const clauseAfter = clauseEndMatch ? clauseEndMatch[1] : afterText;
 
     const clause = (clauseBefore + ' ' + matchText + ' ' + clauseAfter).toLowerCase();
@@ -898,6 +928,12 @@ export function validateAndSanitizeAssistantReply(options: SanitizeReplyOptions)
       }
     }
 
+    // Check portion unit / size in clause
+    const isPerKg = /\b(?:per\s+kg|\/\s*kg|kg\s*each|per\s+kilo)\b/i.test(clause) || /\b1\s*kg\b/i.test(clause);
+    const is500g = /\b(?:500\s*g|half\s*kg)\b/i.test(clause);
+    const is250g = /\b(?:250\s*g|quarter\s*kg)\b/i.test(clause);
+    const isPerPiece = /\b(?:each|per\s+pc|per\s+piece|\/\s*pc)\b/i.test(clause);
+
     // 4. Match products referenced in this clause
     const referencedProducts = productProfiles.filter(prof =>
       prof.names.some(n => {
@@ -910,13 +946,26 @@ export function validateAndSanitizeAssistantReply(options: SanitizeReplyOptions)
     );
 
     if (referencedProducts.length > 0) {
-      // Clause explicitly refers to one or more products. Price is valid ONLY if at least one referenced product has this price.
-      const isPriceGroundedForProduct = referencedProducts.some(p => p.prices.has(num));
-      if (isPriceGroundedForProduct) {
-        return matchText;
+      // If multiple products are referenced in the same clause (e.g. "Ajwa Dates and Almonds are Rs. 1000 per kg each"):
+      // Every referenced product in this shared clause must support this price claim.
+      for (const prof of referencedProducts) {
+        if (!prof.prices.has(num)) {
+          return '(pricing subject to team confirmation and quote)';
+        }
+        if (isPerKg && prof.portionPrices.has('kg') && prof.portionPrices.get('kg') !== num) {
+          return '(pricing subject to team confirmation and quote)';
+        }
+        if (is500g && prof.portionPrices.has('500g') && prof.portionPrices.get('500g') !== num) {
+          return '(pricing subject to team confirmation and quote)';
+        }
+        if (is250g && prof.portionPrices.has('250g') && prof.portionPrices.get('250g') !== num) {
+          return '(pricing subject to team confirmation and quote)';
+        }
+        if (isPerPiece && prof.portionPrices.has('piece') && prof.portionPrices.get('piece') !== num) {
+          return '(pricing subject to team confirmation and quote)';
+        }
       }
-      // Product mentioned does not have this price (e.g. Ajwa Dates with 1000, or Luxury Tin with 1200) -> Neutralize!
-      return '(pricing subject to team confirmation and quote)';
+      return matchText;
     }
 
     // 5. If no specific product is named in this clause:
@@ -955,4 +1004,462 @@ export function validateAndSanitizeAssistantReply(options: SanitizeReplyOptions)
   });
 
   return sanitized.trim();
+}
+
+export type LanguageMode = 'en' | 'roman_ur' | 'ur' | 'ar';
+
+export function detectLanguageMode(userText: string, declaredLang?: 'en' | 'ur' | 'ar'): LanguageMode {
+  if (declaredLang === 'ar') return 'ar';
+  const text = (userText || '').trim();
+  if (/[\u0600-\u06FF]/.test(text)) {
+    return 'ur';
+  }
+  const romanUrduPattern = /\b(?:aap|ap|hum|ham|hai|hain|ki|ke|ka|ko|se|mein|me|par|kya|kyun|kaise|kar|karein|kare|dein|denge|ge|ga|gi|bhai|shukriya|kitna|kitne|chahiye|pakka|waghera|bhi|bohat|acha|achi|kuch|dastiyab|hoga|hogi|hoge)\b/i;
+  if (romanUrduPattern.test(text)) {
+    return 'roman_ur';
+  }
+  if (declaredLang === 'ur') return 'roman_ur';
+  return 'en';
+}
+
+export const FOOTNOTE_DISCLAIMER =
+  '[Authoritative commercial data rendered from AllBarka verified catalog and store policies. Conversational suggestions are AI-assisted.]';
+
+export const POLICY_TEMPLATES: Record<string, Record<LanguageMode, string>> = {
+  lead_time: {
+    en: `• Preparation & Lead Time: ${MANDATORY_LEAD_TIME_NOTICE}`,
+    roman_ur: `• Tayyari aur Dispatch Time: Custom celebration orders ke liye kam az kam 10 calendar days darkar hain.`,
+    ur: `• تیاری کا وقت: کسٹم سیلیبریشن باکسز کی تیاری کے لیے کم از کم 10 یوم درکار ہیں۔`,
+    ar: `• وقت التحضير والتسليم: تتطلب طلبات المناسبات الخاصة ما لا يقل عن 10 أيام تقويمية.`,
+  },
+  shipping_rates: {
+    en: `• Shipping Rates: Lahore standard Rs. ${STORE_CONFIG.shipping.standardRate} (Free in Lahore on merchandise >= Rs. ${STORE_CONFIG.shipping.freeThreshold}). Nationwide delivery: Rs. ${STORE_CONFIG.shipping.nationwidePerKg}/kg (min Rs. ${STORE_CONFIG.shipping.nationwideMinimum}).`,
+    roman_ur: `• Delivery Charges: Lahore standard Rs. ${STORE_CONFIG.shipping.standardRate} (Rs. ${STORE_CONFIG.shipping.freeThreshold} ya zayd par muft). Nationwide: Rs. ${STORE_CONFIG.shipping.nationwidePerKg}/kg (kam az kam Rs. ${STORE_CONFIG.shipping.nationwideMinimum}).`,
+    ur: `• ڈلیوری چارجز: لاہور معیاری ${STORE_CONFIG.shipping.standardRate} روپے (3,000 روپے یا زائد پر مفت)۔ ملک بھر میں: ${STORE_CONFIG.shipping.nationwidePerKg} روپے فی کلو (کم از کم ${STORE_CONFIG.shipping.nationwideMinimum} روپے)۔`,
+    ar: `• رسوم الشحن: لاهور قياسي ${STORE_CONFIG.shipping.standardRate} روبية (مجاناً للطلبات من 3000 روبية فأكثر). لكافة أنحاء باكستان: ${STORE_CONFIG.shipping.nationwidePerKg} روبية/كغ (حد أدنى ${STORE_CONFIG.shipping.nationwideMinimum} روبية).`,
+  },
+  tabarruk_empty: {
+    en: `• Tabarruk Packaging: ${TABARRUK_EMPTY_DEFAULT_NOTICE}`,
+    roman_ur: `• Tabarruk Sets: Bottle khali di jati hai taake customer apna Zamzam khud bhar sakein (AllBarka Zamzam faraham nahi karta).`,
+    ur: `• تبرک سیٹ: بوتلیں خالی فراہم کی جاتی ہیں تاکہ گاہک زمزم خود بھر سکیں (البرکہ زمزم فراہم نہیں کرتا)۔`,
+    ar: `• أطقم التبرك: العبوات فارغة لماء زمزم المقدم من العميل (البركة لا توفر ماء زمزم).`,
+  },
+  non_catalog_fillings: {
+    en: `• Custom Non-Catalog Fillings: ${NON_CATALOG_FILLINGS_DISCLAIMER}`,
+    roman_ur: `• Ghair-catalog Fillings: Chocolates ya khas meethai customer ki darkhwast par arrange ki ja sakti hain; is ke liye team quote darkar hai.`,
+    ur: `• غیر کیٹلاگ فلنگز: چاکلیٹ اور کسٹم مٹھائی گاہک کی فرمائش پر فراہم کی جا سکتی ہیں جن کے لیے ٹیم کوٹیشن ضروری ہے۔`,
+    ar: `• تعبئة مخصصة خارج الكتالوج: الشوكولاتة والحلويات الخاصة تتطلب استشارة وعرض سعر من الفريق.`,
+  },
+  custom_quote_required: {
+    en: `• Customization Quote: Personalized printing, monograms, and custom fillings are priced upon review by our design team.`,
+    roman_ur: `• Custom Quote: Printing, monogram aur custom fillings ki qeemat AllBarka team design review ke baad confirm kare gi.`,
+    ur: `• کسٹم کوٹیشن: پرنٹنگ، مونوگرام اور کسٹم فلنگز کے نرخ ڈیزائن جائزہ کے بعد طے ہوتے ہیں۔`,
+    ar: `• عرض سعر مخصص: الطباعة الخاصة والشعار والتعبئة المخصصة تخضع لمراجعة الفريق.`,
+  },
+};
+
+export const CUSTOMIZATION_TEMPLATES: Record<string, Record<LanguageMode, string>> = {
+  monogram: {
+    en: `• Personalization: Custom gold foil-stamped monogram or initials (requires team confirmation and quote).`,
+    roman_ur: `• Personalization: Gold foil monogram ya initials (team quote darkar hai).`,
+    ur: `• کسٹمائزیشن: گولڈ فوائل مونوگرام یا نام کی پرنٹنگ (ٹیم کوٹیشن درکار ہے)۔`,
+    ar: `• تخصيص: ختم مذهب مونوغرام أو أحرف أولى (يتطلب عرض سعر).`,
+  },
+  custom_ribbon: {
+    en: `• Accent: Matching satin or grosgrain ribbon band.`,
+    roman_ur: `• Ribbon: Matching satin ribbon band.`,
+    ur: `• ربن: خوبصورت ساٹن ربن بینڈ۔`,
+    ar: `• شريط: شريط ساتان متناسق.`,
+  },
+  gift_card: {
+    en: `• Stationery: Personalized celebration gift card or favor tag with your custom message.`,
+    roman_ur: `• Gift Card: Khas celebration card ya favor tag aap ke paigham ke sath.`,
+    ur: `• کارڈ: مبارکباد کا کسٹم تحفہ کارڈ۔`,
+    ar: `• بطاقة: بطاقة تهنئة مخصصة أو بطاقة إهداء.`,
+  },
+  custom_sleeve: {
+    en: `• Outer Presentation: Custom branded sleeve or outer band.`,
+    roman_ur: `• Outer Sleeve: Custom branded sleeve ya outer band.`,
+    ur: `• آؤٹر سلیو: تقریب کے لیے کسٹم برانڈڈ سلیو۔`,
+    ar: `• غلاف خارجي: غلاف مطبوع مخصص للمناسبات.`,
+  },
+  outer_coffer: {
+    en: `• Outer Presentation: Keepsake wooden coffer or velvet gift trunk.`,
+    roman_ur: `• Outer Coffer: Keepsake lakri ka coffer ya velvet gift box.`,
+    ur: `• کوفر بکس: لکڑی یا مخمل کا تحفہ کوفر بکس۔`,
+    ar: `• صندوق فاخر: صندوق خشبي تذكاري أو مخملي.`,
+  },
+  dates_filling: {
+    en: `• Filling Pairing: Premium Saudi dates (Ajwa Al-Madinah, Mabroom, Safawi).`,
+    roman_ur: `• Dates Filling: Aala darjay ki Saudi khajoor (Ajwa, Mabroom, Safawi).`,
+    ur: `• کھجور فلنگ: مدینہ منورہ کی اعلیٰ معیار کی عجوہ، مبروم یا صفاوی کھجور۔`,
+    ar: `• تعبئة التمور: تمور فاخرة (عجوة المدينة، مبروم، صفاوي).`,
+  },
+  dry_fruits_filling: {
+    en: `• Filling Pairing: Gourmet roasted dry fruits (saffron pistachios, jumbo cashews, almonds).`,
+    roman_ur: `• Dry Fruits Filling: Roasted pistachios (pista), jumbo kaju, aur badam.`,
+    ur: `• خشک میوہ جات فلنگ: زعفرانی پستہ، کاجو اور بادام۔`,
+    ar: `• تعبئة المكسرات: فستق محمص بالزعفران، كاجو جامبو ولوز فاخر.`,
+  },
+};
+
+export const QUESTION_TEMPLATES: Record<string, Record<LanguageMode, string>> = {
+  ask_event_date: {
+    en: `Could you share your target event date to help us verify schedule feasibility?`,
+    roman_ur: `Aap ki event ki tareekh kya hai taake delivery feasibility check ki ja sake?`,
+    ur: `آپ کی تقریب کی تاریخ کیا ہے تاکہ وقت پر دستیابی کی تصدیق کی جا سکے؟`,
+    ar: `هل يمكنك تزويدنا بتاريخ المناسبة للتحقق من إمكانية التجهيز؟`,
+  },
+  ask_quantity: {
+    en: `How many gift boxes or portions would you need for your celebration?`,
+    roman_ur: `Aap ko taqreeban kitne boxes ya packets darkar hain?`,
+    ur: `آپ کو تقریباً کتنے بکس یا پیکٹس درکار ہیں؟`,
+    ar: `كم عدد العلب أو الحصص التي تحتاجها لمناسبتك؟`,
+  },
+  ask_box_mode: {
+    en: `Would you prefer empty boxes for your own treats, or filled with AllBarka dates and dry fruits?`,
+    roman_ur: `Kya aap ko khali boxes chahiye ya dry fruits aur dates se bhare huye?`,
+    ur: `کیا آپ کو خالی بکس درکار ہیں یا خشک میوہ جات اور کھجوروں کے ساتھ؟`,
+    ar: `هل تفضل العلب فارغة لحلوياتكم الخاصة أم ممتلئة بتمور ومكسرات البركة؟`,
+  },
+  ask_budget: {
+    en: `Do you have an approximate target budget per box or in total?`,
+    roman_ur: `Aap ka per box ya kul budget ka kya andaza hai?`,
+    ur: `کیا فی بکس یا کل بجٹ کا کوئی اندازہ ہے؟`,
+    ar: `هل لديك ميزانية تقريبية محددة لكل علبة أو للمجموع؟`,
+  },
+  ask_event_type: {
+    en: `Which occasion are you preparing for (Wedding, Nikkah, Corporate, or Hajj/Umrah)?`,
+    roman_ur: `Aap kis taqreeb ke liye tayyari kar rahe hain (Shadi, Nikkah, Corporate ya Umrah/Hajj)?`,
+    ur: `کس تقریب کے لیے اہتمام کیا جا رہا ہے (شادی، نکاح، کارپوریٹ یا عمرہ/حج)؟`,
+    ar: `ما هي نوع المناسبة (زواج، عقد قران، هدايا شركات، أم عمرة/حج)؟`,
+  },
+  ask_city: {
+    en: `Which city should delivery be arranged for (Lahore or nationwide)?`,
+    roman_ur: `Delivery kis shehar ke liye arrange karni hai (Lahore ya koi aur shehar)?`,
+    ur: `ڈلیوری کس شہر کے لیے درکار ہے (لاہور یا ملک بھر میں)؟`,
+    ar: `إلى أي مدينة ترغبون في إرسال الطلب (لاهور أم مدينة أخرى)؟`,
+  },
+};
+
+export interface RenderCommercialAnswerOptions {
+  answer: {
+    action?: 'answer' | 'human';
+    conversationalOpening?: string | null;
+    selectedProducts?: ProductSelectionReference[];
+    suggestedCustomizations?: string[];
+    applicablePolicies?: string[];
+    missingInfoQuestions?: string[];
+    recommendedProductIds?: string[];
+    inquiryPrefill?: Record<string, any> | null;
+    reply?: string;
+    text?: string;
+  };
+  catalog: Product[];
+  recommendations?: ValidatedProductRecommendation[];
+  inquiryPrefill?: ValidatedInquiryPrefill | null;
+  isCatalogFailure?: boolean;
+  userText?: string;
+  language?: 'en' | 'ur' | 'ar';
+}
+
+/**
+ * Deterministically renders commercial facts, prices, portions, store policies,
+ * and customization options directly from authoritative application data.
+ * The AI model provides conversational opening and typed references; application
+ * code owns commercial truth and never allows ungrounded prose to override facts.
+ */
+export function renderDeterministicCommercialAnswer(options: RenderCommercialAnswerOptions): string {
+  const {
+    answer,
+    catalog,
+    recommendations = [],
+    inquiryPrefill = null,
+    isCatalogFailure = false,
+    userText = '',
+    language = 'en',
+  } = options;
+
+  if (isCatalogFailure) {
+    return validateAndSanitizeAssistantReply({
+      replyText: '',
+      catalog,
+      isCatalogFailure: true,
+      language,
+    });
+  }
+
+  const langMode = detectLanguageMode(userText, language);
+  const visible = getCustomerVisibleCatalog(catalog);
+  const catalogMap = new Map<string, Product>();
+  for (const p of visible) {
+    catalogMap.set(p.id.toLowerCase().trim(), p);
+  }
+
+  const sections: string[] = [];
+
+  // 1. Conversational Opening / Advice
+  const rawOpening = answer.conversationalOpening || answer.reply || answer.text || '';
+  if (rawOpening.trim()) {
+    const sanitizedOpening = validateAndSanitizeAssistantReply({
+      replyText: rawOpening,
+      catalog: visible,
+      recommendations,
+      inquiryPrefill,
+      isCatalogFailure: false,
+      language,
+    });
+    if (sanitizedOpening.trim()) {
+      sections.push(sanitizedOpening.trim());
+    }
+  }
+
+  // 2. Verified Commercial Product Facts
+  interface ResolvedProductRef {
+    product: Product;
+    variantLabel?: string | null;
+  }
+  const resolvedProducts: ResolvedProductRef[] = [];
+  const seenIds = new Set<string>();
+
+  if (Array.isArray(answer.selectedProducts)) {
+    for (const sel of answer.selectedProducts) {
+      if (!sel || !sel.productId) continue;
+      const cleanId = sel.productId.toLowerCase().trim();
+      const prod = catalogMap.get(cleanId);
+      if (prod && !seenIds.has(cleanId)) {
+        seenIds.add(cleanId);
+        resolvedProducts.push({ product: prod, variantLabel: sel.variantLabel });
+      }
+    }
+  }
+
+  for (const rec of recommendations) {
+    const cleanId = rec.productId.toLowerCase().trim();
+    const prod = catalogMap.get(cleanId);
+    if (prod && !seenIds.has(cleanId)) {
+      seenIds.add(cleanId);
+      resolvedProducts.push({ product: prod });
+    }
+  }
+
+  if (inquiryPrefill && inquiryPrefill.productId && inquiryPrefill.productId !== 'custom') {
+    const cleanId = inquiryPrefill.productId.toLowerCase().trim();
+    const prod = catalogMap.get(cleanId);
+    if (prod && !seenIds.has(cleanId)) {
+      seenIds.add(cleanId);
+      resolvedProducts.push({ product: prod, variantLabel: inquiryPrefill.packagingVariant });
+    }
+  }
+
+  const productFactLines: string[] = [];
+
+  for (const item of resolvedProducts) {
+    const p = item.product;
+    const isPkg = isPackagingProduct(p);
+    const isQuoteOnly = Boolean(p.quoteOnly || p.orderMode === 'inquiry_quote');
+    const prodName = (langMode === 'ur' && p.name_ur) ? p.name_ur : (langMode === 'ar' && p.name_ar) ? p.name_ar : (p.name_en || p.name);
+
+    if (isQuoteOnly) {
+      const moqOverride = p.moqOverride ?? p.minOrderQuantity ?? null;
+      const moqSuffix = moqOverride ? ` [Minimum order: ${moqOverride} pieces total]` : '';
+      productFactLines.push(`• ${prodName}: Quote on request${moqSuffix}`);
+      continue;
+    }
+
+    if (item.variantLabel) {
+      const reqLabel = item.variantLabel.trim();
+      const matchedVariant = Array.isArray(p.variants)
+        ? p.variants.find(v => v.label.toLowerCase().trim() === reqLabel.toLowerCase())
+        : undefined;
+
+      if (matchedVariant) {
+        if (matchedVariant.available === false || (matchedVariant as any).inStock === false) {
+          const availableList: string[] = [];
+          if (Array.isArray(p.variants)) {
+            for (const v of p.variants) {
+              if (v.available !== false && (v as any).inStock !== false && v.price > 0) {
+                const pieces = parsePiecesPerPack(v.label);
+                if (pieces > 1) {
+                  availableList.push(`${v.label}: Rs. ${v.price.toLocaleString()} per pack of ${pieces} pcs (Rs. ${Math.round(v.price / pieces)}/pc)`);
+                } else {
+                  availableList.push(`${v.label}: Rs. ${v.price.toLocaleString()}`);
+                }
+              }
+            }
+          }
+          productFactLines.push(`• ${prodName}: '${matchedVariant.label}' is currently unavailable. Available options: ${availableList.join(', ')}`);
+          continue;
+        } else {
+          const pieces = parsePiecesPerPack(matchedVariant.label);
+          let priceStr = '';
+          if (pieces > 1) {
+            priceStr = `Rs. ${matchedVariant.price.toLocaleString()} per pack of ${pieces} pcs (Rs. ${Math.round(matchedVariant.price / pieces)}/pc)`;
+          } else {
+            priceStr = `Rs. ${matchedVariant.price.toLocaleString()} / pc`;
+          }
+          let moqStr = '';
+          if (isPkg) {
+            const moqInfo = getPackagingMoqDisplay(p, matchedVariant.label);
+            if (moqInfo.displayText) {
+              moqStr = ` [${moqInfo.displayText}]`;
+            }
+          }
+          productFactLines.push(`• ${prodName} — ${matchedVariant.label}: ${priceStr}${moqStr}`);
+          continue;
+        }
+      }
+
+      if (p.prices && p.prices[reqLabel] !== undefined) {
+        const pr = p.prices[reqLabel];
+        const pieces = parsePiecesPerPack(reqLabel);
+        let priceStr = '';
+        if (pieces > 1) {
+          priceStr = `Rs. ${pr.toLocaleString()} per pack of ${pieces} pcs (Rs. ${Math.round(pr / pieces)}/pc)`;
+        } else {
+          priceStr = `Rs. ${pr.toLocaleString()}`;
+        }
+        productFactLines.push(`• ${prodName} — ${reqLabel}: ${priceStr}`);
+        continue;
+      }
+    }
+
+    // Default: list available portions / variants for this product
+    const variantSummaries: string[] = [];
+    if (Array.isArray(p.variants) && p.variants.length > 0) {
+      for (const v of p.variants) {
+        if (v && v.available !== false && (v as any).inStock !== false && v.price > 0) {
+          const pieces = parsePiecesPerPack(v.label);
+          if (pieces > 1) {
+            variantSummaries.push(`${v.label}: Rs. ${v.price.toLocaleString()} per pack of ${pieces} pcs (Rs. ${Math.round(v.price / pieces)}/pc)`);
+          } else {
+            variantSummaries.push(`${v.label}: Rs. ${v.price.toLocaleString()}`);
+          }
+        }
+      }
+    } else if (p.prices) {
+      for (const [portion, price] of Object.entries(p.prices)) {
+        if (typeof price === 'number' && price > 0) {
+          variantSummaries.push(`${portion}: Rs. ${price.toLocaleString()}`);
+        }
+      }
+    }
+
+    if (variantSummaries.length > 0) {
+      let moqStr = '';
+      if (isPkg) {
+        const moqInfo = getPackagingMoqDisplay(p);
+        if (moqInfo.displayText) {
+          moqStr = ` [${moqInfo.displayText}]`;
+        }
+      }
+      productFactLines.push(`• ${prodName} (${variantSummaries.join(', ')})${moqStr}`);
+    }
+  }
+
+  // 3. Customer Proposed Budget vs Store Price
+  if (inquiryPrefill?.targetPricePkr) {
+    const budgetVal = inquiryPrefill.targetPricePkr.toLocaleString();
+    if (langMode === 'ur') {
+      productFactLines.push(`• گاہک کا مجوزہ بجٹ: ${budgetVal} روپے (حتمی قیمت ٹیم کی توثیق اور کوٹیشن کے بعد طے ہوگی)`);
+    } else if (langMode === 'roman_ur') {
+      productFactLines.push(`• Proposed Customer Budget: Rs. ${budgetVal} (customer proposed target, final pricing requires team quote)`);
+    } else if (langMode === 'ar') {
+      productFactLines.push(`• ميزانية العميل المقترحة: ${budgetVal} روبية (السعر النهائي يخضع لموافقة الفريق وعرض السعر)`);
+    } else {
+      productFactLines.push(`• Proposed Customer Budget: Rs. ${budgetVal} (${inquiryPrefill.budgetType === 'per_piece' ? 'per piece target' : 'total target'}, customer proposed target — final pricing requires team quote)`);
+    }
+  }
+
+  // 4. Packaging Subtotal (if prefill subtotal is computed)
+  if (inquiryPrefill?.packagingSubtotal) {
+    const subtotalVal = inquiryPrefill.packagingSubtotal.toLocaleString();
+    productFactLines.push(`• Packaging Subtotal: Rs. ${subtotalVal} (${inquiryPrefill.quantity} ${inquiryPrefill.quantityUnit} = ${inquiryPrefill.totalPieces} pieces)`);
+    if (inquiryPrefill.packagingSubtotalNotice) {
+      productFactLines.push(`  ${inquiryPrefill.packagingSubtotalNotice}`);
+    }
+  }
+
+  // 5. Store Policies
+  const policyLines: string[] = [];
+  const policiesToRender = new Set<string>(answer.applicablePolicies || []);
+  if (resolvedProducts.some(r => isPackagingProduct(r.product)) || inquiryPrefill) {
+    policiesToRender.add('lead_time');
+  }
+  if (resolvedProducts.some(r => r.product.packagingSubcategory === 'tabarruk')) {
+    policiesToRender.add('tabarruk_empty');
+  }
+  if (inquiryPrefill?.preferredFillings?.some(f => ['chocolates', 'candies', 'other'].includes(f))) {
+    policiesToRender.add('non_catalog_fillings');
+  }
+
+  for (const polId of policiesToRender) {
+    const tpl = POLICY_TEMPLATES[polId]?.[langMode] || POLICY_TEMPLATES[polId]?.en;
+    if (tpl) {
+      policyLines.push(tpl);
+    }
+  }
+
+  // 6. Customization Suggestions
+  const customLines: string[] = [];
+  if (Array.isArray(answer.suggestedCustomizations)) {
+    for (const custId of answer.suggestedCustomizations) {
+      const tpl = CUSTOMIZATION_TEMPLATES[custId]?.[langMode] || CUSTOMIZATION_TEMPLATES[custId]?.en;
+      if (tpl) {
+        customLines.push(tpl);
+      }
+    }
+  }
+
+  // 7. Follow-up Questions
+  const questionLines: string[] = [];
+  if (Array.isArray(answer.missingInfoQuestions)) {
+    for (const qId of answer.missingInfoQuestions) {
+      const tpl = QUESTION_TEMPLATES[qId]?.[langMode] || QUESTION_TEMPLATES[qId]?.en;
+      if (tpl) {
+        questionLines.push(tpl);
+      }
+    }
+  }
+
+  // Assemble full reply
+  const commercialBlocks: string[] = [];
+  if (productFactLines.length > 0) {
+    commercialBlocks.push(productFactLines.join('\n'));
+  }
+  if (policyLines.length > 0) {
+    commercialBlocks.push(policyLines.join('\n'));
+  }
+  if (customLines.length > 0) {
+    commercialBlocks.push(customLines.join('\n'));
+  }
+  if (questionLines.length > 0) {
+    commercialBlocks.push(questionLines.join('\n'));
+  }
+
+  // Append commercial blocks to sections if any exist and are not already in opening
+  if (commercialBlocks.length > 0) {
+    sections.push(commercialBlocks.join('\n\n'));
+  }
+
+  // Append official WhatsApp concierge URL
+  const contactText =
+    langMode === 'ur'
+      ? 'کسٹم کوٹیشن اور لائیو مدد کے لیے ہماری لاہور ٹیم سے واٹس ایپ پر رابطہ کریں: https://wa.me/923160666083'
+      : langMode === 'roman_ur'
+      ? 'Custom celebration orders aur quotes ke liye hamari Lahore team se WhatsApp par rabta karein: https://wa.me/923160666083'
+      : langMode === 'ar'
+      ? 'للحصول على عروض أسعار مخصصة وطلبات المناسبات، يرجى التواصل مع فريقنا في لاهور عبر واتساب: https://wa.me/923160666083'
+      : 'For custom celebration orders, personalization quotes, or live assistance, connect with our Lahore concierge on WhatsApp: https://wa.me/923160666083';
+
+  if (!sections.some(s => s.includes('https://wa.me/923160666083'))) {
+    sections.push(contactText);
+  }
+
+  // Footnote explicitly documenting application-rendered facts vs AI assistance
+  if (!sections.some(s => s.includes(FOOTNOTE_DISCLAIMER))) {
+    sections.push(FOOTNOTE_DISCLAIMER);
+  }
+
+  return sections.join('\n\n');
 }

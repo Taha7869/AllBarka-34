@@ -11,6 +11,9 @@ import {
   validateAiRecommendations,
   validateInquiryPrefill,
   validateAndSanitizeAssistantReply,
+  renderDeterministicCommercialAnswer,
+  detectLanguageMode,
+  FOOTNOTE_DISCLAIMER,
   sanitizeBuddyPrompt,
   OFFICIAL_WHATSAPP_URL,
   isExactOfficialWhatsAppUrl,
@@ -1056,6 +1059,179 @@ test('Stage 7.5 (g): Bounded timing instrumentation on production router path wi
     // Verify zero PII or credentials leaked in response
     const jsonStr = JSON.stringify(data);
     assert.doesNotMatch(jsonStr, /secret|key|token|password|bearer|authorization/i);
+  } finally {
+    harness.close();
+  }
+});
+
+test('Stage 7.5 (h): Deterministic commercial response contract regressions', async () => {
+  let simulatedAnswer: any = {};
+  const harness = await createProductionTestHarness({
+    catalog: TEST_CATALOG,
+    askConsultant: async () => simulatedAnswer,
+  });
+
+  try {
+    // 1. REPRODUCED DEFECT 1: Correct product, wrong portion (Ajwa 1kg with 1250)
+    // Ajwa has 250g at 1250 and 1kg at 5000. Wording claiming "Ajwa Dates are Rs. 1250 per kg." must be neutralized.
+    simulatedAnswer = {
+      action: 'answer',
+      reply: 'Ajwa Dates are Rs. 1250 per kg.',
+    };
+    const res1 = await fetch(`${harness.baseUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'Ajwa 1kg price?' }),
+    });
+    const data1 = await res1.json();
+    assert.equal(res1.status, 200);
+    assert.ok(!data1.reply.includes('Rs. 1250 per kg'), 'Must not allow 250g price Rs. 1250 to be attributed to 1kg');
+    assert.ok(data1.reply.includes('(pricing subject to team confirmation and quote)'), 'Wrong portion price is neutralized');
+
+    // And structured intent selection resolves 1kg directly to Rs. 5,000 from authoritative catalog:
+    simulatedAnswer = {
+      action: 'answer',
+      conversationalOpening: 'Our Ajwa dates from Al-Madinah are soft, authentic, and naturally cured.',
+      selectedProducts: [{ productId: 'ajwa-dates-al-madinah', variantLabel: '1kg' }],
+    };
+    const res1b = await fetch(`${harness.baseUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'I need 1kg Ajwa dates' }),
+    });
+    const data1b = await res1b.json();
+    assert.ok(data1b.reply.includes('Ajwa Dates (Al-Madinah) — 1kg: Rs. 5,000'), 'Application renders exact 1kg catalog price');
+
+    // 2. REPRODUCED DEFECT 2: Two products with different prices (Ajwa and Almonds Rs. 1000 each)
+    // Almonds is Rs. 1000/kg; Ajwa is Rs. 5,000/kg. Claiming both are 1000/kg each must be neutralized.
+    simulatedAnswer = {
+      action: 'answer',
+      reply: 'Ajwa Dates and Almonds are Rs. 1000 per kg each.',
+    };
+    const res2 = await fetch(`${harness.baseUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'What are the prices of Ajwa and Almonds?' }),
+    });
+    const data2 = await res2.json();
+    assert.ok(!data2.reply.includes('Rs. 1000 per kg each'), 'Must not accept Almonds price for Ajwa Dates');
+    assert.ok(data2.reply.includes('(pricing subject to team confirmation and quote)'));
+
+    // And structured intent renders distinct verified prices for each product:
+    simulatedAnswer = {
+      action: 'answer',
+      selectedProducts: [
+        { productId: 'ajwa-dates-al-madinah', variantLabel: '1kg' },
+        { productId: 'almonds-american-jumbo', variantLabel: '1kg' },
+      ],
+    };
+    const res2b = await fetch(`${harness.baseUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'Show Ajwa and Almonds' }),
+    });
+    const data2b = await res2b.json();
+    assert.ok(data2b.reply.includes('Ajwa Dates (Al-Madinah) — 1kg: Rs. 5,000'), 'Ajwa has its own verified price');
+    assert.ok(data2b.reply.includes('Almonds (American Jumbo) — 1kg: Rs. 1,000'), 'Almonds has its own verified price');
+
+    // 3. REPRODUCED DEFECT 3: Disabled or unpublished variants (Luxury Tin Discontinued Lid)
+    // Discontinued Lid has available: false (price 900). Claiming it is Rs. 900 must be neutralized.
+    simulatedAnswer = {
+      action: 'answer',
+      reply: 'Luxury Tin Discontinued Lid is Rs. 900.',
+    };
+    const res3 = await fetch(`${harness.baseUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'Can I get the discontinued lid?' }),
+    });
+    const data3 = await res3.json();
+    assert.ok(!data3.reply.includes('Rs. 900'), 'Disabled variant price must not be accepted');
+
+    // Structured reference to disabled variant flags unavailability and renders available options:
+    simulatedAnswer = {
+      action: 'answer',
+      selectedProducts: [{ productId: 'bid-box-luxury-tin', variantLabel: 'Discontinued Lid' }],
+    };
+    const res3b = await fetch(`${harness.baseUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'Order discontinued lid' }),
+    });
+    const data3b = await res3b.json();
+    assert.ok(data3b.reply.includes("'Discontinued Lid' is currently unavailable"), 'Flags disabled variant');
+    assert.ok(data3b.reply.includes('Empty Box (1 pc): Rs. 350'), 'Lists available alternatives');
+    assert.ok(data3b.reply.includes('Empty Pack (25 pcs): Rs. 7,500'), 'Lists available alternatives');
+
+    // 4. REPRODUCED DEFECT 4: Customer proposed budget (1234) vs store price
+    simulatedAnswer = {
+      action: 'answer',
+      reply: 'Our approved price is Rs. 1234.',
+      inquiryPrefill: {
+        productId: 'bid-box-luxury-tin',
+        targetPricePkr: 1234,
+        budgetType: 'per_piece',
+      },
+    };
+    const res4 = await fetch(`${harness.baseUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'Can we do 1234 rupees?' }),
+    });
+    const data4 = await res4.json();
+    assert.ok(!data4.reply.includes('Our approved price is Rs. 1234'), 'Must not claim customer budget is approved price');
+    assert.ok(data4.reply.includes('customer proposed budget; final pricing requires team confirmation') ||
+              data4.reply.includes('customer proposed target, final pricing requires team quote'));
+    assert.ok(data4.reply.includes('Proposed Customer Budget: Rs. 1,234'));
+
+    // 5. REPRODUCED DEFECT 5: Roman Urdu delivery commitment ("kal pakka deliver")
+    simulatedAnswer = {
+      action: 'answer',
+      reply: 'Hum aap ke custom boxes kal pakka deliver kar dein ge.',
+    };
+    const res5 = await fetch(`${harness.baseUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'Bhai delivery kab tak ho gi?' }),
+    });
+    const data5 = await res5.json();
+    assert.ok(!data5.reply.includes('kal pakka deliver'), 'Must not permit Roman Urdu delivery promise');
+    assert.ok(data5.reply.includes('10 calendar days preparation'), 'Neutralized with mandatory 10 calendar days lead time');
+
+    // 6. Legitimate product selections, suggestions, and inquiry handoff
+    simulatedAnswer = {
+      action: 'answer',
+      conversationalOpening: 'Warm celebration greetings from AllBarka! For your upcoming Nikkah, here is our luxury packaging recommendation.',
+      selectedProducts: [{ productId: 'bid-box-luxury-tin', variantLabel: 'Empty Pack (25 pcs)' }],
+      suggestedCustomizations: ['monogram', 'custom_ribbon'],
+      applicablePolicies: ['lead_time', 'shipping_rates'],
+      inquiryPrefill: {
+        productId: 'bid-box-luxury-tin',
+        packagingVariant: 'Empty Pack (25 pcs)',
+        boxMode: 'empty',
+        quantity: 2,
+        eventType: 'Nikkah',
+        targetPricePkr: 15000,
+      },
+    };
+    const res6 = await fetch(`${harness.baseUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'I need 2 packs of Luxury Tin boxes for Nikkah with monograms' }),
+    });
+    const data6 = await res6.json();
+    assert.equal(res6.status, 200);
+    assert.ok(data6.reply.includes('Luxury Tin Bid Box — Empty Pack (25 pcs): Rs. 7,500 per pack of 25 pcs (Rs. 300/pc) [Minimum order: 1 pack (25 pieces total)]'));
+    assert.ok(data6.reply.includes('Packaging Subtotal: Rs. 15,000 (2 packs = 50 pieces)'));
+    assert.ok(data6.reply.includes('Personalization: Custom gold foil-stamped monogram'));
+    assert.ok(data6.reply.includes('Accent: Matching satin or grosgrain ribbon band'));
+    assert.ok(data6.reply.includes('Preparation & Lead Time:'));
+    assert.ok(data6.reply.includes('https://wa.me/923160666083'));
+    assert.ok(data6.reply.includes(FOOTNOTE_DISCLAIMER));
+    assert.equal(data6.recommendations.length, 1);
+    assert.equal(data6.recommendations[0].productId, 'bid-box-luxury-tin');
+    assert.equal(data6.inquiryPrefill.productId, 'bid-box-luxury-tin');
+    assert.equal(data6.inquiryPrefill.packagingSubtotal, 15000);
   } finally {
     harness.close();
   }

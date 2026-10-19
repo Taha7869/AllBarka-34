@@ -4,6 +4,11 @@ export interface ConsultantRequest {
   system: string;
 }
 
+export interface ProductSelectionReference {
+  productId: string;
+  variantLabel?: string | null;
+}
+
 export interface ConsultantReply {
   text: string;
   reply: string;
@@ -11,6 +16,11 @@ export interface ConsultantReply {
   available: true;
   modelUsed: 'n8n-groq';
   supportUrl?: string;
+  conversationalOpening?: string;
+  selectedProducts?: ProductSelectionReference[];
+  suggestedCustomizations?: string[];
+  applicablePolicies?: string[];
+  missingInfoQuestions?: string[];
   recommendedProductIds?: string[];
   inquiryPrefill?: Record<string, any> | null;
   latencyMs?: number;
@@ -45,6 +55,36 @@ export function extractN8nReply(value: unknown, depth = 0): ConsultantReply | nu
     } catch { return null; }
   }
   const action = result.action === 'human' ? 'human' : 'answer';
+  const conversationalOpening =
+    typeof result.conversationalOpening === 'string' && result.conversationalOpening.trim()
+      ? result.conversationalOpening.trim().slice(0, 1000)
+      : undefined;
+
+  const rawSelected = result.selectedProducts;
+  const selectedProducts: ProductSelectionReference[] | undefined = Array.isArray(rawSelected)
+    ? rawSelected
+        .filter((item: any) => item && typeof item.productId === 'string' && item.productId.trim())
+        .map((item: any) => ({
+          productId: item.productId.trim(),
+          variantLabel: typeof item.variantLabel === 'string' && item.variantLabel.trim() ? item.variantLabel.trim() : null,
+        }))
+    : undefined;
+
+  const rawCustomizations = result.suggestedCustomizations;
+  const suggestedCustomizations = Array.isArray(rawCustomizations)
+    ? rawCustomizations.filter((c: any): c is string => typeof c === 'string' && Boolean(c.trim())).map(c => c.trim())
+    : undefined;
+
+  const rawPolicies = result.applicablePolicies;
+  const applicablePolicies = Array.isArray(rawPolicies)
+    ? rawPolicies.filter((p: any): p is string => typeof p === 'string' && Boolean(p.trim())).map(p => p.trim())
+    : undefined;
+
+  const rawQuestions = result.missingInfoQuestions;
+  const missingInfoQuestions = Array.isArray(rawQuestions)
+    ? rawQuestions.filter((q: any): q is string => typeof q === 'string' && Boolean(q.trim())).map(q => q.trim())
+    : undefined;
+
   const rawIds = result.recommendedProductIds ?? result.recommendations ?? result.productIds;
   const recommendedProductIds = Array.isArray(rawIds)
     ? rawIds.filter((id): id is string => typeof id === 'string' && Boolean(id.trim())).map(id => id.trim())
@@ -61,6 +101,11 @@ export function extractN8nReply(value: unknown, depth = 0): ConsultantReply | nu
     available: true,
     modelUsed: 'n8n-groq',
     ...(action === 'human' ? { supportUrl: HUMAN_SUPPORT_URL } : {}),
+    ...(conversationalOpening ? { conversationalOpening } : {}),
+    ...(selectedProducts && selectedProducts.length > 0 ? { selectedProducts } : {}),
+    ...(suggestedCustomizations && suggestedCustomizations.length > 0 ? { suggestedCustomizations } : {}),
+    ...(applicablePolicies && applicablePolicies.length > 0 ? { applicablePolicies } : {}),
+    ...(missingInfoQuestions && missingInfoQuestions.length > 0 ? { missingInfoQuestions } : {}),
     ...(recommendedProductIds && recommendedProductIds.length > 0 ? { recommendedProductIds } : {}),
     ...(inquiryPrefill ? { inquiryPrefill } : {}),
   };

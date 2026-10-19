@@ -10,6 +10,7 @@ import {
   validateAiRecommendations,
   validateInquiryPrefill,
   validateAndSanitizeAssistantReply,
+  renderDeterministicCommercialAnswer,
   sanitizeBuddyPrompt,
   getCustomerVisibleCatalog,
 } from './aiBuddyResolution';
@@ -135,17 +136,22 @@ export function createAiChatRouter(options: AiChatRouterOptions) {
       }
 
       // Deterministic validation of recommendations & prefill using public catalog
-      const recommendations = validateAiRecommendations(publicCatalog, answer.recommendedProductIds);
+      const candidateProductIds = [
+        ...(Array.isArray(answer.selectedProducts) ? answer.selectedProducts.map((p: any) => p?.productId) : []),
+        ...(Array.isArray(answer.recommendedProductIds) ? answer.recommendedProductIds : []),
+        ...(answer.inquiryPrefill?.productId ? [answer.inquiryPrefill.productId] : []),
+      ].filter(Boolean);
+      const recommendations = validateAiRecommendations(publicCatalog, candidateProductIds);
       const inquiryPrefill = validateInquiryPrefill(publicCatalog, answer.inquiryPrefill);
 
-      // Application-enforced commercial validation of prose reply
-      const rawReply = answer.reply || answer.text || '';
-      const sanitizedReply = validateAndSanitizeAssistantReply({
-        replyText: rawReply,
+      // Render deterministic commercial answer from structured references & public catalog
+      const deterministicReply = renderDeterministicCommercialAnswer({
+        answer,
         catalog: publicCatalog,
         recommendations,
         inquiryPrefill,
         isCatalogFailure,
+        userText,
         language,
       });
 
@@ -153,8 +159,8 @@ export function createAiChatRouter(options: AiChatRouterOptions) {
 
       return res.json({
         ...answer,
-        reply: sanitizedReply,
-        text: sanitizedReply,
+        reply: deterministicReply,
+        text: deterministicReply,
         recommendations,
         inquiryPrefill,
         guestMessagesRemaining,
