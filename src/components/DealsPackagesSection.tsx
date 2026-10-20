@@ -4,6 +4,7 @@ import { Sparkles, ShoppingBag, MessageSquareQuote, ArrowRight, Check, Eye } fro
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import { useCart } from '../contexts/CartContext';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Product } from '../types';
 import { openCustomQuoteModal } from './CustomQuoteModal';
 
@@ -13,6 +14,7 @@ interface DealsPackagesSectionProps {
 }
 
 export default function DealsPackagesSection({ limit, onQuickView }: DealsPackagesSectionProps) {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const products = useCatalogProducts();
   const { addToCart, setIsCartOpen } = useCart();
@@ -180,6 +182,15 @@ export default function DealsPackagesSection({ limit, onQuickView }: DealsPackag
                     <p className="text-xs text-[#E6C786] font-urdu mt-0.5" dir="rtl">
                       {product.name_ur}
                     </p>
+                    <div className="pt-0.5">
+                      <Link
+                        to={`/product/${product.id}`}
+                        className="focus-ring inline-flex items-center gap-1 text-[11px] font-semibold text-[#E6C786] hover:text-white hover:underline"
+                      >
+                        <span>{t('dest.common.viewDetails', 'View Details')}</span>
+                        <ArrowRight size={12} />
+                      </Link>
+                    </div>
                   </div>
 
                   <p className="text-xs text-[#E5DEC9]/85 line-clamp-2 flex-1">
