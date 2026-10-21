@@ -1,15 +1,23 @@
 import type { LanguageCode } from '../contexts/LanguageContext';
 import { apiUrl } from '../lib/apiUrl';
+import type { ValidatedProductRecommendation, ValidatedInquiryPrefill } from '../lib/aiBuddyResolution';
 
 export type ChatMessage = { role: 'user' | 'assistant' | 'system'; content: string };
 export class ConciergeError extends Error {
   constructor(public code: string) { super(code); }
 }
 
+export interface ConciergeChatResult {
+  action: 'answer' | 'human';
+  supportUrl?: string;
+  recommendations?: ValidatedProductRecommendation[];
+  inquiryPrefill?: ValidatedInquiryPrefill | null;
+}
+
 export async function chatWithConcierge(
   messages: ChatMessage[], language: LanguageCode, onChunk: (text: string) => void,
   authToken?: string, signal?: AbortSignal,
-): Promise<{ action: 'answer' | 'human'; supportUrl?: string }> {
+): Promise<ConciergeChatResult> {
   const controller = new AbortController();
   let timer: ReturnType<typeof setTimeout> | undefined;
   let cancel: (() => void) | undefined;
@@ -38,7 +46,12 @@ export async function chatWithConcierge(
         !['answer', 'human'].includes(result.action)) throw new ConciergeError('AI_UNAVAILABLE');
       if (controller.signal.aborted) throw new ConciergeError('AI_CANCELLED');
       onChunk(reply);
-      return { action: result.action, ...(result.action === 'human' ? { supportUrl: 'https://wa.me/923160666083' } : {}) };
+      return {
+        action: result.action,
+        ...(result.action === 'human' ? { supportUrl: 'https://wa.me/923160666083' } : {}),
+        recommendations: result.recommendations,
+        inquiryPrefill: result.inquiryPrefill,
+      };
     })()]);
   } finally {
     clearTimeout(timer);

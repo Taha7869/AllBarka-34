@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion, type Variants } from 'motion/react';
 import { 
   X, 
@@ -11,6 +11,7 @@ import {
   MessageCircle, 
   Instagram, 
   ChevronRight,
+  ChevronDown,
   Sun,
   Moon,
   Laptop
@@ -22,6 +23,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { acquireScrollLock } from '../utils/scrollLock';
 import { buildHumanSupportWhatsAppUrl } from '../config/contacts';
 import { CANONICAL_CATEGORIES } from '../config/categories';
+import { MAIN_NAV_ITEMS, COMPACT_FOOD_NAV_ITEMS } from '../config/navigation';
+import { openCustomQuoteModal } from './CustomQuoteModal';
+import { catalogTranslations } from '../contexts/catalogTranslations';
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -46,6 +50,18 @@ export default function MobileMenu({
   const { currentUser, patronProfile, logout } = useAuth();
   const reduceMotion = useReducedMotion();
   
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    shop: false,
+    gifting: false,
+    'celebration-boxes': false,
+    occasions: false,
+    deals: false,
+  });
+
+  const toggleSection = (id: string) => {
+    setExpandedSections((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -349,43 +365,151 @@ export default function MobileMenu({
                 </div>
               </div>
 
-              {/* 5. Our Collections links */}
+              {/* 5. Navigation Accordion & Compact Food Row */}
               <div className="border-t border-[#29231D]/8 dark:border-[#F6F1EA]/8 pt-4">
                 <span className="text-[10px] font-sans font-bold uppercase tracking-[0.22em] text-[#806326] dark:text-[#C7982F] block mb-2 px-1">
                   {t('ourCollections', 'Our Collections')}
                 </span>
+
+                {/* Accessible Accordion for Main Navigation */}
                 <div className="space-y-1">
-                  <button
-                    type="button"
-                    onClick={() => handleDestination('/shop', 'Shop')}
-                    className="w-full min-h-[44px] flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-[#042821] dark:text-[#FFFCF7] hover:bg-[#C7982F]/10 transition-colors text-left cursor-pointer"
-                  >
-                    <span>{t('allProducts', 'All Products')}</span>
-                    <ChevronRight size={14} className="text-[#C7982F]/70 rtl:rotate-180" />
-                  </button>
+                  {MAIN_NAV_ITEMS.map((item) => {
+                    const isExpanded = !!expandedSections[item.id];
 
-                  {Object.keys(CANONICAL_CATEGORIES).map(id => <button
-                    key={id}
-                    type="button"
-                    data-nav-path={id === 'gift-boxes' ? '/gifting' : `/shop/${id}`}
-                    onClick={() => handleDestination(id === 'gift-boxes' ? '/gifting' : `/shop/${id}`, id === 'herbs-spices' ? 'Herbs & Spices' : 'Shop')}
-                    className="w-full min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-xs text-[#29231D]/85 dark:text-[#F6F1EA]/85 hover:bg-[#C7982F]/10 transition-colors text-left cursor-pointer"
-                  >
-                    <span>{t(`shop.${id}`)}</span>
-                    <ChevronRight size={13} className="text-[#C7982F]/50 rtl:rotate-180" />
-                  </button>)}
+                    return (
+                      <div
+                        key={item.id}
+                        className="rounded-xl border border-[#29231D]/8 dark:border-[#F6F1EA]/10 overflow-hidden bg-[#FFFCF7] dark:bg-[#1A201E]"
+                      >
+                        <button
+                          type="button"
+                          aria-expanded={isExpanded}
+                          aria-controls={`mobile-nav-panel-${item.id}`}
+                          onClick={() => toggleSection(item.id)}
+                          className="w-full min-h-[44px] flex items-center justify-between px-3.5 py-2.5 text-xs font-bold text-[#042821] dark:text-[#FFFCF7] hover:bg-[#C7982F]/10 transition-colors text-start cursor-pointer"
+                        >
+                          <span className="uppercase tracking-wider">{t(item.labelKey, item.defaultLabel)}</span>
+                          <ChevronDown
+                            size={14}
+                            className={`text-[#C7982F] transition-transform duration-200 ${
+                              isExpanded ? 'rotate-180' : ''
+                            }`}
+                          />
+                        </button>
 
-                  <button
-                    type="button"
-                    onClick={() => handleDestination('/journal')}
-                    className="w-full min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-xs text-[#29231D]/85 dark:text-[#F6F1EA]/85 hover:bg-[#C7982F]/10 transition-colors text-left cursor-pointer"
+                        <div
+                          id={`mobile-nav-panel-${item.id}`}
+                          role="region"
+                          hidden={!isExpanded}
+                          className={`px-2 pb-2.5 pt-1 space-y-0.5 bg-[#F6F1EA]/40 dark:bg-[#121615]/50 border-t border-[#29231D]/6 dark:border-[#F6F1EA]/6 ${
+                            isExpanded ? 'block' : 'hidden'
+                          }`}
+                        >
+                          {item.dropdownItems?.map((drop) => {
+                            // Ensure backwards-compatible label matching for test suites
+                            const labelText =
+                              drop.id === 'herbs-spices'
+                                ? catalogTranslations[language]?.['shop.herbs-spices'] || t('shop.herbs-spices', drop.defaultLabel)
+                                : drop.id === 'curated-bundles'
+                                ? catalogTranslations[language]?.['shop.bundles'] || t('shop.bundles', drop.defaultLabel)
+                                : t(drop.labelKey, drop.defaultLabel);
+
+                            return drop.action ? (
+                              <button
+                                key={drop.id}
+                                type="button"
+                                data-nav-path={drop.path}
+                                onClick={() => {
+                                  onClose();
+                                  if (drop.action === 'open-hamper-builder') {
+                                    window.dispatchEvent(new CustomEvent('open-hamper-builder'));
+                                  } else if (drop.action === 'open-custom-quote') {
+                                    openCustomQuoteModal({ mode: 'filled', quantity: 50 });
+                                  }
+                                }}
+                                className="w-full min-h-[38px] flex items-center justify-between px-3 py-1.5 rounded-lg text-xs text-[#29231D]/85 dark:text-[#F6F1EA]/85 hover:bg-[#C7982F]/15 hover:text-[#042821] dark:hover:text-[#FFFCF7] transition-colors text-start cursor-pointer"
+                              >
+                                <span className="truncate">{labelText}</span>
+                                {drop.badge ? (
+                                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#C7982F]/20 text-[#806326] dark:text-[#E4C783]">
+                                    {drop.badge}
+                                  </span>
+                                ) : (
+                                  <ChevronRight size={12} className="text-[#C7982F]/50 shrink-0 rtl:rotate-180" />
+                                )}
+                              </button>
+                            ) : (
+                              <Link
+                                key={drop.id}
+                                to={drop.path}
+                                data-nav-path={drop.path}
+                                onClick={() => {
+                                  onClose();
+                                  if (onNavItemClick) onNavItemClick(labelText);
+                                }}
+                                className="w-full min-h-[38px] flex items-center justify-between px-3 py-1.5 rounded-lg text-xs text-[#29231D]/85 dark:text-[#F6F1EA]/85 hover:bg-[#C7982F]/15 hover:text-[#042821] dark:hover:text-[#FFFCF7] transition-colors text-start cursor-pointer"
+                              >
+                                <span className="truncate">{labelText}</span>
+                                {drop.badge ? (
+                                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#C7982F]/20 text-[#806326] dark:text-[#E4C783]">
+                                    {drop.badge}
+                                  </span>
+                                ) : (
+                                  <ChevronRight size={12} className="text-[#C7982F]/50 shrink-0 rtl:rotate-180" />
+                                )}
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Compact Food Categories Quick Navigation */}
+                <div className="mt-4 pt-3 border-t border-[#29231D]/8 dark:border-[#F6F1EA]/8">
+                  <span className="text-[10px] font-sans font-bold uppercase tracking-[0.22em] text-[#806326] dark:text-[#C7982F] block mb-2 px-1">
+                    {t('nav.foodRow', 'Compact Food Categories')}
+                  </span>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {COMPACT_FOOD_NAV_ITEMS.map((food) => {
+                      const foodLabel =
+                        food.id === 'herbs-spices'
+                          ? catalogTranslations[language]?.['shop.herbs-spices'] || t('shop.herbs-spices', food.defaultLabel)
+                          : t(food.labelKey, food.defaultLabel);
+
+                      return (
+                        <Link
+                          key={food.id}
+                          to={food.path}
+                          data-nav-path={food.path}
+                          onClick={() => {
+                            onClose();
+                            if (onNavItemClick) onNavItemClick(foodLabel);
+                          }}
+                          className="min-h-[40px] flex items-center justify-between px-3 py-2 rounded-xl bg-[#F6F1EA]/70 dark:bg-[#222A28]/70 border border-[#C7982F]/20 hover:border-[#C7982F] text-xs font-semibold text-[#042821] dark:text-[#FFFCF7] text-start transition-all cursor-pointer"
+                        >
+                          <span className="truncate">{foodLabel}</span>
+                          <ChevronRight size={11} className="text-[#C7982F] shrink-0 rtl:rotate-180" />
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Additional Boutique Pages */}
+                <div className="mt-4 space-y-1">
+                  <Link
+                    to="/journal"
+                    onClick={() => onClose()}
+                    className="w-full min-h-[42px] flex items-center justify-between px-3 py-2 rounded-xl text-xs text-[#29231D]/85 dark:text-[#F6F1EA]/85 hover:bg-[#C7982F]/10 transition-colors text-start cursor-pointer"
                   >
-                    <span className="flex items-center gap-1.5">
+                    <span className="flex items-center gap-1.5 font-medium">
                       <BookOpen size={13} className="text-[#C7982F]" />
                       {t('journal', 'The Harvest Chronicle')}
                     </span>
                     <ChevronRight size={13} className="text-[#C7982F]/50 rtl:rotate-180" />
-                  </button>
+                  </Link>
                 </div>
               </div>
 

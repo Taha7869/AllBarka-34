@@ -8,12 +8,16 @@ import './styles/visual-refinements.css';
 import './styles/circular-carousel.css';
 import './styles/store-updates.css';
 import './styles/luminous.css';
+import './styles/editorial.css';
+import './styles/selection-guide.css';
+import './components/AllBarkaHero.css';
 import { ProductMediaProvider } from './contexts/ProductMediaContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { CartProvider } from './contexts/CartContext';
 import { CatalogProvider } from './contexts/CatalogContext';
+import { MerchandisingProvider } from './contexts/MerchandisingContext';
 
 if (typeof window !== 'undefined') {
   window.addEventListener('vite:preloadError', (event) => {
@@ -35,9 +39,9 @@ createRoot(document.getElementById('root')!).render(
     <ThemeProvider>
       <LanguageProvider>
         <AuthProvider>
-          <CatalogProvider><ProductMediaProvider><CartProvider>
+          <CatalogProvider><MerchandisingProvider><ProductMediaProvider><CartProvider>
             <App />
-          </CartProvider></ProductMediaProvider></CatalogProvider>
+          </CartProvider></ProductMediaProvider></MerchandisingProvider></CatalogProvider>
         </AuthProvider>
       </LanguageProvider>
     </ThemeProvider>

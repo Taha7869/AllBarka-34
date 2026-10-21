@@ -1,99 +1,421 @@
-import React, { useState } from 'react';
-import { motion } from 'motion/react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { ChevronDown, Gift, MessageCircle, Sparkles } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { CANONICAL_CATEGORIES } from '../config/categories';
+import { MAIN_NAV_ITEMS, COMPACT_FOOD_NAV_ITEMS, NavItem, NavSubItem, FoodCategoryItem } from '../config/navigation';
+import { openCustomQuoteModal } from './CustomQuoteModal';
 
-interface MenuItem {
+export interface BubbleMenuItem {
   id: string;
   label: string;
   path: string;
   dropdownItems?: { id: string; label: string; path: string }[];
 }
 
-interface BubbleMenuProps {
-  items?: MenuItem[];
+export interface BubbleMenuProps {
+  items?: BubbleMenuItem[];
   activeItem?: string;
   onItemClick?: (item: { id: string; label: string; path: string }) => void;
   className?: string;
+  showFoodRow?: boolean;
+}
+
+/**
+ * Resolves a single authoritative primary active section for main navigation.
+ * Precedence:
+ * 1. Explicit activeItem override prop
+ * 2. Celebration boxes (/shop/celebration-boxes, /shop/bid-boxes)
+ * 3. Deals (/shop/deals, /shop/bundles)
+ * 4. Gifting (/gifting, /shop/combos, /shop/gift-boxes, /wholesale)
+ * 5. Occasions (when an occasion query parameter is present on /shop or category PLP)
+ * 6. Shop (general /shop, food category routes, or canonical /category/*)
+ */
+export function getPrimaryActiveSectionId(
+  pathname: string,
+  search: string,
+  activeItem?: string
+): string | null {
+  if (activeItem) {
+    const normalized = activeItem.toLowerCase().trim();
+    if (normalized === 'shop' || normalized === 'all') return 'shop';
+    if (normalized === 'gifting' || normalized === 'gifts & hampers') return 'gifting';
+    if (normalized === 'celebration-boxes' || normalized === 'celebration boxes') return 'celebration-boxes';
+    if (normalized === 'occasions') return 'occasions';
+    if (normalized === 'deals') return 'deals';
+  }
+
+  const searchParams = new URLSearchParams(search);
+  const occasion = searchParams.get('occasion');
+
+  // Specific commercial / feature sections take precedence
+  if (pathname.startsWith('/shop/celebration-boxes') || pathname.startsWith('/shop/bid-boxes')) {
+    return 'celebration-boxes';
+  }
+
+  if (pathname.startsWith('/shop/deals') || pathname.startsWith('/shop/bundles')) {
+    return 'deals';
+  }
+
+  if (
+    pathname.startsWith('/gifting') ||
+    pathname.startsWith('/shop/combos') ||
+    pathname.startsWith('/shop/gift-boxes') ||
+    pathname.startsWith('/wholesale')
+  ) {
+    return 'gifting';
+  }
+
+  // Occasions filtering on /shop or category PLP:
+  if (occasion && occasion !== 'all') {
+    return 'occasions';
+  }
+
+  // Food categories and general /shop
+  if (pathname === '/shop' || pathname.startsWith('/shop/') || pathname.startsWith('/category/')) {
+    return 'shop';
+  }
+
+  return null;
 }
 
 export default function BubbleMenu({
   items,
-  activeItem = 'Home',
+  activeItem,
   onItemClick,
-  className = ''
+  className = '',
+  showFoodRow = false,
 }: BubbleMenuProps) {
-  const { t } = useLanguage();
-  const defaultItems: MenuItem[] = [
-    { id: 'Home', label: t('home', 'Home'), path: '/' },
-    {
-      id: 'Shop',
-      label: t('shop', 'Shop'),
-      path: '/shop',
-      dropdownItems: [
-        { id: 'all', label: t('allProducts', 'All Products'), path: '/shop' },
-        ...Object.keys(CANONICAL_CATEGORIES).map(id => ({ id, label: t(`shop.${id}`), path: `/shop/${id}` })),
-      ],
-    },
-    { id: 'Herbs & Spices', label: t('catalog.navHerbs'), path: '/shop/herbs-spices' },
-    { id: 'Gift Boxes', label: t('giftBoxes', 'Gifting'), path: '/gifting' },
-    { id: 'Journal', label: t('journal', 'Journal'), path: '/journal' },
-    { id: 'Contact', label: t('contact', 'Contact'), path: '/pages/contact' },
-  ];
-  const menuItems = items && items.length ? items : defaultItems;
-  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const { t, isRtl } = useLanguage();
+  const location = useLocation();
+
+  const [openId, setOpenId] = useState<string | null>(null);
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const navContainerRef = useRef<HTMLElement>(null);
+  const triggerRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  // Cancel any pending close timer
+  const cancelCloseDelay = useCallback(() => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+  }, []);
+
+  // Grace period before closing: prevents premature dismissal during slow or diagonal mouse movement.
+  // CRITICAL: Must not dismiss while keyboard focus remains within the active trigger or panel.
+  const scheduleCloseDelay = useCallback((delayMs = 220) => {
+    cancelCloseDelay();
+    closeTimeoutRef.current = setTimeout(() => {
+      if (navContainerRef.current && navContainerRef.current.contains(document.activeElement)) {
+        return; // Retain menu open because user has keyboard focus inside
+      }
+      setOpenId(null);
+    }, delayMs);
+  }, [cancelCloseDelay]);
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      cancelCloseDelay();
+    };
+  }, [cancelCloseDelay]);
+
+  // Immediately close open menu on ANY route change (navigation, back/forward, external links)
+  useEffect(() => {
+    cancelCloseDelay();
+    setOpenId(null);
+  }, [location.pathname, location.search, cancelCloseDelay]);
+
+  // Outside pointer click dismisses open dropdown
+  useEffect(() => {
+    const handleOutsidePointer = (event: MouseEvent | TouchEvent) => {
+      if (navContainerRef.current && !navContainerRef.current.contains(event.target as Node)) {
+        cancelCloseDelay();
+        setOpenId(null);
+      }
+    };
+
+    document.addEventListener('pointerdown', handleOutsidePointer);
+    return () => {
+      document.removeEventListener('pointerdown', handleOutsidePointer);
+    };
+  }, [cancelCloseDelay]);
+
+  // Focus-out dismisses dropdown when focus leaves entire navigation container
+  const handleContainerBlur = (event: React.FocusEvent) => {
+    if (!navContainerRef.current?.contains(event.relatedTarget as Node)) {
+      cancelCloseDelay();
+      setOpenId(null);
+    }
+  };
+
+  // Keyboard navigation & Escape focus restoration
+  const handleKeyDown = (event: React.KeyboardEvent, itemId: string) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      cancelCloseDelay();
+      setOpenId(null);
+      triggerRefs.current[itemId]?.focus();
+    } else if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      cancelCloseDelay();
+      setOpenId((prev) => (prev === itemId ? null : itemId));
+    } else if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      cancelCloseDelay();
+      setOpenId(itemId);
+      // Defer focus to first menu item in dropdown
+      requestAnimationFrame(() => {
+        const panel = document.getElementById(`nav-dropdown-panel-${itemId}`);
+        const firstLink = panel?.querySelector<HTMLElement>('a, button');
+        firstLink?.focus();
+      });
+    }
+  };
+
+  // Resolve active path / item
+  const currentPath = location.pathname;
+  const primaryActiveId = getPrimaryActiveSectionId(location.pathname, location.search, activeItem);
+
+  const isMainItemActive = (item: NavItem): boolean => {
+    return primaryActiveId === item.id;
+  };
+
+  const isFoodItemActive = (item: FoodCategoryItem): boolean => {
+    if (currentPath === item.path || currentPath === `/category/${item.slug}`) {
+      return true;
+    }
+    if (item.id === 'dry-fruits' && (currentPath === '/shop/nuts' || currentPath === '/category/nuts')) {
+      return true;
+    }
+    if (item.id === 'seeds-snacks' && (currentPath === '/shop/snacks-seeds' || currentPath === '/category/snacks-seeds')) {
+      return true;
+    }
+    return false;
+  };
+
+  // Execute sub-item custom action if defined
+  const handleSubItemClick = (subItem: NavSubItem) => {
+    cancelCloseDelay();
+    setOpenId(null);
+    if (subItem.action === 'open-hamper-builder') {
+      window.dispatchEvent(new CustomEvent('open-hamper-builder'));
+    } else if (subItem.action === 'open-custom-quote') {
+      openCustomQuoteModal({ mode: 'filled', quantity: 50 });
+    }
+    onItemClick?.({ id: subItem.id, label: t(subItem.labelKey, subItem.defaultLabel), path: subItem.path });
+  };
+
+  // Build items list (either from props or canonical configuration)
+  const mainNavItems: NavItem[] = items && items.length > 0
+    ? items.map((it) => ({
+        id: it.id,
+        labelKey: `nav.${it.id.toLowerCase()}`,
+        defaultLabel: it.label,
+        path: it.path,
+        hasDropdown: !!(it.dropdownItems && it.dropdownItems.length > 0),
+        dropdownItems: it.dropdownItems?.map((drop) => ({
+          id: drop.id,
+          labelKey: `nav.${drop.id}`,
+          defaultLabel: drop.label,
+          path: drop.path,
+        })),
+      }))
+    : MAIN_NAV_ITEMS;
 
   return (
     <nav
-      aria-label={t('nav.main')}
-      className={'pointer-events-auto flex items-center gap-1 rounded-full border border-[#C7982F]/25 bg-[#FFFCF7]/85 px-2 py-1 shadow-[0_2px_12px_rgba(41,35,29,0.04)] backdrop-blur-md transition-colors duration-300 dark:bg-[#1A201E]/85 dark:shadow-[0_2px_12px_rgba(0,0,0,0.25)] ' + className}
+      ref={navContainerRef}
+      aria-label={t('nav.main', 'Main navigation')}
+      onBlur={handleContainerBlur}
+      dir={isRtl ? 'rtl' : 'ltr'}
+      className={`pointer-events-auto flex flex-col items-center gap-1 transition-colors duration-300 ${className}`}
     >
-      {menuItems.map((item) => {
-        const isActive = activeItem === item.id || activeItem === item.label;
-        const isHovered = hoveredItem === item.id;
-        const itemClass = isActive
-          ? 'font-semibold text-[#042821] dark:text-[#FFFCF7]'
-          : 'text-[#29231D]/80 hover:text-[#042821] dark:text-[#F6F1EA]/75 dark:hover:text-[#FFFCF7]';
+      {/* LEVEL 1: Single Clean Desktop Navigation Row */}
+      <div className="flex items-center gap-3 xl:gap-5 px-2 py-1 bg-transparent dark:bg-transparent">
+        {mainNavItems.map((item) => {
+          const isOpen = openId === item.id;
+          const isActive = isMainItemActive(item);
 
-        return (
-          <div key={item.id} className="relative" onMouseEnter={() => setHoveredItem(item.id)} onMouseLeave={() => setHoveredItem(null)}>
-            <button
-              type="button"
-              data-nav-path={item.path}
-              onClick={() => onItemClick?.(item)}
-              className={'focus-ring relative z-10 block cursor-pointer rounded-full px-3 py-1.5 font-sans text-[11px] font-medium uppercase tracking-[0.07em] outline-none transition-colors duration-200 ' + itemClass}
+          return (
+            <div
+              key={item.id}
+              className="relative"
+              onMouseEnter={() => {
+                cancelCloseDelay();
+                setOpenId(item.id);
+              }}
+              onMouseLeave={() => {
+                scheduleCloseDelay(220);
+              }}
             >
-              {isHovered && !isActive && (
-                <motion.div layoutId="bubble-hover" className="absolute inset-0 z-[-1] rounded-full bg-[#C7982F]/10 dark:bg-[#C7982F]/15" transition={{ type: 'spring', stiffness: 400, damping: 32 }} />
+              {item.hasDropdown ? (
+                <button
+                  ref={(el) => { triggerRefs.current[item.id] = el; }}
+                  id={`nav-trigger-${item.id}`}
+                  type="button"
+                  aria-haspopup="true"
+                  aria-expanded={isOpen}
+                  aria-current={isActive ? 'page' : undefined}
+                  aria-controls={`nav-dropdown-panel-${item.id}`}
+                  data-nav-path={item.path}
+                  onFocus={() => {
+                    cancelCloseDelay();
+                    if (openId && openId !== item.id) {
+                      setOpenId(null);
+                    }
+                  }}
+                  onClick={() => {
+                    cancelCloseDelay();
+                    setOpenId((prev) => (prev === item.id ? null : item.id));
+                  }}
+                  onKeyDown={(e) => handleKeyDown(e, item.id)}
+                  className={`focus-ring group relative z-10 flex cursor-pointer items-center gap-1.5 whitespace-nowrap px-2 py-2 font-sans text-[12px] font-medium tracking-[0.04em] outline-none transition-colors duration-200 ${
+                    isActive
+                      ? 'border-b-2 border-[#C7982F] font-semibold text-[#042821] dark:text-[#FFFCF7]'
+                      : isOpen
+                      ? 'text-[#042821] dark:text-[#FFFCF7]'
+                      : 'text-[#29231D]/80 hover:text-[#042821] dark:text-[#F6F1EA]/80 dark:hover:text-[#FFFCF7]'
+                  }`}
+                >
+                  <span className="whitespace-nowrap">{t(item.labelKey, item.defaultLabel)}</span>
+                  <ChevronDown
+                    size={13}
+                    className={`text-[#C7982F] transition-transform duration-200 shrink-0 ${
+                      isOpen ? 'rotate-180' : 'group-hover:translate-y-0.5'
+                    }`}
+                    aria-hidden="true"
+                  />
+                </button>
+              ) : (
+                <Link
+                  to={item.path}
+                  data-nav-path={item.path}
+                  aria-current={isActive ? 'page' : undefined}
+                  onFocus={() => {
+                    cancelCloseDelay();
+                    if (openId) setOpenId(null);
+                  }}
+                  onClick={() => {
+                    cancelCloseDelay();
+                    setOpenId(null);
+                    onItemClick?.({ id: item.id, label: t(item.labelKey, item.defaultLabel), path: item.path });
+                  }}
+                  className={`focus-ring relative z-10 block cursor-pointer whitespace-nowrap px-2 py-2 font-sans text-[12px] font-medium tracking-[0.04em] outline-none transition-colors duration-200 ${
+                    isActive
+                      ? 'border-b-2 border-[#C7982F] font-semibold text-[#042821] dark:text-[#FFFCF7]'
+                      : 'text-[#29231D]/80 hover:text-[#042821] dark:text-[#F6F1EA]/80 dark:hover:text-[#FFFCF7]'
+                  }`}
+                >
+                  <span className="whitespace-nowrap">{t(item.labelKey, item.defaultLabel)}</span>
+                </Link>
               )}
-              {isActive && (
-                <motion.div layoutId="bubble-active" className="absolute inset-0 z-[-1] rounded-full border border-[#C7982F]/40 bg-[#C7982F]/15 shadow-xs dark:bg-[#C7982F]/25" transition={{ type: 'spring', stiffness: 350, damping: 28 }} />
-              )}
-              <span>{item.label}</span>
-            </button>
 
-            {item.dropdownItems && isHovered && (
-              <div className="absolute left-1/2 top-full z-50 mt-2 flex min-w-[220px] -translate-x-1/2 flex-col items-stretch overflow-hidden rounded-2xl border border-[#C7982F]/25 bg-[#FFFCF7] py-2 shadow-xl dark:bg-[#1A201E]">
-                <span className="px-4 pb-2 pt-1 text-[9px] font-bold uppercase tracking-[0.22em] text-[#806326] dark:text-[#E4C783]">{t('nav.browse')}</span>
-                {item.dropdownItems.map((dropItem) => (
-                  <button
-                    key={dropItem.id}
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onItemClick?.(dropItem);
-                      setHoveredItem(null);
-                    }}
-                    className="focus-ring w-full cursor-pointer px-4 py-2.5 text-left text-xs font-semibold text-[#042821] outline-none transition-colors hover:bg-[#C7982F]/15 dark:text-[#FFFCF7]"
-                  >
-                    {dropItem.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        );
-      })}
+              {/* DROPDOWN PANEL with Continuous Pointer Bridge, Bounded Viewport Height & Focus Restoration */}
+              {item.hasDropdown && isOpen && (
+                <div
+                  id={`nav-dropdown-panel-${item.id}`}
+                  role="menu"
+                  aria-labelledby={`nav-trigger-${item.id}`}
+                  onMouseEnter={cancelCloseDelay}
+                  onMouseLeave={() => scheduleCloseDelay(220)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      e.preventDefault();
+                      cancelCloseDelay();
+                      setOpenId(null);
+                      triggerRefs.current[item.id]?.focus();
+                    }
+                  }}
+                  style={{ maxHeight: 'min(420px, calc(100vh - 140px))' }}
+                  className="absolute left-1/2 top-full z-[150] mt-1.5 w-64 -translate-x-1/2 rounded-2xl border border-[#C7982F]/25 bg-[#FFFCF7] p-2 shadow-2xl backdrop-blur-xl dark:border-[#C7982F]/20 dark:bg-[#1A201E] overflow-y-auto overscroll-contain"
+                >
+                  {/* Invisible pointer bridge connecting trigger and panel */}
+                  <div
+                    className="absolute -top-3 inset-x-0 h-4 bg-transparent pointer-events-auto"
+                    aria-hidden="true"
+                  />
+
+                  {/* Header / Eyebrow */}
+                  <div className="px-3 py-1.5 border-b border-[#29231D]/10 dark:border-[#F6F1EA]/10 mb-1">
+                    <span className="block text-[9px] font-bold uppercase tracking-[0.22em] text-[#806326] dark:text-[#C7982F]">
+                      {t(item.labelKey, item.defaultLabel)}
+                    </span>
+                  </div>
+
+                  {/* Dropdown Items (semantic links/buttons) */}
+                  <div className="flex flex-col space-y-1">
+                    {item.dropdownItems?.map((dropItem) => {
+                      const isActionFeature = dropItem.action === 'open-hamper-builder';
+                      return (
+                        <Link
+                          key={dropItem.id}
+                          to={dropItem.path}
+                          role="menuitem"
+                          data-nav-path={dropItem.path}
+                          onClick={() => handleSubItemClick(dropItem)}
+                          className={`focus-ring flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold transition-colors ${
+                            isActionFeature
+                              ? 'mb-1 border border-[#C7982F]/40 bg-[#C7982F]/15 text-[#042821] hover:bg-[#C7982F]/25 dark:bg-[#C7982F]/20 dark:text-[#FFFCF7] dark:hover:bg-[#C7982F]/30'
+                              : 'text-[#042821] hover:bg-[#C7982F]/15 dark:text-[#FFFCF7] dark:hover:bg-[#C7982F]/20'
+                          }`}
+                        >
+                          <span className="flex items-center gap-2 truncate">
+                            {isActionFeature && <Gift size={14} className="text-[#C7982F] shrink-0" aria-hidden="true" />}
+                            <span className="truncate">{t(dropItem.labelKey, dropItem.defaultLabel)}</span>
+                          </span>
+                          {dropItem.badge && (
+                            <span className="rounded-full bg-[#C7982F]/25 px-2 py-0.5 text-[9px] font-bold text-[#806326] dark:text-[#E4C783]">
+                              {dropItem.badge}
+                            </span>
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* LEVEL 2: Compact Food Row (Desktop only) */}
+      {showFoodRow && (
+        <div
+          role="navigation"
+          aria-label={t('nav.foodRow', 'Compact food categories')}
+          className="hidden lg:flex items-center gap-4 px-2 py-0.5 text-[11px] font-medium tracking-wide"
+        >
+          {COMPACT_FOOD_NAV_ITEMS.map((food, index) => {
+            const isFoodActive = isFoodItemActive(food);
+
+            return (
+              <React.Fragment key={food.id}>
+                {index > 0 && (
+                  <span className="text-[#C7982F]/40 select-none text-[9px]" aria-hidden="true">
+                    •
+                  </span>
+                )}
+                <Link
+                  to={food.path}
+                  data-nav-path={food.path}
+                  aria-current={isFoodActive ? 'page' : undefined}
+                  className={`focus-ring transition-colors duration-150 py-0.5 cursor-pointer ${
+                    isFoodActive
+                      ? 'border-b-2 border-[#C7982F] font-bold text-[#806326] dark:text-[#E4C783]'
+                      : 'text-[#29231D]/75 hover:text-[#042821] dark:text-[#F6F1EA]/75 dark:hover:text-[#FFFCF7]'
+                  }`}
+                >
+                  {food.id === 'herbs-spices'
+                    ? t('catalog.navHerbs', t(food.labelKey, food.defaultLabel))
+                    : t(food.labelKey, food.defaultLabel)}
+                </Link>
+              </React.Fragment>
+            );
+          })}
+        </div>
+      )}
     </nav>
   );
 }

@@ -83,6 +83,18 @@ test('chat carries canonical server instructions and current Groq JSON schema wi
   assert.ok(result.aiBody.messages[0].content.includes(chat.body.system));
   assert.ok(result.aiBody.messages[0].content.includes('Never claim a ticket was filed'));
   assert.ok(result.aiBody.messages[0].content.includes('Do not diagnose'));
+  const schema = result.aiBody.response_format.json_schema.schema;
+  assert.deepEqual(schema.required, [
+    'action', 'reply', 'openingIntent', 'conversationalOpening', 'selectedProducts', 'suggestedCustomizations',
+    'applicablePolicies', 'missingInfoQuestions', 'recommendedProductIds', 'inquiryPrefill'
+  ]);
+  assert.ok(schema.properties.openingIntent);
+  assert.ok(schema.properties.selectedProducts);
+  assert.ok(schema.properties.suggestedCustomizations);
+  assert.ok(schema.properties.applicablePolicies);
+  assert.ok(schema.properties.missingInfoQuestions);
+  assert.ok(schema.properties.recommendedProductIds);
+  assert.ok(schema.properties.inquiryPrefill);
 });
 
 test('chat rejects empty, oversized and wrong-channel messages or missing server instructions', () => {
@@ -106,6 +118,50 @@ test('valid website replies preserve the existing text/reply contract and curren
   assert.equal(result.responseBody.text, result.responseBody.reply);
   assert.equal(result.responseBody.available, true);
   assert.equal(result.responseBody.modelUsed, 'n8n-groq');
+});
+
+test('website reply extractor forwards structured recommendations, intent selections, and inquiry prefill when present', () => {
+  const structuredContent = {
+    action: 'answer',
+    openingIntent: 'greeting_celebration',
+    conversationalOpening: 'Warm celebration greetings from AllBarka.',
+    selectedProducts: [{ productId: 'bid-box-luxury-tin', variantLabel: 'Empty Pack (25 pcs)' }],
+    suggestedCustomizations: ['monogram', 'custom_ribbon'],
+    applicablePolicies: ['lead_time', 'shipping_rates'],
+    missingInfoQuestions: ['ask_event_date'],
+    reply: 'Here are our celebration packaging options.',
+    recommendedProductIds: ['bid-box-luxury-tin', 'bid-box-tabarruk-set'],
+    inquiryPrefill: {
+      productId: 'bid-box-luxury-tin',
+      packagingVariant: 'Empty Box (1 pc)',
+      boxMode: 'empty',
+      quantity: 50,
+      eventType: 'Nikkah',
+    },
+  };
+  const response = {
+    choices: [{
+      finish_reason: 'stop',
+      message: { content: JSON.stringify(structuredContent) },
+    }],
+  };
+  const result = run('Extract Website Reply', response);
+  assert.equal(result.httpStatus, 200);
+  assert.equal(result.responseBody.action, 'answer');
+  assert.equal(result.responseBody.openingIntent, 'greeting_celebration');
+  assert.equal(result.responseBody.conversationalOpening, 'Warm celebration greetings from AllBarka.');
+  assert.deepEqual(result.responseBody.selectedProducts, [{ productId: 'bid-box-luxury-tin', variantLabel: 'Empty Pack (25 pcs)' }]);
+  assert.deepEqual(result.responseBody.suggestedCustomizations, ['monogram', 'custom_ribbon']);
+  assert.deepEqual(result.responseBody.applicablePolicies, ['lead_time', 'shipping_rates']);
+  assert.deepEqual(result.responseBody.missingInfoQuestions, ['ask_event_date']);
+  assert.deepEqual(result.responseBody.recommendedProductIds, ['bid-box-luxury-tin', 'bid-box-tabarruk-set']);
+  assert.deepEqual(result.responseBody.inquiryPrefill, {
+    productId: 'bid-box-luxury-tin',
+    packagingVariant: 'Empty Box (1 pc)',
+    boxMode: 'empty',
+    quantity: 50,
+    eventType: 'Nikkah',
+  });
 });
 
 test('human replies contain the exact official support URL while spoofed or other URLs are removed', () => {

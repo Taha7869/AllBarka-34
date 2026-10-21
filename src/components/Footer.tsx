@@ -7,13 +7,13 @@ import { AllBarkaCrestVector } from './AllBarkaLogo';
 import { STORE_CONFIG } from '../config/store';
 import { CONTACT_CONFIG, buildHumanSupportWhatsAppUrl } from '../config/contacts';
 import NewsletterCard from './NewsletterCard';
-import { CANONICAL_CATEGORIES } from '../config/categories';
+import { CANONICAL_CATEGORIES, CUSTOMER_FACING_CATEGORIES, getCategoryMeta } from '../config/categories';
 
 export default function Footer() {
   const { t } = useLanguage();
   const collections = [
     ['footer.allProducts', '/shop'],
-    ...Object.keys(CANONICAL_CATEGORIES).map(id => [`shop.${id}`, id === 'gift-boxes' ? '/gifting' : `/shop/${id}`]),
+    ...CUSTOMER_FACING_CATEGORIES.map(id => [`shop.${id}`, id === 'gift-boxes' ? '/gifting' : `/shop/${id}`]),
   ];
   const journal = [
     ['footer.journal', '/journal'], ['footer.story', '/pages/our-story'], ['footer.sourcing', '/pages/our-story'],
@@ -24,7 +24,7 @@ export default function Footer() {
     ['footer.returns', '/policies/refund'], ['footer.privacy', '/policies/privacy'], ['footer.terms', '/policies/terms'],
   ];
   const column = (title: string, links: string[][]) => <div className="footer-links-col" key={title}>
-    <h3>{t(title)}</h3><ul>{links.map(([key, href]) => <li key={key}><Link to={href}>{t(key)}</Link></li>)}</ul>
+    <h3>{t(title)}</h3><ul>{links.map(([key, href]) => <li key={key}><Link to={href}>{t(key, key.startsWith('shop.') ? getCategoryMeta(key.slice(5))?.name : undefined)}</Link></li>)}</ul>
   </div>;
   return <footer id="site-footer" className="site-footer">
     <div className="site-footer-promise"><div><ShieldCheck size={21}/><span><strong>{t('footer.pure')}</strong><small>{t('footer.pureCopy')}</small></span></div><div><Truck size={21}/><span><strong>{t('footer.dispatch')}</strong><small>{t('footer.dispatchCopy')}</small></span></div><div><Sparkles size={21}/><span><strong>{t('footer.seal')}</strong><small>{t('footer.sealCopy')}</small></span></div></div>

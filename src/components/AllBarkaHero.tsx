@@ -2,17 +2,15 @@ import { useCatalogProducts } from '../contexts/CatalogContext';
 import { searchCatalog, startingPrice } from '../lib/catalogDiscovery';
 import React, { lazy, Suspense, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Languages, ArrowRight, Compass, ArrowDown } from 'lucide-react';
-import { useLanguage, type LanguageCode } from '../contexts/LanguageContext';
+import { ArrowRight, Compass, ArrowDown } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { AllBarkaFullLogo } from './AllBarkaLogo';
 import CategoryQuickPills from './CategoryQuickPills';
 import GradientText from './GradientText';
 import PlaceholdersAndVanishInput from './ui/placeholders-and-vanish-input';
-import { PRODUCTS } from '../data/products';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { getLocalized } from '../utils/localize';
-import SelectionGuide from './SelectionGuide';
-import './AllBarkaHero.css';
+const SelectionGuide = lazy(() => import('./SelectionGuide'));
 
 interface AllBarkaHeroProps {
   onOpenCart?: () => void;
@@ -20,15 +18,9 @@ interface AllBarkaHeroProps {
   onSelectCategory?: (category: string, query?: string) => void;
 }
 
-const LANGUAGES: { code: LanguageCode; label: string }[] = [
-  { code: 'en', label: 'English' },
-  { code: 'ur', label: 'اردو' },
-  { code: 'ar', label: 'العربية' },
-];
-
 export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps = {}) {
   const PRODUCTS = useCatalogProducts();
-  const { t, language, isRtl, setLanguage } = useLanguage();
+  const { t, language, isRtl } = useLanguage();
   const mediaCover = useProductMediaCover();
   const [query, setQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
@@ -57,23 +49,6 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
       </picture>
       <div className="heritage-hero-wash" aria-hidden="true" />
 
-      <div className="heritage-hero-language" role="group" aria-label={t('nav.language')}>
-        <Languages size={15} aria-hidden="true" />
-        {LANGUAGES.map(item => (
-          <button
-            key={item.code}
-            type="button"
-            lang={item.code}
-            dir={item.code === 'en' ? 'ltr' : 'rtl'}
-            aria-pressed={language === item.code}
-            onClick={() => setLanguage(item.code)}
-            className="heritage-hero-language-button focus-ring"
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
-
       <div className="heritage-hero-content">
         <AllBarkaFullLogo size="md" variant="light" as="span" className="heritage-hero-brand" />
         <h1 className="heritage-hero-title">
@@ -81,9 +56,9 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
           <em><GradientText colors={['#e4c783', '#fff0bd', '#d7b263', '#fff0bd', '#e4c783']} animationSpeed={12}>{t('heroHeadlinePart2')}</GradientText></em>
         </h1>
         <p className="heritage-hero-description">{t('heroSubtitle')}</p>
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-          <Link to="/shop" className="focus-ring inline-flex min-h-12 items-center gap-3 rounded-full bg-[#e4c783] px-7 text-xs font-semibold text-[#092e23] transition-colors hover:bg-[#f1dca9]">{t('boutique.shop')}<ArrowRight size={16} /></Link>
-          <Link to="/gifting" className="focus-ring inline-flex min-h-12 items-center gap-3 rounded-full border border-[#e4c783]/50 px-6 text-xs font-semibold text-[#fff8e9] transition-colors hover:bg-white/10">{t('boutique.gifting')}</Link>
+        <div className="mt-7 flex flex-wrap items-center justify-center gap-3.5">
+          <Link to="/shop/dry-fruits" className="focus-ring inline-flex min-h-12 items-center gap-3 rounded-full bg-[#e4c783] px-7 text-xs font-semibold text-[#092e23] transition-colors hover:bg-[#f1dca9]">{t('hero.shopDryFruits', 'Shop Dry Fruits')}<ArrowRight size={16} /></Link>
+          <Link to="/gifting" className="focus-ring inline-flex min-h-12 items-center gap-3 rounded-full border border-[#e4c783]/50 px-6 text-xs font-semibold text-[#fff8e9] transition-colors hover:bg-white/10">{t('hero.exploreGifts', 'Explore Gifts')}</Link>
         </div>
 
         <div

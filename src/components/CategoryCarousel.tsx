@@ -6,8 +6,11 @@ import useEmblaCarousel from 'embla-carousel-react';
 import { useReducedMotion } from 'motion/react';
 import { canRotatePantry, pantryCardProjection, pantryRotationDistance } from '../lib/pantryMotion';
 import { visibleCardFraction } from '../lib/circularCatalogue';
-import { CANONICAL_CATEGORIES } from '../config/categories';
+import { CANONICAL_CATEGORIES, canonicalCollectionKey, getEquivalentCollectionIds } from '../config/categories';
 import { PRODUCTS, getProductImage } from '../data/products';
+import { useMerchandisingSettings } from '../contexts/MerchandisingContext';
+import { DEFAULT_MERCHANDISING } from '../config/merchandising';
+import type { MerchandisingSettings } from '../types';
 
 const collectionPresentation = [
   { id: 'all', name: 'All Items', image: '/assets/categories/all_items.png', altKey: 'imageAlt.hero', link: '/shop' },
@@ -18,18 +21,185 @@ const collectionPresentation = [
   { id: 'oils', name: 'Cold-Pressed Oils', image: '/images/generated/category-oils-tile-v1.webp', altKey: 'imageAlt.categoryOils', link: '/shop/oils' },
   { id: 'essentials', name: 'Desi Essentials', image: '/images/generated/category-essentials-tile-v1.webp', altKey: 'imageAlt.categoryEssentials', link: '/shop/essentials' },
 ];
-/** Preserve the established collection art/order; new canonical collections join automatically. */
-export const PANTRY_CATEGORIES = [
+export const PANTRY_CATEGORIES: CarouselSlideItem[] = [
   ...collectionPresentation,
   ...Object.values(CANONICAL_CATEGORIES).filter(category => !collectionPresentation.some(item => item.id === category.id)).map(category => {
     const cover = PRODUCTS.find(product => product.active !== false && product.category === category.id);
     return { id: category.id, name: category.name, image: cover?.image === null ? '' : cover ? getProductImage(cover) : '', altKey: `catalog.alt.${category.id}`, link: `/shop/${category.id}` };
   }),
 ];
-const categories = PANTRY_CATEGORIES;
 
-export default function CategoryCarousel() {
-  const { t } = useLanguage();
+const DEFAULT_COLLECTION_IMAGES: Record<string, string> = {
+  all: '/assets/categories/all_items.png',
+  bundles: '/assets/categories/deals.png',
+  combos: '/assets/categories/deals.png',
+  nuts: '/assets/categories/dry_fruits.png',
+  'dry-fruits': '/assets/categories/dry_fruits.png',
+  'snacks-seeds': '/assets/categories/snacks.png',
+  'seeds-snacks': '/assets/categories/snacks.png',
+  'gift-boxes': '/assets/categories/gifts.png',
+  gifts: '/assets/categories/gifts.png',
+  oils: '/images/generated/category-oils-tile-v1.webp',
+  essentials: '/images/generated/category-essentials-tile-v1.webp',
+  'celebration-boxes': '/assets/categories/gifts.png',
+  deals: '/assets/categories/deals.png',
+  'personalized-treats': '/assets/categories/all_items.png',
+};
+
+export interface CategoryCarouselProps {
+  settings?: MerchandisingSettings;
+}
+
+export interface CarouselSlideItem {
+  id: string;
+  name: string;
+  title?: string;
+  image: string;
+  link: string;
+  altKey: string;
+  badge?: string;
+}
+
+export default function CategoryCarousel({ settings: propSettings }: CategoryCarouselProps = {}) {
+  const { t, language } = useLanguage();
+  const contextSettings = useMerchandisingSettings();
+  const hasCustomSettings = Boolean(propSettings || (contextSettings && contextSettings !== DEFAULT_MERCHANDISING));
+  const activeSettings = propSettings || contextSettings;
+
+  const categories = React.useMemo<CarouselSlideItem[]>(() => {
+    if (!hasCustomSettings || !activeSettings) {
+      return PANTRY_CATEGORIES;
+    }
+    const visibility = activeSettings.categoryVisibility || {};
+    const order = activeSettings.categoryOrder || [];
+    // Safe legacy defaults only where settings.collections is absent, not explicitly empty
+    const rawCollections = activeSettings.collections !== undefined
+      ? activeSettings.collections
+      : DEFAULT_MERCHANDISING.collections;
+
+    // 1. Build normalized lookup for published collections keyed by canonicalCollectionKey
+    const normalizedCollections = new Map<string, {
+      collectionId: string;
+      title_en?: string;
+      title_ur?: string;
+      image?: string;
+      slug?: string;
+      visible?: boolean;
+      badge?: string;
+    }>();
+
+    for (const col of rawCollections) {
+      const cKey = canonicalCollectionKey(col.collectionId);
+      const existing = normalizedCollections.get(cKey);
+
+      if (!existing) {
+        normalizedCollections.set(cKey, { ...col });
+      } else {
+        // Deterministic conflict resolution:
+        // A hidden equivalent must never be resurrected by a conflicting visible alias
+        const isHidden = existing.visible === false || col.visible === false;
+        const isExplicitlyVisible = existing.visible === true || col.visible === true;
+        const resolvedVisibility = isHidden ? false : (isExplicitlyVisible ? true : undefined);
+
+        // Overrides: prefer modern canonical ID, or non-empty overrides
+        const preferCol = (col.collectionId === cKey);
+        normalizedCollections.set(cKey, {
+          collectionId: (col.collectionId === cKey) ? col.collectionId : existing.collectionId,
+          title_en: preferCol ? (col.title_en || existing.title_en) : (existing.title_en || col.title_en),
+          title_ur: preferCol ? (col.title_ur || existing.title_ur) : (existing.title_ur || col.title_ur),
+          image: preferCol ? (col.image || existing.image) : (existing.image || col.image),
+          slug: preferCol ? (col.slug || existing.slug) : (existing.slug || col.slug),
+          badge: preferCol ? (col.badge || existing.badge) : (existing.badge || col.badge),
+          visible: resolvedVisibility,
+        });
+      }
+    }
+
+    const isVisible = (cKey: string) => {
+      const col = normalizedCollections.get(cKey);
+      if (col?.visible === false) return false;
+
+      // Check all equivalent aliases in categoryVisibility
+      const aliases = getEquivalentCollectionIds(cKey);
+      for (const alias of aliases) {
+        if (visibility[alias] === false) return false;
+      }
+
+      return true;
+    };
+
+    // 2. Assemble candidate slides
+    const slideCandidates: CarouselSlideItem[] = [];
+    const seenCanonicalKeys = new Set<string>();
+
+    // A. Start with base pantry categories
+    for (const cat of PANTRY_CATEGORIES) {
+      const cKey = canonicalCollectionKey(cat.id);
+      if (seenCanonicalKeys.has(cKey)) continue;
+      seenCanonicalKeys.add(cKey);
+
+      if (!isVisible(cKey)) continue;
+
+      const col = normalizedCollections.get(cKey);
+      const colTitle = col
+        ? (language === 'ur' ? (col.title_ur || col.title_en) : (col.title_en || col.title_ur))
+        : undefined;
+
+      const defaultLink = (cKey === 'dry-fruits') ? '/shop/dry-fruits'
+        : (cKey === 'seeds-snacks') ? '/shop/seeds-snacks'
+        : cat.link || `/shop/${cat.id}`;
+
+      slideCandidates.push({
+        id: col?.collectionId || cat.id,
+        name: colTitle || cat.name,
+        title: colTitle,
+        image: col?.image || cat.image || DEFAULT_COLLECTION_IMAGES[cKey] || DEFAULT_COLLECTION_IMAGES[cat.id] || '',
+        link: col?.slug || defaultLink,
+        altKey: cat.altKey,
+        badge: col?.badge,
+      });
+    }
+
+    // B. Add any published collections not already present in base pantry categories
+    for (const col of rawCollections) {
+      const cKey = canonicalCollectionKey(col.collectionId);
+      if (seenCanonicalKeys.has(cKey)) continue;
+      seenCanonicalKeys.add(cKey);
+
+      if (!isVisible(cKey)) continue;
+
+      const colEntry = normalizedCollections.get(cKey) || col;
+      const colTitle = language === 'ur'
+        ? (colEntry.title_ur || colEntry.title_en)
+        : (colEntry.title_en || colEntry.title_ur);
+
+      slideCandidates.push({
+        id: colEntry.collectionId,
+        name: colTitle || colEntry.collectionId,
+        title: colTitle,
+        image: colEntry.image || DEFAULT_COLLECTION_IMAGES[cKey] || DEFAULT_COLLECTION_IMAGES[colEntry.collectionId] || '',
+        link: colEntry.slug || `/shop/${colEntry.collectionId}`,
+        altKey: `catalog.alt.${colEntry.collectionId}`,
+        badge: colEntry.badge,
+      });
+    }
+
+    // 3. Deterministic Ordering: normalize ordering IDs
+    if (!order.length) return slideCandidates;
+
+    const normalizedOrder = order.map(id => canonicalCollectionKey(id));
+    const getOrderPos = (id: string) => {
+      const cKey = canonicalCollectionKey(id);
+      const idx = normalizedOrder.indexOf(cKey);
+      return idx !== -1 ? idx : 999;
+    };
+
+    return [...slideCandidates].sort((a, b) => {
+      const posA = getOrderPos(a.id);
+      const posB = getOrderPos(b.id);
+      return posA - posB;
+    });
+  }, [activeSettings, hasCustomSettings, language]);
   const reducedMotion = Boolean(useReducedMotion());
   const sectionRef = useRef<HTMLElement>(null);
   const interactionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -67,6 +237,10 @@ export default function CategoryCarousel() {
     observer.observe(emblaApi.rootNode());
     return () => observer.disconnect();
   }, [emblaApi]);
+
+  useEffect(() => {
+    if (emblaApi) emblaApi.reInit();
+  }, [emblaApi, categories]);
 
   useEffect(() => {
     const sync = () => setPageVisible(!document.hidden);
@@ -189,18 +363,26 @@ export default function CategoryCarousel() {
             <div className="editorial-pantry-track">
               {categories.map((category, index) => (
                 <div key={category.id} className="editorial-pantry-slide" aria-hidden={!visible.has(index)} inert={!visible.has(index)}>
-                  <Link to={category.link} draggable={false} aria-label={t(`pantry.${category.id}`)}
+                  <Link to={category.link} draggable={false} aria-label={category.title || t(`pantry.${category.id}`, category.name)}
                     className="editorial-category group relative block w-full overflow-hidden border border-[var(--color-border-accent)] bg-[var(--color-surface)] focus-ring hover:border-[#C7982F]/60 pointer-events-auto select-none">
-                    {category.image ? <img src={category.image} alt={t(category.altKey, category.name)} draggable={false}
+                    {category.image ? <img src={category.image} alt={category.title || t(category.altKey, category.name)} draggable={false}
                       onError={event => { const node = event.currentTarget; node.onerror = null; node.src = '/images/product-placeholder.svg'; }}
                       className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:transform-none"
-                      loading="lazy" decoding="async" /> : <div role="img" aria-label={category.name} className="absolute inset-0 flex items-center justify-center bg-[#173a2c] font-serif text-3xl text-[#e4c783]">AllBarka</div>}
+                      loading="lazy" decoding="async" /> : <div role="img" aria-label={category.title || category.name} className="absolute inset-0 flex items-center justify-center bg-[#173a2c] font-serif text-3xl text-[#e4c783]">AllBarka</div>}
                     <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-emerald)]/95 via-[var(--color-emerald)]/30 to-transparent pointer-events-none" />
-                    {index < 2 && <span className="absolute left-4 top-4 rounded-full border border-white/25 bg-[var(--color-emerald)]/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-[var(--color-ivory)] backdrop-blur-md pointer-events-none z-10">{t(index === 0 ? 'pantry.start' : 'pantry.value')}</span>}
+                    {category.badge ? (
+                      <span className="absolute left-4 top-4 rounded-full border border-white/25 bg-[var(--color-emerald)]/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-[var(--color-ivory)] backdrop-blur-md pointer-events-none z-10">
+                        {category.badge}
+                      </span>
+                    ) : index < 2 ? (
+                      <span className="absolute left-4 top-4 rounded-full border border-white/25 bg-[var(--color-emerald)]/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-[var(--color-ivory)] backdrop-blur-md pointer-events-none z-10">
+                        {t(index === 0 ? 'pantry.start' : 'pantry.value')}
+                      </span>
+                    ) : null}
                     <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-5 pointer-events-none z-10">
                       <div className="min-w-0">
-                        <span dir="auto" className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#e4c783] sm:text-[10px]">{t(`pantry.${category.id}Eyebrow`)}</span>
-                        <h3 dir="auto" className="font-serif text-2xl font-medium leading-tight text-[#FFFCF7] drop-shadow-md">{t(`pantry.${category.id}`)}</h3>
+                        <span dir="auto" className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#e4c783] sm:text-[10px]">{category.badge || t(`pantry.${category.id}Eyebrow`, 'Collection')}</span>
+                        <h3 dir="auto" className="font-serif text-2xl font-medium leading-tight text-[#FFFCF7] drop-shadow-md">{category.title || t(`pantry.${category.id}`, category.name)}</h3>
                       </div>
                       <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#FFFCF7]/25 bg-[#FFFCF7]/10 text-[#FFFCF7] backdrop-blur-md transition-colors group-hover:border-[var(--color-gold)] group-hover:bg-[var(--color-gold)] group-hover:text-[#042821] motion-reduce:transition-none"><ArrowUpRight size={17} aria-hidden="true" /></span>
                     </div>

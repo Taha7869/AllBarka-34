@@ -23,18 +23,85 @@ export interface BidBoxFilledOption {
 }
 
 export interface BidBoxConfig {
-  emptyUnitStarting: number;
-  emptyBulk50Unit: number;
-  emptyBulk100Unit: number;
-  filledMin: number;
-  filledMax: number;
-  filledSummary: string;
-  occasionTag: string;
+  emptyUnitStarting?: number;
+  emptyBulk50Unit?: number;
+  emptyBulk100Unit?: number;
+  filledMin?: number;
+  filledMax?: number;
+  filledSummary?: string;
+  occasionTag?: string;
   dimensionsAndCapacity?: string;
   emptyOptionDetails?: string;
   filledOptionDetails?: string;
-  emptyTiers: BidBoxBulkTier[];
-  filledOptions: BidBoxFilledOption[];
+  emptyTiers?: BidBoxBulkTier[];
+  filledOptions?: BidBoxFilledOption[];
+  boxStyle?: string;
+  allowsCustomDryFruits?: boolean;
+  capacityG?: number;
+  minUnits?: number;
+  packagingSubcategory?: 'tin' | 'tabarruk' | 'wedding' | 'baby' | 'acrylic' | string | null;
+  [key: string]: any;
+}
+
+export type ProductStatus = 'draft' | 'published' | 'archived';
+export type OrderMode = 'standard' | 'inquiry_quote' | 'both';
+
+export interface ProductPersonalizationConfig {
+  supported: boolean;
+  allowMonogram?: boolean;
+  allowCardMessage?: boolean;
+  allowRibbonColor?: boolean;
+  ribbonColors?: string[];
+  options?: string[];
+  notes?: string;
+}
+
+export interface MerchandisingShowcaseTab {
+  id: string; // e.g. 'dry-fruits', 'pantry', 'gifts', 'celebration-boxes', 'deals'
+  label_en: string;
+  label_ur: string;
+  visible: boolean;
+  productIds: string[]; // exactly 3 admin-selected products per tab
+}
+
+export interface MerchandisingCollectionEntry {
+  collectionId: string; // e.g. 'combos', 'celebration-boxes', 'deals', 'personalized-treats'
+  title_en: string;
+  title_ur: string;
+  slug: string; // validated internal destination e.g. '/celebration-boxes'
+  image?: string;
+  badge?: string;
+  visible: boolean;
+}
+
+export interface MerchandisingOccasionEntry {
+  tag: string; // e.g. 'wedding', 'ramadan', 'eid', 'umrah', 'corporate', 'baby-announcement'
+  title_en: string;
+  title_ur: string;
+  slug: string; // validated internal destination e.g. '/occasions/wedding'
+  icon?: string;
+  visible: boolean;
+}
+
+export interface MerchandisingAutoplayConfig {
+  enabled: boolean;
+  intervalMs: number; // Rule D5 default: 6000
+  resumeDelayMs: number; // Rule D5 default: 3000
+}
+
+export interface MerchandisingSettings {
+  showcaseTabs: MerchandisingShowcaseTab[];
+  featuredProductIds: string[];
+  categoryOrder: string[];
+  categoryVisibility: Record<string, boolean>;
+  autoplay: MerchandisingAutoplayConfig;
+  autoplayDurationMs: number;
+  autoplayResumeDelayMs: number;
+  collections: MerchandisingCollectionEntry[];
+  occasions: MerchandisingOccasionEntry[];
+  revision: number;
+  updatedAt: string;
+  updatedBy?: string;
 }
 
 export interface Product {
@@ -49,7 +116,8 @@ export interface Product {
   active?: boolean;
   inStock?: boolean;
   stockQty?: number;
-  variants?: { label: string; price: number }[];
+  variants?: { label: string; price: number; available?: boolean; moqOverride?: number; minOrderQuantity?: number; [key: string]: any }[];
+  minOrderQuantity?: number;
   pricePer100g?: number;
   allowCustomWeight?: boolean;
   minCustomWeightG?: number;
@@ -58,9 +126,13 @@ export interface Product {
   quoteOnly?: boolean;
   isBidBox?: boolean;
   bidBoxConfig?: BidBoxConfig;
-  components?: string[];
+  packagingSubcategory?: 'tin' | 'tabarruk' | 'wedding' | 'baby' | 'acrylic' | string | null;
+  components?: Array<string | { productId: string; quantity?: number; unitWeightG?: number }>;
   componentIds?: string[];
+  contents?: string[];
   badge?: string;
+  revision?: number;
+  origins?: string[];
   /** Owner-editable packed shipping weight for a fixed bundle, in grams. */
   shippingWeightG?: number;
   /** Merchant-approved grams used for shipping billing, keyed by canonical portion. */
@@ -118,6 +190,40 @@ export interface Product {
   tasteProfile_en?: string;
   tasteProfile_ur?: string;
   tasteProfile_ar?: string;
+
+  /** Canonical product family (e.g. 'badam', 'khajoor', 'tin-bid-box') */
+  productFamily?: string;
+  /** Curated commercial collection slugs (e.g. 'combos', 'celebration-boxes', 'deals', 'personalized-treats') */
+  collections?: string[];
+  /** Occasion tags (e.g. 'wedding', 'umrah', 'ramadan', 'birth', 'corporate') */
+  occasions?: string[];
+  /** Personalization options */
+  personalization?: ProductPersonalizationConfig;
+  /** Explicit inclusions for gift boxes, hampers or bundles */
+  inclusions?: string[];
+  /** Explicit exclusions or prerequisites */
+  exclusions?: string[];
+  /** Ordering workflow supported: direct checkout, inquiry quote, or both */
+  orderMode?: OrderMode;
+  /** Publication lifecycle status: 'draft' | 'published' | 'archived' */
+  status?: ProductStatus;
+  /** Custom packaging or product MOQ override */
+  moqOverride?: number;
+  /** Preparation and lead time in calendar days (e.g. 10 days for custom packaging) */
+  preparationDays?: number;
+  /** Display sorting order within category or collection */
+  displayOrder?: number;
+
+  // Private & supplier fields (authoritative admin only; stripped from public responses)
+  referencePrice?: number;
+  supplierCost?: number;
+  supplierName?: string;
+  supplierItemUrl?: string;
+  internalNotes?: string;
+  importBatch?: string;
+  importTimestamp?: string;
+  adminRevision?: number;
+  targetMarginPercent?: number;
 }
 
 export interface CartItem {
@@ -215,4 +321,78 @@ export interface ActiveReward {
   expiresAt: number;
   status: 'ACTIVE' | 'USED' | 'EXPIRED' | 'CANCELLED';
   rewardType?: string;
+}
+
+export type InquiryType = 'bid_box_quote' | 'wholesale' | 'custom_hamper' | 'general';
+export type InquiryStatus = 'NEW' | 'CONTACTED' | 'QUOTED' | 'APPROVED' | 'CLOSED';
+
+export interface InquiryRecord {
+  id: string;
+  ticketId: string;
+  quoteId: string;
+  type: InquiryType;
+  customerName: string;
+  phone: string;
+  email: string;
+  city: string;
+  productId: string;
+  productName: string;
+  packagingVariant?: string | null;
+  boxMode: 'empty' | 'filled' | 'custom';
+  quantity: number;
+  quantityUnit?: 'pieces' | 'packs' | 'sets';
+  piecesPerPack?: number;
+  eventType: string;
+  targetEventDate?: string | null;
+  budgetType?: 'per_piece' | 'total' | null;
+  preferredFillings?: string[];
+  customFillingsNotes?: string;
+  monogramText?: string;
+  cardMessage?: string;
+  customPrintText: string;
+  standardPrice: number | null;
+  packPrice?: number | null;
+  perPiecePrice?: number | null;
+  requiresTeamQuote?: boolean;
+  unresolvedVariant?: boolean;
+  belowMoq?: boolean;
+  moqRequired?: number | null;
+  minPacksRequired?: number | null;
+  isVerifiedCatalogProduct?: boolean;
+  submissionKey?: string | null;
+  offeredPrice: number | null;
+  finalAgreedPrice: number | null;
+  notes: string;
+  adminNotes: string;
+  status: InquiryStatus;
+  whatsappUrl: string;
+  whatsappReplyUrl: string;
+  assignedTo?: string | null;
+  followUpDate?: string | null;
+  leadTimeNoticeAcknowledged?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CustomQuoteModalInit {
+  productId?: string;
+  productName?: string;
+  mode?: 'empty' | 'filled' | 'custom';
+  quantity?: number;
+  eventType?: string;
+  occasion?: string;
+  targetUnitPrice?: number;
+  variantLabel?: string;
+  portion?: string;
+  notes?: string;
+  targetEventDate?: string;
+  preferredFillings?: string[];
+  customFillingsNotes?: string;
+  monogramText?: string;
+  cardMessage?: string;
+  customPrintText?: string;
+  customPrinting?: string;
+  city?: string;
+  budgetType?: 'per_piece' | 'total';
+  targetPricePkr?: number | string;
 }

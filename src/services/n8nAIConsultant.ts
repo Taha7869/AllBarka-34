@@ -1,7 +1,14 @@
+import type { ApprovedOpeningIntent } from '../lib/aiBuddyResolution';
+
 export interface ConsultantRequest {
   message: string;
   history: unknown;
   system: string;
+}
+
+export interface ProductSelectionReference {
+  productId: string;
+  variantLabel?: string | null;
 }
 
 export interface ConsultantReply {
@@ -11,6 +18,15 @@ export interface ConsultantReply {
   available: true;
   modelUsed: 'n8n-groq';
   supportUrl?: string;
+  openingIntent?: ApprovedOpeningIntent;
+  conversationalOpening?: string;
+  selectedProducts?: ProductSelectionReference[];
+  suggestedCustomizations?: string[];
+  applicablePolicies?: string[];
+  missingInfoQuestions?: string[];
+  recommendedProductIds?: string[];
+  inquiryPrefill?: Record<string, any> | null;
+  latencyMs?: number;
 }
 
 export const HUMAN_SUPPORT_URL = 'https://wa.me/923160666083';
@@ -42,8 +58,68 @@ export function extractN8nReply(value: unknown, depth = 0): ConsultantReply | nu
     } catch { return null; }
   }
   const action = result.action === 'human' ? 'human' : 'answer';
-  return { text, reply: text, action, available: true, modelUsed: 'n8n-groq',
-    ...(action === 'human' ? { supportUrl: HUMAN_SUPPORT_URL } : {}) };
+  const rawOpeningIntent = result.openingIntent;
+  const validOpeningIntents = ['greeting_celebration', 'greeting_gourmet', 'greeting_quote', 'greeting_general'];
+  const openingIntent: ApprovedOpeningIntent | undefined =
+    typeof rawOpeningIntent === 'string' && validOpeningIntents.includes(rawOpeningIntent.trim())
+      ? (rawOpeningIntent.trim() as ApprovedOpeningIntent)
+      : undefined;
+
+  const conversationalOpening =
+    typeof result.conversationalOpening === 'string' && result.conversationalOpening.trim()
+      ? result.conversationalOpening.trim().slice(0, 1000)
+      : undefined;
+
+  const rawSelected = result.selectedProducts;
+  const selectedProducts: ProductSelectionReference[] | undefined = Array.isArray(rawSelected)
+    ? rawSelected
+        .filter((item: any) => item && typeof item.productId === 'string' && item.productId.trim())
+        .map((item: any) => ({
+          productId: item.productId.trim(),
+          variantLabel: typeof item.variantLabel === 'string' && item.variantLabel.trim() ? item.variantLabel.trim() : null,
+        }))
+    : undefined;
+
+  const rawCustomizations = result.suggestedCustomizations;
+  const suggestedCustomizations = Array.isArray(rawCustomizations)
+    ? rawCustomizations.filter((c: any): c is string => typeof c === 'string' && Boolean(c.trim())).map(c => c.trim())
+    : undefined;
+
+  const rawPolicies = result.applicablePolicies;
+  const applicablePolicies = Array.isArray(rawPolicies)
+    ? rawPolicies.filter((p: any): p is string => typeof p === 'string' && Boolean(p.trim())).map(p => p.trim())
+    : undefined;
+
+  const rawQuestions = result.missingInfoQuestions;
+  const missingInfoQuestions = Array.isArray(rawQuestions)
+    ? rawQuestions.filter((q: any): q is string => typeof q === 'string' && Boolean(q.trim())).map(q => q.trim())
+    : undefined;
+
+  const rawIds = result.recommendedProductIds ?? result.recommendations ?? result.productIds;
+  const recommendedProductIds = Array.isArray(rawIds)
+    ? rawIds.filter((id): id is string => typeof id === 'string' && Boolean(id.trim())).map(id => id.trim())
+    : undefined;
+  const inquiryPrefill =
+    result.inquiryPrefill && typeof result.inquiryPrefill === 'object' && !Array.isArray(result.inquiryPrefill)
+      ? result.inquiryPrefill
+      : null;
+
+  return {
+    text,
+    reply: text,
+    action,
+    available: true,
+    modelUsed: 'n8n-groq',
+    ...(action === 'human' ? { supportUrl: HUMAN_SUPPORT_URL } : {}),
+    ...(openingIntent ? { openingIntent } : {}),
+    ...(conversationalOpening ? { conversationalOpening } : {}),
+    ...(selectedProducts && selectedProducts.length > 0 ? { selectedProducts } : {}),
+    ...(suggestedCustomizations && suggestedCustomizations.length > 0 ? { suggestedCustomizations } : {}),
+    ...(applicablePolicies && applicablePolicies.length > 0 ? { applicablePolicies } : {}),
+    ...(missingInfoQuestions && missingInfoQuestions.length > 0 ? { missingInfoQuestions } : {}),
+    ...(recommendedProductIds && recommendedProductIds.length > 0 ? { recommendedProductIds } : {}),
+    ...(inquiryPrefill ? { inquiryPrefill } : {}),
+  };
 }
 
 export function getN8nAiConfig(env: NodeJS.ProcessEnv = process.env) {
@@ -70,13 +146,19 @@ export async function askN8nConsultant(input: ConsultantRequest): Promise<Consul
   });
   try {
     return await Promise.race([deadline, (async () => {
+      const bridgeStart = Date.now();
       const response = await fetch(config.url, {
         method: 'POST', redirect: 'error', signal: controller.signal,
         headers: { 'Content-Type': 'application/json', 'X-AllBarka-Webhook-Secret': config.secret },
         body: JSON.stringify({ source: 'website', message: input.message.trim(), history: normalizeConciergeHistory(input.history), system: input.system }),
       });
+      const bridgeElapsed = Date.now() - bridgeStart;
       if (!response.ok) throw new Error(response.status === 429 ? 'AI_RATE_LIMITED' : 'AI_UNAVAILABLE');
-      return extractN8nReply(await response.json());
+      const parsed = extractN8nReply(await response.json());
+      if (parsed) {
+        parsed.latencyMs = bridgeElapsed;
+      }
+      return parsed;
     })()]);
   } finally { clearTimeout(timer); }
 }

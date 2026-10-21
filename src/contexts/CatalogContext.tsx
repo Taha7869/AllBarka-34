@@ -8,8 +8,8 @@ import { HAMPER_BOX_SEEDS, boxFromPricing, validateHamperBoxPricing } from '../l
 
 const seeds = PRODUCTS.map(product => ({ ...product }));
 const CatalogContext = createContext({ products: PRODUCTS, refresh: async () => {} });
-export function CatalogProvider({ children }: { children: ReactNode }) {
-  const [products, setProducts] = useState<Product[]>(PRODUCTS);
+export function CatalogProvider({ children, initialProducts }: { children: ReactNode; initialProducts?: Product[] }) {
+  const [products, setProducts] = useState<Product[]>(() => initialProducts || PRODUCTS);
   const active = useRef(false);
   const inFlight = useRef<AbortController | null>(null);
   const version = useRef('');
@@ -23,12 +23,37 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
       if (!active.current || controller.signal.aborted || !Array.isArray(data.products) || typeof data.version !== 'string' || data.version === version.current) return;
       // Revalidate the public adapter and retain source-owned descriptive metadata only.
-      const next = seeds.map(seed => {
+      const handledIds = new Set<string>();
+      const next: Product[] = [];
+
+      for (const seed of seeds) {
+        handledIds.add(seed.id);
         const raw = data.products.find((product: Product) => product.id === seed.id);
-        if (!raw || typeof raw.catalogRevision !== 'string') throw new Error('INVALID_PUBLIC_CATALOG');
-        if (raw.active === false && Object.keys(raw.prices || {}).length === 0) return { ...seed, active: false, prices: {}, variants: [], allowCustomWeight: false, catalogRevision: raw.catalogRevision };
-        return productFromPricing(seed, pricingFromLegacy(raw, seed), raw.catalogRevision);
-      });
+        if (!raw) {
+          next.push({ ...seed, active: false, prices: {}, variants: [], allowCustomWeight: false, catalogRevision: 'unlisted' });
+          continue;
+        }
+        if (typeof raw.catalogRevision !== 'string') throw new Error('INVALID_PUBLIC_CATALOG');
+        if (raw.active === false && Object.keys(raw.prices || {}).length === 0) {
+          next.push({ ...seed, active: false, prices: {}, variants: [], allowCustomWeight: false, catalogRevision: raw.catalogRevision });
+        } else {
+          const fromPricing = productFromPricing(seed, pricingFromLegacy(raw, seed), raw.catalogRevision);
+          next.push({
+            ...fromPricing,
+            ...raw,
+            prices: fromPricing.prices,
+            variants: fromPricing.variants,
+          });
+        }
+      }
+
+      // Append newly created dynamic products absent from compiled seeds
+      for (const raw of data.products) {
+        if (!handledIds.has(raw.id) && raw.id) {
+          handledIds.add(raw.id);
+          next.push(raw);
+        }
+      }
       if (!Array.isArray(data.hamperBoxes)) throw new Error('INVALID_PUBLIC_CATALOG');
       const boxes = HAMPER_BOX_SEEDS.map(seed => {
         const raw = data.hamperBoxes.find((box: any) => box.id === seed.id);

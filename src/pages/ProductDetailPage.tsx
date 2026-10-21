@@ -25,6 +25,8 @@ import { resolveCustomWeight } from '../lib/productVariants';
 import { displayProductPrice } from '../lib/productSelection';
 import { openCustomQuoteModal } from '../components/CustomQuoteModal';
 import ProductPhotoViewer from '../components/ProductPhotoViewer';
+import { isPackagingProduct, getPackagingMoqDisplay } from '../lib/packagingMoq';
+import { resolveBidBoxConfig } from '../lib/bidBoxPricing';
 
 export default function ProductDetailPage() {
   const PRODUCTS = useCatalogProducts();
@@ -43,6 +45,9 @@ export default function ProductDetailPage() {
   const [isAdded, setIsAdded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [activeGalleryIdx, setActiveGalleryIdx] = useState(0);
+
+  const isPackaging = Boolean(product && isPackagingProduct(product));
+  const bidBoxConfig = useMemo(() => product ? resolveBidBoxConfig(product) : null, [product]);
   const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
   const photoViewerOpener = useRef<HTMLButtonElement | null>(null);
   const { savedIds, setSaved } = useSavedProducts();
@@ -96,6 +101,58 @@ export default function ProductDetailPage() {
     return [...sameCategory, ...otherBestsellers].slice(0, 4);
   }, [product, PRODUCTS]);
 
+  const disabledLabels = useMemo(
+    () =>
+      new Set(
+        Array.isArray(product?.variants)
+          ? product.variants.filter(v => v && v.available === false).map(v => v.label)
+          : []
+      ),
+    [product?.variants]
+  );
+
+  const weights = useMemo(
+    () =>
+      product
+        ? Object.keys(product.prices || {}).filter(
+            w => !disabledLabels.has(w) && Number.isFinite(product.prices[w]) && product.prices[w] > 0
+          )
+        : [],
+    [product, disabledLabels]
+  );
+
+  const hasCustomPriceOption = Boolean(
+    product && product.allowCustomWeight && Number.isFinite(product.pricePer100g) && (product.pricePer100g || 0) > 0
+  );
+  const isQuoteOnly = Boolean(
+    product && (product.quoteOnly || product.orderMode === 'inquiry_quote' || (weights.length === 0 && !hasCustomPriceOption))
+  );
+
+  let customSelection: ReturnType<typeof resolveCustomWeight> | null = null;
+  if (product && customWeightSelected) {
+    try {
+      customSelection = resolveCustomWeight(product, customGrams);
+    } catch {
+      /* Input shows the reason. */
+    }
+  }
+  const selectedWeight = customWeightSelected ? customSelection?.label || '' : weights[selectedWeightIndex] || weights[0] || '';
+  const candidatePrice = customWeightSelected ? customSelection?.price : (selectedWeight ? product?.prices?.[selectedWeight] : undefined);
+  const priceToUse = typeof candidatePrice === 'number' && Number.isFinite(candidatePrice) && candidatePrice > 0 ? candidatePrice : null;
+  const unit = !isQuoteOnly && priceToUse ? unitPrice(priceToUse, selectedWeight) : null;
+
+  const { moqPieces, minUnits: resolvedMinUnits, displayText: moqDisplayText } = useMemo(() => {
+    if (!product) return { moqPieces: 1 as number | null, minUnits: 1 as number | null, displayText: null as string | null };
+    return getPackagingMoqDisplay(product, selectedWeight || undefined);
+  }, [product, selectedWeight]);
+
+  const minUnits = resolvedMinUnits ?? 1;
+  const maxUnits = isPackaging ? 10000 : 50;
+
+  useEffect(() => {
+    setQuantity(prev => Math.max(minUnits, Math.min(maxUnits, prev)));
+  }, [minUnits, maxUnits]);
+
   if (!product) {
     return (
       <div className="w-full min-h-[70vh] bg-[var(--color-base,#F6F1EA)] flex items-center justify-center py-20 px-4 select-none">
@@ -131,16 +188,9 @@ export default function ProductDetailPage() {
     );
   }
 
-  const weights = Object.keys(product.prices);
-  let customSelection: ReturnType<typeof resolveCustomWeight> | null = null;
-  if (customWeightSelected) { try { customSelection = resolveCustomWeight(product, customGrams); } catch { /* Input shows the reason. */ } }
-  const selectedWeight = customWeightSelected ? customSelection?.label || '' : weights[selectedWeightIndex] || weights[0];
-  const candidatePrice = customWeightSelected ? customSelection?.price : product.prices[selectedWeight];
-  const priceToUse = typeof candidatePrice === 'number' && Number.isFinite(candidatePrice) && candidatePrice > 0 ? candidatePrice : null;
-  const unit = !product.quoteOnly && priceToUse ? unitPrice(priceToUse, selectedWeight) : null;
-
   const handleAddToCart = () => {
-    if (product.quoteOnly || !selectedWeight || !priceToUse) return;
+    if (isQuoteOnly || !selectedWeight || !priceToUse) return;
+    const finalQuantity = Math.max(minUnits, Math.min(maxUnits, quantity));
     addToCart({
       id: `${product.id}-${selectedWeight}`,
       productId: product.id,
@@ -152,7 +202,7 @@ export default function ProductDetailPage() {
       selectedWeight: selectedWeight,
       unitPrice: priceToUse,
       price: priceToUse,
-      quantity: quantity,
+      quantity: finalQuantity,
       wholesale: false,
     });
 
@@ -184,7 +234,7 @@ export default function ProductDetailPage() {
             '@type': 'Brand',
             name: 'AllBarka'
           },
-          ...(!product.quoteOnly && priceToUse ? { offers: {
+          ...(!isQuoteOnly && priceToUse ? { offers: {
             '@type': 'Offer',
             url: `${siteOrigin}/product/${product.id}`,
             priceCurrency: 'PKR',
@@ -286,7 +336,7 @@ export default function ProductDetailPage() {
           <div className="flex flex-col text-left">
             <div className="mb-4">
               <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] block mb-1.5">
-                {product.isBidBox && product.bidBoxConfig ? `${product.bidBoxConfig.occasionTag} • AllBarka Bespoke Atelier` : 'Single-Origin Batch • Hand-Sorted Lahore'}
+                {product.isBidBox && bidBoxConfig ? `${bidBoxConfig.occasionTag} • AllBarka Bespoke Atelier` : 'Single-Origin Batch • Hand-Sorted Lahore'}
               </span>
               <h1 dir="auto" className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold text-[var(--color-primary,#042821)] dark:text-[var(--color-text-primary,#F6F1EA)] leading-tight mb-2">
                 {getLocalized(product, 'name', language)}
@@ -313,30 +363,30 @@ export default function ProductDetailPage() {
                 </div>
               )}
 
-              {product.isBidBox && product.bidBoxConfig && (
+              {product.isBidBox && bidBoxConfig && (
                 <div className="mt-3 grid grid-cols-1 gap-2.5 rounded-2xl bg-[#FAF6EE] dark:bg-[#1A201E] border border-[#C7982F]/35 p-3.5 text-xs text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)]">
-                  {product.bidBoxConfig.dimensionsAndCapacity && (
+                  {bidBoxConfig.dimensionsAndCapacity && (
                     <div>
                       <strong className="uppercase tracking-wider text-[10px] text-[#8C6B1B] dark:text-[#E4C783] block">
                         Box Dimensions &amp; Capacity
                       </strong>
-                      <span>{product.bidBoxConfig.dimensionsAndCapacity}</span>
+                      <span>{bidBoxConfig.dimensionsAndCapacity}</span>
                     </div>
                   )}
-                  {product.bidBoxConfig.emptyOptionDetails && (
+                  {bidBoxConfig.emptyOptionDetails && (
                     <div className="border-t border-[#C7982F]/20 pt-2">
                       <strong className="uppercase tracking-wider text-[10px] text-[#8C6B1B] dark:text-[#E4C783] block">
                         Option 1 — Empty Box Only (Wholesale Bulk Tiers)
                       </strong>
-                      <span>{product.bidBoxConfig.emptyOptionDetails}</span>
+                      <span>{bidBoxConfig.emptyOptionDetails}</span>
                     </div>
                   )}
-                  {product.bidBoxConfig.filledOptionDetails && (
+                  {bidBoxConfig.filledOptionDetails && (
                     <div className="border-t border-[#C7982F]/20 pt-2">
                       <strong className="uppercase tracking-wider text-[10px] text-[#8C6B1B] dark:text-[#E4C783] block">
                         Option 2 — Filled with AllBarka Dry Fruits
                       </strong>
-                      <span>{product.bidBoxConfig.filledOptionDetails}</span>
+                      <span>{bidBoxConfig.filledOptionDetails}</span>
                     </div>
                   )}
                 </div>
@@ -344,7 +394,7 @@ export default function ProductDetailPage() {
             </div>
             
             {/* Price Row */}
-            {product.quoteOnly ? <div className="my-5 rounded-xl border border-[var(--color-border-accent)] p-5 text-sm leading-7 text-[var(--color-text-secondary)]">{t('catalog.quoteDescription')}</div> : <>
+            {isQuoteOnly ? <div className="my-5 rounded-xl border border-[var(--color-border-accent)] p-5 text-sm leading-7 text-[var(--color-text-secondary)]">{t('catalog.quoteDescription')}</div> : <>
             <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2 py-4 border-y border-[var(--color-accent,#C7982F)]/25 mb-6">
               <span className="text-3xl sm:text-4xl font-serif font-bold text-[var(--color-text-price,#29231D)] dark:text-[var(--color-text-price,#F6F1EA)]">
                 <bdi dir="ltr">{displayProductPrice(priceToUse)}</bdi>
@@ -352,111 +402,149 @@ export default function ProductDetailPage() {
               <span className="text-xs font-semibold text-[#0E7A53] dark:text-[#28A745] bg-[#0E7A53]/10 px-2.5 py-1 rounded-full">
                 {t('inStock', 'In Stock')}
               </span>
+              {isPackaging && moqPieces !== null && (
+                <span className="text-xs font-semibold text-[#8C6B1B] bg-[#8C6B1B]/10 px-2.5 py-1 rounded-full border border-[#8C6B1B]/20">
+                  {moqDisplayText || `MOQ: ${moqPieces} pcs (${minUnits} ${minUnits === 1 ? 'pack' : 'units'})`}
+                </span>
+              )}
             </div>
 
             {unit && <p className="mb-5 text-xs text-[var(--color-text-secondary)]"><bdi>Rs. {unit.amount.toLocaleString()} / {unit.unit}</bdi></p>}
 
-            {/* Interactive Bid Box Empty vs Filled + Bulk Discount Tiers */}
-            {product.isBidBox && product.bidBoxConfig && (
-              <div className="mb-6 rounded-2xl border border-[#C7982F]/40 bg-white dark:bg-[#1A201E] p-4 space-y-3 shadow-xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary,#042821)] dark:text-[#E4C783]">
-                    Box Mode: Empty Packaging vs. Filled Dry Fruits
-                  </span>
-                  <span className="text-[11px] font-semibold text-[#8C6B1B]">
-                    Automatic Bulk Discounts
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const idx = weights.indexOf(product.bidBoxConfig!.emptyTiers[2]?.variantKey || 'Empty Bulk (50 pcs)');
-                      setSelectedWeightIndex(idx >= 0 ? idx : 0);
-                      setCustomWeightSelected(false);
-                    }}
-                    className={`flex items-center gap-2.5 rounded-xl border p-3 text-left transition-all ${
-                      selectedWeight.startsWith('Empty')
-                        ? 'border-[#042821] bg-[#042821] text-white'
-                        : 'border-[#C7982F]/35 bg-[#FAF6EE] text-[#042821]'
-                    }`}
-                  >
-                    <Package size={16} className="text-[#E6C786] shrink-0" />
-                    <div>
-                      <div className="text-xs font-bold">Box Only (Empty Packaging)</div>
-                      <div className="text-[10px] opacity-80">
-                        From Rs. {product.bidBoxConfig.emptyUnitStarting}/pc • 100+ pcs: Rs. {product.bidBoxConfig.emptyBulk100Unit}/pc
-                      </div>
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const idx = weights.indexOf(product.bidBoxConfig!.filledOptions[0]?.variantKey || '');
-                      setSelectedWeightIndex(idx >= 0 ? idx : 0);
-                      setCustomWeightSelected(false);
-                    }}
-                    className={`flex items-center gap-2.5 rounded-xl border p-3 text-left transition-all ${
-                      selectedWeight.startsWith('Filled')
-                        ? 'border-[#04282F] bg-[#042821] text-white'
-                        : 'border-[#C7982F]/35 bg-[#FAF6EE] text-[#042821]'
-                    }`}
-                  >
-                    <Gift size={16} className="text-[#E6C786] shrink-0" />
-                    <div>
-                      <div className="text-xs font-bold">Filled with AllBarka Dry Fruits</div>
-                      <div className="text-[10px] opacity-80">
-                        Rs. {product.bidBoxConfig.filledMin.toLocaleString()} – Rs. {product.bidBoxConfig.filledMax.toLocaleString()} ({product.bidBoxConfig.filledSummary})
-                      </div>
-                    </div>
-                  </button>
-                </div>
+            {/* Interactive Bid Box Empty vs Filled + Saved Pack Tiers */}
+            {product.isBidBox && bidBoxConfig && (() => {
+              const emptyTiers = bidBoxConfig.emptyTiers || [];
+              const filledOptions = bidBoxConfig.filledOptions || [];
+              const hasEmptyOptions = typeof bidBoxConfig.emptyUnitStarting === 'number' && bidBoxConfig.emptyUnitStarting > 0;
+              const hasFilledOptions = filledOptions.length > 0 && typeof bidBoxConfig.filledMin === 'number' && typeof bidBoxConfig.filledMax === 'number';
+              const hasEmptyTiers = emptyTiers.length > 0;
+              const hasBulkSavings = emptyTiers.some(t => Boolean(t.discountBadge));
+              const isSelectedEmpty = /^empty\b/i.test(selectedWeight.trim());
 
-                {selectedWeight.startsWith('Empty') && (
-                  <div className="pt-1">
-                    <div className="text-[11px] font-semibold text-[#566B63] mb-1.5">
-                      Bulk Empty Box Quantity Tiers (Unit Price Drops Automatically):
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {product.bidBoxConfig.emptyTiers.map(tier => {
-                        const idx = weights.indexOf(tier.variantKey);
-                        const active = selectedWeight === tier.variantKey;
-                        return (
-                          <button
-                            key={tier.variantKey}
-                            type="button"
-                            onClick={() => {
-                              if (idx >= 0) setSelectedWeightIndex(idx);
-                              setCustomWeightSelected(false);
-                            }}
-                            className={`rounded-xl border p-2 text-left transition-all ${
-                              active
-                                ? 'border-[#042821] bg-[#042821]/10 text-[#042821]'
-                                : 'border-[#C7982F]/30 bg-white text-[#566B63]'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-bold">{tier.qty === 100 ? '100+ pcs' : `${tier.qty} pcs`}</span>
-                              {tier.discountBadge && (
-                                <span className="rounded bg-emerald-700/15 px-1.5 py-0.5 text-[9px] font-extrabold text-emerald-800">
-                                  {tier.discountBadge}
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-[11px] font-bold text-[#8C6B1B] mt-0.5">
-                              Rs. {tier.unitPrice}/box
-                            </div>
-                            <div className="text-[10px] opacity-75">
-                              Pack: Rs. {tier.packPrice.toLocaleString()}
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
+              if (!(hasEmptyOptions && hasFilledOptions) && !hasEmptyTiers) {
+                return null;
+              }
+
+              return (
+                <div className="mb-6 rounded-2xl border border-[#C7982F]/40 bg-white dark:bg-[#1A201E] p-4 space-y-3 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary,#042821)] dark:text-[#E4C783]">
+                      {hasEmptyOptions && hasFilledOptions
+                        ? 'Box Mode: Empty Packaging vs. Filled Dry Fruits'
+                        : 'Saved Empty Box Pack Sizes'}
+                    </span>
+                    {hasBulkSavings && (
+                      <span className="text-[11px] font-semibold text-[#8C6B1B]">
+                        Bulk Tier Savings Available
+                      </span>
+                    )}
                   </div>
-                )}
-              </div>
-            )}
+                  {hasEmptyOptions && hasFilledOptions && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const firstEmptyWeight =
+                            weights.find(w => /^empty\b/i.test(w.trim())) ||
+                            emptyTiers[0]?.variantKey ||
+                            weights[0] ||
+                            '';
+                          const idx = weights.indexOf(firstEmptyWeight);
+                          setSelectedWeightIndex(idx >= 0 ? idx : 0);
+                          setCustomWeightSelected(false);
+                        }}
+                        className={`flex items-center gap-2.5 rounded-xl border p-3 text-left transition-all ${
+                          isSelectedEmpty
+                            ? 'border-[#042821] bg-[#042821] text-white'
+                            : 'border-[#C7982F]/35 bg-[#FAF6EE] text-[#042821]'
+                        }`}
+                      >
+                        <Package size={16} className="text-[#E6C786] shrink-0" />
+                        <div>
+                          <div className="text-xs font-bold">Box Only (Empty Packaging)</div>
+                          <div className="text-[10px] opacity-80">
+                            From Rs. {bidBoxConfig.emptyUnitStarting}/pc
+                            {bidBoxConfig.emptyBulk100Unit
+                              ? ` • 100+ pcs: Rs. ${bidBoxConfig.emptyBulk100Unit}/pc`
+                              : ''}
+                          </div>
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const idx = weights.indexOf(filledOptions[0]?.variantKey || '');
+                          setSelectedWeightIndex(idx >= 0 ? idx : 0);
+                          setCustomWeightSelected(false);
+                        }}
+                        className={`flex items-center gap-2.5 rounded-xl border p-3 text-left transition-all ${
+                          !isSelectedEmpty
+                            ? 'border-[#04282F] bg-[#042821] text-white'
+                            : 'border-[#C7982F]/35 bg-[#FAF6EE] text-[#042821]'
+                        }`}
+                      >
+                        <Gift size={16} className="text-[#E6C786] shrink-0" />
+                        <div>
+                          <div className="text-xs font-bold">Filled with AllBarka Dry Fruits</div>
+                          <div className="text-[10px] opacity-80">
+                            {bidBoxConfig.filledMin === bidBoxConfig.filledMax
+                              ? `Rs. ${bidBoxConfig.filledMin?.toLocaleString()}`
+                              : `Rs. ${bidBoxConfig.filledMin?.toLocaleString()} – Rs. ${bidBoxConfig.filledMax?.toLocaleString()}`}{' '}
+                            ({bidBoxConfig.filledSummary})
+                          </div>
+                        </div>
+                      </button>
+                    </div>
+                  )}
+
+                  {isSelectedEmpty && hasEmptyTiers && (
+                    <div className="pt-1">
+                      <div className="text-[11px] font-semibold text-[#566B63] mb-1.5">
+                        {hasBulkSavings
+                          ? 'Saved Empty Box Pack Tiers (Per-Piece Rate by Pack Size):'
+                          : 'Saved Empty Box Pack Sizes:'}
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {emptyTiers.map(tier => {
+                          const idx = weights.indexOf(tier.variantKey);
+                          const active = selectedWeight === tier.variantKey;
+                          return (
+                            <button
+                              key={tier.variantKey}
+                              type="button"
+                              onClick={() => {
+                                if (idx >= 0) setSelectedWeightIndex(idx);
+                                setCustomWeightSelected(false);
+                              }}
+                              className={`rounded-xl border p-2 text-left transition-all ${
+                                active
+                                  ? 'border-[#042821] bg-[#042821]/10 text-[#042821]'
+                                  : 'border-[#C7982F]/30 bg-white text-[#566B63]'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold">{tier.qty >= 100 ? `${tier.qty}+ pcs` : `${tier.qty} pcs`}</span>
+                                {tier.discountBadge && (
+                                  <span className="rounded bg-emerald-700/15 px-1.5 py-0.5 text-[9px] font-extrabold text-emerald-800">
+                                    {tier.discountBadge}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[11px] font-bold text-[#8C6B1B] mt-0.5">
+                                Rs. {tier.unitPrice}/box
+                              </div>
+                              <div className="text-[10px] opacity-75">
+                                Pack: Rs. {tier.packPrice.toLocaleString()}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Weight Selector */}
             <div className="mb-6">
@@ -492,11 +580,11 @@ export default function ProductDetailPage() {
 
             {/* Quantity & Add to Cart (minimum 44px tap targets) */}
             <div className="flex flex-col gap-3 mb-8">
-              {product.quoteOnly ? <button type="button" onClick={() => openCustomQuoteModal({ productId: product.id, mode: 'filled', quantity: 50 })} className="focus-ring flex min-h-12 items-center justify-center rounded-xl border border-[#c7982f]/40 bg-[#1e3a2b] px-5 text-sm font-semibold text-[#fff8e9]">{t('catalog.requestQuote')}</button> : <div className="flex flex-col sm:flex-row gap-3">
+              {isQuoteOnly ? <button type="button" onClick={() => openCustomQuoteModal({ productId: product.id, variantLabel: selectedWeight, mode: selectedWeight?.startsWith('Empty') ? 'empty' : 'filled', quantity: quantity })} className="focus-ring flex min-h-12 items-center justify-center rounded-xl border border-[#c7982f]/40 bg-[#1e3a2b] px-5 text-sm font-semibold text-[#fff8e9]">{t('catalog.requestQuote')}</button> : <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex items-center justify-center bg-white dark:bg-[#1C2422] border border-[var(--color-accent,#C7982F)]/35 rounded-xl h-12 px-2 shrink-0">
                   <button 
                     type="button"
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    onClick={() => setQuantity(Math.max(minUnits, quantity - 1))}
                     className="w-11 h-11 flex items-center justify-center text-[var(--color-text-primary,#29231D)] dark:text-white hover:text-[var(--color-accent,#C7982F)] transition-colors cursor-pointer text-lg font-bold"
                     aria-label={t('cart.decrease')}
                   >
@@ -507,7 +595,7 @@ export default function ProductDetailPage() {
                   </span>
                   <button 
                     type="button"
-                    onClick={() => setQuantity(Math.min(50, quantity + 1))}
+                    onClick={() => setQuantity(Math.min(maxUnits, quantity + 1))}
                     className="w-11 h-11 flex items-center justify-center text-[var(--color-text-primary,#29231D)] dark:text-white hover:text-[var(--color-accent,#C7982F)] transition-colors cursor-pointer text-lg font-bold"
                     aria-label={t('cart.increase')}
                   >
@@ -545,8 +633,9 @@ export default function ProductDetailPage() {
                   onClick={() =>
                     openCustomQuoteModal({
                       productId: product.id,
-                      mode: selectedWeight.startsWith('Empty') ? 'empty' : 'filled',
-                      quantity: 50,
+                      variantLabel: selectedWeight,
+                      mode: selectedWeight?.startsWith('Empty') ? 'empty' : 'filled',
+                      quantity: quantity,
                     })
                   }
                   className="w-full min-h-[46px] rounded-xl border border-[#8C6B1B] bg-[#FAF6EE] hover:bg-[#8C6B1B] text-[#8C6B1B] hover:text-white flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider transition-all shadow-xs"
@@ -659,7 +748,7 @@ export default function ProductDetailPage() {
 
                     <div className="pt-3 mt-3 border-t border-[var(--color-gold,#C7982F)]/15 flex items-center justify-between">
                       <span className="text-xs font-bold text-[var(--color-emerald,#042821)]">
-                        {rel.quoteOnly ? t('catalog.requestQuote') : `Rs. ${price?.toLocaleString()}`}
+                        {rel.quoteOnly || rel.orderMode === 'inquiry_quote' ? t('catalog.requestQuote') : `Rs. ${price?.toLocaleString()}`}
                       </span>
                       <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-gold,#C7982F)] group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
                         {t('viewDetails')}

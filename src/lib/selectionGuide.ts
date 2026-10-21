@@ -1,5 +1,5 @@
 import type { Product } from '../types';
-import { resolveCategorySlug } from '../config/categories';
+import { resolveCategorySlug, productMatchesCategory } from '../config/categories';
 
 export interface SelectionPreferences { category: string; budget: number | null }
 export interface SelectionMatch { product: Product; weight: string; price: number }
@@ -9,7 +9,7 @@ export function selectionMatches(products: Product[], preferences: SelectionPref
   if (preferences.budget !== null && (!Number.isFinite(preferences.budget) || preferences.budget <= 0)) return [];
   return products.flatMap(product => {
     if (product.active === false || product.quoteOnly) return [];
-    if (preferences.category !== 'all' && product.category !== preferences.category) return [];
+    if (preferences.category !== 'all' && !productMatchesCategory(product, preferences.category)) return [];
     const portions = Object.entries(product.prices).filter(([, price]) => Number.isFinite(price) && price > 0)
       .sort((a, b) => a[1] - b[1]);
     const [weight, price] = portions[0] || [];

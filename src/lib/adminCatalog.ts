@@ -100,3 +100,145 @@ export async function checkCatalogAssets(paths: string[], options: {
   await Promise.all(Array.from({ length: Math.min(concurrency, uniquePaths.length) }, worker));
   return results;
 }
+
+export async function fetchAdminProducts(token: string): Promise<Product[]> {
+  const response = await fetch('/api/admin/catalog/products', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error(`Failed to load admin products (${response.status})`);
+  const data = await response.json();
+  return data.products || [];
+}
+
+export async function createAdminProductClient(product: Partial<Product>, token: string): Promise<Product> {
+  const response = await fetch('/api/admin/catalog/products', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(product),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.code || `Failed to create product (${response.status})`);
+  }
+  const data = await response.json();
+  return data.product;
+}
+
+export async function updateAdminProductClient(productId: string, payload: Partial<Product> & { expectedRevision?: number }, token: string): Promise<Product> {
+  const response = await fetch(`/api/admin/catalog/products/${encodeURIComponent(productId)}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.code || `Failed to update product (${response.status})`);
+  }
+  const data = await response.json();
+  return data.product;
+}
+
+export async function duplicateAdminProductClient(productId: string, newProductId: string | undefined, token: string): Promise<Product> {
+  const response = await fetch(`/api/admin/catalog/products/${encodeURIComponent(productId)}/duplicate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ newProductId }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.code || `Failed to duplicate product (${response.status})`);
+  }
+  const data = await response.json();
+  return data.product;
+}
+
+export async function publishAdminProductClient(productId: string, expectedRevision: number | undefined, token: string): Promise<Product> {
+  const response = await fetch(`/api/admin/catalog/products/${encodeURIComponent(productId)}/publish`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ expectedRevision }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.code || `Failed to publish product (${response.status})`);
+  }
+  const data = await response.json();
+  return data.product;
+}
+
+export async function archiveAdminProductClient(productId: string, expectedRevision: number | undefined, token: string): Promise<Product> {
+  const response = await fetch(`/api/admin/catalog/products/${encodeURIComponent(productId)}/archive`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ expectedRevision }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.code || `Failed to archive product (${response.status})`);
+  }
+  const data = await response.json();
+  return data.product;
+}
+
+export async function fetchAdminMerchandising(token: string, preview = true): Promise<any> {
+  const response = await fetch(`/api/admin/merchandising?preview=${preview}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error(`Failed to load merchandising settings (${response.status})`);
+  const data = await response.json();
+  return data.settings;
+}
+
+export async function saveAdminMerchandisingClient(settings: any, token: string): Promise<any> {
+  const response = await fetch('/api/admin/merchandising', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(settings),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.code || `Failed to save merchandising (${response.status})`);
+  }
+  const data = await response.json();
+  return data.settings;
+}
+
+export async function publishAdminMerchandisingClient(
+  revisions: { expectedDraftRevision: number; expectedLiveRevision: number },
+  token: string
+): Promise<{ settings: any; draft: any; published: any; draftRevision: number; liveRevision: number }> {
+  const response = await fetch('/api/admin/merchandising/publish', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(revisions),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    const error: any = new Error(err.code || `Failed to publish merchandising (${response.status})`);
+    error.status = response.status;
+    error.code = err.code;
+    throw error;
+  }
+  return await response.json();
+}

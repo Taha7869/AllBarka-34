@@ -18,11 +18,9 @@ import type { Product } from '../types';
 import { useCart } from '../contexts/CartContext';
 import { useSavedProducts } from '../hooks/useSavedProducts';
 import { getLocalized } from '../utils/localize';
-import { CANONICAL_CATEGORIES, resolveCategorySlug } from '../config/categories';
+import { CANONICAL_CATEGORIES, CUSTOMER_FACING_CATEGORIES, resolveCategorySlug, OCCASION_TAGS, getCategoryMeta } from '../config/categories';
 import { CATALOG_SORTS, readCatalogFilters, searchCatalog, startingPrice, type CatalogSort } from '../lib/catalogDiscovery';
 import { applyCatalogFilterDraft, beginCatalogFilterDraft, filterCatalogSelection, type CatalogFilterDraft } from '../lib/catalogFilterDraft';
-import BidBoxesSection from './BidBoxesSection';
-import DealsPackagesSection from './DealsPackagesSection';
 import { openCustomQuoteModal } from './CustomQuoteModal';
 
 export interface CategoryPLPProps {
@@ -60,6 +58,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
   const sheetFilterId = useId();
   const activeParams = isModal ? localParams : params;
   const filters = readCatalogFilters(activeParams);
+  const occasion = activeParams.get('occasion');
   const sharedIds = useMemo(() => readSharedSelections(activeParams.get('shared'), PRODUCTS), [activeParams, PRODUCTS]);
   const listView = activeParams.get('view') === 'list';
   const [visibleCount, setVisibleCount] = useState(12);
@@ -68,7 +67,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
   const suggestions = useMemo(() => filters.query.trim() ? searchCatalog(PRODUCTS, filters.query).slice(0, 5) : [], [filters.query, PRODUCTS]);
   const category = resolveCategorySlug(isModal ? modalCategory : initialCategory) || 'all';
   const filterSignature = activeParams.toString();
-  useEffect(() => { setVisibleCount(12); }, [category, filters.query, filters.origin, filters.budget, filters.sort, filters.saved, filters.special]);
+  useEffect(() => { setVisibleCount(12); }, [category, filters.query, filters.origin, filters.budget, filters.sort, filters.saved, filters.special, occasion]);
   // Browser navigation or a new collection cancels the draft instead of committing stale choices.
   useEffect(() => { setFilterDraft(null); }, [filterSignature, category]);
   useEffect(() => {
@@ -102,7 +101,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
     const next = new URLSearchParams(params); next.delete('category');
     navigate({ pathname: id === 'all' ? '/shop' : `/shop/${id}`, search: next.toString() }, { preventScrollReset: true });
   };
-  const clear = () => update({ search: null, budget: null, origin: null, special: null, saved: null, sort: null, shared: null });
+  const clear = () => update({ search: null, budget: null, origin: null, special: null, saved: null, sort: null, shared: null, occasion: null });
   const openFilters = () => {
     setSearchOpen(false);
     if (window.matchMedia('(max-width: 1023px)').matches) setFilterDraft(beginCatalogFilterDraft(activeParams));
@@ -116,7 +115,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
   };
   const origins = useMemo(() => [...new Map(PRODUCTS.filter(p => p.active !== false && p.origin_en).map(p => [p.origin_en, getLocalized(p, 'origin', language)])).entries()], [language, PRODUCTS]);
   const products = useMemo(() => {
-    const found = filterCatalogSelection(PRODUCTS, { query: filters.query, origin: filters.origin, budget: filters.budget, special: filters.special, saved: filters.saved, sort: filters.sort }, { category, isWholesale, savedIds, sharedIds });
+    const found = filterCatalogSelection(PRODUCTS, { query: filters.query, origin: filters.origin, budget: filters.budget, special: filters.special, saved: filters.saved, sort: filters.sort, occasion }, { category, isWholesale, savedIds, sharedIds });
     if (category === 'all' && filters.sort === 'featured') {
       const order = Object.keys(CANONICAL_CATEGORIES);
       return found.sort((a, b) => order.indexOf(a.category) - order.indexOf(b.category));
@@ -125,12 +124,14 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
       : filters.sort === 'price-asc' ? startingPrice(a) - startingPrice(b)
       : filters.sort === 'price-desc' ? startingPrice(b) - startingPrice(a)
       : filters.sort === 'name-asc' ? getLocalized(a, 'name', language).localeCompare(getLocalized(b, 'name', language), language) : 0);
-  }, [category, filters.query, filters.origin, filters.special, filters.saved, filters.budget, filters.sort, isWholesale, savedIds, language, sharedIds, PRODUCTS]);
+  }, [category, filters.query, filters.origin, filters.special, filters.saved, filters.budget, filters.sort, occasion, isWholesale, savedIds, language, sharedIds, PRODUCTS]);
   const previewCount = (draft: CatalogFilterDraft) => filterCatalogSelection(PRODUCTS, draft, { category, isWholesale, savedIds, sharedIds: readSharedSelections(draft.shared, PRODUCTS) }).length;
   const draftOrigins = filterDraft ? [['all', t('shop.anyOrigin')], ...origins].map(([id, label]) => ({ id, label, count: previewCount({ ...filterDraft, origin: id }) })) : [];
+  const occasionTitle = OCCASION_TAGS.find(o => o.id === occasion)?.name || occasion;
   const chips = [
     ...(sharedIds !== null ? [{ key: 'shared', label: t('shop.sharedSelections') }] : []),
     ...(filters.query ? [{ key: 'search', label: filters.query }] : []),
+    ...(occasion && occasion !== 'all' ? [{ key: 'occasion', label: `${t('nav.occasions', 'Occasion')}: ${occasionTitle}` }] : []),
     ...(filters.origin !== 'all' ? [{ key: 'origin', label: origins.find(([id]) => id === filters.origin)?.[1] || filters.origin }] : []),
     ...(filters.budget < 10000 ? [{ key: 'budget', label: `≤ Rs. ${filters.budget.toLocaleString()}` }] : []),
     ...(filters.special ? [{ key: 'special', label: t('shop.special') }] : []),
@@ -138,26 +139,33 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
     ...(filters.sort !== 'featured' ? [{ key: 'sort', label: t(`shop.${filters.sort}`) }] : []),
   ];
   return <section id="category-plp-container" className="w-full pb-12 text-[var(--color-text-primary)]" style={{ '--catalog-header-clearance': `${headerClearance}px` } as React.CSSProperties}>
-    {filterDraft && <CatalogFilterSheet id={sheetFilterId} draft={filterDraft} categoryLabel={t(`shop.${category}`)} results={previewCount(filterDraft)} origins={draftOrigins} savedCount={savedIds.length} onChange={setFilterDraft} onApply={applyDraft} onCancel={() => setFilterDraft(null)} />}
+    {filterDraft && <CatalogFilterSheet id={sheetFilterId} draft={filterDraft} categoryLabel={t(`shop.${category}`, getCategoryMeta(category)?.name || category)} results={previewCount(filterDraft)} origins={draftOrigins} savedCount={savedIds.length} onChange={setFilterDraft} onApply={applyDraft} onCancel={() => setFilterDraft(null)} />}
     {isModal && <button type="button" onClick={onClose} aria-label={t('close')} className="ms-auto flex h-11 w-11 items-center justify-center rounded-full border border-[var(--color-border)]"><X size={20} /></button>}
     <header className="relative mb-7 overflow-hidden rounded-[28px] border border-[#c7982f]/25 bg-[#092e23] px-6 py-9 text-[#fff8e9] sm:px-10 sm:py-14">
       <div className="pointer-events-none absolute -end-12 -top-12 h-72 w-72 rounded-full border border-[#d5b876]/15" aria-hidden="true" />
       <div className="pointer-events-none absolute -bottom-36 end-6 h-80 w-80 rounded-full border border-[#d5b876]/15" aria-hidden="true" />
       <p className="relative mb-4 text-[10px] font-semibold tracking-[.25em] text-[#e4c783]">{t('shop.eyebrow')}</p>
-      <h1 className="relative max-w-3xl font-serif text-4xl leading-[1.12] sm:text-6xl">{category === 'all' ? t('shop.title') : t(`shop.${category}`)}</h1>
+      <h1 className="relative max-w-3xl font-serif text-4xl leading-[1.12] sm:text-6xl">{category === 'all' ? t('shop.title') : t(`shop.${category}`, getCategoryMeta(category)?.name || category)}</h1>
       <div className="relative mt-5 flex flex-wrap items-end justify-between gap-5"><p className="max-w-lg text-sm leading-7 text-[#d1ded5]">{t('shop.copy')}</p><span className="text-xs text-[#e4c783]">{PRODUCTS.length} / {t('shop.results')}</span></div>
     </header>
     {isWholesale && <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--color-border)] p-4"><p className="max-w-lg text-sm leading-6">{t('shop.wholesaleCopy')}</p><a href={buildHumanSupportWhatsAppUrl('I would like to enquire about wholesale products.')} target="_blank" rel="noreferrer" className="focus-ring inline-flex min-h-11 items-center rounded-full bg-[#1e3a2b] px-5 text-xs text-[#fff8e9]">{t('shop.wholesaleEnquiry')}</a></div>}
     <nav aria-label={t('category')} className="catalog-category-nav mb-6 flex gap-2 overflow-x-auto pb-2">
-      {['all', ...Object.keys(CANONICAL_CATEGORIES)].map(id => <button key={id} type="button" onClick={() => selectCategory(id)} aria-pressed={category === id} className={`min-h-11 shrink-0 rounded-full border px-5 text-xs font-semibold transition-colors ${category === id ? 'border-[#1e3a2b] bg-[#1e3a2b] text-[#fff8e9]' : 'border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[#c7982f]'}`}>{t(`shop.${id}`)}</button>)}
+      {['all', ...CUSTOMER_FACING_CATEGORIES].map(id => {
+        const isActive = category === id || (category === 'nuts' && id === 'dry-fruits') || (category === 'snacks-seeds' && id === 'seeds-snacks') || (category === 'combos' && id === 'gift-boxes');
+        return (
+          <button
+            key={id}
+            type="button"
+            onClick={() => selectCategory(id)}
+            aria-pressed={isActive}
+            className={`min-h-11 shrink-0 rounded-full border px-5 text-xs font-semibold transition-colors ${isActive ? 'border-[#1e3a2b] bg-[#1e3a2b] text-[#fff8e9]' : 'border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[#c7982f]'}`}
+          >
+            {t(`shop.${id}`, getCategoryMeta(id)?.name || id)}
+          </button>
+        );
+      })}
       <button type="button" onClick={() => openCustomQuoteModal({ mode: 'filled', quantity: 50 })} className="min-h-11 shrink-0 rounded-full border border-[#8C6B1B] bg-[#FAF6EE] px-5 text-xs font-bold text-[#8C6B1B] transition-colors hover:bg-[#8C6B1B] hover:text-white">Bid Boxes &amp; Custom Quote</button>
     </nav>
-    {(category === 'gift-boxes' || category === 'bundles') && !filters.query && (
-      <div className="mb-10 space-y-8 rounded-3xl overflow-hidden">
-        <BidBoxesSection compact onQuickView={onQuickView} />
-        <DealsPackagesSection limit={8} onQuickView={onQuickView} />
-      </div>
-    )}
     <div className={`catalog-quick-controls mb-5 flex flex-col gap-3 lg:flex-row ${isModal ? 'catalog-quick-controls-modal' : ''}`}>
       <div className="relative flex-1" onFocusCapture={() => setSearchOpen(true)}
         onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setSearchOpen(false); }}
@@ -218,19 +226,20 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
       const saved = savedIds.includes(product.id);
       const unit = product.quoteOnly ? null : unitPrice(product.prices[weight], weight || '');
       const supportsBargain = product.isBidBox || product.category === 'gift-boxes' || product.category === 'bundles' || product.isBundle;
-      return <React.Fragment key={product.id}>{category === 'all' && filters.sort === 'featured' && (index === 0 || products[index - 1].category !== product.category) && <h2 className="col-span-full mt-4 border-b border-[var(--color-border)] pb-3 font-serif text-2xl text-[var(--color-text-primary)]">{t(`shop.${product.category}`)}</h2>}<article className={`group relative flex min-w-0 cursor-pointer flex-col rounded-[22px] border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5 transition-[border-color,box-shadow] duration-300 hover:border-[var(--color-border-accent)] hover:shadow-md motion-reduce:transition-none sm:p-4 ${listView ? "catalog-list-card" : ""}`} onClick={event => { if (!(event.target as HTMLElement).closest('a,button,input,select')) navigate(`/product/${product.id}`); }}>
+      return <React.Fragment key={product.id}>{category === 'all' && filters.sort === 'featured' && (index === 0 || products[index - 1].category !== product.category) && <h2 className="col-span-full mt-4 border-b border-[var(--color-border)] pb-3 font-serif text-2xl text-[var(--color-text-primary)]">{t(`shop.${product.category}`, getCategoryMeta(product.category)?.name || product.category)}</h2>}<article className={`group relative flex min-w-0 cursor-pointer flex-col rounded-[22px] border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5 transition-[border-color,box-shadow] duration-300 hover:border-[var(--color-border-accent)] hover:shadow-md motion-reduce:transition-none sm:p-4 ${listView ? "catalog-list-card" : ""}`} onClick={event => { if (!(event.target as HTMLElement).closest('a,button,input,select,textarea,[role="button"]')) navigate(`/product/${product.id}`); }}>
         <ProductImageGallery product={product} />
-        <div className="flex items-center justify-between gap-2 pt-3"><span className="truncate text-[9px] font-semibold uppercase tracking-[.14em] text-[var(--color-accent-text)]" dir="auto">{getLocalized(product, 'origin', language)}</span><button type="button" onClick={() => setSaved(product.id, !saved)} aria-label={saved ? t('shop.unsave') : t('shop.save')} aria-pressed={saved} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[var(--color-accent-text)] hover:bg-[#c7982f]/10"><Heart size={18} fill={saved ? 'currentColor' : 'none'} /></button></div>
-        <Link to={`/product/${product.id}`} lang={language} dir="auto" className={`focus-ring mb-3 block min-h-12 min-w-0 max-w-full whitespace-normal break-words [overflow-wrap:anywhere] text-start font-medium ${language === 'ur' ? 'font-urdu text-[20px]' : language === 'ar' ? 'font-arabic text-[23px]' : 'font-serif text-[21px] leading-[1.25]'}`}><span>{getLocalized(product, 'name', language)}</span></Link>
-        <div className="mt-auto">{product.quoteOnly ? <><p className="mb-4 text-xs leading-6 text-[var(--color-text-secondary)]">{t('catalog.quoteCopy')}</p><Link to="/pages/contact" onClick={e => { e.preventDefault(); openCustomQuoteModal({ productId: product.id, mode: 'filled', quantity: 50 }); }} className="focus-ring flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#1e3a2b] px-2 text-xs font-semibold text-[#fff8e9] transition-colors hover:bg-[#092e23]">{t('catalog.requestQuote')}<ArrowUpRight size={15} /></Link></> : <>{product.isBundle ? <div className="mb-3"><span className="inline-flex rounded-full border border-[var(--color-border-accent)] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-wide text-[var(--color-accent-text)]">{t('catalog.bundle')}</span><p className="mt-2 text-xs leading-6 text-[var(--color-text-secondary)]" dir="auto">{getLocalized(product, 'contents', language)}</p></div> : <><label className="sr-only" htmlFor={`size-${product.id}`}>{t('shop.portion')}</label><select id={`size-${product.id}`} value={weight} onChange={e => setSizes(prev => ({ ...prev, [product.id]: e.target.value }))} className="mb-3 min-h-11 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-base sm:text-xs">{weights.map(size => <option key={size} value={size}>{size}</option>)}</select></>}
+        <div className="flex items-center justify-between gap-2 pt-3"><span className="truncate text-[9px] font-semibold uppercase tracking-[.14em] text-[var(--color-accent-text)]" dir="auto">{getLocalized(product, 'origin', language)}</span><button type="button" onClick={e => { e.stopPropagation(); setSaved(product.id, !saved); }} aria-label={saved ? t('shop.unsave') : t('shop.save')} aria-pressed={saved} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[var(--color-accent-text)] hover:bg-[#c7982f]/10"><Heart size={18} fill={saved ? 'currentColor' : 'none'} /></button></div>
+        <Link to={`/product/${product.id}`} lang={language} dir="auto" className={`focus-ring mb-1 block min-w-0 max-w-full whitespace-normal break-words [overflow-wrap:anywhere] text-start font-medium ${language === 'ur' ? 'font-urdu text-[20px]' : language === 'ar' ? 'font-arabic text-[23px]' : 'font-serif text-[21px] leading-[1.25]'}`}><span>{getLocalized(product, 'name', language)}</span></Link>
+        <div className="mb-3"><Link to={`/product/${product.id}`} className="focus-ring inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--color-accent-text)] hover:underline"><span>{t('dest.common.viewDetails', 'View Details')}</span></Link></div>
+        <div className="mt-auto">{product.quoteOnly ? <><p className="mb-4 text-xs leading-6 text-[var(--color-text-secondary)]">{t('catalog.quoteCopy')}</p><button type="button" onClick={e => { e.stopPropagation(); openCustomQuoteModal({ productId: product.id, variantLabel: weight, mode: 'filled', quantity: 50 }); }} className="focus-ring flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#1e3a2b] px-2 text-xs font-semibold text-[#fff8e9] transition-colors hover:bg-[#092e23]">{t('catalog.requestQuote')}<ArrowUpRight size={15} /></button></> : <>{product.isBundle ? <div className="mb-3"><span className="inline-flex rounded-full border border-[var(--color-border-accent)] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-wide text-[var(--color-accent-text)]">{t('catalog.bundle')}</span><p className="mt-2 text-xs leading-6 text-[var(--color-text-secondary)]" dir="auto">{getLocalized(product, 'contents', language)}</p></div> : <><label className="sr-only" htmlFor={`size-${product.id}`}>{t('shop.portion')}</label><select id={`size-${product.id}`} value={weight} onClick={e => e.stopPropagation()} onChange={e => { e.stopPropagation(); setSizes(prev => ({ ...prev, [product.id]: e.target.value })); }} className="mb-3 min-h-11 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-base sm:text-xs">{weights.map(size => <option key={size} value={size}>{size}</option>)}</select></>}
           <p className="mb-4 font-serif text-xl font-semibold"><bdi>Rs. {(product.prices[weight] || 0).toLocaleString()}</bdi>{unit && <small className="mt-1 block font-sans text-[10px] font-normal text-[var(--color-text-secondary)]"><bdi>Rs. {unit.amount.toLocaleString()} / {unit.unit}</bdi></small>}</p>
-          <button type="button" onClick={() => onAddToCart ? onAddToCart(product.id, weight) : addToCart(product, weight, 1)} className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#1e3a2b] px-2 text-xs font-semibold text-[#fff8e9] transition-colors hover:bg-[#092e23]"><ShoppingBag size={15} />{t('addToCart')}</button>
-          {supportsBargain && <button type="button" onClick={() => openCustomQuoteModal({ productId: product.id, mode: weight?.startsWith('Empty') ? 'empty' : 'filled', quantity: 50 })} className="mt-2 flex min-h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-[#c7982f]/50 bg-[#c7982f]/10 px-2 text-[11px] font-bold text-[var(--color-accent-text)] transition-colors hover:bg-[#c7982f]/20">Request Custom Quote / Bargain</button>}</>}
-          <div className="mt-2 grid grid-cols-2 gap-2"><button type="button" aria-pressed={compareIds.includes(product.id)} onClick={() => { const added = toggleCompare(product.id); setCompareMessage(added ? t('shop.compareUpdated') : t('shop.compareFull')); }} className="focus-ring flex min-h-11 w-full items-center justify-center gap-2 rounded-xl text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-base)]"><Scale size={15} />{t(compareIds.includes(product.id) ? 'shop.compared' : 'shop.compareAdd')} ({compareIds.length}/3)</button>
-          {onQuickView && <button type="button" onClick={() => onQuickView(product)} className="focus-ring flex min-h-11 w-full items-center justify-center gap-2 rounded-xl text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-base)] hover:text-[var(--color-accent-text)]"><Eye size={15} />{t('shop.quick')}</button>}</div>
+          <button type="button" onClick={e => { e.stopPropagation(); onAddToCart ? onAddToCart(product.id, weight) : addToCart(product, weight, 1); }} className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#1e3a2b] px-2 text-xs font-semibold text-[#fff8e9] transition-colors hover:bg-[#092e23]"><ShoppingBag size={15} />{t('addToCart')}</button>
+          {supportsBargain && <button type="button" onClick={e => { e.stopPropagation(); openCustomQuoteModal({ productId: product.id, variantLabel: weight, mode: weight?.startsWith('Empty') ? 'empty' : 'filled', quantity: 50 }); }} className="mt-2 flex min-h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-[#c7982f]/50 bg-[#c7982f]/10 px-2 text-[11px] font-bold text-[var(--color-accent-text)] transition-colors hover:bg-[#c7982f]/20">Request Custom Quote / Bargain</button>}</>}
+          <div className="mt-2 grid grid-cols-2 gap-2"><button type="button" aria-pressed={compareIds.includes(product.id)} onClick={e => { e.stopPropagation(); const added = toggleCompare(product.id); setCompareMessage(added ? t('shop.compareUpdated') : t('shop.compareFull')); }} className="focus-ring flex min-h-11 w-full items-center justify-center gap-2 rounded-xl text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-base)]"><Scale size={15} />{t(compareIds.includes(product.id) ? 'shop.compared' : 'shop.compareAdd')} ({compareIds.length}/3)</button>
+          {onQuickView && <button type="button" onClick={e => { e.stopPropagation(); onQuickView(product); }} className="focus-ring flex min-h-11 w-full items-center justify-center gap-2 rounded-xl text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-base)] hover:text-[var(--color-accent-text)]"><Eye size={15} />{t('shop.quick')}</button>}</div>
         </div>
       </article></React.Fragment>;
-    })}</div> : <div className="rounded-3xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-16 text-center"><Search size={30} className="mx-auto mb-5 text-[var(--color-accent-text)]" /><h2 className="font-serif text-3xl">{t('shop.empty')}</h2><p className="mx-auto mt-3 max-w-sm text-sm leading-7 text-[var(--color-text-secondary)]">{t('shop.emptyCopy')}</p><button type="button" onClick={clear} className="mt-6 min-h-12 rounded-full bg-[#1e3a2b] px-6 text-sm text-white">{t('shop.clear')}</button><Link to="/shop" className="mx-auto mt-2 flex min-h-11 w-fit items-center gap-2 text-xs" onClick={() => { if (isModal) { clear(); setModalCategory('all'); } }}>{t('shop.all')}<ArrowUpRight size={15} /></Link></div>}
+    })}</div> : <div className="rounded-3xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-16 text-center"><Search size={30} className="mx-auto mb-5 text-[var(--color-accent-text)]" /><h2 className="font-serif text-3xl">{t('shop.empty')}</h2><p className="mx-auto mt-3 max-w-sm text-sm leading-7 text-[var(--color-text-secondary)]">{occasion && occasion !== 'all' ? `No products currently match "${occasionTitle}" in this view. Browse all items or discover our signature collections.` : t('shop.emptyCopy')}</p><button type="button" onClick={clear} className="mt-6 min-h-12 rounded-full bg-[#1e3a2b] px-6 text-sm text-white">{t('shop.clear')}</button><Link to="/shop" className="mx-auto mt-2 flex min-h-11 w-fit items-center gap-2 text-xs" onClick={() => { if (isModal) { clear(); setModalCategory('all'); } }}>{t('shop.all')}<ArrowUpRight size={15} /></Link></div>}
     {products.length > visibleCount && <div className="mt-8 text-center"><button type="button" onClick={() => setVisibleCount(count => count + 12)} className="focus-ring min-h-12 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-7 text-sm font-semibold">{t('shop.loadMore')} ({products.length - visibleCount})</button><p className="mt-3 text-xs text-[var(--color-text-secondary)]">{visibleCount} / {products.length}</p></div>}
     <CatalogTools mode="recent" />
   </section>;

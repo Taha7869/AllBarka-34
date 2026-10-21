@@ -1,30 +1,25 @@
-import React, { useState } from 'react';
-import { Link, useNavigate, useOutletContext } from 'react-router-dom';
-import { useCatalogProducts } from '../contexts/CatalogContext';
+import React from 'react';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import { Product } from '../types';
 import Hero from '../components/Hero';
 import CategoryCarousel from '../components/CategoryCarousel';
-import ProductSlider from '../components/ProductSlider';
+import BoutiqueSelections from '../components/BoutiqueSelections';
+import FindGiftOccasionSection from '../components/FindGiftOccasionSection';
 import CollectionLogoLoop from '../components/CollectionLogoLoop';
 import AllBarkaMovingReviews from '../components/AllBarkaMovingReviews';
 import FAQSection from '../components/FAQSection';
 import ScrollReveal from '../components/motion/ScrollReveal';
 import WordScrollReveal from '../components/motion/WordScrollReveal';
 import MagneticButton from '../components/motion/MagneticButton';
-import BidBoxesSection from '../components/BidBoxesSection';
-import DealsPackagesSection from '../components/DealsPackagesSection';
 import { useLanguage } from '../contexts/LanguageContext';
-import { ShieldCheck, ThermometerSnowflake, Truck, ArrowUpRight, Play, ShoppingBag } from 'lucide-react';
-import '../styles/editorial.css';
+import { useMerchandisingSettings } from '../contexts/MerchandisingContext';
+import { ShieldCheck, ThermometerSnowflake, Truck, ArrowUpRight, ShoppingBag } from 'lucide-react';
 
 interface OutletContextType {
   setCartOpen: (open: boolean) => void;
   setSelectedQuickViewProduct: (product: Product) => void;
   handleAddToCart: (productId: string, weight: string) => void;
 }
-
-const featuredIds = ['pista', 'kaju', 'badam', 'akhroot', 'deal-1', 'deal-2', 'khajoor', 'org-honey'];
-
 
 const servicePillars = [
   { icon: ShieldCheck,          number: '01', title: 'home.purity',    copy: 'home.purityCopy' },
@@ -33,23 +28,30 @@ const servicePillars = [
 ];
 
 export default function HomePage() {
-  const PRODUCTS = useCatalogProducts();
-  const featuredProducts = featuredIds.map(id => PRODUCTS.find(product => product.id === id)).filter((product): product is Product => !!product && product.active !== false);
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const [giftFilmPlaying, setGiftFilmPlaying] = useState(false);
-  const { setCartOpen, setSelectedQuickViewProduct, handleAddToCart } = useOutletContext<OutletContextType>();
+  const merchandisingSettings = useMerchandisingSettings();
+  const outlet = useOutletContext<OutletContextType>() || ({} as Partial<OutletContextType>);
+  const setCartOpen = outlet.setCartOpen ?? (() => {});
+  const setSelectedQuickViewProduct = outlet.setSelectedQuickViewProduct ?? (() => {});
+  const handleAddToCart = outlet.handleAddToCart ?? (() => {});
 
   const handleSearch = (query: string) => navigate(`/shop?search=${encodeURIComponent(query)}`);
 
   return (
     <div className="editorial-home flex w-full flex-col items-center bg-[var(--color-base)] text-[var(--color-ink)]">
 
-      {/* ── Hero ─────────────────────────────────────────────────────────── */}
+      {/* ── 1. Dry-fruit-led premium hero ─────────────────────────────────── */}
       <Hero
         onOpenCart={() => setCartOpen(true)}
         onSearch={handleSearch}
-        onSelectCategory={(category, query) => navigate(`${category === 'all' ? '/shop' : `/shop/${category}`}${query ? `?search=${encodeURIComponent(query)}` : ''}`)}
+        onSelectCategory={(category, query) =>
+          navigate(
+            `${category === 'all' ? '/shop' : `/shop/${category}`}${
+              query ? `?search=${encodeURIComponent(query)}` : ''
+            }`
+          )
+        }
       />
 
       {/* ── Section Divider ──────────────────────────────────────────────── */}
@@ -60,7 +62,19 @@ export default function HomePage() {
       {/* ── Delivery and packing assurances ───────────────────────────────── */}
       <div className="editorial-assurances w-full border-y border-[var(--color-border)] bg-[var(--color-surface)]">
         <div className="mx-auto grid max-w-7xl grid-cols-1 divide-y divide-[var(--color-border)] px-5 sm:grid-cols-3 sm:divide-x sm:divide-y-0 sm:px-8">
-          {[{ Icon: ShieldCheck, title: 'footer.pure', copy: 'footer.pureCopy' }, { Icon: Truck, title: 'boutique.delivery', copy: 'boutique.deliveryValue' }, { Icon: ShoppingBag, title: 'boutique.gifts', copy: 'boutique.giftsDetail' }].map(({ Icon, title, copy }) => <div key={title} className="flex items-center gap-4 px-3 py-5 sm:justify-center sm:py-7"><Icon size={22} className="shrink-0 text-[var(--color-accent-text)]" /><div><p className="font-serif text-base font-semibold">{t(title)}</p><p className="mt-1 text-xs text-[var(--color-text-secondary)]">{t(copy)}</p></div></div>)}
+          {[
+            { Icon: ShieldCheck, title: 'footer.pure', copy: 'footer.pureCopy' },
+            { Icon: Truck, title: 'boutique.delivery', copy: 'boutique.deliveryValue' },
+            { Icon: ShoppingBag, title: 'boutique.gifts', copy: 'boutique.giftsDetail' },
+          ].map(({ Icon, title, copy }) => (
+            <div key={title} className="flex items-center gap-4 px-3 py-5 sm:justify-center sm:py-7">
+              <Icon size={22} className="shrink-0 text-[var(--color-accent-text)]" />
+              <div>
+                <p className="font-serif text-base font-semibold">{t(title)}</p>
+                <p className="mt-1 text-xs text-[var(--color-text-secondary)]">{t(copy)}</p>
+              </div>
+            </div>
+          ))}
         </div>
         <CollectionLogoLoop />
       </div>
@@ -70,9 +84,9 @@ export default function HomePage() {
         <div className="section-divider" />
       </div>
 
-      {/* ── Category Carousel ────────────────────────────────────────────── */}
+      {/* ── 2. Explore Our Collections (Compact destination cards) ───────── */}
       <ScrollReveal className="w-full">
-        <CategoryCarousel />
+        <CategoryCarousel settings={merchandisingSettings} />
       </ScrollReveal>
 
       {/* ── Section Divider ──────────────────────────────────────────────── */}
@@ -80,12 +94,10 @@ export default function HomePage() {
         <div className="section-divider" />
       </div>
 
-      {/* ── Product Slider ───────────────────────────────────────────────── */}
+      {/* ── 3. Boutique Selections (The SINGLE homepage product showcase) ─── */}
       <ScrollReveal className="w-full" index={0}>
-        <ProductSlider
-          title="Boutique Bestsellers"
-          subtitle="A small selection from our collections, packed for your home."
-          products={featuredProducts}
+        <BoutiqueSelections
+          settings={merchandisingSettings}
           onAddToCart={handleAddToCart}
           onQuickView={setSelectedQuickViewProduct}
         />
@@ -96,53 +108,14 @@ export default function HomePage() {
         <div className="section-divider" />
       </div>
 
-      <section dir="ltr" className="boutique-gifting editorial-gifting">
-        <div className="boutique-gifting-inner">
-          <figure className="editorial-gift-figure"><div className="boutique-gifting-media">
-            {giftFilmPlaying ? (
-              <video
-                autoPlay
-                muted
-                controls
-                playsInline
-                preload="metadata"
-                poster="/images/generated/higgsfield-gifting-v1.jpg"
-                onEnded={() => setGiftFilmPlaying(false)}
-                onError={() => setGiftFilmPlaying(false)}
-                aria-label={t('boutique.giftFilm')}
-              >
-                <source src="/videos/allbarka-gifting-motion.mp4" type="video/mp4" />
-              </video>
-            ) : (
-              <>
-                <img src="/images/generated/higgsfield-gifting-v1.jpg" width={2048} height={1152} loading="lazy" decoding="async" alt={t('boutique.giftAlt')} />
-                <button type="button" className="boutique-gifting-play focus-ring" onClick={() => setGiftFilmPlaying(true)} aria-label={t('boutique.giftFilm')}>
-                  <Play size={20} fill="currentColor" aria-hidden="true" />
-                  <span>{t('boutique.giftFilm')}</span>
-                </button>
-              </>
-            )}
-          </div><figcaption dir="auto">{t('home.giftNote')}<span aria-hidden="true">01 / ALLBARKA</span></figcaption></figure>
-          <div>
-            <p dir="auto" className="boutique-eyebrow">{t('boutique.giftEyebrow')}</p>
-            <h2 dir="auto">{t('boutique.giftTitle')}</h2>
-            <p dir="auto">{t('boutique.giftCopy')}</p>
-            <Link to="/gifting" className="boutique-button boutique-button-gold focus-ring">{t('boutique.gifting')} <ArrowUpRight size={17} /></Link>
-          </div>
-        </div>
-      </section>
+      {/* ── 4. Find a Gift for Your Occasion (Compact destination links) ─── */}
+      <ScrollReveal className="w-full" index={0}>
+        <FindGiftOccasionSection settings={merchandisingSettings} />
+      </ScrollReveal>
 
-      {/* ── Bespoke Bid Boxes & Celebration Favors ───────────────────────── */}
-      <BidBoxesSection onQuickView={setSelectedQuickViewProduct} />
-
-      {/* ── Deals & Value Packages ───────────────────────────────────────── */}
-      <DealsPackagesSection limit={8} onQuickView={setSelectedQuickViewProduct} />
-
-      {/* ── Service Pillars (dark emerald section) ───────────────────────── */}
+      {/* ── 5. Compact genuine feedback & essential service information/FAQ ─ */}
       <section dir="ltr" className="editorial-care w-full overflow-hidden bg-[#042821] py-16 text-[#FFFCF7] sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-
-          {/* Section divider on emerald */}
           <div className="section-divider-on-emerald mb-10" aria-hidden="true" />
 
           <div className="mb-10 grid gap-5 text-left lg:grid-cols-[1fr_auto] lg:items-end">
@@ -186,22 +159,21 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* Section divider on emerald */}
           <div className="section-divider-on-emerald mt-10" aria-hidden="true" />
         </div>
       </section>
 
-      {/* ── Reviews ──────────────────────────────────────────────────────── */}
+      {/* Genuine Customer Feedback */}
       <ScrollReveal className="w-full" index={0}>
         <AllBarkaMovingReviews />
       </ScrollReveal>
 
-      {/* ── Section Divider ──────────────────────────────────────────────── */}
+      {/* Section Divider */}
       <div className="w-full px-6 sm:px-10 py-4" aria-hidden="true">
         <div className="section-divider" />
       </div>
 
-      {/* ── FAQ ──────────────────────────────────────────────────────────── */}
+      {/* Essential Service Information & FAQ */}
       <ScrollReveal className="w-full border-t border-[var(--color-border)] bg-[var(--color-surface)]" index={0}>
         <FAQSection />
       </ScrollReveal>

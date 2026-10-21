@@ -11,6 +11,12 @@ import { resolveCustomWeight, resolveProductVariant } from './productVariants';
 import { calculateLoyaltyPoints } from './loyaltyPoints';
 import type { Product } from '../types';
 import { catalogVariantId } from './catalogSchema';
+import {
+  isPackagingProduct,
+  validatePackagingQuantity,
+  parsePiecesPerPack,
+  calculatePackagingMoq,
+} from './packagingMoq';
 
 export interface ValidatedOrderItem {
   id: string; // composite cart item id, e.g. "pista-250g"
@@ -23,6 +29,9 @@ export interface ValidatedOrderItem {
   catalogRevision?: string;
   variantId?: string;
   hamperConfiguration?: HamperConfiguration;
+  moq?: number;
+  piecesPerPack?: number;
+  totalPieces?: number;
 }
 
 export interface ValidatedOrder {
@@ -208,15 +217,24 @@ export function validateAndPriceOrder({
     if (product.active === false) {
       throw new ValidationError(`Product "${product.name_en}" is currently unavailable.`, 'PRODUCT_UNAVAILABLE');
     }
-    if (product.quoteOnly === true) {
+    if (product.quoteOnly === true || product.orderMode === 'inquiry_quote') {
       throw new ValidationError(`Please request a personalized quote for "${product.name_en}".`, 'QUOTE_REQUIRED');
     }
-    const requestedWeight = String(clientItem.selectedWeight || identity?.portion || '250g').trim();
+    const requestedWeight = String(clientItem.selectedWeight || clientItem.weight || clientItem.portion || identity?.portion || '250g').trim();
     const allowedWeights = product.prices ? Object.keys(product.prices) : [];
     const variant = /^Custom\s+/i.test(requestedWeight)
       ? resolveCustomWeight(product, requestedWeight)
       : resolveProductVariant(product, requestedWeight);
     if (!variant) {
+      if (allowedWeights.includes(requestedWeight)) {
+        const rawPrice = product.prices?.[requestedWeight];
+        if (typeof rawPrice !== 'number' || !Number.isFinite(rawPrice) || rawPrice <= 0) {
+          throw new ValidationError(
+            `Pricing is unavailable for "${product.name_en}". Please request a personalized quote.`,
+            'PRICING_UNAVAILABLE'
+          );
+        }
+      }
       throw new ValidationError(
         `Invalid weight "${requestedWeight}" for product "${product.name_en}". Allowed weights: ${allowedWeights.join(', ')}`,
         'INVALID_WEIGHT'
@@ -228,15 +246,55 @@ export function validateAndPriceOrder({
     const authoritativeUnitPrice = !variant.isCustom && isWholesale && product.wholesale > 0
       ? product.wholesale : variant.price;
 
-    // Validate quantity strictly: integer between 1 and 50 inclusive. Reject fractional, zero, negative or non-finite.
+    // Never treat an unknown or zero price as purchasable
+    if (!Number.isFinite(authoritativeUnitPrice) || authoritativeUnitPrice <= 0) {
+      throw new ValidationError(
+        `Pricing is unavailable for "${product.name_en}". Please request a personalized quote.`,
+        'PRICING_UNAVAILABLE'
+      );
+    }
+
+    // Validate quantity strictly: integer, positive, within supported bounds
     const rawQty = clientItem.quantity;
     const numQty = typeof rawQty === 'number' ? rawQty : Number(rawQty);
 
-    if (!Number.isFinite(numQty) || !Number.isInteger(numQty) || numQty < 1 || numQty > 50) {
+    if (!Number.isFinite(numQty) || !Number.isInteger(numQty) || numQty < 1) {
       throw new ValidationError(
-        `Invalid quantity for "${product.name_en}": must be an integer between 1 and 50 units.`,
+        `Invalid quantity for "${product.name_en}": must be a positive integer.`,
         'INVALID_QUANTITY'
       );
+    }
+
+    const isPackaging = isPackagingProduct(product);
+    let piecesPerPack = 1;
+    let moqPieces = 1;
+    let minUnits = 1;
+
+    if (isPackaging) {
+      // Rule D1: Packaging MOQ per design/variant
+      const moqRes = validatePackagingQuantity(product, weight, numQty);
+      if (!moqRes.valid) {
+        throw new ValidationError(moqRes.error!, 'BELOW_MINIMUM_ORDER_QUANTITY');
+      }
+      piecesPerPack = moqRes.piecesPerPack;
+      moqPieces = moqRes.moqPieces;
+      minUnits = moqRes.minUnits;
+
+      const maxPackagingUnits = 10000;
+      if (numQty > maxPackagingUnits) {
+        throw new ValidationError(
+          `Invalid quantity for "${product.name_en}": exceeds maximum allowed limit (${maxPackagingUnits} units).`,
+          'INVALID_QUANTITY'
+        );
+      }
+    } else {
+      // Ordinary food products: strictly exempt from packaging MOQ, max 50 retail units
+      if (numQty > 50) {
+        throw new ValidationError(
+          `Invalid quantity for "${product.name_en}": must be an integer between 1 and 50 units.`,
+          'INVALID_QUANTITY'
+        );
+      }
     }
     const quantity = numQty;
 
@@ -259,7 +317,11 @@ export function validateAndPriceOrder({
       quantity,
       price: authoritativeUnitPrice,
       earnedPoints: pts * quantity,
-      catalogRevision: product.catalogRevision || 'source', variantId: variant.isCustom ? `custom-${weight}` : catalogVariantId(weight),
+      catalogRevision: product.catalogRevision || 'source',
+      variantId: variant.isCustom ? `custom-${weight}` : catalogVariantId(weight),
+      moq: moqPieces,
+      piecesPerPack,
+      totalPieces: quantity * piecesPerPack,
     };
   });
 
