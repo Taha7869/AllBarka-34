@@ -1,6 +1,6 @@
 AllBarka Project Rules (all AI agents MUST follow)
 Stack
-Vite + React 18 + TypeScript + Tailwind CSS (SPA, React Router)
+Vite + React 19 + TypeScript + Tailwind CSS (SPA, React Router)
 Express server (server.ts) — Node 22, Firebase Admin SDK
 Firebase Firestore + Auth, Motion (framer-motion) for animation
 Architecture (Multipage SPA — React Router)
@@ -41,6 +41,7 @@ NEVER modify server-side pricing logic in server.ts without explicit instruction
 NEVER hardcode secrets — env vars only
 After every change: run npm run build and fix errors until it passes
 Keep LanguageContext working — all user-facing text via t() calls
+For the admin expansion, also read instructions.md, design.md and docs/admin-expansion/HANDOFF.md. Track the six-stage roadmap and every meaningful change; older renovation handoffs are historical records.
 Mobile-first responsive; touch targets minimum 44px
 List any new npm dependency + why before installing
 Do not delete or rename files outside the scope of the current task
