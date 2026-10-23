@@ -195,7 +195,7 @@ export function resolveInquiryProductVariant(params: ResolveInquiryParams): Inqu
   }
 
   const selectedLabel = requestedLabel ? requestedLabel : (matchedVariant ? matchedVariant.label : null);
-  const piecesPerPack = parsePiecesPerPack(selectedLabel);
+  const piecesPerPack = parsePiecesPerPack(selectedLabel, catalogProduct);
   const totalPieces = quantity * piecesPerPack;
 
   // 3. Define quantity units explicitly: packs vs pieces vs sets

@@ -1,5 +1,7 @@
 import type { Product } from '../types';
 import { resolveProductVariant } from './productVariants';
+import { prepareCommercePrices, validateProductCommerce, validateProductAttributes } from './productCommerce';
+import { validateProductMediaUrl } from './productMedia';
 
 export class CatalogError extends Error {
   constructor(public code: string, public httpStatus = 400, message?: string) {
@@ -60,10 +62,10 @@ export function validateCatalogPricing(value: unknown, seed: Product): CatalogPr
       || raw.id !== catalogVariantId(raw.label) || !positivePrice(raw.price) || typeof raw.available !== 'boolean'
       || !(raw.weightGrams === null || integer(raw.weightGrams, 0)) || seen.has(raw.label)) throw new CatalogError('INVALID_CATALOG_VARIANT');
     // A merchant can retain existing fixed bundle labels; new arbitrary units cannot enter checkout.
-    const supported = /^\d+(?:\.\d+)?\s*(?:kg|g|ml|pc|pcs|piece|pieces|pack|box|boxes)$/i.test(raw.label)
+    const supported = /^\d+(?:\.\d+)?\s*(?:kg|g|mg|ml|L|pc|pcs|piece|pieces|pack|box|boxes)$/i.test(raw.label)
       || Object.hasOwn(seed.prices, raw.label)
       || /^(?:empty|filled|sample|portion|bundle|box)/i.test(raw.label);
-    if (!supported || (/ml$/i.test(raw.label) && seed.category !== 'oils')) throw new CatalogError('INVALID_CATALOG_UNIT');
+    if (!supported || (/ml$/i.test(raw.label) && seed.category !== 'oils' && !seed.commerce)) throw new CatalogError('INVALID_CATALOG_UNIT');
     const rawVarMoq = raw.moqOverride !== undefined ? raw.moqOverride : (raw as any).minOrderQuantity;
     const varMoq = validateMoqOverride(rawVarMoq);
     seen.add(raw.label);
@@ -76,7 +78,7 @@ export function validateCatalogPricing(value: unknown, seed: Product): CatalogPr
       ...(varMoq !== undefined ? { moqOverride: varMoq } : {}),
     };
   });
-  if (!value.quoteOnly && variants.length === 0) throw new CatalogError('INVALID_CATALOG_PRICING');
+  if (!value.quoteOnly && variants.length === 0 && !(seed.commerce && seed.status === 'draft')) throw new CatalogError('INVALID_CATALOG_PRICING');
   if (value.allowCustomWeight && (!positive(value.pricePer100g) || seed.isBundle || ['oils', 'bundles', 'gift-boxes'].includes(seed.category))) throw new CatalogError('INVALID_CATALOG_CUSTOM_WEIGHT');
   return {
     schemaVersion: 1,
@@ -226,6 +228,11 @@ export function unavailableProduct(seed: Product): Product {
 }
 
 export const PUBLIC_PRODUCT_FIELDS = [
+  'commerce',
+  'seo',
+  'attributes',
+  'templateId',
+  'galleryImages',
   'id',
   'name',
   'name_en',
@@ -322,6 +329,18 @@ export function stripPrivateProductFields(product: Product): Product {
       sanitized[field] = (product as any)[field];
     }
   }
+  const extensionFields = ['commerce', 'seo', 'attributes', 'templateId', 'galleryImages'] as const;
+  if (extensionFields.some(field => product[field] !== undefined)) {
+    try {
+      const validated = validateDynamicProduct(product, product.id);
+      for (const field of extensionFields) {
+        delete sanitized[field];
+        if (validated[field] !== undefined) sanitized[field] = validated[field];
+      }
+    } catch {
+      for (const field of extensionFields) delete sanitized[field];
+    }
+  }
   return sanitized as unknown as Product;
 }
 
@@ -383,7 +402,7 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
 
   const quoteOnly = Boolean(value.quoteOnly) || value.orderMode === 'inquiry_quote';
   const hasConfiguredVariants = hasVariantsArray && (value.variants as unknown[]).length > 0;
-  if (!quoteOnly && Object.keys(prices).length === 0 && !hasConfiguredVariants) {
+  if (!quoteOnly && Object.keys(prices).length === 0 && !hasConfiguredVariants && !(value.commerce && value.status === 'draft')) {
     throw new CatalogError('PRODUCT_REQUIRES_PRICING', 400);
   }
 
@@ -392,7 +411,7 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
     : (value.active === false ? 'archived' : 'draft');
   const active = value.active !== undefined
     ? Boolean(value.active)
-    : (status === 'published' && Object.keys(prices).length > 0);
+    : (status === 'published' && (quoteOnly || Object.keys(prices).length > 0));
 
   const orderMode = value.orderMode === 'standard' || value.orderMode === 'inquiry_quote' || value.orderMode === 'both'
     ? value.orderMode
@@ -439,6 +458,45 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
     desc_ar,
     catalogRevision: typeof value.catalogRevision === 'string' ? value.catalogRevision : undefined,
   };
+
+  if (value.commerce !== undefined && value.commerce !== null) {
+    try { product.commerce = validateProductCommerce(value.commerce, status === 'draft' || quoteOnly); }
+    catch (error) { throw new CatalogError((error as { code?: string }).code || 'INVALID_COMMERCE_CONFIGURATION'); }
+    // Missing translations remain missing; fallback happens at display time.
+    product.name_ur = typeof value.name_ur === 'string' ? value.name_ur.trim() : '';
+    product.name_ar = typeof value.name_ar === 'string' ? value.name_ar.trim() : '';
+    product.desc_ur = typeof value.desc_ur === 'string' ? value.desc_ur.trim() : '';
+    product.desc_ar = typeof value.desc_ar === 'string' ? value.desc_ar.trim() : '';
+    if (!/^[a-z0-9_-]{1,80}$/.test(product.category) || product.name_ur.length > 120 || product.name_ar.length > 120
+      || [product.desc_en, product.desc_ur, product.desc_ar].some(description => description.length > 12000)) throw new CatalogError('INVALID_PRODUCT_CONTENT');
+    try {
+      if (product.image) product.image = validateProductMediaUrl(product.image, 'image');
+      if (product.imageName) product.imageName = validateProductMediaUrl(product.imageName.startsWith('products/') ? `/images/${product.imageName}` : product.imageName, 'image');
+    } catch { throw new CatalogError('INVALID_MEDIA_URL'); }
+  }
+  if (value.attributes !== undefined) {
+    try { product.attributes = validateProductAttributes(value.attributes); }
+    catch (error) { throw new CatalogError((error as { code?: string }).code || 'INVALID_PRODUCT_ATTRIBUTES'); }
+  }
+  if (value.templateId !== undefined) {
+    if (typeof value.templateId !== 'string' || !/^[a-z0-9_-]{0,80}$/.test(value.templateId)) throw new CatalogError('INVALID_TEMPLATE_ID');
+    product.templateId = value.templateId;
+  }
+  if (value.galleryImages !== undefined) {
+    if (!Array.isArray(value.galleryImages) || value.galleryImages.length > 12) throw new CatalogError('INVALID_MEDIA_IMAGES');
+    try { product.galleryImages = [...new Set(value.galleryImages.map(url => validateProductMediaUrl(url, 'image')))]; }
+    catch { throw new CatalogError('INVALID_MEDIA_URL'); }
+  }
+  if (value.seo !== undefined) {
+    if (!object(value.seo)) throw new CatalogError('INVALID_PRODUCT_SEO');
+    product.seo = {};
+    for (const [key, field] of Object.entries(value.seo)) {
+      if (!/^(?:title|description|imageAlt)_(?:en|ur|ar)$/.test(key) && key !== 'socialImage') throw new CatalogError('INVALID_PRODUCT_SEO');
+      if (typeof field !== 'string' || field.length > (key === 'socialImage' ? 2048 : key.startsWith('title_') ? 160 : 320)) throw new CatalogError('INVALID_PRODUCT_SEO');
+      try { (product.seo as Record<string, string>)[key] = key === 'socialImage' && field ? validateProductMediaUrl(field, 'image') : field.trim(); }
+      catch { throw new CatalogError('INVALID_MEDIA_URL'); }
+    }
+  }
 
   // Shipping weight and portion weights capability
   if (value.shippingWeightG !== undefined) {
@@ -685,7 +743,33 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
     product.adminRevision = value.adminRevision;
   }
 
+  if (product.commerce && status === 'published') assertProductPublishable(product);
   return product;
+}
+
+export function normalizeCommerceInput(value: Record<string, unknown>): Record<string, unknown> {
+  try { return prepareCommercePrices(value); }
+  catch (error) { throw new CatalogError((error as { code?: string }).code || 'INVALID_COMMERCE_CONFIGURATION'); }
+}
+
+/** New configuration is opt-in; legacy products retain their existing publication contract. */
+export function assertProductPublishable(product: Product): void {
+  if (!product.commerce) return;
+  if (!product.name_en.trim() || !product.desc_en.trim() || !product.category.trim()) throw new CatalogError('PUBLISH_CONTENT_REQUIRED');
+  if (!product.image && !product.imageName && !product.galleryImages?.length) throw new CatalogError('PUBLISH_IMAGE_REQUIRED');
+  for (const attribute of product.attributes || []) if (attribute.required && attribute.value === '') throw new CatalogError('PUBLISH_ATTRIBUTE_REQUIRED');
+  const quoteOnly = product.quoteOnly || product.orderMode === 'inquiry_quote';
+  if (!quoteOnly) {
+    if (!Object.keys(product.prices).length) throw new CatalogError('PUBLISH_PRICE_REQUIRED');
+    if (product.commerce.quantityMode !== 'custom') for (const option of product.commerce.options) {
+      if (option.available && !(product.prices[option.label] > 0)) throw new CatalogError('OPTION_PRICE_REQUIRED');
+      if (option.available && product.commerce.kind === 'packaging' && option.unit === 'pack' && !option.piecesPerPack) throw new CatalogError('PUBLISH_PIECES_PER_PACK_REQUIRED');
+    }
+    for (const label of Object.keys(product.prices)) if (!(product.shippingWeights?.[label] && product.shippingWeights[label] > 0)) throw new CatalogError('PUBLISH_SHIPPING_REQUIRED');
+    const custom = product.commerce.custom;
+    if (custom && custom.unit !== 'mg' && custom.unit !== 'g' && custom.unit !== 'kg' && product.category !== 'oils' && !custom.shippingWeightGPerUnit) throw new CatalogError('PUBLISH_SHIPPING_REQUIRED');
+  }
+  if (product.commerce.kind === 'packaging' && (product.preparationDays ?? 0) < 10) throw new CatalogError('PUBLISH_PREPARATION_REQUIRED');
 }
 
 export function dynamicProductFromDocument(data: unknown, id: string): Product {

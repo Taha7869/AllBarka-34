@@ -5,7 +5,7 @@ Date: 24 October 2026 (Asia/Karachi). This six-stage plan is separate from the e
 | Stage | Deliverable and completion gate | Status |
 | --- | --- | --- |
 | 1 — Audit and documentation | Pin upstream, inspect existing implementation, record decisions/gaps, create linked working documents, establish baseline build/type/lint evidence. | DONE |
-| 2 — Catalog data and pricing | Add validated measurement units, manual/calculated pricing, fixed/custom/both quantity, reusable templates and SEO metadata without changing legacy commerce. Gate: calculation, persistence, privacy and compatibility tests. | TODO |
+| 2 — Catalog data and pricing | Validated units, manual/calculated canonical pricing, fixed/custom/both food/liquid measurement, fixed count packs, reusable template/taxonomy APIs and SEO metadata. Calculation, persistence, privacy and compatibility gates passed; UI remains Stage 3. | DONE |
 | 3 — Admin item workflow | Extend existing add/edit controls with templates, all three language sections, descriptions, units/options, images, SEO, review and mandatory/optional labels. Manage categories/templates. Gate: a new product survives reload and flows through public catalog, cart and authoritative checkout. | TODO |
 | 4 — Staff order reader | Admin-managed staff access; server-authorized order list/detail reader. Gate: staff can view allowed order data and cannot publish, edit prices, update payment/status, export or access admin data. | TODO |
 | 5 — Content and premium UI | Editable approved banners/section settings/navigation/FAQ/journal content; preserve existing merchandising. Gold/ivory/emerald polish, mobile-first forms/storefront, dark/RTL parity. Gate: real browser checks and persisted settings across refresh. | TODO |
@@ -33,5 +33,5 @@ Upstream commit: `5e6349051980abd1a20f719f289a24a3fd2cba7b`; source tree: `236c3
 - 548 source/text files materialized and verified against upstream Git blob hashes.
 - Existing dependencies installed with `npm ci --ignore-scripts --no-audit --no-fund`; no dependency added or version changed.
 - Baseline `npm run typecheck`, `npm run lint:hooks` and `npm run build`: exit 0.
-- Full offline suite and new-feature browser checks have not yet run.
+- Stage 2 final checks: typecheck/hooks/build passed; full offline suite passed (674 tests, 21 backend checks, asset verification and 36 production checks). Existing browser regressions passed; new expansion UI checks remain Stage 3. See TESTING_RELEASE.md.
 - Live Railway/Firebase/n8n state has not been certified by this audit.

@@ -12,6 +12,8 @@ import {
   validateMoqOverride,
   dynamicProductFromDocument,
   validateDynamicProduct,
+  normalizeCommerceInput,
+  assertProductPublishable,
   validateMerchandisingSettings,
   catalogVariantId,
   VALID_PACKAGING_SUBCATEGORIES,
@@ -74,7 +76,7 @@ export function storedCatalogRecord(productId: string, value: unknown): CatalogR
         };
         const pricing = validateCatalogPricing(normalizedPricing, prod);
         const updatedAt = typeof raw.updatedAt === 'string' ? raw.updatedAt : null;
-        return { pricing, version: fingerprint(pricing), updatedAt };
+        return { pricing, version: fingerprint(prod.commerce ? { pricing, commerce: prod.commerce } : pricing), updatedAt };
       }
       const variants = Array.isArray((value as any).variants)
         ? (value as any).variants.map((v: any) => {
@@ -112,13 +114,15 @@ export function storedCatalogRecord(productId: string, value: unknown): CatalogR
         ...(typeof prod.moqOverride === 'number' ? { moqOverride: prod.moqOverride } : {}),
       };
       const updatedAt = typeof (value as any).updatedAt === 'string' ? (value as any).updatedAt : null;
-      return { pricing, version: fingerprint(pricing), updatedAt };
+      return { pricing, version: fingerprint(prod.commerce ? { pricing, commerce: prod.commerce } : pricing), updatedAt };
     }
     throw new CatalogError('UNKNOWN_CATALOG_PRODUCT', 404);
   }
-  const pricing = readCatalogPricing(value, seed);
+  const raw = value && typeof value === 'object' ? value as Record<string, unknown> : {};
+  const commerceSeed = raw.commerce ? { ...seed, ...validateDynamicProduct({ ...seed, ...raw, id: productId }, productId) } : seed;
+  const pricing = readCatalogPricing(value, commerceSeed);
   const updatedAt = value && typeof value === 'object' && typeof (value as any).updatedAt === 'string' ? (value as any).updatedAt : null;
-  return { pricing, version: fingerprint(pricing), updatedAt };
+  return { pricing, version: fingerprint(raw.commerce ? { pricing, commerce: commerceSeed.commerce } : pricing), updatedAt };
 }
 
 function snapshotFromDocuments(snapshots: DocumentSnapshot[], now: number): CatalogSnapshot {
@@ -145,6 +149,7 @@ function snapshotFromDocuments(snapshots: DocumentSnapshot[], now: number): Cata
         products.push({
           ...base,
           ...raw,
+          ...(raw.commerce ? { commerce: validateDynamicProduct({ ...seed, ...raw, id: seed.id }, seed.id).commerce } : {}),
           id: seed.id,
           name_en: raw.name_en || base.name_en,
           prices: base.prices,
@@ -177,7 +182,7 @@ function snapshotFromDocuments(snapshots: DocumentSnapshot[], now: number): Cata
       // Dynamic product absent from static seeds
       try {
         const dynamicProd = dynamicProductFromDocument(document.data(), document.id);
-        products.push(dynamicProd);
+        products.push({ ...dynamicProd, catalogRevision: storedCatalogRecord(document.id, document.data()).version });
       } catch {
         invalidProductIds.push(document.id);
       }
@@ -360,6 +365,7 @@ export async function updateCatalogPricing(input: { db: Firestore | null; produc
   const result = await db.runTransaction(async transaction => {
     const snapshot = await transaction.get(reference);
     if (!snapshot.exists) throw new CatalogError('MISSING_CATALOG_PRODUCT', 409);
+    if (snapshot.data()?.commerce) throw new CatalogError('USE_PRODUCT_OPTIONS_EDITOR', 409);
     const current = storedCatalogRecord(input.productId, snapshot.data());
     if (current.pricing.revision !== body.expectedRevision || current.version !== body.expectedVersion || current.pricing.revision >= Number.MAX_SAFE_INTEGER) throw new CatalogError('CATALOG_REVISION_CONFLICT', 409);
     const targetProduct = seed || dynamicProductFromDocument(snapshot.data(), input.productId);
@@ -493,14 +499,15 @@ export async function listAdminProducts(db: Firestore | null): Promise<Product[]
 export async function createAdminProduct(input: { db: Firestore | null; body: unknown; actorUid: string }): Promise<Product & { revision: number }> {
   if (!input.db) throw new CatalogError('CATALOG_STORE_UNAVAILABLE', 503);
   if (!input.actorUid) throw new CatalogError('FORBIDDEN_ADMIN', 403);
-  const validated = validateDynamicProduct(input.body);
+  const prepared = normalizeCommerceInput((input.body && typeof input.body === 'object' ? input.body : {}) as Record<string, unknown>);
+  const validated = validateDynamicProduct(prepared);
   const db = input.db;
   const ref = db.collection(CATALOG_COLLECTION).doc(validated.id);
   const auditRef = db.collection('catalogAudits').doc(randomUUID());
   const now = new Date().toISOString();
   const revision = 1;
 
-  const rawBody = (input.body && typeof input.body === 'object' ? input.body : {}) as Record<string, any>;
+  const rawBody = prepared as Record<string, any>;
   const variants = Array.isArray(rawBody.variants)
     ? rawBody.variants.map((v: any) => {
         const rawVarMoq = v?.moqOverride !== undefined ? v.moqOverride : v?.minOrderQuantity;
@@ -571,8 +578,8 @@ export async function updateAdminProduct(input: { db: Firestore | null; productI
   if (!input.actorUid) throw new CatalogError('FORBIDDEN_ADMIN', 403);
   const db = input.db;
   const ref = db.collection(CATALOG_COLLECTION).doc(input.productId);
-  const body = (input.body && typeof input.body === 'object' ? input.body : {}) as Record<string, any>;
-  const expectedRevision = body.expectedRevision !== undefined ? Number(body.expectedRevision) : NaN;
+  const rawBody = (input.body && typeof input.body === 'object' ? input.body : {}) as Record<string, any>;
+  const expectedRevision = rawBody.expectedRevision !== undefined ? Number(rawBody.expectedRevision) : NaN;
   if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0) {
     throw new CatalogError('CATALOG_REVISION_CONFLICT', 409);
   }
@@ -581,6 +588,10 @@ export async function updateAdminProduct(input: { db: Firestore | null; productI
     const snap = await transaction.get(ref);
     const existingData = snap.exists ? (snap.data() as Record<string, any>) : (seeds.get(input.productId) as Record<string, any> | undefined);
     if (!existingData) throw new CatalogError('UNKNOWN_CATALOG_PRODUCT', 404);
+    if (existingData.commerce && rawBody.commerce === null) throw new CatalogError('COMMERCE_CONFIGURATION_REQUIRED');
+    if (existingData.commerce && rawBody.commerce === undefined && (rawBody.prices !== undefined || rawBody.variants !== undefined)) throw new CatalogError('USE_PRODUCT_OPTIONS_EDITOR', 409);
+    const body = rawBody.commerce
+      ? normalizeCommerceInput({ ...existingData, ...rawBody }) as Record<string, any> : rawBody;
 
     const currentRevision = Number.isSafeInteger(existingData.revision) ? existingData.revision : (existingData.adminRevision || 0);
     if (currentRevision !== expectedRevision) {
@@ -846,6 +857,8 @@ export async function publishAdminProduct(input: { db: Firestore | null; product
       updatedAt: now,
       updatedBy: input.actorUid,
     };
+
+    if (existing.commerce) assertProductPublishable(validateDynamicProduct(updated, input.productId));
 
     transaction.set(ref, updated);
     transaction.set(db.collection('catalogAudits').doc(randomUUID()), {

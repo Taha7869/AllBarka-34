@@ -1,4 +1,5 @@
 import type { HamperConfiguration } from './lib/hamperCatalog';
+import type { ProductCommerce, ProductSeo, ProductAttribute } from './lib/productCommerce';
 
 export interface ProductBadge {
   icon: string;
@@ -106,6 +107,11 @@ export interface MerchandisingSettings {
 
 export interface Product {
   id: string;
+  commerce?: ProductCommerce;
+  seo?: ProductSeo;
+  attributes?: ProductAttribute[];
+  templateId?: string;
+  galleryImages?: string[];
   /** Purchase-time pricing fingerprint, including direct Console edits. */
   catalogRevision?: string;
   /** Owner-editable catalogue aliases; legacy localized fields remain compatible. */

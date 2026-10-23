@@ -3,7 +3,7 @@ import test, { describe, before, after } from 'node:test';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
-import { chromium } from 'playwright-core';
+import { launchTestBrowser } from './helpers/browser.mjs';
 
 const PORT = 4589;
 const distDir = path.resolve('dist');
@@ -52,9 +52,7 @@ describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () =
   before(async () => {
     server = createStaticServer();
     await new Promise((resolve) => server.listen(PORT, resolve));
-    browser = await chromium.launch({ channel: 'chrome', headless: true }).catch(() =>
-      chromium.launch({ channel: 'msedge', headless: true })
-    );
+    browser = await launchTestBrowser();
   });
 
   after(async () => {

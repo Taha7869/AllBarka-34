@@ -71,7 +71,7 @@ export function resolveBidBoxConfig(product: Product): BidBoxConfig | undefined 
       !/^empty\b/i.test(trimmed) &&
       (/\bfilled\b|\bassorted\b|\bwith\s+dry\s+fruits\b/i.test(trimmed) || existingFilledMap.has(label));
     if (!isFilledLabel) {
-      const qty = parsePiecesPerPack(label);
+      const qty = parsePiecesPerPack(label, product);
       const unitPrice = Math.round((price / qty) * 100) / 100;
       emptyVariants.push({
         variantKey: label,

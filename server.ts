@@ -44,6 +44,7 @@ import { claimWelcomeVoucher } from './src/lib/welcomeCouponService';
 import { authenticatePatronCredentials } from './src/lib/serverAuthentication';
 import { createProductMediaRouter } from './src/lib/productMediaRouter';
 import { createCatalogRouter } from './src/lib/catalogRouter';
+import { createCatalogConfigurationRouter } from './src/lib/catalogConfigurationRouter';
 import { loadAuthoritativeCatalog, mergeAuthoritativeCatalog } from './src/lib/catalogStore';
 import { buildWaProductRows, serializeWaProductsCsv } from './src/lib/waProductsExport';
 import { CatalogError, unavailableProduct } from './src/lib/catalogSchema';
@@ -300,6 +301,7 @@ app.use('/api/integrations/n8n', createN8nCommerceRouter({ getDb: () => db }));
 app.use(express.json({ limit: '128kb' }));
 app.use(cookieParser());
 app.use(createProductMediaRouter({ getDb: () => db, requireAdmin }));
+app.use(createCatalogConfigurationRouter({ getDb: () => db, requireAdmin }));
 app.use(createCatalogRouter({ getDb: () => db, requireAdmin }));
 app.use(createStoreUpdatesRouter({ getDb: () => db, requireAuth, requireAdmin }));
 

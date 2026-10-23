@@ -1,12 +1,26 @@
 # Data model and compatibility contract
 
-Status: design contract; refine names with implementation and record changes. Existing collections remain authoritative.
+Status: Stage 2 data/service implementation. Media upload, staff and content sections below remain contracts for later stages. Existing collections remain authoritative.
 
 ## Products
 
 Continue using `products/{id}` and the existing revision/audit lifecycle. IDs are stable. Keep legacy `prices`, canonical `variants`, localized product fields, shipping fields, publication status, MOQ, order mode and private fields compatible.
 
 New optional configuration must be explicitly versioned. It describes selected template, typed attributes, measurement options, pricing method, custom-quantity settings and SEO. When absent, the product follows the original resolver. Server validation computes canonical final prices; browser-submitted totals never become authoritative.
+
+Implemented optional product fields are `commerce`, `attributes`, `templateId`, `seo` and `galleryImages`. Types live in `src/lib/productCommerce.ts`; schema and public allowlists live in `catalogSchema.ts`. Existing keywords remain the keyword field. Missing Urdu/Arabic content stays empty in storage; English fallback is a display concern.
+
+`commerce` version 1 contains `kind` (food/liquid/packaging/gift), `pricingMode` (manual/calculated), `quantityMode` (fixed/custom/both), nullable `baseQuantity`/`basePrice`, `baseUnit`, `options` and nullable `custom`.
+
+- Each of at most 20 options has `label`, `quantity`, `unit`, `override`, `available`, nullable integer `shippingWeightG`, optional `moqOverride` and optional `piecesPerPack`. The last field means total physical pieces in one purchasable option; a pack does not imply a piece count.
+- Custom configuration has `unit`, `min`, `max`, `step` and nullable `shippingWeightGPerUnit`. Steps are measured from `min`. Custom measurement supports food/liquid mass or volume; gifts/packaging use fixed options and the existing order quantity/MOQ flow. Count custom measurement is rejected.
+- Quantities allow six decimal places. Calculated prices use exact integer-rational arithmetic and half-up rounding once to whole PKR. Positive prices are capped at PKR 10,000,000. Legacy custom-gram rounding is unchanged.
+- On explicit configuration save, manual/override prices come from canonical `prices`; calculated options are regenerated from the approved base rate. Metadata-only edits preserve saved canonical prices. There is no second final-price array in `commerce`.
+- Custom-only products receive a minimum-quantity canonical option for existing starting-price displays. Fixed labels on custom-only products are rejected by purchase resolution.
+- Explicit drafts can have empty prices. Inquiry-only published products can remain unpriced. Standard publication requires English identity/description/category, cover image, required attributes, valid available option prices and approved shipping weights. Packaging requires at least 10 preparation days and explicit pieces for pack units.
+- Attributes are bounded to 24 typed text/number/select entries. Localized SEO title/description/alt text and social image, plus up to 12 gallery URLs, are validated and whitelisted. Rendering/editing these extensions is Stage 3 work.
+
+Saved canonical variants/prices remain the storefront, quote, order and integration authority. Existing configured products reject the old standalone price-editor endpoint (`USE_PRODUCT_OPTIONS_EDITOR`); Stage 3 must route their UI to the complete options editor. Direct stored configuration changes also affect the catalog fingerprint so stale quotes cannot silently reuse the old configuration.
 
 | Concept | Meaning and validation |
 | --- | --- |
@@ -23,6 +37,8 @@ New optional configuration must be explicitly versioned. It describes selected t
 ## Settings and content
 
 Use server-managed, revisioned settings records for reusable templates, taxonomy extensions and storefront content. Published views expose only whitelisted published fields; admin previews may include drafts. Keep prices in products, never in banners/menus/merchandising.
+
+Stage 2 implements `catalogSettings/main` with `version: 1`, a nonnegative integer `revision`, up to 50 templates and up to 150 taxonomy entries. Missing records return revision-0 defaults sourced from the current registry plus food/liquid/packaging/gift templates. Templates carry localized names, kind, default category/unit, archived status and attribute definitions. Taxonomy entries carry category/collection/occasion type, stable ID, localized names/descriptions and visibility. Existing entries must be archived/hidden rather than deleted. Successful saves increment the revision and write `catalogAudits` atomically. See `API_CONTRACTS.md`. Storefront discovery integration is Stage 3; content records are Stage 5.
 
 Existing `merchandising` records retain their contract and listeners. Add content controls alongside them rather than replacing them. Validate internal destinations and references. Archive categories/templates instead of orphaning existing products.
 
