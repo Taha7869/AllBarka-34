@@ -1,4 +1,4 @@
-import { useCatalogProducts } from '../contexts/CatalogContext';
+import { useCatalogProducts, useCatalogTaxonomy, useCatalogHiddenTaxonomy } from '../contexts/CatalogContext';
 import React, { useEffect, useId, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
@@ -35,6 +35,8 @@ export function CategoryPLPSkeleton() {
 }
 export default function CategoryPLP({ searchFilter: initialSearch, initialCategory = 'all', onAddToCart, onQuickView, isWholesale = false, isModal = false, onClose }: CategoryPLPProps) {
   const PRODUCTS = useCatalogProducts();
+  const taxonomy=useCatalogTaxonomy();const hiddenTaxonomy=useCatalogHiddenTaxonomy();
+  const categoryLabel=(id:string)=>{const entry=taxonomy.find(x=>x.id===id&&x.type!=='occasion');return entry?.[`name_${language}`]||entry?.name_en||t(`shop.${id}`,getCategoryMeta(id)?.name||id);};
   const { t, language } = useCatalogFilterLanguage();
   const mediaCover = useProductMediaCover();
   const { addToCart } = useCart();
@@ -65,7 +67,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
   const [shareStatus, setShareStatus] = useState('');
   const [manualLink, setManualLink] = useState('');
   const suggestions = useMemo(() => filters.query.trim() ? searchCatalog(PRODUCTS, filters.query).slice(0, 5) : [], [filters.query, PRODUCTS]);
-  const category = resolveCategorySlug(isModal ? modalCategory : initialCategory) || 'all';
+  const category = resolveCategorySlug(isModal ? modalCategory : initialCategory) || (isModal ? modalCategory : initialCategory);
   const filterSignature = activeParams.toString();
   useEffect(() => { setVisibleCount(12); }, [category, filters.query, filters.origin, filters.budget, filters.sort, filters.saved, filters.special, occasion]);
   // Browser navigation or a new collection cancels the draft instead of committing stale choices.
@@ -139,18 +141,18 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
     ...(filters.sort !== 'featured' ? [{ key: 'sort', label: t(`shop.${filters.sort}`) }] : []),
   ];
   return <section id="category-plp-container" className="w-full pb-12 text-[var(--color-text-primary)]" style={{ '--catalog-header-clearance': `${headerClearance}px` } as React.CSSProperties}>
-    {filterDraft && <CatalogFilterSheet id={sheetFilterId} draft={filterDraft} categoryLabel={t(`shop.${category}`, getCategoryMeta(category)?.name || category)} results={previewCount(filterDraft)} origins={draftOrigins} savedCount={savedIds.length} onChange={setFilterDraft} onApply={applyDraft} onCancel={() => setFilterDraft(null)} />}
+    {filterDraft && <CatalogFilterSheet id={sheetFilterId} draft={filterDraft} categoryLabel={categoryLabel(category)} results={previewCount(filterDraft)} origins={draftOrigins} savedCount={savedIds.length} onChange={setFilterDraft} onApply={applyDraft} onCancel={() => setFilterDraft(null)} />}
     {isModal && <button type="button" onClick={onClose} aria-label={t('close')} className="ms-auto flex h-11 w-11 items-center justify-center rounded-full border border-[var(--color-border)]"><X size={20} /></button>}
     <header className="relative mb-7 overflow-hidden rounded-[28px] border border-[#c7982f]/25 bg-[#092e23] px-6 py-9 text-[#fff8e9] sm:px-10 sm:py-14">
       <div className="pointer-events-none absolute -end-12 -top-12 h-72 w-72 rounded-full border border-[#d5b876]/15" aria-hidden="true" />
       <div className="pointer-events-none absolute -bottom-36 end-6 h-80 w-80 rounded-full border border-[#d5b876]/15" aria-hidden="true" />
       <p className="relative mb-4 text-[10px] font-semibold tracking-[.25em] text-[#e4c783]">{t('shop.eyebrow')}</p>
-      <h1 className="relative max-w-3xl font-serif text-4xl leading-[1.12] sm:text-6xl">{category === 'all' ? t('shop.title') : t(`shop.${category}`, getCategoryMeta(category)?.name || category)}</h1>
+      <h1 className="relative max-w-3xl font-serif text-4xl leading-[1.12] sm:text-6xl">{category === 'all' ? t('shop.title') : categoryLabel(category)}</h1>
       <div className="relative mt-5 flex flex-wrap items-end justify-between gap-5"><p className="max-w-lg text-sm leading-7 text-[#d1ded5]">{t('shop.copy')}</p><span className="text-xs text-[#e4c783]">{PRODUCTS.length} / {t('shop.results')}</span></div>
     </header>
     {isWholesale && <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--color-border)] p-4"><p className="max-w-lg text-sm leading-6">{t('shop.wholesaleCopy')}</p><a href={buildHumanSupportWhatsAppUrl('I would like to enquire about wholesale products.')} target="_blank" rel="noreferrer" className="focus-ring inline-flex min-h-11 items-center rounded-full bg-[#1e3a2b] px-5 text-xs text-[#fff8e9]">{t('shop.wholesaleEnquiry')}</a></div>}
     <nav aria-label={t('category')} className="catalog-category-nav mb-6 flex gap-2 overflow-x-auto pb-2">
-      {['all', ...CUSTOMER_FACING_CATEGORIES].map(id => {
+      {['all', ...new Set([...CUSTOMER_FACING_CATEGORIES.filter(id=>!hiddenTaxonomy.includes(id)),...taxonomy.filter(x=>x.type!=='occasion').map(x=>x.id)])].map(id => {
         const isActive = category === id || (category === 'nuts' && id === 'dry-fruits') || (category === 'snacks-seeds' && id === 'seeds-snacks') || (category === 'combos' && id === 'gift-boxes');
         return (
           <button
@@ -160,12 +162,13 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
             aria-pressed={isActive}
             className={`min-h-11 shrink-0 rounded-full border px-5 text-xs font-semibold transition-colors ${isActive ? 'border-[#1e3a2b] bg-[#1e3a2b] text-[#fff8e9]' : 'border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[#c7982f]'}`}
           >
-            {t(`shop.${id}`, getCategoryMeta(id)?.name || id)}
+            {categoryLabel(id)}
           </button>
         );
       })}
       <button type="button" onClick={() => openCustomQuoteModal({ mode: 'filled', quantity: 50 })} className="min-h-11 shrink-0 rounded-full border border-[#8C6B1B] bg-[#FAF6EE] px-5 text-xs font-bold text-[#8C6B1B] transition-colors hover:bg-[#8C6B1B] hover:text-white">Bid Boxes &amp; Custom Quote</button>
     </nav>
+    {taxonomy.some(x=>x.type==='occasion')&&<nav className="catalog-category-nav mb-5 flex gap-2 overflow-x-auto" aria-label={t('item.occasions')}>{taxonomy.filter(x=>x.type==='occasion').map(x=><button key={x.id} type="button" className="min-h-11 shrink-0 rounded-full border border-[var(--color-border)] px-4 text-xs" aria-pressed={occasion===x.id} onClick={()=>update({occasion:occasion===x.id?null:x.id})}>{x[`name_${language}`]||x.name_en}</button>)}</nav>}
     <div className={`catalog-quick-controls mb-5 flex flex-col gap-3 lg:flex-row ${isModal ? 'catalog-quick-controls-modal' : ''}`}>
       <div className="relative flex-1" onFocusCapture={() => setSearchOpen(true)}
         onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setSearchOpen(false); }}
@@ -226,7 +229,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
       const saved = savedIds.includes(product.id);
       const unit = product.quoteOnly ? null : unitPrice(product.prices[weight], weight || '');
       const supportsBargain = product.isBidBox || product.category === 'gift-boxes' || product.category === 'bundles' || product.isBundle;
-      return <React.Fragment key={product.id}>{category === 'all' && filters.sort === 'featured' && (index === 0 || products[index - 1].category !== product.category) && <h2 className="col-span-full mt-4 border-b border-[var(--color-border)] pb-3 font-serif text-2xl text-[var(--color-text-primary)]">{t(`shop.${product.category}`, getCategoryMeta(product.category)?.name || product.category)}</h2>}<article className={`group relative flex min-w-0 cursor-pointer flex-col rounded-[22px] border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5 transition-[border-color,box-shadow] duration-300 hover:border-[var(--color-border-accent)] hover:shadow-md motion-reduce:transition-none sm:p-4 ${listView ? "catalog-list-card" : ""}`} onClick={event => { if (!(event.target as HTMLElement).closest('a,button,input,select,textarea,[role="button"]')) navigate(`/product/${product.id}`); }}>
+      return <React.Fragment key={product.id}>{category === 'all' && filters.sort === 'featured' && (index === 0 || products[index - 1].category !== product.category) && <h2 className="col-span-full mt-4 border-b border-[var(--color-border)] pb-3 font-serif text-2xl text-[var(--color-text-primary)]">{categoryLabel(product.category)}</h2>}<article className={`group relative flex min-w-0 cursor-pointer flex-col rounded-[22px] border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5 transition-[border-color,box-shadow] duration-300 hover:border-[var(--color-border-accent)] hover:shadow-md motion-reduce:transition-none sm:p-4 ${listView ? "catalog-list-card" : ""}`} onClick={event => { if (!(event.target as HTMLElement).closest('a,button,input,select,textarea,[role="button"]')) navigate(`/product/${product.id}`); }}>
         <ProductImageGallery product={product} />
         <div className="flex items-center justify-between gap-2 pt-3"><span className="truncate text-[9px] font-semibold uppercase tracking-[.14em] text-[var(--color-accent-text)]" dir="auto">{getLocalized(product, 'origin', language)}</span><button type="button" onClick={e => { e.stopPropagation(); setSaved(product.id, !saved); }} aria-label={saved ? t('shop.unsave') : t('shop.save')} aria-pressed={saved} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[var(--color-accent-text)] hover:bg-[#c7982f]/10"><Heart size={18} fill={saved ? 'currentColor' : 'none'} /></button></div>
         <Link to={`/product/${product.id}`} lang={language} dir="auto" className={`focus-ring mb-1 block min-w-0 max-w-full whitespace-normal break-words [overflow-wrap:anywhere] text-start font-medium ${language === 'ur' ? 'font-urdu text-[20px]' : language === 'ar' ? 'font-arabic text-[23px]' : 'font-serif text-[21px] leading-[1.25]'}`}><span>{getLocalized(product, 'name', language)}</span></Link>

@@ -1,3 +1,4 @@
+import { productSeo } from '../lib/productSeo';
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import { useCatalogActivity } from '../hooks/useCatalogActivity';
 import { unitPrice } from '../lib/catalogActivity';
@@ -21,7 +22,7 @@ import { getLocalized } from '../utils/localize';
 import PulseHeart from '../components/PulseHeart';
 import { buildHumanSupportWhatsAppUrl } from '../config/contacts';
 import CustomWeightInput from '../components/CustomWeightInput';
-import { resolveCustomWeight } from '../lib/productVariants';
+import { resolveCustomWeight, supportsCustomWeight } from '../lib/productVariants';
 import { displayProductPrice } from '../lib/productSelection';
 import { openCustomQuoteModal } from '../components/CustomQuoteModal';
 import ProductPhotoViewer from '../components/ProductPhotoViewer';
@@ -56,7 +57,7 @@ export default function ProductDetailPage() {
   const [shareStatus, setShareStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
 
   const isGiftProduct = product?.category === 'hampers' || product?.category === 'deals' || product?.category === 'combos' || product?.id?.includes('hamper') || product?.id?.includes('gift') || product?.id?.includes('deal');
-  const galleryImages = useMemo(() => product ? productMedia.images.map(src => ({ src, alt: t(`imageAlt.${product.id}`, getLocalized(product, 'name', language)) })) : [], [product, productMedia.images, language, t]);
+  const galleryImages = useMemo(() => product ? productMedia.images.map(src => ({ src, alt: product.seo?productSeo(product,language).imageAlt:t(`imageAlt.${product.id}`, getLocalized(product, 'name', language)) })) : [], [product, productMedia.images, language, t]);
   const galleryKey = productMedia.images.join('\u0000');
   const activeGalleryIndex = clampPhotoIndex(activeGalleryIdx, galleryImages.length);
   useEffect(() => { setActiveGalleryIdx(current => clampPhotoIndex(current, productMedia.images.length)); setImageError(false); }, [galleryKey, productMedia.images.length]);
@@ -121,8 +122,10 @@ export default function ProductDetailPage() {
     [product, disabledLabels]
   );
 
+  useEffect(()=>{if(product?.commerce?.custom){setCustomGrams(String(product.commerce.custom.min));setCustomWeightSelected(product.commerce.quantityMode==='custom');}},[product?.commerce,product?.id]);
+
   const hasCustomPriceOption = Boolean(
-    product && product.allowCustomWeight && Number.isFinite(product.pricePer100g) && (product.pricePer100g || 0) > 0
+    product && supportsCustomWeight(product)
   );
   const isQuoteOnly = Boolean(
     product && (product.quoteOnly || product.orderMode === 'inquiry_quote' || (weights.length === 0 && !hasCustomPriceOption))
@@ -218,11 +221,12 @@ export default function ProductDetailPage() {
   return (
     <div dir="ltr" className="w-full bg-[var(--color-base,#F6F1EA)] pt-6 sm:pt-10 pb-24 select-none">
       <SEO
-        title={getLocalized(product, 'name', language)}
-        description={getLocalized(product, 'desc', language)}
+        title={productSeo(product,language).title}
+        description={productSeo(product,language).description}
         canonicalPath={`/product/${product.id}`}
         type="product"
-        image={productMedia.images[0]}
+        image={productSeo(product,language).image||productMedia.images[0]}
+        keywords={productSeo(product,language).keywords}
         structuredData={{
           '@context': 'https://schema.org',
           '@type': 'Product',

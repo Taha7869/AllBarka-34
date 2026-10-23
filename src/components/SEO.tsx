@@ -7,6 +7,7 @@ interface SEOProps {
   canonicalPath?: string;
   type?: 'website' | 'product' | 'article';
   image?: string;
+  keywords?: string[];
   structuredData?: Record<string, any>;
 }
 
@@ -17,6 +18,7 @@ export default function SEO({
   type = 'website',
   image = '/images/generated/og-image.jpg',
   structuredData,
+  keywords,
 }: SEOProps) {
   const location = useLocation();
   const currentPath = canonicalPath || location.pathname;
@@ -65,6 +67,7 @@ export default function SEO({
       }
       element.setAttribute('content', content);
     };
+    setMeta('name','keywords',(keywords||[]).join(', '));
     setMeta('property', 'og:type', type);
     setMeta('name', 'twitter:card', 'summary_large_image');
     setMeta('name', 'twitter:title', fullTitle);
@@ -97,7 +100,7 @@ export default function SEO({
       const el = document.getElementById('route-structured-data');
       if (el) el.remove();
     };
-  }, [fullTitle, description, canonicalUrl, image, structuredData, siteOrigin, type, currentPath]);
+  }, [fullTitle, description, canonicalUrl, image, structuredData, siteOrigin, type, currentPath, keywords]);
 
   return null;
 }

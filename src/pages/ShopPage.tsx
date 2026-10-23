@@ -1,3 +1,5 @@
+import { useCatalogTaxonomy } from '../contexts/CatalogContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import React, { useEffect, useMemo } from 'react';
 import { useParams, useSearchParams, useLocation, useOutletContext } from 'react-router-dom';
 import CategoryPLP from '../components/CategoryPLP';
@@ -35,8 +37,10 @@ export default function ShopPage() {
     ? 'gift-boxes'
     : (paramCategory || searchParams.get('category') || 'all');
 
-  const resolvedCategory = resolveCategorySlug(rawCategory) || 'all';
-  const categoryMeta = getCategoryMeta(resolvedCategory);
+  const taxonomy=useCatalogTaxonomy();const {language}=useLanguage();
+  const extraCategory=taxonomy.find(x=>x.type!=='occasion'&&x.id===rawCategory);
+  const resolvedCategory = resolveCategorySlug(rawCategory) || extraCategory?.id || rawCategory;
+  const categoryMeta = extraCategory?{name:extraCategory[`name_${language}`]||extraCategory.name_en,description:extraCategory[`description_${language}`]||extraCategory.description_en}:getCategoryMeta(resolvedCategory);
   const searchQuery = searchParams.get('search') || '';
 
   const isCelebrationRoute =

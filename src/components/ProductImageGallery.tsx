@@ -1,3 +1,4 @@
+import { productSeo } from '../lib/productSeo';
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -45,7 +46,7 @@ export default function ProductImageGallery({ product, linkToDetails = true }: {
       <div ref={viewport} className="product-gallery-track" dir="ltr"
         onScroll={event => { const width = event.currentTarget.clientWidth; if (width > 0) setSelected(Math.max(0, Math.min(images.length - 1, Math.round(event.currentTarget.scrollLeft / width)))); }}>
         {images.map((src, index) => {
-          const photo = <img src={src} width={960} height={960} alt={`${t(`imageAlt.${product.id}`, getLocalized(product, 'name', language))} — ${index + 1}`}
+          const photo = <img src={src} width={960} height={960} alt={`${product.seo?productSeo(product,language).imageAlt:t(`imageAlt.${product.id}`, getLocalized(product, 'name', language))} — ${index + 1}`}
               loading="lazy" decoding="async" draggable={false}
               onError={event => { if (!event.currentTarget.src.endsWith('/images/product-placeholder.svg')) event.currentTarget.src = '/images/product-placeholder.svg'; }} />;
           return linkToDetails ? <Link key={src} to={`/product/${product.id}`} className="product-gallery-slide focus-ring" tabIndex={active === index ? 0 : -1}

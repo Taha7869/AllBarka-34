@@ -4,9 +4,13 @@ Updated: 24 October 2026 (Asia/Karachi).
 
 ## Current checkpoint
 
-Stages 1–2 complete after the verification gates recorded in TESTING_RELEASE.md. Stages 3–6 TODO. Stage 2 implements backend/data contracts; the complete Add/Edit Item UI is not yet implemented.
+Stages 1–3 DONE after the verification gates in TESTING_RELEASE.md. Stages 4–6 TODO. The complete shared Add/Edit Item workflow, taxonomy/template editor and customer integration are implemented; live external connectivity remains unverified.
 
 Verified upstream: `5e6349051980abd1a20f719f289a24a3fd2cba7b`, tree `236c3c0afef839529e071369f6ede63e55814483`. Both launch/main pointed there when checked. Feature branch `codex/admin-catalog-foundation-20261023` was created at that exact commit. No production merge, deployment, key change or live database mutation.
+
+## Persistence boundary for this checkpoint
+
+The earlier Stage 3 GitHub save was blocked by automatic approval review for destination authorization. The owner has now requested that completed changes, remaining work and future-model references be maintained in this GitHub repository, continuing the existing feature branch/PR #16. This checkpoint carries the verified Stage 3 source and evidence to `Taha7869/AllBarka-34`, branch `codex/admin-catalog-foundation-20261023`. Confirm its current head through PR #16 when resuming. No production merge or deployment is authorized by this checkpoint.
 
 ## Completed
 
@@ -24,24 +28,32 @@ Verified upstream: `5e6349051980abd1a20f719f289a24a3fd2cba7b`, tree `236c3c0afef
 - Integrated existing lifecycle, public serialization, quote fingerprints and packaging piece counts. New configuration rejects the old standalone pricing editor rather than allowing inconsistent saves.
 - Added calculation, privacy, real-service persistence and loopback API tests. Existing browser tests now support an installed Linux Chromium through a test-only executable override.
 
-## Next: Stage 3
+## Stage 3 implementation
 
-1. Extend the existing Add/Edit Item workflow, using API_CONTRACTS.md and DATA_MODEL.md. Share validated options/template/language/SEO fields; remove example price defaults and show mandatory/optional labels.
-2. Configured products must use the full options editor. Route/hide the old standalone pricing editor for them; preserve it for legacy products.
-3. Integrate taxonomy settings with actual customer discovery, including safe empty states and existing aliases. Apply template defaults explicitly; do not rewrite existing products when a template changes.
-4. Add durable authenticated dynamic-product image upload/gallery integration. Existing media helpers prioritize compiled product paths and need inspection before reuse.
-5. Add unit-aware custom customer inputs and localized SEO rendering, then verify create/reload/publish/catalog/cart/checkout in real fixture-backed browsers on mobile and desktop.
+- Existing create/edit modal contracts share `AdminItemForm`; prices start empty. Separate language sections, units/options, reusable templates/attributes, gallery, private sourcing, personalization, SEO, readiness and explicit publication controls are present.
+- Added admin-only durable photo upload through the existing Firebase bucket, with bounded raster validation and honest provider failures. Product documents store URLs. Reference removal does not delete Storage objects.
+- Shop discovery reads revisioned taxonomy; public hidden-ID tombstones suppress compiled defaults. Custom categories/collections/occasions use exact matching. SEO reaches initial server HTML and localized client metadata.
+- Legacy metadata saves retain canonical prices; explicit blank translations stay blank. Configured products open the full options editor. Applying a template is explicit and does not modify other items.
+- Browser fixture creates a draft, reloads it, uploads a gallery photo, publishes, edits taxonomy/template definitions, preserves input on 409, discovers the item and buys a custom 750mg selection. The server uses PKR 750 despite a submitted PKR 1. All 12 mobile/desktop × EN/UR/AR × light/dark combinations passed without overflow or unexpected console/page errors.
+- Final gates passed: typecheck, hooks lint, production build/privacy audit, 681 tests across 63 files, 21 backend checks, catalog asset audit and 36 production checks. Screenshots are in `evidence/`.
+
+## Next: Stage 4 — staff order reader
+
+1. Inspect existing authentication/custom-claim and admin order services. Reuse them without weakening existing admin guards.
+2. Add administrator-managed grant/revoke for the approved order-reader role; preserve unrelated claims. Require authoritative identity and record audit evidence.
+3. Add dedicated staff list/detail routes with a bounded response allowlist and an orders-only workspace. No mutation, payment/status change, export, catalog, settings or private notes/sourcing access.
+4. Test unauthenticated/customer denial, authorized reader access and every forbidden admin action at the API level; verify the staff UI on mobile/desktop and in EN/UR/AR before advancing the roadmap.
 
 ## Implementation cautions
 
-- Existing `AdminProductCreateModal` contains example prices and literal English labels. Replace those within Stage 3 rather than building a second catalog.
+- Reuse the shared form and existing catalog; do not reintroduce example rate defaults or a second price list.
 - `productVariants.ts` retains the old gram resolver when configuration is absent. New custom measurement supports food/liquid mass/volume only; packaging/gifts use fixed packs and ordinary order quantity/MOQ.
 - `catalogSchema.ts` and `catalogStore.ts` contain several canonical/legacy adapters. New metadata must survive all relevant create/update/load paths.
-- `productMediaRouter.ts` currently uses compiled product IDs. Dynamic media and direct upload require real integration work.
+- The older media-override service remains compiled-ID-specific. Dynamic/configured products use the shared item cover/gallery and upload flow; do not silently route them into the old editor.
 - `AdminOrdersPage.tsx` and server order endpoints currently use admin claims. Staff needs a restricted reader, not a relaxed admin guard.
-- Current category/navigation/content defaults live in source. Admin-created extensions must be visible through actual customer discovery.
+- Shop taxonomy discovery is integrated. Header/home content and section controls remain Stage 5; preserve current defaults and routes.
 - Existing documentation has historical stack/status differences. Do not present old stage reports as new verification.
 
 ## Not yet verified
 
-Stage 3 new UI/browser journeys, live storage/Firebase/n8n connectivity, Firestore edition and deployment. A read-only Firebase CLI edition check could not obtain network approval; no live database assumptions or changes were made. Local service tests use an isolated adapter and do not certify deployed services. Supplier-dependent unpublished products remain outside this implementation scope.
+Stage 4 staff journeys, Stage 5 content/full storefront polish, Stage 6 release/migration review, live Storage/Firebase/n8n connectivity, Firestore edition and deployment. A read-only Firebase CLI edition check could not obtain network approval; no live database assumptions or changes were made. Local service tests use an isolated adapter and do not certify deployed services. Supplier-dependent unpublished products remain outside this implementation scope.

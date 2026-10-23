@@ -62,6 +62,7 @@ test('configuration HTTP routes persist templates/taxonomy, deny customers and r
     const initial = await (await fetch(`${origin}/api/admin/catalog/configuration`, { headers: { Authorization: 'Bearer owner' } })).json();
     assert.equal(initial.configuration.revision, 0);
     const configuration = structuredClone(DEFAULT_CATALOG_CONFIGURATION);
+    configuration.taxonomy[0].visible=false;
     configuration.taxonomy.push({ id: 'merchant-seasonal', type: 'category', name_en: 'Seasonal', name_ur: '', name_ar: '', description_en: '', description_ur: '', description_ar: '', visible: true });
     const save = () => fetch(`${origin}/api/admin/catalog/configuration`, { method: 'PUT', headers: { Authorization: 'Bearer owner', 'Content-Type': 'application/json' }, body: JSON.stringify({ expectedRevision: 0, configuration }) });
     assert.equal((await save()).status, 200);
@@ -69,6 +70,8 @@ test('configuration HTTP routes persist templates/taxonomy, deny customers and r
     const publicConfig = await (await fetch(`${origin}/api/catalog/taxonomy`)).json();
     assert.ok(publicConfig.taxonomy.some((entry: any) => entry.id === 'merchant-seasonal'));
     assert.equal(publicConfig.templates, undefined);
+    assert.ok(!publicConfig.taxonomy.some((entry:any)=>entry.id===configuration.taxonomy[0].id));
+    assert.deepEqual(publicConfig.hiddenTaxonomy,[{id:configuration.taxonomy[0].id,type:configuration.taxonomy[0].type}]);
     const broken = { ...configuration, revision: 1, taxonomy: [] };
     const result = await fetch(`${origin}/api/admin/catalog/configuration`, { method: 'PUT', headers: { Authorization: 'Bearer owner', 'Content-Type': 'application/json' }, body: JSON.stringify({ expectedRevision: 1, configuration: broken }) });
     assert.equal(result.status, 400);

@@ -1,3 +1,4 @@
+import { isProductMediaId } from '../lib/productMedia';
 import { useCatalogProducts, useCatalogRefresh } from '../contexts/CatalogContext';
 import type { Product } from '../types';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
@@ -245,7 +246,7 @@ export default function AdminCatalogPanel() {
           className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#1e3a2b] text-[#fff8e9] dark:bg-[#c7982f] dark:text-[#1e3a2b] px-4 text-xs font-semibold hover:opacity-90 shadow-sm"
         >
           <Plus size={16} />
-          <span>Create Product</span>
+          <span>{t('item.add')}</span>
         </button>
       </div>
     </header>
@@ -356,18 +357,18 @@ export default function AdminCatalogPanel() {
               
               <div className="flex flex-wrap gap-1.5 mt-2">
                 <Link to={`/product/${encodeURIComponent(row.product.id)}`} className="focus-ring inline-flex min-h-9 items-center gap-1 rounded-lg border border-[var(--color-border)] px-2.5 text-xs font-medium text-[var(--color-accent-text)]"><span dir="auto">{t('admin.catalog.open')}</span><ArrowUpRight size={13} aria-hidden="true" /></Link>
-                <button type="button" className="focus-ring inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-2.5 text-xs font-semibold" onClick={() => setEditingMediaProductId(current => current === row.product.id ? null : row.product.id)} aria-expanded={editingMediaProductId === row.product.id} aria-controls={`${ids}-editor-${row.product.id}`}><Image size={14} aria-hidden="true" /><span dir="auto">{mediaTranslation('media.edit')}</span></button>
-                <button type="button" className="focus-ring inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-2.5 text-xs font-semibold" onClick={() => setPricingProductId(current => current === row.product.id ? null : row.product.id)} aria-expanded={pricingProductId === row.product.id} aria-controls={`${ids}-pricing-${row.product.id}`}><span dir="auto">{pricingTranslation('editButton')}</span></button>
+                <button type="button" className="focus-ring inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-2.5 text-xs font-semibold" onClick={() => row.product.commerce || !isProductMediaId(row.product.id) ? setProductToEdit(row.product) : setEditingMediaProductId(current => current === row.product.id ? null : row.product.id)} aria-expanded={editingMediaProductId === row.product.id} aria-controls={`${ids}-editor-${row.product.id}`}><Image size={14} aria-hidden="true" /><span dir="auto">{mediaTranslation('media.edit')}</span></button>
+                <button type="button" className="focus-ring inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-2.5 text-xs font-semibold" onClick={() => row.product.commerce ? setProductToEdit(row.product) : setPricingProductId(current => current === row.product.id ? null : row.product.id)} aria-expanded={pricingProductId === row.product.id} aria-controls={`${ids}-pricing-${row.product.id}`}><span dir="auto">{pricingTranslation('editButton')}</span></button>
                 
                 {/* Full Details Edit */}
                 <button
                   type="button"
-                  title="Edit Product Details & Taxonomy"
+                  title={t('item.edit')}
                   onClick={() => setProductToEdit(row.product)}
                   className="focus-ring inline-flex min-h-9 items-center gap-1 rounded-lg border border-[#c7982f]/60 bg-[#c7982f]/10 text-[#c7982f] px-2.5 text-xs font-semibold hover:bg-[#c7982f]/20"
                 >
                   <Edit size={13} />
-                  <span>Edit Details</span>
+                  <span>{t('item.edit')}</span>
                 </button>
 
                 {/* Lifecycle CRUD actions */}
@@ -419,6 +420,7 @@ export default function AdminCatalogPanel() {
 
     <AdminProductCreateModal
       isOpen={isCreateOpen}
+      initialCategory={category || undefined}
       onClose={() => setIsCreateOpen(false)}
       onCreated={async () => {
         setActionFeedback('New product created successfully!');

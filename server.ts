@@ -1,3 +1,6 @@
+import { getStorage } from 'firebase-admin/storage';
+import firebaseAppletConfig from './firebase-applet-config.json';
+import { createProductUploadRouter } from './src/lib/productUploadRouter';
 import { sanitizeFirestoreData } from './src/lib/firestoreData';
 import express from 'express';
 import cookieParser from 'cookie-parser';
@@ -44,7 +47,7 @@ import { claimWelcomeVoucher } from './src/lib/welcomeCouponService';
 import { authenticatePatronCredentials } from './src/lib/serverAuthentication';
 import { createProductMediaRouter } from './src/lib/productMediaRouter';
 import { createCatalogRouter } from './src/lib/catalogRouter';
-import { createCatalogConfigurationRouter } from './src/lib/catalogConfigurationRouter';
+import { readCatalogConfiguration, createCatalogConfigurationRouter } from './src/lib/catalogConfigurationRouter';
 import { loadAuthoritativeCatalog, mergeAuthoritativeCatalog } from './src/lib/catalogStore';
 import { buildWaProductRows, serializeWaProductsCsv } from './src/lib/waProductsExport';
 import { CatalogError, unavailableProduct } from './src/lib/catalogSchema';
@@ -298,8 +301,9 @@ app.get('/api/integrations/n8n/wa-products', async (req, res) => {
 // Authenticate private integrations before parsing their JSON. Their router owns
 // payload limits and safe parse errors; customer/admin bearer guards remain separate.
 app.use('/api/integrations/n8n', createN8nCommerceRouter({ getDb: () => db }));
-app.use(express.json({ limit: '128kb' }));
 app.use(cookieParser());
+app.use(createProductUploadRouter({ requireAdmin, getBucket: () => adminAuth ? getStorage().bucket(firebaseAppletConfig.storageBucket) : null }));
+app.use(express.json({ limit: '128kb' }));
 app.use(createProductMediaRouter({ getDb: () => db, requireAdmin }));
 app.use(createCatalogConfigurationRouter({ getDb: () => db, requireAdmin }));
 app.use(createCatalogRouter({ getDb: () => db, requireAdmin }));
@@ -879,12 +883,13 @@ async function startServer() {
       }
       catch { return PRODUCTS.map(unavailableProduct); }
     };
+    const pageTaxonomy=async()=>{try{return (await readCatalogConfiguration(db)).taxonomy.filter(x=>x.visible);}catch{return [];}};
     app.get('/robots.txt', (_req, res) => res.type('text/plain').send(
       `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /checkout\nDisallow: /cart\nDisallow: /success\nDisallow: /admin\nSitemap: ${publicOrigin}/sitemap.xml\n`
     ));
     app.get('/sitemap.xml', async (_req, res) => {
       const products = await pageCatalog();
-      const routes = ['/', '/shop', '/gifting', '/wholesale', '/journal', '/faq', '/contact',
+      const routes = [...(await pageTaxonomy()).filter(x=>x.type!=='occasion').map(x=>`/shop/${x.id}`), '/', '/shop', '/gifting', '/wholesale', '/journal', '/faq', '/contact',
         ...products.filter(product => product.active !== false).map(product => `/product/${encodeURIComponent(product.id)}`)];
       res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${routes.map(route => `<url><loc>${publicOrigin}${route}</loc></url>`).join('')}</urlset>`);
     });
@@ -910,7 +915,7 @@ async function startServer() {
       if (req.path.startsWith('/assets/') || path.extname(req.path)) {
         return res.status(404).type('text/plain').send('Not found');
       }
-      const metadata = routeMetadata(req.path, publicOrigin, await pageCatalog());
+      const metadata = routeMetadata(req.path, publicOrigin, await pageCatalog(), await pageTaxonomy());
       if (metadata.noindex) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       res.setHeader('Pragma', 'no-cache');

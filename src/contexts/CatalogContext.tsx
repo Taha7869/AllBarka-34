@@ -1,3 +1,4 @@
+import type { TaxonomyEntry } from '../lib/catalogConfiguration';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { PRODUCTS } from '../data/products';
 import { apiUrl } from '../lib/apiUrl';
@@ -7,9 +8,12 @@ import { HAMPER_BOXES } from '../lib/hamperCatalog';
 import { HAMPER_BOX_SEEDS, boxFromPricing, validateHamperBoxPricing } from '../lib/hamperBoxSchema';
 
 const seeds = PRODUCTS.map(product => ({ ...product }));
-const CatalogContext = createContext({ products: PRODUCTS, refresh: async () => {} });
-export function CatalogProvider({ children, initialProducts }: { children: ReactNode; initialProducts?: Product[] }) {
+const CatalogContext = createContext({ products: PRODUCTS, taxonomy: [] as TaxonomyEntry[], hiddenTaxonomy: [] as string[], refresh: async () => {} });
+export function CatalogProvider({ children, initialProducts, initialTaxonomy }: { children: ReactNode; initialProducts?: Product[]; initialTaxonomy?: TaxonomyEntry[] }) {
   const [products, setProducts] = useState<Product[]>(() => initialProducts || PRODUCTS);
+  const [taxonomy,setTaxonomy]=useState<TaxonomyEntry[]>(initialTaxonomy||[]);
+  const [hiddenTaxonomy,setHiddenTaxonomy]=useState<string[]>([]);
+  const taxonomyFlight=useRef<AbortController|null>(null);
   const active = useRef(false);
   const inFlight = useRef<AbortController | null>(null);
   const version = useRef('');
@@ -18,6 +22,14 @@ export function CatalogProvider({ children, initialProducts }: { children: React
     const controller = new AbortController(); inFlight.current = controller;
     const timer = setTimeout(() => controller.abort(), 10_000);
     try {
+      // Independent bounded request: category settings cannot hold back catalog prices.
+      taxonomyFlight.current?.abort();const tc=new AbortController();taxonomyFlight.current=tc;
+      const taxonomyTimer=setTimeout(()=>tc.abort(),10000);
+      void fetch(apiUrl('/api/catalog/taxonomy'), {signal:tc.signal,credentials:'omit',cache:'no-cache'})
+        .then(async response=>{if(!response.ok)return;const data=await response.json();if(active.current&&!tc.signal.aborted&&Array.isArray(data.taxonomy)){
+          setTaxonomy(data.taxonomy.filter((x:any)=>typeof x.id==='string'&&x.visible===true));
+          setHiddenTaxonomy(Array.isArray(data.hiddenTaxonomy)?data.hiddenTaxonomy.filter((x:any)=>typeof x.id==='string'&&x.type!=='occasion').map((x:any)=>x.id):[]);
+        }}).catch(()=>{}).finally(()=>{clearTimeout(taxonomyTimer);if(taxonomyFlight.current===tc)taxonomyFlight.current=null;});
       const response = await fetch(apiUrl('/api/catalog'), { signal: controller.signal, credentials: 'omit', cache: 'no-cache', headers: { Accept: 'application/json' } });
       if (!response.ok) return;
       const data = await response.json();
@@ -76,9 +88,13 @@ export function CatalogProvider({ children, initialProducts }: { children: React
     const timer = setInterval(() => { if (!document.hidden) void refresh(); }, 30_000);
     const onFocus = () => { void refresh(); };
     window.addEventListener('focus', onFocus);
-    return () => { active.current = false; inFlight.current?.abort(); clearInterval(timer); window.removeEventListener('focus', onFocus); };
+    return () => { active.current = false; inFlight.current?.abort(); taxonomyFlight.current?.abort(); clearInterval(timer); window.removeEventListener('focus', onFocus); };
   }, [refresh]);
-  return <CatalogContext.Provider value={{ products, refresh }}>{children}</CatalogContext.Provider>;
+  return <CatalogContext.Provider value={{ products, taxonomy, hiddenTaxonomy, refresh }}>{children}</CatalogContext.Provider>;
 }
 export const useCatalogProducts = () => useContext(CatalogContext).products;
 export const useCatalogRefresh = () => useContext(CatalogContext).refresh;
+
+export const useCatalogTaxonomy = () => useContext(CatalogContext).taxonomy;
+
+export const useCatalogHiddenTaxonomy = () => useContext(CatalogContext).hiddenTaxonomy;

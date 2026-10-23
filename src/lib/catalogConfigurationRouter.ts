@@ -19,7 +19,7 @@ export function createCatalogConfigurationRouter(options: { getDb: () => Firesto
     try {
       const configuration = await readCatalogConfiguration(options.getDb());
       response.setHeader('Cache-Control', 'public, max-age=30');
-      return response.json({ taxonomy: configuration.taxonomy.filter(entry => entry.visible), revision: configuration.revision });
+      return response.json({ taxonomy: configuration.taxonomy.filter(entry => entry.visible), hiddenTaxonomy: configuration.taxonomy.filter(entry=>!entry.visible).map(({id,type})=>({id,type})), revision: configuration.revision });
     } catch (error) { response.setHeader('Cache-Control', 'no-store'); return fail(error, response); }
   });
   router.get('/api/admin/catalog/configuration', options.requireAdmin, async (_request, response) => {

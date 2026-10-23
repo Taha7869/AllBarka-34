@@ -364,8 +364,8 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
   if (!name_en || name_en.length < 2 || name_en.length > 120) {
     throw new CatalogError('INVALID_PRODUCT_NAME_EN', 400);
   }
-  const name_ur = typeof value.name_ur === 'string' && value.name_ur.trim() ? value.name_ur.trim() : name_en;
-  const name_ar = typeof value.name_ar === 'string' && value.name_ar.trim() ? value.name_ar.trim() : name_en;
+  const name_ur = typeof value.name_ur === 'string' ? value.name_ur.trim() : name_en;
+  const name_ar = typeof value.name_ar === 'string' ? value.name_ar.trim() : name_en;
 
   const category = typeof value.category === 'string' && value.category.trim() ? value.category.trim() : 'dry-fruits';
 

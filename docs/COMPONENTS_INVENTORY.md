@@ -2,6 +2,15 @@
 
 This document is auto-generated and lists every component, page, context, hook, and utility with their usage.
 
+## Admin expansion — Stage 3
+
+- `AdminProductCreateModal` and `AdminProductEditModal` retain their entry-point contracts and share `AdminItemForm` for product editing, preview and publication.
+- `AdminItemField` supplies visible required/publish-required/optional markers; `AdminDelimitedInput` retains separators while editing gallery, keywords and taxonomy lists.
+- `AdminCatalogConfiguration` manages revisioned category/collection/occasion entries, reusable templates and typed attribute definitions inside the existing admin workflow.
+- `CustomWeightInput` remains the customer quantity component, now using configured units/ranges when present and retaining legacy gram controls otherwise.
+- `adminItemForm.ts`, `productSeo.ts`, `productUploadClient.ts` and `productUploadRouter.ts` provide form payload/readiness, localized metadata and authenticated durable photo upload. No new application dependency was added.
+- `adminExpansionTranslations.ts` integrates all new form labels with LanguageContext. `styles/admin-item.css` scopes responsive, token-based form styling.
+
 | File Path | Name | Category | Props | Included By (Pages/Files) |
 |-----------|------|----------|-------|--------------------------|
 | `components/AIConcierge.tsx` | **AIConcierge** | Component | Has Props Interface | RootLayout.tsx |

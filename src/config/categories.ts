@@ -236,7 +236,7 @@ export const CATEGORY_ALIASES: Record<string, string> = {
  * - 'dates' <-> date products
  */
 export function productMatchesCategory(
-  product: { id: string; category?: string; name_en?: string; keywords?: string[] },
+  product: { id: string; category?: string; name_en?: string; keywords?: string[]; collections?: string[] },
   categorySlug?: string | null
 ): boolean {
   if (!categorySlug || categorySlug === 'all') return true;
@@ -244,7 +244,7 @@ export function productMatchesCategory(
   const prodCat = (product.category || '').trim().toLowerCase();
 
   // Exact match
-  if (prodCat === target) return true;
+  if (prodCat === target || product.collections?.includes(target)) return true;
 
   // Dry Fruits & Nuts equivalence
   if ((target === 'dry-fruits' || target === 'nuts') && (prodCat === 'nuts' || prodCat === 'dry-fruits')) {

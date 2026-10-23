@@ -31,6 +31,28 @@ The first full-suite attempt exposed missing Chrome/Edge binaries in this Linux 
 
 All persistence/API tests used isolated fixtures and loopback HTTP. The production checker deliberately verifies unavailable integration behavior without credentials. Live Firestore edition/connectivity, Storage, Railway and n8n remain unverified; an attempted read-only Firebase CLI edition check could not obtain network approval. No live writes, provisioning or deployment took place.
 
+## Stage 3 final verification — actually run
+
+Date: 24 October 2026 (Asia/Karachi). Original application package/lock unchanged.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Exit 0 |
+| `npm run lint:hooks` | Exit 0 |
+| `npm run build` | Exit 0; release privacy audit passed; existing bundle advisory |
+| `node scripts/run-all-tests.mjs` with local test browser | Exit 0; 63 test files; 681/681 tests; 0 failed/cancelled/skipped |
+| Additional backend/production checks | 21/21 backend and 36/36 production |
+| Catalog assets | 97 products, 115 references / 111 unique files; 0 missing/retired views |
+| `git diff --check` | Exit 0 |
+
+New tests cover empty defaults and payload preservation, explicit blank legacy translations, server/client SEO and gallery precedence, custom taxonomy route/filter behavior, upload guards/signatures/size/provider failure, and a mounted browser using the real catalog/configuration/upload routers with isolated services. The browser journey persists a new draft, reloads, uploads, publishes, edits taxonomy and template attributes, checks a stale-edit 409 without losing input, opens customer discovery/PDP and adds `Custom 750mg` to the real CartContext. `validateAndPriceOrder` then ignores a submitted PKR 1 and charges the canonical PKR 750. The upload provider is a local adapter; these checks do not certify the live bucket or create a real customer order.
+
+The responsive matrix covers 390×844 and 1440×900, each in EN/UR/AR and light/dark, with reduced motion, dialog direction/overflow checks and no unexpected console/page errors. The deliberately induced 409 is the only expected error response in that path. Four representative screenshots are saved in `evidence/`: mobile English light, desktop English light, mobile Urdu dark and desktop Arabic dark.
+
+An earlier full run exposed timing drift in three existing autoplay tests; an isolated run reproduced a different boundary failure. Their installed fake clock had continued advancing with real wall time between actions. The harness now pauses wall-time progression between explicit `runFor` calls and flushes via the driver rather than a paused browser timer. All original assertions remain; isolated 11/11 and final full-suite timing checks passed. No carousel runtime logic was changed.
+
+Live Storage availability/permissions, Firestore edition, Railway and n8n remain unverified. No new credentials, application environment edits, live writes, rules publication, workflow edits, deployment or production merge occurred. Stages 4–6 retain their separate gates below.
+
 ## Required feature evidence
 
 1. Unit conversion boundaries, dimensional mismatch, base-rate math, manual overrides, custom range/step and invalid prices.

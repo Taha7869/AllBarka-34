@@ -1,6 +1,6 @@
 # Data model and compatibility contract
 
-Status: Stage 2 data/service implementation. Media upload, staff and content sections below remain contracts for later stages. Existing collections remain authoritative.
+Status: Stages 2–3 data/service and item workflow implementation. Staff and content sections below remain contracts for later stages. Existing collections remain authoritative.
 
 ## Products
 
@@ -18,9 +18,9 @@ Implemented optional product fields are `commerce`, `attributes`, `templateId`, 
 - On explicit configuration save, manual/override prices come from canonical `prices`; calculated options are regenerated from the approved base rate. Metadata-only edits preserve saved canonical prices. There is no second final-price array in `commerce`.
 - Custom-only products receive a minimum-quantity canonical option for existing starting-price displays. Fixed labels on custom-only products are rejected by purchase resolution.
 - Explicit drafts can have empty prices. Inquiry-only published products can remain unpriced. Standard publication requires English identity/description/category, cover image, required attributes, valid available option prices and approved shipping weights. Packaging requires at least 10 preparation days and explicit pieces for pack units.
-- Attributes are bounded to 24 typed text/number/select entries. Localized SEO title/description/alt text and social image, plus up to 12 gallery URLs, are validated and whitelisted. Rendering/editing these extensions is Stage 3 work.
+- Attributes are bounded to 24 typed text/number/select entries. Localized SEO title/description/alt text and social image, plus up to 12 gallery URLs, are validated and whitelisted. The Stage 3 form edits these; galleries and client/server SEO consume them.
 
-Saved canonical variants/prices remain the storefront, quote, order and integration authority. Existing configured products reject the old standalone price-editor endpoint (`USE_PRODUCT_OPTIONS_EDITOR`); Stage 3 must route their UI to the complete options editor. Direct stored configuration changes also affect the catalog fingerprint so stale quotes cannot silently reuse the old configuration.
+Saved canonical variants/prices remain the storefront, quote, order and integration authority. Existing configured products reject the old standalone price-editor endpoint (`USE_PRODUCT_OPTIONS_EDITOR`); their UI now opens the complete options editor. Direct stored configuration changes also affect the catalog fingerprint so stale quotes cannot silently reuse the old configuration.
 
 | Concept | Meaning and validation |
 | --- | --- |
@@ -38,13 +38,13 @@ Saved canonical variants/prices remain the storefront, quote, order and integrat
 
 Use server-managed, revisioned settings records for reusable templates, taxonomy extensions and storefront content. Published views expose only whitelisted published fields; admin previews may include drafts. Keep prices in products, never in banners/menus/merchandising.
 
-Stage 2 implements `catalogSettings/main` with `version: 1`, a nonnegative integer `revision`, up to 50 templates and up to 150 taxonomy entries. Missing records return revision-0 defaults sourced from the current registry plus food/liquid/packaging/gift templates. Templates carry localized names, kind, default category/unit, archived status and attribute definitions. Taxonomy entries carry category/collection/occasion type, stable ID, localized names/descriptions and visibility. Existing entries must be archived/hidden rather than deleted. Successful saves increment the revision and write `catalogAudits` atomically. See `API_CONTRACTS.md`. Storefront discovery integration is Stage 3; content records are Stage 5.
+Stage 2 implements `catalogSettings/main` with `version: 1`, a nonnegative integer `revision`, up to 50 templates and up to 150 taxonomy entries. Missing records return revision-0 defaults sourced from the current registry plus food/liquid/packaging/gift templates. Templates carry localized names, kind, default category/unit, archived status and attribute definitions. Taxonomy entries carry category/collection/occasion type, stable ID, localized names/descriptions and visibility. Existing entries must be archived/hidden rather than deleted. Successful saves increment the revision and write `catalogAudits` atomically. See `API_CONTRACTS.md`. Stage 3 integrates shop discovery; content records remain Stage 5.
 
 Existing `merchandising` records retain their contract and listeners. Add content controls alongside them rather than replacing them. Validate internal destinations and references. Archive categories/templates instead of orphaning existing products.
 
 ## Media
 
-Use the existing Firebase project/bucket configuration and authenticated server APIs for durable uploads. Accept bounded JPEG/PNG/WebP with verified content type, generated filenames and safe public display URLs. Do not store uploads on temporary Railway disk or store base64 image files in Firestore. If external storage is unavailable, show an accurate failure and preserve form input.
+Stage 3 uses the existing Firebase project/bucket configuration and an authenticated raw-body server API for durable uploads. It accepts bounded JPEG/PNG/WebP with MIME/signature checks, generated filenames and safe public display URLs. It stores no uploads on temporary Railway disk and no base64 image files in Firestore. If external storage is unavailable, it reports failure and preserves form input. Configured products and explicitly saved catalog galleries take precedence over the compiled photo manifest; untouched legacy media retains its existing policy. See API_CONTRACTS.md for limits, public object URLs and cleanup boundaries.
 
 ## Staff
 

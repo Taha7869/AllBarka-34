@@ -45,6 +45,13 @@ function createStaticServer() {
   });
 }
 
+// Freeze wall time between interactions; only runFor advances the controlled clock.
+// Otherwise slow CI hover/actionability work also advances the supposedly fixed delays.
+async function installControlledClock(page) {
+  await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
+  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
+}
+
 describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () => {
   let server;
   let browser;
@@ -81,7 +88,7 @@ describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () =
     const page = await context.newPage();
     await page.goto(`http://localhost:${PORT}/`);
     await page.waitForSelector('#boutique-selections');
-    await page.clock.install();
+    await installControlledClock(page);
 
     // Arm fresh countdown with mouse outside showcase
     await page.hover('footer');
@@ -121,7 +128,7 @@ describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () =
     const page = await context.newPage();
     await page.goto(`http://localhost:${PORT}/`);
     await page.waitForSelector('#boutique-selections');
-    await page.clock.install();
+    await installControlledClock(page);
 
     // Hover over boutique selections
     await page.hover('#boutique-selections');
@@ -139,7 +146,7 @@ describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () =
     const page = await context.newPage();
     await page.goto(`http://localhost:${PORT}/`);
     await page.waitForSelector('#boutique-selections');
-    await page.clock.install();
+    await installControlledClock(page);
 
     // Hover and then exit to footer
     await page.hover('#boutique-selections');
@@ -168,7 +175,7 @@ describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () =
     const page = await context.newPage();
     await page.goto(`http://localhost:${PORT}/`);
     await page.waitForSelector('#boutique-selections');
-    await page.clock.install();
+    await installControlledClock(page);
 
     // Initial exit to footer
     await page.hover('#boutique-selections');
@@ -186,7 +193,7 @@ describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () =
 
     // Phase 1: 3000ms resume delay finishes, React re-renders to start 6000ms interval
     await page.clock.runFor(3000);
-    await page.evaluate(() => new Promise(r => setTimeout(r, 0)));
+    await page.waitForTimeout(0);
     assert.equal(await getActiveTabId(page), 'dry-fruits', 'Must not advance during 3000ms resume delay');
 
     // Phase 2: 5800ms of the 6000ms interval (8800ms total from second exit)
@@ -205,7 +212,7 @@ describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () =
     const page = await context.newPage();
     await page.goto(`http://localhost:${PORT}/`);
     await page.waitForSelector('#boutique-selections');
-    await page.clock.install();
+    await installControlledClock(page);
 
     // User manually clicks third tab (Gifts)
     await page.click('#boutique-selections [role="tab"][data-tab-id="gifts"]');
@@ -228,7 +235,7 @@ describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () =
 
     // Phase 1: 3000ms resume delay
     await page.clock.runFor(3000);
-    await page.evaluate(() => new Promise(r => setTimeout(r, 0)));
+    await page.waitForTimeout(0);
     assert.equal(await getActiveTabId(page), 'gifts', 'Must wait during resume delay');
 
     // Phase 2: 5800ms of 6000ms interval (8800ms total)
@@ -247,7 +254,7 @@ describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () =
     const page = await context.newPage();
     await page.goto(`http://localhost:${PORT}/`);
     await page.waitForSelector('#boutique-selections');
-    await page.clock.install();
+    await installControlledClock(page);
 
     // User pauses by clicking pause button
     await page.click('#boutique-selections button[aria-label*="autoplay"]');
@@ -269,7 +276,7 @@ describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () =
 
     // Phase 1: 3000ms resume delay
     await page.clock.runFor(3000);
-    await page.evaluate(() => new Promise(r => setTimeout(r, 0)));
+    await page.waitForTimeout(0);
     assert.equal(await getActiveTabId(page), 'dry-fruits', 'Must not advance during resume delay');
 
     // Phase 2: 5800ms of countdown (8800ms total)
@@ -288,7 +295,7 @@ describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () =
     const page = await context.newPage();
     await page.goto(`http://localhost:${PORT}/`);
     await page.waitForSelector('#boutique-selections');
-    await page.clock.install();
+    await installControlledClock(page);
 
     // Start with dry fruits
     assert.equal(await getActiveTabId(page), 'dry-fruits');
@@ -330,7 +337,7 @@ describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () =
     const page = await context.newPage();
     await page.goto(`http://localhost:${PORT}/`);
     await page.waitForSelector('#boutique-selections');
-    await page.clock.install();
+    await installControlledClock(page);
 
     assert.equal(await getActiveTabId(page), 'dry-fruits');
     assert.equal(await isAutoplayPlaying(page), false, 'Must default to paused when reduced motion is preferred');
@@ -350,7 +357,7 @@ describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () =
     // 2. Pointer leaves the showcase -> 3000ms resume delay + 6000ms countdown = 9000ms first advance
     await page.hover('footer');
     await page.clock.runFor(3000);
-    await page.evaluate(() => new Promise(r => setTimeout(r, 0)));
+    await page.waitForTimeout(0);
 
     await page.clock.runFor(5800);
     assert.equal(await getActiveTabId(page), 'dry-fruits', 'Still counting down 6000ms after resume delay');
@@ -366,7 +373,7 @@ describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () =
     // 4. Leave showcase and verify visibility protection under reduced motion opt-in
     await page.hover('footer');
     await page.clock.runFor(3000);
-    await page.evaluate(() => new Promise(r => setTimeout(r, 0)));
+    await page.waitForTimeout(0);
 
     // Document hidden
     await page.evaluate(() => {
@@ -416,7 +423,7 @@ describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () =
 
     await page.goto(`http://localhost:${PORT}/`);
     await page.waitForSelector('#boutique-selections');
-    await page.clock.install();
+    await installControlledClock(page);
 
     assert.equal(await isAutoplayPlaying(page), false, 'Must remain paused when admin setting has enabled=false');
 
@@ -468,7 +475,7 @@ describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () =
 
     await page.goto(`http://localhost:${PORT}/`);
     await page.waitForSelector('#boutique-selections');
-    await page.clock.install();
+    await installControlledClock(page);
 
     // Start rotation timers
     await page.clock.runFor(1500);
