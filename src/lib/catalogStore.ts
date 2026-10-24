@@ -5,6 +5,7 @@ import { PRODUCTS, BID_BOX_PRODUCT_IDS } from '../data/products';
 import type { Product, MerchandisingSettings } from '../types';
 import {
   CatalogError,
+  requiresStoredLegacyPackagingPricing,
   readCatalogPricing,
   productFromPricing,
   unavailableProduct,
@@ -30,6 +31,14 @@ export const CATALOG_CACHE_MS = 15_000;
 export const CATALOG_COLLECTION = 'products';
 export const MERCHANDISING_COLLECTION = 'merchandising';
 const seeds = new Map(PRODUCTS.map(product => [product.id, product]));
+// Existing compiled products predate explicit lifecycle fields. A metadata edit
+// must preserve their public state without publishing a new/explicit draft.
+function storedPublicationStatus(data: Record<string, any>, productId: string) {
+  if (data.status !== undefined) return data.status;
+  if (seeds.has(productId) && !data.commerce && data.active !== false && data.inStock !== false && data.isDraft !== true
+    && data.publicationStatus !== 'draft' && data.publicationStatus !== 'archived') return 'published';
+  return undefined;
+}
 const fingerprint = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 export interface CatalogSnapshot { products: Product[]; hamperBoxes: HamperBox[]; version: string; invalidProductIds: string[]; checkedAt: string }
 let cache: { db: Firestore; snapshot: CatalogSnapshot; at: number } | null = null;
@@ -196,6 +205,9 @@ function snapshotFromDocuments(snapshots: DocumentSnapshot[], now: number): Cata
       if (!doc || !doc.exists) {
         try {
           if (BID_BOX_PRODUCT_IDS.includes(seed.id)) {
+            // Reading a valid saved legacy label must not activate a previously
+            // unavailable product from compiled prices when its record is missing.
+            if (requiresStoredLegacyPackagingPricing(seed.id)) throw new CatalogError('MISSING_CATALOG_PRODUCT', 503);
             const record = storedCatalogRecord(seed.id, seed);
             products.push(productFromPricing(seed, record.pricing, record.version));
           } else {
@@ -449,7 +461,7 @@ export async function getAdminProductRecord(db: Firestore | null, productId: str
   const snapshot = await db.collection(CATALOG_COLLECTION).doc(productId).get();
   if (snapshot.exists) {
     const data = (snapshot.data() || {}) as Record<string, any>;
-    const dynamicProd = dynamicProductFromDocument(data, productId);
+    const dynamicProd = dynamicProductFromDocument({ ...data, status: storedPublicationStatus(data, productId) }, productId);
     // In admin representation, preserve ALL variants (including disabled ones) with full status and MOQ overrides
     const allVariants = Array.isArray(data.variants)
       ? data.variants.map((v: any) => {
@@ -668,6 +680,7 @@ export async function updateAdminProduct(input: { db: Firestore | null; productI
 
     const validated = validateDynamicProduct({
       ...existingData,
+      status: storedPublicationStatus(existingData, input.productId),
       ...body,
       id: input.productId,
       variants: canonicalVariants || existingData.variants,

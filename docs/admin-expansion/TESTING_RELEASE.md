@@ -103,3 +103,29 @@ Actual full-layout matrix: 360, 390, 768 and 1440px × EN/UR/AR × light/dark = 
 Four `evidence/polish-*.jpg` screenshots show actual mounted header/PDP with fixture data, not a live deployment. Chromium 153 and readable Amiri fonts were supplied outside the application repository; external font/provider requests are stubbed in this browser fixture. No new application dependency was added. Normal test runs save screenshots temporarily; explicit test-only `ALLBARKA_CAPTURE_EVIDENCE=true` refreshes committed evidence.
 
 New tests do not certify live Firebase/Auth/Storage, n8n, production font delivery or deployment. The four packaging-seed label findings and original Stage 6 external gates remain in RELEASE_PACKET.md. No CodeRabbit/Aloop review is claimed.
+
+## Stage 6 compatibility checkpoint — actually verified
+
+Date: 24 October 2026 (Asia/Karachi). Inspected parent: `547081f13cc16df534d66ef1eaf38c3f9dfac90e`. No UI, application package/lock, price list, shipping/MOQ calculation or original photography changed in this checkpoint.
+
+| Check | Final result |
+| --- | --- |
+| `npm run typecheck` | Exit 0 |
+| `npm run lint:hooks` | Exit 0 |
+| `npm run build` | Exit 0; privacy audit passed (84 text artifacts); existing bundle-size advisory |
+| Focused two new Stage 6 test files | 6/6 passed; 0 failed/cancelled/skipped |
+| `ALLBARKA_TEST_BROWSER=<installed Chromium> node scripts/run-all-tests.mjs` | Exit 0; **700/700 tests across 70 files**; 0 failed/cancelled/skipped |
+| Backend / production | **21/21 backend**, **36/36 production** |
+| Catalog assets | 97 products / 115 references / 111 unique files; zero missing/retired views |
+| Isolated additive dry run | 97 saved records and 97 resolved price lists unchanged; 93 products unavailable in empty store; zero writes/conversions/live database calls |
+| `git diff --check` | Exit 0 |
+
+`stage6-legacy-packaging.test.ts` uses real catalog/admin/order/export services with isolated persistence. It verifies exact original long labels and canonical IDs on all four affected products, merchant prices deliberately different from compiled seeds, metadata-only saves and canonical order/WhatsApp export agreement. It rejects altered/arbitrary/control-character labels, wrong product/variant IDs, duplicate variants and long new-commerce labels. It also verifies missing-record fail-closed behavior, unchanged saved records/seed price lists and restricted lifecycle preservation: existing public legacy state survives editing, while explicit drafts/archives and new/unknown products are not promoted.
+
+The initial focused/full run exposed a genuine metadata-edit regression: the new-product draft default was also applied to already-public legacy records without explicit status. The restricted existing-record adapter fixes that behavior without changing new-product defaults. During implementation, a missing-record fallback activation risk was also identified and guarded. The final exact-source full run above passes, including existing admin/staff/content, browser interactions, historical commerce and backend regressions. No assertions were removed to hide these failures.
+
+`stage6-readonly-preflight.test.ts` verifies an actual loopback HTTP server observes exactly three GETs without Authorization/Cookie headers. Output is allowlisted, private injected values are excluded, forbidden origins/credentials are rejected before fetch and malformed/oversized responses cannot claim readiness. The CLI accepts no live/apply mode and invokes no database SDK, Auth/Storage operation, order or webhook.
+
+Separately, the script actually ran against `https://allbarka.com` public health/readiness/catalog endpoints: all three returned 200, with 97 public products. Sanitized report: `evidence/stage6-live-readonly.json`, timestamp `2026-10-24T04:10:45.460Z` (09:10:45 Asia/Karachi). The old deployed commit `8cf4410d4cc9d1a2d4840a62cf0f328c4bdaaee0` differs from the inspected feature parent. It reports databaseConnected true, durablePersistenceReady false, savedOrderVerifiedThisProcess false and aiConnectivityVerified false. All four affected public products are unavailable. This proves neither the private saved-record cause nor deployment of the correction. The report's expected commit is the inspected parent at request time, not the later checkpoint containing the report.
+
+Stage 6 remains IN_PROGRESS. Private merchant exports, feature Auth/staff/Storage/rules, Firestore edition, accepted-order persistence, n8n execution and deployment/rollback checks remain BLOCKED/unverified. No credentials or application environment were changed; no live data/account writes, rules publication, workflow edits, deployment or production merge occurred. Existing external CodeRabbit limitation remains; no Aloop result is claimed.

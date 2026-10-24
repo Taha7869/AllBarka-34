@@ -1,4 +1,5 @@
 import type { Product } from '../types';
+import { BID_BOX_PRODUCTS } from '../data/products';
 import { resolveProductVariant } from './productVariants';
 import { prepareCommercePrices, validateProductCommerce, validateProductAttributes } from './productCommerce';
 import { validateProductMediaUrl } from './productMedia';
@@ -34,6 +35,16 @@ const positivePrice = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value) && (value as number) > 0 && (value as number) <= 10_000_000;
 export const catalogVariantId = (label: string) => `portion-${encodeURIComponent(label)}`;
 
+// Historical packaging selections are identifiers in carts/receipts, not editable prose.
+// Preserve only exact compiled labels for their original product; arbitrary new labels
+// and configured commerce retain the 40-character limit. No price is copied here.
+const legacyPackagingLabels = new Map(BID_BOX_PRODUCTS.map(product => [product.id,
+  new Set(Object.keys(product.prices).filter(label => label.length > 40 && label.length <= 160))]));
+const supportedPortionLength = (productId: string, label: string) =>
+  label.length <= 40 || legacyPackagingLabels.get(productId)?.has(label) === true;
+export const requiresStoredLegacyPackagingPricing = (productId: string) =>
+  (legacyPackagingLabels.get(productId)?.size || 0) > 0;
+
 export function validateMoqOverride(value: unknown): number | null | undefined {
   if (value === undefined) return undefined;
   if (value === null || value === '') return null;
@@ -57,7 +68,7 @@ export function validateCatalogPricing(value: unknown, seed: Product): CatalogPr
 
   const seen = new Set<string>();
   const variants = value.variants.map((raw): CatalogVariant => {
-    if (!object(raw) || typeof raw.label !== 'string' || !raw.label.trim() || raw.label.length > 40
+    if (!object(raw) || typeof raw.label !== 'string' || !raw.label.trim() || !supportedPortionLength(seed.id, raw.label)
       || /[\u0000-\u001f\u007f]/.test(raw.label) || raw.label !== raw.label.trim()
       || raw.id !== catalogVariantId(raw.label) || !positivePrice(raw.price) || typeof raw.available !== 'boolean'
       || !(raw.weightGrams === null || integer(raw.weightGrams, 0)) || seen.has(raw.label)) throw new CatalogError('INVALID_CATALOG_VARIANT');
@@ -394,7 +405,7 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
   const prices: Record<string, number> = {};
   for (const [k, v] of Object.entries(rawPrices)) {
     const key = k.trim();
-    if (!key || key.length > 40) throw new CatalogError('INVALID_PORTION_KEY', 400);
+    if (!key || !supportedPortionLength(rawId, key) || /[\u0000-\u001f\u007f]/.test(key)) throw new CatalogError('INVALID_PORTION_KEY', 400);
     const num = Number(v);
     if (!Number.isFinite(num) || num <= 0) throw new CatalogError('INVALID_PORTION_PRICE', 400);
     prices[key] = Math.round(num * 100) / 100;

@@ -4,13 +4,13 @@ Updated: 24 October 2026 (Asia/Karachi).
 
 ## Current checkpoint
 
-Stages 1–5 DONE after the verification gates in TESTING_RELEASE.md. Stage 6 IN_PROGRESS: offline release packet and additive-impact report prepared; live integration and merchant-data review remain BLOCKED. The complete shared Add/Edit Item workflow, taxonomy/template editor and customer integration are implemented; interaction refinement P0–P3 is also complete under its local gates. Live external connectivity remains unverified.
+Stages 1–5 DONE after the verification gates in TESTING_RELEASE.md. Stage 6 IN_PROGRESS: local compatibility corrections and read-only public diagnostics verified; release-critical integration and private merchant-data review remain BLOCKED. The complete shared Add/Edit Item workflow, taxonomy/template editor and customer integration are implemented; interaction refinement P0–P3 is also complete under its local gates. The old deployed build reports database connectivity; feature Auth/Storage/n8n and accepted-order execution remain unverified.
 
 Verified upstream: `5e6349051980abd1a20f719f289a24a3fd2cba7b`, tree `236c3c0afef839529e071369f6ede63e55814483`. Both launch/main pointed there when checked. Feature branch `codex/admin-catalog-foundation-20261023` was created at that exact commit. No production merge, deployment, key change or live database mutation.
 
 ## Persistence boundary for this checkpoint
 
-Stages 3 and 4 are saved in the existing owner-authorized private repository and draft PR #16. Last remote parent before this Stage 5 checkpoint: `ce130f9f225928295d8b292ec0bb6aa82d96de6e` (tree `eda39b945749a70f81db6d36320b8194223d00cb`). Confirm the current head through PR #16 when resuming; it includes the next Stage 5 checkpoint after this parent. Preserve upstream ancestry; local snapshot history is not the remote history. No production merge or deployment is authorized by this checkpoint.
+Stages 1–5 and P0–P3 are saved in the existing owner-authorized private repository and draft PR #16. Inspected remote parent before this Stage 6 checkpoint: `547081f13cc16df534d66ef1eaf38c3f9dfac90e` (tree `65f7668fcab5093d840ab3a20d56d9c2148a8275`). Confirm the saved successor through PR #16 before resuming. Preserve upstream ancestry and unchanged files; local snapshot history is not remote history. No production merge/deployment is authorized.
 
 ## Completed
 
@@ -62,13 +62,19 @@ Shared CartAddButton confirms committed cart increments; MagneticButton preserve
 
 Latest checks: typecheck/hooks/build/privacy audit and full offline suite passed: 694/694 tests across 68 files, 21 backend, 36 production, asset audit and diff check. New browser uses the actual RootLayout/header/footer, PDP/cart across 24 size/language/theme combinations (48 layouts), plus pointer/keyboard/touch/reduced motion, actual cart add/repeat/no-op/cap cases, image failure, menus and a held/failed checkout quote without an order. Four `evidence/polish-*.jpg` screenshots use isolated data and locally supplied Amiri; live provider/font connectivity is not certified.
 
-Next work remains the original Stage 6 gates below. All prior features and the four packaging-seed findings remain recorded. Read INTERACTION_POLISH.md for exact source and evidence; no deployment or production merge occurred.
+Next work remains the original Stage 6 gates below. All prior features and the original four packaging-seed findings remain recorded; the later local correction is below. Read INTERACTION_POLISH.md for exact source and evidence; no deployment or production merge occurred.
 
-## Stage 6 next executable steps
+## Stage 6 current continuation point
 
-Read `RELEASE_PACKET.md` and `evidence/additive-dry-run.json`. Offline report preserved all 97 saved fixture records, compared 93 valid seed price lists, made zero writes and flagged four compiled packaging seeds as `INVALID_CATALOG_VARIANT`; do not claim all compiled products are purchasable. Their long option labels require merchant-data comparison before any correction. Missing authoritative records remain unavailable; do not seed prices automatically.
+Final local gates passed: 700/700 tests across 70 files, 21 backend checks, 36 production checks, asset audit, typecheck/hooks/build/privacy and diff check. Full evidence: TESTING_RELEASE.md.
 
-Remaining external gates: read-only review/export of actual affected merchant records and those four IDs, deployed Firebase/Storage/Auth availability and rules review, exact n8n payload compatibility in an isolated integration environment, deployment-target smoke checks and explicit release authorization. Existing credentials/configuration are not to be changed by a continuation. Optional CodeRabbit review remains unavailable in this runtime; it is not counted as passed.
+Read `STAGE6_PROGRESS.md`, `RELEASE_PACKET.md` and the two evidence JSON reports. The inspected remote parent for this checkpoint is `547081f13cc16df534d66ef1eaf38c3f9dfac90e`; fetch PR #16 for the saved successor. Never shell-push reconstructed local history.
+
+The four long packaging-label findings have a narrow local reader correction. Exact existing labels/IDs and merchant rates survive load, metadata edits, canonical order pricing and WhatsApp export; arbitrary/new-commerce labels stay strict. A known active legacy item lacking explicit status no longer becomes draft on a metadata-only edit. Explicit drafts/archives/new items are not promoted. Missing affected records remain unavailable. The regenerated isolated impact compares 97/97 seed price lists, leaves all saved fixture documents unchanged and retains 93 unavailable products in an empty store with zero writes/conversions. Do not seed prices automatically.
+
+Three credential-free public GETs reached deployed build `8cf4410d4cc9d1a2d4840a62cf0f328c4bdaaee0`, which reports databaseConnected true but durablePersistenceReady false. All four affected public items remain unavailable on that old build. Their private saved-record condition cannot be inferred from the public API. Local runtime has no Firebase Admin/Storage credentials; existing keys/configuration were not changed.
+
+Next release-critical work requires an authorized integration environment: obtain a read-only export of the actual affected merchant records/settings; review saved variants/rates and invalid references; verify new feature Auth/staff/content/Storage behavior and rules; exercise existing n8n payload/retry contracts with isolated integrations; rehearse backup/rollback and smoke-test a separately authorized deployment target. Accepted-order persistence has not been tested on live services. Keep these BLOCKED until evidence exists; no production action is authorized here. Optional CodeRabbit review remains unavailable and is not counted as passed.
 
 ## Implementation cautions
 
@@ -82,4 +88,4 @@ Remaining external gates: read-only review/export of actual affected merchant re
 
 ## Not yet verified
 
-Live merchant-data migration review, Storage/Firebase/n8n connectivity, Firestore edition and deployment. Stage 6 is not launch-certified. A read-only Firebase CLI edition check could not obtain network approval; no live database assumptions or changes were made. Local service tests use an isolated adapter and do not certify deployed services. Supplier-dependent unpublished products remain outside this implementation scope.
+Private merchant-data migration review, new-feature Auth/Storage/n8n integration, Firestore edition and feature deployment. Stage 6 is not launch-certified. A read-only Firebase CLI edition check could not obtain network approval; no Firestore edition assumption or live database change was made. Later public GET connectivity evidence is recorded above; it does not establish edition or private permissions. Local service tests use an isolated adapter and do not certify deployed services. Supplier-dependent unpublished products remain outside this implementation scope.

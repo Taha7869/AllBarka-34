@@ -2,6 +2,16 @@
 
 Each stage records the prior behavior, resulting behavior, reason, affected paths and actual verification. Earlier renovation work remains in its existing reports.
 
+## 24 October 2026 — Stage 6 legacy compatibility and bounded diagnostics
+
+- **Before:** four saved packaging products could fail canonical validation because historical filled-option labels exceed 40 characters. A metadata-only edit to an already-public legacy product without explicit status could apply the new-product draft default.
+- **After:** only exact existing long labels on original packaging IDs are accepted; canonical selection IDs, merchant rates and order/export agreement are preserved. Known active legacy publication state survives admin reads/metadata saves. Explicit drafts/archives, configured/new product defaults and strict new-commerce labels remain intact.
+- **Missing data:** the four affected missing records still resolve unavailable; the corrected parser never newly activates compiled fallback prices. No records are created or migrated by reads, and existing order/receipt selections are not renamed.
+- **Diagnostics:** a bounded credential-free three-GET script records allowlisted health/readiness/catalog flags. Actual old deployed build reports database connectivity, not durable order verification; it differs from the feature parent and all four public items remain unavailable. No private saved-record cause or feature deployment is claimed.
+- **Paths:** catalogSchema/catalogStore, impact/preflight scripts, two Stage 6 test files, sanitized evidence and continuation/release documents.
+- **Verification:** final 700/700 tests across 70 files; 21 backend, 36 production; type/hooks/build/privacy/assets/diff checks. Six focused cases cover merchant-edited rates, exact labels/IDs, canonical order/export, lifecycle privacy, missing records and diagnostic output/origin/response guards. Earlier failure and correction are recorded in TESTING_RELEASE.md. Impact: 97/97 saved fixture price lists unchanged, 93 empty-store products unavailable, zero writes/conversions.
+- **Remaining:** private merchant export/review, feature Auth/Storage/rules, accepted-order/n8n execution, deployment smoke and rollback rehearsal. No key/environment change, live write, merge or deployment.
+
 ## 24 October 2026 — verified boutique interaction refinement
 
 - **Before:** add actions used different button feedback and the PDP acknowledged the click through an unconditional timer. Gallery arrows/swipe existed without an intentional second-photo hover preview. Full header content could exceed 360px and desktop row width.

@@ -9,7 +9,7 @@ Date: 24 October 2026 (Asia/Karachi). This six-stage plan is separate from the e
 | 3 — Admin item workflow | Shared trilingual add/edit form, units/options, templates/taxonomy, photos/upload, SEO and publish readiness. Fixture-backed browser verified create/reload/publish/discovery/custom cart and authoritative order pricing; responsive language/theme matrix passed. | DONE |
 | 4 — Staff order reader | Admin-managed, audited server-only grants; fresh identity checks, dedicated list/detail DTO and orders-only responsive workspace. Role bypass/write/export/admin denial, revocation and browser gates passed. | DONE |
 | 5 — Content and premium UI | Editable approved banners/section settings/navigation/FAQ/journal content; preserve existing merchandising. Gold/ivory/emerald polish, mobile-first forms/storefront, dark/RTL parity. Gate: real browser checks and persisted settings across refresh passed with isolated fixtures. | DONE |
-| 6 — Integration and release packet | Full checks, migration dry-run, compatibility review, screenshots and final handoff/PR. Gate: all requirements evidenced or explicitly BLOCKED; no local fixture presented as live verification. | IN_PROGRESS — offline packet complete; external gates BLOCKED |
+| 6 — Integration and release packet | Full checks, migration dry-run, compatibility review, screenshots and final handoff/PR. Gate: all requirements evidenced or explicitly BLOCKED; no local fixture presented as live verification. | IN_PROGRESS — local compatibility and public GET diagnostics recorded; release-critical external gates BLOCKED |
 
 Stage transitions update `HANDOFF.md`, `REQUIREMENTS.md` and `CHANGELOG.md`. Owner authorization covers implementation across these stages; routine reversible work does not need repeated confirmation. Production release is a separate operation.
 
@@ -41,3 +41,7 @@ Upstream commit: `5e6349051980abd1a20f719f289a24a3fd2cba7b`; source tree: `236c3
 ## Additional owner-approved interaction refinement
 
 This is a tracked refinement after Stage 5, not a replacement or renumbering of the six expansion stages. P0 continuation documentation DONE; P1 shared action/cart/request feedback DONE; P2 photos/navigation/reveals DONE; P3 complete offline regression/evidence/GitHub checkpoint DONE. Full acceptance matrix and exact resume point: INTERACTION_POLISH.md. Stage 6 external blockers remain unchanged.
+
+## Stage 6 compatibility continuation
+
+`STAGE6_PROGRESS.md` is the current executable tracker. The four exact historical packaging label readers and the legacy metadata publication-state regression have local corrections with no rate/ID migration. The isolated impact report now compares 97/97 saved seed price lists unchanged and retains the original 93 unavailable products in an empty store with zero writes. Public GETs reached the old deployed database-connected build; this does not verify the feature deployment, private records, Storage/Auth roles, accepted orders or n8n. Continue the blocked gates in the tracker without restarting Stages 1–5 or P0–P3.

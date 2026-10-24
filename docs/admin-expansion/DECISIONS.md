@@ -24,3 +24,11 @@ The working branch is `codex/admin-catalog-foundation-20261023`, created from th
 ## Stage 4 identity decision
 
 Store the order-reader grant in server-only `staffAccess/{uid}`, atomically with its audit, rather than editing Firebase custom claims. Fresh Firebase Auth identity and this grant are checked on every staff request. This preserves unrelated claims and makes grant/revoke independent of cached token-role refresh. Administrators still require their existing verified admin claim and a fresh admin account check for staff management. Disabled accounts, revoked sign-ins and unverified staff email are denied. No live account or grant was changed during implementation.
+
+## Stage 6 engineering compatibility decision — 24 October 2026
+
+Preserve exact existing long packaging selection labels per original product ID, using the compiled label keys as an identity allowlist only. This is not owner authorization to change prices or materialize missing records. The four affected missing records continue to fail closed. Arbitrary new labels and optional commerce retain the existing 40-character limit. Canonical IDs, historical cart/order selections, merchant rates, shipping/MOQ and export authority remain intact.
+
+Known active legacy seeds without an explicit lifecycle field already load publicly. Their admin representation/metadata update now preserves that state instead of defaulting them to draft. Explicit status, draft/archive markers, inactive/out-of-stock markers and configured/new product defaults are not promoted. The read adapter never writes. The existing audited metadata update records the preserved explicit lifecycle on an intentional edit.
+
+Public deployed diagnostics are restricted to three credential-free GETs with bounded responses and allowlisted output. A configured flag or old deployment is not proof of feature readiness. No live customer order, webhook, role grant or upload is part of that diagnostic.
