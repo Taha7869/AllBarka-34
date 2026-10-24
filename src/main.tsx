@@ -1,3 +1,5 @@
+import './styles/premium-content.css';
+import {StorefrontContentProvider} from './contexts/StorefrontContentContext';
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
@@ -40,7 +42,7 @@ createRoot(document.getElementById('root')!).render(
       <LanguageProvider>
         <AuthProvider>
           <CatalogProvider><MerchandisingProvider><ProductMediaProvider><CartProvider>
-            <App />
+            <StorefrontContentProvider><App /></StorefrontContentProvider>
           </CartProvider></ProductMediaProvider></MerchandisingProvider></CatalogProvider>
         </AuthProvider>
       </LanguageProvider>

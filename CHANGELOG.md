@@ -2,6 +2,18 @@
 
 Each stage records the prior behavior, resulting behavior, reason, affected paths and actual verification. Earlier renovation work remains in its existing reports.
 
+## 24 October 2026 — Stage 5: published content controls and premium refinement
+
+- **Before:** hero copy, primary navigation, FAQ and journal entries were compiled; the admin could not privately preview and publish approved content as one revisioned record.
+- **After:** Storefront studio edits separate EN/UR/AR content, hero/image/CTA URLs, announcement, approved section order/visibility, existing primary menu labels/destinations, FAQs and plain-text journal additions/overrides. Draft save and private preview are separate from explicit publication; actual customer components, initial journal metadata and sitemap consume published settings.
+- **Safety:** server allowlists/size bounds, safe internal links/media, hidden-body exclusion, stable article slugs, expected revisions and atomic before/after audits. Stale errors preserve edits. Private preview follows subsequent edits; unsaved changes trigger browser unload, link and workspace-tab discard protection. Studio images accept URLs; product file upload remains in the item editor. Preview covers hero/banner/FAQ only.
+- **Design:** restrained emerald/ivory/gold light, existing real hero photography, responsive editorial FAQ and Studio controls. One homepage product showcase remains. No package/lock, price/shipping rules or live settings changed.
+- **Paths:** storefrontContent/router and contentPresentation utilities; provider/translations; AdminContentPanel, StorefrontBanner, FAQSection; hero/home/menu/journal/SEO/server integrations; premium-content.css; source/API/browser tests and stage evidence.
+- **Verification:** typecheck/hooks/build/privacy audit; 693 tests across 67 files, 21 backend checks, 36 production checks and assets. Browser verifies edit/save/private preview/publish/reload, both menus, journal/initial metadata, conflict preservation, 12 viewport/language/theme combinations and reduced motion.
+- **Harness correction:** existing carousel tests now install their controlled clock before page navigation, keeping original assertions. Screenshots default to temporary test output; opt-in `ALLBARKA_CAPTURE_EVIDENCE=true` refreshes repository evidence so routine checks do not dirty past checkpoints.
+- **Stage 6 offline packet:** read-only impact script preserves 97 stored fixture records and compares 93 valid seed price lists with zero writes. Four compiled packaging seeds fail existing variant validation and are explicitly flagged for live merchant-data review. No rates/labels were guessed or changed. See RELEASE_PACKET.md for live gates and rollback.
+- **Remaining:** Stage 6 deployed Firebase/Storage/Auth/n8n and actual merchant-data checks; optional external CodeRabbit review unavailable. No deployment, production merge, keys, rules publication or live writes.
+
 ## 24 October 2026 — Stage 4: orders-only staff access
 
 - **Before:** all operational order screens required admin claims; staff had no restricted reader.

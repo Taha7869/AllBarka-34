@@ -1,3 +1,5 @@
+import {useStorefrontContent} from '../contexts/StorefrontContentContext';
+import {contentNavigation} from '../lib/contentPresentation';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronDown, Gift, MessageCircle, Sparkles } from 'lucide-react';
@@ -85,7 +87,9 @@ export default function BubbleMenu({
   className = '',
   showFoodRow = false,
 }: BubbleMenuProps) {
-  const { t, isRtl } = useLanguage();
+  const { t, isRtl, language } = useLanguage();
+  const content=useStorefrontContent();
+  const configuredNavigation=contentNavigation(MAIN_NAV_ITEMS,content,language);
   const location = useLocation();
 
   const [openId, setOpenId] = useState<string | null>(null);
@@ -175,7 +179,8 @@ export default function BubbleMenu({
 
   // Resolve active path / item
   const currentPath = location.pathname;
-  const primaryActiveId = getPrimaryActiveSectionId(location.pathname, location.search, activeItem);
+  const customActive=content.navigation.find(x=>x.visible&&x.path===location.pathname+location.search)?.id;
+  const primaryActiveId = customActive || getPrimaryActiveSectionId(location.pathname, location.search, activeItem);
 
   const isMainItemActive = (item: NavItem): boolean => {
     return primaryActiveId === item.id;
@@ -221,7 +226,7 @@ export default function BubbleMenu({
           path: drop.path,
         })),
       }))
-    : MAIN_NAV_ITEMS;
+    : configuredNavigation;
 
   return (
     <nav

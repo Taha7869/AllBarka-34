@@ -1,3 +1,5 @@
+import {useStorefrontContent,useStorefrontContentLoading} from '../contexts/StorefrontContentContext';
+import {contentJournal} from '../lib/contentPresentation';
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
@@ -29,6 +31,8 @@ export default function JournalPage() {
   const navigate = useNavigate();
   const { addToCart, setIsCartOpen } = useCart();
   const { t, language } = useLanguage();
+  const content=useStorefrontContent();const contentLoading=useStorefrontContentLoading();
+  const articles=useMemo(()=>contentJournal(content,language),[content,language]);
   const mediaCover = useProductMediaCover();
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -40,12 +44,12 @@ export default function JournalPage() {
   }, [slug]);
 
   // If slug is present, render single article view
-  const currentArticle = slug ? getArticleBySlug(slug) : undefined;
+  const currentArticle = slug ? articles.find(article=>article.slug===slug) : undefined;
 
   const categories = ['All', 'Buying Guides', 'Storage & Care', 'Culinary & Pairings', 'Wellness & Science', 'Gifting'];
 
   const filteredArticles = useMemo(() => {
-    return JOURNAL_ARTICLES.filter((article) => {
+    return articles.filter((article) => {
       const matchesCategory = selectedCategory === 'All' || article.category === selectedCategory;
       const matchesSearch = !searchQuery.trim() || 
         article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -53,7 +57,7 @@ export default function JournalPage() {
         article.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
       return matchesCategory && matchesSearch;
     });
-  }, [selectedCategory, searchQuery]);
+  }, [selectedCategory, searchQuery, articles]);
 
   const handleQuickAdd = (productId: string) => {
     const product = PRODUCTS.find(p => p.id === productId);
@@ -92,11 +96,12 @@ export default function JournalPage() {
   };
 
   // ── DEDICATED ARTICLE VIEW ────────────────────────────────────────────────
+  if(slug&&contentLoading&&!currentArticle)return <p role="status" className="p-10 text-center">{t('content.loading')}</p>;
   if (slug) {
     if (!currentArticle) {
       return (
         <div className="w-full min-h-[70vh] bg-[var(--color-base,#F6F1EA)] py-16 px-4 flex flex-col items-center justify-center text-center">
-          <SEO title="Article Not Found" canonicalPath={`/journal/${slug}`} />
+          <SEO noindex title="Article Not Found" canonicalPath={`/journal/${slug}`} />
           <div className="w-16 h-16 rounded-full bg-[var(--color-gold,#C7982F)]/20 border border-[var(--color-gold,#C7982F)]/40 flex items-center justify-center text-[var(--color-gold,#C7982F)] mb-4">
             <BookOpen size={28} />
           </div>
@@ -134,7 +139,7 @@ export default function JournalPage() {
             '@type': 'Article',
             headline: currentArticle.title,
             description: currentArticle.excerpt,
-            image: `https://allbarka.com${currentArticle.image}`,
+            image: new URL(currentArticle.image,typeof window==='undefined'?'https://allbarka.com':window.location.origin).href,
             datePublished: currentArticle.publishedDate,
             dateModified: currentArticle.updatedDate,
             author: {
@@ -232,7 +237,7 @@ export default function JournalPage() {
             {currentArticle.sections.map((section, idx) => (
               <section key={idx} className="space-y-3.5">
                 <h2 className="text-xl sm:text-2xl font-serif font-bold text-[var(--color-emerald,#042821)]">
-                  {section.heading}
+                  {section.heading||currentArticle.title}
                 </h2>
                 {section.content.map((p, pIdx) => (
                   <p key={pIdx} className="text-sm sm:text-base text-[var(--color-ink,#29231D)]/85 leading-relaxed">
@@ -373,8 +378,8 @@ export default function JournalPage() {
   }
 
   // ── JOURNAL OVERVIEW LIST VIEW ───────────────────────────────────────────
-  const featuredArticle = JOURNAL_ARTICLES[0];
-  const gridArticles = filteredArticles.filter(a => searchQuery.trim() ? true : a.slug !== featuredArticle.slug);
+  const featuredArticle = articles[0];
+  const gridArticles = filteredArticles.filter(a => searchQuery.trim() ? true : a.slug !== featuredArticle?.slug);
 
   return (
     <div className="w-full bg-[var(--color-base,#F6F1EA)] pt-6 sm:pt-10 pb-24 text-[var(--color-ink,#29231D)]">
@@ -387,10 +392,10 @@ export default function JournalPage() {
         {/* Header Hero Banner */}
         <div className="text-center max-w-3xl mx-auto space-y-3">
           <span className="text-xs font-bold uppercase tracking-[0.25em] text-[var(--color-gold,#C7982F)] block">
-            AllBarka Editorial & Education
+            {t('content.journalEyebrow')}
           </span>
           <h1 className="text-3xl sm:text-5xl font-serif font-bold text-[var(--color-emerald,#042821)]">
-            The Harvest Chronicle
+            {t('content.journalTitle')}
           </h1>
           <p className="text-sm sm:text-base text-[var(--color-ink,#29231D)]/75 leading-relaxed">
             Practical buying guides, storage science for warm climates, culinary traditions, and ingredient disclosures to help you savor every harvest lot.
@@ -412,7 +417,7 @@ export default function JournalPage() {
                     : 'bg-[var(--color-surface,#FFFCF7)] text-[var(--color-ink,#29231D)] hover:bg-[var(--color-gold,#C7982F)]/15 border border-[var(--color-gold,#C7982F)]/25'
                 }`}
               >
-                {cat}
+                {t(`content.category.${cat}`,cat)}
               </button>
             ))}
           </div>
@@ -423,7 +428,7 @@ export default function JournalPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search articles..."
+              placeholder={t('content.searchArticles')}
               className="w-full pl-9 pr-4 py-2 rounded-full text-xs bg-[var(--color-surface,#FFFCF7)] border border-[var(--color-gold,#C7982F)]/30 focus:border-[var(--color-gold,#C7982F)] outline-hidden text-[var(--color-ink,#29231D)]"
             />
             <Search size={14} className="absolute left-3 top-2.5 text-[var(--color-ink,#29231D)]/40" />
@@ -431,7 +436,7 @@ export default function JournalPage() {
         </div>
 
         {/* Featured Hero Article (if not searching) */}
-        {!searchQuery.trim() && selectedCategory === 'All' && (
+        {featuredArticle && !searchQuery.trim() && selectedCategory === 'All' && (
           <div className="rounded-3xl bg-[var(--color-surface,#FFFCF7)] border border-[var(--color-gold,#C7982F)]/30 overflow-hidden shadow-sm hover:border-[var(--color-gold,#C7982F)] transition-all group">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
               <div className="lg:col-span-7 aspect-[16/10] lg:aspect-auto overflow-hidden bg-[var(--color-base,#F6F1EA)]">

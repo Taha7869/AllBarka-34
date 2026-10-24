@@ -4,13 +4,13 @@ Updated: 24 October 2026 (Asia/Karachi).
 
 ## Current checkpoint
 
-Stages 1–4 DONE after the verification gates in TESTING_RELEASE.md. Stages 5–6 TODO. The complete shared Add/Edit Item workflow, taxonomy/template editor and customer integration are implemented; live external connectivity remains unverified.
+Stages 1–5 DONE after the verification gates in TESTING_RELEASE.md. Stage 6 IN_PROGRESS: offline release packet and additive-impact report prepared; live integration and merchant-data review remain BLOCKED. The complete shared Add/Edit Item workflow, taxonomy/template editor and customer integration are implemented; live external connectivity remains unverified.
 
 Verified upstream: `5e6349051980abd1a20f719f289a24a3fd2cba7b`, tree `236c3c0afef839529e071369f6ede63e55814483`. Both launch/main pointed there when checked. Feature branch `codex/admin-catalog-foundation-20261023` was created at that exact commit. No production merge, deployment, key change or live database mutation.
 
 ## Persistence boundary for this checkpoint
 
-The earlier Stage 3 GitHub save was blocked by automatic approval review for destination authorization. The owner has now requested that completed changes, remaining work and future-model references be maintained in this GitHub repository, continuing the existing feature branch/PR #16. This checkpoint carries the verified Stage 3 source and evidence to `Taha7869/AllBarka-34`, branch `codex/admin-catalog-foundation-20261023`. Confirm its current head through PR #16 when resuming. No production merge or deployment is authorized by this checkpoint.
+Stages 3 and 4 are saved in the existing owner-authorized private repository and draft PR #16. Last remote parent before this Stage 5 checkpoint: `ce130f9f225928295d8b292ec0bb6aa82d96de6e` (tree `eda39b945749a70f81db6d36320b8194223d00cb`). Confirm the current head through PR #16 when resuming; it includes the next Stage 5 checkpoint after this parent. Preserve upstream ancestry; local snapshot history is not the remote history. No production merge or deployment is authorized by this checkpoint.
 
 ## Completed
 
@@ -46,12 +46,19 @@ The earlier Stage 3 GitHub save was blocked by automatic approval review for des
 - Final checks passed: typecheck, hooks lint, production build/privacy audit, 688 tests across 65 files, 21 backend checks, asset audit and 36 production checks. Browser verified admin grant, order/detail reading, focus restoration, 12 responsive/language/theme combinations and revoke handling without order mutation. Screenshots: `evidence/stage4-*.png`.
 - External CodeRabbit review was not performed: CLI auth reported `not_authenticated`; the login attempt returned `environment_unsupported` (browser login unavailable). No review result is invented. Local functional/security tests are independent evidence.
 
-## Next: Stage 5 — content and premium UI
+## Stage 5 completed — content studio and premium UI
 
-1. Add bounded draft/live content settings, admin editing/preview/publish, revisions/audits and safe link/media validation.
-2. Integrate actual hero/banner, homepage section order/visibility, existing desktop/mobile navigation, FAQ and journal rendering. Preserve the single product showcase and existing commerce authority.
-3. Refine existing emerald/ivory/gold surfaces with restrained corner light/gold dust, mobile hierarchy and dark/RTL/reduced-motion parity.
-4. Verify draft isolation, actual publication/rendering, invalid links, optimistic conflicts and responsive browser evidence before marking DONE.
+- Added bounded draft/live content settings and Studio editor with separate draft save, private preview and explicit publication, revision conflicts and atomic audits. Existing source content remains the fallback; no automatic settings documents are created.
+- Actual consumers include hero/banner, approved homepage section order/visibility, primary desktop/mobile navigation, native trilingual FAQ and journal rendering with initial HTTP metadata/sitemap. The existing single product showcase and canonical commerce authority remain intact.
+- Restrained emerald/ivory/gold corner light, editorial FAQ and responsive Studio controls use existing tokens. No application dependency or generated photography was added. Studio images currently use validated URL inputs; product file upload remains in the item editor. Studio preview covers hero/banner/FAQ, not the complete page/menu/article layout.
+- Verification passed: typecheck/hooks/build/privacy audit, 693/693 tests across 67 files, 21 backend checks, 36 production checks and asset audit. Browser covers draft privacy, preview following edits, publish/reload, actual mobile/desktop navigation, section ordering, journal/initial metadata, stale-edit preservation and 12 responsive/language/theme combinations. Representative JPG evidence is fixture-backed homepage body, not a live deployed header.
+- A pre-existing carousel test defect was isolated: clock installation after navigation left original timers outside fake-clock control. Installation now precedes page load; existing assertions remain, and all 11 lifecycle tests pass.
+
+## Stage 6 next executable steps
+
+Read `RELEASE_PACKET.md` and `evidence/additive-dry-run.json`. Offline report preserved all 97 saved fixture records, compared 93 valid seed price lists, made zero writes and flagged four compiled packaging seeds as `INVALID_CATALOG_VARIANT`; do not claim all compiled products are purchasable. Their long option labels require merchant-data comparison before any correction. Missing authoritative records remain unavailable; do not seed prices automatically.
+
+Remaining external gates: read-only review/export of actual affected merchant records and those four IDs, deployed Firebase/Storage/Auth availability and rules review, exact n8n payload compatibility in an isolated integration environment, deployment-target smoke checks and explicit release authorization. Existing credentials/configuration are not to be changed by a continuation. Optional CodeRabbit review remains unavailable in this runtime; it is not counted as passed.
 
 ## Implementation cautions
 
@@ -60,9 +67,9 @@ The earlier Stage 3 GitHub save was blocked by automatic approval review for des
 - `catalogSchema.ts` and `catalogStore.ts` contain several canonical/legacy adapters. New metadata must survive all relevant create/update/load paths.
 - The older media-override service remains compiled-ID-specific. Dynamic/configured products use the shared item cover/gallery and upload flow; do not silently route them into the old editor.
 - Staff access is a separate server-authorized reader; never relax the existing admin guards or return an admin order object directly to staff.
-- Shop taxonomy discovery is integrated. Header/home content and section controls remain Stage 5; preserve current defaults and routes.
+- Shop taxonomy discovery is integrated. Header/home content and section controls are integrated; preserve default fallbacks, stable IDs and routes.
 - Existing documentation has historical stack/status differences. Do not present old stage reports as new verification.
 
 ## Not yet verified
 
-Stage 5 content/full storefront polish, Stage 6 release/migration review, live Storage/Firebase/n8n connectivity, Firestore edition and deployment. A read-only Firebase CLI edition check could not obtain network approval; no live database assumptions or changes were made. Local service tests use an isolated adapter and do not certify deployed services. Supplier-dependent unpublished products remain outside this implementation scope.
+Live merchant-data migration review, Storage/Firebase/n8n connectivity, Firestore edition and deployment. Stage 6 is not launch-certified. A read-only Firebase CLI edition check could not obtain network approval; no live database assumptions or changes were made. Local service tests use an isolated adapter and do not certify deployed services. Supplier-dependent unpublished products remain outside this implementation scope.

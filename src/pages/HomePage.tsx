@@ -1,3 +1,5 @@
+import {useStorefrontContent} from '../contexts/StorefrontContentContext';
+import StorefrontBanner from '../components/StorefrontBanner';
 import React from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { Product } from '../types';
@@ -31,6 +33,7 @@ export default function HomePage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const merchandisingSettings = useMerchandisingSettings();
+  const content=useStorefrontContent();
   const outlet = useOutletContext<OutletContextType>() || ({} as Partial<OutletContextType>);
   const setCartOpen = outlet.setCartOpen ?? (() => {});
   const setSelectedQuickViewProduct = outlet.setSelectedQuickViewProduct ?? (() => {});
@@ -38,62 +41,15 @@ export default function HomePage() {
 
   const handleSearch = (query: string) => navigate(`/shop?search=${encodeURIComponent(query)}`);
 
-  return (
-    <div className="editorial-home flex w-full flex-col items-center bg-[var(--color-base)] text-[var(--color-ink)]">
-
-      {/* ── 1. Dry-fruit-led premium hero ─────────────────────────────────── */}
-      <Hero
-        onOpenCart={() => setCartOpen(true)}
-        onSearch={handleSearch}
-        onSelectCategory={(category, query) =>
-          navigate(
-            `${category === 'all' ? '/shop' : `/shop/${category}`}${
-              query ? `?search=${encodeURIComponent(query)}` : ''
-            }`
-          )
-        }
-      />
-
-      {/* ── Section Divider ──────────────────────────────────────────────── */}
-      <div className="w-full px-6 sm:px-10 py-6" aria-hidden="true">
-        <div className="section-divider" />
-      </div>
-
-      {/* ── Delivery and packing assurances ───────────────────────────────── */}
-      <div className="editorial-assurances w-full border-y border-[var(--color-border)] bg-[var(--color-surface)]">
-        <div className="mx-auto grid max-w-7xl grid-cols-1 divide-y divide-[var(--color-border)] px-5 sm:grid-cols-3 sm:divide-x sm:divide-y-0 sm:px-8">
-          {[
-            { Icon: ShieldCheck, title: 'footer.pure', copy: 'footer.pureCopy' },
-            { Icon: Truck, title: 'boutique.delivery', copy: 'boutique.deliveryValue' },
-            { Icon: ShoppingBag, title: 'boutique.gifts', copy: 'boutique.giftsDetail' },
-          ].map(({ Icon, title, copy }) => (
-            <div key={title} className="flex items-center gap-4 px-3 py-5 sm:justify-center sm:py-7">
-              <Icon size={22} className="shrink-0 text-[var(--color-accent-text)]" />
-              <div>
-                <p className="font-serif text-base font-semibold">{t(title)}</p>
-                <p className="mt-1 text-xs text-[var(--color-text-secondary)]">{t(copy)}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-        <CollectionLogoLoop />
-      </div>
-
-      {/* ── Section Divider ──────────────────────────────────────────────── */}
-      <div className="w-full px-6 sm:px-10 py-6" aria-hidden="true">
-        <div className="section-divider" />
-      </div>
-
+  const sections = {
+    'collections': (<>
       {/* ── 2. Explore Our Collections (Compact destination cards) ───────── */}
       <ScrollReveal className="w-full">
         <CategoryCarousel settings={merchandisingSettings} />
       </ScrollReveal>
 
-      {/* ── Section Divider ──────────────────────────────────────────────── */}
-      <div className="w-full px-6 sm:px-10 py-6" aria-hidden="true">
-        <div className="section-divider" />
-      </div>
-
+    </>),
+    'showcase': (<>
       {/* ── 3. Boutique Selections (The SINGLE homepage product showcase) ─── */}
       <ScrollReveal className="w-full" index={0}>
         <BoutiqueSelections
@@ -103,16 +59,15 @@ export default function HomePage() {
         />
       </ScrollReveal>
 
-      {/* ── Section Divider ──────────────────────────────────────────────── */}
-      <div className="w-full px-6 sm:px-10 py-6" aria-hidden="true">
-        <div className="section-divider" />
-      </div>
-
+    </>),
+    'occasions': (<>
       {/* ── 4. Find a Gift for Your Occasion (Compact destination links) ─── */}
       <ScrollReveal className="w-full" index={0}>
         <FindGiftOccasionSection settings={merchandisingSettings} />
       </ScrollReveal>
 
+    </>),
+    'care': (<>
       {/* ── 5. Compact genuine feedback & essential service information/FAQ ─ */}
       <section dir="ltr" className="editorial-care w-full overflow-hidden bg-[#042821] py-16 text-[#FFFCF7] sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -163,20 +118,70 @@ export default function HomePage() {
         </div>
       </section>
 
+    </>),
+    'reviews': (<>
       {/* Genuine Customer Feedback */}
       <ScrollReveal className="w-full" index={0}>
         <AllBarkaMovingReviews />
       </ScrollReveal>
 
-      {/* Section Divider */}
-      <div className="w-full px-6 sm:px-10 py-4" aria-hidden="true">
-        <div className="section-divider" />
-      </div>
-
+    </>),
+    'faq': (<>
       {/* Essential Service Information & FAQ */}
       <ScrollReveal className="w-full border-t border-[var(--color-border)] bg-[var(--color-surface)]" index={0}>
         <FAQSection />
       </ScrollReveal>
+
+    </>),
+  };
+  return (
+    <div className="editorial-home flex w-full flex-col items-center bg-[var(--color-base)] text-[var(--color-ink)]">
+
+      <StorefrontBanner/>
+      {/* ── 1. Dry-fruit-led premium hero ─────────────────────────────────── */}
+      <Hero
+        onOpenCart={() => setCartOpen(true)}
+        onSearch={handleSearch}
+        onSelectCategory={(category, query) =>
+          navigate(
+            `${category === 'all' ? '/shop' : `/shop/${category}`}${
+              query ? `?search=${encodeURIComponent(query)}` : ''
+            }`
+          )
+        }
+      />
+
+      {/* ── Section Divider ──────────────────────────────────────────────── */}
+      <div className="w-full px-6 sm:px-10 py-6" aria-hidden="true">
+        <div className="section-divider" />
+      </div>
+
+      {/* ── Delivery and packing assurances ───────────────────────────────── */}
+      <div className="editorial-assurances w-full border-y border-[var(--color-border)] bg-[var(--color-surface)]">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 divide-y divide-[var(--color-border)] px-5 sm:grid-cols-3 sm:divide-x sm:divide-y-0 sm:px-8">
+          {[
+            { Icon: ShieldCheck, title: 'footer.pure', copy: 'footer.pureCopy' },
+            { Icon: Truck, title: 'boutique.delivery', copy: 'boutique.deliveryValue' },
+            { Icon: ShoppingBag, title: 'boutique.gifts', copy: 'boutique.giftsDetail' },
+          ].map(({ Icon, title, copy }) => (
+            <div key={title} className="flex items-center gap-4 px-3 py-5 sm:justify-center sm:py-7">
+              <Icon size={22} className="shrink-0 text-[var(--color-accent-text)]" />
+              <div>
+                <p className="font-serif text-base font-semibold">{t(title)}</p>
+                <p className="mt-1 text-xs text-[var(--color-text-secondary)]">{t(copy)}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <CollectionLogoLoop />
+      </div>
+
+      {/* ── Section Divider ──────────────────────────────────────────────── */}
+      <div className="w-full px-6 sm:px-10 py-6" aria-hidden="true">
+        <div className="section-divider" />
+      </div>
+
+      {content.sections.filter(entry=>entry.visible).map(entry=><div key={entry.id} data-content-section={entry.id} className="content-home-section w-full">{sections[entry.id]}</div>)}
 
     </div>
   );

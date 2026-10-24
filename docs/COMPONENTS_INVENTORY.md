@@ -2,6 +2,13 @@
 
 This document is auto-generated and lists every component, page, context, hook, and utility with their usage.
 
+## Admin expansion — Stage 5
+
+- `AdminContentPanel` is the existing admin workspace's Storefront studio tab; `StorefrontBanner` renders the saved announcement.
+- `StorefrontContentProvider` supplies only public live content; optional explicit `initialContent` supports an isolated private editor preview.
+- `storefrontContent.ts` validates the bounded localized schema, `storefrontContentRouter.ts` owns draft/live revision and audit transactions, and `contentPresentation.ts` adapts existing navigation/journal models.
+- Existing AllBarkaHero, HomePage, desktop/mobile navigation, FAQSection and JournalPage consume the published configuration. `premium-content.css` refines existing tokens without new application dependencies.
+
 ## Admin expansion — Stage 4
 
 - `AdminStaffPanel` is the Team access tab in the existing admin workspace.

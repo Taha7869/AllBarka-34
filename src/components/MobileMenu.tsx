@@ -1,3 +1,5 @@
+import {useStorefrontContent} from '../contexts/StorefrontContentContext';
+import {contentNavigation} from '../lib/contentPresentation';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion, type Variants } from 'motion/react';
@@ -48,6 +50,7 @@ export default function MobileMenu({
   const { theme, setTheme } = useTheme();
   const { language, setLanguage, isRtl, t } = useLanguage();
   const { currentUser, patronProfile, logout } = useAuth();
+  const content=useStorefrontContent();
   const reduceMotion = useReducedMotion();
   
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
@@ -373,7 +376,7 @@ export default function MobileMenu({
 
                 {/* Accessible Accordion for Main Navigation */}
                 <div className="space-y-1">
-                  {MAIN_NAV_ITEMS.map((item) => {
+                  {contentNavigation(MAIN_NAV_ITEMS,content,language).map((item) => {
                     const isExpanded = !!expandedSections[item.id];
 
                     return (

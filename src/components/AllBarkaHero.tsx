@@ -1,3 +1,5 @@
+import {useStorefrontContent} from '../contexts/StorefrontContentContext';
+import {contentText} from '../lib/storefrontContent';
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import { searchCatalog, startingPrice } from '../lib/catalogDiscovery';
 import React, { lazy, Suspense, useMemo, useRef, useState } from 'react';
@@ -20,6 +22,7 @@ interface AllBarkaHeroProps {
 
 export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps = {}) {
   const PRODUCTS = useCatalogProducts();
+  const {hero}=useStorefrontContent();
   const { t, language, isRtl } = useLanguage();
   const mediaCover = useProductMediaCover();
   const [query, setQuery] = useState('');
@@ -44,21 +47,21 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
   return (
     <section className="heritage-hero" dir={isRtl ? 'rtl' : 'ltr'} aria-label="AllBarka boutique">
       <picture className="heritage-hero-background" aria-hidden="true">
-        <source media="(max-width: 767px)" srcSet="/images/generated/hero-dry-fruits-mobile-v1.webp" type="image/webp" />
-        <img src="/images/generated/hero-dry-fruits-wide-v1.webp" width={1920} height={1080} alt="" fetchPriority="high" />
+        <source media="(max-width: 767px)" srcSet={hero.enabled?hero.mobileImage:"/images/generated/hero-dry-fruits-mobile-v1.webp"} />
+        <img src={hero.enabled?hero.image:"/images/generated/hero-dry-fruits-wide-v1.webp"} width={1920} height={1080} alt="" fetchPriority="high" />
       </picture>
       <div className="heritage-hero-wash" aria-hidden="true" />
 
       <div className="heritage-hero-content">
         <AllBarkaFullLogo size="md" variant="light" as="span" className="heritage-hero-brand" />
         <h1 className="heritage-hero-title">
-          {t('heroHeadlinePart1')}{' '}
-          <em><GradientText colors={['#e4c783', '#fff0bd', '#d7b263', '#fff0bd', '#e4c783']} animationSpeed={12}>{t('heroHeadlinePart2')}</GradientText></em>
+          {hero.enabled?contentText(hero.heading,language):t('heroHeadlinePart1')}{' '}
+          <em><GradientText colors={['#e4c783', '#fff0bd', '#d7b263', '#fff0bd', '#e4c783']} animationSpeed={12}>{hero.enabled?contentText(hero.accent,language):t('heroHeadlinePart2')}</GradientText></em>
         </h1>
-        <p className="heritage-hero-description">{t('heroSubtitle')}</p>
+        <p className="heritage-hero-description">{hero.enabled?contentText(hero.description,language):t('heroSubtitle')}</p>
         <div className="mt-7 flex flex-wrap items-center justify-center gap-3.5">
-          <Link to="/shop/dry-fruits" className="focus-ring inline-flex min-h-12 items-center gap-3 rounded-full bg-[#e4c783] px-7 text-xs font-semibold text-[#092e23] transition-colors hover:bg-[#f1dca9]">{t('hero.shopDryFruits', 'Shop Dry Fruits')}<ArrowRight size={16} /></Link>
-          <Link to="/gifting" className="focus-ring inline-flex min-h-12 items-center gap-3 rounded-full border border-[#e4c783]/50 px-6 text-xs font-semibold text-[#fff8e9] transition-colors hover:bg-white/10">{t('hero.exploreGifts', 'Explore Gifts')}</Link>
+          <Link to={hero.enabled?hero.primaryPath:"/shop/dry-fruits"} className="focus-ring inline-flex min-h-12 items-center gap-3 rounded-full bg-[#e4c783] px-7 text-xs font-semibold text-[#092e23] transition-colors hover:bg-[#f1dca9]">{hero.enabled?contentText(hero.primaryLabel,language):t('hero.shopDryFruits', 'Shop Dry Fruits')}<ArrowRight size={16} /></Link>
+          <Link to={hero.enabled?hero.secondaryPath:"/gifting"} className="focus-ring inline-flex min-h-12 items-center gap-3 rounded-full border border-[#e4c783]/50 px-6 text-xs font-semibold text-[#fff8e9] transition-colors hover:bg-white/10">{hero.enabled?contentText(hero.secondaryLabel,language):t('hero.exploreGifts', 'Explore Gifts')}</Link>
         </div>
 
         <div

@@ -1,6 +1,6 @@
 # Data model and compatibility contract
 
-Status: Stages 2–3 data/service and item workflow implementation. Staff and content sections below remain contracts for later stages. Existing collections remain authoritative.
+Status: Stages 2–5 implemented and locally verified. Existing collections remain authoritative; live connectivity and merchant-data review remain external gates.
 
 ## Products
 
@@ -38,9 +38,15 @@ Saved canonical variants/prices remain the storefront, quote, order and integrat
 
 Use server-managed, revisioned settings records for reusable templates, taxonomy extensions and storefront content. Published views expose only whitelisted published fields; admin previews may include drafts. Keep prices in products, never in banners/menus/merchandising.
 
-Stage 2 implements `catalogSettings/main` with `version: 1`, a nonnegative integer `revision`, up to 50 templates and up to 150 taxonomy entries. Missing records return revision-0 defaults sourced from the current registry plus food/liquid/packaging/gift templates. Templates carry localized names, kind, default category/unit, archived status and attribute definitions. Taxonomy entries carry category/collection/occasion type, stable ID, localized names/descriptions and visibility. Existing entries must be archived/hidden rather than deleted. Successful saves increment the revision and write `catalogAudits` atomically. See `API_CONTRACTS.md`. Stage 3 integrates shop discovery; content records remain Stage 5.
+Stage 2 implements `catalogSettings/main` with `version: 1`, a nonnegative integer `revision`, up to 50 templates and up to 150 taxonomy entries. Missing records return revision-0 defaults sourced from the current registry plus food/liquid/packaging/gift templates. Templates carry localized names, kind, default category/unit, archived status and attribute definitions. Taxonomy entries carry category/collection/occasion type, stable ID, localized names/descriptions and visibility. Existing entries must be archived/hidden rather than deleted. Successful saves increment the revision and write `catalogAudits` atomically. See `API_CONTRACTS.md`. Stage 3 integrates shop discovery; content is integrated separately below.
 
 Existing `merchandising` records retain their contract and listeners. Add content controls alongside them rather than replacing them. Validate internal destinations and references. Archive categories/templates instead of orphaning existing products.
+
+### Storefront content
+
+`storefrontContent/main` stores version 1, monotonically increasing `revision`, `liveRevision`, `draft`, `live`, `updatedAt` and private `updatedBy`. Saving a draft never changes live content; publish validates the saved draft and promotes it atomically. Each action writes a private `storefrontContentAudits/{id}` before/after snapshot in the same transaction. Failed audit writes roll back the change. Missing settings resolve defaults without writes.
+
+Content is capped at 100,000 UTF-8 bytes. It includes optional custom hero/banner, exactly six uniquely ordered visibility entries, existing primary-nav ID overrides, up to 30 FAQs and 30 plain-text journal articles. EN/UR/AR remain separate; public display falls back to English. Published visible entries require English content. Destinations are restricted to approved internal store routes. Saved article slugs are stable; hide instead of deleting. Public serialization removes hidden FAQ/article bodies and emits only hidden article slugs to suppress compiled fallbacks. Public content excludes drafts, actor identity and audit records. There are no prices in this settings document.
 
 ## Media
 
@@ -48,7 +54,7 @@ Stage 3 uses the existing Firebase project/bucket configuration and an authentic
 
 ## Staff
 
-Only a verified administrator can grant/revoke the order-reader role on an existing account. Retain unrelated custom claims. Staff role comes from authoritative identity, never an editable user profile. Order responses use a dedicated allowlist and omit claim credentials, integration payloads, staff-only audits and internal notes. Staff has no writes, export privilege or direct browser database access.
+Only a verified administrator can grant/revoke the order-reader role on an existing account. `staffAccess/{uid}` is a server-only grant with revision/audit controls; `staffAccessAudits/{id}` records changes atomically. Firebase custom claims are never rewritten. Every staff read checks fresh Auth identity, verified email, disabled/revoked status and current grant; browser profile fields never grant access. Order responses use a dedicated allowlist and omit claim credentials, integration payloads, staff-only audits and internal notes. Staff has no writes, export privilege or direct browser database access.
 
 ## Migration
 

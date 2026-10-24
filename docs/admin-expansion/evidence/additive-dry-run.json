@@ -1,0 +1,33 @@
+{
+  "generatedAt": "2026-10-24T02:14:26.374Z",
+  "timezone": "Asia/Karachi",
+  "scope": "Isolated store initialized with compiled seed records, plus empty-store safety check; not live merchant records",
+  "mode": "offline-read-only",
+  "products": 97,
+  "productIdsPreserved": true,
+  "savedFixtureRecordsPreserved": true,
+  "validSeedPriceComparisons": 93,
+  "unavailableSeedIds": [
+    "bid-box-umrah-tabarruk",
+    "bid-box-pyramid-favor",
+    "bid-box-card-nikkah",
+    "bid-box-birth-announcement"
+  ],
+  "unavailableSeedReviewRequired": true,
+  "legacyCustomQuantityPreserved": true,
+  "automaticCommerceConversions": 0,
+  "plannedCreates": 0,
+  "plannedUpdates": 0,
+  "plannedDeletes": 0,
+  "fixtureWrites": 0,
+  "fixtureRecords": 97,
+  "emptyStoreUnavailableProducts": 93,
+  "emptyStoreWrites": 0,
+  "liveDatabaseCalls": 0,
+  "configurationDefaultRevision": 0,
+  "contentDefaultRevision": 0,
+  "priceFingerprintBefore": "2316ba9e5c0539d58ffff088fc46fc2e3cb3c822b3a64a72d35e50fb55016a7f",
+  "savedPriceFingerprintAfter": "2316ba9e5c0539d58ffff088fc46fc2e3cb3c822b3a64a72d35e50fb55016a7f",
+  "resolvedPriceFingerprint": "7f56de6624abf3c3e22258303f416d4b49e99500c1d181290a3e53c23c096ecb",
+  "externalVerification": "NOT_RUN"
+}

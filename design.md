@@ -1,6 +1,6 @@
 # AllBarka design direction
 
-Status: OWNER-CONFIRMED direction; implementation tracked in expansion Stage 5.
+Status: OWNER-CONFIRMED direction; Stage 5 implemented and locally browser-verified. Live release remains Stage 6.
 
 ## Identity
 
@@ -32,3 +32,9 @@ Language tabs are English, Urdu and Arabic, with correct direction per input. Tr
 ## Parity and performance
 
 Support light/dark themes, keyboard controls, visible focus and body-text contrast of at least 4.5:1. Respect reduced motion. Prefer CSS decoration and existing animation libraries; do not add a heavy visual dependency for gold dust. Use responsive/lazy imagery and stable image ratios to avoid layout shifts.
+
+## Implemented Stage 5 refinement
+
+`premium-content.css` adds restrained corner gold light to the existing photographed hero, an editorial FAQ with native disclosure controls, and a responsive Studio form using existing brand tokens. The homepage retains one product showcase. Saved section order/visibility and menu labels/destinations reach real customer components; default content remains available when optional overrides are absent. Image inputs in Studio use safe URLs; file upload stays in the catalog editor.
+
+Fixture-backed browser evidence covers 390×844 and 1440×900, EN/UR/AR, light/dark and reduced motion. The four Stage 5 JPGs show published fixture homepage content, not a deployed production header. No additional photo asset or visual dependency was introduced.

@@ -1,3 +1,5 @@
+import {contentJournal} from './contentPresentation';
+import type {StorefrontContent} from './storefrontContent';
 import { productSeo } from './productSeo';
 import type { TaxonomyEntry } from './catalogConfiguration';
 import type { Product } from '../types';
@@ -42,7 +44,7 @@ function basic(route: string, title: string, description: string): RouteMetadata
     ...(['/cart', '/checkout', '/success', '/admin/orders', '/staff/orders'].includes(route) ? { noindex: true } : {}) };
 }
 
-export function routeMetadata(pathname: string, origin: string, products: Product[], taxonomy: TaxonomyEntry[] = []): RouteMetadata {
+export function routeMetadata(pathname: string, origin: string, products: Product[], taxonomy: TaxonomyEntry[] = [], content?:StorefrontContent): RouteMetadata {
   let route: string;
   try { route = decodeURIComponent(pathname).replace(/\/+$/, '') || '/'; }
   catch { route = '/invalid-route'; }
@@ -78,7 +80,7 @@ export function routeMetadata(pathname: string, origin: string, products: Produc
   const extra=taxonomy.find(x=>x.visible&&x.type!=='occasion'&&x.id===categorySlug);
   if(extra) return basic(`/shop/${extra.id}`,extra.name_en,text(extra.description_en));
   const articleSlug = /^\/journal\/([^/]+)$/.exec(route)?.[1];
-  const article = JOURNAL_ARTICLES.find(item => item.slug === articleSlug);
+  const article = (content?contentJournal(content,'en'):JOURNAL_ARTICLES).find(item => item.slug === articleSlug);
   if (article) return { ...basic(route, article.title, article.excerpt), type: 'article', image: article.image };
   const infoSlug = /^\/pages\/(our-story|sourcing-policy|orchard-provenance|lahore-boutique|blog-nutrition|hand-sorting|vacuum-sealing|freshness-guarantee|shipping|contact)$/.exec(route)?.[1];
   const policySlug = /^\/policies\/(shipping|refund|privacy|terms)$/.exec(route)?.[1];

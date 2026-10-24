@@ -68,7 +68,7 @@ test('Stage 3 browser: mobile item workflow persists, publishes and buys with au
     await Promise.all([page.waitForResponse(response=>response.url().endsWith('/api/admin/catalog/configuration')&&response.request().method()==='PUT'&&response.status()===200),configUI.getByRole('button',{name:'Save changes',exact:true}).click()]);
     const configSaved:any=records.get('catalogSettings/main');assert.equal(configSaved.revision,1);assert.ok(configSaved.taxonomy.some((x:any)=>x.id==='single-origin'));assert.equal(configSaved.templates.find((x:any)=>x.id==='saffron-standard').attributes[0].key,'grade');
     // Every viewport/language/theme uses the same mounted form and no horizontal overflow.
-    const shots=path.resolve('docs/admin-expansion/evidence');await fs.mkdir(shots,{recursive:true});
+    const shots=process.env.ALLBARKA_CAPTURE_EVIDENCE==='true'?path.resolve('docs/admin-expansion/evidence'):path.join(temporary,'evidence');await fs.mkdir(shots,{recursive:true});
     for(const [width,height] of [[390,844],[1440,900]] as const)for(const lang of ['en','ur','ar'] as const)for(const dark of [false,true]){
       await page.setViewportSize({width,height});await page.evaluate(({lang,dark})=>{(window as any).fixtureLanguage(lang);document.documentElement.classList.toggle('dark',dark);document.documentElement.dataset.theme=dark?'dark':'light';},{lang,dark});await page.waitForTimeout(60);
       assert.equal(await dialog.getAttribute('dir'),lang==='en'?'ltr':'rtl');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);assert.equal(await dialog.evaluate(e=>e.scrollWidth<=e.clientWidth),true);

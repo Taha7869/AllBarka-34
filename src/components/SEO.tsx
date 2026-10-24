@@ -8,6 +8,7 @@ interface SEOProps {
   type?: 'website' | 'product' | 'article';
   image?: string;
   keywords?: string[];
+  noindex?:boolean;
   structuredData?: Record<string, any>;
 }
 
@@ -19,6 +20,7 @@ export default function SEO({
   image = '/images/generated/og-image.jpg',
   structuredData,
   keywords,
+  noindex=false,
 }: SEOProps) {
   const location = useLocation();
   const currentPath = canonicalPath || location.pathname;
@@ -73,7 +75,7 @@ export default function SEO({
     setMeta('name', 'twitter:title', fullTitle);
     setMeta('name', 'twitter:description', description);
     setMeta('name', 'twitter:image', new URL(image, siteOrigin).href);
-    setMeta('name', 'robots', /^\/(?:admin|staff|cart|checkout|success)(?:\/|$)/.test(currentPath) ? 'noindex, nofollow' : 'index, follow');
+    setMeta('name', 'robots', (noindex || /^\/(?:admin|staff|cart|checkout|success)(?:\/|$)/.test(currentPath)) ? 'noindex, nofollow' : 'index, follow');
 
     const ogImage = document.querySelector('meta[property="og:image"]');
     if (ogImage && image) {
@@ -100,7 +102,7 @@ export default function SEO({
       const el = document.getElementById('route-structured-data');
       if (el) el.remove();
     };
-  }, [fullTitle, description, canonicalUrl, image, structuredData, siteOrigin, type, currentPath, keywords]);
+  }, [fullTitle, description, canonicalUrl, image, structuredData, siteOrigin, type, currentPath, keywords,noindex]);
 
   return null;
 }

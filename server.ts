@@ -1,3 +1,6 @@
+import {publicStorefrontContent} from './src/lib/storefrontContent';
+import {contentJournal} from './src/lib/contentPresentation';
+import {readStorefrontContent,createStorefrontContentRouter} from './src/lib/storefrontContentRouter';
 import { createStaffRouter } from './src/lib/staffAccess';
 import { getStorage } from 'firebase-admin/storage';
 import firebaseAppletConfig from './firebase-applet-config.json';
@@ -309,6 +312,7 @@ app.use(createProductMediaRouter({ getDb: () => db, requireAdmin }));
 app.use(createCatalogConfigurationRouter({ getDb: () => db, requireAdmin }));
 app.use(createCatalogRouter({ getDb: () => db, requireAdmin }));
 app.use(createStaffRouter({ getDb: () => db, getAuth: () => adminAuth, requireAuth, requireAdmin }));
+app.use(createStorefrontContentRouter({getDb:()=>db,requireAdmin}));
 app.use(createStoreUpdatesRouter({ getDb: () => db, requireAuth, requireAdmin }));
 
 // Auth & Session Endpoints
@@ -885,13 +889,15 @@ async function startServer() {
       }
       catch { return PRODUCTS.map(unavailableProduct); }
     };
+    const pageContent=async()=>{try{return publicStorefrontContent((await readStorefrontContent(db)).live);}catch{return undefined;}};
     const pageTaxonomy=async()=>{try{return (await readCatalogConfiguration(db)).taxonomy.filter(x=>x.visible);}catch{return [];}};
     app.get('/robots.txt', (_req, res) => res.type('text/plain').send(
       `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /checkout\nDisallow: /cart\nDisallow: /success\nDisallow: /admin\nDisallow: /staff\nSitemap: ${publicOrigin}/sitemap.xml\n`
     ));
     app.get('/sitemap.xml', async (_req, res) => {
       const products = await pageCatalog();
-      const routes = [...(await pageTaxonomy()).filter(x=>x.type!=='occasion').map(x=>`/shop/${x.id}`), '/', '/shop', '/gifting', '/wholesale', '/journal', '/faq', '/contact',
+      const publishedContent=await pageContent();
+      const routes = [...(publishedContent?contentJournal(publishedContent,'en').map(x=>`/journal/${x.slug}`):[]), ...(await pageTaxonomy()).filter(x=>x.type!=='occasion').map(x=>`/shop/${x.id}`), '/', '/shop', '/gifting', '/wholesale', '/journal', '/faq', '/contact',
         ...products.filter(product => product.active !== false).map(product => `/product/${encodeURIComponent(product.id)}`)];
       res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${routes.map(route => `<url><loc>${publicOrigin}${route}</loc></url>`).join('')}</urlset>`);
     });
@@ -917,7 +923,7 @@ async function startServer() {
       if (req.path.startsWith('/assets/') || path.extname(req.path)) {
         return res.status(404).type('text/plain').send('Not found');
       }
-      const metadata = routeMetadata(req.path, publicOrigin, await pageCatalog(), await pageTaxonomy());
+      const metadata = routeMetadata(req.path, publicOrigin, await pageCatalog(), await pageTaxonomy(),await pageContent());
       if (metadata.noindex) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       res.setHeader('Pragma', 'no-cache');
