@@ -42,3 +42,7 @@ Fixture-backed browser evidence covers 390×844 and 1440×900, EN/UR/AR, light/d
 ## Approved interaction language
 
 Use a small, consistent press response, a fine gold edge/focus state, a real second-photo hover preview where available and short section entrances. Mobile uses press/swipe and explicit controls; essential information never depends on hover. Cart acknowledgement follows actual cart state; checkout pending feedback follows its real request. Keep existing photography, palette, single showcase and compact structure. Detailed passes and carried-forward release gates: `docs/admin-expansion/INTERACTION_POLISH.md`.
+
+### Implemented interaction refinement
+
+The existing controls/gallery/motion system now provide finite press and selected feedback, actual cart acknowledgement, a fine-pointer second-photo preview that yields to explicit browsing, current menu treatment and bounded reveal timing. The real mobile header fits 360px with four 44px utility targets; desktop navigation has a centered second row from 1280px. This was verified on actual header/PDP/cart in 24 size/language/theme combinations plus touch, keyboard and reduced-motion checks. See INTERACTION_POLISH.md for exact boundaries, including preserved quick-view flow and unverified live integrations.

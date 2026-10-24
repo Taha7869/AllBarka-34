@@ -40,4 +40,4 @@ Upstream commit: `5e6349051980abd1a20f719f289a24a3fd2cba7b`; source tree: `236c3
 
 ## Additional owner-approved interaction refinement
 
-This is a tracked refinement after Stage 5, not a replacement or renumbering of the six expansion stages. P0 continuation documentation DONE; P1 shared action/cart/request feedback TODO; P2 photos/navigation/reveals TODO; P3 complete regression/evidence/GitHub checkpoint TODO. Full acceptance matrix and exact resume point: INTERACTION_POLISH.md. Stage 6 external blockers remain unchanged.
+This is a tracked refinement after Stage 5, not a replacement or renumbering of the six expansion stages. P0 continuation documentation DONE; P1 shared action/cart/request feedback DONE; P2 photos/navigation/reveals DONE; P3 complete offline regression/evidence/GitHub checkpoint DONE. Full acceptance matrix and exact resume point: INTERACTION_POLISH.md. Stage 6 external blockers remain unchanged.

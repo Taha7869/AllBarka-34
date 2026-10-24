@@ -217,7 +217,7 @@ export default function RootLayout() {
   };
 
   return (
-    <div className="min-h-screen w-full max-w-full relative flex flex-col font-sans bg-[var(--color-base)] text-[var(--color-ink)] selection:bg-[var(--color-gold)]/30 selection:text-[var(--color-ink)]">
+    <div className="boutique-experience min-h-screen w-full max-w-full relative flex flex-col font-sans bg-[var(--color-base)] text-[var(--color-ink)] selection:bg-[var(--color-gold)]/30 selection:text-[var(--color-ink)]">
       <ToastManager />
       {!isAdminRoute && <GradualBlur preset="header" strength={1.5} opacity={0.9} />}
       
@@ -237,7 +237,7 @@ export default function RootLayout() {
         {!online && <div role="status" className="fixed inset-x-0 top-0 z-[20000] border-b border-[#c7982f] bg-[#092e23] px-4 py-2 text-center text-xs text-[#fff8e9]">{t('checkout.offline')}</div>}
       {!isAdminRoute && <ScrollProgressBar showGlow={false} />}
         <div className="w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 flex flex-col justify-center">
-          <div className="flex justify-between items-center gap-2 sm:gap-4 w-full">
+          <div className="boutique-header-row flex justify-between items-center gap-2 sm:gap-4 w-full">
             
             {/* Leading Brand Mark: Desktop shows full logo, Mobile shows crest + animated intro */}
             <div className="flex items-center shrink-0">
@@ -255,7 +255,7 @@ export default function RootLayout() {
             </div>
             
             {/* Center Navigation (Desktop Only) */}
-            <div className="hidden xl:flex flex-1 justify-center px-2">
+            <div className="boutique-header-navigation hidden xl:flex flex-1 justify-center px-2">
               <BubbleMenu 
                 activeItem={activeNavItem} 
                 onItemClick={(item) => navigate(item.path)} 
@@ -263,7 +263,7 @@ export default function RootLayout() {
             </div>
 
             {/* Trailing Utility Controls */}
-            <div className="flex items-center gap-1.5 sm:gap-2.5 justify-end shrink-0">
+            <div className="boutique-header-tools flex items-center gap-1.5 sm:gap-2.5 justify-end shrink-0">
               {/* Search button */}
               <button
                 id="header-search-btn"

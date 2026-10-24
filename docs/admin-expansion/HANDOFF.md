@@ -4,7 +4,7 @@ Updated: 24 October 2026 (Asia/Karachi).
 
 ## Current checkpoint
 
-Stages 1–5 DONE after the verification gates in TESTING_RELEASE.md. Stage 6 IN_PROGRESS: offline release packet and additive-impact report prepared; live integration and merchant-data review remain BLOCKED. The complete shared Add/Edit Item workflow, taxonomy/template editor and customer integration are implemented; live external connectivity remains unverified.
+Stages 1–5 DONE after the verification gates in TESTING_RELEASE.md. Stage 6 IN_PROGRESS: offline release packet and additive-impact report prepared; live integration and merchant-data review remain BLOCKED. The complete shared Add/Edit Item workflow, taxonomy/template editor and customer integration are implemented; interaction refinement P0–P3 is also complete under its local gates. Live external connectivity remains unverified.
 
 Verified upstream: `5e6349051980abd1a20f719f289a24a3fd2cba7b`, tree `236c3c0afef839529e071369f6ede63e55814483`. Both launch/main pointed there when checked. Feature branch `codex/admin-catalog-foundation-20261023` was created at that exact commit. No production merge, deployment, key change or live database mutation.
 
@@ -54,9 +54,15 @@ Stages 3 and 4 are saved in the existing owner-authorized private repository and
 - Verification passed: typecheck/hooks/build/privacy audit, 693/693 tests across 67 files, 21 backend checks, 36 production checks and asset audit. Browser covers draft privacy, preview following edits, publish/reload, actual mobile/desktop navigation, section ordering, journal/initial metadata, stale-edit preservation and 12 responsive/language/theme combinations. Representative JPG evidence is fixture-backed homepage body, not a live deployed header.
 - A pre-existing carousel test defect was isolated: clock installation after navigation left original timers outside fake-clock control. Installation now precedes page load; existing assertions remain, and all 11 lifecycle tests pass.
 
-## Active owner-approved addition — interaction refinement
+## Completed owner-approved addition — interaction refinement
 
-Owner requested balanced luxury polish from seven interaction references, then explicitly prioritized a durable instruction file before implementation. `instructions.md` now contains the required new-model resume protocol and the original feature inventory; `INTERACTION_POLISH.md` records passes P0–P3 and acceptance items I01–I14. This checkpoint is **documentation only**: P0 DONE, P1/P2/P3 TODO. No new interaction is claimed implemented or verified. Continue P1 from the exact resume section in that tracker. Original expansion Stages 1–5 and all Stage 6 blockers remain intact.
+The owner asked for a continuation file before source work. Consolidated `instructions.md`, the complete original feature inventory and P0–P3/I01–I14 tracker were saved first at documentation commit `dbf2b6c37a57b433ac7641d31d295547f30483ea`. The following source checkpoint completes P1–P3; inspect PR #16 for its current head. Do not restart these passes.
+
+Shared CartAddButton confirms committed cart increments; MagneticButton preserves styles/clicks/disabled behavior; the real gallery has mouse-only second-photo preview, fallback and preserved manual/touch controls. Navigation/selected-state/reveal/toast feedback, actual request busy indicators and mobile/desktop header sizing are integrated without a new application dependency. Existing quick-view close/toast behavior stays with its original component. Canonical pricing, cart services, backend/staff/content authorization and live integrations were not replaced.
+
+Latest checks: typecheck/hooks/build/privacy audit and full offline suite passed: 694/694 tests across 68 files, 21 backend, 36 production, asset audit and diff check. New browser uses the actual RootLayout/header/footer, PDP/cart across 24 size/language/theme combinations (48 layouts), plus pointer/keyboard/touch/reduced motion, actual cart add/repeat/no-op/cap cases, image failure, menus and a held/failed checkout quote without an order. Four `evidence/polish-*.jpg` screenshots use isolated data and locally supplied Amiri; live provider/font connectivity is not certified.
+
+Next work remains the original Stage 6 gates below. All prior features and the four packaging-seed findings remain recorded. Read INTERACTION_POLISH.md for exact source and evidence; no deployment or production merge occurred.
 
 ## Stage 6 next executable steps
 

@@ -13,6 +13,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
   X,
   CheckCircle,
+  LoaderCircle,
   Clock,
   Gift,
   Sparkles,
@@ -1321,10 +1322,11 @@ const handleInputChange = (field: string, value: any) => {
                     </button>
                       <button
                         type="submit"
+                        aria-busy={isSubmittingOrder || quoteLoading}
                         disabled={isSubmittingOrder || isValidatingCoupon || !online || authLoading || quoteLoading || !verifiedQuote}
                         className="flex-1 py-3.5 rounded-full bg-[var(--color-ink,#1F120F)] text-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)] text-xs font-black uppercase tracking-widest hover:bg-[var(--color-ink,#1F120F)]/90 hover:shadow-[0_4px_20px_rgba(184,147,95,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
                       >
-                        <CheckCircle size={16} className="text-[var(--color-gold,#B8935F)]" />
+                        {isSubmittingOrder || quoteLoading ? <LoaderCircle size={16} aria-hidden="true" className="boutique-request-spinner text-[var(--color-gold,#B8935F)]" /> : <CheckCircle size={16} aria-hidden="true" className="text-[var(--color-gold,#B8935F)]" />}
                         <span>{isQuoteRequestMode ? t(isSubmittingOrder ? 'checkout.quoteSubmitting' : 'checkout.quoteSubmit') : isSubmittingOrder ? t('checkout.placingOrder', 'Placing Order…') : t('checkout.confirmOrder', 'Confirm & Place Order')}</span>
                       </button>
                   </div>

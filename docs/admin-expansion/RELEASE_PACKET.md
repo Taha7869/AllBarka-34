@@ -5,7 +5,7 @@ Checkpoint: 24 October 2026 (Asia/Karachi). Stages 1–5 implemented and locally
 ## Review evidence
 
 - Read instructions.md, design.md, CHANGELOG.md, HANDOFF.md and REQUIREMENTS.md for approved scope and continuation.
-- Latest local gates: 693/693 tests across 67 files, 21 backend checks, 36 production checks, asset audit, typecheck, hooks lint and production build/privacy audit. Existing bundle advisory remains. Exact scope: TESTING_RELEASE.md.
+- Latest local gates after interaction refinement: 694/694 tests across 68 files, 21 backend checks, 36 production checks, asset audit, typecheck, hooks lint and production build/privacy audit. Existing bundle advisory remains. Exact scope: TESTING_RELEASE.md.
 - Fixture-backed screenshots: Stage 3 item form, Stage 4 staff workspace, Stage 5 published homepage body. Browser fixtures use real routers/components and isolated database/auth/upload adapters. They do not certify live systems.
 - External CodeRabbit review did not run: CLI not authenticated, browser login unsupported. No Aloop plugin was installed.
 
@@ -33,3 +33,7 @@ This is an offline impact check, not a migration preview of the owner's real rec
 Keep a dated export of affected documents before any future live action. There is no schema migration or destructive startup job to undo. Revert the application to the prior reviewed commit if needed; retain new documents for analysis rather than deleting customer or owner edits. For content rollback on the new app, load the prior approved content snapshot as a new draft using the current revision, review and explicitly publish it so history/audits remain. Do not reset revision numbers or blindly restore an old live document. Revoke a staff grant through the revisioned admin interface when necessary; unrelated Auth claims remain untouched.
 
 Before rolling back an application that has already saved optional commerce, inspect affected product documents against the older resolver and restore only an approved, backed-up compatible product snapshot. Never rewrite orders/receipts or trust a compiled rate as the merchant's current price. Rehearse this with exported data in an isolated environment before launch. All live gates remain unverified at this checkpoint.
+
+## Added interaction checkpoint
+
+P0–P3 in INTERACTION_POLISH.md are complete under local evidence. instructions.md now carries the complete feature inventory and resume protocol for another model/chat. The real customer header/PDP/cart were verified across 48 size/language/theme layouts, with pointer/touch/keyboard, actual cart acknowledgement, image failure and held/failed checkout quote checks. Four polish JPGs and TESTING_RELEASE.md record scope. This improves local release evidence; every external gate and merchant-data finding above remains pending. It does not authorize merging or deploying the draft PR.

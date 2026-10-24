@@ -12,6 +12,7 @@ import './styles/store-updates.css';
 import './styles/luminous.css';
 import './styles/editorial.css';
 import './styles/selection-guide.css';
+import './styles/interaction-polish.css';
 import './components/AllBarkaHero.css';
 import { ProductMediaProvider } from './contexts/ProductMediaContext';
 import { AuthProvider } from './contexts/AuthContext';

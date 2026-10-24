@@ -234,7 +234,7 @@ export default function BubbleMenu({
       aria-label={t('nav.main', 'Main navigation')}
       onBlur={handleContainerBlur}
       dir={isRtl ? 'rtl' : 'ltr'}
-      className={`pointer-events-auto flex flex-col items-center gap-1 transition-colors duration-300 ${className}`}
+      className={`boutique-navigation pointer-events-auto flex flex-col items-center gap-1 transition-colors duration-300 ${className}`}
     >
       {/* LEVEL 1: Single Clean Desktop Navigation Row */}
       <div className="flex items-center gap-3 xl:gap-5 px-2 py-1 bg-transparent dark:bg-transparent">

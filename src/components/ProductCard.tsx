@@ -8,7 +8,7 @@ import { Product } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCart } from '../contexts/CartContext';
 import { getLocalized } from '../utils/localize';
-import MagneticButton from './motion/MagneticButton';
+import CartAddButton from './CartAddButton';
 import { isPackagingProduct, getPackagingMoqDisplay } from '../lib/packagingMoq';
 import { openCustomQuoteModal } from './CustomQuoteModal';
 
@@ -178,21 +178,15 @@ export default function ProductCard({
               >
                 {t('catalog.requestQuote')}
               </button>
-            ) : <MagneticButton
-              strength={3}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onAddToCart) {
-                  onAddToCart(product.id, selectedWeight);
-                } else {
-                  addToCart(product, selectedWeight, minUnits);
-                }
+            ) : <CartAddButton
+              productId={product.id}
+              portion={selectedWeight}
+              onAdd={() => {
+                if (onAddToCart) onAddToCart(product.id, selectedWeight);
+                else addToCart(product, selectedWeight, minUnits);
               }}
-              className="focus-ring flex min-h-[46px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#C7982F]/35 bg-[#1E3A2B] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#FFFCF7] transition-colors duration-200 hover:border-[#C7982F]/70 hover:bg-[#14281E] motion-safe:active:scale-[0.99]"
-            >
-              <ShoppingBag size={14} strokeWidth={1.7} className="text-[#E4C783]" />
-              <span dir="auto">{t('addToCart', 'Add to Cart')}</span>
-            </MagneticButton>}
+              className="focus-ring flex min-h-[46px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#C7982F]/35 bg-[#1E3A2B] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#FFFCF7] transition-colors duration-200 hover:border-[#C7982F]/70 hover:bg-[#14281E]"
+            />}
           </div>
         </div>
       </div>

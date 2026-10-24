@@ -1,7 +1,8 @@
 import {useStorefrontContent} from '../contexts/StorefrontContentContext';
 import {contentNavigation} from '../lib/contentPresentation';
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { getPrimaryActiveSectionId } from './BubbleMenu';
 import { motion, AnimatePresence, useReducedMotion, type Variants } from 'motion/react';
 import { 
   X, 
@@ -51,6 +52,9 @@ export default function MobileMenu({
   const { language, setLanguage, isRtl, t } = useLanguage();
   const { currentUser, patronProfile, logout } = useAuth();
   const content=useStorefrontContent();
+  const location = useLocation();
+  const activeSection = content.navigation.find(entry => entry.visible && entry.path === location.pathname + location.search)?.id
+    || getPrimaryActiveSectionId(location.pathname, location.search);
   const reduceMotion = useReducedMotion();
   
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
@@ -387,6 +391,7 @@ export default function MobileMenu({
                         <button
                           type="button"
                           aria-expanded={isExpanded}
+                          aria-current={activeSection === item.id ? 'page' : undefined}
                           aria-controls={`mobile-nav-panel-${item.id}`}
                           onClick={() => toggleSection(item.id)}
                           className="w-full min-h-[44px] flex items-center justify-between px-3.5 py-2.5 text-xs font-bold text-[#042821] dark:text-[#FFFCF7] hover:bg-[#C7982F]/10 transition-colors text-start cursor-pointer"

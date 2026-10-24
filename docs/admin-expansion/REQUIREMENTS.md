@@ -18,10 +18,10 @@ Statuses refer to the expansion, not whether an older partial implementation exi
 | A12 | Admin-controlled staff access and read-only order workspace | 4 | DONE | staffAccess.ts, AdminStaffPanel, StaffOrdersWorkspace; grant/read/revoke browser test |
 | A13 | Staff denied all admin mutations/private catalog/settings | 4 | DONE | HTTP permission matrix, strict DTO, disabled/revoked/stale claims, audit rollback and concurrency checks |
 | A14 | Approved content/banner/navigation/FAQ/journal controls | 5 | DONE | AdminContentPanel, revisioned draft/live router, actual hero/banner/sections/menus/FAQ/journal; HTTP and browser persistence/privacy/conflict checks |
-| A15 | Gold/ivory/emerald polish with mobile, desktop, dark and RTL parity | 5 | DONE | premium-content.css, native FAQ and Studio; 390/1440 × EN/UR/AR × light/dark browser matrix, reduced motion |
+| A15 | Gold/ivory/emerald polish with mobile, desktop, dark and RTL parity | 5 | DONE | premium-content.css, native FAQ/Studio plus interaction-polish.css; actual RootLayout/PDP/cart at 360/390/768/1440 × EN/UR/AR × light/dark, touch/keyboard/reduced motion |
 | A16 | Shared prices in catalog/cart/quote/order/AI exports | 2–6 | IN_PROGRESS | Stage 3 browser cart uses normalized custom label; server ignores submitted price; full regression suite passes; final live integration remains Stage 6 |
 | A17 | Changes, evidence and continuation state recorded | All | DONE at checkpoint | CHANGELOG.md; HANDOFF.md; RELEASE_PACKET.md; next external gates explicitly recorded |
-| A18 | Type/build/hooks, regression suite and browser verification | 6 | IN_PROGRESS | Stage 5 type/build/hooks, 693/693 tests across 67 files, 21 backend, 36 production and assets pass; browser matrix passes; deployed-service checks BLOCKED |
+| A18 | Type/build/hooks, regression suite and browser verification | 6 | IN_PROGRESS | Latest refinement type/build/hooks, 694/694 tests across 68 files, 21 backend, 36 production and assets pass; actual-layout browser matrix passes; deployed-service checks BLOCKED |
 | A19 | Safe migration preview, preserved owner edits/IDs/history, rollback | 6 | IN_PROGRESS | Offline read-only additive-impact report: 97 fixture records unchanged, 93 valid seed price comparisons, four invalid seed IDs flagged; zero writes. Live owner-data export/review and release rollback rehearsal BLOCKED |
 
 No requirement is DONE solely because a form or endpoint scaffold exists.

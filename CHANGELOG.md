@@ -2,6 +2,16 @@
 
 Each stage records the prior behavior, resulting behavior, reason, affected paths and actual verification. Earlier renovation work remains in its existing reports.
 
+## 24 October 2026 — verified boutique interaction refinement
+
+- **Before:** add actions used different button feedback and the PDP acknowledged the click through an unconditional timer. Gallery arrows/swipe existed without an intentional second-photo hover preview. Full header content could exceed 360px and desktop row width.
+- **After:** ProductCard, CategoryPLP and PDP share CartAddButton, acknowledging only an actual matching committed cart increase. No-op/capped additions cannot claim success. The existing immediate cart-open behavior remains; the PDP's redundant delayed reopening is removed. MagneticButton now forwards anchor/div clicks, native button disabled state and caller styles in reduced-motion/coarse-pointer mode.
+- **Photos and motion:** resolved real second-photo preview for fine-pointer mouse hover; manual/keyboard/touch selection wins and image failure leaves a usable cover. Native gallery/link/quick-view behavior remains. Finite press/selected/underline/reveal feedback uses existing components, with reduced-motion alternatives. Toasts are RTL-aware, capped at three and clean up timers; checkout busy semantics/spinner follow its actual pending state.
+- **Responsive fixes:** mobile logo/control sizing fits the real 360px header while retaining four 44px utility targets. Desktop navigation moves to a centered second row from 1280px so the brand/menu/utilities fit. Existing menu routes/actions and the single homepage showcase remain.
+- **Paths:** CartAddButton, ProductCard, CategoryPLP, ProductDetailPage, ProductImageGallery, MagneticButton, ScrollReveal, ToastManager, BubbleMenu/MobileMenu, RootLayout, checkout presentation, interaction-polish.css and main import; component inventory and continuation documents.
+- **Verification:** 694/694 tests across 68 files, 21 backend, 36 production, assets, typecheck/hooks/build/privacy audit and diff check. New real-layout browser covers 48 PDP/cart layouts, actual committed cart behavior, photo/error/keyboard/touch, menus, reduced motion and held/failed quote. Focused existing media/render tests: 19/19. Screenshot scope and exact results: TESTING_RELEASE.md.
+- **Boundary:** documentation was saved first for model/chat continuation. No package/lock or original photo change; no canonical price/shipping/MOQ, admin/staff/content backend or live integration mutation. Original Stage 6 external checks and four packaging findings remain pending.
+
 ## 24 October 2026 — interaction refinement continuation contract
 
 - **Before:** expansion documentation covered Stages 1–6; the newly supplied interaction references and approved design judgment were only in chat.

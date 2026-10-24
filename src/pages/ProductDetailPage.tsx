@@ -1,3 +1,4 @@
+import CartAddButton from '../components/CartAddButton';
 import { productSeo } from '../lib/productSeo';
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import { useCatalogActivity } from '../hooks/useCatalogActivity';
@@ -14,7 +15,7 @@ import ProductVideo from '../components/ProductVideo';
 import { Product, CartItem } from '../types';
 import ProductDetailAccordion from '../components/ProductDetailAccordion';
 import SEO from '../components/SEO';
-import { ShoppingBag, ShieldCheck, Check, Sparkles, ArrowRight, Truck, Award, AlertCircle, Info, Share2, Maximize2, MessageSquareQuote, Package, Gift } from 'lucide-react';
+import { ShieldCheck, Sparkles, ArrowRight, Truck, Award, AlertCircle, Info, Share2, Maximize2, MessageSquareQuote, Package, Gift } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import TrustBadges from '../components/TrustBadges';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -33,7 +34,7 @@ export default function ProductDetailPage() {
   const PRODUCTS = useCatalogProducts();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { addToCart, setIsCartOpen } = useCart();
+  const { addToCart } = useCart();
   const { t, language } = useLanguage();
   
   const product = PRODUCTS.find((p) => p.id === id && p.active !== false);
@@ -43,7 +44,6 @@ export default function ProductDetailPage() {
   const [customWeightSelected, setCustomWeightSelected] = useState(false);
   const [customGrams, setCustomGrams] = useState('100');
   const [quantity, setQuantity] = useState(1);
-  const [isAdded, setIsAdded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [activeGalleryIdx, setActiveGalleryIdx] = useState(0);
 
@@ -209,11 +209,7 @@ export default function ProductDetailPage() {
       wholesale: false,
     });
 
-    setIsAdded(true);
-    setTimeout(() => {
-      setIsAdded(false);
-      setIsCartOpen(true);
-    }, 400);
+
   };
 
   const siteOrigin = typeof window === 'undefined' ? 'https://allbarka.com' : window.location.origin;
@@ -607,28 +603,15 @@ export default function ProductDetailPage() {
                   </button>
                 </div>
 
-                <button 
-                  type="button"
-                  onClick={handleAddToCart}
-                  disabled={isAdded || !priceToUse || !selectedWeight}
-                  className={`flex-1 min-h-[48px] rounded-xl flex items-center justify-center gap-2.5 text-xs font-bold uppercase tracking-widest transition-all cursor-pointer shadow-sm ${
-                    isAdded 
-                      ? 'bg-[var(--color-accent,#C7982F)] text-[var(--color-text-on-gold,#121615)] shadow-md scale-[1.01]' 
-                      : 'bg-[var(--color-primary,#042821)] text-[var(--color-text-on-emerald,#FFFCF7)] hover:bg-[#03201A] border border-[var(--color-accent,#C7982F)]/40 hover:border-[var(--color-accent,#C7982F)]'
-                  }`}
+                <CartAddButton
+                  productId={product.id}
+                  portion={selectedWeight}
+                  onAdd={handleAddToCart}
+                  disabled={!priceToUse || !selectedWeight}
+                  className="focus-ring flex-1 min-h-[48px] rounded-xl flex items-center justify-center gap-2.5 text-xs font-bold uppercase tracking-widest cursor-pointer shadow-sm bg-[var(--color-primary,#042821)] text-[var(--color-text-on-emerald,#FFFCF7)] border border-[var(--color-accent,#C7982F)]/40 hover:border-[var(--color-accent,#C7982F)]"
                 >
-                  {isAdded ? (
-                    <>
-                      <Check size={16} className="text-emerald-300" />
-                      <span>{t('addedToCart')}</span>
-                    </>
-                  ) : (
-                    <>
-                      <ShoppingBag size={16} className="text-[var(--color-accent,#C7982F)]" />
-                      <span>{t('addToCartPrice', 'Add to Cart')} — <bdi dir="ltr">{displayProductPrice(priceToUse, quantity)}</bdi></span>
-                    </>
-                  )}
-                </button>
+                  {t('addToCartPrice', 'Add to Cart')} — <bdi dir="ltr">{displayProductPrice(priceToUse, quantity)}</bdi>
+                </CartAddButton>
               </div>}
 
               {(product.isBidBox || product.category === 'gift-boxes' || product.category === 'bundles' || product.isBundle) && (

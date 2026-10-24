@@ -2,6 +2,11 @@
 
 This document is auto-generated and lists every component, page, context, hook, and utility with their usage.
 
+## Boutique interaction refinement
+
+- `CartAddButton` reuses MagneticButton and observes the existing CartProvider; confirmation requires the matching committed line quantity to increase. Used by ProductCard, CategoryPLP and ProductDetailPage. Quick view retains its existing close/toast flow.
+- The existing gallery, menus, motion helpers and ToastManager remain the presentation owners. No new application dependency.
+
 ## Admin expansion — Stage 5
 
 - `AdminContentPanel` is the existing admin workspace's Storefront studio tab; `StorefrontBanner` renders the saved announcement.
