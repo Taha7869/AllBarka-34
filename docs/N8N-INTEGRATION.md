@@ -1,3 +1,5 @@
+> 25 October Stage 6 source checkpoint: [N8N_COMPATIBILITY.md](admin-expansion/N8N_COMPATIBILITY.md) documents the exact historical packaging-selection exception, connected local rehearsal and receiver-before-sender release dependency. The checked-in import remains inactive; this is not a live workflow update. Current worker timing/batching is defined by source and INTEGRATIONS.md, not the historical values below.
+
 > Current 4 October fulfillment/outbox/loyalty contract: [INTEGRATIONS.md](../INTEGRATIONS.md). The seven exact live Sheet statuses and semantic no-op/unknown-order200 handling there supersede historical alias behavior below. No workflow has been published by this change.
 
 # Current workflow: website chat and durable order mirror

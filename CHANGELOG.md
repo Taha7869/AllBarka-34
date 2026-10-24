@@ -2,6 +2,15 @@
 
 Each stage records the prior behavior, resulting behavior, reason, affected paths and actual verification. Earlier renovation work remains in its existing reports.
 
+## 25 October 2026 — Stage 6 connected order and receiver compatibility
+
+- **Before:** catalog validation accepted exact historical long selections, but two Umrah labels (53/76 characters) exceeded the n8n sender/receiver's 50-character wire bound. The connected test reproduced a persisted event becoming terminal FAILED before dispatch.
+- **After:** canonical projection reuses the existing per-product identity predicate; the inactive standalone receiver accepts only those two original over-bound labels. Receipt IDs/labels, merchant rates and canonical totals stay unchanged. Arbitrary long/altered/wrong-product selections remain rejected; new-commerce labels retain their separate bound.
+- **Connected evidence:** actual admin-created custom mg/liquid options and six historical packaging selections traverse quote, durable transaction, outbox, transport and checked-in receiver code. Stale totals leave no checkout writes; idempotent replay and dispatch use the saved receipt after merchant repricing; wrong acknowledgement retries the same event and duplicate mirror without a second order/row.
+- **Paths:** catalogSchema identity predicate, n8nOrderNotification, inactive allbarka-website-integration validator, stage6-order-handoff.test.ts and linked integration/release/continuation docs. Only the validator code changes in the 17-node JSON; credentials/resource placeholders and inactive state remain intact.
+- **Checks:** 4 new / 58 targeted cases pass; full 704/704 tests across 71 files, 21 backend, 36 production, type/hooks/build/privacy/assets/diff checks pass. An initial fixture shipping expectation was corrected to the existing per-unit whole-gram policy; runtime shipping was unchanged.
+- **Release dependency:** verify compatible receiver before enabling this sender path under separate authorization. Do not automatically requeue historical terminal/disabled events. Memory/loopback rehearsal does not certify real Firebase/n8n/Sheets. No application key/environment file, live workflow/order/account/rule, production merge or deployment changed. Stage 6 external gates remain BLOCKED.
+
 ## 24 October 2026 — Stage 6 legacy compatibility and bounded diagnostics
 
 - **Before:** four saved packaging products could fail canonical validation because historical filled-option labels exceed 40 characters. A metadata-only edit to an already-public legacy product without explicit status could apply the new-product draft default.

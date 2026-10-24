@@ -129,3 +129,29 @@ The initial focused/full run exposed a genuine metadata-edit regression: the new
 Separately, the script actually ran against `https://allbarka.com` public health/readiness/catalog endpoints: all three returned 200, with 97 public products. Sanitized report: `evidence/stage6-live-readonly.json`, timestamp `2026-10-24T04:10:45.460Z` (09:10:45 Asia/Karachi). The old deployed commit `8cf4410d4cc9d1a2d4840a62cf0f328c4bdaaee0` differs from the inspected feature parent. It reports databaseConnected true, durablePersistenceReady false, savedOrderVerifiedThisProcess false and aiConnectivityVerified false. All four affected public products are unavailable. This proves neither the private saved-record cause nor deployment of the correction. The report's expected commit is the inspected parent at request time, not the later checkpoint containing the report.
 
 Stage 6 remains IN_PROGRESS. Private merchant exports, feature Auth/staff/Storage/rules, Firestore edition, accepted-order persistence, n8n execution and deployment/rollback checks remain BLOCKED/unverified. No credentials or application environment were changed; no live data/account writes, rules publication, workflow edits, deployment or production merge occurred. Existing external CodeRabbit limitation remains; no Aloop result is claimed.
+
+## Stage 6 connected order handoff — actually verified
+
+Date: 25 October 2026 (Asia/Karachi). Inspected remote parent: `95ae816d34f52aed45e70caff9ac7242913824a0`. Source scope: shared historical-label identity predicate, server n8n order projection, inactive receiver validator and one connected service/HTTP test file. No UI, application dependency, canonical price/shipping calculation, retry policy or live integration configuration changed.
+
+| Check | Actual final result |
+| --- | --- |
+| New connected handoff test | 4/4 pass |
+| Targeted handoff + prior legacy packaging + order outbox + bundled workflow tests | 58/58 pass, 0 failed/cancelled/skipped |
+| `npm run typecheck` / `npm run lint:hooks` | Exit 0 / exit 0 |
+| `npm run build` | Exit 0; privacy audit passes (84 text artifacts); existing bundle advisory |
+| `ALLBARKA_TEST_BROWSER=<installed Chromium> node scripts/run-all-tests.mjs` | Exit 0; **704/704 tests across 71 files**, 0 failed/cancelled/skipped |
+| Backend / production | **21/21 backend**, **36/36 production** |
+| Catalog assets | 97 products / 115 references / 111 unique files; 0 missing / retired views |
+| Workflow structure comparison against inspected parent | Only Validate Website Order jsCode changed; all 17 nodes, connections, inactive flag and credential/resource placeholders preserved |
+| `git diff --check` | Exit 0 |
+
+The new connected test first reproduced terminal FAILED for a canonical persisted Umrah selection above the old 50-character wire limit, and direct projection raised CANONICAL_ORDER_INVALID. Sender and bundled receiver had matching incompatible bounds. The correction preserves only exact historical product/label pairs rather than truncating identities or accepting arbitrary long selections. All six existing labels above 40 characters, including both 53/76-character selections, now pass through the actual quote, durable-order transaction, outbox worker, projection, transport and checked-in receiver validation/classification/acknowledgement code with merchant prices distinct from source seeds.
+
+A separate initial assertion assumed fractional sub-gram shipping remained fractional through aggregation. Existing measurementShippingWeight intentionally rounds each sub-gram shipping quantity upward to at least one gram: two Custom 750mg units plus two Custom 600ml oil units total 1202 billed grams and PKR 301 nationwide shipping. The fixture expectation was corrected to that existing policy; production shipping code was not changed.
+
+Further assertions cover new admin-created mg/liquid custom products, canonical ALLBARKA10 and nationwide totals despite forged browser price/weight, stale-total rejection with zero transaction writes, and replay of the original saved receipt after a merchant rate change. A wrong acknowledgement schedules retry after the mirror already exists; the same event/order is subsequently acknowledged without another order or mirror row. Sender and receiver reject wrong product IDs, edited/unbounded labels and appended control characters. Persisted receipts remain unchanged by dispatch, and private claim/admin/supplier fields are absent from the wire projection.
+
+The test persistence and mirror rows are memory fixtures. A loopback HTTP server checks emitted authentication/signature headers and executes trusted repository Code-node bodies; it is not the n8n engine, Google Sheets, Firebase or a customer messaging provider. Actual n8n Header Auth does not verify HMAC; this test does not introduce that claim. Fake configuration is scoped to test-process creation and restored in finally. No .env/application key, live workflow, customer order, account grant, published rule, production branch or deployment was changed. No new live read was made; the 24 October public report remains historical evidence.
+
+`N8N_COMPATIBILITY.md` records the receiver-before-sender release dependency and prohibits automatic replay of historical terminal/disabled events. Stage 6 remains IN_PROGRESS with private merchant data, real provider durable acceptance, new-feature Auth/Storage/rules/edition, n8n/Sheets, preview/rollback and release decision still BLOCKED/unverified. Existing CodeRabbit/Aloop limitations remain unchanged.

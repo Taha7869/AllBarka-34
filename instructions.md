@@ -79,3 +79,7 @@ The implementation now includes CartAddButton (committed cart quantity acknowled
 ### Active Stage 6 continuation
 
 The next authorized work is tracked in `docs/admin-expansion/STAGE6_PROGRESS.md`. Read-only deployed checks are permitted; no live write is implied. The local correction preserves exact existing compiled packaging labels above the generic length bound while leaving arbitrary labels/configured commerce strict. Metadata-only edits preserve known active legacy publication state; explicit drafts/archives and new products remain private. Missing affected records stay unavailable with no compiled-price materialization. Never trim/rename historical labels or reset owner rates to compiled defaults. Treat the old deployed build's database connectivity and feature-branch verification as separate evidence.
+
+### Stage 6 order handoff continuation — 25 October 2026
+
+Read `docs/admin-expansion/N8N_COMPATIBILITY.md` for the connected quote → durable order → outbox → bundled receiver rehearsal. Two exact historical Umrah selections exceed the old 50-character wire bound. The sender and inactive receiver import now preserve those identities; do not widen arbitrary/new labels or truncate receipt strings. Real n8n/Sheets/Firebase remain unverified. Before a separately authorized release, verify the compatible receiver before enabling this sender path; never automatically requeue historical terminal/disabled events. `STAGE6_PROGRESS.md` remains the overall stage tracker.

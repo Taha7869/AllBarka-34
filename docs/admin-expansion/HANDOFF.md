@@ -1,6 +1,6 @@
 # Admin expansion handoff
 
-Updated: 24 October 2026 (Asia/Karachi).
+Updated: 25 October 2026 (Asia/Karachi).
 
 ## Current checkpoint
 
@@ -10,7 +10,7 @@ Verified upstream: `5e6349051980abd1a20f719f289a24a3fd2cba7b`, tree `236c3c0afef
 
 ## Persistence boundary for this checkpoint
 
-Stages 1–5 and P0–P3 are saved in the existing owner-authorized private repository and draft PR #16. Inspected remote parent before this Stage 6 checkpoint: `547081f13cc16df534d66ef1eaf38c3f9dfac90e` (tree `65f7668fcab5093d840ab3a20d56d9c2148a8275`). Confirm the saved successor through PR #16 before resuming. Preserve upstream ancestry and unchanged files; local snapshot history is not remote history. No production merge/deployment is authorized.
+Stages 1–5 and P0–P3 are saved in the existing owner-authorized private repository and draft PR #16. Inspected remote parent before this Stage 6 order-handoff checkpoint: `95ae816d34f52aed45e70caff9ac7242913824a0` (tree `d1a45f8088eaae7107d347f1dd3da5fb29642557`). Confirm the saved successor through PR #16 before resuming. Preserve upstream ancestry and unchanged files; local snapshot history is not remote history. No production merge/deployment is authorized.
 
 ## Completed
 
@@ -66,13 +66,15 @@ Next work remains the original Stage 6 gates below. All prior features and the o
 
 ## Stage 6 current continuation point
 
-Final local gates passed: 700/700 tests across 70 files, 21 backend checks, 36 production checks, asset audit, typecheck/hooks/build/privacy and diff check. Full evidence: TESTING_RELEASE.md.
+Latest local gates passed: 704/704 tests across 71 files, 21 backend checks, 36 production checks, asset audit, typecheck/hooks/build/privacy and diff check. Full evidence: TESTING_RELEASE.md.
 
-Read `STAGE6_PROGRESS.md`, `RELEASE_PACKET.md` and the two evidence JSON reports. The inspected remote parent for this checkpoint is `547081f13cc16df534d66ef1eaf38c3f9dfac90e`; fetch PR #16 for the saved successor. Never shell-push reconstructed local history.
+Read `STAGE6_PROGRESS.md`, `RELEASE_PACKET.md` and the two evidence JSON reports. The inspected remote parent for this checkpoint is `95ae816d34f52aed45e70caff9ac7242913824a0`; fetch PR #16 for the saved successor. Never shell-push reconstructed local history.
 
 The four long packaging-label findings have a narrow local reader correction. Exact existing labels/IDs and merchant rates survive load, metadata edits, canonical order pricing and WhatsApp export; arbitrary/new-commerce labels stay strict. A known active legacy item lacking explicit status no longer becomes draft on a metadata-only edit. Explicit drafts/archives/new items are not promoted. Missing affected records remain unavailable. The regenerated isolated impact compares 97/97 seed price lists, leaves all saved fixture documents unchanged and retains 93 unavailable products in an empty store with zero writes/conversions. Do not seed prices automatically.
 
 Three credential-free public GETs reached deployed build `8cf4410d4cc9d1a2d4840a62cf0f328c4bdaaee0`, which reports databaseConnected true but durablePersistenceReady false. All four affected public items remain unavailable on that old build. Their private saved-record condition cannot be inferred from the public API. Local runtime has no Firebase Admin/Storage credentials; existing keys/configuration were not changed.
+
+The 25 October connected order handoff is locally verified in `N8N_COMPATIBILITY.md`: actual quote → durable transaction → outbox → transport → bundled receiver code. It found that two original Umrah selections (53/76 characters) failed the old 50-character wire limit, even after valid catalog/order pricing. Sender and inactive receiver source now admit those exact identities only. All six long legacy selections and new mg/liquid custom selections preserve canonical rates/receipts through local delivery; stale-total rejection, idempotent saved-receipt replay and uncertain-ack retry/duplicate behavior pass. The JSON remains inactive with only validator code changed; actual n8n/Sheets/Firebase execution is not certified. Verify the compatible receiver before enabling the sender path in any separately authorized release. Do not automatically requeue terminal/disabled historical events.
 
 Next release-critical work requires an authorized integration environment: obtain a read-only export of the actual affected merchant records/settings; review saved variants/rates and invalid references; verify new feature Auth/staff/content/Storage behavior and rules; exercise existing n8n payload/retry contracts with isolated integrations; rehearse backup/rollback and smoke-test a separately authorized deployment target. Accepted-order persistence has not been tested on live services. Keep these BLOCKED until evidence exists; no production action is authorized here. Optional CodeRabbit review remains unavailable and is not counted as passed.
 

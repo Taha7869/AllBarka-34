@@ -1,6 +1,6 @@
 # Stage 6 integration and compatibility checkpoint
 
-Date: 24 October 2026 (Asia/Karachi). The inspected feature parent is `547081f13cc16df534d66ef1eaf38c3f9dfac90e`; fetch draft PR #16 for the saved successor. Stages 1–5 and interaction P0–P3 remain implemented. **Stage 6 is IN_PROGRESS overall** because release-critical external gates remain BLOCKED. This checkpoint does not authorize deployment, production merge, keys, live writes or account changes.
+Date: 25 October 2026 (Asia/Karachi). The inspected feature parent is `95ae816d34f52aed45e70caff9ac7242913824a0`; fetch draft PR #16 for the saved successor. Stages 1–5 and interaction P0–P3 remain implemented. **Stage 6 is IN_PROGRESS overall** because release-critical external gates remain BLOCKED. This checkpoint does not authorize deployment, production merge, keys, live writes or account changes.
 
 | Work | Status | Evidence / next action |
 | --- | --- | --- |
@@ -8,15 +8,16 @@ Date: 24 October 2026 (Asia/Karachi). The inspected feature parent is `547081f13
 | Exact legacy packaging label reader | DONE locally | Original per-product long labels/IDs accepted without migration. Arbitrary/new commerce labels retain the 40-character bound. Missing affected records stay unavailable. |
 | Legacy metadata lifecycle compatibility | DONE locally | Metadata-only edits preserve implicit published status for known active legacy seeds. Explicit drafts/archives, inactive/out-of-stock markers, configured products and unknown IDs are not promoted. |
 | Additive impact and merchant-price/order/export checks | DONE locally | All 97 saved fixture records and resolved price lists unchanged; original 93 empty-store products unavailable; zero writes/conversions. Six focused tests use actual catalog/admin/order/export services and loopback diagnostic requests. |
-| Full offline gates | DONE | 700/700 tests across 70 files; 21 backend; 36 production; catalog assets; typecheck/hooks/build/privacy and diff check pass. Existing bundle advisory remains. |
+| Full offline gates | DONE | 704/704 tests across 71 files; 21 backend; 36 production; catalog assets; typecheck/hooks/build/privacy and diff check pass. Existing bundle advisory remains. |
 | Private merchant records and settings | BLOCKED externally | Public unavailability cannot distinguish missing/archived/invalid records. Obtain an authorized read-only export; compare exact canonical labels, merchant rates and references before a release. Never seed/reset rates. |
 | New feature Auth / staff / content / Storage and rules | BLOCKED externally | Local runtime lacks Firebase Admin/Storage credentials; the old deployment cannot certify new feature endpoints. Verify in the authorized integration environment without changing keys or grants here. |
-| n8n and accepted-order persistence | BLOCKED externally | Configuration flags do not prove execution. Exercise existing payload/retry contracts and durable acceptance in an isolated integration environment; no live workflow edit or customer order here. |
+| Connected order handoff | DONE locally | `N8N_COMPATIBILITY.md`: new custom units and six legacy labels through actual quote/transaction/outbox/transport/receiver code; stale-total rejection, receipt replay and acknowledgement retry/duplicate handling. Memory persistence and loopback only. |
+| n8n and accepted-order persistence | BLOCKED externally | Configuration flags do not prove execution. Local connected rehearsal completed; real provider execution and durable acceptance still require the authorized integration environment. Verify the compatible receiver before enabling long-label sender orders; no live workflow edit or customer order here. |
 | Deployment smoke / rollback / release decision | BLOCKED externally | Preview target, real media/CSP/SEO, backups and compatible rollback rehearsal require separate authorized environment/release steps. Draft PR only. |
 
 ## What failed and was corrected
 
-The original dry run flagged four packaging seeds because existing filled-option labels exceed the generic 40-character canonical variant bound. The correction only admits exact original labels on their original product IDs; it copies no rates. Tests exposed two associated risks: a missing record could gain a newly valid compiled fallback, and a legacy metadata edit could default an already-public item to draft. The missing-record guard and restricted lifecycle adapter correct both. The final focused and full runs pass; the initial failing run is not counted as successful evidence.
+The original dry run flagged four packaging seeds because existing filled-option labels exceed the generic 40-character canonical variant bound. The correction only admits exact original labels on their original product IDs; it copies no rates. Tests exposed two associated risks: a missing record could gain a newly valid compiled fallback, and a legacy metadata edit could default an already-public item to draft. The missing-record guard and restricted lifecycle adapter correct both. The final focused and full runs pass; the initial failing run is not counted as successful evidence. The 25 October connected continuation additionally reproduced a 50-character n8n wire-bound failure for the two long Umrah labels; exact-identity sender and inactive receiver corrections now pass through the local outbox/receiver chain. See N8N_COMPATIBILITY.md for release dependencies.
 
 ## Resume protocol
 

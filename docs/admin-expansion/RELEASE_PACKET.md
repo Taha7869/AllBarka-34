@@ -1,10 +1,10 @@
 # Expansion release packet
 
-Checkpoint: 24 October 2026 (Asia/Karachi). Stages 1–5 implemented and locally verified; Stage 6 IN_PROGRESS. This feature branch is a draft review candidate, not a deployed release.
+Checkpoint: 25 October 2026 (Asia/Karachi). Stages 1–5 implemented and locally verified; Stage 6 IN_PROGRESS. This feature branch is a draft review candidate, not a deployed release.
 
 ## Review evidence
 
-Latest Stage 6 compatibility gates: **700/700 tests across 70 files**, 21 backend, 36 production, catalog assets, typecheck/hooks/build/privacy and diff check pass. Six focused new tests pass. Stage 6 remains IN_PROGRESS under STAGE6_PROGRESS.md.
+Latest Stage 6 connected handoff gates: **704/704 tests across 71 files**, 21 backend, 36 production, catalog assets, typecheck/hooks/build/privacy and diff check pass. The four new connected cases and targeted 58-case run pass. Previous six compatibility/diagnostic cases remain in the full suite. Stage 6 remains IN_PROGRESS under STAGE6_PROGRESS.md.
 
 - Read instructions.md, design.md, CHANGELOG.md, HANDOFF.md and REQUIREMENTS.md for approved scope and continuation.
 - Interaction checkpoint gates: 694/694 tests across 68 files, 21 backend checks, 36 production checks, asset audit, typecheck, hooks lint and production build/privacy audit. Existing bundle advisory remains. Exact scope: TESTING_RELEASE.md.
@@ -20,6 +20,12 @@ The earlier four `INVALID_CATALOG_VARIANT` findings were reproduced for exact co
 The public GET preflight (`scripts/stage6-readonly-preflight.mjs`) inspected health/readiness/catalog only: three HTTP 200 responses, 97 public products, databaseConnected true, durablePersistenceReady false, and all four affected items unavailable. Deployed commit `8cf4410d4cc9d1a2d4840a62cf0f328c4bdaaee0` differs from the inspected feature parent `547081f13cc16df534d66ef1eaf38c3f9dfac90e`. This is a dated observation of the old deployment, **not evidence that the new fix is deployed or that private merchant records are valid**. The sanitized report contains no full catalog, rates, customer data or credentials: `evidence/stage6-live-readonly.json`.
 
 This is an offline impact check, not a migration preview of the owner's real records. Do not apply compiled seeds to an existing merchant database. New optional commerce remains opt-in, canonical products remain the single price authority, content is independent, and existing order snapshots/history are never migrated by these changes.
+
+## Connected order/receiver source compatibility
+
+`N8N_COMPATIBILITY.md` records a reproduced wire-bound gap after the earlier catalog-only correction: two exact Umrah labels exceed 50 characters. The canonical sender and inactive receiver validator now preserve those original identities with a product-specific exception; other wire labels remain limited to 50, new-commerce labels to 40. No pricing/total/ID migration is introduced. Connected local tests join actual catalog/quote/transaction/outbox/transport with the bundled receiver code and memory mirror rows, including new mg/liquid custom selections, six original long selections, stale quote rejection, saved receipt replay and invalid-ack retry/duplicate handling. This is not real Firebase/n8n/Sheets acceptance.
+
+A future authorized release must verify the compatible receiver before enabling the sender path; the old receiver still rejects those two selections. Back up and compare the actual workflow and retain existing node/resource/credential identity. No workflow activation, secret change or historical outbox replay is authorized by the source correction.
 
 ## External gates still blocked
 

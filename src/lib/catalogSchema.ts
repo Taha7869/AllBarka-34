@@ -40,8 +40,10 @@ export const catalogVariantId = (label: string) => `portion-${encodeURIComponent
 // and configured commerce retain the 40-character limit. No price is copied here.
 const legacyPackagingLabels = new Map(BID_BOX_PRODUCTS.map(product => [product.id,
   new Set(Object.keys(product.prices).filter(label => label.length > 40 && label.length <= 160))]));
+export const isKnownLegacyPackagingLabel = (productId: string, label: string) =>
+  legacyPackagingLabels.get(productId)?.has(label) === true;
 const supportedPortionLength = (productId: string, label: string) =>
-  label.length <= 40 || legacyPackagingLabels.get(productId)?.has(label) === true;
+  label.length <= 40 || isKnownLegacyPackagingLabel(productId, label);
 export const requiresStoredLegacyPackagingPricing = (productId: string) =>
   (legacyPackagingLabels.get(productId)?.size || 0) > 0;
 

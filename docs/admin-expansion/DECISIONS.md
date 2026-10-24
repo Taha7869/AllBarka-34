@@ -32,3 +32,7 @@ Preserve exact existing long packaging selection labels per original product ID,
 Known active legacy seeds without an explicit lifecycle field already load publicly. Their admin representation/metadata update now preserves that state instead of defaulting them to draft. Explicit status, draft/archive markers, inactive/out-of-stock markers and configured/new product defaults are not promoted. The read adapter never writes. The existing audited metadata update records the preserved explicit lifecycle on an intentional edit.
 
 Public deployed diagnostics are restricted to three credential-free GETs with bounded responses and allowlisted output. A configured flag or old deployment is not proof of feature readiness. No live customer order, webhook, role grant or upload is part of that diagnostic.
+
+## Stage 6 wire identity compatibility — 25 October 2026
+
+Reuse the exact catalog identity allowlist for historical n8n selections; keep the general 50-character wire bound and new-commerce 40-character bound. The standalone inactive receiver permits only the two original over-50 Umrah labels on the original product ID. No selection truncation, price recalculation, migration or automatic outbox replay is allowed. This is an engineering compatibility correction, not owner authorization to publish a workflow or change integration secrets. Verify the compatible receiver before enabling the corresponding sender path in a separately authorized release. Connected loopback acceptance is distinct from live Firebase/n8n/Sheets execution.
