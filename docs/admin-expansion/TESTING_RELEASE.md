@@ -155,3 +155,26 @@ Further assertions cover new admin-created mg/liquid custom products, canonical 
 The test persistence and mirror rows are memory fixtures. A loopback HTTP server checks emitted authentication/signature headers and executes trusted repository Code-node bodies; it is not the n8n engine, Google Sheets, Firebase or a customer messaging provider. Actual n8n Header Auth does not verify HMAC; this test does not introduce that claim. Fake configuration is scoped to test-process creation and restored in finally. No .env/application key, live workflow, customer order, account grant, published rule, production branch or deployment was changed. No new live read was made; the 24 October public report remains historical evidence.
 
 `N8N_COMPATIBILITY.md` records the receiver-before-sender release dependency and prohibits automatic replay of historical terminal/disabled events. Stage 6 remains IN_PROGRESS with private merchant data, real provider durable acceptance, new-feature Auth/Storage/rules/edition, n8n/Sheets, preview/rollback and release decision still BLOCKED/unverified. Existing CodeRabbit/Aloop limitations remain unchanged.
+
+## Stage 6 admin finishing — actually verified
+
+Date: 25 October 2026 (Asia/Karachi). Inspected remote parent: `4772d983373cd51a2186e7e674ec800521c19802`. Owner explicitly retained existing Firebase/all other keys. No application environment/credential, dependency, server catalog/pricing, Storage path, permission/rule, staff/content backend or workflow change is included.
+
+| Check | Actual final result |
+| --- | --- |
+| New admin-finishing mounted browser | 1/1 pass; explicit evidence capture pass |
+| Original Stage 3 workflow + finishing browser | 2/2 pass |
+| `npm run typecheck` / `npm run lint:hooks` | Exit 0 / exit 0 |
+| `npm run build` | Exit 0; 84-artifact privacy audit pass; existing bundle advisory |
+| Full offline runner with installed test-only Chromium | **705/705 tests across 72 files**, 0 failed/cancelled/skipped; exit 0 |
+| Backend / production | **21/21 backend**, **36/36 production** |
+| Catalog assets | 97 products / 115 references / 111 unique files; 0 missing/retired views |
+| `git diff --check` | Exit 0 |
+
+The new mounted browser uses actual AdminItemForm, configuration/catalog routers and isolated auth/memory Firestore. It verifies mobile/desktop section shortcuts open SEO/details and place focus; keyboard dismissal and focus restoration; item-only and configuration-only dirty guards; a real native beforeunload dialog on reload, dismissal and retained input; settings-save controls held through both PUT and catalog refresh; item input retained after saving settings; draft creation after settings save; settings conflict preserves input and focuses its error. The only intentional browser console error is the induced HTTP 409. Listener cancellation state is also checked before editing and after save/close cleanup. It does not simulate process-crash recovery or create an autosave store.
+
+The matrix covers **360×800, 390×844, 1440×900 × EN/UR/AR × light/dark (18 layouts)**, with reduced motion, appropriate direction, 44px shortcut targets and no page/dialog horizontal overflow. Additional 200% computed text/control-size checks at 360/1440 ensure footer and scroll area remain reachable. These enlarge actual DOM text sizes; they are not an assertion about every browser's zoom implementation or an exhaustive accessibility audit. Two inspected JPGs show the actual mounted fixture editor: `evidence/admin-finish-1440-en.jpg` and `evidence/admin-finish-360-ur.jpg`; they are not live private-dashboard screenshots.
+
+The first run exposed a configuration-only unload-guard propagation gap; dirty/busy callbacks now update parent refs synchronously. Source review also prevented a settings-revision remount during an unfinished catalog refresh from clearing newer draft flags: revision replacement now follows refresh, and the fixture holds each request separately. Existing Stage 3 assertions remain; its formerly unscoped SEO text selector now targets the original summary because real section navigation intentionally repeats that label. The real reload test initially awaited a navigation that a dismissed prompt deliberately cancels; it now issues Chromium Page.reload directly, still asserts the native beforeunload prompt/dismissal and retains the field value. No assertion was removed to conceal a product failure.
+
+No live provider, actual account/upload/order, key rotation, rules publication, workflow activation, production merge or deployment occurred. The full suite retains the earlier commerce, staff/content, actual customer layouts and connected n8n handoff regressions. Stage 6 is still IN_PROGRESS because real merchant/private/provider/deployment/rollback gates remain unverified. See ADMIN_FINISHING.md and STAGE6_PROGRESS.md for exact continuation; do not repeat completed feature work.

@@ -705,6 +705,9 @@ const entries = [
 ["packaging.acrylic", "Acrylic boxes", "ایکریلک باکس", "علب أكريليك"]
 ,
 ["makeCover","Use as cover","مرکزی تصویر بنائیں","استخدام كصورة رئيسية"]
+,["goTo","Go to section","حصے پر جائیں","الانتقال إلى قسم"]
+,["chooseSection","Choose a section…","حصہ منتخب کریں…","اختر قسمًا…"]
+,["saveConfigurationFirst","Save category and template changes below before saving this item.","آئٹم محفوظ کرنے سے پہلے نیچے کیٹیگری اور ٹیمپلیٹ کی تبدیلیاں محفوظ کریں۔","احفظ تغييرات الفئات والقوالب أدناه قبل حفظ هذا المنتج."]
 ] as const;
 export const adminExpansionTranslations: Record<LanguageCode, Record<string,string>> = {
  en: Object.fromEntries(entries.map(([key,en])=>['item.'+key,en])),

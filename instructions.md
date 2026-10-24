@@ -83,3 +83,9 @@ The next authorized work is tracked in `docs/admin-expansion/STAGE6_PROGRESS.md`
 ### Stage 6 order handoff continuation — 25 October 2026
 
 Read `docs/admin-expansion/N8N_COMPATIBILITY.md` for the connected quote → durable order → outbox → bundled receiver rehearsal. Two exact historical Umrah selections exceed the old 50-character wire bound. The sender and inactive receiver import now preserve those identities; do not widen arbitrary/new labels or truncate receipt strings. Real n8n/Sheets/Firebase remain unverified. Before a separately authorized release, verify the compatible receiver before enabling this sender path; never automatically requeue historical terminal/disabled events. `STAGE6_PROGRESS.md` remains the overall stage tracker.
+
+### Owner continuation — preserve keys and finish usability
+
+25 October 2026: the owner explicitly reconfirmed existing Firebase and all other service keys/configuration must remain unchanged while features/UI are completed. Do not treat provider verification as requiring a new key by default; use already-authorized configured access where available, and record absent access honestly. Key rotation alone does not replace permissions, actual upload/order/n8n and deployment checks.
+
+`docs/admin-expansion/ADMIN_FINISHING.md` records the bounded admin finishing pass after remote parent `4772d983373cd51a2186e7e674ec800521c19802`. Preserve the shared eight-section Add/Edit form, section shortcuts, independent item/configuration unsaved protection, pending-save guard and error focus. Item saves must not discard unsaved category/template edits; configuration saves must not clear unsaved item edits or re-enable dismissal before refresh settles. Read current gates in TESTING_RELEASE.md and STAGE6_PROGRESS.md before continuing. Existing storefront/staff/content, connected order handoff and all original features remain implemented.

@@ -46,3 +46,7 @@ Use a small, consistent press response, a fine gold edge/focus state, a real sec
 ### Implemented interaction refinement
 
 The existing controls/gallery/motion system now provide finite press and selected feedback, actual cart acknowledgement, a fine-pointer second-photo preview that yields to explicit browsing, current menu treatment and bounded reveal timing. The real mobile header fits 360px with four 44px utility targets; desktop navigation has a centered second row from 1280px. This was verified on actual header/PDP/cart in 24 size/language/theme combinations plus touch, keyboard and reduced-motion checks. See INTERACTION_POLISH.md for exact boundaries, including preserved quick-view flow and unverified live integrations.
+
+### Implemented admin finishing pass
+
+The shared Add/Edit item editor now has restrained gold-edged desktop section shortcuts and one compact mobile section selector. Existing palette, typography, fields and persisted data remain intact. Independent unsaved item/configuration protection, pending-save controls and focused error summaries improve actual editing behavior. The browser checks 360/390px and desktop in EN/UR/AR, light/dark, reduced motion and 200% enlarged text/control sizes; inspected fixture screenshots are recorded in ADMIN_FINISHING.md. This is source/fixture evidence, not a deployed private-dashboard claim.

@@ -1,6 +1,6 @@
 # Stage 6 integration and compatibility checkpoint
 
-Date: 25 October 2026 (Asia/Karachi). The inspected feature parent is `95ae816d34f52aed45e70caff9ac7242913824a0`; fetch draft PR #16 for the saved successor. Stages 1–5 and interaction P0–P3 remain implemented. **Stage 6 is IN_PROGRESS overall** because release-critical external gates remain BLOCKED. This checkpoint does not authorize deployment, production merge, keys, live writes or account changes.
+Date: 25 October 2026 (Asia/Karachi). The inspected feature parent is `4772d983373cd51a2186e7e674ec800521c19802`; fetch draft PR #16 for the saved successor. Stages 1–5 and interaction P0–P3 remain implemented. **Stage 6 is IN_PROGRESS overall** because release-critical external gates remain BLOCKED. This checkpoint does not authorize deployment, production merge, keys, live writes or account changes.
 
 | Work | Status | Evidence / next action |
 | --- | --- | --- |
@@ -8,7 +8,8 @@ Date: 25 October 2026 (Asia/Karachi). The inspected feature parent is `95ae816d3
 | Exact legacy packaging label reader | DONE locally | Original per-product long labels/IDs accepted without migration. Arbitrary/new commerce labels retain the 40-character bound. Missing affected records stay unavailable. |
 | Legacy metadata lifecycle compatibility | DONE locally | Metadata-only edits preserve implicit published status for known active legacy seeds. Explicit drafts/archives, inactive/out-of-stock markers, configured products and unknown IDs are not promoted. |
 | Additive impact and merchant-price/order/export checks | DONE locally | All 97 saved fixture records and resolved price lists unchanged; original 93 empty-store products unavailable; zero writes/conversions. Six focused tests use actual catalog/admin/order/export services and loopback diagnostic requests. |
-| Full offline gates | DONE | 704/704 tests across 71 files; 21 backend; 36 production; catalog assets; typecheck/hooks/build/privacy and diff check pass. Existing bundle advisory remains. |
+| Admin finishing | DONE locally | ADMIN_FINISHING.md F01–F06; existing item editor section shortcuts, independent unsaved scopes, pending-save/refresh guard, error focus, real cancelled browser reload and 18 layouts plus enlarged text. Existing keys retained. |
+| Full offline gates | DONE | 705/705 tests across 72 files; 21 backend; 36 production; catalog assets; typecheck/hooks/build/privacy and diff check pass. Existing bundle advisory remains. |
 | Private merchant records and settings | BLOCKED externally | Public unavailability cannot distinguish missing/archived/invalid records. Obtain an authorized read-only export; compare exact canonical labels, merchant rates and references before a release. Never seed/reset rates. |
 | New feature Auth / staff / content / Storage and rules | BLOCKED externally | Local runtime lacks Firebase Admin/Storage credentials; the old deployment cannot certify new feature endpoints. Verify in the authorized integration environment without changing keys or grants here. |
 | Connected order handoff | DONE locally | `N8N_COMPATIBILITY.md`: new custom units and six legacy labels through actual quote/transaction/outbox/transport/receiver code; stale-total rejection, receipt replay and acknowledgement retry/duplicate handling. Memory persistence and loopback only. |
@@ -22,7 +23,7 @@ The original dry run flagged four packaging seeds because existing filled-option
 ## Resume protocol
 
 1. Confirm the existing feature branch/draft PR head and read `instructions.md`, `HANDOFF.md`, `RELEASE_PACKET.md` and `TESTING_RELEASE.md`.
-2. Do not repeat completed UI, staff/content, interaction or local compatibility work. Continue the BLOCKED rows only when the required authorized environment/export exists.
+2. Do not repeat completed UI, staff/content, interaction, admin finishing or local compatibility work. The owner reconfirmed existing keys/configuration remain unchanged; key replacement is deferred and is not a substitute for provider verification. Continue the BLOCKED rows only when the required authorized environment/export exists.
 3. Preserve existing rates, labels/IDs, receipts, MOQ, ten-day preparation, shipping/coupons/loyalty and stock convention. No application key/environment edit, production write/deploy/merge, role grant, rules publication or live n8n call is authorized by this checkpoint.
 4. Update this tracker, handoff, tests and changelog for each further checkpoint. Save scoped changes against the actual remote parent/tree; reconstructed local history must not replace upstream history.
 

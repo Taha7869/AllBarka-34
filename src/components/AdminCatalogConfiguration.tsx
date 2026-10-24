@@ -1,16 +1,20 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import type { CatalogConfiguration } from '../lib/catalogConfiguration';
 import { MEASUREMENT_UNITS } from '../lib/productCommerce';
 import AdminDelimitedInput from './AdminDelimitedInput';
 import { ItemField } from './AdminItemField';
-export default function AdminCatalogConfiguration({configuration,onSave}:{configuration:CatalogConfiguration;onSave:(value:CatalogConfiguration)=>Promise<void>}) {
+export default function AdminCatalogConfiguration({configuration,onSave,onDirtyChange,onBusyChange}:{configuration:CatalogConfiguration;onSave:(value:CatalogConfiguration)=>Promise<void>;onDirtyChange?:(dirty:boolean)=>void;onBusyChange?:(busy:boolean)=>void}) {
   const {t}=useLanguage();
   const [value,setValue]=useState(()=>structuredClone(configuration));
   const [saving,setSaving]=useState(false);
-  const [error,setError]=useState('');
-  const change=(family:'templates'|'taxonomy',index:number,patch:Record<string,unknown>)=>setValue(v=>({...v,[family]:v[family].map((entry,i)=>i===index?{...entry,...patch}:entry)}));
-  return <details className="item-section"><summary>{t('item.configuration')}</summary>
+  const [error,setError]=useState('');const errorSummary=useRef<HTMLParagraphElement>(null);
+  useEffect(()=>()=>onDirtyChange?.(false),[onDirtyChange]);
+  useEffect(()=>()=>onBusyChange?.(false),[onBusyChange]);
+  useEffect(()=>{if(error&&!saving){errorSummary.current?.focus();errorSummary.current?.scrollIntoView({block:'nearest'});}},[error,saving]);
+  const edit=(update:(previous:CatalogConfiguration)=>CatalogConfiguration)=>{setValue(update);onDirtyChange?.(true);setError('');};
+  const change=(family:'templates'|'taxonomy',index:number,patch:Record<string,unknown>)=>edit(v=>({...v,[family]:v[family].map((entry,i)=>i===index?{...entry,...patch}:entry)}));
+  return <details id="item-section-configuration" className="item-section"><summary>{t('item.configuration')}</summary>
     <div className="item-stack">
       {(['taxonomy','templates'] as const).map(family=><div key={family} className="item-stack">
         <h4>{t(family==='taxonomy'?'item.category':'item.template')}</h4>
@@ -35,10 +39,10 @@ export default function AdminCatalogConfiguration({configuration,onSave}:{config
             </div>)}<button type="button" disabled={entry.attributes.length>=24} onClick={()=>change(family,index,{attributes:[...entry.attributes,{key:'',label_en:'',label_ur:'',label_ar:'',type:'text',required:false,options:[]}]})}>{t('item.add')}</button></div>
           </>}
         </div></details>)}
-        <button type="button" disabled={value[family].length>=(family==='templates'?50:150)} onClick={()=>setValue(v=>({...v,[family]:[...v[family],family==='taxonomy'?{id:'',type:'category',name_en:'',name_ur:'',name_ar:'',description_en:'',description_ur:'',description_ar:'',visible:true}:{id:'',name_en:'',name_ur:'',name_ar:'',kind:'food',defaultCategory:'dry-fruits',defaultUnit:'g',archived:false,attributes:[]}]}))}>{t(family==='taxonomy'?'item.addTaxonomy':'item.addTemplate')}</button>
+        <button type="button" disabled={value[family].length>=(family==='templates'?50:150)} onClick={()=>edit(v=>({...v,[family]:[...v[family],family==='taxonomy'?{id:'',type:'category',name_en:'',name_ur:'',name_ar:'',description_en:'',description_ur:'',description_ar:'',visible:true}:{id:'',name_en:'',name_ur:'',name_ar:'',kind:'food',defaultCategory:'dry-fruits',defaultUnit:'g',archived:false,attributes:[]}]}))}>{t(family==='taxonomy'?'item.addTaxonomy':'item.addTemplate')}</button>
       </div>)}
-      {error&&<p role="alert">{t('item.failed')} <bdi>{error}</bdi></p>}
-      <button type="button" disabled={saving} onClick={async()=>{setSaving(true);setError('');try{await onSave(value);}catch(e){setError((e as any).code||'REQUEST_FAILED');}finally{setSaving(false);}}}>{t(saving?'item.loading':'item.save')}</button>
+      {error&&<p ref={errorSummary} tabIndex={-1} className="item-error" role="alert">{t('item.failed')} <bdi>{error}</bdi></p>}
+      <button type="button" disabled={saving} onClick={async()=>{onBusyChange?.(true);setSaving(true);setError('');try{await onSave(value);onDirtyChange?.(false);}catch(e){setError((e as any).code||'REQUEST_FAILED');}finally{onBusyChange?.(false);setSaving(false);}}}>{t(saving?'item.loading':'item.save')}</button>
     </div>
   </details>;
 }

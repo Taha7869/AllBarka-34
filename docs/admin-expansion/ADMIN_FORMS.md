@@ -34,3 +34,9 @@ The form includes direct durable upload, cover selection/removal and gallery URL
 - Save Draft, Preview and Publish have distinct behavior. Public storefront only consumes published valid records.
 - Preserve existing lifecycle audits. Duplicate creates a new draft with a new ID.
 - Mobile uses stacked field groups and accessible actions. Dialog focus/scroll behavior must remain usable with the on-screen keyboard.
+
+## Finishing behavior — 25 October 2026
+
+The existing item editor has eight jump destinations: identity/translations, options/prices, media, SEO, ordering/details, private sourcing, review and categories/templates. The mobile selector and desktop controls open closed sections and focus the existing heading/summary; form input remains in place.
+
+Item and taxonomy/template edits have independent dirty scopes. Closing/Escape or browser reload protects either scope. Save category/template edits first when both scopes are dirty; the localized footer explains this requirement, and item save/publish cannot trigger a modal close that discards configuration edits. A settings save preserves item edits and remains busy through catalog refresh before swapping to the new settings revision. Item/configuration error summaries receive focus; conflicts retain input. The mounted create/upload/publish/custom-cart regression still covers the original workflow. Exact evidence and limitations: ADMIN_FINISHING.md and TESTING_RELEASE.md.

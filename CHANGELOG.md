@@ -2,6 +2,15 @@
 
 Each stage records the prior behavior, resulting behavior, reason, affected paths and actual verification. Earlier renovation work remains in its existing reports.
 
+## 25 October 2026 — verified admin finishing with existing keys retained
+
+- **Before:** long item forms required manual scrolling; configuration-only edits were outside the parent dirty/dismissal state; settings saves could leave competing actions usable; errors did not intentionally receive focus.
+- **After:** eight gold-edged desktop shortcuts and a compact mobile selector open existing sections and focus their headings. Item and category/template edits have independent dirty guards for close/Escape/reload. Pending configuration saves block dismissal/competing item actions through catalog refresh; unsaved settings must be saved before item save/publish can close the editor. Failed edits remain visible and error summaries receive focus.
+- **Preservation:** original mandatory/optional labels, fields/units/prices/photos/SEO/languages, upload/publish/cart workflow and canonical backend remain intact. Owner reconfirmed existing Firebase and other keys/configuration; no rotation or new credentials.
+- **Paths:** existing AdminItemForm/AdminCatalogConfiguration, translations, admin-item.css, focused browser and precise original SEO selector; design/component inventory and linked continuation/release documents. No new component/dependency/schema.
+- **Checks:** 705/705 tests across 72 files, 21 backend, 36 production, type/hooks/build/privacy/assets/diff checks pass. Original and new focused browser 2/2; 18 responsive/language/theme layouts, 200% enlarged text/control sizes, real cancelled reload, held saves/refresh, conflict input/focus and two inspected fixture JPGs. Actual failures and infrastructure correction are recorded in TESTING_RELEASE.md.
+- **Remaining:** real provider/private merchant/order/n8n and preview/rollback checks under the authorized environment. No live writes, account changes, rule/workflow publication, merge or deployment. Stage 6 remains IN_PROGRESS.
+
 ## 25 October 2026 — Stage 6 connected order and receiver compatibility
 
 - **Before:** catalog validation accepted exact historical long selections, but two Umrah labels (53/76 characters) exceeded the n8n sender/receiver's 50-character wire bound. The connected test reproduced a persisted event becoming terminal FAILED before dispatch.

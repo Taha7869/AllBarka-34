@@ -249,3 +249,7 @@ Existing ProductImageGallery uses a single numeric photo counter and retains arr
 - `lib/hamperCatalog.ts` is the shared packaging/contents registry and configuration resolver. The existing CustomHamperBuilderModal emits this configuration; CartContext, server validation, admin packing and WhatsApp checkout preserve it.
 - `contexts/shippingTranslations.ts` supplies destination, tariff and payment-confirmation copy in all three languages.
 - `styles/luminous.css` adds non-interactive gold light and borders to existing surfaces, with a finite crest ripple and reduced-motion fallback. It is imported last in main.tsx.
+
+### Admin finishing continuation — 25 October 2026
+
+Reuse `AdminItemForm`, `AdminCatalogConfiguration` and `ItemField`: eight-section navigation and independent dirty/busy/error-focus contracts are implemented in those existing components. No new component or dependency was added. Configuration changes notify the parent synchronously; item save/publish waits for unsaved settings to be saved, and the settings revision swap follows catalog refresh. See `admin-expansion/ADMIN_FINISHING.md` before changing dismissal or save behavior.

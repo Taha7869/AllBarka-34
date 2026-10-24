@@ -14,6 +14,7 @@
 | D10 | Preserve existing identity and gold/gold-dust premium detail. Earthy colours are supporting details; prioritize mobile and desktop quality. | OWNER-CONFIRMED |
 | D11 | Use six stages with written completed/pending work and verification evidence. | OWNER-CONFIRMED |
 | D12 | Preserve existing stock convention 9999, packaging MOQ, 10-calendar-day preparation and standard-vs-inquiry ordering. | Existing owner rules, retained |
+| D13 | Keep existing Firebase and all other service keys/configuration while completing UI/features; defer any future rotation. Provider permission/execution verification remains separate. | OWNER-RECONFIRMED, 25 October 2026 |
 
 ## Documentation drift discovered
 

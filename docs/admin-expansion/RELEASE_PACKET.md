@@ -4,7 +4,7 @@ Checkpoint: 25 October 2026 (Asia/Karachi). Stages 1–5 implemented and locally
 
 ## Review evidence
 
-Latest Stage 6 connected handoff gates: **704/704 tests across 71 files**, 21 backend, 36 production, catalog assets, typecheck/hooks/build/privacy and diff check pass. The four new connected cases and targeted 58-case run pass. Previous six compatibility/diagnostic cases remain in the full suite. Stage 6 remains IN_PROGRESS under STAGE6_PROGRESS.md.
+Latest Stage 6 admin-finishing gates: **705/705 tests across 72 files**, 21 backend, 36 production, catalog assets, typecheck/hooks/build/privacy and diff check pass. New finishing browser and original item journey pass (2/2 focused); the previous four connected cases and 58-case targeted run remain recorded. Previous six compatibility/diagnostic cases remain in the full suite. Stage 6 remains IN_PROGRESS under STAGE6_PROGRESS.md.
 
 - Read instructions.md, design.md, CHANGELOG.md, HANDOFF.md and REQUIREMENTS.md for approved scope and continuation.
 - Interaction checkpoint gates: 694/694 tests across 68 files, 21 backend checks, 36 production checks, asset audit, typecheck, hooks lint and production build/privacy audit. Existing bundle advisory remains. Exact scope: TESTING_RELEASE.md.
@@ -26,6 +26,10 @@ This is an offline impact check, not a migration preview of the owner's real rec
 `N8N_COMPATIBILITY.md` records a reproduced wire-bound gap after the earlier catalog-only correction: two exact Umrah labels exceed 50 characters. The canonical sender and inactive receiver validator now preserve those original identities with a product-specific exception; other wire labels remain limited to 50, new-commerce labels to 40. No pricing/total/ID migration is introduced. Connected local tests join actual catalog/quote/transaction/outbox/transport with the bundled receiver code and memory mirror rows, including new mg/liquid custom selections, six original long selections, stale quote rejection, saved receipt replay and invalid-ack retry/duplicate handling. This is not real Firebase/n8n/Sheets acceptance.
 
 A future authorized release must verify the compatible receiver before enabling the sender path; the old receiver still rejects those two selections. Back up and compare the actual workflow and retain existing node/resource/credential identity. No workflow activation, secret change or historical outbox replay is authorized by the source correction.
+
+## Admin finishing and existing configuration
+
+The owner reconfirmed existing Firebase/all other keys remain unchanged while completing UI/features. ADMIN_FINISHING.md F01–F06 are locally complete: mobile/desktop section shortcuts in the shared editor; independent item and category/template unsaved protection; held save/refresh protection; focused errors and preserved stale-edit input. The original upload/publish/custom-cart journey remains covered. Browser evidence includes 18 layout/language/theme combinations, real cancelled reload and 200% enlarged text/control-size checks; two inspected fixture JPGs are saved. No new schema, permission, dependency or live configuration change occurred. This is implemented/reviewable source, not a deployed private workspace or real provider verification.
 
 ## External gates still blocked
 

@@ -10,7 +10,7 @@ Verified upstream: `5e6349051980abd1a20f719f289a24a3fd2cba7b`, tree `236c3c0afef
 
 ## Persistence boundary for this checkpoint
 
-Stages 1–5 and P0–P3 are saved in the existing owner-authorized private repository and draft PR #16. Inspected remote parent before this Stage 6 order-handoff checkpoint: `95ae816d34f52aed45e70caff9ac7242913824a0` (tree `d1a45f8088eaae7107d347f1dd3da5fb29642557`). Confirm the saved successor through PR #16 before resuming. Preserve upstream ancestry and unchanged files; local snapshot history is not remote history. No production merge/deployment is authorized.
+Stages 1–5 and P0–P3 are saved in the existing owner-authorized private repository and draft PR #16. Inspected remote parent before this Stage 6 admin-finishing checkpoint: `4772d983373cd51a2186e7e674ec800521c19802` (tree `bf5a5fe50fb2e543cdf0fc59a164cbb46931088d`). Confirm the saved successor through PR #16 before resuming. Preserve upstream ancestry and unchanged files; local snapshot history is not remote history. No production merge/deployment is authorized.
 
 ## Completed
 
@@ -64,11 +64,17 @@ Latest checks: typecheck/hooks/build/privacy audit and full offline suite passed
 
 Next work remains the original Stage 6 gates below. All prior features and the original four packaging-seed findings remain recorded; the later local correction is below. Read INTERACTION_POLISH.md for exact source and evidence; no deployment or production merge occurred.
 
+## Admin finishing completed locally — owner keys retained
+
+The owner reconfirmed existing Firebase and all other keys/configuration remain unchanged. `ADMIN_FINISHING.md` F01–F06 are complete locally: eight-section navigation in the shared item editor, independent item/category/template unsaved protection, real cancelled reload/close/Escape checks, save and refresh blocking, focused errors and preserved conflict input. Item save/publish waits for unsaved configuration changes to be saved, preventing post-create close from discarding them. Configuration save does not clear unsaved item input and revision replacement follows refresh. No new editor, local draft store, application dependency or pricing/storage/permission schema was added.
+
+The original create/upload/publish/custom-cart browser still passes. The new mounted form covers 18 viewport/language/theme layouts plus 200% enlarged text/control sizes at 360/1440. Two inspected fixture JPGs are saved. Latest complete gates below include all previous features. Remaining actual Firestore/Auth/Storage/n8n/order/preview/rollback evidence still requires the authorized environment; changing keys alone does not close those gates.
+
 ## Stage 6 current continuation point
 
-Latest local gates passed: 704/704 tests across 71 files, 21 backend checks, 36 production checks, asset audit, typecheck/hooks/build/privacy and diff check. Full evidence: TESTING_RELEASE.md.
+Latest local gates passed: 705/705 tests across 72 files, 21 backend checks, 36 production checks, asset audit, typecheck/hooks/build/privacy and diff check. Full evidence: TESTING_RELEASE.md.
 
-Read `STAGE6_PROGRESS.md`, `RELEASE_PACKET.md` and the two evidence JSON reports. The inspected remote parent for this checkpoint is `95ae816d34f52aed45e70caff9ac7242913824a0`; fetch PR #16 for the saved successor. Never shell-push reconstructed local history.
+Read `STAGE6_PROGRESS.md`, `RELEASE_PACKET.md` and the two evidence JSON reports. The inspected remote parent for this checkpoint is `4772d983373cd51a2186e7e674ec800521c19802`; fetch PR #16 for the saved successor. Never shell-push reconstructed local history.
 
 The four long packaging-label findings have a narrow local reader correction. Exact existing labels/IDs and merchant rates survive load, metadata edits, canonical order pricing and WhatsApp export; arbitrary/new-commerce labels stay strict. A known active legacy item lacking explicit status no longer becomes draft on a metadata-only edit. Explicit drafts/archives/new items are not promoted. Missing affected records remain unavailable. The regenerated isolated impact compares 97/97 seed price lists, leaves all saved fixture documents unchanged and retains 93 unavailable products in an empty store with zero writes/conversions. Do not seed prices automatically.
 
