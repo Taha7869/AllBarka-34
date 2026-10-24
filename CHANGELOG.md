@@ -2,6 +2,13 @@
 
 Each stage records the prior behavior, resulting behavior, reason, affected paths and actual verification. Earlier renovation work remains in its existing reports.
 
+## 24 October 2026 — interaction refinement continuation contract
+
+- **Before:** expansion documentation covered Stages 1–6; the newly supplied interaction references and approved design judgment were only in chat.
+- **After:** instructions.md now consolidates the original feature inventory, required reading/resume sequence, verified remote parent, preservation rules, checkpoint discipline and current task. INTERACTION_POLISH.md adds passes P0–P3, acceptance items I01–I14, source entry points and all carried-forward external blockers. Design, roadmap and handoff link to the new scope.
+- **Evidence:** documentation and link/status review; git diff check. No new interaction implementation or runtime verification is claimed by this documentation checkpoint.
+- **Next:** P1 shared feedback/control work, then P2 photo/navigation refinement, then P3 complete verification. Previous Stage 6 live integration/merchant-data findings remain pending.
+
 ## 24 October 2026 — Stage 5: published content controls and premium refinement
 
 - **Before:** hero copy, primary navigation, FAQ and journal entries were compiled; the admin could not privately preview and publish approved content as one revisioned record.

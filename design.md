@@ -38,3 +38,7 @@ Support light/dark themes, keyboard controls, visible focus and body-text contra
 `premium-content.css` adds restrained corner gold light to the existing photographed hero, an editorial FAQ with native disclosure controls, and a responsive Studio form using existing brand tokens. The homepage retains one product showcase. Saved section order/visibility and menu labels/destinations reach real customer components; default content remains available when optional overrides are absent. Image inputs in Studio use safe URLs; file upload stays in the catalog editor.
 
 Fixture-backed browser evidence covers 390×844 and 1440×900, EN/UR/AR, light/dark and reduced motion. The four Stage 5 JPGs show published fixture homepage content, not a deployed production header. No additional photo asset or visual dependency was introduced.
+
+## Approved interaction language
+
+Use a small, consistent press response, a fine gold edge/focus state, a real second-photo hover preview where available and short section entrances. Mobile uses press/swipe and explicit controls; essential information never depends on hover. Cart acknowledgement follows actual cart state; checkout pending feedback follows its real request. Keep existing photography, palette, single showcase and compact structure. Detailed passes and carried-forward release gates: `docs/admin-expansion/INTERACTION_POLISH.md`.

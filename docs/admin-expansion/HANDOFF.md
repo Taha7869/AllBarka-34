@@ -54,6 +54,10 @@ Stages 3 and 4 are saved in the existing owner-authorized private repository and
 - Verification passed: typecheck/hooks/build/privacy audit, 693/693 tests across 67 files, 21 backend checks, 36 production checks and asset audit. Browser covers draft privacy, preview following edits, publish/reload, actual mobile/desktop navigation, section ordering, journal/initial metadata, stale-edit preservation and 12 responsive/language/theme combinations. Representative JPG evidence is fixture-backed homepage body, not a live deployed header.
 - A pre-existing carousel test defect was isolated: clock installation after navigation left original timers outside fake-clock control. Installation now precedes page load; existing assertions remain, and all 11 lifecycle tests pass.
 
+## Active owner-approved addition — interaction refinement
+
+Owner requested balanced luxury polish from seven interaction references, then explicitly prioritized a durable instruction file before implementation. `instructions.md` now contains the required new-model resume protocol and the original feature inventory; `INTERACTION_POLISH.md` records passes P0–P3 and acceptance items I01–I14. This checkpoint is **documentation only**: P0 DONE, P1/P2/P3 TODO. No new interaction is claimed implemented or verified. Continue P1 from the exact resume section in that tracker. Original expansion Stages 1–5 and all Stage 6 blockers remain intact.
+
 ## Stage 6 next executable steps
 
 Read `RELEASE_PACKET.md` and `evidence/additive-dry-run.json`. Offline report preserved all 97 saved fixture records, compared 93 valid seed price lists, made zero writes and flagged four compiled packaging seeds as `INVALID_CATALOG_VARIANT`; do not claim all compiled products are purchasable. Their long option labels require merchant-data comparison before any correction. Missing authoritative records remain unavailable; do not seed prices automatically.

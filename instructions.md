@@ -30,3 +30,43 @@ Extend the existing store, without replacing its working commerce system. Phase 
 ## Verified baseline
 
 Repository: `Taha7869/AllBarka-34`. Both `launch` and `main` were verified at `5e6349051980abd1a20f719f289a24a3fd2cba7b`. Expansion branch: `codex/admin-catalog-foundation-20261023`. Remote files were read at that immutable commit and checked against their Git blob hashes. Local snapshot history is only a verification aid; remote commits must retain the original upstream parent and unchanged files.
+
+## Approved interaction refinement — 24 October 2026
+
+Continue from Stage 5 commit `9afaca79459f3cf5da888a53a38344901b97dc78`. The owner approved a balanced luxury polish across homepage, catalog/product, cart and checkout based on seven motion references. Execute P1–P3 in `docs/admin-expansion/INTERACTION_POLISH.md`; retain the original six expansion stages and their external blockers. Reuse existing components and motion libraries. Confirm cart success only from the committed cart state; show loading only for a real pending operation. Fine-pointer photo preview must not replace explicit gallery selection or touch/keyboard controls. Verify reduced motion, EN/UR/AR, dark/light, responsive overflow and old commerce/admin/staff/content flows before saving a scoped GitHub checkpoint.
+
+## Required resume protocol for any model or new chat
+
+This file is the entry point for continuation. Never infer completion from a prior chat message alone. Read these current repository files before editing:
+
+1. `AGENTS.md` — stack, existing business rules and safety boundaries.
+2. `design.md` and `docs/COMPONENTS_INVENTORY.md` — visual direction and reusable components.
+3. `docs/admin-expansion/HANDOFF.md` and `ROADMAP.md` — completed expansion stages and exact continuation point.
+4. `docs/admin-expansion/REQUIREMENTS.md` and `INTERACTION_POLISH.md` — original requirements plus every approved interaction and acceptance gate.
+5. `docs/admin-expansion/TESTING_RELEASE.md`, `VERIFICATION_LOOP.md` and `RELEASE_PACKET.md` — actual evidence, fix/recheck process, external blockers and rollback boundaries.
+6. `CHANGELOG.md` — before/after behavior and meaningful implementation history.
+
+Read draft PR #16 and confirm its current head before preparing a commit: https://github.com/Taha7869/AllBarka-34/pull/16 . Continue the existing feature branch `codex/admin-catalog-foundation-20261023`; do not create a replacement app or copy only a homepage mockup. The verified implemented Stage 5 parent is `9afaca79459f3cf5da888a53a38344901b97dc78` (tree `4e38e394006e87be385f3cfb0ae48f4e1b1423df`). Later commits can be documentation-only or partially implemented; inspect the current handoff and actual diff. Preserve the remote parent chain and every unmodified file. Recovered local snapshot commits are not upstream ancestry.
+
+If scratch files are unavailable after workspace maintenance, restore source/assets from the verified GitHub feature branch, verify blob hashes and reinstall the unchanged lockfile. Do not replace the saved implementation with older ZIP files or compiled defaults. Save only intended changes against the remote base tree; absent historical binary evidence in a local reconstruction is not a deletion request.
+
+## Feature inventory that must survive this refinement
+
+| Area | Required existing behavior |
+| --- | --- |
+| Product administration | Shared add/edit workflow; draft/preview/publish/duplicate/archive; visible mandatory/optional markers; conflicts preserve input |
+| Options and rates | mg/g/kg/ml/L/piece/pack; manual/calculated options and explicit overrides; fixed/custom/both as validated for product kind; canonical server prices |
+| Product organization | Reusable templates/typed attributes; editable categories/collections/occasions; real customer discovery and stable IDs |
+| Content and languages | Separate EN/UR/AR fields and display fallback; SEO keywords/localized metadata; cover/gallery/alt text; bounded catalog photo upload |
+| Storefront studio | Private saved draft and hero/banner/FAQ preview; explicit publish; actual hero/banner, section order/visibility, primary menus, FAQ and plain-text journal consumption; revision/audit privacy |
+| Roles | Admin management and separate staff orders-only reader; fresh server authorization; no staff writes/export/private admin data |
+| Commerce | Saved-cart compatibility, custom quantity/units, packaging MOQ and 10-day preparation, canonical quote/order totals and idempotency, original shipping/coupons/loyalty |
+| Customer experience | Existing compact homepage and one product showcase; product details, gallery/swipe/viewer, quick view, inquiry flow, cart and checkout |
+| Design and access | Emerald/ivory/gold/gold-dust; readable mobile/desktop, dark/light, EN/UR/AR RTL, keyboard focus, 44px controls and reduced motion |
+| Integrations and history | Keep existing Firebase/Auth/Storage/n8n contracts, historical receipts and private fields; do not mistake fixture success for live verification |
+
+## Current task and completion discipline
+
+Current authorized addition: balanced luxury interaction refinement, passes P0–P3 in `docs/admin-expansion/INTERACTION_POLISH.md`. At this documentation checkpoint, implementation of the new interactions has not started. The previously implemented expansion Stages 1–5 remain complete under their recorded offline gates. Expansion Stage 6 is still IN_PROGRESS with external checks BLOCKED, including four packaging-seed label findings. Do not erase or silently close them.
+
+Before ending any implementation checkpoint, update the interaction tracker, handoff, requirements where applicable, exact test record and change log. Record: what changed, which acceptance gates passed, what failed and was fixed, what remains, and the next concrete file/behavior to work on. Use TODO / IN_PROGRESS / DONE / BLOCKED honestly. Do not mark an effect done solely because a class or form exists. Commit verified source/docs/evidence together on the review branch, update the existing draft PR and verify remote blob hashes/head. A fresh model should be able to continue using repository documents without access to the original chat.

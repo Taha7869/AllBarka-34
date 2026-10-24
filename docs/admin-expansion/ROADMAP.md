@@ -37,3 +37,7 @@ Upstream commit: `5e6349051980abd1a20f719f289a24a3fd2cba7b`; source tree: `236c3
 - Stage 3 final checks: 681/681 tests across 63 files, 21 backend checks, asset audit and 36 production checks passed. Live Railway/Firebase/n8n state remains uncertified.
 
 - Stage 5 final checks: 693/693 tests across 67 files, 21 backend, 36 production, assets and 12 responsive/language/theme combinations passed. Stage 6 offline impact report and external gates: RELEASE_PACKET.md.
+
+## Additional owner-approved interaction refinement
+
+This is a tracked refinement after Stage 5, not a replacement or renumbering of the six expansion stages. P0 continuation documentation DONE; P1 shared action/cart/request feedback TODO; P2 photos/navigation/reveals TODO; P3 complete regression/evidence/GitHub checkpoint TODO. Full acceptance matrix and exact resume point: INTERACTION_POLISH.md. Stage 6 external blockers remain unchanged.
