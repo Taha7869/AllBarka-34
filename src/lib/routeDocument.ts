@@ -31,6 +31,7 @@ const pages: Record<string, [string, string]> = {
   '/cart': ['Your Cart', 'Review your AllBarka selections and current checkout quote.'],
   '/checkout': ['Checkout', 'Confirm your AllBarka order and delivery details.'],
   '/success': ['Order Confirmation', 'View your saved AllBarka order confirmation.'],
+  '/staff/orders': ['Order room', 'AllBarka staff order reader.'],
   '/admin/orders': ['Merchant Workspace', 'AllBarka merchant workspace.'],
 };
 
@@ -38,7 +39,7 @@ function text(value: string) { return value.replace(/<[^>]*>/g, '').replace(/\s+
 function branded(title: string) { return title.includes('AllBarka') ? title : `${title} — AllBarka`; }
 function basic(route: string, title: string, description: string): RouteMetadata {
   return { status: 200, path: route, title: branded(title), description, type: 'website', image: DEFAULT_IMAGE,
-    ...(['/cart', '/checkout', '/success', '/admin/orders'].includes(route) ? { noindex: true } : {}) };
+    ...(['/cart', '/checkout', '/success', '/admin/orders', '/staff/orders'].includes(route) ? { noindex: true } : {}) };
 }
 
 export function routeMetadata(pathname: string, origin: string, products: Product[], taxonomy: TaxonomyEntry[] = []): RouteMetadata {

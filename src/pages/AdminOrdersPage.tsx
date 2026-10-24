@@ -1,5 +1,6 @@
-import React, { useEffect, useId, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import AdminDialog from '../components/AdminWorkspaceDialog';
+import AdminStaffPanel from '../components/AdminStaffPanel';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowDownToLine, ArrowUpRight, Bell, Check, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Copy, CreditCard, Eye, LayoutDashboard, LockKeyhole, MessageSquareQuote, Package, Printer, RefreshCw, Search, ShieldCheck, Truck, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,7 +12,6 @@ import AdminUpdatesPanel from '../components/AdminUpdatesPanel';
 import AdminInquiriesPanel from '../components/AdminInquiriesPanel';
 import { adminRequest, AdminRequestError } from '../lib/adminClient';
 import { adminPhoneHref, createAdminCsv, formatAdminCurrency, formatAdminDate, isAdminQuoteRequest, formatAdminOrderTotal, adminEditableStatuses, adminEditablePaymentStatuses, adminPromoNotes } from '../lib/adminPresentation';
-import { acquireScrollLock } from '../utils/scrollLock';
 import type { CanonicalOrder, OrderStatus, PaymentStatus } from '../lib/serverOrderService';
 import { PRODUCTS } from '../data/products';
 import { getLocalized } from '../utils/localize';
@@ -27,7 +27,7 @@ type Ledger = {
   orders: AdminOrderSummary[]; page: number; totalCount: number; totalPages: number; asOf: string; scannedCount: number; truncated: boolean;
   metrics: { count: number; activeCount: number; deliveredCount: number; cancelledCount: number; orderValue: number; paidValue: number; unpaidValue: number; bankPendingCount: number; statusCounts: Partial<Record<OrderStatus, number>> };
 };
-type Tab = 'overview' | 'orders' | 'catalogue' | 'updates' | 'inquiries';
+type Tab = 'overview' | 'orders' | 'catalogue' | 'updates' | 'inquiries' | 'team';
 type Mutation = { type: 'status' | 'payment'; target: string };
 
 function hamperPackingDetails(item: CanonicalOrder['items'][number], language: LanguageCode, t: (key: string) => string) {
@@ -45,40 +45,6 @@ function OrderBadge({ value, payment = false }: { value: string; payment?: boole
   const { t } = useAdminLanguage();
   const tone = ['DELIVERED', 'PAID'].includes(value) ? 'success' : ['CANCELLED', 'REFUNDED'].includes(value) ? 'muted' : ['DISPATCHED', 'OUT_FOR_DELIVERY'].includes(value) ? 'transit' : 'pending';
   return <span className={`admin-badge admin-badge-${tone}`} dir="auto">{t(`admin.${payment ? 'payment' : 'status'}.${value}`, value)}</span>;
-}
-
-/** One focus-managed dialog for details and print; private records stay in memory. */
-function AdminDialog({ title, children, onClose, busy = false, packing = false }: { title: string; children: React.ReactNode; onClose: () => void; busy?: boolean; packing?: boolean }) {
-  const { t } = useAdminLanguage();
-  const ref = useRef<HTMLDivElement>(null);
-  const titleId = useId();
-  const closeRef = useRef(onClose);
-  const busyRef = useRef(busy);
-  closeRef.current = onClose; busyRef.current = busy;
-  useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null;
-    const release = acquireScrollLock();
-    const root = document.getElementById('root');
-    const previousInert = root?.inert ?? false;
-    if (root) root.inert = true;
-    const frame = requestAnimationFrame(() => ref.current?.querySelector<HTMLElement>('button')?.focus());
-    const keydown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !busyRef.current) { event.preventDefault(); closeRef.current(); }
-      if (event.key !== 'Tab') return;
-      const controls = Array.from(ref.current?.querySelectorAll<HTMLElement>('button:not(:disabled),a[href],input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex="0"]') || []).filter(el => el.getClientRects().length);
-      const first = controls[0]; const last = controls.at(-1);
-      if (event.shiftKey && (document.activeElement === first || !ref.current?.contains(document.activeElement))) { event.preventDefault(); last?.focus(); }
-      else if (!event.shiftKey && (document.activeElement === last || !ref.current?.contains(document.activeElement))) { event.preventDefault(); first?.focus(); }
-    };
-    document.addEventListener('keydown', keydown);
-    return () => { cancelAnimationFrame(frame); document.removeEventListener('keydown', keydown); release(); if (root) root.inert = previousInert; if (previous?.isConnected) previous.focus(); };
-  }, []);
-  return createPortal(<div className="admin-dialog-backdrop" data-admin-dialog data-admin-packing={packing ? 'true' : undefined} dir="ltr" onClick={event => { if (event.target === event.currentTarget && !busy) onClose(); }}>
-    <div ref={ref} role="dialog" aria-modal="true" aria-labelledby={titleId} className="admin-dialog-panel">
-      <header className="admin-dialog-header"><div><p className="admin-eyebrow">AllBarka</p><h2 id={titleId} dir="auto">{title}</h2></div><button type="button" className="admin-icon-button admin-dialog-close" aria-label={t('admin.close')} disabled={busy} onClick={onClose}><X size={20} /></button></header>
-      {children}
-    </div>
-  </div>, document.body);
 }
 
 function PackingPreview({ orders, onClose }: { orders: AdminOrderSummary[]; onClose: () => void }) {
@@ -103,7 +69,7 @@ export default function AdminOrdersPage() {
   const { t, language, setLanguage } = useAdminLanguage();
   const { t: updateT } = useLanguage();
   const [params, setParams] = useSearchParams();
-  const tab: Tab = ['catalogue', 'orders', 'updates', 'inquiries'].includes(params.get('view') || '') ? params.get('view') as Tab : 'overview';
+  const tab: Tab = ['catalogue', 'orders', 'updates', 'inquiries', 'team'].includes(params.get('view') || '') ? params.get('view') as Tab : 'overview';
   const status = STATUSES.includes(params.get('status') as OrderStatus) ? params.get('status')! : 'ALL';
   const payment = PAYMENTS.includes(params.get('paymentStatus') as PaymentStatus) ? params.get('paymentStatus')! : 'ALL';
   const method = ['cod', 'bank', 'quote'].includes(params.get('paymentMethod') || '') ? params.get('paymentMethod')! : 'ALL';
@@ -158,7 +124,7 @@ export default function AdminOrdersPage() {
   }, [currentUser, accessRefresh]);
   useEffect(() => {
     if (!currentUser || isAdmin !== true) return;
-    if (tab === 'catalogue' || tab === 'updates' || tab === 'inquiries') { setLoading(false); return; }
+    if (tab === 'catalogue' || tab === 'updates' || tab === 'inquiries' || tab === 'team') { setLoading(false); return; }
     const controller = new AbortController();
     setLoading(true); setError(''); setSelection([]);
     adminRequest<Ledger>(() => currentUser.getIdToken(), `/api/admin/orders?${listQuery}`, { signal: controller.signal }).then(data => {
@@ -263,12 +229,12 @@ export default function AdminOrdersPage() {
 
   return <div className="admin-workspace" dir="ltr">
     <aside className="admin-sidebar"><div className="admin-sidebar-brand"><AllBarkaCrestVector className="w-9 h-12" /><div><strong>AllBarka</strong><p dir="auto">{t('admin.operations')}</p></div></div>
-      <nav aria-label={t('admin.workspace')}>{([{ key: 'overview', icon: LayoutDashboard }, { key: 'orders', icon: ClipboardList }, { key: 'inquiries', icon: MessageSquareQuote }, { key: 'catalogue', icon: Package }, { key: 'updates', icon: Bell }] as const).map(({ key, icon: Icon }) => <button type="button" key={key} aria-current={tab === key ? 'page' : undefined} className={tab === key ? 'active' : ''} onClick={() => changeFilters({ view: key })}><Icon size={18} /><span dir="auto">{key === 'updates' ? updateT('updates.adminTitle') : key === 'inquiries' ? 'Bargain Desk & Quotes' : t(`admin.${key}`)}</span>{key === 'orders' && metrics && <span className="admin-nav-count">{metrics.count}</span>}</button>)}</nav>
+      <nav aria-label={t('admin.workspace')}>{([{ key: 'overview', icon: LayoutDashboard }, { key: 'orders', icon: ClipboardList }, { key: 'inquiries', icon: MessageSquareQuote }, { key: 'catalogue', icon: Package }, { key: 'updates', icon: Bell }, { key: 'team', icon: ShieldCheck }] as const).map(({ key, icon: Icon }) => <button type="button" key={key} aria-current={tab === key ? 'page' : undefined} className={tab === key ? 'active' : ''} onClick={() => changeFilters({ view: key })}><Icon size={18} /><span dir="auto">{key === 'team' ? t('staff.team') : key === 'updates' ? updateT('updates.adminTitle') : key === 'inquiries' ? 'Bargain Desk & Quotes' : t(`admin.${key}`)}</span>{key === 'orders' && metrics && <span className="admin-nav-count">{metrics.count}</span>}</button>)}</nav>
       <div className="admin-sidebar-bottom"><ShieldCheck size={21} /><strong dir="auto">{t('admin.security')}</strong><p dir="auto">{t('admin.privacy')}</p><bdi>{currentUser.email || currentUser.phoneNumber}</bdi><Link to="/" className="admin-store-link"><span dir="auto">{t('admin.returnStore')}</span><ArrowUpRight size={16} /></Link></div>
     </aside>
     <div className="admin-main">
-      <header className="admin-page-heading"><div><p className="admin-eyebrow" dir="auto">{t('admin.workspace')}</p><h1 dir="auto">{tab === 'updates' ? updateT('updates.adminTitle') : tab === 'inquiries' ? 'Inquiries & Custom Quotes (Bargain Desk)' : t(`admin.${tab}`)}</h1><p dir="auto">{tab === 'updates' ? updateT('updates.adminHint') : tab === 'inquiries' ? 'Review customer bargain offers for Bid Boxes, wholesale requests, custom hampers, and pitch rates directly on WhatsApp.' : t(tab === 'catalogue' ? 'admin.catalog.hint' : tab === 'orders' ? 'admin.ordersHint' : 'admin.overviewHint')}</p></div><div className="admin-heading-actions">{languageSelect}{tab !== 'catalogue' && tab !== 'updates' && tab !== 'inquiries' && <button type="button" className="admin-button" disabled={loading} onClick={() => setRefresh(value => value + 1)}><RefreshCw size={16} className={loading ? 'admin-loading-spin' : ''} /><span dir="auto">{t('admin.refresh')}</span></button>}</div></header>
-      {tab === 'catalogue' ? <AdminCatalogPanel /> : tab === 'updates' ? <AdminUpdatesPanel /> : tab === 'inquiries' ? <AdminInquiriesPanel /> : <>
+      <header className="admin-page-heading"><div><p className="admin-eyebrow" dir="auto">{t('admin.workspace')}</p><h1 dir="auto">{tab === 'team' ? t('staff.team') : tab === 'updates' ? updateT('updates.adminTitle') : tab === 'inquiries' ? 'Inquiries & Custom Quotes (Bargain Desk)' : t(`admin.${tab}`)}</h1><p dir="auto">{tab === 'team' ? t('staff.teamHint') : tab === 'updates' ? updateT('updates.adminHint') : tab === 'inquiries' ? 'Review customer bargain offers for Bid Boxes, wholesale requests, custom hampers, and pitch rates directly on WhatsApp.' : t(tab === 'catalogue' ? 'admin.catalog.hint' : tab === 'orders' ? 'admin.ordersHint' : 'admin.overviewHint')}</p></div><div className="admin-heading-actions">{languageSelect}{tab !== 'catalogue' && tab !== 'updates' && tab !== 'inquiries' && tab !== 'team' && <button type="button" className="admin-button" disabled={loading} onClick={() => setRefresh(value => value + 1)}><RefreshCw size={16} className={loading ? 'admin-loading-spin' : ''} /><span dir="auto">{t('admin.refresh')}</span></button>}</div></header>
+      {tab === 'team' ? <AdminStaffPanel /> : tab === 'catalogue' ? <AdminCatalogPanel /> : tab === 'updates' ? <AdminUpdatesPanel /> : tab === 'inquiries' ? <AdminInquiriesPanel /> : <>
         {filters}
         <div className="admin-sync-line"><span dir="auto">{t('admin.filteredScope')}</span><span dir="auto">{ledger?.asOf ? t('admin.lastSynced').replace('{time}', formatAdminDate(ledger.asOf, language)) : '—'}</span></div>
         {queue !== 'all' && <div className="admin-queue-filter"><span dir="auto">{t(`admin.queue.${queue === 'bank-pending' ? 'payments' : queue}`)}</span><button type="button" className="admin-icon-button" aria-label={t('admin.clearQueue')} onClick={() => changeFilters({ queue: 'all' })}><X size={15} /></button></div>}

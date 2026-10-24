@@ -73,7 +73,7 @@ export default function SEO({
     setMeta('name', 'twitter:title', fullTitle);
     setMeta('name', 'twitter:description', description);
     setMeta('name', 'twitter:image', new URL(image, siteOrigin).href);
-    setMeta('name', 'robots', /^\/(?:admin|cart|checkout|success)(?:\/|$)/.test(currentPath) ? 'noindex, nofollow' : 'index, follow');
+    setMeta('name', 'robots', /^\/(?:admin|staff|cart|checkout|success)(?:\/|$)/.test(currentPath) ? 'noindex, nofollow' : 'index, follow');
 
     const ogImage = document.querySelector('meta[property="og:image"]');
     if (ogImage && image) {

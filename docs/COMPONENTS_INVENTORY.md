@@ -2,6 +2,13 @@
 
 This document is auto-generated and lists every component, page, context, hook, and utility with their usage.
 
+## Admin expansion — Stage 4
+
+- `AdminStaffPanel` is the Team access tab in the existing admin workspace.
+- `StaffOrdersWorkspace` owns `/staff/orders` and uses dedicated `staffContracts.ts` responses.
+- `AdminWorkspaceDialog` extracts the existing portal/focus/scroll behavior for both admin and staff.
+- `staffAccess.ts` mounts guarded role-management and read-only order routes; `staffTranslations.ts` and `staff.css` supply trilingual responsive styling. No new application dependency.
+
 ## Admin expansion — Stage 3
 
 - `AdminProductCreateModal` and `AdminProductEditModal` retain their entry-point contracts and share `AdminItemForm` for product editing, preview and publication.

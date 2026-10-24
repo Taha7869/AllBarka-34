@@ -1,3 +1,4 @@
+import {staffRequest} from '../lib/adminClient';
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { X, User, Package, MapPin, Phone, Crown, LogOut, Clock, Calendar, CheckCircle2, RotateCcw, ShoppingBag, AlertCircle, ShieldCheck, Bell } from 'lucide-react';
@@ -38,6 +39,8 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
   const loyaltyIdentity = useRef(currentUser?.uid);
   loyaltyIdentity.current = currentUser?.uid;
   const [showAdminWorkspace, setShowAdminWorkspace] = useState(false);
+  const [staffAccessUid,setStaffAccessUid]=useState<string|null>(null);
+  useEffect(()=>{const controller=new AbortController();setStaffAccessUid(null);if(isOpen&&currentUser)staffRequest(()=>currentUser.getIdToken(),'/api/staff/access',{signal:controller.signal}).then(()=>{if(!controller.signal.aborted)setStaffAccessUid(currentUser.uid);}).catch(()=>{});return()=>controller.abort();},[currentUser,isOpen]);
 
   useEffect(() => {
     let active = true;
@@ -261,6 +264,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                 <div className="mt-6 pt-4 border-t border-[var(--color-gold,#B8935F)]/20">
                   <button type="button" className="focus-ring mb-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[var(--color-border-accent)] px-3 text-xs font-semibold" onClick={() => { onClose(); requestAnimationFrame(() => window.dispatchEvent(new CustomEvent('open-store-updates'))); }}><Bell size={16}/><span dir="auto">{t('updates.open')}</span></button>
                   {showAdminWorkspace && <Link to="/admin/orders" onClick={onClose} dir="ltr" className="focus-ring mb-3 flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[var(--color-border-accent)] bg-[var(--color-primary)] px-3 text-xs font-semibold text-[var(--color-primary-fg)]"><ShieldCheck size={16} /><span dir="auto">{t('admin.workspace')}</span></Link>}
+                  {staffAccessUid===currentUser?.uid&&<Link to="/staff/orders" onClick={onClose} className="focus-ring mb-3 flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[var(--color-border-accent)] px-3 text-xs font-semibold"><ShieldCheck size={16}/>{t('staff.workspace')}</Link>}
                   <button
                     onClick={handleLogout}
                     className="w-full py-2.5 rounded-xl border border-[var(--color-ink,#1F120F)]/20 text-[var(--color-ink,#1F120F)] hover:bg-[var(--color-ink,#1F120F)]/5 text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2"

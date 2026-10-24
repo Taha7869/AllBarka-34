@@ -1,6 +1,6 @@
 # AllBarka admin expansion — working instructions
 
-Read `AGENTS.md`, `design.md`, and `docs/admin-expansion/HANDOFF.md` before continuing this project. The approved plan is `docs/admin-expansion/ROADMAP.md`; older renovation documents remain historical evidence, not the status of this expansion.
+Read `AGENTS.md`, `design.md`, and `docs/admin-expansion/HANDOFF.md` before continuing this project. The verification/fix/checkpoint process is `docs/admin-expansion/VERIFICATION_LOOP.md`. The approved plan is `docs/admin-expansion/ROADMAP.md`; older renovation documents remain historical evidence, not the status of this expansion.
 
 ## Owner-approved scope
 

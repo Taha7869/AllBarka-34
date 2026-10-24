@@ -20,3 +20,7 @@
 `AGENTS.md` described React 18, while the actual lockfile/package use React 19. Existing category prose in repository skills also differs from the current category registry. Runtime/schema tests and current owner decisions must ground implementation; do not rename categories from stale prose. This expansion does not change reference-import markup or legacy custom-gram rounding.
 
 The working branch is `codex/admin-catalog-foundation-20261023`, created from the verified release. Earlier renovation branch/halt instructions describe a prior workstream and do not describe this branch's current status.
+
+## Stage 4 identity decision
+
+Store the order-reader grant in server-only `staffAccess/{uid}`, atomically with its audit, rather than editing Firebase custom claims. Fresh Firebase Auth identity and this grant are checked on every staff request. This preserves unrelated claims and makes grant/revoke independent of cached token-role refresh. Administrators still require their existing verified admin claim and a fresh admin account check for staff management. Disabled accounts, revoked sign-ins and unverified staff email are denied. No live account or grant was changed during implementation.

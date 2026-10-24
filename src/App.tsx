@@ -1,3 +1,4 @@
+import StaffOrdersWorkspace from './components/StaffOrdersWorkspace';
 import React from 'react';
 import { BrowserRouter, Routes, Route, useParams } from 'react-router-dom';
 
@@ -80,6 +81,7 @@ export default function App() {
               <Route path="occasions/:occasion" element={<ShopPage />} />
               <Route path="cart" element={<CartPage />} />
               <Route path="admin/orders" element={<AdminOrdersPage />} />
+              <Route path="staff/orders" element={<StaffOrdersWorkspace />} />
               <Route path="*" element={<NotFoundPage />} />
             </Route>
           </Routes>

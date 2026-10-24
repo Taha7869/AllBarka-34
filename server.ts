@@ -1,3 +1,4 @@
+import { createStaffRouter } from './src/lib/staffAccess';
 import { getStorage } from 'firebase-admin/storage';
 import firebaseAppletConfig from './firebase-applet-config.json';
 import { createProductUploadRouter } from './src/lib/productUploadRouter';
@@ -307,6 +308,7 @@ app.use(express.json({ limit: '128kb' }));
 app.use(createProductMediaRouter({ getDb: () => db, requireAdmin }));
 app.use(createCatalogConfigurationRouter({ getDb: () => db, requireAdmin }));
 app.use(createCatalogRouter({ getDb: () => db, requireAdmin }));
+app.use(createStaffRouter({ getDb: () => db, getAuth: () => adminAuth, requireAuth, requireAdmin }));
 app.use(createStoreUpdatesRouter({ getDb: () => db, requireAuth, requireAdmin }));
 
 // Auth & Session Endpoints
@@ -885,7 +887,7 @@ async function startServer() {
     };
     const pageTaxonomy=async()=>{try{return (await readCatalogConfiguration(db)).taxonomy.filter(x=>x.visible);}catch{return [];}};
     app.get('/robots.txt', (_req, res) => res.type('text/plain').send(
-      `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /checkout\nDisallow: /cart\nDisallow: /success\nDisallow: /admin\nSitemap: ${publicOrigin}/sitemap.xml\n`
+      `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /checkout\nDisallow: /cart\nDisallow: /success\nDisallow: /admin\nDisallow: /staff\nSitemap: ${publicOrigin}/sitemap.xml\n`
     ));
     app.get('/sitemap.xml', async (_req, res) => {
       const products = await pageCatalog();

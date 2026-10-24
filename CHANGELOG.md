@@ -2,6 +2,15 @@
 
 Each stage records the prior behavior, resulting behavior, reason, affected paths and actual verification. Earlier renovation work remains in its existing reports.
 
+## 24 October 2026 — Stage 4: orders-only staff access
+
+- **Before:** all operational order screens required admin claims; staff had no restricted reader.
+- **After:** administrators can find a verified existing account and grant/revoke only order reading, using revisioned server-only grants and atomic audits. The separate staff workspace shows bounded order list/details with search, status/date filters and no writes/export/catalog controls.
+- **Safety:** fresh account/grant checks on every request, disabled/revoked sign-in rejection, dedicated nested DTO allowlists, independent admin guards and immediate revoke handling on the next read. Existing Auth custom claims, prices, order mutations and live rules remain unchanged.
+- **Paths:** staff contracts/access router, staff workspace/team panel, shared dialog, bounded GET-only client, translations/CSS; integrations in server/App, existing admin/account navigation, SEO/robots and evidence documents.
+- **Verification:** 688 tests, 21 backend and 36 production checks passed; browser grant/read/detail/revoke plus 12 viewport/language/theme combinations. External CodeRabbit auth was unavailable and is documented without claiming a review.
+- **Remaining:** Stage 5 content/premium storefront and Stage 6 final integration/release packet. No production deploy/merge or live data/account writes.
+
 ## 24 October 2026 — Stage 3: shared item workflow and customer integration
 
 - **Before:** separate create/edit modals duplicated field state; create supplied example rates and omitted descriptions/media/SEO. Flexible Stage 2 options, templates and taxonomy had no complete editing or discovery workflow.

@@ -15,8 +15,8 @@ Statuses refer to the expansion, not whether an older partial implementation exi
 | A09 | Durable image upload, cover, gallery and alt text | 3 | DONE | Authenticated durable upload implementation, cover/gallery controls and alt text; local provider success/failure tests; live bucket unverified |
 | A10 | Localized SEO fields and social preview | 2–3 | DONE | Localized form and client metadata; saved English metadata in initial HTML; keywords/social image and fallback tests |
 | A11 | Draft, preview, duplicate, publish, archive and revision conflict handling | 3 | DONE | Existing duplicate/archive lifecycle retained; shared draft/preview/publish flow and real stale-edit conflict browser case |
-| A12 | Admin-controlled staff access and read-only order workspace | 4 | TODO | Existing admin claims and order services |
-| A13 | Staff denied all admin mutations/private catalog/settings | 4 | TODO | Requires API-level tests, not just hidden buttons |
+| A12 | Admin-controlled staff access and read-only order workspace | 4 | DONE | staffAccess.ts, AdminStaffPanel, StaffOrdersWorkspace; grant/read/revoke browser test |
+| A13 | Staff denied all admin mutations/private catalog/settings | 4 | DONE | HTTP permission matrix, strict DTO, disabled/revoked/stale claims, audit rollback and concurrency checks |
 | A14 | Approved content/banner/navigation/FAQ/journal controls | 5 | TODO | Existing merchandising plus additive content record |
 | A15 | Gold/ivory/emerald polish with mobile, desktop, dark and RTL parity | 5 | TODO | Existing design tokens/luminous.css |
 | A16 | Shared prices in catalog/cart/quote/order/AI exports | 2–6 | IN_PROGRESS | Stage 3 browser cart uses normalized custom label; server ignores submitted price; full regression suite passes; final live integration remains Stage 6 |

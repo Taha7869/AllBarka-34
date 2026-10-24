@@ -1,3 +1,4 @@
+import {staffTranslations} from './staffTranslations';
 import { adminExpansionTranslations } from './adminExpansionTranslations';
 import { catalogTranslations } from './catalogTranslations';
 import { shoppingQualityTranslations } from './shoppingQualityTranslations';
@@ -610,7 +611,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const t = useCallback((key: string, defaultText = ''): string => {
     if (rewardTranslations[language]?.[key]) return rewardTranslations[language][key];
-    return adminExpansionTranslations[language]?.[key] || destinationTranslations[language]?.[key] || shoppingQualityTranslations[language]?.[key] || trackingTranslations[language]?.[key] || weightTranslations[language]?.[key] || checkoutReliabilityTranslations[language]?.[key] || (conciergeTranslations[language] as Record<string, string>)[key] || shippingTranslations[language]?.[key] || updateTranslations[language]?.[key] || authTranslations[language]?.[key] || trendTranslations[language]?.[key] || catalogTranslations[language]?.[key] || boutiqueTranslations[language]?.[key] || TRANSLATIONS[language]?.[key] || TRANSLATIONS.en[key] || defaultText || key;
+    return staffTranslations[language]?.[key] || adminExpansionTranslations[language]?.[key] || destinationTranslations[language]?.[key] || shoppingQualityTranslations[language]?.[key] || trackingTranslations[language]?.[key] || weightTranslations[language]?.[key] || checkoutReliabilityTranslations[language]?.[key] || (conciergeTranslations[language] as Record<string, string>)[key] || shippingTranslations[language]?.[key] || updateTranslations[language]?.[key] || authTranslations[language]?.[key] || trendTranslations[language]?.[key] || catalogTranslations[language]?.[key] || boutiqueTranslations[language]?.[key] || TRANSLATIONS[language]?.[key] || TRANSLATIONS.en[key] || defaultText || key;
   }, [language]);
 
   const value = useMemo(() => ({
