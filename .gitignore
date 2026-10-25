@@ -1,0 +1,36 @@
+node_modules/
+build/
+dist/
+dist-client/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Local archives, backup copies, and credentials
+*.tar.gz
+*.zip
+*.7z
+*.bak
+*.debug
+*_backup.*
+*.pem
+*.key
+*service-account*.json
+*service_account*.json
+*firebase-adminsdk*.json
+credentials*.json
+.firebase/
+.cache/
+*.tsbuildinfo
+.local-setup/
+
+# Temporary generated output text dumps
+*-utf8.txt
+*_output.txt
+backend.txt
+error.txt
+git-*.txt
+typecheck*.txt
+ts_errors.txt

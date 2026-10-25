@@ -1,0 +1,1285 @@
+{
+  "category": "bundles",
+  "styleVersion": 2,
+  "canvas": 960,
+  "safeArea": {
+    "left": 58,
+    "right": 902,
+    "top": 58,
+    "bottom": 902
+  },
+  "checks": [
+    {
+      "id": "bundle-daily-grind",
+      "variant": "primary",
+      "boxes": 8,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "The Daily Grind",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 345.41357421875,
+          "x2": 614.76611328125,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "دی ڈیلی گرائنڈ — روزمرہ میوے",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 118.09805297851562,
+          "x2": 411.501953125,
+          "y1": 809.8000030517578,
+          "y2": 868
+        },
+        {
+          "text": "باقة المكسرات اليومية",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 585.8490753173828,
+          "x2": 803.2609252929688,
+          "y1": 829,
+          "y2": 865
+        },
+        {
+          "kind": "scene",
+          "text": "3 × 250G",
+          "x1": 120.5703125,
+          "x2": 190.4296875,
+          "y1": 75,
+          "y2": 90
+        },
+        {
+          "kind": "scene",
+          "text": "AllBarka",
+          "x1": 421.3984375,
+          "x2": 545.6015625,
+          "y1": 204,
+          "y2": 240
+        }
+      ],
+      "safe": true,
+      "fontReady": true,
+      "path": "/images/products/bundle-daily-grind.svg"
+    },
+    {
+      "id": "bundle-brain-fuel",
+      "variant": "primary",
+      "boxes": 8,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Brain Fuel Box",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 356.0712890625,
+          "x2": 605.7431640625,
+          "y1": 719.5,
+          "y2": 748.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "برین فیول باکس",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 188.0280303955078,
+          "x2": 341.1919708251953,
+          "y1": 806.2599945068359,
+          "y2": 865.6199951171875
+        },
+        {
+          "text": "صندوق برين فيول",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 605.5420455932617,
+          "x2": 784.819953918457,
+          "y1": 831,
+          "y2": 864
+        },
+        {
+          "kind": "scene",
+          "text": "FOUR SELECTIONS",
+          "x1": 79.2421875,
+          "x2": 232.7578125,
+          "y1": 75,
+          "y2": 90
+        },
+        {
+          "kind": "scene",
+          "text": "AllBarka",
+          "x1": 421.3984375,
+          "x2": 545.6015625,
+          "y1": 204,
+          "y2": 240
+        }
+      ],
+      "safe": true,
+      "fontReady": true,
+      "path": "/images/products/bundle-brain-fuel.svg"
+    },
+    {
+      "id": "bundle-winter-warrior",
+      "variant": "primary",
+      "boxes": 8,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Winter Warrior Pack",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 303.74169921875,
+          "x2": 655.90380859375,
+          "y1": 719.5,
+          "y2": 748.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ونٹر وارئیر پیک",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 199.38803100585938,
+          "x2": 329.7959747314453,
+          "y1": 818,
+          "y2": 868
+        },
+        {
+          "text": "باقة وينتر ووريور",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 607.8815689086914,
+          "x2": 778.2284317016602,
+          "y1": 832,
+          "y2": 864
+        },
+        {
+          "kind": "scene",
+          "text": "WINTER SELECTION",
+          "x1": 79.359375,
+          "x2": 241.640625,
+          "y1": 75,
+          "y2": 90
+        },
+        {
+          "kind": "scene",
+          "text": "AllBarka",
+          "x1": 421.3984375,
+          "x2": 545.6015625,
+          "y1": 204,
+          "y2": 240
+        }
+      ],
+      "safe": true,
+      "fontReady": true,
+      "path": "/images/products/bundle-winter-warrior.svg"
+    },
+    {
+      "id": "bundle-immunity-shield",
+      "variant": "primary",
+      "boxes": 9,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Immunity Shield",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 339.09375,
+          "x2": 622.0859375,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "امیونٹی شیلڈ بنڈل",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 182.41402435302734,
+          "x2": 345.34598541259766,
+          "y1": 822.7839965820312,
+          "y2": 865
+        },
+        {
+          "text": "باقة إميونيتي شيلد",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 610.7035675048828,
+          "x2": 779.4064331054688,
+          "y1": 832,
+          "y2": 873
+        },
+        {
+          "kind": "scene",
+          "text": "THREE SELECTIONS",
+          "x1": 79.625,
+          "x2": 242.375,
+          "y1": 75,
+          "y2": 90
+        },
+        {
+          "kind": "scene",
+          "text": "AllBarka",
+          "x1": 421.3984375,
+          "x2": 545.6015625,
+          "y1": 204,
+          "y2": 240
+        },
+        {
+          "kind": "scene",
+          "text": "A",
+          "x1": 346.125,
+          "x2": 361.125,
+          "y1": 358.5,
+          "y2": 379.5
+        }
+      ],
+      "safe": true,
+      "fontReady": true,
+      "path": "/images/products/bundle-immunity-shield.svg"
+    },
+    {
+      "id": "bundle-sunrise-seeds",
+      "variant": "primary",
+      "boxes": 8,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Sunrise Seeds",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 364.70849609375,
+          "x2": 595.87060546875,
+          "y1": 719.5,
+          "y2": 748.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "سن رائز سیڈز بنڈل",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 175.69402313232422,
+          "x2": 353.44197845458984,
+          "y1": 823,
+          "y2": 865
+        },
+        {
+          "text": "باقة بذور الصباح",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 611.6875610351562,
+          "x2": 777.4224395751953,
+          "y1": 832,
+          "y2": 872
+        },
+        {
+          "kind": "scene",
+          "text": "FOUR SEED SELECTIONS",
+          "x1": 79.734375,
+          "x2": 282.265625,
+          "y1": 75,
+          "y2": 90
+        },
+        {
+          "kind": "scene",
+          "text": "AllBarka",
+          "x1": 421.3984375,
+          "x2": 545.6015625,
+          "y1": 204,
+          "y2": 240
+        }
+      ],
+      "safe": true,
+      "fontReady": true,
+      "path": "/images/products/bundle-sunrise-seeds.svg"
+    },
+    {
+      "id": "bundle-royal-feast",
+      "variant": "primary",
+      "boxes": 8,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Royal Feast",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 383.5693359375,
+          "x2": 577.3125,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "شاہی ضیافت بنڈل",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 173.93002319335938,
+          "x2": 355.07398986816406,
+          "y1": 823,
+          "y2": 865
+        },
+        {
+          "text": "باقة الوليمة الملكية",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 610.3545761108398,
+          "x2": 778.7554244995117,
+          "y1": 829,
+          "y2": 864
+        },
+        {
+          "kind": "scene",
+          "text": "ROYAL SELECTION",
+          "x1": 79.9609375,
+          "x2": 232.0390625,
+          "y1": 75,
+          "y2": 90
+        },
+        {
+          "kind": "scene",
+          "text": "AllBarka",
+          "x1": 421.3984375,
+          "x2": 545.6015625,
+          "y1": 204,
+          "y2": 240
+        }
+      ],
+      "safe": true,
+      "fontReady": true,
+      "path": "/images/products/bundle-royal-feast.svg"
+    },
+    {
+      "id": "bundle-silver-hamper",
+      "variant": "primary",
+      "boxes": 11,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Silver Hamper",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 358.73388671875,
+          "x2": 602.69873046875,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "سلور ہیمپر",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 213.31800842285156,
+          "x2": 309.6860046386719,
+          "y1": 824.2599945068359,
+          "y2": 868
+        },
+        {
+          "text": "سلة الهدايا الفضية",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 607.4715805053711,
+          "x2": 780.9204330444336,
+          "y1": 832,
+          "y2": 863
+        },
+        {
+          "kind": "scene",
+          "text": "THREE SELECTIONS",
+          "x1": 79.625,
+          "x2": 242.375,
+          "y1": 75,
+          "y2": 90
+        },
+        {
+          "kind": "scene",
+          "text": "AllBarka",
+          "x1": 421.3984375,
+          "x2": 545.6015625,
+          "y1": 204,
+          "y2": 240
+        },
+        {
+          "kind": "scene",
+          "text": "A",
+          "x1": 345.7890625,
+          "x2": 361.7890625,
+          "y1": 352.5,
+          "y2": 374.5
+        },
+        {
+          "kind": "scene",
+          "text": "A",
+          "x1": 585.7890625,
+          "x2": 601.7890625,
+          "y1": 352.5,
+          "y2": 374.5
+        },
+        {
+          "kind": "scene",
+          "text": "A",
+          "x1": 345.7890625,
+          "x2": 361.7890625,
+          "y1": 473.5,
+          "y2": 495.5
+        }
+      ],
+      "safe": true,
+      "fontReady": true,
+      "path": "/images/products/bundle-silver-hamper.svg"
+    },
+    {
+      "id": "bundle-gold-hamper",
+      "variant": "primary",
+      "boxes": 13,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Gold Hamper",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 366.43408203125,
+          "x2": 594.99853515625,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "گولڈ ہیمپر",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 217.96601104736328,
+          "x2": 317.0339889526367,
+          "y1": 814.0559997558594,
+          "y2": 868
+        },
+        {
+          "text": "سلة الهدايا الذهبية",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 606.6965789794922,
+          "x2": 781.6954345703125,
+          "y1": 832,
+          "y2": 863
+        },
+        {
+          "kind": "scene",
+          "text": "FIVE SELECTIONS",
+          "x1": 83.2109375,
+          "x2": 228.7890625,
+          "y1": 75,
+          "y2": 90
+        },
+        {
+          "kind": "scene",
+          "text": "AllBarka",
+          "x1": 421.3984375,
+          "x2": 545.6015625,
+          "y1": 204,
+          "y2": 240
+        },
+        {
+          "kind": "scene",
+          "text": "A",
+          "x1": 305.7890625,
+          "x2": 321.7890625,
+          "y1": 352.5,
+          "y2": 374.5
+        },
+        {
+          "kind": "scene",
+          "text": "A",
+          "x1": 465.7890625,
+          "x2": 481.7890625,
+          "y1": 352.5,
+          "y2": 374.5
+        },
+        {
+          "kind": "scene",
+          "text": "A",
+          "x1": 625.7890625,
+          "x2": 641.7890625,
+          "y1": 352.5,
+          "y2": 374.5
+        },
+        {
+          "kind": "scene",
+          "text": "A",
+          "x1": 305.7890625,
+          "x2": 321.7890625,
+          "y1": 473.5,
+          "y2": 495.5
+        },
+        {
+          "kind": "scene",
+          "text": "A",
+          "x1": 465.7890625,
+          "x2": 481.7890625,
+          "y1": 473.5,
+          "y2": 495.5
+        }
+      ],
+      "safe": true,
+      "fontReady": true,
+      "path": "/images/products/bundle-gold-hamper.svg"
+    },
+    {
+      "id": "bundle-platinum-hamper",
+      "variant": "primary",
+      "boxes": 14,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Platinum Hamper",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 329.185546875,
+          "x2": 632.2470703125,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "پلاٹینم ہیمپر",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 207.28401947021484,
+          "x2": 317.1520004272461,
+          "y1": 811.583984375,
+          "y2": 872
+        },
+        {
+          "text": "سلة الهدايا البلاتينية",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 598.6055908203125,
+          "x2": 789.7864227294922,
+          "y1": 832,
+          "y2": 863
+        },
+        {
+          "kind": "scene",
+          "text": "SEVEN SELECTIONS",
+          "x1": 79.625,
+          "x2": 242.375,
+          "y1": 75,
+          "y2": 90
+        },
+        {
+          "kind": "scene",
+          "text": "AllBarka",
+          "x1": 421.3984375,
+          "x2": 545.6015625,
+          "y1": 204,
+          "y2": 240
+        },
+        {
+          "kind": "scene",
+          "text": "A",
+          "x1": 465.7890625,
+          "x2": 481.7890625,
+          "y1": 332.3333435058594,
+          "y2": 354.3333435058594
+        },
+        {
+          "kind": "scene",
+          "text": "A",
+          "x1": 625.7890625,
+          "x2": 641.7890625,
+          "y1": 332.3333435058594,
+          "y2": 354.3333435058594
+        },
+        {
+          "kind": "scene",
+          "text": "A",
+          "x1": 305.7890625,
+          "x2": 321.7890625,
+          "y1": 413,
+          "y2": 435
+        },
+        {
+          "kind": "scene",
+          "text": "A",
+          "x1": 465.7890625,
+          "x2": 481.7890625,
+          "y1": 413,
+          "y2": 435
+        },
+        {
+          "kind": "scene",
+          "text": "A",
+          "x1": 625.7890625,
+          "x2": 641.7890625,
+          "y1": 413,
+          "y2": 435
+        },
+        {
+          "kind": "scene",
+          "text": "A",
+          "x1": 305.7890625,
+          "x2": 321.7890625,
+          "y1": 493.6666564941406,
+          "y2": 515.6666259765625
+        }
+      ],
+      "safe": true,
+      "fontReady": true,
+      "path": "/images/products/bundle-platinum-hamper.svg"
+    },
+    {
+      "id": "bundle-ramadan-ready",
+      "variant": "primary",
+      "boxes": 9,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Ramadan Ready",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 343.138671875,
+          "x2": 619.158203125,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "رمضان ریڈی بنڈل",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 171.99803161621094,
+          "x2": 357.63397216796875,
+          "y1": 823,
+          "y2": 865.6199951171875
+        },
+        {
+          "text": "باقة رمضان",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 638.7120361328125,
+          "x2": 751.3979644775391,
+          "y1": 832,
+          "y2": 863
+        },
+        {
+          "kind": "scene",
+          "text": "RAMADAN SELECTION",
+          "x1": 76.4140625,
+          "x2": 255.5859375,
+          "y1": 75,
+          "y2": 90
+        },
+        {
+          "kind": "scene",
+          "text": "AllBarka",
+          "x1": 421.3984375,
+          "x2": 545.6015625,
+          "y1": 204,
+          "y2": 240
+        },
+        {
+          "kind": "scene",
+          "text": "A",
+          "x1": 585.7890625,
+          "x2": 601.7890625,
+          "y1": 473.5,
+          "y2": 495.5
+        }
+      ],
+      "safe": true,
+      "fontReady": true,
+      "path": "/images/products/bundle-ramadan-ready.svg"
+    },
+    {
+      "id": "bundle-mystery-box",
+      "variant": "primary",
+      "boxes": 13,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Mystery Box",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 375.10107421875,
+          "x2": 585.71337890625,
+          "y1": 722.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "مسٹری باکس",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 203.1200180053711,
+          "x2": 325.9559860229492,
+          "y1": 806.2599945068359,
+          "y2": 868
+        },
+        {
+          "text": "صندوق المفاجآت",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 605.6350402832031,
+          "x2": 784.7269592285156,
+          "y1": 826,
+          "y2": 862
+        },
+        {
+          "kind": "scene",
+          "text": "SURPRISE SELECTION",
+          "x1": 80.765625,
+          "x2": 261.234375,
+          "y1": 75,
+          "y2": 90
+        },
+        {
+          "kind": "scene",
+          "text": "AllBarka",
+          "x1": 421.3984375,
+          "x2": 545.6015625,
+          "y1": 204,
+          "y2": 240
+        },
+        {
+          "kind": "scene",
+          "text": "A",
+          "x1": 305.7890625,
+          "x2": 321.7890625,
+          "y1": 352.5,
+          "y2": 374.5
+        },
+        {
+          "kind": "scene",
+          "text": "A",
+          "x1": 465.7890625,
+          "x2": 481.7890625,
+          "y1": 352.5,
+          "y2": 374.5
+        },
+        {
+          "kind": "scene",
+          "text": "A",
+          "x1": 625.7890625,
+          "x2": 641.7890625,
+          "y1": 352.5,
+          "y2": 374.5
+        },
+        {
+          "kind": "scene",
+          "text": "A",
+          "x1": 305.7890625,
+          "x2": 321.7890625,
+          "y1": 473.5,
+          "y2": 495.5
+        },
+        {
+          "kind": "scene",
+          "text": "A",
+          "x1": 465.7890625,
+          "x2": 481.7890625,
+          "y1": 473.5,
+          "y2": 495.5
+        }
+      ],
+      "safe": true,
+      "fontReady": true,
+      "path": "/images/products/bundle-mystery-box.svg"
+    },
+    {
+      "id": "bundle-tasting-flight",
+      "variant": "primary",
+      "boxes": 12,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Tasting Flight",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 363.17041015625,
+          "x2": 596.71142578125,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ٹیسٹنگ فلائٹ — چار نمونے",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 136.22804260253906,
+          "x2": 395.2799835205078,
+          "y1": 815,
+          "y2": 866.7920074462891
+        },
+        {
+          "text": "باقة التذوق — أربع عينات",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 559.4605865478516,
+          "x2": 830.6494293212891,
+          "y1": 824,
+          "y2": 873
+        },
+        {
+          "kind": "scene",
+          "text": "4 × 100G",
+          "x1": 119.5703125,
+          "x2": 190.4296875,
+          "y1": 75,
+          "y2": 90
+        },
+        {
+          "kind": "scene",
+          "text": "AllBarka",
+          "x1": 421.3984375,
+          "x2": 545.6015625,
+          "y1": 204,
+          "y2": 240
+        },
+        {
+          "kind": "scene",
+          "text": "A",
+          "x1": 345.7890625,
+          "x2": 361.7890625,
+          "y1": 352.5,
+          "y2": 374.5
+        },
+        {
+          "kind": "scene",
+          "text": "A",
+          "x1": 585.7890625,
+          "x2": 601.7890625,
+          "y1": 352.5,
+          "y2": 374.5
+        },
+        {
+          "kind": "scene",
+          "text": "A",
+          "x1": 345.7890625,
+          "x2": 361.7890625,
+          "y1": 473.5,
+          "y2": 495.5
+        },
+        {
+          "kind": "scene",
+          "text": "A",
+          "x1": 585.7890625,
+          "x2": 601.7890625,
+          "y1": 473.5,
+          "y2": 495.5
+        }
+      ],
+      "safe": true,
+      "fontReady": true,
+      "path": "/images/products/bundle-tasting-flight.svg"
+    },
+    {
+      "id": "corporate-gifting",
+      "variant": "primary",
+      "boxes": 12,
+      "bounds": [
+        {
+          "text": "ALLBARKA / THE PANTRY",
+          "kind": "brand",
+          "fontSize": 15,
+          "x1": 116.0048828125,
+          "x2": 307.990234375,
+          "y1": 669,
+          "y2": 680
+        },
+        {
+          "text": "Corporate Gifting",
+          "kind": "name_en",
+          "fontSize": 38,
+          "x1": 333.44384765625,
+          "x2": 627.20361328125,
+          "y1": 719.5,
+          "y2": 756.5
+        },
+        {
+          "text": "URDU",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 247.66796875,
+          "x2": 281.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "ARABIC",
+          "kind": "language",
+          "fontSize": 12,
+          "x1": 670.66796875,
+          "x2": 718.666015625,
+          "y1": 802,
+          "y2": 811
+        },
+        {
+          "text": "کارپوریٹ تحائف",
+          "kind": "name_ur",
+          "fontSize": 28,
+          "x1": 180.13802337646484,
+          "x2": 355.1339797973633,
+          "y1": 824.8520050048828,
+          "y2": 869.843994140625
+        },
+        {
+          "text": "هدايا الشركات",
+          "kind": "name_ar",
+          "fontSize": 31,
+          "x1": 622.6850433349609,
+          "x2": 767.3029632568359,
+          "y1": 830,
+          "y2": 865
+        },
+        {
+          "kind": "scene",
+          "text": "REQUEST A QUOTE",
+          "x1": 78.640625,
+          "x2": 233.359375,
+          "y1": 75,
+          "y2": 90
+        },
+        {
+          "kind": "scene",
+          "text": "AllBarka",
+          "x1": 421.3984375,
+          "x2": 545.6015625,
+          "y1": 204,
+          "y2": 240
+        },
+        {
+          "kind": "scene",
+          "text": "A",
+          "x1": 345.7890625,
+          "x2": 361.7890625,
+          "y1": 352.5,
+          "y2": 374.5
+        },
+        {
+          "kind": "scene",
+          "text": "A",
+          "x1": 585.7890625,
+          "x2": 601.7890625,
+          "y1": 352.5,
+          "y2": 374.5
+        },
+        {
+          "kind": "scene",
+          "text": "A",
+          "x1": 345.7890625,
+          "x2": 361.7890625,
+          "y1": 473.5,
+          "y2": 495.5
+        },
+        {
+          "kind": "scene",
+          "text": "A",
+          "x1": 585.7890625,
+          "x2": 601.7890625,
+          "y1": 473.5,
+          "y2": 495.5
+        }
+      ],
+      "safe": true,
+      "fontReady": true,
+      "path": "/images/products/corporate-gifting.svg"
+    }
+  ]
+}

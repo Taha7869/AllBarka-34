@@ -1,0 +1,95 @@
+/**
+ * AllBarka Design System Tokens
+ * Single source of truth for brand colours, spacing, radii, and shadows.
+ * Mirrors the tokens in docs/DESIGN_SYSTEM.md exactly.
+ * Imported at the top of index.css.
+ */
+
+/* ─── Brand Colour Palette ──────────────────────────────────────────────── */
+:root {
+  /* Signatures */
+  --brand-emerald:       #1E3A2B;
+  --brand-emerald-hover: #14281E;
+  --brand-emerald-dark:  #0E4A3B;  /* dark-mode primary */
+
+  --brand-gold:          #C7982F;
+  --brand-gold-hover:    #B58724;
+  --brand-gold-light:    #D4B483;
+  --brand-gold-dark:     #D4A843;  /* dark-mode accent */
+
+  --brand-ivory:         #FDFBF7;
+  --brand-cream:         #F6F1EA;
+  --brand-surface:       #FFFCF7;
+  --brand-ink:           #29231D;
+  --brand-ink-muted:     #635B52;
+  --brand-bronze:        #806326;
+
+  /* ─── Spacing Scale (4-point grid) ──────────────────────────── */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* ─── Radius Scale ───────────────────────────────────────────── */
+  --radius-sm:  8px;
+  --radius-md:  12px;
+  --radius-lg:  16px;
+  --radius-xl:  24px;
+  --radius-full: 9999px;
+
+  /* ─── Shadow Levels ──────────────────────────────────────────── */
+  --shadow-subtle:
+    0 2px 8px -2px rgba(41, 35, 29, 0.04),
+    0 1px 2px -1px rgba(41, 35, 29, 0.02);
+
+  --shadow-medium:
+    0 4px 20px -4px rgba(41, 35, 29, 0.06),
+    0 2px 6px -1px rgba(41, 35, 29, 0.03);
+
+  --shadow-luxury:
+    0 16px 36px -8px rgba(41, 35, 29, 0.12),
+    0 4px 12px -2px rgba(41, 35, 29, 0.05);
+
+  /* ─── Animation Durations ────────────────────────────────────── */
+  --duration-fast:    150ms;
+  --duration-base:    250ms;
+  --duration-slow:    500ms;
+  --duration-shimmer: 1.8s;
+  --duration-border:  6s;
+  --easing-luxury: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* ─── Typography (mirrors index.css @theme) ──────────────────── */
+  --font-display: "Playfair Display", Georgia, Cambria, serif;
+  --font-body:    "Inter", "Satoshi", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-urdu:    "Noto Nastaliq Urdu", "Amiri", serif;
+  --font-arabic:  "Amiri", "Scheherazade New", serif;
+}
+
+/* ─── Dark-mode shadow overrides ────────────────────────────────────────── */
+.dark, [data-theme="dark"] {
+  --shadow-subtle:
+    0 2px 8px -2px rgba(0, 0, 0, 0.3),
+    0 1px 2px -1px rgba(0, 0, 0, 0.2);
+
+  --shadow-medium:
+    0 4px 20px -4px rgba(0, 0, 0, 0.45),
+    0 2px 6px -1px rgba(0, 0, 0, 0.30);
+
+  --shadow-luxury:
+    0 16px 36px -8px rgba(0, 0, 0, 0.60),
+    0 4px 12px -2px rgba(0, 0, 0, 0.35);
+}
+
+/* ─── Utility aliases (Tailwind-compatible arbitrary-value shortcuts) ─────
+   Token classes so components can write class="shadow-subtle" etc.        */
+.shadow-subtle  { box-shadow: var(--shadow-subtle); }
+.shadow-medium  { box-shadow: var(--shadow-medium); }
+.shadow-luxury  { box-shadow: var(--shadow-luxury); }

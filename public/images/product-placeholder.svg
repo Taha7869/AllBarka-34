@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FAF9F5"/>
+      <stop offset="100%" stop-color="#F3ECE3"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#C7982F"/>
+      <stop offset="50%" stop-color="#E5C77A"/>
+      <stop offset="100%" stop-color="#9E761E"/>
+    </linearGradient>
+    <style>
+      .bg-plate { fill: url(#bgGrad); stroke: #C7982F; }
+      .filigree { stroke: #C7982F; }
+      .inner-border { stroke: #29231D; }
+      .circle-plate { fill: #FFFCF7; }
+      .title-text { fill: #29231D; }
+      .subtitle-text { fill: #806326; }
+      .notice-text { fill: #29231D; }
+      .desc-text { fill: #635B52; }
+      .gold-elem { stroke: #C7982F; fill: #C7982F; }
+      @media (prefers-color-scheme: dark) {
+        .bg-plate { fill: #1A201E; stroke: #D4A843; }
+        .filigree { stroke: #D4A843; }
+        .inner-border { stroke: #F6F1EA; opacity: 0.15; }
+        .circle-plate { fill: #222A28; }
+        .title-text { fill: #F6F1EA; }
+        .subtitle-text { fill: #E4C783; }
+        .notice-text { fill: #F6F1EA; }
+        .desc-text { fill: #B4C0BC; }
+        .gold-elem { stroke: #D4A843; fill: #D4A843; }
+      }
+    </style>
+  </defs>
+  <!-- Background Plate -->
+  <rect width="600" height="600" rx="28" class="bg-plate" stroke-width="1.5" stroke-opacity="0.4"/>
+  <!-- Decorative Corner Filigree -->
+  <rect x="20" y="20" width="560" height="560" rx="20" fill="none" class="filigree" stroke-width="1" stroke-opacity="0.3" stroke-dasharray="6 4"/>
+  <!-- Inner Frame -->
+  <rect x="36" y="36" width="528" height="528" rx="14" fill="none" class="inner-border" stroke-width="1" stroke-opacity="0.1"/>
+  
+  <!-- Central Emblem / Botanical Seal -->
+  <g transform="translate(300, 220)">
+    <!-- Outer Ring -->
+    <circle r="68" class="circle-plate" stroke="url(#goldGrad)" stroke-width="2"/>
+    <circle r="60" fill="none" stroke="url(#goldGrad)" stroke-width="1" stroke-opacity="0.4" stroke-dasharray="4 3"/>
+    
+    <!-- Stylized Wheat / Leaf / Nut Crest -->
+    <path d="M0 -34 C16 -16, 20 4, 0 30 C-20 4, -16 -16, 0 -34 Z" fill="none" stroke="url(#goldGrad)" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="M0 -26 L0 24" class="gold-elem" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M0 -10 C7 -14, 13 -10, 11 -5" class="gold-elem" fill="none" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M0 0 C7 -4, 13 0, 11 5" class="gold-elem" fill="none" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M0 -10 C-7 -14, -13 -10, -11 -5" class="gold-elem" fill="none" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M0 0 C-7 -4, -13 0, -11 5" class="gold-elem" fill="none" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Typography (High contrast, elegant serif & sans) -->
+  <text x="300" y="348" text-anchor="middle" font-family="'Playfair Display', Georgia, serif" font-size="22" font-weight="700" class="title-text" letter-spacing="4">ALLBARKA</text>
+  <text x="300" y="374" text-anchor="middle" font-family="'Inter', -apple-system, sans-serif" font-size="10.5" font-weight="700" class="subtitle-text" letter-spacing="3">CURATED ESTATE HARVEST</text>
+  
+  <!-- Subtle Divider Line -->
+  <line x1="220" y1="398" x2="380" y2="398" stroke="url(#goldGrad)" stroke-width="1" stroke-opacity="0.5"/>
+  <circle cx="300" cy="398" r="2.5" fill="#C7982F"/>
+  
+  <!-- Status Notice -->
+  <text x="300" y="432" text-anchor="middle" font-family="'Playfair Display', Georgia, serif" font-size="18" font-weight="700" class="notice-text">Product Image Unavailable</text>
+  <text x="300" y="460" text-anchor="middle" font-family="'Inter', -apple-system, sans-serif" font-size="12" font-weight="500" class="desc-text">Authentic harvest photograph in preparation</text>
+  <text x="300" y="484" text-anchor="middle" font-family="'Inter', -apple-system, sans-serif" font-size="10" font-weight="600" class="subtitle-text" letter-spacing="1">100% UNBLEACHED &amp; FRESHNESS GUARANTEED</text>
+</svg>

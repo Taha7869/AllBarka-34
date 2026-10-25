@@ -1,0 +1,8 @@
+export const staffFixtureOrder=(id='AB-STAFF-0001')=>({orderId:id,status:'ORDER_RECEIVED',paymentMethod:'bank',paymentStatus:'UNPAID',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),createdAtMs:Date.now(),schemaVersion:'2.0.0',source:'website',
+  customer:{name:'Ayesha Patron',phone:'03001234567',city:'Lahore',address:'Gulberg III',instructions:'Call at gate',privateCost:900},items:[{productId:'pista',name:'Iranian pistachios',quantity:2,selectedWeight:'500g',price:2500,supplierCost:1}],
+  totals:{subtotal:5000,total:5150,shipping:150,discount:0,giftWrapFee:0,privateMargin:4000},gifting:{giftWrapping:false,giftMessage:''},adminNotes:['SECRET_NOTE'],adminNoteEntries:[{text:'SECRET_NOTE'}],claimTokenHash:'SECRET_TOKEN',guestSessionId:'SECRET_SESSION',uid:'SECRET_CUSTOMER_UID',n8nPayload:{secret:'SECRET_INTEGRATION'}});
+export function staffFixtureIdentity(){
+  const users=new Map<string,any>([['owner',{uid:'owner',email:'owner@example.test',emailVerified:true,customClaims:{admin:true,unrelated:'keep'}}],['reader',{uid:'reader',email:'reader@example.test',emailVerified:true,displayName:'Packing team',customClaims:{role:'customer',loyalty:'keep'}}],['customer',{uid:'customer',email:'customer@example.test',emailVerified:true,customClaims:{}}]]);
+  const auth:any={getUser:async(uid:string)=>{if(!users.has(uid))throw Object.assign(Error('no account'),{code:'auth/user-not-found'});return structuredClone(users.get(uid));},getUserByEmail:async(email:string)=>{const account=[...users.values()].find(user=>user.email===email);if(!account)throw Object.assign(Error('no account'),{code:'auth/user-not-found'});return structuredClone(account);}};
+  return {auth,users};
+}

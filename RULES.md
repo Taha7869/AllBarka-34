@@ -109,7 +109,7 @@ Known failures, blockers and who/what can resolve them:
 Next executable action and file:
 ```
 
-Keep completed requirements and historical evidence; append corrections with dates instead of rewriting past outcomes. Before saving to GitHub, re-read the head and preserve unrelated changes. Use an expected-parent/fast-forward update. Verify the remote commit, intended changed paths and saved content after the write. A local file or uncommitted worktree is not a saved GitHub checkpoint.
+Keep completed requirements and historical evidence; append corrections with dates instead of rewriting past outcomes. Before saving to GitHub, re-read the head and preserve unrelated changes. If using the Git tree API, require a nonempty base-tree SHA read from the verified remote commit; missing session state must abort the write rather than create a new empty tree. Compare the candidate tree with the upstream tree before moving the branch: intended files only, expected blob hashes, no unexplained deletions. Use an expected-parent/fast-forward update. Verify the remote commit, intended changed paths and saved content again after the write. A local file or uncommitted worktree is not a saved GitHub checkpoint.
 
 ## R11 — Delivery checklist
 

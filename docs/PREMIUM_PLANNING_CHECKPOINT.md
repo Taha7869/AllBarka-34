@@ -50,18 +50,19 @@ Method: source-guided documentation self-review; no CodeRabbit or independent re
 | D01: old current-task/next-work wording could direct a fresh agent back to completed interaction work. | Qualified the old refinement as previously completed and labeled the integration workstream; added the latest planning/rules entry point. Reviewed the resulting diff. |
 | D02: one global TODO statement would make per-feature updates easy to overlook. | Added a scope/work cell to each of the 34 feature rows and instructions for linked task evidence. Unique-ID check passes. |
 | D03: category rules need to catch unseen new records without relying on a repeated owner reminder. | Added a task-start catalog/taxonomy revision/watermark comparison, full-snapshot fallback and explicit stale/unverified handling. This is a work rule, not an installed automated monitor. |
+| D04: the first GitHub save omitted the required base tree after transient session state was unavailable. | Post-save verification caught an 11-file documentation-only tree at commit `9a6db22553272e1fab18182a46f3438addd3d4a9`. The corrected fast-forward checkpoint rebuilds from verified upstream tree `f2af11803c3383bfb743db48c1e2ed3787846e63` plus only these documentation edits, preserving all original code/assets. R10 now explicitly requires a present base tree and candidate-tree comparison before moving a branch. No main/launch ref or deployment was changed. |
 
 No unresolved material finding in this documentation scope. Live catalog classification and premium implementation are explicitly unperformed rather than marked passed.
 
 ## Delivery gate record
 
 - PASS: requested plan/rules/continuation documents are complete; new implementation is correctly TODO/proposed.
-- PASS: final documentation diff self-reviewed; findings D01–D03 resolved and links/IDs checked.
+- PASS: final documentation diff self-reviewed; findings D01–D04 resolved and links/IDs checked. The intermediate save error and restoration are retained above.
 - PASS: required local build/type/lint and full offline regression results above; initial browser failure retained in the record.
 - N/A for changing catalog records in this documentation-only task; the separate current live reconciliation remains BLOCKED / NOT_RUN.
 - PASS: application source/assets/contracts and dependency lockfile match the inspected parent; no application runtime or data writes.
 - PASS: master status, decisions, audit limits, changelog and next action updated.
-- GitHub save: use the inspected parent and base tree, then verify the saved commit's exact paths/blob hashes and the feature ref. The commit containing this file is the checkpoint identity; production release remains separate.
+- GitHub save: the corrected checkpoint is a fast-forward successor to the intermediate save `9a6db22553272e1fab18182a46f3438addd3d4a9`, rebuilt from the original verified source tree plus the 11 intended Markdown files. Verify candidate and saved trees against original implementation parent `2df0571e52c2281f39f70ed660abef8b62e50784`; all 870 original blobs remain present, seven documents change and four documents are added. The commit containing this file is the checkpoint identity; production release remains separate.
 
 ## Limits and next action
 

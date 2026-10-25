@@ -1,0 +1,85 @@
+{
+  "generatedAt": "2026-10-24T04:10:45.460Z",
+  "timezone": "Asia/Karachi",
+  "scope": "Public deployed endpoints only; not private merchant records or feature deployment certification",
+  "mode": "read-only",
+  "origin": "https://allbarka.com",
+  "methods": [
+    "GET"
+  ],
+  "requests": [
+    {
+      "path": "/api/health",
+      "status": 200,
+      "bytes": 448
+    },
+    {
+      "path": "/api/commerce/readiness",
+      "status": 200,
+      "bytes": 549
+    },
+    {
+      "path": "/api/catalog",
+      "status": 200,
+      "bytes": 658340
+    }
+  ],
+  "expectedFeatureCommit": "547081f13cc16df534d66ef1eaf38c3f9dfac90e",
+  "deployedCommit": "8cf4410d4cc9d1a2d4840a62cf0f328c4bdaaee0",
+  "deployedMatchesExpected": false,
+  "health": {
+    "status": "ok",
+    "aiConfigured": true,
+    "aiConnectivityVerified": false
+  },
+  "readiness": {
+    "authActive": true,
+    "databaseInitialized": true,
+    "databaseConnected": true,
+    "durablePersistenceReady": false,
+    "savedOrderVerifiedThisProcess": false,
+    "aiConfigured": true,
+    "orderWebhookConfigured": true
+  },
+  "publicProductCount": 97,
+  "flaggedProducts": [
+    {
+      "id": "bid-box-umrah-tabarruk",
+      "found": true,
+      "active": false,
+      "priceOptions": 0,
+      "variants": 0
+    },
+    {
+      "id": "bid-box-pyramid-favor",
+      "found": true,
+      "active": false,
+      "priceOptions": 0,
+      "variants": 0
+    },
+    {
+      "id": "bid-box-card-nikkah",
+      "found": true,
+      "active": false,
+      "priceOptions": 0,
+      "variants": 0
+    },
+    {
+      "id": "bid-box-birth-announcement",
+      "found": true,
+      "active": false,
+      "priceOptions": 0,
+      "variants": 0
+    }
+  ],
+  "writesPerformed": 0,
+  "acceptedOrderTested": false,
+  "authRolesTested": false,
+  "storageUploadTested": false,
+  "n8nExecutionTested": false,
+  "limitations": [
+    "An older deployed build cannot certify the feature branch.",
+    "Configured flags do not establish successful order, Auth, Storage or n8n execution.",
+    "Unavailable public products do not expose the underlying private saved records."
+  ]
+}
