@@ -2,6 +2,14 @@
 
 Each stage records the prior behavior, resulting behavior, reason, affected paths and actual verification. Earlier renovation work remains in its existing reports.
 
+## 25 October 2026 — premium planning, review rules and catalog audit protocol
+
+- **Before:** the current repository tracked the admin expansion but did not contain the newly supplied 24-item premium shortlist or a dedicated cross-task review/category/delivery rules file.
+- **After:** MASTER_PLAN.md retains the 24 ideas and ten additional proposals with scope/status, phased sequencing, owner inputs and acceptance criteria. RULES.md requires final-diff review, semantic catalog/category reconciliation after relevant changes, honest evidence and an updated handoff before delivery. CATALOG_AUDIT.md explicitly records that the current live audit has not run and provides complete-scope reporting requirements.
+- **Continuation:** AGENTS.md, instructions.md, README.md, design.md and the admin handoff/roadmap link the new process while retaining completed work and separate external blockers. New recommendations are not silently treated as approved or implemented.
+- **Paths/evidence:** documentation only; exact verification, self-review and limits are recorded in docs/PREMIUM_PLANNING_CHECKPOINT.md. No runtime, dependency, price, category record, key or environment changed.
+- **Next:** record owner priorities/assets, select the first premium slice and apply the rules on the existing feature branch. A rules document does not install an automated monitor, perform live Firestore corrections or certify deployment.
+
 ## 25 October 2026 — verified admin finishing with existing keys retained
 
 - **Before:** long item forms required manual scrolling; configuration-only edits were outside the parent dirty/dismissal state; settings saves could leave competing actions usable; errors did not intentionally receive focus.

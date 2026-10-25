@@ -2,6 +2,12 @@
 
 Status: OWNER-CONFIRMED direction; Stage 5 implemented and locally browser-verified. Live release remains Stage 6.
 
+This status describes the existing design implementation below. The new premium storefront direction in [MASTER_PLAN.md](MASTER_PLAN.md) is a proposal pending owner choices/material; it is not covered by that historical completion claim. Apply [RULES.md](RULES.md) to each design/implementation checkpoint.
+
+## Proposed next visual direction — The AllBarka Table
+
+Recommend a Signature Table hero connecting daily pantry, Lahore hospitality and gifting, using existing emerald/ivory/gold and typography. Separate desktop/mobile art direction should give product and brand a clear focus, with existing search/category/guide tools in a quieter discovery area. Keep one compact homepage showcase. “What arrives” photography, scale/contents clarity and accurate option imagery support the visual work. Extend existing Studio controls for selected upgrades rather than adding a competing editor. Full M01–M34 proposals, dependencies and acceptance are in MASTER_PLAN.md; no new visual implementation or original photoshoot is claimed here.
+
 ## Identity
 
 Preserve the existing luxury dry-fruit identity. Use emerald `#1E3A2B`, dark emerald `#042821`, ivory `#FDFBF7`, cream `#F6F1EA`, surface `#FFFCF7`, ink `#29231D`, bronze `#806326` and existing gold `#C7982F` / champagne `#B8935F`. The supplied earthy reference informs secondary sand/olive surfaces; it does not replace the brand with a new palette.

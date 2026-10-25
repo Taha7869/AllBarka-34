@@ -1,6 +1,14 @@
 # AllBarka admin expansion — working instructions
 
-Read `AGENTS.md`, `design.md`, and `docs/admin-expansion/HANDOFF.md` before continuing this project. The verification/fix/checkpoint process is `docs/admin-expansion/VERIFICATION_LOOP.md`. The approved plan is `docs/admin-expansion/ROADMAP.md`; older renovation documents remain historical evidence, not the status of this expansion.
+Read `AGENTS.md`, `RULES.md`, `MASTER_PLAN.md`, `design.md`, and `docs/admin-expansion/HANDOFF.md` before continuing this project. The verification/fix/checkpoint process is `docs/admin-expansion/VERIFICATION_LOOP.md`. The approved admin plan is `docs/admin-expansion/ROADMAP.md`; older renovation documents remain historical evidence, not the status of this expansion.
+
+## Latest owner continuation — 25 October 2026
+
+The current checkpoint records the owner's premium-storefront shortlist, further recommendations and required inputs before implementation in [MASTER_PLAN.md](MASTER_PLAN.md). The original 24 ideas are retained with stable M01–M24 IDs; M25–M34 are additional proposals. The Signature Table is the current recommendation, not a newly confirmed owner selection. Do not mark new features implemented from this planning document.
+
+The owner additionally requested a rules file so future agents review before delivery, verify correct category matching after new/updated Firestore products and preserve working behavior without repeated prompting. [RULES.md](RULES.md) is mandatory for every task. Follow R03 review, R04 semantic/end-to-end catalog reconciliation and R11 delivery gates. Current live category-audit status and its reusable report are [docs/CATALOG_AUDIT.md](docs/CATALOG_AUDIT.md); no automatic monitor or live audit is implied by writing the rules.
+
+Use the current feature branch and PR #16 below. Update the master register, relevant handoff, verification evidence and CHANGELOG before ending each checkpoint. New feature selections and owner materials are open in the master plan; finish independent authorized work without repeating already-answered questions. This latest planning/rules task does not reset completed admin stages or close their separate live blockers. Earlier next-step directions below apply to their own workstream. Documentation evidence: [docs/PREMIUM_PLANNING_CHECKPOINT.md](docs/PREMIUM_PLANNING_CHECKPOINT.md).
 
 ## Owner-approved scope
 
@@ -40,6 +48,7 @@ Continue from Stage 5 commit `9afaca79459f3cf5da888a53a38344901b97dc78`. The own
 This file is the entry point for continuation. Never infer completion from a prior chat message alone. Read these current repository files before editing:
 
 1. `AGENTS.md` — stack, existing business rules and safety boundaries.
+   Also read `RULES.md` for mandatory review/catalog/delivery gates and `MASTER_PLAN.md` for the current premium proposals, inputs and task status.
 2. `design.md` and `docs/COMPONENTS_INVENTORY.md` — visual direction and reusable components.
 3. `docs/admin-expansion/HANDOFF.md` and `ROADMAP.md` — completed expansion stages and exact continuation point.
 4. `docs/admin-expansion/REQUIREMENTS.md` and `INTERACTION_POLISH.md` — original requirements plus every approved interaction and acceptance gate.
@@ -65,9 +74,9 @@ If scratch files are unavailable after workspace maintenance, restore source/ass
 | Design and access | Emerald/ivory/gold/gold-dust; readable mobile/desktop, dark/light, EN/UR/AR RTL, keyboard focus, 44px controls and reduced motion |
 | Integrations and history | Keep existing Firebase/Auth/Storage/n8n contracts, historical receipts and private fields; do not mistake fixture success for live verification |
 
-## Current task and completion discipline
+## Existing admin refinement and completion discipline
 
-Current authorized addition: balanced luxury interaction refinement, passes P0–P3 in `docs/admin-expansion/INTERACTION_POLISH.md`. P0–P3 of the interaction refinement are complete under the local evidence in INTERACTION_POLISH.md and TESTING_RELEASE.md. Do not implement the same pass again. The documentation-first checkpoint is `dbf2b6c37a57b433ac7641d31d295547f30483ea`; the subsequent source checkpoint is the current draft PR head. The previously implemented expansion Stages 1–5 remain complete under their recorded offline gates. Expansion Stage 6 is still IN_PROGRESS with external checks BLOCKED, including private merchant-data review for four packaging IDs. Their reader correction is locally verified, not deployed/live-certified; retain the historical finding and its resolution evidence.
+Previously authorized addition (completed locally): balanced luxury interaction refinement, passes P0–P3 in `docs/admin-expansion/INTERACTION_POLISH.md`. P0–P3 of the interaction refinement are complete under the local evidence in INTERACTION_POLISH.md and TESTING_RELEASE.md. Do not implement the same pass again. The documentation-first checkpoint is `dbf2b6c37a57b433ac7641d31d295547f30483ea`; the subsequent source checkpoint is the current draft PR head. The previously implemented expansion Stages 1–5 remain complete under their recorded offline gates. Expansion Stage 6 is still IN_PROGRESS with external checks BLOCKED, including private merchant-data review for four packaging IDs. Their reader correction is locally verified, not deployed/live-certified; retain the historical finding and its resolution evidence.
 
 Before ending any implementation checkpoint, update the interaction tracker, handoff, requirements where applicable, exact test record and change log. Record: what changed, which acceptance gates passed, what failed and was fixed, what remains, and the next concrete file/behavior to work on. Use TODO / IN_PROGRESS / DONE / BLOCKED honestly. Do not mark an effect done solely because a class or form exists. Commit verified source/docs/evidence together on the review branch, update the existing draft PR and verify remote blob hashes/head. A fresh model should be able to continue using repository documents without access to the original chat.
 
@@ -76,9 +85,9 @@ Before ending any implementation checkpoint, update the interaction tracker, han
 
 The implementation now includes CartAddButton (committed cart quantity acknowledgement), the existing MagneticButton's corrected click/style/disabled forwarding, fine-pointer actual-photo preview with explicit browsing preserved, current mobile-menu state, restrained navigation/reveal/toast feedback and real pending-quote indicators. The actual header was verified and corrected at 360px and desktop widths; desktop navigation uses a centered second row from 1280px. Exact source paths and acceptance results are in INTERACTION_POLISH.md. Interaction checkpoint gates: 694 tests across 68 files, 21 backend checks, 36 production checks and unchanged catalog assets; build/type/hooks pass. See STAGE6_PROGRESS.md and TESTING_RELEASE.md for the later compatibility checkpoint. Original Stage 6 external checks remain BLOCKED and are the next work when a permitted integration environment is available. No production deploy, merge, live data/role write, workflow edit or key change is part of this checkpoint.
 
-### Active Stage 6 continuation
+### Integration workstream — Stage 6 continuation
 
-The next authorized work is tracked in `docs/admin-expansion/STAGE6_PROGRESS.md`. Read-only deployed checks are permitted; no live write is implied. The local correction preserves exact existing compiled packaging labels above the generic length bound while leaving arbitrary labels/configured commerce strict. Metadata-only edits preserve known active legacy publication state; explicit drafts/archives and new products remain private. Missing affected records stay unavailable with no compiled-price materialization. Never trim/rename historical labels or reset owner rates to compiled defaults. Treat the old deployed build's database connectivity and feature-branch verification as separate evidence.
+Integration continuation is tracked in `docs/admin-expansion/STAGE6_PROGRESS.md`. Read-only deployed checks are permitted; no live write is implied. The local correction preserves exact existing compiled packaging labels above the generic length bound while leaving arbitrary labels/configured commerce strict. Metadata-only edits preserve known active legacy publication state; explicit drafts/archives and new products remain private. Missing affected records stay unavailable with no compiled-price materialization. Never trim/rename historical labels or reset owner rates to compiled defaults. Treat the old deployed build's database connectivity and feature-branch verification as separate evidence.
 
 ### Stage 6 order handoff continuation — 25 October 2026
 

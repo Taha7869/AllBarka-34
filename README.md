@@ -1,3 +1,7 @@
+## AllBarka — contributor starting point
+
+Read [AGENTS.md](AGENTS.md), [RULES.md](RULES.md), [instructions.md](instructions.md) and [MASTER_PLAN.md](MASTER_PLAN.md) before changing the project. They contain the mandatory review/delivery process, catalog-matching protocol, current task status and required owner inputs. The current development checkpoint is on `codex/admin-catalog-foundation-20261023` in [draft PR #16](https://github.com/Taha7869/AllBarka-34/pull/16); verify the head before continuing. See [the current handoff](docs/admin-expansion/HANDOFF.md) for completed work and separate live-release blockers.
+
 <div align="center">
 <img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
 </div>

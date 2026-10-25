@@ -1,4 +1,8 @@
 AllBarka Project Rules (all AI agents MUST follow)
+
+Mandatory continuation and delivery entry point
+Before every task, read RULES.md, instructions.md and MASTER_PLAN.md plus the relevant current handoff. RULES.md defines required final-diff review, catalog/category reconciliation after item or taxonomy changes, evidence and delivery gates. MASTER_PLAN.md records proposed/selected premium work, status, owner inputs and next actions. Apply these to the existing app; update the relevant records at every checkpoint. A checklist is not proof of a live Firestore audit. Current review branch: codex/admin-catalog-foundation-20261023 (PR #16); verify its current head. Preserve existing admin Stage 6 release blockers.
+
 Stack
 Vite + React 19 + TypeScript + Tailwind CSS (SPA, React Router)
 Express server (server.ts) — Node 22, Firebase Admin SDK

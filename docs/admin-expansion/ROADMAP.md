@@ -2,6 +2,8 @@
 
 Date: 24 October 2026 (Asia/Karachi). This six-stage plan is separate from the earlier eight-stage renovation.
 
+25 October continuation: [MASTER_PLAN.md](../../MASTER_PLAN.md) separately tracks proposed premium storefront V0–V6 work and owner inputs. [RULES.md](../../RULES.md) adds mandatory review, category reconciliation and delivery evidence for all subsequent tasks. These documents do not restart the stages below or certify their blocked live gates.
+
 | Stage | Deliverable and completion gate | Status |
 | --- | --- | --- |
 | 1 — Audit and documentation | Pin upstream, inspect existing implementation, record decisions/gaps, create linked working documents, establish baseline build/type/lint evidence. | DONE |
