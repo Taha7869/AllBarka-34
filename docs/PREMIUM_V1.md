@@ -75,7 +75,7 @@ Before views were recaptured from the verified baseline source; current source b
 - [x] Catalog source/fixture scope separated from BLOCKED live audit.
 - [x] Existing commerce/privacy/localization preserved by source review and regression suite.
 - [x] Master plan, handoff, changelog and next action updated.
-- [ ] Remote checkpoint verification: perform against the current parent before delivery; see the saved commit containing this file and PR #16. Never push reconstructed local history.
+- [x] Remote source checkpoint `7b35e5e9cfbe4fe7188f1f95a856692729beaf91` verified in PR #16. Tree `d4270124203bb6d1eba07d0ea341b8e159596c13` contains 883 blobs: all 874 upstream paths preserved, 19 intended existing files changed, 9 added, zero deletions/unexpected changes. Candidate hashes were compared before an expected-parent fast-forward update; saved head/tree/parent were read back. This following documentation-only commit closes the save record.
 
 Release state: feature branch only; not merged, deployed or live-certified.
 

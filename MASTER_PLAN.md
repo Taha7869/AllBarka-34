@@ -160,3 +160,5 @@ Performance targets for field measurement are LCP <=2.5s, INP <=200ms and CLS <=
 - Current repository source and existing admin evidence at the implementation parent above. Live merchant records were not read in this checkpoint.
 
 25 Oct 2026: owner confirmed balanced retail + gifting and existing assets first. Bounded V1 is locally verified: 706 tests, 21 backend, 36 production checks. Next planned slice: V2 collections/product-card presentation; preserve V1 and obtain live catalog snapshot when authorized access is available.
+
+Saved V1 source/evidence checkpoint: `7b35e5e9cfbe4fe7188f1f95a856692729beaf91` in PR #16. Remote tree/head/parent verified; 883 blobs, no deletions. This documentation-only successor records verification; inspect the current PR head before the next task.
