@@ -2,11 +2,11 @@
 
 Status: OWNER-CONFIRMED direction; Stage 5 implemented and locally browser-verified. Live release remains Stage 6.
 
-This status describes the existing design implementation below. The new premium storefront direction in [MASTER_PLAN.md](MASTER_PLAN.md) is a proposal pending owner choices/material; it is not covered by that historical completion claim. Apply [RULES.md](RULES.md) to each design/implementation checkpoint.
+This status describes the existing design implementation below. Owner confirmed retail + gifting balance and existing assets first. Current bounded V1 implementation/evidence is in [PREMIUM_V1.md](docs/PREMIUM_V1.md); remaining proposals in [MASTER_PLAN.md](MASTER_PLAN.md) retain their own statuses. Apply [RULES.md](RULES.md) to each design/implementation checkpoint.
 
 ## Proposed next visual direction — The AllBarka Table
 
-Recommend a Signature Table hero connecting daily pantry, Lahore hospitality and gifting, using existing emerald/ivory/gold and typography. Separate desktop/mobile art direction should give product and brand a clear focus, with existing search/category/guide tools in a quieter discovery area. Keep one compact homepage showcase. “What arrives” photography, scale/contents clarity and accurate option imagery support the visual work. Extend existing Studio controls for selected upgrades rather than adding a competing editor. Full M01–M34 proposals, dependencies and acceptance are in MASTER_PLAN.md; no new visual implementation or original photoshoot is claimed here.
+Recommend a Signature Table hero connecting daily pantry, Lahore hospitality and gifting, using existing emerald/ivory/gold and typography. Separate desktop/mobile art direction should give product and brand a clear focus, with existing search/category/guide tools in a quieter discovery area. Keep one compact homepage showcase. “What arrives” photography, scale/contents clarity and accurate option imagery support the visual work. Extend existing Studio controls for selected upgrades rather than adding a competing editor. Full M01–M34 proposals, dependencies and acceptance are in MASTER_PLAN.md; V1 implementation/evidence is scoped in PREMIUM_V1.md; no original photoshoot is claimed.
 
 ## Identity
 

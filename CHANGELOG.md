@@ -2,6 +2,10 @@
 
 Each stage records the prior behavior, resulting behavior, reason, affected paths and actual verification. Earlier renovation work remains in its existing reports.
 
+## 25 October 2026 — V1 Signature Table hero/discovery
+
+Previously logo, heading, search, categories and guide shared the image overlay. Existing AllBarkaHero now gives retail/gifting their own responsive editorial composition and moves tools into a compact discovery band. Existing assets are reframed; generated gift art is captioned as inspiration. Published Studio settings, category IDs, single showcase and commerce remain. Keyboard/media recovery and enlarged-text control widths are corrected. Type/hooks/build/privacy and full offline suite pass: 706 tests, 21 backend and 36 production checks. Source, asset limitations, review findings, exact tests and continuation are in docs/PREMIUM_V1.md. No new dependency, price/data/keys change, merge or deployment.
+
 ## 25 October 2026 — premium planning, review rules and catalog audit protocol
 
 - **Before:** the current repository tracked the admin expansion but did not contain the newly supplied 24-item premium shortlist or a dedicated cross-task review/category/delivery rules file.

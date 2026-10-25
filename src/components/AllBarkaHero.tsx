@@ -4,11 +4,9 @@ import { useCatalogProducts } from '../contexts/CatalogContext';
 import { searchCatalog, startingPrice } from '../lib/catalogDiscovery';
 import React, { lazy, Suspense, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Compass, ArrowDown } from 'lucide-react';
+import { ArrowRight, Compass } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { AllBarkaFullLogo } from './AllBarkaLogo';
 import CategoryQuickPills from './CategoryQuickPills';
-import GradientText from './GradientText';
 import PlaceholdersAndVanishInput from './ui/placeholders-and-vanish-input';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { getLocalized } from '../utils/localize';
@@ -45,25 +43,49 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
   };
 
   return (
-    <section className="heritage-hero" dir={isRtl ? 'rtl' : 'ltr'} aria-label="AllBarka boutique">
-      <picture className="heritage-hero-background" aria-hidden="true">
-        <source media="(max-width: 767px)" srcSet={hero.enabled?hero.mobileImage:"/images/generated/hero-dry-fruits-mobile-v1.webp"} />
-        <img src={hero.enabled?hero.image:"/images/generated/hero-dry-fruits-wide-v1.webp"} width={1920} height={1080} alt="" fetchPriority="high" />
-      </picture>
-      <div className="heritage-hero-wash" aria-hidden="true" />
-
+    <>
+    <section className="heritage-hero" dir={isRtl ? 'rtl' : 'ltr'} aria-labelledby="table-hero-title">
       <div className="heritage-hero-content">
-        <AllBarkaFullLogo size="md" variant="light" as="span" className="heritage-hero-brand" />
-        <h1 className="heritage-hero-title">
-          {hero.enabled?contentText(hero.heading,language):t('heroHeadlinePart1')}{' '}
-          <em><GradientText colors={['#e4c783', '#fff0bd', '#d7b263', '#fff0bd', '#e4c783']} animationSpeed={12}>{hero.enabled?contentText(hero.accent,language):t('heroHeadlinePart2')}</GradientText></em>
+        <p className="table-eyebrow"><span aria-hidden="true" />{t('table.eyebrow')}</p>
+        <h1 id="table-hero-title" className="heritage-hero-title" dir="auto">
+          {hero.enabled ? contentText(hero.heading, language) : t('table.heading')}{' '}
+          <em>{hero.enabled ? contentText(hero.accent, language) : t('table.accent')}</em>
         </h1>
-        <p className="heritage-hero-description">{hero.enabled?contentText(hero.description,language):t('heroSubtitle')}</p>
-        <div className="mt-7 flex flex-wrap items-center justify-center gap-3.5">
-          <Link to={hero.enabled?hero.primaryPath:"/shop/dry-fruits"} className="focus-ring inline-flex min-h-12 items-center gap-3 rounded-full bg-[#e4c783] px-7 text-xs font-semibold text-[#092e23] transition-colors hover:bg-[#f1dca9]">{hero.enabled?contentText(hero.primaryLabel,language):t('hero.shopDryFruits', 'Shop Dry Fruits')}<ArrowRight size={16} /></Link>
-          <Link to={hero.enabled?hero.secondaryPath:"/gifting"} className="focus-ring inline-flex min-h-12 items-center gap-3 rounded-full border border-[#e4c783]/50 px-6 text-xs font-semibold text-[#fff8e9] transition-colors hover:bg-white/10">{hero.enabled?contentText(hero.secondaryLabel,language):t('hero.exploreGifts', 'Explore Gifts')}</Link>
+        <p className="heritage-hero-description" dir="auto">{hero.enabled ? contentText(hero.description, language) : t('table.description')}</p>
+        <div className="table-hero-actions">
+          <Link to={hero.enabled ? hero.primaryPath : '/shop/dry-fruits'} className="table-hero-primary focus-ring">
+            {hero.enabled ? contentText(hero.primaryLabel, language) : t('hero.shopDryFruits')}
+            <ArrowRight size={16} className="rtl-flip" aria-hidden="true" />
+          </Link>
+          <Link to={hero.enabled ? hero.secondaryPath : '/gifting'} className="table-hero-secondary focus-ring">
+            {hero.enabled ? contentText(hero.secondaryLabel, language) : t('hero.exploreGifts')}
+            <ArrowRight size={16} className="rtl-flip" aria-hidden="true" />
+          </Link>
         </div>
-
+        <p className="table-hero-note">{t('table.note')}</p>
+      </div>
+      <div className={`table-hero-art${hero.enabled ? ' table-hero-art-custom' : ''}`}>
+        <figure className="table-pantry-figure">
+          <div className="table-photo-frame">
+            <span className="table-photo-fallback" aria-hidden="true">{t('table.eyebrow')}</span>
+            <picture className="heritage-hero-background" key={`${hero.enabled}-${hero.image}-${hero.mobileImage}`}>
+              <source media="(max-width: 767px)" srcSet={hero.enabled ? hero.mobileImage : '/images/dryfruit_flatlay_hero_mobile.webp'} />
+              <img src={hero.enabled ? hero.image : '/images/dryfruit_flatlay_hero.webp'} width={1400} height={781} alt="" fetchPriority="high" onLoad={event => { event.currentTarget.style.visibility = 'visible'; }} onError={event => { event.currentTarget.style.visibility = 'hidden'; }} />
+            </picture>
+          </div>
+          {!hero.enabled && <figcaption>{t('table.pantryCaption')}</figcaption>}
+        </figure>
+        {!hero.enabled && <figure className="table-gift-figure">
+          <div className="table-photo-frame">
+            <img src="/images/generated/gift-box-1.webp" width={640} height={640} alt="" decoding="async" onError={event => { event.currentTarget.style.visibility = 'hidden'; }} />
+          </div>
+          <figcaption>{t('table.giftCaption')}</figcaption>
+        </figure>}
+      </div>
+    </section>
+    <section className="table-discovery" dir={isRtl ? 'rtl' : 'ltr'} aria-labelledby="table-discovery-title">
+      <div className="table-discovery-top">
+        <h2 id="table-discovery-title">{t('table.discovery')}</h2>
         <div
           className="heritage-hero-search-wrap"
           onFocusCapture={() => setSearchOpen(true)}
@@ -71,13 +93,14 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
             if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setSearchOpen(false);
           }}
           onKeyDownCapture={event => {
-            if (event.key === 'Escape') setSearchOpen(false);
+            if (event.key === 'Escape') { event.preventDefault(); event.currentTarget.querySelector('input')?.focus(); setSearchOpen(false); }
             if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && suggestions.length) {
+              if (!searchOpen) { setSearchOpen(true); event.preventDefault(); return; }
               const links = Array.from(event.currentTarget.querySelectorAll<HTMLAnchorElement>('.boutique-suggestion'));
               const index = links.indexOf(event.target as HTMLAnchorElement);
               event.preventDefault();
               if (event.key === 'ArrowUp' && index === 0) event.currentTarget.querySelector('input')?.focus();
-              else links[(index + (event.key === 'ArrowDown' ? 1 : -1) + links.length) % links.length]?.focus();
+              else links[index === -1 ? (event.key === 'ArrowDown' ? 0 : links.length - 1) : (index + (event.key === 'ArrowDown' ? 1 : -1) + links.length) % links.length]?.focus();
             }
           }}
         >
@@ -116,17 +139,17 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
           )}
         </div>
 
+        <button ref={guideOpener} type="button" className="heritage-hero-guide focus-ring" onClick={() => setGuideOpen(true)} aria-haspopup="dialog"><Compass size={18} aria-hidden="true" />{t('guide.launch')}<ArrowRight size={14} className="rtl-flip" aria-hidden="true" /></button>
+      </div>
         <div className="heritage-hero-pills">
-          <CategoryQuickPills selectedId={selected} onSelectCategory={item => {
+          <CategoryQuickPills variant="editorial" selectedId={selected} onSelectCategory={item => {
             setSelected(item.id);
             if (item.categoryFilter) onSelectCategory?.(item.categoryFilter, item.searchTerm);
           }} />
         </div>
-        <button ref={guideOpener} type="button" className="heritage-hero-guide focus-ring" onClick={() => setGuideOpen(true)} aria-haspopup="dialog"><Compass size={15} aria-hidden="true" />{t('guide.launch')}<ArrowRight size={14} aria-hidden="true" /></button>
-        <a href="#allbarka-pantry" className="heritage-hero-scroll focus-ring" aria-label={t('home.scroll')}><ArrowDown size={18} aria-hidden="true" /></a>
-      </div>
       {guideOpen && <Suspense fallback={<p className="heritage-hero-guide-loading" role="status">{t('guide.loading')}</p>}><SelectionGuide opener={guideOpener.current} onClose={() => setGuideOpen(false)} /></Suspense>}
     </section>
+    </>
   );
 }
 

@@ -1,6 +1,6 @@
 # Admin expansion handoff
 
-Latest additional workstream (25 October 2026): read [MASTER_PLAN.md](../../MASTER_PLAN.md), [RULES.md](../../RULES.md) and [the planning checkpoint](../PREMIUM_PLANNING_CHECKPOINT.md) before continuing. The owner requested premium suggestions/inputs/progress tracking and mandatory review/category/delivery rules. This is documentation only; premium features remain proposed. Original completed admin work and Stage 6 external blockers below retain their status. Current live catalog/category reconciliation is explicitly unrun in [CATALOG_AUDIT.md](../CATALOG_AUDIT.md).
+Latest additional workstream (25 October 2026): locally verified V1 hero/discovery (706 tests, 21 backend, 36 production checks) in [PREMIUM_V1.md](../PREMIUM_V1.md), tracked in [MASTER_PLAN.md](../../MASTER_PLAN.md). Owner confirmed retail + gifting balanced and existing assets first. Read [RULES.md](../../RULES.md); preserve completed admin work and separate Stage 6 blockers. Live catalog reconciliation remains BLOCKED in [CATALOG_AUDIT.md](../CATALOG_AUDIT.md).
 
 Updated: 25 October 2026 (Asia/Karachi).
 

@@ -1,5 +1,14 @@
 export const catalogTranslations: Record<string, Record<string, string>> = {
   en: {
+    "table.eyebrow": "The AllBarka Table",
+    "table.heading": "For your table.",
+    "table.accent": "For your people.",
+    "table.description": "Everyday favourites, a little something for your mehmaan, and gifts that bring people together.",
+    "table.note": "Everyday pantry · Thoughtful gifting",
+    "table.pantryCaption": "The pleasure of sharing",
+    "table.giftCaption": "Gifting inspiration",
+    "table.discovery": "Find your favourites",
+
     'nav.shop': 'Shop',
     'nav.gifting': 'Gifts & Hampers',
     'nav.celebrationBoxes': 'Celebration Boxes',
@@ -188,6 +197,15 @@ export const catalogTranslations: Record<string, Record<string, string>> = {
     'occasion.exploreDest': 'Explore favors',
   },
   ur: {
+    "table.eyebrow": "البَرکہ کا دسترخوان",
+    "table.heading": "آپ کے دسترخوان کے لیے۔",
+    "table.accent": "آپ کے اپنوں کے لیے۔",
+    "table.description": "روزمرہ کی پسند، مہمانوں کی خاطر تواضع اور ایسے تحفے جو اپنوں کو قریب لائیں۔",
+    "table.note": "روزمرہ کی خریداری · اپنوں کے لیے تحفے",
+    "table.pantryCaption": "مل بانٹنے کی خوشی",
+    "table.giftCaption": "تحفوں کی ایک جھلک",
+    "table.discovery": "اپنی پسند تلاش کریں",
+
     'nav.shop': 'شاپ',
     'nav.gifting': 'تحائف اور ہیمپر',
     'nav.celebrationBoxes': 'تقریباتی ڈبے',
@@ -376,6 +394,15 @@ export const catalogTranslations: Record<string, Record<string, string>> = {
     'occasion.exploreDest': 'تفصیلات دیکھیں',
   },
   ar: {
+    "table.eyebrow": "مائدة البركة",
+    "table.heading": "لمائدتكم.",
+    "table.accent": "ولأحبابكم.",
+    "table.description": "مفضلاتكم اليومية، وضيافة لمَن تحبون، وهدايا تجمع الأحباب.",
+    "table.note": "مفضلات يومية · هدايا للأحباب",
+    "table.pantryCaption": "متعة المشاركة",
+    "table.giftCaption": "إلهام للهدايا",
+    "table.discovery": "اعثروا على مفضلاتكم",
+
     'nav.shop': 'المتجر',
     'nav.gifting': 'الهدايا والباقات',
     'nav.celebrationBoxes': 'صناديق الاحتفالات',

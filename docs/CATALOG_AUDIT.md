@@ -61,3 +61,7 @@ Delete the placeholder row only when replacing it with a dated real audit; retai
 - Any correction has a before/after dry run, authorized scope, revision handling and post-change verification; unrelated values/IDs/receipts remain intact.
 
 A source-only or fixture-only result must be labeled as such. The optional automated report remains PROPOSED / TODO as M34 in [MASTER_PLAN.md](../MASTER_PLAN.md).
+
+## V1 — 25 October 2026
+
+Baseline 2c94349b7754a94b936783b4c85595c66f406a83. Live revision UNKNOWN: no configured Firestore read tool/current authorized private export. Live audit BLOCKED. Hero/category-control styling changes no IDs or mappings; existing source/fixture category regressions and real pistachio search/category/PDP navigation are required in PREMIUM_V1.md. No production writes.

@@ -2,7 +2,7 @@
 
 Date: 24 October 2026 (Asia/Karachi). This six-stage plan is separate from the earlier eight-stage renovation.
 
-25 October continuation: [MASTER_PLAN.md](../../MASTER_PLAN.md) separately tracks proposed premium storefront V0–V6 work and owner inputs. [RULES.md](../../RULES.md) adds mandatory review, category reconciliation and delivery evidence for all subsequent tasks. These documents do not restart the stages below or certify their blocked live gates.
+25 October continuation: [MASTER_PLAN.md](../../MASTER_PLAN.md) tracks premium V0–V6 work and owner inputs; bounded V1 evidence is [PREMIUM_V1.md](../PREMIUM_V1.md). [RULES.md](../../RULES.md) adds mandatory review, category reconciliation and delivery evidence for all subsequent tasks. These documents do not restart the stages below or certify their blocked live gates.
 
 | Stage | Deliverable and completion gate | Status |
 | --- | --- | --- |

@@ -4,7 +4,7 @@ Read `AGENTS.md`, `RULES.md`, `MASTER_PLAN.md`, `design.md`, and `docs/admin-exp
 
 ## Latest owner continuation — 25 October 2026
 
-The current checkpoint records the owner's premium-storefront shortlist, further recommendations and required inputs before implementation in [MASTER_PLAN.md](MASTER_PLAN.md). The original 24 ideas are retained with stable M01–M24 IDs; M25–M34 are additional proposals. The Signature Table is the current recommendation, not a newly confirmed owner selection. Do not mark new features implemented from this planning document.
+The current premium workstream is the bounded V1 hero/discovery pass in [docs/PREMIUM_V1.md](docs/PREMIUM_V1.md). Owner confirmed retail + gifting balanced and existing assets first. [MASTER_PLAN.md](MASTER_PLAN.md) retains stable M01–M34 IDs and unselected proposals. Count only evidenced scope as complete; do not repeat answered questions.
 
 The owner additionally requested a rules file so future agents review before delivery, verify correct category matching after new/updated Firestore products and preserve working behavior without repeated prompting. [RULES.md](RULES.md) is mandatory for every task. Follow R03 review, R04 semantic/end-to-end catalog reconciliation and R11 delivery gates. Current live category-audit status and its reusable report are [docs/CATALOG_AUDIT.md](docs/CATALOG_AUDIT.md); no automatic monitor or live audit is implied by writing the rules.
 

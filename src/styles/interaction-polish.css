@@ -91,6 +91,10 @@
 }
 .boutique-experience [role="dialog"][dir="rtl"] button[aria-current="page"] { box-shadow: inset -3px 0 var(--color-accent); }
 
+/* Enlarged text may wrap rows; keep all utilities reachable. */
+.boutique-header-row { flex-wrap: wrap; }
+.boutique-header-tools { max-width: 100%; flex-wrap: wrap; }
+
 /* Fit the real mobile header without shrinking its four 44px utility targets. */
 .boutique-header-tools > button { min-width: 44px; min-height: 44px; }
 @media (max-width: 420px) {

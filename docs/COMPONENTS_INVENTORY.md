@@ -2,6 +2,10 @@
 
 This document is auto-generated and lists every component, page, context, hook, and utility with their usage.
 
+## Premium V1
+
+Existing AllBarkaHero owns the signature composition and separate discovery state. CategoryQuickPills has an editorial variant preserving routes. AdminContentPanel defaults follow hero copy/art. No new component/dependency. See PREMIUM_V1.md.
+
 ## Boutique interaction refinement
 
 - `CartAddButton` reuses MagneticButton and observes the existing CartProvider; confirmation requires the matching committed line quantity to increase. Used by ProductCard, CategoryPLP and ProductDetailPage. Quick view retains its existing close/toast flow.
