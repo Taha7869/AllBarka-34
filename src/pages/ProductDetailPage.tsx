@@ -158,7 +158,7 @@ export default function ProductDetailPage() {
 
   if (!product) {
     return (
-      <div className="w-full min-h-[70vh] bg-[var(--color-base,#F6F1EA)] flex items-center justify-center py-20 px-4 select-none">
+      <div className="pdp-empty w-full min-h-[70vh] bg-[var(--color-base,#F6F1EA)] flex items-center justify-center py-20 px-4 select-none">
         <div className="max-w-lg w-full bg-[var(--color-surface,#FFFCF7)] border border-[var(--color-gold,#C7982F)]/30 rounded-3xl p-8 sm:p-12 shadow-sm text-center">
           <div className="w-16 h-16 rounded-full bg-[var(--color-emerald,#042821)]/5 border border-[var(--color-gold,#C7982F)]/30 flex items-center justify-center mx-auto mb-4 text-[var(--color-gold,#C7982F)]">
             <Sparkles size={28} />
@@ -167,23 +167,23 @@ export default function ProductDetailPage() {
             AllBarka Reserve
           </span>
           <h1 className="text-2xl sm:text-3xl font-serif font-bold text-[var(--color-ink,#29231D)] mb-3">
-            Product Not Found
+            {t('pdp.notFound')}
           </h1>
           <p className="text-sm text-[var(--color-ink,#29231D)]/70 mb-8 leading-relaxed max-w-sm mx-auto">
-            The luxury harvest lot or curio selection you are looking for has been retired or relocated to our archival cellar.
+            {t('pdp.notFoundCopy')}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <button
               onClick={() => navigate('/shop')}
               className="w-full sm:w-auto px-6 py-3 rounded-full bg-[var(--color-emerald,#042821)] text-[var(--color-surface,#FFFCF7)] text-xs font-bold uppercase tracking-wider hover:bg-[#03201A] transition-colors border border-[var(--color-gold,#C7982F)]/40 shadow-sm"
             >
-              Explore Full Shop
+              {t('shop')}
             </button>
             <button
               onClick={() => navigate('/')}
               className="w-full sm:w-auto px-6 py-3 rounded-full bg-white text-[var(--color-ink,#29231D)] text-xs font-bold uppercase tracking-wider border border-[var(--color-gold,#C7982F)]/30 hover:border-[var(--color-gold,#C7982F)] transition-colors"
             >
-              Return Home
+              {t('home')}
             </button>
           </div>
         </div>
@@ -215,7 +215,7 @@ export default function ProductDetailPage() {
   const siteOrigin = typeof window === 'undefined' ? 'https://allbarka.com' : window.location.origin;
 
   return (
-    <div dir="ltr" className="w-full bg-[var(--color-base,#F6F1EA)] pt-6 sm:pt-10 pb-24 select-none">
+    <div dir={language === 'en' ? 'ltr' : 'rtl'} data-product-kind={isPackaging ? 'packaging' : 'food'} className="pdp-editorial w-full bg-[var(--color-base,#F6F1EA)] pt-6 sm:pt-10 pb-24">
       <SEO
         title={productSeo(product,language).title}
         description={productSeo(product,language).description}
@@ -245,13 +245,13 @@ export default function ProductDetailPage() {
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-start">
+        <div className="pdp-composition grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-start">
           
           {/* Left: Product Visual Showcase */}
-          <div className="flex flex-col gap-3 lg:sticky lg:top-28">
-            <div className="relative aspect-square rounded-3xl overflow-hidden bg-[var(--color-surface,#FFFCF7)] border border-[var(--color-gold,#C7982F)]/30 shadow-sm flex items-center justify-center p-6 group">
+          <div className="pdp-gallery flex flex-col gap-3 lg:sticky lg:top-28">
+            <div className="pdp-main-photo relative aspect-square rounded-3xl overflow-hidden bg-[var(--color-surface,#FFFCF7)] border border-[var(--color-gold,#C7982F)]/30 shadow-sm flex items-center justify-center p-6 group">
               {imageError || (product.image === null && productMedia.images.length === 0) ? (
-                <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-[#FAF9F5] to-[#EFE7D8]">
+                <div className="pdp-photo-fallback w-full h-full flex flex-col items-center justify-center p-8 text-center">
                   <div className="w-16 h-16 rounded-2xl bg-[var(--color-gold,#C7982F)]/20 border border-[var(--color-gold,#C7982F)]/40 flex items-center justify-center text-[var(--color-gold,#C7982F)] mb-4">
                     <Sparkles size={28} />
                   </div>
@@ -267,7 +267,7 @@ export default function ProductDetailPage() {
                   referrerPolicy="no-referrer"
                   decoding="async"
                   onError={() => setImageError(true)}
-                  className="w-full h-full object-cover rounded-2xl group-hover:scale-105 transition-transform duration-500 ease-out"
+                  className="w-full h-full object-contain rounded-2xl"
                 />
               )}
             </div>
@@ -293,7 +293,7 @@ export default function ProductDetailPage() {
               </div>
               {isGiftProduct && (
                 <p className="text-[10px] italic text-[#635B52] dark:text-[#A8A199]">
-                  Studio reference presentation — custom ribbon &amp; crest tags tailored per order.
+                  {t('pdp.presentationNote')}
                 </p>
               )}
             </div>
@@ -333,10 +333,10 @@ export default function ProductDetailPage() {
           </div>
 
           {/* Right: Product Purchase Details */}
-          <div className="flex flex-col text-left">
+          <div className="pdp-purchase flex flex-col text-start">
             <div className="mb-4">
               <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] block mb-1.5">
-                {product.isBidBox && bidBoxConfig ? `${bidBoxConfig.occasionTag} • AllBarka Bespoke Atelier` : 'Single-Origin Batch • Hand-Sorted Lahore'}
+                {t(isPackaging ? 'pdp.packagingEyebrow' : 'pdp.foodEyebrow')}
               </span>
               <h1 dir="auto" className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold text-[var(--color-primary,#042821)] dark:text-[var(--color-text-primary,#F6F1EA)] leading-tight mb-2">
                 {getLocalized(product, 'name', language)}
@@ -345,8 +345,8 @@ export default function ProductDetailPage() {
                 {getLocalized(product, 'desc', language)}
               </p>
 
-              {getLocalized(product, 'tasteProfile', language) && (
-                <div className="mt-3 p-3 rounded-xl bg-[var(--color-surface,#FFFCF7)] dark:bg-[#1A201E] border border-[var(--color-accent,#C7982F)]/25 text-xs text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)]">
+              {!isPackaging && getLocalized(product, 'tasteProfile', language) && (
+                <div className="pdp-food-notes mt-3 p-3 rounded-xl bg-[var(--color-surface,#FFFCF7)] dark:bg-[#1A201E] border border-[var(--color-accent,#C7982F)]/25 text-xs text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)]">
                   <span className="font-bold text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] uppercase tracking-wider text-[10px] block mb-0.5">
                     {t('tasteProfile')}
                   </span>
@@ -368,7 +368,7 @@ export default function ProductDetailPage() {
                   {bidBoxConfig.dimensionsAndCapacity && (
                     <div>
                       <strong className="uppercase tracking-wider text-[10px] text-[#8C6B1B] dark:text-[#E4C783] block">
-                        Box Dimensions &amp; Capacity
+                        {t('pdp.dimensions')}
                       </strong>
                       <span>{bidBoxConfig.dimensionsAndCapacity}</span>
                     </div>
@@ -376,7 +376,7 @@ export default function ProductDetailPage() {
                   {bidBoxConfig.emptyOptionDetails && (
                     <div className="border-t border-[#C7982F]/20 pt-2">
                       <strong className="uppercase tracking-wider text-[10px] text-[#8C6B1B] dark:text-[#E4C783] block">
-                        Option 1 — Empty Box Only (Wholesale Bulk Tiers)
+                        {t('pdp.emptyOption')}
                       </strong>
                       <span>{bidBoxConfig.emptyOptionDetails}</span>
                     </div>
@@ -384,7 +384,7 @@ export default function ProductDetailPage() {
                   {bidBoxConfig.filledOptionDetails && (
                     <div className="border-t border-[#C7982F]/20 pt-2">
                       <strong className="uppercase tracking-wider text-[10px] text-[#8C6B1B] dark:text-[#E4C783] block">
-                        Option 2 — Filled with AllBarka Dry Fruits
+                        {t('pdp.filledOption')}
                       </strong>
                       <span>{bidBoxConfig.filledOptionDetails}</span>
                     </div>
@@ -395,12 +395,12 @@ export default function ProductDetailPage() {
             
             {/* Price Row */}
             {isQuoteOnly ? <div className="my-5 rounded-xl border border-[var(--color-border-accent)] p-5 text-sm leading-7 text-[var(--color-text-secondary)]">{t('catalog.quoteDescription')}</div> : <>
-            <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2 py-4 border-y border-[var(--color-accent,#C7982F)]/25 mb-6">
+            <div className="pdp-price-row flex flex-wrap items-baseline gap-x-4 gap-y-2 py-4 border-y border-[var(--color-accent,#C7982F)]/25 mb-6">
               <span className="text-3xl sm:text-4xl font-serif font-bold text-[var(--color-text-price,#29231D)] dark:text-[var(--color-text-price,#F6F1EA)]">
                 <bdi dir="ltr">{displayProductPrice(priceToUse)}</bdi>
               </span>
               <span className="text-xs font-semibold text-[#0E7A53] dark:text-[#28A745] bg-[#0E7A53]/10 px-2.5 py-1 rounded-full">
-                {t('inStock', 'In Stock')}
+                {priceToUse && selectedWeight ? t('inStock', 'In Stock') : t('pdp.chooseValid')}
               </span>
               {isPackaging && moqPieces !== null && (
                 <span className="text-xs font-semibold text-[#8C6B1B] bg-[#8C6B1B]/10 px-2.5 py-1 rounded-full border border-[#8C6B1B]/20">
@@ -430,12 +430,12 @@ export default function ProductDetailPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary,#042821)] dark:text-[#E4C783]">
                       {hasEmptyOptions && hasFilledOptions
-                        ? 'Box Mode: Empty Packaging vs. Filled Dry Fruits'
-                        : 'Saved Empty Box Pack Sizes'}
+                        ? t('pdp.boxMode')
+                        : t('pdp.savedPacks')}
                     </span>
                     {hasBulkSavings && (
                       <span className="text-[11px] font-semibold text-[#8C6B1B]">
-                        Bulk Tier Savings Available
+                        {t('pdp.bulkSavings')}
                       </span>
                     )}
                   </div>
@@ -461,7 +461,7 @@ export default function ProductDetailPage() {
                       >
                         <Package size={16} className="text-[#E6C786] shrink-0" />
                         <div>
-                          <div className="text-xs font-bold">Box Only (Empty Packaging)</div>
+                          <div className="text-xs font-bold">{t('pdp.boxOnly')}</div>
                           <div className="text-[10px] opacity-80">
                             From Rs. {bidBoxConfig.emptyUnitStarting}/pc
                             {bidBoxConfig.emptyBulk100Unit
@@ -485,7 +485,7 @@ export default function ProductDetailPage() {
                       >
                         <Gift size={16} className="text-[#E6C786] shrink-0" />
                         <div>
-                          <div className="text-xs font-bold">Filled with AllBarka Dry Fruits</div>
+                          <div className="text-xs font-bold">{t('pdp.filled')}</div>
                           <div className="text-[10px] opacity-80">
                             {bidBoxConfig.filledMin === bidBoxConfig.filledMax
                               ? `Rs. ${bidBoxConfig.filledMin?.toLocaleString()}`
@@ -562,6 +562,7 @@ export default function ProductDetailPage() {
                     <button
                       key={idx}
                       type="button"
+                      aria-pressed={isSelected && !customWeightSelected}
                       onClick={() => { setSelectedWeightIndex(idx); setCustomWeightSelected(false); }}
                       className={`min-h-[44px] min-w-[70px] px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer ${
                         isSelected && !customWeightSelected
@@ -577,6 +578,12 @@ export default function ProductDetailPage() {
               <CustomWeightInput product={product} selected={customWeightSelected} grams={customGrams} onSelect={() => setCustomWeightSelected(true)} onChange={setCustomGrams} />
             </div>
             </>}
+
+            {!isQuoteOnly && <dl className="pdp-selection-summary" aria-label={t('pdp.selection')}>
+              <div><dt>{t('shop.portion')}</dt><dd dir="auto">{selectedWeight || t('pdp.chooseValid')}</dd></div>
+              <div><dt>{t('pdp.quantity')}</dt><dd><bdi>{quantity}</bdi></dd></div>
+              <div><dt>{t('pdp.selectionTotal')}</dt><dd aria-live="polite"><bdi dir="ltr">{displayProductPrice(priceToUse, quantity)}</bdi></dd></div>
+            </dl>}
 
             {/* Quantity & Add to Cart (minimum 44px tap targets) */}
             <div className="flex flex-col gap-3 mb-8">
@@ -628,7 +635,7 @@ export default function ProductDetailPage() {
                   className="w-full min-h-[46px] rounded-xl border border-[#8C6B1B] bg-[#FAF6EE] hover:bg-[#8C6B1B] text-[#8C6B1B] hover:text-white flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider transition-all shadow-xs"
                 >
                   <MessageSquareQuote size={16} />
-                  Request Custom Quote / Offer Your Price
+                  {t('pdp.quoteAction')}
                 </button>
               )}
               
@@ -647,23 +654,23 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Quick Guarantees Strip */}
-            <div className="grid grid-cols-2 gap-3 mb-8 p-3.5 rounded-2xl bg-[var(--color-surface,#FFFCF7)] dark:bg-[#1A201E] border border-[var(--color-accent,#C7982F)]/25">
+            <div className="pdp-service-links grid grid-cols-2 gap-3 mb-8 p-3.5 rounded-2xl bg-[var(--color-surface,#FFFCF7)] dark:bg-[#1A201E] border border-[var(--color-accent,#C7982F)]/25">
               <div className="flex items-center gap-2 text-xs font-medium text-[var(--color-text-secondary,#635B52)] dark:text-[var(--color-text-secondary,#B4C0BC)]">
                 <Truck size={15} className="text-[var(--color-accent,#C7982F)] shrink-0" />
-                <span>{t('boutique.delivery')}</span>
+                <Link to="/policies" className="focus-ring">{t('pdp.deliveryDetails')}</Link>
               </div>
               <div className="flex items-center gap-2 text-xs font-medium text-[var(--color-text-secondary,#635B52)] dark:text-[var(--color-text-secondary,#B4C0BC)]">
                 <ShieldCheck size={15} className="text-[var(--color-accent,#C7982F)] shrink-0" />
-                <span>{t('trust.fresh')}</span>
+                <a href="#pdp-product-details" className="focus-ring">{t('care.title')}</a>
               </div>
             </div>
 
             {/* Accordions for Sourcing, Storage, and Packaging */}
-            <div className="mb-10">
-              <ProductDetailAccordion product={product} />
+            <div id="pdp-product-details" className="mb-10">
+              <ProductDetailAccordion product={product} defaultOpenKey={isPackaging ? 'packaging' : 'storage'} />
             </div>
 
-            <div className="mt-8 border-t border-[var(--color-accent,#C7982F)]/20 pt-8">
+            <div className="pdp-guarantee mt-8 border-t border-[var(--color-accent,#C7982F)]/20 pt-8" hidden={isPackaging}>
               <div className="flex items-center gap-2 mb-4">
                 <ShieldCheck size={20} className="text-[#C5A059]" />
                 <h3 className="font-serif font-bold text-lg text-[var(--color-ink,#29231D)] dark:text-[#FFFCF7]">
@@ -676,16 +683,16 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
-        {/* ── RELATED HARVESTS STRIP (Discovery Continuity) ───────────────── */}
+        {/* ── RELATED HARVESTS STRIP ({t('pdp.relatedEyebrow')}) ───────────────── */}
         {relatedProducts.length > 0 && (
-          <section className="mt-20 pt-12 border-t border-[var(--color-accent,#C7982F)]/25">
+          <section className="pdp-related mt-20 pt-12 border-t border-[var(--color-accent,#C7982F)]/25">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 text-left">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] block mb-1">
-                  Discovery Continuity
+                  {t('pdp.relatedEyebrow')}
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[var(--color-primary,#042821)] dark:text-[var(--color-text-primary,#F6F1EA)]">
-                  Complementary Gourmet Selections
+                  {t('pdp.relatedTitle')}
                 </h2>
               </div>
               <Link
@@ -699,7 +706,7 @@ export default function ProductDetailPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
               {relatedProducts.map((rel) => {
-                const firstWeight = Object.keys(rel.prices)[0];
+                const firstWeight = Object.keys(rel.prices).find(label => rel.prices[label] > 0 && !rel.variants?.some(variant => variant.label === label && variant.available === false)) || '';
                 const price = rel.prices[firstWeight];
                 return (
                   <Link
@@ -725,7 +732,7 @@ export default function ProductDetailPage() {
                           {getLocalized(rel, 'origin', language)}
                         </span>
                       )}
-                      <h3 dir="auto" className="text-sm font-serif font-bold text-[var(--color-ink,#29231D)] group-hover:text-[var(--color-gold,#C7982F)] transition-colors line-clamp-1">
+                      <h3 dir="auto" className="text-sm font-serif font-bold text-[var(--color-text-primary)] transition-colors">
                         {getLocalized(rel, 'name', language)}
                       </h3>
                       <p dir="auto" className="text-[11px] text-[var(--color-ink,#29231D)]/60 line-clamp-1 mt-0.5">
@@ -735,7 +742,7 @@ export default function ProductDetailPage() {
 
                     <div className="pt-3 mt-3 border-t border-[var(--color-gold,#C7982F)]/15 flex items-center justify-between">
                       <span className="text-xs font-bold text-[var(--color-emerald,#042821)]">
-                        {rel.quoteOnly || rel.orderMode === 'inquiry_quote' ? t('catalog.requestQuote') : `Rs. ${price?.toLocaleString()}`}
+                        {rel.quoteOnly || rel.orderMode === 'inquiry_quote' || !price ? t('catalog.requestQuote') : `Rs. ${price?.toLocaleString()}`}
                       </span>
                       <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-gold,#C7982F)] group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
                         {t('viewDetails')}

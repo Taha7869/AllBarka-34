@@ -134,3 +134,10 @@ Owner accepted the revised opening and requested a phased sequence. MASTER_PLAN 
 ## 27 October 2026 — V2 product cards and browsing
 
 Homepage/shop cards now share restrained framing, full-photo contain treatment, stronger name/quantity/price hierarchy and clearer controls matching the accepted hero. Existing category masthead/discovery controls follow the same styling. Category Back restores current-tab scroll and loaded depth; fresh navigation and same-path filters retain appropriate behavior. Removed/disabled variants resolve consistently and an empty purchasable option set cannot be added. Existing admin media/ordering, gallery, cart and canonical price authority retained; no new component/dependency or live mutation. Exact final gates, scope and limitations: docs/PREMIUM_V2.md.
+
+
+## 27 October 2026 — V3 product-detail art direction
+
+Existing PDP now has contained photography, a distinct editorial purchase surface, proper RTL direction/type, a live selection summary and selected portion state. Packaging opens relevant details first, with food-only taste/guarantee content omitted. Generic sourcing/personalization claims replaced by neutral headings/reference wording. Missing-product recovery and packaging headings/actions translated, dark fallback improved, related cards resolve an enabled positive price or inquiry. Existing canonical pricing/MOQ/custom quantity/gallery/media/cart contracts retained. No new component/dependency/product image or live mutation. Current gates and pending broader V3 work: docs/PREMIUM_V3.md.
+
+V3 final local verification: typecheck/hooks/build/privacy passed; 709 tests across 75 files, 21 backend and 36 production checks, zero missing/retired assets. Seven fixture screenshots and layout matrix saved; M15 DONE locally, M19 and original Stage 6/live catalog blockers retained.

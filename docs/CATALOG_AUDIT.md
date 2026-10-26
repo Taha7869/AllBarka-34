@@ -73,3 +73,6 @@ Baseline 599d13461db796a8f6ad73bbf44910d7ec3a78ab; recovery source 30438be512ac4
 
 
 27 October 2026 — V2 presentation checkpoint: live watermark remains UNKNOWN; no new authorized snapshot available, live audit BLOCKED. Existing local readers now exclude disabled variant labels and resolve removed remembered selections, without changing product/category assignments. New fixture checks selected 500g/cart, category results, mobile budget filters and back depth. Full fixture/asset evidence is in PREMIUM_V2.md. No claim that current Firestore records were all audited; no production writes.
+
+
+27 October 2026 — V3 PDP presentation: watermark UNKNOWN / live audit BLOCKED. No authorized Firestore read tool/current export found; no live writes or category changes. Existing fixture product pista and the first saved bid-box fixture exercise food/packaging presentation, selected quantities/totals, available related-price selection and failure handling. No full live semantic category certification. See PREMIUM_V3.md; prior audits remain historical.

@@ -267,3 +267,8 @@ AllBarkaHero reuses AllBarkaCrestVector and existing state/providers; scoped CSS
 ## V2 product presentation — 27 October 2026
 
 Reuse existing ProductCard (homepage), CategoryPLP (shop), ProductImageGallery, CartAddButton, CategoryCarousel and CatalogFilterSheet. Shared styling is scoped in editorial.css; no new component or dependency. CategoryPLP retains a bounded session-only history-entry map for position/loaded depth; ShopPage/RootLayout cooperate on POP navigation. ProductShowcase.tsx is not an existing component; follow actual HomePage consumers rather than creating that duplicate. See PREMIUM_V2.md.
+
+
+## V3 product-detail pass — 27 October 2026
+
+ProductDetailPage reuses ProductDetailAccordion (packaging default for packaging), ProductPhotoViewer, ProductVideo, CartAddButton, CustomWeightInput and existing catalog/media/cart contexts. The read-only selection summary is inline in the existing page and uses existing displayProductPrice state. Styles extend editorial.css; labels use shoppingQualityTranslations. No new component/dependency/schema. See PREMIUM_V3.md.
