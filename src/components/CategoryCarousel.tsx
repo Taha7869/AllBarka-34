@@ -25,7 +25,7 @@ export const PANTRY_CATEGORIES: CarouselSlideItem[] = [
   ...collectionPresentation,
   ...Object.values(CANONICAL_CATEGORIES).filter(category => !collectionPresentation.some(item => item.id === category.id)).map(category => {
     const cover = PRODUCTS.find(product => product.active !== false && product.category === category.id);
-    return { id: category.id, name: category.name, image: cover?.image === null ? '' : cover ? getProductImage(cover) : '', altKey: `catalog.alt.${category.id}`, link: `/shop/${category.id}` };
+    return { id: category.id, name: category.name, image: cover?.image === null ? '' : cover ? getProductImage(cover) : category.id === 'dates' ? '/images/generated/dark-dates-catalog-v1.webp' : '', altKey: `catalog.alt.${category.id}`, link: `/shop/${category.id}` };
   }),
 ];
 
@@ -371,12 +371,12 @@ export default function CategoryCarousel({ settings: propSettings }: CategoryCar
                       loading="lazy" decoding="async" /> : <div role="img" aria-label={category.title || category.name} className="absolute inset-0 flex items-center justify-center bg-[#173a2c] font-serif text-3xl text-[#e4c783]">AllBarka</div>}
                     <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-emerald)]/95 via-[var(--color-emerald)]/30 to-transparent pointer-events-none" />
                     {category.badge ? (
-                      <span className="absolute left-4 top-4 rounded-full border border-white/25 bg-[var(--color-emerald)]/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-[var(--color-ivory)] backdrop-blur-md pointer-events-none z-10">
+                      <span className="absolute left-1/2 top-8 -translate-x-1/2 rounded-full border border-white/25 bg-[#042821]/90 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-[#FFFCF7] backdrop-blur-md pointer-events-none z-10">
                         {category.badge}
                       </span>
-                    ) : index < 2 ? (
-                      <span className="absolute left-4 top-4 rounded-full border border-white/25 bg-[var(--color-emerald)]/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-[var(--color-ivory)] backdrop-blur-md pointer-events-none z-10">
-                        {t(index === 0 ? 'pantry.start' : 'pantry.value')}
+                    ) : ['all', 'bundles', 'combos', 'deals'].includes(category.id) ? (
+                      <span className="absolute left-1/2 top-8 -translate-x-1/2 rounded-full border border-white/25 bg-[#042821]/90 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-[#FFFCF7] backdrop-blur-md pointer-events-none z-10">
+                        {t(category.id === 'all' ? 'pantry.start' : 'pantry.value')}
                       </span>
                     ) : null}
                     <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-5 pointer-events-none z-10">

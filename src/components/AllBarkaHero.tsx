@@ -6,6 +6,7 @@ import React, { lazy, Suspense, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Compass } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { AllBarkaCrestVector } from './AllBarkaLogo';
 import CategoryQuickPills from './CategoryQuickPills';
 import PlaceholdersAndVanishInput from './ui/placeholders-and-vanish-input';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
@@ -46,7 +47,7 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
     <>
     <section className="heritage-hero" dir={isRtl ? 'rtl' : 'ltr'} aria-labelledby="table-hero-title">
       <div className="heritage-hero-content">
-        <p className="table-eyebrow"><span aria-hidden="true" />{t('table.eyebrow')}</p>
+        <p className="table-eyebrow"><span aria-hidden="true">✦</span>{t('table.eyebrow')}</p>
         <h1 id="table-hero-title" className="heritage-hero-title" dir="auto">
           {hero.enabled ? contentText(hero.heading, language) : t('table.heading')}{' '}
           <em>{hero.enabled ? contentText(hero.accent, language) : t('table.accent')}</em>
@@ -65,6 +66,7 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
         <p className="table-hero-note">{t('table.note')}</p>
       </div>
       <div className={`table-hero-art${hero.enabled ? ' table-hero-art-custom' : ''}`}>
+        {!hero.enabled && <div className="table-hero-crest" aria-hidden="true"><AllBarkaCrestVector /></div>}
         <figure className="table-pantry-figure">
           <div className="table-photo-frame">
             <span className="table-photo-fallback" aria-hidden="true">{t('table.eyebrow')}</span>

@@ -1,5 +1,7 @@
 # AllBarka — visual identity and experience master plan
 
+26 October 2026: owner requested stronger visual character and premium internet/motion references. Current M01/M02/M04–M06/M21 revision is IN_PROGRESS, not yet verified after workspace recovery. Read [current revision](docs/PREMIUM_V1_REVISION.md). Earlier completed work and live Stage 6 blockers remain.
+
 Updated: 25 October 2026 (Asia/Karachi).
 
 **Current checkpoint: bounded V1 hero/discovery implementation.** Owner confirmed balanced retail + gifting and existing assets first. Work/evidence is in [PREMIUM_V1.md](docs/PREMIUM_V1.md); remaining proposals are retained below. Mandatory review, catalog-matching and delivery rules are in [RULES.md](RULES.md).

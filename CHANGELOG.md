@@ -110,3 +110,8 @@ Previously logo, heading, search, categories and guide shared the image overlay.
 - **Reason:** make continuation and future changes reviewable without repeating decisions or mistaking an existing partial feature for completed work.
 - **Runtime behavior:** unchanged. No environment values, rates, products, shipping policy, permissions or production services changed.
 - **Verification:** source snapshot hashes matched for 548 files. Existing locked install, baseline typecheck, hooks lint and production build passed. Expansion tests and live checks are pending.
+
+
+## 26 October 2026 — visual/motion revision, unfinished recovery checkpoint
+
+Reconstructed the owner-requested emerald/arched hero and collection presentation, moved assurances after configurable sections, corrected position-dependent collection badges and date imagery fallback. Added finite photography/arrow motion inspired by referenced premium ecommerce work. Current verification pending; see docs/PREMIUM_V1_REVISION.md. No production release or live data change.

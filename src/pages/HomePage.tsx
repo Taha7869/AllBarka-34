@@ -151,10 +151,7 @@ export default function HomePage() {
         }
       />
 
-      {/* ── Section Divider ──────────────────────────────────────────────── */}
-      <div className="w-full px-6 sm:px-10 py-6" aria-hidden="true">
-        <div className="section-divider" />
-      </div>
+      {content.sections.filter(entry=>entry.visible).map(entry=><div key={entry.id} data-content-section={entry.id} className="content-home-section w-full">{sections[entry.id]}</div>)}
 
       {/* ── Delivery and packing assurances ───────────────────────────────── */}
       <div className="editorial-assurances w-full border-y border-[var(--color-border)] bg-[var(--color-surface)]">
@@ -175,13 +172,6 @@ export default function HomePage() {
         </div>
         <CollectionLogoLoop />
       </div>
-
-      {/* ── Section Divider ──────────────────────────────────────────────── */}
-      <div className="w-full px-6 sm:px-10 py-6" aria-hidden="true">
-        <div className="section-divider" />
-      </div>
-
-      {content.sections.filter(entry=>entry.visible).map(entry=><div key={entry.id} data-content-section={entry.id} className="content-home-section w-full">{sections[entry.id]}</div>)}
 
     </div>
   );

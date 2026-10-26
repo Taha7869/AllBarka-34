@@ -1,5 +1,7 @@
 # AllBarka admin expansion — working instructions
 
+26 October 2026: owner requested stronger visual character and premium internet/motion references. Current M01/M02/M04–M06/M21 revision is IN_PROGRESS, not yet verified after workspace recovery. Read [current revision](docs/PREMIUM_V1_REVISION.md). Earlier completed work and live Stage 6 blockers remain.
+
 Read `AGENTS.md`, `RULES.md`, `MASTER_PLAN.md`, `design.md`, and `docs/admin-expansion/HANDOFF.md` before continuing this project. The verification/fix/checkpoint process is `docs/admin-expansion/VERIFICATION_LOOP.md`. The approved admin plan is `docs/admin-expansion/ROADMAP.md`; older renovation documents remain historical evidence, not the status of this expansion.
 
 ## Latest owner continuation — 25 October 2026
