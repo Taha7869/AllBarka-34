@@ -76,4 +76,4 @@ Before: [V1 desktop](evidence/premium-v1/after-1440-en-light.jpg), [V1 mobile](e
 - [x] Catalog presentation/category fixtures checked; current live watermark UNKNOWN, live classification audit BLOCKED, no data writes.
 - [x] Commerce, privacy, roles and EN/UR/AR/theme behavior covered by retained regression gates; no changed backend contracts.
 - [x] Master status, handoff, testing record, decisions/limits and changelog updated.
-- [ ] Final successor remote tree/ref readback: complete and record exact commit before delivery. Branch is PR #16; no production merge/deploy.
+- [x] Source/evidence saved at `822deeafd723f6292d39232ea537263b7897f49b`, tree `99d25b7286354866b0bc82b957a86cf9b86d026f`, parent `30438be512ac433dfcfb59a911137ec00d46f2f9`; remote commit/ref read back. All 884 prior blob paths preserved; 13 intended existing files changed and seven evidence files added (891 blobs), with zero unexpected paths/hash differences. This follow-up changes only this record and MASTER_PLAN to record the verified save. PR #16 remains draft; main/launch remain `5e6349051980abd1a20f719f289a24a3fd2cba7b`. No production merge/deploy.

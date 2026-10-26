@@ -16,6 +16,8 @@ Roman Urdu: **Yahan pending, chal raha kaam, rukawat aur verified done ka hisaab
 - This is the single feature register for the premium proposal. [Admin roadmap](docs/admin-expansion/ROADMAP.md) and [Stage 6 progress](docs/admin-expansion/STAGE6_PROGRESS.md) retain authority for prior work and external release gates.
 - Source presence, local tests, browser fixtures and live verification are different evidence. Current documentation validation is in [PREMIUM_PLANNING_CHECKPOINT.md](docs/PREMIUM_PLANNING_CHECKPOINT.md).
 
+Verified visual/motion source and evidence: `822deeafd723f6292d39232ea537263b7897f49b` (tree `99d25b7286354866b0bc82b957a86cf9b86d026f`), saved and read back on PR #16. The documentation successor records that save; inspect the current remote head before continuing. Full local gates pass; no live release.
+
 ## Current status
 
 | Workstream | State | Evidence / next action |
