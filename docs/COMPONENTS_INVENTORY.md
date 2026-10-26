@@ -257,3 +257,8 @@ Existing ProductImageGallery uses a single numeric photo counter and retains arr
 ### Admin finishing continuation — 25 October 2026
 
 Reuse `AdminItemForm`, `AdminCatalogConfiguration` and `ItemField`: eight-section navigation and independent dirty/busy/error-focus contracts are implemented in those existing components. No new component or dependency was added. Configuration changes notify the parent synchronously; item save/publish waits for unsaved settings to be saved, and the settings revision swap follows catalog refresh. See `admin-expansion/ADMIN_FINISHING.md` before changing dismissal or save behavior.
+
+
+## 26 October visual/motion revision
+
+AllBarkaHero reuses AllBarkaCrestVector and existing state/providers; scoped CSS supplies the emerald/arch composition and finite motion. Existing CategoryCarousel keeps routes/merchant overrides while default badges follow destinations and Dates gets existing date imagery. HomePage repositions existing assurances after configurable sections. No new component/dependency. See PREMIUM_V1_REVISION.md.

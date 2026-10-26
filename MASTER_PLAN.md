@@ -1,10 +1,10 @@
 # AllBarka — visual identity and experience master plan
 
-26 October 2026: owner requested stronger visual character and premium internet/motion references. Current M01/M02/M04–M06/M21 revision is IN_PROGRESS, not yet verified after workspace recovery. Read [current revision](docs/PREMIUM_V1_REVISION.md). Earlier completed work and live Stage 6 blockers remain.
+27 October 2026: owner-requested emerald/arched hero and motion revision is locally verified. M01/M02 are DONE for this bounded pass; M04–M06/M21 have completed portions and pending broader work. Final offline suite: 707 tests, 21 backend and 36 production checks passed. Read [current revision](docs/PREMIUM_V1_REVISION.md). Earlier completed work and live Stage 6 blockers remain.
 
-Updated: 25 October 2026 (Asia/Karachi).
+Updated: 27 October 2026 (Asia/Karachi).
 
-**Current checkpoint: bounded V1 hero/discovery implementation.** Owner confirmed balanced retail + gifting and existing assets first. Work/evidence is in [PREMIUM_V1.md](docs/PREMIUM_V1.md); remaining proposals are retained below. Mandatory review, catalog-matching and delivery rules are in [RULES.md](RULES.md).
+**Current checkpoint: owner-requested V1 visual/motion revision.** See [PREMIUM_V1_REVISION.md](docs/PREMIUM_V1_REVISION.md); earlier V1 below is historical. Owner confirmed balanced retail + gifting and existing assets first. Work/evidence is in [PREMIUM_V1.md](docs/PREMIUM_V1.md); remaining proposals are retained below. Mandatory review, catalog-matching and delivery rules are in [RULES.md](RULES.md).
 
 Roman Urdu: **Yahan pending, chal raha kaam, rukawat aur verified done ka hisaab rahega. Sirf idea likhne ya UI banne se feature DONE nahi hota. Naya agent current branch aur yeh files parh kar agla kaam shuru kare.**
 
@@ -24,7 +24,7 @@ Roman Urdu: **Yahan pending, chal raha kaam, rukawat aur verified done ka hisaab
 | Previous interaction refinement P0–P3 and admin finishing F01–F06 | DONE under recorded local gates | Preserve cart acknowledgement, explicit gallery controls, responsive header and unsaved-edit protections. |
 | Previous expansion Stage 6 | IN_PROGRESS; external gates BLOCKED | See its tracker. Planning does not close Firebase/Auth/Storage/n8n/order/deployment checks. |
 | Current planning, rules and continuation links | DONE for documentation; inspect the commit containing this file for the saved checkpoint | Two root guides, catalog audit protocol and handoff links; see checkpoint evidence. |
-| New premium implementation | SELECTED / DONE — bounded local V1 | M01/M02 locally complete; asset inventory and hero type portion complete. Full M03/M04 pending; see PREMIUM_V1.md. |
+| New premium implementation | SELECTED / DONE — bounded V1 revision; broader work pending | Emerald/arched design and finite motion; current gates in PREMIUM_V1_REVISION.md. Broader typography/photography pending. |
 | Current live catalog/category reconciliation | BLOCKED / NOT_RUN | This session did not read live Firestore. See catalog audit record. |
 
 ## Scope and completion protocol
@@ -62,12 +62,12 @@ Selected rows below refer only to the bounded V1 **new upgrade**. Reuse notes de
 
 | ID | Proposed deliverable / acceptance | Reuse or dependency | Phase | Scope / work |
 | --- | --- | --- | --- | --- |
-| M01 | Signature hero with distinct desktop/mobile composition, useful CTA and resilient media. | `AllBarkaHero.tsx`, current RootLayout and Studio; M03/M04. | V1 | SELECTED / DONE (local V1; see PREMIUM_V1.md) |
-| M02 | Record A/B/C decision and a single visual storyboard. | Recommend A; owner's commercial priority informs balance. | V0 | SELECTED / DONE (local V1; see PREMIUM_V1.md) |
+| M01 | Signature hero with distinct desktop/mobile composition, useful CTA and resilient media. | `AllBarkaHero.tsx`, current RootLayout and Studio; M03/M04. | V1 | SELECTED / DONE (locally verified visual/motion revision; owner aesthetic acceptance open) |
+| M02 | Record A/B/C decision and a single visual storyboard. | Recommend A; owner's commercial priority informs balance. | V0 | SELECTED / DONE (locally verified visual/motion revision; owner aesthetic acceptance open) |
 | M03 | Consistent product/packaging/scale photography, provenance inventory and responsive exports. | Existing media provider; authentic merchant assets. | V1/V3 | SELECTED / IN_PROGRESS — inventory/reuse DONE; original photography pending |
 | M04 | Typography, readable prices, spacing and Urdu/Arabic line-height pass. | Existing tokens/fonts and LanguageContext. | V1–V5 | SELECTED / IN_PROGRESS — hero/discovery DONE; other pages pending |
-| M05 | Compact homepage: hero, collections, one showcase, gifting, truthful brand story and useful feedback/info. | `HomePage.tsx`, published section order/visibility. | V2 | PROPOSED / TODO |
-| M06 | Editorial pantry/hosting/occasion entrances that expose real catalog breadth. | Current category/collection routes; no silent ID renaming. | V2 | PROPOSED / TODO |
+| M05 | Compact homepage: hero, collections, one showcase, gifting, truthful brand story and useful feedback/info. | `HomePage.tsx`, published section order/visibility. | V2 | SELECTED / IN_PROGRESS — bounded rhythm portion DONE; full content work pending |
+| M06 | Editorial pantry/hosting/occasion entrances that expose real catalog breadth. | Current category/collection routes; no silent ID renaming. | V2 | SELECTED / IN_PROGRESS — framing/date fallback portion DONE; full editorial entrances pending |
 | M07 | Photo framing, clear selected-quantity price, readable titles and touch actions on product cards. | `ProductCard.tsx`, CartAddButton, carousel/media provider. | V2 | PROPOSED / TODO |
 | M08 | Gift Atelier: accurate photo arrangement, contents/quantity summary and canonical total. | Existing `CustomHamperBuilderModal.tsx`, hamper validation and real box photos. | V4 | PROPOSED / TODO |
 | M09 | EN/UR/AR personalized card preview with merchant-supported fonts/styles and persisted message/style. | Existing personalization; verify cart, reload, order and packing handoff end to end. | V4 | PROPOSED / TODO |
@@ -82,7 +82,7 @@ Selected rows below refer only to the bounded V1 **new upgrade**. Reuse notes de
 | M18 | Cart/checkout continuity for actual photo, variant, quantity, message and authoritative cost breakdown. | Current persisted receipt, quote recovery and idempotency. | V4 | PROPOSED / TODO |
 | M19 | Story/journal layouts with actual people/process/serving content and meaningful related products. | InfoPage/JournalPage and existing Studio articles. | V3 | PROPOSED / TODO |
 | M20 | Route-appropriate mobile search/filter/buy controls, safe areas and no competing fixed bars. | Existing header/menu/cart/sticky controls; keyboard/overlay tests. | V2/V6 | PROPOSED / TODO |
-| M21 | One restrained motion language with touch/keyboard/reduced-motion equivalents. | Completed interaction foundations; refine, do not recreate. | V1–V6 | PROPOSED / TODO |
+| M21 | One restrained motion language with touch/keyboard/reduced-motion equivalents. | Completed interaction foundations; refine, do not recreate. | V1–V6 | SELECTED / IN_PROGRESS — bounded hero motion DONE; site-wide pass pending |
 | M22 | Branded loading, empty, unavailable, failure and 404 states with useful next actions. | Existing state/toast/error components; real request lifecycle. | V2–V6 | PROPOSED / TODO |
 | M23 | Extend admin control for selected upgrades: crop/focal points, facts, styles, supported editorial content. | Existing Studio/item forms, revisions, validation and admin guards. | V1–V5 | PROPOSED / TODO |
 | M24 | Baseline image/JS performance and useful consent-appropriate purchase-funnel measurement. | Inspect existing instrumentation; local/lab and live field evidence stay separate. | V1/V6 | PROPOSED / TODO |
@@ -152,7 +152,7 @@ Performance targets for field measurement are LCP <=2.5s, INP <=200ms and CLS <=
 1. Fetch current PR #16 head; read `AGENTS.md`, `RULES.md`, `instructions.md` and this file.
 2. Read this checkpoint and the original Stage 6 blockers. Do not repeat completed admin/interactions or call them live-certified.
 3. Owner replies are recorded: retail + gifting balanced; existing assets first. Do not ask again. Read PREMIUM_V1.md for current gates.
-4. Continue from the exact V1 evidence/status; preserve completed hero behavior. Next planned slice is V2 collections/product cards, with live category audit still blocked.
+4. Read PREMIUM_V1_REVISION.md for the current owner-requested visual/motion revision and its gates. Next: product-card presentation/full editorial entrances; live category audit remains blocked.
 5. Use R03/R04/R11 as applicable, update status/evidence/next action, save against the verified remote parent and verify the saved checkpoint.
 
 ## References used for these recommendations

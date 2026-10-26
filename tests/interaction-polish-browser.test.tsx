@@ -61,9 +61,12 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     await page.mouse.move(0, 0); await page.waitForFunction(() => document.querySelector('#lab-gallery .product-gallery')?.getAttribute('data-previewing') === 'false');
     await gallery.getByRole('button', { name: 'Next photo', exact: true }).click();
     await page.waitForFunction(() => document.querySelector('#lab-gallery .product-gallery-counter')?.getAttribute('aria-label') === 'Photo 2/4');
+    // The counter updates optimistically; complete the native scroll before the keyboard return journey.
+    await page.waitForFunction(() => { const track=document.querySelector<HTMLElement>('#lab-gallery .product-gallery-track'); return track && Math.abs(track.scrollLeft-track.clientWidth)<1; });
     await page.mouse.move(0, 0); await gallery.hover(); assert.equal(await gallery.getAttribute('data-previewing'), 'false');
     await gallery.getByRole('button', { name: 'Previous photo', exact: true }).focus(); await page.keyboard.press('Enter');
     await page.waitForFunction(() => document.querySelector('#lab-gallery .product-gallery-counter')?.getAttribute('aria-label') === 'Photo 1/4');
+    await page.waitForFunction(() => Math.abs(document.querySelector<HTMLElement>('#lab-gallery .product-gallery-track')!.scrollLeft)<1);
     assert.equal(await gallery.locator('a[tabindex="0"]').getAttribute('href'), '/product/deal-1');
     await page.locator('#lab-anchor').focus(); await page.keyboard.press('Enter'); assert.equal(await page.evaluate(() => (window as any).anchorClicks), 1);
     await page.locator('#lab-noop').click(); assert.equal(await page.locator('#lab-noop').getAttribute('data-confirmed'), 'false');

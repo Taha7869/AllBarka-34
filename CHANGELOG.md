@@ -115,3 +115,12 @@ Previously logo, heading, search, categories and guide shared the image overlay.
 ## 26 October 2026 — visual/motion revision, unfinished recovery checkpoint
 
 Reconstructed the owner-requested emerald/arched hero and collection presentation, moved assurances after configurable sections, corrected position-dependent collection badges and date imagery fallback. Added finite photography/arrow motion inspired by referenced premium ecommerce work. Current verification pending; see docs/PREMIUM_V1_REVISION.md. No production release or live data change.
+
+
+## 27 October 2026 — verified emerald hero and restrained motion revision
+
+- **Before → after:** pale split hero becomes an emerald opening with ivory/gold editorial type, arched existing tabletop imagery, supporting gift inset and existing crest. Collection frames repeat the arch; discovery stays separate. Configurable sections now precede secondary assurances while retaining one product showcase.
+- **Motion:** finite photo/gift settle, fine-pointer photo zoom and directional keyboard/hover arrow feedback; immediate actions, static reduced-motion behavior, unchanged custom Studio artwork contract.
+- **Correctness:** default collection badges follow destination IDs after merchant reorder; explicit merchant badges remain. Existing generated date illustration is presentation fallback only, with no catalog reclassification.
+- **Verification:** final self-review, typecheck/hooks/build/privacy audit, affected browser journeys and full runner passed: 707 tests, 21 backend, 36 production checks. Three existing test suites extended; stale CSS/theme paint and native gallery scroll timing corrected in fixtures without removing acceptance assertions. Six current screenshots and matrix saved under docs/evidence/premium-v1-revision.
+- **Continuity:** MASTER_PLAN, instructions and handoff updated; full evidence and pending scope in docs/PREMIUM_V1_REVISION.md. This completes the bounded local revision, not all premium proposals. No deployment, live Firestore/provider mutation, key/config/dependency or pricing change.

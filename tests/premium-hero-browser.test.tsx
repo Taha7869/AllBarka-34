@@ -37,7 +37,11 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
   for(const folder of ['images','fonts','videos'])app.use('/'+folder,express.static(path.resolve('public',folder)));
   app.use('/assets',express.static(path.resolve('dist/assets')));
   app.get('/fixture.js',(_req,res)=>res.sendFile(path.join(temporary,'fixture.js')));
-  const css=(await fs.readdir('dist/assets')).filter(f=>f.endsWith('.css')).map(f=>`<link rel="stylesheet" href="/assets/${f}">`).join('');
+  // Follow the current Vite entry, not stale CSS left by an interrupted build.
+  const builtHtml=await fs.readFile('dist/index.html','utf8');
+  const styles=[...builtHtml.matchAll(/<link\b[^>]*href="(\/assets\/[^"]+\.css)"[^>]*>/g)].map(match=>match[1]);
+  assert.ok(styles.length,'current production stylesheet');
+  const css=styles.map(href=>`<link rel="stylesheet" href="${href}">`).join('');
   app.get(/.*/, (req,res)=>req.path.startsWith('/api/')?res.status(404).json({code:'NOT_FOUND'}):res.type('html').send(`<html><head><meta name="viewport" content="width=device-width,initial-scale=1">${css}<style>@font-face{font-family:Amiri;src:url(/fonts/Amiri-Regular.ttf)}@font-face{font-family:"Noto Nastaliq Urdu";src:url(/fonts/NotoNastaliqUrdu.ttf)}</style></head><body><div id="root"></div><script src="/fixture.js"></script></body></html>`));
   const server=app.listen(0,'127.0.0.1');await once(server,'listening');const origin=`http://127.0.0.1:${(server.address() as any).port}`;const browser=await launchTestBrowser();
   try {
@@ -45,7 +49,7 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     await context.route('**/*',r=>new URL(r.request().url()).origin===origin?r.continue():r.fulfill({status:200,body:''}));
     const page=await context.newPage();const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
     await page.goto(origin);await page.locator('.heritage-hero').waitFor();
-    const shots=process.env.ALLBARKA_CAPTURE_EVIDENCE==='true'?path.resolve('docs/evidence/premium-v1'):path.join(temporary,'evidence');await fs.mkdir(shots,{recursive:true});
+    const shots=process.env.ALLBARKA_CAPTURE_EVIDENCE==='true'?path.resolve('docs/evidence/premium-v1-revision'):path.join(temporary,'evidence');await fs.mkdir(shots,{recursive:true});
     if(process.env.ALLBARKA_HERO_BASELINE==='true'){
       for(const width of [1440,390]){await page.setViewportSize({width,height:width===390?844:1000});await page.evaluate(()=>scrollTo(0,0));await page.waitForTimeout(100);await page.screenshot({path:path.join(shots,`before-${width}.jpg`),quality:82});}return;
     }
@@ -53,14 +57,26 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     for(const width of [360,390,768,1024,1440])for(const language of ['en','ur','ar'])for(const theme of ['light','dark']){
       await page.setViewportSize({width,height:width<768?844:1000});
       await page.evaluate(({language,theme})=>{(window as any).fixture.lang(language);(window as any).fixture.theme(theme);window.scrollTo({top:0,behavior:'instant'});},{language,theme});await page.evaluate(()=>document.fonts.ready);await page.waitForTimeout(50);
+      // Wait for the actual theme paint, not just the React state update.
+      await page.waitForFunction(theme=>getComputedStyle(document.querySelector('#header-cart-btn')!).color===(theme==='dark'?'rgb(255, 252, 247)':'rgb(4, 40, 33)'),theme);
+      // Capture a stable painted frame before measuring; interrupted CSS transitions are not final evidence.
+      const painted=await page.screenshot({type:'jpeg',quality:82,animations:'disabled'});
       assert.equal(await page.locator('h1').count(),1);assert.equal(await page.locator('.heritage-hero').getAttribute('dir'),language==='en'?'ltr':'rtl');
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`overflow ${width}/${language}/${theme}`);
       const boxes=await page.evaluate(()=>Object.fromEntries(Object.entries({hero:'.heritage-hero',art:'.table-hero-art',tools:'.table-discovery',primary:'.table-hero-primary',submit:'.table-discovery button[type=submit]'}).map(([key,selector])=>{const r=document.querySelector(selector)!.getBoundingClientRect();return [key,{top:r.top,bottom:r.bottom,height:r.height,width:r.width}];})));
       assert.ok(boxes.tools.top>=boxes.hero.bottom-1);assert.ok(boxes.primary.height>=44&&boxes.submit.height>=44&&boxes.submit.width>=44);
-      if(language==='en'&&width<768){assert.ok(boxes.primary.bottom<844);assert.ok(boxes.art.top<844);}
+      if(language==='en'&&width<768){assert.ok(boxes.primary.bottom<844,JSON.stringify({width,language,theme,boxes}));assert.ok(boxes.art.top<844);}
       layouts.push({width,language,theme,...boxes});
-      if(([390,1440].includes(width)&&language==='en'&&theme==='light')||(width===390&&language==='ur'&&theme==='dark')||(width===1440&&language==='ar'&&theme==='dark'))await page.screenshot({path:path.join(shots,`after-${width}-${language}-${theme}.jpg`),quality:82});
+      if(([390,1440].includes(width)&&language==='en'&&theme==='light')||(width===390&&language==='ur'&&theme==='dark')||(width===1440&&language==='ar'&&theme==='dark'))await fs.writeFile(path.join(shots,`after-${width}-${language}-${theme}.jpg`),painted);
     }
+    for(const width of [390,1440]){
+      await page.setViewportSize({width,height:width===390?844:1000});
+      await page.evaluate(()=>{(window as any).fixture.lang('en');(window as any).fixture.theme('light');});
+      await page.locator('#allbarka-pantry').scrollIntoViewIfNeeded();
+      await page.locator('#allbarka-pantry').screenshot({path:path.join(shots,`collections-${width}.jpg`),quality:82});
+    }
+    assert.equal(await page.evaluate(()=>{const first=document.querySelector('[data-content-section]');const assurances=document.querySelector('.editorial-assurances');return !!first&&!!assurances&&!!(first.compareDocumentPosition(assurances)&Node.DOCUMENT_POSITION_FOLLOWING);}),true,'collections and products precede secondary assurances');
+    assert.equal(await page.locator('.table-gift-figure').evaluate(e=>getComputedStyle(e).animationName),'none');
     await page.evaluate(()=>{(window as any).fixture.lang('en');(window as any).fixture.theme('light');});await page.setViewportSize({width:390,height:844});
     const search=page.locator('#hero-search-input');await search.fill('pistachio');await page.locator('.boutique-suggestion').first().waitFor();
     await page.keyboard.press('ArrowDown');assert.equal(await page.locator('.boutique-suggestion').first().evaluate(e=>e===document.activeElement),true);
@@ -87,6 +103,25 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     const touch=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce'});touch.setDefaultTimeout(10000);
     await touch.route('**/*',r=>{const u=new URL(r.request().url());if(u.origin!==origin)return r.fulfill({status:200,body:''});if(u.pathname.startsWith('/fonts/')||u.pathname.includes('dryfruit_flatlay_hero')||u.pathname.includes('gift-box-1.webp'))return r.abort();return r.continue();});const mobile=await touch.newPage();mobile.on('pageerror',e=>errors.push(e.message));await mobile.goto(origin);await mobile.locator('.table-hero-primary').waitFor();await mobile.waitForFunction(()=>document.querySelector<HTMLImageElement>('.heritage-hero-background img')?.style.visibility==='hidden');assert.equal(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
     await mobile.locator('.heritage-hero-guide').tap();await mobile.getByRole('dialog').waitFor();await mobile.getByRole('dialog').getByRole('button',{name:'Close',exact:true}).tap();await mobile.getByRole('dialog').waitFor({state:'hidden'});await mobile.locator('.table-hero-secondary').tap();await mobile.waitForURL('**/gifting');await touch.close();
+    // Normal motion is finite, preserves immediate actions, and cancels when the preference changes.
+    const animated=await browser.newContext({viewport:{width:1440,height:1000},reducedMotion:'no-preference'});animated.setDefaultTimeout(10000);
+    await animated.route('**/*',r=>new URL(r.request().url()).origin===origin?r.continue():r.fulfill({status:200,body:''}));
+    const motionPage=await animated.newPage();motionPage.on('pageerror',e=>errors.push(e.message));await motionPage.goto(origin);await motionPage.locator('.table-gift-figure').waitFor();
+    assert.equal(await motionPage.locator('.table-hero-primary').isVisible(),true);
+    const motionInfo=await motionPage.locator('.heritage-hero-background img').evaluate(e=>{const s=getComputedStyle(e);return{name:s.animationName,iterations:s.animationIterationCount,duration:s.animationDuration};});
+    assert.equal(motionInfo.name,'table-image-settle');assert.equal(motionInfo.iterations,'1');assert.ok(parseFloat(motionInfo.duration)<=1);
+    await motionPage.waitForFunction(()=>document.querySelector('.heritage-hero-background img')!.getAnimations().length===0);
+    await motionPage.locator('.table-pantry-figure').hover();
+    await motionPage.waitForFunction(()=>{const s=getComputedStyle(document.querySelector('.heritage-hero-background img')!);return Math.abs(new DOMMatrixReadOnly(s.transform).a-1.025)<.001;});
+    await motionPage.keyboard.press('Tab');await motionPage.locator('.table-hero-primary').focus();
+    await motionPage.waitForFunction(()=>getComputedStyle(document.querySelector('.table-hero-primary svg')!).translate==='4px');
+    await motionPage.evaluate(()=>(window as any).fixture.lang('ar'));await motionPage.screenshot();
+    await motionPage.waitForFunction(()=>getComputedStyle(document.querySelector('.table-hero-primary svg')!).translate==='-4px');
+    await motionPage.emulateMedia({reducedMotion:'reduce'});await motionPage.screenshot();
+    assert.equal(await motionPage.locator('.heritage-hero-background img').evaluate(e=>getComputedStyle(e).animationName),'none');
+    assert.equal(await motionPage.locator('.heritage-hero-background img').evaluate(e=>getComputedStyle(e).transform),'none');
+    assert.equal(await motionPage.locator('.table-hero-primary svg').evaluate(e=>getComputedStyle(e).translate),'none');
+    await animated.close();
     await fs.writeFile(path.join(shots,'layout-matrix.json'),JSON.stringify({source:'isolated real-route fixture; external resources blocked',layouts},null,2));assert.deepEqual(errors,[]);
   }finally{await browser.close();server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));await fs.rm(temporary,{recursive:true,force:true});}
 });

@@ -65,3 +65,8 @@ A source-only or fixture-only result must be labeled as such. The optional autom
 ## V1 — 25 October 2026
 
 Baseline 2c94349b7754a94b936783b4c85595c66f406a83. Live revision UNKNOWN: no configured Firestore read tool/current authorized private export. Live audit BLOCKED. Hero/category-control styling changes no IDs or mappings; existing source/fixture category regressions and real pistachio search/category/PDP navigation are required in PREMIUM_V1.md. No production writes.
+
+
+## 26 October — visual/motion revision
+
+Baseline 599d13461db796a8f6ad73bbf44910d7ec3a78ab; recovery source 30438be512ac433dfcfb59a911137ec00d46f2f9. Live revision UNKNOWN; no Firestore reader/current export, audit BLOCKED. IDs, taxonomy assignments, routes, membership and prices unchanged. Dates uses existing generated dark-date category imagery if no exact-category cover exists; the legacy khajoor record remains in nuts and normal aliases still control discovery. This is illustration, not a reclassification or delivered-contents claim. Default badges now follow destinations after merchant reorder. Fixture verification is recorded in PREMIUM_V1_REVISION.md; no live writes/certification.

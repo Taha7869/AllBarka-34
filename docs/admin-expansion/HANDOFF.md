@@ -1,6 +1,6 @@
 # Admin expansion handoff
 
-26 October 2026: owner requested stronger visual character and premium internet/motion references. Current M01/M02/M04–M06/M21 revision is IN_PROGRESS, not yet verified after workspace recovery. Read [current revision](../PREMIUM_V1_REVISION.md). Earlier completed work and live Stage 6 blockers remain.
+27 October 2026: owner-requested emerald/arched hero and motion revision is locally verified. M01/M02 are DONE for this bounded pass; M04–M06/M21 have completed portions and pending broader work. Final offline suite: 707 tests, 21 backend and 36 production checks passed. Read [current revision](../PREMIUM_V1_REVISION.md). Earlier completed work and live Stage 6 blockers remain.
 
 Latest additional workstream (25 October 2026): locally verified V1 hero/discovery (706 tests, 21 backend, 36 production checks) in [PREMIUM_V1.md](../PREMIUM_V1.md), tracked in [MASTER_PLAN.md](../../MASTER_PLAN.md). Owner confirmed retail + gifting balanced and existing assets first. Read [RULES.md](../../RULES.md); preserve completed admin work and separate Stage 6 blockers. Live catalog reconciliation remains BLOCKED in [CATALOG_AUDIT.md](../CATALOG_AUDIT.md).
 

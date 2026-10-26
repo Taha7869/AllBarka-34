@@ -182,3 +182,12 @@ No live provider, actual account/upload/order, key rotation, rules publication, 
 ## Premium V1 checkpoint — 25 October 2026
 
 See [PREMIUM_V1.md](../PREMIUM_V1.md) for scoped source/asset review, six before/after fixture screenshots, 30 responsive/language/theme layouts, search/guide/custom-content/image recovery, 200% text and touch checks. Typecheck/hooks/build/privacy PASS; full offline rerun PASS: 706/706 tests across 73 files, 21 backend, 36 production checks, zero missing/retired catalog views. The initial new-test resize-measurement failure was corrected with a stable-geometry wait; no original test was weakened. Source hash `1317a7c9d04992cd7fe5d150f4060ad0d20fdce86c1c985b5c44e29b78e21cbc`. Original Stage 6 integration/release blockers remain unchanged; no deployment/live data/keys change.
+
+
+## Premium V1 visual/motion revision — 27 October 2026
+
+Locally verified bounded M01/M02 and portions of M04–M06/M21. See [PREMIUM_V1_REVISION.md](../PREMIUM_V1_REVISION.md) for exact commands, findings, references, image provenance and six fresh screenshots plus 30-layout matrix. Runtime source hash `52ea4931dd88def56c0a2eeff7a318b0f1c1132858cfd2560598f8fa20e17238`.
+
+Typecheck/hooks/build PASS (84 text artifacts privacy audit); targeted hero and interaction browser tests PASS. Final full offline runner completed: **707/707 tests across 73 files**, zero failed/cancelled/skipped, **21 backend**, **36 production**, 97 fixture products / 115 references / 111 unique assets with zero missing or retired views. Final diff self-reviewed. Existing bundle-size advisory remains.
+
+The earlier 706/707 run stopped at a pre-existing gallery timing test: optimistic counter state arrived before native smooth scroll. The fixture now verifies physical arrival and keyboard return, preserving original assertions; no gallery runtime changed. Current hero fixture reads the current built stylesheet and waits for actual theme paint to avoid stale styles/transition screenshots. Fresh normal-motion checks cover finite entrance, fine-pointer zoom, LTR/RTL keyboard arrow feedback and dynamic reduced-motion cancellation. No external/CodeRabbit review claimed. Live Firestore category audit and Stage 6 provider/release gates remain BLOCKED; no deployment, live mutation or key/config change.

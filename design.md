@@ -56,3 +56,10 @@ The existing controls/gallery/motion system now provide finite press and selecte
 ### Implemented admin finishing pass
 
 The shared Add/Edit item editor now has restrained gold-edged desktop section shortcuts and one compact mobile section selector. Existing palette, typography, fields and persisted data remain intact. Independent unsaved item/configuration protection, pending-save controls and focused error summaries improve actual editing behavior. The browser checks 360/390px and desktop in EN/UR/AR, light/dark, reduced motion and 200% enlarged text/control sizes; inspected fixture screenshots are recorded in ADMIN_FINISHING.md. This is source/fixture evidence, not a deployed private-dashboard claim.
+
+
+## Current 26 October revision — character and finite motion
+
+Owner found the pale V1 opening flat. Current target is emerald with ivory/gold typography, a large arched still-life, existing botanical crest and separate gift cue. Repeat the arch in existing collections; keep discovery quieter. Existing assurances/ribbon now follow the configurable sections, preserving their order/visibility and one showcase. Published custom art stays rectangular without the default gift/crest.
+
+Motion uses a finite 900ms photo settle and 700ms gift settle; fine-pointer image zoom and directional arrow feedback support browsing. The hero adds no delayed/hidden text or action. Reduced-motion disables the new transforms; no looping scene, scroll lock or new dependency. References and current gates are in [PREMIUM_V1_REVISION.md](docs/PREMIUM_V1_REVISION.md). Reuse imagery only; no exact contents/merchant-shoot claim for generated art. Owner aesthetic acceptance remains separate from tests.

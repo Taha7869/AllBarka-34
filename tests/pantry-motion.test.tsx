@@ -5,6 +5,7 @@ import { renderToString } from 'react-dom/server';
 import { MemoryRouter } from 'react-router-dom';
 import CategoryCarousel, { PANTRY_CATEGORIES } from '../src/components/CategoryCarousel';
 import { LanguageProvider } from '../src/contexts/LanguageContext';
+import { DEFAULT_MERCHANDISING } from '../src/config/merchandising';
 import { trendTranslations } from '../src/contexts/trendTranslations';
 import { canRotatePantry, pantryCardProjection, pantryRotationDistance } from '../src/lib/pantryMotion';
 
@@ -57,4 +58,17 @@ test('continuous discovery and manual navigation are translated in all storefron
     for (const language of ['en', 'ur', 'ar']) assert.ok(trendTranslations[language][key]?.trim());
     for (const language of ['ur', 'ar']) assert.match(trendTranslations[language][key], /[\u0600-\u06ff]/);
   }
+});
+
+
+test('collection badges follow destinations after merchant reordering and preserve explicit badges', () => {
+  const settings = { ...DEFAULT_MERCHANDISING, categoryOrder: ['dates', 'oils', 'all', 'bundles'] };
+  const render = (value: typeof settings) => renderToString(<MemoryRouter><LanguageProvider><CategoryCarousel settings={value} /></LanguageProvider></MemoryRouter>);
+  const html = render(settings);
+  const dates = html.match(/<a [^>]*href="\/shop\/dates"[^>]*>[\s\S]*?<\/a>/)?.[0];
+  const all = html.match(/<a [^>]*aria-label="Full Boutique"[^>]*href="\/shop"[^>]*>[\s\S]*?<\/a>/)?.[0];
+  assert.ok(dates);assert.doesNotMatch(dates, /Start Here|Better Together/i);
+  assert.ok(all && /Start Here/i.test(all), 'all-items retains its badge after moving');
+  const custom = render({ ...settings, collections: [{ collectionId: 'dates', title_en: 'Dates', badge: 'Seasonal', visible: true }] });
+  assert.match(custom.match(/<a [^>]*href="\/shop\/dates"[^>]*>[\s\S]*?<\/a>/)?.[0] || '', /Seasonal/);
 });

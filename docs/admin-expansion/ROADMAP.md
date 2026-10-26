@@ -51,3 +51,6 @@ This is a tracked refinement after Stage 5, not a replacement or renumbering of 
 25 October continuation: the actual quote/order/outbox/bundled receiver chain is now rehearsed locally, including new mg/liquid selections, six historical long labels, stale totals, receipt replay and invalid-ack retries. A two-selection wire-bound mismatch was corrected in the sender and inactive receiver source; real provider/release gates remain BLOCKED. `N8N_COMPATIBILITY.md` records the receiver-before-sender release dependency.
 
 Owner-approved admin finishing continuation: `ADMIN_FINISHING.md` tracks eight-section navigation, independent unsaved item/configuration guards, pending-save protection and error focus in the existing editor. This does not restart completed stages, create a new editor or change existing keys. Browser evidence includes 18 mobile/desktop × language/theme layouts plus enlarged text and real discard/reload/persistence/conflict behavior. Live gates remain explicit.
+
+
+26 October: owner-requested visual/motion revision (M01/M02 and bounded M04–M06/M21) is tracked in [PREMIUM_V1_REVISION.md](../PREMIUM_V1_REVISION.md). Previous stages remain intact; Stage 6 live gates remain blocked.
