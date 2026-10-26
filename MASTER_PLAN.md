@@ -18,7 +18,7 @@ Roman Urdu: **Yahan pending, chal raha kaam, rukawat aur verified done ka hisaab
 
 Verified visual/motion source and evidence: `822deeafd723f6292d39232ea537263b7897f49b` (tree `99d25b7286354866b0bc82b957a86cf9b86d026f`), saved and read back on PR #16. The documentation successor records that save; inspect the current remote head before continuing. Full local gates pass; no live release.
 
-Current continuation: V2 core cards/shop browsing is locally verified (708 tests / 21 backend / 36 production), with scope and remaining proposals in [PREMIUM_V2.md](docs/PREMIUM_V2.md). Next recommended phase is V3 product detail.
+Saved V2 implementation/evidence: `4441a671a97682b98be64c94744a5fee25e3158d`, verified remote tree/ref; follow-up documentation records the save. Current continuation: V2 core cards/shop browsing is locally verified (708 tests / 21 backend / 36 production), with scope and remaining proposals in [PREMIUM_V2.md](docs/PREMIUM_V2.md). Next recommended phase is V3 product detail.
 
 ## Current status
 

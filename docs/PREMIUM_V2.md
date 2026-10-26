@@ -58,4 +58,4 @@ Final R11: bounded scope complete; self-review complete with V2-01–06 resolved
 - [x] Fixture/category scope recorded; current live audit BLOCKED, no live certification or reclassification.
 - [x] Canonical commerce, privacy, roles, localization and existing flows retained under the full regression suite.
 - [x] Master register, handoff, test record, inventory, audit note and changelog updated.
-- [ ] Source/evidence remote commit/tree/ref readback pending; record exact verified save before delivery. Draft PR #16, no deployment.
+- [x] Source/evidence saved at `4441a671a97682b98be64c94744a5fee25e3158d`, tree `6928193a5f13b561899aa65213781f1c8b9130d7`, parent `65ba53b4ea209ed309ecc29b00686cf84639b998`. Candidate hashes matched all intended entries, all 891 baseline paths preserved, six added (897 blobs), zero unexpected deletion/change. Commit and branch ref read back. This documentation successor only records that verification. Draft PR #16; no deployment.
