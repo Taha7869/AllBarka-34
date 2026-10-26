@@ -64,13 +64,13 @@ Selected rows below refer only to the bounded V1 **new upgrade**. Reuse notes de
 
 | ID | Proposed deliverable / acceptance | Reuse or dependency | Phase | Scope / work |
 | --- | --- | --- | --- | --- |
-| M01 | Signature hero with distinct desktop/mobile composition, useful CTA and resilient media. | `AllBarkaHero.tsx`, current RootLayout and Studio; M03/M04. | V1 | SELECTED / DONE (locally verified visual/motion revision; owner aesthetic acceptance open) |
-| M02 | Record A/B/C decision and a single visual storyboard. | Recommend A; owner's commercial priority informs balance. | V0 | SELECTED / DONE (locally verified visual/motion revision; owner aesthetic acceptance open) |
+| M01 | Signature hero with distinct desktop/mobile composition, useful CTA and resilient media. | `AllBarkaHero.tsx`, current RootLayout and Studio; M03/M04. | V1 | SELECTED / DONE (locally verified visual/motion revision; owner accepted current look on 27 Oct 2026) |
+| M02 | Record A/B/C decision and a single visual storyboard. | Recommend A; owner's commercial priority informs balance. | V0 | SELECTED / DONE (locally verified visual/motion revision; owner accepted current look on 27 Oct 2026) |
 | M03 | Consistent product/packaging/scale photography, provenance inventory and responsive exports. | Existing media provider; authentic merchant assets. | V1/V3 | SELECTED / IN_PROGRESS — inventory/reuse DONE; original photography pending |
 | M04 | Typography, readable prices, spacing and Urdu/Arabic line-height pass. | Existing tokens/fonts and LanguageContext. | V1–V5 | SELECTED / IN_PROGRESS — hero/discovery DONE; other pages pending |
 | M05 | Compact homepage: hero, collections, one showcase, gifting, truthful brand story and useful feedback/info. | `HomePage.tsx`, published section order/visibility. | V2 | SELECTED / IN_PROGRESS — bounded rhythm portion DONE; full content work pending |
 | M06 | Editorial pantry/hosting/occasion entrances that expose real catalog breadth. | Current category/collection routes; no silent ID renaming. | V2 | SELECTED / IN_PROGRESS — framing/date fallback portion DONE; full editorial entrances pending |
-| M07 | Photo framing, clear selected-quantity price, readable titles and touch actions on product cards. | `ProductCard.tsx`, CartAddButton, carousel/media provider. | V2 | PROPOSED / TODO |
+| M07 | Photo framing, clear selected-quantity price, readable titles and touch actions on product cards. | `ProductCard.tsx`, CartAddButton, carousel/media provider. | V2 | SELECTED / TODO — next V2-A slice |
 | M08 | Gift Atelier: accurate photo arrangement, contents/quantity summary and canonical total. | Existing `CustomHamperBuilderModal.tsx`, hamper validation and real box photos. | V4 | PROPOSED / TODO |
 | M09 | EN/UR/AR personalized card preview with merchant-supported fonts/styles and persisted message/style. | Existing personalization; verify cart, reload, order and packing handoff end to end. | V4 | PROPOSED / TODO |
 | M10 | Find Your Taste from real taste/texture/occasion attributes and current prices/availability. | Existing SelectionGuide; explain no-match and missing attributes. | V3 | PROPOSED / TODO |
@@ -106,21 +106,33 @@ M08-3D remains an optional **feasibility item**, not a prerequisite. Evaluate re
 | M33 | Verified claims and content readiness | Record evidence for origin, packing, freshness/process, certifications and reviews; publish only supported statements. Mark missing facts internally and avoid fake urgency/stock claims. | Early | PROPOSED / TODO |
 | M34 | Catalog health report | Implement a read-only report for orphan taxonomy, broken/mismatched media, missing required facts and publish/discovery problems; actionable item IDs and completeness counts. Follow R04; a written protocol is not the automated report. | Foundation | PROPOSED / TODO |
 
-## Phased delivery proposal
+## Six delivery phases — 27 October 2026
 
-V labels intentionally differ from previous admin Stages 1–6 and interaction P0–P3.
+Owner accepted the current look ("Okay ha yaar") and asked how to divide the remaining work. Use **six delivery phases**, preserving V1–V6 IDs. V0 planning is already complete and is not a seventh implementation phase. These are distinct from previous admin Stages 1–6 and interaction P0–P3. Organizing a proposal into a phase does not silently select every optional feature.
 
-| Phase | Scope | Exit gate / dependency | Current state |
+| Phase | Customer-visible outcome | Scope / dependencies | Current state |
 | --- | --- | --- | --- |
-| V0 — Plan and inputs | Capture scope, rules, priorities, hero direction and source map. | Documents saved; owner decisions/assets recorded separately. | DONE for V1 inputs; further merchant facts remain open. |
-| V1 — Identity and hero | M01–M04, M25, baseline M24; related Studio fields and M33. | Actual mobile/laptop hero, typography and media fallbacks reviewed; original utilities remain reachable. | First bounded hero/discovery slice DONE locally; full asset/editor extensions pending. |
-| V2 — Discovery | M05–M07, M17, M20/M22, M31 and category audit/M34. | Current products reachable through correct taxonomy/search, one homepage showcase, usable mobile states. | TODO |
-| V3 — Product and story | M10/M11/M15/M19/M26/M27. | Verified facts/media and actual selected-option behavior; no invented product claims. | TODO |
-| V4 — Gifting and purchase | M08/M09/M16/M18/M30; relevant M32 controls. | Configuration/message survives cart/quote/order/packing; canonical total and error/recovery checks. | TODO |
-| V5 — Optional signature tools | M12–M14/M28/M29 when selected. | Merchant guidance and backend/privacy dependencies resolved per feature. | TODO; optional selections open |
-| V6 — Release verification | Review, regression, responsive/accessibility/performance and supported live integrations. | Every selected acceptance gate evidenced, original Stage 6 dependencies respected, separately authorized rollout. | TODO |
+| **V1 — Brand opening** | Emerald Signature Table hero, balanced retail/gifting actions, separate discovery and restrained motion. | Completed M01/M02 and hero portions of M03/M04/M21. Remaining photography, site-wide typography and editor controls accompany the relevant later surfaces. | **DONE for bounded opening; owner accepted current look.** Local verification saved; not deployed. |
+| **V2 — Browsing and product cards** | Matching collection entrances, readable product cards, better shop/category layout, filters and mobile browsing. | M05–M07/M17; relevant M20/M22, plus M04/M21/M23 as needed. R04 category audit accompanies discovery changes. M31 aliases/M34 automated report remain optional follow-ups. | **NEXT: V2-A selected / TODO**; other V2 items retain individual statuses. |
+| **V3 — Product detail and brand story** | Distinct food/packaging product pages, useful photography, clear selected quantity/price/purchase panel, editorial story/journal. | M15/M19; M11/M26 only from verified facts and real contents/scale assets. Richer M10/M27 need catalog attributes. Typography/motion/admin support ship with each changed surface. | TODO; factual-content dependencies remain open. |
+| **V4 — Gifting and purchase** | Dedicated gifting page, improved hamper configuration, personalization where supported, coherent cart/checkout. | M16/M08/M09/M18/M30. Accurate box/filling photos and merchant printing options before claiming a realistic preview. Keep canonical totals, MOQ/preparation and saved-order recovery. | TODO; merchant capabilities/accurate assets gate dependent features. |
+| **V5 — Optional signature experiences** | Selected taste/hosting/occasion planners, useful comparison/reorder, optional shop-the-table or private gift reveal. | Remaining M10/M12–M14/M27–M29 when selected and supported by verified data. True 3D is separate feasibility work. | PROPOSED / TODO; can be deferred without blocking core launch. |
+| **V6 — Integration and release readiness** | Consistent experience across devices/languages; verified performance, catalog freshness, admin editing and supported live checkout/integrations. | M24, remaining cross-page M20–M23/M25/M32/M33 as selected, existing R03/R04/R11 gates and original admin Stage 6 external blockers. | TODO; live dependencies remain BLOCKED. No merge/deploy in this planning instruction. |
 
-Recommended first slice: **A + M01/M03/M04/M05/M07/M15/M16**, with M25/M26/M33 supporting it; M08 follows once accurate box/content assets are ready. This is a sequencing recommendation, not a claim that all ideas must launch together.
+**Every phase includes design → implementation/admin support → browser/functional verification → self-review/fixes → saved GitHub checkpoint.** Review, accessibility, localization, performance and tests start in the phase that changes a surface; they are not postponed until V6. Finish one reviewable slice before expanding scope. Keep the compact homepage and single product showcase.
+
+### Immediate slice: V2-A — product cards and collection continuity
+
+Owner/agent: Codex. Scope SELECTED / work TODO. This is the next implementation slice; this phase-plan checkpoint does not claim new runtime work.
+
+- First inspect `ProductCard.tsx`, its selected-option/price/cart/media consumers, `ProductShowcase.tsx`, `CategoryCarousel.tsx`, existing shop/PLP consumers and `docs/COMPONENTS_INVENTORY.md`. Reuse their shared behavior.
+- Give real product photography consistent framing, strengthen name/selected-quantity/price hierarchy, refine labels and 44px mobile actions, and align collection/card typography and spacing with the accepted hero. Use existing assets; do not clip labels or actual pack/contents details merely to match the arch.
+- Preserve existing cart acknowledgement, second-photo preview, explicit gallery controls, unavailable/inquiry modes, merchant ordering/visibility, IDs and routes. Retain one homepage showcase. No backend pricing, stock or live product reclassification.
+- Acceptance: correct selected quantity and price agree with the added cart option; card/quick-view/PDP navigation remains intact; configurable and legacy products, inquiry/unavailable cases, failed images and long names work. Check 360/390/tablet/1440, EN/UR/AR, light/dark, 200% text, keyboard/touch and reduced motion. Save comparable before/after actual-route evidence and pass required local gates.
+- Begin R04 by checking for an available authorized live catalog snapshot/watermark. If unavailable, record BLOCKED and complete fixture/source checks; do not ask for keys or invent a live audit.
+- M17 full category/filter/back-position changes are a following V2-B slice. Record exact selected sub-scope before implementation; existing native filters remain working during V2-A. New synonyms, automated catalog monitoring and broad editorial copy are not silently bundled into this first slice.
+
+Existing assets, palette and retail/gifting balance are already answered. No further owner input is needed to begin V2-A. Request only factual product/printing/serving information when a dependent later feature reaches it; omit unsupported claims meanwhile.
 
 ## Owner inputs — ask once, keep the answers here
 
@@ -148,13 +160,14 @@ Performance targets for field measurement are LCP <=2.5s, INP <=200ms and CLS <=
 | 25 Oct 2026 | Owner supplied 24 ideas, requested further suggestions, needed inputs and a repository progress record before starting. | Planning selected; individual new features proposed. |
 | 25 Oct 2026 | Owner added mandatory rules: review before delivery, correct categories after Firestore item changes, preserve working behavior, reduce repeated prompting. | Rules documentation implemented; future automation is separate M34. |
 | 25 Oct 2026 | Recommend A / The Signature Table; preserve current brand and services. | Working V1 direction based on confirmed balanced priorities. |
+| 27 Oct 2026 | Owner accepted current look and requested phased continuation. | Six delivery phases recorded; V2-A product cards/collection continuity selected as next slice. No new implementation claimed in this planning checkpoint. |
 
 ## Next session
 
 1. Fetch current PR #16 head; read `AGENTS.md`, `RULES.md`, `instructions.md` and this file.
 2. Read this checkpoint and the original Stage 6 blockers. Do not repeat completed admin/interactions or call them live-certified.
 3. Owner replies are recorded: retail + gifting balanced; existing assets first. Do not ask again. Read PREMIUM_V1.md for current gates.
-4. Read PREMIUM_V1_REVISION.md for the current owner-requested visual/motion revision and its gates. Next: product-card presentation/full editorial entrances; live category audit remains blocked.
+4. Preserve the accepted hero in PREMIUM_V1_REVISION.md. Follow the six-phase schedule above; next executable task is V2-A product-card/collection continuity. Read the component inventory and existing card/media/cart consumers before editing; live category audit remains blocked until current authorized evidence is available.
 5. Use R03/R04/R11 as applicable, update status/evidence/next action, save against the verified remote parent and verify the saved checkpoint.
 
 ## References used for these recommendations

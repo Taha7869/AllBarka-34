@@ -124,3 +124,8 @@ Reconstructed the owner-requested emerald/arched hero and collection presentatio
 - **Correctness:** default collection badges follow destination IDs after merchant reorder; explicit merchant badges remain. Existing generated date illustration is presentation fallback only, with no catalog reclassification.
 - **Verification:** final self-review, typecheck/hooks/build/privacy audit, affected browser journeys and full runner passed: 707 tests, 21 backend, 36 production checks. Three existing test suites extended; stale CSS/theme paint and native gallery scroll timing corrected in fixtures without removing acceptance assertions. Six current screenshots and matrix saved under docs/evidence/premium-v1-revision.
 - **Continuity:** MASTER_PLAN, instructions and handoff updated; full evidence and pending scope in docs/PREMIUM_V1_REVISION.md. This completes the bounded local revision, not all premium proposals. No deployment, live Firestore/provider mutation, key/config/dependency or pricing change.
+
+
+## 27 October 2026 — six-phase continuation plan
+
+Owner accepted the revised opening and requested a phased sequence. MASTER_PLAN now maps six delivery phases to the existing V1–V6/M IDs, separates completed V0 planning from delivery phases, records acceptance of the current look, and selects V2-A product cards/collection continuity as the next bounded slice. Each phase includes admin integration where needed, testing, self-review and a saved checkpoint. Optional signature tools can be deferred; factual assets and live Stage 6 gates remain named dependencies. Instructions/handoff link the immediate scope and acceptance. Documentation only; no new runtime feature or live verification claimed.
