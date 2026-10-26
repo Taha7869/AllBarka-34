@@ -20,7 +20,7 @@ Verified visual/motion source and evidence: `822deeafd723f6292d39232ea537263b789
 
 Saved V2 implementation/evidence: `4441a671a97682b98be64c94744a5fee25e3158d`, verified remote tree/ref; follow-up documentation records the save. Current continuation: V2 core cards/shop browsing is locally verified (708 tests / 21 backend / 36 production), with scope and remaining proposals in [PREMIUM_V2.md](docs/PREMIUM_V2.md). M15 PDP slice is now locally complete in PREMIUM_V3.md; broader V3 story/journal/facts remain pending.
 
-Latest implementation: **V3 product-detail slice (M15) DONE locally** — contained gallery, food/packaging purchase presentation, selection summary and localized recovery. 709 tests / 21 backend / 36 production passed; [PREMIUM_V3.md](docs/PREMIUM_V3.md) records limits. Full V3 and live release are not complete.
+Saved V3 source/evidence: `3c6949a5e69ee5eadd28334ae1c35e2c113413df` (remote tree/ref verified). Latest implementation: **V3 product-detail slice (M15) DONE locally** — contained gallery, food/packaging purchase presentation, selection summary and localized recovery. 709 tests / 21 backend / 36 production passed; [PREMIUM_V3.md](docs/PREMIUM_V3.md) records limits. Full V3 and live release are not complete.
 
 ## Current status
 

@@ -57,4 +57,4 @@ After this scoped checkpoint, continue remaining V3 story/journal layout work (M
 - [x] Catalog fixture/live scope recorded; live classification audit BLOCKED, no reclassification.
 - [x] Commerce/privacy/roles/localization preserved by reuse and scoped regression checks; final full runner PASS.
 - [x] Master, handoff, test record and changelog final statuses updated.
-- [ ] Remote checkpoint tree/hash/ref verification pending; draft PR #16, no production release.
+- [x] Source/evidence saved at `3c6949a5e69ee5eadd28334ae1c35e2c113413df`, tree `8f4b793ccd2883a0e5631fba4d95b4363d971280`, parent `136310a35af988fb337daac96435e2bdedd977e7`. Candidate blob hashes matched; all 897 baseline paths preserved, ten added (907 blobs), zero unexpected changes/deletions. Remote commit/ref read back. This documentation successor only records the save. Draft PR #16, no production release.
