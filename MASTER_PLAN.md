@@ -18,6 +18,8 @@ Roman Urdu: **Yahan pending, chal raha kaam, rukawat aur verified done ka hisaab
 
 Verified visual/motion source and evidence: `822deeafd723f6292d39232ea537263b7897f49b` (tree `99d25b7286354866b0bc82b957a86cf9b86d026f`), saved and read back on PR #16. The documentation successor records that save; inspect the current remote head before continuing. Full local gates pass; no live release.
 
+Current continuation: V2 core cards/shop browsing is locally verified (708 tests / 21 backend / 36 production), with scope and remaining proposals in [PREMIUM_V2.md](docs/PREMIUM_V2.md). Next recommended phase is V3 product detail.
+
 ## Current status
 
 | Workstream | State | Evidence / next action |
@@ -70,7 +72,7 @@ Selected rows below refer only to the bounded V1 **new upgrade**. Reuse notes de
 | M04 | Typography, readable prices, spacing and Urdu/Arabic line-height pass. | Existing tokens/fonts and LanguageContext. | V1–V5 | SELECTED / IN_PROGRESS — hero/discovery DONE; other pages pending |
 | M05 | Compact homepage: hero, collections, one showcase, gifting, truthful brand story and useful feedback/info. | `HomePage.tsx`, published section order/visibility. | V2 | SELECTED / IN_PROGRESS — bounded rhythm portion DONE; full content work pending |
 | M06 | Editorial pantry/hosting/occasion entrances that expose real catalog breadth. | Current category/collection routes; no silent ID renaming. | V2 | SELECTED / IN_PROGRESS — framing/date fallback portion DONE; full editorial entrances pending |
-| M07 | Photo framing, clear selected-quantity price, readable titles and touch actions on product cards. | `ProductCard.tsx`, CartAddButton, carousel/media provider. | V2 | SELECTED / TODO — next V2-A slice |
+| M07 | Photo framing, clear selected-quantity price, readable titles and touch actions on product cards. | `ProductCard.tsx`, CartAddButton, carousel/media provider. | V2 | SELECTED / DONE — V2 card presentation and current-option fallback, locally verified |
 | M08 | Gift Atelier: accurate photo arrangement, contents/quantity summary and canonical total. | Existing `CustomHamperBuilderModal.tsx`, hamper validation and real box photos. | V4 | PROPOSED / TODO |
 | M09 | EN/UR/AR personalized card preview with merchant-supported fonts/styles and persisted message/style. | Existing personalization; verify cart, reload, order and packing handoff end to end. | V4 | PROPOSED / TODO |
 | M10 | Find Your Taste from real taste/texture/occasion attributes and current prices/availability. | Existing SelectionGuide; explain no-match and missing attributes. | V3 | PROPOSED / TODO |
@@ -80,7 +82,7 @@ Selected rows below refer only to the bounded V1 **new upgrade**. Reuse notes de
 | M14 | Optional private gift reveal with hidden prices and a greeting QR/link. | Separate private server contract; unguessable token, expiry/revoke, no indexing/private preview leakage. No automatic recipient message. | V5 | PROPOSED / TODO |
 | M15 | Product-detail art direction: useful gallery and clear purchase/inquiry panel, distinct food/packaging needs. | Existing PDP, gallery/viewer, custom quantity and sticky controls. | V3 | PROPOSED / TODO |
 | M16 | Dedicated gifting composition with occasion/budget/recipient discovery and exact included contents. | Existing `/gifting` route and `GiftsHampersDestination.tsx`; preserve current routing/filter contracts. | V4 | PROPOSED / TODO |
-| M17 | Shop/category intros, relevant filters, selected states and reliable back/scroll restoration. | ShopPage/CategoryPLP, filter sheet and URL state. | V2 | PROPOSED / TODO |
+| M17 | Shop/category intros, relevant filters, selected states and reliable back/scroll restoration. | ShopPage/CategoryPLP, filter sheet and URL state. | V2 | SELECTED / DONE locally for existing core browse/filter UI and current-tab Back recovery; live catalog validation BLOCKED |
 | M18 | Cart/checkout continuity for actual photo, variant, quantity, message and authoritative cost breakdown. | Current persisted receipt, quote recovery and idempotency. | V4 | PROPOSED / TODO |
 | M19 | Story/journal layouts with actual people/process/serving content and meaningful related products. | InfoPage/JournalPage and existing Studio articles. | V3 | PROPOSED / TODO |
 | M20 | Route-appropriate mobile search/filter/buy controls, safe areas and no competing fixed bars. | Existing header/menu/cart/sticky controls; keyboard/overlay tests. | V2/V6 | PROPOSED / TODO |
@@ -113,7 +115,7 @@ Owner accepted the current look ("Okay ha yaar") and asked how to divide the rem
 | Phase | Customer-visible outcome | Scope / dependencies | Current state |
 | --- | --- | --- | --- |
 | **V1 — Brand opening** | Emerald Signature Table hero, balanced retail/gifting actions, separate discovery and restrained motion. | Completed M01/M02 and hero portions of M03/M04/M21. Remaining photography, site-wide typography and editor controls accompany the relevant later surfaces. | **DONE for bounded opening; owner accepted current look.** Local verification saved; not deployed. |
-| **V2 — Browsing and product cards** | Matching collection entrances, readable product cards, better shop/category layout, filters and mobile browsing. | M05–M07/M17; relevant M20/M22, plus M04/M21/M23 as needed. R04 category audit accompanies discovery changes. M31 aliases/M34 automated report remain optional follow-ups. | **NEXT: V2-A selected / TODO**; other V2 items retain individual statuses. |
+| **V2 — Browsing and product cards** | Matching collection entrances, readable product cards, better shop/category layout, filters and mobile browsing. | M05–M07/M17; relevant M20/M22, plus M04/M21/M23 as needed. R04 category audit accompanies discovery changes. M31 aliases/M34 automated report remain optional follow-ups. | **DONE locally for core cards/shop browsing, including in-session Back recovery.** See PREMIUM_V2.md; richer editorial/alias/monitoring proposals retain their own status. |
 | **V3 — Product detail and brand story** | Distinct food/packaging product pages, useful photography, clear selected quantity/price/purchase panel, editorial story/journal. | M15/M19; M11/M26 only from verified facts and real contents/scale assets. Richer M10/M27 need catalog attributes. Typography/motion/admin support ship with each changed surface. | TODO; factual-content dependencies remain open. |
 | **V4 — Gifting and purchase** | Dedicated gifting page, improved hamper configuration, personalization where supported, coherent cart/checkout. | M16/M08/M09/M18/M30. Accurate box/filling photos and merchant printing options before claiming a realistic preview. Keep canonical totals, MOQ/preparation and saved-order recovery. | TODO; merchant capabilities/accurate assets gate dependent features. |
 | **V5 — Optional signature experiences** | Selected taste/hosting/occasion planners, useful comparison/reorder, optional shop-the-table or private gift reveal. | Remaining M10/M12–M14/M27–M29 when selected and supported by verified data. True 3D is separate feasibility work. | PROPOSED / TODO; can be deferred without blocking core launch. |
@@ -123,14 +125,14 @@ Owner accepted the current look ("Okay ha yaar") and asked how to divide the rem
 
 ### Immediate slice: V2-A — product cards and collection continuity
 
-Owner/agent: Codex. Scope SELECTED / work TODO. This is the next implementation slice; this phase-plan checkpoint does not claim new runtime work.
+Owner/agent: Codex. Scope SELECTED / work DONE locally, plus bounded V2-B shop styling and Back recovery. Evidence: [PREMIUM_V2.md](docs/PREMIUM_V2.md). Richer editorial content, aliases and live audit retain their separate status.
 
-- First inspect `ProductCard.tsx`, its selected-option/price/cart/media consumers, `ProductShowcase.tsx`, `CategoryCarousel.tsx`, existing shop/PLP consumers and `docs/COMPONENTS_INVENTORY.md`. Reuse their shared behavior.
+- First inspect `ProductCard.tsx`, its selected-option/price/cart/media consumers, `the existing HomePage showcase consumers`, `CategoryCarousel.tsx`, existing shop/PLP consumers and `docs/COMPONENTS_INVENTORY.md`. Reuse their shared behavior.
 - Give real product photography consistent framing, strengthen name/selected-quantity/price hierarchy, refine labels and 44px mobile actions, and align collection/card typography and spacing with the accepted hero. Use existing assets; do not clip labels or actual pack/contents details merely to match the arch.
 - Preserve existing cart acknowledgement, second-photo preview, explicit gallery controls, unavailable/inquiry modes, merchant ordering/visibility, IDs and routes. Retain one homepage showcase. No backend pricing, stock or live product reclassification.
 - Acceptance: correct selected quantity and price agree with the added cart option; card/quick-view/PDP navigation remains intact; configurable and legacy products, inquiry/unavailable cases, failed images and long names work. Check 360/390/tablet/1440, EN/UR/AR, light/dark, 200% text, keyboard/touch and reduced motion. Save comparable before/after actual-route evidence and pass required local gates.
 - Begin R04 by checking for an available authorized live catalog snapshot/watermark. If unavailable, record BLOCKED and complete fixture/source checks; do not ask for keys or invent a live audit.
-- M17 full category/filter/back-position changes are a following V2-B slice. Record exact selected sub-scope before implementation; existing native filters remain working during V2-A. New synonyms, automated catalog monitoring and broad editorial copy are not silently bundled into this first slice.
+- V2-B core category/control styling, retained native filters and current-tab Back position/loaded-depth recovery are locally complete; see the task record for exact evidence and limits. New synonyms, automated catalog monitoring and broad editorial copy are not silently bundled into this first slice.
 
 Existing assets, palette and retail/gifting balance are already answered. No further owner input is needed to begin V2-A. Request only factual product/printing/serving information when a dependent later feature reaches it; omit unsupported claims meanwhile.
 
@@ -167,7 +169,7 @@ Performance targets for field measurement are LCP <=2.5s, INP <=200ms and CLS <=
 1. Fetch current PR #16 head; read `AGENTS.md`, `RULES.md`, `instructions.md` and this file.
 2. Read this checkpoint and the original Stage 6 blockers. Do not repeat completed admin/interactions or call them live-certified.
 3. Owner replies are recorded: retail + gifting balanced; existing assets first. Do not ask again. Read PREMIUM_V1.md for current gates.
-4. Preserve the accepted hero in PREMIUM_V1_REVISION.md. Follow the six-phase schedule above; next executable task is V2-A product-card/collection continuity. Read the component inventory and existing card/media/cart consumers before editing; live category audit remains blocked until current authorized evidence is available.
+4. Preserve the accepted hero in PREMIUM_V1_REVISION.md. Follow the six-phase schedule above; next recommended design task is V3 product detail art direction (M15), with food/packaging needs kept distinct. V2 core evidence is in PREMIUM_V2.md. Read the component inventory and existing card/media/cart consumers before editing; live category audit remains blocked until current authorized evidence is available.
 5. Use R03/R04/R11 as applicable, update status/evidence/next action, save against the verified remote parent and verify the saved checkpoint.
 
 ## References used for these recommendations

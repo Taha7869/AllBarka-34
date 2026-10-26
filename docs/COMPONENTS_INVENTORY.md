@@ -262,3 +262,8 @@ Reuse `AdminItemForm`, `AdminCatalogConfiguration` and `ItemField`: eight-sectio
 ## 26 October visual/motion revision
 
 AllBarkaHero reuses AllBarkaCrestVector and existing state/providers; scoped CSS supplies the emerald/arch composition and finite motion. Existing CategoryCarousel keeps routes/merchant overrides while default badges follow destinations and Dates gets existing date imagery. HomePage repositions existing assurances after configurable sections. No new component/dependency. See PREMIUM_V1_REVISION.md.
+
+
+## V2 product presentation — 27 October 2026
+
+Reuse existing ProductCard (homepage), CategoryPLP (shop), ProductImageGallery, CartAddButton, CategoryCarousel and CatalogFilterSheet. Shared styling is scoped in editorial.css; no new component or dependency. CategoryPLP retains a bounded session-only history-entry map for position/loaded depth; ShopPage/RootLayout cooperate on POP navigation. ProductShowcase.tsx is not an existing component; follow actual HomePage consumers rather than creating that duplicate. See PREMIUM_V2.md.

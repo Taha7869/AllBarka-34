@@ -1,6 +1,6 @@
 import { useCatalogProducts } from '../contexts/CatalogContext';
-import React, { useState, useEffect } from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { Outlet, useNavigationType, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
@@ -48,6 +48,8 @@ export default function RootLayout() {
   const online = useOnlineStatus();
 
   const location = useLocation();
+  const navigationType = useNavigationType();
+  const previousScrollRoute = useRef<string | null>(null);
   const isAdminRoute = location.pathname.startsWith('/admin/');
   const { currentUser, patronProfile, logout } = useAuth();
   const { language, setLanguage, isRtl, t } = useLanguage();
@@ -166,8 +168,10 @@ export default function RootLayout() {
   };
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [location.pathname]);
+    if (previousScrollRoute.current === location.pathname) return;
+    previousScrollRoute.current = location.pathname;
+    if (!(navigationType === 'POP' && /^\/(shop|category)(\/|$)/.test(location.pathname))) window.scrollTo(0, 0);
+  }, [location.pathname, navigationType]);
 
   useEffect(() => {
     const handleScroll = () => {

@@ -1,5 +1,7 @@
 # AllBarka admin expansion — working instructions
 
+27 October 2026 — next phase implementation: [V2 product cards and browsing](docs/PREMIUM_V2.md) is locally complete for the stated core scope: 708 tests, 21 backend and 36 production checks. Preserve the accepted hero; next recommended phase is V3 product detail. Live catalog audit and original Stage 6 blockers remain.
+
 27 October 2026 — phase planning: owner accepted the revised look. Follow the six delivery phases in [MASTER_PLAN.md](MASTER_PLAN.md); V1 bounded opening is complete and V2-A product-card/collection continuity is the next SELECTED / TODO slice. No additional owner input is required for existing-asset layout work. Optional features and original Stage 6 live blockers retain their statuses. This checkpoint changes documents only.
 
 27 October 2026: owner-requested emerald/arched hero and motion revision is locally verified. M01/M02 are DONE for this bounded pass; M04–M06/M21 have completed portions and pending broader work. Final offline suite: 707 tests, 21 backend and 36 production checks passed. Read [current revision](docs/PREMIUM_V1_REVISION.md). Earlier completed work and live Stage 6 blockers remain.

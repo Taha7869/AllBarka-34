@@ -70,3 +70,6 @@ Baseline 2c94349b7754a94b936783b4c85595c66f406a83. Live revision UNKNOWN: no con
 ## 26 October — visual/motion revision
 
 Baseline 599d13461db796a8f6ad73bbf44910d7ec3a78ab; recovery source 30438be512ac433dfcfb59a911137ec00d46f2f9. Live revision UNKNOWN; no Firestore reader/current export, audit BLOCKED. IDs, taxonomy assignments, routes, membership and prices unchanged. Dates uses existing generated dark-date category imagery if no exact-category cover exists; the legacy khajoor record remains in nuts and normal aliases still control discovery. This is illustration, not a reclassification or delivered-contents claim. Default badges now follow destinations after merchant reorder. Fixture verification is recorded in PREMIUM_V1_REVISION.md; no live writes/certification.
+
+
+27 October 2026 — V2 presentation checkpoint: live watermark remains UNKNOWN; no new authorized snapshot available, live audit BLOCKED. Existing local readers now exclude disabled variant labels and resolve removed remembered selections, without changing product/category assignments. New fixture checks selected 500g/cart, category results, mobile budget filters and back depth. Full fixture/asset evidence is in PREMIUM_V2.md. No claim that current Firestore records were all audited; no production writes.

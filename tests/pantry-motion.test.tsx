@@ -69,6 +69,6 @@ test('collection badges follow destinations after merchant reordering and preser
   const all = html.match(/<a [^>]*aria-label="Full Boutique"[^>]*href="\/shop"[^>]*>[\s\S]*?<\/a>/)?.[0];
   assert.ok(dates);assert.doesNotMatch(dates, /Start Here|Better Together/i);
   assert.ok(all && /Start Here/i.test(all), 'all-items retains its badge after moving');
-  const custom = render({ ...settings, collections: [{ collectionId: 'dates', title_en: 'Dates', badge: 'Seasonal', visible: true }] });
+  const custom = render({ ...settings, collections: [{ collectionId: 'dates', slug: '/shop/dates', title_en: 'Dates', title_ur: '', badge: 'Seasonal', visible: true }] });
   assert.match(custom.match(/<a [^>]*href="\/shop\/dates"[^>]*>[\s\S]*?<\/a>/)?.[0] || '', /Seasonal/);
 });

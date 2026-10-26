@@ -40,7 +40,8 @@ export default function ProductCard({
   const weights = Object.keys(product.prices || {}).filter(
     weight => !disabledLabels.has(weight) && Number.isFinite(product.prices[weight]) && product.prices[weight] > 0
   );
-  const [selectedWeight, setSelectedWeight] = useState(weights[0] || '');
+  const [preferredWeight, setSelectedWeight] = useState(weights[0] || '');
+  const selectedWeight = weights.includes(preferredWeight) ? preferredWeight : weights[0] || '';
   const titleTypography = language === 'ur' ? 'font-urdu text-[20px]' : language === 'ar' ? 'font-arabic text-[23px]' : 'font-serif text-[21px] leading-[1.25]';
 
   const hasPositivePrice = weights.length > 0;
@@ -84,7 +85,7 @@ export default function ProductCard({
 
     >
       {/* Top Meta Line */}
-      <div className="mb-1 flex min-h-11 items-center gap-2">
+      <div className="table-card-meta mb-1 flex min-h-11 items-center gap-2">
         <span dir="auto" className="min-w-0 flex-1 truncate text-[9px] font-sans font-medium uppercase tracking-[0.12em] text-[var(--color-accent-text)]">
           {getLocalized(product, 'origin', language)}
         </span>
@@ -100,7 +101,7 @@ export default function ProductCard({
       <ProductImageGallery product={product} />
 
       {/* Product Details */}
-      <div dir={language === 'en' ? 'ltr' : 'rtl'} className="min-w-0 flex-1 space-y-2 pb-4 pt-1 text-start">
+      <div dir={language === 'en' ? 'ltr' : 'rtl'} className="table-card-details min-w-0 flex-1 space-y-2 pb-4 pt-1 text-start">
         <Link to={`/product/${product.id}`} className="block max-w-full focus-ring rounded-sm w-fit">
           <h3 lang={language} className={`whitespace-normal break-words [overflow-wrap:anywhere] font-medium text-[var(--color-text-primary)] transition-colors hover:text-[var(--color-accent-text)] ${titleTypography}`}>
             {getLocalized(product, 'name', language)}
@@ -118,7 +119,7 @@ export default function ProductCard({
       </div>
 
       {/* Weights & Action Area */}
-      <div className="mt-auto space-y-4 border-t border-[var(--color-border)] pt-4">
+      <div className="table-card-purchase mt-auto space-y-4 border-t border-[var(--color-border)] pt-4">
         {/* Weight Selector */}
         {!isQuoteOnly && <div className="flex w-full flex-wrap gap-1.5" role="group" aria-label={t('shop.portion')}>
           {weights.map((w) => (
@@ -148,7 +149,7 @@ export default function ProductCard({
               <span dir="auto" className="text-[9px] font-sans font-medium uppercase tracking-[0.12em] text-[var(--color-text-secondary)]">
                 {t('price', 'Price')}
               </span>
-              <span className="font-serif text-2xl font-medium leading-tight tracking-tight text-[var(--color-text-price)]">
+              <span className="table-card-price font-serif text-2xl font-medium leading-tight tracking-tight text-[var(--color-text-price)]">
                 {isQuoteOnly ? <span className="text-base">{t('catalog.requestQuote')}</span> : <bdi dir="ltr">Rs. {unitPrice?.toLocaleString()}</bdi>}
               </span>
               {isPackaging && !isQuoteOnly && moqPieces !== null && (

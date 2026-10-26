@@ -129,3 +129,8 @@ Reconstructed the owner-requested emerald/arched hero and collection presentatio
 ## 27 October 2026 — six-phase continuation plan
 
 Owner accepted the revised opening and requested a phased sequence. MASTER_PLAN now maps six delivery phases to the existing V1–V6/M IDs, separates completed V0 planning from delivery phases, records acceptance of the current look, and selects V2-A product cards/collection continuity as the next bounded slice. Each phase includes admin integration where needed, testing, self-review and a saved checkpoint. Optional signature tools can be deferred; factual assets and live Stage 6 gates remain named dependencies. Instructions/handoff link the immediate scope and acceptance. Documentation only; no new runtime feature or live verification claimed.
+
+
+## 27 October 2026 — V2 product cards and browsing
+
+Homepage/shop cards now share restrained framing, full-photo contain treatment, stronger name/quantity/price hierarchy and clearer controls matching the accepted hero. Existing category masthead/discovery controls follow the same styling. Category Back restores current-tab scroll and loaded depth; fresh navigation and same-path filters retain appropriate behavior. Removed/disabled variants resolve consistently and an empty purchasable option set cannot be added. Existing admin media/ordering, gallery, cart and canonical price authority retained; no new component/dependency or live mutation. Exact final gates, scope and limitations: docs/PREMIUM_V2.md.
