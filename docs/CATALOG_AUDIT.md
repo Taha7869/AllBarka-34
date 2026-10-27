@@ -76,3 +76,6 @@ Baseline 599d13461db796a8f6ad73bbf44910d7ec3a78ab; recovery source 30438be512ac4
 
 
 27 October 2026 — V3 PDP presentation: watermark UNKNOWN / live audit BLOCKED. No authorized Firestore read tool/current export found; no live writes or category changes. Existing fixture product pista and the first saved bid-box fixture exercise food/packaging presentation, selected quantities/totals, available related-price selection and failure handling. No full live semantic category certification. See PREMIUM_V3.md; prior audits remain historical.
+
+
+27 October 2026 — editorial presentation: live watermark UNKNOWN/current audit BLOCKED; no authorized current merchant snapshot. Journal related products use the current public active catalog and shared ProductCard instead of a raw first-price/500g fallback. Existing fixture related-cart and full regressions are local evidence; no new classification/price/status or live write. See PREMIUM_EDITORIAL.md.

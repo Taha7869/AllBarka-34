@@ -141,3 +141,10 @@ Homepage/shop cards now share restrained framing, full-photo contain treatment, 
 Existing PDP now has contained photography, a distinct editorial purchase surface, proper RTL direction/type, a live selection summary and selected portion state. Packaging opens relevant details first, with food-only taste/guarantee content omitted. Generic sourcing/personalization claims replaced by neutral headings/reference wording. Missing-product recovery and packaging headings/actions translated, dark fallback improved, related cards resolve an enabled positive price or inquiry. Existing canonical pricing/MOQ/custom quantity/gallery/media/cart contracts retained. No new component/dependency/product image or live mutation. Current gates and pending broader V3 work: docs/PREMIUM_V3.md.
 
 V3 final local verification: typecheck/hooks/build/privacy passed; 709 tests across 75 files, 21 backend and 36 production checks, zero missing/retired assets. Seven fixture screenshots and layout matrix saved; M15 DONE locally, M19 and original Stage 6/live catalog blockers retained.
+
+
+## 27 October 2026 — story and journal editorial pass
+
+Added distinct standalone story opening/reading/retail-gifting/journal routes using existing copy and assets. Journal overview/article now have editorial typography, functional category/search discovery, native contents links and shared related ProductCards. Fixed featured article omission under category filters, premature quick-add acknowledgement and unawaited clipboard success. Scoped grid sizing fixes mobile related-card overflow; localized recovery/labels and themed surfaces. Existing content publication, commerce and InfoPage modal/other routes retained. No new component/dependency, claims/people photos, live write or deploy. Final verification/status: docs/PREMIUM_EDITORIAL.md.
+
+Final M19 gates: 710 tests across 76 files, 21 backend, 36 production, type/hooks/build/privacy and 72 layouts plus enlarged-text checks PASS after wrapping fixes. Eight before/after screenshots and two matrices retained. Bounded layout scope DONE locally; missing authentic photography/factual validation/editor extensions remain separate.

@@ -272,3 +272,8 @@ Reuse existing ProductCard (homepage), CategoryPLP (shop), ProductImageGallery, 
 ## V3 product-detail pass — 27 October 2026
 
 ProductDetailPage reuses ProductDetailAccordion (packaging default for packaging), ProductPhotoViewer, ProductVideo, CartAddButton, CustomWeightInput and existing catalog/media/cart contexts. The read-only selection summary is inline in the existing page and uses existing displayProductPrice state. Styles extend editorial.css; labels use shoppingQualityTranslations. No new component/dependency/schema. See PREMIUM_V3.md.
+
+
+## M19 editorial pass — 27 October 2026
+
+JournalPage reuses existing public contentJournal/StorefrontContentProvider, SEO and ProductCard (therefore CartAddButton, media, portion and MOQ behavior). Native contents links require no new component. Standalone InfoPage our-story branch reuses current PAGES copy, existing hero still-life, SEO and LanguageContext; other info/modal routes remain. Styles extend editorial.css; UI labels use shoppingQualityTranslations. No new component/dependency/settings model.
