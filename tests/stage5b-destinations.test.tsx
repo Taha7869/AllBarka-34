@@ -360,8 +360,8 @@ test('Regression 6: Dedicated destinations render proper headers, policies, and 
 
   // Gifts & Hampers
   const htmlGifting = renderApp('/gifting');
-  assert.ok(htmlGifting.includes('Luxury Gifts &amp; Curated Hampers') || htmlGifting.includes('Luxury Gifts & Curated Hampers'));
-  assert.ok(htmlGifting.includes('Bespoke Hamper Builder'));
+  assert.match(htmlGifting, /<h1>Thoughtfully chosen\. Beautifully given\.<\/h1>/);
+  assert.ok(htmlGifting.includes('Launch Hamper Builder'));
   assert.ok(htmlGifting.includes('Corporate Executive Gifting'));
 
   // Deals & Value Packages
@@ -597,7 +597,8 @@ test('Regression 8: packagingSubcategory validates values, clears deliberately, 
 test('Regression 9: Gifts & Hampers and Deals destinations consume URL params and preserve unrelated query params', () => {
   // Gifts & Hampers with occasion filter and unrelated tracking parameter
   const giftingWeddingHtml = renderApp('/gifting?occasion=wedding&utm_source=spring_campaign');
-  assert.ok(giftingWeddingHtml.includes('Luxury Gifts &amp; Curated Hampers') || giftingWeddingHtml.includes('Luxury Gifts & Curated Hampers'));
+  assert.match(giftingWeddingHtml, /<h1>Thoughtfully chosen\. Beautifully given\.<\/h1>/);
+  assert.match(giftingWeddingHtml, /aria-pressed="true">Nikkah &amp; Wedding<\/button>/);
 
   // Deals & Value Packages with filter and unrelated parameter
   const dealsDuosHtml = renderApp('/shop/deals?filter=duos&partner_id=corporate_club');

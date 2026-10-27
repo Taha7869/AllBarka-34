@@ -79,3 +79,6 @@ Baseline 599d13461db796a8f6ad73bbf44910d7ec3a78ab; recovery source 30438be512ac4
 
 
 27 October 2026 — editorial presentation: live watermark UNKNOWN/current audit BLOCKED; no authorized current merchant snapshot. Journal related products use the current public active catalog and shared ProductCard instead of a raw first-price/500g fallback. Existing fixture related-cart and full regressions are local evidence; no new classification/price/status or live write. See PREMIUM_EDITORIAL.md.
+
+
+27 October 2026 — V4 gifting: live watermark UNKNOWN/current audit BLOCKED; no authorized current merchant snapshot. Gift membership/occasion matching retains the existing rule and exact IDs. Starting-pack budget uses an enabled positive option, not order/MOQ affordability. Current snapshot fixtures verify changed pista rate, unlisted filling recovery, saved hamper repricing and unavailable packaging. Shared hamper availability validation now rejects inquiry/draft/archived/disabled250g selections; no record/price/taxonomy mutation. This is source/fixture evidence, not current live semantic reconciliation. See PREMIUM_GIFTING.md.

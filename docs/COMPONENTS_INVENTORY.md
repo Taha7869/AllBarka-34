@@ -1,5 +1,9 @@
 # AllBarka Components Inventory
 
+## V4 gifting continuation
+
+GiftsHampersDestination reuses ProductCard/media/cart acknowledgement and existing occasion routes. CustomHamperBuilderModal owns current-box/contents summary, unavailable selection recovery and existing-message preview; CartContext resolves the same current provider snapshot. No new component, dependency, printing style or data schema. Shared ProductCard price/Quick View row wraps at enlarged text. Source-controlled composition/copy remain outside M23 admin-editability; see PREMIUM_GIFTING.md.
+
 This document is auto-generated and lists every component, page, context, hook, and utility with their usage.
 
 ## Premium V1

@@ -72,3 +72,13 @@ test('builder provides real packaging, an accessible dialog and no fabricated pr
   assert.match(html, /4–6 selections/);
   assert.doesNotMatch(html, /prod-chilgoza|prod-figs|custom-hamper-\d+/);
 });
+
+
+test('hamper portions reject inquiry, unpublished and disabled selections without inventing a price', () => {
+  const item=PRODUCTS.find(product=>product.id==='pista')!;
+  for(const patch of [{orderMode:'inquiry_quote' as const},{status:'draft' as const},{status:'archived' as const},{variants:[{label:'250g',price:item.prices['250g'],available:false}]}]){
+    const changed={...item,...patch};assert.equal(hamperSelectionPrice(changed),null);
+    assert.equal(resolveHamper(configuration(),PRODUCTS.map(product=>product.id===item.id?changed:product)),null);
+  }
+  assert.equal(resolveHamper(configuration(),PRODUCTS,HAMPER_BOXES.map(box=>({...box,active:false}))),null);
+});

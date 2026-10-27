@@ -144,7 +144,7 @@ export default function ProductCard({
 
         {/* Pricing & Add to Cart */}
         <div className="flex flex-col gap-3">
-          <div className="flex items-end justify-between gap-2">
+          <div className="flex flex-wrap items-end justify-between gap-2">
             <div className="flex flex-col text-start">
               <span dir="auto" className="text-[9px] font-sans font-medium uppercase tracking-[0.12em] text-[var(--color-text-secondary)]">
                 {t('price', 'Price')}

@@ -1,0 +1,254 @@
+[
+  {
+    "surface": "landing",
+    "width": 360,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "surface": "landing",
+    "width": 360,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "surface": "landing",
+    "width": 360,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "surface": "landing",
+    "width": 360,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "surface": "landing",
+    "width": 360,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "surface": "landing",
+    "width": 360,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "surface": "landing",
+    "width": 390,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "surface": "landing",
+    "width": 390,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "surface": "landing",
+    "width": 390,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "surface": "landing",
+    "width": 390,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "surface": "landing",
+    "width": 390,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "surface": "landing",
+    "width": 390,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "surface": "landing",
+    "width": 768,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "surface": "landing",
+    "width": 768,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "surface": "landing",
+    "width": 768,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "surface": "landing",
+    "width": 768,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "surface": "landing",
+    "width": 768,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "surface": "landing",
+    "width": 768,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "surface": "landing",
+    "width": 1440,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "surface": "landing",
+    "width": 1440,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "surface": "landing",
+    "width": 1440,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "surface": "landing",
+    "width": 1440,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "surface": "landing",
+    "width": 1440,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "surface": "landing",
+    "width": 1440,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "surface": "builder",
+    "width": 360,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "surface": "builder",
+    "width": 360,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "surface": "builder",
+    "width": 360,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "surface": "builder",
+    "width": 360,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "surface": "builder",
+    "width": 360,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "surface": "builder",
+    "width": 360,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "surface": "builder",
+    "width": 768,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "surface": "builder",
+    "width": 768,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "surface": "builder",
+    "width": 768,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "surface": "builder",
+    "width": 768,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "surface": "builder",
+    "width": 768,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "surface": "builder",
+    "width": 768,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "surface": "builder",
+    "width": 1440,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "surface": "builder",
+    "width": 1440,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "surface": "builder",
+    "width": 1440,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "surface": "builder",
+    "width": 1440,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "surface": "builder",
+    "width": 1440,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "surface": "builder",
+    "width": 1440,
+    "language": "ar",
+    "theme": "dark"
+  }
+]

@@ -122,7 +122,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (!item || typeof item !== 'object') return [];
             const identity = resolveCartIdentity(item, PRODUCTS);
             if (!identity) return [];
-            const hamper = identity.productId === 'custom-hamper' ? resolveHamper(item.hamperConfiguration) : null;
+            const hamper = identity.productId === 'custom-hamper' ? resolveHamper(item.hamperConfiguration, PRODUCTS) : null;
             const rawWeight = hamper?.portion || resolveCartPortion(identity.product, item.selectedWeight || identity.portion);
             if (!rawWeight) return [];
             const rawProductId = identity.productId;
@@ -225,7 +225,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const identity = resolveCartIdentity(productOrItem, PRODUCTS);
       if (!identity) return;
       const rawProdId = identity.productId;
-      const hamper = rawProdId === 'custom-hamper' ? resolveHamper((productOrItem as CartItem).hamperConfiguration) : null;
+      const hamper = rawProdId === 'custom-hamper' ? resolveHamper((productOrItem as CartItem).hamperConfiguration, PRODUCTS) : null;
+      if (rawProdId === 'custom-hamper' && !hamper) { addToast(t('cart.portionUnavailable'), 'error'); return; }
       const fullProd = hamper ? { ...hamper, id: 'custom-hamper' } : identity.product || (productOrItem as any);
       const selectedWeight = hamper?.portion || resolveCartPortion(identity.product, weight || (productOrItem as any).selectedWeight || identity.portion);
       if (!selectedWeight) {
