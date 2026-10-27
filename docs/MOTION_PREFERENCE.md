@@ -1,6 +1,6 @@
 # M21 — live device motion preference
 
-28 October 2026 (Asia/Karachi). Codex. SELECTED / DONE locally for this bounded slice; verified remote save is the final delivery step. Inspected parent `7fa11696d81c347a0ee8ce91aa52efbc0561dd46`, tree `599fc1839f38d55d1046b7ba5bee0331a63902a4`, draft PR #16. Owner requested the next independent step and deferred keys/configuration changes and final release. This bounded slice continues the already-selected M21 motion work.
+28 October 2026 (Asia/Karachi). Codex. SELECTED / DONE for the bounded locally verified slice; source saved and read-back verified in draft PR #16. Inspected parent `7fa11696d81c347a0ee8ce91aa52efbc0561dd46`, tree `599fc1839f38d55d1046b7ba5bee0331a63902a4`, draft PR #16. Owner requested the next independent step and deferred keys/configuration changes and final release. This bounded slice continues the already-selected M21 motion work.
 
 ## Result and scope
 
@@ -44,8 +44,12 @@ Existing current auth, Storage, n8n, accepted-order, preview/rollback and final 
 - [x] Catalog impact/watermark recorded with public/private distinction.
 - [x] Existing commerce, privacy, roles, localization and manual reading controls retained.
 - [x] Master/handoff/test/changelog updated; source checkpoint prepared for verified save.
-- [ ] Expected parent/base tree, candidate contents and saved remote ref verified.
+- [x] Expected parent/base tree, 49 intended paths, candidate contents and saved source ref verified.
 
 Next independent continuation after final save: inspect remaining route/overlay keyboard and short-height behavior (M20/M21) while provider-dependent checks stay deferred. Do not restart this preference migration or the completed premium/admin stages. Obtain authorized provider/test access when the owner moves to final integration; changing keys is not itself verification.
 
 Self-review also compared all migrated consumer bodies against the inspected baseline: 33 are import-only substitutions; only ScrollReveal and MagneticButton have the documented additional changes. Live release is deferred. The full suite includes the new mounted preference journey and existing actual-route admin/catalog/gifting/purchase/navigation checks.
+
+## Verified source save
+
+Source `3960af7afa15f2e738236152e3e1a6850b5b8964`, tree `b6e3136abb99639d98253ce9bdb1f21006c4683f`, parent `7fa11696d81c347a0ee8ce91aa52efbc0561dd46`. Candidate tree has 953 blobs, preserves all unrelated upstream files (including historical PNGs unavailable locally), and contains only the 49 intended changed/added paths. Expected-parent fast-forward and exact text/hash read-back of all 49 files passed. This documentation successor records that completed verification. No production branch, provider setting or deployment changed.
