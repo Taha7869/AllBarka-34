@@ -36,8 +36,11 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
   app.use(createCatalogConfigurationRouter({ getDb: () => db, requireAdmin }));
   app.use(createStorefrontContentRouter({ getDb: () => db, requireAdmin }));
   app.get('/api/product-media', (_req, res) => res.json({ overrides: {} }));
-  const quotes: express.Response[] = []; let orderCalls = 0;
-  app.post('/api/orders/quote', (_req, res) => { quotes.push(res); });
+  const quotes: express.Response[] = []; let orderCalls = 0; let releaseQuotes = false;
+  app.post('/api/orders/quote', (_req, res) => {
+    if (releaseQuotes) res.status(503).json({ success: false, code: 'FIXTURE_UNAVAILABLE', error: 'Quote unavailable in isolated test' });
+    else quotes.push(res);
+  });
   app.post('/api/orders', (_req, res) => { orderCalls++; res.status(503).json({ code: 'UNAVAILABLE' }); });
   app.use('/assets', express.static(path.resolve('dist/assets'))); app.use('/images', express.static(path.resolve('public/images')));
   app.use('/videos', express.static(path.resolve('public/videos')));
@@ -106,15 +109,22 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     await page.getByRole('button', { name: 'Open navigation menu', exact: true }).click();
     const menu = page.getByRole('dialog'); assert.equal(await menu.locator('button[aria-current="page"]').count(), 1);
     await menu.getByRole('button', { name: 'Close navigation menu', exact: true }).click();
+    // Closed animation surfaces must immediately stop blocking input/focus.
+    const closedMenu = page.locator('#mobile-navigation-menu');
+    assert.equal(await closedMenu.evaluate(element => (element as HTMLElement).inert), true);
+    assert.equal(await closedMenu.evaluate(element => getComputedStyle(element).pointerEvents), 'none');
+    assert.equal(await closedMenu.getAttribute('aria-hidden'), 'true');
+    assert.equal(await page.locator('#mobile-menu-trigger-btn').evaluate(element => element === document.activeElement), true);
     await page.evaluate(() => (window as any).fixture.navigate('/checkout'));
     await page.locator('#checkout-field-name').fill('Fixture Patron'); await page.locator('#checkout-field-phone').fill('03001234567');
     await page.getByRole('button', { name: 'Continue to delivery & address', exact: true }).click(); await page.locator('#checkout-field-address').fill('Fixture Gulberg III Lahore');
     await page.getByRole('button', { name: 'Proceed to Payment & Review', exact: true }).click();
     const submit = page.locator('button[type="submit"][aria-busy]'); await submit.waitFor(); assert.equal(await submit.isDisabled(), true); assert.equal(await submit.getAttribute('aria-busy'), 'true');
     assert.equal(await submit.locator('.boutique-request-spinner').evaluate(element => getComputedStyle(element).animationName), 'none');
-    expectedFailure = true; for (const response of quotes) if (!response.writableEnded) response.status(503).json({ success: false, code: 'FIXTURE_UNAVAILABLE', error: 'Quote unavailable in isolated test' });
+    expectedFailure = true; releaseQuotes = true; for (const response of quotes) if (!response.writableEnded) response.status(503).json({ success: false, code: 'FIXTURE_UNAVAILABLE', error: 'Quote unavailable in isolated test' });
+    await page.getByText('Quote unavailable in isolated test', { exact: true }).waitFor();
     await page.waitForFunction(() => document.querySelector('button[type="submit"][aria-busy]')?.getAttribute('aria-busy') === 'false');
-    expectedFailure = false; assert.equal(await submit.isDisabled(), true); assert.equal(orderCalls, 0); assert.equal(await page.getByText('Quote unavailable in isolated test', { exact: true }).count(), 1);
+    expectedFailure = false; assert.equal(await submit.isDisabled(), true); assert.equal(orderCalls, 0); assert.equal(await page.getByText('Quote unavailable in isolated test', { exact: true }).count(), 1, await page.locator('main').innerText());
     await page.evaluate(() => (window as any).fixture.navigate('/polish-lab')); await page.locator('#lab-anchor').waitFor();
     assert.equal(await page.locator('#lab-anchor').evaluate(element => getComputedStyle(element).opacity), '0.7');
     await page.setViewportSize({ width: 1440, height: 900 }); await page.locator('#lab-gallery').hover(); assert.equal(await gallery.getAttribute('data-previewing'), 'false');

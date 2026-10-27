@@ -1,5 +1,12 @@
 # AllBarka expansion change log
 
+## 27 October 2026 — recover saved Stage 3-to-M18 work and refresh integration evidence
+
+- **Before:** implementation `81eedbfe` was saved, but PR #16 still summarized gifting and the M18 remote-save checkbox remained open. Older records reported Railway access unavailable.
+- **After:** recovered all runtime/source/test assets with matching Git blob hashes and reproduced the saved runtime fingerprint. The targeted Stage 3/pricing/SSR run passes 30/30. Full-suite verification passes 713/713, 21 backend and 36 production checks; final PR synchronization is in progress, tracked in docs/RESUME_VERIFICATION.md.
+- **Live evidence:** authenticated Railway metadata now identifies the existing production deployment, source revision and 32 configured application variable names (values withheld). Read-only public endpoints return 97 products. Full private semantic/catalog, Auth/Storage, accepted-order/n8n and release gates remain unresolved.
+- **Paths:** master/instructions/current handoff, M18 save record, Stage 6/release/testing/catalog records, this log and sanitized recovery evidence. The full run exposed an intermittent menu-exit overlay blocking checkout. MobileMenu now disables closed-surface input/focus immediately and discards stale route animation; its existing browser regression checks the interaction boundary. Package/lock, merchant data and service configuration remain unchanged; no production merge or deploy.
+
 Each stage records the prior behavior, resulting behavior, reason, affected paths and actual verification. Earlier renovation work remains in its existing reports.
 
 ## 25 October 2026 — V1 Signature Table hero/discovery

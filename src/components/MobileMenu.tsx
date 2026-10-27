@@ -72,6 +72,13 @@ export default function MobileMenu({
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  const dismissMenu = () => {
+    closeRef.current();
+    triggerRef?.current?.focus();
+  };
+
   // Focus management & Escape key handling
   useEffect(() => {
     if (!isOpen) return;
@@ -82,7 +89,7 @@ export default function MobileMenu({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        closeRef.current();
         triggerRef?.current?.focus();
       } else if (e.key === 'Tab') {
         const controls = containerRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), [tabindex="0"]');
@@ -104,7 +111,7 @@ export default function MobileMenu({
       clearTimeout(timer);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose, triggerRef]);
+  }, [isOpen, triggerRef]);
 
   // Reference-counted background scroll lock
   useEffect(() => {
@@ -158,22 +165,26 @@ export default function MobileMenu({
   };
 
   return (
-    <AnimatePresence>
+    <div
+      id="mobile-navigation-menu"
+      role={isOpen ? 'dialog' : undefined}
+      aria-modal={isOpen ? true : undefined}
+      aria-hidden={!isOpen}
+      aria-label={t('nav.main')}
+      inert={!isOpen}
+      style={{ pointerEvents: isOpen ? 'auto' : 'none' }}
+      className="fixed inset-0 z-[120] flex xl:hidden"
+    >
+    <AnimatePresence key={location.key}>
       {isOpen && (
-        <div 
-          id="mobile-navigation-menu"
-          role="dialog"
-          aria-modal="true"
-          aria-label={t('nav.main')}
-          className="fixed inset-0 z-[120] flex xl:hidden"
-        >
+        <React.Fragment key="menu-surfaces">
           {/* Backdrop */}
           <motion.div
             variants={backdropVariants}
             initial="closed"
             animate="open"
             exit="closed"
-            onClick={onClose}
+            onClick={dismissMenu}
             className="fixed inset-0 bg-[#042821]/60 dark:bg-black/75 backdrop-blur-xs"
           />
 
@@ -208,7 +219,7 @@ export default function MobileMenu({
               <button
                 ref={closeButtonRef}
                 type="button"
-                onClick={onClose}
+                onClick={dismissMenu}
                 className="w-11 h-11 rounded-full flex items-center justify-center text-[#29231D] dark:text-[#F6F1EA] hover:bg-[#C7982F]/15 border border-[#29231D]/10 dark:border-[#F6F1EA]/12 transition-colors focus-ring cursor-pointer"
                 aria-label={t('nav.closeMenu')}
               >
@@ -551,8 +562,9 @@ export default function MobileMenu({
 
             </div>
           </motion.div>
-        </div>
+        </React.Fragment>
       )}
     </AnimatePresence>
+    </div>
   );
 }

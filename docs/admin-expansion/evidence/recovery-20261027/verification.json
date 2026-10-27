@@ -1,0 +1,23 @@
+{
+  "sourceBase": "81eedbfe0b09cdd29ba599f4733968a05a60fdbe",
+  "runtimeFingerprint": "e3ca5200b9ff0263736ecef2d694474eb236e6c9b3b9283d43512d3e1a8be4e1",
+  "node": "24.22.1",
+  "chromium": "153.0.8010.0",
+  "typecheck": "PASS",
+  "hooks": "PASS",
+  "buildPrivacyArtifacts": 84,
+  "initialTargeted": 30,
+  "finalTargeted": 13,
+  "fullTests": 713,
+  "testFiles": 78,
+  "failures": 0,
+  "cancelled": 0,
+  "skipped": 0,
+  "backendChecks": 21,
+  "productionChecks": 36,
+  "assetProducts": 97,
+  "assetReferences": 115,
+  "uniqueAssets": 111,
+  "liveWrites": 0,
+  "deployed": false
+}

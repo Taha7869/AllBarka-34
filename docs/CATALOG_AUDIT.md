@@ -1,5 +1,13 @@
 # Catalog and category reconciliation record
 
+## 27 October 2026 — current public projection, private reconciliation still blocked
+
+[Current report](admin-expansion/evidence/recovery-20261027/public-catalog.json) enumerates the complete 97-product response from the old deployed `8cf4410` build: 92 active, 5 inactive, 97 unique IDs, no unknown built-in category IDs or feature pricing-adapter errors in this captured public scope. Public catalog version: `e911ff4c059a56799c438e03089dde03694ec6bc1235e04582b26778667fd1db`. This is a public projection, not the full merchant Firestore snapshot.
+
+The four historical long-label packaging products are still unavailable. Acrylic Royal is also inactive but is inquiry-only in source; do not presume a fifth malformed saved record. Active unpriced Corporate Gifting is explicitly inquiry-only. Legacy nuts/dates and seed aliases remain supported; no reclassification or rate is inferred. Current published taxonomy is inaccessible on the old build (`/api/catalog/taxonomy` 404). Private drafts/statuses, intended semantic assignments, media/facts and full live changed-item journeys remain BLOCKED. No data writes. See [recovery evidence](RESUME_VERIFICATION.md).
+
+The planning table and subsequent dated runs below are historical records; their earlier NOT_READ statements do not override this new limited public read.
+
 Updated: 25 October 2026 (Asia/Karachi).
 
 Protocol: [RULES.md R04](../RULES.md#r04--catalog-classification-is-an-end-to-end-gate). This file records audit evidence; it is not a background synchronization job or automatic Firestore repair.

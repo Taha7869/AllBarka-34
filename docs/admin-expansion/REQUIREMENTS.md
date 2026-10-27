@@ -2,6 +2,8 @@
 
 Statuses refer to the expansion, not whether an older partial implementation exists.
 
+27 October continuation: [current recovery verification](../RESUME_VERIFICATION.md) records the latest local checks and mobile-menu correction. Earlier counts below remain historical; Stage 6 private/provider release gates retain their IN_PROGRESS/BLOCKED states.
+
 | ID | Requirement | Stage | Status | Evidence/path |
 | --- | --- | --- | --- | --- |
 | A01 | Verified baseline, stage plan, decisions and handoff | 1 | DONE | ROADMAP.md; instructions.md; design.md |

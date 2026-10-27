@@ -1,5 +1,9 @@
 # Expansion release packet
 
+## 27 October 2026 continuation
+
+Use [RESUME_VERIFICATION.md](../RESUME_VERIFICATION.md) for the recovered `81eedbfe` source, fresh verification and sanitized Railway/public-catalog evidence. Only the old production build is deployed. Railway connectivity is now confirmed; private merchant/provider acceptance and preview/rollback remain unresolved. The following 25 October packet is retained as historical implementation and release-boundary evidence.
+
 Checkpoint: 25 October 2026 (Asia/Karachi). Stages 1–5 implemented and locally verified; Stage 6 IN_PROGRESS. This feature branch is a draft review candidate, not a deployed release.
 
 ## Review evidence

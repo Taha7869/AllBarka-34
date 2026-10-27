@@ -66,4 +66,8 @@ Next executable action: V6 integration readiness with the authorized Railway pro
 - [x] Catalog fixture/live separation recorded; current live semantic audit BLOCKED.
 - [x] Commerce/privacy/roles/localization contracts reused; no new pricing policy or backend schema.
 - [x] Master/handoff/test/changelog statuses updated at final checkpoint.
-- [ ] Verified remote parent/tree, intended paths/blob hashes and saved commit/ref; draft PR only.
+- [x] Remote persistence verified on 27 October: source `81eedbfe0b09cdd29ba599f4733968a05a60fdbe`, tree `42c6731ff2ffb9109d999c6943ee2062279c4bf1`, parent `c46735d3ad1007444904c26db9b2c2f43a3e7e74`; 27 changed paths, no deleted paths, 941 remote blobs. Draft PR only. Fresh recovery checks and current Railway access are recorded in [RESUME_VERIFICATION.md](RESUME_VERIFICATION.md).
+
+## 27 October recovery clarification
+
+The M18 implementation was already saved in `81eedbfe`; the previously unchecked remote-save box and older PR description were stale records. Recovery reconstituted the same runtime fingerprint. Railway metadata is now accessible, superseding the earlier access-discovery note; private merchant/provider checks remain unresolved. See RESUME_VERIFICATION.md for the current evidence and exact next integration action.
