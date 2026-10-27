@@ -1,5 +1,9 @@
 # AllBarka Components Inventory
 
+## M18 purchase continuation
+
+CartPage and CartDrawer reuse current Catalog/Cart/ProductMedia contexts, CartTools and shared CartAddButton. New CartItemPersonalization renders the same saved hamper contents/recipient/message on cart, drawer and checkout; the inventory had no equivalent reusable read-only component. It invents no printing options or prices. CheckoutPage keeps its existing quote/order/retry handlers; guarded acceptedCheckoutReceipt adapts current quoted line prices for all normal checkout summaries. purchase.css scopes presentation and mobile summary/drawer behavior. No new dependency or data schema. See PREMIUM_PURCHASE.md.
+
 ## V4 gifting continuation
 
 GiftsHampersDestination reuses ProductCard/media/cart acknowledgement and existing occasion routes. CustomHamperBuilderModal owns current-box/contents summary, unavailable selection recovery and existing-message preview; CartContext resolves the same current provider snapshot. No new component, dependency, printing style or data schema. Shared ProductCard price/Quick View row wraps at enlarged text. Source-controlled composition/copy remain outside M23 admin-editability; see PREMIUM_GIFTING.md.

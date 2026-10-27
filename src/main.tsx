@@ -11,6 +11,7 @@ import './styles/circular-carousel.css';
 import './styles/store-updates.css';
 import './styles/luminous.css';
 import './styles/editorial.css';
+import './styles/purchase.css';
 import './styles/selection-guide.css';
 import './styles/interaction-polish.css';
 import './components/AllBarkaHero.css';

@@ -3,7 +3,7 @@ import { getLocalized } from '../utils/localize';
 import { hamperPackingLines } from '../lib/hamperCatalog';
 import React, { useEffect, useState, useId, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
   X,
   Trash2,
@@ -17,8 +17,9 @@ import {
   MessageCircle,
   ArrowRight
 } from 'lucide-react';
+import CartItemPersonalization from './CartItemPersonalization';
+import CartAddButton from './CartAddButton';
 import type { CartItem } from '../types';
-import { PRODUCTS } from '../data/products';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { useCart, parsePrice, formatPrice, FREE_SHIPPING_THRESHOLD } from '../contexts/CartContext';
 import { buildAutomatedOrderWhatsAppUrl } from '../config/contacts';
@@ -91,11 +92,15 @@ export default function CartDrawer({
   const { t, isRtl , language } = useLanguage();
   const mediaCover = useProductMediaCover();
   const context = useCart();
+  const reduceMotion = useReducedMotion();
+  const drawerRef = useRef<HTMLElement>(null);
+  const closeRef = useRef<() => void>(() => {});
   const drawerHeadingId = useId();
 
   // Prefer context state, fallback to props
   const isOpen = propsIsOpen !== undefined ? propsIsOpen : context.isCartOpen;
   const closeDrawer = propsOnClose || context.closeCart;
+  closeRef.current = closeDrawer;
   const cartItems = propsCartItems || context.cartItems;
   const subtotal = context.subtotal;
   const totalItemCount = context.totalItemCount;
@@ -119,21 +124,23 @@ export default function CartDrawer({
     if (propsOnSetPaymentMethod) propsOnSetPaymentMethod(method);
   };
 
-  // Reference-counted body scroll lock when drawer is active
   useEffect(() => {
     if (!isOpen) return;
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const releaseLock = acquireScrollLock();
-
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') closeDrawer();
+    drawerRef.current?.focus();
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); closeRef.current(); }
+      if (event.key !== 'Tab') return;
+      const controls = Array.from(drawerRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),select:not(:disabled),a[href],summary,[tabindex="0"]') || []);
+      const first=controls[0],last=controls[controls.length-1];
+      if (!first) { event.preventDefault(); drawerRef.current?.focus(); }
+      else if (event.shiftKey && (document.activeElement===first || document.activeElement===drawerRef.current)) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && (document.activeElement===last || document.activeElement===drawerRef.current)) { event.preventDefault(); first.focus(); }
     };
-    window.addEventListener('keydown', handleEscape);
-
-    return () => {
-      releaseLock();
-      window.removeEventListener('keydown', handleEscape);
-    };
-  }, [isOpen, closeDrawer]);
+    window.addEventListener('keydown',handleKey);
+    return()=>{releaseLock();window.removeEventListener('keydown',handleKey);if(previous?.isConnected)previous.focus();};
+  }, [isOpen]);
 
   const handleQuantityDelta = (item: CartItem, delta: number) => {
     if (propsOnUpdateQuantity) {
@@ -193,7 +200,7 @@ export default function CartDrawer({
 
   // Recommendations: up to 3 catalog items not in cart
   const recommendations = PRODUCTS.filter(
-    (prod) => !cartItems.some((item) => item.productId === prod.id || item.id.startsWith(prod.id))
+    (prod) => prod.active !== false && !prod.quoteOnly && prod.orderMode !== 'inquiry_quote' && prod.status !== 'draft' && prod.status !== 'archived' && Object.keys(prod.prices).some(label => prod.prices[label] > 0 && !prod.variants?.some(variant => variant.label === label && variant.available === false)) && !cartItems.some((item) => item.productId === prod.id || item.id.startsWith(prod.id))
   ).slice(0, 3);
 
   // 1-Click WhatsApp Quick Checkout — encodes full cart summary for guest checkout
@@ -244,18 +251,19 @@ export default function CartDrawer({
 
           {/* Slideout Drawer Container: Full screen on <640px and max-w-md on desktop */}
           <motion.aside
-            initial={{ x: isRtl ? '-100%' : '100%' }}
+            ref={drawerRef} tabIndex={-1}
+            initial={reduceMotion ? false : { x: isRtl ? '-100%' : '100%' }}
             animate={{ x: 0 }}
-            exit={{ x: isRtl ? '-100%' : '100%' }}
-            transition={{ type: 'spring', damping: 30, stiffness: 280 }}
+            exit={{ x: reduceMotion ? 0 : isRtl ? '-100%' : '100%' }}
+            transition={reduceMotion ? {duration:0} : { type: 'spring', damping: 30, stiffness: 280 }}
             role="dialog"
             aria-modal="true"
             aria-labelledby={drawerHeadingId}
             dir={isRtl ? 'rtl' : 'ltr'}
-            className={`w-full sm:max-w-md bg-[#F6F1EA] dark:bg-[#121615] h-full relative z-10 shadow-[0_0_50px_rgba(0,0,0,0.35)] flex flex-col overflow-hidden text-[#29231D] dark:text-[#F6F1EA] ${isRtl ? 'border-r' : 'border-l'} border-[#C7982F]/25 pb-[env(safe-area-inset-bottom)]`}
+            className={`purchase-drawer w-full sm:max-w-md bg-[#F6F1EA] dark:bg-[#121615] h-full relative z-10 shadow-[0_0_50px_rgba(0,0,0,0.35)] flex flex-col overflow-hidden text-[#29231D] dark:text-[#F6F1EA] ${isRtl ? 'border-r' : 'border-l'} border-[#C7982F]/25 pb-[env(safe-area-inset-bottom)]`}
           >
             {/* ── 1. Top Fixed Header ── */}
-            <div className="bg-[#FFFCF7] dark:bg-[#1A201E] border-b border-[#C7982F]/25 px-4 sm:px-5 py-4 flex items-center justify-between shrink-0 shadow-xs">
+            <div className="purchase-drawer-header bg-[#FFFCF7] dark:bg-[#1A201E] border-b border-[#C7982F]/25 px-4 sm:px-5 py-4 flex items-center justify-between shrink-0 shadow-xs">
               <div className="flex items-center gap-3">
                 <div className="w-11 h-11 rounded-full bg-[#F6F1EA] dark:bg-[#222A28] border border-[#C7982F]/40 flex items-center justify-center text-[#C7982F] relative shadow-xs shrink-0">
                   <ShoppingCart size={19} />
@@ -270,10 +278,10 @@ export default function CartDrawer({
                     id={drawerHeadingId}
                     className="text-lg font-serif font-bold text-[#29231D] dark:text-[#F6F1EA] leading-tight"
                   >
-                    Your Luxury Box
+                    {t('purchase.bag')}
                   </h2>
                   <p className="text-[10px] text-[#806326] dark:text-[#E4C783] font-semibold uppercase tracking-widest leading-none mt-1">
-                    {totalItemCount} {totalItemCount === 1 ? 'item' : 'items'} curated
+                    {totalItemCount} {t('shop.results')}
                   </p>
                 </div>
               </div>
@@ -283,12 +291,14 @@ export default function CartDrawer({
                 type="button"
                 onClick={closeDrawer}
                 className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-[#F6F1EA] dark:bg-[#222A28] hover:bg-[#C7982F] text-[#29231D] dark:text-[#F6F1EA] hover:text-[#042821] flex items-center justify-center transition-all duration-200 cursor-pointer focus-ring shadow-xs border border-[#29231D]/10 dark:border-[#F6F1EA]/10"
-                aria-label="Close cart drawer"
+                aria-label={t('purchase.close')}
               >
                 <X size={18} />
               </button>
             </div>
 
+            {/* ── 2. Scrollable Middle Area ── */}
+            <div className="purchase-drawer-scroll flex-1 overflow-y-auto min-h-0 p-3.5 sm:p-4 space-y-4 [scrollbar-width:thin] overscroll-contain">
             {/* ── Free Delivery Status Bar ── */}
             {cartItems.length > 0 && shippingCity === 'Lahore' && (
               <div className="bg-[#FFFCF7]/90 dark:bg-[#1A201E]/90 border-b border-[#29231D]/10 dark:border-[#F6F1EA]/10 px-4 sm:px-5 py-3 shrink-0">
@@ -319,8 +329,7 @@ export default function CartDrawer({
               </div>
             )}
 
-            {/* ── 2. Scrollable Middle Area ── */}
-            <div className="flex-1 overflow-y-auto min-h-0 p-3.5 sm:p-4 space-y-4 [scrollbar-width:thin] overscroll-contain">
+
               {cartItems.length === 0 ? (
                 /* Empty State */
                 <div className="text-center py-16 px-4 flex flex-col items-center justify-center space-y-4">
@@ -329,10 +338,10 @@ export default function CartDrawer({
                   </div>
                   <div>
                     <h3 className="font-serif font-bold text-xl text-[#29231D] dark:text-[#F6F1EA]">
-                      Your box is empty
+                      {t('cartEmpty')}
                     </h3>
                     <p className="text-xs text-[#635B52] dark:text-[#A8A199] mt-1.5 max-w-[260px] mx-auto leading-relaxed">
-                      Handpicked Afghani chilgoza, Iranian pistachios, and Hunza dry fruits are waiting for you.
+                      {t('purchase.emptyCopy')}
                     </p>
                   </div>
                   <button
@@ -341,7 +350,7 @@ export default function CartDrawer({
                     className="mt-3 px-8 py-3.5 min-h-[44px] rounded-full bg-[#042821] dark:bg-[#0E4A3B] hover:bg-[#03201A] text-[#FFFCF7] text-xs font-bold uppercase tracking-widest transition-all shadow-md active:scale-95 cursor-pointer border border-[#C7982F]/40 flex items-center justify-center gap-2 focus-ring"
                   >
                     <ShoppingBag size={15} className="text-[#C7982F]" />
-                    <span>Browse Collections</span>
+                    <span>{t('purchase.browse')}</span>
                   </button>
                 </div>
               ) : (
@@ -356,7 +365,7 @@ export default function CartDrawer({
                     return (
                       <div
                         key={item.id}
-                        className="flex gap-3 p-3 bg-[#FFFCF7] dark:bg-[#1A201E] rounded-2xl border border-[#29231D]/10 dark:border-[#F6F1EA]/12 items-center shadow-xs hover:border-[#C7982F]/60 transition-all"
+                        className="purchase-drawer-item flex gap-3 p-3 bg-[#FFFCF7] dark:bg-[#1A201E] rounded-2xl border border-[#29231D]/10 dark:border-[#F6F1EA]/12 items-center shadow-xs hover:border-[#C7982F]/60 transition-all"
                       >
                         <SafeCartImage
                           src={imageSource}
@@ -366,7 +375,7 @@ export default function CartDrawer({
                         />
 
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-serif font-bold text-[#29231D] dark:text-[#F6F1EA] text-sm truncate leading-tight">
+                          <h4 className="font-serif font-bold text-[#29231D] dark:text-[#F6F1EA] text-sm leading-tight">
                             {getLocalized(item, 'name', language)}
                           </h4>
                           <div className="flex items-center gap-2 mt-1">
@@ -378,8 +387,9 @@ export default function CartDrawer({
                             </span>
                           </div>
                           <p className="text-xs font-bold text-[#29231D] dark:text-[#F6F1EA] mt-1 font-serif">
-                            Total: {formatPrice(itemTotalPrice)}
+                            {t('purchase.lineTotal')}: {formatPrice(itemTotalPrice)}
                           </p>
+                          <CartItemPersonalization configuration={item.hamperConfiguration} />
                         </div>
 
                         {/* Quantity controls: strictly enforces 44x44px minimum touch targets */}
@@ -390,8 +400,8 @@ export default function CartDrawer({
                             className="w-11 h-11 min-w-[44px] min-h-[44px] bg-[#FFFCF7] dark:bg-[#1A201E] text-[#29231D] dark:text-[#F6F1EA] flex items-center justify-center rounded-lg hover:bg-[#C7982F] hover:text-[#042821] transition-all active:scale-95 shadow-xs cursor-pointer border border-[#29231D]/10 dark:border-[#F6F1EA]/10 focus-ring"
                             aria-label={
                               item.quantity === 1
-                                ? `Remove ${getLocalized(item, 'name', language)} from cart`
-                                : `Decrease quantity of ${getLocalized(item, 'name', language)}`
+                                ? `${t('purchase.remove')}: ${getLocalized(item, 'name', language)}`
+                                : `${t('purchase.decrease')}: ${getLocalized(item, 'name', language)}`
                             }
                           >
                             <Minus size={14} />
@@ -404,7 +414,7 @@ export default function CartDrawer({
                             value={item.quantity}
                             onChange={(e) => handleQuantityDirect(item, e.target.value)}
                             className="w-8 text-center bg-transparent font-mono text-sm font-bold text-[#29231D] dark:text-[#F6F1EA] focus:outline-hidden"
-                            aria-label={`Quantity for ${getLocalized(item, 'name', language)}`}
+                            aria-label={`${t('quantity')}: ${getLocalized(item, 'name', language)}`}
                           />
 
                           <button
@@ -412,7 +422,7 @@ export default function CartDrawer({
                             onClick={() => handleQuantityDelta(item, 1)}
                             disabled={item.quantity >= 50}
                             className="w-11 h-11 min-w-[44px] min-h-[44px] bg-[#FFFCF7] dark:bg-[#1A201E] text-[#29231D] dark:text-[#F6F1EA] flex items-center justify-center rounded-lg hover:bg-[#C7982F] hover:text-[#042821] transition-all active:scale-95 shadow-xs cursor-pointer border border-[#29231D]/10 dark:border-[#F6F1EA]/10 disabled:opacity-40 disabled:cursor-not-allowed focus-ring"
-                            aria-label={`Increase quantity of ${getLocalized(item, 'name', language)}`}
+                            aria-label={`${t('purchase.increase')}: ${getLocalized(item, 'name', language)}`}
                           >
                             <Plus size={14} />
                           </button>
@@ -423,7 +433,7 @@ export default function CartDrawer({
                           type="button"
                           onClick={() => handleRemove(item)}
                           className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 rounded-xl transition-colors shrink-0 cursor-pointer focus-ring"
-                          aria-label={`Remove ${getLocalized(item, 'name', language)} (${item.selectedWeight}) from cart`}
+                          aria-label={`${t('purchase.remove')}: ${getLocalized(item, 'name', language)} (${item.selectedWeight})`}
                         >
                           <Trash2 size={16} />
                         </button>
@@ -439,16 +449,16 @@ export default function CartDrawer({
                   <div className="flex items-center justify-between">
                     <h3 className="font-serif font-bold text-[#29231D] dark:text-[#F6F1EA] text-sm flex items-center gap-1.5">
                       <Sparkles size={13} className="text-[#C7982F]" />
-                      You Might Also Like
+                      {t('purchase.recommendations')}
                     </h3>
                     <span className="text-[10px] font-semibold text-[#806326] dark:text-[#E4C783] uppercase tracking-wider">
-                      Pair & Save
+                      {t('purchase.eyebrow')}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                     {recommendations.map((prod) => {
-                      const firstWeight = Object.keys(prod.prices)[0] || '250g';
+                      const firstWeight = Object.keys(prod.prices).find(label => prod.prices[label] > 0 && !prod.variants?.some(variant => variant.label === label && variant.available === false))!;
                       const initialPrice = parsePrice(prod.prices[firstWeight] || prod.wholesale);
 
                       return (
@@ -476,13 +486,7 @@ export default function CartDrawer({
                             <span className="text-xs font-serif font-bold text-[#29231D] dark:text-[#F6F1EA]">
                               {formatPrice(initialPrice)}
                             </span>
-                            <button
-                              type="button"
-                              onClick={() => handleAddRecommendation(prod.id, firstWeight)}
-                              className="min-h-[36px] px-3 py-1.5 rounded-md bg-[#042821] dark:bg-[#0E4A3B] hover:bg-[#03201A] text-[#FFFCF7] text-[10px] font-bold uppercase tracking-wider active:scale-95 transition-all cursor-pointer shadow-xs border border-[#C7982F]/40 focus-ring"
-                            >
-                              + Add
-                            </button>
+                            <CartAddButton productId={prod.id} portion={firstWeight} onAdd={() => handleAddRecommendation(prod.id, firstWeight)} className="min-h-11 inline-flex items-center justify-center gap-1 border border-[var(--color-border-accent)] px-3 text-xs">{t('purchase.add')}</CartAddButton>
                           </div>
                         </div>
                       );
@@ -490,17 +494,19 @@ export default function CartDrawer({
                   </div>
                 </div>
               )}
-            </div>
-
-            <button type="button" onClick={() => { closeDrawer(); navigate('/cart'); }} className="focus-ring min-h-11 shrink-0 border-t border-[var(--color-border)] px-5 py-2 text-sm font-semibold text-[var(--color-accent-text)] underline underline-offset-4">{t('cart.boxTools')}</button>
-
-            {/* ── 3. Sticky Bottom Summary ── */}
-            {cartItems.length > 0 && (
-              <div className="p-4 border-t border-[#29231D]/10 dark:border-[#F6F1EA]/12 bg-[#FFFCF7] dark:bg-[#1A201E] shrink-0 space-y-3 shadow-lg">
+              {cartItems.length > 0 && <div className="purchase-drawer-extras">            <button type="button" onClick={() => { closeDrawer(); navigate('/cart'); }} className="focus-ring min-h-11 shrink-0 border-t border-[var(--color-border)] px-5 py-2 text-sm font-semibold text-[var(--color-accent-text)] underline underline-offset-4">{t('cart.boxTools')}</button>                {/* Financial Summary */}
+                <label className="block space-y-2 text-xs font-semibold">
+                  <span>{t('shipping.destination')}</span>
+                  <select className="focus-ring min-h-11 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] px-3" value={shippingCity === 'Lahore' ? 'Lahore' : 'Other City'} onChange={event => setShippingCity(event.target.value)}>
+                    <option value="Lahore">{t('shipping.lahore')}</option>
+                    <option value="Other City">{t('shipping.outside')}</option>
+                  </select>
+                </label>
+                <p className="text-[11px] leading-relaxed text-[var(--color-text-secondary)]">{t(shippingCity === 'Lahore' ? 'shipping.lahoreRule' : 'shipping.nationwideRule')}</p>
                 {/* Payment Method Selector */}
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-semibold text-[#635B52] dark:text-[#A8A199] uppercase tracking-widest block">
-                    Payment Method
+{t('checkout.paymentLabel')}
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
@@ -512,7 +518,7 @@ export default function CartDrawer({
                           : 'bg-[#F6F1EA] dark:bg-[#222A28] text-[#29231D] dark:text-[#F6F1EA] border-[#29231D]/10 dark:border-[#F6F1EA]/10 hover:border-[#C7982F]'
                       }`}
                     >
-                      Cash on Delivery
+                      {t('checkout.cod')}
                     </button>
                     <button
                       type="button"
@@ -523,20 +529,29 @@ export default function CartDrawer({
                           : 'bg-[#F6F1EA] dark:bg-[#222A28] text-[#29231D] dark:text-[#F6F1EA] border-[#29231D]/10 dark:border-[#F6F1EA]/10 hover:border-[#C7982F]'
                       }`}
                     >
-                      Bank / Raast
+                      {t('checkout.bank')}
                     </button>
                   </div>
                 </div>
 
-                {/* Financial Summary */}
-                <label className="block space-y-2 text-xs font-semibold">
-                  <span>{t('shipping.destination')}</span>
-                  <select className="focus-ring min-h-11 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] px-3" value={shippingCity === 'Lahore' ? 'Lahore' : 'Other City'} onChange={event => setShippingCity(event.target.value)}>
-                    <option value="Lahore">{t('shipping.lahore')}</option>
-                    <option value="Other City">{t('shipping.outside')}</option>
-                  </select>
-                </label>
-                <p className="text-[11px] leading-relaxed text-[var(--color-text-secondary)]">{t(shippingCity === 'Lahore' ? 'shipping.lahoreRule' : 'shipping.nationwideRule')}</p>
+                {/* Loyalty / Auth Catch */}
+                <div className="flex items-center justify-between bg-[#F6F1EA] dark:bg-[#222A28] border border-[#C7982F]/30 p-2.5 rounded-xl">
+                  <span className="text-[10px] text-[#635B52] dark:text-[#A8A199] font-medium leading-tight">
+                    {t('purchase.loyalty')}
+                  </span>
+                  <button type="button" onClick={() => window.dispatchEvent(new CustomEvent('open-auth-modal'))} className="text-[10px] uppercase font-bold text-[#806326] dark:text-[#E4C783] hover:underline whitespace-nowrap cursor-pointer">
+                    {t('purchase.signIn')}
+                  </button>
+                </div>
+
+</div>}
+            </div>
+
+
+
+            {/* ── 3. Sticky Bottom Summary ── */}
+            {cartItems.length > 0 && (
+              <div className="purchase-drawer-footer p-4 border-t border-[#29231D]/10 dark:border-[#F6F1EA]/12 bg-[#FFFCF7] dark:bg-[#1A201E] shrink-0 space-y-3 shadow-lg">
                 <div className="space-y-1.5 text-xs text-[#29231D] dark:text-[#F6F1EA] pt-0.5">
                   <div className="flex justify-between text-xs">
                     <span className="font-medium text-[#635B52] dark:text-[#A8A199]">{t('cartSubtotal', 'Subtotal')}</span>
@@ -554,22 +569,11 @@ export default function CartDrawer({
                   </div>
                   <div className="h-px bg-[#29231D]/10 dark:bg-[#F6F1EA]/10 my-1" />
                   <div className="flex justify-between items-baseline font-serif font-bold text-[#29231D] dark:text-[#F6F1EA]">
-                    <span className="text-sm">{t('totalPayable', 'Estimated Total')}</span>
+                    <span className="text-sm">{t('purchase.estimatedTotal')}</span>
                     <span className="text-[#806326] dark:text-[#E4C783] text-lg font-mono">
                       <bdi dir="ltr">{estimatedShipping === null ? t('shipping.pending') : formatPrice(subtotal + estimatedShipping)}</bdi>
                     </span>
                   </div>
-                </div>
-
-                {/* Loyalty / Auth Catch */}
-                <div className="flex items-center justify-between bg-[#F6F1EA] dark:bg-[#222A28] border border-[#C7982F]/30 p-2.5 rounded-xl">
-                  <span className="text-[10px] text-[#635B52] dark:text-[#A8A199] font-medium leading-tight">
-                    Log in to earn loyalty points<br className="sm:hidden" />
-                    <span dir="rtl" className="sm:ml-1 text-[11px] font-sans">لائلٹی پوائنٹس کمانے کے لیے لاگ ان کریں</span>
-                  </span>
-                  <button type="button" onClick={() => window.dispatchEvent(new CustomEvent('open-auth-modal'))} className="text-[10px] uppercase font-bold text-[#806326] dark:text-[#E4C783] hover:underline whitespace-nowrap cursor-pointer">
-                    Sign In
-                  </button>
                 </div>
 
                 {/* Primary Checkout CTA */}
@@ -590,7 +594,7 @@ export default function CartDrawer({
                   className="w-full min-h-[44px] py-3 px-5 rounded-full bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#1E3A2B] dark:text-[#E4C783] text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2.5 border border-[#25D366]/40 cursor-pointer focus-ring"
                 >
                   <MessageCircle size={15} className="text-[#25D366]" />
-                  <span>Order via WhatsApp</span>
+                  <span>{t('purchase.whatsapp')}</span>
                 </button>
               </div>
             )}
