@@ -1,6 +1,6 @@
 # Recovery and integration checkpoint — 27 October 2026
 
-Task **V6-R01**: recover the saved work after the reported Stage 3 interruption, verify the current implementation, synchronize its handoff/PR, and refresh available read-only integration evidence. Codex self-review; no independent reviewer is claimed. Local recovery/correction verification is DONE; remote synchronization is the final delivery step. No restart is needed. The full recheck exposed a mobile-menu interaction defect, corrected in the existing component as recorded below.
+Task **V6-R01**: recover the saved work after the reported Stage 3 interruption, verify the current implementation, synchronize its handoff/PR, and refresh available read-only integration evidence. Codex self-review; no independent reviewer is claimed. Recovery/correction and verified source synchronization are DONE. Source checkpoint `4ee28a08a71d2df7f0a6e3636b693f6ad76630bd` is saved in draft PR #16. No restart is needed. The full recheck exposed a mobile-menu interaction defect, corrected in the existing component as recorded below.
 
 ## Authoritative source
 
@@ -35,7 +35,7 @@ Runtime: Node `24.22.1`, npm `11.9.0`, test-only Chromium `153.0.8010.0`. Existi
 | Final targeted menu/navigation run | PASS 13/13, zero failed/cancelled/skipped, exit 0. Includes actual menu-to-checkout flow and all existing navigation tests. |
 | Full suite after fix | PASS 713/713 across 78 files, 21 backend checks and 36 production checks, exit 0; zero failed/cancelled/skipped. Asset audit: 97 products / 115 references / 111 unique files; zero missing or retired views. |
 | All 21 `scripts/*.mjs` syntax checks | PASS; read-only parse checks, no script behavior certification |
-| Final documentation links/diff | PASS; relative links checked against local files and verified upstream tree; whitespace check passes. Remote save pending. |
+| Final documentation links/diff | PASS; relative links checked against local files and verified upstream tree; whitespace check passes. Source save verified: 18 intended paths, no deletions, 947 blobs, exact read-back contents and hashes. |
 
 Targeted command, with `ALLBARKA_SKIP_LOCAL_ENV=true` and `ALLBARKA_TEST_BROWSER` pointing to the installed test browser:
 
@@ -72,16 +72,20 @@ Next executable integration action: obtain an authorized private merchant catalo
 
 ## R11 checklist
 
-- [x] Local recovery/correction scope complete after final full verification; saved checkpoint is the remaining delivery step.
+- [x] Recovery/correction scope complete; final full verification and source checkpoint saved/read back.
 - [x] Self-review identifies source/fixture/live boundaries; no new critical/high source defect reproduced in targeted checks.
 - [x] Final full-suite and documentation gates recorded; unrun live gates explicitly named.
 - [x] Current public catalog enumerated; full semantic/private audit explicitly BLOCKED.
 - [x] Application source and existing commerce/privacy/role/localization behavior preserved.
-- [x] Master/handoff/test/changelog synchronized locally; PR metadata update follows the verified source save.
-- [ ] Remote parent/tree, intended paths, unchanged blobs and saved ref verified; production release not performed.
+- [x] Master/handoff/test/changelog synchronized; PR metadata is the final delivery update.
+- [x] Source checkpoint remote parent/tree, all 18 intended paths, unchanged blobs and saved ref verified; production release not performed.
 
 ## Mobile-menu correction scope
 
 Changed runtime: `src/components/MobileMenu.tsx`; regression: `tests/interaction-polish-browser.test.tsx`. Uses the existing menu and animations, with no new component or dependency. Final runtime fingerprint `e3ca5200b9ff0263736ecef2d694474eb236e6c9b3b9283d43512d3e1a8be4e1`. Fresh build/privacy, typecheck and hooks lint pass after the correction. Final targeted/full results must be recorded before delivery. The first corrected targeted run passed the menu-close assertions and reached checkout, then exposed a separate held-quote fixture timing assertion (12/13). The expected server-error assertion remains enabled and the fixture now releases both queued and later-arriving quote requests with the same 503 response. It waits for the expected error before checking its count; disabled submission and zero order calls remain asserted. A separate isolated rerun had passed before this infrastructure correction, so neither an isolated pass nor an arbitrary delay is treated as the fix.
 
 Final corrected-source command: `ALLBARKA_SKIP_LOCAL_ENV=true ALLBARKA_TEST_BROWSER=/workspace/scratch/f57ba9a36e75/browser-runtime/bin/chromium node scripts/run-all-tests.mjs` (exit 0). Final targeted command adds `tests/stage4-navigation.test.tsx` to `tests/interaction-polish-browser.test.tsx`, with the same environment (13/13, exit 0). Earlier failed runs remain recorded above and are not acceptance evidence.
+
+## Verified source persistence
+
+Source checkpoint `4ee28a08a71d2df7f0a6e3636b693f6ad76630bd`, tree `26ba404b7ac023f047f2d564f180ffda3a97f7d9`, parent `81eedbfe0b09cdd29ba599f4733968a05a60fdbe`. Expected-parent fast-forward succeeded. All 18 intended files were read back with exact text/blob hashes; candidate tree contains 947 blobs and preserves every unrelated upstream blob, including the four historical PNGs unavailable locally. This documentation successor records that completed save. Inspect the current PR head before continuing; local reconstructed snapshot history was never pushed.
