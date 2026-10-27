@@ -1,7 +1,8 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import React, { useState, useEffect, useCallback, useRef, useId, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Play, Pause, ArrowRight, Sparkles } from 'lucide-react';
-import { useReducedMotion } from 'motion/react';
+
 import type { Product, MerchandisingSettings } from '../types';
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import { useLanguage } from '../contexts/LanguageContext';

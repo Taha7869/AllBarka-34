@@ -285,3 +285,7 @@ ProductDetailPage reuses ProductDetailAccordion (packaging default for packaging
 ## M19 editorial pass — 27 October 2026
 
 JournalPage reuses existing public contentJournal/StorefrontContentProvider, SEO and ProductCard (therefore CartAddButton, media, portion and MOQ behavior). Native contents links require no new component. Standalone InfoPage our-story branch reuses current PAGES copy, existing hero still-life, SEO and LanguageContext; other info/modal routes remain. Styles extend editorial.css; UI labels use shoppingQualityTranslations. No new component/dependency/settings model.
+
+## M21 live motion preference — 28 October 2026
+
+`hooks/usePrefersReducedMotion.ts` is the shared subscribed device preference for 35 existing UI consumers. It uses React useSyncExternalStore with SSR and legacy-listener fallback; no new component or dependency. ScrollReveal retains its wrapper/child state through live changes. See [MOTION_PREFERENCE.md](MOTION_PREFERENCE.md).

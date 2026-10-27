@@ -1,5 +1,6 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../../hooks/usePrefersReducedMotion';
 import React, { useRef } from 'react';
-import { motion, useMotionValue, useSpring, useReducedMotion } from 'motion/react';
+import { motion, useMotionValue, useSpring } from 'motion/react';
 
 interface MagneticButtonProps {
   children: React.ReactNode;
@@ -47,6 +48,7 @@ const MagneticButton: React.FC<MagneticButtonProps> = ({
   const sy = useSpring(y, springConfig);
 
   const isTouchDevice = typeof window !== 'undefined'
+    && typeof window.matchMedia === 'function'
     && window.matchMedia('(hover: none), (pointer: coarse)').matches;
 
   const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {

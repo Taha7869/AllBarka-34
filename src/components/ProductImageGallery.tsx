@@ -1,8 +1,9 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { productSeo } from '../lib/productSeo';
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useReducedMotion } from 'motion/react';
+
 import { Product } from '../types';
 import { useProductMedia } from '../contexts/ProductMediaContext';
 import { clampPhotoIndex } from '../lib/productPhotoViewer';

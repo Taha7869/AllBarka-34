@@ -1,3 +1,4 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import { getLocalized } from '../utils/localize';
 import React, { useState, useEffect } from 'react';
@@ -10,7 +11,7 @@ import CartItemPersonalization from '../components/CartItemPersonalization';
 import AddressBook from '../components/AddressBook';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   X,
   CheckCircle,

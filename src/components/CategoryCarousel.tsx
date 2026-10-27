@@ -1,9 +1,10 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import useEmblaCarousel from 'embla-carousel-react';
-import { useReducedMotion } from 'motion/react';
+
 import { canRotatePantry, pantryCardProjection, pantryRotationDistance } from '../lib/pantryMotion';
 import { visibleCardFraction } from '../lib/circularCatalogue';
 import { CANONICAL_CATEGORIES, canonicalCollectionKey, getEquivalentCollectionIds } from '../config/categories';

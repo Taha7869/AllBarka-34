@@ -1,5 +1,7 @@
 # AllBarka expansion change log
 
+28 October 2026 — current **M21 live motion preference** slice: [scope/evidence](docs/MOTION_PREFERENCE.md). Existing 35 Motion preference consumers use one subscribed hook; ScrollReveal retains child state. Typecheck/hooks/build/privacy and 21 targeted tests pass; final full regression passes 715/715 across 79 files, 21 backend and 36 production checks; source persistence is recorded in the linked checkpoint. Owner deferred keys/configuration and final release. Preserve prior Stage 3-to-M18 and recovery checkpoints.
+
 ## 27 October 2026 — recover saved Stage 3-to-M18 work and refresh integration evidence
 
 - **Before:** implementation `81eedbfe` was saved, but PR #16 still summarized gifting and the M18 remote-save checkbox remained open. Older records reported Railway access unavailable.

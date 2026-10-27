@@ -1,5 +1,6 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import React from 'react';
-import { motion, useScroll, useSpring, useReducedMotion } from 'motion/react';
+import { motion, useScroll, useSpring } from 'motion/react';
 
 export interface ScrollProgressBarProps {
   className?: string;

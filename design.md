@@ -68,3 +68,7 @@ Motion uses a finite 900ms photo settle and 700ms gift settle; fine-pointer imag
 ## M18 purchase continuation — 27 October 2026
 
 Extend the accepted ivory/emerald editorial language to the existing cart, drawer and checkout. Bag uses useful contained photos, full names/options,44px quantity controls and a clear estimated-total panel. Drawer keeps header/purchase actions while secondary delivery/payment/tools scroll. Checkout has an emerald heading, readable steps and a responsive order overview; native item/gift disclosures preserve saved recipient/message. Show current quote line prices with current quote totals; never recalculate server rates in presentation. Shared CartItemPersonalization reuses existing saved configuration and labels generated packaging as reference art. Final local evidence and remaining live boundaries: PREMIUM_PURCHASE.md.
+
+## M21 live motion preference — 28 October 2026
+
+Existing movement keeps its accepted visual language, but JavaScript consumers now subscribe to device preference changes during the session. ScrollReveal keeps the same wrapper so typed/selected child state survives; existing manual pause/play and reduced-motion styles remain authoritative. No new art, component or dependency. Current scope/evidence: docs/MOTION_PREFERENCE.md.

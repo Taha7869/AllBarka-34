@@ -93,3 +93,7 @@ Baseline 599d13461db796a8f6ad73bbf44910d7ec3a78ab; recovery source 30438be512ac4
 
 
 27 October 2026 — M18 cart/checkout: live watermark UNKNOWN / current semantic audit BLOCKED; no authorized current merchant snapshot/read tool. Current provider images and exact saved identities/variants remain. Fixture deliberately holds an older public snapshot while the actual quote service reads a changed memory-catalog rate, verifying canonical quote line-price/total continuity. Drawer recommendations now exclude unavailable/unpublished/inquiry records and disabled/nonpositive portions. No live assignment, rate, price formula, stock, publication or taxonomy write. Local evidence only; see PREMIUM_PURCHASE.md.
+
+## 28 October 2026 — M21 motion preference
+
+Current public GET watermark was refreshed: 97 products, version `e911ff4c059a56799c438e03089dde03694ec6bc1235e04582b26778667fd1db`, unchanged from the prior captured projection. [Read record](evidence/motion-preference/public-watermark.json). No catalog/category/media/price/availability edits in this slice. Complete private semantic reconciliation remains BLOCKED without current authorized merchant/taxonomy data. Existing category/discovery regressions are retained; this motion check is not a new live classification certification.

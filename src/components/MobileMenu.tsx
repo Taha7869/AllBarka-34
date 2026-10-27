@@ -1,9 +1,10 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import {useStorefrontContent} from '../contexts/StorefrontContentContext';
 import {contentNavigation} from '../lib/contentPresentation';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { getPrimaryActiveSectionId } from './BubbleMenu';
-import { motion, AnimatePresence, useReducedMotion, type Variants } from 'motion/react';
+import { motion, AnimatePresence, type Variants } from 'motion/react';
 import { 
   X, 
   ShoppingBag, 

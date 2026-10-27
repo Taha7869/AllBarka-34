@@ -1,6 +1,7 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, useReducedMotion } from 'motion/react';
+import { motion } from 'motion/react';
 import { X, ShoppingBag, Minus, Plus, ArrowUpRight } from 'lucide-react';
 import type { Product } from '../types';
 import ProductDetailAccordion from './ProductDetailAccordion';

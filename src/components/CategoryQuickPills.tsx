@@ -1,5 +1,6 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import React from 'react';
-import { motion, useReducedMotion } from 'motion/react';
+import { motion } from 'motion/react';
 import { useDragScroll } from '../hooks/useDragScroll';
 import { useLanguage } from '../contexts/LanguageContext';
 import { CANONICAL_CATEGORIES, resolveCategorySlug } from '../config/categories';

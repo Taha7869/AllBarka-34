@@ -1,5 +1,6 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import React, { useEffect, useId, useState } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { AlertCircle, ChevronDown, Leaf, PackageCheck, ThermometerSnowflake } from 'lucide-react';
 import type { Product } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';

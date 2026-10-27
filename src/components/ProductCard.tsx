@@ -1,9 +1,10 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import ProductImageGallery from './ProductImageGallery';
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, ShoppingBag, Heart } from 'lucide-react';
 import { useSavedProducts } from '../hooks/useSavedProducts';
-import { motion, useReducedMotion } from 'motion/react';
+import { motion } from 'motion/react';
 import { Product } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCart } from '../contexts/CartContext';

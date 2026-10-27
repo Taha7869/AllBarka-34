@@ -1,5 +1,7 @@
 # Verification and release record
 
+28 October 2026 — current **M21 live motion preference** slice: [scope/evidence](../MOTION_PREFERENCE.md). Existing 35 Motion preference consumers use one subscribed hook; ScrollReveal retains child state. Typecheck/hooks/build/privacy and 21 targeted tests pass; final full regression passes 715/715 across 79 files, 21 backend and 36 production checks; source persistence is recorded in the linked checkpoint. Owner deferred keys/configuration and final release. Preserve prior Stage 3-to-M18 and recovery checkpoints.
+
 ## 27 October 2026 — recovery re-verification
 
 Runtime source `81eedbfe0b09cdd29ba599f4733968a05a60fdbe`, fingerprint `dd84bc1eef43282eac53f871a9f3171d9d1e0e35d2433f937ab63c56bf221cb4`. Fresh typecheck/hooks/build/privacy pass; targeted Stage 3/pricing/SSR checks pass 30/30. Final corrected-source full suite passes 713/713 across 78 files, 21 backend and 36 production checks. [Recovery evidence](../RESUME_VERIFICATION.md) records exact commands, browser setup diagnostics, current public read-only observations and remaining live limits. The recheck found a mobile-menu exit overlay issue; the existing menu and browser regression are corrected, with final gates tracked in the recovery record.

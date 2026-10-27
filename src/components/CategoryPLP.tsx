@@ -1,8 +1,9 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import CartAddButton from './CartAddButton';
 import { useCatalogProducts, useCatalogTaxonomy, useCatalogHiddenTaxonomy } from '../contexts/CatalogContext';
 import React, { useEffect, useId, useMemo, useState, useRef } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams, useNavigationType } from 'react-router-dom';
-import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Search, SlidersHorizontal, X, Heart, ArrowUpRight, ShoppingBag, Eye, Share2, Scale } from 'lucide-react';
 import CatalogTools from './CatalogTools';
 import SquishSwitch from './SquishSwitch';

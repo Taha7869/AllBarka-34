@@ -1,5 +1,6 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import React from 'react';
-import { useReducedMotion } from 'motion/react';
+
 
 interface GradientTextProps {
   children: React.ReactNode;

@@ -1,7 +1,8 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import React, { useEffect, useRef, useState } from 'react';
-import { motion, useReducedMotion } from 'motion/react';
+import { motion } from 'motion/react';
 import { X, Gift, Check, ArrowRight, ShoppingBag } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getLocalized } from '../utils/localize';

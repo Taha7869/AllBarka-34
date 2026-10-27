@@ -1,5 +1,6 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../../hooks/usePrefersReducedMotion';
 import { useRef } from 'react';
-import { motion, useInView, useReducedMotion } from 'motion/react';
+import { motion, useInView } from 'motion/react';
 
 interface WordScrollRevealProps {
   text: string;
