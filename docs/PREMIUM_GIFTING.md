@@ -1,6 +1,6 @@
 # V4 gifting — bounded landing, builder and message pass
 
-27 October 2026 (Asia/Karachi). Owner/agent Codex. SELECTED / IN_PROGRESS pending final regression and remote checkpoint. Inspected parent `ef711ebd00b3dd286c6ef47f9f9beb962c5bb2b2`, tree `e47278cc4dbbbba719bb873d011e0a7ad9daa823` (920 blobs). Branch `codex/admin-catalog-foundation-20261023`, draft [PR #16](https://github.com/Taha7869/AllBarka-34/pull/16). Existing assets first; retail + gifting balanced.
+27 October 2026 (Asia/Karachi). Owner/agent Codex. SELECTED / DONE locally for the bounded landing/builder/message scope. Broader V4 remains IN_PROGRESS. Inspected parent `ef711ebd00b3dd286c6ef47f9f9beb962c5bb2b2`, tree `e47278cc4dbbbba719bb873d011e0a7ad9daa823` (920 blobs). Branch `codex/admin-catalog-foundation-20261023`, draft [PR #16](https://github.com/Taha7869/AllBarka-34/pull/16). Existing assets first; retail + gifting balanced.
 
 ## Acceptance and scope
 
@@ -33,10 +33,8 @@ Codex self-review of changed source, shared card/catalog/cart contracts, regress
 | G05 | Medium: mobile title pushed reference photo below the opening | Compact mobile title/photo composition; initial EN360 viewport photo/action assertions and refreshed390 screenshot. |
 | G06 | Medium: an unavailable initial filling disappeared from candidate controls but stayed selected | Localized explicit removal control in step2; mounted unlisted-product fixture removes it successfully before normal cart journey. |
 | G07 | Test infrastructure: first baseline button name was incomplete; later add-close assertion matched the automatically opened cart dialog | Correct original label regex and scope the builder dialog by its class; no application assertion removed. A later missing-price mock supplied an invalid zero rate rejected by the public adapter; corrected to an actual unlisted product response. Diagnostic runs are not final evidence. |
-
-| G08 | Test expectation: full run710/712 had two failures because historical destination regressions asserted the replaced heading/builder title | Assert exact new H1 and builder launch text, retain corporate/other-route checks, add selected Nikkah & Wedding state and mounted occasion/budget tracking-parameter preservation; final full rerun required. An intermediate run used the abbreviated Wedding label; the exact existing Nikkah & Wedding translation is retained in the corrected assertion. |
-
-| G09 | Medium: doubled text at360px made the shared card price/Quick View row extend beyond the page | Allow that row to wrap; do not hide/clip content. EN/UR/AR ×both themes doubled-text landing checks and image-fallback verification pass in the isolated diagnostic fixture; the same checks now run in the persistent gifting browser test. Final full suite rerun follows this source fix. |
+| G08 | Test expectation: full run710/712 had two failures because historical destination regressions asserted the replaced heading/builder title | Assert exact new H1 and builder launch text, retain corporate/other-route checks, add selected Nikkah & Wedding state and mounted occasion/budget tracking-parameter preservation; final full rerun PASS after correction. An intermediate run used the abbreviated Wedding label; the exact existing Nikkah & Wedding translation is retained in the corrected assertion. |
+| G09 | Medium: doubled text at360px made the shared card price/Quick View row extend beyond the page | Allow that row to wrap; do not hide/clip content. EN/UR/AR ×both themes doubled-text landing checks and image-fallback verification pass in the isolated diagnostic fixture; the same checks now run in the persistent gifting browser test. Final full suite rerun after this source fix PASS. |
 
 No unresolved critical/high finding in the reviewed bounded diff. Existing R04 live audit and Stage6 external blockers remain explicit.
 
@@ -46,12 +44,12 @@ Final runtime source/build fingerprint `39fe0290ec4f3651bf16fc0ca458266d5eb5bf8a
 
 - `npm run typecheck` and `npm run lint:hooks`: PASS exit0/0. Existing npm environment advisory only; no hooks warnings.
 - `ALLBARKA_SKIP_LOCAL_ENV=true npm run build`: PASS exit0;84-text-artifact privacy audit, existing bundle-size advisory.
-- Affected tests: PASS,19/19 (`premium-gifting-browser.test.tsx`, `hamper-catalog.test.tsx`, `stage5b-destinations.test.tsx`), zero failed/cancelled/skipped; exit0. Capture browser journey also passed after adding URL-state checks. Earlier invalid-zero mock was rejected by the real adapter; G08 exact occasion-label correction is included in final19/19..
-- Final full offline runner: FINAL_FULL_PENDING. An earlier full run was interrupted before the initial source fixes; a710/712 run found obsolete heading expectations in G08; the following712/712 main-suite run preceded the enlarged-text card-row fix G09. These are historical checks, not acceptance for the final fingerprint.
+- Affected tests: PASS,19/19 (`premium-gifting-browser.test.tsx`, `hamper-catalog.test.tsx`, `stage5b-destinations.test.tsx`), zero failed/cancelled/skipped; exit0. Capture browser journey also passed after adding URL-state checks. Earlier invalid-zero mock was rejected by the real adapter; G08 exact occasion-label correction is included in final19/19.
+- Final full offline runner: PASS,712/712 tests across77 files, zero failed/cancelled/skipped;21 backend and36 production checks; assets97 products/115 references/111 unique files, zero missing/retired views; exit0. Command: `ALLBARKA_SKIP_LOCAL_ENV=true ALLBARKA_TEST_BROWSER=/workspace/scratch/2298f1388db7/browser-runtime153/chromium node scripts/run-all-tests.mjs`. This final complete run follows G09 on the fingerprint above. An earlier full run was interrupted before the initial source fixes; a710/712 run found obsolete heading expectations in G08; the following712/712 main-suite run preceded the enlarged-text card-row fix G09. These are historical checks, not acceptance for the final fingerprint.
 
 Browser uses actual RootLayout/ShopPage/gift destination/builder, shared providers/cart and public catalog/config/content routers with isolated memory persistence. Auth/provider boundaries isolated, external resources blocked, local Urdu/Arabic fonts supplied. Test-only Chromium153.0.8010.0. No live database or accepted-order action.
 
-Main matrix: landing360/390/768/1440 ×EN/UR/AR ×light/dark =24; builder360/768/1440 ×languages/themes =18, total42. Mobile height844px, tablet/desktop1000px. Extra builder844×390 landscape checks usable scroll area and reachable footer action. Doubled computed landing text at360 on all six language/theme pairs and builder text/input size at360 check no horizontal dialog overflow and usable scrolling; this is DOM enlargement, not certification of every browser zoom setting. Reduced motion enabled; minimum44px touched controls and keyboard Escape/opener verified. Capacity, URL filters, unlisted-product selection recovery, current price, actual cart message/configuration, reload and all-packaging-unavailable state exercised.
+Main matrix: landing360/390/768/1440 ×EN/UR/AR ×light/dark =24; builder360/768/1440 ×languages/themes =18, total42. Mobile height844px, tablet/desktop1000px. Extra builder844×390 landscape checks usable scroll area and reachable footer action. Doubled computed landing text at360 on all six language/theme pairs and builder text/input size at360 check no horizontal page/dialog overflow and usable scrolling; this is DOM enlargement, not certification of every browser zoom setting. Reduced motion enabled; minimum44px touched controls and keyboard Escape/opener verified. Capacity, URL filters, unlisted-product selection recovery, current price, actual cart message/configuration, reload and all-packaging-unavailable state exercised.
 
 Before: [gifting desktop](evidence/premium-gifting/before-gifting-1440.jpg), [builder desktop](evidence/premium-gifting/before-builder-1440.jpg). After: [gifting desktop](evidence/premium-gifting/after-gifting-1440.jpg), [gifting mobile](evidence/premium-gifting/after-gifting-390.jpg), [builder desktop](evidence/premium-gifting/after-builder-1440.jpg), [matrix](evidence/premium-gifting/layouts.json).
 
@@ -67,10 +65,10 @@ Next executable independent slice: broader M18 cart/checkout visual continuity u
 
 ## R11 delivery checklist
 
-- [ ] Bounded scope complete under final gates; full V4 explicitly remains partial.
-- [x] Final source self-reviewed, G01–G06 fixed; G07 is test-only correction, no unresolved critical/high finding.
-- [ ] Relevant final full/affected/browser gates evidenced; external gates named.
+- [x] Bounded scope complete under final gates; full V4 explicitly remains partial.
+- [x] Final source self-reviewed, G01–G06/G09 fixed; G07/G08 are test-only corrections, no unresolved critical/high finding.
+- [x] Relevant final full/affected/browser gates evidenced; external gates named.
 - [x] Catalog fixture/live separation recorded, current live audit BLOCKED.
 - [x] Canonical commerce/privacy/roles/localization contracts reused; existing availability validation strengthened.
-- [ ] Master/handoff/test/changelog statuses updated at final checkpoint.
-- [ ] Remote parent, intended tree/blob changes, commit/ref and saved files verified; draft PR only.
+- [x] Master/handoff/test/changelog statuses updated at final checkpoint.
+- [x] Source/evidence checkpoint `57e2a0dc707268640e41d9032c4b68eb7a683206`, tree `625cf5ad6232dabd4dbab83f4a91272bdcc4154e`, parent `ef711ebd00b3dd286c6ef47f9f9beb962c5bb2b2`. All920 prior blobs preserved; eight added,928 total,24 intended changed/added paths and zero unexpected changes/deletions. Candidate hashes compared before expected-parent fast-forward; remote commit/ref and representative raw content read back exactly. This documentation successor records the final gates. Draft PR only; no production release.
