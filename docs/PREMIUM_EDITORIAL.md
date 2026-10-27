@@ -63,4 +63,4 @@ Next independent design phase is V4 gifting, while merchant-dependent photograph
 - [x] Catalog fixture/live distinction recorded; current live reconciliation BLOCKED.
 - [x] Canonical commerce, privacy/roles and content publication contracts reused; final full regression PASS.
 - [x] Final master/handoff/test/changelog statuses updated.
-- [ ] Correct branch, candidate hashes and saved remote ref readback pending; no live release.
+- [x] Source/evidence saved at `1bf00c937ffe0718e0eb2f429670d83d7bd94553`, tree `733c0cddb7f6fa815930351f4b898036d47fed2b`, parent `9bdc7df926dcf183f00b81967757ae910fb7818a`. All907 prior blob paths preserved; thirteen additions give920 blobs, zero unexpected hash/path changes or deletions. Candidate compared before expected-parent fast-forward; remote commit/ref read back. This documentation successor only records verification. Draft PR#16; no live release.

@@ -22,7 +22,7 @@ Saved V2 implementation/evidence: `4441a671a97682b98be64c94744a5fee25e3158d`, ve
 
 Saved V3 source/evidence: `3c6949a5e69ee5eadd28334ae1c35e2c113413df` (remote tree/ref verified). Latest implementation: **V3 product-detail slice (M15) DONE locally** — contained gallery, food/packaging purchase presentation, selection summary and localized recovery. 709 tests / 21 backend / 36 production passed; [PREMIUM_V3.md](docs/PREMIUM_V3.md) records limits. Full V3 and live release are not complete.
 
-Latest continuation: **M19 story/journal presentation DONE locally**, with 710 tests / 21 backend / 36 production checks and 72 route/size/language/theme layouts plus enlarged-text checks. See [PREMIUM_EDITORIAL.md](docs/PREMIUM_EDITORIAL.md). M15 remains complete; original photography/facts and Stage 6 live gates are open. Next independent design work: V4 gifting.
+Saved M19 source/evidence: `1bf00c937ffe0718e0eb2f429670d83d7bd94553` (remote tree/ref verified). Latest continuation: **M19 story/journal presentation DONE locally**, with 710 tests / 21 backend / 36 production checks and 72 route/size/language/theme layouts plus enlarged-text checks. See [PREMIUM_EDITORIAL.md](docs/PREMIUM_EDITORIAL.md). M15 remains complete; original photography/facts and Stage 6 live gates are open. Next independent design work: V4 gifting.
 
 ## Current status
 
