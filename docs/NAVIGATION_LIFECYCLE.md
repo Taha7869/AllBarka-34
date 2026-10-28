@@ -1,6 +1,6 @@
 # M20-NAV1 — mobile navigation lifecycle and keyboard handoff
 
-28 October 2026 (Asia/Karachi). Codex. SELECTED / DONE for the bounded locally verified slice; remote persistence verification follows below. Inspected parent `0d331e8dd03c40d8f48183abc2b5db629d64f9b0`; draft PR #16. Owner requested the next independent part; provider/key changes and final release remain deferred. This selects the bounded navigation portion of M20 and continues M21 keyboard/accessibility checks, not the whole proposed mobile-controls workstream.
+28 October 2026 (Asia/Karachi). Codex. SELECTED / DONE for the bounded locally verified slice; source saved and read-back verified in draft PR #16. Inspected parent `0d331e8dd03c40d8f48183abc2b5db629d64f9b0`. Owner requested the next independent part; provider/key changes and final release remain deferred. This selects the bounded navigation portion of M20 and continues M21 keyboard/accessibility checks, not the whole proposed mobile-controls workstream.
 
 ## Behavior
 
@@ -54,7 +54,7 @@ Existing feature Auth/Storage/n8n, accepted-order, private catalog, preview/roll
 - [x] Catalog impact/watermark recorded with private/live limits.
 - [x] Commerce/privacy/roles/language and existing features retained.
 - [x] Master, handoff, testing record and changelog updated.
-- [ ] Verified parent/tree, intended source/evidence paths and saved ref read back.
+- [x] Verified parent/tree, all 19 intended source/evidence paths and saved ref read back; source checkpoint below.
 
 After save: inspect the remaining M20 shop filter/overlay controls in `src/components/CatalogFilterSheet.tsx` and `src/pages/ShopPage.tsx`, selecting a separately bounded safe-area/keyboard/recovery task before implementation. Do not restart this lifecycle work or previously completed stages. Actual provider-dependent integration belongs to the deferred final environment/release work; rotating keys is not verification.
 
@@ -68,3 +68,11 @@ All commands use the existing lockfile/dependencies. Browser: separately install
 - With `ALLBARKA_SKIP_LOCAL_ENV=true` and the browser variable: `node --test --test-reporter=tap tests/stage5a-controlled-clock.test.mjs` —11/11, exit 0 after the blank-page freeze correction.
 - With the same environment and `NODE_OPTIONS=--test-reporter=tap`: `node scripts/run-all-tests.mjs` —715/715,79 files,21 backend,36 production; exit 0. Navigation-only capture rewrites only the final two navigation images and matrix. The saved pre-wrap image remains diagnostic.
 - Final diff/relative-link checks and documentation delivery build are recorded before the source save. No external acceptance or production claim is derived from fixtures.
+
+## Verified source save
+
+Source/evidence commit: `d113d254384d068300de1b21855daa93e862cfcd`, parent `0d331e8dd03c40d8f48183abc2b5db629d64f9b0`, tree `721dcfa82d4e970ca48ade6cb7c793c0864b1779`. The candidate and saved tree contain 960 blobs, exactly 19 intended changed/added paths and zero deletions. All unrelated upstream files, including the historical PNGs unavailable locally, were preserved.
+
+Expected-parent fast-forward, remote ancestry/changed paths and exact content/hash read-back of all 19 files PASS. [Draft PR #16](https://github.com/Taha7869/AllBarka-34/pull/16) records the completed persistence gate. This documentation-only successor closes the pre-write checkbox; application source, tests and screenshot evidence retain their verified contents. Runtime fingerprint remains `90d80acb82c420b9d13b4537b01f2518735375df91b56dc5d241a206d6cea2c2` with 715 full tests, 21 backend and 36 production checks passing on the saved source.
+
+The bounded navigation task is complete. Broader M20/M21 proposals and the deferred provider/key/release work keep their separate statuses; no production merge or deployment occurred.
