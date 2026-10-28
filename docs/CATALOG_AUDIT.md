@@ -97,3 +97,7 @@ Baseline 599d13461db796a8f6ad73bbf44910d7ec3a78ab; recovery source 30438be512ac4
 ## 28 October 2026 — M21 motion preference
 
 Current public GET watermark was refreshed: 97 products, version `e911ff4c059a56799c438e03089dde03694ec6bc1235e04582b26778667fd1db`, unchanged from the prior captured projection. [Read record](evidence/motion-preference/public-watermark.json). No catalog/category/media/price/availability edits in this slice. Complete private semantic reconciliation remains BLOCKED without current authorized merchant/taxonomy data. Existing category/discovery regressions are retained; this motion check is not a new live classification certification.
+
+## 28 October 2026 — M20-NAV1 lifecycle
+
+Fresh public watermark still reports 97 products at `e911ff4c059a56799c438e03089dde03694ec6bc1235e04582b26778667fd1db`. [Read record](evidence/navigation-lifecycle/public-watermark.json). Actual route destinations/category membership and product data are unchanged; this fixes modal lifecycle/history only. Current private semantic audit remains BLOCKED without a complete authorized merchant/taxonomy snapshot. No live writes or catalog classification certification.

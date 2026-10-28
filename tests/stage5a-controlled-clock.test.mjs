@@ -45,13 +45,14 @@ function createStaticServer() {
   });
 }
 
-// Install before navigation so the application never creates native timers outside clock control.
-// Pause only after loading; driver interactions then cannot age the controlled countdown.
+// Freeze the blank page before loading: slow requests/driver work must not age autoplay.
+// Application time then advances only through each test's explicit runFor calls.
 async function openControlledPage(page) {
-  await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
-  await page.goto(`http://localhost:${PORT}/`);
+  const initialTime = new Date('2026-01-01T00:00:00Z');
+  await page.clock.install({ time: initialTime });
+  await page.clock.pauseAt(new Date(initialTime.getTime() + 1000));
+  await page.goto(`http://localhost:${PORT}/`, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('#boutique-selections');
-  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
 }
 
 describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () => {

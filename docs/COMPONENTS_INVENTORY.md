@@ -289,3 +289,7 @@ JournalPage reuses existing public contentJournal/StorefrontContentProvider, SEO
 ## M21 live motion preference — 28 October 2026
 
 `hooks/usePrefersReducedMotion.ts` is the shared subscribed device preference for 35 existing UI consumers. It uses React useSyncExternalStore with SSR and legacy-listener fallback; no new component or dependency. ScrollReveal retains its wrapper/child state through live changes. See [MOTION_PREFERENCE.md](MOTION_PREFERENCE.md).
+
+## M20-NAV1 — mobile navigation lifecycle
+
+Reuse MobileMenu/RootLayout and existing CartDrawer. Menu owns one destination navigation; RootLayout no longer adds a competing mobile callback. Route and xl breakpoint effects clear modal state, brand uses a native button, and delayed focus yields to current menu focus. Existing social actions wrap for enlarged text. No new component. See [NAVIGATION_LIFECYCLE.md](NAVIGATION_LIFECYCLE.md).

@@ -17,11 +17,11 @@ import { createStorefrontContentRouter } from '../src/lib/storefrontContentRoute
 test('boutique interactions: committed cart feedback, honest failures, real gallery, keyboard/touch and full-layout responsive parity', async () => {
   const temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'allbarka-interactions-'));
   const { db } = memoryFirestore(Object.fromEntries(PRODUCTS.map(product => [`products/${product.id}`, product])));
-  const entry = `import React,{useEffect}from'react';import{createRoot}from'react-dom/client';import{BrowserRouter,Routes,Route,useNavigate}from'react-router-dom';
+  const entry = `import React,{useEffect}from'react';import{createRoot}from'react-dom/client';import{BrowserRouter,Routes,Route,useNavigate,useLocation}from'react-router-dom';
 import{LanguageProvider,useLanguage}from'./src/contexts/LanguageContext';import{ThemeProvider,useTheme}from'./src/contexts/ThemeContext';import{CartProvider,useCart}from'./src/contexts/CartContext';import{CatalogProvider}from'./src/contexts/CatalogContext';import{MerchandisingProvider}from'./src/contexts/MerchandisingContext';import{ProductMediaProvider,useProductMediaRegistry}from'./src/contexts/ProductMediaContext';import{StorefrontContentProvider}from'./src/contexts/StorefrontContentContext';
 import RootLayout from'./src/layouts/RootLayout';import HomePage from'./src/pages/HomePage';import ShopPage from'./src/pages/ShopPage';import ProductDetailPage from'./src/pages/ProductDetailPage';import CartPage from'./src/pages/CartPage';import CheckoutPage from'./src/pages/CheckoutPage';import CartAddButton from'./src/components/CartAddButton';import ProductImageGallery from'./src/components/ProductImageGallery';import MagneticButton from'./src/components/motion/MagneticButton';import{PRODUCTS}from'./src/data/products';
 const item=PRODUCTS.find(p=>p.id==='pista');const photos=PRODUCTS.find(p=>p.id==='deal-1');
-function Controls(){const cart=useCart();const{setLanguage}=useLanguage();const{setTheme}=useTheme();const navigate=useNavigate();const media=useProductMediaRegistry();useEffect(()=>{window.fixture={navigate,lang:setLanguage,theme:setTheme,cart:cart.cartItems,close:()=>cart.setIsCartOpen(false),clear:()=>{cart.clearCart();cart.setIsCartOpen(false)},cap:()=>cart.updateQuantity('pista-250g',50),add:()=>cart.addToCart(item,'250g',1,undefined,{silent:true,openCart:false}),media:media.setOverride};});return null;}
+function Controls(){const cart=useCart();const{setLanguage,t,language}=useLanguage();const{setTheme}=useTheme();const navigate=useNavigate();const location=useLocation();const media=useProductMediaRegistry();useEffect(()=>{window.fixture={navigate,pathname:location.pathname,search:location.search,language,lang:setLanguage,theme:setTheme,menuCart:t('reviewCart','Review Cart & Checkout'),cart:cart.cartItems,close:()=>cart.setIsCartOpen(false),clear:()=>{cart.clearCart();cart.setIsCartOpen(false)},cap:()=>cart.updateQuantity('pista-250g',50),add:()=>cart.addToCart(item,'250g',1,undefined,{silent:true,openCart:false}),media:media.setOverride};});return null;}
 function Lab(){const{addToCart}=useCart();return <section className="w-full max-w-5xl px-5 py-10"><h1 className="font-serif text-3xl mb-8">Interaction verification</h1><div id="lab-gallery" style={{maxWidth:350}}><ProductImageGallery product={photos}/></div><div className="grid gap-4 mt-8" style={{maxWidth:350}}><CartAddButton id="lab-add" productId="pista" portion="250g" onAdd={()=>addToCart(item,'250g',1,undefined,{silent:true,openCart:false})} className="rounded-xl bg-[#1e3a2b] text-white px-5 flex items-center justify-center gap-2"/><CartAddButton id="lab-noop" productId="pista" portion="250g" onAdd={()=>{}} className="border rounded-xl px-5 flex items-center justify-center gap-2"/><CartAddButton id="lab-disabled" productId="pista" portion="250g" onAdd={()=>addToCart(item,'250g')} disabled className="border rounded-xl px-5"/><MagneticButton id="lab-anchor" as="a" href="#lab-gallery" style={{opacity:.7}} onClick={e=>{e.preventDefault();window.anchorClicks=(window.anchorClicks||0)+1}}>Gallery action</MagneticButton></div></section>}
 createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider><LanguageProvider><CatalogProvider initialProducts={PRODUCTS}><MerchandisingProvider><ProductMediaProvider><CartProvider><StorefrontContentProvider><Controls/><Routes><Route path="/" element={<RootLayout/>}><Route index element={<HomePage/>}/><Route path="shop" element={<ShopPage/>}/><Route path="shop/:category" element={<ShopPage/>}/><Route path="product/:id" element={<ProductDetailPage/>}/><Route path="cart" element={<CartPage/>}/><Route path="checkout" element={<CheckoutPage/>}/><Route path="polish-lab" element={<Lab/>}/></Route></Routes></StorefrontContentProvider></CartProvider></ProductMediaProvider></MerchandisingProvider></CatalogProvider></LanguageProvider></ThemeProvider></BrowserRouter>);`;
   await build({ stdin: { contents: entry, loader: 'tsx', resolveDir: process.cwd(), sourcefile: 'interaction-fixture.tsx' },
@@ -106,8 +106,9 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     }
     await page.emulateMedia({ reducedMotion: 'reduce' }); await page.setViewportSize({ width: 390, height: 844 });
     await page.evaluate(() => { (window as any).fixture.lang('en'); (window as any).fixture.theme('light'); (window as any).fixture.navigate('/shop/dry-fruits'); });
+    await page.waitForFunction(()=>(window as any).fixture.pathname==='/shop/dry-fruits'&&(window as any).fixture.language==='en');
     await page.getByRole('button', { name: 'Open navigation menu', exact: true }).click();
-    const menu = page.getByRole('dialog'); assert.equal(await menu.locator('button[aria-current="page"]').count(), 1);
+    const menu = page.getByRole('dialog'); await menu.waitFor(); assert.equal(await menu.locator('button[aria-current="page"]').count(), 1);
     await menu.getByRole('button', { name: 'Close navigation menu', exact: true }).click();
     // Closed animation surfaces must immediately stop blocking input/focus.
     const closedMenu = page.locator('#mobile-navigation-menu');
@@ -115,6 +116,65 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     assert.equal(await closedMenu.evaluate(element => getComputedStyle(element).pointerEvents), 'none');
     assert.equal(await closedMenu.getAttribute('aria-hidden'), 'true');
     assert.equal(await page.locator('#mobile-menu-trigger-btn').evaluate(element => element === document.activeElement), true);
+    // Route and breakpoint changes must close the menu and release its body lock.
+    const trigger = page.locator('#mobile-menu-trigger-btn');
+    await trigger.click();
+    await page.evaluate(()=>(window as any).fixture.navigate('/cart'));
+    await page.waitForFunction(()=>document.querySelector('#mobile-menu-trigger-btn')?.getAttribute('aria-expanded')==='false',undefined,{timeout:3000});
+    assert.notEqual(await page.evaluate(()=>document.body.style.overflow),'hidden');
+    await page.evaluate(()=>(window as any).fixture.navigate('/shop?navigation-check=1'));
+    await page.waitForFunction(()=>(window as any).fixture.pathname==='/shop'&&(window as any).fixture.search==='?navigation-check=1');
+    await trigger.click();await page.goBack();
+    await page.waitForFunction(()=>document.querySelector('#mobile-menu-trigger-btn')?.getAttribute('aria-expanded')==='false');
+    assert.notEqual(await page.evaluate(()=>document.body.style.overflow),'hidden');
+    await trigger.click();await page.goForward();
+    await page.waitForFunction(()=>document.querySelector('#mobile-menu-trigger-btn')?.getAttribute('aria-expanded')==='false');
+    await page.goBack();await page.waitForURL(origin+'/cart');await page.waitForFunction(()=>(window as any).fixture.pathname==='/cart');
+    await trigger.click();await page.setViewportSize({width:1280,height:900});
+    await page.waitForFunction(()=>document.querySelector('#mobile-menu-trigger-btn')?.getAttribute('aria-expanded')==='false');
+    assert.notEqual(await page.evaluate(()=>document.body.style.overflow),'hidden');
+    assert.equal(await page.evaluate(()=>!!document.activeElement?.getClientRects().length),true);
+    assert.equal(await page.evaluate(()=>!document.querySelector('#mobile-navigation-menu')?.contains(document.activeElement)),true);
+    await page.setViewportSize({width:390,height:844});assert.equal(await trigger.getAttribute('aria-expanded'),'false');
+    // Brand is a real keyboard control, and menu -> cart -> Escape returns focus.
+    await trigger.click();const brand=page.locator('#mobile-navigation-menu').getByRole('button',{name:/AllBarka/});
+    assert.ok(await brand.evaluate(e=>e.getBoundingClientRect().height)>=44);
+    await brand.focus();await page.waitForTimeout(100);assert.equal(await brand.evaluate(e=>e===document.activeElement),true);await page.keyboard.press('Enter');await page.waitForURL(origin+'/');
+    assert.equal(await trigger.getAttribute('aria-expanded'),'false');
+    await page.goBack();await page.waitForURL(origin+'/cart');await page.waitForFunction(()=>(window as any).fixture.pathname==='/cart');
+    await trigger.click();const cartLabel=await page.evaluate(()=>(window as any).fixture.menuCart);
+    await page.locator('#mobile-navigation-menu').getByRole('button').filter({hasText:cartLabel}).click();
+    const cartDialog=page.locator('.purchase-drawer');await cartDialog.waitFor();
+    await page.waitForFunction(()=>document.querySelector('.purchase-drawer')?.contains(document.activeElement));
+    await page.keyboard.press('Tab');assert.equal(await cartDialog.evaluate(e=>e.contains(document.activeElement)),true);
+    await page.keyboard.press('Shift+Tab');assert.equal(await cartDialog.evaluate(e=>e.contains(document.activeElement)),true);
+    await page.keyboard.press('Escape');await page.getByRole('dialog').waitFor({state:'hidden'});
+    assert.equal(await trigger.evaluate(e=>e===document.activeElement),true);
+    const navigationShots=process.env.ALLBARKA_CAPTURE_NAVIGATION==='true'?path.resolve('docs/evidence/navigation-lifecycle'):path.join(temporary,'navigation-lifecycle');await fs.mkdir(navigationShots,{recursive:true});
+    const menuLayouts:object[]=[];
+    for(const [width,height] of [[360,640],[390,844],[768,600],[844,390]])for(const language of ['en','ur','ar'])for(const theme of ['light','dark']){
+      await page.setViewportSize({width,height});await page.evaluate(({language,theme})=>{(window as any).fixture.lang(language);(window as any).fixture.theme(theme);},{language,theme});
+      await trigger.click();const dialog=page.locator('#mobile-navigation-menu');await page.waitForFunction(()=>document.querySelector('#mobile-navigation-menu')?.contains(document.activeElement));
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+      const scroll=dialog.locator('.overflow-y-auto');assert.ok(await scroll.evaluate(e=>e.clientHeight)>80);
+      const links=dialog.locator('a[href]');await links.last().focus();await page.keyboard.press('Tab');
+      assert.equal(await dialog.evaluate(e=>e.contains(document.activeElement)),true);
+      await page.keyboard.press('Shift+Tab');assert.equal(await links.last().evaluate(e=>e===document.activeElement),true);
+      if(width===844&&language==='en'&&theme==='light')await page.screenshot({path:path.join(navigationShots,'navigation-landscape.jpg'),quality:78});
+      menuLayouts.push({width,height,language,theme,keyboardContained:true});
+      if(width===844&&language==='en'&&theme==='light'){
+        await dialog.evaluate(root=>{const elements=[...root.querySelectorAll<HTMLElement>('*')].filter(e=>[...e.childNodes].some(n=>n.nodeType===3&&n.textContent?.trim()));elements.forEach(e=>e.style.fontSize=(parseFloat(getComputedStyle(e).fontSize)*2)+'px');});
+        assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+        assert.ok(await scroll.evaluate(e=>e.clientHeight)>44);await page.keyboard.press('Tab');await page.keyboard.press('Shift+Tab');assert.equal(await links.last().evaluate(e=>e===document.activeElement),true);
+        assert.equal(await links.last().evaluate(e=>{const r=e.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;}),true);
+        assert.equal(await links.evaluateAll(elements=>elements.every(e=>{const r=e.getBoundingClientRect(),root=e.closest('#mobile-navigation-menu')!.getBoundingClientRect(),label=e.querySelector('span')!.getBoundingClientRect();return r.left>=root.left&&r.right<=root.right&&label.left>=r.left&&label.right<=r.right&&e.scrollWidth<=e.clientWidth;})),true);
+        await page.screenshot({path:path.join(navigationShots,'navigation-landscape-enlarged.jpg'),quality:78});
+        menuLayouts.push({width,height,language,theme,enlargedText:true,keyboardContained:true});
+      }
+      await page.keyboard.press('Escape');assert.equal(await trigger.evaluate(e=>e===document.activeElement),true);assert.notEqual(await page.evaluate(()=>document.body.style.overflow),'hidden');
+    }
+    await fs.writeFile(path.join(navigationShots,'navigation-layouts.json'),JSON.stringify(menuLayouts,null,2)+'\n');
+    await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{(window as any).fixture.lang('en');(window as any).fixture.theme('light');});
     await page.evaluate(() => (window as any).fixture.navigate('/checkout'));
     await page.locator('#checkout-field-name').fill('Fixture Patron'); await page.locator('#checkout-field-phone').fill('03001234567');
     await page.getByRole('button', { name: 'Continue to delivery & address', exact: true }).click(); await page.locator('#checkout-field-address').fill('Fixture Gulberg III Lahore');

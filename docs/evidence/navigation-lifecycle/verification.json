@@ -1,0 +1,86 @@
+{
+  "task": "M20-NAV1",
+  "date": "2026-10-28",
+  "timezone": "Asia/Karachi",
+  "parent": "0d331e8dd03c40d8f48183abc2b5db629d64f9b0",
+  "runtimeFingerprint": "90d80acb82c420b9d13b4537b01f2518735375df91b56dc5d241a206d6cea2c2",
+  "environment": {
+    "node": "24.22.1",
+    "npm": "11.9.0",
+    "chromium": "153.0.8010.0",
+    "mode": "Offline fixtures; runner strips integration credentials"
+  },
+  "review": "Codex source and screenshot self-review; no independent review claimed",
+  "diagnostics": [
+    {
+      "stage": "pre-wrap full run",
+      "result": "715/715 PASS; superseded by screenshot finding NL05"
+    },
+    {
+      "stage": "post-wrap pre-synchronization full run",
+      "result": "714/715, exit1; fixture active-item assertion before route commit"
+    },
+    {
+      "stage": "all-module-context reproduction",
+      "result": "1 failed before synchronization; 1/1 PASS after synchronization"
+    },
+    {
+      "stage": "post-synchronization full run",
+      "result": "714/715; initial autoplay advanced during load before clock freeze; blank-page freeze correction retains all assertions"
+    }
+  ],
+  "clockFixtureAffected": {
+    "tests": 11,
+    "pass": 11,
+    "fail": 0,
+    "exit": 0
+  },
+  "typecheck": "PASS",
+  "hooks": "PASS",
+  "build": "PASS",
+  "privacyArtifacts": 84,
+  "affectedBeforeFixtureSynchronization": {
+    "tests": 13,
+    "pass": 13,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "exit": 0
+  },
+  "finalAllModuleContextAffected": {
+    "tests": 1,
+    "pass": 1,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "exit": 0
+  },
+  "full": {
+    "tests": 715,
+    "pass": 715,
+    "files": 79,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "exit": 0,
+    "backend": 21,
+    "production": 36,
+    "assets": {
+      "products": 97,
+      "references": 115,
+      "unique": 111,
+      "missing": 0,
+      "retired": 0
+    }
+  },
+  "testGitBlobs": {
+    "tests/interaction-polish-browser.test.tsx": "ffeb9c811a0693d250a7a7dcf2c9958561d1c4b1",
+    "tests/stage5a-controlled-clock.test.mjs": "8368c9af478741c5e25096b5e6341cc670740361"
+  },
+  "navigationLayouts": 25,
+  "screenshots": "Local actual-component/isolated-router fixtures, final landscape/enlarged plus pre-wrap diagnostic",
+  "liveWrites": 0,
+  "providerVerification": "Not performed; final environment/release deferred",
+  "privateCatalogAudit": "BLOCKED: authorized current merchant snapshot unavailable",
+  "sourceSave": "Parent/tree/paths/readback recorded in docs/NAVIGATION_LIFECYCLE.md after save"
+}

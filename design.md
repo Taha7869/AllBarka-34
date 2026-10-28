@@ -72,3 +72,7 @@ Extend the accepted ivory/emerald editorial language to the existing cart, drawe
 ## M21 live motion preference — 28 October 2026
 
 Existing movement keeps its accepted visual language, but JavaScript consumers now subscribe to device preference changes during the session. ScrollReveal keeps the same wrapper so typed/selected child state survives; existing manual pause/play and reduced-motion styles remain authoritative. No new art, component or dependency. Current scope/evidence: docs/MOTION_PREFERENCE.md.
+
+## M20-NAV1 navigation lifecycle
+
+Retain the existing drawer layout and accepted motion. Route/history and desktop breakpoint transitions close mobile modal state; native brand button and initial-focus guard support keyboard use. Existing social actions wrap when enlarged text needs more width. Existing scroll body and reference-counted lock remain, with short-height/RTL/theme/keyboard checks. No new visual component or dependency. Current evidence: docs/NAVIGATION_LIFECYCLE.md.

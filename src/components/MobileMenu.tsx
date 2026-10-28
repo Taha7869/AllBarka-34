@@ -75,6 +75,38 @@ export default function MobileMenu({
 
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
+  const previousRoute = useRef(location.key);
+
+  // Back/Forward and navigation outside this drawer must release its modal state.
+  useEffect(() => {
+    if (previousRoute.current === location.key) return;
+    previousRoute.current = location.key;
+    closeRef.current();
+  }, [location.key]);
+
+  // Match Tailwind's xl breakpoint: a hidden mobile drawer must not lock desktop.
+  useEffect(() => {
+    if (!isOpen || typeof window.matchMedia !== 'function') return;
+    const desktop = window.matchMedia('(min-width: 80rem)');
+    const update = () => {
+      if (!desktop.matches) return;
+      const focusWasInside = containerRef.current?.contains(document.activeElement);
+      closeRef.current();
+      if (focusWasInside) {
+        const visibleHeaderControl = Array.from(document.querySelectorAll<HTMLElement>('header a[href], header button'))
+          .find(element => element.getClientRects().length && !element.closest('[inert]'));
+        visibleHeaderControl?.focus();
+      }
+    };
+    update();
+    if (typeof desktop.addEventListener === 'function') {
+      desktop.addEventListener('change', update);
+      return () => desktop.removeEventListener('change', update);
+    }
+    desktop.addListener(update);
+    return () => desktop.removeListener(update);
+  }, [isOpen]);
+
   const dismissMenu = () => {
     closeRef.current();
     triggerRef?.current?.focus();
@@ -85,7 +117,8 @@ export default function MobileMenu({
     if (!isOpen) return;
 
     const timer = setTimeout(() => {
-      closeButtonRef.current?.focus();
+      // A quick keyboard/pointer action inside the menu takes precedence.
+      if (!containerRef.current?.contains(document.activeElement)) closeButtonRef.current?.focus();
     }, 50);
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -200,9 +233,10 @@ export default function MobileMenu({
           >
             {/* Header / Brand in Drawer */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-[#29231D]/10 dark:border-[#F6F1EA]/10 bg-[#F6F1EA]/70 dark:bg-[#121615]/70 shrink-0">
-              <div 
+              <button
+                type="button"
                 onClick={() => handleDestination('/', 'Home')}
-                className="flex items-center gap-2 cursor-pointer focus-ring rounded-lg p-1 -m-1"
+                className="flex min-h-11 items-center gap-2 cursor-pointer focus-ring rounded-lg p-1 -m-1 text-start"
               >
                 <div className="w-8 h-8 flex items-center justify-center">
                   <AllBarkaCrestVector />
@@ -215,7 +249,7 @@ export default function MobileMenu({
                     BOUTIQUE
                   </span>
                 </div>
-              </div>
+              </button>
 
               <button
                 ref={closeButtonRef}
@@ -538,12 +572,12 @@ export default function MobileMenu({
                 <span className="text-[10px] font-sans font-bold uppercase tracking-[0.22em] text-[#806326] dark:text-[#C7982F] block mb-2 px-1">
                   {t('connectWithUs', 'Connect With Us')}
                 </span>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <a
                     href={buildHumanSupportWhatsAppUrl()}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex-1 min-h-[44px] flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-[#29231D]/12 dark:border-[#F6F1EA]/15 bg-[#F6F1EA] dark:bg-[#222A28] text-xs font-bold text-[#042821] dark:text-[#FFFCF7] hover:bg-[#FFFCF7] transition-all"
+                    className="flex-1 basis-32 min-h-[44px] flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-[#29231D]/12 dark:border-[#F6F1EA]/15 bg-[#F6F1EA] dark:bg-[#222A28] text-xs font-bold text-[#042821] dark:text-[#FFFCF7] hover:bg-[#FFFCF7] transition-all"
                   >
                     <MessageCircle size={16} className="text-[#25D366]" />
                     <span>WhatsApp</span>
@@ -553,7 +587,7 @@ export default function MobileMenu({
                     href="https://www.instagram.com/allbarka.pk"
                     target="_blank"
                     rel="noreferrer"
-                    className="flex-1 min-h-[44px] flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-[#29231D]/12 dark:border-[#F6F1EA]/15 bg-[#F6F1EA] dark:bg-[#222A28] text-xs font-bold text-[#042821] dark:text-[#FFFCF7] hover:bg-[#FFFCF7] transition-all"
+                    className="flex-1 basis-32 min-h-[44px] flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-[#29231D]/12 dark:border-[#F6F1EA]/15 bg-[#F6F1EA] dark:bg-[#222A28] text-xs font-bold text-[#042821] dark:text-[#FFFCF7] hover:bg-[#FFFCF7] transition-all"
                   >
                     <Instagram size={16} className="text-[#E4405F]" />
                     <span>Instagram</span>

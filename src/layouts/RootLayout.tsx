@@ -386,14 +386,6 @@ export default function RootLayout() {
         cartCount={totalItemsCount}
         onOpenCart={() => setIsCartOpen(true)}
         triggerRef={mobileMenuTriggerRef}
-        onNavItemClick={(item) => {
-          if (item === 'Home') navigate('/');
-          else if (item === 'Shop') navigate('/shop');
-          else if (item === 'Herbs & Spices') navigate('/shop/herbs-spices');
-          else if (item === 'Gift Boxes') navigate('/shop/combos');
-          else if (item === 'Contact') navigate('/pages/contact');
-          else navigate('/shop');
-        }}
       />
 
       <main className="flex-1 w-full relative z-10 flex flex-col items-center">

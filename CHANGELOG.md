@@ -1,5 +1,7 @@
 # AllBarka expansion change log
 
+28 October 2026 — **M20-NAV1 navigation lifecycle / DONE locally for the bounded slice**. [Scope/evidence](docs/NAVIGATION_LIFECYCLE.md). Existing menu closes on route/history and desktop breakpoint changes; brand keyboard action and early user focus are preserved, duplicate parent navigation removed. Native brand target is at least 44px; enlarged social actions wrap without clipping. Isolated affected 13/13, final all-module-context journey 1/1 and full 715/715 across 79 files, 21 backend and 36 production checks PASS. 25 navigation layouts include doubled landscape text. Saved-checkpoint details are in the linked evidence. Keys/configuration and final release remain deferred.
+
 28 October 2026 — current **M21 live motion preference** slice: [scope/evidence](docs/MOTION_PREFERENCE.md). Existing 35 Motion preference consumers use one subscribed hook; ScrollReveal retains child state. Typecheck/hooks/build/privacy and 21 targeted tests pass; final full regression passes 715/715 across 79 files, 21 backend and 36 production checks; source persistence is recorded in the linked checkpoint. Owner deferred keys/configuration and final release. Preserve prior Stage 3-to-M18 and recovery checkpoints.
 
 ## 27 October 2026 — recover saved Stage 3-to-M18 work and refresh integration evidence

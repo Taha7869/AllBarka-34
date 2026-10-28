@@ -1,5 +1,7 @@
 # AllBarka — visual identity and experience master plan
 
+28 October 2026 — **M20-NAV1 / DONE locally for the bounded slice**: bounded mobile navigation lifecycle and overlay keyboard/short-height pass. Verified: route/Back/Forward and desktop breakpoint close the menu and release scroll lock; native keyboard brand navigation and single-entry history work; menu/cart focus handoff and 25 layouts (24 matrix plus doubled landscape text) pass. Enlarged social links wrap without clipping. Final full 715/715 across 79 files, 21 backend and 36 production checks PASS. See [evidence](docs/NAVIGATION_LIFECYCLE.md). Reuse existing components. Provider/key/release work remains deferred.
+
 28 October 2026 — **M21 live motion preference / DONE locally**. Continue approved cross-page motion work while the owner defers keys/config and final release. Scope: subscribed device preference for existing consumers, retained state during preference changes and mounted browser/SSR verification. Final 715 tests / 21 backend / 36 production checks pass; see [current evidence](docs/MOTION_PREFERENCE.md). Provider/factual/photography dependencies remain open.
 
 27 October 2026 — **V6-R01 recovery / correction DONE; source saved and verified in PR #16**. Recovered baseline `81eedbfe0b09cdd29ba599f4733968a05a60fdbe` already contains completed Stage 3-to-M18 work. The current checkpoint adds the bounded mobile-menu close correction; inspect PR #16 head before continuation. [Current recovery evidence](docs/RESUME_VERIFICATION.md) records 30 fresh targeted passes, the matching build fingerprint and the final passing full suite (713 tests / 21 backend / 36 production checks). Railway metadata is now accessible, and a fresh public catalog snapshot contains 97 products; private semantic/provider checks remain blocked. Earlier dated checkpoints below retain their historical scope.
@@ -10,9 +12,9 @@
 
 27 October 2026: owner-requested emerald/arched hero and motion revision is locally verified. M01/M02 are DONE for this bounded pass; M04–M06/M21 have completed portions and pending broader work. Final offline suite: 707 tests, 21 backend and 36 production checks passed. Read [current revision](docs/PREMIUM_V1_REVISION.md). Earlier completed work and live Stage 6 blockers remain.
 
-Updated: 27 October 2026 (Asia/Karachi).
+Updated: 28 October 2026 (Asia/Karachi).
 
-**Current checkpoint: M18 cart/drawer/checkout DONE locally for the bounded purchase pass.** Read [PREMIUM_PURCHASE.md](docs/PREMIUM_PURCHASE.md) for final evidence and next action. V1/V2/M15/M19 and gifting are preserved. Remaining live provider/catalog, photography, merchant printing/facts and optional proposal scopes retain their statuses; apply [RULES.md](RULES.md).
+**Current checkpoint: M20-NAV1 navigation lifecycle DONE locally for the bounded pass.** Read [NAVIGATION_LIFECYCLE.md](docs/NAVIGATION_LIFECYCLE.md) for final evidence and the verified source checkpoint. M18 purchase and M21 preference work remain complete for their recorded scopes. V1/V2/M15/M19 and gifting are preserved. Remaining live provider/catalog, photography, merchant printing/facts and optional proposal scopes retain their statuses; apply [RULES.md](RULES.md).
 
 Roman Urdu: **Yahan pending, chal raha kaam, rukawat aur verified done ka hisaab rahega. Sirf idea likhne ya UI banne se feature DONE nahi hota. Naya agent current branch aur yeh files parh kar agla kaam shuru kare.**
 
@@ -97,7 +99,7 @@ Selected rows below refer only to the bounded V1 **new upgrade**. Reuse notes de
 | M17 | Shop/category intros, relevant filters, selected states and reliable back/scroll restoration. | ShopPage/CategoryPLP, filter sheet and URL state. | V2 | SELECTED / DONE locally for existing core browse/filter UI and current-tab Back recovery; live catalog validation BLOCKED |
 | M18 | Cart/checkout continuity for actual photo, variant, quantity, message and authoritative cost breakdown. | Current persisted receipt, quote recovery and idempotency. | V4 | SELECTED / DONE locally — cart/drawer/checkout presentation and saved/current-quote continuity DONE locally; live provider gates remain Stage6 |
 | M19 | Story/journal layouts with actual people/process/serving content and meaningful related products. | InfoPage/JournalPage and existing Studio articles. | V3 | SELECTED / DONE locally for existing-content layout/functional fixes; authentic people/process assets and factual validation remain open |
-| M20 | Route-appropriate mobile search/filter/buy controls, safe areas and no competing fixed bars. | Existing header/menu/cart/sticky controls; keyboard/overlay tests. | V2/V6 | PROPOSED / TODO |
+| M20 | Route-appropriate mobile search/filter/buy controls, safe areas and no competing fixed bars. | Existing header/menu/cart/sticky controls; keyboard/overlay tests. | V2/V6 | DONE locally for bounded navigation lifecycle; broader mobile controls remain proposed |
 | M21 | One restrained motion language with touch/keyboard/reduced-motion equivalents. | Completed interaction foundations; refine, do not recreate. | V1–V6 | SELECTED / IN_PROGRESS — bounded hero motion DONE; device-preference synchronization DONE locally (35 consumers, 715 tests); remaining motion audit is separately pending |
 | M22 | Branded loading, empty, unavailable, failure and 404 states with useful next actions. | Existing state/toast/error components; real request lifecycle. | V2–V6 | PROPOSED / TODO |
 | M23 | Extend admin control for selected upgrades: crop/focal points, facts, styles, supported editorial content. | Existing Studio/item forms, revisions, validation and admin guards. | V1–V5 | PROPOSED / TODO |
