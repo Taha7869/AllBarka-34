@@ -2,6 +2,7 @@ import {publicStorefrontContent} from './src/lib/storefrontContent';
 import {contentJournal} from './src/lib/contentPresentation';
 import {readStorefrontContent,createStorefrontContentRouter} from './src/lib/storefrontContentRouter';
 import { createStaffRouter } from './src/lib/staffAccess';
+import { isCurrentAdministrator, requireCurrentAdministrator } from './src/lib/adminAuthentication';
 import { getStorage } from 'firebase-admin/storage';
 import firebaseAppletConfig from './firebase-applet-config.json';
 import { createProductUploadRouter } from './src/lib/productUploadRouter';
@@ -59,9 +60,9 @@ import { redeemPatronReward } from './src/lib/loyaltyRedemption';
 import { quoteOrderForCustomer } from './src/lib/orderQuote';
 import { createStoreUpdatesRouter } from './src/lib/storeUpdatesRouter';
 import { createN8nCommerceRouter } from './src/lib/n8nCommerceRouter';
-import { verifyN8nIntegrationSecret } from './src/lib/integrationAuthentication';
+import { requireN8nIntegration } from './src/lib/integrationAuthentication';
 import {
-  AdminOperationError, hasAdminClaim, validateAdminOrderId, validateAdminStatusInput,
+  AdminOperationError, validateAdminOrderId, validateAdminStatusInput,
   parseAdminOrderFilters, listAdminOrders, getAdminOrder, sanitizeOrderForAdmin,
   addAdminOrderNote, updateAdminOrderPayment,
 } from './src/lib/adminOperations';
@@ -142,7 +143,7 @@ async function authenticateOptionalUser(req: express.Request, res: express.Respo
 
   try {
     (req as any).user = await authenticatePatronCredentials(authHeader, sessionCookie, {
-      verifyIdToken: token => adminAuth.verifyIdToken(token),
+      verifyIdToken: (token, checkRevoked) => adminAuth.verifyIdToken(token, checkRevoked),
       verifySessionCookie: (cookie, checkRevoked) => adminAuth.verifySessionCookie(cookie, checkRevoked),
     });
     return next();
@@ -175,17 +176,9 @@ async function requireAuth(req: express.Request, res: express.Response, next: ex
   });
 }
 
+const currentAdministrator = requireCurrentAdministrator(() => adminAuth);
 async function requireAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
-  await requireAuth(req, res, () => {
-    const user = (req as any).user;
-    if (!hasAdminClaim(user)) {
-      return res.status(403).json({
-        error: 'Forbidden. Authoritative admin privileges required.',
-        code: 'FORBIDDEN_ADMIN'
-      });
-    }
-    next();
-  });
+  await requireAuth(req, res, () => { void currentAdministrator(req, res, next); });
 }
 
 // In-memory claims for Guest -> Account linking (Order ID -> Claim Token)
@@ -253,27 +246,8 @@ app.use(helmet({
 
 app.use('/api', commerceCors(process.env.FRONTEND_ORIGINS));
 
-function checkN8nAuth(req: express.Request): boolean {
-  const configuredSecret = process.env.N8N_INTEGRATION_SECRET;
-  if (!configuredSecret || configuredSecret.trim().length < 32) {
-    return true;
-  }
-  const headerSecret = req.headers['x-allbarka-integration-secret'];
-  if (typeof headerSecret === 'string' && verifyN8nIntegrationSecret(headerSecret, configuredSecret)) {
-    return true;
-  }
-  const querySecret = req.query.secret || req.query.key;
-  if (typeof querySecret === 'string' && verifyN8nIntegrationSecret(querySecret, configuredSecret)) {
-    return true;
-  }
-  return false;
-}
-
 // Live n8n wa_products Single Source of Truth Sync Endpoint (Mounted before n8nCommerceRouter catch-all)
-app.get('/api/integrations/n8n/wa-products', async (req, res) => {
-  if (!checkN8nAuth(req)) {
-    return res.status(401).json({ ok: false, error: 'Integration authentication required.', code: 'INTEGRATION_AUTH_REQUIRED' });
-  }
+app.get('/api/integrations/n8n/wa-products', requireN8nIntegration(), async (req, res) => {
   try {
     let authoritativeProducts = PRODUCTS;
     if (db) {
@@ -298,7 +272,7 @@ app.get('/api/integrations/n8n/wa-products', async (req, res) => {
       products: rows,
     });
   } catch (err: any) {
-    return res.status(500).json({ ok: false, error: err.message || 'Failed to export wa_products.', code: 'SERVER_ERROR' });
+    return res.status(500).json({ ok: false, error: 'Failed to export wa_products.', code: 'SERVER_ERROR' });
   }
 });
 
@@ -561,7 +535,6 @@ app.get('/api/orders/:orderId', authenticateOptionalUser, async (req, res) => {
 
     const order = doc.data() as CanonicalOrder;
     const isOwner = user && order.uid && user.uid === order.uid;
-    const isAdmin = hasAdminClaim(user);
     let isGuestAuthorized = false;
 
     if (guestClaimToken && order.claimTokenHash) {
@@ -571,6 +544,7 @@ app.get('/api/orders/:orderId', authenticateOptionalUser, async (req, res) => {
       }
     }
 
+    const isAdmin = !isOwner && !isGuestAuthorized && await isCurrentAdministrator(adminAuth, user);
     if (!isOwner && !isAdmin && !isGuestAuthorized) {
       return res.status(404).json({ error: 'Order not found.', code: 'ORDER_NOT_FOUND' });
     }
@@ -582,7 +556,7 @@ app.get('/api/orders/:orderId', authenticateOptionalUser, async (req, res) => {
         ? Number((await db.collection('users').doc(order.uid).get()).data()?.loyaltyPoints) || 0 : 0 },
     });
   } catch (error: any) {
-    res.status(500).json({ error: error.message || 'Server error retrieving order.', code: 'SERVER_ERROR' });
+    res.status(500).json({ error: 'Server error retrieving order.', code: 'SERVER_ERROR' });
   }
 });
 

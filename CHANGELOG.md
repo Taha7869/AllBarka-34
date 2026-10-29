@@ -1,5 +1,16 @@
 # AllBarka expansion change log
 
+## 29 October 2026 — SEC01 admin and credential security hardening
+
+- Owner authorized security corrections and rotation of credentials found at risk; no actual secret value was available or changed.
+- Replaced cached admin-only authority with current Auth account checks across admin APIs and receipt admin access; bearer tokens now check revocation. Disabled/deleted/demoted identities fail closed.
+- Prototype Firestore rules route private catalog/inquiry/quote operations through the backend and close unused legacy arbitrary favorites writes; valid customer contact fields and public content/reviews retain their prior behavior.
+- n8n private catalog export now uses existing required header authentication and blocks missing configuration; URL secrets no longer authenticate. Bundled HTTP caller declares private Header Auth; current remote workflows remain unedited and must be checked before release.
+- Fullstack privacy audit now scans hosting environment values, enforces the shared public VITE allowlist and rejects provider-shaped tokens without exposing values.
+- Updated existing vulnerable dependencies and added scoped patched grpc override; npm audit changed from 23 findings to 0.
+- Evidence and exact remaining integration/release gates: [SECURITY_HARDENING.md](docs/SECURITY_HARDENING.md). Affected security tests, demo rules emulator, staff browser and required local build checks pass. Full regression: 720 PASS, existing FH02 navigation-focus FAIL, 1 emulator-only SKIP (rules tested separately). Existing FH02/Stage 6 blockers are preserved. No merge, deployment or live Firebase/Meta/n8n write.
+
+
 ## 29 October 2026 — M20-FILTER1 same-URL history recovery
 
 Before: an open mobile filter draft survived Back/Forward between identical URLs, retaining the sheet and background inert/scroll lock. After: CategoryPLP cancels the draft on router entry-key changes, reusing the existing sheet cleanup. Existing browser journey now asserts Back/Forward, discarded budget, released inert/scroll lock and fresh committed defaults. No commerce, catalog assignment, translation, dependency or production change.

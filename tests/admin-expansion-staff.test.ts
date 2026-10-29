@@ -4,7 +4,7 @@ import express from 'express';
 import { once } from 'node:events';
 import { memoryFirestore } from './helpers/memoryFirestore';
 import { assertStaffReader,changeStaffAccess,lookupStaffAccount,sanitizeOrderForStaff,createStaffRouter } from '../src/lib/staffAccess';
-import { hasAdminClaim } from '../src/lib/adminOperations';
+import { requireCurrentAdministrator } from '../src/lib/adminAuthentication';
 import { createCatalogRouter } from '../src/lib/catalogRouter';
 import { createCatalogConfigurationRouter } from '../src/lib/catalogConfigurationRouter';
 import { createProductMediaRouter } from '../src/lib/productMediaRouter';
@@ -38,9 +38,10 @@ test('staff order projection removes nested private data and keeps quote totals 
   assert.equal(routeMetadata('/staff/orders','https://allbarka.com',[]).noindex,true);
 });
 test('real HTTP permission matrix: readers can list/detail only and cannot reach any admin family or staff write/export',async()=>{
-  const {db}=memoryFirestore({'orders/AB-STAFF-0001':staffFixtureOrder(),'staffAccess/reader':{uid:'reader',version:1,enabled:true,revision:1}});const {auth}=staffFixtureIdentity();
+  const {db}=memoryFirestore({'orders/AB-STAFF-0001':staffFixtureOrder(),'staffAccess/reader':{uid:'reader',version:1,enabled:true,revision:1}});const {auth,users}=staffFixtureIdentity();
   const requireAuth:any=(req:any,res:any,next:any)=>{const value=req.get('Authorization')?.replace('Bearer ','');if(!['owner','reader','customer'].includes(value))return res.status(401).json({code:'UNAUTHORIZED'});req.user={uid:value,...(value==='owner'?{admin:true}:{}),auth_time:Math.floor(Date.now()/1000)};next();};
-  const requireAdmin:any=(req:any,res:any,next:any)=>requireAuth(req,res,()=>hasAdminClaim(req.user)?next():res.status(403).json({code:'FORBIDDEN_ADMIN'}));
+  const currentAdministrator=requireCurrentAdministrator(()=>auth);
+  const requireAdmin:any=(req:any,res:any,next:any)=>requireAuth(req,res,()=>currentAdministrator(req,res,next));
   const app=express();app.use(createProductUploadRouter({requireAdmin,getBucket:()=>null}));app.use(express.json());app.use(createStaffRouter({getDb:()=>db,getAuth:()=>auth,requireAuth,requireAdmin}));app.use(createCatalogRouter({getDb:()=>db,requireAdmin}));app.use(createCatalogConfigurationRouter({getDb:()=>db,requireAdmin}));app.use(createProductMediaRouter({getDb:()=>db,requireAdmin}));app.use('/api/admin',requireAdmin,(_req,res)=>res.json({reachedAdmin:true}));
   const server=app.listen(0,'127.0.0.1');await once(server,'listening');const origin=`http://127.0.0.1:${(server.address() as any).port}`;
   const request=(path:string,identity='reader',method='GET',body?:unknown)=>fetch(origin+path,{method,headers:{...(identity?{Authorization:`Bearer ${identity}`} :{}),...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});
@@ -51,6 +52,10 @@ test('real HTTP permission matrix: readers can list/detail only and cannot reach
     for(const [method,path]of [['POST','/api/staff/orders/AB-STAFF-0001/status'],['PUT','/api/staff/access'],['GET','/api/staff/orders/export'],['GET','/api/admin/orders'],['GET','/api/admin/orders/export'],['POST','/api/admin/orders/AB-STAFF-0001/status'],['POST','/api/admin/orders/AB-STAFF-0001/payment'],['POST','/api/admin/orders/AB-STAFF-0001/notes'],['GET','/api/admin/catalog/products'],['POST','/api/admin/catalog/products'],['GET','/api/admin/catalog/configuration'],['PUT','/api/admin/catalog/configuration'],['POST','/api/admin/catalog/uploads'],['GET','/api/admin/product-media/pista'],['PATCH','/api/admin/product-media/pista'],['GET','/api/admin/staff'],['PUT','/api/admin/staff/reader'],['GET','/api/admin/updates'],['POST','/api/admin/updates'],['GET','/api/admin/inquiries']])assert.equal((await request(path,'reader',method)).status,403,`${method} ${path}`);
     assert.equal((await request('/api/admin/staff','owner')).status,200);
     const revoke=await request('/api/admin/staff/reader','owner','PUT',{enabled:false,expectedRevision:1});assert.equal(revoke.status,200);assert.equal((await request('/api/staff/orders')).status,403);
+    users.get('owner').customClaims={admin:false};
+    for(const path of ['/api/admin/orders','/api/admin/catalog/products','/api/admin/catalog/configuration','/api/admin/staff','/api/admin/updates','/api/admin/inquiries']) {
+      assert.equal((await request(path,'owner')).status,403,`Demoted admin with old token: ${path}`);
+    }
   }finally{server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));}
 });
 test('bounded staff client always uses GET, never accepts admin paths and cancels stalled tokens',async()=>{
