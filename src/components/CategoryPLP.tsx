@@ -78,7 +78,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
   const filterSignature = activeParams.toString();
   useEffect(() => { setVisibleCount(!isModal && navigationType === 'POP' ? browsingPositions.get(location.key)?.count || 12 : 12); }, [category, filters.query, filters.origin, filters.budget, filters.sort, filters.saved, filters.special, occasion, isModal, location.key, navigationType]);
   // Browser navigation or a new collection cancels the draft instead of committing stale choices.
-  useEffect(() => { setFilterDraft(null); }, [filterSignature, category]);
+  useEffect(() => { setFilterDraft(null); }, [filterSignature, category, location.key]);
   useEffect(() => {
     const viewport = window.matchMedia('(max-width: 1023px)');
     const changed = () => setMobileControls(viewport.matches);

@@ -17,10 +17,10 @@ import { createStorefrontContentRouter } from '../src/lib/storefrontContentRoute
 test('premium browsing: selected portion, cart, responsive card parity and shop navigation', async () => {
   const temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'allbarka-hero-'));
   const { db } = memoryFirestore(Object.fromEntries(PRODUCTS.map(product => [`products/${product.id}`, product])));
-  const entry = `import React,{useEffect}from'react';import{createRoot}from'react-dom/client';import{BrowserRouter,Routes,Route,useNavigate}from'react-router-dom';
+  const entry = `import React,{useEffect}from'react';import{createRoot}from'react-dom/client';import{BrowserRouter,Routes,Route,useNavigate,useLocation}from'react-router-dom';
 import{LanguageProvider,useLanguage}from'./src/contexts/LanguageContext';import{ThemeProvider,useTheme}from'./src/contexts/ThemeContext';import{CartProvider,useCart}from'./src/contexts/CartContext';import{CatalogProvider}from'./src/contexts/CatalogContext';import{MerchandisingProvider}from'./src/contexts/MerchandisingContext';import{ProductMediaProvider}from'./src/contexts/ProductMediaContext';import{StorefrontContentProvider,useStorefrontContentRefresh}from'./src/contexts/StorefrontContentContext';
 import RootLayout from'./src/layouts/RootLayout';import HomePage from'./src/pages/HomePage';import ShopPage from'./src/pages/ShopPage';import ProductDetailPage from'./src/pages/ProductDetailPage';import CartPage from'./src/pages/CartPage';import CheckoutPage from'./src/pages/CheckoutPage';import{PRODUCTS}from'./src/data/products';
-function Controls(){const{setLanguage}=useLanguage();const{setTheme}=useTheme();const refresh=useStorefrontContentRefresh();const cart=useCart();useEffect(()=>{window.fixture={refresh,lang:setLanguage,theme:setTheme,cart:cart.cartItems,close:()=>cart.setIsCartOpen(false),clear:()=>cart.clearCart()};});return null;}
+function Controls(){const navigate=useNavigate();const location=useLocation();const{setLanguage}=useLanguage();const{setTheme}=useTheme();const refresh=useStorefrontContentRefresh();const cart=useCart();useEffect(()=>{window.fixture={navigate,routeKey:location.key,refresh,lang:setLanguage,theme:setTheme,cart:cart.cartItems,close:()=>cart.setIsCartOpen(false),clear:()=>cart.clearCart()};});return null;}
 createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider><LanguageProvider><CatalogProvider initialProducts={PRODUCTS}><MerchandisingProvider><ProductMediaProvider><CartProvider><StorefrontContentProvider><Controls/><Routes><Route path="/" element={<RootLayout/>}><Route index element={<HomePage/>}/><Route path="shop" element={<ShopPage/>}/><Route path="shop/:category" element={<ShopPage/>}/><Route path="product/:id" element={<ProductDetailPage/>}/><Route path="cart" element={<CartPage/>}/><Route path="checkout" element={<CheckoutPage/>}/><Route path="gifting" element={<ShopPage/>}/></Route></Routes></StorefrontContentProvider></CartProvider></ProductMediaProvider></MerchandisingProvider></CatalogProvider></LanguageProvider></ThemeProvider></BrowserRouter>);`;
   await build({ stdin: { contents: entry, loader: 'tsx', resolveDir: process.cwd(), sourcefile: 'interaction-fixture.tsx' },
     bundle: true, format: 'iife', platform: 'browser', outfile: path.join(temporary, 'fixture.js'), jsx: 'automatic',
@@ -81,7 +81,23 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     await sheet.locator('input[type=range]').fill('1000');
     await page.keyboard.press('Escape');await sheet.waitFor({state:'hidden'});
     assert.equal(new URL(page.url()).searchParams.has('budget'),false,'cancelled filters never apply');
+    // A new history entry can have the same pathname/query. Back must still cancel its draft.
+    const routeKey=await page.evaluate(()=>(window as any).fixture.routeKey);
+    await page.evaluate(()=>(window as any).fixture.navigate('/shop/nuts'));
+    await page.waitForFunction(key=>(window as any).fixture.routeKey!==key,routeKey);
     await page.locator('.catalog-quick-controls button[aria-controls]').click();await sheet.waitFor();
+    await sheet.locator('input[type=range]').fill('700');
+    assert.equal(await page.locator('#root').evaluate(root=>(root as HTMLElement).inert),true);
+    assert.equal(await page.evaluate(()=>document.body.style.overflow),'hidden');
+    await page.goBack();await sheet.waitFor({state:'hidden'});
+    assert.equal(new URL(page.url()).searchParams.has('budget'),false,'Back discards same-URL entry draft');
+    assert.equal(await page.locator('#root').evaluate(root=>(root as HTMLElement).inert),false,'Back releases background inert');
+    assert.notEqual(await page.evaluate(()=>document.body.style.overflow),'hidden','Back releases scroll lock');
+    await page.goForward();
+    await page.waitForFunction(key=>(window as any).fixture.routeKey!==key,routeKey);
+    assert.equal(await sheet.count(),0,'Forward never resurrects an uncommitted draft');
+    await page.locator('.catalog-quick-controls button[aria-controls]').click();await sheet.waitFor();
+    assert.equal(await sheet.locator('input[type=range]').inputValue(),'10000','new draft uses committed filters');
     await sheet.locator('input[type=range]').fill('1000');
     await sheet.locator('.catalog-filter-apply').click();await sheet.waitFor({state:'hidden'});
     assert.equal(new URL(page.url()).searchParams.get('budget'),'1000');

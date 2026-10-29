@@ -1,0 +1,62 @@
+{
+  "task": "M20-FILTER1",
+  "date": "2026-10-29",
+  "timezone": "Asia/Karachi",
+  "status": "IN_PROGRESS_UNFINISHED",
+  "parent": "a594920e62171a934abb946b2e8cc6e9a8ccec0e",
+  "baseTree": "d0a10510f0f35f973657fa8f785a5e1268270524",
+  "runtimeFingerprint": "6114591fe157237db5f65aa365e10bb782874dcdad4d154e31cb194d6b77a0bc",
+  "typecheck": {
+    "exit": 0
+  },
+  "hooks": {
+    "exit": 0
+  },
+  "buildPrivacy": {
+    "exit": 0,
+    "artifacts": 84
+  },
+  "affectedFilters": {
+    "pass": 7,
+    "fail": 0,
+    "exit": 0
+  },
+  "completeSuite": {
+    "tests": 715,
+    "pass": 714,
+    "fail": 1,
+    "cancelled": 0,
+    "skipped": 0,
+    "exit": 1,
+    "failure": "FH02 existing enlarged navigation focused-link viewport containment; tests/interaction-polish-browser.test.tsx:169"
+  },
+  "subsequentDiagnostic": {
+    "result": "interrupted after repeated FH02 failure",
+    "experimentalWaitReverted": true,
+    "passingFullSuite": false
+  },
+  "standaloneBackend": {
+    "pass": 21,
+    "fail": 0,
+    "exit": 0
+  },
+  "standaloneProduction": {
+    "pass": 36,
+    "exit": 0
+  },
+  "assets": {
+    "products": 97,
+    "references": 115,
+    "uniqueFiles": 111,
+    "missing": 0,
+    "retiredViews": 0,
+    "exit": 0
+  },
+  "review": "Codex self-review; no independent review claimed",
+  "privateCatalogReconciliation": "BLOCKED",
+  "liveFeatureProviders": "NOT_RUN",
+  "productionMerged": false,
+  "deployed": false,
+  "keysChanged": false,
+  "next": "Diagnose full-context FH02 geometry/scroll/committed language-theme; preserve existing assertions; then complete M20 filter safe-area/focus audit."
+}

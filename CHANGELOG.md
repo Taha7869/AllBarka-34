@@ -1,5 +1,11 @@
 # AllBarka expansion change log
 
+## 29 October 2026 — M20-FILTER1 same-URL history recovery
+
+Before: an open mobile filter draft survived Back/Forward between identical URLs, retaining the sheet and background inert/scroll lock. After: CategoryPLP cancels the draft on router entry-key changes, reusing the existing sheet cleanup. Existing browser journey now asserts Back/Forward, discarded budget, released inert/scroll lock and fresh committed defaults. No commerce, catalog assignment, translation, dependency or production change.
+
+Affected browser/filter tests: 7/7 PASS; full regression 714/715 FAIL at the existing enlarged-navigation focused-link viewport assertion (FH02). An isolated test-wait experiment did not resolve complete-context failure and was reverted. This is an explicitly unfinished source checkpoint, with no release or passing-full-suite claim. [Task, evidence and remaining core work](docs/FILTER_HISTORY.md).
+
 28 October 2026 — **M20-NAV1 navigation lifecycle / DONE locally for the bounded slice**. [Scope/evidence](docs/NAVIGATION_LIFECYCLE.md). Existing menu closes on route/history and desktop breakpoint changes; brand keyboard action and early user focus are preserved, duplicate parent navigation removed. Native brand target is at least 44px; enlarged social actions wrap without clipping. Isolated affected 13/13, final all-module-context journey 1/1 and full 715/715 across 79 files, 21 backend and 36 production checks PASS. 25 navigation layouts include doubled landscape text. Saved-checkpoint details are in the linked evidence. Keys/configuration and final release remain deferred.
 
 28 October 2026 — current **M21 live motion preference** slice: [scope/evidence](docs/MOTION_PREFERENCE.md). Existing 35 Motion preference consumers use one subscribed hook; ScrollReveal retains child state. Typecheck/hooks/build/privacy and 21 targeted tests pass; final full regression passes 715/715 across 79 files, 21 backend and 36 production checks; source persistence is recorded in the linked checkpoint. Owner deferred keys/configuration and final release. Preserve prior Stage 3-to-M18 and recovery checkpoints.
