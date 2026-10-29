@@ -2,10 +2,92 @@
   "task": "M20-FILTER1",
   "date": "2026-10-29",
   "timezone": "Asia/Karachi",
-  "status": "IN_PROGRESS_UNFINISHED",
-  "parent": "a594920e62171a934abb946b2e8cc6e9a8ccec0e",
-  "baseTree": "d0a10510f0f35f973657fa8f785a5e1268270524",
-  "runtimeFingerprint": "6114591fe157237db5f65aa365e10bb782874dcdad4d154e31cb194d6b77a0bc",
+  "status": "DONE_LOCALLY_BOUNDED",
+  "parent": "898fddeb11cf7b60ced9c352714060e9a72de7ba",
+  "checkpointParent": "7a00826106ab8b31f6cc26fe87500047b8477bac",
+  "initialParent": "a594920e62171a934abb946b2e8cc6e9a8ccec0e",
+  "buildSource": "dcef90ee88182db0",
+  "environment": {
+    "os": "win32",
+    "node": "v24.14.0",
+    "npm": "11.9.0",
+    "browsersTested": [
+      "HeadlessChrome/156.0.8078.73 (SwiftShader via ALLBARKA_TEST_BROWSER)",
+      "chrome-headless-shell/145.0.7632.77 (SwiftShader via ALLBARKA_TEST_BROWSER)"
+    ]
+  },
+  "fh02Diagnosis": {
+    "location": "tests/interaction-polish-browser.test.tsx:169",
+    "viewport": {
+      "width": 844,
+      "height": 390,
+      "language": "en",
+      "dir": "ltr",
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "fontsStatus": "loaded"
+    },
+    "beforeEnlarge1x": {
+      "scrollContainer": {
+        "top": 77,
+        "bottom": 390,
+        "clientHeight": 313,
+        "scrollHeight": 1137,
+        "scrollTop": 824
+      },
+      "lastLink": {
+        "top": 314,
+        "bottom": 358,
+        "left": 173.5,
+        "right": 319,
+        "width": 145.5,
+        "height": 44,
+        "computedFontSize": "12px"
+      }
+    },
+    "unfixedAfterEnlarge2x": {
+      "pendingCssTransitionsOnFontSize": 50,
+      "scrollContainer": {
+        "top": 81,
+        "bottom": 390,
+        "clientHeight": 309,
+        "scrollHeight": 1538,
+        "scrollTop": 1107
+      },
+      "lastLink": {
+        "top": 430,
+        "bottom": 480,
+        "left": 20,
+        "right": 319,
+        "width": 299,
+        "height": 50,
+        "computedFontSize": "24px",
+        "visibleInViewport": false
+      }
+    },
+    "fixedAfterEnlarge2x": {
+      "pendingCssTransitionsOnFontSize": 0,
+      "scrollContainer": {
+        "top": 81,
+        "bottom": 390,
+        "clientHeight": 309,
+        "scrollHeight": 1538,
+        "scrollTop": 1229
+      },
+      "lastLink": {
+        "top": 308,
+        "bottom": 358,
+        "left": 20,
+        "right": 319,
+        "width": 299,
+        "height": 50,
+        "computedFontSize": "24px",
+        "visibleInViewport": true
+      }
+    },
+    "rootCause": "src/index.css:471 set transition-duration: 0.01ms !important on *, ::before, ::after under @media (prefers-reduced-motion: reduce), activating transition-property: all across every element and deferring 200% inline font-size layout expansion until after Shift+Tab focus completed.",
+    "fix": "Changed transition-duration: 0.01ms !important to transition-duration: 0s !important in src/index.css:471."
+  },
   "typecheck": {
     "exit": 0
   },
@@ -16,24 +98,19 @@
     "exit": 0,
     "artifacts": 84
   },
-  "affectedFilters": {
-    "pass": 7,
+  "affectedTests": {
+    "pass": 23,
     "fail": 0,
     "exit": 0
   },
   "completeSuite": {
-    "tests": 715,
-    "pass": 714,
-    "fail": 1,
+    "files": 82,
+    "tests": 722,
+    "pass": 721,
+    "fail": 0,
     "cancelled": 0,
-    "skipped": 0,
-    "exit": 1,
-    "failure": "FH02 existing enlarged navigation focused-link viewport containment; tests/interaction-polish-browser.test.tsx:169"
-  },
-  "subsequentDiagnostic": {
-    "result": "interrupted after repeated FH02 failure",
-    "experimentalWaitReverted": true,
-    "passingFullSuite": false
+    "skipped": 1,
+    "exit": 0
   },
   "standaloneBackend": {
     "pass": 21,
@@ -52,11 +129,11 @@
     "retiredViews": 0,
     "exit": 0
   },
-  "review": "Codex self-review; no independent review claimed",
+  "review": "Self-review completed across CategoryPLP.tsx, index.css and premium-browsing-browser.test.tsx; no independent review claimed",
   "privateCatalogReconciliation": "BLOCKED",
   "liveFeatureProviders": "NOT_RUN",
   "productionMerged": false,
   "deployed": false,
   "keysChanged": false,
-  "next": "Diagnose full-context FH02 geometry/scroll/committed language-theme; preserve existing assertions; then complete M20 filter safe-area/focus audit."
+  "next": "Complete bounded M20 filter sheet safe-area/enlarged-filter/focus audit in CatalogFilterSheet.tsx and catalog-filters.css."
 }
