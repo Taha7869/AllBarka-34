@@ -30,28 +30,54 @@ export default function CatalogFilterSheet({ id, draft, categoryLabel, results, 
   const patch = (changes: Partial<CatalogFilterDraft>) => onChange({ ...draft, ...changes });
 
   useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null;
+    const initialPath = window.location.pathname;
+    const activeAtOpen = document.activeElement instanceof HTMLElement && document.activeElement !== document.body
+      ? document.activeElement
+      : null;
+    const previous = activeAtOpen || document.querySelector<HTMLElement>('.catalog-quick-controls button[aria-controls]');
     const root = document.getElementById('root');
     const previousInert = root?.inert ?? false;
     if (root) root.inert = true;
     const release = acquireScrollLock();
-    const frame = requestAnimationFrame(() => close.current?.focus());
+    const dialog = panel.current;
+    const ensureVisible = (element: HTMLElement | null) => {
+      if (!element || !dialog?.contains(element)) return;
+      const target = element.closest<HTMLElement>('.catalog-filter-toggles label') || element;
+      target.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    };
+    const frame = requestAnimationFrame(() => {
+      if (!dialog?.contains(document.activeElement)) close.current?.focus();
+    });
+    const focusIn = (event: FocusEvent) => {
+      ensureVisible(event.target instanceof HTMLElement ? event.target : null);
+    };
     const keydown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); cancel.current(); return; }
       if (event.key !== 'Tab') return;
-      const controls = Array.from(panel.current?.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),select:not(:disabled),a[href],[tabindex="0"]') || []).filter(control => control.getClientRects().length);
+      const controls = Array.from(dialog?.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),select:not(:disabled),a[href],[tabindex="0"]') || []).filter(control => control.getClientRects().length);
       const first = controls[0]; const last = controls.at(-1);
-      if (event.shiftKey && (document.activeElement === first || !panel.current?.contains(document.activeElement))) { event.preventDefault(); last?.focus(); }
-      else if (!event.shiftKey && (document.activeElement === last || !panel.current?.contains(document.activeElement))) { event.preventDefault(); first?.focus(); }
+      if (event.shiftKey && (document.activeElement === first || !dialog?.contains(document.activeElement))) { event.preventDefault(); last?.focus(); ensureVisible(last || null); }
+      else if (!event.shiftKey && (document.activeElement === last || !dialog?.contains(document.activeElement))) { event.preventDefault(); first?.focus(); ensureVisible(first || null); }
     };
     const desktop = window.matchMedia('(min-width: 1024px)');
     const resized = () => { if (desktop.matches) cancel.current(); };
+    resized();
+    dialog?.addEventListener('focusin', focusIn);
     desktop.addEventListener('change', resized);
     document.addEventListener('keydown', keydown, true);
     return () => {
-      cancelAnimationFrame(frame); desktop.removeEventListener('change', resized); document.removeEventListener('keydown', keydown, true);
+      cancelAnimationFrame(frame); dialog?.removeEventListener('focusin', focusIn); desktop.removeEventListener('change', resized); document.removeEventListener('keydown', keydown, true);
       release(); if (root) root.inert = previousInert;
-      if (previous?.isConnected) previous.focus({ preventScroll: true });
+      if (window.location.pathname !== initialPath) return;
+      const active = document.activeElement as HTMLElement | null;
+      if (active && active !== document.body && !dialog?.contains(active)) return;
+      const fallback = document.querySelector<HTMLElement>('.catalog-quick-controls button[aria-controls], .catalog-quick-controls input[type="search"], header a[href], header button');
+      const target = previous?.isConnected && previous.getClientRects().length && !previous.closest('[inert]')
+        ? previous
+        : fallback && fallback.getClientRects().length && !fallback.closest('[inert]')
+          ? fallback
+          : null;
+      target?.focus({ preventScroll: true });
     };
   }, []);
 
@@ -86,7 +112,7 @@ export default function CatalogFilterSheet({ id, draft, categoryLabel, results, 
         </fieldset>
         <div className="catalog-filter-toggles">
           <label><input type="checkbox" checked={draft.special} onChange={event => patch({ special: event.target.checked })} /><span dir="auto">{t('shop.special')}</span></label>
-          <label><input type="checkbox" checked={draft.saved} onChange={event => patch({ saved: event.target.checked })} /><span><span className="catalog-filter-saved-label" dir="auto"><Heart size={15} aria-hidden="true" />{t('shop.saved')} <bdi>({savedCount})</bdi></span><small dir="auto">{t('filters.savedHint')}</small></span></label>
+          <label><input type="checkbox" checked={draft.saved} onChange={event => patch({ saved: event.target.checked })} /><span><span className="catalog-filter-saved-label" dir="auto"><Heart size={15} aria-hidden="true" /><span>{t('shop.saved')}</span> <bdi>({savedCount})</bdi></span><small dir="auto">{t('filters.savedHint')}</small></span></label>
         </div>
       </div>
       <footer className="catalog-filter-actions">

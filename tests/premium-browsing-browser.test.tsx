@@ -20,7 +20,7 @@ test('premium browsing: selected portion, cart, responsive card parity and shop 
   const entry = `import React,{useEffect}from'react';import{createRoot}from'react-dom/client';import{BrowserRouter,Routes,Route,useNavigate,useLocation}from'react-router-dom';
 import{LanguageProvider,useLanguage}from'./src/contexts/LanguageContext';import{ThemeProvider,useTheme}from'./src/contexts/ThemeContext';import{CartProvider,useCart}from'./src/contexts/CartContext';import{CatalogProvider}from'./src/contexts/CatalogContext';import{MerchandisingProvider}from'./src/contexts/MerchandisingContext';import{ProductMediaProvider}from'./src/contexts/ProductMediaContext';import{StorefrontContentProvider,useStorefrontContentRefresh}from'./src/contexts/StorefrontContentContext';
 import RootLayout from'./src/layouts/RootLayout';import HomePage from'./src/pages/HomePage';import ShopPage from'./src/pages/ShopPage';import ProductDetailPage from'./src/pages/ProductDetailPage';import CartPage from'./src/pages/CartPage';import CheckoutPage from'./src/pages/CheckoutPage';import{PRODUCTS}from'./src/data/products';
-function Controls(){const navigate=useNavigate();const location=useLocation();const{setLanguage}=useLanguage();const{setTheme}=useTheme();const refresh=useStorefrontContentRefresh();const cart=useCart();useEffect(()=>{window.fixture={navigate,routeKey:location.key,refresh,lang:setLanguage,theme:setTheme,cart:cart.cartItems,close:()=>cart.setIsCartOpen(false),clear:()=>cart.clearCart()};});return null;}
+function Controls(){const navigate=useNavigate();const location=useLocation();const{setLanguage,language}=useLanguage();const{setTheme,theme}=useTheme();const refresh=useStorefrontContentRefresh();const cart=useCart();useEffect(()=>{window.fixture={navigate,routeKey:location.key,pathname:location.pathname,language,theme,refresh,lang:setLanguage,theme:setTheme,cart:cart.cartItems,close:()=>cart.setIsCartOpen(false),clear:()=>cart.clearCart()};});return null;}
 createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider><LanguageProvider><CatalogProvider initialProducts={PRODUCTS}><MerchandisingProvider><ProductMediaProvider><CartProvider><StorefrontContentProvider><Controls/><Routes><Route path="/" element={<RootLayout/>}><Route index element={<HomePage/>}/><Route path="shop" element={<ShopPage/>}/><Route path="shop/:category" element={<ShopPage/>}/><Route path="product/:id" element={<ProductDetailPage/>}/><Route path="cart" element={<CartPage/>}/><Route path="checkout" element={<CheckoutPage/>}/><Route path="gifting" element={<ShopPage/>}/></Route></Routes></StorefrontContentProvider></CartProvider></ProductMediaProvider></MerchandisingProvider></CatalogProvider></LanguageProvider></ThemeProvider></BrowserRouter>);`;
   await build({ stdin: { contents: entry, loader: 'tsx', resolveDir: process.cwd(), sourcefile: 'interaction-fixture.tsx' },
     bundle: true, format: 'iife', platform: 'browser', outfile: path.join(temporary, 'fixture.js'), jsx: 'automatic',
@@ -76,16 +76,139 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
       if((width===390||width===1440)&&language==='en'&&theme==='light')await page.screenshot({path:path.join(evidence,`shop-${width}.jpg`),quality:82,animations:'disabled'});
     }
     await page.evaluate(()=>{(window as any).fixture.lang('en');(window as any).fixture.theme('light');});await page.setViewportSize({width:390,height:844});
-    await page.locator('.catalog-quick-controls button[aria-controls]').click();
-    const sheet=page.getByRole('dialog');await sheet.waitFor();
+    const trigger=page.locator('.catalog-quick-controls button[aria-controls]');
+    const sheet=page.getByRole('dialog');
+    // Early user interaction inside the filter sheet must not be stolen by delayed initial focus.
+    const earlyFocusPreserved=await page.evaluate(async()=>{
+      document.querySelector<HTMLButtonElement>('.catalog-quick-controls button[aria-controls]')!.click();
+      await new Promise<void>(resolve=>setTimeout(resolve,0));
+      const range=document.querySelector<HTMLInputElement>('[role="dialog"] input[type="range"]');
+      range?.focus();
+      await new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())));
+      return document.activeElement===range;
+    });
+    assert.equal(earlyFocusPreserved,true,'initial focus yields to an early user interaction');
     await sheet.locator('input[type=range]').fill('1000');
     await page.keyboard.press('Escape');await sheet.waitFor({state:'hidden'});
     assert.equal(new URL(page.url()).searchParams.has('budget'),false,'cancelled filters never apply');
+    assert.equal(await trigger.evaluate(e=>e===document.activeElement),true,'Escape restores focus to filter trigger');
+    // Cancel button and backdrop dismissal discard drafts; touch-like open still restores focus to visible trigger.
+    await page.evaluate(()=>{(document.activeElement as HTMLElement|null)?.blur?.();document.querySelector<HTMLButtonElement>('.catalog-quick-controls button[aria-controls]')!.click();});
+    await sheet.waitFor();
+    await sheet.locator('input[type=range]').fill('1500');
+    await sheet.locator('input[type=checkbox]').first().check();
+    await sheet.locator('.catalog-filter-cancel').click();await sheet.waitFor({state:'hidden'});
+    assert.equal(new URL(page.url()).searchParams.has('budget'),false,'Cancel button discards draft');
+    assert.equal(new URL(page.url()).searchParams.has('special'),false,'Cancel button discards toggle draft');
+    assert.equal(await trigger.evaluate(e=>e===document.activeElement),true,'Cancel restores focus even when opened without prior button focus');
+    await trigger.click();await sheet.waitFor();
+    await sheet.locator('select').last().selectOption('price-asc');
+    await page.locator('.catalog-filter-backdrop').click({position:{x:8,y:8}});await sheet.waitFor({state:'hidden'});
+    assert.equal(new URL(page.url()).searchParams.has('sort'),false,'backdrop click discards draft');
+    assert.equal(await trigger.evaluate(e=>e===document.activeElement),true,'backdrop dismissal restores focus');
+    // Desktop resize closes the mobile sheet, releases inert/scroll lock and restores focus to a visible control.
+    await trigger.click();await sheet.waitFor();
+    await sheet.locator('input[type=range]').fill('1200');
+    await page.setViewportSize({width:1280,height:900});await sheet.waitFor({state:'hidden'});
+    assert.equal(new URL(page.url()).searchParams.has('budget'),false,'desktop resize discards uncommitted mobile draft');
+    assert.equal(await page.locator('#root').evaluate(root=>(root as HTMLElement).inert),false,'desktop resize releases inert');
+    assert.notEqual(await page.evaluate(()=>document.body.style.overflow),'hidden','desktop resize releases scroll lock');
+    assert.equal(await page.evaluate(()=>Boolean(document.activeElement&&document.activeElement!==document.body&&document.activeElement.getClientRects().length>0)),true,'desktop resize restores focus to a visible control');
+    await page.setViewportSize({width:390,height:844});
+    // Route change while open releases inert/scroll lock without stealing focus onto the old trigger.
+    await trigger.click();await sheet.waitFor();
+    const beforeNavKey=await page.evaluate(()=>(window as any).fixture.routeKey);
+    await page.evaluate(()=>(window as any).fixture.navigate('/shop/dates'));
+    await page.waitForFunction(key=>(window as any).fixture.routeKey!==key,beforeNavKey);
+    await sheet.waitFor({state:'hidden'});
+    assert.equal(await page.locator('#root').evaluate(root=>(root as HTMLElement).inert),false,'route change releases inert');
+    assert.notEqual(await page.evaluate(()=>document.body.style.overflow),'hidden','route change releases scroll lock');
+    assert.equal(await trigger.evaluate(e=>e===document.activeElement),false,'route change does not steal focus onto filter trigger');
+    await page.evaluate(()=>(window as any).fixture.navigate('/shop/nuts'));
+    await page.waitForFunction(()=>window.location.pathname==='/shop/nuts');
+    // Responsive filter sheet matrix: 360x640, 390x844, 768x600, 844x390 x EN/UR/AR x light/dark + 200% enlarged text & simulated safe-area.
+    for(const [width,height] of [[360,640],[390,844],[768,600],[844,390]] as const)for(const language of ['en','ur','ar'] as const)for(const theme of ['light','dark'] as const){
+      await page.setViewportSize({width,height});
+      await page.evaluate(({language,theme})=>{(window as any).fixture.lang(language);(window as any).fixture.theme(theme);},{language,theme});
+      await page.waitForFunction(({language,theme})=>document.documentElement.lang===language&&document.documentElement.dataset.theme===theme,{language,theme});
+      await trigger.click();await sheet.waitFor();
+      await page.waitForFunction(()=>document.querySelector('[role="dialog"]')?.contains(document.activeElement));
+      const sheetState=await sheet.evaluate((root,vh)=>{
+        const scroll=root.querySelector<HTMLElement>('.catalog-filter-scroll')!;
+        const actions=root.querySelector<HTMLElement>('.catalog-filter-actions')!;
+        const targets=[...root.querySelectorAll<HTMLElement>('button,select,input[type="range"],.catalog-filter-toggles label')];
+        return {
+          docOverflow:document.documentElement.scrollWidth>window.innerWidth+1,
+          sheetOverflow:root.scrollWidth>root.clientWidth+1,
+          scrollClientHeight:scroll.clientHeight,
+          actionsBottom:actions.getBoundingClientRect().bottom,
+          minTarget:Math.min(...targets.map(t=>Math.min(t.getBoundingClientRect().width,t.getBoundingClientRect().height))),
+          vh,
+        };
+      },height);
+      assert.equal(sheetState.docOverflow,false,`doc overflow ${width}x${height}/${language}/${theme}`);
+      assert.equal(sheetState.sheetOverflow,false,`sheet overflow ${width}x${height}/${language}/${theme}`);
+      assert.ok(sheetState.scrollClientHeight>80,`scroll height ${width}x${height}/${language}/${theme}`);
+      assert.ok(sheetState.actionsBottom<=height+1,`actions reachable ${width}x${height}/${language}/${theme}`);
+      assert.ok(sheetState.minTarget>=44,`44px targets ${width}x${height}/${language}/${theme}`);
+      await sheet.locator('.catalog-filter-apply').focus();await page.keyboard.press('Tab');
+      assert.equal(await sheet.locator('.catalog-filter-icon').evaluate(e=>e===document.activeElement),true);
+      await page.keyboard.press('Shift+Tab');
+      assert.equal(await sheet.locator('.catalog-filter-apply').evaluate(e=>e===document.activeElement),true);
+      if(theme==='light'&&((width===360&&height===640)||(width===844&&height===390))){
+        await sheet.locator('input[type=range]').fill('300');
+        await sheet.locator('input[type=checkbox]').first().check();
+        await sheet.locator('input[type=checkbox]').last().check();
+        await sheet.evaluate(root=>{
+          root.style.setProperty('--catalog-safe-area-bottom','34px');
+          const elements=[...root.querySelectorAll<HTMLElement>('*')].filter(e=>[...e.childNodes].some(n=>n.nodeType===3&&n.textContent?.trim()));
+          elements.forEach(e=>{e.style.fontSize=`${parseFloat(getComputedStyle(e).fontSize)*2}px`;});
+        });
+        const enlarged=await sheet.evaluate((root,vh)=>{
+          const scroll=root.querySelector<HTMLElement>('.catalog-filter-scroll')!;
+          const actions=root.querySelector<HTMLElement>('.catalog-filter-actions')!;
+          const apply=root.querySelector<HTMLElement>('.catalog-filter-apply')!;
+          const cancel=root.querySelector<HTMLElement>('.catalog-filter-cancel')!;
+          const doubleScaled=[...root.querySelectorAll<HTMLElement>('*')].filter(e=>e.style.fontSize&&e.parentElement?.closest('[style*="font-size"]')).length;
+          return {
+            sheetOverflow:root.scrollWidth>root.clientWidth+1,
+            scrollClientHeight:scroll.clientHeight,
+            actionsBottom:actions.getBoundingClientRect().bottom,
+            applyBottom:apply.getBoundingClientRect().bottom,
+            cancelBottom:cancel.getBoundingClientRect().bottom,
+            paddingBottom:parseFloat(getComputedStyle(actions).paddingBottom),
+            noResults:Boolean(root.querySelector('.catalog-filter-no-results')),
+            doubleScaled,
+            vh,
+          };
+        },height);
+        assert.equal(enlarged.sheetOverflow,false,`200% overflow ${width}x${height}/${language}`);
+        assert.equal(enlarged.doubleScaled,0,`no 400% nested scaling ${width}x${height}/${language}`);
+        assert.equal(enlarged.noResults,true,`zero-results status ${width}x${height}/${language}`);
+        assert.ok(enlarged.paddingBottom>=42,`simulated safe-area inset applied ${width}x${height}/${language}`);
+        assert.ok(enlarged.scrollClientHeight>44,`200% scroll space ${width}x${height}/${language}`);
+        assert.ok(enlarged.actionsBottom<=height+1&&enlarged.applyBottom<=height+1&&enlarged.cancelBottom<=height+1,`200% actions reachable ${width}x${height}/${language}`);
+        const controlCount=await sheet.locator('button:not(:disabled),input:not(:disabled),select:not(:disabled)').count();
+        for(let step=0;step<controlCount+2;step++){
+          await page.keyboard.press('Tab');
+          const visible=await sheet.evaluate(root=>{
+            const active=document.activeElement as HTMLElement|null;
+            if(!active||!root.contains(active))return false;
+            const r=active.getBoundingClientRect();
+            return r.top>=-1&&r.bottom<=window.innerHeight+1&&r.left>=-1&&r.right<=window.innerWidth+1;
+          });
+          assert.equal(visible,true,`200% Tab focus visible step ${step} at ${width}x${height}/${language}`);
+        }
+      }
+      await page.keyboard.press('Escape');await sheet.waitFor({state:'hidden'});
+      assert.equal(await trigger.evaluate(e=>e===document.activeElement),true);
+    }
+    await page.evaluate(()=>{(window as any).fixture.lang('en');(window as any).fixture.theme('light');});await page.setViewportSize({width:390,height:844});
     // A new history entry can have the same pathname/query. Back must still cancel its draft.
     const routeKey=await page.evaluate(()=>(window as any).fixture.routeKey);
     await page.evaluate(()=>(window as any).fixture.navigate('/shop/nuts'));
     await page.waitForFunction(key=>(window as any).fixture.routeKey!==key,routeKey);
-    await page.locator('.catalog-quick-controls button[aria-controls]').click();await sheet.waitFor();
+    await trigger.click();await sheet.waitFor();
     await sheet.locator('input[type=range]').fill('700');
     assert.equal(await page.locator('#root').evaluate(root=>(root as HTMLElement).inert),true);
     assert.equal(await page.evaluate(()=>document.body.style.overflow),'hidden');
@@ -96,11 +219,19 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     await page.goForward();
     await page.waitForFunction(key=>(window as any).fixture.routeKey!==key,routeKey);
     assert.equal(await sheet.count(),0,'Forward never resurrects an uncommitted draft');
-    await page.locator('.catalog-quick-controls button[aria-controls]').click();await sheet.waitFor();
+    await trigger.click();await sheet.waitFor();
     assert.equal(await sheet.locator('input[type=range]').inputValue(),'10000','new draft uses committed filters');
     await sheet.locator('input[type=range]').fill('1000');
     await sheet.locator('.catalog-filter-apply').click();await sheet.waitFor({state:'hidden'});
     assert.equal(new URL(page.url()).searchParams.get('budget'),'1000');
+    // Reset remains staged until Apply commits it; cancelling after Reset preserves committed filters.
+    await trigger.click();await sheet.waitFor();
+    assert.equal(await sheet.locator('input[type=range]').inputValue(),'1000');
+    await sheet.locator('.catalog-filter-reset').click();
+    assert.equal(await sheet.locator('input[type=range]').inputValue(),'10000','Reset stages default budget in draft');
+    assert.equal(new URL(page.url()).searchParams.get('budget'),'1000','Reset does not mutate committed URL before Apply');
+    await page.keyboard.press('Escape');await sheet.waitFor({state:'hidden'});
+    assert.equal(new URL(page.url()).searchParams.get('budget'),'1000','cancelling after Reset keeps committed budget');
     await page.getByRole('combobox').first().fill('zzzz-no-product');
     await page.locator('#plp-products-grid').waitFor({state:'hidden'});
     await page.setViewportSize({width:1440,height:1200});
@@ -108,6 +239,18 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     const home=page.locator('.boutique-product-card').first();await home.scrollIntoViewIfNeeded();
     await home.screenshot({path:path.join(evidence,'home-card.jpg'),quality:82,animations:'disabled'});
     assert.equal(await home.locator('.product-gallery').count(),1);
-    await fs.writeFile(path.join(evidence,'layouts.json'),JSON.stringify(layouts,null,2));assert.deepEqual(errors,[]);
+    await fs.writeFile(path.join(evidence,'layouts.json'),JSON.stringify(layouts,null,2));
+    // Touch and non-reduced-motion check on mobile filter sheet
+    const touch=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'no-preference'});
+    await touch.route('**/*',r=>new URL(r.request().url()).origin===origin?r.continue():r.fulfill({status:200,body:''}));
+    const mobile=await touch.newPage();mobile.on('pageerror',e=>errors.push(e.message));
+    await mobile.goto(origin+'/shop/nuts');await mobile.locator('.table-catalog-card').first().waitFor();
+    await mobile.locator('.catalog-quick-controls button[aria-controls]').tap();
+    const mobileSheet=mobile.getByRole('dialog');await mobileSheet.waitFor();
+    assert.notEqual(await mobileSheet.evaluate(e=>getComputedStyle(e).animationName),'none');
+    await mobileSheet.locator('.catalog-filter-cancel').tap();await mobileSheet.waitFor({state:'hidden'});
+    assert.notEqual(await mobile.evaluate(()=>document.body.style.overflow),'hidden');
+    await touch.close();
+    assert.deepEqual(errors,[]);
   }finally{await browser.close();server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));await fs.rm(temporary,{recursive:true,force:true});}
 });

@@ -1,90 +1,126 @@
 {
-  "task": "M20-FILTER1",
-  "date": "2026-10-29",
+  "task": "M20-FILTER2",
+  "previousTasksPreserved": [
+    "M20-FILTER1",
+    "FH02",
+    "SEC01"
+  ],
+  "date": "2026-10-30",
   "timezone": "Asia/Karachi",
   "status": "DONE_LOCALLY_BOUNDED",
-  "parent": "898fddeb11cf7b60ced9c352714060e9a72de7ba",
+  "parent": "d13577b57fac813e76e9ed156691c3a4aa7dbfeb",
+  "securityParent": "898fddeb11cf7b60ced9c352714060e9a72de7ba",
   "checkpointParent": "7a00826106ab8b31f6cc26fe87500047b8477bac",
-  "initialParent": "a594920e62171a934abb946b2e8cc6e9a8ccec0e",
-  "buildSource": "dcef90ee88182db0",
+  "buildSource": "1d70761420fcdaf0",
   "environment": {
     "os": "win32",
     "node": "v24.14.0",
     "npm": "11.9.0",
     "browsersTested": [
-      "HeadlessChrome/156.0.8078.73 (SwiftShader via ALLBARKA_TEST_BROWSER)",
-      "chrome-headless-shell/145.0.7632.77 (SwiftShader via ALLBARKA_TEST_BROWSER)"
+      "chrome-headless-shell/145.0.7632.77 (SwiftShader via ALLBARKA_TEST_BROWSER)",
+      "HeadlessChrome/156.0.8078.73 (SwiftShader via ALLBARKA_TEST_BROWSER)"
     ]
+  },
+  "m20Filter2Evidence": {
+    "viewportsTested": [
+      "360x640",
+      "390x844",
+      "768x600",
+      "844x390",
+      "1280x900",
+      "1440x1000"
+    ],
+    "languagesTested": [
+      "en",
+      "ur",
+      "ar"
+    ],
+    "themesTested": [
+      "light",
+      "dark"
+    ],
+    "safeAreaVerification": {
+      "simulatedCssInset": "Verified default env(safe-area-inset-bottom, 0px) and simulated --catalog-safe-area-bottom: 34px (paddingBottom >= 42px) in headless Chromium",
+      "physicalDeviceVerification": "NOT_RUN (headless Chromium simulation only; physical iOS/Android hardware not claimed)"
+    },
+    "beforeMetrics": {
+      "earlyFocus": {
+        "beforeRaf": "INPUT:range",
+        "afterRaf": "BUTTON:button"
+      },
+      "touchOpenEscapeRestoredFocus": false,
+      "enlarged844x390_en": {
+        "headingHeight": 131,
+        "scrollClientHeight": 81,
+        "actionsHeight": 177,
+        "actionsBottom": 390,
+        "doubleScaledNodes": 1
+      },
+      "enlarged360x640_en": {
+        "headingHeight": 252,
+        "scrollClientHeight": 114,
+        "actionsHeight": 222,
+        "actionsBottom": 640,
+        "doubleScaledNodes": 1
+      }
+    },
+    "afterMetrics": {
+      "earlyFocus": {
+        "beforeRaf": "INPUT:range",
+        "afterRaf": "INPUT:range"
+      },
+      "touchOpenEscapeRestoredFocus": true,
+      "routeChangeStoleTriggerFocus": false,
+      "enlarged844x390_en": {
+        "headingHeight": 94,
+        "scrollClientHeight": 161,
+        "actionsHeight": 134,
+        "actionsBottom": 390,
+        "doubleScaledNodes": 0
+      },
+      "enlarged844x390_ur": {
+        "headingHeight": 94,
+        "scrollClientHeight": 193,
+        "actionsHeight": 102,
+        "actionsBottom": 390,
+        "doubleScaledNodes": 0
+      },
+      "enlarged844x390_ar": {
+        "headingHeight": 94,
+        "scrollClientHeight": 193,
+        "actionsHeight": 102,
+        "actionsBottom": 390,
+        "doubleScaledNodes": 0
+      },
+      "enlarged360x640_en": {
+        "headingHeight": 179,
+        "scrollClientHeight": 245,
+        "actionsHeight": 190,
+        "actionsBottom": 640,
+        "doubleScaledNodes": 0
+      },
+      "enlarged360x640_ur": {
+        "headingHeight": 179,
+        "scrollClientHeight": 248,
+        "actionsHeight": 186,
+        "actionsBottom": 640,
+        "doubleScaledNodes": 0
+      },
+      "enlarged360x640_ar": {
+        "headingHeight": 179,
+        "scrollClientHeight": 281,
+        "actionsHeight": 154,
+        "actionsBottom": 640,
+        "doubleScaledNodes": 0
+      }
+    },
+    "screenshots": {
+      "before": "docs/evidence/filter-history/filter-sheet-landscape-enlarged-before.jpg",
+      "after": "docs/evidence/filter-history/filter-sheet-landscape-enlarged-after.jpg"
+    }
   },
   "fh02Diagnosis": {
     "location": "tests/interaction-polish-browser.test.tsx:169",
-    "viewport": {
-      "width": 844,
-      "height": 390,
-      "language": "en",
-      "dir": "ltr",
-      "theme": "light",
-      "reducedMotion": "reduce",
-      "fontsStatus": "loaded"
-    },
-    "beforeEnlarge1x": {
-      "scrollContainer": {
-        "top": 77,
-        "bottom": 390,
-        "clientHeight": 313,
-        "scrollHeight": 1137,
-        "scrollTop": 824
-      },
-      "lastLink": {
-        "top": 314,
-        "bottom": 358,
-        "left": 173.5,
-        "right": 319,
-        "width": 145.5,
-        "height": 44,
-        "computedFontSize": "12px"
-      }
-    },
-    "unfixedAfterEnlarge2x": {
-      "pendingCssTransitionsOnFontSize": 50,
-      "scrollContainer": {
-        "top": 81,
-        "bottom": 390,
-        "clientHeight": 309,
-        "scrollHeight": 1538,
-        "scrollTop": 1107
-      },
-      "lastLink": {
-        "top": 430,
-        "bottom": 480,
-        "left": 20,
-        "right": 319,
-        "width": 299,
-        "height": 50,
-        "computedFontSize": "24px",
-        "visibleInViewport": false
-      }
-    },
-    "fixedAfterEnlarge2x": {
-      "pendingCssTransitionsOnFontSize": 0,
-      "scrollContainer": {
-        "top": 81,
-        "bottom": 390,
-        "clientHeight": 309,
-        "scrollHeight": 1538,
-        "scrollTop": 1229
-      },
-      "lastLink": {
-        "top": 308,
-        "bottom": 358,
-        "left": 20,
-        "right": 319,
-        "width": 299,
-        "height": 50,
-        "computedFontSize": "24px",
-        "visibleInViewport": true
-      }
-    },
     "rootCause": "src/index.css:471 set transition-duration: 0.01ms !important on *, ::before, ::after under @media (prefers-reduced-motion: reduce), activating transition-property: all across every element and deferring 200% inline font-size layout expansion until after Shift+Tab focus completed.",
     "fix": "Changed transition-duration: 0.01ms !important to transition-duration: 0s !important in src/index.css:471."
   },
@@ -99,7 +135,7 @@
     "artifacts": 84
   },
   "affectedTests": {
-    "pass": 23,
+    "pass": 8,
     "fail": 0,
     "exit": 0
   },
@@ -110,6 +146,7 @@
     "fail": 0,
     "cancelled": 0,
     "skipped": 1,
+    "skippedExplanation": "tests/firestore-security.test.mjs skips when FIRESTORE_EMULATOR_HOST is unset in the offline runner; verified separately with the Firestore rules emulator under SEC01.",
     "exit": 0
   },
   "standaloneBackend": {
@@ -129,11 +166,11 @@
     "retiredViews": 0,
     "exit": 0
   },
-  "review": "Self-review completed across CategoryPLP.tsx, index.css and premium-browsing-browser.test.tsx; no independent review claimed",
+  "review": "Self-review completed across CatalogFilterSheet.tsx, catalog-filters.css and premium-browsing-browser.test.tsx; no independent review claimed",
   "privateCatalogReconciliation": "BLOCKED",
   "liveFeatureProviders": "NOT_RUN",
   "productionMerged": false,
   "deployed": false,
   "keysChanged": false,
-  "next": "Complete bounded M20 filter sheet safe-area/enlarged-filter/focus audit in CatalogFilterSheet.tsx and catalog-filters.css."
+  "next": "Execute SEC01 live credential/rules/n8n header rollout and R04 private Firestore catalog reconciliation when authorized access is provided, or select the next bounded offline proposal in MASTER_PLAN.md."
 }
