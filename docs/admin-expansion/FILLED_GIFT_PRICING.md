@@ -72,19 +72,30 @@ Continue the existing filled-packaging inquiry fix and implement R04-KG1 in the 
 
 ## Checkpoint evidence and boundaries
 
-Owner/agent: owner decision; Antigravity implementation & verification.
-Changed scope: runtime estimator (`src/lib/filledGiftPricing.ts`), hamper catalog update (`src/lib/hamperCatalog.ts`), additive schema (`src/types.ts`, `src/lib/catalogSchema.ts`), inquiry guards (`src/lib/orderValidation.ts`, `src/components/BidBoxesSection.tsx`, `src/pages/ProductDetailPage.tsx`), unit tests (`tests/filled-gift-pricing.test.ts`, `tests/hamper-catalog.test.tsx`, `tests/stage6-legacy-packaging.test.ts`).
+Owner/agent: owner decision; Antigravity implementation & complete verification.
+Changed scope: runtime estimator (`src/lib/filledGiftPricing.ts`), hamper catalog update (`src/lib/hamperCatalog.ts`), additive schema (`src/types.ts`, `src/lib/catalogSchema.ts`), inquiry guards and customer journeys (`src/lib/orderValidation.ts`, `src/lib/orderQuote.ts`, `src/lib/orderDatabase.ts`, `src/components/BidBoxesSection.tsx`, `src/components/CustomQuoteModal.tsx`, `src/pages/ProductDetailPage.tsx`), comprehensive unit & browser tests (`tests/filled-gift-pricing.test.ts`, `tests/shipping-policy.test.ts`, `tests/stage6-order-handoff.test.ts`, `tests/premium-gifting-browser.test.tsx`, `tests/admin-expansion-content-browser.test.tsx`, `tests/admin-finishing-browser.test.tsx`).
 Runtime source:
-1. `src/lib/filledGiftPricing.ts`: shared deterministic estimator implementing `resolveAuthoritativeKgRate`, `calculateIngredientEstimate` (`K * g * n / 1000`), `calculateFilledGiftEstimate`, and `isFilledPackagingVariant`.
+1. `src/lib/filledGiftPricing.ts`: shared deterministic estimator implementing `resolveAuthoritativeKgRate`, `calculateIngredientEstimate` (`K * g * n / 1000`), `calculateFilledGiftEstimate`, `classifyPackagingVariant`, `isFilledPackagingVariant`, and `packagingVariantRequiresInquiry`. Enforces fail-closed rules: rejects calculated commerce derived from base packs < 1000g, ignores shipping mass (`weightGrams: 1000`), fails closed on conflicting rates or disabled variants, and reports calculated `ingredientsSubtotalPkr` while keeping `estimatedTotalPkr` null if packaging or an ingredient is missing.
 2. `src/lib/hamperCatalog.ts`: updated `hamperSelectionPrice` to use `resolveAuthoritativeKgRate(product) * HAMPER_PORTION_GRAMS / 1000` (half-up integer PKR rounding).
 3. `src/types.ts` & `src/lib/catalogSchema.ts`: additive `RecipeIngredient` type, `recipeIngredients` and `filledRecipes` allowlisted in `PUBLIC_PRODUCT_FIELDS` and validated in `validateDynamicProduct`.
 4. Inquiry guards:
-   - Authoritative server guard in `validateAndPriceOrder` (`src/lib/orderValidation.ts`) rejecting direct checkout of filled packaging variants with `QUOTE_REQUIRED`.
+   - Server guard in `validateAndPriceOrder` (`src/lib/orderValidation.ts`) parameterized with `allowInquiryItems` (aliased with `allowPackagingQuote`, defaulting to `false`). Rejects unquoted custom hampers and filled packaging variants with `QUOTE_REQUIRED`.
+   - `quoteOrderForCustomer` (`src/lib/orderQuote.ts`) passes `allowInquiryItems: true` so customer quotes calculate prices and shipping accurately.
+   - `createDurableOrder` (`src/lib/orderDatabase.ts`) respects `allowInquiryItems: Boolean(payload.allowInquiryItems)`.
    - Frontend UI guards in `BidBoxesSection.tsx` and `ProductDetailPage.tsx` routing filled packaging selections to `openCustomQuoteModal` instead of direct cart checkout.
+   - `BidBoxesSection.tsx` connected to `calculateFilledGiftEstimate` for per-box estimate display, preserving requested tier quantity without inflating customer budget.
+   - `CustomQuoteModal.tsx` displays live recipe ingredients breakdown for filled inquiry mode.
 Verification:
-- `tests/filled-gift-pricing.test.ts`: 8/8 comprehensive tests PASS (owner 50g example, multi-ingredient mixture, changed kg rates, unchanged 250g pack rates, missing/disabled kg rates failing unpriced, unchanged standalone retail/custom weights, filled checkout rejection with `QUOTE_REQUIRED`, empty packaging checkout success).
+- `tests/filled-gift-pricing.test.ts`: 14/14 comprehensive tests PASS (owner 50g example, multi-ingredient mixture, changed kg rates, unchanged 250g pack rates, missing/disabled kg rates failing unpriced, unchanged standalone retail/custom weights, filled checkout rejection with `QUOTE_REQUIRED`, empty packaging checkout success, calculated base < 1kg rejection, shipping mass exclusion, conflicting/disabled variant fail-closed, subtotal exposure with null total, unquoted hamper rejection, canonical variant classification).
 - `tests/hamper-catalog.test.tsx`: 7/7 tests PASS.
 - `tests/authoritative-quote.test.ts`: 7/7 tests PASS.
 - `tests/stage6-legacy-packaging.test.ts`: 4/4 tests PASS.
+- `tests/stage6-order-handoff.test.ts`: 4/4 tests PASS.
+- `tests/premium-gifting-browser.test.tsx`: 1/1 test PASS.
+- `tests/admin-expansion-content-browser.test.tsx`: 1/1 test PASS.
+- `tests/admin-finishing-browser.test.tsx`: 1/1 test PASS.
+- `npm run typecheck` (`tsc --noEmit`): PASS (0 errors).
+- `npm run lint:hooks` (`eslint src`): PASS (0 errors).
 - `ALLBARKA_SKIP_LOCAL_ENV=true npm run build`: PASS (exit code 0; release privacy audit passed with 84 text artifacts).
+- `node scripts/run-all-tests.mjs`: PASS (735 passed, 0 failed, 1 skipped across 83 test files; 21 backend tests passed; 36 production checks passed).
 - `git diff --check`: PASS (0 errors).

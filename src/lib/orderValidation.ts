@@ -17,7 +17,8 @@ import {
   parsePiecesPerPack,
   calculatePackagingMoq,
 } from './packagingMoq';
-import { isFilledPackagingVariant } from './filledGiftPricing';
+import { isFilledPackagingVariant, packagingVariantRequiresInquiry } from './filledGiftPricing';
+export { isFilledPackagingVariant, packagingVariantRequiresInquiry };
 
 export interface ValidatedOrderItem {
   id: string; // composite cart item id, e.g. "pista-250g"
@@ -153,6 +154,7 @@ export function validateAndPriceOrder({
   promoContext,
   products = PRODUCTS,
   hamperBoxes,
+  allowInquiryItems = false,
   allowPackagingQuote = false,
 }: {
   items: any[];
@@ -164,8 +166,10 @@ export function validateAndPriceOrder({
   promoContext?: { hasPastOrders?: boolean; identityVerified?: boolean; now?: number };
   products?: Product[];
   hamperBoxes?: HamperBox[];
+  allowInquiryItems?: boolean;
   allowPackagingQuote?: boolean;
 }): ValidatedOrder {
+  const permitInquiry = Boolean(allowInquiryItems || allowPackagingQuote);
   if (!Array.isArray(items) || items.length === 0) {
     throw new ValidationError('Order must contain at least one item.', 'EMPTY_CART');
   }
@@ -193,7 +197,10 @@ export function validateAndPriceOrder({
 
     // Resolve canonical product ID
     const rawId = String(clientItem.productId || clientItem.id || '').trim();
-    if (rawId === CUSTOM_HAMPER_PRODUCT_ID) {
+    if (rawId === CUSTOM_HAMPER_PRODUCT_ID || rawId.startsWith(`${CUSTOM_HAMPER_PRODUCT_ID}:`) || clientItem.hamperConfiguration) {
+      if (!permitInquiry) {
+        throw new ValidationError('Custom hampers are quoted by our team. Please request a personalized quote.', 'QUOTE_REQUIRED');
+      }
       const hamper = resolveHamper(clientItem.hamperConfiguration, products, hamperBoxes);
       if (!hamper) throw new ValidationError('Please rebuild this hamper with a supported box and valid harvest selections.', 'INVALID_HAMPER_CONFIGURATION');
       const quantity = typeof clientItem.quantity === 'number' ? clientItem.quantity : Number(clientItem.quantity);
@@ -224,7 +231,7 @@ export function validateAndPriceOrder({
       throw new ValidationError(`Please request a personalized quote for "${product.name_en}".`, 'QUOTE_REQUIRED');
     }
     const requestedWeight = String(clientItem.selectedWeight || clientItem.weight || clientItem.portion || identity?.portion || '250g').trim();
-    if (!allowPackagingQuote && isPackagingProduct(product) && isFilledPackagingVariant(requestedWeight)) {
+    if (!permitInquiry && packagingVariantRequiresInquiry(product, requestedWeight)) {
       throw new ValidationError(`Please request a personalized quote for filled packaging "${product.name_en}" (${requestedWeight}).`, 'QUOTE_REQUIRED');
     }
     const allowedWeights = product.prices ? Object.keys(product.prices) : [];
@@ -247,7 +254,7 @@ export function validateAndPriceOrder({
       );
     }
     const weight = variant.label;
-    if (!allowPackagingQuote && isPackagingProduct(product) && isFilledPackagingVariant(weight)) {
+    if (!permitInquiry && packagingVariantRequiresInquiry(product, weight)) {
       throw new ValidationError(`Please request a personalized quote for filled packaging "${product.name_en}" (${weight}).`, 'QUOTE_REQUIRED');
     }
     // Existing fixed wholesale pricing remains compatible. Custom grams always

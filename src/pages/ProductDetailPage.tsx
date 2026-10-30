@@ -131,8 +131,8 @@ export default function ProductDetailPage() {
   const isQuoteOnly = Boolean(
     product && (product.quoteOnly || product.orderMode === 'inquiry_quote' || (weights.length === 0 && !hasCustomPriceOption))
   );
-  const isFilledPackaging = Boolean(isPackaging && isFilledPackagingVariant(selectedWeight));
-  const requiresInquiry = isQuoteOnly || isFilledPackaging;
+
+
 
   let customSelection: ReturnType<typeof resolveCustomWeight> | null = null;
   if (product && customWeightSelected) {
@@ -143,6 +143,8 @@ export default function ProductDetailPage() {
     }
   }
   const selectedWeight = customWeightSelected ? customSelection?.label || '' : weights[selectedWeightIndex] || weights[0] || '';
+  const isFilledPackaging = Boolean(isPackaging && isFilledPackagingVariant(selectedWeight));
+  const requiresInquiry = isQuoteOnly || isFilledPackaging;
   const candidatePrice = customWeightSelected ? customSelection?.price : (selectedWeight ? product?.prices?.[selectedWeight] : undefined);
   const priceToUse = typeof candidatePrice === 'number' && Number.isFinite(candidatePrice) && candidatePrice > 0 ? candidatePrice : null;
   const unit = !isQuoteOnly && priceToUse ? unitPrice(priceToUse, selectedWeight) : null;

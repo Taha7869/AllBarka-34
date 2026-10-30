@@ -7,8 +7,11 @@ import {
   calculateFilledGiftEstimate,
   resolveAuthoritativeKgRate,
   isFilledPackagingVariant,
+  classifyPackagingVariant,
+  packagingVariantRequiresInquiry,
   type RecipeIngredient,
 } from '../src/lib/filledGiftPricing';
+import { CUSTOM_HAMPER_PRODUCT_ID } from '../src/lib/hamperCatalog';
 import { validateAndPriceOrder } from '../src/lib/orderValidation';
 import { resolveProductVariant, resolveCustomWeight } from '../src/lib/productVariants';
 
@@ -322,4 +325,167 @@ test('Test 8: Eligible empty packaging checkout succeeds through standard valida
   assert.equal(orderResult.items[0].price, 2500);
   assert.equal(orderResult.items[0].quantity, 2);
   assert.equal(orderResult.summary.subtotal, 5000);
+});
+
+test('Test 9: resolveAuthoritativeKgRate rejects calculated commerce derived from smaller base packs', () => {
+  const calculatedFrom250g: Product = {
+    ...PRODUCTS.find(p => p.id === 'badam')!,
+    id: 'mock-calc-nut',
+    commerce: {
+      version: 1,
+      kind: 'food',
+      pricingMode: 'calculated',
+      quantityMode: 'fixed',
+      baseQuantity: 250,
+      baseUnit: 'g',
+      basePrice: 350,
+      options: [
+        { label: '250g', quantity: 250, unit: 'g', override: false, available: true, shippingWeightG: 250 },
+        { label: '1kg', quantity: 1, unit: 'kg', override: false, available: true, shippingWeightG: 1000 },
+      ],
+      custom: null,
+    },
+    prices: {},
+    variants: [],
+  };
+
+  // Base is 250g, not 1kg; even though 1kg option exists in calculated mode, base rate is NOT 1kg
+  assert.equal(resolveAuthoritativeKgRate(calculatedFrom250g), null);
+
+  // But if base is exactly 1000g / 1kg, it resolves cleanly
+  const calculatedFrom1kg: Product = {
+    ...calculatedFrom250g,
+    commerce: {
+      ...calculatedFrom250g.commerce!,
+      baseQuantity: 1000,
+      baseUnit: 'g',
+      basePrice: 1400,
+    },
+  };
+  assert.equal(resolveAuthoritativeKgRate(calculatedFrom1kg), 1400);
+});
+
+test('Test 10: resolveAuthoritativeKgRate ignores shipping mass (weightGrams: 1000)', () => {
+  const shippingMassProduct: Product = {
+    ...PRODUCTS.find(p => p.id === 'badam')!,
+    id: 'mock-gift-pack',
+    prices: { 'Gift Pack': 2500 },
+    variants: [
+      { label: 'Gift Pack', price: 2500, weightGrams: 1000, available: true },
+    ],
+  };
+
+  // A variant named "Gift Pack" with weightGrams: 1000 must NEVER be treated as a 1kg food ingredient rate
+  assert.equal(resolveAuthoritativeKgRate(shippingMassProduct), null);
+});
+
+test('Test 11: resolveAuthoritativeKgRate fails closed on conflicting rates or disabled variants', () => {
+  // Conflicting prices: '1kg' is 1000, '1 kg' is 1200
+  const conflictingPrices: Product = {
+    ...PRODUCTS.find(p => p.id === 'badam')!,
+    prices: { '1kg': 1000, '1 kg': 1200 },
+    variants: [],
+  };
+  assert.equal(resolveAuthoritativeKgRate(conflictingPrices), null);
+
+  // Disabled variant takes precedence and fails closed
+  const disabledVariantProduct: Product = {
+    ...PRODUCTS.find(p => p.id === 'badam')!,
+    prices: { '1kg': 3800 },
+    variants: [
+      { label: '1kg', price: 3800, available: false },
+    ],
+  };
+  assert.equal(resolveAuthoritativeKgRate(disabledVariantProduct), null);
+});
+
+test('Test 12: Incomplete estimate leaves estimatedTotalPkr null while exposing ingredientsSubtotalPkr', () => {
+  const packagingProductWithoutPrice: Product = {
+    ...PRODUCTS.find(p => p.id === 'badam')!,
+    id: 'bid-box-unpriced-pkg',
+    category: 'celebration-boxes',
+    isBidBox: true,
+    prices: {}, // Empty packaging price unknown
+    variants: [],
+  };
+
+  const result = calculateFilledGiftEstimate({
+    packagingProduct: packagingProductWithoutPrice,
+    packagingRequired: true,
+    recipe: [{ productId: 'badam', grams: 50 }],
+    catalogProducts: PRODUCTS,
+    requestedBoxes: 2,
+  });
+
+  // Must fail closed for total, but expose ingredientsSubtotalPkr
+  assert.equal(result.isAvailable, false);
+  assert.equal(result.unavailabilityReason, 'MISSING_PACKAGING_PRICE');
+  assert.equal(result.estimatedTotalPkr, null);
+  assert.equal(result.ingredientsAvailable, true);
+  // Badam: 3800/kg * 50g * 2 boxes / 1000 = 380 PKR
+  assert.equal(result.ingredientsSubtotalPkr, 380);
+});
+
+test('Test 13: Direct checkout of custom hampers is strictly rejected with QUOTE_REQUIRED without allowInquiryItems', () => {
+  const hamper = {
+    productId: CUSTOM_HAMPER_PRODUCT_ID,
+    quantity: 1,
+    hamperConfiguration: {
+      version: 1,
+      boxId: 'box-wood',
+      selections: ['pista', 'kaju', 'badam', 'akhroot'],
+      recipientName: 'Test Recipient',
+      giftMessage: 'Best wishes',
+    },
+  };
+
+  assert.throws(
+    () => {
+      validateAndPriceOrder({
+        items: [hamper],
+        shippingMethodId: 'standard',
+        city: 'Lahore',
+      });
+    },
+    (err: any) => {
+      assert.equal(err.code, 'QUOTE_REQUIRED');
+      return true;
+    }
+  );
+
+  // When allowInquiryItems: true is explicitly passed, inquiry pricing succeeds
+  const quoted = validateAndPriceOrder({
+    items: [hamper],
+    shippingMethodId: 'standard',
+    city: 'Lahore',
+    allowInquiryItems: true,
+  });
+  assert.ok(quoted);
+  assert.equal(quoted.items[0].productId, CUSTOM_HAMPER_PRODUCT_ID);
+});
+
+test('Test 14: Canonical variant classification and inquiry guard defaults unknown packaging to inquiry', () => {
+  const packagingProduct: Product = {
+    ...PRODUCTS.find(p => p.id === 'badam')!,
+    id: 'box-classified',
+    category: 'celebration-boxes',
+    isBidBox: true,
+    filledRecipes: {
+      'Special Recipe Tier': [{ productId: 'badam', grams: 50 }],
+    },
+    bidBoxConfig: {
+      filledOptions: [{ variantKey: 'Configured Filled Option', label: 'Filled', price: 500 }],
+      emptyTiers: [{ variantKey: 'Configured Empty Tier', qty: 25, unitPrice: 100, packPrice: 2500 }],
+    } as any,
+  };
+
+  assert.equal(classifyPackagingVariant(packagingProduct, 'Special Recipe Tier'), 'filled');
+  assert.equal(classifyPackagingVariant(packagingProduct, 'Configured Filled Option'), 'filled');
+  assert.equal(classifyPackagingVariant(packagingProduct, 'Configured Empty Tier'), 'empty');
+  assert.equal(classifyPackagingVariant(packagingProduct, 'Unknown Mystery Option'), 'unknown');
+
+  // Unknown packaging options require inquiry (default-deny)
+  assert.equal(packagingVariantRequiresInquiry(packagingProduct, 'Unknown Mystery Option'), true);
+  assert.equal(packagingVariantRequiresInquiry(packagingProduct, 'Configured Empty Tier'), false);
+  assert.equal(packagingVariantRequiresInquiry(packagingProduct, 'Configured Filled Option'), true);
 });

@@ -7,7 +7,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { Product } from '../types';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { openCustomQuoteModal } from './CustomQuoteModal';
-import { isFilledPackagingVariant } from '../lib/filledGiftPricing';
+import { isFilledPackagingVariant, calculateFilledGiftEstimate, resolveFilledRecipe } from '../lib/filledGiftPricing';
 
 interface BidBoxesSectionProps {
   onQuickView?: (product: Product) => void;
@@ -64,11 +64,13 @@ export default function BidBoxesSection({ onQuickView, compact = false }: BidBox
     }
 
     if (mode === 'filled' || isFilledPackagingVariant(variantKey)) {
+      const tierIndex = selectedEmptyTierIdx[product.id] ?? 2;
+      const chosenTier = cfg?.emptyTiers[tierIndex] || cfg?.emptyTiers[0];
       openCustomQuoteModal({
         productId: product.id,
         mode: 'filled',
         variantLabel: variantKey,
-        quantity: 50,
+        quantity: chosenTier?.qty || 25,
       });
       return;
     }
@@ -164,6 +166,18 @@ export default function BidBoxesSection({ onQuickView, compact = false }: BidBox
             const activeEmptyTier = isQuoteOnly ? null : (cfg.emptyTiers[emptyTierIdx] || cfg.emptyTiers[0]);
             const filledIdx = selectedFilledIdx[product.id] ?? 0;
             const activeFilledOpt = isQuoteOnly ? null : (cfg.filledOptions[filledIdx] || cfg.filledOptions[0]);
+            const selectedBoxes = activeEmptyTier?.qty || 25;
+            const filledRecipe = resolveFilledRecipe(product, activeFilledOpt?.variantKey);
+            const filledEst = calculateFilledGiftEstimate({
+              packagingProduct: product,
+              packagingUnitPrice: activeEmptyTier?.unitPrice,
+              recipe: filledRecipe || undefined,
+              catalogProducts: products,
+              requestedBoxes: 1,
+            });
+            const displayFilledPrice = (filledEst.isAvailable && filledEst.estimatedTotalPkr)
+              ? filledEst.estimatedTotalPkr
+              : (activeFilledOpt?.price || null);
 
             const cover = mediaCover(product) || product.image || '/images/products/bid-box-umrah-tabarruk-1.webp';
 
@@ -344,7 +358,7 @@ export default function BidBoxesSection({ onQuickView, compact = false }: BidBox
                           <div className="flex items-center justify-between text-[11px]">
                             <span className="font-semibold text-[#566B63]">Filled Assortment:</span>
                             <span className="font-bold text-[#072A20]">
-                              Rs. {activeFilledOpt?.price.toLocaleString()}/box
+                              {displayFilledPrice ? `Rs. ${displayFilledPrice.toLocaleString()}/box` : 'Quote on Request'}
                             </span>
                           </div>
                           <div className="space-y-1.5">
@@ -416,14 +430,13 @@ export default function BidBoxesSection({ onQuickView, compact = false }: BidBox
                                 productId: product.id,
                                 mode: 'filled',
                                 variantLabel: activeFilledOpt?.variantKey,
-                                quantity: 50,
-                                targetUnitPrice: (activeFilledOpt?.price || 0) * 50,
+                                quantity: selectedBoxes,
                               })
                             }
                             className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#072A20] hover:bg-[#0D3F30] text-[#F7F1E3] py-2.5 px-3 text-xs font-bold uppercase tracking-wider transition-all shadow-sm cursor-pointer"
                           >
                             <MessageSquareQuote size={14} className="text-[#E6C786]" />
-                            {t('catalog.requestQuote', 'Request Custom Quote')} (Est. Rs. {activeFilledOpt?.price.toLocaleString()}/box)
+                            {t('catalog.requestQuote', 'Request Custom Quote')}{displayFilledPrice ? ` (Est. Rs. ${displayFilledPrice.toLocaleString()}/box)` : ''}
                           </button>
                         )}
 
@@ -433,10 +446,8 @@ export default function BidBoxesSection({ onQuickView, compact = false }: BidBox
                             openCustomQuoteModal({
                               productId: product.id,
                               mode,
-                              quantity: mode === 'empty' ? (activeEmptyTier?.qty || 50) : 50,
-                              targetUnitPrice: mode === 'empty'
-                                ? ((activeEmptyTier?.unitPrice || 0) * (activeEmptyTier?.qty || 50))
-                                : ((activeFilledOpt?.price || 0) * 50),
+                              variantLabel: mode === 'filled' ? activeFilledOpt?.variantKey : activeEmptyTier?.variantKey,
+                              quantity: selectedBoxes,
                             })
                           }
                           className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#8C6B1B]/50 bg-[#FAF6EE] hover:bg-[#8C6B1B] text-[#8C6B1B] hover:text-white py-2 px-3 text-[11px] font-bold uppercase tracking-wider transition-all"

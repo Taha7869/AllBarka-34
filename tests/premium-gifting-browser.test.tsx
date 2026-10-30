@@ -9,6 +9,7 @@ import { build } from 'esbuild';
 import { launchTestBrowser } from './helpers/browser.mjs';
 import { memoryFirestore } from './helpers/memoryFirestore';
 import { HAMPER_BOX_SEEDS } from '../src/lib/hamperBoxSchema';
+import { hamperSelectionPrice } from '../src/lib/hamperCatalog';
 import { PRODUCTS } from '../src/data/products';
 import { createCatalogRouter } from '../src/lib/catalogRouter';
 import { createCatalogConfigurationRouter } from '../src/lib/catalogConfigurationRouter';
@@ -17,7 +18,7 @@ import { createStorefrontContentRouter } from '../src/lib/storefrontContentRoute
 // Real components, cart, routers and isolated persistence. Auth is isolated; no live provider writes.
 test('gift atelier: discovery, current catalogue total, message preview and saved hamper', async () => {
   const temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'allbarka-hero-'));
-  const fixtureProducts=PRODUCTS.map(product=>product.id==='pista'?{...product,prices:{...product.prices,'250g':product.prices['250g']+500}}:product);
+  const fixtureProducts=PRODUCTS.map(product=>product.id==='pista'?{...product,prices:{...product.prices,'1kg':(product.prices['1kg']||4500)+500,'250g':product.prices['250g']+500}}:product);
   const { db } = memoryFirestore(Object.fromEntries([...fixtureProducts.map(product => [`products/${product.id}`, product] as const),...HAMPER_BOX_SEEDS.map(box=>[`hamperBoxes/${box.id}`,{schemaVersion:1,boxId:box.id,revision:0,price:box.price,active:true}] as const)]));
   const entry = `import React,{useEffect}from'react';import{createRoot}from'react-dom/client';import{BrowserRouter,Routes,Route,useNavigate}from'react-router-dom';
 import{LanguageProvider,useLanguage}from'./src/contexts/LanguageContext';import{ThemeProvider,useTheme}from'./src/contexts/ThemeContext';import{CartProvider,useCart}from'./src/contexts/CartContext';import{CatalogProvider,useCatalogProducts}from'./src/contexts/CatalogContext';import{MerchandisingProvider}from'./src/contexts/MerchandisingContext';import{ProductMediaProvider}from'./src/contexts/ProductMediaContext';import{StorefrontContentProvider,useStorefrontContentRefresh}from'./src/contexts/StorefrontContentContext';
@@ -108,7 +109,7 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     await page.waitForFunction(()=>(window as any).fixture.cart.some((item:any)=>item.productId==='custom-hamper'));
     const saved=await page.evaluate(()=>(window as any).fixture.cart.find((item:any)=>item.productId==='custom-hamper'));
     assert.equal(saved.hamperConfiguration.recipientName,'Ayesha');assert.equal(saved.hamperConfiguration.giftMessage,'عید مبارک\nWith love from Lahore');
-    const expected=1800+['pista','kaju','badam','akhroot'].reduce((sum,id)=>sum+Math.round(fixtureProducts.find(p=>p.id===id)!.prices['250g']*.8),0);
+    const expected=1800+['pista','kaju','badam','akhroot'].reduce((sum,id)=>sum+hamperSelectionPrice(fixtureProducts.find(p=>p.id===id)!)!,0);
     assert.equal(saved.unitPrice,expected,'builder and cart resolve the current provider catalogue snapshot');
     await page.reload();await page.waitForFunction(value=>(window as any).fixture.cart.some((item:any)=>item.productId==='custom-hamper'&&item.unitPrice===value),expected);
     assert.equal(await page.evaluate(()=>(window as any).fixture.cart.find((item:any)=>item.productId==='custom-hamper').hamperConfiguration.recipientName),'Ayesha');

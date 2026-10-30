@@ -3,6 +3,7 @@ import { BID_BOX_PRODUCTS } from '../data/products';
 import { resolveProductVariant } from './productVariants';
 import { prepareCommercePrices, validateProductCommerce, validateProductAttributes } from './productCommerce';
 import { validateProductMediaUrl } from './productMedia';
+import { validateRecipeIngredients, validateFilledRecipes, readRecipeIngredients, readFilledRecipes } from './filledGiftPricing';
 
 export class CatalogError extends Error {
   constructor(public code: string, public httpStatus = 400, message?: string) {
@@ -639,40 +640,15 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
       throw new CatalogError('INVALID_PACKAGING_SUBCATEGORY', 400);
     }
   }
-  // Additive recipe ingredients for filled packaging / custom gifts
-  if (value.recipeIngredients !== undefined) {
-    if (value.recipeIngredients === null) {
-      product.recipeIngredients = undefined;
-    } else if (Array.isArray(value.recipeIngredients)) {
-      product.recipeIngredients = value.recipeIngredients.map((item: any) => {
-        if (!object(item) || typeof item.productId !== 'string' || !item.productId.trim() || typeof item.grams !== 'number' || !Number.isFinite(item.grams) || item.grams <= 0) {
-          throw new CatalogError('INVALID_RECIPE_INGREDIENT', 400);
-        }
-        return { productId: item.productId.trim(), grams: item.grams };
-      });
-    } else {
-      throw new CatalogError('INVALID_RECIPE_INGREDIENTS', 400);
-    }
+  // Additive filled-gift recipes: explicit net grams per box, keyed by canonical ingredient product ID.
+  // Absent or null clears the field; an invalid value is rejected rather than repaired.
+  if (value.recipeIngredients !== undefined && value.recipeIngredients !== null) {
+    try { product.recipeIngredients = validateRecipeIngredients(value.recipeIngredients); }
+    catch (error) { throw new CatalogError((error as Error).message || 'INVALID_RECIPE_INGREDIENTS', 400); }
   }
-
-  if (value.filledRecipes !== undefined) {
-    if (value.filledRecipes === null) {
-      product.filledRecipes = undefined;
-    } else if (object(value.filledRecipes)) {
-      const recipes: Record<string, Array<{ productId: string; grams: number }>> = {};
-      for (const [k, list] of Object.entries(value.filledRecipes as Record<string, unknown>)) {
-        if (!Array.isArray(list)) throw new CatalogError('INVALID_FILLED_RECIPES', 400);
-        recipes[k] = list.map((item: any) => {
-          if (!object(item) || typeof item.productId !== 'string' || !item.productId.trim() || typeof item.grams !== 'number' || !Number.isFinite(item.grams) || item.grams <= 0) {
-            throw new CatalogError('INVALID_RECIPE_INGREDIENT', 400);
-          }
-          return { productId: item.productId.trim(), grams: item.grams };
-        });
-      }
-      product.filledRecipes = recipes;
-    } else {
-      throw new CatalogError('INVALID_FILLED_RECIPES', 400);
-    }
+  if (value.filledRecipes !== undefined && value.filledRecipes !== null) {
+    try { product.filledRecipes = validateFilledRecipes(value.filledRecipes); }
+    catch (error) { throw new CatalogError((error as Error).message || 'INVALID_FILLED_RECIPES', 400); }
   }
 
   if (Array.isArray(value.collections)) {
@@ -823,8 +799,19 @@ export function assertProductPublishable(product: Product): void {
   if (product.commerce.kind === 'packaging' && (product.preparationDays ?? 0) < 10) throw new CatalogError('PUBLISH_PREPARATION_REQUIRED');
 }
 
+/** A corrupt stored recipe makes that recipe unpriced; it must never hide or break the product itself. */
+export function withReadableRecipes<T extends Record<string, any>>(raw: T): T {
+  const next: Record<string, any> = { ...raw };
+  for (const [field, read] of [['recipeIngredients', readRecipeIngredients], ['filledRecipes', readFilledRecipes]] as const) {
+    if (next[field] === undefined || next[field] === null) continue;
+    const readable = read(next[field]);
+    if (readable === undefined) delete next[field]; else next[field] = readable;
+  }
+  return next as T;
+}
+
 export function dynamicProductFromDocument(data: unknown, id: string): Product {
-  const raw = object(data) ? data : {};
+  const raw = object(data) ? withReadableRecipes(data) : {};
   const validated = validateDynamicProduct({ ...raw, id }, id);
   const fingerprintStr = typeof (raw as any).updatedAt === 'string'
     ? `${id}-${(raw as any).revision || 0}-${(raw as any).updatedAt}`

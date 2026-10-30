@@ -5,20 +5,34 @@
 - **Before:** Existing hamper ingredient pricing prorated the 250g packaged retail option (`price_250g * 200 / 250`); `BidBoxesSection.tsx` added filled packaging variants to the cart for direct checkout; `orderValidation.ts` only enforced quote requirements at the product level (`quoteOnly || orderMode === 'inquiry_quote'`), allowing direct checkout of filled packaging variants when `orderMode === 'both'`.
 - **After:**
   1. Implemented shared deterministic kilogram estimator in `src/lib/filledGiftPricing.ts`:
-     - `resolveAuthoritativeKgRate(product)`: resolves the current Firestore 1kg selling rate from commerce options, base rates, variants, and prices; fails closed (`null`) if missing, disabled, draft, archived, or quote-only; never synthesizes from 250g/500g packs or per-100g rates.
+     - `resolveAuthoritativeKgRate(product)`: resolves the current Firestore 1kg selling rate from commerce options, base rates, variants, and prices; strictly fails closed (`null`) if missing, disabled (`available: false` or `inStock: false`), draft, archived, or quote-only; rejects calculated commerce derived from base packs < 1000g (e.g. 250g); ignores shipping mass (`weightGrams: 1000`); never synthesizes from 250g/500g packs or per-100g rates.
      - `calculateIngredientEstimate(kgRatePkr, gramsPerBox, requestedBoxes)`: exact `(K * g * n) / 1000` formula with half-up integer PKR rounding at final boundary.
-     - `calculateFilledGiftEstimate`: multi-ingredient mixture estimate with separate packaging and ingredients totals; fails unpriced (`isAvailable: false`) if any ingredient rate or recipe quantity is missing/disabled.
-     - `isFilledPackagingVariant(label)`: detects filled packaging configurations.
+     - `calculateFilledGiftEstimate`: multi-ingredient mixture estimate with separate packaging and ingredients totals; exposes `ingredientsSubtotalPkr` while keeping `estimatedTotalPkr` null if packaging price or an ingredient rate is missing/disabled (`MISSING_PACKAGING_PRICE`).
+     - `classifyPackagingVariant(product, label)` & `isFilledPackagingVariant(label)`: canonical classification defaulting unclassified packaging variants to inquiry (`default-deny`).
+     - `packagingVariantRequiresInquiry(product, label)`: enforces inquiry on configured recipes and filled packaging variants.
   2. Updated `src/lib/hamperCatalog.ts`: updated `hamperSelectionPrice` to calculate portion price via `resolveAuthoritativeKgRate(product) * HAMPER_PORTION_GRAMS / 1000`.
   3. Additive schema in `src/types.ts` and `src/lib/catalogSchema.ts`: added `RecipeIngredient`, allowlisted optional `recipeIngredients` and `filledRecipes` in `PUBLIC_PRODUCT_FIELDS` and validated them in `validateDynamicProduct`.
-  4. Authoritative server guard in `src/lib/orderValidation.ts`: rejects direct order checkout of filled packaging variants with `QUOTE_REQUIRED` (`ValidationError`), ensuring no accepted order or outbox event can be created. Empty packaging bulk tiers and retail food checkout remain working.
-  5. Storefront UI guards in `src/components/BidBoxesSection.tsx` and `src/pages/ProductDetailPage.tsx`: filled packaging selections render and route to `openCustomQuoteModal` instead of adding to cart.
+  4. Authoritative server guard in `src/lib/orderValidation.ts`, `src/lib/orderQuote.ts`, and `src/lib/orderDatabase.ts`:
+     - Parameterized `validateAndPriceOrder` with `allowInquiryItems` (aliased with `allowPackagingQuote`, defaulting to `false`).
+     - Strictly enforces checkout mode in direct order creation, rejecting unquoted custom hampers and filled packaging variants with `QUOTE_REQUIRED` (`ValidationError`).
+     - Quotes (`quoteOrderForCustomer`) explicitly pass `allowInquiryItems: true`, calculating valid prices and shipping without bypassing checkout guards.
+  5. Storefront UI journeys in `src/components/BidBoxesSection.tsx`, `src/components/CustomQuoteModal.tsx`, and `src/pages/ProductDetailPage.tsx`:
+     - `BidBoxesSection.tsx`: connected to `calculateFilledGiftEstimate` for per-box estimate display (`displayFilledPrice`), preserving selected bulk tier quantity without hardcoding 50 boxes or inflating customer budget.
+     - `CustomQuoteModal.tsx`: calculates and displays live recipe breakdown (ingredients, packaging, total) when `mode === 'filled'`.
+     - `ProductDetailPage.tsx`: routes filled packaging variants to `openCustomQuoteModal`.
 - **Verification:**
-  - `tests/filled-gift-pricing.test.ts`: 8/8 tests PASS covering the owner 50g example (Rs. 50/box, Rs. 500 for 10 boxes), multiple ingredients with packaging totals, dynamic kg rate updates, pack price independence, missing/disabled kg rate failure closed, standalone retail/custom-weight price preservation, direct checkout rejection with `QUOTE_REQUIRED`, and empty packaging checkout success.
+  - `tests/filled-gift-pricing.test.ts`: 14/14 tests PASS covering the owner 50g example (Rs. 50/box, Rs. 500 for 10 boxes), multiple ingredients with packaging totals, dynamic kg rate updates, pack price independence, missing/disabled kg rate failure closed, standalone retail/custom-weight price preservation, direct checkout rejection with `QUOTE_REQUIRED`, empty packaging checkout success, calculated base < 1kg rejection, shipping mass exclusion, conflicting/disabled variant fail-closed, subtotal exposure with null total, unquoted hamper rejection, canonical variant classification.
   - `tests/hamper-catalog.test.tsx`: 7/7 tests PASS.
   - `tests/authoritative-quote.test.ts`: 7/7 tests PASS.
   - `tests/stage6-legacy-packaging.test.ts`: 4/4 tests PASS.
+  - `tests/stage6-order-handoff.test.ts`: 4/4 tests PASS.
+  - `tests/premium-gifting-browser.test.tsx`: 1/1 test PASS.
+  - `tests/admin-expansion-content-browser.test.tsx`: 1/1 test PASS.
+  - `tests/admin-finishing-browser.test.tsx`: 1/1 test PASS.
+  - `npm run typecheck` (`tsc --noEmit`): PASS (0 errors).
+  - `npm run lint:hooks` (`eslint src`): PASS (0 errors).
   - `ALLBARKA_SKIP_LOCAL_ENV=true npm run build`: PASS (84 text artifacts release privacy audit passed).
+  - `node scripts/run-all-tests.mjs`: PASS (735 passed, 0 failed, 1 skipped across 83 test files; 21 backend tests passed; 36 production checks passed).
   - `git diff --check`: PASS (0 errors).
 
 ## 30 October 2026 — R04-KG1 owner kilogram pricing policy and architecture

@@ -199,7 +199,7 @@ const hamper = { productId: 'custom-hamper', selectedWeight: 'fake 1g', quantity
   price: 1, shippingWeightGrams: 1, hamperConfiguration };
 
 test('custom hampers use canonical packaging, contents price and mass despite forged client fields', () => {
-  const result = validateAndPriceOrder({ city: 'Karachi', shippingMethodId: 'standard', items: [hamper], isWholesale: true });
+  const result = validateAndPriceOrder({ city: 'Karachi', shippingMethodId: 'standard', items: [hamper], isWholesale: true, allowInquiryItems: true });
   const expectedUnitPrice = 1400 + hamperConfiguration.selections.reduce((sum, id) => sum +
     Math.round(PRODUCTS.find(product => product.id === id)!.prices['250g'] * 200 / 250), 0);
   assert.equal(result.items[0].price, expectedUnitPrice);
@@ -216,7 +216,7 @@ test('invalid or obsolete hamper selections cannot reach an authoritative quote'
     { ...hamperConfiguration, selections: ['pista', 'pista', 'badam'] }, { ...hamperConfiguration, boxId: 'forged-free-box' },
     { ...hamperConfiguration, giftMessage: 'x'.repeat(501) }]) {
     const invalid = { ...hamper, hamperConfiguration: configuration };
-    assert.throws(() => validateAndPriceOrder({ city: 'Lahore', shippingMethodId: 'standard', items: [invalid] }), isCode('INVALID_HAMPER_CONFIGURATION'));
+    assert.throws(() => validateAndPriceOrder({ city: 'Lahore', shippingMethodId: 'standard', items: [invalid], allowInquiryItems: true }), isCode('INVALID_HAMPER_CONFIGURATION'));
     assert.equal(getCartShippingWeightGrams([invalid] as never), null);
   }
 });
@@ -236,7 +236,7 @@ test('hamper idempotency includes contents, box and card while ignoring client p
 test('persisted hamper and WhatsApp packing details preserve complete normalized configuration', async () => {
   const mock = mockDatabase();
   const result = await createDurableOrder({ db: mock.db as never, uid: null,
-    payload: { ...destination, shippingMethodId: 'standard', items: [hamper] }, idempotencyKey: 'hamper-test' });
+    payload: { ...destination, shippingMethodId: 'standard', items: [hamper], allowInquiryItems: true }, idempotencyKey: 'hamper-test' });
   const persisted = mock.records.get(`orders/${result.orderId}`);
   assert.deepEqual(persisted.items[0].hamperConfiguration, resolveHamper(hamperConfiguration)!.configuration);
   assert.equal(persisted.totals.shipping, 300);

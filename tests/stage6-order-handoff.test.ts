@@ -34,7 +34,7 @@ async function create(fixture: ReturnType<typeof store>, payload: any, key: stri
   try {
     // Test process only; no .env file, real credential, provider URL or live network call.
     process.env.N8N_ORDER_WEBHOOK_URL = config.webhookUrl; process.env.N8N_WEBHOOK_SECRET = config.webhookSecret;
-    return await createDurableOrder({ db: fixture.db, payload, uid: null, idempotencyKey: key, expectedFinalTotal });
+    return await createDurableOrder({ db: fixture.db, payload: { allowInquiryItems: true, ...payload }, uid: null, idempotencyKey: key, expectedFinalTotal });
   } finally {
     for (const [index, key] of ['N8N_ORDER_WEBHOOK_URL', 'N8N_WEBHOOK_SECRET'].entries()) {
       if (previous[index] === undefined) delete process.env[key]; else process.env[key] = previous[index];

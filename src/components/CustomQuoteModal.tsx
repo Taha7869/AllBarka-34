@@ -20,6 +20,7 @@ import {
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import { Product, CustomQuoteModalInit } from '../types';
 import { resolveInquiryProductVariant } from '../lib/inquiryResolution';
+import { calculateFilledGiftEstimate, resolveFilledRecipe } from '../lib/filledGiftPricing';
 import {
   buildCustomerInquiryWhatsAppUrl,
   MANDATORY_LEAD_TIME_NOTICE,
@@ -193,6 +194,21 @@ export default function CustomQuoteModal() {
 
   const isTabarruk = resolution.isTabarruk;
   const referenceUnitPrice = resolution.standardPrice ?? 0;
+
+  const filledRecipe = useMemo(() => {
+    return resolveFilledRecipe(selectedProduct, selectedVariantLabel);
+  }, [selectedProduct, selectedVariantLabel]);
+
+  const filledEstimate = useMemo(() => {
+    if (mode !== 'filled' || !selectedProduct) return null;
+    return calculateFilledGiftEstimate({
+      packagingProduct: selectedProduct,
+      packagingUnitPrice: resolution.perPiecePrice || resolution.standardPrice,
+      recipe: filledRecipe || undefined,
+      catalogProducts: products,
+      requestedBoxes: quantity,
+    });
+  }, [mode, selectedProduct, resolution, filledRecipe, products, quantity]);
 
   if (!isOpen) return null;
 
@@ -902,6 +918,36 @@ export default function CustomQuoteModal() {
                     </button>
                   </div>
                 </div>
+                {mode === 'filled' && filledEstimate?.ingredientsAvailable && (
+                  <div className="rounded-xl bg-[#FAF6EE] border border-[#D4AF6A]/40 p-3 space-y-2 text-xs">
+                    <div className="flex items-center justify-between font-bold text-[#072A20]">
+                      <span>Recipe Estimate ({quantity} boxes):</span>
+                      <span>
+                        {filledEstimate.estimatedTotalPkr != null
+                          ? `Rs. ${filledEstimate.estimatedTotalPkr.toLocaleString()}`
+                          : 'Packaging Quote Required'}
+                      </span>
+                    </div>
+                    <div className="space-y-1 text-[11px] text-[#566B63] border-t border-[#D4AF6A]/20 pt-1.5">
+                      {filledEstimate.ingredientLines.map(line => (
+                        <div key={line.productId} className="flex justify-between">
+                          <span>{line.name_en} ({line.gramsPerBox}g/box):</span>
+                          <span className="font-semibold text-[#072A20]">Rs. {line.estimatePkr.toLocaleString()}</span>
+                        </div>
+                      ))}
+                      <div className="flex justify-between font-semibold text-[#072A20] border-t border-[#D4AF6A]/20 pt-1">
+                        <span>Ingredients Subtotal:</span>
+                        <span>Rs. {filledEstimate.ingredientsSubtotalPkr?.toLocaleString()}</span>
+                      </div>
+                      {filledEstimate.packagingTotalPkr != null && (
+                        <div className="flex justify-between font-semibold text-[#072A20]">
+                          <span>Packaging Total:</span>
+                          <span>Rs. {filledEstimate.packagingTotalPkr.toLocaleString()}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
                 <div className="flex items-center gap-2 py-1 text-xs">
                   <span className="text-[#566B63]">Catalog Reference Rate:</span>
                   {resolution.requiresTeamQuote || !resolution.standardPrice ? (

@@ -12,6 +12,7 @@ import {
   validateCatalogPricing,
   validateMoqOverride,
   dynamicProductFromDocument,
+  withReadableRecipes,
   validateDynamicProduct,
   normalizeCommerceInput,
   assertProductPublishable,
@@ -24,6 +25,7 @@ import {
 } from './catalogSchema';
 import { resolveCartIdentity } from './cartInput';
 import { CUSTOM_HAMPER_PRODUCT_ID, HAMPER_SELECTION_IDS, type HamperBox } from './hamperCatalog';
+import { readFilledRecipes, readRecipeIngredients } from './filledGiftPricing';
 import { HAMPER_BOX_SEEDS, validateHamperBoxPricing, boxFromPricing, type HamperBoxRecord } from './hamperBoxSchema';
 import { applyReferenceImportPricing, type ReferencePricingResult } from './pricingImport';
 
@@ -177,6 +179,9 @@ function snapshotFromDocuments(snapshots: DocumentSnapshot[], now: number): Cata
           occasions: Array.isArray(raw.occasions) ? raw.occasions : base.occasions,
           personalization: raw.personalization || base.personalization,
           inclusions: Array.isArray(raw.inclusions) ? raw.inclusions : base.inclusions,
+          // Stored recipes are re-validated on read; an invalid or absent recipe stays unpriced.
+          recipeIngredients: readRecipeIngredients(raw.recipeIngredients ?? base.recipeIngredients),
+          filledRecipes: readFilledRecipes(raw.filledRecipes ?? base.filledRecipes),
           exclusions: Array.isArray(raw.exclusions) ? raw.exclusions : base.exclusions,
           moqOverride: raw.moqOverride === null ? undefined : (typeof raw.moqOverride === 'number' ? raw.moqOverride : base.moqOverride),
           preparationDays: typeof raw.preparationDays === 'number' ? raw.preparationDays : base.preparationDays,
@@ -679,7 +684,7 @@ export async function updateAdminProduct(input: { db: Firestore | null; productI
             : undefined;
 
     const validated = validateDynamicProduct({
-      ...existingData,
+      ...withReadableRecipes(existingData),
       status: storedPublicationStatus(existingData, input.productId),
       ...body,
       id: input.productId,
@@ -696,6 +701,11 @@ export async function updateAdminProduct(input: { db: Firestore | null; productI
       updatedAt: now,
       updatedBy: input.actorUid,
     };
+
+    // An explicit null clears a saved recipe; omitted fields keep the stored recipe untouched.
+    for (const field of ['recipeIngredients', 'filledRecipes'] as const) {
+      if (body[field] === null || validated[field] === undefined) delete updatedData[field];
+    }
 
     if (finalProdMoq === undefined) {
       delete updatedData.moqOverride;

@@ -29,7 +29,7 @@ test('admin finishing: section navigation, independent unsaved scopes, pending s
   app.use('/api/admin/catalog/configuration', async (req, _res, next) => { if (hold && req.method === 'PUT') await new Promise<void>(resolve => { release = resolve; }); next(); });
   app.get('/api/catalog', async (_req, _res, next) => { if (holdRefresh) await new Promise<void>(resolve => { releaseRefresh = resolve; }); next(); });
   app.use(createCatalogConfigurationRouter({ getDb: () => db, requireAdmin })); app.use(createCatalogRouter({ getDb: () => db, requireAdmin }));
-  app.use('/assets', express.static(path.resolve('dist/assets'))); app.use('/images', express.static(path.resolve('public/images')));
+  app.use('/assets', express.static(path.resolve('dist/assets'))); app.use('/images', express.static(path.resolve('public/images'))); app.use(express.static(path.resolve('public')));
   app.get('/fixture.js', (_req, res) => res.sendFile(path.join(temporary, 'fixture.js'))); app.get('/fixture.css', (_req, res) => res.sendFile(path.join(temporary, 'fixture.css')));
   const css = (await fs.readdir('dist/assets')).filter(name => name.endsWith('.css')).map(name => `<link rel="stylesheet" href="/assets/${name}">`).join('');
   app.get('/', (_req, res) => res.type('html').send(`<html><head>${css}<link rel="stylesheet" href="/fixture.css"></head><body><div id="root"></div><script src="/fixture.js"></script></body></html>`));
