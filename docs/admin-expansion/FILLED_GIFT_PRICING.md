@@ -1,7 +1,7 @@
 # Filled gifts: kilogram-based ingredient estimates
 
 Updated: 30 October 2026 (Asia/Karachi).
-Task: R04-KG1. Owner decision: CONFIRMED. Implementation: DONE. Live verification/release: NOT_RUN.
+Task: R04-KG1. Owner decision: CONFIRMED. Implementation: IN_PROGRESS. Live verification/release: NOT_RUN.
 Inspected source parent: `5a472f537f2f4a91ee3fb831a6e311fc250ca2f9`.
 This checkpoint records the completed implementation of the shared kilogram-based estimator and authoritative inquiry guard.
 
@@ -78,15 +78,22 @@ Runtime source:
 1. `src/lib/filledGiftPricing.ts`: shared deterministic estimator implementing `resolveAuthoritativeKgRate`, `calculateIngredientEstimate` (`K * g * n / 1000`), `calculateFilledGiftEstimate`, `classifyPackagingVariant`, `isFilledPackagingVariant`, and `packagingVariantRequiresInquiry`. Enforces fail-closed rules: rejects calculated commerce derived from base packs < 1000g, ignores shipping mass (`weightGrams: 1000`), fails closed on conflicting rates or disabled variants, and reports calculated `ingredientsSubtotalPkr` while keeping `estimatedTotalPkr` null if packaging or an ingredient is missing.
 2. `src/lib/hamperCatalog.ts`: updated `hamperSelectionPrice` to use `resolveAuthoritativeKgRate(product) * HAMPER_PORTION_GRAMS / 1000` (half-up integer PKR rounding).
 3. `src/types.ts` & `src/lib/catalogSchema.ts`: additive `RecipeIngredient` type, `recipeIngredients` and `filledRecipes` allowlisted in `PUBLIC_PRODUCT_FIELDS` and validated in `validateDynamicProduct`.
-4. Inquiry guards:
+4. Inquiry guards and persistence boundary:
    - Server guard in `validateAndPriceOrder` (`src/lib/orderValidation.ts`) parameterized with `allowInquiryItems` (aliased with `allowPackagingQuote`, defaulting to `false`). Rejects unquoted custom hampers and filled packaging variants with `QUOTE_REQUIRED`.
-   - `quoteOrderForCustomer` (`src/lib/orderQuote.ts`) passes `allowInquiryItems: true` so customer quotes calculate prices and shipping accurately.
-   - `createDurableOrder` (`src/lib/orderDatabase.ts`) respects `allowInquiryItems: Boolean(payload.allowInquiryItems)`.
+   - `quoteOrderForCustomer` (`src/lib/orderQuote.ts`) passes `allowInquiryItems: true` so customer quotes calculate prices and shipping accurately in read-only mode.
+   - `createDurableOrder` (`src/lib/orderDatabase.ts`) strictly removes client reliance on `allowInquiryItems`: customer request payloads cannot authorize inquiry items to become accepted orders.
+   - Direct checkout attempts for filled packaging and custom hampers strictly fail closed with `QUOTE_REQUIRED`, even if the customer provides `allowInquiryItems: true`, `allowPackagingQuote: true`, or supplies a matching `expectedFinalTotal`.
    - Frontend UI guards in `BidBoxesSection.tsx` and `ProductDetailPage.tsx` routing filled packaging selections to `openCustomQuoteModal` instead of direct cart checkout.
    - `BidBoxesSection.tsx` connected to `calculateFilledGiftEstimate` for per-box estimate display, preserving requested tier quantity without inflating customer budget.
    - `CustomQuoteModal.tsx` displays live recipe ingredients breakdown for filled inquiry mode.
+
+5. Remaining blockers for complete R04-KG1 closure:
+   - Visual dynamic recipe configuration in `AdminProductEditModal.tsx` so merchants can configure ingredients and gram weights through the admin UI.
+   - Merchant WhatsApp quote approval and durable quote-to-order conversion mechanism.
+   - Live Firestore data seeding/migration for bid-box recipes and authoritative 1kg ingredient rates.
+
 Verification:
-- `tests/filled-gift-pricing.test.ts`: 14/14 comprehensive tests PASS (owner 50g example, multi-ingredient mixture, changed kg rates, unchanged 250g pack rates, missing/disabled kg rates failing unpriced, unchanged standalone retail/custom weights, filled checkout rejection with `QUOTE_REQUIRED`, empty packaging checkout success, calculated base < 1kg rejection, shipping mass exclusion, conflicting/disabled variant fail-closed, subtotal exposure with null total, unquoted hamper rejection, canonical variant classification).
+- `tests/filled-gift-pricing.test.ts`: 19/19 comprehensive tests PASS (owner 50g example, multi-ingredient mixture, changed kg rates, unchanged 250g pack rates, missing/disabled kg rates failing unpriced, unchanged standalone retail/custom weights, filled checkout rejection with `QUOTE_REQUIRED`, empty packaging checkout success, calculated base < 1kg rejection, shipping mass exclusion, conflicting/disabled variant fail-closed, subtotal exposure with null total, unquoted hamper rejection, canonical variant classification, direct creation failure, client payload bypass denial, quote-match rejection, empty packaging/food normal checkout, and idempotent historical replay).
 - `tests/hamper-catalog.test.tsx`: 7/7 tests PASS.
 - `tests/authoritative-quote.test.ts`: 7/7 tests PASS.
 - `tests/stage6-legacy-packaging.test.ts`: 4/4 tests PASS.

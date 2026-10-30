@@ -10,7 +10,7 @@ import { createAdminProduct, updateAdminProduct, storedCatalogRecord, invalidate
 import { calculateMinOrderQuantityUnits } from '../src/lib/packagingMoq';
 import { quoteOrderForCustomer } from '../src/lib/orderQuote';
 import { createDurableOrder } from '../src/lib/orderDatabase';
-import type { CanonicalOrder } from '../src/lib/serverOrderService';
+import { generateOrderId, SCHEMA_VERSION, hashPayload, generateAuthoritativeWhatsAppMessage, type CanonicalOrder, type OutboxOrderEvent } from '../src/lib/serverOrderService';
 import { createOrderOutboxWorker } from '../src/services/orderOutboxWorker';
 import { getN8nOrderDispatchConfig, projectCanonicalOrderForN8n, sendOrderToN8n } from '../src/services/n8nOrderNotification';
 import { getN8nStatusDispatchConfig } from '../src/services/n8nStatusNotification';
@@ -34,7 +34,7 @@ async function create(fixture: ReturnType<typeof store>, payload: any, key: stri
   try {
     // Test process only; no .env file, real credential, provider URL or live network call.
     process.env.N8N_ORDER_WEBHOOK_URL = config.webhookUrl; process.env.N8N_WEBHOOK_SECRET = config.webhookSecret;
-    return await createDurableOrder({ db: fixture.db, payload: { allowInquiryItems: true, ...payload }, uid: null, idempotencyKey: key, expectedFinalTotal });
+    return await createDurableOrder({ db: fixture.db, payload, uid: null, idempotencyKey: key, expectedFinalTotal });
   } finally {
     for (const [index, key] of ['N8N_ORDER_WEBHOOK_URL', 'N8N_WEBHOOK_SECRET'].entries()) {
       if (previous[index] === undefined) delete process.env[key]; else process.env[key] = previous[index];
@@ -43,6 +43,113 @@ async function create(fixture: ReturnType<typeof store>, payload: any, key: stri
 }
 function eventFor(fixture: ReturnType<typeof store>, orderId: string): any {
   return [...fixture.records].find(([path, event]: [string, any]) => path.startsWith('orderEvents/') && event.orderId === orderId)![1];
+}
+function seedHistoricalOrder(
+  fixture: ReturnType<typeof store>,
+  payload: any,
+  quote: Awaited<ReturnType<typeof quoteOrderForCustomer>>,
+  idempotencyKey?: string,
+) {
+  const nowMs = Date.now();
+  const nowIso = new Date(nowMs).toISOString();
+  const orderId = generateOrderId(new Date(nowMs));
+  const eventId = `${orderId}_ORDER_CREATED_${nowMs}`;
+  const canonicalOrder: CanonicalOrder = {
+    schemaVersion: SCHEMA_VERSION,
+    orderId,
+    source: 'website',
+    createdAt: nowIso,
+    createdAtMs: nowMs,
+    updatedAt: nowIso,
+    updatedAtMs: nowMs,
+    status: 'ORDER_RECEIVED',
+    orderType: 'ORDER',
+    paymentStatus: 'UNPAID',
+    paymentMethod: (payload.paymentMethod || 'cod') as any,
+    uid: null,
+    isWholesale: Boolean(payload.isWholesale),
+    claimTokenHash: null,
+    claimTokenExpiry: null,
+    claimStatus: null,
+    customer: {
+      name: payload.name,
+      phone: payload.phone,
+      address: payload.address,
+      city: payload.city,
+      deliverySlot: payload.deliverySlot,
+      instructions: payload.instructions,
+    },
+    gifting: {
+      giftWrapping: Boolean(payload.giftWrapping),
+      giftWrapFee: quote.totals.giftWrapFee ?? 0,
+    },
+    items: quote.items,
+    totals: quote.totals,
+    promoCode: payload.discountCode || null,
+    promoType: (quote.totals as any).promoType ?? null,
+    discountAmount: (quote.totals as any).discountAmount ?? 0,
+    freeShipping: Boolean((quote.totals as any).freeShipping),
+    freeGiftWrap: Boolean((quote.totals as any).freeGiftWrap),
+    freeGift: Boolean((quote.totals as any).freeGift),
+    isQuoteRequest: false,
+    rewardId: null,
+    rewardDiscount: 0,
+    earnedPoints: 0,
+    pointsAwarded: false,
+  };
+  const outboxEvent: OutboxOrderEvent = {
+    eventId,
+    orderId,
+    eventType: 'ORDER_CREATED',
+    type: 'order_created',
+    schemaVersion: SCHEMA_VERSION,
+    occurredAt: nowIso,
+    occurredAtMs: nowMs,
+    deliveryState: 'PENDING',
+    attempts: 0,
+    nextAttemptAtMs: nowMs,
+    payload: {
+      orderId,
+      source: 'website',
+      status: canonicalOrder.status,
+      uid: null,
+      customerName: payload.name,
+      customerPhone: payload.phone,
+      items: quote.items.map(item => ({ name: item.name, qty: item.quantity, price: item.price })),
+      paymentMethod: canonicalOrder.paymentMethod,
+      createdAt: nowIso,
+      phone: payload.phone,
+      total: quote.totals.total,
+      itemCount: quote.items.length,
+    },
+  };
+  fixture.records.set(`orders/${orderId}`, canonicalOrder);
+  fixture.records.set(`orderEvents/${eventId}`, outboxEvent);
+  if (idempotencyKey) {
+    const payloadHash = hashPayload(payload);
+    fixture.records.set(`checkoutIntents/${idempotencyKey}`, {
+      idempotencyKey,
+      orderId,
+      payloadHash,
+      createdAt: nowMs,
+      response: {
+        orderId,
+        status: canonicalOrder.status,
+        orderType: canonicalOrder.orderType,
+        whatsappMessage: generateAuthoritativeWhatsAppMessage(canonicalOrder),
+        totals: quote.totals,
+        items: quote.items,
+        claimToken: null,
+        uid: null,
+      },
+    });
+  }
+  return {
+    orderId,
+    eventId,
+    items: quote.items,
+    totals: quote.totals,
+  };
 }
 async function withReceiver(run: (receiver: any) => Promise<void>, wrongFirstAck = false) {
   const rows = new Map<string, any>(); const envelopes: any[] = []; const failures: string[] = [];
@@ -86,7 +193,9 @@ test('all six historical long packaging selections survive quote, durable order 
       const quantity = calculateMinOrderQuantityUnits({ ...seed, prices: document.prices }, label);
       const payload = { ...customer, items: [{ productId: seed.id, selectedWeight: label, quantity, price: 1, shippingWeightGrams: 0 }] };
       invalidateCatalogCache(); const quote = await quoteOrderForCustomer(fixture.db, payload);
-      const saved = await create(fixture, payload, 'legacy-selection', quote.totals.total);
+      await assert.rejects(create(fixture, payload, 'unauthorized', quote.totals.total), { code: 'QUOTE_REQUIRED' });
+      await assert.rejects(create(fixture, { ...payload, allowInquiryItems: true }, 'unauthorized-bypass', quote.totals.total), { code: 'QUOTE_REQUIRED' });
+      const saved = seedHistoricalOrder(fixture, payload, quote, 'legacy-selection');
       assert.equal(saved.items[0].selectedWeight, label); assert.equal(saved.items[0].price, merchantPrice);
       const before = structuredClone(fixture.records.get(`orders/${saved.orderId}`));
       assert.equal(eventFor(fixture, saved.orderId).deliveryState, 'PENDING');
@@ -160,7 +269,12 @@ test('sender and receiver restrict the long selection exception to exact histori
   const fixture = store(); const seed = BID_BOX_PRODUCTS.find(product => product.id === 'bid-box-umrah-tabarruk')!;
   const label = Object.keys(seed.prices).find(label => label.length > 50)!;
   const quantity = calculateMinOrderQuantityUnits(seed, label);
-  const saved = await create(fixture, { ...customer, items: [{ productId: seed.id, selectedWeight: label, quantity }] }, 'selection-scope');
+  const payload = { ...customer, items: [{ productId: seed.id, selectedWeight: label, quantity }] };
+  invalidateCatalogCache();
+  await assert.rejects(create(fixture, payload, 'unauthorized'), { code: 'QUOTE_REQUIRED' });
+  await assert.rejects(create(fixture, { ...payload, allowInquiryItems: true }, 'unauthorized-bypass'), { code: 'QUOTE_REQUIRED' });
+  const quote = await quoteOrderForCustomer(fixture.db, payload);
+  const saved = seedHistoricalOrder(fixture, payload, quote, 'selection-scope');
   const order = fixture.records.get(`orders/${saved.orderId}`) as CanonicalOrder;
   const wire = projectCanonicalOrderForN8n(order); assert.equal(wire.items[0].selectedWeight, label);
   for (const [id, selectedWeight] of [['pista', label], [seed.id, label + ' extra'], [seed.id, 'x'.repeat(51)], [seed.id, 'x'.repeat(161)], [seed.id, label + '\n']]) {

@@ -1,3 +1,21 @@
+## 30 October 2026 — R04-KG1 inquiry guard persistence boundary security repair
+
+- **Fixed client-controlled inquiry bypass in order creation**:
+  - Removed `allowInquiryItems: Boolean(payload.allowInquiryItems)` from `createDurableOrder` (`src/lib/orderDatabase.ts`). Client payloads can no longer authorize unquoted filled packaging or custom hampers into accepted orders.
+  - Strictly separated read-only estimates (`/api/orders/quote` / `quoteOrderForCustomer`) from atomic order acceptance (`/api/orders` / `createDurableOrder`). Receiving a quote or submitting a matching `expectedFinalTotal` does not grant merchant checkout approval.
+  - Fail-closed: Without an authoritative merchant approval mechanism in this branch, all unapproved filled/custom order attempts strictly reject with `QUOTE_REQUIRED`.
+- **Honest test fixtures & outbox dispatch verification**:
+  - Removed `allowInquiryItems: true` bypass from `tests/shipping-policy.test.ts`. Directly assert `QUOTE_REQUIRED` on unapproved hamper submissions and test historical receipt replay and WhatsApp message details via seeded database records.
+  - Removed `allowInquiryItems: true` bypass from `tests/stage6-order-handoff.test.ts`. Assert `QUOTE_REQUIRED` on unapproved filled packaging submissions, and use `seedHistoricalOrder` helper for verifying outbox worker delivery and receiver wire projections.
+- **Added positive inquiry guard boundary tests in `tests/filled-gift-pricing.test.ts`**:
+  - Test 15: Direct order creation fails with `QUOTE_REQUIRED` for filled packaging and custom hampers.
+  - Test 16: Client payloads cannot bypass inquiry guard with omitted flags, `true`, `false`, strings (`"true"`), numbers (`1`), or aliases (`allowPackagingQuote`, `permitInquiry`, `isQuoteRequest`, `quoteApproved`, etc.).
+  - Test 17: Quoting an order and submitting with matching `expectedFinalTotal` strictly fails with `QUOTE_REQUIRED`.
+  - Test 18: Empty packaging (`Empty Pack (25 pcs)`) and ordinary products (`badam` `1kg`) continue to create orders normally without inquiry rejection.
+  - Test 19: Idempotency replays of already-persisted orders succeed without re-evaluating inquiry guards.
+- **Status tracking**:
+  - Maintained `R04-KG1` as `IN_PROGRESS` in `FILLED_GIFT_PRICING.md`, `HANDOFF.md`, `MASTER_PLAN.md`, and `instructions.md`, documenting remaining open items (admin visual recipe editor, merchant quote approval workflow, and live Firestore catalog seeding).
+
 # AllBarka expansion change log
 
 ## 30 October 2026 — R04-KG1 kilogram-based filled gift estimates and inquiry guard

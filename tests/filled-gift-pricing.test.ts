@@ -11,7 +11,17 @@ import {
   packagingVariantRequiresInquiry,
   type RecipeIngredient,
 } from '../src/lib/filledGiftPricing';
-import { CUSTOM_HAMPER_PRODUCT_ID } from '../src/lib/hamperCatalog';
+import { CUSTOM_HAMPER_PRODUCT_ID, HAMPER_BOXES } from '../src/lib/hamperCatalog';
+import { BID_BOX_PRODUCTS } from '../src/data/products';
+import { memoryFirestore } from './helpers/memoryFirestore';
+import { createDurableOrder } from '../src/lib/orderDatabase';
+import { quoteOrderForCustomer } from '../src/lib/orderQuote';
+import {
+  hashPayload,
+  generateAuthoritativeWhatsAppMessage,
+  SCHEMA_VERSION,
+  type CanonicalOrder,
+} from '../src/lib/serverOrderService';
 import { validateAndPriceOrder } from '../src/lib/orderValidation';
 import { resolveProductVariant, resolveCustomWeight } from '../src/lib/productVariants';
 
@@ -488,4 +498,327 @@ test('Test 14: Canonical variant classification and inquiry guard defaults unkno
   assert.equal(packagingVariantRequiresInquiry(packagingProduct, 'Unknown Mystery Option'), true);
   assert.equal(packagingVariantRequiresInquiry(packagingProduct, 'Configured Empty Tier'), false);
   assert.equal(packagingVariantRequiresInquiry(packagingProduct, 'Configured Filled Option'), true);
+});
+
+function createMemoryCatalogStore() {
+  const initialRecords: Record<string, unknown> = {};
+  for (const product of [...PRODUCTS, ...BID_BOX_PRODUCTS]) {
+    initialRecords[`products/${product.id}`] = product;
+  }
+  for (const box of HAMPER_BOXES) {
+    initialRecords[`hamperBoxes/${box.id}`] = { ...box, active: true };
+  }
+  const fixture = memoryFirestore(initialRecords);
+  fixture.db.doc = (path: string) => {
+    const [collection, id] = path.split('/');
+    return fixture.db.collection(collection).doc(id);
+  };
+  return fixture;
+}
+
+const standardCustomer = {
+  name: 'Ahmed Khan',
+  phone: '03001234567',
+  address: 'House 12, Street 3, F-7/2',
+  city: 'Islamabad',
+  paymentMethod: 'cod',
+  shippingMethodId: 'standard',
+};
+
+test('Test 15: Direct order creation fails with QUOTE_REQUIRED for filled packaging and custom hampers', async () => {
+  const fixture = createMemoryCatalogStore();
+
+  // A. Filled packaging item
+  const filledPackagingItem = {
+    productId: 'bid-box-umrah-tabarruk',
+    selectedWeight: 'Filled Standard (Irani Dates, Badam, Kaju & Kishmish)',
+    quantity: 25,
+  };
+
+  await assert.rejects(
+    createDurableOrder({
+      db: fixture.db,
+      payload: { ...standardCustomer, items: [filledPackagingItem] },
+      uid: null,
+      idempotencyKey: 'test-15-filled-direct',
+    }),
+    (err: any) => {
+      assert.equal(err.code, 'QUOTE_REQUIRED');
+      return true;
+    }
+  );
+
+  // B. Custom hamper item
+  const hamperItem = {
+    productId: CUSTOM_HAMPER_PRODUCT_ID,
+    quantity: 1,
+    hamperConfiguration: {
+      version: 1,
+      boxId: 'box-wood',
+      selections: ['pista', 'kaju', 'badam', 'akhroot'],
+      recipientName: 'Valued Recipient',
+      giftMessage: 'Best wishes',
+    },
+  };
+
+  await assert.rejects(
+    createDurableOrder({
+      db: fixture.db,
+      payload: { ...standardCustomer, items: [hamperItem] },
+      uid: null,
+      idempotencyKey: 'test-15-hamper-direct',
+    }),
+    (err: any) => {
+      assert.equal(err.code, 'QUOTE_REQUIRED');
+      return true;
+    }
+  );
+
+  // Verify zero order records were written
+  const orderDocs = [...fixture.records.keys()].filter(k => k.startsWith('orders/'));
+  assert.equal(orderDocs.length, 0);
+});
+
+test('Test 16: Client payload cannot bypass inquiry guard with omitted flags, true, false, strings, numbers, or aliases', async () => {
+  const fixture = createMemoryCatalogStore();
+  const filledPackagingItem = {
+    productId: 'bid-box-umrah-tabarruk',
+    selectedWeight: 'Filled Standard (Irani Dates, Badam, Kaju & Kishmish)',
+    quantity: 25,
+  };
+
+  const bypassAttempts = [
+    { allowInquiryItems: true },
+    { allowInquiryItems: 'true' },
+    { allowInquiryItems: 1 },
+    { allowInquiryItems: false },
+    { allowPackagingQuote: true },
+    { allowPackagingQuote: 'true' },
+    { allowPackagingQuote: 1 },
+    { permitInquiry: true },
+    { isQuoteRequest: true },
+    { quoteApproved: true },
+    { approvedByMerchant: true },
+    { allowInquiry: true },
+  ];
+
+  for (let i = 0; i < bypassAttempts.length; i++) {
+    const bypassPayload = {
+      ...standardCustomer,
+      items: [filledPackagingItem],
+      ...bypassAttempts[i],
+    };
+
+    await assert.rejects(
+      createDurableOrder({
+        db: fixture.db,
+        payload: bypassPayload,
+        uid: null,
+        idempotencyKey: `test-16-bypass-${i}`,
+      }),
+      (err: any) => {
+        assert.equal(err.code, 'QUOTE_REQUIRED', `Attempt ${JSON.stringify(bypassAttempts[i])} must be rejected with QUOTE_REQUIRED`);
+        return true;
+      }
+    );
+  }
+
+  // Verify no orders were created
+  const orderDocs = [...fixture.records.keys()].filter(k => k.startsWith('orders/'));
+  assert.equal(orderDocs.length, 0);
+});
+
+test('Test 17: Quoting an order and submitting with matching expectedFinalTotal does NOT allow order creation', async () => {
+  const fixture = createMemoryCatalogStore();
+  const filledPackagingItem = {
+    productId: 'bid-box-umrah-tabarruk',
+    selectedWeight: 'Filled Standard (Irani Dates, Badam, Kaju & Kishmish)',
+    quantity: 25,
+  };
+
+  const quotePayload = {
+    ...standardCustomer,
+    items: [filledPackagingItem],
+  };
+
+  // 1. Quoting succeeds through legitimate quote path
+  const quote = await quoteOrderForCustomer(fixture.db, quotePayload);
+  assert.ok(quote.totals.total > 0);
+
+  // 2. Submitting order with exact matching expectedFinalTotal still fails with QUOTE_REQUIRED
+  await assert.rejects(
+    createDurableOrder({
+      db: fixture.db,
+      payload: quotePayload,
+      uid: null,
+      expectedFinalTotal: quote.totals.total,
+      idempotencyKey: 'test-17-matching-quote-attempt',
+    }),
+    (err: any) => {
+      assert.equal(err.code, 'QUOTE_REQUIRED');
+      return true;
+    }
+  );
+
+  // 3. Submitting order with matching expectedFinalTotal AND allowInquiryItems: true still fails
+  await assert.rejects(
+    createDurableOrder({
+      db: fixture.db,
+      payload: { ...quotePayload, allowInquiryItems: true },
+      uid: null,
+      expectedFinalTotal: quote.totals.total,
+      idempotencyKey: 'test-17-matching-quote-bypass-attempt',
+    }),
+    (err: any) => {
+      assert.equal(err.code, 'QUOTE_REQUIRED');
+      return true;
+    }
+  );
+});
+
+test('Test 18: Empty packaging and ordinary products continue to create orders normally without inquiry rejection', async () => {
+  const fixture = createMemoryCatalogStore();
+
+  // A. Ordinary food item (1kg badam)
+  const foodPayload = {
+    ...standardCustomer,
+    items: [
+      {
+        productId: 'badam',
+        selectedWeight: '1kg',
+        quantity: 2,
+      },
+    ],
+  };
+
+  const foodOrder = await createDurableOrder({
+    db: fixture.db,
+    payload: foodPayload,
+    uid: null,
+    idempotencyKey: 'test-18-food-order',
+  });
+
+  assert.ok(foodOrder.orderId);
+  assert.equal(foodOrder.status, 'ORDER_RECEIVED');
+  assert.equal(foodOrder.orderType, 'ORDER');
+  assert.ok(fixture.records.has(`orders/${foodOrder.orderId}`));
+
+  // B. Eligible empty packaging item (Empty Box 25 pcs)
+  const emptyPackagingPayload = {
+    ...standardCustomer,
+    items: [
+      {
+        productId: 'bid-box-umrah-tabarruk',
+        selectedWeight: 'Empty Pack (25 pcs)',
+        quantity: 25,
+      },
+    ],
+  };
+
+  const emptyBoxOrder = await createDurableOrder({
+    db: fixture.db,
+    payload: emptyPackagingPayload,
+    uid: null,
+    idempotencyKey: 'test-18-empty-box-order',
+  });
+
+  assert.ok(emptyBoxOrder.orderId);
+  assert.equal(emptyBoxOrder.status, 'ORDER_RECEIVED');
+  assert.equal(emptyBoxOrder.orderType, 'ORDER');
+  assert.ok(fixture.records.has(`orders/${emptyBoxOrder.orderId}`));
+});
+
+test('Test 19: Idempotency replays of already-persisted orders succeed without re-evaluating inquiry guards', async () => {
+  const fixture = createMemoryCatalogStore();
+  const filledPackagingItem = {
+    productId: 'bid-box-umrah-tabarruk',
+    selectedWeight: 'Filled Standard (Irani Dates, Badam, Kaju & Kishmish)',
+    quantity: 25,
+  };
+
+  const payload = {
+    ...standardCustomer,
+    items: [filledPackagingItem],
+  };
+
+  // Obtain quote to get validated items & totals for seeding
+  const quote = await quoteOrderForCustomer(fixture.db, payload);
+
+  const historicalOrderId = 'AB-20261026-HIST01';
+  const idempotencyKey = 'historical-filled-idempotency-key';
+  const nowMs = 1792999900000;
+  const nowIso = new Date(nowMs).toISOString();
+
+  const historicalOrder: CanonicalOrder = {
+    schemaVersion: SCHEMA_VERSION,
+    orderId: historicalOrderId,
+    source: 'website',
+    createdAt: nowIso,
+    createdAtMs: nowMs,
+    updatedAt: nowIso,
+    updatedAtMs: nowMs,
+    status: 'ORDER_RECEIVED',
+    orderType: 'ORDER',
+    paymentStatus: 'UNPAID',
+    paymentMethod: 'cod',
+    uid: null,
+    isWholesale: false,
+    claimTokenHash: null,
+    claimTokenExpiry: null,
+    claimStatus: null,
+    customer: {
+      name: standardCustomer.name,
+      phone: standardCustomer.phone,
+      address: standardCustomer.address,
+      city: standardCustomer.city,
+    },
+    gifting: {
+      giftWrapping: false,
+      giftWrapFee: 0,
+    },
+    items: quote.items,
+    totals: quote.totals,
+    promoCode: null,
+    discountAmount: 0,
+    freeShipping: false,
+    freeGiftWrap: false,
+    freeGift: false,
+    isQuoteRequest: false,
+    rewardId: null,
+    rewardDiscount: 0,
+    earnedPoints: 0,
+    pointsAwarded: false,
+  };
+
+  fixture.records.set(`orders/${historicalOrderId}`, historicalOrder);
+  fixture.records.set(`checkoutIntents/${idempotencyKey}`, {
+    idempotencyKey,
+    orderId: historicalOrderId,
+    payloadHash: hashPayload(payload),
+    createdAt: nowMs,
+    response: {
+      orderId: historicalOrderId,
+      status: 'ORDER_RECEIVED',
+      orderType: 'ORDER',
+      whatsappMessage: generateAuthoritativeWhatsAppMessage(historicalOrder),
+      totals: quote.totals,
+      items: quote.items,
+      claimToken: null,
+      uid: null,
+    },
+  });
+
+  // Replaying the submission with the same idempotency key succeeds without throwing QUOTE_REQUIRED
+  const replayed = await createDurableOrder({
+    db: fixture.db,
+    payload,
+    uid: null,
+    idempotencyKey,
+  });
+
+  assert.equal(replayed.isDuplicate, true);
+  assert.equal(replayed.orderId, historicalOrderId);
+  assert.equal(replayed.status, 'ORDER_RECEIVED');
+  assert.match(replayed.whatsappMessage, /ALLBARKA — ORDER CONFIRMATION/);
+  assert.match(replayed.whatsappMessage, /Umrah & Hajj Tabarruk Box Set/);
 });
