@@ -637,6 +637,199 @@ createRoot(document.getElementById('root')).render(
     const mismatchJson = await mismatchRes.json();
     assert.equal(mismatchJson.code, 'IDEMPOTENCY_PAYLOAD_MISMATCH');
 
+    // =========================================================================
+    // 10. HAMPER BOX AUTHORITY: STORED PRICE, DYNAMIC UPDATE & FAIL CLOSED
+    // =========================================================================
+    // 10.1 Stored hamper box price different from compiled default (e.g. Rs. 2,200 vs compiled Rs. 1,800)
+    const storedWoodBox = {
+      schemaVersion: 1,
+      boxId: 'box-wood',
+      revision: 1,
+      price: 2200,
+      active: true,
+      updatedAt: new Date().toISOString(),
+    };
+    records.set('hamperBoxes/box-wood', storedWoodBox);
+
+    // Refresh client catalog
+    await page.evaluate(async () => {
+      await (window as any).fixture.refresh();
+    });
+
+    // Submit inquiry for custom hamper with box-wood
+    const hamperConfig1 = {
+      version: 1 as const,
+      boxId: 'box-wood' as const,
+      selections: ['pista', 'kaju', 'badam', 'akhroot'],
+      recipientName: 'Fatima',
+      giftMessage: 'Special Wishes',
+    };
+
+    const storedBoxRes1 = await fetch(`${origin}/api/quotes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerName: 'Fatima Zahra',
+        customerPhone: '03005544332',
+        productId: 'custom-hamper',
+        hamperConfiguration: hamperConfig1,
+        quantity: 1,
+      }),
+    });
+    assert.equal(storedBoxRes1.status, 200);
+    const storedBoxJson1 = await storedBoxRes1.json();
+    assert.equal(storedBoxJson1.ok, true);
+    const storedBoxRecord1 = records.get(`inquiries/${storedBoxJson1.quoteId}`) as any;
+    assert.ok(storedBoxRecord1);
+
+    const ingredientSum = ['pista', 'kaju', 'badam', 'akhroot'].reduce(
+      (sum, id) => sum + hamperSelectionPrice(fixtureProducts.find(p => p.id === id)!)!,
+      0
+    );
+    const expectedStoredBox1 = 2200 + ingredientSum;
+    assert.equal(storedBoxRecord1.standardPrice, expectedStoredBox1, 'Inquiry uses stored hamper box rate (Rs. 2,200), NOT compiled default (Rs. 1,800)');
+    assert.equal(storedBoxRecord1.estimatedTotalPkr, expectedStoredBox1);
+    assert.notEqual(storedBoxRecord1.standardPrice, 1800 + ingredientSum, 'Compiled default Rs. 1,800 is not used');
+
+    // Returned WhatsApp URL reflects authoritative rate
+    const decodedWA1 = decodeURIComponent(storedBoxRecord1.whatsappUrl);
+    assert.match(decodedWA1, new RegExp(`Standard Rate Ref:\\*\\s*Rs\\.\\s*${expectedStoredBox1.toLocaleString()}/pc`));
+    assert.match(decodedWA1, new RegExp(`Estimated Total Ref:\\*\\s*Rs\\.\\s*${expectedStoredBox1.toLocaleString()} PKR`));
+
+    // 10.2 Dynamically change stored box rate in Firestore: Rs. 2,200 -> Rs. 2,500
+    const updatedWoodBox = {
+      ...storedWoodBox,
+      revision: 2,
+      price: 2500,
+      updatedAt: new Date().toISOString(),
+    };
+    records.set('hamperBoxes/box-wood', updatedWoodBox);
+
+    // Refresh client catalog
+    await page.evaluate(async () => {
+      await (window as any).fixture.refresh();
+    });
+
+    const storedBoxRes2 = await fetch(`${origin}/api/quotes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerName: 'Fatima Zahra',
+        customerPhone: '03005544332',
+        productId: 'custom-hamper',
+        hamperConfiguration: hamperConfig1,
+        quantity: 2,
+      }),
+    });
+    assert.equal(storedBoxRes2.status, 200);
+    const storedBoxJson2 = await storedBoxRes2.json();
+    const storedBoxRecord2 = records.get(`inquiries/${storedBoxJson2.quoteId}`) as any;
+    assert.ok(storedBoxRecord2);
+
+    const expectedStoredBox2 = 2500 + ingredientSum;
+    assert.equal(storedBoxRecord2.standardPrice, expectedStoredBox2, 'Next inquiry dynamically uses new stored rate (Rs. 2,500)');
+    assert.equal(storedBoxRecord2.estimatedTotalPkr, expectedStoredBox2 * 2, 'Estimated total is preserved for 2 hampers');
+    const decodedWA2 = decodeURIComponent(storedBoxRecord2.whatsappUrl);
+    assert.match(decodedWA2, new RegExp(`Standard Rate Ref:\\*\\s*Rs\\.\\s*${expectedStoredBox2.toLocaleString()}/pc`));
+    assert.match(decodedWA2, new RegExp(`Estimated Total Ref:\\*\\s*Rs\\.\\s*${(expectedStoredBox2 * 2).toLocaleString()} PKR`));
+
+    // 10.3 Inactive or disabled stored hamper box strictly fails closed
+    const disabledWoodBox = {
+      ...updatedWoodBox,
+      revision: 3,
+      price: 0,
+      active: false,
+      updatedAt: new Date().toISOString(),
+    };
+    records.set('hamperBoxes/box-wood', disabledWoodBox);
+
+    // Refresh client catalog
+    await page.evaluate(async () => {
+      await (window as any).fixture.refresh();
+    });
+
+    const disabledBoxRes = await fetch(`${origin}/api/quotes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerName: 'Fatima Zahra',
+        customerPhone: '03005544332',
+        productId: 'custom-hamper',
+        hamperConfiguration: hamperConfig1,
+        quantity: 1,
+      }),
+    });
+    assert.equal(disabledBoxRes.status, 200);
+    const disabledBoxJson = await disabledBoxRes.json();
+    const disabledBoxRecord = records.get(`inquiries/${disabledBoxJson.quoteId}`) as any;
+    assert.ok(disabledBoxRecord);
+    assert.equal(disabledBoxRecord.isVerifiedCatalogProduct, false, 'Disabled hamper box is not verified');
+    assert.equal(disabledBoxRecord.standardPrice, null, 'Disabled hamper box has standardPrice: null');
+    assert.equal(disabledBoxRecord.requiresTeamQuote, true, 'Disabled hamper box sets requiresTeamQuote: true');
+    assert.equal(disabledBoxRecord.estimatedTotalPkr, null);
+    const disabledDecodedWA = decodeURIComponent(disabledBoxRecord.whatsappUrl);
+    assert.match(disabledDecodedWA, /Standard Rate Ref:\*\s*Custom Quote on Request/, 'WhatsApp has honest quote-required message');
+    assert.doesNotMatch(disabledDecodedWA, /1,?800/, 'Never restores compiled default Rs. 1,800');
+    assert.doesNotMatch(disabledDecodedWA, /2,?500/, 'Never displays inactive Rs. 2,500');
+
+    // =========================================================================
+    // 11. NON-DIVISIBLE MONEY & ESTIMATOR TOTAL PRECISION PRESERVATION
+    // =========================================================================
+    // Configure ingredient at Rs. 1,001/kg, 50g per box, 10 boxes
+    // Net ingredient estimate: 1001 * 50 * 10 / 1000 = 500.5 -> rounded half-up = Rs. 501
+    // Empty packaging: Rs. 100/box * 10 = Rs. 1,000
+    // Total estimatedTotalPkr = 501 + 1000 = Rs. 1,501
+    // Unit price per box: Math.round(1501 / 10) = 150
+    const oddNut: Product = {
+      ...mockNut,
+      id: 'mock-nut-acceptance',
+      prices: { '1kg': 1001, '250g': 350 },
+      variants: [
+        { label: '1kg', price: 1001, available: true },
+        { label: '250g', price: 350, available: true },
+      ],
+    };
+    records.set(`products/${mockNut.id}`, oddNut);
+
+    const nonDivisibleRes = await fetch(`${origin}/api/quotes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerName: 'Tahir Abbas',
+        customerPhone: '03007766554',
+        productId: mockBox.id,
+        packagingVariant: 'Filled Legacy Option',
+        boxMode: 'filled',
+        quantity: 10,
+      }),
+    });
+    assert.equal(nonDivisibleRes.status, 200);
+    const nonDivisibleJson = await nonDivisibleRes.json();
+    assert.equal(nonDivisibleJson.ok, true);
+    const nonDivisibleRecord = records.get(`inquiries/${nonDivisibleJson.quoteId}`) as any;
+    assert.ok(nonDivisibleRecord);
+
+    // standardPrice is the nominal per-box unit rate: Rs. 150/box
+    assert.equal(nonDivisibleRecord.standardPrice, 150, 'Nominal unit price is Rs. 150');
+    // estimatedTotalPkr preserves exact estimator total: Rs. 1,501
+    assert.equal(nonDivisibleRecord.estimatedTotalPkr, 1501, 'Authoritative total strictly preserves Rs. 1,501 without rounding drift');
+    assert.notEqual(nonDivisibleRecord.estimatedTotalPkr, 1500, 'Downstream total did not drift to Rs. 1,500 through unit price round trips');
+
+    // Returned WhatsApp message contains exact preserved total
+    const nonDivisibleWA = decodeURIComponent(nonDivisibleRecord.whatsappUrl);
+    assert.match(nonDivisibleWA, /Standard Rate Ref:\*\s*Rs\.\s*150\/pc/, 'WhatsApp message has nominal unit rate: Rs. 150/pc');
+    assert.match(nonDivisibleWA, /Estimated Total Ref:\*\s*Rs\.\s*1,501 PKR/, 'WhatsApp message has preserved total: Rs. 1,501 PKR');
+
+    // =========================================================================
+    // 12. CARD HONEST QUOTE-REQUIRED STATE (NO cfg.filledMin FALLBACK)
+    // =========================================================================
+    await page.goto(`${origin}/celebration-boxes`);
+    const noRecipeCard = page.locator('article').filter({ hasText: 'Box Without Configured Recipe' });
+    await noRecipeCard.waitFor();
+    const noRecipeCardText = await noRecipeCard.innerText();
+    assert.match(noRecipeCardText, /Quote on Request/, 'Unconfigured recipe card displays Quote on Request for filled mode');
+    assert.doesNotMatch(noRecipeCardText, /Filled:\s*Rs\./i, 'Unconfigured recipe card never displays any numeric price for filled mode');
+
     assert.deepEqual(errors, [], 'Zero browser page errors');
   } finally {
     await browser.close();

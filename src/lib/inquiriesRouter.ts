@@ -2,6 +2,7 @@ import { Router, type RequestHandler } from 'express';
 import type { Firestore } from 'firebase-admin/firestore';
 import type { InquiryRecord, InquiryStatus, InquiryType, Product } from '../types';
 import { PRODUCTS } from '../data/products';
+import type { HamperBox } from './hamperCatalog';
 import { loadAuthoritativeCatalog, mergeAuthoritativeCatalog } from './catalogStore';
 import {
   isValidPhone,
@@ -24,6 +25,8 @@ import { buildCustomerInquiryWhatsAppUrl } from './inquiryWhatsApp';
 export interface InquiriesRouterOptions {
   getDb: () => Firestore | null;
   getCatalog?: () => Product[] | Promise<Product[]>;
+  getHamperBoxes?: () => HamperBox[] | Promise<HamperBox[]>;
+  getSnapshot?: () => Promise<{ products: Product[]; hamperBoxes: HamperBox[] }>;
   requireAdmin?: RequestHandler;
   inMemoryStore?: Map<string, InquiryRecord>;
   inquiryLimiter?: RequestHandler;
@@ -35,18 +38,39 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
   const adminGuard = options.requireAdmin || ((_req, _res, next) => next());
   const limiter = options.inquiryLimiter || ((_req, _res, next) => next());
 
-  // Asynchronous authoritative catalog resolver
-  // Never falls back to compiled selling prices if authoritative resolution fails
-  const resolveCatalog = options.getCatalog
-    ? async () => await options.getCatalog!()
-    : async () => {
-        const db = options.getDb();
-        if (!db) {
-          throw new Error('CATALOG_STORE_UNAVAILABLE');
-        }
-        const snapshot = await loadAuthoritativeCatalog(db, { fresh: true });
-        return mergeAuthoritativeCatalog(PRODUCTS, snapshot.products);
+  // Asynchronous authoritative catalog and hamper box resolver
+  // Never falls back to compiled selling prices or default hamper boxes if authoritative resolution fails
+  const resolveCatalogAndBoxes = async (): Promise<{ catalog: Product[]; hamperBoxes: HamperBox[] }> => {
+    if (options.getSnapshot) {
+      const snap = await options.getSnapshot();
+      return {
+        catalog: snap.products,
+        hamperBoxes: snap.hamperBoxes,
       };
+    }
+    const db = options.getDb();
+    if (db) {
+      const snapshot = await loadAuthoritativeCatalog(db, { fresh: true });
+      const catalog = options.getCatalog
+        ? await options.getCatalog()
+        : mergeAuthoritativeCatalog(PRODUCTS, snapshot.products);
+      const hamperBoxes = options.getHamperBoxes
+        ? await options.getHamperBoxes()
+        : snapshot.hamperBoxes;
+      return { catalog, hamperBoxes };
+    }
+    if (options.getCatalog) {
+      const catalog = await options.getCatalog();
+      const hamperBoxes = options.getHamperBoxes
+        ? await options.getHamperBoxes()
+        : [];
+      return { catalog, hamperBoxes };
+    }
+    throw new Error('CATALOG_STORE_UNAVAILABLE');
+  };
+
+  // Retain resolveCatalog for backward compatibility if needed internally
+  const resolveCatalog = async (): Promise<Product[]> => (await resolveCatalogAndBoxes()).catalog;
 
   // 1. Boutique / Contact API
   router.post('/api/contact', limiter, async (req, res) => {
@@ -116,7 +140,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         notes: message,
         adminNotes: '',
         status: 'NEW',
-        whatsappUrl: `https://wa.me/923160666083?text=${encodeURIComponent(`Assalam-o-Alaikum AllBarka! Inquiry Ref #${ticketId} — ${name}`)}`,
+        whatsappUrl: `https://wa.me/923160666083?text=${encodeURIComponent(`Assalam-o-Alaikum AllBarka! Inquiry Ref #${ticketId} â€” ${name}`)}`,
         whatsappReplyUrl: '',
         assignedTo: null,
         followUpDate: null,
@@ -198,8 +222,11 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         rawMode === 'empty' ? 'empty' : rawMode === 'custom' ? 'custom' : 'filled';
 
       let catalog: Product[];
+      let hamperBoxes: HamperBox[];
       try {
-        catalog = await resolveCatalog();
+        const resolved = await resolveCatalogAndBoxes();
+        catalog = resolved.catalog;
+        hamperBoxes = resolved.hamperBoxes;
       } catch (catErr: any) {
         console.warn('Authoritative catalog resolution error:', catErr);
         return res.status(503).json({
@@ -214,6 +241,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
       const productId = String(body.productId ?? body.boxId ?? (type === 'custom_hamper' ? 'custom-hamper' : 'general')).trim();
       const resolution = resolveInquiryProductVariant({
         catalog,
+        hamperBoxes,
         productId,
         requestedVariantLabel: requestedVariant,
         boxMode,
@@ -409,8 +437,11 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         rawMode === 'empty' ? 'empty' : rawMode === 'custom' ? 'custom' : 'filled';
 
       let catalog: Product[];
+      let hamperBoxes: HamperBox[];
       try {
-        catalog = await resolveCatalog();
+        const resolved = await resolveCatalogAndBoxes();
+        catalog = resolved.catalog;
+        hamperBoxes = resolved.hamperBoxes;
       } catch (catErr: any) {
         console.warn('Authoritative catalog resolution error:', catErr);
         return res.status(503).json({
@@ -425,6 +456,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
       const productId = String(raw.productId || 'custom').trim();
       const resolution = resolveInquiryProductVariant({
         catalog,
+        hamperBoxes,
         productId,
         requestedVariantLabel: requestedVariant,
         boxMode: safeMode,
@@ -478,6 +510,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         targetPricePkr: offPrice,
         referenceUnitPrice: resolution.standardPrice,
         perPiecePrice: resolution.perPiecePrice,
+        estimatedTotalPkr: resolution.estimatedTotalPkr ?? (resolution.standardPrice != null ? resolution.standardPrice * rawQuantity : null),
         requiresTeamQuote: resolution.requiresTeamQuote,
         belowMoq: resolution.belowMoq,
         moqRequired: resolution.moqRequired,

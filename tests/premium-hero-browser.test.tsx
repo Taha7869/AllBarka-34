@@ -118,6 +118,7 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     await motionPage.evaluate(()=>(window as any).fixture.lang('ar'));await motionPage.screenshot();
     await motionPage.waitForFunction(()=>getComputedStyle(document.querySelector('.table-hero-primary svg')!).translate==='-4px');
     await motionPage.emulateMedia({reducedMotion:'reduce'});await motionPage.screenshot();
+    await motionPage.waitForFunction(()=>getComputedStyle(document.querySelector('.heritage-hero-background img')!).transform==='none');
     assert.equal(await motionPage.locator('.heritage-hero-background img').evaluate(e=>getComputedStyle(e).animationName),'none');
     assert.equal(await motionPage.locator('.heritage-hero-background img').evaluate(e=>getComputedStyle(e).transform),'none');
     assert.equal(await motionPage.locator('.table-hero-primary svg').evaluate(e=>getComputedStyle(e).translate),'none');

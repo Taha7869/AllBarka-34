@@ -1,7 +1,7 @@
 # Filled gifts: kilogram-based ingredient estimates
 
-Updated: 30 October 2026 (Asia/Karachi).
-Task: R04-KG1. Owner decision: CONFIRMED. Implementation: IN_PROGRESS (estimate consistency & inquiry journey slice verified). Live verification/release: NOT_RUN.
+Updated: 31 October 2026 (Asia/Karachi).
+Task: R04-KG1. Owner decision: CONFIRMED. Implementation: IN_PROGRESS (hamper box authority, precision policy, and fallback removal verified). Live verification/release: NOT_RUN.
 Inspected source parent: `5282f800390b2a794ad538257a497a0f6b253c5f`.
 This checkpoint records the completed implementation of the estimate consistency and inquiry journey slice across card, modal, hamper builder, and authoritative quote verification.
 
@@ -23,6 +23,15 @@ Let `K` be the valid current PKR selling rate for exactly 1kg of the selected in
 - These calculations are ingredient/box estimates, not an approved final quote, accepted order, payment amount or dispatch commitment.
 
 ### Acceptance examples, not new live rates
+
+### Money Precision and Downstream Totals Policy
+
+When money is non-divisible across boxes (e.g. Rs1001/kg × 50g × 10 boxes):
+- The shared estimator (calculateFilledGiftEstimate) scales ingredient mass in milligrams and kilogram rates via BigInt, computing the exact ingredient subtotal for the entire requested order (exact = BigInt(rate) * milliGrams(item.grams) * BigInt(requestedBoxes)).
+- Rounding to whole PKR (roundHalfUp(exact, MICRO)) occurs once on the order total (ingredientsSubtotalPkr), adding packaging total (packagingTotal) to produce estimatedTotalPkr.
+- For display purposes, nominal unit rate (standardPrice / perPiecePrice) is computed as Math.round(estimatedTotalPkr / quantity) (e.g. Rs. 150/box).
+- Crucially, authoritative downstream totals (InquiryRecord.estimatedTotalPkr, /api/quotes and /api/inquiries response, displayed modal estimate, and WhatsApp Estimated Total Ref:* Rs. X PKR) preserve the shared estimator's estimatedTotalPkr directly (e.g. Rs. 1,501). They NEVER recalculate standardPrice * quantity, preventing 1 PKR rounding drift (e.g. 150 × 10 = 1500).
+
 
 | Scenario | Kilogram rate | Other pack rate | Net filling | Required ingredient estimate |
 | --- | --- | --- | --- | --- |
@@ -104,7 +113,7 @@ Verification:
 - `npm run typecheck` (`tsc --noEmit`): PASS (0 errors).
 - `npm run lint:hooks` (`eslint src`): PASS (0 errors).
 - `ALLBARKA_SKIP_LOCAL_ENV=true npm run build`: PASS (exit code 0; release privacy audit passed with 84 text artifacts).
-- `tests/filled-gift-journey-browser.test.tsx`: 1/1 mounted browser & authoritative API journey PASS (9 stages: card estimate display Rs. 150/box without legacy Rs. 9,000, modal reference rate Rs. 150/box & Est. Rs. 1,500 total with empty customer budget input, quote submission and memoryFirestore persistence, WhatsApp URL concordance, changed authoritative kg rate Rs. 2,000/kg & forged client total rejection, unpriced missing recipe & legacy packaging without recipe, empty packaging deletion/disablement fail-closed, hamper builder inquiry dispatch without cart mutation, and direct order QUOTE_REQUIRED failure).
+- `tests/filled-gift-journey-browser.test.tsx`: 1/1 mounted browser & authoritative API journey PASS (12 stages: card estimate display Rs. 150/box without legacy Rs. 9,000, modal reference rate Rs. 150/box & Est. Rs. 1,500 total with empty customer budget input, quote submission and memoryFirestore persistence, WhatsApp URL concordance, changed authoritative kg rate Rs. 2,000/kg & forged client total rejection, unpriced missing recipe & legacy packaging without recipe, empty packaging deletion/disablement fail-closed, hamper builder inquiry dispatch without cart mutation, direct order QUOTE_REQUIRED failure, hamper box stored rate authority & dynamic updates & fail-closed without fallback to compiled seeds, non-divisible money precision preservation, and card honest quote-required state without cfg.filledMin).
 - `tests/stage6-inquiry-flow.test.ts`: 19/19 tests PASS.
 - `node scripts/run-all-tests.mjs`: PASS (742 passed, 0 failed, 1 skipped across 84 test files; 21 backend tests passed; 36 production checks passed).
 - `git diff --check`: PASS (0 errors).

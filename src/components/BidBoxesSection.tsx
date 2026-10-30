@@ -271,7 +271,7 @@ export default function BidBoxesSection({ onQuickView, compact = false }: BidBox
                         </span>
                         <span className="text-[#D4AF6A]">•</span>
                         <span>
-                          Filled: <strong className="text-[#072A20]">{displayFilledPrice ? `Rs. ${displayFilledPrice.toLocaleString()}` : typeof cfg.filledMin === 'number' ? `Rs. ${cfg.filledMin.toLocaleString()}` : t('catalog.quoteOnRequest', 'Quote on Request')}</strong>
+                          Filled: <strong className="text-[#072A20]">{displayFilledPrice ? `Rs. ${displayFilledPrice.toLocaleString()}` : t('catalog.quoteOnRequest', 'Quote on Request')}</strong>
                         </span>
                       </div>
                     )}

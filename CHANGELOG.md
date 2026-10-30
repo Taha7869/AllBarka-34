@@ -1,3 +1,27 @@
+## 31 October 2026 — R04-KG1 hamper box authority, precision policy and fallback removal
+
+- **Hamper box pricing authority & catalog snapshot binding**:
+  - `src/lib/inquiriesRouter.ts`: Added `getHamperBoxes` & `getSnapshot` options and implemented `resolveCatalogAndBoxes()` resolving both `products` and `hamperBoxes` from the same fresh snapshot via `loadAuthoritativeCatalog(db, { fresh: true })`. Passed `hamperBoxes` to `resolveInquiryProductVariant` in both `/api/quotes` and `/api/inquiries`.
+  - `server.ts`: Omitted redundant `getCatalog`, allowing `createInquiriesRouter` to fetch unified catalog snapshots directly from database.
+  - `src/lib/hamperCatalog.ts`: In `resolveHamper`, strictly validated `option.active !== false && Number.isSafeInteger(option.price) && option.price > 0`. Zero-priced, disabled, or missing hamper boxes fail closed immediately.
+  - `src/lib/inquiryResolution.ts`: Passed `hamperBoxes ?? []` to `resolveHamper`, strictly preventing fallback to compiled `HAMPER_BOXES` default seeds when hamper boxes are unsupplied or missing.
+  - `src/contexts/CatalogContext.tsx`: Added `hamperBoxes` state and exported `useCatalogHamperBoxes()` hook to deliver reactive updates on catalog refresh.
+  - `src/components/CustomQuoteModal.tsx` & `src/components/CustomHamperBuilderModal.tsx`: Connected `useCatalogHamperBoxes()` to map over dynamic authoritative hamper boxes instead of static seeds.
+- **Non-divisible money precision preservation**:
+  - `src/lib/inquiryResolution.ts`: Added `authoritativeEstimatedTotalPkr` tracking from `calculateFilledGiftEstimate` for filled gifts. Preserves exact order total `estimatedTotalPkr` directly rather than recalculating `standardPrice * quantity`.
+  - `src/lib/inquiryWhatsApp.ts`: Formatted `• *Estimated Total Ref:* Rs. ${Number(params.estimatedTotalPkr).toLocaleString()} PKR` when `estimatedTotalPkr != null && Number(estimatedTotalPkr) > 0` and team quote is not required.
+  - `docs/admin-expansion/FILLED_GIFT_PRICING.md`: Documented the precision policy across display, persistence, and WhatsApp messaging.
+- **Legacy card fallback removal**:
+  - `src/components/BidBoxesSection.tsx`: Removed `cfg.filledMin` numeric fallback. When recipe or ingredient rates are missing, card renders an honest `Quote on Request` state with zero numeric pricing.
+- **12-stage mounted browser journey verification**:
+  - `tests/filled-gift-journey-browser.test.tsx`: Extended from 9 to 12 stages, adding:
+    - Stage 10: Stored hamper box rate authority (Rs. 2,200), dynamic updates (Rs. 2,500), and fail-closed handling of inactive/disabled boxes without compiled seed fallback.
+    - Stage 11: Non-divisible money precision preservation (Rs. 1,001/kg × 50g × 10 boxes = Rs. 501 ingredient subtotal + Rs. 1,000 packaging = Rs. 1,501 total preserved end-to-end without rounding drift to Rs. 1,500).
+    - Stage 12: Unconfigured recipe card display verifying honest `Quote on Request` state and absence of any numeric `Filled: Rs.` pricing.
+- **Test suite status**:
+  - All 84 test files (742 passed, 0 failed, 1 skipped), 21 backend tests, 36 production checks, `tsc --noEmit`, and `eslint src` PASS.
+  - `R04-KG1` explicitly remains `IN_PROGRESS` pending visual recipe editor in `AdminProductEditModal`.
+
 ## 30 October 2026 ? R04-KG1 actual inquiry submission journey and mounted browser evidence
 
 - **End-to-end inquiry submission journey alignment**:

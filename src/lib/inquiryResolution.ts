@@ -109,7 +109,7 @@ export function resolveInquiryProductVariant(params: ResolveInquiryParams): Inqu
   const { catalog, productId, requestedVariantLabel, boxMode, quantity, hamperConfiguration, hamperBoxes } = params;
   if (productId === 'custom-hamper' || productId?.startsWith('custom-hamper:') || hamperConfiguration) {
     if (hamperConfiguration) {
-      const resolvedHamper = resolveHamper(hamperConfiguration, catalog, hamperBoxes);
+      const resolvedHamper = resolveHamper(hamperConfiguration, catalog, hamperBoxes ?? []);
       if (resolvedHamper) {
         return {
           productId: 'custom-hamper',
@@ -263,6 +263,7 @@ export function resolveInquiryProductVariant(params: ResolveInquiryParams): Inqu
   let packPrice: number | null = null;
   let perPiecePrice: number | null = null;
   let requiresTeamQuote = false;
+  let authoritativeEstimatedTotalPkr: number | null = null;
 
   if (!isPublicActive || isQuoteOnly || unresolvedVariant) {
     requiresTeamQuote = true;
@@ -275,6 +276,7 @@ export function resolveInquiryProductVariant(params: ResolveInquiryParams): Inqu
       standardPrice = matchedVariant.price;
       packPrice = matchedVariant.price;
       perPiecePrice = Math.round((matchedVariant.price / piecesPerPack) * 100) / 100;
+      authoritativeEstimatedTotalPkr = standardPrice * quantity;
     } else {
       requiresTeamQuote = true;
     }
@@ -292,11 +294,16 @@ export function resolveInquiryProductVariant(params: ResolveInquiryParams): Inqu
           requestedBoxes: quantity,
         });
         if (est.isAvailable && est.estimatedTotalPkr != null) {
+          // Documented precision policy:
+          // standardPrice is the nominal unit rate for display (half-up integer PKR rounding).
+          // However, the downstream total (authoritativeEstimatedTotalPkr) preserves the shared estimator's
+          // exact total directly without drift from multiplying a rounded unit rate by box quantity.
           const perBox = Math.round(est.estimatedTotalPkr / quantity);
           standardPrice = perBox;
           packPrice = perBox;
           perPiecePrice = perBox;
           requiresTeamQuote = false;
+          authoritativeEstimatedTotalPkr = est.estimatedTotalPkr;
         } else {
           standardPrice = null;
           packPrice = null;
@@ -350,6 +357,6 @@ export function resolveInquiryProductVariant(params: ResolveInquiryParams): Inqu
     moqRequired,
     minPacksRequired,
     isTabarruk,
-    estimatedTotalPkr: standardPrice != null ? standardPrice * quantity : null,
+    estimatedTotalPkr: authoritativeEstimatedTotalPkr ?? (standardPrice != null ? standardPrice * quantity : null),
   };
 }

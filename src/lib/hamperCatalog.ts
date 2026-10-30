@@ -58,7 +58,7 @@ export function resolveHamper(value: unknown, products: Product[] = PRODUCTS, bo
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const input = value as Record<string, unknown>;
   if (input.version !== 1) return null;
-  const box = boxes.find(option => option.id === input.boxId && option.active !== false);
+  const box = boxes.find(option => option.id === input.boxId && option.active !== false && Number.isSafeInteger(option.price) && option.price > 0);
   if (!box || !Array.isArray(input.selections) || input.selections.length < box.minSelections || input.selections.length > box.maxSelections) return null;
   if (input.selections.some(id => typeof id !== 'string' || !HAMPER_SELECTION_IDS.includes(id as typeof HAMPER_SELECTION_IDS[number]))) return null;
   if (new Set(input.selections).size !== input.selections.length) return null;

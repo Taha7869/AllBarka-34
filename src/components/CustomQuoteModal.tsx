@@ -17,7 +17,7 @@ import {
   RefreshCw,
   FileText,
 } from 'lucide-react';
-import { useCatalogProducts } from '../contexts/CatalogContext';
+import { useCatalogProducts, useCatalogHamperBoxes } from '../contexts/CatalogContext';
 import { Product, CustomQuoteModalInit } from '../types';
 import { resolveInquiryProductVariant } from '../lib/inquiryResolution';
 import { calculateFilledGiftEstimate, resolveFilledRecipe, resolveEmptyPackagingUnitPrice } from '../lib/filledGiftPricing';
@@ -62,6 +62,7 @@ const QUANTITY_PRESETS = [25, 50, 100, 200, 300, 500] as const;
 
 export default function CustomQuoteModal() {
   const products = useCatalogProducts();
+  const hamperBoxes = useCatalogHamperBoxes();
   const [isOpen, setIsOpen] = useState(false);
 
   const eligibleProducts = useMemo(() => {
@@ -231,7 +232,7 @@ export default function CustomQuoteModal() {
 
   const effectiveReferenceRate = useMemo(() => {
     if (selectedProductId === 'custom-hamper' && hamperConfiguration) {
-      const resolved = resolveHamper(hamperConfiguration, products);
+      const resolved = resolveHamper(hamperConfiguration, products, hamperBoxes);
       if (resolved) {
         return {
           standardPrice: resolved.unitPrice,
@@ -268,7 +269,7 @@ export default function CustomQuoteModal() {
       isEstimate: false,
       estimatedTotalPkr: null,
     };
-  }, [mode, filledEstimate, quantity, resolution, selectedProductId, hamperConfiguration, products]);
+  }, [mode, filledEstimate, quantity, resolution, selectedProductId, hamperConfiguration, products, hamperBoxes]);
 
   if (!isOpen) return null;
 
@@ -295,6 +296,7 @@ export default function CustomQuoteModal() {
     targetPricePkr,
     referenceUnitPrice: effectiveReferenceRate.standardPrice,
     perPiecePrice: effectiveReferenceRate.perPiecePrice,
+    estimatedTotalPkr: effectiveReferenceRate.estimatedTotalPkr,
     requiresTeamQuote: effectiveReferenceRate.requiresTeamQuote,
     belowMoq: resolution.belowMoq,
     moqRequired: resolution.moqRequired,
@@ -377,6 +379,7 @@ export default function CustomQuoteModal() {
           targetPricePkr,
           referenceUnitPrice: effectiveReferenceRate.standardPrice,
           perPiecePrice: effectiveReferenceRate.perPiecePrice,
+          estimatedTotalPkr: effectiveReferenceRate.estimatedTotalPkr,
           requiresTeamQuote: effectiveReferenceRate.requiresTeamQuote,
           belowMoq: resolution.belowMoq,
           moqRequired: resolution.moqRequired,

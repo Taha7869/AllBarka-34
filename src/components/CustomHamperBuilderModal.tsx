@@ -1,6 +1,6 @@
 import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
-import { useCatalogProducts } from '../contexts/CatalogContext';
+import { useCatalogProducts, useCatalogHamperBoxes } from '../contexts/CatalogContext';
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { X, Gift, Check, ArrowRight, ShoppingBag } from 'lucide-react';
@@ -74,6 +74,7 @@ const translations = {
 
 export default function CustomHamperBuilderModal({ isOpen, onClose, onAddToCart }: CustomHamperBuilderModalProps) {
   const PRODUCTS = useCatalogProducts();
+  const hamperBoxes = useCatalogHamperBoxes();
   const mediaCover = useProductMediaCover();
   const { language, isRtl, t: storefrontTranslation } = useLanguage();
   const t = (key: string) => translations[language][key] || storefrontTranslation(key);
@@ -86,13 +87,13 @@ export default function CustomHamperBuilderModal({ isOpen, onClose, onAddToCart 
   const [selectedItems, setSelectedItems] = useState<string[]>(['pista', 'kaju', 'badam', 'akhroot']);
   const [recipientName, setRecipientName] = useState('');
   const [giftMessage, setGiftMessage] = useState('');
-  const box = HAMPER_BOXES.find(option => option.id === boxId)!;
+  const box = hamperBoxes.find(option => option.id === boxId) || hamperBoxes[0] || HAMPER_BOXES[0];
   const candidates = HAMPER_SELECTION_IDS.flatMap(id => {
     const product = PRODUCTS.find(candidate => candidate.id === id);
     return product && hamperSelectionPrice(product) !== null ? [product] : [];
   });
   const configuration: HamperConfiguration = { version: 1, boxId, selections: selectedItems, recipientName, giftMessage };
-  const resolved = resolveHamper(configuration, PRODUCTS);
+  const resolved = resolveHamper(configuration, PRODUCTS, hamperBoxes);
   const boxAvailable = box.active !== false && box.price > 0;
   const pricesKnown = boxAvailable && selectedItems.every(id => candidates.some(product => product.id === id));
   const selectionValid = pricesKnown && selectedItems.length >= box.minSelections && selectedItems.length <= box.maxSelections;
@@ -164,7 +165,7 @@ export default function CustomHamperBuilderModal({ isOpen, onClose, onAddToCart 
       </div>
       <div className="gift-builder-steps grid shrink-0 grid-cols-3 border-b border-[var(--color-border)]">{([1, 2, 3] as const).map(value => <button type="button" key={value} aria-current={step === value ? 'step' : undefined} disabled={value === 3 && !selectionValid} onClick={() => setStep(value)} className={`focus-ring min-h-12 border-b-2 px-2 py-3 text-[11px] font-medium disabled:opacity-40 ${step === value ? 'border-[var(--color-gold)] bg-[#c7982f]/5 text-[var(--color-accent-text)]' : 'border-transparent text-[var(--color-text-secondary)]'}`}><span dir="auto">{value}. {t(value === 1 ? 'packaging' : value === 2 ? 'harvests' : 'card')}</span></button>)}</div>
       <div className="gift-builder-scroll min-h-0 flex-1 overflow-y-auto p-5 sm:p-6"><div className="gift-builder-layout"><div className="gift-builder-work">
-        {step === 1 && <div><h4 dir="auto" className="font-serif text-xl">{t('packagingTitle')}</h4><p dir="auto" className="mb-5 mt-2 text-xs leading-6 text-[var(--color-text-secondary)]">{t('packagingNote')}</p><div className="grid gap-4 sm:grid-cols-3">{HAMPER_BOXES.map(option => <button type="button" key={option.id} disabled={option.active === false || option.price <= 0} aria-pressed={boxId === option.id} onClick={() => setBoxId(option.id)} className={`focus-ring flex flex-col rounded-2xl border p-3.5 text-start transition-colors motion-reduce:transition-none ${boxId === option.id ? 'border-[var(--color-gold)] bg-[#c7982f]/10' : 'border-[var(--color-border)] hover:border-[var(--color-gold)]'}`}>
+        {step === 1 && <div><h4 dir="auto" className="font-serif text-xl">{t('packagingTitle')}</h4><p dir="auto" className="mb-5 mt-2 text-xs leading-6 text-[var(--color-text-secondary)]">{t('packagingNote')}</p><div className="grid gap-4 sm:grid-cols-3">{hamperBoxes.map(option => <button type="button" key={option.id} disabled={option.active === false || option.price <= 0} aria-pressed={boxId === option.id} onClick={() => setBoxId(option.id)} className={`focus-ring flex flex-col rounded-2xl border p-3.5 text-start transition-colors motion-reduce:transition-none ${boxId === option.id ? 'border-[var(--color-gold)] bg-[#c7982f]/10' : 'border-[var(--color-border)] hover:border-[var(--color-gold)]'}`}>
           <img src={option.image} alt={getLocalized(option, 'name', language)} width={640} height={360} loading="lazy" className="mb-3 aspect-video w-full rounded-xl object-cover"/><span dir="auto" className={`text-sm ${nameTypography}`}>{getLocalized(option, 'name', language)}</span><span dir="auto" className="mt-2 text-[10px] leading-5 text-[var(--color-text-secondary)]">{t('capacity').replace('{min}', String(option.minSelections)).replace('{max}', String(option.maxSelections))}</span><span className="mt-auto flex items-center justify-between gap-2 border-t border-[var(--color-border)] pt-3 text-sm text-[var(--color-accent-text)]"><bdi>{option.active===false||option.price<=0?t('boxUnavailable'):`Rs. ${option.price.toLocaleString()}`}</bdi>{boxId === option.id && <Check size={17}/>}</span>
         </button>)}</div><p dir="auto" className="mt-4 text-[10px] leading-5 text-[var(--color-text-secondary)]">{t('reference')}</p></div>}
         {step === 2 && <div><div className="mb-5 flex flex-wrap items-start justify-between gap-3"><div dir="auto"><h4 className="font-serif text-xl">{t('selectionTitle')}</h4><p className="mt-2 text-xs leading-6 text-[var(--color-text-secondary)]">{t('selectionNote')}</p><p className="text-xs leading-6 text-[var(--color-accent-text)]">{capacity}</p></div><span dir="auto" className="rounded-full bg-[#1e3a2b] px-3 py-2 text-xs text-[#fff8e9]">{t('selected').replace('{count}', String(selectedItems.length))}</span></div><div className="grid gap-3 sm:grid-cols-2">{candidates.map(product => {

@@ -188,13 +188,19 @@ export function buildCustomerInquiryWhatsAppUrl(params: CustomerInquiryWhatsAppP
   // Reference pricing with pack/piece clarity
   if (params.requiresTeamQuote || !params.referenceUnitPrice || params.referenceUnitPrice <= 0) {
     lines.push(`• *Standard Rate Ref:* Custom Quote on Request (Team Confirmation Required)`);
-  } else if (params.quantityUnit === 'packs') {
-    const perPiece = params.perPiecePrice ? ` (Rs. ${Number(params.perPiecePrice).toLocaleString()}/pc)` : '';
-    lines.push(`• *Standard Rate Ref:* Rs. ${Number(params.referenceUnitPrice).toLocaleString()}/pack${perPiece}`);
-  } else if (params.quantityUnit === 'sets') {
-    lines.push(`• *Standard Rate Ref:* Rs. ${Number(params.referenceUnitPrice).toLocaleString()}/set`);
   } else {
-    lines.push(`• *Standard Rate Ref:* Rs. ${Number(params.referenceUnitPrice).toLocaleString()}/pc`);
+    if (params.quantityUnit === 'packs') {
+      const perPiece = params.perPiecePrice ? ` (Rs. ${Number(params.perPiecePrice).toLocaleString()}/pc)` : '';
+      lines.push(`• *Standard Rate Ref:* Rs. ${Number(params.referenceUnitPrice).toLocaleString()}/pack${perPiece}`);
+    } else if (params.quantityUnit === 'sets') {
+      lines.push(`• *Standard Rate Ref:* Rs. ${Number(params.referenceUnitPrice).toLocaleString()}/set`);
+    } else {
+      lines.push(`• *Standard Rate Ref:* Rs. ${Number(params.referenceUnitPrice).toLocaleString()}/pc`);
+    }
+
+    if (params.estimatedTotalPkr != null && Number(params.estimatedTotalPkr) > 0) {
+      lines.push(`• *Estimated Total Ref:* Rs. ${Number(params.estimatedTotalPkr).toLocaleString()} PKR`);
+    }
   }
 
   if (params.targetPricePkr) {
