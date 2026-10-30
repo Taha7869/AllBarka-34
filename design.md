@@ -76,3 +76,7 @@ Existing movement keeps its accepted visual language, but JavaScript consumers n
 ## M20-NAV1 navigation lifecycle
 
 Retain the existing drawer layout and accepted motion. Route/history and desktop breakpoint transitions close mobile modal state; native brand button and initial-focus guard support keyboard use. Existing social actions wrap when enlarged text needs more width. Existing scroll body and reference-counted lock remain, with short-height/RTL/theme/keyboard checks. No new visual component or dependency. Current evidence: docs/NAVIGATION_LIFECYCLE.md.
+
+## Filled/custom estimate disclosure — owner decision, 30 October 2026
+
+Follow [FILLED_GIFT_PRICING.md](docs/admin-expansion/FILLED_GIFT_PRICING.md). Show explicit ingredient quantities and current kilogram-based estimates where all necessary data is known; incomplete pricing must say that a team quote is required. Filled/custom amounts require final WhatsApp confirmation and must not look like accepted checkout totals. Use the existing trilingual inquiry flow; preserve standard retail/eligible empty packaging purchase actions. This is selected policy; source implementation and browser verification are pending.

@@ -1,5 +1,12 @@
 # AllBarka expansion change log
 
+## 30 October 2026 — R04-KG1 owner kilogram pricing policy and architecture
+
+- **Before:** Existing hamper ingredient pricing prorates the 250g pack rate; CAT2 records Rs960 for a 200g pista portion. Filled/custom inquiry enforcement and final executable missing-record payloads remain pending, despite earlier prose implying completion.
+- **Owner-confirmed target:** Calculate food fillings from the current stored 1kg selling rate and explicit net recipe grams; Rs1000/kg gives Rs50 for 50g even when the 250g pack is Rs350. Filled/custom totals are estimates with final WhatsApp confirmation. Missing kg/recipe data remains unpriced. Existing standalone retail/custom-weight rates and ordinary checkout are preserved.
+- **Changed:** Recorded D14, the linked filled-gift pricing architecture/acceptance, root agent/rules/instructions/design guidance, master task and current handoff/audit correction. **Policy documentation only; implementation TODO.** No live writes, price resets, code changes, key changes or deployment.
+- **Review/verification:** Codex documentation self-review and checkpoint checks are recorded in [FILLED_GIFT_PRICING.md](docs/admin-expansion/FILLED_GIFT_PRICING.md). No new live verification or runtime-test result is claimed.
+
 ## 30 October 2026 — R04-CAT2 catalog remediation reconciliation and admin-editable proposals
 
 - **Before:** `R04-CAT1` (`0ccb8c373889296eb791abd96869b6c03b1972d7`) enumerated the 89 live Firestore `products` documents, 8 missing `BID_BOX_PRODUCTS`, 3 missing `hamperBoxes`, and taxonomy/copy exceptions, but did not yet provide a consolidated per-option merchant review table separating publication `status` from `orderMode`, verified-fact replacement descriptions for `ajwa-dates` / `medjool-dates`, or a local fixture dry run validating exact candidate payloads and concurrency preconditions.

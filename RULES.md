@@ -56,6 +56,7 @@ If current Firestore access is unavailable, finish source/fixture checks, record
 
 ## R05 — Preserve commerce and data contracts
 
+- Latest owner pricing decision (30 October 2026, R04-KG1): [filled-gift pricing architecture](docs/admin-expansion/FILLED_GIFT_PRICING.md). Filled/custom ingredient estimates use current stored kilogram rates and explicit net recipe grams, with final WhatsApp quotation. This supersedes historical 250g-pack proration without repricing standalone retail/custom weights. Missing kg/recipe data stays unpriced; no compiled/per-100g inferred fallback or automatic live mutation. Apply the policy in the pending source implementation and verify UI/server inquiry guards.
 - Firestore remains the live catalog/pricing authority. Reuse the existing server quote/order services and the same canonical projection for n8n. Do not create an independently editable duplicate price list or invent missing prices.
 - Keep stable product/box IDs, exact historical option labels, units, packaging MOQ, ten-calendar-day preparation and saved receipt/cart compatibility. Existing 9999 stock is the availability convention, not measured physical inventory.
 - Preserve current shipping/coupon/loyalty rules: Lahore standard Rs.150, free at discounted subtotal >= Rs.3,000; express Rs.350; outside Lahore actual canonical weight × Rs.250/kg with Rs.250 minimum and the existing ZAFRANI exception. The existing oil tariff treats 1ml as 1g for billing only. Reuse calculation code; do not reimplement it in the UI.

@@ -1,5 +1,9 @@
 # Catalog and category reconciliation record
 
+## 30 October 2026 — R04-KG1 policy supersedes old estimate basis
+
+Owner confirmed kilogram-based ingredient estimates for filled/custom boxes and hampers. See [FILLED_GIFT_PRICING.md](admin-expansion/FILLED_GIFT_PRICING.md). Historical CAT2 pista 200g = Rs960 records the old 250g-pack proration only. With that same dated record's 1kg price Rs4500, the new policy requires Rs900 for 200g; use fresh authoritative rates in implementation. Do not change stored merchant pack/custom rates to make these numbers agree. This documentation is not a new live audit, data mutation or implemented estimator. CAT2 proposal templates with unresolved placeholders are not executable validated final payloads. The report's business explanation of filled inquiry is not proof of UI/server enforcement; the pending implementation must test that boundary.
+
 ## 30 October 2026 — R04-CAT1 read-only live Firestore catalog and taxonomy audit
 
 [Sanitized machine-readable audit report](evidence/catalog-audit/r04-cat1-audit.json) records the complete read-only live Firestore inspection (`allbarka-live`, database `(default)`), feature-branch authoritative snapshot (`loadAuthoritativeCatalog` at `922f7c72c42e96a3501326d208c2914b8c66232a`), and credential-free public deployed preflight (`https://allbarka.com`, deployed commit `8cf4410d4cc9d1a2d4840a62cf0f328c4bdaaee0`). Zero writes, seed operations, price resets, publication changes, rules updates, credential rotations, or workflow executions were performed.

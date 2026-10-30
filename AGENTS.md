@@ -31,6 +31,7 @@ WCAG AA minimum 4.5:1 contrast for body copy
 Dark mode must ALWAYS keep working
 Respect prefers-reduced-motion in every animation
 Business Rules (DO NOT CHANGE without explicit instruction)
+30 October 2026 owner override (R04-KG1): filled/custom box and hamper ingredient estimates use current Firestore 1kg selling rate × explicit net grams / 1000; no 250g/500g proration or guessed kg fallback. Final filled/custom quote is confirmed via WhatsApp. Read docs/admin-expansion/FILLED_GIFT_PRICING.md; implementation is pending and this overrides older hamper-pricing prose only. Preserve standalone retail rates/quantity rules and eligible empty-packaging checkout.
 Lahore standard shipping Rs.150; FREE when discounted subtotal >= Rs.3,000.
 Outside Lahore all delivery methods use actual canonical order weight x Rs.250/kg, minimum Rs.250. Only the owner-authorized ZAFRANI promo waives that charge; order thresholds and rewards never grant national free delivery. Do not round up to whole kilograms (1.2kg = Rs.300).
 Oil billing convention: 1ml counts as 1g for the delivery tariff, as confirmed by the owner; this is not a physical density assertion.
