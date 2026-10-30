@@ -2177,9 +2177,9 @@
       "storedPricePer100gPkr": 720,
       "proposedDescriptions": {
         "currentStoredDescEn": "Fresh, succulent Irani Muzafati dates with a soft caramel melt-in-mouth texture for thoughtful gifting and daily nourishment.",
-        "proposedVerifiedFactDescEn": "Ajwa dates (Khajoor) packed in sealed food-grade portions (250g, 500g, and custom weighed selections) for daily pantry use and gifting. Store airtight in a cool, dry place.",
-        "proposedVerifiedFactDescUr": "روزمرہ استعمال اور تحفے کے لیے سیل بند پیکنگ (250 گرام، 500 گرام اور حسبِ ضرورت وزن) میں عجوہ کھجور۔ ٹھنڈی اور خشک جگہ پر بند ڈبے میں رکھیں۔",
-        "proposedVerifiedFactDescAr": "تمر عجوة معبأ في عبوات محكمة الإغلاق (250 غرام و500 غرام وأوزان مخصصة) للاستخدام اليومي والهدايا. يُحفظ في وعاء محكم في مكان بارد وجاف.",
+        "proposedVerifiedFactDescEn": "Ajwa dates (Khajoor) available in 250g, 500g, and custom weighed selections for daily use and gifting. Store in an airtight container in a cool, dry place.",
+        "proposedVerifiedFactDescUr": "روزمرہ استعمال اور تحفے کے لیے 250 گرام، 500 گرام اور حسبِ ضرورت وزن میں عجوہ کھجور۔ ٹھنڈی اور خشک جگہ پر بند ڈبے میں رکھیں۔",
+        "proposedVerifiedFactDescAr": "تمر عجوة متوفر بوزن 250 غرام و500 غرام وأوزان مخصصة للاستخدام اليومي والهدايا. يُحفظ في وعاء محكم في مكان بارد وجاف.",
         "flaggedConflictingCompiledMetadata": {
           "catalogOriginsTs": {
             "origin_en": "Irani Muzafati · Packed in Pakistan",
@@ -2196,8 +2196,8 @@
         }
       },
       "unresolvedMerchantDecisions": [
-        "Confirm whether physical inventory for ajwa-dates (\"Ajwa Dates Madina (Khajoor)\", 250g=400 PKR, 500g=760 PKR, pricePer100g=160 PKR) is authentic Madina-grown Ajwa or Irani Muzafati.",
-        "Confirm replacement desc_en/desc_ur/desc_ar (drafted strictly from verified title/portion facts without unverified crop-origin or grading claims).",
+        "Confirm whether physical inventory for ajwa-dates (\"Ajwa Dates Madina (Khajoor)\", 250g=1800 PKR, 500g=3400 PKR, pricePer100g=720 PKR) is authentic Madina-grown Ajwa or Irani Muzafati.",
+        "Confirm replacement desc_en/desc_ur/desc_ar (drafted strictly from verified title/portion facts without unverified crop-origin, packaging claims, or grading claims).",
         "Confirm whether stored/compiled origin_* (\"Irani Muzafati · Packed in Pakistan\" in src/data/catalogOrigins.ts), recipe_* (\"Serve Irani Muzafati dates whole...\" in src/data/care/dry.ts), and bundle references in bundle-immunity-shield / bundle-ramadan-ready should be updated in tandem."
       ]
     },
@@ -2220,9 +2220,9 @@
       "storedPricePer100gPkr": 880,
       "proposedDescriptions": {
         "currentStoredDescEn": "Premium jumbo amber dates from the fertile Panjgur date palms of Balochistan, prized for their luscious sweetness and rich flesh.",
-        "proposedVerifiedFactDescEn": "Jumbo Medjool dates (Khajoor) packed in sealed food-grade portions (250g, 500g, and custom weighed selections) for everyday enjoyment, sharing, and gifting. Store airtight in a cool, dry place.",
-        "proposedVerifiedFactDescUr": "روزمرہ استعمال، مہمان نوازی اور تحفے کے لیے سیل بند پیکنگ (250 گرام، 500 گرام اور حسبِ ضرورت وزن) میں جمبو میڈجول کھجور۔ ٹھنڈی اور خشک جگہ پر بند ڈبے میں رکھیں۔",
-        "proposedVerifiedFactDescAr": "تمر مجهول جامبو معبأ في عبوات محكمة الإغلاق (250 غرام و500 غرام وأوزان مخصصة) للضيافة والاستخدام اليومي والهدايا. يُحفظ في وعاء محكم في مكان بارد وجاف.",
+        "proposedVerifiedFactDescEn": "Jumbo Medjool dates (Khajoor) available in 250g, 500g, and custom weighed selections for everyday sharing and gifting. Store in an airtight container in a cool, dry place.",
+        "proposedVerifiedFactDescUr": "روزمرہ استعمال، مہمان نوازی اور تحفے کے لیے 250 گرام، 500 گرام اور حسبِ ضرورت وزن میں جمبو میڈجول کھجور۔ ٹھنڈی اور خشک جگہ پر بند ڈبے میں رکھیں۔",
+        "proposedVerifiedFactDescAr": "تمر مجهول جامبو متوفر بوزن 250 غرام و500 غرام وأوزان مخصصة للضيافة والاستخدام اليومي والهدايا. يُحفظ في وعاء محكم في مكان بارد وجاف.",
         "flaggedConflictingCompiledMetadata": {
           "catalogOriginsTs": {
             "origin_en": "Amber Variety · Packed in Pakistan",
@@ -2239,8 +2239,8 @@
         }
       },
       "unresolvedMerchantDecisions": [
-        "Confirm whether physical inventory for medjool-dates (\"Medjool Dates Jumbo\", 250g=450 PKR, 500g=855 PKR, pricePer100g=180 PKR) is Medjool variety or Balochistan Panjgur Amber.",
-        "Confirm replacement desc_en/desc_ur/desc_ar (drafted strictly from verified title/portion facts without unverified geographic origin or variety claims).",
+        "Confirm whether physical inventory for medjool-dates (\"Medjool Dates Jumbo\", 250g=2200 PKR, 500g=4200 PKR, pricePer100g=880 PKR) is Medjool variety or Balochistan Panjgur Amber.",
+        "Confirm replacement desc_en/desc_ur/desc_ar (drafted strictly from verified title/portion facts without unverified geographic origin, packaging claims, or variety claims).",
         "Confirm whether stored/compiled origin_* (\"Amber Variety · Packed in Pakistan\" in src/data/catalogOrigins.ts), recipe_* (\"Split a jumbo Panjgur amber date...\" in src/data/care/dry.ts), and bundle references in bundle-royal-feast / bundle-ramadan-ready should be updated in tandem."
       ]
     }

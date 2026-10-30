@@ -215,7 +215,7 @@ Baseline commit: `0ccb8c373889296eb791abd96869b6c03b1972d7` (`R04-CAT1`). Mode: 
 | **Hamper Boxes** (`hamperBoxes` collection) | `box-wood` (*Sheesham Artisan Wooden Chest*), `box-velvet` (*Royal Emerald Velvet Coffer*), `box-tin` (*Heritage Gold Keepsake Tin*) | Missing in Firestore `hamperBoxes` (`0` docs); `/api/catalog` returns `hamperBoxes: []` and custom hamper checkout is blocked (`409 MISSING_HAMPER_BOX`). | Schema uses `active: boolean` (`true` = published/selectable, `false` = disabled/draft); custom hampers use standard checkout when `active: true`. | - `box-wood` (`4–6` portions, `800g–1200g` contents): **`1800` PKR** *(UNCONFIRMED ref)*<br>- `box-velvet` (`3–5` portions, `600g–1000g` contents): **`1400` PKR** *(UNCONFIRMED ref)*<br>- `box-tin` (`3–4` portions, `600g–800g` contents): **`950` PKR** *(UNCONFIRMED ref)* | 1. Confirm `active: true \| false` for each box.<br>2. Approve or replace the UNCONFIRMED compiled reference PKR price (`1800`, `1400`, `950` PKR) for each box. |
 | **Gift-Box Membership** (Minimal additive taxonomy) | `bundle-silver-hamper`, `bundle-gold-hamper`, `bundle-platinum-hamper`, `bundle-ramadan-ready`, `corporate-gifting`, `deal-1`, `deal-2` | `/category/gift-boxes` currently matches only `deal-1` & `deal-2` (`2` items) because the 5 hampers/gifting sets have `category: 'bundles', collections: []`. | Stored records remain `status: 'published'` (`active: true`); `corporate-gifting` remains `orderMode: 'inquiry_quote'` (`quoteOnly: true`), others remain `orderMode: 'standard'`. | **No price changes** (stored prices preserved: `bundle-silver-hamper` `4500` PKR, `bundle-gold-hamper` `8500` PKR, `bundle-platinum-hamper` `16000` PKR, `bundle-ramadan-ready` `3200` PKR, `deal-1` `1950` PKR, `deal-2` `1600` PKR).<br>**Proposed minimal taxonomy change:** Keep primary `category: 'bundles'` on `bundle-silver-hamper`, `bundle-gold-hamper`, `bundle-platinum-hamper`, `bundle-ramadan-ready`, and `corporate-gifting` and add **`collections: ['gift-boxes']`** (`7` items in `/category/gift-boxes`, preserving all `/category/bundles` and `/category/deals` memberships). Keep `deal-1` & `deal-2` in primary `category: 'gift-boxes'` (both include a luxury presentation gift box) and optionally add `collections: ['bundles']`. | 1. Confirm adding `collections: ['gift-boxes']` to the 5 hamper/gifting products.<br>2. Confirm keeping `deal-1` and `deal-2` in primary `category: 'gift-boxes'` (with or without `collections: ['bundles']`). |
 | **Occasion Assignments** (Minimal additive tags) | `bundle-ramadan-ready`, `corporate-gifting`, `bundle-silver-hamper`, `bundle-gold-hamper`, `bundle-platinum-hamper`, `bundle-royal-feast`, `deal-1`, `deal-2`, `khajoor`, `ajwa-dates`, `medjool-dates`, `aseel-dates`, `chohara` | All 89 stored Firestore docs currently have `occasions: []` (`ramadan` and `corporate` filters return `0` items). | Stored `status` and `orderMode` preserved unchanged. | **No price changes.** Proposed additive `occasions` tags:<br>- `ramadan` (`6` items): `bundle-ramadan-ready`, `khajoor`, `ajwa-dates`, `medjool-dates`, `aseel-dates`, `chohara`<br>- `corporate` (`6` items): `corporate-gifting`, `bundle-silver-hamper`, `bundle-gold-hamper`, `bundle-platinum-hamper`, `deal-1`, `deal-2`<br>- `wedding` (add `5` stored items to `6` wedding bid-boxes = `11` total): `bundle-silver-hamper`, `bundle-gold-hamper`, `bundle-platinum-hamper`, `bundle-royal-feast`, `chohara`<br>- `umrah` (add `2` stored items to `bid-box-umrah-tabarruk` = `3` total): `ajwa-dates`, `medjool-dates` | 1. Confirm or adjust the proposed `occasions` array per product.<br>2. Confirm whether the 5 date items should keep primary `category: 'nuts'` (preserving dual `/category/dry-fruits` + `/category/dates` membership) or move to `category: 'dates', collections: ['dry-fruits']`. |
-| **Incorrect Date Descriptions** (Verified-fact replacement copy) | `ajwa-dates` (*Ajwa Dates Madina (Khajoor)*) & `medjool-dates` (*Medjool Dates Jumbo*) | Stored `ajwa-dates` `desc_en` claims *"Irani Muzafati dates"*; stored `medjool-dates` `desc_en` claims *"jumbo amber dates from the fertile Panjgur date palms of Balochistan"*. | Stored `status: 'published'` (`active: true`) and `orderMode: 'standard'` preserved unchanged. | **No price changes** (stored prices preserved: `ajwa-dates` `250g: 400, 500g: 760, pricePer100g: 160` PKR; `medjool-dates` `250g: 450, 500g: 855, pricePer100g: 180` PKR).<br>**Verified-fact replacement `desc_en` drafts:**<br>- `ajwa-dates`: *"Ajwa dates (Khajoor) packed in sealed food-grade portions (250g, 500g, and custom weighed selections) for daily pantry use and gifting. Store airtight in a cool, dry place."*<br>- `medjool-dates`: *"Jumbo Medjool dates (Khajoor) packed in sealed food-grade portions (250g, 500g, and custom weighed selections) for everyday enjoyment, sharing, and gifting. Store airtight in a cool, dry place."* | 1. Confirm physical stock identity (`Ajwa` vs `Irani Muzafati`, `Medjool` vs `Panjgur Amber`).<br>2. Approve the verified-fact `desc_en` / `desc_ur` / `desc_ar` drafts.<br>3. Confirm whether compiled `src/data/catalogOrigins.ts` (`origin_*`), `src/data/care/dry.ts` (`use` / `recipe_*`), and bundle copy in `bundle-immunity-shield`, `bundle-royal-feast`, and `bundle-ramadan-ready` should be updated to match. |
+| **Incorrect Date Descriptions** (Verified-fact replacement copy) | `ajwa-dates` (*Ajwa Dates Madina (Khajoor)*) & `medjool-dates` (*Medjool Dates Jumbo*) | Stored `ajwa-dates` `desc_en` claims *"Irani Muzafati dates"*; stored `medjool-dates` `desc_en` claims *"jumbo amber dates from the fertile Panjgur date palms of Balochistan"*. | Stored `status: 'published'` (`active: true`) and `orderMode: 'standard'` preserved unchanged. | **No price changes** (stored prices preserved: `ajwa-dates` `250g: 1800, 500g: 3400, pricePer100g: 720` PKR; `medjool-dates` `250g: 2200, 500g: 4200, pricePer100g: 880` PKR).<br>**Verified-fact replacement `desc_en` drafts (unsupported claims & "sealed food-grade" removed):**<br>- `ajwa-dates`: *"Ajwa dates (Khajoor) available in 250g, 500g, and custom weighed selections for daily use and gifting. Store in an airtight container in a cool, dry place."*<br>- `medjool-dates`: *"Jumbo Medjool dates (Khajoor) available in 250g, 500g, and custom weighed selections for everyday sharing and gifting. Store in an airtight container in a cool, dry place."* | 1. Confirm physical stock identity (`Ajwa` vs `Irani Muzafati`, `Medjool` vs `Panjgur Amber`).<br>2. Approve the verified-fact `desc_en` / `desc_ur` / `desc_ar` drafts.<br>3. Confirm whether compiled `src/data/catalogOrigins.ts` (`origin_*`), `src/data/care/dry.ts` (`use` / `recipe_*`), and bundle copy in `bundle-immunity-shield`, `bundle-royal-feast`, and `bundle-ramadan-ready` should be updated to match. |
 
 ### 2. Flagged Unsupported / Conflicting Origin, Quality & Ingredient Claims (`ajwa-dates` & `medjool-dates`)
 
@@ -244,3 +244,172 @@ Baseline commit: `0ccb8c373889296eb791abd96869b6c03b1972d7` (`R04-CAT1`). Mode: 
   - Verified stale `expectedRevision: 0` after creation fails closed with `409 CATALOG_REVISION_CONFLICT`.
   - Category counts before -> after (if all proposals are approved & published): `celebration-boxes` `4 -> 8`, `gift-boxes` `2 -> 7`, `bundles` `13 -> 15`, `deals` `15 -> 15`, `dry-fruits` `22 -> 22`, `dates` `5 -> 5`.
   - Occasion counts before -> after: `wedding` `4 -> 11`, `umrah` `0 -> 3`, `birth` `0 -> 1`, `ramadan` `0 -> 6`, `corporate` `0 -> 6`.
+### 4. Price Reference Reconciliation (CAT1 vs True Compiled Symbols vs CAT2)
+
+To eliminate any ambiguity between the initial read-only audit in `R04-CAT1` (`0ccb8c373889296eb791abd96869b6c03b1972d7`) and the remediation dry run in `R04-CAT2` (`1ca79681d03ed2ca934ec7d802b571de32752055`), the table below traces every pricing figure to its exact source file, symbol, and commit:
+
+| Product / Box ID | Stored Live Firestore Status | Initial CAT1 Markdown Table (`0ccb8c3`) | True Upstream Compiled Symbol & File (`2c94349` & Feature `922f7c7`) | Reconciled CAT2 Review Value (`1ca7968`) | Root Cause Analysis & Reconciled Nature of Price |
+| --- | --- | --- | --- | --- | --- |
+| `bid-box-luxury-tin` | Missing in Firestore (`exists: false`); active on storefront via seed fallback | `180 / 1800 / 4250 / 8000 / 15000 / 650 / 1350` PKR | `src/data/products.ts:1865-1872` in `createBidBoxProduct` (`emptyUnit1: 140`, `emptyUnit25: 132`, `emptyUnit50: 125`, `emptyUnit100: 115`, `filledMin: 1150`, `filledMax: 2200`) | **`140 / 1400 / 3300 / 6250 / 11500 / 1150 / 2200` PKR** | **Transcription error in CAT1 markdown table.** CAT1 mistakenly copied rates from `bid-box-sweet-nikkah` (empty base 180) and rough tiers into the `bid-box-luxury-tin` row. Both deployed `8cf4410` and feature `922f7c7` have always executed `emptyUnit1: 140` in compiled code. These figures are **UNCONFIRMED compiled reference rates**, not approved merchant selling prices. |
+| `bid-box-jute-pouch` | Missing in Firestore (`exists: false`); active on storefront via seed fallback | `40 / 400 / 925 / 1750 / 3000 / 280 / 480` PKR | `src/data/products.ts:1952-1959` in `createBidBoxProduct` (`emptyUnit1: 75`, `emptyUnit25: 72`, `emptyUnit50: 68`, `emptyUnit100: 60`, `filledMin: 450`, `filledMax: 850`) | **`75 / 750 / 1800 / 3400 / 6000 / 450 / 850` PKR** | **Transcription error in CAT1 markdown table.** The repository git history contains no record of 40/400/925 PKR in any source symbol. CAT2 inspected the compiled TypeScript source directly and restored the actual compiled constants as **UNCONFIRMED compiled reference rates**. |
+| `bid-box-sweet-nikkah` | Missing in Firestore (`exists: false`); active on storefront via seed fallback | `95 / 950 / 2250 / 4250 / 7500 / 480 / 950` PKR | `src/data/products.ts:1981-1988` in `createBidBoxProduct` (`emptyUnit1: 180`, `emptyUnit25: 172`, `emptyUnit50: 165`, `emptyUnit100: 150`, `filledMin: 1750`, `filledMax: 3800`) | **`180 / 1800 / 4300 / 8250 / 15000 / 1750 / 3800` PKR** | **Transcription error in CAT1 markdown table.** The numbers 95/950 were arbitrary prose notes. Upstream source has defined `emptyUnit1: 180` since commit `0ebc652` and restored in `2c94349`. Reconciled in CAT2 as **UNCONFIRMED compiled reference rates**. |
+| `box-wood` (`hamperBoxes`) | Missing in Firestore `hamperBoxes` (`0` docs in collection) | `2000` PKR | `src/lib/hamperCatalog.ts:10` in `HAMPER_BOXES` (mapped to `HAMPER_BOX_SEEDS` in `src/lib/hamperBoxSchema.ts:3`) | **`1800` PKR** | **Transcription error in CAT1 markdown table.** CAT1 stated PKR 2,000 from memory. The authoritative runtime symbol `HAMPER_BOXES[0].price` is and has always been `1800` PKR. |
+| `box-velvet` (`hamperBoxes`) | Missing in Firestore `hamperBoxes` (`0` docs in collection) | `2500` PKR | `src/lib/hamperCatalog.ts:11` in `HAMPER_BOXES` | **`1400` PKR** | **Transcription error in CAT1 markdown table.** Upstream constant `HAMPER_BOXES[1].price` is `1400` PKR. |
+| `box-tin` (`hamperBoxes`) | Missing in Firestore `hamperBoxes` (`0` docs in collection) | `1200` PKR | `src/lib/hamperCatalog.ts:12` in `HAMPER_BOXES` | **`950` PKR** | **Transcription error in CAT1 markdown table.** Upstream constant `HAMPER_BOXES[2].price` is `950` PKR. |
+| `pista` | Stored in Firestore `products` (`revision: 2`, `schemaVersion: 1`) | `250g: 1200, 500g: 2200, 1kg: 4500` PKR; `pricePer100g: 500` PKR | Live Firestore document `products/pista` (overriding compiled seed `1250 / 2500 / 5000`) | `250g: 1200, 500g: 2200, 1kg: 4500` PKR; `pricePer100g: 500` PKR | **Authoritative merchant record.** Both CAT1 and CAT2 verify that stored merchant prices must be preserved 100% untouched. |
+
+### 5. Option Identity Preservation and Schema / n8n Compatibility Analysis
+
+During `R04-CAT1`, promotional display text from `bidBoxConfig.emptyTiers` was loosely cited. However, in the AllBarka production architecture, the string keys in `product.prices` and `variant.label` serve as immutable contract identifiers across multiple subsystems. Renaming or modifying these keys to match informal promotional phrasing would cause severe compatibility breakages:
+
+| Canonical Runtime Key (`src/data/products.ts:1695-1702`) | Informal Promotional Label (`bidBoxConfig.emptyTiers`) | Subsystem Compatibility Risks If Changed |
+| --- | --- | --- |
+| `'Empty Box (1 pc)'` | `Empty Box (Single Piece)` | **1. Cart line validation:** `src/lib/cartInput.ts:25-32` matches line items strictly against `product.prices[variantLabel]`. If the label is changed, existing user carts in browser `localStorage` or sessions fail with `INVALID_CART_VARIANT` and line prices reset to 0.<br>**2. Canonical quote service:** `src/lib/quoteService.ts` and `tests/authoritative-quote.test.ts` resolve line prices by exact key match. Mismatched keys throw `UNSUPPORTED_VARIANT`.<br>**3. Admin schema validation:** `src/lib/catalogSchema.ts:41-48` allowlists exact packaging variant strings. Unrecognized strings exceeding 40 characters are rejected with `INVALID_PORTION_KEY` (400).<br>**4. n8n order synchronization:** `src/services/n8nOrderNotification.ts` formats outbound webhooks to n8n workflow nodes that parse `variantLabel` for automated packaging inventory dispatch and supplier notifications. Renaming keys breaks downstream n8n webhook triggers. |
+| `'Empty Pack (10 pcs)'` | `Empty Pack of 10 (10% Off)` | Same as above. The canonical key encodes quantity deterministically for `parsePiecesPerPack` (`src/lib/packagingMoq.ts:133-145`). |
+| `'Empty Pack (25 pcs)'` | `Empty Pack of 25 (Wholesale)` | Same as above. |
+| `'Empty Bulk (50 pcs)'` | `Empty Bulk of 50` | Same as above. |
+| `'Empty Bulk (100 pcs)'` | `Empty Bulk of 100` | Same as above. |
+| Product-specific filled labels (e.g. `Filled Standard (Assorted Dry Fruits)`, `Filled Royal (VIP 4-Nut Assortment)`) | Varies by packaging product | Same as above. Specifically, the allowlisted 53-char and 76-char labels on `bid-box-umrah-tabarruk` are hardcoded in `legacyPackagingLabels`. Any deviation breaks schema validation upon admin save. |
+
+**Policy Decision:** All proposed candidate payloads and future admin writes MUST preserve the exact canonical runtime keys (`'Empty Box (1 pc)'`, `'Empty Pack (10 pcs)'`, `'Empty Pack (25 pcs)'`, `'Empty Bulk (50 pcs)'`, `'Empty Bulk (100 pcs)'`, and exact filled option strings).
+
+### 6. Draft / Inquiry Candidate Payload Readiness & Schema Blocker Analysis
+
+Under repo rules and owner direction, finalizing selling prices must not block the creation and storage of missing catalog records. However, candidate records must conform strictly to the actual schema rules in `src/lib/catalogSchema.ts` and `src/lib/hamperBoxSchema.ts`:
+
+#### A. Schema Validation Blocker Analysis for Unpriced Products
+1. **`validateDynamicProduct` (`src/lib/catalogSchema.ts:416-431`):**
+   ```ts
+   const quoteOnly = Boolean(value.quoteOnly) || value.orderMode === 'inquiry_quote';
+   const hasConfiguredVariants = hasVariantsArray && (value.variants as unknown[]).length > 0;
+   if (!quoteOnly && Object.keys(prices).length === 0 && !hasConfiguredVariants && !(value.commerce && value.status === 'draft')) {
+     throw new CatalogError('PRODUCT_REQUIRES_PRICING', 400);
+   }
+   ```
+   - **Finding:** If `orderMode === 'inquiry_quote'` (`quoteOnly: true`), a product can be created with `prices: {}` and `variants: []` (e.g. `bid-box-acrylic-royal` and `corporate-gifting`).
+   - **Blocker:** If `orderMode !== 'inquiry_quote'`, any product lacking positive variant prices is rejected with `PRODUCT_REQUIRES_PRICING` (400), **even if `status === 'draft'`**, unless the product includes an explicit `commerce` block (`!(value.commerce && value.status === 'draft')`).
+   - **Remediation for unpriced draft records:** To store draft non-commerce records without fabricating unconfirmed selling prices or enabling storefront checkout, two valid patterns exist:
+     - **Option 1 (Inquiry-only candidate):** Set `status: 'draft'`, `active: false`, `orderMode: 'inquiry_quote'`, `quoteOnly: true`, `prices: {}`. This is 100% schema-valid without any prices.
+     - **Option 2 (Draft record with unconfirmed reference prices disabled):** Set `status: 'draft'`, `active: false`, `orderMode: 'both'`, and populate the compiled UNCONFIRMED reference variants in `prices` and `variants`. Because `active: false` and `status: 'draft'`, the item is hidden from the storefront and cannot be purchased or quoted, but the document structure is valid in Firestore and immediately ready for merchant price activation in the admin UI.
+2. **`validateHamperBoxPricing` (`src/lib/hamperBoxSchema.ts:6-12`):**
+   ```ts
+   if (!Number.isSafeInteger(v.price) || v.price <= 0) throw new CatalogError('INVALID_HAMPER_BOX', 400);
+   if (typeof v.active !== 'boolean') throw new CatalogError('INVALID_HAMPER_BOX', 400);
+   ```
+   - **Finding:** `HamperBoxRecord` schema strictly requires `price > 0` and safe integer. An unpriced hamper box (`price: 0` or missing) throws `INVALID_HAMPER_BOX` (400).
+   - **Finding:** The schema has no separate `status` enum; disabled/draft state is represented solely via `active: false`.
+   - **Remediation:** Hamper boxes can be stored in inactive/draft state by setting `active: false` with the compiled reference price (`1800`, `1400`, `950` PKR) until merchant pricing approval.
+
+#### B. Candidate Payloads for Missing Records (Non-Purchasable Draft / Inquiry State)
+
+1. **`bid-box-acrylic-royal` (Candidate Inquiry / Draft Payload):**
+   ```json
+   {
+     "id": "bid-box-acrylic-royal",
+     "schemaVersion": 1,
+     "expectedRevision": 0,
+     "status": "draft",
+     "active": false,
+     "quoteOnly": true,
+     "orderMode": "inquiry_quote",
+     "category": "celebration-boxes",
+     "packagingSubcategory": "wedding",
+     "occasions": ["wedding"],
+     "collections": [],
+     "allowCustomWeight": false,
+     "prices": {},
+     "variants": [],
+     "wholesale": 0,
+     "shippingWeightG": 650
+   }
+   ```
+2. **Target Packaging Items (`bid-box-umrah-tabarruk`, `bid-box-pyramid-favor`, `bid-box-card-nikkah`, `bid-box-birth-announcement`, `bid-box-luxury-tin`, `bid-box-jute-pouch`, `bid-box-sweet-nikkah`):**
+   Each item is structured as a non-purchasable draft payload with `status: 'draft'`, `active: false`, `quoteOnly: false`, `orderMode: 'both'`, and the 7 canonical variant keys populated with unconfirmed reference rates. Because `active: false`, no customer checkout is possible, resolving the Priority 1 risk where fallback items were previously purchasable without an admin Firestore document.
+3. **Hamper Boxes (`box-wood`, `box-velvet`, `box-tin`):**
+   Structured with `schemaVersion: 1`, `revision: 1`, `active: false`, and the compiled reference prices (`1800`, `1400`, `950` PKR).
+
+### 7. Specific Policy Question Resolutions
+
+#### A. Mathematical Proof of the Dynamic MOQ 25-Piece Cap
+- **Implementation:** `calculatePackagingMoq` (`src/lib/packagingMoq.ts:160-202`) computes:
+  $$\text{rawMoq} = \left\lceil \frac{5000}{\text{perPiecePrice}} \right\rceil$$
+  $$\text{moqPieces} = \min(25, \max(1, \text{rawMoq}))$$
+- **Proof:** For any packaging item where $\text{perPiecePrice} < 200\text{ PKR}$, the quotient $\frac{5000}{\text{perPiecePrice}} > 25$. Because the formula applies $\min(25, \dots)$, the calculated piece threshold is capped at **25 pieces** (`DEFAULT_PACKAGING_CAP_MOQ = 25`).
+- **Impact on Order Totals:**
+  $$\text{Minimum Order Total} = 25 \times \text{perPiecePrice} < 25 \times 200 = 5,000\text{ PKR}$$
+  For example, on `bid-box-pyramid-favor` (Rs. 60/piece reference):
+  - Without cap: $\lceil 5000 / 60 \rceil = 84\text{ pieces} \rightarrow 84 \times 60 = 5,040\text{ PKR}$.
+  - With Rule D1 25-piece cap: $\min(25, 84) = 25\text{ pieces} \rightarrow 25 \times 60 = **1,500\text{ PKR}**$.
+  - Pack rounding via `calculateMinOrderQuantityUnits` (`Math.ceil(25 / 10) = 3\text{ packs}` [30 pieces]): $3 \times 600 = **1,800\text{ PKR}**$.
+- **Business Rationale:** The 25-piece cap intentionally prevents excessive quantity barriers on low-cost favor items (avoiding forcing customers to purchase 84+ boxes for small intimate family gatherings), while still requiring a meaningful bulk commitment.
+
+#### B. Derivation of the 200g Pista Hamper Portion Price (Rs. 960)
+- In `src/lib/hamperCatalog.ts:39`, `hamperSelectionPrice` calculates the portion price as:
+  $$\text{portionPrice} = \text{Math.round}\left( \frac{\text{price\_250g} \times 200}{250} \right)$$
+- In the live stored Firestore record for `pista` (`revision: 2`), `prices['250g']` is authoritative at **PKR 1,200**:
+  $$\text{portionPrice} = \text{Math.round}\left( \frac{1200 \times 200}{250} \right) = 1200 \times 0.8 = **960\text{ PKR}**$$
+- **Contrast with loose custom rate:** The stored `pricePer100g: 500` rate ($500 \times 2 = 1,000\text{ PKR}$) applies exclusively to standalone unconstrained custom-weight selections in `src/lib/commercePricing.ts`. For curated luxury hampers, the portion pricing algorithm prorates the standard packaged **250g retail rate**, passing retail volume savings to the gift buyer.
+
+#### C. Why Filled Options Require Inquiry / Quotation While Standard Boxes Permit Direct Checkout
+- Product-level `orderMode: 'both'` indicates that a catalog product contains both direct checkout options and inquiry-negotiated options. It is not evidence that every variant can be purchased directly.
+- **Empty box options** (`'Empty Box (1 pc)'`, `'Empty Pack (10 pcs)'`, etc.) are pre-manufactured, standardized physical packaging units that require no personalization and can be checked out directly once MOQ is met.
+- **Filled options** (`Filled Standard`, `Filled Royal`) involve bespoke customizations: couple/family name printing, event dates, specific Dua cards, custom ribbon colors, and fresh hand-sorting of perishable dry fruits and dates.
+- Furthermore, 4 products have filled variant labels ranging from 41 to 76 characters. The legacy n8n webhook receiver historically enforced a 50-character limit on variant strings. Direct automated checkout of filled options before deploying the Stage 6 receiver update creates fulfillment communication failures.
+
+#### D. Sanitized Date Descriptions (Removal of Unsubstantiated Claims)
+- All unsupported claims, including "sealed food-grade packaging/portions", "Madina-grown crop", and "Panjgur date palms of Balochistan", have been excised from the proposed replacement copy.
+- **Sanitized Replacement Copy:**
+  - `ajwa-dates`: *"Ajwa dates (Khajoor) available in 250g, 500g, and custom weighed selections for daily use and gifting. Store in an airtight container in a cool, dry place."*
+    - Urdu: *"روزمرہ استعمال اور تحفے کے لیے 250 گرام، 500 گرام اور حسبِ ضرورت وزن میں عجوہ کھجور۔ ٹھنڈی اور خشک جگہ پر بند ڈبے میں رکھیں۔"*
+    - Arabic: *"تمر عجوة متوفر بوزن 250 غرام و500 غرام وأوزان مخصصة للاستخدام اليومي والهدايا. يُحفظ في وعاء محكم في مكان بارد وجاف."*
+  - `medjool-dates`: *"Jumbo Medjool dates (Khajoor) available in 250g, 500g, and custom weighed selections for everyday sharing and gifting. Store in an airtight container in a cool, dry place."*
+    - Urdu: *"روزمرہ استعمال، مہمان نوازی اور تحفے کے لیے 250 گرام، 500 گرام اور حسبِ ضرورت وزن میں جمبو میڈجول کھجور۔ ٹھنڈی اور خشک جگہ پر بند ڈبے میں رکھیں۔"*
+    - Arabic: *"تمر مجهول جامبو متوفر بوزن 250 غرام و500 غرام وأوزان مخصصة للضيافة والاستخدام اليومي والهدايا. يُحفظ في وعاء محكم في مكان بارد وجاف."*
+
+### 8. Admin Price Propagation Architecture Trace & Verification
+
+The lifecycle of an admin catalog price update flows through the following verifiable architecture:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin as Merchant / Admin
+    participant UI as AdminItemForm (Frontend)
+    participant API as /api/admin/catalog/products/:id
+    participant Store as catalogStore (updateAdminProduct)
+    participant DB as Firestore (allbarka-live)
+    participant Cache as In-Memory Cache (cachedCatalog)
+    participant Quote as Authoritative Quote Service
+    participant Client as Storefront CatalogProvider
+
+    Admin->>UI: Edits price and clicks "Save Changes"
+    UI->>API: PUT /api/admin/catalog/products/:id (body with expectedRevision)
+    API->>Store: updateAdminProduct({ db, productId, body, actorUid })
+    Store->>DB: db.runTransaction: reads current doc & verifies currentRevision === expectedRevision
+    Store->>DB: t.set(docRef, { ...cleanedData, revision: currentRevision + 1, updatedAt })
+    Store->>DB: t.set(auditRef, { event: 'PRODUCT_UPDATED', productId, ... })
+    Store->>Cache: invalidateCatalogCache() (cache = null)
+    Store-->>UI: Returns updated product record with new revision
+    Note over Store,Cache: Cache synchronously purged — NO server restart or redeployment required
+    Client->>API: GET /api/catalog (polled or on CatalogProvider.refresh())
+    API->>Store: loadAuthoritativeCatalog(db) -> cache is null -> reads fresh from Firestore
+    Store-->>Client: Returns fresh catalog with updated merchant prices
+    Admin->>Quote: Checkout / Quote requested
+    Quote->>Store: loadAuthoritativeCatalog(db, { fresh: true }) -> reads fresh from Firestore
+```
+
+- **Persistence & Editability of Seed-Backed Items:** When a missing seed product (e.g. `bid-box-luxury-tin`) is first written to Firestore via `updateAdminProduct` with `expectedRevision: 0`, it transitions from an ephemeral compiled seed fallback into a durable `schemaVersion: 1` document at `revision: 1`. From that point forward, it is fully editable via all standard admin catalog forms, eliminating the legacy `409 MISSING_CATALOG_PRODUCT` error.
+- **Cache Lifecycle:** Because `updateAdminProduct` directly invokes `invalidateCatalogCache()` upon transaction commit (`src/lib/catalogStore.ts:762`), the in-memory cache is immediately cleared. Updates do **not** require server restart, cache expiration wait, or code redeployment.
+
+### 9. Short Prioritized Merchant Decision List & Smallest Next Action
+
+To enable live production writes, the merchant must confirm the following 6 decisions:
+
+1. **Priority 1 Packaging Selling Prices & Publication Status:** Confirm authoritative selling prices for `bid-box-luxury-tin`, `bid-box-jute-pouch`, and `bid-box-sweet-nikkah` (or confirm keeping compiled rates as approved prices), and confirm `status: 'published'` vs `'draft'`.
+2. **Hamper Box Prices & Availability:** Confirm PKR prices (`1800`, `1400`, `950` PKR compiled references) and `active: true | false` for `box-wood`, `box-velvet`, and `box-tin`.
+3. **Priority 2 Long-Label Packaging Mode:** Confirm whether `bid-box-umrah-tabarruk`, `bid-box-pyramid-favor`, `bid-box-card-nikkah`, and `bid-box-birth-announcement` should be activated as inquiry-only (`orderMode: 'inquiry_quote'`) immediately, or held in draft until Stage 6 n8n receiver deployment.
+4. **Gift Boxes Collection Membership:** Confirm adding `collections: ['gift-boxes']` to `bundle-silver-hamper`, `bundle-gold-hamper`, `bundle-platinum-hamper`, `bundle-ramadan-ready`, and `corporate-gifting`.
+5. **Occasions Tagging:** Confirm proposed additive tags: `ramadan` (6 items), `corporate` (6 items), `wedding` (5 stored bundles + chohara).
+6. **Date Physical Stock Identity & Descriptions:** Confirm physical inventory identity for `ajwa-dates` (Ajwa vs Irani Muzafati) and `medjool-dates` (Medjool vs Panjgur Amber), and approve the sanitized fact-only replacement descriptions.
+
+- **Smallest Next Concrete Action:** Record the merchant's confirmation of the above decisions in `docs/admin-expansion/DECISIONS.md`, after which the dry-run write procedure documented in `r04-cat2-remediation-dry-run.json` can be executed under separate write authorization.
