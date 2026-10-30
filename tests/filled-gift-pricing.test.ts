@@ -9,9 +9,11 @@ import {
   isFilledPackagingVariant,
   classifyPackagingVariant,
   packagingVariantRequiresInquiry,
+  resolveEmptyPackagingUnitPrice,
+  resolveFilledRecipe,
   type RecipeIngredient,
 } from '../src/lib/filledGiftPricing';
-import { CUSTOM_HAMPER_PRODUCT_ID, HAMPER_BOXES } from '../src/lib/hamperCatalog';
+import { CUSTOM_HAMPER_PRODUCT_ID, HAMPER_BOXES, resolveHamper } from '../src/lib/hamperCatalog';
 import { BID_BOX_PRODUCTS } from '../src/data/products';
 import { memoryFirestore } from './helpers/memoryFirestore';
 import { createDurableOrder } from '../src/lib/orderDatabase';
@@ -503,7 +505,21 @@ test('Test 14: Canonical variant classification and inquiry guard defaults unkno
 function createMemoryCatalogStore() {
   const initialRecords: Record<string, unknown> = {};
   for (const product of [...PRODUCTS, ...BID_BOX_PRODUCTS]) {
-    initialRecords[`products/${product.id}`] = product;
+    if (product.id === 'bid-box-umrah-tabarruk') {
+      initialRecords[`products/${product.id}`] = {
+        ...product,
+        filledRecipes: {
+          'Filled Standard (Irani Dates, Badam, Kaju & Kishmish)': [
+            { productId: 'khajoor', grams: 100 },
+            { productId: 'badam', grams: 50 },
+            { productId: 'kaju', grams: 50 },
+            { productId: 'kishmish', grams: 50 },
+          ],
+        },
+      };
+    } else {
+      initialRecords[`products/${product.id}`] = product;
+    }
   }
   for (const box of HAMPER_BOXES) {
     initialRecords[`hamperBoxes/${box.id}`] = { ...box, active: true };
@@ -821,4 +837,313 @@ test('Test 19: Idempotency replays of already-persisted orders succeed without r
   assert.equal(replayed.status, 'ORDER_RECEIVED');
   assert.match(replayed.whatsappMessage, /ALLBARKA — ORDER CONFIRMATION/);
   assert.match(replayed.whatsappMessage, /Umrah & Hajj Tabarruk Box Set/);
+});
+
+test('Test 20: Acceptance Scenario — Rs1000/kg + 50g (Rs50/box) + Rs100 empty pack vs legacy Rs9000 filled option', async () => {
+  // Scenario:
+  // - Ingredient: Rs1,000/kg, 50g per box (ingredient estimate = Rs50/box).
+  // - Actual empty packaging: Rs100 per box.
+  // - Unrelated old filled option price: Rs9,000.
+  // - Expected estimate: Rs150 per box, Rs1,500 for ten boxes — never Rs9,050 per box or Rs90,000.
+
+  const mockNut: Product = {
+    ...PRODUCTS.find(p => p.id === 'badam')!,
+    id: 'mock-nut-acceptance',
+    name_en: 'Acceptance Almonds',
+    status: 'published',
+    prices: { '1kg': 1000, '250g': 350 },
+    variants: [
+      { label: '1kg', price: 1000, available: true },
+      { label: '250g', price: 350, available: true },
+    ],
+  };
+
+  const mockPackaging: Product = {
+    ...BID_BOX_PRODUCTS[0],
+    id: 'mock-box-acceptance',
+    name_en: 'Acceptance Favor Box',
+    name_ur: 'ٹیسٹ بکس',
+    name_ar: 'صندوق اختبار',
+    category: 'celebration-boxes',
+    packagingSubcategory: 'wedding',
+    isBidBox: true,
+    active: true,
+    status: 'published',
+    orderMode: 'both',
+    shippingWeightG: 200,
+    prices: {
+      'Empty Box (1 pc)': 100,
+      'Filled Legacy Option': 9000,
+    },
+    variants: [
+      { label: 'Empty Box (1 pc)', price: 100, available: true },
+      { label: 'Filled Legacy Option', price: 9000, available: true },
+    ],
+    filledRecipes: {
+      'Filled Legacy Option': [{ productId: 'mock-nut-acceptance', grams: 50 }],
+    },
+    bidBoxConfig: {
+      emptyUnitStarting: 100,
+      emptyBulk50Unit: 90,
+      emptyBulk100Unit: 80,
+      emptyTiers: [
+        { qty: 1, label: 'Empty Box (1 pc)', unitPrice: 100, packPrice: 100, variantKey: 'Empty Box (1 pc)' },
+        { qty: 25, label: '25-pcs', unitPrice: 100, packPrice: 2500, variantKey: '25-pcs' },
+        { qty: 50, label: '50-pcs', unitPrice: 90, packPrice: 4500, variantKey: '50-pcs' },
+      ],
+      filledOptions: [
+        { label: 'Filled Legacy Option', subtitle: 'Dry fruit filling', price: 9000, variantKey: 'Filled Legacy Option' },
+      ],
+    },
+  };
+
+  const catalog: Product[] = [mockNut, mockPackaging, ...PRODUCTS.filter(p => p.id !== mockNut.id && p.id !== mockPackaging.id)];
+
+  // A. Verify empty packaging resolution
+  const emptyUnitPrice1 = resolveEmptyPackagingUnitPrice(mockPackaging, 1);
+  assert.equal(emptyUnitPrice1, 100);
+  const emptyUnitPrice10 = resolveEmptyPackagingUnitPrice(mockPackaging, 10);
+  assert.equal(emptyUnitPrice10, 100);
+
+  // B. Card Calculation (1 box)
+  const cardRecipe = resolveFilledRecipe(mockPackaging, 'Filled Legacy Option');
+  assert.deepEqual(cardRecipe, [{ productId: 'mock-nut-acceptance', grams: 50 }]);
+  const cardEstimate = calculateFilledGiftEstimate({
+    packagingProduct: mockPackaging,
+    packagingUnitPrice: emptyUnitPrice1 ?? undefined,
+    recipe: cardRecipe || undefined,
+    catalogProducts: catalog,
+    requestedBoxes: 1,
+  });
+  assert.equal(cardEstimate.isAvailable, true);
+  assert.equal(cardEstimate.ingredientsTotalPkr, 50);
+  assert.equal(cardEstimate.packagingTotalPkr, 100);
+  assert.equal(cardEstimate.estimatedTotalPkr, 150);
+  assert.notEqual(cardEstimate.estimatedTotalPkr, 9050, 'Card estimate must never add ingredients on top of old Rs9000 filled option');
+
+  // C. Modal Calculation (10 boxes)
+  const modalEstimate10 = calculateFilledGiftEstimate({
+    packagingProduct: mockPackaging,
+    packagingUnitPrice: emptyUnitPrice10 ?? undefined,
+    recipe: cardRecipe || undefined,
+    catalogProducts: catalog,
+    requestedBoxes: 10,
+  });
+  assert.equal(modalEstimate10.isAvailable, true);
+  assert.equal(modalEstimate10.ingredientsTotalPkr, 500);
+  assert.equal(modalEstimate10.packagingTotalPkr, 1000);
+  assert.equal(modalEstimate10.estimatedTotalPkr, 1500);
+  assert.notEqual(modalEstimate10.estimatedTotalPkr, 90050, 'Modal estimate must never add ingredients on top of old Rs9000 filled option');
+
+  // D. Authoritative Server Estimate via quoteOrderForCustomer (10 boxes)
+  const fixture = createMemoryCatalogStore();
+  fixture.records.set(`products/${mockNut.id}`, mockNut);
+  fixture.records.set(`products/${mockPackaging.id}`, mockPackaging);
+
+  const serverQuote = await quoteOrderForCustomer(fixture.db, {
+    items: [{ productId: mockPackaging.id, selectedWeight: 'Filled Legacy Option', quantity: 10 }],
+    city: 'Lahore',
+    shippingMethodId: 'standard',
+  });
+
+  assert.equal(serverQuote.success, true);
+  assert.equal(serverQuote.items[0].price, 150, 'Server unit price per box must be Rs150 (Rs50 filling + Rs100 empty box)');
+  assert.equal(serverQuote.totals.subtotal, 1500, 'Server subtotal for 10 boxes must be Rs1500');
+  assert.notEqual(serverQuote.totals.subtotal, 90000, 'Server must never use legacy Rs9000 variant price');
+
+  // E. Card, Modal, and Server estimate STRICTLY AGREE
+  assert.equal(cardEstimate.estimatedTotalPkr! * 10, modalEstimate10.estimatedTotalPkr);
+  assert.equal(modalEstimate10.estimatedTotalPkr, serverQuote.totals.subtotal);
+
+  // F. Changed kg rate updates estimate correctly (Rs2000/kg -> Rs100 filling -> Rs200 per box, Rs2000 for 10 boxes)
+  const mockNutUpdated: Product = {
+    ...mockNut,
+    status: 'published',
+    prices: { '1kg': 2000, '250g': 600 },
+    variants: [
+      { label: '1kg', price: 2000, available: true },
+      { label: '250g', price: 600, available: true },
+    ],
+  };
+  const updatedCatalog: Product[] = [mockNutUpdated, mockPackaging];
+  const updatedModalEstimate = calculateFilledGiftEstimate({
+    packagingProduct: mockPackaging,
+    packagingUnitPrice: emptyUnitPrice10 ?? undefined,
+    recipe: cardRecipe || undefined,
+    catalogProducts: updatedCatalog,
+    requestedBoxes: 10,
+  });
+  assert.equal(updatedModalEstimate.isAvailable, true);
+  assert.equal(updatedModalEstimate.ingredientsTotalPkr, 1000); // 2000 * 50 * 10 / 1000
+  assert.equal(updatedModalEstimate.packagingTotalPkr, 1000);
+  assert.equal(updatedModalEstimate.estimatedTotalPkr, 2000);
+
+  const fixtureUpdated = createMemoryCatalogStore();
+  fixtureUpdated.records.set(`products/${mockNutUpdated.id}`, mockNutUpdated);
+  fixtureUpdated.records.set(`products/${mockPackaging.id}`, mockPackaging);
+  const serverQuoteUpdated = await quoteOrderForCustomer(fixtureUpdated.db, {
+    items: [{ productId: mockPackaging.id, selectedWeight: 'Filled Legacy Option', quantity: 10 }],
+    city: 'Lahore',
+    shippingMethodId: 'standard',
+  });
+  assert.equal(serverQuoteUpdated.success, true);
+  assert.equal(serverQuoteUpdated.items[0].price, 200);
+  assert.equal(serverQuoteUpdated.totals.subtotal, 2000);
+
+  // G. Missing recipe never displays old filled price: produces honest unpriced state on card/modal and PRICING_UNAVAILABLE on server
+  const packagingWithoutRecipe: Product = {
+    ...mockPackaging,
+    id: 'mock-box-no-recipe',
+    status: 'published',
+    filledRecipes: undefined,
+    recipeIngredients: undefined,
+  };
+  const unpricedRecipeEstimate = calculateFilledGiftEstimate({
+    packagingProduct: packagingWithoutRecipe,
+    recipe: undefined,
+    catalogProducts: catalog,
+    requestedBoxes: 10,
+  });
+  assert.equal(unpricedRecipeEstimate.isAvailable, false);
+  assert.equal(unpricedRecipeEstimate.estimatedTotalPkr, null);
+
+  const fixtureNoRecipe = createMemoryCatalogStore();
+  fixtureNoRecipe.records.set(`products/${mockNut.id}`, mockNut);
+  fixtureNoRecipe.records.set(`products/${packagingWithoutRecipe.id}`, packagingWithoutRecipe);
+  let quoteNoRecipeError: any = null;
+  try {
+    await quoteOrderForCustomer(fixtureNoRecipe.db, {
+      items: [{ productId: packagingWithoutRecipe.id, selectedWeight: 'Filled Legacy Option', quantity: 10 }],
+      city: 'Lahore',
+      shippingMethodId: 'standard',
+    });
+  } catch (err: any) {
+    quoteNoRecipeError = err;
+  }
+  assert.ok(quoteNoRecipeError);
+  assert.equal(quoteNoRecipeError.code, 'PRICING_UNAVAILABLE');
+
+  // H. Missing kg rate never displays old filled price
+  const mockNutNoKg: Product = {
+    ...mockNut,
+    status: 'published',
+    prices: { '250g': 350 },
+    variants: [{ label: '250g', price: 350, available: true }],
+  };
+  const unpricedKgEstimate = calculateFilledGiftEstimate({
+    packagingProduct: mockPackaging,
+    recipe: cardRecipe || undefined,
+    catalogProducts: [mockNutNoKg, mockPackaging],
+    requestedBoxes: 10,
+  });
+  assert.equal(unpricedKgEstimate.isAvailable, false);
+  assert.equal(unpricedKgEstimate.estimatedTotalPkr, null);
+
+  const fixtureNoKg = createMemoryCatalogStore();
+  fixtureNoKg.records.set(`products/${mockNutNoKg.id}`, mockNutNoKg);
+  fixtureNoKg.records.set(`products/${mockPackaging.id}`, mockPackaging);
+  let quoteNoKgError: any = null;
+  try {
+    await quoteOrderForCustomer(fixtureNoKg.db, {
+      items: [{ productId: mockPackaging.id, selectedWeight: 'Filled Legacy Option', quantity: 10 }],
+      city: 'Lahore',
+      shippingMethodId: 'standard',
+    });
+  } catch (err: any) {
+    quoteNoKgError = err;
+  }
+  assert.ok(quoteNoKgError);
+  assert.equal(quoteNoKgError.code, 'PRICING_UNAVAILABLE');
+
+  // I. Missing empty packaging never displays old filled price
+  const packagingNoEmpty: Product = {
+    ...mockPackaging,
+    id: 'mock-box-no-empty',
+    status: 'published',
+    prices: { 'Filled Legacy Option': 9000 },
+    variants: [{ label: 'Filled Legacy Option', price: 9000, available: true }],
+    bidBoxConfig: undefined,
+  };
+  assert.equal(resolveEmptyPackagingUnitPrice(packagingNoEmpty, 10), null);
+  const unpricedEmptyEstimate = calculateFilledGiftEstimate({
+    packagingProduct: packagingNoEmpty,
+    recipe: cardRecipe || undefined,
+    catalogProducts: [mockNut, packagingNoEmpty],
+    requestedBoxes: 10,
+  });
+  assert.equal(unpricedEmptyEstimate.isAvailable, false);
+  assert.equal(unpricedEmptyEstimate.estimatedTotalPkr, null);
+
+  const fixtureNoEmpty = createMemoryCatalogStore();
+  fixtureNoEmpty.records.set(`products/${mockNut.id}`, mockNut);
+  fixtureNoEmpty.records.set(`products/${packagingNoEmpty.id}`, packagingNoEmpty);
+  let quoteNoEmptyError: any = null;
+  try {
+    await quoteOrderForCustomer(fixtureNoEmpty.db, {
+      items: [{ productId: packagingNoEmpty.id, selectedWeight: 'Filled Legacy Option', quantity: 10 }],
+      city: 'Lahore',
+      shippingMethodId: 'standard',
+    });
+  } catch (err: any) {
+    quoteNoEmptyError = err;
+  }
+  assert.ok(quoteNoEmptyError);
+  assert.equal(quoteNoEmptyError.code, 'PRICING_UNAVAILABLE');
+
+  // J. Customer budget remains strictly separate from computed estimate
+  const customerOfferedBudget = 120; // Customer targets Rs120/box while catalog estimate is Rs150/box
+  assert.notEqual(customerOfferedBudget, cardEstimate.estimatedTotalPkr);
+  assert.notEqual(customerOfferedBudget * 10, modalEstimate10.estimatedTotalPkr);
+
+  // K. Custom hamper inquiry prefill preserves complete configuration
+  const hamperConfig = {
+    version: 1 as const,
+    boxId: 'box-wood' as const,
+    selections: ['pista', 'badam', 'kaju', 'akhroot'],
+    recipientName: 'Fatima',
+    giftMessage: 'Best wishes for your celebration',
+  };
+  const resolvedHamper = resolveHamper(hamperConfig, PRODUCTS);
+  assert.ok(resolvedHamper);
+  assert.equal(resolvedHamper.configuration.recipientName, 'Fatima');
+  assert.equal(resolvedHamper.configuration.giftMessage, 'Best wishes for your celebration');
+  assert.equal(resolvedHamper.configuration.selections.length, 4);
+
+  // L. Filled/custom direct order creation strictly fails closed with QUOTE_REQUIRED
+  await assert.rejects(
+    () => createDurableOrder({
+      db: fixture.db,
+      payload: {
+        ...standardCustomer,
+        items: [{ productId: mockPackaging.id, selectedWeight: 'Filled Legacy Option', quantity: 10 }],
+      },
+      uid: null,
+      idempotencyKey: 'direct-order-attempt-filled-packaging',
+    }),
+    (err: any) => {
+      assert.equal(err.code, 'QUOTE_REQUIRED');
+      return true;
+    }
+  );
+
+  await assert.rejects(
+    () => createDurableOrder({
+      db: fixture.db,
+      payload: {
+        ...standardCustomer,
+        items: [{
+          productId: CUSTOM_HAMPER_PRODUCT_ID,
+          selectedWeight: resolvedHamper.portion,
+          quantity: 1,
+          hamperConfiguration: resolvedHamper.configuration,
+        }],
+      },
+      uid: null,
+      idempotencyKey: 'direct-order-attempt-custom-hamper',
+    }),
+    (err: any) => {
+      assert.equal(err.code, 'QUOTE_REQUIRED');
+      return true;
+    }
+  );
 });

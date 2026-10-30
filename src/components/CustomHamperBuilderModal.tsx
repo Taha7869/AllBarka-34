@@ -8,6 +8,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { getLocalized } from '../utils/localize';
 import { acquireScrollLock } from '../utils/scrollLock';
 import { CUSTOM_HAMPER_PRODUCT_ID, HAMPER_BOXES, HAMPER_SELECTION_IDS, HAMPER_PORTION_GRAMS, hamperCartKey, hamperSelectionPrice, resolveHamper, type HamperConfiguration } from '../lib/hamperCatalog';
+import { openCustomQuoteModal } from './CustomQuoteModal';
 
 export interface CustomHamperCartInput {
   id: string;
@@ -63,7 +64,7 @@ const copy = [
   ['total', 'Hamper total', 'ہیمپر کی مجموعی قیمت', 'إجمالي الصندوق'],
   ['back', 'Back', 'واپس', 'السابق'],
   ['continue', 'Continue', 'آگے بڑھیں', 'متابعة'],
-  ['add', 'Add hamper to bag', 'ہیمپر شاپنگ بیگ میں شامل کریں', 'أضف الصندوق إلى الحقيبة'],
+  ['add', 'Request Hamper Quote', 'ہیمپر کی کوٹیشن طلب کریں', 'طلب عرض سعر للصندوق'],
 ] as const;
 const translations = {
   en: Object.fromEntries(copy.map(([key, en]) => [key, en])),
@@ -125,6 +126,28 @@ export default function CustomHamperBuilderModal({ isOpen, onClose, onAddToCart 
   const toggleItem = (id: string) => setSelectedItems(previous => previous.includes(id) ? previous.filter(value => value !== id) : previous.length < box.maxSelections ? [...previous, id] : previous);
   const finish = () => {
     if (!resolved) return;
+    const boxName = getLocalized(box, 'name', language);
+    const selectionsSummary = selectedItems
+      .map(id => {
+        const p = PRODUCTS.find(candidate => candidate.id === id);
+        return p ? `${getLocalized(p, 'name', language)} (200g)` : id;
+      })
+      .join(', ');
+    const fillingsNote = `Coffer: ${boxName}. Selections: ${selectionsSummary}.`;
+
+    openCustomQuoteModal({
+      productId: CUSTOM_HAMPER_PRODUCT_ID,
+      productName: resolved.name_en,
+      mode: 'filled',
+      quantity: 1,
+      variantLabel: resolved.portion,
+      eventType: 'Other Celebration',
+      monogramText: resolved.configuration.recipientName || undefined,
+      cardMessage: resolved.configuration.giftMessage || undefined,
+      customFillingsNotes: fillingsNote,
+      targetPricePkr: resolved.unitPrice,
+    });
+
     onAddToCart({ id: hamperCartKey(resolved.configuration), productId: CUSTOM_HAMPER_PRODUCT_ID, slug: CUSTOM_HAMPER_PRODUCT_ID,
       name_en: resolved.name_en, name_ur: resolved.name_ur, name_ar: resolved.name_ar, selectedWeight: resolved.portion,
       unitPrice: resolved.unitPrice, price: resolved.unitPrice, image: resolved.image, quantity: 1, hamperConfiguration: resolved.configuration });

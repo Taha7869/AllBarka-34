@@ -265,18 +265,42 @@ export function resolveFilledRecipe(product: Product | null | undefined, label: 
   return filledLabels.length === 1 && filledLabels[0].trim() === key ? shared : null;
 }
 
-/** Per-box price of actual empty packaging for the requested quantity: the largest available empty pack not above it. */
+/** Per-box price of actual empty packaging for the requested quantity. */
 export function resolveEmptyPackagingUnitPrice(product: Product | null | undefined, boxes: number): number | null {
   if (!product || !validBoxes(boxes)) return null;
   const disabled = new Set((product.variants || []).filter(unavailableVariant).map(variant => variant.label));
   let best: { pieces: number; unit: number } | null = null;
+  let smallest: { pieces: number; unit: number } | null = null;
+
   for (const [label, price] of Object.entries(product.prices || {})) {
     if (disabled.has(label) || !Number.isFinite(price) || price <= 0 || classifyPackagingVariant(product, label) !== 'empty') continue;
     const pieces = parsePiecesPerPack(label, product);
-    if (!Number.isSafeInteger(pieces) || pieces < 1 || pieces > boxes) continue;
-    if (!best || pieces > best.pieces) best = { pieces, unit: Math.round((price / pieces) * 100) / 100 };
+    if (!Number.isSafeInteger(pieces) || pieces < 1) continue;
+    const unit = Math.round((price / pieces) * 100) / 100;
+    if (pieces <= boxes) {
+      if (!best || pieces > best.pieces) best = { pieces, unit };
+    }
+    if (!smallest || pieces < smallest.pieces) {
+      smallest = { pieces, unit };
+    }
   }
-  return best ? best.unit : null;
+
+  if (Array.isArray(product.bidBoxConfig?.emptyTiers)) {
+    for (const tier of product.bidBoxConfig.emptyTiers) {
+      if (!tier || disabled.has(tier.variantKey) || !Number.isFinite(tier.unitPrice) || tier.unitPrice <= 0) continue;
+      const pieces = tier.qty;
+      if (!Number.isSafeInteger(pieces) || pieces < 1) continue;
+      const unit = tier.unitPrice;
+      if (pieces <= boxes) {
+        if (!best || pieces > best.pieces) best = { pieces, unit };
+      }
+      if (!smallest || pieces < smallest.pieces) {
+        smallest = { pieces, unit };
+      }
+    }
+  }
+
+  return best ? best.unit : (smallest ? smallest.unit : null);
 }
 
 /**

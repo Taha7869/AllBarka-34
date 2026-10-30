@@ -20,7 +20,7 @@ import {
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import { Product, CustomQuoteModalInit } from '../types';
 import { resolveInquiryProductVariant } from '../lib/inquiryResolution';
-import { calculateFilledGiftEstimate, resolveFilledRecipe } from '../lib/filledGiftPricing';
+import { calculateFilledGiftEstimate, resolveFilledRecipe, resolveEmptyPackagingUnitPrice } from '../lib/filledGiftPricing';
 import {
   buildCustomerInquiryWhatsAppUrl,
   MANDATORY_LEAD_TIME_NOTICE,
@@ -199,16 +199,50 @@ export default function CustomQuoteModal() {
     return resolveFilledRecipe(selectedProduct, selectedVariantLabel);
   }, [selectedProduct, selectedVariantLabel]);
 
+  const emptyPackagingUnitPrice = useMemo(() => {
+    if (mode !== 'filled' || !selectedProduct) return null;
+    return resolveEmptyPackagingUnitPrice(selectedProduct, quantity);
+  }, [mode, selectedProduct, quantity]);
+
   const filledEstimate = useMemo(() => {
     if (mode !== 'filled' || !selectedProduct) return null;
     return calculateFilledGiftEstimate({
       packagingProduct: selectedProduct,
-      packagingUnitPrice: resolution.perPiecePrice || resolution.standardPrice,
+      packagingUnitPrice: emptyPackagingUnitPrice ?? undefined,
       recipe: filledRecipe || undefined,
       catalogProducts: products,
       requestedBoxes: quantity,
     });
-  }, [mode, selectedProduct, resolution, filledRecipe, products, quantity]);
+  }, [mode, selectedProduct, emptyPackagingUnitPrice, filledRecipe, products, quantity]);
+
+  const effectiveReferenceRate = useMemo(() => {
+    if (mode === 'filled') {
+      if (filledEstimate?.isAvailable && filledEstimate.estimatedTotalPkr != null) {
+        const perBox = Math.round(filledEstimate.estimatedTotalPkr / quantity);
+        return {
+          standardPrice: perBox,
+          perPiecePrice: perBox,
+          requiresTeamQuote: false,
+          isEstimate: true,
+          estimatedTotalPkr: filledEstimate.estimatedTotalPkr,
+        };
+      }
+      return {
+        standardPrice: null,
+        perPiecePrice: null,
+        requiresTeamQuote: true,
+        isEstimate: false,
+        estimatedTotalPkr: null,
+      };
+    }
+    return {
+      standardPrice: resolution.standardPrice,
+      perPiecePrice: resolution.perPiecePrice,
+      requiresTeamQuote: resolution.requiresTeamQuote,
+      isEstimate: false,
+      estimatedTotalPkr: null,
+    };
+  }, [mode, filledEstimate, quantity, resolution]);
 
   if (!isOpen) return null;
 
@@ -233,9 +267,9 @@ export default function CustomQuoteModal() {
     customPrintText: customPrinting,
     budgetType,
     targetPricePkr,
-    referenceUnitPrice: resolution.standardPrice,
-    perPiecePrice: resolution.perPiecePrice,
-    requiresTeamQuote: resolution.requiresTeamQuote,
+    referenceUnitPrice: effectiveReferenceRate.standardPrice,
+    perPiecePrice: effectiveReferenceRate.perPiecePrice,
+    requiresTeamQuote: effectiveReferenceRate.requiresTeamQuote,
     belowMoq: resolution.belowMoq,
     moqRequired: resolution.moqRequired,
     customerName,
@@ -283,7 +317,7 @@ export default function CustomQuoteModal() {
         customPrintText: customPrinting.trim() || undefined,
         budgetType,
         targetPricePkr: targetPricePkr ? Number(targetPricePkr) : null,
-        referenceUnitPrice: resolution.standardPrice,
+        referenceUnitPrice: effectiveReferenceRate.standardPrice,
         customerName: customerName.trim(),
         customerPhone: customerPhone.trim(),
         email: customerEmail.trim() || undefined,
@@ -313,9 +347,9 @@ export default function CustomQuoteModal() {
           customPrintText: customPrinting,
           budgetType,
           targetPricePkr,
-          referenceUnitPrice: resolution.standardPrice,
-          perPiecePrice: resolution.perPiecePrice,
-          requiresTeamQuote: resolution.requiresTeamQuote,
+          referenceUnitPrice: effectiveReferenceRate.standardPrice,
+          perPiecePrice: effectiveReferenceRate.perPiecePrice,
+          requiresTeamQuote: effectiveReferenceRate.requiresTeamQuote,
           belowMoq: resolution.belowMoq,
           moqRequired: resolution.moqRequired,
           customerName,
@@ -600,6 +634,9 @@ export default function CustomQuoteModal() {
                     className="w-full rounded-xl border border-[#D4AF6A]/50 bg-white px-3 py-2.5 text-sm font-medium text-[#072A20] focus:border-[#072A20] focus:outline-none"
                   >
                     <option value="">Default Size / Pack</option>
+                    {selectedVariantLabel && !availableVariants.includes(selectedVariantLabel) && (
+                      <option value={selectedVariantLabel}>{selectedVariantLabel}</option>
+                    )}
                     {availableVariants.map(v => (
                       <option key={v} value={v}>
                         {v}
@@ -950,8 +987,17 @@ export default function CustomQuoteModal() {
                 )}
                 <div className="flex items-center gap-2 py-1 text-xs">
                   <span className="text-[#566B63]">Catalog Reference Rate:</span>
-                  {resolution.requiresTeamQuote || !resolution.standardPrice ? (
+                  {effectiveReferenceRate.requiresTeamQuote || !effectiveReferenceRate.standardPrice ? (
                     <span className="font-semibold text-[#8C6B1B]">Custom Quote on Request (Team Review)</span>
+                  ) : effectiveReferenceRate.isEstimate ? (
+                    <span className="font-bold text-[#072A20]">
+                      Rs. {Number(effectiveReferenceRate.standardPrice).toLocaleString()} / box
+                      {quantity > 1 && (
+                        <span className="text-[11px] font-normal text-[#566B63] ml-1">
+                          (Est. Rs. {Number(effectiveReferenceRate.estimatedTotalPkr).toLocaleString()} total)
+                        </span>
+                      )}
+                    </span>
                   ) : resolution.quantityUnit === 'packs' ? (
                     <span className="font-bold text-[#072A20]">
                       Rs. {Number(resolution.standardPrice).toLocaleString()} / pack
@@ -977,10 +1023,10 @@ export default function CustomQuoteModal() {
                     type="number"
                     min={1}
                     placeholder={
-                      resolution.standardPrice
+                      effectiveReferenceRate.standardPrice
                         ? budgetType === 'total'
-                          ? `e.g. ${Math.round(resolution.standardPrice * quantity * 0.9)} (Target total PKR)`
-                          : `e.g. ${Math.round((resolution.perPiecePrice || resolution.standardPrice) * 0.9)} (Target ${resolution.quantityUnit === 'packs' ? 'per pack' : 'per piece'} PKR)`
+                          ? `e.g. ${Math.round(effectiveReferenceRate.standardPrice * quantity * 0.9)} (Target total PKR)`
+                          : `e.g. ${Math.round(effectiveReferenceRate.standardPrice * 0.9)} (Target ${effectiveReferenceRate.isEstimate ? 'per box' : resolution.quantityUnit === 'packs' ? 'per pack' : 'per piece'} PKR)`
                         : `Target offer in PKR`
                     }
                     value={targetPricePkr}

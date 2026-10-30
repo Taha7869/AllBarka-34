@@ -177,7 +177,7 @@ export default function BidBoxesSection({ onQuickView, compact = false }: BidBox
             });
             const displayFilledPrice = (filledEst.isAvailable && filledEst.estimatedTotalPkr)
               ? filledEst.estimatedTotalPkr
-              : (activeFilledOpt?.price || null);
+              : null;
 
             const cover = mediaCover(product) || product.image || '/images/products/bid-box-umrah-tabarruk-1.webp';
 
@@ -358,27 +358,41 @@ export default function BidBoxesSection({ onQuickView, compact = false }: BidBox
                           <div className="flex items-center justify-between text-[11px]">
                             <span className="font-semibold text-[#566B63]">Filled Assortment:</span>
                             <span className="font-bold text-[#072A20]">
-                              {displayFilledPrice ? `Rs. ${displayFilledPrice.toLocaleString()}/box` : 'Quote on Request'}
+                              {displayFilledPrice ? `Rs. ${displayFilledPrice.toLocaleString()}/box` : t('catalog.quoteOnRequest', 'Quote on Request')}
                             </span>
                           </div>
                           <div className="space-y-1.5">
-                            {cfg.filledOptions.map((opt, idx) => (
-                              <button
-                                key={opt.variantKey}
-                                type="button"
-                                onClick={() => setSelectedFilledIdx(prev => ({ ...prev, [product.id]: idx }))}
-                                className={`w-full rounded-lg border px-2.5 py-1.5 text-left transition-all flex items-center justify-between gap-2 ${
-                                  filledIdx === idx
-                                    ? 'border-[#072A20] bg-[#072A20]/5 text-[#072A20]'
-                                    : 'border-[#D4AF6A]/30 bg-white text-[#566B63] hover:border-[#072A20]/40'
-                                }`}
-                              >
-                                <span className="text-[11px] font-bold truncate">{opt.label}</span>
-                                <span className="text-xs font-extrabold text-[#8C6B1B] shrink-0">
-                                  Rs. {opt.price.toLocaleString()}
-                                </span>
-                              </button>
-                            ))}
+                            {cfg.filledOptions.map((opt, idx) => {
+                              const optRecipe = resolveFilledRecipe(product, opt.variantKey);
+                              const optEst = calculateFilledGiftEstimate({
+                                packagingProduct: product,
+                                packagingUnitPrice: activeEmptyTier?.unitPrice,
+                                recipe: optRecipe || undefined,
+                                catalogProducts: products,
+                                requestedBoxes: 1,
+                              });
+                              const optPriceDisplay = (optEst.isAvailable && optEst.estimatedTotalPkr)
+                                ? `Rs. ${optEst.estimatedTotalPkr.toLocaleString()}/box`
+                                : t('catalog.quoteOnRequest', 'Quote on Request');
+
+                              return (
+                                <button
+                                  key={opt.variantKey}
+                                  type="button"
+                                  onClick={() => setSelectedFilledIdx(prev => ({ ...prev, [product.id]: idx }))}
+                                  className={`w-full rounded-lg border px-2.5 py-1.5 text-left transition-all flex items-center justify-between gap-2 ${
+                                    filledIdx === idx
+                                      ? 'border-[#072A20] bg-[#072A20]/5 text-[#072A20]'
+                                      : 'border-[#D4AF6A]/30 bg-white text-[#566B63] hover:border-[#072A20]/40'
+                                  }`}
+                                >
+                                  <span className="text-[11px] font-bold truncate">{opt.label}</span>
+                                  <span className="text-xs font-extrabold text-[#8C6B1B] shrink-0">
+                                    {optPriceDisplay}
+                                  </span>
+                                </button>
+                              );
+                            })}
                           </div>
                         </div>
                       )}

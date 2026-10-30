@@ -10,14 +10,14 @@ import { resolveCartIdentity } from './cartInput';
 import { resolveCustomWeight, resolveProductVariant } from './productVariants';
 import { calculateLoyaltyPoints } from './loyaltyPoints';
 import type { Product } from '../types';
-import { catalogVariantId } from './catalogSchema';
+import { catalogVariantId, isKnownLegacyPackagingLabel } from './catalogSchema';
 import {
   isPackagingProduct,
   validatePackagingQuantity,
   parsePiecesPerPack,
   calculatePackagingMoq,
 } from './packagingMoq';
-import { isFilledPackagingVariant, packagingVariantRequiresInquiry } from './filledGiftPricing';
+import { isFilledPackagingVariant, packagingVariantRequiresInquiry, classifyPackagingVariant, calculateFilledGiftEstimate, resolveFilledRecipe } from './filledGiftPricing';
 export { isFilledPackagingVariant, packagingVariantRequiresInquiry };
 
 export interface ValidatedOrderItem {
@@ -257,19 +257,6 @@ export function validateAndPriceOrder({
     if (!permitInquiry && packagingVariantRequiresInquiry(product, weight)) {
       throw new ValidationError(`Please request a personalized quote for filled packaging "${product.name_en}" (${weight}).`, 'QUOTE_REQUIRED');
     }
-    // Existing fixed wholesale pricing remains compatible. Custom grams always
-    // use the catalogue retail rate, never a client-supplied wholesale amount.
-    const authoritativeUnitPrice = !variant.isCustom && isWholesale && product.wholesale > 0
-      ? product.wholesale : variant.price;
-
-    // Never treat an unknown or zero price as purchasable
-    if (!Number.isFinite(authoritativeUnitPrice) || authoritativeUnitPrice <= 0) {
-      throw new ValidationError(
-        `Pricing is unavailable for "${product.name_en}". Please request a personalized quote.`,
-        'PRICING_UNAVAILABLE'
-      );
-    }
-
     // Validate quantity strictly: integer, positive, within supported bounds
     const rawQty = clientItem.quantity;
     const numQty = typeof rawQty === 'number' ? rawQty : Number(rawQty);
@@ -278,6 +265,43 @@ export function validateAndPriceOrder({
       throw new ValidationError(
         `Invalid quantity for "${product.name_en}": must be a positive integer.`,
         'INVALID_QUANTITY'
+      );
+    }
+
+    // Existing fixed wholesale pricing remains compatible. Custom grams always
+    // use the catalogue retail rate, never a client-supplied wholesale amount.
+    let authoritativeUnitPrice = !variant.isCustom && isWholesale && product.wholesale > 0
+      ? product.wholesale : variant.price;
+
+    if (classifyPackagingVariant(product, weight) === 'filled') {
+      const recipe = resolveFilledRecipe(product, weight);
+      if (recipe) {
+        const estimate = calculateFilledGiftEstimate({
+          packagingProduct: product,
+          recipe,
+          catalogProducts: products,
+          requestedBoxes: numQty,
+        });
+        if (!estimate.isAvailable || estimate.estimatedTotalPkr === null) {
+          throw new ValidationError(
+            `Pricing is unavailable for "${product.name_en}". Please request a personalized quote.`,
+            'PRICING_UNAVAILABLE'
+          );
+        }
+        authoritativeUnitPrice = Math.round(estimate.estimatedTotalPkr / numQty);
+      } else if (!isKnownLegacyPackagingLabel(product.id, weight)) {
+        throw new ValidationError(
+          `Pricing is unavailable for "${product.name_en}". Please request a personalized quote.`,
+          'PRICING_UNAVAILABLE'
+        );
+      }
+    }
+
+    // Never treat an unknown or zero price as purchasable
+    if (!Number.isFinite(authoritativeUnitPrice) || authoritativeUnitPrice <= 0) {
+      throw new ValidationError(
+        `Pricing is unavailable for "${product.name_en}". Please request a personalized quote.`,
+        'PRICING_UNAVAILABLE'
       );
     }
 

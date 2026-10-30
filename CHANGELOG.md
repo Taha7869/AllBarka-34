@@ -1,3 +1,29 @@
+## 30 October 2026 — R04-KG1 estimate consistency and inquiry journey slice
+
+- **Estimate consistency between card, modal, and server**:
+  - `src/lib/filledGiftPricing.ts`: Updated `resolveEmptyPackagingUnitPrice` to check both `product.prices` and `product.bidBoxConfig.emptyTiers`, returning the actual packaging unit price even when requested quantity is below the smallest pack tier (falling back to the smallest pack tier unit rate).
+  - `src/components/BidBoxesSection.tsx`: Removed misleading `activeFilledOpt?.price` fallback. Displays localized `catalog.quoteOnRequest` ('Quote on Request') when recipe/rates are missing. Option buttons compute per-box estimates via `calculateFilledGiftEstimate` or show 'Quote on Request', eliminating outdated filled prices.
+  - `src/components/CustomQuoteModal.tsx`: Resolves actual empty packaging unit cost via canonical `resolveEmptyPackagingUnitPrice(selectedProduct, quantity)` and passes to `calculateFilledGiftEstimate`. Computes `effectiveReferenceRate` to show per-box estimate (and total for quantity > 1) or 'Custom Quote on Request (Team Review)', never displaying legacy Rs. 9,000 filled option prices. Connected `effectiveReferenceRate` to budget placeholders, WhatsApp inquiry URLs, and quote persistence.
+  - `src/lib/orderValidation.ts`: In filled packaging mode, dynamically evaluates filled packaging recipes at authoritative pricing boundary (`validateAndPriceOrder`), matching customer quotes and rejecting invalid/missing recipe or kg rates with `PRICING_UNAVAILABLE`, while preserving historical compatibility for known legacy packaging labels.
+- **Custom Hamper Builder inquiry journey**:
+  - `src/components/CustomHamperBuilderModal.tsx`: Updated Step 3 action copy to "Request Hamper Quote" (`t('add')`) across EN, UR, and AR. In `finish()`, dispatches `openCustomQuoteModal` with complete coffer name, 200g portion details for each selection, recipient name, gift message, and target price, while maintaining `onAddToCart` for client bag state.
+  - `src/lib/inquiryResolution.ts`: Added support for `custom-hamper` product IDs in `resolveInquiryProductVariant`, enabling seamless quote modal prefill and review.
+- **Trilingual localization**:
+  - `src/contexts/catalogTranslations.ts`: Added `'catalog.quoteOnRequest'`: EN `'Quote on Request'`, UR `'قیمت رابطہ پر دستیاب'`, AR `'السعر عند الطلب'`.
+- **Comprehensive test verification**:
+  - `tests/filled-gift-pricing.test.ts`: Added Test 20 verifying the acceptance scenario across 12 assertions (A through L):
+    - Ingredient Rs. 1,000/kg (50g/box = Rs. 50/box), empty packaging Rs. 100/box, old filled option Rs. 9,000.
+    - Verified estimate is Rs. 150/box (Rs. 1,500 for 10 boxes), never Rs. 9,050/box or Rs. 90,000.
+    - Card, modal, and authoritative server estimate strictly agree.
+    - Rate updates (Rs. 2,000/kg) update estimates accurately (Rs. 200/box, Rs. 2,000 for 10 boxes).
+    - Missing recipe, missing kg rate, or missing packaging strictly fail closed to unpriced state and server `PRICING_UNAVAILABLE`.
+    - Customer budget remains strictly separate from catalog estimate.
+    - Hamper builder configuration is preserved upon quote dispatch.
+    - Direct order creation strictly fails closed with `QUOTE_REQUIRED`.
+  - All 20/20 `tests/filled-gift-pricing.test.ts` pass. Full offline suite (741 tests across 83 files, 21 backend, 36 production checks) pass.
+- **Status tracking**:
+  - Maintained `R04-KG1` as `IN_PROGRESS` in all documentation pending: (1) Visual admin recipe editor in `AdminProductEditModal`, (2) Merchant quote-approval workflow, (3) Live Firestore catalog seeding.
+
 ## 30 October 2026 — R04-KG1 inquiry guard persistence boundary security repair
 
 - **Fixed client-controlled inquiry bypass in order creation**:

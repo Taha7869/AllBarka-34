@@ -1,9 +1,9 @@
 # Filled gifts: kilogram-based ingredient estimates
 
 Updated: 30 October 2026 (Asia/Karachi).
-Task: R04-KG1. Owner decision: CONFIRMED. Implementation: IN_PROGRESS. Live verification/release: NOT_RUN.
-Inspected source parent: `5a472f537f2f4a91ee3fb831a6e311fc250ca2f9`.
-This checkpoint records the completed implementation of the shared kilogram-based estimator and authoritative inquiry guard.
+Task: R04-KG1. Owner decision: CONFIRMED. Implementation: IN_PROGRESS (estimate consistency & inquiry journey slice verified). Live verification/release: NOT_RUN.
+Inspected source parent: `5282f800390b2a794ad538257a497a0f6b253c5f`.
+This checkpoint records the completed implementation of the estimate consistency and inquiry journey slice across card, modal, hamper builder, and authoritative quote verification.
 
 ## Current owner instruction and precedence
 
@@ -93,7 +93,7 @@ Runtime source:
    - Live Firestore data seeding/migration for bid-box recipes and authoritative 1kg ingredient rates.
 
 Verification:
-- `tests/filled-gift-pricing.test.ts`: 19/19 comprehensive tests PASS (owner 50g example, multi-ingredient mixture, changed kg rates, unchanged 250g pack rates, missing/disabled kg rates failing unpriced, unchanged standalone retail/custom weights, filled checkout rejection with `QUOTE_REQUIRED`, empty packaging checkout success, calculated base < 1kg rejection, shipping mass exclusion, conflicting/disabled variant fail-closed, subtotal exposure with null total, unquoted hamper rejection, canonical variant classification, direct creation failure, client payload bypass denial, quote-match rejection, empty packaging/food normal checkout, and idempotent historical replay).
+- `tests/filled-gift-pricing.test.ts`: 20/20 comprehensive tests PASS (including Test 20 acceptance scenario with 12 assertions across card, modal, and server) (owner 50g example, multi-ingredient mixture, changed kg rates, unchanged 250g pack rates, missing/disabled kg rates failing unpriced, unchanged standalone retail/custom weights, filled checkout rejection with `QUOTE_REQUIRED`, empty packaging checkout success, calculated base < 1kg rejection, shipping mass exclusion, conflicting/disabled variant fail-closed, subtotal exposure with null total, unquoted hamper rejection, canonical variant classification, direct creation failure, client payload bypass denial, quote-match rejection, empty packaging/food normal checkout, and idempotent historical replay).
 - `tests/hamper-catalog.test.tsx`: 7/7 tests PASS.
 - `tests/authoritative-quote.test.ts`: 7/7 tests PASS.
 - `tests/stage6-legacy-packaging.test.ts`: 4/4 tests PASS.

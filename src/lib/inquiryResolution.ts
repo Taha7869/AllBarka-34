@@ -101,6 +101,26 @@ export function sanitizePublicInquiryInput(raw: any): Record<string, any> {
  */
 export function resolveInquiryProductVariant(params: ResolveInquiryParams): InquiryVariantResolution {
   const { catalog, productId, requestedVariantLabel, boxMode, quantity } = params;
+  if (productId === 'custom-hamper' || productId?.startsWith('custom-hamper:')) {
+    return {
+      productId: 'custom-hamper',
+      productName: 'Custom Luxury Hamper',
+      isVerifiedCatalogProduct: true,
+      packagingVariant: requestedVariantLabel ? String(requestedVariantLabel).slice(0, 80) : 'Custom Hamper',
+      unresolvedVariant: false,
+      quantityUnit: 'pieces',
+      piecesPerPack: 1,
+      standardPrice: null,
+      packPrice: null,
+      perPiecePrice: null,
+      totalPieces: quantity,
+      requiresTeamQuote: true,
+      belowMoq: false,
+      moqRequired: null,
+      minPacksRequired: null,
+      isTabarruk: false,
+    };
+  }
   const catalogProduct = catalog.find(p => p.id === productId);
 
   if (!catalogProduct) {
