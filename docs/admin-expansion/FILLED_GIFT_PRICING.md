@@ -1,9 +1,9 @@
 # Filled gifts: kilogram-based ingredient estimates
 
 Updated: 30 October 2026 (Asia/Karachi).
-Task: R04-KG1. Owner decision: CONFIRMED. Implementation: TODO. Live verification/release: NOT_RUN.
+Task: R04-KG1. Owner decision: CONFIRMED. Implementation: DONE. Live verification/release: NOT_RUN.
 Inspected source parent: `5a472f537f2f4a91ee3fb831a6e311fc250ca2f9`.
-This is a policy and architecture checkpoint, not a claim that the runtime formula or inquiry guard has changed.
+This checkpoint records the completed implementation of the shared kilogram-based estimator and authoritative inquiry guard.
 
 ## Current owner instruction and precedence
 
@@ -72,11 +72,19 @@ Continue the existing filled-packaging inquiry fix and implement R04-KG1 in the 
 
 ## Checkpoint evidence and boundaries
 
-Owner/agent: owner decision; Codex documentation self-review.
-Changed scope: policy, architecture, continuation links and acceptance criteria only.
-Runtime source, merchant rates, database records, keys, workflows and deployment are unchanged by this checkpoint.
-Catalog reconciliation: N/A for documentation-only recording; no new live catalog read or write.
-Source inspection: `hamperCatalog.ts` currently uses `product.prices['250g'] * 200 / 250`; `productVariants.ts` has a separate standalone custom-weight resolver. The new policy has not yet been implemented.
-Documentation checks: PASS for new links, changed-line whitespace, example arithmetic and unchanged runtime source hashes. `ALLBARKA_SKIP_LOCAL_ENV=true npm run build`: PASS (exit 0; source fingerprint `a2e8d86be6da3cb1`; release privacy audit 84 text artifacts). Dependencies installed from the unchanged lockfile in an isolated source snapshot. Archived screenshot binaries were not needed for this documentation/build check; no visual or full-regression result is claimed. Final diff: Codex self-review; scope is the ten intended policy documents only.
-Implementation/browser/live checks: NOT_RUN at this policy checkpoint.
-Next executable action: fetch this checkpoint in Antigravity, then implement the bounded estimator and filled/custom inquiry guards above.
+Owner/agent: owner decision; Antigravity implementation & verification.
+Changed scope: runtime estimator (`src/lib/filledGiftPricing.ts`), hamper catalog update (`src/lib/hamperCatalog.ts`), additive schema (`src/types.ts`, `src/lib/catalogSchema.ts`), inquiry guards (`src/lib/orderValidation.ts`, `src/components/BidBoxesSection.tsx`, `src/pages/ProductDetailPage.tsx`), unit tests (`tests/filled-gift-pricing.test.ts`, `tests/hamper-catalog.test.tsx`, `tests/stage6-legacy-packaging.test.ts`).
+Runtime source:
+1. `src/lib/filledGiftPricing.ts`: shared deterministic estimator implementing `resolveAuthoritativeKgRate`, `calculateIngredientEstimate` (`K * g * n / 1000`), `calculateFilledGiftEstimate`, and `isFilledPackagingVariant`.
+2. `src/lib/hamperCatalog.ts`: updated `hamperSelectionPrice` to use `resolveAuthoritativeKgRate(product) * HAMPER_PORTION_GRAMS / 1000` (half-up integer PKR rounding).
+3. `src/types.ts` & `src/lib/catalogSchema.ts`: additive `RecipeIngredient` type, `recipeIngredients` and `filledRecipes` allowlisted in `PUBLIC_PRODUCT_FIELDS` and validated in `validateDynamicProduct`.
+4. Inquiry guards:
+   - Authoritative server guard in `validateAndPriceOrder` (`src/lib/orderValidation.ts`) rejecting direct checkout of filled packaging variants with `QUOTE_REQUIRED`.
+   - Frontend UI guards in `BidBoxesSection.tsx` and `ProductDetailPage.tsx` routing filled packaging selections to `openCustomQuoteModal` instead of direct cart checkout.
+Verification:
+- `tests/filled-gift-pricing.test.ts`: 8/8 comprehensive tests PASS (owner 50g example, multi-ingredient mixture, changed kg rates, unchanged 250g pack rates, missing/disabled kg rates failing unpriced, unchanged standalone retail/custom weights, filled checkout rejection with `QUOTE_REQUIRED`, empty packaging checkout success).
+- `tests/hamper-catalog.test.tsx`: 7/7 tests PASS.
+- `tests/authoritative-quote.test.ts`: 7/7 tests PASS.
+- `tests/stage6-legacy-packaging.test.ts`: 4/4 tests PASS.
+- `ALLBARKA_SKIP_LOCAL_ENV=true npm run build`: PASS (exit code 0; release privacy audit passed with 84 text artifacts).
+- `git diff --check`: PASS (0 errors).

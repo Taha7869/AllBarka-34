@@ -28,6 +28,7 @@ import { displayProductPrice } from '../lib/productSelection';
 import { openCustomQuoteModal } from '../components/CustomQuoteModal';
 import ProductPhotoViewer from '../components/ProductPhotoViewer';
 import { isPackagingProduct, getPackagingMoqDisplay } from '../lib/packagingMoq';
+import { isFilledPackagingVariant } from '../lib/filledGiftPricing';
 import { resolveBidBoxConfig } from '../lib/bidBoxPricing';
 
 export default function ProductDetailPage() {
@@ -130,6 +131,8 @@ export default function ProductDetailPage() {
   const isQuoteOnly = Boolean(
     product && (product.quoteOnly || product.orderMode === 'inquiry_quote' || (weights.length === 0 && !hasCustomPriceOption))
   );
+  const isFilledPackaging = Boolean(isPackaging && isFilledPackagingVariant(selectedWeight));
+  const requiresInquiry = isQuoteOnly || isFilledPackaging;
 
   let customSelection: ReturnType<typeof resolveCustomWeight> | null = null;
   if (product && customWeightSelected) {
@@ -193,6 +196,10 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = () => {
     if (isQuoteOnly || !selectedWeight || !priceToUse) return;
+    if (isPackaging && isFilledPackagingVariant(selectedWeight)) {
+      openCustomQuoteModal({ productId: product.id, variantLabel: selectedWeight, mode: 'filled', quantity });
+      return;
+    }
     const finalQuantity = Math.max(minUnits, Math.min(maxUnits, quantity));
     addToCart({
       id: `${product.id}-${selectedWeight}`,
@@ -587,7 +594,7 @@ export default function ProductDetailPage() {
 
             {/* Quantity & Add to Cart (minimum 44px tap targets) */}
             <div className="flex flex-col gap-3 mb-8">
-              {isQuoteOnly ? <button type="button" onClick={() => openCustomQuoteModal({ productId: product.id, variantLabel: selectedWeight, mode: selectedWeight?.startsWith('Empty') ? 'empty' : 'filled', quantity: quantity })} className="focus-ring flex min-h-12 items-center justify-center rounded-xl border border-[#c7982f]/40 bg-[#1e3a2b] px-5 text-sm font-semibold text-[#fff8e9]">{t('catalog.requestQuote')}</button> : <div className="flex flex-col sm:flex-row gap-3">
+              {requiresInquiry ? <button type="button" onClick={() => openCustomQuoteModal({ productId: product.id, variantLabel: selectedWeight, mode: selectedWeight?.startsWith('Empty') ? 'empty' : 'filled', quantity: quantity })} className="focus-ring flex min-h-12 items-center justify-center rounded-xl border border-[#c7982f]/40 bg-[#1e3a2b] px-5 text-sm font-semibold text-[#fff8e9]">{t('catalog.requestQuote')}</button> : <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex items-center justify-center bg-white dark:bg-[#1C2422] border border-[var(--color-accent,#C7982F)]/35 rounded-xl h-12 px-2 shrink-0">
                   <button 
                     type="button"

@@ -14,7 +14,7 @@ test('hamper registry uses real canonical products and existing merchant packagi
   for (const id of HAMPER_SELECTION_IDS) {
     const product = PRODUCTS.find(product => product.id === id);
     assert.ok(product, `${id} must be an orderable canonical product`);
-    assert.equal(hamperSelectionPrice(product), Math.round(product.prices['250g'] * 200 / 250));
+    assert.equal(hamperSelectionPrice(product), Math.round(product.prices['1kg'] * 200 / 1000));
   }
   assert.ok(!HAMPER_SELECTION_IDS.some(id => /chilgoza|figs|prod-/.test(id)));
 });
@@ -23,7 +23,7 @@ test('resolver derives names, price and net contents weight without trusting cli
   const input = { ...configuration(), unitPrice: 1, price: -1, massGrams: 0, name_en: 'Fake discount' };
   const result = resolveHamper(input);
   assert.ok(result);
-  const expected = 1800 + configuration().selections.reduce((sum, id) => sum + Math.round(PRODUCTS.find(product => product.id === id)!.prices['250g'] * .8), 0);
+  const expected = 1800 + configuration().selections.reduce((sum, id) => sum + Math.round(PRODUCTS.find(product => product.id === id)!.prices['1kg'] * 200 / 1000), 0);
   assert.equal(result.unitPrice, expected);
   assert.equal(result.massGrams, 800);
   assert.equal(result.portion, '4 × 200g');
@@ -50,8 +50,10 @@ test('each coffer honors its registered capacity and current catalogue pricing',
     for (const count of [box.minSelections, box.maxSelections]) assert.ok(resolveHamper({ ...configuration(), boxId: box.id, selections: [...HAMPER_SELECTION_IDS].slice(0, count) }));
     assert.equal(resolveHamper({ ...configuration(), boxId: box.id, selections: [...HAMPER_SELECTION_IDS].slice(0, box.maxSelections + 1) }), null);
   }
-  const prices = PRODUCTS.map(product => product.id === 'pista' ? { ...product, prices: { ...product.prices, '250g': product.prices['250g'] + 500 } } : product);
-  assert.equal(resolveHamper(configuration(), prices)!.unitPrice - resolveHamper(configuration())!.unitPrice, 400);
+  const pricesWith1kg = PRODUCTS.map(product => product.id === 'pista' ? { ...product, prices: { ...product.prices, '1kg': product.prices['1kg'] + 500 } } : product);
+  assert.equal(resolveHamper(configuration(), pricesWith1kg)!.unitPrice - resolveHamper(configuration())!.unitPrice, 100);
+  const pricesWith250g = PRODUCTS.map(product => product.id === 'pista' ? { ...product, prices: { ...product.prices, '250g': product.prices['250g'] + 500 } } : product);
+  assert.equal(resolveHamper(configuration(), pricesWith250g)!.unitPrice - resolveHamper(configuration())!.unitPrice, 0);
 });
 
 test('normalized configuration survives JSON and distinguishes different gift cards', () => {
@@ -76,7 +78,7 @@ test('builder provides real packaging, an accessible dialog and no fabricated pr
 
 test('hamper portions reject inquiry, unpublished and disabled selections without inventing a price', () => {
   const item=PRODUCTS.find(product=>product.id==='pista')!;
-  for(const patch of [{orderMode:'inquiry_quote' as const},{status:'draft' as const},{status:'archived' as const},{variants:[{label:'250g',price:item.prices['250g'],available:false}]}]){
+  for(const patch of [{orderMode:'inquiry_quote' as const},{status:'draft' as const},{status:'archived' as const},{variants:[{label:'1kg',price:item.prices['1kg'],available:false}]}]){
     const changed={...item,...patch};assert.equal(hamperSelectionPrice(changed),null);
     assert.equal(resolveHamper(configuration(),PRODUCTS.map(product=>product.id===item.id?changed:product)),null);
   }

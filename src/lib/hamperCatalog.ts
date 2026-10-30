@@ -1,5 +1,6 @@
 import { PRODUCTS } from '../data/products';
 import type { Product } from '../types';
+import { resolveAuthoritativeKgRate } from './filledGiftPricing';
 
 export const CUSTOM_HAMPER_PRODUCT_ID = 'custom-hamper';
 export const HAMPER_PORTION_GRAMS = 200;
@@ -33,10 +34,9 @@ export interface ResolvedHamper {
 
 /** Retail cost for an actual canonical product's 200g hamper portion. */
 export function hamperSelectionPrice(product: Product): number | null {
-  if (product.active === false || product.quoteOnly === true || product.orderMode === 'inquiry_quote' || product.status === 'draft' || product.status === 'archived' || product.variants?.some(variant => variant.label === '250g' && variant.available === false)) return null;
-  const price = product.prices['250g'];
-  if (!Number.isSafeInteger(price) || price <= 0) return null;
-  const portionPrice = Math.round(price * HAMPER_PORTION_GRAMS / 250);
+  const kgRate = resolveAuthoritativeKgRate(product);
+  if (kgRate === null || !Number.isSafeInteger(kgRate) || kgRate <= 0) return null;
+  const portionPrice = Math.round((kgRate * HAMPER_PORTION_GRAMS) / 1000);
   return Number.isSafeInteger(portionPrice) && portionPrice > 0 ? portionPrice : null;
 }
 

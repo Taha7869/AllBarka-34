@@ -1,5 +1,7 @@
 import type { HamperConfiguration } from './lib/hamperCatalog';
 import type { ProductCommerce, ProductSeo, ProductAttribute } from './lib/productCommerce';
+import type { RecipeIngredient } from './lib/filledGiftPricing';
+export type { RecipeIngredient } from './lib/filledGiftPricing';
 
 export interface ProductBadge {
   icon: string;
@@ -41,6 +43,8 @@ export interface BidBoxConfig {
   capacityG?: number;
   minUnits?: number;
   packagingSubcategory?: 'tin' | 'tabarruk' | 'wedding' | 'baby' | 'acrylic' | string | null;
+  recipeIngredients?: RecipeIngredient[];
+  filledRecipes?: Record<string, RecipeIngredient[]>;
   [key: string]: any;
 }
 
@@ -133,6 +137,8 @@ export interface Product {
   isBidBox?: boolean;
   bidBoxConfig?: BidBoxConfig;
   packagingSubcategory?: 'tin' | 'tabarruk' | 'wedding' | 'baby' | 'acrylic' | string | null;
+  recipeIngredients?: RecipeIngredient[];
+  filledRecipes?: Record<string, RecipeIngredient[]>;
   components?: Array<string | { productId: string; quantity?: number; unitWeightG?: number }>;
   componentIds?: string[];
   contents?: string[];

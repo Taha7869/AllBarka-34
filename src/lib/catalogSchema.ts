@@ -330,6 +330,8 @@ export const PUBLIC_PRODUCT_FIELDS = [
   'tag_ur',
   'tag_ar',
   'packagingSubcategory',
+  'recipeIngredients',
+  'filledRecipes',
   'catalogRevision',
 ] as const;
 
@@ -637,6 +639,42 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
       throw new CatalogError('INVALID_PACKAGING_SUBCATEGORY', 400);
     }
   }
+  // Additive recipe ingredients for filled packaging / custom gifts
+  if (value.recipeIngredients !== undefined) {
+    if (value.recipeIngredients === null) {
+      product.recipeIngredients = undefined;
+    } else if (Array.isArray(value.recipeIngredients)) {
+      product.recipeIngredients = value.recipeIngredients.map((item: any) => {
+        if (!object(item) || typeof item.productId !== 'string' || !item.productId.trim() || typeof item.grams !== 'number' || !Number.isFinite(item.grams) || item.grams <= 0) {
+          throw new CatalogError('INVALID_RECIPE_INGREDIENT', 400);
+        }
+        return { productId: item.productId.trim(), grams: item.grams };
+      });
+    } else {
+      throw new CatalogError('INVALID_RECIPE_INGREDIENTS', 400);
+    }
+  }
+
+  if (value.filledRecipes !== undefined) {
+    if (value.filledRecipes === null) {
+      product.filledRecipes = undefined;
+    } else if (object(value.filledRecipes)) {
+      const recipes: Record<string, Array<{ productId: string; grams: number }>> = {};
+      for (const [k, list] of Object.entries(value.filledRecipes as Record<string, unknown>)) {
+        if (!Array.isArray(list)) throw new CatalogError('INVALID_FILLED_RECIPES', 400);
+        recipes[k] = list.map((item: any) => {
+          if (!object(item) || typeof item.productId !== 'string' || !item.productId.trim() || typeof item.grams !== 'number' || !Number.isFinite(item.grams) || item.grams <= 0) {
+            throw new CatalogError('INVALID_RECIPE_INGREDIENT', 400);
+          }
+          return { productId: item.productId.trim(), grams: item.grams };
+        });
+      }
+      product.filledRecipes = recipes;
+    } else {
+      throw new CatalogError('INVALID_FILLED_RECIPES', 400);
+    }
+  }
+
   if (Array.isArray(value.collections)) {
     product.collections = value.collections.filter(c => typeof c === 'string' && c.trim()).map(c => c.trim());
   }

@@ -28,7 +28,7 @@ test('known legacy packaging labels load unchanged, preserve merchant prices on 
     assert.equal((records.get(`products/${seed.id}`) as any).prices[label], merchantPrice);
     invalidateCatalogCache(); const saved = (await loadAuthoritativeCatalog(db, { fresh: true })).products.find(product => product.id === seed.id)!;
     const quantity = calculateMinOrderQuantityUnits(saved, label);
-    const order = validateAndPriceOrder({ products: [saved], items: [{ productId: saved.id, selectedWeight: label, quantity, price: 1 }], city: 'Lahore', shippingMethodId: 'standard', giftWrapping: false, isWholesale: false });
+    const order = validateAndPriceOrder({ products: [saved], items: [{ productId: saved.id, selectedWeight: label, quantity, price: 1 }], city: 'Lahore', shippingMethodId: 'standard', giftWrapping: false, isWholesale: false, allowPackagingQuote: true });
     assert.equal(order.items[0].selectedWeight, label); assert.equal(order.items[0].price, merchantPrice);
     const exported = buildWaProductRows([saved]).find(row => row.name.endsWith(`(${label})`));
     assert.equal(exported?.price, merchantPrice); assert.equal(exported?.base_product_id, seed.id);

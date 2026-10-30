@@ -7,6 +7,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { Product } from '../types';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { openCustomQuoteModal } from './CustomQuoteModal';
+import { isFilledPackagingVariant } from '../lib/filledGiftPricing';
 
 interface BidBoxesSectionProps {
   onQuickView?: (product: Product) => void;
@@ -60,6 +61,16 @@ export default function BidBoxesSection({ onQuickView, compact = false }: BidBox
           variantKey = filledOpt.variantKey;
         }
       }
+    }
+
+    if (mode === 'filled' || isFilledPackagingVariant(variantKey)) {
+      openCustomQuoteModal({
+        productId: product.id,
+        mode: 'filled',
+        variantLabel: variantKey,
+        quantity: 50,
+      });
+      return;
     }
 
     addToCart(product, variantKey, 1);
@@ -380,24 +391,41 @@ export default function BidBoxesSection({ onQuickView, compact = false }: BidBox
                       </button>
                     ) : (
                       <>
-                        <button
-                          type="button"
-                          onClick={() => handleAddBidBox(product)}
-                          className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#072A20] hover:bg-[#0D3F30] text-[#F7F1E3] py-2.5 px-3 text-xs font-bold uppercase tracking-wider transition-all shadow-sm"
-                        >
-                          {addedId === product.id ? (
-                            <>
-                              <Check size={15} className="text-[#E6C786]" /> Added to Cart
-                            </>
-                          ) : (
-                            <>
-                              <ShoppingBag size={14} className="text-[#E6C786]" />
-                              {mode === 'empty'
-                                ? `Add ${activeEmptyTier?.qty} Empty Boxes (Rs. ${activeEmptyTier?.packPrice.toLocaleString()})`
-                                : `Add Filled Box (Rs. ${activeFilledOpt?.price.toLocaleString()})`}
-                            </>
-                          )}
-                        </button>
+                        {mode === 'empty' ? (
+                          <button
+                            type="button"
+                            onClick={() => handleAddBidBox(product)}
+                            className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#072A20] hover:bg-[#0D3F30] text-[#F7F1E3] py-2.5 px-3 text-xs font-bold uppercase tracking-wider transition-all shadow-sm"
+                          >
+                            {addedId === product.id ? (
+                              <>
+                                <Check size={15} className="text-[#E6C786]" /> Added to Cart
+                              </>
+                            ) : (
+                              <>
+                                <ShoppingBag size={14} className="text-[#E6C786]" />
+                                Add {activeEmptyTier?.qty} Empty Boxes (Rs. {activeEmptyTier?.packPrice.toLocaleString()})
+                              </>
+                            )}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openCustomQuoteModal({
+                                productId: product.id,
+                                mode: 'filled',
+                                variantLabel: activeFilledOpt?.variantKey,
+                                quantity: 50,
+                                targetUnitPrice: (activeFilledOpt?.price || 0) * 50,
+                              })
+                            }
+                            className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#072A20] hover:bg-[#0D3F30] text-[#F7F1E3] py-2.5 px-3 text-xs font-bold uppercase tracking-wider transition-all shadow-sm cursor-pointer"
+                          >
+                            <MessageSquareQuote size={14} className="text-[#E6C786]" />
+                            {t('catalog.requestQuote', 'Request Custom Quote')} (Est. Rs. {activeFilledOpt?.price.toLocaleString()}/box)
+                          </button>
+                        )}
 
                         <button
                           type="button"
