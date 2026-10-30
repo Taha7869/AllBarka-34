@@ -365,6 +365,7 @@ export interface InquiryRecord {
   standardPrice: number | null;
   packPrice?: number | null;
   perPiecePrice?: number | null;
+  estimatedTotalPkr?: number | null;
   requiresTeamQuote?: boolean;
   unresolvedVariant?: boolean;
   belowMoq?: boolean;
@@ -382,6 +383,7 @@ export interface InquiryRecord {
   assignedTo?: string | null;
   followUpDate?: string | null;
   leadTimeNoticeAcknowledged?: boolean;
+  hamperConfiguration?: HamperConfiguration;
   createdAt: string;
   updatedAt: string;
 }
@@ -407,4 +409,5 @@ export interface CustomQuoteModalInit {
   city?: string;
   budgetType?: 'per_piece' | 'total';
   targetPricePkr?: number | string;
+  hamperConfiguration?: HamperConfiguration;
 }

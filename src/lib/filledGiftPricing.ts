@@ -269,10 +269,40 @@ export function resolveFilledRecipe(product: Product | null | undefined, label: 
 export function resolveEmptyPackagingUnitPrice(product: Product | null | undefined, boxes: number): number | null {
   if (!product || !validBoxes(boxes)) return null;
   const disabled = new Set((product.variants || []).filter(unavailableVariant).map(variant => variant.label));
+
+  const variants = product.variants || [];
+  const prices = product.prices || {};
+  const hasConfiguredVariants = variants.length > 0;
+  const hasConfiguredPrices = Object.keys(prices).length > 0;
+
+  // Stored empty packaging deletion/disabling rule:
+  // If stored variants or prices are configured, deleting or disabling empty pricing
+  // must NOT resurrect stale compiled bidBoxConfig tiers.
+  if (hasConfiguredVariants || hasConfiguredPrices) {
+    const emptyVariants = variants.filter(v => classifyPackagingVariant(product, v.label) === 'empty');
+    const emptyPriceEntries = Object.entries(prices).filter(([label]) => classifyPackagingVariant(product, label) === 'empty');
+    const hasAnyConfiguredEmpty = emptyVariants.length > 0 || emptyPriceEntries.length > 0;
+
+    // If options are configured on the product, but empty packaging was deleted entirely:
+    if (!hasAnyConfiguredEmpty) {
+      return null;
+    }
+
+    // If all configured empty variants are disabled:
+    if (emptyVariants.length > 0 && emptyVariants.every(unavailableVariant)) {
+      return null;
+    }
+
+    // If all configured empty prices are disabled or invalid:
+    if (emptyPriceEntries.length > 0 && emptyPriceEntries.every(([label, price]) => disabled.has(label) || !Number.isFinite(price) || price <= 0)) {
+      return null;
+    }
+  }
+
   let best: { pieces: number; unit: number } | null = null;
   let smallest: { pieces: number; unit: number } | null = null;
 
-  for (const [label, price] of Object.entries(product.prices || {})) {
+  for (const [label, price] of Object.entries(prices)) {
     if (disabled.has(label) || !Number.isFinite(price) || price <= 0 || classifyPackagingVariant(product, label) !== 'empty') continue;
     const pieces = parsePiecesPerPack(label, product);
     if (!Number.isSafeInteger(pieces) || pieces < 1) continue;
@@ -287,7 +317,7 @@ export function resolveEmptyPackagingUnitPrice(product: Product | null | undefin
 
   if (Array.isArray(product.bidBoxConfig?.emptyTiers)) {
     for (const tier of product.bidBoxConfig.emptyTiers) {
-      if (!tier || disabled.has(tier.variantKey) || !Number.isFinite(tier.unitPrice) || tier.unitPrice <= 0) continue;
+      if (!tier || disabled.has(tier.variantKey) || (tier.label && disabled.has(tier.label)) || !Number.isFinite(tier.unitPrice) || tier.unitPrice <= 0) continue;
       const pieces = tier.qty;
       if (!Number.isSafeInteger(pieces) || pieces < 1) continue;
       const unit = tier.unitPrice;

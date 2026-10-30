@@ -9,7 +9,10 @@ export interface CustomQuoteSubmissionInput {
   productId: string;
   productName: string;
   packagingVariant?: string;
-  boxMode: 'empty' | 'filled' | 'custom';
+  mode?: 'empty' | 'filled' | 'custom';
+  boxMode?: 'empty' | 'filled' | 'custom';
+  variantLabel?: string;
+  hamperConfiguration?: any;
   quantity: number;
   eventType: string;
   targetEventDate?: string;

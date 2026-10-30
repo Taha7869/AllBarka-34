@@ -21,6 +21,7 @@ import { useCatalogProducts } from '../contexts/CatalogContext';
 import { Product, CustomQuoteModalInit } from '../types';
 import { resolveInquiryProductVariant } from '../lib/inquiryResolution';
 import { calculateFilledGiftEstimate, resolveFilledRecipe, resolveEmptyPackagingUnitPrice } from '../lib/filledGiftPricing';
+import { resolveHamper, type HamperConfiguration } from '../lib/hamperCatalog';
 import {
   buildCustomerInquiryWhatsAppUrl,
   MANDATORY_LEAD_TIME_NOTICE,
@@ -80,6 +81,7 @@ export default function CustomQuoteModal() {
 
   // Form State
   const [selectedProductId, setSelectedProductId] = useState<string>('bid-box-umrah-tabarruk');
+  const [hamperConfiguration, setHamperConfiguration] = useState<HamperConfiguration | null>(null);
   const [selectedVariantLabel, setSelectedVariantLabel] = useState<string>('');
   const [mode, setMode] = useState<'empty' | 'filled' | 'custom'>('empty');
   const [quantity, setQuantity] = useState<number>(50);
@@ -122,6 +124,7 @@ export default function CustomQuoteModal() {
         ? crypto.randomUUID()
         : 'sub_' + Date.now() + '_' + Math.random().toString(36).slice(2);
       setSubmissionKey(newKey);
+      setHamperConfiguration(detail.hamperConfiguration || null);
 
       // 2. Set product identity without silent fallback to unrelated first item
       const initialId = detail.productId || (eligibleProducts[0]?.id ?? '');
@@ -164,6 +167,17 @@ export default function CustomQuoteModal() {
     window.addEventListener('open-custom-quote-modal', handleOpen);
     return () => window.removeEventListener('open-custom-quote-modal', handleOpen);
   }, [eligibleProducts]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
 
   // Product resolution without silent fallback to unrelated first item
   const selectedProduct: Product | undefined = useMemo(() => {
@@ -216,6 +230,18 @@ export default function CustomQuoteModal() {
   }, [mode, selectedProduct, emptyPackagingUnitPrice, filledRecipe, products, quantity]);
 
   const effectiveReferenceRate = useMemo(() => {
+    if (selectedProductId === 'custom-hamper' && hamperConfiguration) {
+      const resolved = resolveHamper(hamperConfiguration, products);
+      if (resolved) {
+        return {
+          standardPrice: resolved.unitPrice,
+          perPiecePrice: resolved.unitPrice,
+          requiresTeamQuote: false,
+          isEstimate: true,
+          estimatedTotalPkr: resolved.unitPrice * quantity,
+        };
+      }
+    }
     if (mode === 'filled') {
       if (filledEstimate?.isAvailable && filledEstimate.estimatedTotalPkr != null) {
         const perBox = Math.round(filledEstimate.estimatedTotalPkr / quantity);
@@ -242,7 +268,7 @@ export default function CustomQuoteModal() {
       isEstimate: false,
       estimatedTotalPkr: null,
     };
-  }, [mode, filledEstimate, quantity, resolution]);
+  }, [mode, filledEstimate, quantity, resolution, selectedProductId, hamperConfiguration, products]);
 
   if (!isOpen) return null;
 
@@ -277,6 +303,7 @@ export default function CustomQuoteModal() {
     city,
     isTabarruk: resolution.isTabarruk,
     leadTimeNoticeAcknowledged: leadTimeAcknowledged,
+    hamperConfiguration: hamperConfiguration || undefined,
   });
 
   const toggleFilling = (fillingId: string) => {
@@ -323,6 +350,7 @@ export default function CustomQuoteModal() {
         email: customerEmail.trim() || undefined,
         city: city.trim() || 'Lahore',
         leadTimeNoticeAcknowledged: leadTimeAcknowledged,
+        hamperConfiguration: hamperConfiguration || undefined,
       });
 
       const quoteId = res.quoteId;
@@ -357,6 +385,7 @@ export default function CustomQuoteModal() {
           city,
           isTabarruk: resolution.isTabarruk,
           leadTimeNoticeAcknowledged: leadTimeAcknowledged,
+          hamperConfiguration: hamperConfiguration || undefined,
         });
 
       setSubmittedQuote({ quoteId, whatsappUrl });

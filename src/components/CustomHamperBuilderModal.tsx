@@ -145,12 +145,11 @@ export default function CustomHamperBuilderModal({ isOpen, onClose, onAddToCart 
       monogramText: resolved.configuration.recipientName || undefined,
       cardMessage: resolved.configuration.giftMessage || undefined,
       customFillingsNotes: fillingsNote,
-      targetPricePkr: resolved.unitPrice,
+      hamperConfiguration: resolved.configuration,
+      // Target price starts empty: customer budget is NOT prefilled
     });
 
-    onAddToCart({ id: hamperCartKey(resolved.configuration), productId: CUSTOM_HAMPER_PRODUCT_ID, slug: CUSTOM_HAMPER_PRODUCT_ID,
-      name_en: resolved.name_en, name_ur: resolved.name_ur, name_ar: resolved.name_ar, selectedWeight: resolved.portion,
-      unitPrice: resolved.unitPrice, price: resolved.unitPrice, image: resolved.image, quantity: 1, hamperConfiguration: resolved.configuration });
+    // Opening quote modal does NOT mutate the shopping bag
     onClose();
   };
 

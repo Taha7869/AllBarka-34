@@ -1,3 +1,5 @@
+import { calculateFilledGiftEstimate, resolveFilledRecipe, resolveEmptyPackagingUnitPrice } from './filledGiftPricing';
+import { resolveHamper, HAMPER_BOXES, HamperBox, HamperConfiguration, HAMPER_PORTION_GRAMS } from './hamperCatalog';
 import type { Product } from '../types';
 import { calculatePackagingMoq, parsePiecesPerPack, isPackagingProduct } from './packagingMoq';
 
@@ -7,6 +9,8 @@ export interface ResolveInquiryParams {
   requestedVariantLabel?: string | null;
   boxMode: 'empty' | 'filled' | 'custom';
   quantity: number;
+  hamperConfiguration?: any;
+  hamperBoxes?: HamperBox[];
 }
 
 export interface InquiryVariantResolution {
@@ -26,6 +30,8 @@ export interface InquiryVariantResolution {
   moqRequired: number | null;
   minPacksRequired: number | null;
   isTabarruk: boolean;
+  hamperConfiguration?: HamperConfiguration;
+  estimatedTotalPkr?: number | null;
 }
 
 /**
@@ -77,7 +83,7 @@ export function sanitizePublicInquiryInput(raw: any): Record<string, any> {
     'customPrintText', 'customPrinting', 'packagingVariant', 'variantLabel', 'portion', 'targetEventDate',
     'deliveryCity', 'notes', 'message', 'customHamperNotes', 'metadata', 'topic',
     'budgetType', 'preferredFillings', 'customFillingsNotes', 'monogramText', 'cardMessage',
-    'leadTimeNoticeAcknowledged', 'submissionKey', 'idempotencyKey'
+    'leadTimeNoticeAcknowledged', 'submissionKey', 'idempotencyKey', 'hamperConfiguration', 'customHamperConfig'
   ]);
   const sanitized: Record<string, any> = {};
   for (const [key, val] of Object.entries(raw)) {
@@ -100,19 +106,45 @@ export function sanitizePublicInquiryInput(raw: any): Record<string, any> {
  * 5. Default selection is permitted ONLY when the customer supplied no variant, and must follow valid available variants and selected mode.
  */
 export function resolveInquiryProductVariant(params: ResolveInquiryParams): InquiryVariantResolution {
-  const { catalog, productId, requestedVariantLabel, boxMode, quantity } = params;
-  if (productId === 'custom-hamper' || productId?.startsWith('custom-hamper:')) {
+  const { catalog, productId, requestedVariantLabel, boxMode, quantity, hamperConfiguration, hamperBoxes } = params;
+  if (productId === 'custom-hamper' || productId?.startsWith('custom-hamper:') || hamperConfiguration) {
+    if (hamperConfiguration) {
+      const resolvedHamper = resolveHamper(hamperConfiguration, catalog, hamperBoxes);
+      if (resolvedHamper) {
+        return {
+          productId: 'custom-hamper',
+          productName: resolvedHamper.name_en,
+          isVerifiedCatalogProduct: true,
+          packagingVariant: resolvedHamper.portion,
+          unresolvedVariant: false,
+          quantityUnit: 'pieces',
+          piecesPerPack: 1,
+          standardPrice: resolvedHamper.unitPrice,
+          packPrice: resolvedHamper.unitPrice,
+          perPiecePrice: resolvedHamper.unitPrice,
+          estimatedTotalPkr: resolvedHamper.unitPrice * quantity,
+          totalPieces: quantity,
+          requiresTeamQuote: false,
+          belowMoq: false,
+          moqRequired: null,
+          minPacksRequired: null,
+          isTabarruk: false,
+          hamperConfiguration: resolvedHamper.configuration,
+        };
+      }
+    }
     return {
       productId: 'custom-hamper',
       productName: 'Custom Luxury Hamper',
-      isVerifiedCatalogProduct: true,
+      isVerifiedCatalogProduct: false,
       packagingVariant: requestedVariantLabel ? String(requestedVariantLabel).slice(0, 80) : 'Custom Hamper',
-      unresolvedVariant: false,
+      unresolvedVariant: true,
       quantityUnit: 'pieces',
       piecesPerPack: 1,
       standardPrice: null,
       packPrice: null,
       perPiecePrice: null,
+      estimatedTotalPkr: null,
       totalPieces: quantity,
       requiresTeamQuote: true,
       belowMoq: false,
@@ -247,11 +279,37 @@ export function resolveInquiryProductVariant(params: ResolveInquiryParams): Inqu
       requiresTeamQuote = true;
     }
   } else {
-    // Filled mode: must not use an empty box price
+    // Filled mode: recompute estimate server-side using shared estimator
     if (matchedVariant && matchedVariant.isFilled) {
-      standardPrice = matchedVariant.price;
-      packPrice = matchedVariant.price;
-      perPiecePrice = Math.round((matchedVariant.price / piecesPerPack) * 100) / 100;
+      const recipe = resolveFilledRecipe(catalogProduct, matchedVariant.label);
+      if (recipe) {
+        const emptyUnitPrice = resolveEmptyPackagingUnitPrice(catalogProduct, quantity);
+        const est = calculateFilledGiftEstimate({
+          packagingProduct: catalogProduct,
+          packagingUnitPrice: emptyUnitPrice ?? undefined,
+          recipe,
+          catalogProducts: catalog,
+          requestedBoxes: quantity,
+        });
+        if (est.isAvailable && est.estimatedTotalPkr != null) {
+          const perBox = Math.round(est.estimatedTotalPkr / quantity);
+          standardPrice = perBox;
+          packPrice = perBox;
+          perPiecePrice = perBox;
+          requiresTeamQuote = false;
+        } else {
+          standardPrice = null;
+          packPrice = null;
+          perPiecePrice = null;
+          requiresTeamQuote = true;
+        }
+      } else {
+        // Missing recipe: remains unpriced, including known legacy packaging IDs!
+        standardPrice = null;
+        packPrice = null;
+        perPiecePrice = null;
+        requiresTeamQuote = true;
+      }
     } else {
       requiresTeamQuote = true;
     }
@@ -292,5 +350,6 @@ export function resolveInquiryProductVariant(params: ResolveInquiryParams): Inqu
     moqRequired,
     minPacksRequired,
     isTabarruk,
+    estimatedTotalPkr: standardPrice != null ? standardPrice * quantity : null,
   };
 }

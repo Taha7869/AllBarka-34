@@ -53,6 +53,8 @@ export interface CustomerInquiryWhatsAppParams {
   customerPhone: string;
   city: string;
   isTabarruk?: boolean;
+  hamperConfiguration?: any;
+  estimatedTotalPkr?: number | null;
 }
 
 export interface AdminWhatsAppPitchParams {
@@ -142,6 +144,16 @@ export function buildCustomerInquiryWhatsAppUrl(params: CustomerInquiryWhatsAppP
 
   if (params.belowMoq && params.moqRequired) {
     lines.push(`• *MOQ Review:* Requested quantity is below standard minimum order (${params.moqRequired} pcs); team review requested`);
+  }
+
+  if (params.hamperConfiguration) {
+    const config = params.hamperConfiguration;
+    lines.push(`• *Hamper Coffer:* ${config.boxId}`);
+    if (Array.isArray(config.selections)) {
+      lines.push(`• *Selections:* ${config.selections.map((s: string) => `${s} (200g)`).join(', ')}`);
+    }
+    if (config.recipientName) lines.push(`• *Recipient:* ${config.recipientName}`);
+    if (config.giftMessage) lines.push(`• *Gift Message:* ${config.giftMessage}`);
   }
 
   lines.push(

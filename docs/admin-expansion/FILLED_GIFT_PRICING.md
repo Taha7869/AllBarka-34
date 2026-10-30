@@ -104,5 +104,7 @@ Verification:
 - `npm run typecheck` (`tsc --noEmit`): PASS (0 errors).
 - `npm run lint:hooks` (`eslint src`): PASS (0 errors).
 - `ALLBARKA_SKIP_LOCAL_ENV=true npm run build`: PASS (exit code 0; release privacy audit passed with 84 text artifacts).
-- `node scripts/run-all-tests.mjs`: PASS (735 passed, 0 failed, 1 skipped across 83 test files; 21 backend tests passed; 36 production checks passed).
+- `tests/filled-gift-journey-browser.test.tsx`: 1/1 mounted browser & authoritative API journey PASS (9 stages: card estimate display Rs. 150/box without legacy Rs. 9,000, modal reference rate Rs. 150/box & Est. Rs. 1,500 total with empty customer budget input, quote submission and memoryFirestore persistence, WhatsApp URL concordance, changed authoritative kg rate Rs. 2,000/kg & forged client total rejection, unpriced missing recipe & legacy packaging without recipe, empty packaging deletion/disablement fail-closed, hamper builder inquiry dispatch without cart mutation, and direct order QUOTE_REQUIRED failure).
+- `tests/stage6-inquiry-flow.test.ts`: 19/19 tests PASS.
+- `node scripts/run-all-tests.mjs`: PASS (742 passed, 0 failed, 1 skipped across 84 test files; 21 backend tests passed; 36 production checks passed).
 - `git diff --check`: PASS (0 errors).

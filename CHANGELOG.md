@@ -1,3 +1,30 @@
+## 30 October 2026 ? R04-KG1 actual inquiry submission journey and mounted browser evidence
+
+- **End-to-end inquiry submission journey alignment**:
+  - `src/lib/inquiriesRouter.ts`: Both `/api/quotes` and `/api/inquiries` pass `hamperConfiguration` to `resolveInquiryProductVariant`, recompute authoritative recipe estimates server-side, ignore client-supplied rates and totals, and persist distinct `standardPrice`, `estimatedTotalPkr`, and independent customer `offeredPrice`. Generated WhatsApp URL path reflects computed estimates without legacy Rs9,000 prices.
+  - `src/lib/inquiryResolution.ts`: Added `hamperConfiguration` and `hamperBoxes` parameters to `resolveInquiryProductVariant`. Validates custom hampers server-side via `resolveHamper`; valid hampers get `isVerifiedCatalogProduct: true`, `standardPrice`, and structured configuration, while arbitrary custom-hamper strings fail verification (`isVerifiedCatalogProduct: false`, `requiresTeamQuote: true`, `standardPrice: null`). In filled mode, dynamic estimates are computed via `calculateFilledGiftEstimate`, leaving missing recipes/rates unpriced without legacy fallback.
+  - `src/lib/inquiryWhatsApp.ts`: Added structured hamper configuration formatting to customer WhatsApp URL (`Hamper Coffer`, selections with 200g portion mass, recipient name, and gift message).
+  - `src/lib/storefrontSubmissions.ts`: Added `hamperConfiguration`, `boxMode`, `mode`, and `variantLabel` to `CustomQuoteSubmissionInput`.
+  - `src/components/CustomQuoteModal.tsx`: Preserves `hamperConfiguration`, renders hamper estimate via `resolveHamper`, passes configuration to `submitCustomQuoteInquiry` and WhatsApp links, and added Escape key handler.
+- **Fail-closed empty packaging deletion/disablement rule**:
+  - `src/lib/filledGiftPricing.ts`: In `resolveEmptyPackagingUnitPrice`, if variants or prices are configured on the product and empty packaging is deleted or all empty variants are disabled, returns `null` immediately. Strictly prevents resurrecting stale compiled `bidBoxConfig.emptyTiers` when stored empty pricing is deleted or disabled.
+- **Hamper builder inquiry workflow**:
+  - `src/components/CustomHamperBuilderModal.tsx`: Removed `onAddToCart` call from `finish()`. Requesting a hamper quote leaves shopping bag item count unchanged (0) while opening `CustomQuoteModal` with complete structured configuration, recipient name, gift message, empty customer budget, and catalog reference rate.
+- **Mounted browser & authoritative API journey verification**:
+  - `tests/filled-gift-journey-browser.test.tsx`: New end-to-end mounted browser and API test verifying all 9 journey stages against isolated `memoryFirestore`:
+    1. Card display estimate (Rs. 150/box; never legacy Rs. 9,000 or Rs. 9,050).
+    2. Modal opening & budget independence (Catalog Reference Rate Rs. 150/box & Est. Rs. 1,500 total for 10 boxes; customer budget starts empty; customer enters independent budget offer).
+    3. Quote submission & agreement (persisted record has `standardPrice: 150`, `estimatedTotalPkr: 1500`, `offeredPrice: 120`; decoded WhatsApp message matches).
+    4. Changed authoritative kg rate (Rs. 2,000/kg -> Rs. 200/box; server strictly ignores forged browser rate/subtotal).
+    5. Missing recipe / kg rate / packaging remains unpriced (`standardPrice: null`, `requiresTeamQuote: true`; legacy packaging IDs unpriced for new inquiries).
+    6. Deleting / disabling stored empty pricing cannot resurrect compiled tier.
+    7. Hamper inquiry journey (cart count unchanged at 0, structured configuration validated server-side, arbitrary custom-hamper rejected).
+    8. Direct order submission strictly fails closed with `QUOTE_REQUIRED`.
+    9. Idempotency deduplication and payload mismatch protection.
+- **Test suite status**:
+  - All 84 test files (742 passed, 0 failed, 1 skipped), 21 backend tests, 36 production checks, `tsc --noEmit`, and `eslint src` PASS.
+  - `R04-KG1` explicitly remains `IN_PROGRESS` pending visual dynamic recipe editor in `AdminProductEditModal`.
+
 ## 30 October 2026 — R04-KG1 estimate consistency and inquiry journey slice
 
 - **Estimate consistency between card, modal, and server**:

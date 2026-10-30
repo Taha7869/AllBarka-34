@@ -218,6 +218,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         requestedVariantLabel: requestedVariant,
         boxMode,
         quantity: rawQuantity,
+        hamperConfiguration: body.hamperConfiguration,
       });
 
       const offPrice = budgetVal != null ? Number(budgetVal) : null;
@@ -266,6 +267,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         targetPricePkr: offPrice,
         referenceUnitPrice: resolution.standardPrice,
         perPiecePrice: resolution.perPiecePrice,
+        estimatedTotalPkr: resolution.estimatedTotalPkr ?? (resolution.standardPrice != null ? resolution.standardPrice * rawQuantity : null),
         requiresTeamQuote: resolution.requiresTeamQuote,
         belowMoq: resolution.belowMoq,
         moqRequired: resolution.moqRequired,
@@ -274,6 +276,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         customerPhone: isEmailOnly ? '' : phone.slice(0, 40),
         city: city.slice(0, 80),
         isTabarruk: resolution.isTabarruk,
+        hamperConfiguration: resolution.hamperConfiguration || body.hamperConfiguration,
       });
 
       const record: InquiryRecord = {
@@ -301,6 +304,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         cardMessage: body.cardMessage ? String(body.cardMessage).trim().slice(0, 500) : '',
         customPrintText,
         standardPrice: resolution.standardPrice,
+        estimatedTotalPkr: resolution.estimatedTotalPkr ?? (resolution.standardPrice != null ? resolution.standardPrice * rawQuantity : null),
         packPrice: resolution.packPrice,
         perPiecePrice: resolution.perPiecePrice,
         requiresTeamQuote: resolution.requiresTeamQuote,
@@ -320,6 +324,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         assignedTo: null,
         followUpDate: null,
         leadTimeNoticeAcknowledged: Boolean(body.leadTimeNoticeAcknowledged),
+        hamperConfiguration: resolution.hamperConfiguration || undefined,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -424,6 +429,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         requestedVariantLabel: requestedVariant,
         boxMode: safeMode,
         quantity: rawQuantity,
+        hamperConfiguration: raw.hamperConfiguration,
       });
 
       const offPrice = budgetVal != null ? Number(budgetVal) : null;
@@ -480,6 +486,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         customerPhone: resolvedPhone.slice(0, 40),
         city: city.slice(0, 80),
         isTabarruk: resolution.isTabarruk,
+        hamperConfiguration: resolution.hamperConfiguration || raw.hamperConfiguration,
       });
 
       const record: InquiryRecord = {
@@ -507,6 +514,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         cardMessage: raw.cardMessage ? String(raw.cardMessage).trim().slice(0, 500) : '',
         customPrintText,
         standardPrice: resolution.standardPrice,
+        estimatedTotalPkr: resolution.estimatedTotalPkr ?? (resolution.standardPrice != null ? resolution.standardPrice * rawQuantity : null),
         packPrice: resolution.packPrice,
         perPiecePrice: resolution.perPiecePrice,
         requiresTeamQuote: resolution.requiresTeamQuote,
@@ -526,6 +534,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         assignedTo: null,
         followUpDate: null,
         leadTimeNoticeAcknowledged: Boolean(raw.leadTimeNoticeAcknowledged),
+        hamperConfiguration: resolution.hamperConfiguration || undefined,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
