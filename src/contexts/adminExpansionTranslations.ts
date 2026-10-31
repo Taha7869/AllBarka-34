@@ -707,7 +707,31 @@ const entries = [
 ["makeCover","Use as cover","مرکزی تصویر بنائیں","استخدام كصورة رئيسية"]
 ,["goTo","Go to section","حصے پر جائیں","الانتقال إلى قسم"]
 ,["chooseSection","Choose a section…","حصہ منتخب کریں…","اختر قسمًا…"]
-,["saveConfigurationFirst","Save category and template changes below before saving this item.","آئٹم محفوظ کرنے سے پہلے نیچے کیٹیگری اور ٹیمپلیٹ کی تبدیلیاں محفوظ کریں۔","احفظ تغييرات الفئات والقوالب أدناه قبل حفظ هذا المنتج."]
+,["saveConfigurationFirst","Save category and template changes below before saving this item.","آئٹم محفوظ کرنے سے پہلے نیچے کیٹیگری اور ٹیمپلیٹ کی تبدیلیاں محفوظ کریں۔","احفظ تغييرات الفئات والقوالب أدناه قبل حفظ هذا المنتج."],
+["recipe","Recipe & Filling","ترکیب اور فلنگ","الوصفة والتعبئة"],
+["recipeIngredients","Default Filling Recipe","بنیادی فلنگ کی ترکیب","الوصفة الأساسية للحشوة"],
+["recipeDesc","Configure dry fruit, date and nut filling ingredients and gram weights per box for quotation estimates.","کوٹیشن کے تخمینے کے لیے فی ڈبہ خشک میوہ جات، کھجور اور گری دار میوے کے اجزاء اور گرام وزن ترتیب دیں۔","تكوين مكونات حشوة الفواكه المجففة والتمور والمكسرات وأوزانها بالجرام لكل صندوق لتقديرات الأسعار."],
+["addIngredient","Add ingredient","جز شامل کریں","إضافة مكون"],
+["ingredientProduct","Ingredient product","اجزاء کا پروڈکٹ","منتج المكون"],
+["ingredientGrams","Net grams per box","خالص گرام فی ڈبہ","الجرام الصافي لكل صندوق"],
+["noKgRate","No 1kg rate — team quote required","۱ کلو کا نرخ موجود نہیں — دستی کوٹیشن درکار ہے","لا يوجد سعر للكيلوغرام — يتطلب تسعير يدوي"],
+["totalFillingGrams","Total filling mass","کل فلنگ کا وزن","إجمالي كتلة الحشوة"],
+["totalFillingEstimate","Total ingredient estimate","کل اجزاء کا تخمینہ","إجمالي تقدير المكونات"],
+["incompleteEstimate","Incomplete estimate — team quote required","نامکمل تخمینہ — دستی کوٹیشن درکار ہے","تقدير غير مكتمل — يتطلب تسعير يدوي"],
+["recipeDescriptions","Customer Recipe Descriptions (EN / UR / AR)","گاہک کے لیے ترکیب کی تفصیل (انگریزی / اردو / عربی)","أوصاف الوصفة للعملاء (بالإنجليزية / الأردية / العربية)"],
+["recipeTextEn","Recipe description (English)","ترکیب کی تفصیل (انگریزی)","وصف الوصفة (الإنجليزية)"],
+["recipeTextUr","Recipe description (Urdu)","ترکیب کی تفصیل (اردو)","وصف الوصفة (الأردية)"],
+["recipeTextAr","Recipe description (Arabic)","ترکیب کی تفصیل (عربی)","وصف الوصفة (العربية)"],
+["variantRecipes","Variant-Specific Recipes","ویرینٹ کے مخصوص نسخے","وصفات خاصة بالخيارات"],
+["variantRecipeHint","Override the default recipe for specific filled packaging variants.","مخصوص فلنگ ویرینٹس کے لیے بنیادی ترکیب تبدیل کریں۔","تجاوز الوصفة الافتراضية لخيارات التعبئة المحددة."],
+["useSharedRecipe","Default recipe","بنیادی ترکیب","الوصفة الافتراضية"],
+["useCustomRecipe","Custom recipe","مخصوص ترکیب","وصفة مخصصة"],
+["enableCustomRecipe","Enable custom recipe for this option","اس اختیار کے لیے مخصوص ترکیب فعال کریں","تفعيل وصفة مخصصة لهذا الخيار"],
+["reason.INVALID_RECIPE_INGREDIENTS","Add 1 to 30 valid ingredients to the recipe.","ترکیب میں ۱ سے ۳۰ تک درست اجزاء شامل کریں۔","أضف من 1 إلى 30 مكونًا صالحًا إلى الوصفة."],
+["reason.INVALID_RECIPE_INGREDIENT","Select a valid product for each ingredient.","ہر جز کے لیے درست پروڈکٹ منتخب کریں۔","اختر منتجًا صالحًا لكل مكون."],
+["reason.INVALID_RECIPE_GRAMS","Ingredient grams must be between 0.001g and 10,000g.","جز کا وزن ۰.۰۰۱ سے ۱۰،۰۰۰ گرام کے درمیان ہونا چاہیے۔","يجب أن يكون وزن المكون بين 0.001 و 10,000 جرام."],
+["reason.DUPLICATE_RECIPE_INGREDIENT","Each ingredient product can only appear once in a recipe.","ہر جز پروڈکٹ ترکیب میں صرف ایک بار آ سکتا ہے۔","يمكن أن يظهر كل منتج مكون مرة واحدة فقط في الوصفة."],
+["reason.INVALID_FILLED_RECIPES","Review variant-specific recipes for invalid entries.","ویرینٹ کی مخصوص ترکیبوں میں غلط اندراجات چیک کریں۔","راجع الوصفات المخصصة للخيارات للتحقق من الإدخالات غير الصالحة."]
 ] as const;
 export const adminExpansionTranslations: Record<LanguageCode, Record<string,string>> = {
  en: Object.fromEntries(entries.map(([key,en])=>['item.'+key,en])),

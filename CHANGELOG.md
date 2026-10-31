@@ -1,3 +1,24 @@
+## 31 October 2026 — R04-KG1 custom hamper precision, encoding restoration and admin visual recipe editor
+
+- **Custom-hamper order-level precision policy**:
+  - `src/lib/hamperCatalog.ts`: Added `quantity: number = 1` parameter to `resolveHamper`. Implemented order-level BigInt scaling: `exact += BigInt(kgRate) * 200_000n * BigInt(validQty)`. Computed `ingredientsSubtotal = roundHalfUp(exact, MICRO)`, `packagingTotal = box.price * validQty`, `estimatedTotalPkr = ingredientsSubtotal + packagingTotal`, and display unit price `unitPrice = Math.round(estimatedTotalPkr / validQty)`. Returned `packagingPrice`, `ingredientsSubtotalPkr`, `estimatedTotalPkr`, and `quantity` on `ResolvedHamper`.
+  - `src/lib/inquiryResolution.ts`: Passed `quantity` to `resolveHamper` and preserved `estimatedTotalPkr`.
+  - `src/components/CustomQuoteModal.tsx`: Passed `quantity` to `resolveHamper` and preserved `estimatedTotalPkr`.
+  - `tests/hamper-catalog.test.tsx`: Added acceptance test for 4 ingredients at Rs. 1,001/kg, 200g each, 10 hampers: ingredient subtotal = Rs. 8,008; packaging total (Rs. 1,000 × 10) = Rs. 10,000; total = Rs. 18,008 (nominal unit price Rs. 1,801). Passed 8/8 tests.
+- **UTF-8 character encoding restoration**:
+  - `server.ts`: Restored `👑 *ALLBARKA LUXURY BOUTIQUE ORDER* 👑` on line 426.
+  - `src/lib/inquiriesRouter.ts`: Restored `—` em-dash on line 143 in contact WhatsApp URL. Preserved Urdu and Arabic script fidelity.
+- **Admin visual dynamic recipe editor**:
+  - `src/components/AdminRecipeEditor.tsx`: Created visual recipe editor component with candidate ingredient selection from catalog, grams per box input with live cost calculations (`kgRate * grams / 1000`), net filling grams, total ingredient estimate per box, warning badges for unconfigured 1kg rates, localized customer recipe descriptions (`recipe_en/ur/ar`), and variant-specific recipe overrides (`filledRecipes`) with enable/disable checkbox and per-variant ingredient lists.
+  - `src/components/AdminItemForm.tsx`: Wired `AdminRecipeEditor`, inserted `'recipe'` into `ITEM_SECTIONS` at index 4 (preserving index 3 `seo` for tests), rendered `<details id="item-section-recipe">`, connected patch handlers, and added recipe review preview to `#item-section-review`.
+  - `src/contexts/adminExpansionTranslations.ts`: Added 24 localized translation entries (English, Urdu, Arabic) for recipe fields, labels, summaries, hints, and error reasons (`reason.INVALID_RECIPE_*`).
+  - `src/lib/catalogSchema.ts`: Allowed variant labels that exist in `seed.commerce?.options` in `validateCatalogPricing`.
+  - `src/contexts/CatalogContext.tsx`: Passed `effectiveSeed` with `raw.commerce` to `pricingFromLegacy` in `refresh()`.
+  - `tests/admin-recipe-editor-browser.test.tsx`: Created 10-stage end-to-end mounted browser journey test verifying navigation, live rate calculation, localized text, variant override, review preview, admin API save to `memoryFirestore`, record persistence with revision 2, round-trip reload, and recipe clearing with revision 3.
+- **Test suite status**:
+  - All 85 test files (744 passed, 0 failed, 1 skipped), 21 backend tests, 36 production checks, `tsc --noEmit`, and `eslint src` PASS.
+  - `R04-KG1` explicitly remains `IN_PROGRESS` pending merchant execution of live Firestore catalog data migration/seeding.
+
 ## 31 October 2026 — R04-KG1 hamper box authority, precision policy and fallback removal
 
 - **Hamper box pricing authority & catalog snapshot binding**:

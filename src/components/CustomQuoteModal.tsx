@@ -232,14 +232,14 @@ export default function CustomQuoteModal() {
 
   const effectiveReferenceRate = useMemo(() => {
     if (selectedProductId === 'custom-hamper' && hamperConfiguration) {
-      const resolved = resolveHamper(hamperConfiguration, products, hamperBoxes);
+      const resolved = resolveHamper(hamperConfiguration, products, hamperBoxes, quantity);
       if (resolved) {
         return {
           standardPrice: resolved.unitPrice,
           perPiecePrice: resolved.unitPrice,
           requiresTeamQuote: false,
           isEstimate: true,
-          estimatedTotalPkr: resolved.unitPrice * quantity,
+          estimatedTotalPkr: resolved.estimatedTotalPkr ?? (resolved.unitPrice * quantity),
         };
       }
     }

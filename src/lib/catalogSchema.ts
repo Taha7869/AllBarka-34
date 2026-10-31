@@ -78,7 +78,8 @@ export function validateCatalogPricing(value: unknown, seed: Product): CatalogPr
     // A merchant can retain existing fixed bundle labels; new arbitrary units cannot enter checkout.
     const supported = /^\d+(?:\.\d+)?\s*(?:kg|g|mg|ml|L|pc|pcs|piece|pieces|pack|box|boxes)$/i.test(raw.label)
       || Object.hasOwn(seed.prices, raw.label)
-      || /^(?:empty|filled|sample|portion|bundle|box)/i.test(raw.label);
+      || /^(?:empty|filled|sample|portion|bundle|box)/i.test(raw.label)
+      || (seed.commerce?.options?.some(opt => opt?.label === raw.label) ?? false);
     if (!supported || (/ml$/i.test(raw.label) && seed.category !== 'oils' && !seed.commerce)) throw new CatalogError('INVALID_CATALOG_UNIT');
     const rawVarMoq = raw.moqOverride !== undefined ? raw.moqOverride : (raw as any).minOrderQuantity;
     const varMoq = validateMoqOverride(rawVarMoq);

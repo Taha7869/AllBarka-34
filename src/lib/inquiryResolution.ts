@@ -109,7 +109,7 @@ export function resolveInquiryProductVariant(params: ResolveInquiryParams): Inqu
   const { catalog, productId, requestedVariantLabel, boxMode, quantity, hamperConfiguration, hamperBoxes } = params;
   if (productId === 'custom-hamper' || productId?.startsWith('custom-hamper:') || hamperConfiguration) {
     if (hamperConfiguration) {
-      const resolvedHamper = resolveHamper(hamperConfiguration, catalog, hamperBoxes ?? []);
+      const resolvedHamper = resolveHamper(hamperConfiguration, catalog, hamperBoxes ?? [], quantity);
       if (resolvedHamper) {
         return {
           productId: 'custom-hamper',
@@ -122,7 +122,7 @@ export function resolveInquiryProductVariant(params: ResolveInquiryParams): Inqu
           standardPrice: resolvedHamper.unitPrice,
           packPrice: resolvedHamper.unitPrice,
           perPiecePrice: resolvedHamper.unitPrice,
-          estimatedTotalPkr: resolvedHamper.unitPrice * quantity,
+          estimatedTotalPkr: resolvedHamper.estimatedTotalPkr ?? (resolvedHamper.unitPrice * quantity),
           totalPieces: quantity,
           requiresTeamQuote: false,
           belowMoq: false,

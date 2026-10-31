@@ -1,9 +1,9 @@
 # Filled gifts: kilogram-based ingredient estimates
 
 Updated: 31 October 2026 (Asia/Karachi).
-Task: R04-KG1. Owner decision: CONFIRMED. Implementation: IN_PROGRESS (hamper box authority, precision policy, and fallback removal verified). Live verification/release: NOT_RUN.
-Inspected source parent: `5282f800390b2a794ad538257a497a0f6b253c5f`.
-This checkpoint records the completed implementation of the estimate consistency and inquiry journey slice across card, modal, hamper builder, and authoritative quote verification.
+Task: R04-KG1. Owner decision: CONFIRMED. Implementation: IN_PROGRESS (custom hamper precision, encoding restoration, and admin visual recipe editor verified; live data seeding/migration pending). Live verification/release: NOT_RUN.
+Inspected source parent: `bd17e1a89b5c7d379aa0e0635cac325fa6a434a2`.
+This checkpoint records the completed implementation of custom-hamper order-level precision, UTF-8 encoding restoration, and the admin visual recipe editor across form, review, persistence, and mounted browser journey.
 
 ## Current owner instruction and precedence
 
@@ -31,6 +31,11 @@ When money is non-divisible across boxes (e.g. Rs1001/kg × 50g × 10 boxes):
 - Rounding to whole PKR (roundHalfUp(exact, MICRO)) occurs once on the order total (ingredientsSubtotalPkr), adding packaging total (packagingTotal) to produce estimatedTotalPkr.
 - For display purposes, nominal unit rate (standardPrice / perPiecePrice) is computed as Math.round(estimatedTotalPkr / quantity) (e.g. Rs. 150/box).
 - Crucially, authoritative downstream totals (InquiryRecord.estimatedTotalPkr, /api/quotes and /api/inquiries response, displayed modal estimate, and WhatsApp Estimated Total Ref:* Rs. X PKR) preserve the shared estimator's estimatedTotalPkr directly (e.g. Rs. 1,501). They NEVER recalculate standardPrice * quantity, preventing 1 PKR rounding drift (e.g. 150 × 10 = 1500).
+- For custom hampers (`resolveHamper` in `src/lib/hamperCatalog.ts` and `src/lib/inquiryResolution.ts`):
+  - Order-level BigInt scaling accumulates ingredient costs across requested hampers: `exact += BigInt(kgRate) * 200_000n * BigInt(validQty)`.
+  - `ingredientsSubtotal = roundHalfUp(exact, MICRO)` with `packagingTotal = box.price * validQty` to yield exact `estimatedTotalPkr`.
+  - Nominal unit rate for display is `Math.round(estimatedTotalPkr / validQty)`.
+  - Acceptance example: 4 ingredients at Rs. 1,001/kg, 200g each, 10 hampers: ingredient subtotal = Rs. 8,008; packaging total (Rs. 1,000 × 10) = Rs. 10,000; estimatedTotalPkr = Rs. 18,008; nominal unit price = Rs. 1,801. Neither builder, modal, endpoints, persistence, nor WhatsApp suffer from 10 PKR per-ingredient rounding drift.
 
 
 | Scenario | Kilogram rate | Other pack rate | Net filling | Required ingredient estimate |
@@ -82,10 +87,11 @@ Continue the existing filled-packaging inquiry fix and implement R04-KG1 in the 
 ## Checkpoint evidence and boundaries
 
 Owner/agent: owner decision; Antigravity implementation & complete verification.
-Changed scope: runtime estimator (`src/lib/filledGiftPricing.ts`), hamper catalog update (`src/lib/hamperCatalog.ts`), additive schema (`src/types.ts`, `src/lib/catalogSchema.ts`), inquiry guards and customer journeys (`src/lib/orderValidation.ts`, `src/lib/orderQuote.ts`, `src/lib/orderDatabase.ts`, `src/components/BidBoxesSection.tsx`, `src/components/CustomQuoteModal.tsx`, `src/pages/ProductDetailPage.tsx`), comprehensive unit & browser tests (`tests/filled-gift-pricing.test.ts`, `tests/shipping-policy.test.ts`, `tests/stage6-order-handoff.test.ts`, `tests/premium-gifting-browser.test.tsx`, `tests/admin-expansion-content-browser.test.tsx`, `tests/admin-finishing-browser.test.tsx`).
+Changed scope: runtime estimator (`src/lib/filledGiftPricing.ts`), hamper catalog update (`src/lib/hamperCatalog.ts`), admin visual recipe editor (`src/components/AdminRecipeEditor.tsx`, `src/components/AdminItemForm.tsx`), additive schema (`src/types.ts`, `src/lib/catalogSchema.ts`), inquiry guards and customer journeys (`src/lib/orderValidation.ts`, `src/lib/orderQuote.ts`, `src/lib/orderDatabase.ts`, `src/components/BidBoxesSection.tsx`, `src/components/CustomQuoteModal.tsx`, `src/pages/ProductDetailPage.tsx`), comprehensive unit & browser tests (`tests/filled-gift-pricing.test.ts`, `tests/admin-recipe-editor-browser.test.tsx`, `tests/hamper-catalog.test.tsx`, `tests/filled-gift-journey-browser.test.tsx`, `tests/shipping-policy.test.ts`, `tests/stage6-order-handoff.test.ts`, `tests/premium-gifting-browser.test.tsx`, `tests/admin-expansion-content-browser.test.tsx`, `tests/admin-finishing-browser.test.tsx`).
 Runtime source:
 1. `src/lib/filledGiftPricing.ts`: shared deterministic estimator implementing `resolveAuthoritativeKgRate`, `calculateIngredientEstimate` (`K * g * n / 1000`), `calculateFilledGiftEstimate`, `classifyPackagingVariant`, `isFilledPackagingVariant`, and `packagingVariantRequiresInquiry`. Enforces fail-closed rules: rejects calculated commerce derived from base packs < 1000g, ignores shipping mass (`weightGrams: 1000`), fails closed on conflicting rates or disabled variants, and reports calculated `ingredientsSubtotalPkr` while keeping `estimatedTotalPkr` null if packaging or an ingredient is missing.
-2. `src/lib/hamperCatalog.ts`: updated `hamperSelectionPrice` to use `resolveAuthoritativeKgRate(product) * HAMPER_PORTION_GRAMS / 1000` (half-up integer PKR rounding).
+2. `src/lib/hamperCatalog.ts`: updated `hamperSelectionPrice` and `resolveHamper` to implement the order-level BigInt scaling precision policy (`exact += BigInt(kgRate) * 200_000n * BigInt(validQty)`), computing exact `ingredientsSubtotalPkr`, `packagingTotal`, and `estimatedTotalPkr`. Unit prices are nominal/display-only (`Math.round(estimatedTotalPkr / validQty)`).
+2b. `src/components/AdminRecipeEditor.tsx` & `src/components/AdminItemForm.tsx`: visual admin recipe editor mounted in `#item-section-recipe`. Displays candidate ingredients with live 1kg rate badges (`resolveAuthoritativeKgRate`), grams per box inputs with live cost calculations (`kgRate * grams / 1000`), total net grams, and total estimate per box. Supports localized customer recipe descriptions (`recipe_en/ur/ar`), variant-specific overrides (`filledRecipes`), monotonic revision advancement, recipe clearing, and preview in `#item-section-review`.
 3. `src/types.ts` & `src/lib/catalogSchema.ts`: additive `RecipeIngredient` type, `recipeIngredients` and `filledRecipes` allowlisted in `PUBLIC_PRODUCT_FIELDS` and validated in `validateDynamicProduct`.
 4. Inquiry guards and persistence boundary:
    - Server guard in `validateAndPriceOrder` (`src/lib/orderValidation.ts`) parameterized with `allowInquiryItems` (aliased with `allowPackagingQuote`, defaulting to `false`). Rejects unquoted custom hampers and filled packaging variants with `QUOTE_REQUIRED`.
@@ -97,13 +103,14 @@ Runtime source:
    - `CustomQuoteModal.tsx` displays live recipe ingredients breakdown for filled inquiry mode.
 
 5. Remaining blockers for complete R04-KG1 closure:
-   - Visual dynamic recipe configuration in `AdminProductEditModal.tsx` so merchants can configure ingredients and gram weights through the admin UI.
+   - Visual dynamic recipe configuration in `AdminItemForm.tsx` / `AdminRecipeEditor.tsx`: COMPLETE (verified by 10-stage browser journey in `tests/admin-recipe-editor-browser.test.tsx`).
    - Merchant WhatsApp quote approval and durable quote-to-order conversion mechanism.
-   - Live Firestore data seeding/migration for bid-box recipes and authoritative 1kg ingredient rates.
+   - Live Firestore data seeding/migration for bid-box recipes and authoritative 1kg ingredient rates (merchant action pending).
 
 Verification:
 - `tests/filled-gift-pricing.test.ts`: 20/20 comprehensive tests PASS (including Test 20 acceptance scenario with 12 assertions across card, modal, and server) (owner 50g example, multi-ingredient mixture, changed kg rates, unchanged 250g pack rates, missing/disabled kg rates failing unpriced, unchanged standalone retail/custom weights, filled checkout rejection with `QUOTE_REQUIRED`, empty packaging checkout success, calculated base < 1kg rejection, shipping mass exclusion, conflicting/disabled variant fail-closed, subtotal exposure with null total, unquoted hamper rejection, canonical variant classification, direct creation failure, client payload bypass denial, quote-match rejection, empty packaging/food normal checkout, and idempotent historical replay).
-- `tests/hamper-catalog.test.tsx`: 7/7 tests PASS.
+- `tests/admin-recipe-editor-browser.test.tsx`: 1/1 mounted browser test PASS (10 stages: recipe section navigation, adding ingredients with live calculations at Rs. 4,500/kg -> Rs. 225 PKR and Rs. 2,000/kg -> Rs. 100 PKR, total filling mass & cost display, localized customer descriptions, variant-specific override with pista 100g, review section preview, admin API save, Firestore record verification with revision 2, round-trip reload and live recalculation, recipe clearing and removal with revision 3).
+- `tests/hamper-catalog.test.tsx`: 8/8 tests PASS (including custom hamper order-level precision acceptance scenario: 4 × Rs. 1,001/kg × 200g × 10 hampers = Rs. 8,008 ingredients + Rs. 10,000 packaging = Rs. 18,008 total).
 - `tests/authoritative-quote.test.ts`: 7/7 tests PASS.
 - `tests/stage6-legacy-packaging.test.ts`: 4/4 tests PASS.
 - `tests/stage6-order-handoff.test.ts`: 4/4 tests PASS.
@@ -115,5 +122,5 @@ Verification:
 - `ALLBARKA_SKIP_LOCAL_ENV=true npm run build`: PASS (exit code 0; release privacy audit passed with 84 text artifacts).
 - `tests/filled-gift-journey-browser.test.tsx`: 1/1 mounted browser & authoritative API journey PASS (12 stages: card estimate display Rs. 150/box without legacy Rs. 9,000, modal reference rate Rs. 150/box & Est. Rs. 1,500 total with empty customer budget input, quote submission and memoryFirestore persistence, WhatsApp URL concordance, changed authoritative kg rate Rs. 2,000/kg & forged client total rejection, unpriced missing recipe & legacy packaging without recipe, empty packaging deletion/disablement fail-closed, hamper builder inquiry dispatch without cart mutation, direct order QUOTE_REQUIRED failure, hamper box stored rate authority & dynamic updates & fail-closed without fallback to compiled seeds, non-divisible money precision preservation, and card honest quote-required state without cfg.filledMin).
 - `tests/stage6-inquiry-flow.test.ts`: 19/19 tests PASS.
-- `node scripts/run-all-tests.mjs`: PASS (742 passed, 0 failed, 1 skipped across 84 test files; 21 backend tests passed; 36 production checks passed).
+- `node scripts/run-all-tests.mjs`: PASS (744 passed, 0 failed, 1 skipped across all 85 test files; 21 backend tests passed; 36 production checks passed).
 - `git diff --check`: PASS (0 errors).

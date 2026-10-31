@@ -11,10 +11,11 @@ import { MEASUREMENT_UNITS, calculatedUnitPrice, type CommerceOption, type Produ
 import AdminDelimitedInput from './AdminDelimitedInput';
 import { ItemField } from './AdminItemField';
 import AdminCatalogConfiguration from './AdminCatalogConfiguration';
+import AdminRecipeEditor from './AdminRecipeEditor';
 import type { Product } from '../types';
 import '../styles/admin-item.css';
 
-const ITEM_SECTIONS = ['identity','options','media','seo','logistics','private','review','configuration'] as const;
+const ITEM_SECTIONS = ['identity','options','media','seo','recipe','logistics','private','review','configuration'] as const;
 
 export default function AdminItemForm({product,onClose,onSaved,initialCategory}:{product?:Product|null;onClose:()=>void;onSaved?:(p:Product)=>void;initialCategory?:string}) {
   const {currentUser}=useAuth();const {t,language,isRtl}=useLanguage();const refresh=useCatalogRefresh();
@@ -132,6 +133,23 @@ export default function AdminItemForm({product,onClose,onSaved,initialCategory}:
           <div className="flex flex-wrap gap-3">{[...new Set<string>([form.image,...form.galleryImages||[]].filter(Boolean))].map((url,i)=><div key={url} className="item-stack"><img src={url} alt={form.name_en||''} className="item-thumb"/>{i>0&&<button type="button" onClick={()=>{set('image',url);set('galleryImages',[form.image,...form.galleryImages||[]].filter((v:string)=>v&&v!==url));}}>{t('item.makeCover')}</button>}<button type="button" onClick={()=>{if(url===form.image){set('image',form.galleryImages?.[0]||'');set('galleryImages',(form.galleryImages||[]).slice(1));}else set('galleryImages',(form.galleryImages||[]).filter((v:string)=>v!==url));}}>{t('item.remove')}</button></div>)}</div>
         </section>
         <details id="item-section-seo" className="item-section"><summary>{t('item.seo')}</summary><div className="item-stack">{(['en','ur','ar'] as const).map(lang=><div key={lang} className="item-grid" dir={lang==='en'?'ltr':'rtl'}>{['title','description','imageAlt'].map(key=>field(`${key}_${lang}`,{label:`${t(key==='title'?'item.seoTitle':key==='description'?'item.seoDescription':'item.imageAlt')} · ${lang.toUpperCase()}`,value:form.seo?.[`${key}_${lang}`]||'',onChange:v=>set('seo',{...form.seo,[`${key}_${lang}`]:v})}))}</div>)}<ItemField label={t('item.keywords')}><AdminDelimitedInput value={form.keywords||[]} onChange={v=>set('keywords',v)}/></ItemField>{field('socialImage',{value:form.seo?.socialImage||'',onChange:v=>set('seo',{...form.seo,socialImage:v})})}</div></details>
+        <details id="item-section-recipe" className="item-section"><summary>{t('item.recipe')}</summary>
+          <AdminRecipeEditor
+            disabled={blocked||loadFailed}
+            recipeIngredients={form.recipeIngredients}
+            filledRecipes={form.filledRecipes}
+            recipe_en={form.recipe_en}
+            recipe_ur={form.recipe_ur}
+            recipe_ar={form.recipe_ar}
+            variantOptions={commerce?.options.map(o=>o.label)||(form.prices?Object.keys(form.prices):[])}
+            onChange={patch=>{
+              itemDirtyRef.current=true;
+              setDirty(true);
+              setNotice('');
+              setForm(v=>({...v,...patch}));
+            }}
+          />
+        </details>
         <details id="item-section-logistics" className="item-section"><summary>{t('item.logistics')}</summary><div className="item-grid">{choices('orderMode',form.orderMode||'standard',['standard','inquiry_quote','both'],v=>set('orderMode',v))}
           {field('productFamily')}<ItemField label={t('item.packagingSubcategory')}><select value={form.packagingSubcategory||''} onChange={e=>set('packagingSubcategory',e.target.value||null)}><option value="">{t('item.none')}</option>{['tin','tabarruk','wedding','baby','acrylic'].map(x=><option value={x} key={x}>{t(`item.packaging.${x}`)}</option>)}</select></ItemField>
           {['preparationDays','shippingWeightG','displayOrder','wholesale','moqOverride'].map(key=>field(key,{type:'number',publish:key==='preparationDays'&&commerce?.kind==='packaging'}))}
@@ -140,7 +158,7 @@ export default function AdminItemForm({product,onClose,onSaved,initialCategory}:
           {field('notes',{value:form.personalization?.notes||'',onChange:v=>set('personalization',{...form.personalization,notes:v})})}
         </div></details>
         <details id="item-section-private" className="item-section"><summary>{t('item.private')}</summary><div className="item-grid">{['supplierName','supplierItemUrl','internalNotes'].map(key=>field(key,{multiline:key==='internalNotes'}))}{['supplierCost','referencePrice','targetMarginPercent'].map(key=>field(key,{type:'number'}))}</div></details>
-        <section id="item-section-review" className="item-section item-review item-stack"><h4 tabIndex={-1}>{t('item.review')}</h4><button type="button" aria-expanded={preview} onClick={()=>setPreview(v=>!v)}>{t('item.review')}</button><p className="item-hint">{readiness?t(`item.reason.${readiness}`,t('item.failed')):t('item.ready')}</p>{preview&&<><h4>{form[`name_${language}`]||form.name_en}</h4><p>{form[`desc_${language}`]||form.desc_en}</p><p>{form.category} · {form.id}</p>{commerce?.options.map((o,i)=><p key={i}><bdi>{o.label}: {optionPrice(form,i)??'—'} PKR</bdi></p>)}<p>{t('item.fallback')}</p></>}</section>
+        <section id="item-section-review" className="item-section item-review item-stack"><h4 tabIndex={-1}>{t('item.review')}</h4><button type="button" aria-expanded={preview} onClick={()=>setPreview(v=>!v)}>{t('item.review')}</button><p className="item-hint">{readiness?t(`item.reason.${readiness}`,t('item.failed')):t('item.ready')}</p>{preview&&<><h4>{form[`name_${language}`]||form.name_en}</h4><p>{form[`desc_${language}`]||form.desc_en}</p><p>{form.category} · {form.id}</p>{commerce?.options.map((o,i)=><p key={i}><bdi>{o.label}: {optionPrice(form,i)??'—'} PKR</bdi></p>)}{form.recipeIngredients?.length>0&&<p><bdi>{t('item.recipe')}: {form.recipeIngredients.map((i:any)=>`${i.productId} (${i.grams}g)`).join(' + ')}</bdi></p>}<p>{t('item.fallback')}</p></>}</section>
         <AdminCatalogConfiguration key={configuration.revision} configuration={configuration} onDirtyChange={markConfigurationDirty} onBusyChange={markConfigurationBusy} onSave={async value=>{if(!currentUser)return;const res=await adminRequest<{configuration:CatalogConfiguration}>(()=>currentUser.getIdToken(),'/api/admin/catalog/configuration',{method:'PUT',body:{expectedRevision:configuration.revision,configuration:value},signal:abort.current.signal});await refresh();setConfiguration(res.configuration);}}/>
       </fieldset>}
     </form>

@@ -50,7 +50,8 @@ export function CatalogProvider({ children, initialProducts, initialTaxonomy }: 
         if (raw.active === false && Object.keys(raw.prices || {}).length === 0) {
           next.push({ ...seed, active: false, prices: {}, variants: [], allowCustomWeight: false, catalogRevision: raw.catalogRevision });
         } else {
-          const fromPricing = productFromPricing(seed, pricingFromLegacy(raw, seed), raw.catalogRevision);
+          const effectiveSeed = raw.commerce ? { ...seed, commerce: raw.commerce } : seed;
+          const fromPricing = productFromPricing(effectiveSeed, pricingFromLegacy(raw, effectiveSeed), raw.catalogRevision);
           next.push({
             ...fromPricing,
             ...raw,

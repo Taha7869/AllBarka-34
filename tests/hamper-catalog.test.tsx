@@ -5,7 +5,8 @@ import { renderToString } from 'react-dom/server';
 import { LanguageProvider } from '../src/contexts/LanguageContext';
 import CustomHamperBuilderModal from '../src/components/CustomHamperBuilderModal';
 import { PRODUCTS } from '../src/data/products';
-import { HAMPER_BOXES, HAMPER_SELECTION_IDS, hamperCartKey, hamperSelectionPrice, resolveHamper, type HamperConfiguration } from '../src/lib/hamperCatalog';
+import { HAMPER_BOXES, HAMPER_SELECTION_IDS, hamperCartKey, hamperSelectionPrice, resolveHamper, type HamperConfiguration, type HamperBox } from '../src/lib/hamperCatalog';
+import type { Product } from '../src/types';
 
 const configuration = (): HamperConfiguration => ({ version: 1, boxId: 'box-wood', selections: ['pista', 'kaju', 'badam', 'akhroot'], recipientName: 'Ayesha', giftMessage: 'With love\nFrom the family' });
 
@@ -83,4 +84,73 @@ test('hamper portions reject inquiry, unpublished and disabled selections withou
     assert.equal(resolveHamper(configuration(),PRODUCTS.map(product=>product.id===item.id?changed:product)),null);
   }
   assert.equal(resolveHamper(configuration(),PRODUCTS,HAMPER_BOXES.map(box=>({...box,active:false}))),null);
+});
+
+test('order-level precision: four ingredients at Rs1,001/kg, 200g each, 10 hampers yields Rs8,008 ingredients and Rs18,008 total', () => {
+  const box: HamperBox = {
+    id: 'box-wood',
+    name_en: 'Test Box',
+    name_ur: '',
+    name_ar: '',
+    price: 1000,
+    minSelections: 4,
+    maxSelections: 4,
+    image: '',
+    active: true,
+  };
+  const testProducts: Product[] = ['pista', 'kaju', 'badam', 'akhroot'].map(id => ({
+    id,
+    name_en: id,
+    name_ur: '',
+    name_ar: '',
+    desc_en: '',
+    desc_ur: '',
+    desc_ar: '',
+    category: 'dry-fruits',
+    status: 'published',
+    orderMode: 'standard',
+    active: true,
+    wholesale: 0,
+    image: null,
+    imageName: null,
+    prices: { '1kg': 1001 },
+    commerce: {
+      version: 1,
+      kind: 'food',
+      pricingMode: 'manual',
+      quantityMode: 'fixed',
+      baseQuantity: null,
+      baseUnit: 'g',
+      basePrice: null,
+      options: [{ label: '1kg', quantity: 1, unit: 'kg', override: false, available: true, shippingWeightG: 1000 }],
+      custom: null,
+    },
+    schemaVersion: 1,
+    revision: 1,
+    adminRevision: 1,
+  }));
+
+  const config: HamperConfiguration = {
+    version: 1,
+    boxId: 'box-wood',
+    selections: ['pista', 'kaju', 'badam', 'akhroot'],
+    recipientName: 'Test Recipient',
+    giftMessage: 'Test Message',
+  };
+
+  // Quantity = 1
+  const single = resolveHamper(config, testProducts, [box], 1);
+  assert.ok(single);
+  assert.equal(single.ingredientsSubtotalPkr, 801);
+  assert.equal(single.packagingPrice, 1000);
+  assert.equal(single.estimatedTotalPkr, 1801);
+  assert.equal(single.unitPrice, 1801);
+
+  // Quantity = 10 (Acceptance example: 4 ingredients * Rs1,001/kg * 200g * 10 = Rs8,008 + Rs10,000 = Rs18,008)
+  const tenHampers = resolveHamper(config, testProducts, [box], 10);
+  assert.ok(tenHampers);
+  assert.equal(tenHampers.ingredientsSubtotalPkr, 8008);
+  assert.equal(tenHampers.packagingPrice, 1000);
+  assert.equal(tenHampers.estimatedTotalPkr, 18008);
+  assert.equal(tenHampers.unitPrice, 1801);
 });

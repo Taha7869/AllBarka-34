@@ -140,7 +140,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         notes: message,
         adminNotes: '',
         status: 'NEW',
-        whatsappUrl: `https://wa.me/923160666083?text=${encodeURIComponent(`Assalam-o-Alaikum AllBarka! Inquiry Ref #${ticketId} â€” ${name}`)}`,
+        whatsappUrl: `https://wa.me/923160666083?text=${encodeURIComponent(`Assalam-o-Alaikum AllBarka! Inquiry Ref #${ticketId} — ${name}`)}`,
         whatsappReplyUrl: '',
         assignedTo: null,
         followUpDate: null,

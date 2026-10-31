@@ -30,6 +30,10 @@ export interface ResolvedHamper {
   name_ur: string;
   name_ar: string;
   image: string;
+  packagingPrice?: number;
+  ingredientsSubtotalPkr?: number;
+  estimatedTotalPkr?: number;
+  quantity?: number;
 }
 
 /** Retail cost for an actual canonical product's 200g hamper portion. */
@@ -54,7 +58,10 @@ function note(value: unknown, limit: number): string | null {
  * Shared storefront/server resolver. Never trusts browser prices, names or mass.
  * Reported weight is the contents' net weight; packaging has no invented mass.
  */
-export function resolveHamper(value: unknown, products: Product[] = PRODUCTS, boxes: HamperBox[] = HAMPER_BOXES): ResolvedHamper | null {
+const MICRO = 1_000_000n;
+const roundHalfUp = (numerator: bigint, denominator: bigint) => (numerator * 2n + denominator) / (denominator * 2n);
+
+export function resolveHamper(value: unknown, products: Product[] = PRODUCTS, boxes: HamperBox[] = HAMPER_BOXES, quantity: number = 1): ResolvedHamper | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const input = value as Record<string, unknown>;
   if (input.version !== 1) return null;
@@ -67,19 +74,41 @@ export function resolveHamper(value: unknown, products: Product[] = PRODUCTS, bo
   const recipientName = note(input.recipientName, 100);
   const giftMessage = note(input.giftMessage, 500);
   if (recipientName === null || giftMessage === null || /\n|\t/.test(recipientName)) return null;
-  let unitPrice: number = box.price;
+
+  const validQty = Number.isSafeInteger(quantity) && quantity > 0 ? quantity : 1;
+
+  let exact = 0n;
   for (const id of selections) {
     const product = products.find(candidate => candidate.id === id);
-    const price = product ? hamperSelectionPrice(product) : null;
-    if (price === null) return null;
-    unitPrice += price;
+    if (!product) return null;
+    const kgRate = resolveAuthoritativeKgRate(product);
+    if (kgRate === null || !Number.isSafeInteger(kgRate) || kgRate <= 0) return null;
+    exact += BigInt(kgRate) * 200_000n * BigInt(validQty);
   }
-  if (!Number.isSafeInteger(unitPrice)) return null;
+
+  const ingredientsSubtotal = roundHalfUp(exact, MICRO);
+  if (ingredientsSubtotal <= 0n || ingredientsSubtotal > BigInt(Number.MAX_SAFE_INTEGER)) return null;
+  const ingredientsSubtotalPkr = Number(ingredientsSubtotal);
+
+  const packagingTotal = box.price * validQty;
+  const estimatedTotalPkr = ingredientsSubtotalPkr + packagingTotal;
+  if (!Number.isSafeInteger(estimatedTotalPkr)) return null;
+
+  const nominalUnitPrice = Math.round(estimatedTotalPkr / validQty);
   const configuration: HamperConfiguration = { version: 1, boxId: box.id, selections: [...selections], recipientName, giftMessage };
   return {
-    configuration, unitPrice, massGrams: selections.length * HAMPER_PORTION_GRAMS,
+    configuration,
+    unitPrice: nominalUnitPrice,
+    massGrams: selections.length * HAMPER_PORTION_GRAMS,
     portion: `${selections.length} × ${HAMPER_PORTION_GRAMS}g`,
-    name_en: `Custom ${box.name_en}`, name_ur: `خصوصی ${box.name_ur}`, name_ar: `${box.name_ar} حسب الطلب`, image: box.image,
+    name_en: `Custom ${box.name_en}`,
+    name_ur: `خصوصی ${box.name_ur}`,
+    name_ar: `${box.name_ar} حسب الطلب`,
+    image: box.image,
+    packagingPrice: box.price,
+    ingredientsSubtotalPkr,
+    estimatedTotalPkr,
+    quantity: validQty,
   };
 }
 
