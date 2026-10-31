@@ -2,7 +2,7 @@ import { Router, type RequestHandler } from 'express';
 import type { Firestore } from 'firebase-admin/firestore';
 import type { InquiryRecord, InquiryStatus, InquiryType, Product } from '../types';
 import { PRODUCTS } from '../data/products';
-import type { HamperBox } from './hamperCatalog';
+import type { HamperBox, HamperConfiguration } from './hamperCatalog';
 import { loadAuthoritativeCatalog, mergeAuthoritativeCatalog } from './catalogStore';
 import { normalizeNetFillingGrams, isValidNetFillingGrams } from './filledGiftPricing';
 import {
@@ -31,6 +31,79 @@ export interface InquiriesRouterOptions {
   requireAdmin?: RequestHandler;
   inMemoryStore?: Map<string, InquiryRecord>;
   inquiryLimiter?: RequestHandler;
+}
+
+
+interface ExtractedWeightAndConfig {
+  netFillingGrams: number | null;
+  hamperConfiguration: HamperConfiguration | null;
+}
+
+function normalizeAndValidateInquiryWeightAndHamper(
+  rawTopFilling: unknown,
+  rawHamperConfig: unknown
+): { ok: true; data: ExtractedWeightAndConfig } | { ok: false; status: 400; error: string; code: string } {
+  let topNormalized: number | null = null;
+  if (rawTopFilling !== undefined && rawTopFilling !== null && rawTopFilling !== '') {
+    const norm = normalizeNetFillingGrams(rawTopFilling);
+    if (norm === null || !isValidNetFillingGrams(norm)) {
+      return {
+        ok: false,
+        status: 400,
+        error: 'Please provide a valid net filling weight per box (e.g. 250g, 500g, 1kg or custom weight).',
+        code: 'INVALID_NET_FILLING_WEIGHT',
+      };
+    }
+    topNormalized = norm;
+  }
+
+  let nestedNormalized: number | null = null;
+  const configObj = rawHamperConfig && typeof rawHamperConfig === 'object' && !Array.isArray(rawHamperConfig)
+    ? (rawHamperConfig as Record<string, unknown>)
+    : null;
+
+  if (configObj && configObj.netFillingGrams !== undefined && configObj.netFillingGrams !== null && configObj.netFillingGrams !== '') {
+    const norm = normalizeNetFillingGrams(configObj.netFillingGrams);
+    if (norm === null || !isValidNetFillingGrams(norm)) {
+      return {
+        ok: false,
+        status: 400,
+        error: 'Please provide a valid net filling weight per box (e.g. 250g, 500g, 1kg or custom weight).',
+        code: 'INVALID_NET_FILLING_WEIGHT',
+      };
+    }
+    nestedNormalized = norm;
+  }
+
+  if (topNormalized !== null && nestedNormalized !== null && topNormalized !== nestedNormalized) {
+    return {
+      ok: false,
+      status: 400,
+      error: 'Conflicting net filling weight values provided in request.',
+      code: 'CONFLICTING_NET_FILLING_WEIGHT',
+    };
+  }
+
+  const canonicalWeight = topNormalized ?? nestedNormalized ?? null;
+
+  let canonicalHamper: HamperConfiguration | null = null;
+  if (configObj) {
+    canonicalHamper = {
+      ...(configObj as any),
+      ...(canonicalWeight != null ? { netFillingGrams: canonicalWeight } : {}),
+    };
+    if (canonicalWeight == null) {
+      delete (canonicalHamper as any).netFillingGrams;
+    }
+  }
+
+  return {
+    ok: true,
+    data: {
+      netFillingGrams: canonicalWeight,
+      hamperConfiguration: canonicalHamper,
+    },
+  };
 }
 
 export function createInquiriesRouter(options: InquiriesRouterOptions) {
@@ -216,24 +289,16 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
       }
 
       const rawNetFilling = body.netFillingGrams ?? body.netWeightGrams ?? body.fillingWeightGrams ?? body.netWeight;
-      let netFillingGrams: number | null = null;
-      if (rawNetFilling !== undefined && rawNetFilling !== null && rawNetFilling !== '') {
-        const normalized = normalizeNetFillingGrams(rawNetFilling);
-        if (normalized === null || !isValidNetFillingGrams(normalized)) {
-          return res.status(400).json({ error: 'Please provide a valid net filling weight per box (e.g. 250g, 500g, 1kg or custom weight).', code: 'INVALID_NET_FILLING_WEIGHT' });
-        }
-        netFillingGrams = normalized;
+      const weightCheck = normalizeAndValidateInquiryWeightAndHamper(rawNetFilling, body.hamperConfiguration);
+      if (!weightCheck.ok) {
+        const err = weightCheck as { ok: false; status: number; error: string; code: string };
+        return res.status(err.status).json({ error: err.error, code: err.code });
       }
-
-      if (body.hamperConfiguration?.netFillingGrams !== undefined && body.hamperConfiguration.netFillingGrams !== null && body.hamperConfiguration.netFillingGrams !== '') {
-        const normalized = normalizeNetFillingGrams(body.hamperConfiguration.netFillingGrams);
-        if (normalized === null || !isValidNetFillingGrams(normalized)) {
-          return res.status(400).json({ error: 'Please provide a valid net filling weight per box (e.g. 250g, 500g, 1kg or custom weight).', code: 'INVALID_NET_FILLING_WEIGHT' });
-        }
-        body.hamperConfiguration.netFillingGrams = normalized;
-        if (netFillingGrams === null) {
-          netFillingGrams = normalized;
-        }
+      const canonicalNetFillingGrams = weightCheck.data.netFillingGrams;
+      const canonicalHamperConfig = weightCheck.data.hamperConfiguration;
+      const netFillingGrams = canonicalNetFillingGrams;
+      if (canonicalHamperConfig) {
+        body.hamperConfiguration = canonicalHamperConfig;
       }
 
       const rawType = String(body.type || 'general');
@@ -268,8 +333,8 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         requestedVariantLabel: requestedVariant,
         boxMode,
         quantity: rawQuantity,
-        hamperConfiguration: body.hamperConfiguration,
-        netFillingGrams,
+        hamperConfiguration: canonicalHamperConfig || body.hamperConfiguration,
+        netFillingGrams: canonicalNetFillingGrams,
       });
 
       const effectiveNetFilling = resolution.netFillingGrams ?? netFillingGrams;
@@ -296,7 +361,32 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
             targetPricePkr: offPrice,
             leadTimeNoticeAcknowledged: Boolean(body.leadTimeNoticeAcknowledged),
             netFillingGrams: effectiveNetFilling,
+            hamperConfiguration: resolution.hamperConfiguration || canonicalHamperConfig || body.hamperConfiguration,
           })
+        : undefined;
+
+      const legacyPayloadHash = submissionKey && (resolution.hamperConfiguration || canonicalHamperConfig || body.hamperConfiguration)
+        ? computeInquiryPayloadHash({
+            customerName,
+            phone,
+            city,
+            productId,
+            packagingVariant: resolution.packagingVariant,
+            boxMode,
+            quantity: rawQuantity,
+            eventType: type,
+            targetEventDate: body.targetEventDate ? String(body.targetEventDate).slice(0, 30) : null,
+            preferredFillings: Array.isArray(body.preferredFillings) ? body.preferredFillings : [],
+            customFillingsNotes: body.customFillingsNotes || '',
+            monogramText: body.monogramText || '',
+            cardMessage: body.cardMessage || '',
+            customPrintText,
+            budgetType: body.budgetType || null,
+            targetPricePkr: offPrice,
+            leadTimeNoticeAcknowledged: Boolean(body.leadTimeNoticeAcknowledged),
+            netFillingGrams: effectiveNetFilling,
+            hamperConfiguration: resolution.hamperConfiguration || canonicalHamperConfig || body.hamperConfiguration,
+          }, { legacyHamper: true })
         : undefined;
 
       const id = generateInquiryReferenceId(type);
@@ -329,7 +419,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         customerPhone: isEmailOnly ? '' : phone.slice(0, 40),
         city: city.slice(0, 80),
         isTabarruk: resolution.isTabarruk,
-        hamperConfiguration: resolution.hamperConfiguration || body.hamperConfiguration,
+        hamperConfiguration: resolution.hamperConfiguration || canonicalHamperConfig || body.hamperConfiguration,
         netFillingGrams: effectiveNetFilling,
       });
 
@@ -460,24 +550,16 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
       }
 
       const rawNetFilling = raw.netFillingGrams ?? raw.netWeightGrams ?? raw.fillingWeightGrams ?? raw.netWeight;
-      let netFillingGrams: number | null = null;
-      if (rawNetFilling !== undefined && rawNetFilling !== null && rawNetFilling !== '') {
-        const normalized = normalizeNetFillingGrams(rawNetFilling);
-        if (normalized === null || !isValidNetFillingGrams(normalized)) {
-          return res.status(400).json({ error: 'Please provide a valid net filling weight per box (e.g. 250g, 500g, 1kg or custom weight).', code: 'INVALID_NET_FILLING_WEIGHT' });
-        }
-        netFillingGrams = normalized;
+      const weightCheck = normalizeAndValidateInquiryWeightAndHamper(rawNetFilling, raw.hamperConfiguration);
+      if (!weightCheck.ok) {
+        const err = weightCheck as { ok: false; status: number; error: string; code: string };
+        return res.status(err.status).json({ error: err.error, code: err.code });
       }
-
-      if (raw.hamperConfiguration?.netFillingGrams !== undefined && raw.hamperConfiguration.netFillingGrams !== null && raw.hamperConfiguration.netFillingGrams !== '') {
-        const normalized = normalizeNetFillingGrams(raw.hamperConfiguration.netFillingGrams);
-        if (normalized === null || !isValidNetFillingGrams(normalized)) {
-          return res.status(400).json({ error: 'Please provide a valid net filling weight per box (e.g. 250g, 500g, 1kg or custom weight).', code: 'INVALID_NET_FILLING_WEIGHT' });
-        }
-        raw.hamperConfiguration.netFillingGrams = normalized;
-        if (netFillingGrams === null) {
-          netFillingGrams = normalized;
-        }
+      const canonicalNetFillingGrams = weightCheck.data.netFillingGrams;
+      const canonicalHamperConfig = weightCheck.data.hamperConfiguration;
+      const netFillingGrams = canonicalNetFillingGrams;
+      if (canonicalHamperConfig) {
+        raw.hamperConfiguration = canonicalHamperConfig;
       }
 
       const rawMode = String(raw.boxMode ?? raw.mode ?? '').toLowerCase();
@@ -509,11 +591,11 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         requestedVariantLabel: requestedVariant,
         boxMode: safeMode,
         quantity: rawQuantity,
-        hamperConfiguration: raw.hamperConfiguration,
-        netFillingGrams,
+        hamperConfiguration: canonicalHamperConfig || raw.hamperConfiguration,
+        netFillingGrams: canonicalNetFillingGrams,
       });
 
-      const effectiveNetFilling = resolution.netFillingGrams ?? netFillingGrams;
+      const effectiveNetFilling = resolution.netFillingGrams ?? canonicalNetFillingGrams;
       const offPrice = budgetVal != null ? Number(budgetVal) : null;
       const eventType = rawEventType || 'Nikkah';
 
@@ -537,7 +619,32 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
             targetPricePkr: offPrice,
             leadTimeNoticeAcknowledged: Boolean(raw.leadTimeNoticeAcknowledged),
             netFillingGrams: effectiveNetFilling,
+            hamperConfiguration: resolution.hamperConfiguration || canonicalHamperConfig || raw.hamperConfiguration,
           })
+        : undefined;
+
+      const legacyPayloadHash = submissionKey && (resolution.hamperConfiguration || canonicalHamperConfig || raw.hamperConfiguration)
+        ? computeInquiryPayloadHash({
+            customerName: resolvedName,
+            phone: resolvedPhone,
+            city,
+            productId,
+            packagingVariant: resolution.packagingVariant,
+            boxMode: safeMode,
+            quantity: rawQuantity,
+            eventType,
+            targetEventDate: raw.targetEventDate ? String(raw.targetEventDate).slice(0, 30) : null,
+            preferredFillings: Array.isArray(raw.preferredFillings) ? raw.preferredFillings : [],
+            customFillingsNotes: raw.customFillingsNotes || '',
+            monogramText: raw.monogramText || '',
+            cardMessage: raw.cardMessage || '',
+            customPrintText,
+            budgetType: raw.budgetType || null,
+            targetPricePkr: offPrice,
+            leadTimeNoticeAcknowledged: Boolean(raw.leadTimeNoticeAcknowledged),
+            netFillingGrams: effectiveNetFilling,
+            hamperConfiguration: resolution.hamperConfiguration || canonicalHamperConfig || raw.hamperConfiguration,
+          }, { legacyHamper: true })
         : undefined;
 
       const quoteId = generateInquiryReferenceId('bid_box_quote');
@@ -570,7 +677,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         customerPhone: resolvedPhone.slice(0, 40),
         city: city.slice(0, 80),
         isTabarruk: resolution.isTabarruk,
-        hamperConfiguration: resolution.hamperConfiguration || raw.hamperConfiguration,
+        hamperConfiguration: resolution.hamperConfiguration || canonicalHamperConfig || raw.hamperConfiguration,
         netFillingGrams: effectiveNetFilling,
       });
 

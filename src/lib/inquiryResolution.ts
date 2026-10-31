@@ -86,7 +86,7 @@ export function sanitizePublicInquiryInput(raw: any): Record<string, any> {
     'deliveryCity', 'notes', 'message', 'customHamperNotes', 'metadata', 'topic',
     'budgetType', 'preferredFillings', 'customFillingsNotes', 'monogramText', 'cardMessage',
     'leadTimeNoticeAcknowledged', 'submissionKey', 'idempotencyKey', 'hamperConfiguration', 'customHamperConfig',
-    'netFillingGrams', 'netWeightGrams', 'fillingWeightGrams'
+    'netFillingGrams', 'netWeightGrams', 'fillingWeightGrams', 'netWeight'
   ]);
   const sanitized: Record<string, any> = {};
   for (const [key, val] of Object.entries(raw)) {
@@ -112,7 +112,50 @@ export function resolveInquiryProductVariant(params: ResolveInquiryParams): Inqu
   const { catalog, productId, requestedVariantLabel, boxMode, quantity, hamperConfiguration, hamperBoxes, netFillingGrams } = params;
   if (productId === 'custom-hamper' || productId?.startsWith('custom-hamper:') || hamperConfiguration) {
     if (hamperConfiguration) {
-      const resolvedHamper = resolveHamper(hamperConfiguration, catalog, hamperBoxes ?? [], quantity);
+      // Validate that top-level netFillingGrams and hamperConfiguration.netFillingGrams do not conflict
+      const rawNested = (hamperConfiguration as any).netFillingGrams;
+      const nestedWeight = rawNested !== undefined && rawNested !== null && rawNested !== ''
+        ? normalizeNetFillingGrams(rawNested)
+        : null;
+      const rawTop = netFillingGrams as unknown;
+      const topWeight = rawTop !== undefined && rawTop !== null && rawTop !== ''
+        ? normalizeNetFillingGrams(rawTop)
+        : null;
+
+      if (nestedWeight !== null && topWeight !== null && nestedWeight !== topWeight) {
+        // Conflicting weights: fail closed as unresolved unpriced quote-required
+        return {
+          productId: 'custom-hamper',
+          productName: 'Custom Luxury Hamper',
+          isVerifiedCatalogProduct: false,
+          packagingVariant: requestedVariantLabel ? String(requestedVariantLabel).slice(0, 80) : 'Custom Hamper',
+          unresolvedVariant: true,
+          quantityUnit: 'pieces',
+          piecesPerPack: 1,
+          standardPrice: null,
+          packPrice: null,
+          perPiecePrice: null,
+          estimatedTotalPkr: null,
+          totalPieces: quantity,
+          requiresTeamQuote: true,
+          belowMoq: false,
+          moqRequired: null,
+          minPacksRequired: null,
+          isTabarruk: false,
+          netFillingGrams: null,
+        };
+      }
+
+      const effectiveNetWeight = topWeight ?? nestedWeight ?? null;
+      const effectiveHamperConfig: HamperConfiguration = {
+        ...hamperConfiguration,
+        ...(effectiveNetWeight != null ? { netFillingGrams: effectiveNetWeight } : {}),
+      };
+      if (effectiveNetWeight == null) {
+        delete (effectiveHamperConfig as any).netFillingGrams;
+      }
+
+      const resolvedHamper = resolveHamper(effectiveHamperConfig, catalog, hamperBoxes ?? [], quantity);
       if (resolvedHamper) {
         const isEstimated = resolvedHamper.estimatedTotalPkr != null;
         return {

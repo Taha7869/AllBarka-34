@@ -127,7 +127,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (!rawWeight) return [];
             const rawProductId = identity.productId;
             const compositeId = hamper ? hamperCartKey(hamper.configuration) : `${rawProductId}-${rawWeight}`;
-            const unitPrice = hamper?.unitPrice ?? resolveCartUnitPrice(identity.product, rawWeight, item.unitPrice ?? item.price ?? 0);
+            const unitPrice = (hamper ? (hamper.estimatedTotalPkr != null ? hamper.unitPrice : null) : null) ?? resolveCartUnitPrice(identity.product, rawWeight, item.unitPrice ?? item.price ?? 0);
             return [{
               id: compositeId,
               productId: rawProductId,
@@ -162,7 +162,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const hamper = item.productId === 'custom-hamper' ? resolveHamper(item.hamperConfiguration, PRODUCTS) : null;
         const product = identity?.product;
         if (!hamper && (!product || product.active === false || product.quoteOnly)) return item;
-        const price = hamper?.unitPrice ?? (product ? resolveCartUnitPrice(product, item.selectedWeight, 0) : 0);
+        const price = (hamper ? (hamper.estimatedTotalPkr != null ? hamper.unitPrice : null) : null) ?? (product ? resolveCartUnitPrice(product, item.selectedWeight, 0) : 0);
         if (price <= 0 || price === item.unitPrice) return item;
         changed = true;
         return { ...item, unitPrice: price, price };

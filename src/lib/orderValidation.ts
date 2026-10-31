@@ -203,6 +203,9 @@ export function validateAndPriceOrder({
       }
       const hamper = resolveHamper(clientItem.hamperConfiguration, products, hamperBoxes);
       if (!hamper) throw new ValidationError('Please rebuild this hamper with a supported box and valid harvest selections.', 'INVALID_HAMPER_CONFIGURATION');
+      if (hamper.estimatedTotalPkr == null) {
+        throw new ValidationError('Custom hampers with custom weight require a personalized quote from our concierge.', 'QUOTE_REQUIRED');
+      }
       const quantity = typeof clientItem.quantity === 'number' ? clientItem.quantity : Number(clientItem.quantity);
       if (!Number.isInteger(quantity) || quantity < 1 || quantity > 50) {
         throw new ValidationError('Invalid quantity for this hamper: must be an integer between 1 and 50 units.', 'INVALID_QUANTITY');

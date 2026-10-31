@@ -1,29 +1,23 @@
-## 31 October 2026 — R04-KG1-W1 filled box and custom-weight net filling integration
+## 31 October 2026 — R04-KG1-W1 filled box and custom-weight net filling repair & integration
 
-- **Canonical net filling weight model & normalization (`netFillingGrams`)**:
-  - Reused existing technical limits and precision helpers: `NET_FILLING_PRESETS = [250, 500, 1000] as const`, `normalizeNetFillingGrams` (normalizing string/numeric grams, kilograms, and custom input e.g. `250g` -> 250, `1kg` -> 1000, `0.25kg` -> 250, `Custom 750g` -> 750), `isValidNetFillingGrams` (rejection of non-finite, zero, negative, out-of-bound >10,000g, and unsupported-precision values), and `validateNetFillingGrams` (throws `INVALID_NET_FILLING_WEIGHT` on invalid input).
-  - Maintained separation of concepts: net filling grams per box, explicit ingredient grams, box quantity multiplier, packaging mass, customer budget, and authoritative estimated total.
-- **Recipe weight matching & fail-closed unpriced state**:
-  - `calculateFilledGiftEstimate`: Enforced validation of recipe total grams (`sum(item.grams)`) against `expectedNetFillingGrams`. If mismatched, fails closed returning `isAvailable: false, unavailabilityReason: 'INVALID_RECIPE'`.
-  - In `inquiryResolution`: returns honest unpriced quote-required state (`requiresTeamQuote: true, standardPrice: null, estimatedTotalPkr: null`) without inventing equal shares, auto-distributing grams, or resizing recipes.
-  - `hamperCatalog.ts`: When `netFillingGrams` is provided, sets `massGrams: netFillingGrams`, formats portion as `${selections.length} selections · ${weight}`, and returns unpriced `requiresTeamQuote: true`. Preserved historical 200g-per-selection calculation when `netFillingGrams` is omitted.
-- **Backend API & persistence integration**:
-  - Standardized `POST /api/inquiries` and `POST /api/quotes`: normalizes and validates `netFillingGrams` and `hamperConfiguration.netFillingGrams`, returning HTTP 400 `INVALID_NET_FILLING_WEIGHT` on invalid weights.
-  - Persists `netFillingGrams` on `InquiryRecord` in Firestore and returns it in sanitized public API responses.
-  - Idempotency: included `netFillingGrams` in `computeInquiryPayloadHash` (omitted when null/undefined for 100% backward compatibility; triggers HTTP 409 `IDEMPOTENCY_PAYLOAD_MISMATCH` if weight changes for the same client request key).
-- **Customer & admin UI flows**:
-  - `CustomQuoteModal.tsx`: Added preset buttons (`250g`, `500g`, `1kg`) and `Custom Weight` toggle + number input (`min 50`, `max 5000`, `step 50`). Recalculates estimate dynamically with authoritative pricing. Preserves user input on validation errors.
-  - `CustomHamperBuilderModal.tsx`: Carries `netFillingGrams` to `CustomQuoteModal` and formats selection notes without `(200g)` per line when custom weight is present.
-  - `AdminInquiriesPanel.tsx`: Displays `{weight} / box` badge in inquiry summary list and product comparison breakdown.
-  - WhatsApp messages: `buildCustomerInquiryWhatsAppUrl` and `buildAdminWhatsAppPitchUrl` explicitly display `• *Net Filling Weight:* {weight} per box` and adapt hamper selection lines.
-- **Verification & regression**:
-  - `tests/filled-gift-pricing.test.ts`: Added Test 21 covering all weight presets (250g, 500g, 1kg), custom 750g, strict validation rejection, formula scaling at Rs. 1000/kg (250g -> Rs250, 500g -> Rs500, 1kg -> Rs1000, 750g -> Rs750 + packaging and 10x quantity multiplication), recipe sum matching rule (`INVALID_RECIPE` on mismatch), and legacy hamper 200g preservation (21/21 PASS).
-  - `tests/stage6-inquiry-flow.test.ts`: Verified 750g custom weight end-to-end persistence in `/api/quotes` and `/api/inquiries`, 1kg preset normalization, WhatsApp URL generation, unpriced quote-on-request preservation, HTTP 400 rejection on invalid weights, and HTTP 409 idempotency conflict on changed weight (23/23 PASS).
+- **Status**: `IN_PROGRESS` (repaired locally on isolated fixtures; live catalog data seeding pending merchant confirmation).
+- **Repaired Defects**:
+  1. *Server Weight Boundary & Resolution*: Normalized weight once at server boundary (`normalizeAndValidateInquiryWeightAndHamper` in `src/lib/inquiriesRouter.ts`). Constructs canonical `hamperConfiguration` merging `canonicalNetFillingGrams`. Explicit weights bypass the historical 200g-per-selection formula (e.g. 750g request with 4 selections yields honest unpriced 750g inquiry, never 800g / Rs. 18,008 estimate). Rejects conflicting top-level and nested weights with HTTP 400 `CONFLICTING_NET_FILLING_WEIGHT`.
+  2. *Packaging-Only Price vs Complete Estimate Separation*: In `CustomQuoteModal.tsx`, server response, persisted inquiry, and WhatsApp URL generation, when `resolveHamper` returns no complete estimate (`estimatedTotalPkr == null`), consistently outputs `requiresTeamQuote: true`, `standardPrice: null`, and `estimatedTotalPkr: null`. Never uses packaging price as a complete estimate. Preserved `QUOTE_REQUIRED` in `orderValidation.ts` and `CartContext.tsx`.
+  3. *Hamper Composition Idempotency Hashing*: `computeInquiryPayloadHash` now includes canonical sorted selections, boxId, recipientName, giftMessage, and netFillingGrams. Replaying identical requests succeeds; changed composition under same key triggers HTTP 409 `IDEMPOTENCY_PAYLOAD_MISMATCH`. Historical intent replay compatibility preserved via dual-hash fallback in `persistInquiryAtomically`.
+  4. *Gift-Weight UI Alignment & Validation*: Removed invented `min=50, max=5000, step=50` input constraints, aligning with shared server validation (`min={1}, max={10000}, step="any"`). Blank custom input triggers localized validation error (`quote.customWeightRequired`) and preserves form draft. Valid non-50g-multiples (e.g. 775g) submit and persist cleanly. Localized across EN, UR, and AR with RTL support.
+- **Verification Evidence**:
+  - `tests/stage6-inquiry-flow.test.ts`: 28/28 PASS.
+  - `tests/filled-gift-journey-browser.test.tsx`: 14/14 stages PASS (including 390px viewport, blank input error, 775g keyboard entry, dark mode, and UR/AR RTL).
   - `tests/hamper-catalog.test.tsx`: 9/9 PASS.
+  - `tests/filled-gift-pricing.test.ts`: 21/21 PASS.
   - `npm run typecheck` (`tsc --noEmit`): PASS (0 errors).
   - `npm run lint:hooks` (`eslint src`): PASS (0 errors).
-  - `$env:ALLBARKA_SKIP_LOCAL_ENV="true"; npm run build`: PASS (Vite + esbuild server + 84 release text artifacts audited).
-  - Full regression runner `node scripts/run-all-tests.mjs`: PASS (750 passed, 0 failed, 1 skipped across all 85 test files; 21 backend tests; 36 production checks).
+- **Remaining Live Business Data**:
+  - 8 `BID_BOX_PRODUCTS` in live Firestore remain to be confirmed/created.
+  - 3 `hamperBoxes` (`box-wood`, `box-velvet`, `box-tin`) remain to be confirmed/seeded.
+  - Live product recipes for filled gift options remain to be entered by merchant.
+  - These business data items are tracked as external merchant prerequisites before live deployment.
 
 ## 31 October 2026 — R04-KG1 verification gap closure (production build & privacy audit, real ThemeProvider dark switch, 390px RTL visual parity, 10-hamper HTTP endpoints)
 

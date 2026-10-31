@@ -945,6 +945,89 @@ createRoot(document.getElementById('root')).render(
     assert.match(inqWaUrl, /Standard Rate Ref:\*\s*Rs\.\s*1,801\/pc/, 'WhatsApp message has nominal unit rate Rs. 1,801/pc');
     assert.match(inqWaUrl, /Estimated Total Ref:\*\s*Rs\.\s*18,008 PKR/, 'WhatsApp message has exact preserved total Rs. 18,008 PKR');
 
+    // =========================================================================
+    // 14. BROWSER UI REGRESSIONS: 390PX VIEWPORT, CUSTOM WEIGHT VALIDATION & RTL
+    // =========================================================================
+    // 14a. Viewport 390x844: Zero horizontal overflow
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`${origin}/celebration-boxes`);
+    await page.waitForFunction(() => (window as any).fixture?.catalog?.length > 0);
+
+    const hasHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+    assert.equal(hasHorizontalOverflow, false, 'Zero horizontal overflow at 390px viewport');
+
+    // 14b. Open CustomQuoteModal for Acceptance Favor Box
+    const stage14BoxCard = page.locator('article', { hasText: 'Acceptance Favor Box' });
+    await stage14BoxCard.waitFor();
+    await stage14BoxCard.locator('button', { hasText: 'Filled Legacy Option' }).click();
+    await stage14BoxCard.locator('button', { hasText: 'Request Custom Quote' }).first().click();
+
+    const stage14Modal = page.locator('#custom-quote-modal-title');
+    await stage14Modal.waitFor();
+
+    // 14c. Blank Custom Weight Validation
+    // Click "Custom Weight" button
+    const customWeightBtn = page.locator('button', { hasText: 'Custom Weight' });
+    await customWeightBtn.click();
+    const customWeightInput = page.locator('#quote-custom-net-weight');
+    await customWeightInput.waitFor();
+    await customWeightInput.fill('');
+
+    await page.locator('#quote-customer-name').fill('Ayesha Khan');
+    await page.locator('#quote-customer-phone').fill('03160666083');
+
+    // Click submit
+    await page.locator('button', { hasText: 'Submit & Save Custom Quote' }).click();
+
+    // Assert validation error appears and form draft is preserved
+    const customWeightError = page.locator('text=Please enter a custom net filling weight');
+    await customWeightError.waitFor();
+    assert.ok(await customWeightError.isVisible(), 'Shows validation error when custom weight input is blank');
+    assert.equal(await page.locator('#quote-customer-name').inputValue(), 'Ayesha Khan', 'Customer name is preserved');
+    assert.equal(await page.locator('#quote-customer-phone').inputValue(), '03160666083', 'Customer phone is preserved');
+
+    // 14d. Valid Non-50g-Multiple Value (775g) via keyboard
+    await customWeightInput.fill('775');
+    await page.locator('button', { hasText: 'Submit & Save Custom Quote' }).click();
+
+    // Wait for confirmation
+    const stage14Confirmation = page.locator('text=Quote Saved & Logged');
+    await stage14Confirmation.waitFor();
+    const stage14ConfText = await page.locator('.space-y-1').innerText();
+    const stage14QuoteMatch = stage14ConfText.match(/Ref\s*#(ABQ-[A-Z0-9-]+)/i);
+    assert.ok(stage14QuoteMatch, 'Confirmation contains quote reference ID for 775g');
+    const stage14QuoteId = stage14QuoteMatch[1];
+
+    const stage14Record = (records.get(`inquiries/${stage14QuoteId}`) || records.get(`quotes/${stage14QuoteId}`)) as any;
+    assert.ok(stage14Record, '775g quote is persisted in database');
+    assert.equal(stage14Record.netFillingGrams, 775, 'Persisted record preserves 775g net filling weight');
+    const stage14WaUrl = decodeURIComponent(stage14Record.whatsappUrl);
+    assert.match(stage14WaUrl, /• \*Net Filling Weight:\* 775g per box/, 'WhatsApp message has 775g per box');
+
+    // 14e. Dark Mode Parity
+    await page.evaluate(() => (window as any).fixture.theme('dark'));
+    await page.waitForFunction(() => document.documentElement.classList.contains('dark') && document.documentElement.getAttribute('data-theme') === 'dark');
+    const isDark = await page.evaluate(() => document.documentElement.classList.contains('dark') && document.documentElement.getAttribute('data-theme') === 'dark');
+    assert.equal(isDark, true, 'Document root has dark class and data-theme="dark"');
+
+    // 14f. Urdu & Arabic RTL Parity
+    await page.evaluate(() => (window as any).fixture.lang('ur'));
+    await page.waitForFunction(() => document.documentElement.dir === 'rtl' && document.documentElement.lang === 'ur');
+    const isUrduRtl = await page.evaluate(() => document.documentElement.dir === 'rtl' && document.documentElement.lang === 'ur');
+    assert.equal(isUrduRtl, true, 'Document root has dir="rtl" and lang="ur" for Urdu');
+
+    await page.evaluate(() => (window as any).fixture.lang('ar'));
+    await page.waitForFunction(() => document.documentElement.dir === 'rtl' && document.documentElement.lang === 'ar');
+    const isArabicRtl = await page.evaluate(() => document.documentElement.dir === 'rtl' && document.documentElement.lang === 'ar');
+    assert.equal(isArabicRtl, true, 'Document root has dir="rtl" and lang="ar" for Arabic');
+
+    // Restore default theme & language
+    await page.evaluate(() => {
+      (window as any).fixture.lang('en');
+      (window as any).fixture.theme('light');
+    });
+    await page.waitForFunction(() => document.documentElement.dir === 'ltr' && document.documentElement.lang === 'en');
+
     assert.deepEqual(errors, [], 'Zero browser page errors');
   } finally {
     await browser.close();

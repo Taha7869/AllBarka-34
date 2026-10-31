@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import type { Firestore } from 'firebase-admin/firestore';
 import type { InquiryRecord, InquiryStatus, InquiryType, Product } from '../types';
+import type { HamperConfiguration } from './hamperCatalog';
 import { sanitizeFirestoreData } from './firestoreData';
 import {
   isValidPhone,
@@ -71,7 +72,7 @@ export function normalizeWhatsAppPhone(rawPhone: string): string {
  * Computes deterministic SHA-256 hash of canonical inquiry fields for idempotency.
  * Normalizes customPrintText and customPrinting aliases to produce identical hashes.
  */
-export function computeInquiryPayloadHash(fields: {
+export interface InquiryPayloadFields {
   customerName: string;
   phone: string;
   city?: string;
@@ -91,7 +92,13 @@ export function computeInquiryPayloadHash(fields: {
   targetPricePkr?: number | null;
   leadTimeNoticeAcknowledged?: boolean;
   netFillingGrams?: number | null;
-}): string {
+  hamperConfiguration?: HamperConfiguration | null;
+}
+
+export function computeInquiryPayloadHash(
+  fields: InquiryPayloadFields,
+  options?: { legacyHamper?: boolean }
+): string {
   const printText = (fields.customPrintText ?? fields.customPrinting)?.trim() || '';
 
   const normalized = {
@@ -115,6 +122,21 @@ export function computeInquiryPayloadHash(fields: {
     ...(fields.netFillingGrams != null && Number.isFinite(fields.netFillingGrams) && Number(fields.netFillingGrams) > 0
       ? { netFillingGrams: Number(fields.netFillingGrams) }
       : {}),
+    ...(fields.hamperConfiguration && !options?.legacyHamper
+      ? {
+          hamperConfiguration: {
+            boxId: String(fields.hamperConfiguration.boxId || '').trim().toLowerCase(),
+            selections: Array.isArray(fields.hamperConfiguration.selections)
+              ? [...fields.hamperConfiguration.selections].sort()
+              : [],
+            recipientName: String(fields.hamperConfiguration.recipientName || '').trim(),
+            giftMessage: String(fields.hamperConfiguration.giftMessage || '').trim(),
+            ...(fields.hamperConfiguration.netFillingGrams != null && Number.isFinite(fields.hamperConfiguration.netFillingGrams) && Number(fields.hamperConfiguration.netFillingGrams) > 0
+              ? { netFillingGrams: Number(fields.hamperConfiguration.netFillingGrams) }
+              : {}),
+          },
+        }
+      : {}),
   };
   return crypto.createHash('sha256').update(JSON.stringify(normalized)).digest('hex');
 }
@@ -137,7 +159,8 @@ export async function persistInquiryAtomically(
   db: Firestore | null,
   record: InquiryRecord,
   submissionKey?: string,
-  payloadHash?: string
+  payloadHash?: string,
+  legacyPayloadHash?: string
 ): Promise<{ isDuplicate: boolean; inquiry: InquiryRecord }> {
   if (!db) {
     throw new PersistenceUnavailableError('Inquiry storage is temporarily unavailable. Your inquiry has not been registered.');
@@ -149,7 +172,9 @@ export async function persistInquiryAtomically(
       const intentDoc = await tx.get(intentRef);
       if (intentDoc.exists) {
         const intentData = intentDoc.data();
-        if (intentData?.payloadHash !== payloadHash) {
+        const matchesCurrent = intentData?.payloadHash === payloadHash;
+        const matchesLegacy = Boolean(legacyPayloadHash && intentData?.payloadHash === legacyPayloadHash);
+        if (!matchesCurrent && !matchesLegacy) {
           throw new IdempotencyConflictError();
         }
         // Duplicate retry of identical submission: return existing record
