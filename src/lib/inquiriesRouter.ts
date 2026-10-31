@@ -374,7 +374,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
             packagingVariant: resolution.packagingVariant,
             boxMode,
             quantity: rawQuantity,
-            eventType: type,
+            eventType,
             targetEventDate: body.targetEventDate ? String(body.targetEventDate).slice(0, 30) : null,
             preferredFillings: Array.isArray(body.preferredFillings) ? body.preferredFillings : [],
             customFillingsNotes: body.customFillingsNotes || '',
@@ -475,7 +475,10 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
       };
       record.whatsappReplyUrl = buildAdminWhatsAppPitchUrl(record);
 
-      const result = await persistInquiryAtomically(db, record, submissionKey, payloadHash);
+      const result = await persistInquiryAtomically(db, record, submissionKey, payloadHash, legacyPayloadHash, {
+        hamperConfiguration: resolution.hamperConfiguration || canonicalHamperConfig,
+        netFillingGrams: effectiveNetFilling,
+      });
       inMemory.set(result.inquiry.id, result.inquiry);
 
       return res.json({
@@ -733,7 +736,10 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
       };
       record.whatsappReplyUrl = buildAdminWhatsAppPitchUrl(record);
 
-      const result = await persistInquiryAtomically(db, record, submissionKey, payloadHash);
+      const result = await persistInquiryAtomically(db, record, submissionKey, payloadHash, legacyPayloadHash, {
+        hamperConfiguration: resolution.hamperConfiguration || canonicalHamperConfig,
+        netFillingGrams: effectiveNetFilling,
+      });
       inMemory.set(result.inquiry.id, result.inquiry);
 
       return res.json({

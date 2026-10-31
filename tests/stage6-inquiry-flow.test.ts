@@ -26,6 +26,7 @@ import { submitCustomQuoteInquiry } from '../src/lib/storefrontSubmissions';
 import { validateAndPriceOrder } from '../src/lib/orderValidation';
 import type { Product, InquiryRecord } from '../src/types';
 import { HAMPER_BOXES } from '../src/lib/hamperCatalog';
+import { PRODUCTS } from '../src/data/products';
 
 // ============================================================================
 // TEST FIXTURES & MOCK FIRESTORE
@@ -1683,3 +1684,131 @@ test('orderValidation: direct-order rejection with QUOTE_REQUIRED for custom ham
     (err: any) => err.code === 'QUOTE_REQUIRED'
   );
 });
+
+
+// ============================================================================
+// HISTORICAL INQUIRY REPLAY COMPATIBILITY (pre-composition-hash intents)
+// ============================================================================
+import cryptoNode from 'node:crypto';
+import { normalizeWhatsAppPhone } from '../src/lib/inquiryService';
+
+/** Independent reproduction of the historical hash algorithm: no hamper composition. */
+function historicalIntentHash(rec: any, rawPhone: string): string {
+  const normalized: any = {
+    customerName: String(rec.customerName || '').trim().toLowerCase(),
+    phone: normalizeWhatsAppPhone(rawPhone),
+    city: String(rec.city || '').trim().toLowerCase(),
+    productId: String(rec.productId || '').trim().toLowerCase(),
+    packagingVariant: rec.packagingVariant ? String(rec.packagingVariant).trim() : null,
+    boxMode: String(rec.boxMode || '').trim().toLowerCase(),
+    quantity: rec.quantity,
+    eventType: String(rec.eventType || '').trim().toLowerCase(),
+    targetEventDate: null,
+    preferredFillings: [],
+    customFillingsNotes: '',
+    monogramText: '',
+    cardMessage: '',
+    customPrintText: '',
+    budgetType: null,
+    targetPricePkr: null,
+    leadTimeNoticeAcknowledged: false,
+  };
+  return cryptoNode.createHash('sha256').update(JSON.stringify(normalized)).digest('hex');
+}
+
+for (const endpoint of ['/api/quotes', '/api/inquiries'] as const) {
+  test(`historical replay via ${endpoint}: equivalent replays original, changed/insufficient config fails closed`, async () => {
+    const db = createMockFirestore();
+    const app = createTestServer({ db, catalog: [...TEST_CATALOG, ...PRODUCTS.filter(p => ['pista', 'kaju', 'badam', 'akhroot'].includes(p.id))] });
+    const server = app.listen(0);
+    const port = (server.address() as any).port;
+    const url = `http://127.0.0.1:${port}${endpoint}`;
+    const post = (body: any) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const idOf = (j: any) => j.quoteId || j.id || j.ticketId;
+    const phone = '03160666083';
+    const baseCfg = { version: 1 as const, boxId: 'box-wood', selections: ['pista', 'kaju', 'badam', 'akhroot'], recipientName: 'Recipient Alpha', giftMessage: 'Message Alpha' };
+    const base = {
+      customerName: 'Usman', customerPhone: phone, city: 'Lahore', productId: 'custom-hamper',
+      type: 'custom_hamper', boxMode: 'custom', quantity: 5, eventType: 'Nikkah',
+      hamperConfiguration: baseCfg,
+    };
+
+    try {
+      // Seed a historical intent: create the original inquiry normally, then rewrite the intent hash
+      // to the value the historical algorithm produced (composition omitted).
+      const seed = async (key: string, mutate?: (intent: any) => void) => {
+        const res = await post({ ...base, submissionKey: key });
+        assert.equal(res.status, 200);
+        const original = await res.json();
+        const intents = db._store.get('inquiryIntents')!;
+        const intent = intents.get(key);
+        assert.ok(intent, 'intent stored');
+        intent.payloadHash = historicalIntentHash(intent.inquiry, phone);
+        mutate?.(intent);
+        intents.set(key, intent);
+        return { original, intent };
+      };
+
+      // 1. Identical historical replay returns original ID, totals and does not rewrite records.
+      const k1 = `hist-identical-${endpoint.slice(5)}`;
+      const { original, intent } = await seed(k1);
+      const inquiriesBefore = db._store.get('inquiries')!.size;
+      const intentBefore = JSON.stringify(db._store.get('inquiryIntents')!.get(k1));
+      const replay = await post({ ...base, submissionKey: k1 });
+      assert.equal(replay.status, 200);
+      const replayJson = await replay.json();
+      assert.equal(idOf(replayJson), idOf(original));
+      assert.equal(replayJson.inquiry.estimatedTotalPkr, original.inquiry.estimatedTotalPkr);
+      assert.equal(replayJson.inquiry.standardPrice, original.inquiry.standardPrice);
+      assert.equal(db._store.get('inquiries')!.size, inquiriesBefore, 'no new inquiry written');
+      assert.equal(JSON.stringify(db._store.get('inquiryIntents')!.get(k1)), intentBefore, 'intent not overwritten');
+      assert.equal(db._store.get('inquiryIntents')!.get(k1).payloadHash, intent.payloadHash, 'historical hash retained');
+
+      // 2. Selection reordering replays consistently.
+      const reordered = await post({ ...base, submissionKey: k1, hamperConfiguration: { ...baseCfg, selections: ['akhroot', 'badam', 'kaju', 'pista'] } });
+      assert.equal(reordered.status, 200);
+      assert.equal(idOf(await reordered.json()), idOf(original));
+
+      // 3. Changed selections / box / weight / recipient / message conflict.
+      const changes: Array<[string, any]> = [
+        ['selections', { ...baseCfg, selections: ['pista', 'kaju', 'badam', 'kishmish'] }],
+        ['box', { ...baseCfg, boxId: 'box-tin' }],
+        ['recipient', { ...baseCfg, recipientName: 'Recipient Beta' }],
+        ['message', { ...baseCfg, giftMessage: 'Message Beta' }],
+      ];
+      for (const [label, cfg] of changes) {
+        const res = await post({ ...base, submissionKey: k1, hamperConfiguration: cfg });
+        assert.equal(res.status, 409, `changed ${label} conflicts`);
+        assert.equal((await res.json()).code, 'IDEMPOTENCY_PAYLOAD_MISMATCH');
+      }
+      const weightRes = await post({ ...base, submissionKey: k1, netFillingGrams: 750 });
+      assert.equal(weightRes.status, 409, 'added weight conflicts');
+      const afterConflicts = db._store.get('inquiries')!.get(idOf(original));
+      assert.equal(afterConflicts.hamperConfiguration.recipientName, 'Recipient Alpha', 'original untouched');
+
+      // 4. Insufficient historical configuration fails closed.
+      const k2 = `hist-nocfg-${endpoint.slice(5)}`;
+      await seed(k2, (it) => { delete it.inquiry.hamperConfiguration; });
+      const noCfg = await post({ ...base, submissionKey: k2 });
+      assert.equal(noCfg.status, 409);
+      assert.equal((await noCfg.json()).code, 'IDEMPOTENCY_PAYLOAD_MISMATCH');
+
+      const k3 = `hist-emptysel-${endpoint.slice(5)}`;
+      await seed(k3, (it) => { it.inquiry.hamperConfiguration.selections = []; });
+      assert.equal((await post({ ...base, submissionKey: k3 })).status, 409);
+
+      // 5. New canonical submissions and retries remain correct.
+      const k4 = `hist-new-${endpoint.slice(5)}`;
+      const first = await post({ ...base, submissionKey: k4 });
+      assert.equal(first.status, 200);
+      const firstJson = await first.json();
+      const retry = await post({ ...base, submissionKey: k4 });
+      assert.equal(retry.status, 200);
+      assert.equal(idOf(await retry.json()), idOf(firstJson));
+      const changed = await post({ ...base, submissionKey: k4, hamperConfiguration: { ...baseCfg, giftMessage: 'Other' } });
+      assert.equal(changed.status, 409);
+    } finally {
+      server.close();
+    }
+  });
+}

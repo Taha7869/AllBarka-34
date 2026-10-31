@@ -141,6 +141,45 @@ export function computeInquiryPayloadHash(
   return crypto.createHash('sha256').update(JSON.stringify(normalized)).digest('hex');
 }
 
+function positiveWeight(value: unknown): number | null {
+  const n = typeof value === 'number' ? value : Number.NaN;
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/**
+ * Centralized historical replay compatibility check. Pre-repair intents hashed without hamper
+ * composition, so a legacy hash match alone proves nothing about box/selections/recipient/message.
+ * Returns true only if the stored original inquiry carries a complete composition that is
+ * canonically equal to the current request (selection order ignored, effective weight equal).
+ * A stored record lacking a verifiable composition fails closed (returns false).
+ * A request without a hamper replays only against a stored record that also has none.
+ */
+export function isHistoricalHamperReplayEquivalent(
+  stored: Partial<InquiryRecord> | null | undefined,
+  request?: { hamperConfiguration?: HamperConfiguration | null; netFillingGrams?: number | null } | null
+): boolean {
+  if (!stored) return false;
+  const reqCfg = (request?.hamperConfiguration || null) as HamperConfiguration | null;
+  const stCfg = (stored.hamperConfiguration || null) as HamperConfiguration | null;
+  if (!reqCfg) return !stCfg;
+  if (!stCfg) return false;
+  const complete = (c: any) =>
+    typeof c.boxId === 'string' && c.boxId.trim() !== '' &&
+    Array.isArray(c.selections) && c.selections.length > 0 &&
+    c.selections.every((s: unknown) => typeof s === 'string' && s !== '');
+  if (!complete(stCfg) || !complete(reqCfg)) return false;
+  const canon = (c: HamperConfiguration) => ({
+    boxId: String(c.boxId).trim().toLowerCase(),
+    selections: [...c.selections].sort(),
+    recipientName: String(c.recipientName || '').trim(),
+    giftMessage: String(c.giftMessage || '').trim(),
+  });
+  if (JSON.stringify(canon(stCfg)) !== JSON.stringify(canon(reqCfg))) return false;
+  const stWeight = positiveWeight(stored.netFillingGrams) ?? positiveWeight((stCfg as any).netFillingGrams);
+  const reqWeight = positiveWeight(request?.netFillingGrams) ?? positiveWeight((reqCfg as any).netFillingGrams);
+  return stWeight === reqWeight;
+}
+
 /**
  * Generates a collision-resistant, human-readable reference ID.
  */
@@ -160,7 +199,8 @@ export async function persistInquiryAtomically(
   record: InquiryRecord,
   submissionKey?: string,
   payloadHash?: string,
-  legacyPayloadHash?: string
+  legacyPayloadHash?: string,
+  requestHamper?: { hamperConfiguration?: HamperConfiguration | null; netFillingGrams?: number | null } | null
 ): Promise<{ isDuplicate: boolean; inquiry: InquiryRecord }> {
   if (!db) {
     throw new PersistenceUnavailableError('Inquiry storage is temporarily unavailable. Your inquiry has not been registered.');
@@ -174,7 +214,9 @@ export async function persistInquiryAtomically(
         const intentData = intentDoc.data();
         const matchesCurrent = intentData?.payloadHash === payloadHash;
         const matchesLegacy = Boolean(legacyPayloadHash && intentData?.payloadHash === legacyPayloadHash);
-        if (!matchesCurrent && !matchesLegacy) {
+        // Historical hashes omitted hamper composition: accept a legacy match only when the stored
+        // original inquiry verifiably carries the same canonical composition (fail closed otherwise).
+        if (!matchesCurrent && (!matchesLegacy || !isHistoricalHamperReplayEquivalent(intentData?.inquiry, requestHamper))) {
           throw new IdempotencyConflictError();
         }
         // Duplicate retry of identical submission: return existing record
