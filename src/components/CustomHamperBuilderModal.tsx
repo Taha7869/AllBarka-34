@@ -8,6 +8,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { getLocalized } from '../utils/localize';
 import { acquireScrollLock } from '../utils/scrollLock';
 import { CUSTOM_HAMPER_PRODUCT_ID, HAMPER_BOXES, HAMPER_SELECTION_IDS, HAMPER_PORTION_GRAMS, hamperCartKey, hamperSelectionPrice, resolveHamper, type HamperConfiguration } from '../lib/hamperCatalog';
+import { calculateFilledGiftEstimate } from '../lib/filledGiftPricing';
 import { openCustomQuoteModal } from './CustomQuoteModal';
 
 export interface CustomHamperCartInput {
@@ -95,12 +96,28 @@ export default function CustomHamperBuilderModal({ isOpen, onClose, onAddToCart 
   const configuration: HamperConfiguration = { version: 1, boxId, selections: selectedItems, recipientName, giftMessage };
   const resolved = resolveHamper(configuration, PRODUCTS, hamperBoxes);
   const boxAvailable = box.active !== false && box.price > 0;
-  const pricesKnown = boxAvailable && selectedItems.every(id => candidates.some(product => product.id === id));
+  const contentsEstimate = React.useMemo(() => {
+    if (!selectedItems.length) return { subtotal: 0, available: true };
+    const recipe = selectedItems.map(productId => ({ productId, grams: HAMPER_PORTION_GRAMS }));
+    const result = calculateFilledGiftEstimate({
+      recipe,
+      catalogProducts: PRODUCTS,
+      packagingRequired: false,
+      requestedBoxes: 1,
+    });
+    return {
+      subtotal: result.ingredientsSubtotalPkr,
+      available: result.ingredientsAvailable,
+    };
+  }, [selectedItems, PRODUCTS]);
+
+  const pricesKnown = boxAvailable && contentsEstimate.available;
   const selectionValid = pricesKnown && selectedItems.length >= box.minSelections && selectedItems.length <= box.maxSelections;
-  const totalPrice = pricesKnown ? box.price + selectedItems.reduce((sum, id) => {
-    const product = candidates.find(candidate => candidate.id === id);
-    return sum + (product ? hamperSelectionPrice(product) || 0 : 0);
-  }, 0) : null;
+  const contentsSubtotal = pricesKnown ? (contentsEstimate.subtotal ?? 0) : null;
+  const totalPrice = pricesKnown && contentsSubtotal !== null ? box.price + contentsSubtotal : null;
+
+
+
   const capacity = t('capacity').replace('{min}', String(box.minSelections)).replace('{max}', String(box.maxSelections));
   const invalidMessage = t('selectionInvalid').replace('{min}', String(box.minSelections)).replace('{max}', String(box.maxSelections));
   const nameTypography = language === 'ur' ? 'font-urdu' : language === 'ar' ? 'font-arabic' : 'font-serif';
@@ -175,7 +192,7 @@ export default function CustomHamperBuilderModal({ isOpen, onClose, onAddToCart 
         {step === 3 && <div dir={isRtl ? 'rtl' : 'ltr'} className="space-y-5"><h4 className="font-serif text-xl">{t('cardTitle')}</h4><div><label htmlFor="hamper-recipient" className="mb-2 block text-xs font-medium">{t('recipient')}</label><input id="hamper-recipient" type="text" value={recipientName} maxLength={100} autoComplete="off" onChange={event => setRecipientName(event.target.value)} placeholder={t('recipientPlaceholder')} className="min-h-12 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] px-4 text-base focus-visible:outline-[var(--color-gold)]"/></div><div><label htmlFor="hamper-message" className="mb-2 block text-xs font-medium">{t('message')}</label><textarea id="hamper-message" value={giftMessage} maxLength={500} rows={3} onChange={event => setGiftMessage(event.target.value)} placeholder={t('messagePlaceholder')} className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] p-4 text-base focus-visible:outline-[var(--color-gold)]"/></div><div className="gift-card-preview" aria-label={t('previewTitle')}><p>{t('previewTitle')}</p>{recipientName && <h5 dir="auto">{recipientName}</h5>}<p dir="auto" className="gift-card-message">{giftMessage || t('messagePlaceholder')}</p><small>{t('previewNote')}</small></div><div className="rounded-2xl border border-[#c7982f]/40 bg-[#12382a] p-5 text-[#fff8e9]"><h5 className="font-serif text-lg text-[#e4c783]">{t('summary')}</h5><p className="mt-3 text-sm">{getLocalized(box, 'name', language)}</p><p className="mt-3 text-xs leading-6"><strong>{t('contents')}: </strong>{selectedItems.map(id => getLocalized(PRODUCTS.find(product => product.id === id), 'name', language)).join('، ')}</p><p className="mt-3 text-xs">{t('netWeight')}: <bdi>{selectedItems.length * HAMPER_PORTION_GRAMS}g</bdi></p></div></div>}
       </div><aside className="gift-builder-preview" aria-label={t('summary')}><figure><img src={box.image} alt={getLocalized(box,'name',language)} width={640} height={360}/><figcaption>{t('reference')}</figcaption></figure><h4>{getLocalized(box,'name',language)}</h4><p>{t('selected').replace('{count}',String(selectedItems.length))} · <bdi>{selectedItems.length * HAMPER_PORTION_GRAMS}g</bdi></p>
         <ul>{selectedItems.map(id=>{const product=candidates.find(item=>item.id===id);return <li key={id}>{product && <img src={mediaCover(product)} alt="" width={48} height={48}/>}<span dir="auto">{product?getLocalized(product,'name',language):t('unavailable')}<small>{HAMPER_PORTION_GRAMS}g</small></span><bdi>{product?`Rs. ${hamperSelectionPrice(product)?.toLocaleString()}`:'—'}</bdi></li>;})}</ul>
-        <dl><div><dt>{t('packagingCost')}</dt><dd><bdi>{boxAvailable?`Rs. ${box.price.toLocaleString()}`:t('boxUnavailable')}</bdi></dd></div><div><dt>{t('contents')}</dt><dd><bdi>{totalPrice===null?'—':`Rs. ${(totalPrice-box.price).toLocaleString()}`}</bdi></dd></div><div><dt>{t('total')}</dt><dd aria-live="polite"><bdi>{totalPrice===null?'—':`Rs. ${totalPrice.toLocaleString()}`}</bdi></dd></div></dl>
+        <dl><div><dt>{t('packagingCost')}</dt><dd><bdi>{boxAvailable?`Rs. ${box.price.toLocaleString()}`:t('boxUnavailable')}</bdi></dd></div><div><dt>{t('contents')}</dt><dd><bdi>{contentsSubtotal===null?'—':`Rs. ${contentsSubtotal.toLocaleString()}`}</bdi></dd></div><div><dt>{t('total')}</dt><dd aria-live="polite"><bdi>{totalPrice===null?'—':`Rs. ${totalPrice.toLocaleString()}`}</bdi></dd></div></dl>
         {!selectionValid && step !== 2 && <p role="status">{!boxAvailable?t('boxUnavailable'):pricesKnown?invalidMessage:t('unavailable')}</p>}</aside></div></div>
       <div className="gift-builder-footer flex shrink-0 flex-col gap-4 border-t border-[var(--color-border)] bg-[var(--color-base)] p-4 sm:flex-row sm:items-center sm:justify-between"><div dir="auto"><span className="block text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-secondary)]">{t('total')}</span><strong className="font-serif text-2xl text-[var(--color-accent-text)]"><bdi>{totalPrice===null?'—':`Rs. ${totalPrice.toLocaleString()}`}</bdi></strong></div><div className="flex gap-3">{step > 1 && <button type="button" onClick={() => setStep(step === 3 ? 2 : 1)} className="focus-ring min-h-12 rounded-full border border-[var(--color-border)] px-5 text-xs font-medium">{t('back')}</button>}<button type="button" disabled={step === 2 ? !selectionValid : step === 3 ? !resolved : false} onClick={step === 3 ? finish : () => setStep(step === 1 ? 2 : 3)} className="gift-builder-add focus-ring flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full border border-[#c7982f]/40 bg-[#1e3a2b] px-6 text-xs font-semibold text-[#fff8e9] disabled:opacity-40">{step === 3 ? <ShoppingBag size={16}/> : null}<span dir="auto">{t(step === 3 ? 'add' : 'continue')}</span>{step < 3 && <ArrowRight size={16} className="text-[#e4c783]"/>}</button></div></div>
     </motion.div>

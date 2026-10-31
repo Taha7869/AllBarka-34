@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { renderToString } from 'react-dom/server';
 import { LanguageProvider } from '../src/contexts/LanguageContext';
+import { CatalogProvider } from '../src/contexts/CatalogContext';
 import CustomHamperBuilderModal from '../src/components/CustomHamperBuilderModal';
 import { PRODUCTS } from '../src/data/products';
 import { HAMPER_BOXES, HAMPER_SELECTION_IDS, hamperCartKey, hamperSelectionPrice, resolveHamper, type HamperConfiguration, type HamperBox } from '../src/lib/hamperCatalog';
@@ -153,4 +154,52 @@ test('order-level precision: four ingredients at Rs1,001/kg, 200g each, 10 hampe
   assert.equal(tenHampers.packagingPrice, 1000);
   assert.equal(tenHampers.estimatedTotalPkr, 18008);
   assert.equal(tenHampers.unitPrice, 1801);
+});
+
+test('CustomHamperBuilderModal renders shared estimator contents Rs801 and total Rs2,601 for 4 x Rs1,001/kg selections', () => {
+  const testProducts: Product[] = ['pista', 'kaju', 'badam', 'akhroot'].map(id => ({
+    id,
+    name_en: id,
+    name_ur: '',
+    name_ar: '',
+    desc_en: '',
+    desc_ur: '',
+    desc_ar: '',
+    category: 'dry-fruits',
+    status: 'published',
+    orderMode: 'standard',
+    active: true,
+    wholesale: 0,
+    image: null,
+    imageName: null,
+    prices: { '1kg': 1001 },
+    commerce: {
+      version: 1,
+      kind: 'food',
+      pricingMode: 'manual',
+      quantityMode: 'fixed',
+      baseQuantity: null,
+      baseUnit: 'g',
+      basePrice: null,
+      options: [{ label: '1kg', quantity: 1, unit: 'kg', override: false, available: true, shippingWeightG: 1000 }],
+      custom: null,
+    },
+    schemaVersion: 1,
+    revision: 1,
+    adminRevision: 1,
+  }));
+
+  const html = renderToString(
+    <CatalogProvider initialProducts={testProducts}>
+      <LanguageProvider>
+        <CustomHamperBuilderModal isOpen onClose={() => {}} onAddToCart={() => {}} />
+      </LanguageProvider>
+    </CatalogProvider>
+  );
+
+  assert.match(html, /Contents/);
+  // Shared estimator contents subtotal: 801 PKR (not 4 * 200 = 800)
+  assert.match(html, /Rs\.\s*801/);
+  // Total includes packaging Rs1,800 + Rs801 = Rs2,601
+  assert.match(html, /Rs\.\s*2,601/);
 });

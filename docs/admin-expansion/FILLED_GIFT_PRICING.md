@@ -1,9 +1,9 @@
 # Filled gifts: kilogram-based ingredient estimates
 
 Updated: 31 October 2026 (Asia/Karachi).
-Task: R04-KG1. Owner decision: CONFIRMED. Implementation: IN_PROGRESS (custom hamper precision, encoding restoration, and admin visual recipe editor verified; live data seeding/migration pending). Live verification/release: NOT_RUN.
-Inspected source parent: `bd17e1a89b5c7d379aa0e0635cac325fa6a434a2`.
-This checkpoint records the completed implementation of custom-hamper order-level precision, UTF-8 encoding restoration, and the admin visual recipe editor across form, review, persistence, and mounted browser journey.
+Task: R04-KG1. Owner decision: CONFIRMED. Implementation: IN_PROGRESS (builder and recipe editor precision unified, blank row validation enforced, 12-stage admin browser test and 9/9 hamper catalog tests verified; live catalog data seeding/migration pending). Live verification/release: NOT_RUN.
+Inspected source parent: `d8ff43bb7bd06ecf8a161d52c349d0830ed3c0d2`.
+This checkpoint records the unification of CustomHamperBuilderModal and AdminRecipeEditor total calculations with the canonical shared estimator, explicit merchant selection and grams on new ingredient rows with fail-closed validation, acceptance fixture verification (4 x Rs. 1,001/kg @ 200g each yielding Rs. 801 contents for 1 hamper and Rs. 8,008 for 10 hampers), and owner confirmation of the manual WhatsApp quote workflow.
 
 ## Current owner instruction and precedence
 
@@ -102,15 +102,16 @@ Runtime source:
    - `BidBoxesSection.tsx` connected to `calculateFilledGiftEstimate` for per-box estimate display, preserving requested tier quantity without inflating customer budget.
    - `CustomQuoteModal.tsx` displays live recipe ingredients breakdown for filled inquiry mode.
 
-5. Remaining blockers for complete R04-KG1 closure:
-   - Visual dynamic recipe configuration in `AdminItemForm.tsx` / `AdminRecipeEditor.tsx`: COMPLETE (verified by 10-stage browser journey in `tests/admin-recipe-editor-browser.test.tsx`).
-   - Merchant WhatsApp quote approval and durable quote-to-order conversion mechanism.
-   - Live Firestore data seeding/migration for bid-box recipes and authoritative 1kg ingredient rates (merchant action pending).
+5. Remaining blockers and owner confirmations for complete R04-KG1 closure:
+   - Visual dynamic recipe configuration in `AdminItemForm.tsx` / `AdminRecipeEditor.tsx`: COMPLETE (verified by 12-stage browser journey in `tests/admin-recipe-editor-browser.test.tsx` including blank row initialization, client-side validation rejection on incomplete save, 4x1001 acceptance fixture, mobile 390x844, RTL Urdu, and dark mode).
+   - Custom Hamper Builder & Recipe Editor shared estimator unification: COMPLETE (`CustomHamperBuilderModal.tsx` and `AdminRecipeEditor.tsx` calculate aggregate totals via `calculateFilledGiftEstimate` / `resolveHamper`, preventing individually rounded lines from dictating order totals).
+   - Merchant quote-approval workflow: CONFIRMED BY OWNER. Manual quotation and confirmation via WhatsApp is the confirmed and permanent workflow. No automated approval-token or durable quote-to-order conversion system will be built.
+   - Live Firestore catalog data population and release gates: PENDING merchant execution (zero live writes or mutations claimed by implementation).
 
 Verification:
 - `tests/filled-gift-pricing.test.ts`: 20/20 comprehensive tests PASS (including Test 20 acceptance scenario with 12 assertions across card, modal, and server) (owner 50g example, multi-ingredient mixture, changed kg rates, unchanged 250g pack rates, missing/disabled kg rates failing unpriced, unchanged standalone retail/custom weights, filled checkout rejection with `QUOTE_REQUIRED`, empty packaging checkout success, calculated base < 1kg rejection, shipping mass exclusion, conflicting/disabled variant fail-closed, subtotal exposure with null total, unquoted hamper rejection, canonical variant classification, direct creation failure, client payload bypass denial, quote-match rejection, empty packaging/food normal checkout, and idempotent historical replay).
-- `tests/admin-recipe-editor-browser.test.tsx`: 1/1 mounted browser test PASS (10 stages: recipe section navigation, adding ingredients with live calculations at Rs. 4,500/kg -> Rs. 225 PKR and Rs. 2,000/kg -> Rs. 100 PKR, total filling mass & cost display, localized customer descriptions, variant-specific override with pista 100g, review section preview, admin API save, Firestore record verification with revision 2, round-trip reload and live recalculation, recipe clearing and removal with revision 3).
-- `tests/hamper-catalog.test.tsx`: 8/8 tests PASS (including custom hamper order-level precision acceptance scenario: 4 × Rs. 1,001/kg × 200g × 10 hampers = Rs. 8,008 ingredients + Rs. 10,000 packaging = Rs. 18,008 total).
+- `tests/admin-recipe-editor-browser.test.tsx`: 1/1 mounted browser test PASS (12 stages: recipe section navigation, blank row initialization, incomplete row validation rejection, adding ingredients with live calculations at Rs. 4,500/kg -> Rs. 225 PKR and Rs. 2,000/kg -> Rs. 100 PKR, total filling mass & cost display, localized customer descriptions, variant-specific override with pista 100g, review section preview, admin API save, Firestore record verification with revision 2, round-trip reload and live recalculation, recipe clearing and removal with revision 3, acceptance fixture 4 x Rs. 1,001/kg @ 200g showing 4 x Rs. 200 PKR lines and aggregate Rs. 801 PKR / 800g total, mobile 390x844, RTL Urdu, and dark mode parity).
+- `tests/hamper-catalog.test.tsx`: 9/9 tests PASS (including custom hamper order-level precision acceptance scenario: 4 × Rs. 1,001/kg × 200g × 10 hampers = Rs. 8,008 ingredients + Rs. 10,000 packaging = Rs. 18,008 total, and CustomHamperBuilderModal rendering shared estimator contents Rs. 801 and total Rs. 2,601).
 - `tests/authoritative-quote.test.ts`: 7/7 tests PASS.
 - `tests/stage6-legacy-packaging.test.ts`: 4/4 tests PASS.
 - `tests/stage6-order-handoff.test.ts`: 4/4 tests PASS.
@@ -122,5 +123,5 @@ Verification:
 - `ALLBARKA_SKIP_LOCAL_ENV=true npm run build`: PASS (exit code 0; release privacy audit passed with 84 text artifacts).
 - `tests/filled-gift-journey-browser.test.tsx`: 1/1 mounted browser & authoritative API journey PASS (12 stages: card estimate display Rs. 150/box without legacy Rs. 9,000, modal reference rate Rs. 150/box & Est. Rs. 1,500 total with empty customer budget input, quote submission and memoryFirestore persistence, WhatsApp URL concordance, changed authoritative kg rate Rs. 2,000/kg & forged client total rejection, unpriced missing recipe & legacy packaging without recipe, empty packaging deletion/disablement fail-closed, hamper builder inquiry dispatch without cart mutation, direct order QUOTE_REQUIRED failure, hamper box stored rate authority & dynamic updates & fail-closed without fallback to compiled seeds, non-divisible money precision preservation, and card honest quote-required state without cfg.filledMin).
 - `tests/stage6-inquiry-flow.test.ts`: 19/19 tests PASS.
-- `node scripts/run-all-tests.mjs`: PASS (744 passed, 0 failed, 1 skipped across all 85 test files; 21 backend tests passed; 36 production checks passed).
+- `node scripts/run-all-tests.mjs`: PASS (745 passed, 0 failed, 1 skipped across all 85 test files; 21 backend tests passed; 36 production checks passed).
 - `git diff --check`: PASS (0 errors).

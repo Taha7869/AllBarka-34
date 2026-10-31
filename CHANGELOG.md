@@ -1,3 +1,25 @@
+## 31 October 2026 — R04-KG1 builder & recipe editor precision unification, blank row validation and acceptance fixture
+
+- **Custom Hamper Builder & Admin Recipe Editor shared estimator unification**:
+  - `src/components/CustomHamperBuilderModal.tsx`: Replaced separate `selectedItems.reduce(..., hamperSelectionPrice)` total summation with `calculateFilledGiftEstimate` / `resolveHamper`, ensuring individually rounded lines do not determine aggregate or order totals.
+  - `src/components/AdminRecipeEditor.tsx`: Replaced line-by-line rounded summation in `defaultSummary` and `variantSummary` with `calculateFilledGiftEstimate`, computing exact order-level precision totals.
+  - `tests/hamper-catalog.test.tsx`: Added test verifying `CustomHamperBuilderModal` renders shared estimator contents subtotal Rs. 801 and total Rs. 2,601 for 4 × Rs. 1,001/kg selections. Passed 9/9 tests.
+- **Explicit merchant selection & grams on new recipe rows**:
+  - `src/components/AdminRecipeEditor.tsx`: New ingredient rows initialized as `{ productId: '', grams: 0 }` for both default recipes and variant recipes, requiring explicit merchant selection instead of auto-selecting the first candidate or assigning 50g. Displays `Select an ingredient product` badge when `productId` is empty and placeholder `e.g. 50` when grams is 0. Preserved intentional copying of existing configured default recipe when enabling custom variant override.
+  - `src/components/AdminItemForm.tsx`: Added client-side fail-closed validation guards rejecting save when `recipeIngredients` or `filledRecipes` contain incomplete rows.
+  - `src/contexts/adminExpansionTranslations.ts`: Added localized translations for `selectProductRequired` across English, Urdu, and Arabic.
+- **Acceptance fixture & browser journey verification**:
+  - `tests/admin-recipe-editor-browser.test.tsx`: Extended to 12 stages, verifying:
+    - Blank new row initialization and client-side validation rejection with `INVALID_RECIPE_INGREDIENT` on incomplete save attempt.
+    - Intentional recipe copying when enabling custom variant override and blank row initialization on variant `Add Ingredient`.
+    - Acceptance fixture: 4 ingredients at Rs. 1,001/kg, 200g each, Rs. 1,000 packaging: 4 rows showing `→ Rs. 200 PKR / box` each, aggregate preview showing `Total filling mass: 800g per box` and `Total ingredient estimate: Rs. 801 PKR / box`.
+    - Mobile (390×844), RTL (Urdu `dir="rtl"`), and dark mode parity with zero console/page errors.
+- **Owner confirmation**:
+  - Manual final quotation via WhatsApp is the confirmed and permanent workflow. No automated approval-token or durable quote-to-order conversion system will be built.
+- **Test suite status**:
+  - All 85 test files (745 passed, 0 failed, 1 skipped), 21 backend tests, 36 production checks, `tsc --noEmit`, and `eslint src` PASS.
+  - `R04-KG1` explicitly remains `IN_PROGRESS` pending merchant execution of live Firestore catalog data migration/seeding.
+
 ## 31 October 2026 — R04-KG1 custom hamper precision, encoding restoration and admin visual recipe editor
 
 - **Custom-hamper order-level precision policy**:

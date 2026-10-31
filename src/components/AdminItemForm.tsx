@@ -12,6 +12,7 @@ import AdminDelimitedInput from './AdminDelimitedInput';
 import { ItemField } from './AdminItemField';
 import AdminCatalogConfiguration from './AdminCatalogConfiguration';
 import AdminRecipeEditor from './AdminRecipeEditor';
+import { validateRecipeIngredients, validateFilledRecipes } from '../lib/filledGiftPricing';
 import type { Product } from '../types';
 import '../styles/admin-item.css';
 
@@ -85,6 +86,8 @@ export default function AdminItemForm({product,onClose,onSaved,initialCategory}:
   const save=async(status:string)=>{
     if(!currentUser||loadFailed||blocked||configurationDirty)return;
     if(commerceTouched&&commerce?.options.some(o=>!o.label.trim()&&form.prices?.[o.label])){setError('OPTION_LABEL_REQUIRED');return;}
+    if(form.recipeIngredients&&form.recipeIngredients.length>0){try{validateRecipeIngredients(form.recipeIngredients);}catch(e){setError((e as Error).message);return;}}
+    if(form.filledRecipes&&Object.keys(form.filledRecipes).length>0){try{validateFilledRecipes(form.filledRecipes);}catch(e){setError((e as Error).message);return;}}
     setBusy(true);setError('');setNotice('');
     try {
       const body=itemPayload(form,status,commerceTouched,product);

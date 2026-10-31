@@ -714,6 +714,7 @@ const entries = [
 ["addIngredient","Add ingredient","جز شامل کریں","إضافة مكون"],
 ["ingredientProduct","Ingredient product","اجزاء کا پروڈکٹ","منتج المكون"],
 ["ingredientGrams","Net grams per box","خالص گرام فی ڈبہ","الجرام الصافي لكل صندوق"],
+["selectProductRequired","Select an ingredient product","اجزاء کا پروڈکٹ منتخب کریں","اختر منتج المكون"],
 ["noKgRate","No 1kg rate — team quote required","۱ کلو کا نرخ موجود نہیں — دستی کوٹیشن درکار ہے","لا يوجد سعر للكيلوغرام — يتطلب تسعير يدوي"],
 ["totalFillingGrams","Total filling mass","کل فلنگ کا وزن","إجمالي كتلة الحشوة"],
 ["totalFillingEstimate","Total ingredient estimate","کل اجزاء کا تخمینہ","إجمالي تقدير المكونات"],

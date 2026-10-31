@@ -185,11 +185,57 @@ test('R04-KG1: Admin visual recipe editor mounts, calculates live rates, binds v
     adminRevision: 1,
   };
 
+  const createSeedDryFruit = (id: string, name_en: string, price1kg: number): any => ({
+    id,
+    name_en,
+    name_ur: name_en,
+    name_ar: name_en,
+    desc_en: 'Premium dry fruit selection',
+    desc_ur: '',
+    desc_ar: '',
+    category: 'dry-fruits',
+    status: 'published',
+    orderMode: 'standard',
+    active: true,
+    image: '/images/product-placeholder.svg',
+    imageName: null,
+    prices: { '1kg': price1kg },
+    variants: [
+      { id: '1kg', label: '1kg', price: price1kg, available: true, weightGrams: 1000 },
+    ],
+    shippingWeights: { '1kg': 1000 },
+    commerce: {
+      version: 1,
+      kind: 'food',
+      pricingMode: 'manual',
+      quantityMode: 'fixed',
+      baseQuantity: null,
+      baseUnit: 'g',
+      basePrice: null,
+      options: [
+        { label: '1kg', quantity: 1, unit: 'kg', override: false, available: true, shippingWeightG: 1000 },
+      ],
+      custom: null,
+    },
+    schemaVersion: 1,
+    revision: 1,
+    adminRevision: 1,
+  });
+
+  const kaju = createSeedDryFruit('kaju', 'Cashews', 1001);
+  const badam = createSeedDryFruit('badam', 'Almonds', 1001);
+  const akhroot = createSeedDryFruit('akhroot', 'Walnuts', 1001);
+  const kishmish = createSeedDryFruit('kishmish', 'Raisins', 1001);
+
   const { db, records } = memoryFirestore({
     'catalogSettings/main': configuration,
     'products/pista': pista,
     'products/ajwa-dates': ajwaDates,
     'products/walnut-raw': walnutQuoteOnly,
+    'products/kaju': kaju,
+    'products/badam': badam,
+    'products/akhroot': akhroot,
+    'products/kishmish': kishmish,
     'products/bid-box-luxury-tin': luxuryTin,
     'hamperBoxes/box-wood': { schemaVersion: 1, boxId: 'box-wood', revision: 1, price: 1800, active: true },
     'hamperBoxes/box-velvet': { schemaVersion: 1, boxId: 'box-velvet', revision: 1, price: 1400, active: true },
@@ -313,10 +359,24 @@ createRoot(document.getElementById('root')!).render(
     await addIngBtn.click();
 
     const firstIngSelect = recipeSection.locator('select').first();
-    await firstIngSelect.selectOption('pista');
     const firstIngGrams = recipeSection.locator('input[type="number"]').first();
-    await firstIngGrams.fill('50');
 
+    // Assert new row starts empty without auto-selecting candidate or assigning 50g
+    assert.equal(await firstIngSelect.inputValue(), '');
+    assert.equal(await firstIngGrams.inputValue(), '');
+    const badge = recipeSection.getByText(/Select an ingredient product/i);
+    await badge.waitFor();
+    assert.ok(await badge.isVisible());
+
+    // Attempting to save with incomplete row must fail closed with validation error
+    const saveBtn = dialog.locator('footer button[type="submit"]');
+    await saveBtn.click();
+    const errorAlert = dialog.locator('p[role="alert"].item-error');
+    await errorAlert.waitFor();
+    assert.match(await errorAlert.textContent() || '', /INVALID_RECIPE_INGREDIENT/);
+
+    await firstIngSelect.selectOption('pista');
+    await firstIngGrams.fill('50');
 
     // Verify live calculation
     await page.waitForFunction(() => {
@@ -327,8 +387,13 @@ createRoot(document.getElementById('root')!).render(
     // 3. Add second ingredient: Ajwa Dates (50g)
     await addIngBtn.click();
     const secondIngSelect = recipeSection.locator('select').nth(1);
-    await secondIngSelect.selectOption('ajwa-dates');
     const secondIngGrams = recipeSection.locator('input[type="number"]').nth(1);
+
+    // Assert second row also starts empty
+    assert.equal(await secondIngSelect.inputValue(), '');
+    assert.equal(await secondIngGrams.inputValue(), '');
+
+    await secondIngSelect.selectOption('ajwa-dates');
     await secondIngGrams.fill('50');
 
     // Verify live calculation for ajwa-dates 50g at Rs. 2,000/kg -> Rs. 100 PKR / box
@@ -353,6 +418,24 @@ createRoot(document.getElementById('root')!).render(
     await pistachiosVariant.locator('summary').first().click();
     const enableCustomCheckbox = pistachiosVariant.locator('input[type="checkbox"]').first();
     await enableCustomCheckbox.check();
+
+    // Verify custom variant copies the 2 configured default ingredients
+    const variantSelects = pistachiosVariant.locator('select');
+    assert.equal(await variantSelects.count(), 2);
+    assert.equal(await variantSelects.nth(0).inputValue(), 'pista');
+    assert.equal(await variantSelects.nth(1).inputValue(), 'ajwa-dates');
+
+    // Verify variant "Add Ingredient" button adds a blank row
+    const addVariantIngBtn = pistachiosVariant.getByRole('button', { name: /Add Ingredient/i }).first();
+    await addVariantIngBtn.click();
+    const thirdVariantSelect = pistachiosVariant.locator('select').nth(2);
+    const thirdVariantGrams = pistachiosVariant.locator('input[type="number"]').nth(2);
+    assert.equal(await thirdVariantSelect.inputValue(), '');
+    assert.equal(await thirdVariantGrams.inputValue(), '');
+
+    // Remove the blank third row
+    const removeThirdBtn = pistachiosVariant.getByRole('button', { name: /Remove/i }).nth(2);
+    await removeThirdBtn.click();
 
     // In custom variant recipe: set pista to 100g and remove ajwa-dates
     const customIngSelect = pistachiosVariant.locator('select').first();
@@ -379,7 +462,6 @@ createRoot(document.getElementById('root')!).render(
     });
 
     // 7. Save product
-    const saveBtn = dialog.locator('footer button[type="submit"]');
     await saveBtn.click();
 
     // Wait for save completion
@@ -436,6 +518,46 @@ createRoot(document.getElementById('root')!).render(
     assert.equal(clearedDoc.revision, 3);
     assert.equal(clearedDoc.recipeIngredients, undefined, 'Explicitly clearing recipe removes recipeIngredients');
     assert.equal(clearedDoc.filledRecipes, undefined, 'Disabling variant overrides removes filledRecipes');
+
+    // 11. Acceptance Fixture: 4 ingredients at Rs. 1,001/kg, 200g each
+    // Verify each row displays -> Rs. 200 PKR / box, while aggregate preview displays Rs. 801 PKR / box
+    await recipeShortcut.click();
+    const fixtureIngredients = ['kaju', 'badam', 'akhroot', 'kishmish'];
+    for (let i = 0; i < 4; i++) {
+      await addIngBtn.click();
+      const sel = recipeSection.locator('select').nth(i);
+      const grams = recipeSection.locator('input[type="number"]').nth(i);
+      await sel.selectOption(fixtureIngredients[i]);
+      await grams.fill('200');
+    }
+
+    // Verify all 4 rows display "Rs. 200 PKR" per box (nominal rounded line item)
+    await page.waitForFunction(() => {
+      const text = document.querySelector('#item-section-recipe')?.textContent || '';
+      const matches = text.match(/Rs\.\s*200\s*PKR/g);
+      return matches && matches.length === 4;
+    });
+
+    // Verify aggregate preview displays 800g and Rs. 801 PKR / box
+    // (Notice 200 * 4 = 800, but canonical shared estimator computes Rs. 801 PKR)
+    await page.waitForFunction(() => {
+      const text = document.querySelector('#item-section-recipe')?.textContent || '';
+      return text.includes('800g per box') && text.includes('Rs. 801 PKR / box');
+    });
+
+    // 12. Mobile (390x844), RTL (Urdu), and Dark Mode checks
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.evaluate(() => (window as any).fixtureSetLanguage('ur'));
+    await page.waitForFunction(() => document.documentElement.dir === 'rtl');
+    const htmlDir = await page.evaluate(() => document.documentElement.dir);
+    assert.equal(htmlDir, 'rtl');
+
+    await page.emulateMedia({ colorScheme: 'dark' });
+
+    // Verify recipe section remains accessible and rendered without errors
+    const mobileRecipeText = await recipeSection.textContent() || '';
+    assert.ok(mobileRecipeText.includes('800'));
+    assert.ok(mobileRecipeText.includes('801'));
 
     assert.deepEqual(errors, []);
   } finally {

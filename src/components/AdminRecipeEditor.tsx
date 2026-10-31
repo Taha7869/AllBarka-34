@@ -3,6 +3,7 @@ import { Plus, Trash2, Scale, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import {
+  calculateFilledGiftEstimate,
   resolveAuthoritativeKgRate,
   MAX_RECIPE_INGREDIENTS,
   MAX_INGREDIENT_GRAMS,
@@ -75,9 +76,7 @@ export default function AdminRecipeEditor({
 
   const handleAddDefaultIngredient = () => {
     if (defaultIngredients.length >= MAX_RECIPE_INGREDIENTS) return;
-    const firstCandidate = candidateProducts.find(c => !defaultIngredients.some(i => i.productId === c.id)) || candidateProducts[0];
-    const initialId = firstCandidate ? firstCandidate.id : '';
-    updateDefaultIngredients([...defaultIngredients, { productId: initialId, grams: 50 }]);
+    updateDefaultIngredients([...defaultIngredients, { productId: '', grams: 0 }]);
   };
 
   const handleRemoveDefaultIngredient = (index: number) => {
@@ -90,31 +89,75 @@ export default function AdminRecipeEditor({
     updateDefaultIngredients(next);
   };
 
-  // Recipe totals
+  // Recipe totals using canonical shared estimator
   const defaultSummary = useMemo(() => {
     let totalGrams = 0;
-    let totalCost = 0;
-    let hasMissingRate = false;
-
     for (const item of defaultIngredients) {
-      const grams = Number(item.grams) || 0;
-      totalGrams += grams;
-      const candidate = candidateMap.get(item.productId);
-      if (candidate && candidate.kgRate !== null && candidate.kgRate > 0) {
-        totalCost += Math.round((candidate.kgRate * grams) / 1000);
-      } else {
-        hasMissingRate = true;
-      }
+      totalGrams += Number(item.grams) || 0;
     }
 
+    if (!defaultIngredients.length) {
+      return { totalGrams: 0, totalCost: 0, hasMissingRate: false };
+    }
+
+    const hasIncompleteRow = defaultIngredients.some(
+      item => !item.productId || !Number(item.grams) || Number(item.grams) <= 0
+    );
+
+    if (hasIncompleteRow) {
+      return { totalGrams, totalCost: 0, hasMissingRate: true };
+    }
+
+    const estimate = calculateFilledGiftEstimate({
+      recipe: defaultIngredients,
+      catalogProducts,
+      packagingRequired: false,
+      requestedBoxes: 1,
+    });
+
+    const totalCost = estimate.ingredientsSubtotalPkr ?? 0;
+    const hasMissingRate = !estimate.ingredientsAvailable || estimate.ingredientsSubtotalPkr === null;
+
     return { totalGrams, totalCost, hasMissingRate };
-  }, [defaultIngredients, candidateMap]);
+  }, [defaultIngredients, catalogProducts]);
+
+  // Variant recipe totals
+  const variantSummary = useMemo(() => {
+    const map: Record<string, { totalGrams: number; totalCost: number; hasMissingRate: boolean }> = {};
+    if (!filledRecipes) return map;
+    for (const [variantLabel, ingredients] of Object.entries(filledRecipes)) {
+      let totalGrams = 0;
+      for (const item of ingredients) {
+        totalGrams += Number(item.grams) || 0;
+      }
+      const hasIncompleteRow = ingredients.some(
+        item => !item.productId || !Number(item.grams) || Number(item.grams) <= 0
+      );
+      if (hasIncompleteRow || !ingredients.length) {
+        map[variantLabel] = { totalGrams, totalCost: 0, hasMissingRate: true };
+        continue;
+      }
+      const estimate = calculateFilledGiftEstimate({
+        recipe: ingredients,
+        catalogProducts,
+        packagingRequired: false,
+        requestedBoxes: 1,
+      });
+      map[variantLabel] = {
+        totalGrams,
+        totalCost: estimate.ingredientsSubtotalPkr ?? 0,
+        hasMissingRate: !estimate.ingredientsAvailable || estimate.ingredientsSubtotalPkr === null,
+      };
+    }
+    return map;
+  }, [filledRecipes, catalogProducts]);
 
   // Variant recipe handlers
   const handleToggleVariantRecipe = (variantLabel: string, enabled: boolean) => {
     const current = { ...(filledRecipes || {}) };
     if (enabled) {
-      current[variantLabel] = defaultIngredients.length > 0 ? structuredClone(defaultIngredients) : [{ productId: candidateProducts[0]?.id || '', grams: 50 }];
+      const hasConfiguredDefault = defaultIngredients.length > 0 && defaultIngredients.some(i => i.productId && Number(i.grams) > 0);
+      current[variantLabel] = hasConfiguredDefault ? structuredClone(defaultIngredients) : [{ productId: '', grams: 0 }];
     } else {
       delete current[variantLabel];
     }
@@ -173,7 +216,7 @@ export default function AdminRecipeEditor({
                     step="any"
                     min="0.1"
                     max={MAX_INGREDIENT_GRAMS}
-                    value={item.grams ?? ''}
+                    value={item.grams ? item.grams : ''}
                     placeholder="e.g. 50"
                     onChange={e => {
                       const val = e.target.value === '' ? 0 : Number(e.target.value);
@@ -187,7 +230,12 @@ export default function AdminRecipeEditor({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
                   <Scale size={16} />
                   <span>
-                    {kgRate !== null ? (
+                    {!item.productId ? (
+                      <span style={{ color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <AlertCircle size={14} />
+                        {t('item.selectProductRequired', 'Select an ingredient product')}
+                      </span>
+                    ) : kgRate !== null ? (
                       <>
                         <bdi>Rs. {kgRate.toLocaleString()} / kg</bdi>
                         {rowCost !== null && (
@@ -362,7 +410,7 @@ export default function AdminRecipeEditor({
                                     step="any"
                                     min="0.1"
                                     max={MAX_INGREDIENT_GRAMS}
-                                    value={item.grams ?? ''}
+                                    value={item.grams ? item.grams : ''}
                                     onChange={e => {
                                       const val = e.target.value === '' ? 0 : Number(e.target.value);
                                       const next = variantIngredients.map((ing, i) => (i === vIdx ? { ...ing, grams: val } : ing));
@@ -374,7 +422,12 @@ export default function AdminRecipeEditor({
 
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <span style={{ fontSize: '13px' }}>
-                                  {kgRate !== null ? (
+                                  {!item.productId ? (
+                                    <span style={{ color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                      <AlertCircle size={14} />
+                                      {t('item.selectProductRequired', 'Select an ingredient product')}
+                                    </span>
+                                  ) : kgRate !== null ? (
                                     <>
                                       <bdi>Rs. {kgRate.toLocaleString()} / kg</bdi>
                                       {rowCost !== null && (
@@ -384,7 +437,10 @@ export default function AdminRecipeEditor({
                                       )}
                                     </>
                                   ) : (
-                                    <span style={{ color: '#b91c1c' }}>{t('item.noKgRate', 'No 1kg rate')}</span>
+                                    <span style={{ color: '#b91c1c', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                      <AlertCircle size={14} />
+                                      {t('item.noKgRate', 'No 1kg rate')}
+                                    </span>
                                   )}
                                 </span>
 
@@ -404,13 +460,42 @@ export default function AdminRecipeEditor({
                           );
                         })}
 
+                        {variantIngredients.length > 0 && (
+                          <div
+                            className="item-option"
+                            style={{
+                              background: 'color-mix(in srgb, var(--color-base) 94%, #C7982F)',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              flexWrap: 'wrap',
+                              gap: '12px',
+                            }}
+                          >
+                            <div>
+                              <strong>{t('item.totalFillingGrams', 'Total filling mass')}: </strong>
+                              <span>{variantSummary[variantLabel]?.totalGrams ?? 0}g per box</span>
+                            </div>
+                            <div>
+                              <strong>{t('item.totalFillingEstimate', 'Total ingredient estimate')}: </strong>
+                              {variantSummary[variantLabel] && !variantSummary[variantLabel].hasMissingRate ? (
+                                <span style={{ color: 'var(--color-accent-text)', fontWeight: 700 }}>
+                                  <bdi>Rs. {variantSummary[variantLabel].totalCost.toLocaleString()} PKR</bdi> / box
+                                </span>
+                              ) : (
+                                <span style={{ color: '#b91c1c', fontWeight: 600 }}>
+                                  {t('item.incompleteEstimate', 'Incomplete estimate — team quote required')}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
                         <button
                           type="button"
                           disabled={disabled || variantIngredients.length >= MAX_RECIPE_INGREDIENTS}
                           onClick={() => {
-                            const firstCandidate = candidateProducts.find(c => !variantIngredients.some(i => i.productId === c.id)) || candidateProducts[0];
-                            const initialId = firstCandidate ? firstCandidate.id : '';
-                            handleUpdateVariantIngredients(variantLabel, [...variantIngredients, { productId: initialId, grams: 50 }]);
+                            handleUpdateVariantIngredients(variantLabel, [...variantIngredients, { productId: '', grams: 0 }]);
                           }}
                           style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                         >
