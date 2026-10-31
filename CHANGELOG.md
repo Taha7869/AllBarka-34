@@ -1,3 +1,27 @@
+## 31 October 2026 — R04-KG1 verification gap closure (production build & privacy audit, real ThemeProvider dark switch, 390px RTL visual parity, 10-hamper HTTP endpoints)
+
+- **Production build & privacy audit**:
+  - Executed `$env:ALLBARKA_SKIP_LOCAL_ENV="true"; npm run build` on source revision `dc9a7d41211453e45b7df4b7e081fa56a91adeb8` (Build source: `04402a72aab5f441`). Vite v6.4.5 built frontend assets in ~8.7s, esbuild bundled `build/server.cjs` (1.0mb), and `scripts/audit-release.mjs` audited 84 text artifacts with zero private values printed. Exit code: 0.
+- **Admin recipe editor browser test corrections (`tests/admin-recipe-editor-browser.test.tsx`)**:
+  - Mounted real `ThemeProvider` (`src/contexts/ThemeContext.tsx`) wrapping `LanguageProvider` and `CatalogProvider`.
+  - Switched app theme via supported hook mechanism (`useTheme().setTheme('dark')`), asserting `document.documentElement.dataset.theme === 'dark'` and `classList.contains('dark')`.
+  - Verified recipe controls at 390px viewport width in Urdu RTL (`fixtureSetLanguage('ur')`, `dir="rtl"`, `lang="ur"`).
+  - Checked for zero horizontal overflow on `document.documentElement`, modal `dialog`, and `#item-section-recipe` (`scrollWidth <= clientWidth`).
+  - Verified that all recipe controls (ingredient selects, grams inputs, remove and add buttons) are visible, usable (enabled), have positive bounding box dimensions, and stay strictly within the 390px viewport (`box.x >= -1 && box.x + box.width <= 390 + 1`). Mere `textContent` presence explicitly rejected as insufficient evidence.
+- **Ten-hamper acceptance fixture via real HTTP endpoints (`tests/filled-gift-journey-browser.test.tsx`)**:
+  - Added Stage 13 verifying the 10-hamper acceptance fixture: 4 ingredients at Rs. 1,001/kg (`pista`, `kaju`, `badam`, `akhroot`), 200g each, 10 hampers, packaging Rs. 1,000 each (`box-wood`).
+  - Contents subtotal exact: 4 × 1001 × 0.2 × 10 = Rs. 8,008. Packaging total: 10 × 1000 = Rs. 10,000. Authoritative total: Rs. 18,008. Nominal unit price: Rs. 1,801.
+  - Verified across both real HTTP endpoints: `POST /api/quotes` and `POST /api/inquiries`.
+  - Asserted `record.estimatedTotalPkr === 18008` in persistent `memoryFirestore` and WhatsApp URL message text `• *Estimated Total Ref:* Rs. 18,008 PKR`, confirming zero drift to 18,000 or 18,010.
+- **Test suite status**:
+  - `tests/admin-recipe-editor-browser.test.tsx`: 12 stages PASS.
+  - `tests/filled-gift-journey-browser.test.tsx`: 13 stages PASS.
+  - `tests/hamper-catalog.test.tsx`: 9/9 tests PASS.
+  - `tests/filled-gift-pricing.test.ts`: 20/20 tests PASS.
+  - `npm run typecheck` (`tsc --noEmit`): PASS (0 errors).
+  - `npm run lint:hooks` (`eslint src`): PASS (0 errors).
+  - Status remains explicitly `IN_PROGRESS` pending merchant execution of live catalog migration/seeding.
+
 ## 31 October 2026 — R04-KG1 builder & recipe editor precision unification, blank row validation and acceptance fixture
 
 - **Custom Hamper Builder & Admin Recipe Editor shared estimator unification**:

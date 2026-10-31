@@ -255,19 +255,22 @@ import { createRoot } from 'react-dom/client';
 import AdminItemForm from './src/components/AdminItemForm';
 import { LanguageProvider, useLanguage } from './src/contexts/LanguageContext';
 import { CatalogProvider } from './src/contexts/CatalogContext';
+import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 
 function Workspace() {
   const [product, setProduct] = useState(${JSON.stringify(luxuryTin)});
   const [key, setKey] = useState(0);
   const { setLanguage } = useLanguage();
+  const { setTheme } = useTheme();
 
   useEffect(() => {
     (window as any).fixtureSetLanguage = setLanguage;
+    (window as any).fixtureSetTheme = setTheme;
     (window as any).fixtureReloadProduct = (p) => {
       setProduct(p);
       setKey(k => k + 1);
     };
-  }, [setLanguage]);
+  }, [setLanguage, setTheme]);
 
   return (
     <AdminItemForm
@@ -282,11 +285,13 @@ function Workspace() {
 }
 
 createRoot(document.getElementById('root')!).render(
-  <LanguageProvider>
-    <CatalogProvider>
-      <Workspace />
-    </CatalogProvider>
-  </LanguageProvider>
+  <ThemeProvider>
+    <LanguageProvider>
+      <CatalogProvider>
+        <Workspace />
+      </CatalogProvider>
+    </LanguageProvider>
+  </ThemeProvider>
 );`;
 
   await build({
@@ -548,16 +553,53 @@ createRoot(document.getElementById('root')!).render(
     // 12. Mobile (390x844), RTL (Urdu), and Dark Mode checks
     await page.setViewportSize({ width: 390, height: 844 });
     await page.evaluate(() => (window as any).fixtureSetLanguage('ur'));
-    await page.waitForFunction(() => document.documentElement.dir === 'rtl');
+    await page.waitForFunction(() => document.documentElement.dir === 'rtl' && document.documentElement.classList.contains('rtl'));
     const htmlDir = await page.evaluate(() => document.documentElement.dir);
     assert.equal(htmlDir, 'rtl');
+    assert.equal(await page.evaluate(() => document.documentElement.lang), 'ur');
 
-    await page.emulateMedia({ colorScheme: 'dark' });
+    // Switch theme through supported mechanism
+    await page.evaluate(() => (window as any).fixtureSetTheme('dark'));
+    await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark');
+    assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), 'dark');
+    assert.equal(await page.evaluate(() => document.documentElement.classList.contains('dark')), true);
 
-    // Verify recipe section remains accessible and rendered without errors
+    // Verify visual parity and horizontal overflow boundaries at 390px in Urdu RTL
+    const isDocOverflowing = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+    assert.equal(isDocOverflowing, false, 'Document element must not have horizontal overflow at 390px');
+
+    const isDialogOverflowing = await dialog.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
+    assert.equal(isDialogOverflowing, false, 'Dialog element must not have horizontal overflow at 390px');
+
+    const isRecipeOverflowing = await recipeSection.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
+    assert.equal(isRecipeOverflowing, false, 'Recipe section must not have horizontal overflow at 390px');
+
+    // Verify recipe controls are visible, usable, and within 390px bounds (not merely textContent presence)
+    if (!await recipeSection.evaluate(el => (el as HTMLDetailsElement).open)) {
+      await recipeShortcut.click();
+    }
+
+    const recipeControls = recipeSection.locator('select, input[type="number"], button');
+    const controlCount = await recipeControls.count();
+    assert.ok(controlCount >= 8, `Must mount at least 8 recipe controls (found ${controlCount})`);
+
+    for (let i = 0; i < controlCount; i++) {
+      const ctrl = recipeControls.nth(i);
+      if (await ctrl.isVisible()) {
+        assert.equal(await ctrl.isEnabled(), true, `Recipe control #${i} must be enabled and usable`);
+        const box = await ctrl.boundingBox();
+        assert.ok(box && box.width > 0 && box.height > 0, `Recipe control #${i} must have non-zero dimensions`);
+        assert.ok(
+          box.x >= -1 && box.x + box.width <= 390 + 1,
+          `Recipe control #${i} must remain within 390px viewport (left: ${box.x}, right: ${box.x + box.width})`
+        );
+      }
+    }
+
+    // Verify recipe summary numbers render accurately in Urdu RTL
     const mobileRecipeText = await recipeSection.textContent() || '';
-    assert.ok(mobileRecipeText.includes('800'));
-    assert.ok(mobileRecipeText.includes('801'));
+    assert.ok(mobileRecipeText.includes('800'), 'Must contain 800g filling mass');
+    assert.ok(mobileRecipeText.includes('801'), 'Must contain Rs. 801 PKR aggregate preview');
 
     assert.deepEqual(errors, []);
   } finally {

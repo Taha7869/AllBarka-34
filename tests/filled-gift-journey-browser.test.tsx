@@ -830,6 +830,121 @@ createRoot(document.getElementById('root')).render(
     assert.match(noRecipeCardText, /Quote on Request/, 'Unconfigured recipe card displays Quote on Request for filled mode');
     assert.doesNotMatch(noRecipeCardText, /Filled:\s*Rs\./i, 'Unconfigured recipe card never displays any numeric price for filled mode');
 
+    // =========================================================================
+    // 13. TEN-HAMPER ACCEPTANCE FIXTURE VIA BOTH REAL INQUIRY HTTP ENDPOINTS
+    // =========================================================================
+    // Acceptance fixture: 4 ingredients at Rs. 1,001/kg, 200g each, 10 hampers, packaging Rs. 1,000 each:
+    // Contents exact: 4 * 1001 * 0.2 * 10 = Rs. 8,008
+    // Packaging exact: 10 * 1000 = Rs. 10,000
+    // Total estimatedTotalPkr: Rs. 18,008
+    // Nominal unit price: Math.round(18008 / 10) = Rs. 1,801
+    const createHamperNut = (id: string, name_en: string, price1kg: number = 1001): Product => ({
+      id,
+      name_en,
+      name_ur: name_en,
+      name_ar: name_en,
+      category: 'dry-fruits',
+      status: 'published',
+      orderMode: 'standard',
+      active: true,
+      image: '/images/product-placeholder.svg',
+      prices: { '1kg': price1kg },
+      variants: [
+        { id: '1kg', label: '1kg', price: price1kg, available: true, weightGrams: 1000 },
+      ],
+      shippingWeights: { '1kg': 1000 },
+      commerce: {
+        version: 1,
+        kind: 'food',
+        pricingMode: 'manual',
+        quantityMode: 'fixed',
+        baseQuantity: null,
+        baseUnit: 'g',
+        basePrice: null,
+        options: [
+          { label: '1kg', quantity: 1, unit: 'kg', override: false, available: true, shippingWeightG: 1000 },
+        ],
+        custom: null,
+      },
+      schemaVersion: 1,
+      revision: 1,
+      adminRevision: 1,
+    } as unknown as Product);
+
+    records.set('products/pista', createHamperNut('pista', 'Pistachios 1001'));
+    records.set('products/kaju', createHamperNut('kaju', 'Cashews 1001'));
+    records.set('products/badam', createHamperNut('badam', 'Almonds 1001'));
+    records.set('products/akhroot', createHamperNut('akhroot', 'Walnuts 1001'));
+    records.set('hamperBoxes/box-wood', {
+      schemaVersion: 1,
+      boxId: 'box-wood',
+      revision: 1,
+      price: 1000,
+      active: true,
+    });
+
+    const tenHamperPayload = {
+      type: 'custom_hamper',
+      productId: 'custom-hamper',
+      customerName: 'Zainab Bibi',
+      customerPhone: '03001234567',
+      boxMode: 'custom',
+      quantity: 10,
+      hamperConfiguration: {
+        version: 1,
+        boxId: 'box-wood',
+        selections: ['pista', 'kaju', 'badam', 'akhroot'],
+        recipientName: 'Patron Recipient',
+        giftMessage: 'Best Wishes',
+      },
+    };
+
+    // 13a. POST /api/quotes
+    const quoteEndpointRes = await fetch(`${origin}/api/quotes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(tenHamperPayload),
+    });
+    assert.equal(quoteEndpointRes.status, 200, '/api/quotes responds 200 OK');
+    const quoteEndpointJson = await quoteEndpointRes.json();
+    assert.equal(quoteEndpointJson.ok, true, '/api/quotes response ok is true');
+    assert.equal(quoteEndpointJson.inquiry.standardPrice, 1801, 'Nominal unit price is Rs. 1,801');
+    assert.equal(quoteEndpointJson.inquiry.estimatedTotalPkr, 18008, 'API response preserves exact Rs. 18,008 total');
+
+    const quotePersisted = (records.get(`inquiries/${quoteEndpointJson.quoteId}`) || records.get(`quotes/${quoteEndpointJson.quoteId}`)) as any;
+    assert.ok(quotePersisted, 'Record must be persisted in database');
+    assert.equal(quotePersisted.standardPrice, 1801, 'Persisted standardPrice is Rs. 1,801');
+    assert.equal(quotePersisted.estimatedTotalPkr, 18008, 'Persisted estimatedTotalPkr strictly preserves Rs. 18,008');
+    assert.notEqual(quotePersisted.estimatedTotalPkr, 18000, 'Downstream total did not round down to Rs. 18,000');
+    assert.notEqual(quotePersisted.estimatedTotalPkr, 18010, 'Downstream total did not drift to Rs. 18,010 via unit rate round trip');
+
+    const quoteWaUrl = decodeURIComponent(quoteEndpointJson.whatsappUrl || quotePersisted.whatsappUrl);
+    assert.match(quoteWaUrl, /Standard Rate Ref:\*\s*Rs\.\s*1,801\/pc/, 'WhatsApp message has nominal unit rate Rs. 1,801/pc');
+    assert.match(quoteWaUrl, /Estimated Total Ref:\*\s*Rs\.\s*18,008 PKR/, 'WhatsApp message has exact preserved total Rs. 18,008 PKR');
+
+    // 13b. POST /api/inquiries
+    const inqEndpointRes = await fetch(`${origin}/api/inquiries`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(tenHamperPayload),
+    });
+    assert.equal(inqEndpointRes.status, 200, '/api/inquiries responds 200 OK');
+    const inqEndpointJson = await inqEndpointRes.json();
+    assert.equal(inqEndpointJson.ok, true, '/api/inquiries response ok is true');
+    assert.equal(inqEndpointJson.inquiry.standardPrice, 1801, 'Nominal unit price is Rs. 1,801');
+    assert.equal(inqEndpointJson.inquiry.estimatedTotalPkr, 18008, 'API response preserves exact Rs. 18,008 total');
+
+    const inqPersisted = records.get(`inquiries/${inqEndpointJson.id || inqEndpointJson.ticketId}`) as any;
+    assert.ok(inqPersisted, 'Record must be persisted in inquiries collection');
+    assert.equal(inqPersisted.standardPrice, 1801, 'Persisted standardPrice is Rs. 1,801');
+    assert.equal(inqPersisted.estimatedTotalPkr, 18008, 'Persisted estimatedTotalPkr strictly preserves Rs. 18,008');
+    assert.notEqual(inqPersisted.estimatedTotalPkr, 18000, 'Downstream total did not round down to Rs. 18,000');
+    assert.notEqual(inqPersisted.estimatedTotalPkr, 18010, 'Downstream total did not drift to Rs. 18,010 via unit rate round trip');
+
+    const inqWaUrl = decodeURIComponent(inqEndpointJson.whatsappUrl || inqPersisted.whatsappUrl);
+    assert.match(inqWaUrl, /Standard Rate Ref:\*\s*Rs\.\s*1,801\/pc/, 'WhatsApp message has nominal unit rate Rs. 1,801/pc');
+    assert.match(inqWaUrl, /Estimated Total Ref:\*\s*Rs\.\s*18,008 PKR/, 'WhatsApp message has exact preserved total Rs. 18,008 PKR');
+
     assert.deepEqual(errors, [], 'Zero browser page errors');
   } finally {
     await browser.close();

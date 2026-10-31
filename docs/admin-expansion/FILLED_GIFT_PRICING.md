@@ -1,9 +1,9 @@
 # Filled gifts: kilogram-based ingredient estimates
 
 Updated: 31 October 2026 (Asia/Karachi).
-Task: R04-KG1. Owner decision: CONFIRMED. Implementation: IN_PROGRESS (builder and recipe editor precision unified, blank row validation enforced, 12-stage admin browser test and 9/9 hamper catalog tests verified; live catalog data seeding/migration pending). Live verification/release: NOT_RUN.
-Inspected source parent: `d8ff43bb7bd06ecf8a161d52c349d0830ed3c0d2`.
-This checkpoint records the unification of CustomHamperBuilderModal and AdminRecipeEditor total calculations with the canonical shared estimator, explicit merchant selection and grams on new ingredient rows with fail-closed validation, acceptance fixture verification (4 x Rs. 1,001/kg @ 200g each yielding Rs. 801 contents for 1 hamper and Rs. 8,008 for 10 hampers), and owner confirmation of the manual WhatsApp quote workflow.
+Task: R04-KG1. Owner decision: CONFIRMED. Implementation: IN_PROGRESS (production build/privacy audit verified, real ThemeProvider dark mode switcher and 390px RTL control geometry parity verified, 10-hamper acceptance fixture verified through both real HTTP endpoints /api/quotes and /api/inquiries preserving Rs. 18,008; live catalog data seeding/migration pending). Live verification/release: NOT_RUN.
+Inspected source parent: `dc9a7d41211453e45b7df4b7e081fa56a91adeb8`.
+This checkpoint records the closure of verification gaps at checkpoint dc9a7d41211453e45b7df4b7e081fa56a91adeb8: production build and privacy audit executed on current source (exit code 0), admin-recipe-editor-browser.test.tsx corrected to mount the real ThemeProvider and assert dataset.theme === 'dark' with 390px Urdu RTL usable control bounding boxes and zero horizontal overflow, and ten-hamper acceptance fixture (4 x Rs. 1,001/kg @ 200g, qty 10, box Rs. 1,000) verified through both real HTTP endpoints (/api/quotes and /api/inquiries) strictly preserving Rs. 18,008 in persistence and WhatsApp URLs.
 
 ## Current owner instruction and precedence
 
@@ -103,8 +103,9 @@ Runtime source:
    - `CustomQuoteModal.tsx` displays live recipe ingredients breakdown for filled inquiry mode.
 
 5. Remaining blockers and owner confirmations for complete R04-KG1 closure:
-   - Visual dynamic recipe configuration in `AdminItemForm.tsx` / `AdminRecipeEditor.tsx`: COMPLETE (verified by 12-stage browser journey in `tests/admin-recipe-editor-browser.test.tsx` including blank row initialization, client-side validation rejection on incomplete save, 4x1001 acceptance fixture, mobile 390x844, RTL Urdu, and dark mode).
+   - Visual dynamic recipe configuration in `AdminItemForm.tsx` / `AdminRecipeEditor.tsx`: COMPLETE (verified by 12-stage browser journey in `tests/admin-recipe-editor-browser.test.tsx` mounting real ThemeProvider, dark mode switch `setTheme('dark')`, 390x844 RTL Urdu usable control bounding boxes, zero horizontal overflow, blank row initialization, client-side validation rejection on incomplete save, and 4x1001 acceptance fixture).
    - Custom Hamper Builder & Recipe Editor shared estimator unification: COMPLETE (`CustomHamperBuilderModal.tsx` and `AdminRecipeEditor.tsx` calculate aggregate totals via `calculateFilledGiftEstimate` / `resolveHamper`, preventing individually rounded lines from dictating order totals).
+   - Ten-Hamper Acceptance Fixture via real HTTP endpoints: COMPLETE (`POST /api/quotes` and `POST /api/inquiries` in `tests/filled-gift-journey-browser.test.tsx` Stage 13 verified with 4 x Rs. 1,001/kg @ 200g, qty 10, box Rs. 1,000; strictly preserving Rs. 18,008 across persistence and WhatsApp URLs).
    - Merchant quote-approval workflow: CONFIRMED BY OWNER. Manual quotation and confirmation via WhatsApp is the confirmed and permanent workflow. No automated approval-token or durable quote-to-order conversion system will be built.
    - Live Firestore catalog data population and release gates: PENDING merchant execution (zero live writes or mutations claimed by implementation).
 
@@ -120,8 +121,8 @@ Verification:
 - `tests/admin-finishing-browser.test.tsx`: 1/1 test PASS.
 - `npm run typecheck` (`tsc --noEmit`): PASS (0 errors).
 - `npm run lint:hooks` (`eslint src`): PASS (0 errors).
-- `ALLBARKA_SKIP_LOCAL_ENV=true npm run build`: PASS (exit code 0; release privacy audit passed with 84 text artifacts).
-- `tests/filled-gift-journey-browser.test.tsx`: 1/1 mounted browser & authoritative API journey PASS (12 stages: card estimate display Rs. 150/box without legacy Rs. 9,000, modal reference rate Rs. 150/box & Est. Rs. 1,500 total with empty customer budget input, quote submission and memoryFirestore persistence, WhatsApp URL concordance, changed authoritative kg rate Rs. 2,000/kg & forged client total rejection, unpriced missing recipe & legacy packaging without recipe, empty packaging deletion/disablement fail-closed, hamper builder inquiry dispatch without cart mutation, direct order QUOTE_REQUIRED failure, hamper box stored rate authority & dynamic updates & fail-closed without fallback to compiled seeds, non-divisible money precision preservation, and card honest quote-required state without cfg.filledMin).
+- `ALLBARKA_SKIP_LOCAL_ENV=true npm run build`: PASS (exit code 0; source revision `dc9a7d41211453e45b7df4b7e081fa56a91adeb8`, build source `04402a72aab5f441`, release privacy audit passed with 84 text artifacts audited with zero leaks).
+- `tests/filled-gift-journey-browser.test.tsx`: 1/1 mounted browser & authoritative API journey PASS (13 stages: card estimate display Rs. 150/box without legacy Rs. 9,000, modal reference rate Rs. 150/box & Est. Rs. 1,500 total with empty customer budget input, quote submission and memoryFirestore persistence, WhatsApp URL concordance, changed authoritative kg rate Rs. 2,000/kg & forged client total rejection, unpriced missing recipe & legacy packaging without recipe, empty packaging deletion/disablement fail-closed, hamper builder inquiry dispatch without cart mutation, direct order QUOTE_REQUIRED failure, hamper box stored rate authority & dynamic updates & fail-closed without fallback to compiled seeds, non-divisible money precision preservation, card honest quote-required state without cfg.filledMin, and 10-hamper acceptance fixture through both real HTTP endpoints /api/quotes and /api/inquiries strictly preserving Rs. 18,008).
 - `tests/stage6-inquiry-flow.test.ts`: 19/19 tests PASS.
 - `node scripts/run-all-tests.mjs`: PASS (745 passed, 0 failed, 1 skipped across all 85 test files; 21 backend tests passed; 36 production checks passed).
 - `git diff --check`: PASS (0 errors).
