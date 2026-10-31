@@ -125,6 +125,8 @@ The original create/upload/publish/custom-cart browser still passes. The new mou
 
 ## Stage 6 current continuation point
 
+01 November 2026 update: Verified environment state and prepared isolated preview configuration (`.env.preview.example` and `PREVIEW_ENVIRONMENT.md`). Account `tahaishaque5@gmail.com` connects to live production `allbarka-live` (89 merchant products, customer orders) and `primal-circuit-ck76w`. Zero mutations executed against `allbarka-live`. Implemented `GET /api/catalog/products/:productId` in `src/lib/catalogRouter.ts`. Verified 10-step operational journey in `tests/stage6-operational-integration.test.ts` covering admin/staff/customer permissions, draft lifecycle, optimistic concurrency (409), bounded image upload, discovery, dynamic price edits, private field sanitization, and honest Quote on Request. All 32 affected tests pass, typecheck passes, lint passes, build & privacy audit pass. External prerequisite for live preview execution: provisioning isolated GCP/Firebase project `allbarka-preview` and service account credentials.
+
 Latest local gates passed: 705/705 tests across 72 files, 21 backend checks, 36 production checks, asset audit, typecheck/hooks/build/privacy and diff check. Full evidence: TESTING_RELEASE.md.
 
 Read `STAGE6_PROGRESS.md`, `RELEASE_PACKET.md` and the two evidence JSON reports. The inspected remote parent for this checkpoint is `4772d983373cd51a2186e7e674ec800521c19802`; fetch PR #16 for the saved successor. Never shell-push reconstructed local history.

@@ -1,3 +1,28 @@
+## 01 November 2026 — Stage 6 Firebase/Admin operational integration verification & isolated preview environment specification
+
+- **Scope & Verification**:
+  - Identified actual operational environment: authenticated GCP account (`tahaishaque5@gmail.com`) currently holds production `allbarka-live` (89 live products, customer orders, registered patrons) and AI Studio project `primal-circuit-ck76w`. No isolated preview Firebase project currently exists.
+  - In adherence to safety guidelines, zero mutation tests were run against production `allbarka-live` (no writes, no role changes, no storage uploads, no rule deploys).
+  - Defined concrete preview environment configuration (`.env.preview.example`) specifying isolated project target `allbarka-preview`, dedicated storage bucket `allbarka-preview.firebasestorage.app`, and dedicated test roles (`preview-admin-uid`, `preview-staff-uid`, `preview-customer-uid`). Documented in `docs/admin-expansion/PREVIEW_ENVIRONMENT.md`.
+  - Added public sanitized single-product endpoint `GET /api/catalog/products/:productId` in `src/lib/catalogRouter.ts` (matching `firestore.rules:73`), sanitizing active published records with `stripPrivateProductFields` and returning 404 for draft, archived, or non-existent items.
+  - Implemented and verified complete 10-step operational integration test suite (`tests/stage6-operational-integration.test.ts`):
+    1. Admin authentication & server-enforced permissions verified.
+    2. Unauthenticated and customer token mutations rejected (401/403).
+    3. Staff read-only access verified: staff can view orders, but cannot mutate products, prices, content, roles, or settings.
+    4. Admin create draft, save, reload, and edit workflow verified via admin HTTP API.
+    5. Optimistic concurrency verified: stale expected revision returns 409 `CATALOG_REVISION_CONFLICT` and preserves stored state.
+    6. Bounded image upload verified: 5MB bound enforced, non-image rejected (400), storage downtime handled (503), raster images persisted with unique UUID URL.
+    7. Draft isolation verified: drafts hidden from public catalog before publish; publish advances revision.
+    8. Discovery & catalog refresh verified: published product is discoverable via `/api/catalog` and PDP `/api/catalog/products/:productId`; price edits take effect immediately.
+    9. Draft/private fields sanitization verified: `supplierCost`, `internalNotes`, `updatedBy` stripped from public responses; drafts return 404.
+    10. Honest unpriced state verified: unpriced boxes without ingredients/recipes remain Quote on Request (`quoteOnly: true`, empty prices, no fake estimates).
+- **Quality Gates**:
+  - `tests/stage6-operational-integration.test.ts`: 2/2 tests PASS (10 steps).
+  - All 32 affected catalog/staff/commerce/persistence tests PASS.
+  - `npm run typecheck` (`tsc --noEmit`): PASS (0 errors).
+  - `npm run lint:hooks` (`eslint src`): PASS (0 errors).
+  - `$env:ALLBARKA_SKIP_LOCAL_ENV="true"; npm run build`: PASS (Vite build + esbuild server + 84 artifact privacy audit clean).
+
 ## 31 October 2026 — R04-KG1-W1 historical inquiry replay compatibility (follow-up)
 
 - Both `/api/quotes` and `/api/inquiries` now pass the historical hash and canonical request composition to `persistInquiryAtomically`; replay requires hash match plus `isHistoricalHamperReplayEquivalent` against the stored original inquiry. Fail-closed 409 when the stored configuration is missing/incomplete (limitation; no migration).
