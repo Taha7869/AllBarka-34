@@ -90,6 +90,7 @@ export function computeInquiryPayloadHash(fields: {
   budgetType?: string | null;
   targetPricePkr?: number | null;
   leadTimeNoticeAcknowledged?: boolean;
+  netFillingGrams?: number | null;
 }): string {
   const printText = (fields.customPrintText ?? fields.customPrinting)?.trim() || '';
 
@@ -111,6 +112,9 @@ export function computeInquiryPayloadHash(fields: {
     budgetType: fields.budgetType || null,
     targetPricePkr: fields.targetPricePkr ?? null,
     leadTimeNoticeAcknowledged: Boolean(fields.leadTimeNoticeAcknowledged),
+    ...(fields.netFillingGrams != null && Number.isFinite(fields.netFillingGrams) && Number(fields.netFillingGrams) > 0
+      ? { netFillingGrams: Number(fields.netFillingGrams) }
+      : {}),
   };
   return crypto.createHash('sha256').update(JSON.stringify(normalized)).digest('hex');
 }

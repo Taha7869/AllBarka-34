@@ -1,6 +1,6 @@
 import { PRODUCTS } from '../data/products';
 import type { Product } from '../types';
-import { resolveAuthoritativeKgRate } from './filledGiftPricing';
+import { resolveAuthoritativeKgRate, normalizeNetFillingGrams, isValidNetFillingGrams } from './filledGiftPricing';
 
 export const CUSTOM_HAMPER_PRODUCT_ID = 'custom-hamper';
 export const HAMPER_PORTION_GRAMS = 200;
@@ -19,6 +19,7 @@ export interface HamperConfiguration {
   selections: string[];
   recipientName: string;
   giftMessage: string;
+  netFillingGrams?: number;
 }
 
 export interface ResolvedHamper {
@@ -77,6 +78,32 @@ export function resolveHamper(value: unknown, products: Product[] = PRODUCTS, bo
 
   const validQty = Number.isSafeInteger(quantity) && quantity > 0 ? quantity : 1;
 
+  let explicitNetGrams: number | undefined;
+  if (input.netFillingGrams !== undefined && input.netFillingGrams !== null && input.netFillingGrams !== '') {
+    const norm = normalizeNetFillingGrams(input.netFillingGrams);
+    if (norm === null || !isValidNetFillingGrams(norm)) return null;
+    explicitNetGrams = norm;
+  }
+
+  if (explicitNetGrams !== undefined) {
+    const configuration: HamperConfiguration = { version: 1, boxId: box.id, selections: [...selections], recipientName, giftMessage, netFillingGrams: explicitNetGrams };
+    const portionLabel = `${selections.length} selections · ${explicitNetGrams >= 1000 ? `${explicitNetGrams / 1000}kg` : `${explicitNetGrams}g`}`;
+    return {
+      configuration,
+      unitPrice: box.price,
+      massGrams: explicitNetGrams,
+      portion: portionLabel,
+      name_en: `Custom ${box.name_en}`,
+      name_ur: `خصوصی ${box.name_ur}`,
+      name_ar: `${box.name_ar} حسب الطلب`,
+      image: box.image,
+      packagingPrice: box.price,
+      ingredientsSubtotalPkr: undefined,
+      estimatedTotalPkr: undefined,
+      quantity: validQty,
+    };
+  }
+
   let exact = 0n;
   for (const id of selections) {
     const product = products.find(candidate => candidate.id === id);
@@ -117,11 +144,14 @@ export function hamperPackingLines(value: unknown, language: 'en' | 'ur' | 'ar' 
   const hamper = resolveHamper(value);
   if (!hamper) return [];
   const names = hamper.configuration.selections.map(id => {
-    const product = PRODUCTS.find(candidate => candidate.id === id)!;
-    return `${product[`name_${language}`] || product.name_en} (${HAMPER_PORTION_GRAMS}g)`;
+    const product = PRODUCTS.find(candidate => candidate.id === id);
+    const baseName = (product && (product[`name_${language}`] || product.name_en)) || id;
+    if (hamper.configuration.netFillingGrams) return baseName;
+    return `${baseName} (${HAMPER_PORTION_GRAMS}g)`;
   });
   return [
     `  Contents: ${names.join(', ')}`,
+    ...(hamper.configuration.netFillingGrams ? [`  Net filling weight: ${hamper.configuration.netFillingGrams >= 1000 ? `${hamper.configuration.netFillingGrams / 1000}kg` : `${hamper.configuration.netFillingGrams}g`}`] : []),
     ...(hamper.configuration.recipientName ? [`  Recipient: ${hamper.configuration.recipientName}`] : []),
     ...(hamper.configuration.giftMessage ? [`  Gift card: ${hamper.configuration.giftMessage}`] : []),
   ];

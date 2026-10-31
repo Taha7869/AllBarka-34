@@ -12,6 +12,10 @@ import {
   resolveEmptyPackagingUnitPrice,
   resolveFilledRecipe,
   type RecipeIngredient,
+  normalizeNetFillingGrams,
+  isValidNetFillingGrams,
+  validateNetFillingGrams,
+  NET_FILLING_PRESETS,
 } from '../src/lib/filledGiftPricing';
 import { CUSTOM_HAMPER_PRODUCT_ID, HAMPER_BOXES, resolveHamper } from '../src/lib/hamperCatalog';
 import { BID_BOX_PRODUCTS } from '../src/data/products';
@@ -1146,4 +1150,210 @@ test('Test 20: Acceptance Scenario — Rs1000/kg + 50g (Rs50/box) + Rs100 empty 
       return true;
     }
   );
+});
+
+test('Test 21: Total Net Filling Weight Presets, Custom Weight, Exact Formula Scaling, and Unpriced Recipe Mismatch', async () => {
+  // 1. Preset Normalization (Check 1)
+  assert.equal(normalizeNetFillingGrams('250g'), 250);
+  assert.equal(normalizeNetFillingGrams('500g'), 500);
+  assert.equal(normalizeNetFillingGrams('1kg'), 1000);
+  assert.equal(normalizeNetFillingGrams('0.25kg'), 250);
+  assert.equal(normalizeNetFillingGrams(250), 250);
+  assert.equal(normalizeNetFillingGrams(500), 500);
+  assert.equal(normalizeNetFillingGrams(1000), 1000);
+  assert.deepEqual(NET_FILLING_PRESETS, [250, 500, 1000]);
+
+  // 2. Custom 750g Normalization & Validation (Check 2)
+  assert.equal(normalizeNetFillingGrams('750g'), 750);
+  assert.equal(normalizeNetFillingGrams('Custom 750g'), 750);
+  assert.equal(normalizeNetFillingGrams('custom 750g'), 750);
+  assert.equal(normalizeNetFillingGrams(750), 750);
+  assert.equal(isValidNetFillingGrams(750), true);
+
+  // 3. Validation & Server-side Rejection (Check 5)
+  assert.equal(isValidNetFillingGrams(0), false);
+  assert.equal(isValidNetFillingGrams(-50), false);
+  assert.equal(isValidNetFillingGrams(15000), false);
+  assert.equal(isValidNetFillingGrams('not-a-number'), false);
+  assert.equal(isValidNetFillingGrams(100.12345), false);
+  assert.throws(() => validateNetFillingGrams(-10), /INVALID_NET_FILLING_WEIGHT/);
+  assert.throws(() => validateNetFillingGrams(0), /INVALID_NET_FILLING_WEIGHT/);
+  assert.throws(() => validateNetFillingGrams(20000), /INVALID_NET_FILLING_WEIGHT/);
+  assert.equal(validateNetFillingGrams('750g'), 750);
+
+  // 4. Authoritative Ingredient Formula at Rs1000/kg (Check 8)
+  const mockNut1000: Product = {
+    ...PRODUCTS.find(p => p.id === 'badam')!,
+    id: 'mock-nut-1000',
+
+    name_en: 'Premium Saffron Almonds',
+    name_ur: 'بادام',
+    name_ar: 'لوز',
+    category: 'nuts',
+    price: 1000,
+    pricePer100g: 100,
+    status: 'published',
+    active: true,
+    prices: { '1kg': 1000 },
+    variants: [{ label: '1kg', price: 1000, available: true }],
+  };
+
+  const mockBox: Product = {
+    ...PRODUCTS.find(p => p.id === 'bid-box-umrah-tabarruk' || p.category === 'celebration-boxes')!,
+    id: 'mock-box-100',
+
+    name_en: 'Royal Velvet Gift Box',
+    name_ur: 'ڈبہ',
+    name_ar: 'صندوق',
+    category: 'packaging',
+    price: 100,
+    status: 'published',
+    active: true,
+    bidBoxConfig: {
+      emptyUnitStarting: 100,
+      emptyTiers: [{ qty: 1, label: 'Empty (1 pc)', unitPrice: 100, packPrice: 100, variantKey: '1-pc' }],
+    },
+  };
+
+  const catalog = [mockNut1000, mockBox];
+
+  // 250g -> Rs250 ingredient estimate
+  const est250 = calculateFilledGiftEstimate({
+    packagingProduct: mockBox,
+    packagingUnitPrice: 100,
+    recipe: [{ productId: mockNut1000.id, grams: 250 }],
+    catalogProducts: catalog,
+    requestedBoxes: 1,
+    expectedNetFillingGrams: 250,
+  });
+  assert.equal(est250.isAvailable, true);
+  assert.equal(est250.ingredientsTotalPkr, 250);
+  assert.equal(est250.packagingTotalPkr, 100);
+  assert.equal(est250.estimatedTotalPkr, 350);
+
+  // 500g -> Rs500 ingredient estimate
+  const est500 = calculateFilledGiftEstimate({
+    packagingProduct: mockBox,
+    packagingUnitPrice: 100,
+    recipe: [{ productId: mockNut1000.id, grams: 500 }],
+    catalogProducts: catalog,
+    requestedBoxes: 1,
+    expectedNetFillingGrams: 500,
+  });
+  assert.equal(est500.isAvailable, true);
+  assert.equal(est500.ingredientsTotalPkr, 500);
+  assert.equal(est500.packagingTotalPkr, 100);
+  assert.equal(est500.estimatedTotalPkr, 600);
+
+  // 1kg -> Rs1000 ingredient estimate
+  const est1000 = calculateFilledGiftEstimate({
+    packagingProduct: mockBox,
+    packagingUnitPrice: 100,
+    recipe: [{ productId: mockNut1000.id, grams: 1000 }],
+    catalogProducts: catalog,
+    requestedBoxes: 1,
+    expectedNetFillingGrams: 1000,
+  });
+  assert.equal(est1000.isAvailable, true);
+  assert.equal(est1000.ingredientsTotalPkr, 1000);
+  assert.equal(est1000.packagingTotalPkr, 100);
+  assert.equal(est1000.estimatedTotalPkr, 1100);
+
+  // 750g -> Rs750 ingredient estimate + 10 boxes quantity multiplication (Check 8)
+  const est750x10 = calculateFilledGiftEstimate({
+    packagingProduct: mockBox,
+    packagingUnitPrice: 100,
+    recipe: [{ productId: mockNut1000.id, grams: 750 }],
+    catalogProducts: catalog,
+    requestedBoxes: 10,
+    expectedNetFillingGrams: 750,
+  });
+  assert.equal(est750x10.isAvailable, true);
+  assert.equal(est750x10.ingredientsTotalPkr, 7500); // Rs750/box * 10 boxes
+  assert.equal(est750x10.packagingTotalPkr, 1000); // Rs100/box * 10 boxes
+  assert.equal(est750x10.estimatedTotalPkr, 8500);
+
+  // 5. Explicit recipe totals must match selected net filling weight (Check 6 & 7)
+  const mismatchedEst = calculateFilledGiftEstimate({
+    packagingProduct: mockBox,
+    packagingUnitPrice: 100,
+    recipe: [{ productId: mockNut1000.id, grams: 500 }],
+    catalogProducts: catalog,
+    requestedBoxes: 1,
+    expectedNetFillingGrams: 750,
+  });
+  assert.equal(mismatchedEst.isAvailable, false);
+  assert.equal(mismatchedEst.unavailabilityReason, 'INVALID_RECIPE');
+  assert.equal(mismatchedEst.estimatedTotalPkr, null);
+
+  // Mixed ingredients: 100g + 150g = 250g total matches expectedNetFillingGrams: 250
+  const mockCashew: Product = {
+    ...mockNut1000,
+    id: 'mock-cashew-1000',
+    name_en: 'Roasted Cashews',
+  };
+  const mixedCatalog = [mockNut1000, mockCashew, mockBox];
+  const mixedEst250 = calculateFilledGiftEstimate({
+    packagingProduct: mockBox,
+    packagingUnitPrice: 100,
+    recipe: [
+      { productId: mockNut1000.id, grams: 100 },
+      { productId: mockCashew.id, grams: 150 },
+    ],
+    catalogProducts: mixedCatalog,
+    requestedBoxes: 1,
+    expectedNetFillingGrams: 250,
+  });
+  assert.equal(mixedEst250.isAvailable, true);
+  assert.equal(mixedEst250.ingredientsTotalPkr, 250);
+
+  // If mixed ingredients sum to 200g != 250g -> fails closed
+  const mixedMismatched = calculateFilledGiftEstimate({
+    packagingProduct: mockBox,
+    packagingUnitPrice: 100,
+    recipe: [
+      { productId: mockNut1000.id, grams: 100 },
+      { productId: mockCashew.id, grams: 100 },
+    ],
+    catalogProducts: mixedCatalog,
+    requestedBoxes: 1,
+    expectedNetFillingGrams: 250,
+  });
+  assert.equal(mixedMismatched.isAvailable, false);
+  assert.equal(mixedMismatched.unavailabilityReason, 'INVALID_RECIPE');
+
+  // 6. Hamper Catalog resolution with netFillingGrams
+  const customWeightHamper = resolveHamper(
+    {
+      version: 1,
+      boxId: 'box-wood',
+      selections: ['pista', 'badam', 'kaju', 'akhroot'],
+      recipientName: 'Taha',
+      giftMessage: 'Congratulations',
+      netFillingGrams: 750,
+    },
+    PRODUCTS
+  );
+  assert.ok(customWeightHamper);
+  assert.equal(customWeightHamper.configuration.netFillingGrams, 750);
+  assert.equal(customWeightHamper.massGrams, 750);
+  assert.equal(customWeightHamper.estimatedTotalPkr, undefined);
+  assert.equal(customWeightHamper.ingredientsSubtotalPkr, undefined);
+  assert.equal(customWeightHamper.portion, '4 selections · 750g');
+
+  // 7. Legacy Hamper resolution preserves historical 200g per selection (Check 9)
+  const legacyHamper = resolveHamper(
+    {
+      version: 1,
+      boxId: 'box-wood',
+      selections: ['pista', 'badam', 'kaju', 'akhroot'],
+      recipientName: 'Ali',
+      giftMessage: 'Best wishes',
+    },
+    PRODUCTS
+  );
+  assert.ok(legacyHamper);
+  assert.equal(legacyHamper.configuration.netFillingGrams, undefined);
+  assert.equal(legacyHamper.massGrams, 800); // 4 * 200g
+  assert.ok(typeof legacyHamper.unitPrice === 'number' && legacyHamper.unitPrice > 0);
 });

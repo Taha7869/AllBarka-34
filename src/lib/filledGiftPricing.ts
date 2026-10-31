@@ -21,6 +21,7 @@ export interface FilledGiftEstimateInput {
   packagingUnitPrice?: number | null;
   packagingRequired?: boolean;
   recipe?: RecipeIngredient[];
+  expectedNetFillingGrams?: number | null;
   catalogProducts: Product[];
   requestedBoxes?: number;
 }
@@ -51,6 +52,41 @@ export interface FilledGiftEstimateResult {
 export const MAX_RECIPE_INGREDIENTS = 30;
 export const MAX_INGREDIENT_GRAMS = 10_000;
 export const MAX_ESTIMATE_BOXES = 100_000;
+
+export const NET_FILLING_PRESETS = [250, 500, 1000] as const;
+export type NetFillingPreset = (typeof NET_FILLING_PRESETS)[number];
+
+export function normalizeNetFillingGrams(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : NaN;
+  }
+  if (typeof value !== 'string') return NaN;
+  const str = value.trim();
+  if (!str) return null;
+  const match = /^(?:Custom\s+)?(\d+(?:\.\d+)?)\s*(kg|g|grams)?$/i.exec(str);
+  if (!match) return NaN;
+  const num = Number(match[1]);
+  if (!Number.isFinite(num)) return NaN;
+  const unit = match[2]?.toLowerCase();
+  if (unit === 'kg') return num * 1000;
+  return num;
+}
+
+export function isValidNetFillingGrams(value: unknown): boolean {
+  const grams = typeof value === 'number' ? value : normalizeNetFillingGrams(value);
+  if (grams === null || typeof grams !== 'number' || !Number.isFinite(grams)) return false;
+  if (grams <= 0 || grams > MAX_INGREDIENT_GRAMS) return false;
+  return milliGrams(grams) !== null;
+}
+
+export function validateNetFillingGrams(value: unknown): number {
+  const grams = normalizeNetFillingGrams(value);
+  if (grams === null || !isValidNetFillingGrams(grams)) {
+    throw new Error('INVALID_NET_FILLING_WEIGHT');
+  }
+  return grams;
+}
 
 const MICRO = 1_000_000n;
 
@@ -254,15 +290,41 @@ export function calculateIngredientEstimate(kgRatePkr: number, gramsPerBox: numb
 }
 
 /** Recipe selection for a packaging variant: its own configured recipe, or the product recipe for its single filled variant. */
-export function resolveFilledRecipe(product: Product | null | undefined, label: unknown): RecipeIngredient[] | null {
-  if (!product || typeof label !== 'string') return null;
-  const key = label.trim();
-  const own = product.filledRecipes && Object.hasOwn(product.filledRecipes, key) ? readRecipeIngredients(product.filledRecipes[key]) : undefined;
-  if (own) return own;
+export function resolveFilledRecipe(
+  product: Product | null | undefined,
+  label: unknown,
+  netFillingGrams?: number | null
+): RecipeIngredient[] | null {
+  if (!product) return null;
+  const key = typeof label === 'string' ? label.trim() : '';
+  if (key && product.filledRecipes && Object.hasOwn(product.filledRecipes, key)) {
+    const own = readRecipeIngredients(product.filledRecipes[key]);
+    if (own) return own;
+  }
+  const normGrams = netFillingGrams != null ? normalizeNetFillingGrams(netFillingGrams) : null;
+  if (product.filledRecipes && normGrams != null && isValidNetFillingGrams(normGrams)) {
+    const candidates = [
+      `${normGrams}g`,
+      normGrams === 1000 ? '1kg' : '',
+      `${normGrams}g Filled`,
+      `Filled ${normGrams}g`,
+      String(normGrams),
+    ].filter(Boolean);
+    for (const cand of candidates) {
+      if (Object.hasOwn(product.filledRecipes, cand)) {
+        const found = readRecipeIngredients(product.filledRecipes[cand]);
+        if (found) return found;
+      }
+    }
+  }
   const shared = readRecipeIngredients(product.recipeIngredients);
-  if (!shared || classifyPackagingVariant(product, key) !== 'filled') return null;
-  const filledLabels = Object.keys(product.prices || {}).filter(candidate => classifyPackagingVariant(product, candidate) === 'filled');
-  return filledLabels.length === 1 && filledLabels[0].trim() === key ? shared : null;
+  if (!shared) return null;
+  if (!key) return shared;
+  if (classifyPackagingVariant(product, key) === 'filled') {
+    const filledLabels = Object.keys(product.prices || {}).filter(candidate => classifyPackagingVariant(product, candidate) === 'filled');
+    if (filledLabels.length === 1 && filledLabels[0].trim() === key) return shared;
+  }
+  return shared;
 }
 
 /** Per-box price of actual empty packaging for the requested quantity. */
@@ -340,6 +402,7 @@ export function resolveEmptyPackagingUnitPrice(product: Product | null | undefin
 export function calculateFilledGiftEstimate({
   packagingProduct,
   recipe,
+  expectedNetFillingGrams,
   packagingUnitPrice,
   packagingRequired,
   catalogProducts,
@@ -360,6 +423,17 @@ export function calculateFilledGiftEstimate({
 
   let list: RecipeIngredient[];
   try { list = validateRecipeIngredients(effectiveRecipe); } catch { return failure('INVALID_RECIPE', requestedBoxes); }
+
+  if (expectedNetFillingGrams != null) {
+    const expGrams = normalizeNetFillingGrams(expectedNetFillingGrams);
+    if (expGrams === null || !isValidNetFillingGrams(expGrams)) {
+      return failure('INVALID_RECIPE', requestedBoxes);
+    }
+    const recipeTotalGrams = list.reduce((sum, item) => sum + item.grams, 0);
+    if (Math.abs(recipeTotalGrams - expGrams) > 1e-6) {
+      return failure('INVALID_RECIPE', requestedBoxes);
+    }
+  }
 
   const lines: EstimatedIngredientLine[] = [];
   let exact = 0n;

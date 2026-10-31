@@ -55,6 +55,7 @@ export interface CustomerInquiryWhatsAppParams {
   isTabarruk?: boolean;
   hamperConfiguration?: any;
   estimatedTotalPkr?: number | null;
+  netFillingGrams?: number | null;
 }
 
 export interface AdminWhatsAppPitchParams {
@@ -83,6 +84,7 @@ export interface AdminWhatsAppPitchParams {
   finalAgreedPrice?: number | string | null;
   adminNotes?: string | null;
   isTabarruk?: boolean;
+  netFillingGrams?: number | null;
 }
 
 export function formatFillingsLabel(fillings?: string[]): string {
@@ -125,6 +127,9 @@ export function buildCustomerInquiryWhatsAppUrl(params: CustomerInquiryWhatsAppP
     ``,
     `• *Selected Product:* ${params.productName} (${params.productId})`,
     params.packagingVariant ? `• *Variant / Portion:* ${params.packagingVariant}` : '',
+    params.netFillingGrams != null && Number(params.netFillingGrams) > 0
+      ? `• *Net Filling Weight:* ${Number(params.netFillingGrams) >= 1000 ? `${Number(params.netFillingGrams) / 1000}kg` : `${Number(params.netFillingGrams)}g`} per box`
+      : '',
     `• *Packaging Mode:* ${modeLabel}`,
   ];
 
@@ -149,8 +154,13 @@ export function buildCustomerInquiryWhatsAppUrl(params: CustomerInquiryWhatsAppP
   if (params.hamperConfiguration) {
     const config = params.hamperConfiguration;
     lines.push(`• *Hamper Coffer:* ${config.boxId}`);
+    const configNetWeight = config.netFillingGrams ?? params.netFillingGrams;
     if (Array.isArray(config.selections)) {
-      lines.push(`• *Selections:* ${config.selections.map((s: string) => `${s} (200g)`).join(', ')}`);
+      if (configNetWeight != null && Number(configNetWeight) > 0) {
+        lines.push(`• *Selections:* ${config.selections.join(', ')}`);
+      } else {
+        lines.push(`• *Selections:* ${config.selections.map((s: string) => `${s} (200g)`).join(', ')}`);
+      }
     }
     if (config.recipientName) lines.push(`• *Recipient:* ${config.recipientName}`);
     if (config.giftMessage) lines.push(`• *Gift Message:* ${config.giftMessage}`);
@@ -263,6 +273,9 @@ export function buildAdminWhatsAppPitchUrl(params: AdminWhatsAppPitchParams): st
     } (*Ref #${params.id}*):`,
     params.productName ? `• *Selection:* ${params.productName}` : '',
     params.packagingVariant ? `• *Variant / Portion:* ${params.packagingVariant}` : '',
+    params.netFillingGrams != null && Number(params.netFillingGrams) > 0
+      ? `• *Net Filling Weight:* ${Number(params.netFillingGrams) >= 1000 ? `${Number(params.netFillingGrams) / 1000}kg` : `${Number(params.netFillingGrams)}g`} per box`
+      : '',
     params.boxMode ? `• *Configuration:* ${modeLabel}` : '',
     isTabarruk ? `• *Tabarruk Packaging Notice:* Bottles are empty for customer-provided Zamzam water; packaging is empty by default` : '',
   ];

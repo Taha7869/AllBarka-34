@@ -383,6 +383,7 @@ export interface InquiryRecord {
   assignedTo?: string | null;
   followUpDate?: string | null;
   leadTimeNoticeAcknowledged?: boolean;
+  netFillingGrams?: number | null;
   hamperConfiguration?: HamperConfiguration;
   createdAt: string;
   updatedAt: string;
@@ -409,5 +410,6 @@ export interface CustomQuoteModalInit {
   city?: string;
   budgetType?: 'per_piece' | 'total';
   targetPricePkr?: number | string;
+  netFillingGrams?: number | null;
   hamperConfiguration?: HamperConfiguration;
 }

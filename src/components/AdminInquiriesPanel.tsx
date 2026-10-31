@@ -68,6 +68,7 @@ export interface AdminInquiryRecord {
   assignedTo?: string | null;
   followUpDate?: string | null;
   leadTimeNoticeAcknowledged?: boolean;
+  netFillingGrams?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -468,6 +469,12 @@ export default function AdminInquiriesPanel() {
                       </span>
                     )}
 
+                    {item.netFillingGrams != null && item.netFillingGrams > 0 && (
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-900">
+                        {item.netFillingGrams >= 1000 ? `${item.netFillingGrams / 1000}kg` : `${item.netFillingGrams}g`} / box
+                      </span>
+                    )}
+
                     {/* Quantity Badge */}
                     {item.quantity > 0 && (
                       <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-800">
@@ -563,6 +570,7 @@ export default function AdminInquiriesPanel() {
                     <div className="font-semibold text-sm text-[#072A20]">
                       {item.productName}
                       {item.packagingVariant ? ` (${item.packagingVariant})` : ''}
+                      {item.netFillingGrams != null && item.netFillingGrams > 0 ? ` · ${item.netFillingGrams >= 1000 ? `${item.netFillingGrams / 1000}kg` : `${item.netFillingGrams}g`} / box` : ''}
                     </div>
                     <div className="text-xs text-[#566B63] space-y-1 pt-1">
                       <div className="flex justify-between">

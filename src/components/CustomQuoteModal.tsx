@@ -20,7 +20,14 @@ import {
 import { useCatalogProducts, useCatalogHamperBoxes } from '../contexts/CatalogContext';
 import { Product, CustomQuoteModalInit } from '../types';
 import { resolveInquiryProductVariant } from '../lib/inquiryResolution';
-import { calculateFilledGiftEstimate, resolveFilledRecipe, resolveEmptyPackagingUnitPrice } from '../lib/filledGiftPricing';
+import {
+  calculateFilledGiftEstimate,
+  resolveFilledRecipe,
+  resolveEmptyPackagingUnitPrice,
+  normalizeNetFillingGrams,
+  isValidNetFillingGrams,
+  NET_FILLING_PRESETS,
+} from '../lib/filledGiftPricing';
 import { resolveHamper, type HamperConfiguration } from '../lib/hamperCatalog';
 import {
   buildCustomerInquiryWhatsAppUrl,
@@ -89,6 +96,9 @@ export default function CustomQuoteModal() {
   const [eventType, setEventType] = useState<string>('Nikkah');
   const [targetEventDate, setTargetEventDate] = useState<string>('');
   const [leadTimeAcknowledged, setLeadTimeAcknowledged] = useState<boolean>(false);
+  const [netFillingGrams, setNetFillingGrams] = useState<number | null>(null);
+  const [isCustomWeight, setIsCustomWeight] = useState<boolean>(false);
+  const [customWeightInput, setCustomWeightInput] = useState<string>('');
 
   // Fillings & Personalization
   const [preferredFillings, setPreferredFillings] = useState<string[]>([]);
@@ -149,6 +159,29 @@ export default function CustomQuoteModal() {
         setCity(String(detail.city).trim());
       }
 
+      let initialNetGrams: number | null = null;
+      if (detail.netFillingGrams != null && Number.isFinite(detail.netFillingGrams) && detail.netFillingGrams > 0) {
+        initialNetGrams = detail.netFillingGrams;
+      } else if (detail.hamperConfiguration?.netFillingGrams) {
+        initialNetGrams = detail.hamperConfiguration.netFillingGrams;
+      } else {
+        const fromLabel = normalizeNetFillingGrams(detail.variantLabel || detail.portion || '');
+        if (fromLabel) initialNetGrams = fromLabel;
+      }
+      setNetFillingGrams(initialNetGrams);
+      if (initialNetGrams != null) {
+        if ([250, 500, 1000].includes(initialNetGrams)) {
+          setIsCustomWeight(false);
+          setCustomWeightInput(String(initialNetGrams));
+        } else {
+          setIsCustomWeight(true);
+          setCustomWeightInput(String(initialNetGrams));
+        }
+      } else {
+        setIsCustomWeight(false);
+        setCustomWeightInput('');
+      }
+
       if (detail.targetPricePkr != null && String(detail.targetPricePkr).trim() !== '') {
         setTargetPricePkr(String(detail.targetPricePkr).trim());
         setBudgetType(detail.budgetType === 'per_piece' ? 'per_piece' : 'total');
@@ -200,19 +233,22 @@ export default function CustomQuoteModal() {
   const resolution = useMemo(() => {
     return resolveInquiryProductVariant({
       catalog: products,
+      hamperBoxes,
       productId: selectedProduct?.id || selectedProductId,
       requestedVariantLabel: selectedVariantLabel || null,
       boxMode: mode,
       quantity,
+      hamperConfiguration: hamperConfiguration || undefined,
+      netFillingGrams: mode === 'empty' ? null : netFillingGrams,
     });
-  }, [products, selectedProduct, selectedProductId, selectedVariantLabel, mode, quantity]);
+  }, [products, hamperBoxes, selectedProduct, selectedProductId, selectedVariantLabel, mode, quantity, hamperConfiguration, netFillingGrams]);
 
   const isTabarruk = resolution.isTabarruk;
   const referenceUnitPrice = resolution.standardPrice ?? 0;
 
   const filledRecipe = useMemo(() => {
-    return resolveFilledRecipe(selectedProduct, selectedVariantLabel);
-  }, [selectedProduct, selectedVariantLabel]);
+    return resolveFilledRecipe(selectedProduct, selectedVariantLabel, mode === 'empty' ? null : netFillingGrams);
+  }, [selectedProduct, selectedVariantLabel, mode, netFillingGrams]);
 
   const emptyPackagingUnitPrice = useMemo(() => {
     if (mode !== 'filled' || !selectedProduct) return null;
@@ -227,12 +263,17 @@ export default function CustomQuoteModal() {
       recipe: filledRecipe || undefined,
       catalogProducts: products,
       requestedBoxes: quantity,
+      expectedNetFillingGrams: netFillingGrams,
     });
-  }, [mode, selectedProduct, emptyPackagingUnitPrice, filledRecipe, products, quantity]);
+  }, [mode, selectedProduct, emptyPackagingUnitPrice, filledRecipe, products, quantity, netFillingGrams]);
 
   const effectiveReferenceRate = useMemo(() => {
     if (selectedProductId === 'custom-hamper' && hamperConfiguration) {
-      const resolved = resolveHamper(hamperConfiguration, products, hamperBoxes, quantity);
+      const configWithWeight = {
+        ...hamperConfiguration,
+        ...(netFillingGrams ? { netFillingGrams } : {}),
+      };
+      const resolved = resolveHamper(configWithWeight, products, hamperBoxes, quantity);
       if (resolved) {
         return {
           standardPrice: resolved.unitPrice,
@@ -269,7 +310,7 @@ export default function CustomQuoteModal() {
       isEstimate: false,
       estimatedTotalPkr: null,
     };
-  }, [mode, filledEstimate, quantity, resolution, selectedProductId, hamperConfiguration, products, hamperBoxes]);
+  }, [mode, filledEstimate, quantity, resolution, selectedProductId, hamperConfiguration, products, hamperBoxes, netFillingGrams]);
 
   if (!isOpen) return null;
 
@@ -306,6 +347,7 @@ export default function CustomQuoteModal() {
     isTabarruk: resolution.isTabarruk,
     leadTimeNoticeAcknowledged: leadTimeAcknowledged,
     hamperConfiguration: hamperConfiguration || undefined,
+    netFillingGrams: mode === 'empty' ? null : netFillingGrams,
   });
 
   const toggleFilling = (fillingId: string) => {
@@ -325,6 +367,13 @@ export default function CustomQuoteModal() {
     if (!customerPhone.trim() || customerPhone.trim().length < 10) {
       setErrorMsg('Please enter a valid WhatsApp / mobile number (e.g. 03160666083).');
       return;
+    }
+
+    if (mode !== 'empty' && isCustomWeight && customWeightInput.trim() !== '') {
+      if (netFillingGrams === null || !isValidNetFillingGrams(netFillingGrams)) {
+        setErrorMsg('Please enter a valid custom net filling weight between 50g and 5,000g (e.g. 750).');
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -353,6 +402,7 @@ export default function CustomQuoteModal() {
         city: city.trim() || 'Lahore',
         leadTimeNoticeAcknowledged: leadTimeAcknowledged,
         hamperConfiguration: hamperConfiguration || undefined,
+        netFillingGrams: mode === 'empty' ? null : netFillingGrams,
       });
 
       const quoteId = res.quoteId;
@@ -389,6 +439,7 @@ export default function CustomQuoteModal() {
           isTabarruk: resolution.isTabarruk,
           leadTimeNoticeAcknowledged: leadTimeAcknowledged,
           hamperConfiguration: hamperConfiguration || undefined,
+          netFillingGrams: mode === 'empty' ? null : netFillingGrams,
         });
 
       setSubmittedQuote({ quoteId, whatsappUrl });
@@ -662,7 +713,21 @@ export default function CustomQuoteModal() {
                   <select
                     id="quote-variant-select"
                     value={selectedVariantLabel}
-                    onChange={(e) => setSelectedVariantLabel(e.target.value)}
+                    onChange={(e) => {
+                      const newVar = e.target.value;
+                      setSelectedVariantLabel(newVar);
+                      const normalized = normalizeNetFillingGrams(newVar);
+                      if (normalized) {
+                        setNetFillingGrams(normalized);
+                        if ([250, 500, 1000].includes(normalized)) {
+                          setIsCustomWeight(false);
+                          setCustomWeightInput(String(normalized));
+                        } else {
+                          setIsCustomWeight(true);
+                          setCustomWeightInput(String(normalized));
+                        }
+                      }
+                    }}
                     className="w-full rounded-xl border border-[#D4AF6A]/50 bg-white px-3 py-2.5 text-sm font-medium text-[#072A20] focus:border-[#072A20] focus:outline-none"
                   >
                     <option value="">Default Size / Pack</option>
@@ -739,6 +804,99 @@ export default function CustomQuoteModal() {
                   </button>
                 </div>
               </div>
+
+              {/* 2b. Net Filling Weight per Box */}
+              {(mode === 'filled' || mode === 'custom') && (
+                <div className="rounded-2xl border border-[#D4AF6A]/40 bg-white/80 p-4 space-y-3 shadow-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#072A20]">
+                      Net Filling Weight per Box
+                    </label>
+                    <span className="text-[11px] text-[#566B63]">
+                      Excludes packaging mass
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#566B63] leading-relaxed">
+                    Select the combined net ingredient weight for one box. Mixed ingredients together equal this total.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {NET_FILLING_PRESETS.map((preset) => {
+                      const label = preset >= 1000 ? `${preset / 1000}kg` : `${preset}g`;
+                      const isSelected = !isCustomWeight && netFillingGrams === preset;
+                      return (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => {
+                            setIsCustomWeight(false);
+                            setNetFillingGrams(preset);
+                            setCustomWeightInput(String(preset));
+                          }}
+                          className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+                            isSelected
+                              ? 'bg-[#072A20] text-white shadow-sm ring-2 ring-[#D4AF6A]/50'
+                              : 'bg-white border border-[#D4AF6A]/40 text-[#072A20] hover:bg-[#D4AF6A]/15'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCustomWeight(true);
+                        const parsed = normalizeNetFillingGrams(customWeightInput);
+                        if (parsed && isValidNetFillingGrams(parsed)) {
+                          setNetFillingGrams(parsed);
+                        } else {
+                          setNetFillingGrams(null);
+                        }
+                      }}
+                      className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+                        isCustomWeight
+                          ? 'bg-[#072A20] text-white shadow-sm ring-2 ring-[#D4AF6A]/50'
+                          : 'bg-white border border-[#D4AF6A]/40 text-[#072A20] hover:bg-[#D4AF6A]/15'
+                      }`}
+                    >
+                      Custom Weight
+                    </button>
+                  </div>
+
+                  {isCustomWeight && (
+                    <div className="pt-2 border-t border-[#D4AF6A]/20">
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="quote-custom-net-weight"
+                          type="number"
+                          inputMode="decimal"
+                          min={50}
+                          max={5000}
+                          step={50}
+                          placeholder="e.g. 750"
+                          value={customWeightInput}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setCustomWeightInput(val);
+                            const parsed = normalizeNetFillingGrams(val);
+                            if (parsed && isValidNetFillingGrams(parsed)) {
+                              setNetFillingGrams(parsed);
+                            } else {
+                              setNetFillingGrams(null);
+                            }
+                          }}
+                          className="w-36 rounded-xl border border-[#D4AF6A]/60 bg-white px-3 py-2 text-sm font-semibold text-[#072A20] focus:border-[#072A20] focus:outline-none"
+                          dir="ltr"
+                        />
+                        <span className="text-xs font-bold text-[#072A20]">grams / box</span>
+                      </div>
+                      <p className="text-[10px] text-[#566B63] mt-1.5">
+                        Enter requested ingredient grams per box (50g – 5,000g). Box quantity is multiplied separately.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* 3. Quantity & Authoritative MOQ */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

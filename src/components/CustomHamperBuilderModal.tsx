@@ -148,7 +148,8 @@ export default function CustomHamperBuilderModal({ isOpen, onClose, onAddToCart 
     const selectionsSummary = selectedItems
       .map(id => {
         const p = PRODUCTS.find(candidate => candidate.id === id);
-        return p ? `${getLocalized(p, 'name', language)} (200g)` : id;
+        const name = p ? getLocalized(p, 'name', language) : id;
+        return resolved.configuration.netFillingGrams ? name : `${name} (200g)`;
       })
       .join(', ');
     const fillingsNote = `Coffer: ${boxName}. Selections: ${selectionsSummary}.`;
@@ -164,6 +165,7 @@ export default function CustomHamperBuilderModal({ isOpen, onClose, onAddToCart 
       cardMessage: resolved.configuration.giftMessage || undefined,
       customFillingsNotes: fillingsNote,
       hamperConfiguration: resolved.configuration,
+      netFillingGrams: resolved.configuration.netFillingGrams,
       // Target price starts empty: customer budget is NOT prefilled
     });
 

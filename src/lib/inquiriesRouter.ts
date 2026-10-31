@@ -4,6 +4,7 @@ import type { InquiryRecord, InquiryStatus, InquiryType, Product } from '../type
 import { PRODUCTS } from '../data/products';
 import type { HamperBox } from './hamperCatalog';
 import { loadAuthoritativeCatalog, mergeAuthoritativeCatalog } from './catalogStore';
+import { normalizeNetFillingGrams, isValidNetFillingGrams } from './filledGiftPricing';
 import {
   isValidPhone,
   isValidQuantity,
@@ -214,6 +215,27 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         return res.status(400).json({ error: 'Target budget must be a positive number.', code: 'INVALID_BUDGET' });
       }
 
+      const rawNetFilling = body.netFillingGrams ?? body.netWeightGrams ?? body.fillingWeightGrams ?? body.netWeight;
+      let netFillingGrams: number | null = null;
+      if (rawNetFilling !== undefined && rawNetFilling !== null && rawNetFilling !== '') {
+        const normalized = normalizeNetFillingGrams(rawNetFilling);
+        if (normalized === null || !isValidNetFillingGrams(normalized)) {
+          return res.status(400).json({ error: 'Please provide a valid net filling weight per box (e.g. 250g, 500g, 1kg or custom weight).', code: 'INVALID_NET_FILLING_WEIGHT' });
+        }
+        netFillingGrams = normalized;
+      }
+
+      if (body.hamperConfiguration?.netFillingGrams !== undefined && body.hamperConfiguration.netFillingGrams !== null && body.hamperConfiguration.netFillingGrams !== '') {
+        const normalized = normalizeNetFillingGrams(body.hamperConfiguration.netFillingGrams);
+        if (normalized === null || !isValidNetFillingGrams(normalized)) {
+          return res.status(400).json({ error: 'Please provide a valid net filling weight per box (e.g. 250g, 500g, 1kg or custom weight).', code: 'INVALID_NET_FILLING_WEIGHT' });
+        }
+        body.hamperConfiguration.netFillingGrams = normalized;
+        if (netFillingGrams === null) {
+          netFillingGrams = normalized;
+        }
+      }
+
       const rawType = String(body.type || 'general');
       const type: InquiryType = VALID_INQUIRY_TYPES.includes(rawType as InquiryType) ? (rawType as InquiryType) : 'general';
 
@@ -247,8 +269,10 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         boxMode,
         quantity: rawQuantity,
         hamperConfiguration: body.hamperConfiguration,
+        netFillingGrams,
       });
 
+      const effectiveNetFilling = resolution.netFillingGrams ?? netFillingGrams;
       const offPrice = budgetVal != null ? Number(budgetVal) : null;
       const eventType = rawEventType || (type === 'bid_box_quote' ? 'Nikkah' : 'General');
 
@@ -271,6 +295,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
             budgetType: body.budgetType || null,
             targetPricePkr: offPrice,
             leadTimeNoticeAcknowledged: Boolean(body.leadTimeNoticeAcknowledged),
+            netFillingGrams: effectiveNetFilling,
           })
         : undefined;
 
@@ -305,6 +330,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         city: city.slice(0, 80),
         isTabarruk: resolution.isTabarruk,
         hamperConfiguration: resolution.hamperConfiguration || body.hamperConfiguration,
+        netFillingGrams: effectiveNetFilling,
       });
 
       const record: InquiryRecord = {
@@ -353,6 +379,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         followUpDate: null,
         leadTimeNoticeAcknowledged: Boolean(body.leadTimeNoticeAcknowledged),
         hamperConfiguration: resolution.hamperConfiguration || undefined,
+        netFillingGrams: effectiveNetFilling,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -432,6 +459,27 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         return res.status(400).json({ error: 'Target budget must be a positive number.', code: 'INVALID_BUDGET' });
       }
 
+      const rawNetFilling = raw.netFillingGrams ?? raw.netWeightGrams ?? raw.fillingWeightGrams ?? raw.netWeight;
+      let netFillingGrams: number | null = null;
+      if (rawNetFilling !== undefined && rawNetFilling !== null && rawNetFilling !== '') {
+        const normalized = normalizeNetFillingGrams(rawNetFilling);
+        if (normalized === null || !isValidNetFillingGrams(normalized)) {
+          return res.status(400).json({ error: 'Please provide a valid net filling weight per box (e.g. 250g, 500g, 1kg or custom weight).', code: 'INVALID_NET_FILLING_WEIGHT' });
+        }
+        netFillingGrams = normalized;
+      }
+
+      if (raw.hamperConfiguration?.netFillingGrams !== undefined && raw.hamperConfiguration.netFillingGrams !== null && raw.hamperConfiguration.netFillingGrams !== '') {
+        const normalized = normalizeNetFillingGrams(raw.hamperConfiguration.netFillingGrams);
+        if (normalized === null || !isValidNetFillingGrams(normalized)) {
+          return res.status(400).json({ error: 'Please provide a valid net filling weight per box (e.g. 250g, 500g, 1kg or custom weight).', code: 'INVALID_NET_FILLING_WEIGHT' });
+        }
+        raw.hamperConfiguration.netFillingGrams = normalized;
+        if (netFillingGrams === null) {
+          netFillingGrams = normalized;
+        }
+      }
+
       const rawMode = String(raw.boxMode ?? raw.mode ?? '').toLowerCase();
       const safeMode: 'empty' | 'filled' | 'custom' =
         rawMode === 'empty' ? 'empty' : rawMode === 'custom' ? 'custom' : 'filled';
@@ -462,8 +510,10 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         boxMode: safeMode,
         quantity: rawQuantity,
         hamperConfiguration: raw.hamperConfiguration,
+        netFillingGrams,
       });
 
+      const effectiveNetFilling = resolution.netFillingGrams ?? netFillingGrams;
       const offPrice = budgetVal != null ? Number(budgetVal) : null;
       const eventType = rawEventType || 'Nikkah';
 
@@ -486,6 +536,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
             budgetType: raw.budgetType || null,
             targetPricePkr: offPrice,
             leadTimeNoticeAcknowledged: Boolean(raw.leadTimeNoticeAcknowledged),
+            netFillingGrams: effectiveNetFilling,
           })
         : undefined;
 
@@ -520,6 +571,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         city: city.slice(0, 80),
         isTabarruk: resolution.isTabarruk,
         hamperConfiguration: resolution.hamperConfiguration || raw.hamperConfiguration,
+        netFillingGrams: effectiveNetFilling,
       });
 
       const record: InquiryRecord = {
@@ -568,6 +620,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         followUpDate: null,
         leadTimeNoticeAcknowledged: Boolean(raw.leadTimeNoticeAcknowledged),
         hamperConfiguration: resolution.hamperConfiguration || undefined,
+        netFillingGrams: effectiveNetFilling,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };

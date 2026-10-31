@@ -30,6 +30,7 @@ export interface CustomQuoteSubmissionInput {
   email?: string;
   city: string;
   leadTimeNoticeAcknowledged?: boolean;
+  netFillingGrams?: number | null;
 }
 
 export interface CustomQuoteSubmissionResult {

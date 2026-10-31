@@ -126,3 +126,33 @@ Verification:
 - `tests/stage6-inquiry-flow.test.ts`: 19/19 tests PASS.
 - `node scripts/run-all-tests.mjs`: PASS (745 passed, 0 failed, 1 skipped across all 85 test files; 21 backend tests passed; 36 production checks passed).
 - `git diff --check`: PASS (0 errors).
+
+---
+
+## Child Task R04-KG1-W1: Net Filling Weight Canon & Customer/Admin Flow Integration (31 October 2026)
+
+### 1. Scope & Objective
+Complete the canonical net filling weight model supporting presets (`250g`, `500g`, `1kg`) and `Custom weight` per box across customer inquiry modals, backend router endpoints, database persistence, WhatsApp message generation, and admin inquiry management.
+
+### 2. Architecture & Rules Implemented
+- **Single Canonical Weight Field**: Additive `netFillingGrams?: number | null` field on `InquiryRecord`, `CustomQuoteModalInit`, `CustomQuoteSubmissionInput`, `ResolveInquiryParams`, `InquiryVariantResolution`, and `HamperConfiguration`.
+- **Unit Normalization & Validation**: `normalizeNetFillingGrams` and `isValidNetFillingGrams` in `src/lib/filledGiftPricing.ts` enforce finite positive integers/milligram values up to `MAX_INGREDIENT_GRAMS` (10,000g), rejecting negative, zero, non-finite, and out-of-bound weights.
+- **Recipe Sum Matching Rule**: `calculateFilledGiftEstimate` accepts `expectedNetFillingGrams`. If the explicit recipe ingredient grams sum does not strictly match `expectedNetFillingGrams`, it fails closed returning `isAvailable: false, unavailabilityReason: 'INVALID_RECIPE'`, leaving the inquiry in an honest unpriced quote-required state. No equal-split recipes or automatic weight distributions are ever invented.
+- **Historical Compatibility**: Legacy hamper configurations without `netFillingGrams` preserve the historical 200g portion per selection. When `netFillingGrams` is provided, `resolveHamper` sets `massGrams: netFillingGrams` and returns honest unpriced quote-required status (`requiresTeamQuote: true`).
+- **Endpoint Security & Validation**: `POST /api/inquiries` and `POST /api/quotes` validate submitted net filling weights, returning HTTP 400 `INVALID_NET_FILLING_WEIGHT` on invalid input.
+- **Idempotency Protection**: `computeInquiryPayloadHash` includes `netFillingGrams`. Replays with identical payloads succeed; resubmissions under the same submission key with a changed net filling weight return HTTP 409 `IDEMPOTENCY_PAYLOAD_MISMATCH`.
+- **Customer & Admin WhatsApp Concordance**: `buildCustomerInquiryWhatsAppUrl` and `buildAdminWhatsAppPitchUrl` render `• *Net Filling Weight:* {weight} per box`. Hamper selections under custom weight omit the historical `(200g)` suffix.
+- **Storefront & Admin UI**:
+  - `src/components/CustomQuoteModal.tsx`: mounts 250g, 500g, 1kg, and Custom weight controls when in `filled` or `custom` mode, syncs with weight-bearing variant labels, and validates input.
+  - `src/components/CustomHamperBuilderModal.tsx`: passes `netFillingGrams` to `openCustomQuoteModal` and formats selection notes appropriately.
+  - `src/components/AdminInquiriesPanel.tsx`: displays the net filling weight badge in inquiry summary and product comparison views.
+
+### 3. Verification Evidence
+- `tests/filled-gift-pricing.test.ts`: 21/21 tests PASS (Test 21 verifies presets, custom 750g, strict validation, formula scaling at Rs. 1000/kg, recipe weight matching, and legacy hamper preservation).
+- `tests/stage6-inquiry-flow.test.ts`: 23/23 tests PASS (verifying 750g end-to-end persistence, unpriced quote-on-request preservation, HTTP 400 rejection on invalid weights, and HTTP 409 idempotency conflict on changed weight).
+- `tests/hamper-catalog.test.tsx`: 9/9 tests PASS.
+- `npm run typecheck` (`tsc --noEmit`): PASS (0 errors).
+- `npm run lint:hooks` (`eslint src`): PASS (0 errors).
+- `ALLBARKA_SKIP_LOCAL_ENV=true npm run build`: PASS (exit code 0).
+- `node scripts/run-all-tests.mjs`: PASS (750 tests passed, 0 failed, 1 skipped across all 85 test files; 21 backend tests passed; 36 production checks passed).
+- `git diff --check`: PASS (0 errors).

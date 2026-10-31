@@ -1,3 +1,30 @@
+## 31 October 2026 — R04-KG1-W1 filled box and custom-weight net filling integration
+
+- **Canonical net filling weight model & normalization (`netFillingGrams`)**:
+  - Reused existing technical limits and precision helpers: `NET_FILLING_PRESETS = [250, 500, 1000] as const`, `normalizeNetFillingGrams` (normalizing string/numeric grams, kilograms, and custom input e.g. `250g` -> 250, `1kg` -> 1000, `0.25kg` -> 250, `Custom 750g` -> 750), `isValidNetFillingGrams` (rejection of non-finite, zero, negative, out-of-bound >10,000g, and unsupported-precision values), and `validateNetFillingGrams` (throws `INVALID_NET_FILLING_WEIGHT` on invalid input).
+  - Maintained separation of concepts: net filling grams per box, explicit ingredient grams, box quantity multiplier, packaging mass, customer budget, and authoritative estimated total.
+- **Recipe weight matching & fail-closed unpriced state**:
+  - `calculateFilledGiftEstimate`: Enforced validation of recipe total grams (`sum(item.grams)`) against `expectedNetFillingGrams`. If mismatched, fails closed returning `isAvailable: false, unavailabilityReason: 'INVALID_RECIPE'`.
+  - In `inquiryResolution`: returns honest unpriced quote-required state (`requiresTeamQuote: true, standardPrice: null, estimatedTotalPkr: null`) without inventing equal shares, auto-distributing grams, or resizing recipes.
+  - `hamperCatalog.ts`: When `netFillingGrams` is provided, sets `massGrams: netFillingGrams`, formats portion as `${selections.length} selections · ${weight}`, and returns unpriced `requiresTeamQuote: true`. Preserved historical 200g-per-selection calculation when `netFillingGrams` is omitted.
+- **Backend API & persistence integration**:
+  - Standardized `POST /api/inquiries` and `POST /api/quotes`: normalizes and validates `netFillingGrams` and `hamperConfiguration.netFillingGrams`, returning HTTP 400 `INVALID_NET_FILLING_WEIGHT` on invalid weights.
+  - Persists `netFillingGrams` on `InquiryRecord` in Firestore and returns it in sanitized public API responses.
+  - Idempotency: included `netFillingGrams` in `computeInquiryPayloadHash` (omitted when null/undefined for 100% backward compatibility; triggers HTTP 409 `IDEMPOTENCY_PAYLOAD_MISMATCH` if weight changes for the same client request key).
+- **Customer & admin UI flows**:
+  - `CustomQuoteModal.tsx`: Added preset buttons (`250g`, `500g`, `1kg`) and `Custom Weight` toggle + number input (`min 50`, `max 5000`, `step 50`). Recalculates estimate dynamically with authoritative pricing. Preserves user input on validation errors.
+  - `CustomHamperBuilderModal.tsx`: Carries `netFillingGrams` to `CustomQuoteModal` and formats selection notes without `(200g)` per line when custom weight is present.
+  - `AdminInquiriesPanel.tsx`: Displays `{weight} / box` badge in inquiry summary list and product comparison breakdown.
+  - WhatsApp messages: `buildCustomerInquiryWhatsAppUrl` and `buildAdminWhatsAppPitchUrl` explicitly display `• *Net Filling Weight:* {weight} per box` and adapt hamper selection lines.
+- **Verification & regression**:
+  - `tests/filled-gift-pricing.test.ts`: Added Test 21 covering all weight presets (250g, 500g, 1kg), custom 750g, strict validation rejection, formula scaling at Rs. 1000/kg (250g -> Rs250, 500g -> Rs500, 1kg -> Rs1000, 750g -> Rs750 + packaging and 10x quantity multiplication), recipe sum matching rule (`INVALID_RECIPE` on mismatch), and legacy hamper 200g preservation (21/21 PASS).
+  - `tests/stage6-inquiry-flow.test.ts`: Verified 750g custom weight end-to-end persistence in `/api/quotes` and `/api/inquiries`, 1kg preset normalization, WhatsApp URL generation, unpriced quote-on-request preservation, HTTP 400 rejection on invalid weights, and HTTP 409 idempotency conflict on changed weight (23/23 PASS).
+  - `tests/hamper-catalog.test.tsx`: 9/9 PASS.
+  - `npm run typecheck` (`tsc --noEmit`): PASS (0 errors).
+  - `npm run lint:hooks` (`eslint src`): PASS (0 errors).
+  - `$env:ALLBARKA_SKIP_LOCAL_ENV="true"; npm run build`: PASS (Vite + esbuild server + 84 release text artifacts audited).
+  - Full regression runner `node scripts/run-all-tests.mjs`: PASS (750 passed, 0 failed, 1 skipped across all 85 test files; 21 backend tests; 36 production checks).
+
 ## 31 October 2026 — R04-KG1 verification gap closure (production build & privacy audit, real ThemeProvider dark switch, 390px RTL visual parity, 10-hamper HTTP endpoints)
 
 - **Production build & privacy audit**:
