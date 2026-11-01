@@ -5,6 +5,7 @@ import { createStaffRouter } from './src/lib/staffAccess';
 import { isCurrentAdministrator, requireCurrentAdministrator } from './src/lib/adminAuthentication';
 import { getStorage } from 'firebase-admin/storage';
 import firebaseAppletConfig from './firebase-applet-config.json';
+import { isPreviewEnvironment, validatePreviewServerConfig, resolveStorageBucket } from './src/lib/environmentConfig';
 import { createProductUploadRouter } from './src/lib/productUploadRouter';
 import { sanitizeFirestoreData } from './src/lib/firestoreData';
 import express from 'express';
@@ -69,7 +70,14 @@ import {
 import { createInquiriesRouter } from './src/lib/inquiriesRouter';
 
 // Load environment variables
-if (process.env.ALLBARKA_SKIP_LOCAL_ENV !== 'true') dotenv.config({ quiet: true });
+if (process.env.ALLBARKA_SKIP_LOCAL_ENV !== 'true') {
+  const envPath = process.env.ENV_FILE || (process.env.ALLBARKA_MODE === 'preview' || process.env.APP_ENV === 'preview' ? '.env.preview' : undefined);
+  if (envPath) {
+    dotenv.config({ path: envPath, quiet: true });
+  } else {
+    dotenv.config({ quiet: true });
+  }
+}
 
 // Initialize Firebase Admin (Production or Emulator)
 let db: any = null;
@@ -79,11 +87,22 @@ let savedOrderVerifiedThisProcess = false;
 let firebaseAdminMissingCredentialsMsg = 'Firebase Admin credentials (FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY) are not configured on the server. Please configure these environment variables.';
 
 try {
-  const projectId = process.env.FIREBASE_PROJECT_ID || 'allbarka-live';
+  const isPreview = isPreviewEnvironment(process.env);
+  let projectId = process.env.FIREBASE_PROJECT_ID || 'allbarka-live';
+
+  if (isPreview) {
+    const validated = validatePreviewServerConfig(process.env, { requireCredentials: false });
+    projectId = validated.projectId;
+    console.log(`[Preview Mode] Validated isolated preview server for project '${projectId}' (bucket: '${validated.storageBucket}').`);
+  }
+
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
   if (clientEmail && privateKey) {
+    if (isPreview) {
+      validatePreviewServerConfig(process.env, { requireCredentials: true });
+    }
     const credentialOptions = cert({
       projectId,
       clientEmail: clientEmail.trim(),
@@ -102,7 +121,7 @@ try {
     } else {
       const dbId = process.env.FIRESTORE_DATABASE_ID;
       db = dbId && dbId !== '(default)' ? getFirestore(adminApp, dbId) : getFirestore(adminApp);
-      console.log(`[Firestore] Live production database initialized successfully for project '${projectId}'.`);
+      console.log(`[Firestore] Database initialized successfully for project '${projectId}'.`);
     }
   } else if (process.env.FIRESTORE_EMULATOR_HOST) {
     const adminApp = initializeApp({ projectId });
@@ -117,11 +136,11 @@ try {
     console.warn(`[Firebase Admin] ${firebaseAdminMissingCredentialsMsg}`);
   }
   if (db) db.settings({ ignoreUndefinedProperties: true });
-} catch {
+} catch (error: any) {
   adminAuth = null;
   firebaseAdminAuthAvailable = false;
-  firebaseAdminMissingCredentialsMsg = 'Firebase Admin could not initialize. Verify private credentials and project configuration on the API host.';
-  console.error('[Firebase Admin] FIREBASE_ADMIN_INITIALIZATION_FAILED');
+  firebaseAdminMissingCredentialsMsg = error?.message || 'Firebase Admin could not initialize. Verify private credentials and project configuration on the API host.';
+  console.error(`[Firebase Admin] FIREBASE_ADMIN_INITIALIZATION_FAILED: ${error?.message || error}`);
 }
 
 // Security & Authentication Middlewares
@@ -280,7 +299,15 @@ app.get('/api/integrations/n8n/wa-products', requireN8nIntegration(), async (req
 // payload limits and safe parse errors; customer/admin bearer guards remain separate.
 app.use('/api/integrations/n8n', createN8nCommerceRouter({ getDb: () => db }));
 app.use(cookieParser());
-app.use(createProductUploadRouter({ requireAdmin, getBucket: () => adminAuth ? getStorage().bucket(firebaseAppletConfig.storageBucket) : null }));
+app.use(createProductUploadRouter({
+  requireAdmin,
+  getBucket: () => {
+    if (!adminAuth) return null;
+    const bucketName = resolveStorageBucket(process.env);
+    if (!bucketName) return null;
+    return getStorage().bucket(bucketName);
+  }
+}));
 app.use(express.json({ limit: '128kb' }));
 app.use(createProductMediaRouter({ getDb: () => db, requireAdmin }));
 app.use(createCatalogConfigurationRouter({ getDb: () => db, requireAdmin }));

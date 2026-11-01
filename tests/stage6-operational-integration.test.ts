@@ -1,8 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import express from 'express';
-import fs from 'node:fs/promises';
-import path from 'node:path';
 import { once } from 'node:events';
 import { memoryFirestore } from './helpers/memoryFirestore';
 import { staffFixtureIdentity, staffFixtureOrder } from './helpers/staffFixtures';
@@ -11,42 +9,258 @@ import { createCatalogRouter } from '../src/lib/catalogRouter';
 import { createCatalogConfigurationRouter } from '../src/lib/catalogConfigurationRouter';
 import { createProductUploadRouter, MAX_UPLOAD_BYTES } from '../src/lib/productUploadRouter';
 import { createProductMediaRouter } from '../src/lib/productMediaRouter';
-import { createStaffRouter } from '../src/lib/staffAccess';
+import { createStaffRouter, assertStaffReader, changeStaffAccess } from '../src/lib/staffAccess';
 import { createInquiriesRouter } from '../src/lib/inquiriesRouter';
 import { HAMPER_BOXES } from '../src/lib/hamperCatalog';
 import { validateAndPriceOrder } from '../src/lib/orderValidation';
 import { DEFAULT_CATALOG_CONFIGURATION } from '../src/lib/catalogConfiguration';
+import {
+  isPreviewEnvironment,
+  validatePreviewServerConfig,
+  resolveStorageBucket,
+  resolveFirebaseClientConfig,
+  ConfigurationError,
+} from '../src/lib/environmentConfig';
 import type { Product } from '../src/types';
 
 const PNG_BUFFER = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jQ1sAAAAASUVORK5CYII=', 'base64');
 
 // ============================================================================
-// STAGE 6: OPERATIONAL INTEGRATION & ENVIRONMENT VERIFICATION
+// STAGE 6: RUNTIME PREVIEW ISOLATION & OPERATIONAL INTEGRATION VERIFICATION
+// Note: Verification below uses isolated local fixtures (memoryFirestore and mock identity).
+// Real Firebase Cloud provider verification remains explicitly BLOCKED until an isolated
+// target GCP/Firebase project ('allbarka-preview') is provisioned with active credentials.
 // ============================================================================
 
-test('Stage 6: Preview environment specification and safety invariants against production pollution', async () => {
-  // 1. Verify concrete preview configuration file exists
-  const previewEnvContent = await fs.readFile(path.resolve('.env.preview.example'), 'utf8');
-  assert.match(previewEnvContent, /VITE_FIREBASE_PROJECT_ID=allbarka-preview/);
-  assert.match(previewEnvContent, /FIREBASE_PROJECT_ID=allbarka-preview/);
-  assert.match(previewEnvContent, /STORAGE_BUCKET=allbarka-preview\.firebasestorage\.app/);
-  assert.match(previewEnvContent, /TEST_ADMIN_UID=preview-admin-uid/);
-  assert.match(previewEnvContent, /TEST_STAFF_UID=preview-staff-uid/);
-  assert.match(previewEnvContent, /TEST_CUSTOMER_UID=preview-customer-uid/);
+test('Stage 6 [Local Fixture]: Runtime preview configuration validation and safety invariants against production pollution', async () => {
+  // ===========================================================================
+  // 1. Complete isolated preview configuration succeeds
+  // ===========================================================================
+  const validPreviewEnv = {
+    ALLBARKA_MODE: 'preview',
+    FIREBASE_PROJECT_ID: 'allbarka-preview',
+    STORAGE_BUCKET: 'allbarka-preview.firebasestorage.app',
+    VITE_FIREBASE_PROJECT_ID: 'allbarka-preview',
+    VITE_FIREBASE_STORAGE_BUCKET: 'allbarka-preview.firebasestorage.app',
+    VITE_FIREBASE_AUTH_DOMAIN: 'allbarka-preview.firebaseapp.com',
+    VITE_FIREBASE_API_KEY: 'AIzaSyPreviewTestKey012345678901234',
+    VITE_FIREBASE_APP_ID: '1:123456789012:web:abcdef123456',
+    FIREBASE_CLIENT_EMAIL: 'preview-admin-sa@allbarka-preview.iam.gserviceaccount.com',
+    FIREBASE_PRIVATE_KEY: '-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQD...',
+  };
 
-  // 2. Verify preview environment documentation exists and guards production
-  const previewDocContent = await fs.readFile(path.resolve('docs/admin-expansion/PREVIEW_ENVIRONMENT.md'), 'utf8');
-  assert.match(previewDocContent, /allbarka-live/);
-  assert.match(previewDocContent, /LIVE PRODUCTION/);
-  assert.match(previewDocContent, /STRICTLY PROTECTED/);
-  assert.match(previewDocContent, /allbarka-preview/);
+  assert.equal(isPreviewEnvironment(validPreviewEnv), true, 'Identifies preview mode from ALLBARKA_MODE');
+  const serverConfig = validatePreviewServerConfig(validPreviewEnv, { requireCredentials: true });
+  assert.equal(serverConfig.projectId, 'allbarka-preview');
+  assert.equal(serverConfig.storageBucket, 'allbarka-preview.firebasestorage.app');
+  assert.equal(resolveStorageBucket(validPreviewEnv), 'allbarka-preview.firebasestorage.app');
 
-  // 3. Confirm safety invariant: live mutation tests MUST NOT run against production
-  assert.notEqual(process.env.VITE_FIREBASE_PROJECT_ID, 'allbarka-preview', 'Preview project is not yet provisioned in environment');
-  assert.ok(!process.env.FIREBASE_PRIVATE_KEY || process.env.ALLBARKA_SKIP_LOCAL_ENV === 'true', 'Production private key must not be loaded during unauthenticated test runs');
+  const clientConfig = resolveFirebaseClientConfig(validPreviewEnv);
+  assert.equal(clientConfig.projectId, 'allbarka-preview');
+  assert.equal(clientConfig.storageBucket, 'allbarka-preview.firebasestorage.app');
+  assert.equal(clientConfig.authDomain, 'allbarka-preview.firebaseapp.com');
+  assert.equal(clientConfig.apiKey, 'AIzaSyPreviewTestKey012345678901234');
+  assert.equal(clientConfig.appId, '1:123456789012:web:abcdef123456');
+
+  // ===========================================================================
+  // 2. Missing, mixed or production-targeted preview configuration fails before mutation calls
+  // ===========================================================================
+  // 2a. Rejection of production project and bucket targets in preview mode
+  assert.throws(
+    () => validatePreviewServerConfig({ ALLBARKA_MODE: 'preview', FIREBASE_PROJECT_ID: 'allbarka-live', STORAGE_BUCKET: 'allbarka-preview.firebasestorage.app' }),
+    (err: any) => err instanceof ConfigurationError && err.code === 'PRODUCTION_TARGET_REJECTED',
+    'Rejects production project ID in preview mode'
+  );
+  assert.throws(
+    () => validatePreviewServerConfig({ ALLBARKA_MODE: 'preview', FIREBASE_PROJECT_ID: 'allbarka-preview', STORAGE_BUCKET: 'allbarka-live.firebasestorage.app' }),
+    (err: any) => err instanceof ConfigurationError && err.code === 'PRODUCTION_TARGET_REJECTED',
+    'Rejects production storage bucket in preview mode'
+  );
+
+  // 2b. Rejection of mixed client/server configurations
+  assert.throws(
+    () => validatePreviewServerConfig({
+      ALLBARKA_MODE: 'preview',
+      FIREBASE_PROJECT_ID: 'allbarka-preview',
+      STORAGE_BUCKET: 'allbarka-preview.firebasestorage.app',
+      VITE_FIREBASE_PROJECT_ID: 'allbarka-live',
+    }),
+    (err: any) => err instanceof ConfigurationError && err.code === 'MIXED_CONFIGURATION_DETECTED',
+    'Rejects client pointing to production while server is in preview'
+  );
+  assert.throws(
+    () => validatePreviewServerConfig({
+      ALLBARKA_MODE: 'preview',
+      FIREBASE_PROJECT_ID: 'allbarka-preview',
+      STORAGE_BUCKET: 'allbarka-preview.firebasestorage.app',
+      VITE_FIREBASE_STORAGE_BUCKET: 'allbarka-live.firebasestorage.app',
+    }),
+    (err: any) => err instanceof ConfigurationError && err.code === 'MIXED_CONFIGURATION_DETECTED',
+    'Rejects client storage pointing to production'
+  );
+  assert.throws(
+    () => validatePreviewServerConfig({
+      ALLBARKA_MODE: 'preview',
+      FIREBASE_PROJECT_ID: 'allbarka-preview',
+      STORAGE_BUCKET: 'allbarka-preview.firebasestorage.app',
+      VITE_FIREBASE_AUTH_DOMAIN: 'allbarka-live.firebaseapp.com',
+    }),
+    (err: any) => err instanceof ConfigurationError && err.code === 'MIXED_CONFIGURATION_DETECTED',
+    'Rejects client authDomain pointing to production'
+  );
+
+  // 2c. Rejection of missing required fields in preview mode
+  assert.throws(
+    () => validatePreviewServerConfig({ ALLBARKA_MODE: 'preview', FIREBASE_PROJECT_ID: 'allbarka-preview' }),
+    (err: any) => err instanceof ConfigurationError && err.code === 'PREVIEW_STORAGE_BUCKET_MISSING',
+    'Fails when STORAGE_BUCKET is omitted in preview mode'
+  );
+  assert.throws(
+    () => validatePreviewServerConfig({ ALLBARKA_MODE: 'preview', STORAGE_BUCKET: 'allbarka-preview.firebasestorage.app' }),
+    (err: any) => err instanceof ConfigurationError && err.code === 'PREVIEW_PROJECT_ID_MISSING',
+    'Fails when FIREBASE_PROJECT_ID is omitted in preview mode'
+  );
+  assert.throws(
+    () => validatePreviewServerConfig({ ALLBARKA_MODE: 'preview', FIREBASE_PROJECT_ID: 'allbarka-preview', STORAGE_BUCKET: 'allbarka-preview.firebasestorage.app' }, { requireCredentials: true }),
+    (err: any) => err instanceof ConfigurationError && err.code === 'PREVIEW_CREDENTIALS_MISSING',
+    'Fails when mutation credentials are required but missing'
+  );
+
+  // 2d. Client isolation: missing fields throw without falling back to production JSON
+  assert.throws(
+    () => resolveFirebaseClientConfig({ ALLBARKA_MODE: 'preview', VITE_FIREBASE_PROJECT_ID: 'allbarka-preview' }),
+    (err: any) => err instanceof ConfigurationError && err.code === 'PREVIEW_CLIENT_STORAGE_BUCKET_MISSING',
+    'Client preview config refuses to fall back to production storage bucket'
+  );
+  assert.throws(
+    () => resolveFirebaseClientConfig({
+      ALLBARKA_MODE: 'preview',
+      VITE_FIREBASE_PROJECT_ID: 'allbarka-live',
+      VITE_FIREBASE_STORAGE_BUCKET: 'allbarka-preview.firebasestorage.app',
+      VITE_FIREBASE_AUTH_DOMAIN: 'allbarka-preview.firebaseapp.com',
+    }),
+    (err: any) => err instanceof ConfigurationError && err.code === 'PRODUCTION_TARGET_REJECTED',
+    'Client preview config rejects production project target'
+  );
+
+  // ===========================================================================
+  // 3. Upload wiring receives intended preview bucket
+  // ===========================================================================
+  assert.equal(resolveStorageBucket(validPreviewEnv), 'allbarka-preview.firebasestorage.app');
+  let wiredBucketName = '';
+  const uploadApp = express();
+  uploadApp.use(createProductUploadRouter({
+    requireAdmin: (_req, _res, next) => next(),
+    getBucket: () => {
+      wiredBucketName = resolveStorageBucket(validPreviewEnv);
+      return {
+        name: wiredBucketName,
+        file: () => ({ save: async () => {} }),
+      } as any;
+    },
+  }));
+  const uploadServer = uploadApp.listen(0, '127.0.0.1');
+  await once(uploadServer, 'listening');
+  const uploadPort = (uploadServer.address() as any).port;
+  try {
+    const res = await fetch(`http://127.0.0.1:${uploadPort}/api/admin/catalog/uploads`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'image/png' },
+      body: PNG_BUFFER,
+    });
+    assert.equal(res.status, 201);
+    const json = await res.json();
+    assert.equal(wiredBucketName, 'allbarka-preview.firebasestorage.app');
+    assert.match(json.url, /https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/allbarka-preview\.firebasestorage\.app\//);
+  } finally {
+    uploadServer.close();
+  }
+
+  // ===========================================================================
+  // 4. Existing production configuration remains compatible
+  // ===========================================================================
+  assert.equal(resolveStorageBucket({}), 'allbarka-live.firebasestorage.app');
+  const defaultClientConfig = resolveFirebaseClientConfig({});
+  assert.equal(defaultClientConfig.projectId, 'allbarka-live');
+  assert.equal(defaultClientConfig.authDomain, 'allbarka-live.firebaseapp.com');
+  assert.equal(defaultClientConfig.storageBucket, 'allbarka-live.firebasestorage.app');
+
+  // ===========================================================================
+  // 5. Correct staff records are accepted; incomplete records remain denied
+  // ===========================================================================
+  const { auth: mockAuth, users } = staffFixtureIdentity();
+  users.set('test-staff-uid', {
+    uid: 'test-staff-uid',
+    email: 'test-staff@allbarka.test',
+    emailVerified: true,
+    disabled: false,
+    customClaims: { role: 'staff' },
+  });
+
+  const { db: staffDb, records } = memoryFirestore({
+    'staffAccess/test-staff-uid': {
+      version: 1,
+      uid: 'test-staff-uid',
+      enabled: true,
+      revision: 1,
+    },
+  });
+
+  // Valid staff record with version: 1 passes
+  await assert.doesNotReject(
+    () => assertStaffReader(staffDb, mockAuth, { uid: 'test-staff-uid', auth_time: Math.floor(Date.now() / 1000) }),
+    'Complete staff record with version: 1 is accepted'
+  );
+
+  // Incomplete record missing version: 1 is denied
+  records.set('staffAccess/test-staff-uid', {
+    uid: 'test-staff-uid',
+    enabled: true,
+    revision: 1,
+  });
+  await assert.rejects(
+    () => assertStaffReader(staffDb, mockAuth, { uid: 'test-staff-uid', auth_time: Math.floor(Date.now() / 1000) }),
+    (err: any) => err.code === 'STAFF_ACCESS_DENIED' && err.status === 403,
+    'Incomplete record missing version: 1 is denied'
+  );
+
+  // Incomplete record with enabled: false is denied
+  records.set('staffAccess/test-staff-uid', {
+    version: 1,
+    uid: 'test-staff-uid',
+    enabled: false,
+    revision: 1,
+  });
+  await assert.rejects(
+    () => assertStaffReader(staffDb, mockAuth, { uid: 'test-staff-uid', auth_time: Math.floor(Date.now() / 1000) }),
+    (err: any) => err.code === 'STAFF_ACCESS_DENIED' && err.status === 403,
+    'Disabled staff record is denied'
+  );
+
+  // Admin workflow creates canonical version: 1 record
+  users.set('admin-actor', {
+    uid: 'admin-actor',
+    email: 'admin@allbarka.test',
+    emailVerified: true,
+    disabled: false,
+    customClaims: { admin: true },
+  });
+  records.delete('staffAccess/test-staff-uid');
+  const granted = await changeStaffAccess({
+    db: staffDb,
+    auth: mockAuth,
+    claims: { uid: 'admin-actor', auth_time: Math.floor(Date.now() / 1000) },
+    targetUid: 'test-staff-uid',
+    body: { enabled: true, expectedRevision: 0 },
+  });
+  assert.equal(granted.enabled, true);
+  assert.equal(granted.revision, 1);
+  const storedStaff = records.get('staffAccess/test-staff-uid') as any;
+  assert.equal(storedStaff.version, 1, 'Admin workflow sets version: 1');
+  assert.equal(storedStaff.enabled, true);
 });
 
-test('Stage 6 Operational Journey: Complete 10-step admin and customer verification', async () => {
+test('Stage 6 Operational Journey [Local Fixture Evidence]: Complete 10-step admin and customer verification', async () => {
   const initialConfiguration = structuredClone(DEFAULT_CATALOG_CONFIGURATION);
   initialConfiguration.taxonomy.push({
     id: 'preview-dry-fruits',
@@ -109,8 +323,15 @@ test('Stage 6 Operational Journey: Complete 10-step admin and customer verificat
   // Track uploaded images
   let simulateStorageFail = false;
   const uploadedFiles: Array<{ key: string; bytes: Buffer; options: any }> = [];
+  const previewStorageBucketName = resolveStorageBucket({
+    ALLBARKA_MODE: 'preview',
+    FIREBASE_PROJECT_ID: 'allbarka-preview',
+    STORAGE_BUCKET: 'allbarka-preview.firebasestorage.app',
+  });
+  assert.equal(previewStorageBucketName, 'allbarka-preview.firebasestorage.app');
+
   const mockStorageBucket = {
-    name: 'allbarka-preview.firebasestorage.app',
+    name: previewStorageBucketName,
     file: (key: string) => ({
       save: async (bytes: Buffer, options: any) => {
         if (simulateStorageFail) throw new Error('Storage service unavailable');
@@ -322,6 +543,7 @@ test('Stage 6 Operational Journey: Complete 10-step admin and customer verificat
     assert.equal(uploadRes.status, 201, 'Valid photo upload returns 201 Created');
     const uploadJson = await uploadRes.json();
     assert.ok(uploadJson.url.includes('firebasestorage.googleapis.com'), 'Returns storage public URL');
+    assert.ok(uploadJson.url.includes('allbarka-preview.firebasestorage.app'), 'Upload URL targets preview bucket');
     assert.equal(uploadedFiles.length, 1);
     assert.equal(uploadedFiles[0].options.metadata.contentType, 'image/png');
 
@@ -456,55 +678,67 @@ test('Stage 6 Operational Journey: Complete 10-step admin and customer verificat
     // Create an unpriced filled box without configured recipe
     const unpricedBox: Partial<Product> = {
       id: 'test-preview-unpriced-box',
-      name_en: 'Preview Empty Unpriced Box',
-      name_ur: 'ٹیسٹ باکس',
-      name_ar: 'صندوق تجريبي',
-      category: 'celebration-boxes',
+      name_en: 'Preview Custom Unpriced Box',
+      name_ur: 'ٹیسٹ غیر قیمت شدہ ڈبہ',
+      name_ar: 'علبة تجريبية بدون سعر',
+      category: 'gift-boxes',
       status: 'published',
       active: true,
+      quoteOnly: true,
       orderMode: 'inquiry_quote',
       prices: {},
-      variants: [],
+      isBidBox: true,
+      bidBoxConfig: {
+        capacityG: 500,
+        boxStyle: 'Luxury Wooden Box',
+      },
     };
-    records.set('products/test-preview-unpriced-box', unpricedBox);
 
-    // Quote request for unpriced box returns honest Quote on Request
+    const createUnpricedRes = await request('/api/admin/catalog/products', {
+      token: 'preview-admin-uid',
+      method: 'POST',
+      body: unpricedBox,
+    });
+    assert.equal(createUnpricedRes.status, 201, 'Unpriced box draft created successfully');
+
+    // Customer inquiry estimate for unpriced box without configured recipes
     const quoteRes = await request('/api/quotes', {
       method: 'POST',
       body: {
-        productId: 'test-preview-unpriced-box',
-        customerName: 'Fatima Patron',
+        customerName: 'Preview Patron',
         customerPhone: '03001234567',
-        quantity: 25,
+        productId: 'test-preview-unpriced-box',
+        quantity: 1,
+        netFillingGrams: 500,
+        submissionKey: 'preview-sub-key-unpriced-001',
       },
     });
-    assert.equal(quoteRes.status, 200);
+    assert.equal(quoteRes.status, 200, 'Inquiry quote endpoint returns 200');
     const quoteJson = await quoteRes.json();
-    assert.equal(quoteJson.inquiry.requiresTeamQuote, true, 'Unpriced item sets requiresTeamQuote: true');
-    assert.equal(quoteJson.inquiry.standardPrice, null, 'Unpriced item standardPrice is null');
-    assert.equal(quoteJson.inquiry.estimatedTotalPkr, null, 'Unpriced item estimatedTotalPkr is null');
+    assert.equal(quoteJson.inquiry.requiresTeamQuote, true, 'Unpriced recipe strictly outputs requiresTeamQuote: true');
+    assert.equal(quoteJson.inquiry.standardPrice, null, 'Unpriced recipe outputs null standardPrice');
+    assert.equal(quoteJson.inquiry.estimatedTotalPkr, null, 'Unpriced recipe outputs null estimatedTotalPkr');
 
-    // Direct order checkout with unpriced/quote item throws QUOTE_REQUIRED
+    // Authoritative order pricing must fail closed for unpriced inquiry-only items
     assert.throws(
-      () => {
+      () =>
         validateAndPriceOrder({
-          city: 'Lahore',
-          shippingMethodId: 'standard',
-          products: [unpricedBox as Product],
-          allowInquiryItems: false,
           items: [
             {
               productId: 'test-preview-unpriced-box',
-              quantity: 10,
+              quantity: 1,
+              selectedWeight: '500g',
+              price: 1500, // Customer attempting to purchase without merchant quote
             },
           ],
-        });
-      },
+          products: [unpricedBox as Product],
+          shippingMethodId: 'standard',
+          city: 'Lahore',
+        }),
       (err: any) => err.code === 'QUOTE_REQUIRED',
-      'Direct order creation fails closed with QUOTE_REQUIRED for quote-only packaging'
+      'Attempt to purchase unpriced quote-only box throws QUOTE_REQUIRED'
     );
   } finally {
-    server.closeAllConnections();
-    await new Promise<void>(resolve => server.close(() => resolve()));
+    server.close();
   }
 });

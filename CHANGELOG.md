@@ -1,27 +1,18 @@
-## 01 November 2026 — Stage 6 Firebase/Admin operational integration verification & isolated preview environment specification
+## 01 November 2026 — Stage 6 preview environment isolation repair & operational integration verification
 
-- **Scope & Verification**:
-  - Identified actual operational environment: authenticated GCP account (`tahaishaque5@gmail.com`) currently holds production `allbarka-live` (89 live products, customer orders, registered patrons) and AI Studio project `primal-circuit-ck76w`. No isolated preview Firebase project currently exists.
-  - In adherence to safety guidelines, zero mutation tests were run against production `allbarka-live` (no writes, no role changes, no storage uploads, no rule deploys).
-  - Defined concrete preview environment configuration (`.env.preview.example`) specifying isolated project target `allbarka-preview`, dedicated storage bucket `allbarka-preview.firebasestorage.app`, and dedicated test roles (`preview-admin-uid`, `preview-staff-uid`, `preview-customer-uid`). Documented in `docs/admin-expansion/PREVIEW_ENVIRONMENT.md`.
-  - Added public sanitized single-product endpoint `GET /api/catalog/products/:productId` in `src/lib/catalogRouter.ts` (matching `firestore.rules:73`), sanitizing active published records with `stripPrivateProductFields` and returning 404 for draft, archived, or non-existent items.
-  - Implemented and verified complete 10-step operational integration test suite (`tests/stage6-operational-integration.test.ts`):
-    1. Admin authentication & server-enforced permissions verified.
-    2. Unauthenticated and customer token mutations rejected (401/403).
-    3. Staff read-only access verified: staff can view orders, but cannot mutate products, prices, content, roles, or settings.
-    4. Admin create draft, save, reload, and edit workflow verified via admin HTTP API.
-    5. Optimistic concurrency verified: stale expected revision returns 409 `CATALOG_REVISION_CONFLICT` and preserves stored state.
-    6. Bounded image upload verified: 5MB bound enforced, non-image rejected (400), storage downtime handled (503), raster images persisted with unique UUID URL.
-    7. Draft isolation verified: drafts hidden from public catalog before publish; publish advances revision.
-    8. Discovery & catalog refresh verified: published product is discoverable via `/api/catalog` and PDP `/api/catalog/products/:productId`; price edits take effect immediately.
-    9. Draft/private fields sanitization verified: `supplierCost`, `internalNotes`, `updatedBy` stripped from public responses; drafts return 404.
-    10. Honest unpriced state verified: unpriced boxes without ingredients/recipes remain Quote on Request (`quoteOnly: true`, empty prices, no fake estimates).
+- **Scope & Confirmed Defect Repairs**:
+  - Repaired preview upload bucket wiring in `server.ts`: uses `resolveStorageBucket(process.env)` in `src/lib/environmentConfig.ts` to bind `STORAGE_BUCKET` in preview mode, eliminating silent fallback to production bucket.
+  - Repaired client auth isolation in `src/lib/firebaseAuth.ts` and `src/lib/googleAuthentication.ts`: uses `resolveFirebaseClientConfig(import.meta.env)`. In preview mode, strictly requires complete isolated client credentials and eliminates silent fallback to production JSON values.
+  - Overhauled `tests/stage6-operational-integration.test.ts`: replaced prose regex checks with behavioral runtime validation (enforcing preview isolation, rejection of production targets/mixed configs, upload router bucket wiring, and production backwards-compatibility). Labeled all tests as `[Local Fixture Evidence]`.
+  - Corrected `docs/admin-expansion/PREVIEW_ENVIRONMENT.md` and `.env.preview.example`: corrected `staffAccess` schema to include mandatory `version: 1` required by `staffAccess.ts:22`, documented admin workflow `PUT /api/admin/staff/:uid`, replaced service-agent role and blanket Firestore Owner with official least-privilege roles (`roles/datastore.user`, `roles/firebaseauth.admin`, `roles/storage.objectAdmin`), and documented exact loading commands.
+  - Preserved 10-step operational journey: admin permissions, customer rejection, staff scope (`version: 1`), draft create/edit/save, 409 stale revision conflict, bounded image upload, preview publication, PDP discovery/refresh, private field sanitization, and honest Quote on Request states.
 - **Quality Gates**:
   - `tests/stage6-operational-integration.test.ts`: 2/2 tests PASS (10 steps).
-  - All 32 affected catalog/staff/commerce/persistence tests PASS.
+  - 61 affected catalog/staff/commerce/persistence/auth tests PASS.
   - `npm run typecheck` (`tsc --noEmit`): PASS (0 errors).
   - `npm run lint:hooks` (`eslint src`): PASS (0 errors).
-  - `$env:ALLBARKA_SKIP_LOCAL_ENV="true"; npm run build`: PASS (Vite build + esbuild server + 84 artifact privacy audit clean).
+  - `$env:ALLBARKA_SKIP_LOCAL_ENV="true"; npm run build`: PASS (84 artifact privacy audit clean, 0 esbuild warnings).
+  - Full offline suite (`node scripts/run-all-tests.mjs`): PASS (760 tests: 759 passed, 1 skipped, 21 backend tests, 36 production checks across 86 test files).
 
 ## 31 October 2026 — R04-KG1-W1 historical inquiry replay compatibility (follow-up)
 
