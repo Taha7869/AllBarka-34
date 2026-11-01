@@ -85,9 +85,9 @@ let adminAuth: any = null;
 let firebaseAdminAuthAvailable = false;
 let savedOrderVerifiedThisProcess = false;
 let firebaseAdminMissingCredentialsMsg = 'Firebase Admin credentials (FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY) are not configured on the server. Please configure these environment variables.';
+const isPreview = isPreviewEnvironment(process.env);
 
 try {
-  const isPreview = isPreviewEnvironment(process.env);
   let projectId = process.env.FIREBASE_PROJECT_ID || 'allbarka-live';
 
   if (isPreview) {
@@ -918,7 +918,7 @@ async function startServer() {
         return res.status(404).type('text/plain').send('Not found');
       }
       const metadata = routeMetadata(req.path, publicOrigin, await pageCatalog(), await pageTaxonomy(),await pageContent());
-      if (metadata.noindex) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+      if (metadata.noindex || isPreview) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');

@@ -29,6 +29,10 @@ test('unknown product, category, article and page URLs return noindex 404 metada
   }
   assert.equal(routeMetadata('/shop/nuts', origin, PRODUCTS).status, 200);
   assert.equal(routeMetadata('/admin/orders', origin, PRODUCTS).noindex, true);
+  assert.equal(routeMetadata('/admin', origin, PRODUCTS).noindex, true);
+  assert.equal(routeMetadata('/admin/studio', origin, PRODUCTS).noindex, true);
+  assert.equal(routeMetadata('/staff/orders', origin, PRODUCTS).noindex, true);
+  assert.equal(routeMetadata('/staff', origin, PRODUCTS).noindex, true);
 });
 
 test('catalog content cannot inject HTML or executable JSON into the document', () => {

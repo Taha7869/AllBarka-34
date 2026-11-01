@@ -1,0 +1,297 @@
+{
+  "packetId": "M34-MERCHANT-DATA-ENTRY-PACKET",
+  "generatedAt": "2026-11-01T11:00:00.000Z",
+  "purpose": "Authoritative review and data-entry materials for AllBarka merchant. Contains exact schema payloads for 8 missing celebration box products and 3 missing hamper boxes, plus ingredient 1kg rate confirmations. All unconfirmed values are left strictly null (no invented prices).",
+  "rulesEnforced": {
+    "zeroInventedPrices": true,
+    "unconfirmedValuesLeftBlank": true,
+    "kilogramRateFormulaPreserved": "kgRatePkr * grams / 1000",
+    "noAutomaticProrationFromPacks": true,
+    "zeroLiveWritesExecuted": true
+  },
+  "hamperBoxes": [
+    {
+      "boxId": "box-wood",
+      "name_en": "Sheesham Artisan Wooden Chest",
+      "name_ur": "شیشم کاریگری لکڑی کا صندوق",
+      "name_ar": "صندوق خشبي حرفي من خشب الشيشام",
+      "minSelections": 4,
+      "maxSelections": 6,
+      "image": "/images/generated/hamper-sheesham-chest-v1.webp",
+      "referenceSeedPricePkr": 1800,
+      "confirmedPricePkr": null,
+      "active": false,
+      "notes": "Requires merchant confirmation of box packaging price before enabling live in hamperBoxes collection."
+    },
+    {
+      "boxId": "box-velvet",
+      "name_en": "Royal Emerald Velvet Coffer",
+      "name_ur": "شاہی زمرد مخمل صندوقچہ",
+      "name_ar": "صندوق مخملي ملكي من الزمرد الأخضر",
+      "minSelections": 3,
+      "maxSelections": 5,
+      "image": "/images/generated/hamper-emerald-coffer-v1.webp",
+      "referenceSeedPricePkr": 1400,
+      "confirmedPricePkr": null,
+      "active": false,
+      "notes": "Requires merchant confirmation of box packaging price before enabling live in hamperBoxes collection."
+    },
+    {
+      "boxId": "box-tin",
+      "name_en": "Heritage Gold Keepsake Tin",
+      "name_ur": "ورثہ سنہری یادگار ٹن",
+      "name_ar": "علبة تذكارية ذهبية تراثية",
+      "minSelections": 3,
+      "maxSelections": 4,
+      "image": "/images/generated/hamper-gold-tin-v1.webp",
+      "referenceSeedPricePkr": 950,
+      "confirmedPricePkr": null,
+      "active": false,
+      "notes": "Requires merchant confirmation of box packaging price before enabling live in hamperBoxes collection."
+    }
+  ],
+  "celebrationBoxes": [
+    {
+      "id": "bid-box-umrah-tabarruk",
+      "name_en": "Bespoke Umrah Tabarruk Favor Box",
+      "name_ur": "عمرہ تبرک بید باکس",
+      "name_ar": "صندوق تبرك العمرة الفاخر",
+      "category": "celebration-boxes",
+      "packagingSubcategory": "tabarruk",
+      "occasions": ["umrah"],
+      "orderMode": "both",
+      "status": "draft",
+      "minimumOrderQuantity": 10,
+      "variants": [
+        { "label": "Empty Box (Single Piece)", "referencePricePkr": 180, "confirmedPricePkr": null, "minOrderQuantity": 10 },
+        { "label": "Empty Pack of 10 (10% Off)", "referencePricePkr": 1620, "confirmedPricePkr": null, "minOrderQuantity": 1 },
+        { "label": "Empty Pack of 25 (15% Off)", "referencePricePkr": 3825, "confirmedPricePkr": null, "minOrderQuantity": 1 },
+        { "label": "Empty Pack of 50 (20% Off)", "referencePricePkr": 7200, "confirmedPricePkr": null, "minOrderQuantity": 1 },
+        { "label": "Empty Pack of 100 (25% Off)", "referencePricePkr": 13500, "confirmedPricePkr": null, "minOrderQuantity": 1 },
+        { "label": "Filled Standard (Ajwa & Zamzam Bottle Option)", "referencePricePkr": 1150, "confirmedPricePkr": null, "minOrderQuantity": 10 },
+        { "label": "Filled Royal (Ajwa, Amber Dates, Zamzam & Tasbeeh Presentation)", "referencePricePkr": 3200, "confirmedPricePkr": null, "minOrderQuantity": 10 }
+      ],
+      "confirmedRecipeIngredients": null
+    },
+    {
+      "id": "bid-box-pyramid-favor",
+      "name_en": "Artisanal Velvet Pyramid Favor Box",
+      "name_ur": "مخمل ہرم فیور باکس",
+      "name_ar": "صندوق هرمي مخملي للهدايا",
+      "category": "celebration-boxes",
+      "packagingSubcategory": "wedding",
+      "occasions": ["wedding"],
+      "orderMode": "both",
+      "status": "draft",
+      "minimumOrderQuantity": 10,
+      "variants": [
+        { "label": "Empty Box (Single Piece)", "referencePricePkr": 220, "confirmedPricePkr": null, "minOrderQuantity": 10 },
+        { "label": "Empty Pack of 10 (10% Off)", "referencePricePkr": 1980, "confirmedPricePkr": null, "minOrderQuantity": 1 },
+        { "label": "Empty Pack of 25 (15% Off)", "referencePricePkr": 4675, "confirmedPricePkr": null, "minOrderQuantity": 1 },
+        { "label": "Empty Pack of 50 (20% Off)", "referencePricePkr": 8800, "confirmedPricePkr": null, "minOrderQuantity": 1 },
+        { "label": "Empty Pack of 100 (25% Off)", "referencePricePkr": 16500, "confirmedPricePkr": null, "minOrderQuantity": 1 },
+        { "label": "Filled Standard (Roasted Almonds & Dragees)", "referencePricePkr": 1250, "confirmedPricePkr": null, "minOrderQuantity": 10 },
+        { "label": "Filled Royal (Pistachio, Cashew & Saffron Sweets Assortment)", "referencePricePkr": 3400, "confirmedPricePkr": null, "minOrderQuantity": 10 }
+      ],
+      "confirmedRecipeIngredients": null
+    },
+    {
+      "id": "bid-box-card-nikkah",
+      "name_en": "Regal Gold Card Nikkah Bid Box",
+      "name_ur": "ریگل گولڈ نکاح بید باکس",
+      "name_ar": "صندوق بطاقات النكاح الذهبي الملكي",
+      "category": "celebration-boxes",
+      "packagingSubcategory": "wedding",
+      "occasions": ["wedding"],
+      "orderMode": "both",
+      "status": "draft",
+      "minimumOrderQuantity": 10,
+      "variants": [
+        { "label": "Empty Box (Single Piece)", "referencePricePkr": 160, "confirmedPricePkr": null, "minOrderQuantity": 10 },
+        { "label": "Empty Pack of 10 (10% Off)", "referencePricePkr": 1440, "confirmedPricePkr": null, "minOrderQuantity": 1 },
+        { "label": "Empty Pack of 25 (15% Off)", "referencePricePkr": 3400, "confirmedPricePkr": null, "minOrderQuantity": 1 },
+        { "label": "Empty Pack of 50 (20% Off)", "referencePricePkr": 6400, "confirmedPricePkr": null, "minOrderQuantity": 1 },
+        { "label": "Empty Pack of 100 (25% Off)", "referencePricePkr": 12000, "confirmedPricePkr": null, "minOrderQuantity": 1 },
+        { "label": "Filled Standard (Mixed Premium Nuts & Cardamom)", "referencePricePkr": 1050, "confirmedPricePkr": null, "minOrderQuantity": 10 },
+        { "label": "Filled Royal (Exotic Nuts, Dry Fruit Bites & Cardamom Pearls)", "referencePricePkr": 3100, "confirmedPricePkr": null, "minOrderQuantity": 10 }
+      ],
+      "confirmedRecipeIngredients": null
+    },
+    {
+      "id": "bid-box-birth-announcement",
+      "name_en": "Celebration Baby Arrival & Aqeeqah Box",
+      "name_ur": "پیدائش اور عقیقہ کا تحفہ باکس",
+      "name_ar": "صندوق تهنئة المواليد والعقيقة الفاخر",
+      "category": "celebration-boxes",
+      "packagingSubcategory": "baby",
+      "occasions": ["birth"],
+      "orderMode": "both",
+      "status": "draft",
+      "minimumOrderQuantity": 10,
+      "variants": [
+        { "label": "Empty Box (Single Piece)", "referencePricePkr": 150, "confirmedPricePkr": null, "minOrderQuantity": 10 },
+        { "label": "Empty Pack of 10 (10% Off)", "referencePricePkr": 1350, "confirmedPricePkr": null, "minOrderQuantity": 1 },
+        { "label": "Empty Pack of 25 (15% Off)", "referencePricePkr": 3187, "confirmedPricePkr": null, "minOrderQuantity": 1 },
+        { "label": "Empty Pack of 50 (20% Off)", "referencePricePkr": 6000, "confirmedPricePkr": null, "minOrderQuantity": 1 },
+        { "label": "Empty Pack of 100 (25% Off)", "referencePricePkr": 11250, "confirmedPricePkr": null, "minOrderQuantity": 1 },
+        { "label": "Filled Standard (Dry Fruits & Chocolates)", "referencePricePkr": 950, "confirmedPricePkr": null, "minOrderQuantity": 10 },
+        { "label": "Filled Royal (Deluxe Nuts, Panjeeri & Chocolates)", "referencePricePkr": 2900, "confirmedPricePkr": null, "minOrderQuantity": 10 }
+      ],
+      "confirmedRecipeIngredients": null
+    },
+    {
+      "id": "bid-box-luxury-tin",
+      "name_en": "Luxury Gold Embossed Wedding Tin",
+      "name_ur": "شاہی سنہری مہر شدہ شادی ٹن",
+      "name_ar": "علبة زفاف ذهبية فاخرة منقوشة",
+      "category": "celebration-boxes",
+      "packagingSubcategory": "wedding",
+      "occasions": ["wedding"],
+      "orderMode": "both",
+      "status": "draft",
+      "minimumOrderQuantity": 10,
+      "variants": [
+        { "label": "Empty Box (Single Piece)", "referencePricePkr": 250, "confirmedPricePkr": null, "minOrderQuantity": 10 },
+        { "label": "Empty Pack of 10 (10% Off)", "referencePricePkr": 2250, "confirmedPricePkr": null, "minOrderQuantity": 1 },
+        { "label": "Empty Pack of 25 (15% Off)", "referencePricePkr": 5312, "confirmedPricePkr": null, "minOrderQuantity": 1 },
+        { "label": "Empty Pack of 50 (20% Off)", "referencePricePkr": 10000, "confirmedPricePkr": null, "minOrderQuantity": 1 },
+        { "label": "Empty Pack of 100 (25% Off)", "referencePricePkr": 18750, "confirmedPricePkr": null, "minOrderQuantity": 1 },
+        { "label": "Filled Standard (Dry Fruits)", "referencePricePkr": 1350, "confirmedPricePkr": null, "minOrderQuantity": 10 },
+        { "label": "Filled Royal (Nuts & Saffron)", "referencePricePkr": 3600, "confirmedPricePkr": null, "minOrderQuantity": 10 }
+      ],
+      "confirmedRecipeIngredients": null
+    },
+    {
+      "id": "bid-box-jute-pouch",
+      "name_en": "Artisanal Heritage Jute Potli Pouch",
+      "name_ur": "روایتی سنہری پوٹلی پاؤچ",
+      "name_ar": "كيس بوتلي من الخيش التراثي الفاخر",
+      "category": "celebration-boxes",
+      "packagingSubcategory": "wedding",
+      "occasions": ["wedding"],
+      "orderMode": "both",
+      "status": "draft",
+      "minimumOrderQuantity": 10,
+      "variants": [
+        { "label": "Empty Box (Single Piece)", "referencePricePkr": 120, "confirmedPricePkr": null, "minOrderQuantity": 10 },
+        { "label": "Empty Pack of 10 (10% Off)", "referencePricePkr": 1080, "confirmedPricePkr": null, "minOrderQuantity": 1 },
+        { "label": "Empty Pack of 25 (15% Off)", "referencePricePkr": 2550, "confirmedPricePkr": null, "minOrderQuantity": 1 },
+        { "label": "Empty Pack of 50 (20% Off)", "referencePricePkr": 4800, "confirmedPricePkr": null, "minOrderQuantity": 1 },
+        { "label": "Empty Pack of 100 (25% Off)", "referencePricePkr": 9000, "confirmedPricePkr": null, "minOrderQuantity": 1 },
+        { "label": "Filled Standard (Dry Fruits)", "referencePricePkr": 850, "confirmedPricePkr": null, "minOrderQuantity": 10 },
+        { "label": "Filled Royal (Deluxe Assortment)", "referencePricePkr": 2600, "confirmedPricePkr": null, "minOrderQuantity": 10 }
+      ],
+      "confirmedRecipeIngredients": null
+    },
+    {
+      "id": "bid-box-sweet-nikkah",
+      "name_en": "Sweet Nikkah Emerald Favor Box",
+      "name_ur": "زمردی نکاح فیور باکس",
+      "name_ar": "صندوق هدايا النكاح الزمردي الأنيق",
+      "category": "celebration-boxes",
+      "packagingSubcategory": "wedding",
+      "occasions": ["wedding"],
+      "orderMode": "both",
+      "status": "draft",
+      "minimumOrderQuantity": 10,
+      "variants": [
+        { "label": "Empty Box (Single Piece)", "referencePricePkr": 140, "confirmedPricePkr": null, "minOrderQuantity": 10 },
+        { "label": "Empty Pack of 10 (10% Off)", "referencePricePkr": 1260, "confirmedPricePkr": null, "minOrderQuantity": 1 },
+        { "label": "Empty Pack of 25 (15% Off)", "referencePricePkr": 2975, "confirmedPricePkr": null, "minOrderQuantity": 1 },
+        { "label": "Empty Pack of 50 (20% Off)", "referencePricePkr": 5600, "confirmedPricePkr": null, "minOrderQuantity": 1 },
+        { "label": "Empty Pack of 100 (25% Off)", "referencePricePkr": 10500, "confirmedPricePkr": null, "minOrderQuantity": 1 },
+        { "label": "Filled Standard (Nuts & Dragees)", "referencePricePkr": 980, "confirmedPricePkr": null, "minOrderQuantity": 10 },
+        { "label": "Filled Royal (Pistachio & Sweets)", "referencePricePkr": 2800, "confirmedPricePkr": null, "minOrderQuantity": 10 }
+      ],
+      "confirmedRecipeIngredients": null
+    },
+    {
+      "id": "bid-box-acrylic-royal",
+      "name_en": "Royal Crystal Acrylic Presentation Box",
+      "name_ur": "شاہی کرسٹل ایکریلک ڈبہ",
+      "name_ar": "صندوق العرض الأكريليكي الملكي الشفاف",
+      "category": "celebration-boxes",
+      "packagingSubcategory": "wedding",
+      "occasions": ["wedding"],
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "quoteOnly": true,
+      "minimumOrderQuantity": 10,
+      "variants": [],
+      "confirmedRecipeIngredients": null,
+      "notes": "Bespoke inquiry-only item. Merchant quotes individually based on crystal sizing and custom dry fruit / sweet filling."
+    }
+  ],
+  "candidateIngredientsWithMissing1kgRate": [
+    {
+      "productId": "ajwa-dates",
+      "name_en": "Ajwa Al-Madinah Dates",
+      "currentPacksPkr": { "250g": null, "500g": 1500 },
+      "confirmed1kgRatePkr": null,
+      "requiredForCustomWeight": true
+    },
+    {
+      "productId": "medjool-dates",
+      "name_en": "Medjool Premium Dates",
+      "currentPacksPkr": { "250g": null, "500g": 1800 },
+      "confirmed1kgRatePkr": null,
+      "requiredForCustomWeight": true
+    },
+    {
+      "productId": "aseel-dates",
+      "name_en": "Aseel Dry Dates",
+      "currentPacksPkr": { "250g": 400, "500g": 750 },
+      "confirmed1kgRatePkr": null,
+      "requiredForCustomWeight": true
+    },
+    {
+      "productId": "chohara",
+      "name_en": "Yellow Chohara",
+      "currentPacksPkr": { "250g": 350, "500g": 650 },
+      "confirmed1kgRatePkr": null,
+      "requiredForCustomWeight": true
+    },
+    {
+      "productId": "afghan-figs",
+      "name_en": "Afghan Sun-Dried Figs",
+      "currentPacksPkr": { "250g": 850, "500g": 1600 },
+      "confirmed1kgRatePkr": null,
+      "requiredForCustomWeight": true
+    },
+    {
+      "productId": "kashmiri-walnut",
+      "name_en": "Kashmiri Snow Walnut Kernels",
+      "currentPacksPkr": { "250g": 900, "500g": 1700 },
+      "confirmed1kgRatePkr": null,
+      "requiredForCustomWeight": true
+    },
+    {
+      "productId": "roasted-cashews",
+      "name_en": "Salted Roasted Cashews W-240",
+      "currentPacksPkr": { "250g": 950, "500g": 1800 },
+      "confirmed1kgRatePkr": null,
+      "requiredForCustomWeight": true
+    },
+    {
+      "productId": "pine-nuts",
+      "name_en": "Chilgoza Roasted Pine Nuts",
+      "currentPacksPkr": { "100g": 1200, "250g": 2900 },
+      "confirmed1kgRatePkr": null,
+      "requiredForCustomWeight": true
+    }
+  ],
+  "copyCorrections": [
+    {
+      "productId": "ajwa-dates",
+      "currentDescription": "Contains conflicting Muzafati / Iranian origin mentions.",
+      "recommendedAuthenticDescription": "Hand-sorted authentic Ajwa dates sourced directly from certified orchards in Al-Madinah Al-Munawwarah, Saudi Arabia. Rich in natural potassium and essential minerals.",
+      "recommendedOrigin": "Al-Madinah Al-Munawwarah, Saudi Arabia"
+    },
+    {
+      "productId": "medjool-dates",
+      "currentDescription": "Contains conflicting Panjgur Amber mentions.",
+      "recommendedAuthenticDescription": "Large, succulent Medjool dates characterized by their soft, caramel-like texture and natural sweetness. Hand-graded for exceptional size and moisture.",
+      "recommendedOrigin": "Certified Premier Date Orchards"
+    }
+  ]
+}

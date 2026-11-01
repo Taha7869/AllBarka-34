@@ -41,7 +41,7 @@ function text(value: string) { return value.replace(/<[^>]*>/g, '').replace(/\s+
 function branded(title: string) { return title.includes('AllBarka') ? title : `${title} — AllBarka`; }
 function basic(route: string, title: string, description: string): RouteMetadata {
   return { status: 200, path: route, title: branded(title), description, type: 'website', image: DEFAULT_IMAGE,
-    ...(['/cart', '/checkout', '/success', '/admin/orders', '/staff/orders'].includes(route) ? { noindex: true } : {}) };
+    ...((['/cart', '/checkout', '/success'].includes(route) || route.startsWith('/admin') || route.startsWith('/staff')) ? { noindex: true } : {}) };
 }
 
 export function routeMetadata(pathname: string, origin: string, products: Product[], taxonomy: TaxonomyEntry[] = [], content?:StorefrontContent): RouteMetadata {
