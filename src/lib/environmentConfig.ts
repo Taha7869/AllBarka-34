@@ -28,14 +28,23 @@ export function isProductionTarget(value: unknown): boolean {
 /**
  * Determines whether the environment is explicitly configured for isolated preview mode.
  */
-export function isPreviewEnvironment(env: Record<string, string | undefined> = {}): boolean {
-  const mode = (env.ALLBARKA_MODE || env.APP_ENV || env.NODE_ENV || '').trim().toLowerCase();
+export function isPreviewEnvironment(env: Record<string, unknown> = {}): boolean {
+  const readStr = (val: unknown) => (typeof val === 'string' ? val : '');
+  const mode = (
+    readStr(env.MODE) ||
+    readStr(env.ALLBARKA_MODE) ||
+    readStr(env.APP_ENV) ||
+    readStr(env.NODE_ENV) ||
+    readStr(env.VITE_APP_ENV) ||
+    readStr(env.VITE_ALLBARKA_MODE) ||
+    readStr(env.VITE_MODE)
+  ).trim().toLowerCase();
   if (mode === 'preview') return true;
-  const serverProjectId = (env.FIREBASE_PROJECT_ID || '').trim().toLowerCase();
+  const serverProjectId = readStr(env.FIREBASE_PROJECT_ID).trim().toLowerCase();
   if (serverProjectId === 'allbarka-preview' || (serverProjectId.length > 0 && serverProjectId.endsWith('-preview'))) {
     return true;
   }
-  const clientProjectId = (env.VITE_FIREBASE_PROJECT_ID || '').trim().toLowerCase();
+  const clientProjectId = readStr(env.VITE_FIREBASE_PROJECT_ID).trim().toLowerCase();
   if (clientProjectId === 'allbarka-preview' || (clientProjectId.length > 0 && clientProjectId.endsWith('-preview'))) {
     return true;
   }
@@ -165,18 +174,19 @@ export interface FirebaseClientAppConfig {
  * In production/default mode: falls back to firebase-applet-config.json.
  */
 export function resolveFirebaseClientConfig(
-  rawEnv?: Record<string, string | undefined>
+  rawEnv?: Record<string, unknown>
 ): FirebaseClientAppConfig {
-  const env: Record<string, string | undefined> =
+  const env: Record<string, unknown> =
     rawEnv ||
     (typeof process !== 'undefined' && process.env
-      ? (process.env as Record<string, string | undefined>)
+      ? (process.env as Record<string, unknown>)
       : {});
 
+  const readStr = (val: unknown) => (typeof val === 'string' ? val : '');
   const isPreview = isPreviewEnvironment(env);
 
   if (isPreview) {
-    const projectId = (env.VITE_FIREBASE_PROJECT_ID || '').trim();
+    const projectId = readStr(env.VITE_FIREBASE_PROJECT_ID).trim();
     if (!projectId) {
       throw new ConfigurationError('PREVIEW_CLIENT_PROJECT_ID_MISSING', 'Preview client requires VITE_FIREBASE_PROJECT_ID');
     }
@@ -184,7 +194,7 @@ export function resolveFirebaseClientConfig(
       throw new ConfigurationError('PRODUCTION_TARGET_REJECTED', `Preview client cannot target production project '${projectId}'`);
     }
 
-    const storageBucket = (env.VITE_FIREBASE_STORAGE_BUCKET || '').trim();
+    const storageBucket = readStr(env.VITE_FIREBASE_STORAGE_BUCKET).trim();
     if (!storageBucket) {
       throw new ConfigurationError('PREVIEW_CLIENT_STORAGE_BUCKET_MISSING', 'Preview client requires VITE_FIREBASE_STORAGE_BUCKET; cannot fall back to production');
     }
@@ -192,7 +202,7 @@ export function resolveFirebaseClientConfig(
       throw new ConfigurationError('PRODUCTION_TARGET_REJECTED', `Preview client cannot target production bucket '${storageBucket}'`);
     }
 
-    const authDomain = (env.VITE_FIREBASE_AUTH_DOMAIN || '').trim();
+    const authDomain = readStr(env.VITE_FIREBASE_AUTH_DOMAIN).trim();
     if (!authDomain) {
       throw new ConfigurationError('PREVIEW_CLIENT_AUTH_DOMAIN_MISSING', 'Preview client requires VITE_FIREBASE_AUTH_DOMAIN; cannot fall back to production');
     }
@@ -200,30 +210,58 @@ export function resolveFirebaseClientConfig(
       throw new ConfigurationError('PRODUCTION_TARGET_REJECTED', `Preview client cannot target production authDomain '${authDomain}'`);
     }
 
-    const apiKey = (env.VITE_FIREBASE_API_KEY || '').trim();
-    const appId = (env.VITE_FIREBASE_APP_ID || '').trim();
+    const apiKey = readStr(env.VITE_FIREBASE_API_KEY).trim();
+    if (!apiKey || apiKey.startsWith('your_')) {
+      throw new ConfigurationError('PREVIEW_CLIENT_API_KEY_MISSING', 'Preview client requires VITE_FIREBASE_API_KEY for authentication; cannot fall back to production');
+    }
+    if (isProductionTarget(apiKey)) {
+      throw new ConfigurationError('PRODUCTION_TARGET_REJECTED', 'Preview client cannot use production API key');
+    }
+
+    const appId = readStr(env.VITE_FIREBASE_APP_ID).trim();
+    if (!appId || appId.startsWith('your_')) {
+      throw new ConfigurationError('PREVIEW_CLIENT_APP_ID_MISSING', 'Preview client requires VITE_FIREBASE_APP_ID for authentication; cannot fall back to production');
+    }
+    if (isProductionTarget(appId)) {
+      throw new ConfigurationError('PRODUCTION_TARGET_REJECTED', 'Preview client cannot use production App ID');
+    }
+
+    const messagingSenderId = readStr(env.VITE_FIREBASE_MESSAGING_SENDER_ID).trim() || undefined;
+    if (messagingSenderId && isProductionTarget(messagingSenderId)) {
+      throw new ConfigurationError('PRODUCTION_TARGET_REJECTED', 'Preview client cannot target production messagingSenderId');
+    }
+
+    const measurementId = readStr(env.VITE_FIREBASE_MEASUREMENT_ID).trim() || undefined;
+    if (measurementId && isProductionTarget(measurementId)) {
+      throw new ConfigurationError('PRODUCTION_TARGET_REJECTED', 'Preview client cannot target production measurementId');
+    }
+
+    const firestoreDatabaseId = readStr(env.VITE_FIRESTORE_DATABASE_ID).trim() || '(default)';
+    if (firestoreDatabaseId && isProductionTarget(firestoreDatabaseId)) {
+      throw new ConfigurationError('PRODUCTION_TARGET_REJECTED', 'Preview client cannot target production database ID');
+    }
 
     return {
       projectId,
       storageBucket,
       authDomain,
-      apiKey: apiKey || undefined,
-      appId: appId || undefined,
-      messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID?.trim() || undefined,
-      measurementId: env.VITE_FIREBASE_MEASUREMENT_ID?.trim() || undefined,
-      firestoreDatabaseId: env.VITE_FIRESTORE_DATABASE_ID?.trim() || '(default)',
+      apiKey,
+      appId,
+      messagingSenderId,
+      measurementId,
+      firestoreDatabaseId,
     };
   }
 
   // Standard production / default behavior (preserves backward compatibility)
   return {
-    projectId: env.VITE_FIREBASE_PROJECT_ID?.trim() || firebaseAppletConfig.projectId || 'allbarka-live',
-    appId: env.VITE_FIREBASE_APP_ID?.trim() || firebaseAppletConfig.appId,
-    apiKey: env.VITE_FIREBASE_API_KEY?.trim() || firebaseAppletConfig.apiKey,
-    authDomain: env.VITE_FIREBASE_AUTH_DOMAIN?.trim() || firebaseAppletConfig.authDomain || 'allbarka-live.firebaseapp.com',
-    storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET?.trim() || firebaseAppletConfig.storageBucket || 'allbarka-live.firebasestorage.app',
-    messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID?.trim() || firebaseAppletConfig.messagingSenderId,
-    measurementId: env.VITE_FIREBASE_MEASUREMENT_ID?.trim() || firebaseAppletConfig.measurementId,
-    firestoreDatabaseId: env.VITE_FIRESTORE_DATABASE_ID?.trim() || firebaseAppletConfig.firestoreDatabaseId || '(default)',
+    projectId: readStr(env.VITE_FIREBASE_PROJECT_ID).trim() || firebaseAppletConfig.projectId || 'allbarka-live',
+    appId: readStr(env.VITE_FIREBASE_APP_ID).trim() || firebaseAppletConfig.appId,
+    apiKey: readStr(env.VITE_FIREBASE_API_KEY).trim() || firebaseAppletConfig.apiKey,
+    authDomain: readStr(env.VITE_FIREBASE_AUTH_DOMAIN).trim() || firebaseAppletConfig.authDomain || 'allbarka-live.firebaseapp.com',
+    storageBucket: readStr(env.VITE_FIREBASE_STORAGE_BUCKET).trim() || firebaseAppletConfig.storageBucket || 'allbarka-live.firebasestorage.app',
+    messagingSenderId: readStr(env.VITE_FIREBASE_MESSAGING_SENDER_ID).trim() || firebaseAppletConfig.messagingSenderId,
+    measurementId: readStr(env.VITE_FIREBASE_MEASUREMENT_ID).trim() || firebaseAppletConfig.measurementId,
+    firestoreDatabaseId: readStr(env.VITE_FIRESTORE_DATABASE_ID).trim() || firebaseAppletConfig.firestoreDatabaseId || '(default)',
   };
 }

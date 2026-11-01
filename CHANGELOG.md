@@ -1,18 +1,20 @@
-## 01 November 2026 — Stage 6 preview environment isolation repair & operational integration verification
+## 01 November 2026 — Stage 6 client preview bootstrap repair & operational integration verification
 
-- **Scope & Confirmed Defect Repairs**:
-  - Repaired preview upload bucket wiring in `server.ts`: uses `resolveStorageBucket(process.env)` in `src/lib/environmentConfig.ts` to bind `STORAGE_BUCKET` in preview mode, eliminating silent fallback to production bucket.
-  - Repaired client auth isolation in `src/lib/firebaseAuth.ts` and `src/lib/googleAuthentication.ts`: uses `resolveFirebaseClientConfig(import.meta.env)`. In preview mode, strictly requires complete isolated client credentials and eliminates silent fallback to production JSON values.
-  - Overhauled `tests/stage6-operational-integration.test.ts`: replaced prose regex checks with behavioral runtime validation (enforcing preview isolation, rejection of production targets/mixed configs, upload router bucket wiring, and production backwards-compatibility). Labeled all tests as `[Local Fixture Evidence]`.
-  - Corrected `docs/admin-expansion/PREVIEW_ENVIRONMENT.md` and `.env.preview.example`: corrected `staffAccess` schema to include mandatory `version: 1` required by `staffAccess.ts:22`, documented admin workflow `PUT /api/admin/staff/:uid`, replaced service-agent role and blanket Firestore Owner with official least-privilege roles (`roles/datastore.user`, `roles/firebaseauth.admin`, `roles/storage.objectAdmin`), and documented exact loading commands.
-  - Preserved 10-step operational journey: admin permissions, customer rejection, staff scope (`version: 1`), draft create/edit/save, 409 stale revision conflict, bounded image upload, preview publication, PDP discovery/refresh, private field sanitization, and honest Quote on Request states.
+- **Correction of Premature Completion Claim & Scope**:
+  - Corrected premature completion claim from checkpoint `a11bac7`: browser client bootstrap previously ignored Vite's `import.meta.env.MODE`. Because browser code does not receive unprefixed `ALLBARKA_MODE`, running Vite in preview mode with a unique project ID (such as `allbarka-preview-123`) entered production/fallback behavior.
+  - Repaired client preview bootstrap in `src/lib/environmentConfig.ts`: recognizes actual Vite preview mode (`env.MODE === 'preview'`) independently of project naming.
+  - In preview mode: strictly requires explicit SDK fields needed by existing email and Google authentication (`VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_APP_ID`); rejects production targets (`PRODUCTION_TARGET_REJECTED`); and never substitutes production JSON values from `firebase-applet-config.json` for missing preview fields.
+  - Preserved server-mode and production backwards compatibility without exposing server environment variables or broadening `envPrefix`.
+  - Added behavioral regressions in `tests/stage6-operational-integration.test.ts`:
+    1. Browser-shaped environments containing `MODE` and `VITE_*` fields only (valid unique project ID, missing required auth fields fail closed, accidental production targets rejected, production browser mode compatibility).
+    2. Actual Vite preview-mode transform/build verification using `vite.build({ mode: 'preview' })` (unique project ID execution in VM sandbox, incomplete config rejection, accidental production target rejection).
 - **Quality Gates**:
-  - `tests/stage6-operational-integration.test.ts`: 2/2 tests PASS (10 steps).
+  - `tests/stage6-operational-integration.test.ts`: 2/2 tests PASS (including actual Vite preview builds).
   - 61 affected catalog/staff/commerce/persistence/auth tests PASS.
   - `npm run typecheck` (`tsc --noEmit`): PASS (0 errors).
   - `npm run lint:hooks` (`eslint src`): PASS (0 errors).
   - `$env:ALLBARKA_SKIP_LOCAL_ENV="true"; npm run build`: PASS (84 artifact privacy audit clean, 0 esbuild warnings).
-  - Full offline suite (`node scripts/run-all-tests.mjs`): PASS (760 tests: 759 passed, 1 skipped, 21 backend tests, 36 production checks across 86 test files).
+  - Full offline suite (`node scripts/run-all-tests.mjs`): PASS.
 
 ## 31 October 2026 — R04-KG1-W1 historical inquiry replay compatibility (follow-up)
 

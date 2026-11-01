@@ -2,6 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import express from 'express';
 import { once } from 'node:events';
+import vm from 'node:vm';
+import path from 'node:path';
+import { build as viteBuild } from 'vite';
 import { memoryFirestore } from './helpers/memoryFirestore';
 import { staffFixtureIdentity, staffFixtureOrder } from './helpers/staffFixtures';
 import { requireCurrentAdministrator } from '../src/lib/adminAuthentication';
@@ -14,6 +17,7 @@ import { createInquiriesRouter } from '../src/lib/inquiriesRouter';
 import { HAMPER_BOXES } from '../src/lib/hamperCatalog';
 import { validateAndPriceOrder } from '../src/lib/orderValidation';
 import { DEFAULT_CATALOG_CONFIGURATION } from '../src/lib/catalogConfiguration';
+import { googleAuthConfigured } from '../src/lib/googleAuthentication';
 import {
   isPreviewEnvironment,
   validatePreviewServerConfig,
@@ -126,22 +130,289 @@ test('Stage 6 [Local Fixture]: Runtime preview configuration validation and safe
     'Fails when mutation credentials are required but missing'
   );
 
-  // 2d. Client isolation: missing fields throw without falling back to production JSON
+  // 2d. Browser-shaped environments containing MODE and VITE_* fields only (no ALLBARKA_MODE)
+  // 2d-i. Valid browser preview with unique project ID (such as allbarka-preview-123)
+  const browserPreviewEnv = {
+    MODE: 'preview',
+    BASE_URL: '/',
+    PROD: false,
+    DEV: false,
+    VITE_FIREBASE_PROJECT_ID: 'allbarka-preview-123',
+    VITE_FIREBASE_STORAGE_BUCKET: 'allbarka-preview-123.firebasestorage.app',
+    VITE_FIREBASE_AUTH_DOMAIN: 'allbarka-preview-123.firebaseapp.com',
+    VITE_FIREBASE_API_KEY: 'AIzaSyPreviewKey123456789',
+    VITE_FIREBASE_APP_ID: '1:123456:web:preview123',
+  };
+  assert.equal(isPreviewEnvironment(browserPreviewEnv), true, 'Recognizes actual Vite preview mode independently of project naming');
+  const resolvedBrowserConfig = resolveFirebaseClientConfig(browserPreviewEnv);
+  assert.equal(resolvedBrowserConfig.projectId, 'allbarka-preview-123');
+  assert.equal(resolvedBrowserConfig.storageBucket, 'allbarka-preview-123.firebasestorage.app');
+  assert.equal(resolvedBrowserConfig.authDomain, 'allbarka-preview-123.firebaseapp.com');
+  assert.equal(resolvedBrowserConfig.apiKey, 'AIzaSyPreviewKey123456789');
+  assert.equal(resolvedBrowserConfig.appId, '1:123456:web:preview123');
+  assert.equal(googleAuthConfigured(resolvedBrowserConfig), true, 'Google auth recognizes complete resolved preview SDK configuration');
+
+  // 2d-ii. Missing required preview auth SDK fields throw without falling back to production JSON
   assert.throws(
-    () => resolveFirebaseClientConfig({ ALLBARKA_MODE: 'preview', VITE_FIREBASE_PROJECT_ID: 'allbarka-preview' }),
-    (err: any) => err instanceof ConfigurationError && err.code === 'PREVIEW_CLIENT_STORAGE_BUCKET_MISSING',
-    'Client preview config refuses to fall back to production storage bucket'
+    () => resolveFirebaseClientConfig({
+      MODE: 'preview',
+      VITE_FIREBASE_STORAGE_BUCKET: 'allbarka-preview-123.firebasestorage.app',
+      VITE_FIREBASE_AUTH_DOMAIN: 'allbarka-preview-123.firebaseapp.com',
+      VITE_FIREBASE_API_KEY: 'AIzaSyPreviewKey123456789',
+      VITE_FIREBASE_APP_ID: '1:123456:web:preview123',
+    }),
+    (err: any) => err instanceof ConfigurationError && err.code === 'PREVIEW_CLIENT_PROJECT_ID_MISSING',
+    'Throws when VITE_FIREBASE_PROJECT_ID is missing in browser preview'
   );
   assert.throws(
     () => resolveFirebaseClientConfig({
-      ALLBARKA_MODE: 'preview',
+      MODE: 'preview',
+      VITE_FIREBASE_PROJECT_ID: 'allbarka-preview-123',
+      VITE_FIREBASE_AUTH_DOMAIN: 'allbarka-preview-123.firebaseapp.com',
+      VITE_FIREBASE_API_KEY: 'AIzaSyPreviewKey123456789',
+      VITE_FIREBASE_APP_ID: '1:123456:web:preview123',
+    }),
+    (err: any) => err instanceof ConfigurationError && err.code === 'PREVIEW_CLIENT_STORAGE_BUCKET_MISSING',
+    'Throws when VITE_FIREBASE_STORAGE_BUCKET is missing in browser preview'
+  );
+  assert.throws(
+    () => resolveFirebaseClientConfig({
+      MODE: 'preview',
+      VITE_FIREBASE_PROJECT_ID: 'allbarka-preview-123',
+      VITE_FIREBASE_STORAGE_BUCKET: 'allbarka-preview-123.firebasestorage.app',
+      VITE_FIREBASE_API_KEY: 'AIzaSyPreviewKey123456789',
+      VITE_FIREBASE_APP_ID: '1:123456:web:preview123',
+    }),
+    (err: any) => err instanceof ConfigurationError && err.code === 'PREVIEW_CLIENT_AUTH_DOMAIN_MISSING',
+    'Throws when VITE_FIREBASE_AUTH_DOMAIN is missing in browser preview'
+  );
+  assert.throws(
+    () => resolveFirebaseClientConfig({
+      MODE: 'preview',
+      VITE_FIREBASE_PROJECT_ID: 'allbarka-preview-123',
+      VITE_FIREBASE_STORAGE_BUCKET: 'allbarka-preview-123.firebasestorage.app',
+      VITE_FIREBASE_AUTH_DOMAIN: 'allbarka-preview-123.firebaseapp.com',
+      VITE_FIREBASE_APP_ID: '1:123456:web:preview123',
+    }),
+    (err: any) => err instanceof ConfigurationError && err.code === 'PREVIEW_CLIENT_API_KEY_MISSING',
+    'Throws when VITE_FIREBASE_API_KEY is missing in browser preview'
+  );
+  assert.throws(
+    () => resolveFirebaseClientConfig({
+      MODE: 'preview',
+      VITE_FIREBASE_PROJECT_ID: 'allbarka-preview-123',
+      VITE_FIREBASE_STORAGE_BUCKET: 'allbarka-preview-123.firebasestorage.app',
+      VITE_FIREBASE_AUTH_DOMAIN: 'allbarka-preview-123.firebaseapp.com',
+      VITE_FIREBASE_API_KEY: 'your_api_key_here',
+      VITE_FIREBASE_APP_ID: '1:123456:web:preview123',
+    }),
+    (err: any) => err instanceof ConfigurationError && err.code === 'PREVIEW_CLIENT_API_KEY_MISSING',
+    'Throws when VITE_FIREBASE_API_KEY is placeholder in browser preview'
+  );
+  assert.throws(
+    () => resolveFirebaseClientConfig({
+      MODE: 'preview',
+      VITE_FIREBASE_PROJECT_ID: 'allbarka-preview-123',
+      VITE_FIREBASE_STORAGE_BUCKET: 'allbarka-preview-123.firebasestorage.app',
+      VITE_FIREBASE_AUTH_DOMAIN: 'allbarka-preview-123.firebaseapp.com',
+      VITE_FIREBASE_API_KEY: 'AIzaSyPreviewKey123456789',
+    }),
+    (err: any) => err instanceof ConfigurationError && err.code === 'PREVIEW_CLIENT_APP_ID_MISSING',
+    'Throws when VITE_FIREBASE_APP_ID is missing in browser preview'
+  );
+  assert.throws(
+    () => resolveFirebaseClientConfig({
+      MODE: 'preview',
+      VITE_FIREBASE_PROJECT_ID: 'allbarka-preview-123',
+      VITE_FIREBASE_STORAGE_BUCKET: 'allbarka-preview-123.firebasestorage.app',
+      VITE_FIREBASE_AUTH_DOMAIN: 'allbarka-preview-123.firebaseapp.com',
+      VITE_FIREBASE_API_KEY: 'AIzaSyPreviewKey123456789',
+      VITE_FIREBASE_APP_ID: 'your_app_id_here',
+    }),
+    (err: any) => err instanceof ConfigurationError && err.code === 'PREVIEW_CLIENT_APP_ID_MISSING',
+    'Throws when VITE_FIREBASE_APP_ID is placeholder in browser preview'
+  );
+
+  // 2d-iii. Accidental production targets in browser preview fail closed
+  assert.throws(
+    () => resolveFirebaseClientConfig({
+      MODE: 'preview',
       VITE_FIREBASE_PROJECT_ID: 'allbarka-live',
-      VITE_FIREBASE_STORAGE_BUCKET: 'allbarka-preview.firebasestorage.app',
-      VITE_FIREBASE_AUTH_DOMAIN: 'allbarka-preview.firebaseapp.com',
+      VITE_FIREBASE_STORAGE_BUCKET: 'allbarka-preview-123.firebasestorage.app',
+      VITE_FIREBASE_AUTH_DOMAIN: 'allbarka-preview-123.firebaseapp.com',
+      VITE_FIREBASE_API_KEY: 'AIzaSyPreviewKey123456789',
+      VITE_FIREBASE_APP_ID: '1:123456:web:preview123',
     }),
     (err: any) => err instanceof ConfigurationError && err.code === 'PRODUCTION_TARGET_REJECTED',
-    'Client preview config rejects production project target'
+    'Rejects production project ID in browser preview'
   );
+  assert.throws(
+    () => resolveFirebaseClientConfig({
+      MODE: 'preview',
+      VITE_FIREBASE_PROJECT_ID: 'allbarka-preview-123',
+      VITE_FIREBASE_STORAGE_BUCKET: 'allbarka-live.firebasestorage.app',
+      VITE_FIREBASE_AUTH_DOMAIN: 'allbarka-preview-123.firebaseapp.com',
+      VITE_FIREBASE_API_KEY: 'AIzaSyPreviewKey123456789',
+      VITE_FIREBASE_APP_ID: '1:123456:web:preview123',
+    }),
+    (err: any) => err instanceof ConfigurationError && err.code === 'PRODUCTION_TARGET_REJECTED',
+    'Rejects production storage bucket in browser preview'
+  );
+  assert.throws(
+    () => resolveFirebaseClientConfig({
+      MODE: 'preview',
+      VITE_FIREBASE_PROJECT_ID: 'allbarka-preview-123',
+      VITE_FIREBASE_STORAGE_BUCKET: 'allbarka-preview-123.firebasestorage.app',
+      VITE_FIREBASE_AUTH_DOMAIN: 'allbarka-live.firebaseapp.com',
+      VITE_FIREBASE_API_KEY: 'AIzaSyPreviewKey123456789',
+      VITE_FIREBASE_APP_ID: '1:123456:web:preview123',
+    }),
+    (err: any) => err instanceof ConfigurationError && err.code === 'PRODUCTION_TARGET_REJECTED',
+    'Rejects production auth domain in browser preview'
+  );
+  assert.throws(
+    () => resolveFirebaseClientConfig({
+      MODE: 'preview',
+      VITE_FIREBASE_PROJECT_ID: 'allbarka-preview-123',
+      VITE_FIREBASE_STORAGE_BUCKET: 'allbarka-preview-123.firebasestorage.app',
+      VITE_FIREBASE_AUTH_DOMAIN: 'allbarka-preview-123.firebaseapp.com',
+      VITE_FIREBASE_API_KEY: 'AIzaSy_allbarka-live_key',
+      VITE_FIREBASE_APP_ID: '1:123456:web:preview123',
+    }),
+    (err: any) => err instanceof ConfigurationError && err.code === 'PRODUCTION_TARGET_REJECTED',
+    'Rejects production API key in browser preview'
+  );
+  assert.throws(
+    () => resolveFirebaseClientConfig({
+      MODE: 'preview',
+      VITE_FIREBASE_PROJECT_ID: 'allbarka-preview-123',
+      VITE_FIREBASE_STORAGE_BUCKET: 'allbarka-preview-123.firebasestorage.app',
+      VITE_FIREBASE_AUTH_DOMAIN: 'allbarka-preview-123.firebaseapp.com',
+      VITE_FIREBASE_API_KEY: 'AIzaSyPreviewKey123456789',
+      VITE_FIREBASE_APP_ID: '1:allbarka-live:web:preview123',
+    }),
+    (err: any) => err instanceof ConfigurationError && err.code === 'PRODUCTION_TARGET_REJECTED',
+    'Rejects production App ID in browser preview'
+  );
+
+  // 2d-iv. Production browser environment preserves backwards compatibility
+  const browserProdEnv = {
+    MODE: 'production',
+    BASE_URL: '/',
+    PROD: true,
+    DEV: false,
+  };
+  assert.equal(isPreviewEnvironment(browserProdEnv), false, 'Production browser environment is not preview');
+  const prodConfig = resolveFirebaseClientConfig(browserProdEnv);
+  assert.equal(prodConfig.projectId, 'allbarka-live', 'Preserves production project ID from applet config');
+  assert.equal(prodConfig.authDomain, 'allbarka-live.firebaseapp.com');
+  assert.equal(prodConfig.storageBucket, 'allbarka-live.firebasestorage.app');
+
+  // 2e. Actual Vite preview-mode transform/build verification
+  const envConfigModulePath = path.resolve('src/lib/environmentConfig.ts').replace(/\\/g, '/');
+  const viteEntrySource = `
+    import { resolveFirebaseClientConfig } from '${envConfigModulePath}';
+    globalThis.__vite_preview_result = resolveFirebaseClientConfig(import.meta.env);
+  `;
+
+  const origEnvSnapshot = { ...process.env };
+  try {
+    // 2e-i. Actual Vite preview build with unique project ID succeeds and resolves without production fallback
+    process.env.VITE_FIREBASE_PROJECT_ID = 'allbarka-preview-unique-789';
+    process.env.VITE_FIREBASE_API_KEY = 'AIzaSyPreviewKey789';
+    process.env.VITE_FIREBASE_AUTH_DOMAIN = 'allbarka-preview-unique-789.firebaseapp.com';
+    process.env.VITE_FIREBASE_APP_ID = '1:789:web:preview789';
+    process.env.VITE_FIREBASE_STORAGE_BUCKET = 'allbarka-preview-unique-789.firebasestorage.app';
+
+    const vitePreviewBuild: any = await viteBuild({
+      root: process.cwd(),
+      mode: 'preview',
+      build: {
+        write: false,
+        rollupOptions: {
+          input: 'virtual:vite-entry',
+          plugins: [
+            {
+              name: 'virtual-vite-entry',
+              resolveId(id) { if (id === 'virtual:vite-entry') return id; },
+              load(id) { if (id === 'virtual:vite-entry') return viteEntrySource; }
+            }
+          ]
+        }
+      }
+    });
+
+    const transformedCode1 = (Array.isArray(vitePreviewBuild) ? vitePreviewBuild[0] : vitePreviewBuild).output[0].code;
+    const sandbox1 = { globalThis: {} as any };
+    vm.createContext(sandbox1);
+    vm.runInContext(transformedCode1, sandbox1);
+    const buildResult1 = sandbox1.globalThis.__vite_preview_result;
+    assert.ok(buildResult1, 'Actual Vite preview build executes successfully in sandbox');
+    assert.equal(buildResult1.projectId, 'allbarka-preview-unique-789');
+    assert.equal(buildResult1.storageBucket, 'allbarka-preview-unique-789.firebasestorage.app');
+    assert.equal(buildResult1.authDomain, 'allbarka-preview-unique-789.firebaseapp.com');
+    assert.equal(buildResult1.apiKey, 'AIzaSyPreviewKey789');
+    assert.equal(buildResult1.appId, '1:789:web:preview789');
+
+    // 2e-ii. Actual Vite preview build with incomplete configuration throws and fails closed
+    delete process.env.VITE_FIREBASE_API_KEY;
+    const viteIncompleteBuild: any = await viteBuild({
+      root: process.cwd(),
+      mode: 'preview',
+      build: {
+        write: false,
+        rollupOptions: {
+          input: 'virtual:vite-entry',
+          plugins: [
+            {
+              name: 'virtual-vite-entry',
+              resolveId(id) { if (id === 'virtual:vite-entry') return id; },
+              load(id) { if (id === 'virtual:vite-entry') return viteEntrySource; }
+            }
+          ]
+        }
+      }
+    });
+    const transformedCode2 = (Array.isArray(viteIncompleteBuild) ? viteIncompleteBuild[0] : viteIncompleteBuild).output[0].code;
+    const sandbox2 = { globalThis: {} as any };
+    vm.createContext(sandbox2);
+    assert.throws(
+      () => vm.runInContext(transformedCode2, sandbox2),
+      (err: any) => err.name === 'ConfigurationError' && err.code === 'PREVIEW_CLIENT_API_KEY_MISSING',
+      'Actual Vite preview build fails closed on missing API key'
+    );
+
+    // 2e-iii. Actual Vite preview build with accidental production target throws and fails closed
+    process.env.VITE_FIREBASE_API_KEY = 'AIzaSyPreviewKey789';
+    process.env.VITE_FIREBASE_PROJECT_ID = 'allbarka-live';
+    const viteProductionTargetBuild: any = await viteBuild({
+      root: process.cwd(),
+      mode: 'preview',
+      build: {
+        write: false,
+        rollupOptions: {
+          input: 'virtual:vite-entry',
+          plugins: [
+            {
+              name: 'virtual-vite-entry',
+              resolveId(id) { if (id === 'virtual:vite-entry') return id; },
+              load(id) { if (id === 'virtual:vite-entry') return viteEntrySource; }
+            }
+          ]
+        }
+      }
+    });
+    const transformedCode3 = (Array.isArray(viteProductionTargetBuild) ? viteProductionTargetBuild[0] : viteProductionTargetBuild).output[0].code;
+    const sandbox3 = { globalThis: {} as any };
+    vm.createContext(sandbox3);
+    assert.throws(
+      () => vm.runInContext(transformedCode3, sandbox3),
+      (err: any) => err.name === 'ConfigurationError' && err.code === 'PRODUCTION_TARGET_REJECTED',
+      'Actual Vite preview build rejects accidental production target'
+    );
+  } finally {
+    process.env = origEnvSnapshot;
+  }
 
   // ===========================================================================
   // 3. Upload wiring receives intended preview bucket
