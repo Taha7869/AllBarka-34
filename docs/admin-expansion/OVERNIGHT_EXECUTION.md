@@ -64,3 +64,29 @@ The following items are strictly external / manual and are deferred until the ow
   - `npm run typecheck`: 0 errors.
   - `npm run lint:hooks`: 0 warnings.
   - All 4 offline launch engineering packages (A, B, C, D) are 100% complete and verified offline. Cloud provisioning and manual merchant price confirmations remain strictly deferred for the owner on PC.
+
+- **02 Nov 2026 — Repair of Confirmed Findings in Checkpoint 77c6e86:**
+  - **Corrected Merchant Packet (`merchant-data-entry-packet.json` & `MERCHANT_REVIEW_PACKET.md`):**
+    - Corrected classification to `M34-MERCHANT-REVIEW-WORKSHEET` (`REVIEW_WORKSHEET_NOT_DIRECT_WRITE_PAYLOAD`).
+    - Rebuilt from compiled definitions (`src/data/products.ts`, `src/lib/hamperCatalog.ts`) and dated audit evidence (`R04-CAT1` on 30 Oct 2026).
+    - Preserved exact stable IDs (8 celebration boxes, 3 hamper boxes) and exact historical variant labels and compiled prices (e.g. `bid-box-luxury-tin` empty 1 pc is 140, filled is 'Filled Standard (Assorted Dry Fruits)' at 1150; `bid-box-umrah-tabarruk` empty 1 pc is 200, filled is 'Filled Standard (Irani Dates, Badam, Kaju & Kishmish)' at 850; removed invented Ajwa/Zamzam options).
+    - Preserved dynamic Rule D1 MOQ (`calculatePackagingMoq`: `min(25, max(1, ceil(5000 / perPiecePrice)))`) with `moqOverride: null`. No hardcoded MOQ 10.
+    - Preserved standalone retail custom-weight pricing (`pricePer100g` via `resolveCustomWeight`); clarified that 1kg rate requirement is strictly for filled gift recipes and hamper estimation under `FILLED_GIFT_PRICING.md`.
+    - Removed unsupported certification/physical claims; recorded copy discrepancies as review questions for the merchant.
+  - **Repaired Catalog Health Reporter (`src/lib/catalogHealthReport.ts` & `scripts/report-catalog-health.ts`):**
+    - Supported explicit offline snapshot input via `--snapshot=<path>` (`loadCatalogHealthSnapshotFile`) capable of loading audit reports (e.g. `r04-cat1-audit.json`) and catalog exports with full provenance and timestamp.
+    - Default static check clearly reports `source: 'default_static'` and notes compiled-reference limitations.
+    - Dynamically incorporated custom categories, collections, and occasions from `config.taxonomy` (preventing false orphan flags).
+    - Distinguished store read failures (`storedProductReadStatus: 'UNREADABLE'`) from confirmed empty collections, preventing false missing document claims when database reads fail.
+    - Separated retail custom weight capability from filled gift ingredient estimation (missing 1kg rate on retail items with valid `pricePer100g` is classified as `MERCHANT_JUDGMENT`, not a definite failure).
+  - **Repaired Release & Smoke Documentation (`docs/LAUNCH_SMOKE_PROCEDURE.md` & `docs/PREVIEW_RELEASE_ROLLBACK_CHECKLIST.md`):**
+    - Corrected Node/npm prerequisites to `>=22.12.0 <25` and `npm 11.x` per `package.json` engines.
+    - Added explicit warning that local server with production credentials is not an isolated test environment.
+    - Removed false claim that `migrate-catalog-v2.ts` imports json; documented actual existing revisioned admin workflow (`updateAdminProduct`, `updateHamperBoxPricing`, `/admin/studio`).
+    - Removed blind rollback instructions to `8cf4410` and false schema/order guarantees; documented factual rollback compatibility analysis (schema, receipt replay, outbox, n8n receiver alignment).
+    - Re-emphasized receiver-before-sender ordering invariant.
+  - **Completed Touched UI Localization & Verification (`src/components/ErrorBoundary.tsx`, `src/pages/NotFoundPage.tsx`, `src/contexts/LanguageContext.tsx`):**
+    - Added localized translations for error boundary across EN, UR, and AR with full `isRtl` layout support.
+    - Removed unsupported assurance that stored selections "remain secure", replacing with honest, elegant boutique messaging.
+    - Verified 404 page in EN, UR, and AR with RTL layout and luxury focus-ring buttons.
+  - **Regressions Verified:** Added tests in `tests/catalog-health-report.test.ts` (11 tests) and `tests/error-surfaces.test.tsx` (6 tests). All 17 tests PASS.

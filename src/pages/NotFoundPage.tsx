@@ -1,11 +1,10 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Compass, ShoppingBag, Home } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 export default function NotFoundPage() {
-  const navigate = useNavigate();
-  const { language, t } = useLanguage();
+  const { language, isRtl, t } = useLanguage();
 
   const title =
     language === 'ur'
@@ -22,7 +21,10 @@ export default function NotFoundPage() {
       : 'The harvest lot, page, or boutique collection you are looking for has moved or is currently resting in the reserve.';
 
   return (
-    <div className="w-full min-h-[70vh] bg-[var(--color-base,#FAF9F5)] flex items-center justify-center py-20 px-4 select-none">
+    <div
+      dir={isRtl ? 'rtl' : 'ltr'}
+      className="w-full min-h-[70vh] bg-[var(--color-base,#FAF9F5)] flex items-center justify-center py-20 px-4 select-none"
+    >
       <div className="max-w-lg w-full bg-[var(--color-surface,#FFFFFF)] border border-[var(--color-gold,#D4AF37)]/30 rounded-3xl p-8 sm:p-12 shadow-sm text-center relative overflow-hidden">
         {/* Subtle gold accent circle */}
         <div className="absolute top-0 right-0 w-36 h-36 bg-[var(--color-gold,#D4AF37)]/10 rounded-full blur-2xl pointer-events-none" />
@@ -32,20 +34,14 @@ export default function NotFoundPage() {
         </div>
 
         <span className="inline-block px-3.5 py-1 rounded-full bg-[var(--color-gold,#D4AF37)]/10 border border-[var(--color-gold,#D4AF37)]/30 text-[10px] font-sans font-bold uppercase tracking-[0.2em] text-[#8C6B1B] dark:text-[var(--color-gold,#D4AF37)] mb-4">
-          404 • Page Not Found
+          404 • {t('notFound', 'Page Not Found')}
         </span>
 
-        <h1
-          dir={language === 'ur' || language === 'ar' ? 'rtl' : 'ltr'}
-          className="text-2xl sm:text-3xl font-serif font-bold text-[#120F17] dark:text-[#FAF9F5] mb-3"
-        >
+        <h1 className="text-2xl sm:text-3xl font-serif font-bold text-[#120F17] dark:text-[#FAF9F5] mb-3">
           {title}
         </h1>
 
-        <p
-          dir={language === 'ur' || language === 'ar' ? 'rtl' : 'ltr'}
-          className="text-sm text-[#4A4540] dark:text-[#C5BFB5] mb-8 leading-relaxed max-w-sm mx-auto"
-        >
+        <p className="text-sm text-[#4A4540] dark:text-[#C5BFB5] mb-8 leading-relaxed max-w-sm mx-auto">
           {description}
         </p>
 

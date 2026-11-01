@@ -1,20 +1,25 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import type { Firestore } from 'firebase-admin/firestore';
 import type { Product } from '../types';
 import { BID_BOX_PRODUCTS, BID_BOX_PRODUCT_IDS, PRODUCTS } from '../data/products';
-import { HAMPER_BOXES, type HamperBox } from './hamperCatalog';
 import { HAMPER_BOX_SEEDS } from './hamperBoxSchema';
+import { type HamperBox } from './hamperCatalog';
 import { DEFAULT_CATALOG_CONFIGURATION, type CatalogConfiguration } from './catalogConfiguration';
 import { readCatalogConfiguration } from './catalogConfigurationRouter';
 import { CANONICAL_CATEGORIES, FOOD_CATEGORIES, COMMERCIAL_COLLECTIONS, OCCASION_TAGS, OCCASION_ALIASES } from '../config/categories';
 import { resolveAuthoritativeKgRate } from './filledGiftPricing';
 import { requiresStoredLegacyPackagingPricing } from './catalogSchema';
 import { loadAuthoritativeCatalog, type CatalogSnapshot } from './catalogStore';
+import { supportsCustomWeight } from './productVariants';
 
 export type CatalogHealthIssueSeverity = 'DEFINITE_FAILURE' | 'MERCHANT_JUDGMENT';
 
 export type CatalogHealthIssueCode =
   | 'MISSING_STORED_RECORD'
   | 'MISSING_STORED_HAMPER_BOX'
+  | 'STORE_READ_UNAVAILABLE'
+  | 'CONFIG_READ_UNAVAILABLE'
   | 'MISSING_1KG_RATE'
   | 'INVALID_RECIPE_REFERENCE'
   | 'INVALID_RECIPE_GRAMS'
@@ -49,6 +54,17 @@ export interface CatalogHealthSummary {
 export interface CatalogHealthReport {
   generatedAt: string;
   source: 'firestore_live' | 'firestore_memory' | 'snapshot_fixture' | 'default_static';
+  provenance?: {
+    snapshotFile?: string;
+    description?: string;
+    revision?: string | number;
+    timestamp?: string;
+  };
+  readStatus: {
+    products: 'CONFIRMED' | 'UNREADABLE' | 'NOT_AUDITED';
+    hamperBoxes: 'CONFIRMED' | 'UNREADABLE' | 'NOT_AUDITED';
+    config: 'CONFIRMED' | 'UNREADABLE_FALLBACK_DEFAULT' | 'STATIC_DEFAULT';
+  };
   summary: CatalogHealthSummary;
   issues: CatalogHealthIssue[];
   actionableItems: {
@@ -61,10 +77,19 @@ export interface CatalogHealthInput {
   products: Product[];
   hamperBoxes?: HamperBox[];
   config?: CatalogConfiguration;
+  configReadStatus?: 'CONFIRMED' | 'UNREADABLE_FALLBACK_DEFAULT' | 'STATIC_DEFAULT';
   storedProductDocIds?: Set<string> | string[];
+  storedProductReadStatus?: 'CONFIRMED' | 'UNREADABLE' | 'NOT_AUDITED';
   storedHamperBoxDocIds?: Set<string> | string[];
+  storedHamperBoxReadStatus?: 'CONFIRMED' | 'UNREADABLE' | 'NOT_AUDITED';
   source?: 'firestore_live' | 'firestore_memory' | 'snapshot_fixture' | 'default_static';
   now?: number | string;
+  provenance?: {
+    snapshotFile?: string;
+    description?: string;
+    revision?: string | number;
+    timestamp?: string;
+  };
 }
 
 const FOOD_CATEGORY_IDS = new Set([
@@ -75,21 +100,6 @@ const FOOD_CATEGORY_IDS = new Set([
   'dates',
   'essentials',
   'oils',
-]);
-
-const KNOWN_OCCASIONS = new Set([
-  ...OCCASION_TAGS.map(o => o.id),
-  ...Object.keys(OCCASION_ALIASES),
-]);
-
-const KNOWN_COLLECTIONS = new Set([
-  ...Object.keys(COMMERCIAL_COLLECTIONS),
-  'combos',
-  'gift-boxes',
-  'bundles',
-  'deals',
-  'celebration-boxes',
-  'personalized-treats',
 ]);
 
 function buildValidCategoryIds(config?: CatalogConfiguration): Set<string> {
@@ -105,7 +115,42 @@ function buildValidCategoryIds(config?: CatalogConfiguration): Set<string> {
   if (config?.taxonomy) {
     for (const entry of config.taxonomy) {
       if (entry.type === 'category' || entry.type === 'collection') {
-        ids.add(entry.id);
+        ids.add(entry.id.toLowerCase());
+      }
+    }
+  }
+  return ids;
+}
+
+function buildValidOccasionIds(config?: CatalogConfiguration): Set<string> {
+  const ids = new Set<string>([
+    ...OCCASION_TAGS.map(o => o.id.toLowerCase()),
+    ...Object.keys(OCCASION_ALIASES).map(k => k.toLowerCase()),
+  ]);
+  if (config?.taxonomy) {
+    for (const entry of config.taxonomy) {
+      if (entry.type === 'occasion') {
+        ids.add(entry.id.toLowerCase());
+      }
+    }
+  }
+  return ids;
+}
+
+function buildValidCollectionIds(config?: CatalogConfiguration): Set<string> {
+  const ids = new Set<string>([
+    ...Object.keys(COMMERCIAL_COLLECTIONS).map(k => k.toLowerCase()),
+    'combos',
+    'gift-boxes',
+    'bundles',
+    'deals',
+    'celebration-boxes',
+    'personalized-treats',
+  ]);
+  if (config?.taxonomy) {
+    for (const entry of config.taxonomy) {
+      if (entry.type === 'collection') {
+        ids.add(entry.id.toLowerCase());
       }
     }
   }
@@ -123,7 +168,11 @@ export function generateCatalogHealthReport(input: CatalogHealthInput): CatalogH
     products,
     hamperBoxes = HAMPER_BOX_SEEDS,
     config = DEFAULT_CATALOG_CONFIGURATION,
+    configReadStatus = 'STATIC_DEFAULT',
+    storedProductReadStatus = input.storedProductDocIds !== undefined ? 'CONFIRMED' : 'NOT_AUDITED',
+    storedHamperBoxReadStatus = input.storedHamperBoxDocIds !== undefined ? 'CONFIRMED' : 'NOT_AUDITED',
     source = 'default_static',
+    provenance,
     now = new Date().toISOString(),
   } = input;
 
@@ -137,7 +186,40 @@ export function generateCatalogHealthReport(input: CatalogHealthInput): CatalogH
 
   const issues: CatalogHealthIssue[] = [];
   const validCategoryIds = buildValidCategoryIds(config);
+  const validOccasionIds = buildValidOccasionIds(config);
+  const validCollectionIds = buildValidCollectionIds(config);
   const productMap = new Map<string, Product>(products.map(p => [p.id, p]));
+
+  // Record read-status notices if database reads failed (preventing false missing doc accusations)
+  if (storedProductReadStatus === 'UNREADABLE') {
+    issues.push({
+      itemId: 'products_collection',
+      itemType: 'settings',
+      code: 'STORE_READ_UNAVAILABLE',
+      severity: 'MERCHANT_JUDGMENT',
+      message: 'Firestore products collection could not be read; stored document presence is unverified rather than confirmed missing.',
+    });
+  }
+
+  if (storedHamperBoxReadStatus === 'UNREADABLE') {
+    issues.push({
+      itemId: 'hamperBoxes_collection',
+      itemType: 'settings',
+      code: 'STORE_READ_UNAVAILABLE',
+      severity: 'MERCHANT_JUDGMENT',
+      message: 'Firestore hamperBoxes collection could not be read; stored document presence is unverified rather than confirmed missing.',
+    });
+  }
+
+  if (configReadStatus === 'UNREADABLE_FALLBACK_DEFAULT') {
+    issues.push({
+      itemId: 'catalogSettings_main',
+      itemType: 'settings',
+      code: 'CONFIG_READ_UNAVAILABLE',
+      severity: 'MERCHANT_JUDGMENT',
+      message: 'catalogSettings/main could not be read; fell back to default catalog configuration rather than confirmed live settings.',
+    });
+  }
 
   // Find all products referenced in any recipe across the entire catalog
   const referencedIngredientIds = new Set<string>();
@@ -158,8 +240,8 @@ export function generateCatalogHealthReport(input: CatalogHealthInput): CatalogH
     }
   }
 
-  // 1. Authoritative Firestore Persistence Audit (Missing Records)
-  if (storedProdIds !== undefined) {
+  // 1. Authoritative Firestore Persistence Audit (Only when collection was confirmed read)
+  if (storedProductReadStatus === 'CONFIRMED' && storedProdIds !== undefined) {
     for (const bidBoxId of BID_BOX_PRODUCT_IDS) {
       if (!storedProdIds.has(bidBoxId)) {
         const requiresStored = requiresStoredLegacyPackagingPricing(bidBoxId);
@@ -177,7 +259,7 @@ export function generateCatalogHealthReport(input: CatalogHealthInput): CatalogH
     }
   }
 
-  if (storedBoxIds !== undefined) {
+  if (storedHamperBoxReadStatus === 'CONFIRMED' && storedBoxIds !== undefined) {
     for (const box of HAMPER_BOX_SEEDS) {
       if (!storedBoxIds.has(box.id)) {
         issues.push({
@@ -259,22 +341,35 @@ export function generateCatalogHealthReport(input: CatalogHealthInput): CatalogH
       }
     }
 
-    // 3c. 1kg Selling Rate Audit (for filled gifts, custom hampers, and custom weight)
+    // 3c. 1kg Selling Rate & Retail Custom Weight Integrity
     const kgRate = resolveAuthoritativeKgRate(product);
     const isReferencedInRecipe = referencedIngredientIds.has(product.id);
     const allowsCustom = product.allowCustomWeight === true;
+    const retailCustomSupported = supportsCustomWeight(product);
+
+    if (allowsCustom && isFood) {
+      if (!product.pricePer100g || product.pricePer100g <= 0) {
+        if (!product.commerce?.custom) {
+          issues.push({
+            itemId: product.id,
+            itemType: 'product',
+            code: 'ZERO_PRICE_ON_STANDARD',
+            severity: 'DEFINITE_FAILURE',
+            message: `Food product '${product.id}' allows custom weight but lacks a positive pricePer100g for retail custom weight.`,
+          });
+        }
+      }
+    }
 
     if (kgRate === null && isFood) {
-      if (allowsCustom || isReferencedInRecipe) {
+      if (isReferencedInRecipe) {
         issues.push({
           itemId: product.id,
           itemType: 'product',
-          code: 'MISSING_1KG_RATE',
+          code: 'RECIPE_INGREDIENT_MISSING_KG_RATE',
           severity: 'DEFINITE_FAILURE',
-          message: allowsCustom
-            ? `Food product '${product.id}' allows custom weight but has no explicit 1kg selling rate; custom weight pricing will fail.`
-            : `Food product '${product.id}' is referenced in a gift recipe but has no explicit 1kg selling rate; recipe estimation will fail.`,
-          details: { allowsCustom, isReferencedInRecipe },
+          message: `Food product '${product.id}' is referenced in a gift recipe but has no authoritative 1kg selling rate; recipe estimation will fail.`,
+          details: { isReferencedInRecipe },
         });
       } else if (product.active !== false && product.status === 'published') {
         issues.push({
@@ -282,7 +377,8 @@ export function generateCatalogHealthReport(input: CatalogHealthInput): CatalogH
           itemType: 'product',
           code: 'MISSING_1KG_RATE',
           severity: 'MERCHANT_JUDGMENT',
-          message: `Published food product '${product.id}' has no explicit 1kg selling rate; it cannot be selected as an ingredient for custom hampers or custom weight without a merchant quote.`,
+          message: `Published food product '${product.id}' has no explicit 1kg selling rate. Standalone retail custom weight is ${retailCustomSupported ? 'functional via pricePer100g' : 'unavailable'}, but it cannot be estimated as an ingredient for custom hampers or filled gift recipes without an explicit 1kg rate.`,
+          details: { allowsCustom, retailCustomSupported, pricePer100g: product.pricePer100g },
         });
       }
     }
@@ -392,7 +488,7 @@ export function generateCatalogHealthReport(input: CatalogHealthInput): CatalogH
     }
 
     // 3f. Taxonomy & Category Integrity
-    if (!product.category || !validCategoryIds.has(product.category)) {
+    if (!product.category || !validCategoryIds.has(product.category.toLowerCase())) {
       issues.push({
         itemId: product.id,
         itemType: 'product',
@@ -405,7 +501,7 @@ export function generateCatalogHealthReport(input: CatalogHealthInput): CatalogH
 
     if (Array.isArray(product.occasions)) {
       for (const occ of product.occasions) {
-        if (!KNOWN_OCCASIONS.has(occ.trim().toLowerCase())) {
+        if (!validOccasionIds.has(occ.trim().toLowerCase())) {
           issues.push({
             itemId: product.id,
             itemType: 'product',
@@ -420,7 +516,7 @@ export function generateCatalogHealthReport(input: CatalogHealthInput): CatalogH
 
     if (Array.isArray(product.collections)) {
       for (const col of product.collections) {
-        if (!KNOWN_COLLECTIONS.has(col.trim().toLowerCase())) {
+        if (!validCollectionIds.has(col.trim().toLowerCase())) {
           issues.push({
             itemId: product.id,
             itemType: 'product',
@@ -510,6 +606,12 @@ export function generateCatalogHealthReport(input: CatalogHealthInput): CatalogH
   return {
     generatedAt,
     source,
+    provenance,
+    readStatus: {
+      products: storedProductReadStatus,
+      hamperBoxes: storedHamperBoxReadStatus,
+      config: configReadStatus,
+    },
     summary: {
       totalProductsScanned: products.length,
       totalHamperBoxesScanned: hamperBoxes.length,
@@ -527,6 +629,74 @@ export function generateCatalogHealthReport(input: CatalogHealthInput): CatalogH
 }
 
 /**
+ * Loads and validates an explicit offline snapshot/audit file into a CatalogHealthInput.
+ * Supports audit reports (like r04-cat1-audit.json) and catalog snapshot exports.
+ */
+export function loadCatalogHealthSnapshotFile(filePath: string): CatalogHealthInput {
+  const resolved = path.resolve(process.cwd(), filePath);
+  if (!fs.existsSync(resolved)) {
+    throw new Error(`Snapshot file not found at ${resolved}`);
+  }
+  const raw = JSON.parse(fs.readFileSync(resolved, 'utf-8'));
+
+  // Format 1: Audit report format (e.g. r04-cat1-audit.json)
+  if (Array.isArray(raw.perProductAudit)) {
+    const storedProductDocIds = new Set<string>(
+      raw.perProductAudit.filter((p: any) => p.inFirestore === true).map((p: any) => p.id)
+    );
+    const storedHamperBoxDocIds = new Set<string>(); // 0 hamper box docs in CAT1
+    return {
+      products: PRODUCTS,
+      hamperBoxes: HAMPER_BOX_SEEDS,
+      config: DEFAULT_CATALOG_CONFIGURATION,
+      configReadStatus: raw.settingsDocuments?.catalogSettingsMainExists ? 'CONFIRMED' : 'STATIC_DEFAULT',
+      storedProductDocIds,
+      storedProductReadStatus: 'CONFIRMED',
+      storedHamperBoxDocIds,
+      storedHamperBoxReadStatus: 'CONFIRMED',
+      source: 'snapshot_fixture',
+      now: raw.generatedAt || Date.now(),
+      provenance: {
+        snapshotFile: filePath,
+        description: `Audit Snapshot ${raw.auditId || 'R04-CAT1'} (${storedProductDocIds.size} Firestore products, ${storedHamperBoxDocIds.size} hamperBoxes)`,
+        revision: raw.featureCommit || raw.auditId,
+        timestamp: raw.generatedAt,
+      },
+    };
+  }
+
+  // Format 2: Direct CatalogSnapshot export or object with products array
+  if (Array.isArray(raw.products)) {
+    const storedProductDocIds = raw.storedProductDocIds
+      ? new Set<string>(raw.storedProductDocIds)
+      : new Set<string>(raw.products.map((p: any) => p.id));
+    const storedHamperBoxDocIds = raw.storedHamperBoxDocIds
+      ? new Set<string>(raw.storedHamperBoxDocIds)
+      : (Array.isArray(raw.hamperBoxes) ? new Set<string>(raw.hamperBoxes.map((b: any) => b.id)) : undefined);
+    return {
+      products: raw.products,
+      hamperBoxes: Array.isArray(raw.hamperBoxes) ? raw.hamperBoxes : HAMPER_BOX_SEEDS,
+      config: raw.config || DEFAULT_CATALOG_CONFIGURATION,
+      configReadStatus: raw.config ? 'CONFIRMED' : 'STATIC_DEFAULT',
+      storedProductDocIds,
+      storedProductReadStatus: 'CONFIRMED',
+      storedHamperBoxDocIds,
+      storedHamperBoxReadStatus: storedHamperBoxDocIds ? 'CONFIRMED' : 'NOT_AUDITED',
+      source: 'snapshot_fixture',
+      now: raw.now || raw.generatedAt || Date.now(),
+      provenance: {
+        snapshotFile: filePath,
+        description: raw.description || `Catalog Export Snapshot (${raw.products.length} products)`,
+        revision: raw.revision,
+        timestamp: raw.generatedAt,
+      },
+    };
+  }
+
+  throw new Error(`Unrecognized snapshot format in ${filePath}. Expected 'perProductAudit' array or 'products' array.`);
+}
+
+/**
  * Async audit execution that connects to an active Firestore instance (or memory fixture)
  * to evaluate live/memory document presence against snapshot projections.
  */
@@ -540,43 +710,70 @@ export async function runCatalogHealthAudit(
       products: PRODUCTS,
       hamperBoxes: HAMPER_BOX_SEEDS,
       config: DEFAULT_CATALOG_CONFIGURATION,
+      configReadStatus: 'STATIC_DEFAULT',
+      storedProductDocIds: undefined,
+      storedProductReadStatus: 'NOT_AUDITED',
+      storedHamperBoxDocIds: undefined,
+      storedHamperBoxReadStatus: 'NOT_AUDITED',
       source: 'default_static',
       now,
+      provenance: {
+        description: 'Compiled static reference seeds (PRODUCTS, HAMPER_BOX_SEEDS). To audit an offline snapshot, use --snapshot=<path>.',
+        revision: 'compiled_seeds',
+      },
     });
   }
 
-  let storedProductDocIds: Set<string>;
-  let storedHamperBoxDocIds: Set<string>;
+  let storedProductDocIds: Set<string> | undefined;
+  let storedHamperBoxDocIds: Set<string> | undefined;
+  let storedProductReadStatus: 'CONFIRMED' | 'UNREADABLE' | 'NOT_AUDITED' = 'NOT_AUDITED';
+  let storedHamperBoxReadStatus: 'CONFIRMED' | 'UNREADABLE' | 'NOT_AUDITED' = 'NOT_AUDITED';
+
   try {
-    const [prodSnap, boxSnap] = await Promise.all([
-      db.collection('products').get(),
-      db.collection('hamperBoxes').get(),
-    ]);
+    const prodSnap = await db.collection('products').get();
     storedProductDocIds = new Set(prodSnap.docs.map(doc => doc.id));
-    storedHamperBoxDocIds = new Set(boxSnap.docs.map(doc => doc.id));
+    storedProductReadStatus = 'CONFIRMED';
   } catch {
-    storedProductDocIds = new Set();
-    storedHamperBoxDocIds = new Set();
+    storedProductDocIds = undefined;
+    storedProductReadStatus = 'UNREADABLE';
+  }
+
+  try {
+    const boxSnap = await db.collection('hamperBoxes').get();
+    storedHamperBoxDocIds = new Set(boxSnap.docs.map(doc => doc.id));
+    storedHamperBoxReadStatus = 'CONFIRMED';
+  } catch {
+    storedHamperBoxDocIds = undefined;
+    storedHamperBoxReadStatus = 'UNREADABLE';
   }
 
   const snapshot: CatalogSnapshot = await loadAuthoritativeCatalog(db, { fresh: true, now });
   let config: CatalogConfiguration = DEFAULT_CATALOG_CONFIGURATION;
+  let configReadStatus: 'CONFIRMED' | 'UNREADABLE_FALLBACK_DEFAULT' = 'CONFIRMED';
   try {
     config = await readCatalogConfiguration(db);
   } catch {
     config = DEFAULT_CATALOG_CONFIGURATION;
+    configReadStatus = 'UNREADABLE_FALLBACK_DEFAULT';
   }
 
-  const resolvedSource = options.source as CatalogHealthReport['source'] ||
+  const resolvedSource = (options.source as CatalogHealthReport['source']) ||
     (typeof (db as any).__allbarka_memory === 'boolean' || !(db as any).projectId ? 'firestore_memory' : 'firestore_live');
 
   return generateCatalogHealthReport({
     products: snapshot.products,
     hamperBoxes: snapshot.hamperBoxes,
     config,
+    configReadStatus,
     storedProductDocIds,
+    storedProductReadStatus,
     storedHamperBoxDocIds,
+    storedHamperBoxReadStatus,
     source: resolvedSource,
     now,
+    provenance: {
+      description: `Active ${resolvedSource} instance (project: ${(db as any).projectId || 'memory'})`,
+      revision: snapshot.version,
+    },
   });
 }
