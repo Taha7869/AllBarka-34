@@ -1,5 +1,8 @@
 # Stage 6 integration and compatibility checkpoint
 
+> [!NOTE]
+> **Owner Direction (01 Nov 2026):** Manual cloud provisioning (creating GCP/Firebase project `allbarka-preview`, IAM role assignments, billing, live credential rotation, and merchant price/recipe confirmations) is skipped while the owner is away. These items remain explicitly in the GitHub pending list to be executed when the owner is active on PC. Ongoing development and testing continue locally using existing available keys and isolated fixtures.
+
 ## 01 November 2026 — Stage 6 client preview bootstrap repair & operational integration verification
 
 [Preview environment specification](PREVIEW_ENVIRONMENT.md) and [operational test suite](../../tests/stage6-operational-integration.test.ts) complete the client preview bootstrap repair and behavioral isolation verification for the isolated preview environment:
