@@ -31,7 +31,10 @@ export type CatalogHealthIssueCode =
   | 'MISSING_REQUIRED_NAME'
   | 'ZERO_PRICE_ON_STANDARD'
   | 'MISSING_MEDIA'
-  | 'COPY_FACT_DISCREPANCY';
+  | 'COPY_FACT_DISCREPANCY'
+  | 'UNVERIFIED_CERTIFICATION_CLAIM'
+  | 'DISCREPANT_CLAIMS'
+  | 'MISSING_ALLERGEN_ADVISORY';
 
 export interface CatalogHealthIssue {
   itemId: string;
@@ -595,6 +598,46 @@ export function generateCatalogHealthReport(input: CatalogHealthInput): CatalogH
           code: 'COPY_FACT_DISCREPANCY',
           severity: 'MERCHANT_JUDGMENT',
           message: `Product 'medjool-dates' copy mentions 'Panjgur Amber'; Medjool variety should have distinct, verified harvest provenance.`,
+        });
+      }
+    }
+
+    // 3i. M33 / M34 Verified Claims & Content Readiness Audit
+    if (product.passport?.certifications && product.passport.certifications.length > 0) {
+      const status = product.claimsVerification?.status;
+      if (status !== 'verified') {
+        issues.push({
+          itemId: product.id,
+          itemType: 'product',
+          code: 'UNVERIFIED_CERTIFICATION_CLAIM',
+          severity: 'MERCHANT_JUDGMENT',
+          message: `Product '${product.id}' lists certifications (${product.passport.certifications.join(', ')}) but claimsVerification status is '${status || 'unverified'}'.`,
+          details: { certifications: product.passport.certifications, claimsVerification: product.claimsVerification },
+        });
+      }
+    }
+    if (product.claimsVerification?.status === 'discrepant') {
+      issues.push({
+        itemId: product.id,
+        itemType: 'product',
+        code: 'DISCREPANT_CLAIMS',
+        severity: 'MERCHANT_JUDGMENT',
+        message: `Product '${product.id}' has claimsVerification marked as 'discrepant': ${product.claimsVerification.notes || 'Internal audit discrepancy'}.`,
+        details: { notes: product.claimsVerification.notes },
+      });
+    }
+    if (product.active !== false && product.status === 'published' && !isPackaging) {
+      const hasAllergenInfo = Boolean(
+        (product.passport?.allergens && product.passport.allergens.length > 0) ||
+        (product.allergenWarning_en && product.allergenWarning_en.trim().length > 0)
+      );
+      if (!hasAllergenInfo) {
+        issues.push({
+          itemId: product.id,
+          itemType: 'product',
+          code: 'MISSING_ALLERGEN_ADVISORY',
+          severity: 'MERCHANT_JUDGMENT',
+          message: `Published food product '${product.id}' has no allergen advisory in passport or legacy allergen warning.`,
         });
       }
     }

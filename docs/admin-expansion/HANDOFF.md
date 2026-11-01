@@ -1,5 +1,15 @@
 # Admin expansion handoff
 
+02 November 2026 — **Batch A: Product Facts & Admin Foundation (M11, M23, M33, M34) / DONE locally**. Continued on `codex/admin-catalog-foundation-20261023`.
+The owner clarified that completing core launch readiness is insufficient; proceed with implementing the full premium roadmap (M01–M34) across Batches A–F.
+Batch A completed:
+1. M11 Verified Product Passport (`src/types.ts`, `src/lib/catalogSchema.ts`, `src/components/ProductDetailAccordion.tsx`): Added structured passport for variety, harvestSeason, roastLevel ('raw' | 'lightly_roasted' | 'salted' | 'slow_roasted' | 'unprocessed'), processingMethod, ingredients, allergens, storageInstructions, bestBeforeDays, certifications.
+2. M23 Media Focal Point & Crop Mode (`src/types.ts`, `src/lib/catalogSchema.ts`, `src/components/AdminItemForm.tsx`, `src/components/ProductImageGallery.tsx`): Media focal point coordinates (x, y between 0 and 1) and crop mode ('cover' | 'contain' | 'custom').
+3. M33 Verified Claims & Content Readiness: `claimsVerification` schema with 'unverified' | 'verified' | 'discrepant', verifiedAt date, and notes. Storefront displays certified badges strictly when claims are verified.
+4. M34 Health Report Content Audit (`src/lib/catalogHealthReport.ts`): Added issue codes `UNVERIFIED_CERTIFICATION_CLAIM`, `DISCREPANT_CLAIMS`, and `MISSING_ALLERGEN_ADVISORY` categorized under `MERCHANT_JUDGMENT`.
+5. Admin Form: Added #item-section-passport to `AdminItemForm.tsx` with full EN/UR/AR localization in `src/contexts/adminExpansionTranslations.ts`. Verified round-trip persistence and revision advancement on `memoryFirestore`.
+Verification: Tests in `tests/product-passport.test.ts` (8/8 PASS), `tests/catalog-health-report.test.ts` (15/15 PASS), `npm run typecheck` (0 errors), `npm run lint:hooks` (0 warnings). Manual cloud setup remains deferred.
+
 > [!NOTE]
 > **Owner Direction (01 Nov 2026):** Manual cloud provisioning (creating GCP/Firebase project `allbarka-preview`, IAM role assignments, billing, live credential rotation, and merchant price/recipe confirmations) is skipped while the owner is away. These items remain explicitly in the GitHub pending list to be executed when the owner is active on PC. Ongoing development and testing continue locally using existing available keys and isolated fixtures. See [Overnight Execution Record](OVERNIGHT_EXECUTION.md).
 

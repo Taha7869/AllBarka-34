@@ -50,6 +50,33 @@ export interface BidBoxConfig {
 
 export type ProductStatus = 'draft' | 'published' | 'archived';
 export type OrderMode = 'standard' | 'inquiry_quote' | 'both';
+export type RoastLevel = 'raw' | 'lightly_roasted' | 'salted' | 'slow_roasted' | 'unprocessed';
+export type ClaimVerificationStatus = 'unverified' | 'verified' | 'discrepant';
+export type CertificationType = 'halal' | 'organic' | 'gluten_free' | 'raw_natural' | 'vegan';
+export type CropMode = 'cover' | 'contain' | 'custom';
+
+export interface ProductPassport {
+  variety?: string;
+  harvestSeason?: string;
+  roastLevel?: RoastLevel;
+  processingMethod?: string;
+  ingredients?: string[];
+  allergens?: string[];
+  storageInstructions?: string;
+  bestBeforeDays?: number;
+  certifications?: CertificationType[];
+}
+
+export interface ClaimsVerification {
+  status: ClaimVerificationStatus;
+  verifiedAt?: string;
+  notes?: string;
+}
+
+export interface MediaFocalPoint {
+  x: number; // 0.0 to 1.0 (0.5 is center)
+  y: number; // 0.0 to 1.0 (0.5 is center)
+}
 
 export interface ProductPersonalizationConfig {
   supported: boolean;
@@ -236,6 +263,11 @@ export interface Product {
   importTimestamp?: string;
   adminRevision?: number;
   targetMarginPercent?: number;
+  // M11 Verified Product Passport & M23 Media / Claims Controls
+  passport?: ProductPassport;
+  claimsVerification?: ClaimsVerification;
+  mediaFocalPoint?: MediaFocalPoint;
+  cropMode?: CropMode;
 }
 
 export interface CartItem {

@@ -16,7 +16,7 @@ import { validateRecipeIngredients, validateFilledRecipes } from '../lib/filledG
 import type { Product } from '../types';
 import '../styles/admin-item.css';
 
-const ITEM_SECTIONS = ['identity','options','media','seo','recipe','logistics','private','review','configuration'] as const;
+const ITEM_SECTIONS = ['identity','options','media','passport','seo','recipe','logistics','private','review','configuration'] as const;
 
 export default function AdminItemForm({product,onClose,onSaved,initialCategory}:{product?:Product|null;onClose:()=>void;onSaved?:(p:Product)=>void;initialCategory?:string}) {
   const {currentUser}=useAuth();const {t,language,isRtl}=useLanguage();const refresh=useCatalogRefresh();
@@ -134,7 +134,84 @@ export default function AdminItemForm({product,onClose,onSaved,initialCategory}:
         <section id="item-section-media" className="item-section item-stack"><h4 tabIndex={-1}>{t('item.media')}</h4>{field('image',{publish:true})}<ItemField label={t('item.galleryImages')}><AdminDelimitedInput multiline value={form.galleryImages||[]} onChange={v=>set('galleryImages',v)}/></ItemField>
           <ItemField label={t('item.upload')}><input type="file" accept="image/jpeg,image/png,image/webp" onChange={async e=>{const file=e.target.files?.[0];if(!file||!currentUser)return;setBusy(true);setError('');try{const url=await uploadProductPhoto(()=>currentUser.getIdToken(),file,abort.current.signal);if(!form.image)set('image',url);else set('galleryImages',[...form.galleryImages||[],url]);}catch(e){setError((e as any).code||'UPLOAD_FAILED');}finally{setBusy(false);}}}/></ItemField>
           <div className="flex flex-wrap gap-3">{[...new Set<string>([form.image,...form.galleryImages||[]].filter(Boolean))].map((url,i)=><div key={url} className="item-stack"><img src={url} alt={form.name_en||''} className="item-thumb"/>{i>0&&<button type="button" onClick={()=>{set('image',url);set('galleryImages',[form.image,...form.galleryImages||[]].filter((v:string)=>v&&v!==url));}}>{t('item.makeCover')}</button>}<button type="button" onClick={()=>{if(url===form.image){set('image',form.galleryImages?.[0]||'');set('galleryImages',(form.galleryImages||[]).slice(1));}else set('galleryImages',(form.galleryImages||[]).filter((v:string)=>v!==url));}}>{t('item.remove')}</button></div>)}</div>
+                  <div className="item-grid">
+            <ItemField label={t('item.focalPointX', 'Focal Point X (0–1)')}>
+              <input type="number" min={0} max={1} step={0.05} value={form.mediaFocalPoint?.x ?? 0.5} onChange={e => set('mediaFocalPoint', { x: Number(e.target.value), y: form.mediaFocalPoint?.y ?? 0.5 })} />
+            </ItemField>
+            <ItemField label={t('item.focalPointY', 'Focal Point Y (0–1)')}>
+              <input type="number" min={0} max={1} step={0.05} value={form.mediaFocalPoint?.y ?? 0.5} onChange={e => set('mediaFocalPoint', { x: form.mediaFocalPoint?.x ?? 0.5, y: Number(e.target.value) })} />
+            </ItemField>
+            <ItemField label={t('item.cropMode', 'Crop Mode')}>
+              <select value={form.cropMode || 'cover'} onChange={e => set('cropMode', e.target.value)}>
+                <option value="cover">{t('item.cropCover', 'Cover (Fill & Crop)')}</option>
+                <option value="contain">{t('item.cropContain', 'Contain (Fit Full Image)')}</option>
+                <option value="custom">{t('item.cropCustom', 'Custom')}</option>
+              </select>
+            </ItemField>
+          </div>
         </section>
+        <details id="item-section-passport" className="item-section"><summary>{t('item.passport', 'Product Passport & Claims')}</summary>
+          <div className="item-stack">
+            <div className="item-grid">
+              {field('variety', { label: t('item.variety', 'Cultivar / Variety'), value: form.passport?.variety || '', onChange: (v: string) => set('passport', { ...form.passport, variety: v }) })}
+              {field('harvestSeason', { label: t('item.harvestSeason', 'Harvest Season'), value: form.passport?.harvestSeason || '', onChange: (v: string) => set('passport', { ...form.passport, harvestSeason: v }) })}
+              <ItemField label={t('item.roastLevel', 'Roast Level')}>
+                <select value={form.passport?.roastLevel || ''} onChange={e => set('passport', { ...form.passport, roastLevel: e.target.value || undefined })} className="focus-ring rounded-lg border border-[var(--color-border)] bg-[var(--color-base)] p-2">
+                  <option value="">{t('item.none', 'None / N/A')}</option>
+                  <option value="raw">{t('item.roast.raw', 'Raw / Natural')}</option>
+                  <option value="lightly_roasted">{t('item.roast.lightly_roasted', 'Lightly Roasted')}</option>
+                  <option value="salted">{t('item.roast.salted', 'Salted & Roasted')}</option>
+                  <option value="slow_roasted">{t('item.roast.slow_roasted', 'Slow Roasted')}</option>
+                  <option value="unprocessed">{t('item.roast.unprocessed', 'Unprocessed')}</option>
+                </select>
+              </ItemField>
+              {field('processingMethod', { label: t('item.processingMethod', 'Processing Method'), value: form.passport?.processingMethod || '', onChange: (v: string) => set('passport', { ...form.passport, processingMethod: v }) })}
+              {field('bestBeforeDays', { label: t('item.bestBeforeDays', 'Shelf Life (Days)'), type: 'number', value: form.passport?.bestBeforeDays ?? '', onChange: (v: any) => set('passport', { ...form.passport, bestBeforeDays: v !== '' ? Number(v) : undefined }) })}
+            </div>
+            <div className="item-grid">
+              <ItemField label={t('item.ingredients', 'Ingredients (List)')}>
+                <AdminDelimitedInput value={form.passport?.ingredients || []} onChange={(v: string[]) => set('passport', { ...form.passport, ingredients: v })} />
+              </ItemField>
+              <ItemField label={t('item.allergens', 'Allergen Advisory (List)')}>
+                <AdminDelimitedInput value={form.passport?.allergens || []} onChange={(v: string[]) => set('passport', { ...form.passport, allergens: v })} />
+              </ItemField>
+            </div>
+            {field('storageInstructions', { label: t('item.storageInstructions', 'Storage Instructions'), multiline: true, value: form.passport?.storageInstructions || '', onChange: (v: string) => set('passport', { ...form.passport, storageInstructions: v }) })}
+            <div className="item-stack rounded-xl border border-[var(--color-border)] p-4 bg-[var(--color-base)]">
+              <h5 className="font-semibold text-sm">{t('item.certifications', 'Certifications')}</h5>
+              <div className="flex flex-wrap gap-4">
+                {(['halal', 'organic', 'gluten_free', 'raw_natural', 'vegan'] as const).map(cert => (
+                  <label key={cert} className="flex items-center gap-2 text-xs cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.passport?.certifications?.includes(cert) || false}
+                      onChange={e => {
+                        const cur = form.passport?.certifications || [];
+                        const next = e.target.checked ? [...cur, cert] : cur.filter((c: string) => c !== cert);
+                        set('passport', { ...form.passport, certifications: next });
+                      }}
+                    />
+                    <span>{t(`item.cert.${cert}`, cert.replace('_', ' ').toUpperCase())}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="item-stack rounded-xl border border-[var(--color-border)] p-4 bg-[var(--color-base)]">
+              <h5 className="font-semibold text-sm">{t('item.claimsVerification', 'Claims Verification (M33 Readiness)')}</h5>
+              <div className="item-grid">
+                <ItemField label={t('item.claimsStatus', 'Verification Status')}>
+                  <select value={form.claimsVerification?.status || 'unverified'} onChange={e => set('claimsVerification', { ...form.claimsVerification, status: e.target.value })} className="focus-ring rounded-lg border border-[var(--color-border)] bg-[var(--color-base)] p-2">
+                    <option value="unverified">{t('item.claims.unverified', 'Unverified / Internal')}</option>
+                    <option value="verified">{t('item.claims.verified', 'Verified (Safe for Public Badges)')}</option>
+                    <option value="discrepant">{t('item.claims.discrepant', 'Discrepant / Audit Flag')}</option>
+                  </select>
+                </ItemField>
+                {field('verifiedAt', { label: t('item.verifiedAt', 'Verified At (Date)'), value: form.claimsVerification?.verifiedAt || '', onChange: (v: string) => set('claimsVerification', { ...form.claimsVerification, verifiedAt: v }) })}
+              </div>
+              {field('notes', { label: t('item.claimsNotes', 'Internal Verification Notes'), multiline: true, value: form.claimsVerification?.notes || '', onChange: (v: string) => set('claimsVerification', { ...form.claimsVerification, notes: v }) })}
+            </div>
+          </div>
+        </details>
         <details id="item-section-seo" className="item-section"><summary>{t('item.seo')}</summary><div className="item-stack">{(['en','ur','ar'] as const).map(lang=><div key={lang} className="item-grid" dir={lang==='en'?'ltr':'rtl'}>{['title','description','imageAlt'].map(key=>field(`${key}_${lang}`,{label:`${t(key==='title'?'item.seoTitle':key==='description'?'item.seoDescription':'item.imageAlt')} · ${lang.toUpperCase()}`,value:form.seo?.[`${key}_${lang}`]||'',onChange:v=>set('seo',{...form.seo,[`${key}_${lang}`]:v})}))}</div>)}<ItemField label={t('item.keywords')}><AdminDelimitedInput value={form.keywords||[]} onChange={v=>set('keywords',v)}/></ItemField>{field('socialImage',{value:form.seo?.socialImage||'',onChange:v=>set('seo',{...form.seo,socialImage:v})})}</div></details>
         <details id="item-section-recipe" className="item-section"><summary>{t('item.recipe')}</summary>
           <AdminRecipeEditor

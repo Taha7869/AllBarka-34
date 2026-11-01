@@ -4,7 +4,7 @@ import { calculatedUnitPrice, prepareCommercePrices } from './productCommerce';
 import { validateDynamicProduct } from './catalogSchema';
 
 export const emptyCommerce = (): ProductCommerce => ({version:1,kind:'food',pricingMode:'manual',quantityMode:'fixed',baseQuantity:null,baseUnit:'g',basePrice:null,options:[],custom:null});
-export const newItem = (category='dry-fruits'): Record<string,any> => ({id:'',name_en:'',name_ur:'',name_ar:'',desc_en:'',desc_ur:'',desc_ar:'',category,status:'draft',orderMode:'standard',active:false,prices:{},commerce:emptyCommerce(),attributes:[],seo:{},galleryImages:[],stock:9999});
+export const newItem = (category='dry-fruits'): Record<string,any> => ({id:'',name_en:'',name_ur:'',name_ar:'',desc_en:'',desc_ur:'',desc_ar:'',category,status:'draft',orderMode:'standard',active:false,prices:{},commerce:emptyCommerce(),attributes:[],seo:{},galleryImages:[],passport:{},claimsVerification:{status:'unverified'},mediaFocalPoint:{x:0.5,y:0.5},cropMode:'cover',stock:9999});
 export function itemSlug(name: string): string { return name.normalize('NFKD').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,80); }
 export function optionPrice(product: Record<string,any>, index: number): number | null {
   const c=product.commerce as ProductCommerce, o=c.options[index];

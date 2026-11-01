@@ -69,7 +69,7 @@ export default function ProductImageGallery({ product, linkToDetails = true }: {
         {images.map((src, index) => {
           const photo = <img src={src} width={960} height={960} alt={`${product.seo?productSeo(product,language).imageAlt:t(`imageAlt.${product.id}`, getLocalized(product, 'name', language))} — ${index + 1}`}
               loading="lazy" decoding="async" draggable={false}
-              onError={event => { if (!event.currentTarget.src.endsWith('/images/product-placeholder.svg')) event.currentTarget.src = '/images/product-placeholder.svg'; }} />;
+              style={{ objectPosition: product.mediaFocalPoint ? `${Math.round(product.mediaFocalPoint.x * 100)}% ${Math.round(product.mediaFocalPoint.y * 100)}%` : undefined, objectFit: product.cropMode === 'contain' ? 'contain' : 'cover' }} onError={event => { if (!event.currentTarget.src.endsWith('/images/product-placeholder.svg')) event.currentTarget.src = '/images/product-placeholder.svg'; }} />;
           return linkToDetails ? <Link key={src} to={`/product/${product.id}`} className="product-gallery-slide focus-ring" tabIndex={active === index ? 0 : -1}
             aria-label={`${getLocalized(product, 'name', language)} — ${index + 1}/${images.length}`}>{photo}</Link>
             : <div key={src} className="product-gallery-slide">{photo}</div>;

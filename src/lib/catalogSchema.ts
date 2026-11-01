@@ -1,4 +1,4 @@
-import type { Product } from '../types';
+import type { Product, ProductPassport, ClaimsVerification, MediaFocalPoint, CropMode, RoastLevel, ClaimVerificationStatus, CertificationType } from '../types';
 import { BID_BOX_PRODUCTS } from '../data/products';
 import { resolveProductVariant } from './productVariants';
 import { prepareCommercePrices, validateProductCommerce, validateProductAttributes } from './productCommerce';
@@ -335,9 +335,96 @@ export const PUBLIC_PRODUCT_FIELDS = [
   'recipeIngredients',
   'filledRecipes',
   'catalogRevision',
+  'passport',
+  'claimsVerification',
+  'mediaFocalPoint',
+  'cropMode',
 ] as const;
 
 export const VALID_PACKAGING_SUBCATEGORIES = ['tin', 'tabarruk', 'wedding', 'baby', 'acrylic'] as const;
+
+export const VALID_ROAST_LEVELS = ['raw', 'lightly_roasted', 'salted', 'slow_roasted', 'unprocessed'] as const;
+export const VALID_CLAIM_STATUSES = ['unverified', 'verified', 'discrepant'] as const;
+export const VALID_CERTIFICATIONS = ['halal', 'organic', 'gluten_free', 'raw_natural', 'vegan'] as const;
+export const VALID_CROP_MODES = ['cover', 'contain', 'custom'] as const;
+
+export function validateProductPassport(value: unknown): ProductPassport {
+  if (!object(value)) throw new CatalogError('INVALID_PRODUCT_PASSPORT', 400);
+  const raw = value as Record<string, unknown>;
+  const passport: ProductPassport = {};
+  if (typeof raw.variety === 'string' && raw.variety.trim()) {
+    passport.variety = raw.variety.trim().slice(0, 100);
+  }
+  if (typeof raw.harvestSeason === 'string' && raw.harvestSeason.trim()) {
+    passport.harvestSeason = raw.harvestSeason.trim().slice(0, 100);
+  }
+  if (raw.roastLevel !== undefined && raw.roastLevel !== null && raw.roastLevel !== '') {
+    if (typeof raw.roastLevel === 'string' && (VALID_ROAST_LEVELS as readonly string[]).includes(raw.roastLevel)) {
+      passport.roastLevel = raw.roastLevel as RoastLevel;
+    } else {
+      throw new CatalogError('INVALID_ROAST_LEVEL', 400);
+    }
+  }
+  if (typeof raw.processingMethod === 'string' && raw.processingMethod.trim()) {
+    passport.processingMethod = raw.processingMethod.trim().slice(0, 120);
+  }
+  if (Array.isArray(raw.ingredients)) {
+    passport.ingredients = raw.ingredients.filter(i => typeof i === 'string' && i.trim()).map(i => (i as string).trim().slice(0, 80));
+  }
+  if (Array.isArray(raw.allergens)) {
+    passport.allergens = raw.allergens.filter(a => typeof a === 'string' && a.trim()).map(a => (a as string).trim().slice(0, 80));
+  }
+  if (typeof raw.storageInstructions === 'string' && raw.storageInstructions.trim()) {
+    passport.storageInstructions = raw.storageInstructions.trim().slice(0, 500);
+  }
+  if (raw.bestBeforeDays !== undefined && raw.bestBeforeDays !== null && raw.bestBeforeDays !== '') {
+    const days = Number(raw.bestBeforeDays);
+    if (!Number.isSafeInteger(days) || days < 0 || days > 3650) {
+      throw new CatalogError('INVALID_BEST_BEFORE_DAYS', 400);
+    }
+    passport.bestBeforeDays = days;
+  }
+  if (Array.isArray(raw.certifications)) {
+    passport.certifications = raw.certifications.filter((c: unknown): c is CertificationType =>
+      typeof c === 'string' && (VALID_CERTIFICATIONS as readonly string[]).includes(c as CertificationType)
+    );
+  }
+  return passport;
+}
+
+export function validateClaimsVerification(value: unknown): ClaimsVerification {
+  if (!object(value)) throw new CatalogError('INVALID_CLAIMS_VERIFICATION', 400);
+  const raw = value as Record<string, unknown>;
+  const status = typeof raw.status === 'string' && (VALID_CLAIM_STATUSES as readonly string[]).includes(raw.status as ClaimVerificationStatus)
+    ? (raw.status as ClaimVerificationStatus)
+    : 'unverified';
+  const result: ClaimsVerification = { status };
+  if (typeof raw.verifiedAt === 'string' && raw.verifiedAt.trim()) {
+    result.verifiedAt = raw.verifiedAt.trim().slice(0, 60);
+  }
+  if (typeof raw.notes === 'string' && raw.notes.trim()) {
+    result.notes = raw.notes.trim().slice(0, 500);
+  }
+  return result;
+}
+
+export function validateMediaFocalPoint(value: unknown): MediaFocalPoint {
+  if (!object(value)) throw new CatalogError('INVALID_MEDIA_FOCAL_POINT', 400);
+  const raw = value as Record<string, unknown>;
+  const x = Number(raw.x);
+  const y = Number(raw.y);
+  if (!Number.isFinite(x) || x < 0 || x > 1 || !Number.isFinite(y) || y < 0 || y > 1) {
+    throw new CatalogError('INVALID_MEDIA_FOCAL_POINT_COORDINATES', 400);
+  }
+  return { x: Math.round(x * 100) / 100, y: Math.round(y * 100) / 100 };
+}
+
+export function validateCropMode(value: unknown): CropMode {
+  if (typeof value === 'string' && (VALID_CROP_MODES as readonly string[]).includes(value as CropMode)) {
+    return value as CropMode;
+  }
+  throw new CatalogError('INVALID_CROP_MODE', 400);
+}
 
 export function stripPrivateProductFields(product: Product): Product {
   const sanitized: Record<string, unknown> = {};
@@ -769,6 +856,36 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
   }
   if (typeof value.adminRevision === 'number' && Number.isSafeInteger(value.adminRevision) && value.adminRevision >= 0) {
     product.adminRevision = value.adminRevision;
+  }
+
+    // M11 Product Passport, M23 Media Focal Point, Crop Mode & Claims Verification
+  if (value.passport !== undefined) {
+    if (value.passport === null) {
+      delete (product as any).passport;
+    } else {
+      product.passport = validateProductPassport(value.passport);
+    }
+  }
+  if (value.claimsVerification !== undefined) {
+    if (value.claimsVerification === null) {
+      delete (product as any).claimsVerification;
+    } else {
+      product.claimsVerification = validateClaimsVerification(value.claimsVerification);
+    }
+  }
+  if (value.mediaFocalPoint !== undefined) {
+    if (value.mediaFocalPoint === null) {
+      delete (product as any).mediaFocalPoint;
+    } else {
+      product.mediaFocalPoint = validateMediaFocalPoint(value.mediaFocalPoint);
+    }
+  }
+  if (value.cropMode !== undefined) {
+    if (value.cropMode === null || value.cropMode === '') {
+      delete (product as any).cropMode;
+    } else {
+      product.cropMode = validateCropMode(value.cropMode);
+    }
   }
 
   if (product.commerce && status === 'published') assertProductPublishable(product);
