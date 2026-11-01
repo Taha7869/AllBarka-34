@@ -90,3 +90,20 @@ The following items are strictly external / manual and are deferred until the ow
     - Removed unsupported assurance that stored selections "remain secure", replacing with honest, elegant boutique messaging.
     - Verified 404 page in EN, UR, and AR with RTL layout and luxury focus-ring buttons.
   - **Regressions Verified:** Added tests in `tests/catalog-health-report.test.ts` (11 tests) and `tests/error-surfaces.test.tsx` (6 tests). All 17 tests PASS.
+
+- **02 Nov 2026 — Repair of Snapshot Evidence Accuracy & Real Error-Surface Browser Verification (Checkpoint 3e3fc4b):**
+  - **Snapshot Evidence Accuracy (`src/lib/catalogHealthReport.ts`):**
+    - Enforced rigorous input shape and row validation for both `perProductAudit` and `products` arrays; rejects malformed top-level JSON, non-arrays, and invalid product rows.
+    - Derived stored document presence strictly from explicit evidence with documented scope: missing evidence marks `NOT_AUDITED` rather than confirmed empty or confirmed persisted.
+    - Nonzero hamper box counts without explicit doc IDs mark `storedHamperBoxReadStatus: 'NOT_AUDITED'` rather than false missing assertions.
+    - Projection-only products arrays without explicit `storedProductDocIds` mark `storedProductReadStatus: 'NOT_AUDITED'`.
+    - For CAT1 (`r04-cat1-audit.json`), products are constructed strictly from observed merchant fields without substituting compiled `PRODUCTS` seeds. Evidence scope accurately notes that unrecorded recipes and media were not in the audit scope.
+    - Added regressions in `tests/catalog-health-report.test.ts` for nonzero/unknown hamper counts, projection-only products, malformed snapshots, and CAT1 observed facts (15/15 PASS).
+  - **Actual Error-Surface Browser Verification (`tests/error-surfaces.test.tsx`):**
+    - Replaced mocked boundary tests with real browser integration tests using `launchTestBrowser()`, Express static server, and esbuild bundling the actual `ErrorBoundary` and `NotFoundPage`.
+    - Triggered a controlled child failure inside the real `ErrorBoundary`, verifying display of accessible fallback with `role="alert"`, `aria-live="assertive"`, and honest boutique copy.
+    - Verified recovery via `onReset` restoring healthy children, and custom fallback prop rendering.
+    - Verified default navigation: "Return to Table" navigates to `/`, 404 page navigates to `/shop` and `/`.
+    - Verified parity matrix across viewports (Mobile 390x844, Desktop 1440x900), languages (EN, UR, AR), RTL direction, themes (light/dark), keyboard focus/tabbing, and 200% text zoom with zero horizontal overflow.
+    - Captured browser screenshot evidence in `docs/evidence/error-surfaces/`.
+    - Retained fast SSR tests for initial markup and context isolation (5/5 PASS).

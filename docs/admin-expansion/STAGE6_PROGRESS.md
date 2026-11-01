@@ -3,6 +3,13 @@
 > [!NOTE]
 > **Owner Direction (01 Nov 2026):** Manual cloud provisioning (creating GCP/Firebase project `allbarka-preview`, IAM role assignments, billing, live credential rotation, and merchant price/recipe confirmations) is skipped while the owner is away. These items remain explicitly in the GitHub pending list to be executed when the owner is active on PC. Ongoing development and testing continue locally using existing available keys and isolated fixtures. See [Overnight Execution Record](OVERNIGHT_EXECUTION.md).
 
+## 02 November 2026 — Repair of Snapshot Evidence Accuracy & Real Error-Surface Browser Verification (Checkpoint 3e3fc4b)
+
+Repaired snapshot evidence accuracy assumptions and completed real browser error-surface verification:
+- **Snapshot Evidence Accuracy (`src/lib/catalogHealthReport.ts`):** Validated supported input shapes and row types; derived persistence strictly from explicit evidence with documented scope (`NOT_AUDITED` on missing evidence rather than confirmed empty or persisted); nonzero hamper box counts without IDs mark `storedHamperBoxReadStatus: 'NOT_AUDITED'`; projection-only product arrays mark `storedProductReadStatus: 'NOT_AUDITED'`; for CAT1 (`r04-cat1-audit.json`), products are constructed strictly from observed merchant fields without compiled seed substitution, and unrecorded recipes/media are scoped as unrecorded rather than false failures.
+- **Real Browser Error-Surface Verification (`tests/error-surfaces.test.tsx`):** Mounted real `ErrorBoundary` and `NotFoundPage` in Playwright browser tests; verified controlled child failure catching, fallback rendering with accessible `role="alert"` and honest boutique copy, recovery via `onReset`, custom fallback prop, and navigation ("Return to Table" and 404 links); verified parity across mobile/desktop, EN/UR/AR, RTL, light/dark, keyboard focus/tabbing, and 200% text zoom with zero horizontal overflow; captured browser screenshots in `docs/evidence/error-surfaces/`.
+- **Quality Gates:** `npm run typecheck` PASS (0 errors), `npm run lint:hooks` PASS (0 warnings), `tests/catalog-health-report.test.ts` (15/15 PASS), `tests/error-surfaces.test.tsx` (5/5 PASS), full offline suite PASS. Manual cloud provisioning remains pending owner on PC.
+
 ## 02 November 2026 — Repair of Confirmed Findings in Checkpoint 77c6e86
 
 Repaired confirmed findings in catalog review worksheets, health reporter, release procedures, and error UI:

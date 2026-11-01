@@ -483,3 +483,156 @@ test('Retail custom weight vs gift ingredient estimate: valid retail custom pric
   assert.ok(kgIssue, 'Must flag missing 1kg rate as merchant judgment for hamper recipe eligibility');
   assert.ok(kgIssue.message.includes('functional via pricePer100g'));
 });
+
+// REGRESSION 6: Malformed snapshot validation
+test('Snapshot validation: rejects malformed JSON, invalid row types, and unrecognized top-level schemas', () => {
+  const tmpDir = fs.mkdtempSync(path.join(process.cwd(), 'temp-snap-test-'));
+  try {
+    // 1. Missing file
+    assert.throws(() => loadCatalogHealthSnapshotFile(path.join(tmpDir, 'nonexistent.json')), /not found/i);
+
+    // 2. Invalid JSON
+    const badJsonPath = path.join(tmpDir, 'bad.json');
+    fs.writeFileSync(badJsonPath, '{ invalid json');
+    assert.throws(() => loadCatalogHealthSnapshotFile(badJsonPath), /Malformed snapshot: invalid JSON/i);
+
+    // 3. Array instead of object
+    const arrayJsonPath = path.join(tmpDir, 'array.json');
+    fs.writeFileSync(arrayJsonPath, JSON.stringify([1, 2, 3]));
+    assert.throws(() => loadCatalogHealthSnapshotFile(arrayJsonPath), /expected top-level JSON object/i);
+
+    // 4. perProductAudit is not an array
+    const badAuditPath = path.join(tmpDir, 'bad-audit.json');
+    fs.writeFileSync(badAuditPath, JSON.stringify({ perProductAudit: 'not-an-array' }));
+    assert.throws(() => loadCatalogHealthSnapshotFile(badAuditPath), /'perProductAudit' must be an array/i);
+
+    // 5. perProductAudit row missing id
+    const badAuditRowPath = path.join(tmpDir, 'bad-audit-row.json');
+    fs.writeFileSync(badAuditRowPath, JSON.stringify({ perProductAudit: [{ name_en: 'Missing ID' }] }));
+    assert.throws(() => loadCatalogHealthSnapshotFile(badAuditRowPath), /missing valid string 'id'/i);
+
+    // 6. products is not an array
+    const badProductsPath = path.join(tmpDir, 'bad-prods.json');
+    fs.writeFileSync(badProductsPath, JSON.stringify({ products: 'not-an-array' }));
+    assert.throws(() => loadCatalogHealthSnapshotFile(badProductsPath), /'products' must be an array/i);
+
+    // 7. products row missing id
+    const badProductRowPath = path.join(tmpDir, 'bad-prod-row.json');
+    fs.writeFileSync(badProductRowPath, JSON.stringify({ products: [{ name_en: 'No ID' }] }));
+    assert.throws(() => loadCatalogHealthSnapshotFile(badProductRowPath), /missing valid string 'id'/i);
+
+    // 8. Unrecognized format
+    const emptyObjPath = path.join(tmpDir, 'empty.json');
+    fs.writeFileSync(emptyObjPath, JSON.stringify({ someOtherField: 123 }));
+    assert.throws(() => loadCatalogHealthSnapshotFile(emptyObjPath), /Unrecognized snapshot format/i);
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+// REGRESSION 7: Projection-only products do not assert persistence
+test('Snapshot evidence: projection-only products without explicit doc IDs do not assert persistence', () => {
+  const tmpDir = fs.mkdtempSync(path.join(process.cwd(), 'temp-proj-test-'));
+  try {
+    const projPath = path.join(tmpDir, 'projection.json');
+    fs.writeFileSync(projPath, JSON.stringify({
+      products: [
+        baseValidProduct({ id: 'proj-pista' }),
+        baseValidProduct({ id: 'bid-box-luxury-tin', category: 'celebration-boxes', isBidBox: true }),
+      ],
+      description: 'Public Storefront Projection',
+    }));
+
+    const input = loadCatalogHealthSnapshotFile(projPath);
+    assert.equal(input.storedProductReadStatus, 'NOT_AUDITED');
+    assert.equal(input.storedProductDocIds, undefined);
+    assert.equal(input.provenance?.kind, 'projection_fixture');
+    assert.equal(input.provenance?.scope?.storedProductsAudited, false);
+
+    const report = generateCatalogHealthReport(input);
+    assert.equal(report.readStatus.products, 'NOT_AUDITED');
+
+    // Must NOT flag MISSING_STORED_RECORD on celebration box because persistence was NOT audited!
+    const missingStored = report.issues.filter(i => i.code === 'MISSING_STORED_RECORD');
+    assert.equal(missingStored.length, 0, 'Must not claim celebration box is missing stored record when persistence is NOT_AUDITED');
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+// REGRESSION 8: Nonzero hamper count without IDs marks hamperBoxes NOT_AUDITED
+test('Snapshot evidence: nonzero hamper box count without doc IDs marks hamperBoxes NOT_AUDITED rather than confirmed missing', () => {
+  const tmpDir = fs.mkdtempSync(path.join(process.cwd(), 'temp-hamper-test-'));
+  try {
+    const snapPath = path.join(tmpDir, 'audit-with-count-only.json');
+    fs.writeFileSync(snapPath, JSON.stringify({
+      auditId: 'R04-SAMPLE',
+      counts: {
+        liveFirestoreHamperBoxDocs: 3, // Positive count but NO doc IDs provided!
+      },
+      perProductAudit: [
+        {
+          id: 'sample-pista',
+          name_en: 'Sample Pista',
+          inFirestore: true,
+          projectedActive: true,
+          projectedStatus: 'published',
+          variantsCount: 3,
+          pricesCount: 3,
+        },
+      ],
+    }));
+
+    const input = loadCatalogHealthSnapshotFile(snapPath);
+    assert.equal(input.storedHamperBoxReadStatus, 'NOT_AUDITED');
+    assert.equal(input.storedHamperBoxDocIds, undefined);
+
+    const report = generateCatalogHealthReport(input);
+    assert.equal(report.readStatus.hamperBoxes, 'NOT_AUDITED');
+
+    // Must NOT flag MISSING_STORED_HAMPER_BOX
+    const missingBoxes = report.issues.filter(i => i.code === 'MISSING_STORED_HAMPER_BOX');
+    assert.equal(missingBoxes.length, 0, 'Must not claim hamper boxes are missing when only positive count was given without doc IDs');
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+// REGRESSION 9: Mixed reference/observed facts and CAT1 scope fidelity
+test('Historical snapshot fidelity: CAT1 uses observed audit fields without seed substitution, with documented scope', () => {
+  const cat1Path = 'docs/evidence/catalog-audit/r04-cat1-audit.json';
+  const input = loadCatalogHealthSnapshotFile(cat1Path);
+
+  // Products must be constructed from perProductAudit, NOT substituted with compiled PRODUCTS seeds
+  assert.equal(input.products.length, 97);
+  // In perProductAudit, recipes and images were not recorded:
+  const pista = input.products.find(p => p.id === 'pista');
+  assert.ok(pista);
+  assert.equal(pista.recipeIngredients, undefined, 'Must not reconstruct recipes from seeds');
+  assert.equal(input.recipesAudited, false, 'Recipes were unrecorded in perProductAudit');
+  assert.equal(input.mediaAudited, false, 'Media URLs were unrecorded in perProductAudit');
+
+  // Provenance must explicitly document scope
+  assert.equal(input.provenance?.kind, 'historical_audit');
+  assert.equal(input.provenance?.scope?.storedProductsAudited, true);
+  assert.equal(input.provenance?.scope?.storedHamperBoxesAudited, true); // CAT1 explicitly confirmed 0 hamperBox docs
+  assert.equal(input.provenance?.scope?.recipesAudited, false);
+  assert.equal(input.provenance?.scope?.mediaAudited, false);
+
+  const report = generateCatalogHealthReport(input);
+  assert.equal(report.readStatus.products, 'CONFIRMED');
+  assert.equal(report.readStatus.hamperBoxes, 'CONFIRMED');
+  assert.equal(report.summary.totalProductsScanned, 97);
+
+  // The 7 definite failures in CAT1: 4 legacy long-label celebration boxes missing in Firestore + 3 hamper boxes missing in Firestore
+  assert.equal(report.actionableItems.definiteFailures.length, 7);
+  assert.deepEqual(report.actionableItems.definiteFailures, [
+    'bid-box-birth-announcement',
+    'bid-box-card-nikkah',
+    'bid-box-pyramid-favor',
+    'bid-box-umrah-tabarruk',
+    'box-tin',
+    'box-velvet',
+    'box-wood',
+  ]);
+});
