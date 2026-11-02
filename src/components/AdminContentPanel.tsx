@@ -1,5 +1,5 @@
 import {useEffect,useState} from 'react';
-import {ArrowDown,ArrowUp,Eye,Save,Upload} from 'lucide-react';
+import {ArrowDown,ArrowUp,Eye,Save,Upload,RotateCcw,Monitor,Smartphone} from 'lucide-react';
 import {useAuth} from '../contexts/AuthContext';
 import {useAdminLanguage} from '../hooks/useAdminLanguage';
 import {useStorefrontContentRefresh,StorefrontContentProvider} from '../contexts/StorefrontContentContext';
@@ -18,6 +18,7 @@ export default function AdminContentPanel({onDirtyChange}:{onDirtyChange?:(dirty
   const {currentUser}=useAuth();const {t,language,isRtl}=useAdminLanguage();const refresh=useStorefrontContentRefresh();
   const [bundle,setBundle]=useState<Bundle|null>(null);const [draft,setDraft]=useState<StorefrontContent|null>(null);
   const [owner,setOwner]=useState('');const [loading,setLoading]=useState(true);const [busy,setBusy]=useState(false);const [dirty,setDirty]=useState(false);const [preview,setPreview]=useState(false);const [error,setError]=useState('');const [notice,setNotice]=useState('');
+  const [previewDevice,setPreviewDevice]=useState<'desktop'|'mobile'>('desktop');const [previewVersion,setPreviewVersion]=useState<'draft'|'live'>('draft');
   useEffect(()=>{const controller=new AbortController();setBundle(null);setDraft(null);setLoading(true);if(!currentUser){setLoading(false);return;}adminRequest<Bundle>(()=>currentUser.getIdToken(),'/api/admin/storefront-content',{signal:controller.signal}).then(value=>{if(!controller.signal.aborted){setOwner(currentUser.uid);setBundle(value);setDraft(value.draft);setDirty(false);}}).catch(e=>{if(!controller.signal.aborted)setError(e.code||'REQUEST_FAILED');}).finally(()=>{if(!controller.signal.aborted)setLoading(false);});return()=>controller.abort();},[currentUser]);
   useEffect(()=>{onDirtyChange?.(dirty);return()=>onDirtyChange?.(false);},[dirty,onDirtyChange]);
   useEffect(()=>{if(!dirty)return;const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue='';};const leave=(event:MouseEvent)=>{const anchor=(event.target as Element)?.closest?.('a[href]');if(anchor&&!anchor.getAttribute('href')?.startsWith('#')&&!window.confirm(t('item.discard'))){event.preventDefault();event.stopPropagation();}};window.addEventListener('beforeunload',warn);document.addEventListener('click',leave,true);return()=>{window.removeEventListener('beforeunload',warn);document.removeEventListener('click',leave,true);};},[dirty,t]);
@@ -26,6 +27,12 @@ export default function AdminContentPanel({onDirtyChange}:{onDirtyChange?:(dirty
   const save=async(action:'draft'|'publish')=>{
     if(!currentUser||!bundle||!draft||busy||owner!==currentUser.uid)return;setBusy(true);setError('');
     try{const result=await adminRequest<Bundle>(()=>currentUser.getIdToken(),`/api/admin/storefront-content/${action}`,{method:'POST',body:{expectedRevision:bundle.revision,...(action==='draft'?{content:draft}:{})}});setBundle(result);setDraft(result.draft);setDirty(false);setNotice(action==='draft'?'content.saved':'content.published');if(action==='publish')await refresh();}catch(e){setError((e as any).code||'REQUEST_FAILED');}finally{setBusy(false);}
+  };
+  const restore=async()=>{
+    if(!currentUser||!bundle||busy||owner!==currentUser.uid)return;
+    if(!window.confirm(t('content.confirmRestoreLive','Restore draft from current live published version? Any unsaved edits will be discarded.')))return;
+    setBusy(true);setError('');
+    try{const result=await adminRequest<Bundle>(()=>currentUser.getIdToken(),'/api/admin/storefront-content/restore',{method:'POST',body:{expectedRevision:bundle.revision,target:'live'}});setBundle(result);setDraft(result.draft);setDirty(false);setNotice('content.restored');}catch(e){setError((e as any).code||'REQUEST_FAILED');}finally{setBusy(false);}
   };
   if(loading)return <p role="status">{t('admin.checking')}</p>;
   if(!draft||!bundle||owner!==currentUser?.uid)return <p role="alert" className="admin-notice">{t('content.error')}</p>;
@@ -45,7 +52,39 @@ export default function AdminContentPanel({onDirtyChange}:{onDirtyChange?:(dirty
         <button type="button" className="admin-button" disabled={draft.articles.length>=30} onClick={()=>edit(v=>{v.articles.push({slug:'',visible:false,title:blankText(),excerpt:blankText(),body:blankText(),image:'/images/product-placeholder.svg',category:'Buying Guides',publishedDate:getKarachiTime().isoDateStr,relatedProductIds:[]});})}>{t('content.addArticle')}</button>
       </details>
     </fieldset>
-    {preview&&<section className="content-draft-preview"><p className="admin-eyebrow">{t('content.draftOnly')}</p><StorefrontContentProvider initialContent={draft}><StorefrontBanner/><div className="content-hero-preview"><img src={draft.hero.enabled?draft.hero.image:'/images/dryfruit_flatlay_hero.webp'} alt=""/><div><h3>{draft.hero.enabled?contentText(draft.hero.heading,language):t('table.heading')} <em>{draft.hero.enabled?contentText(draft.hero.accent,language):t('table.accent')}</em></h3><p>{draft.hero.enabled?contentText(draft.hero.description,language):t('table.description')}</p></div></div><FAQSection/></StorefrontContentProvider></section>}
-    <footer className="content-studio-actions"><button type="button" className="admin-button" onClick={()=>setPreview(v=>!v)}><Eye size={16}/>{t('content.preview')}</button><button type="button" className="admin-button" disabled={busy} onClick={()=>void save('draft')}><Save size={16}/>{t('content.saveDraft')}</button><button type="button" className="admin-button admin-button-primary" disabled={busy||dirty} onClick={()=>void save('publish')}><Upload size={16}/>{t('content.publish')}</button>{dirty&&<p>{t('content.unsaved')}</p>}</footer>
+    {preview&&<section className="content-draft-preview space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-neutral-100 dark:bg-zinc-800 rounded-xl border border-neutral-300 dark:border-zinc-700">
+        <div className="flex items-center gap-2">
+          <p className="admin-eyebrow m-0 font-bold">{t('content.draftOnly')}</p>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200 font-semibold">
+            {previewVersion==='draft'?`Draft Rev ${bundle.revision}`:`Live Rev ${bundle.liveRevision}`}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 bg-white dark:bg-zinc-700 p-0.5 rounded-lg border border-neutral-200 dark:border-zinc-600">
+            <button type="button" className={`px-2 py-1 text-xs font-semibold rounded flex items-center gap-1 ${previewDevice==='desktop'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewDevice('desktop')}><Monitor size={14}/>Desktop</button>
+            <button type="button" className={`px-2 py-1 text-xs font-semibold rounded flex items-center gap-1 ${previewDevice==='mobile'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewDevice('mobile')}><Smartphone size={14}/>Mobile</button>
+          </div>
+          <div className="flex items-center gap-1 bg-white dark:bg-zinc-700 p-0.5 rounded-lg border border-neutral-200 dark:border-zinc-600">
+            <button type="button" className={`px-2 py-1 text-xs font-semibold rounded ${previewVersion==='draft'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewVersion('draft')}>Draft</button>
+            <button type="button" className={`px-2 py-1 text-xs font-semibold rounded ${previewVersion==='live'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewVersion('live')}>Live</button>
+          </div>
+        </div>
+      </div>
+      <div className={previewDevice==='mobile'?'max-w-[390px] mx-auto border-4 border-neutral-700 rounded-[28px] p-2 bg-white dark:bg-zinc-900 shadow-xl overflow-hidden':'w-full'}>
+        <StorefrontContentProvider initialContent={previewVersion==='draft'?draft:bundle.live}>
+          <StorefrontBanner/>
+          <div className="content-hero-preview">
+            <img src={(previewVersion==='draft'?draft:bundle.live).hero.enabled?(previewVersion==='draft'?draft:bundle.live).hero.image:'/images/dryfruit_flatlay_hero.webp'} alt=""/>
+            <div>
+              <h3>{(previewVersion==='draft'?draft:bundle.live).hero.enabled?contentText((previewVersion==='draft'?draft:bundle.live).hero.heading,language):t('table.heading')} <em>{(previewVersion==='draft'?draft:bundle.live).hero.enabled?contentText((previewVersion==='draft'?draft:bundle.live).hero.accent,language):t('table.accent')}</em></h3>
+              <p>{(previewVersion==='draft'?draft:bundle.live).hero.enabled?contentText((previewVersion==='draft'?draft:bundle.live).hero.description,language):t('table.description')}</p>
+            </div>
+          </div>
+          <FAQSection/>
+        </StorefrontContentProvider>
+      </div>
+    </section>}
+    <footer className="content-studio-actions"><button type="button" className="admin-button" onClick={()=>setPreview(v=>!v)}><Eye size={16}/>{t('content.preview')}</button><button type="button" className="admin-button" disabled={busy||(!dirty&&bundle.revision===bundle.liveRevision)} onClick={restore}><RotateCcw size={16}/>{t('content.restoreLive','Restore live to draft')}</button><button type="button" className="admin-button" disabled={busy} onClick={()=>void save('draft')}><Save size={16}/>{t('content.saveDraft')}</button><button type="button" className="admin-button admin-button-primary" disabled={busy||dirty} onClick={()=>void save('publish')}><Upload size={16}/>{t('content.publish')}</button>{dirty&&<p>{t('content.unsaved')}</p>}</footer>
   </section>;
 }

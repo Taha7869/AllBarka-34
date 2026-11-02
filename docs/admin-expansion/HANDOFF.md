@@ -1,5 +1,13 @@
 # Admin expansion handoff
 
+02 November 2026 — **Batch D: Studio Preview & Restore (M32) / DONE locally**. Continued on `codex/admin-catalog-foundation-20261023`.
+Implemented and verified Studio preview and restore capabilities:
+1. M32 Studio Preview & Restore: Extended `src/lib/storefrontContentRouter.ts` with `POST /api/admin/storefront-content/restore`. Enforces expected revision check, admin auth, and atomic transaction restoring live published content into draft without affecting live storefront. Records `CONTENT_DRAFT_RESTORED` audit event.
+2. Responsive Preview & Version Switcher (`AdminContentPanel.tsx`): Integrated viewport toggles (Desktop vs Mobile 390px frame) and version toggles (Draft vs Live published). Added "Restore live to draft" button with browser confirmation and notice.
+3. Localization: Added translations in `src/contexts/contentTranslations.ts` across EN, UR, and AR for restore prompt, confirmation, and responsive device modes.
+4. Playwright Browser Acceptance (`tests/batch-d-browser.test.tsx`): Verified baseline publish, preview toggle, desktop and mobile 390px frame modes, draft editing vs live baseline preview, and restoring live baseline into draft. Verified regression test `tests/admin-expansion-content-browser.test.tsx` continues to PASS (1/1 PASS in 7.2s).
+Verification: `tests/batch-d-studio.test.ts` (1/1 PASS in 88ms), `tests/batch-d-browser.test.tsx` (1/1 PASS in 2.6s), `npm run typecheck` (0 errors), `npm run lint:hooks` (0 warnings), production build passing in 7.8s, `verify-production.mjs` (36/36 PASS). Manual cloud provisioning remains deferred on GitHub pending list for owner on PC.
+
 02 November 2026 — **Batch C: Entertaining & Occasions (M12, M13, M30) / DONE locally**. Continued on `codex/admin-catalog-foundation-20261023`.
 Implemented and verified entertaining and event planning roadmap items:
 1. M12 Mehmaan Table Planner (`src/lib/mehmaanPlanner.ts`, `src/components/MehmaanTablePlannerModal.tsx`): Built hosting table planner scaling portions for 5 to 50+ guests across 4 hosting styles ('chai', 'dawat', 'iftar', 'majlis'). Computes transparent net gram breakdowns (nuts, dates, dried fruits) and maps table needs to catalog package portions (`250g`, `500g`, `1kg`) with live subtotal calculation and bulk "Add All Selections to Bag" cart action.

@@ -271,6 +271,54 @@ const entries=[
     "معاينة مسودة خاصة"
   ],
   [
+    "restoreLive",
+    "Restore live to draft",
+    "شائع شدہ مواد ڈرافٹ پر بحال کریں",
+    "استعادة النسخة المنشورة إلى المسودة"
+  ],
+  [
+    "confirmRestoreLive",
+    "Restore draft from current live published version? Any unsaved edits will be discarded.",
+    "کیا آپ شائع شدہ ورژن سے ڈرافٹ بحال کرنا چاہتے ہیں؟ غیر محفوظ تبدیلیاں ضائع ہو جائیں گی۔",
+    "هل تريد استعادة المسودة من النسخة المنشورة حالياً؟ سيتم إلغاء التغييرات غير المحفوظة."
+  ],
+  [
+    "restored",
+    "Draft restored from live published baseline.",
+    "شائع شدہ بنیاد سے ڈرافٹ بحال کر دیا گیا۔",
+    "تمت استعادة المسودة من الأساس المنشور."
+  ],
+  [
+    "previewDesktop",
+    "Desktop (1440px)",
+    "ڈیسک ٹاپ (1440px)",
+    "سطح المكتب (1440 بكسل)"
+  ],
+  [
+    "previewMobile",
+    "Mobile (390px)",
+    "موبائل (390px)",
+    "الجوال (390 بكسل)"
+  ],
+  [
+    "previewLiveVersion",
+    "Live published",
+    "شائع شدہ ورژن",
+    "النسخة المنشورة"
+  ],
+  [
+    "previewDraftVersion",
+    "Private draft",
+    "نجی ڈرافٹ",
+    "مسودة خاصة"
+  ],
+  [
+    "previewResponsiveTitle",
+    "Private draft preview",
+    "نجی ڈرافٹ پیش منظر",
+    "معاينة مسودة خاصة"
+  ],
+  [
     "liveRevision",
     "Published revision",
     "شائع شدہ ورژن",
