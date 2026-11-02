@@ -279,3 +279,34 @@ Private merchant-data migration review, new-feature Auth/Storage/n8n integration
   - **Storefront & Admin Preview Wiring:** Wired `mediaFocalPoint` (objectPosition percentages) and `cropMode` ('cover' | 'contain') into `ProductDetailPage.tsx`. Localized enums for harvest, roast levels, and certifications across EN/UR/AR in `catalogTranslations.ts` and rendered in `ProductDetailAccordion.tsx`.
   - **Real Browser Acceptance Verified (`tests/admin-passport-browser.test.tsx`):** Mounted real `AdminItemForm` and `ProductDetailAccordion` via Playwright (`launchTestBrowser()`), verifying full edit, save, reopen, clearing, public PDP/API privacy, stale revision conflict (409), mobile viewport (390x844), RTL (Urdu), and Dark Mode.
   - **All Quality Gates Green:** `npm run typecheck` (0 errors), `npm run lint:hooks` (0 warnings), build passing, `node scripts/verify-production.mjs` (36/36 passed), `tests/product-passport.test.ts` (11/11 passed), `tests/admin-passport-browser.test.tsx` (1/1 passed).
+
+- **02 Nov 2026 — Checkpoint 1d6ce10 Defect Repairs Completed & Verified:**
+  - **1. Gift Reveal Admin Authorization Timing (`src/lib/giftRevealRouter.ts`):**
+    - Corrected asynchronous authorization composition. `verifyAdminAuthorization` now awaits the definitive outcome of `requireAdmin` (or fallback `isCurrentAdministrator`) through hooked response completion and `onNext` callbacks rather than prematurely resolving on middleware return.
+    - Guaranteed zero writes occur before authorization succeeds; provider lookup delays (e.g., asynchronous `getUser`) are awaited cleanly.
+    - Demoted, disabled, revoked tokens fail closed with 403; provider failure fails closed with 503; legitimate order-owner access preserved without administrative lookups.
+    - Verified via `tests/batch-e-signature.test.ts` (delayed auth lookup, zero writes before success, demoted token rejection, owner access).
+  - **2. Actual Storefront Studio Preview Surfaces & Viewports (`src/components/AdminContentPanel.tsx`):**
+    - Rendered explicit surface switcher controls (`Homepage`, `Journal`, `FAQ`).
+    - Integrated real Journal article list rendering (`contentJournal(activeContent, language)`) with responsive cards, category badges, publication dates, and read times.
+    - Integrated real FAQ surface rendering (`contentFaq(activeContent, language)`) with structured question-answer groups.
+    - Added responsive viewport controls with `data-viewport-device` and `data-viewport-width` attributes (`mobile` 390px, `tablet` 768px, `desktop` 100%), rendering isolated responsive frames without mutating or publishing live content.
+    - Verified via Playwright in `tests/batch-d-browser.test.tsx`.
+  - **3. Complete Reorder Revalidation with Canonical Server Quote (`src/lib/orderPresentation.ts`, `src/components/PatronLoungeModal.tsx`):**
+    - Implemented canonical server quote validation `revalidateReorderWithServerQuote` calling `/api/orders/quote`.
+    - Handled price changes, removed/discontinued products (`PRODUCT_UNAVAILABLE`), quote-required products (`QUOTE_REQUIRED`), and network failures.
+    - Flagged `requiresRenewedReview: true` when server quote deviates from the historical order price/availability.
+    - In `PatronLoungeModal.tsx`, wired `startReorderReview` to revalidation with loading indicator (`data-reorder-validating`), clear warning notices (`data-quote-notice`, `data-renewed-review-notice`), and prevented stale direct-add.
+    - Verified via `tests/batch-e-signature.test.ts`.
+  - **4. Truthful Planner Cart Results & Quantity Limits (`src/contexts/CartContext.tsx`, `src/components/MehmaanTablePlannerModal.tsx`):**
+    - Updated `CartContext.tsx` `addToCart` to return an explicit `AddToCartResult` (`{ accepted, requestedQuantity, acceptedQuantity, capped, reason }`).
+    - Added `cartItemsRef` to track synchronous cart state during bulk consecutive additions in a single event tick.
+    - Enforced 50-unit max limit per food item truthfully.
+    - In `MehmaanTablePlannerModal.tsx`, updated `handleAddAll` to inspect each item's addition result, accurately differentiate complete success from capped/partial additions, and display truthful feedback (`data-testid="planner-cart-feedback"`).
+    - Verified via `tests/batch-c-entertaining.test.ts` (large serving plan, 200 guests scaling, portion resolution, and truthful 50-unit capping).
+  - **Full Test Suite & Quality Gates Pass:**
+    - `npm run typecheck` (0 errors)
+    - `npm run lint:hooks` (0 warnings)
+    - Production build & release privacy audit (84 artifacts clean)
+    - `node scripts/verify-production.mjs` (36/36 checks passed)
+    - `node scripts/run-all-tests.mjs` (Full master offline suite: 101 test files + backend + assets + production checks: 815 browser tests passed, 1 skipped, 11 hardening tests passed, 21 backend tests passed, 0 failures).

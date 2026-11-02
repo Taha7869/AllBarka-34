@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, Users, ShoppingBag, Check, Coffee, Utensils, Moon, PartyPopper, AlertCircle } from 'lucide-react';
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { useCart } from '../contexts/CartContext';
+import { useCart, type AddToCartResult } from '../contexts/CartContext';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { getLocalized } from '../utils/localize';
 import { acquireScrollLock } from '../utils/scrollLock';
@@ -75,40 +75,67 @@ export default function MehmaanTablePlannerModal({ isOpen, onClose }: MehmaanTab
   const handleAddAll = () => {
     if (plan.items.length === 0) {
       setAddNotice(t('mehmaan.noItems', 'No eligible harvest items available in this category.'));
-      setTimeout(() => setAddNotice(''), 3000);
+      setTimeout(() => setAddNotice(''), 4000);
       return;
     }
 
-    let addedCount = 0;
+    const results: { item: typeof plan.items[0]; res?: AddToCartResult }[] = [];
     for (const item of plan.items) {
       if (item.product && item.recommendedPortionWeight && item.unitPrice > 0) {
-        addToCart(
+        const res = addToCart(
           item.product,
           item.recommendedPortionWeight,
           item.recommendedUnits,
           undefined,
           { silent: true, openCart: false }
         );
-        addedCount++;
+        results.push({ item, res: res as AddToCartResult | undefined });
+      } else {
+        results.push({ item, res: undefined });
       }
     }
 
-    if (addedCount === 0) {
-      setAddNotice(t('mehmaan.noItems', 'No eligible items available to add to cart.'));
-      setTimeout(() => setAddNotice(''), 3000);
+    const acceptedList = results.filter(r => r.res && r.res.accepted);
+    const cappedList = results.filter(r => r.res && r.res.capped);
+    const rejectedList = results.filter(r => !r.res || !r.res.accepted);
+
+    if (acceptedList.length === 0) {
+      setAddedAll(false);
+      const isCapBlocked = cappedList.length > 0;
+      setAddNotice(
+        isCapBlocked
+          ? t('mehmaan.capBlocked', 'Cart limit (50 units per item) reached. Cannot add planner selections.')
+          : t('mehmaan.noneAdded', 'None of the requested selections could be added to bag.')
+      );
+      setTimeout(() => setAddNotice(''), 4000);
       return;
     }
 
-    setAddedAll(true);
-    setAddNotice(
-      addedCount === plan.items.length
-        ? t('mehmaan.allAdded', `Added all ${addedCount} items to bag!`)
-        : t('mehmaan.partialAdded', `${addedCount} of ${plan.items.length} items added to bag.`)
-    );
+    if (acceptedList.length === plan.items.length && cappedList.length === 0) {
+      setAddedAll(true);
+      const totalUnits = acceptedList.reduce((acc, r) => acc + (r.res?.acceptedQuantity || 0), 0);
+      setAddNotice(t('mehmaan.allAdded', `Added all ${acceptedList.length} selections (${totalUnits} units) to bag!`));
+    } else {
+      setAddedAll(false);
+      let msg = '';
+      if (acceptedList.length === plan.items.length && cappedList.length > 0) {
+        msg = t('mehmaan.allCapped', `Added ${acceptedList.length} selections, but quantities were adjusted to respect the 50-unit limit.`);
+      } else {
+        msg = t('mehmaan.partialAdded', `${acceptedList.length} of ${plan.items.length} selections added to bag.`);
+        if (cappedList.length > 0) {
+          msg += ` ${cappedList.length} item(s) capped at 50 units.`;
+        }
+        if (rejectedList.length > 0) {
+          msg += ` ${rejectedList.length} item(s) unavailable.`;
+        }
+      }
+      setAddNotice(msg);
+    }
+
     setTimeout(() => {
       setAddedAll(false);
       setAddNotice('');
-    }, 3000);
+    }, 5000);
   };
 
   if (!isOpen) return null;
@@ -357,7 +384,7 @@ export default function MehmaanTablePlannerModal({ isOpen, onClose }: MehmaanTab
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
             {addNotice && (
-              <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+              <span data-testid="planner-cart-feedback" className="text-xs font-medium text-emerald-700 dark:text-emerald-400 max-w-xs text-right">
                 {addNotice}
               </span>
             )}

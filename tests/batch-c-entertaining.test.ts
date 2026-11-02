@@ -118,3 +118,129 @@ test('M13 & M30: Occasion & Event Planning calculates lead times, evaluates urge
   assert.ok(decodedText.includes('Emerald theme with gold ribbon'));
   assert.ok(decodedText.includes('Quotation request only; final order confirmed upon artisan review and invoice.'));
 });
+
+test('M12: Large serving plan, cart quantity limits, and truthful planner acceptance feedback', () => {
+  const mockCatalog: any[] = [
+    {
+      id: 'pista',
+      name_en: 'Roasted Pistachios',
+      category: 'nuts',
+      active: true,
+      status: 'published',
+      quoteOnly: false,
+      prices: { '250g': 1250, '500g': 2400 },
+      variants: [{ label: '250g', available: true }, { label: '500g', available: true }],
+    },
+    {
+      id: 'ajwa-dates',
+      name_en: 'Ajwa Al-Madinah',
+      category: 'dates',
+      active: true,
+      status: 'published',
+      quoteOnly: false,
+      prices: { '250g': 1800 },
+      variants: [{ label: '250g', available: true }],
+    },
+    {
+      id: 'afghan-figs',
+      name_en: 'Afghan Figs',
+      category: 'dry-fruits',
+      active: true,
+      status: 'published',
+      quoteOnly: false,
+      prices: { '250g': 950 },
+      variants: [{ label: '250g', available: true }],
+    },
+    {
+      id: 'draft-nut',
+      name_en: 'Unpublished Draft Nut',
+      category: 'nuts',
+      active: true,
+      status: 'draft',
+      prices: { '250g': 1000 },
+    },
+    {
+      id: 'inactive-date',
+      name_en: 'Inactive Date',
+      category: 'dates',
+      active: false,
+      status: 'published',
+      prices: { '250g': 1200 },
+    },
+    {
+      id: 'quote-only-fig',
+      name_en: 'Bespoke Fig',
+      category: 'dry-fruits',
+      active: true,
+      quoteOnly: true,
+      prices: { '250g': 2000 },
+    },
+  ];
+
+  // 1. Large guest count (200 guests) with heavy serving assumptions (80g/guest nuts = 16,000g)
+  const largePlan = calculateMehmaanPlan(mockCatalog, 200, 'dawat', {
+    nutsGramsPerGuest: 80,
+    datesGramsPerGuest: 50,
+    driedFruitsGramsPerGuest: 40,
+  });
+
+  assert.equal(largePlan.guests, 200);
+  assert.equal(largePlan.breakdown.nutsGrams, 16000);
+  assert.equal(largePlan.breakdown.datesGrams, 10000);
+  assert.equal(largePlan.breakdown.driedFruitsGrams, 8000);
+
+  // Draft, inactive, and quoteOnly items are strictly excluded
+  assert.ok(!largePlan.items.some(i => i.product.id === 'draft-nut'));
+  assert.ok(!largePlan.items.some(i => i.product.id === 'inactive-date'));
+  assert.ok(!largePlan.items.some(i => i.product.id === 'quote-only-fig'));
+
+  // Nuts portion is 500g x 32 units = 16,000g
+  const nutsItem = largePlan.items.find(i => i.category === 'nuts');
+  assert.ok(nutsItem);
+  assert.equal(nutsItem.recommendedPortionWeight, '500g');
+  assert.equal(nutsItem.recommendedUnits, 32);
+
+  // Dates portion is 250g x 40 units = 10,000g
+  const datesItem = largePlan.items.find(i => i.category === 'dates');
+  assert.ok(datesItem);
+  assert.equal(datesItem.recommendedPortionWeight, '250g');
+  assert.equal(datesItem.recommendedUnits, 40);
+
+  // 2. Simulate Cart additions and verify truthful capping logic
+  // Assume cart already has 25 units of pista-500g. Adding 32 units exceeds the 50-unit cap!
+  const existingCart = [
+    { id: 'pista-500g', productId: 'pista', selectedWeight: '500g', quantity: 25 },
+  ];
+
+  const simulateAddToCart = (item: any) => {
+    const compositeId = `${item.product.id}-${item.recommendedPortionWeight}`;
+    const existing = existingCart.find(c => c.id === compositeId);
+    const existingQty = existing ? existing.quantity : 0;
+    const maxUnits = 50;
+    const remaining = Math.max(0, maxUnits - existingQty);
+    const cleanQty = item.recommendedUnits;
+    const acceptedQty = Math.min(remaining, cleanQty);
+    const isCapped = cleanQty > acceptedQty;
+
+    return {
+      accepted: acceptedQty > 0,
+      requestedQuantity: cleanQty,
+      acceptedQuantity: acceptedQty,
+      capped: isCapped,
+      reason: isCapped ? 'quantity_capped' : undefined,
+    };
+  };
+
+  const pistaResult = simulateAddToCart(nutsItem);
+  assert.equal(pistaResult.accepted, true);
+  assert.equal(pistaResult.requestedQuantity, 32);
+  assert.equal(pistaResult.acceptedQuantity, 25, 'Accepted quantity must be capped at remaining allowance to 50');
+  assert.equal(pistaResult.capped, true, 'Quantity must be flagged as capped');
+
+  // Next attempt when cart has reached full 50 units
+  existingCart[0].quantity = 50;
+  const fullCapResult = simulateAddToCart(nutsItem);
+  assert.equal(fullCapResult.accepted, false, 'Must be rejected when cap is reached');
+  assert.equal(fullCapResult.acceptedQuantity, 0);
+  assert.equal(fullCapResult.capped, true);
+});

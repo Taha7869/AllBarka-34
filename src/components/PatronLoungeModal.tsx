@@ -7,7 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCart } from '../contexts/CartContext';
 import { useCatalogProducts } from '../contexts/CatalogContext';
-import { reviewReorderItems, trackingProgress, TRACKING_STEPS, type ReorderAnalysis } from '../lib/orderPresentation';
+import { reviewReorderItems, revalidateReorderWithServerQuote, trackingProgress, TRACKING_STEPS, type ReorderAnalysis } from '../lib/orderPresentation';
 import { Link } from 'react-router-dom';
 import { acquireScrollLock } from '../utils/scrollLock';
 import { apiUrl } from '../lib/apiUrl';
@@ -26,6 +26,8 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
   const PRODUCTS = useCatalogProducts();
   const [reviewingOrder, setReviewingOrder] = useState<any | null>(null);
   const [reorderAnalysis, setReorderAnalysis] = useState<ReorderAnalysis | null>(null);
+  const [reorderValidating, setReorderValidating] = useState(false);
+  const [reorderError, setReorderError] = useState('');
   const reduceMotion = useReducedMotion();
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef(onClose);
@@ -444,9 +446,16 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                             {reviewingOrder?.orderId === order.orderId && reorderAnalysis && (
                               <div className="reorder-review-panel mt-3 p-4 rounded-xl bg-amber-50/60 dark:bg-zinc-800/80 border border-[var(--color-gold,#B8935F)]/30 space-y-3">
                                 <div className="flex items-center justify-between">
-                                  <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary,#042821)] dark:text-emerald-400">
-                                    {t('account.reorderReviewTitle', 'Review Items Before Reorder')}
-                                  </h4>
+                                  <div className="flex items-center gap-2">
+                                    <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary,#042821)] dark:text-emerald-400">
+                                      {t('account.reorderReviewTitle', 'Review Items Before Reorder')}
+                                    </h4>
+                                    {reorderValidating && (
+                                      <span className="text-[10px] text-amber-700 dark:text-amber-400 font-semibold animate-pulse" data-reorder-validating>
+                                        · Verifying live rates...
+                                      </span>
+                                    )}
+                                  </div>
                                   <button
                                     type="button"
                                     onClick={() => { setReviewingOrder(null); setReorderAnalysis(null); }}
@@ -486,6 +495,24 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                                   </div>
                                 )}
 
+                                {reorderError && (
+                                  <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200" data-reorder-error>
+                                    <p className="font-semibold">{reorderError}</p>
+                                  </div>
+                                )}
+
+                                {reorderAnalysis.quoteRequiredNotice && (
+                                  <div className="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-xs text-blue-900 dark:text-blue-200" data-quote-notice>
+                                    <p className="font-semibold">{reorderAnalysis.quoteRequiredNotice}</p>
+                                  </div>
+                                )}
+
+                                {reorderAnalysis.requiresRenewedReview && (
+                                  <div className="p-2 rounded bg-amber-100/80 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700 text-[11px] text-amber-900 dark:text-amber-200" data-renewed-review-notice>
+                                    <p className="font-semibold">Boutique rates or product availability have changed. Please review the updated selection below before confirming.</p>
+                                  </div>
+                                )}
+
                                 {reorderAnalysis.hasUnavailableItems && (
                                   <div className="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 text-xs space-y-1" data-unavailable-warning>
                                     <div className="flex items-center gap-1.5 text-rose-800 dark:text-rose-300 font-semibold">
@@ -506,7 +533,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                                   <button
                                     type="button"
                                     data-action="confirm-reorder"
-                                    disabled={reorderAnalysis.reorderable.length === 0}
+                                    disabled={reorderValidating || reorderAnalysis.reorderable.length === 0}
                                     onClick={confirmReorder}
                                     className="px-4 py-2 rounded-xl bg-[#043327] hover:bg-[#074b39] text-[#FAF9F5] text-xs font-bold transition-all disabled:opacity-40 flex items-center gap-1.5 shadow-sm"
                                   >

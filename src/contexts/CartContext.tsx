@@ -1,5 +1,5 @@
 import { useCatalogProducts } from '../contexts/CatalogContext';
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { CartItem, Product } from '../types';
 import { PRODUCTS, getProductImage } from '../data/products';
 import { useToast } from '../components/ToastManager';
@@ -62,6 +62,16 @@ export type AddToCartInput =
       hamperConfiguration?: HamperConfiguration;
     };
 
+export interface AddToCartResult {
+  accepted: boolean;
+  productId: string;
+  weight: string;
+  requestedQuantity: number;
+  acceptedQuantity: number;
+  capped: boolean;
+  reason?: 'portion_unavailable' | 'quantity_capped' | 'unknown_product';
+}
+
 export interface CartContextValue {
   cartItems: CartItem[];
   subtotal: number;
@@ -85,7 +95,7 @@ export interface CartContextValue {
     quantity?: number,
     customUnitPrice?: number,
     options?: { silent?: boolean; openCart?: boolean }
-  ) => void;
+  ) => AddToCartResult | void;
   removeFromCart: (cartItemId: string) => void;
   updateQuantity: (cartItemId: string, newQty: number) => void;
   clearCart: () => void;
@@ -152,6 +162,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     return [];
   });
+  const cartItemsRef = useRef<CartItem[]>(cartItems);
 
   // Sync with localStorage on changes
   // Keep an already-open bag in step with merchant prices while preserving unavailable lines for review.
@@ -174,6 +185,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     try {
+      cartItemsRef.current = cartItems;
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
     } catch (e) {
       console.warn('Failed to save cart to localStorage:', e);
@@ -222,17 +234,46 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       quantity?: number,
       customUnitPrice?: number,
       options?: { silent?: boolean; openCart?: boolean }
-    ) => {
+    ): AddToCartResult => {
       const identity = resolveCartIdentity(productOrItem, PRODUCTS);
-      if (!identity) return;
+      if (!identity) {
+        return {
+          accepted: false,
+          productId: typeof productOrItem === 'string' ? productOrItem : (productOrItem as any)?.id || '',
+          weight: weight || '',
+          requestedQuantity: quantity || 1,
+          acceptedQuantity: 0,
+          capped: false,
+          reason: 'unknown_product',
+        };
+      }
       const rawProdId = identity.productId;
       const hamper = rawProdId === 'custom-hamper' ? resolveHamper((productOrItem as CartItem).hamperConfiguration, PRODUCTS) : null;
-      if (rawProdId === 'custom-hamper' && !hamper) { addToast(t('cart.portionUnavailable'), 'error'); return; }
+      if (rawProdId === 'custom-hamper' && !hamper) {
+        addToast(t('cart.portionUnavailable'), 'error');
+        return {
+          accepted: false,
+          productId: rawProdId,
+          weight: weight || '',
+          requestedQuantity: quantity || 1,
+          acceptedQuantity: 0,
+          capped: false,
+          reason: 'portion_unavailable',
+        };
+      }
       const fullProd = hamper ? { ...hamper, id: 'custom-hamper' } : identity.product || (productOrItem as any);
       const selectedWeight = hamper?.portion || resolveCartPortion(identity.product, weight || (productOrItem as any).selectedWeight || identity.portion);
       if (!selectedWeight) {
         addToast(t('cart.portionUnavailable', 'This portion is unavailable. Please choose another size.'), 'error');
-        return;
+        return {
+          accepted: false,
+          productId: rawProdId,
+          weight: weight || '',
+          requestedQuantity: quantity || 1,
+          acceptedQuantity: 0,
+          capped: false,
+          reason: 'portion_unavailable',
+        };
       }
       const compositeId = hamper ? hamperCartKey(hamper.configuration) : `${rawProdId}-${selectedWeight}`;
 
@@ -257,48 +298,85 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ? (productOrItem as any).wholesale
         : false;
 
+      // Reliable accepted quantity determination using current synchronous cart reference
+      const existingItem = cartItemsRef.current.find((item) => item.id === compositeId);
+      const existingQty = existingItem ? existingItem.quantity : 0;
+      const maxUnits = isPackaging ? 10000 : 50;
+      const remainingCapacity = Math.max(0, maxUnits - existingQty);
+      const acceptedQty = Math.min(remainingCapacity, cleanQty);
+      const isCapped = cleanQty > acceptedQty;
+
+      if (acceptedQty <= 0) {
+        addToast(t('cart.limitReached', 'Maximum allowable cart quantity (50 units) reached for this selection.'), 'error');
+        return {
+          accepted: false,
+          productId: rawProdId,
+          weight: selectedWeight,
+          requestedQuantity: cleanQty,
+          acceptedQuantity: 0,
+          capped: true,
+          reason: 'quantity_capped',
+        };
+      }
+
       setCartItems((prev) => {
         const existingIndex = prev.findIndex((item) => item.id === compositeId);
+        let next: CartItem[];
         if (existingIndex > -1) {
-          const next = [...prev];
-          const maxUnits = isPackaging ? 10000 : 50;
-          const newQty = Math.min(maxUnits, next[existingIndex].quantity + cleanQty);
+          next = [...prev];
+          const newQty = Math.min(maxUnits, next[existingIndex].quantity + acceptedQty);
           next[existingIndex] = {
             ...next[existingIndex],
             quantity: newQty,
             unitPrice: unitPrice || next[existingIndex].unitPrice,
             price: unitPrice || next[existingIndex].price,
           };
-          return next;
+        } else {
+          const newItem: CartItem = {
+            id: compositeId,
+            productId: rawProdId,
+            name_en: fullProd.name_en || (productOrItem as any).name_en || (productOrItem as any).name || 'Artisanal Selection',
+            name_ur: fullProd.name_ur || (productOrItem as any).name_ur || (productOrItem as any).name || 'Artisanal Selection',
+            name_ar: fullProd.name_ar || (productOrItem as any).name_ar || (productOrItem as any).name || 'Artisanal Selection',
+            slug: fullProd.id || rawProdId,
+            image: imageSrc,
+            selectedWeight,
+            unitPrice,
+            price: unitPrice,
+            quantity: acceptedQty,
+            wholesale: isWholesale,
+            ...(hamper ? { hamperConfiguration: hamper.configuration } : {}),
+          };
+          next = [...prev, newItem];
         }
-
-        const newItem: CartItem = {
-          id: compositeId,
-          productId: rawProdId,
-          name_en: fullProd.name_en || (productOrItem as any).name_en || (productOrItem as any).name || 'Artisanal Selection',
-          name_ur: fullProd.name_ur || (productOrItem as any).name_ur || (productOrItem as any).name || 'Artisanal Selection',
-          name_ar: fullProd.name_ar || (productOrItem as any).name_ar || (productOrItem as any).name || 'Artisanal Selection',
-          slug: fullProd.id || rawProdId,
-          image: imageSrc,
-          selectedWeight,
-          unitPrice,
-          price: unitPrice,
-          quantity: cleanQty,
-          wholesale: isWholesale,
-          ...(hamper ? { hamperConfiguration: hamper.configuration } : {}),
-        };
-        return [...prev, newItem];
+        cartItemsRef.current = next;
+        return next;
       });
 
-      recordFunnelEvent('add_to_cart', { productId: rawProdId, quantity: cleanQty });
+      recordFunnelEvent('add_to_cart', { productId: rawProdId, quantity: acceptedQty });
 
       // Subtle toast notification & auto-open cart drawer
-      if (!options?.silent) addToast(`${fullProd[`name_${language}`] || fullProd.name_en || 'Item'} (${selectedWeight}) — ${t('cart.addedToast')}`, 'success');
+      if (!options?.silent) {
+        const toastMsg = isCapped
+          ? `${fullProd[`name_${language}`] || fullProd.name_en || 'Item'} (${selectedWeight}) — ${acceptedQty} added (capped at 50-unit limit)`
+          : `${fullProd[`name_${language}`] || fullProd.name_en || 'Item'} (${selectedWeight}) — ${t('cart.addedToast')}`;
+        addToast(toastMsg, isCapped ? 'error' : 'success');
+      }
       if (options?.openCart !== false) {
         setIsCartPulsing(true);
         setTimeout(() => setIsCartPulsing(false), 800);
         setIsCartOpen(true);
       }
+
+      return {
+        accepted: true,
+        productId: rawProdId,
+        weight: selectedWeight,
+        requestedQuantity: cleanQty,
+        acceptedQuantity: acceptedQty,
+        capped: isCapped,
+        reason: isCapped ? 'quantity_capped' : undefined,
+      };
     },
     [addToast, t, language, PRODUCTS]
   );

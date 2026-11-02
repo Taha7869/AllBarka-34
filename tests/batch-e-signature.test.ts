@@ -4,7 +4,7 @@ import express from 'express';
 import { once } from 'node:events';
 import { memoryFirestore } from './helpers/memoryFirestore';
 import { createGiftRevealRouter, hashRevealToken } from '../src/lib/giftRevealRouter';
-import { reviewReorderItems, getReorderItems, resolveReorderProduct } from '../src/lib/orderPresentation';
+import { reviewReorderItems, getReorderItems, resolveReorderProduct, revalidateReorderWithServerQuote } from '../src/lib/orderPresentation';
 import { requireCurrentAdministrator } from '../src/lib/adminAuthentication';
 import { calculateMehmaanPlan, resolveBestPortion } from '../src/lib/mehmaanPlanner';
 import { shoppingQualityTranslations } from '../src/contexts/shoppingQualityTranslations';
@@ -251,6 +251,155 @@ test('P0 & M14: Gift Reveal API enforces current authority, derives from saved o
   }
 });
 
+test('P0 & M14: Gift Reveal API with delayed asynchronous authority lookup handles production composition, preserves owner access, and prevents premature writes', async () => {
+  const { db } = memoryFirestore();
+  const app = express();
+  app.use(express.json());
+
+  const authAccounts = new Map<string, any>([
+    ['admin-current', { uid: 'admin-current', disabled: false, customClaims: { admin: true } }],
+    ['admin-demoted', { uid: 'admin-demoted', disabled: false, customClaims: { admin: false } }],
+    ['admin-disabled', { uid: 'admin-disabled', disabled: true, customClaims: { admin: true } }],
+    ['owner-customer', { uid: 'owner-customer', disabled: false, customClaims: {} }],
+  ]);
+
+  let providerFailing = false;
+  const delayedAuthService = {
+    getUser: async (uid: string) => {
+      // Genuine event-loop tick asynchrony without arbitrary setTimeout sleep
+      await Promise.resolve();
+      await new Promise(resolve => setImmediate(resolve));
+      if (providerFailing) throw new Error('FIRESTORE_OR_AUTH_OUTAGE');
+      const account = authAccounts.get(uid);
+      if (!account) {
+        const err: any = new Error('not found');
+        err.code = 'auth/user-not-found';
+        throw err;
+      }
+      return account;
+    },
+  };
+
+  let currentUser: any = null;
+  const mockAuth: express.RequestHandler = (req, res, next) => {
+    if (!currentUser) {
+      return res.status(401).json({ code: 'AUTHENTICATION_REQUIRED' });
+    }
+    (req as any).user = currentUser;
+    next();
+  };
+
+  const currentAdministrator = requireCurrentAdministrator(() => delayedAuthService);
+  // Production-equivalent middleware composition where requireAdmin returns before currentAdministrator completes
+  const productionRequireAdmin: express.RequestHandler = async (req, res, next) => {
+    await mockAuth(req, res, () => {
+      void currentAdministrator(req, res, next);
+    });
+  };
+
+  app.use(createGiftRevealRouter({
+    getDb: () => db,
+    getAuth: () => delayedAuthService,
+    requireAuth: mockAuth,
+    requireAdmin: productionRequireAdmin,
+  }));
+
+  const server = app.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  const origin = `http://127.0.0.1:${(server.address() as any).port}`;
+
+  try {
+    const orderId = 'AB-20261102-DELAYED-AUTH';
+    await db.collection('orders').doc(orderId).set({
+      orderId,
+      uid: 'owner-customer',
+      customer: { name: 'Owner Patron' },
+      items: [{ productId: 'pista', name: 'Pistachios', selectedWeight: '250g', quantity: 1, price: 1250 }],
+    });
+
+    const getDbCount = async () => (await db.collection('giftReveals').get()).docs.length;
+    assert.equal(await getDbCount(), 0, 'No records before tests begin');
+
+    // 1. Demoted admin denied with 403, zero writes occur
+    currentUser = { uid: 'admin-demoted', admin: true, role: 'admin' };
+    const demotedRes = await fetch(`${origin}/api/gift-reveal`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId }),
+    });
+    assert.equal(demotedRes.status, 403);
+    assert.equal(await getDbCount(), 0, 'No writes occur before authorization succeeds');
+
+    // 2. Disabled admin denied with 403, zero writes occur
+    currentUser = { uid: 'admin-disabled', admin: true, role: 'admin' };
+    const disabledRes = await fetch(`${origin}/api/gift-reveal`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId }),
+    });
+    assert.equal(disabledRes.status, 403);
+    assert.equal(await getDbCount(), 0, 'No writes occur for disabled admin');
+
+    // 3. Provider failure fails closed with 503, zero writes occur
+    providerFailing = true;
+    currentUser = { uid: 'admin-current', admin: true, role: 'admin' };
+    const providerFailRes = await fetch(`${origin}/api/gift-reveal`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId }),
+    });
+    assert.equal(providerFailRes.status, 503);
+    assert.equal(await getDbCount(), 0, 'No writes occur on provider failure');
+    providerFailing = false;
+
+    // 4. Valid current admin succeeds with 201 for another customer's order despite delayed lookup
+    currentUser = { uid: 'admin-current', admin: true, role: 'admin' };
+    const adminCreateRes = await fetch(`${origin}/api/gift-reveal`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId, senderName: 'Corporate Admin' }),
+    });
+    assert.equal(adminCreateRes.status, 201);
+    const adminCreateJson = await adminCreateRes.json();
+    assert.equal(adminCreateJson.ok, true);
+    assert.equal(await getDbCount(), 1, 'Exactly one record written on successful admin authorization');
+
+    // 5. Demoted admin denied revoking reveal with 403
+    currentUser = { uid: 'admin-demoted', admin: true, role: 'admin' };
+    const demotedRevokeRes = await fetch(`${origin}/api/gift-reveal/${adminCreateJson.token}/revoke`, {
+      method: 'POST',
+    });
+    assert.equal(demotedRevokeRes.status, 403);
+    const tokenHash = hashRevealToken(adminCreateJson.token);
+    const docAfterFailedRevoke = (await db.collection('giftReveals').doc(tokenHash).get()).data();
+    assert.equal(docAfterFailedRevoke.revoked, false, 'Revocation flag must not change on denied attempt');
+
+    // 6. Valid current admin revokes reveal link with 200
+    currentUser = { uid: 'admin-current', admin: true, role: 'admin' };
+    const adminRevokeRes = await fetch(`${origin}/api/gift-reveal/${adminCreateJson.token}/revoke`, {
+      method: 'POST',
+    });
+    assert.equal(adminRevokeRes.status, 200);
+    const docAfterSuccessRevoke = (await db.collection('giftReveals').doc(tokenHash).get()).data();
+    assert.equal(docAfterSuccessRevoke.revoked, true, 'Revocation flag is updated');
+    assert.equal(docAfterSuccessRevoke.revokedBy, 'admin-current');
+
+    // 7. Legitimate order owner succeeds with 201 directly without admin checks
+    currentUser = { uid: 'owner-customer', role: 'customer' };
+    const ownerCreateRes = await fetch(`${origin}/api/gift-reveal`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId, recipientName: 'Family Friend' }),
+    });
+    assert.equal(ownerCreateRes.status, 201);
+    const ownerCreateJson = await ownerCreateRes.json();
+    assert.equal(ownerCreateJson.ok, true);
+    assert.equal(await getDbCount(), 2, 'Owner successfully creates reveal link');
+  } finally {
+    server.close();
+  }
+});
+
 test('M29: Patron reorder resolves prefix collisions, parses past items, verifies live catalog availability, and detects price changes', () => {
   const mockCatalog: Product[] = [
     {
@@ -382,6 +531,86 @@ test('M29: Patron reorder resolves prefix collisions, parses past items, verifie
   assert.equal(reorderPayload[0].product.id, 'pista');
   assert.equal(reorderPayload[0].weight, '500g');
   assert.equal(reorderPayload[0].quantity, 2);
+});
+
+test('M29: Reorder revalidation with canonical server quote detects price changes, quote requirements, product unavailabilities, and requires renewed review', async () => {
+  const mockProducts: Product[] = [
+    {
+      id: 'pista',
+      name_en: 'Roasted Pistachios',
+      category: 'nuts',
+      active: true,
+      prices: { '500g': 4500 },
+      variants: [{ label: '500g', available: true }],
+    } as any,
+  ];
+
+  const pastItems = [
+    { id: 'pista-500g', productId: 'pista', selectedWeight: '500g', quantity: 2, price: 4000 },
+  ];
+
+  const initialAnalysis = reviewReorderItems(pastItems, mockProducts);
+  assert.equal(initialAnalysis.reorderable.length, 1);
+  assert.equal(initialAnalysis.estimatedSubtotal, 9000);
+
+  // 1. Server quote returns updated prices (e.g. price increased to 5000 on server)
+  const mockFetchSuccess: any = async () => ({
+    ok: true,
+    status: 200,
+    json: async () => ({
+      success: true,
+      totals: { subtotal: 10000, isQuoteRequest: false },
+      items: [{ productId: 'pista', selectedWeight: '500g', price: 5000, quantity: 2 }],
+    }),
+  });
+
+  const revalidatedSuccess = await revalidateReorderWithServerQuote(initialAnalysis, { fetchFn: mockFetchSuccess });
+  assert.equal(revalidatedSuccess.serverValidated, true);
+  assert.equal(revalidatedSuccess.estimatedSubtotal, 10000);
+  assert.equal(revalidatedSuccess.reorderable[0].currentUnitPrice, 5000);
+  assert.equal(revalidatedSuccess.hasPriceChanges, true);
+  assert.equal(revalidatedSuccess.requiresRenewedReview, true, 'Customer renewed review required when server rate changes');
+
+  // 2. Server quote returns 400 QUOTE_REQUIRED
+  const mockFetchQuoteReq: any = async () => ({
+    ok: false,
+    status: 400,
+    json: async () => ({
+      code: 'QUOTE_REQUIRED',
+      error: 'Custom packaging requires personalized quote.',
+    }),
+  });
+
+  const revalidatedQuoteReq = await revalidateReorderWithServerQuote(initialAnalysis, { fetchFn: mockFetchQuoteReq });
+  assert.equal(revalidatedQuoteReq.serverValidated, true);
+  assert.equal(revalidatedQuoteReq.isQuoteRequest, true);
+  assert.equal(revalidatedQuoteReq.requiresRenewedReview, true);
+  assert.ok(revalidatedQuoteReq.quoteRequiredNotice?.includes('Custom packaging requires personalized quote'));
+
+  // 3. Server quote returns 400 PRODUCT_UNAVAILABLE
+  const mockFetchUnavail: any = async () => ({
+    ok: false,
+    status: 400,
+    json: async () => ({
+      code: 'PRODUCT_UNAVAILABLE',
+      error: 'Product "Roasted Pistachios" is currently out of harvest.',
+    }),
+  });
+
+  const revalidatedUnavail = await revalidateReorderWithServerQuote(initialAnalysis, { fetchFn: mockFetchUnavail });
+  assert.equal(revalidatedUnavail.serverValidated, true);
+  assert.equal(revalidatedUnavail.hasUnavailableItems, true);
+  assert.equal(revalidatedUnavail.requiresRenewedReview, true);
+  assert.ok(revalidatedUnavail.serverNotice?.includes('out of harvest'));
+
+  // 4. Server connection failure handles gracefully and avoids silent stale acceptance
+  const mockFetchNetworkFail: any = async () => {
+    throw new Error('NETWORK_TIMEOUT');
+  };
+
+  const revalidatedFail = await revalidateReorderWithServerQuote(initialAnalysis, { fetchFn: mockFetchNetworkFail });
+  assert.equal(revalidatedFail.serverValidated, false);
+  assert.ok(revalidatedFail.serverNotice?.includes('NETWORK_TIMEOUT'));
 });
 
 test('M12 & M26: Mehmaan planner respects custom assumptions, canonical eligibility, and honest packaging facts', () => {

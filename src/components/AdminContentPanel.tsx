@@ -1,10 +1,11 @@
 import {useEffect,useState} from 'react';
-import {ArrowDown,ArrowUp,Eye,Save,Upload,RotateCcw,Monitor,Smartphone,Tablet,History,X,Lock,BookOpen,Compass,HelpCircle} from 'lucide-react';
+import {ArrowDown,ArrowUp,Eye,Save,Upload,RotateCcw,Monitor,Smartphone,Tablet,History,X,Lock,BookOpen,Compass,HelpCircle,Home} from 'lucide-react';
 import {useAuth} from '../contexts/AuthContext';
 import {useAdminLanguage} from '../hooks/useAdminLanguage';
 import {useStorefrontContentRefresh,StorefrontContentProvider} from '../contexts/StorefrontContentContext';
 import {adminRequest} from '../lib/adminClient';
-import {blankText,contentText,type StorefrontContent,type LocalText} from '../lib/storefrontContent';
+import {blankText,contentText,type StorefrontContent,type LocalText} from '../lib/storefrontContent';
+import {contentJournal} from '../lib/contentPresentation';
 import {MAIN_NAV_ITEMS} from '../config/navigation';
 import {JOURNAL_ARTICLES} from '../data/articles';
 import {getKarachiTime} from '../lib/deliveryCalendar';
@@ -70,39 +71,105 @@ export default function AdminContentPanel({onDirtyChange}:{onDirtyChange?:(dirty
         <button type="button" className="admin-button" disabled={draft.articles.length>=30} onClick={()=>edit(v=>{v.articles.push({slug:'',visible:false,title:blankText(),excerpt:blankText(),body:blankText(),image:'/images/product-placeholder.svg',category:'Buying Guides',publishedDate:getKarachiTime().isoDateStr,relatedProductIds:[]});})}>{t('content.addArticle')}</button>
       </details>
     </fieldset>
-    {preview&&<section className="content-draft-preview space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-neutral-100 dark:bg-zinc-800 rounded-xl border border-neutral-300 dark:border-zinc-700">
-        <div className="flex items-center gap-2">
-          <p className="admin-eyebrow m-0 font-bold">{t('content.draftOnly')}</p>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200 font-semibold">
-            {previewVersion==='draft'?`Draft Rev ${bundle.revision}`:`Live Rev ${bundle.liveRevision}`}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 bg-white dark:bg-zinc-700 p-0.5 rounded-lg border border-neutral-200 dark:border-zinc-600">
-            <button type="button" className={`px-2 py-1 text-xs font-semibold rounded flex items-center gap-1 ${previewDevice==='desktop'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewDevice('desktop')}><Monitor size={14}/>Desktop</button>
-            <button type="button" className={`px-2 py-1 text-xs font-semibold rounded flex items-center gap-1 ${previewDevice==='tablet'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewDevice('tablet')}><Tablet size={14}/>Tablet</button>
-            <button type="button" className={`px-2 py-1 text-xs font-semibold rounded flex items-center gap-1 ${previewDevice==='mobile'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewDevice('mobile')}><Smartphone size={14}/>Mobile</button>
-          </div>
-          <div className="flex items-center gap-1 bg-white dark:bg-zinc-700 p-0.5 rounded-lg border border-neutral-200 dark:border-zinc-600">
-            <button type="button" className={`px-2 py-1 text-xs font-semibold rounded ${previewVersion==='draft'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewVersion('draft')}>Draft</button>
-            <button type="button" className={`px-2 py-1 text-xs font-semibold rounded ${previewVersion==='live'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewVersion('live')}>Live</button>
-          </div>
-        </div>
-      </div>
-      <div className={previewDevice==='mobile'?'max-w-[390px] mx-auto border-4 border-neutral-700 rounded-[28px] p-2 bg-white dark:bg-zinc-900 shadow-xl overflow-hidden':previewDevice==='tablet'?'max-w-[768px] mx-auto border-2 border-neutral-600 rounded-2xl p-3 bg-white dark:bg-zinc-900 shadow-lg overflow-hidden':'w-full'}>
-        <StorefrontContentProvider initialContent={previewVersion==='draft'?draft:bundle.live}>
-          <StorefrontBanner/>
-          <div className="content-hero-preview">
-            <img src={(previewVersion==='draft'?draft:bundle.live).hero.enabled?(previewVersion==='draft'?draft:bundle.live).hero.image:'/images/dryfruit_flatlay_hero.webp'} alt=""/>
-            <div>
-              <h3>{(previewVersion==='draft'?draft:bundle.live).hero.enabled?contentText((previewVersion==='draft'?draft:bundle.live).hero.heading,language):t('table.heading')} <em>{(previewVersion==='draft'?draft:bundle.live).hero.enabled?contentText((previewVersion==='draft'?draft:bundle.live).hero.accent,language):t('table.accent')}</em></h3>
-              <p>{(previewVersion==='draft'?draft:bundle.live).hero.enabled?contentText((previewVersion==='draft'?draft:bundle.live).hero.description,language):t('table.description')}</p>
-            </div>
-          </div>
-          <FAQSection/>
-        </StorefrontContentProvider>
-      </div>
+    {preview&&<section className="content-draft-preview space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-neutral-100 dark:bg-zinc-800 rounded-xl border border-neutral-300 dark:border-zinc-700">
+        <div className="flex items-center gap-2">
+          <p className="admin-eyebrow m-0 font-bold">{t('content.draftOnly')}</p>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200 font-semibold">
+            {previewVersion==='draft'?`Draft Rev ${bundle.revision}`:`Live Rev ${bundle.liveRevision}`}
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Surface Switcher */}
+          <div className="preview-surface-tabs flex items-center gap-1 bg-white dark:bg-zinc-700 p-0.5 rounded-lg border border-neutral-200 dark:border-zinc-600">
+            <button type="button" data-surface="home" className={`px-2 py-1 text-xs font-semibold rounded flex items-center gap-1 ${previewSurface==='home'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewSurface('home')}><Home size={13}/>Homepage</button>
+            <button type="button" data-surface="journal" className={`px-2 py-1 text-xs font-semibold rounded flex items-center gap-1 ${previewSurface==='journal'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewSurface('journal')}><BookOpen size={13}/>Journal</button>
+            <button type="button" data-surface="faq" className={`px-2 py-1 text-xs font-semibold rounded flex items-center gap-1 ${previewSurface==='faq'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewSurface('faq')}><HelpCircle size={13}/>FAQ</button>
+          </div>
+          {/* Viewport Device Switcher */}
+          <div className="flex items-center gap-1 bg-white dark:bg-zinc-700 p-0.5 rounded-lg border border-neutral-200 dark:border-zinc-600">
+            <button type="button" className={`px-2 py-1 text-xs font-semibold rounded flex items-center gap-1 ${previewDevice==='desktop'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewDevice('desktop')}><Monitor size={14}/>Desktop</button>
+            <button type="button" className={`px-2 py-1 text-xs font-semibold rounded flex items-center gap-1 ${previewDevice==='tablet'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewDevice('tablet')}><Tablet size={14}/>Tablet</button>
+            <button type="button" className={`px-2 py-1 text-xs font-semibold rounded flex items-center gap-1 ${previewDevice==='mobile'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewDevice('mobile')}><Smartphone size={14}/>Mobile</button>
+          </div>
+          {/* Version Switcher */}
+          <div className="flex items-center gap-1 bg-white dark:bg-zinc-700 p-0.5 rounded-lg border border-neutral-200 dark:border-zinc-600">
+            <button type="button" className={`px-2 py-1 text-xs font-semibold rounded ${previewVersion==='draft'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewVersion('draft')}>Draft</button>
+            <button type="button" className={`px-2 py-1 text-xs font-semibold rounded ${previewVersion==='live'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewVersion('live')}>Live</button>
+          </div>
+        </div>
+      </div>
+      {/* Viewport Frame with Responsive Width and Breakpoints */}
+      <div
+        className={`preview-viewport-container mx-auto transition-all duration-200 ${
+          previewDevice==='mobile'
+            ? 'w-[390px] max-w-[390px] border-4 border-neutral-700 rounded-[28px] p-2 bg-white dark:bg-zinc-900 shadow-xl overflow-hidden'
+            : previewDevice==='tablet'
+            ? 'w-[768px] max-w-[768px] border-2 border-neutral-600 rounded-2xl p-3 bg-white dark:bg-zinc-900 shadow-lg overflow-hidden'
+            : 'w-full rounded-xl border border-neutral-200 dark:border-zinc-700 p-4 bg-white dark:bg-zinc-900'
+        }`}
+        data-viewport-device={previewDevice}
+        data-viewport-width={previewDevice==='mobile'?'390':previewDevice==='tablet'?'768':'1440'}
+      >
+        <div className="text-[10px] text-neutral-400 font-mono mb-2 pb-1.5 border-b border-neutral-100 dark:border-zinc-800 flex items-center justify-between">
+          <span>Viewport: {previewDevice==='mobile'?'390px (Mobile Portrait)':previewDevice==='tablet'?'768px (Tablet)':`Full Width (Desktop)`}</span>
+          <span className="capitalize">Surface: {previewSurface}</span>
+        </div>
+        <StorefrontContentProvider initialContent={previewVersion==='draft'?draft:bundle.live}>
+          {previewSurface==='home'&&(
+            <div className="preview-surface-home space-y-4">
+              <StorefrontBanner/>
+              <div className="content-hero-preview">
+                <img src={(previewVersion==='draft'?draft:bundle.live).hero.enabled?(previewVersion==='draft'?draft:bundle.live).hero.image:'/images/dryfruit_flatlay_hero.webp'} alt=""/>
+                <div>
+                  <h3>{(previewVersion==='draft'?draft:bundle.live).hero.enabled?contentText((previewVersion==='draft'?draft:bundle.live).hero.heading,language):t('table.heading')} <em>{(previewVersion==='draft'?draft:bundle.live).hero.enabled?contentText((previewVersion==='draft'?draft:bundle.live).hero.accent,language):t('table.accent')}</em></h3>
+                  <p>{(previewVersion==='draft'?draft:bundle.live).hero.enabled?contentText((previewVersion==='draft'?draft:bundle.live).hero.description,language):t('table.description')}</p>
+                </div>
+              </div>
+              <FAQSection/>
+            </div>
+          )}
+          {previewSurface==='journal'&&(
+            <div className="preview-surface-journal p-4 space-y-4">
+              <div className="flex items-center justify-between border-b border-neutral-200 dark:border-zinc-700 pb-3">
+                <div>
+                  <h2 className="font-serif font-bold text-lg text-[#043327] dark:text-emerald-400">AllBarka Editorial Journal</h2>
+                  <p className="text-xs text-neutral-500">Authentic harvest stories and connoisseur guides.</p>
+                </div>
+                <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 font-semibold">
+                  {contentJournal(previewVersion==='draft'?draft:bundle.live, language).length} Articles
+                </span>
+              </div>
+              {contentJournal(previewVersion==='draft'?draft:bundle.live, language).length===0?(
+                <p className="p-8 text-center text-xs text-neutral-400 border border-dashed border-neutral-200 dark:border-zinc-700 rounded-xl">No published articles in this collection.</p>
+              ):(
+                <div className={`grid gap-4 ${previewDevice==='mobile'?'grid-cols-1':previewDevice==='tablet'?'grid-cols-2':'grid-cols-3'}`}>
+                  {contentJournal(previewVersion==='draft'?draft:bundle.live, language).map(art=>(
+                    <article key={art.slug} className="p-3.5 rounded-xl border border-neutral-200 dark:border-zinc-700 bg-neutral-50 dark:bg-zinc-800/60 space-y-2">
+                      <img src={art.image} alt={art.title} className="w-full h-32 object-cover rounded-lg" onError={e=>{(e.currentTarget as HTMLImageElement).src='/images/product-placeholder.svg';}}/>
+                      <div className="flex items-center justify-between text-[11px] text-neutral-400">
+                        <span className="font-semibold text-emerald-700 dark:text-emerald-300">{art.category}</span>
+                        <span>{art.publishedDate}</span>
+                      </div>
+                      <h4 className="font-serif font-bold text-sm text-[#120F17] dark:text-[#FAF9F5] line-clamp-1">{art.title}</h4>
+                      <p className="text-xs text-neutral-600 dark:text-neutral-300 line-clamp-2">{art.excerpt}</p>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {previewSurface==='faq'&&(
+            <div className="preview-surface-faq p-4 space-y-3">
+              <div className="border-b border-neutral-200 dark:border-zinc-700 pb-3">
+                <h2 className="font-serif font-bold text-lg text-[#043327] dark:text-emerald-400">Frequently Asked Questions</h2>
+                <p className="text-xs text-neutral-500">Concierge answers on orders, packaging and authenticity.</p>
+              </div>
+              <FAQSection/>
+            </div>
+          )}
+        </StorefrontContentProvider>
+      </div>
     </section>}
     {historyModal&&<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
       <div className="bg-white dark:bg-zinc-900 border border-[#D4AF37]/30 rounded-2xl max-w-lg w-full max-h-[80vh] flex flex-col overflow-hidden shadow-2xl">

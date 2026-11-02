@@ -250,6 +250,7 @@ Performance targets for field measurement are LCP <=2.5s, INP <=200ms and CLS <=
 | 25 Oct 2026 | Owner added mandatory rules: review before delivery, correct categories after Firestore item changes, preserve working behavior, reduce repeated prompting. | Rules documentation implemented; future automation is separate M34. |
 | 25 Oct 2026 | Recommend A / The Signature Table; preserve current brand and services. | Working V1 direction based on confirmed balanced priorities. |
 | 27 Oct 2026 | Owner accepted current look and requested phased continuation. | Six delivery phases recorded; V2-A product cards/collection continuity selected as next slice. No new implementation claimed in this planning checkpoint. |
+| 02 Nov 2026 | Checkpoint 1d6ce10 defect repairs completed: gift reveal async admin auth timing, Studio preview surfaces & viewports, reorder server quote revalidation, and truthful planner cart capping. Full offline suite (101 test files, 815 browser tests passed, 1 skipped, 11 hardening, 21 backend, 36 production checks) verified green. | Completed and verified locally; manual cloud provisioning remains deferred. |
 
 ## Next session
 

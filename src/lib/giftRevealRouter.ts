@@ -1,7 +1,7 @@
-import { Router, type RequestHandler, type Request, type Response } from 'express';
+import { Router, type Request, type Response, type RequestHandler } from 'express';
+import { createHash, randomBytes } from 'crypto';
 import type { Firestore } from 'firebase-admin/firestore';
 import type { Auth } from 'firebase-admin/auth';
-import { randomBytes, createHash } from 'node:crypto';
 import { PRODUCTS } from '../data/products';
 import { isCurrentAdministrator } from './adminAuthentication';
 
@@ -55,39 +55,104 @@ async function verifyAdminAuthorization(
   options: GiftRevealRouterOptions,
   user: any
 ): Promise<boolean> {
+  // 1. If requireAdmin middleware is configured, run it with definitive completion tracking.
+  // Never treat middleware return as authorization completion, because compositions like
+  // requireAuth(req, res, () => { void currentAdministrator(...) }) return before the async lookup finishes.
   if (options.requireAdmin) {
-    let nextCalled = false;
-    await new Promise<void>((resolve, reject) => {
-      try {
-        const next = (err?: any) => {
-          if (err) reject(err);
-          else {
-            nextCalled = true;
-            resolve();
+    return new Promise<boolean>((resolve) => {
+      let settled = false;
+
+      const finishSuccess = () => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        resolve(true);
+      };
+
+      const finishDenied = () => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        resolve(false);
+      };
+
+      const onNext = (err?: any) => {
+        if (err) {
+          if (!settled) {
+            settled = true;
+            cleanup();
+            if (!res.headersSent) {
+              res.status(503).json({ code: 'AUTH_SERVICE_UNAVAILABLE', error: 'Authority verification unavailable.' });
+            }
+            resolve(false);
           }
-        };
-        const p = options.requireAdmin!(req, res, next) as unknown;
-        if (p && typeof (p as any).then === 'function') {
-          (p as Promise<any>).then(() => resolve()).catch(reject);
         } else {
-          resolve();
+          finishSuccess();
         }
-      } catch (err) {
-        reject(err);
+      };
+
+      const originalEnd = res.end;
+      const originalJson = res.json;
+      const originalSend = res.send;
+
+      function cleanup() {
+        res.removeListener('finish', finishDenied);
+        res.removeListener('close', finishDenied);
+        res.end = originalEnd;
+        res.json = originalJson;
+        res.send = originalSend;
+      }
+
+      res.once('finish', finishDenied);
+      res.once('close', finishDenied);
+
+      (res as any).end = function (...args: any[]) {
+        cleanup();
+        settled = true;
+        resolve(false);
+        return originalEnd.apply(res, args);
+      };
+      (res as any).json = function (...args: any[]) {
+        cleanup();
+        settled = true;
+        resolve(false);
+        return originalJson.apply(res, args);
+      };
+      (res as any).send = function (...args: any[]) {
+        cleanup();
+        settled = true;
+        resolve(false);
+        return originalSend.apply(res, args);
+      };
+
+      try {
+        const p = (options.requireAdmin as any)(req, res, onNext);
+        if (p && typeof p.catch === 'function') {
+          p.catch(() => {
+            if (!settled) {
+              settled = true;
+              cleanup();
+              if (!res.headersSent) {
+                res.status(503).json({ code: 'AUTH_SERVICE_UNAVAILABLE', error: 'Authority verification unavailable.' });
+              }
+              resolve(false);
+            }
+          });
+        }
+      } catch {
+        if (!settled) {
+          settled = true;
+          cleanup();
+          if (!res.headersSent) {
+            res.status(503).json({ code: 'AUTH_SERVICE_UNAVAILABLE', error: 'Authority verification unavailable.' });
+          }
+          resolve(false);
+        }
       }
     });
-
-    if (res.headersSent || (res as any).writableEnded) {
-      return false;
-    }
-    if (!nextCalled) {
-      if (!res.headersSent) {
-        res.status(403).json({ code: 'FORBIDDEN_ADMIN', error: 'Authoritative admin privileges required.' });
-      }
-      return false;
-    }
   }
 
+  // 2. Direct current-account authority validator lookup when requireAdmin middleware is omitted
   if (options.getAuth) {
     try {
       const isCurrent = await isCurrentAdministrator(options.getAuth(), user);
@@ -97,20 +162,20 @@ async function verifyAdminAuthorization(
         }
         return false;
       }
-    } catch (err: any) {
+      return true;
+    } catch {
       if (!res.headersSent) {
         res.status(503).json({ code: 'AUTH_SERVICE_UNAVAILABLE', error: 'Authority verification unavailable.' });
       }
       return false;
     }
-  } else if (!options.requireAdmin) {
-    if (!res.headersSent) {
-      res.status(403).json({ code: 'FORBIDDEN_ADMIN', error: 'Authoritative admin privileges required.' });
-    }
-    return false;
   }
 
-  return true;
+  // 3. Fail closed if neither administrator middleware nor Auth instance was configured
+  if (!res.headersSent) {
+    res.status(403).json({ code: 'FORBIDDEN_ADMIN', error: 'Authoritative admin privileges required.' });
+  }
+  return false;
 }
 
 export function createGiftRevealRouter(options: GiftRevealRouterOptions) {
@@ -209,7 +274,7 @@ export function createGiftRevealRouter(options: GiftRevealRouterOptions) {
         revealUrl: `/reveal/${token}`,
         expiresAt,
       });
-    } catch (e: any) {
+    } catch {
       return res.status(500).json({ code: 'REVEAL_CREATION_FAILED', error: 'Internal failure creating gift reveal.' });
     }
   });
@@ -258,7 +323,7 @@ export function createGiftRevealRouter(options: GiftRevealRouterOptions) {
       );
 
       return res.json({ ok: true, revoked: true });
-    } catch (e: any) {
+    } catch {
       return res.status(500).json({ code: 'REVEAL_REVOCATION_FAILED', error: 'Failed to revoke reveal link.' });
     }
   });
@@ -270,54 +335,42 @@ export function createGiftRevealRouter(options: GiftRevealRouterOptions) {
     try {
       const db = options.getDb();
       if (!db) {
-        return res.status(503).json({ code: 'DATABASE_UNAVAILABLE' });
+        return res.status(503).json({ code: 'DATABASE_UNAVAILABLE', error: 'Database unavailable.' });
       }
 
       const rawToken = String(req.params.token || '').trim();
       if (!/^[a-f0-9]{32}$/.test(rawToken)) {
-        return res.status(404).json({ code: 'REVEAL_NOT_FOUND' });
+        return res.status(400).json({ code: 'INVALID_TOKEN', error: 'Malformed token.' });
       }
 
       const tokenHash = hashRevealToken(rawToken);
       const doc = await db.collection('giftReveals').doc(tokenHash).get();
       if (!doc.exists) {
-        return res.status(404).json({ code: 'REVEAL_NOT_FOUND' });
+        return res.status(404).json({ code: 'REVEAL_NOT_FOUND', error: 'This gift reveal link was not found or has expired.' });
       }
 
       const data = doc.data() as StoredGiftRevealRecord;
 
-      // Fail-closed on revoked records
-      if (data.revoked === true) {
-        return res.status(410).json({ code: 'REVEAL_REVOKED' });
+      if (data.revoked) {
+        return res.status(410).json({ code: 'REVEAL_REVOKED', error: 'This gift unboxing experience has been revoked by the sender.' });
       }
 
-      // Fail-closed on missing, malformed or past expiry
-      if (!data.expiresAt || isNaN(Date.parse(data.expiresAt)) || new Date(data.expiresAt).getTime() < Date.now()) {
-        return res.status(410).json({ code: 'REVEAL_EXPIRED' });
+      if (new Date(data.expiresAt).getTime() <= Date.now()) {
+        return res.status(410).json({ code: 'REVEAL_EXPIRED', error: 'This gift reveal link has expired.' });
       }
 
-      // Explicit sanitized recipient DTO (Zero prices, zero address, zero phone, zero internal notes)
-      const recipientDto: GiftRevealRecipientDTO = {
-        senderName: String(data.senderName || ''),
-        recipientName: String(data.recipientName || ''),
-        giftMessage: String(data.giftMessage || ''),
-        items: Array.isArray(data.items)
-          ? data.items.map(i => ({
-              productId: String(i.productId || ''),
-              name_en: String(i.name_en || ''),
-              name_ur: String(i.name_ur || ''),
-              name_ar: String(i.name_ar || ''),
-              image: String(i.image || ''),
-              weight: String(i.weight || ''),
-              quantity: Math.max(1, Math.floor(Number(i.quantity) || 1)),
-            }))
-          : [],
+      // Safe, bounded recipient DTO with strictly zero prices, zero order IDs, zero creator UIDs
+      const recipientDTO: GiftRevealRecipientDTO = {
+        senderName: data.senderName,
+        recipientName: data.recipientName,
+        giftMessage: data.giftMessage,
+        items: data.items,
         expiresAt: data.expiresAt,
       };
 
-      return res.json(recipientDto);
-    } catch (e: any) {
-      return res.status(500).json({ code: 'REVEAL_LOOKUP_FAILED' });
+      return res.json(recipientDTO);
+    } catch {
+      return res.status(500).json({ code: 'REVEAL_FETCH_FAILED', error: 'Failed to retrieve gift reveal.' });
     }
   });
 

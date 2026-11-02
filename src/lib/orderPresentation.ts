@@ -42,6 +42,11 @@ export interface ReorderAnalysis {
   hasUnavailableItems: boolean;
   hasPriceChanges: boolean;
   estimatedSubtotal: number;
+  serverValidated?: boolean;
+  isQuoteRequest?: boolean;
+  requiresRenewedReview?: boolean;
+  serverNotice?: string;
+  quoteRequiredNotice?: string;
 }
 
 /**
@@ -160,6 +165,118 @@ export function reviewReorderItems(
     hasPriceChanges,
     estimatedSubtotal,
   };
+}
+
+/**
+ * Validates reorder items against the authoritative server quote endpoint (/api/orders/quote).
+ * Detects server-side price adjustments, quote-required configurations, or product unavailabilities.
+ * Flags requiresRenewedReview if the server outcome differs from the initial client estimate.
+ */
+export async function revalidateReorderWithServerQuote(
+  analysis: ReorderAnalysis,
+  options?: { city?: string; fetchFn?: typeof fetch }
+): Promise<ReorderAnalysis> {
+  if (analysis.reorderable.length === 0) {
+    return { ...analysis, serverValidated: true };
+  }
+
+  const fetchImpl = options?.fetchFn || (typeof fetch !== 'undefined' ? fetch : null);
+  if (!fetchImpl) {
+    return analysis;
+  }
+
+  try {
+    const payload = {
+      items: analysis.reorderable.map(i => ({
+        productId: i.productId,
+        selectedWeight: i.weight,
+        quantity: i.quantity,
+      })),
+      city: options?.city || 'Lahore',
+    };
+
+    const res = await fetchImpl('/api/orders/quote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      if (res.status === 400 && err.code === 'QUOTE_REQUIRED') {
+        return {
+          ...analysis,
+          serverValidated: true,
+          isQuoteRequest: true,
+          requiresRenewedReview: true,
+          quoteRequiredNotice: err.error || 'One or more items require a personalized quote from our concierge.',
+        };
+      }
+      if (res.status === 400 && err.code === 'PRODUCT_UNAVAILABLE') {
+        return {
+          ...analysis,
+          serverValidated: true,
+          hasUnavailableItems: true,
+          requiresRenewedReview: true,
+          serverNotice: err.error || 'One or more items are currently unavailable for reorder.',
+        };
+      }
+      return {
+        ...analysis,
+        serverValidated: false,
+        serverNotice: err.error || 'Authoritative order quote verification failed.',
+      };
+    }
+
+    const data = await res.json();
+    if (data && data.totals && Array.isArray(data.items)) {
+      const serverSubtotal = Number(data.totals.subtotal) || analysis.estimatedSubtotal;
+      const isQuote = Boolean(data.totals.isQuoteRequest);
+      let priceChanged = analysis.hasPriceChanges;
+
+      const updated = analysis.reorderable.map(item => {
+        const found = data.items.find((si: any) =>
+          (si.productId === item.productId || (si.id && String(si.id).startsWith(item.productId))) &&
+          si.selectedWeight === item.weight
+        );
+        if (found && typeof found.price === 'number') {
+          const changed = item.originalUnitPrice !== undefined && item.originalUnitPrice !== found.price;
+          if (changed) priceChanged = true;
+          return {
+            ...item,
+            currentUnitPrice: found.price,
+            priceChanged: changed,
+            status: (changed ? 'price_changed' : 'available') as 'price_changed' | 'available',
+          };
+        }
+        return item;
+      });
+
+      const changedFromEstimate =
+        serverSubtotal !== analysis.estimatedSubtotal ||
+        priceChanged !== analysis.hasPriceChanges ||
+        isQuote;
+
+      return {
+        reorderable: updated,
+        unavailable: analysis.unavailable,
+        hasUnavailableItems: analysis.hasUnavailableItems,
+        hasPriceChanges: priceChanged,
+        estimatedSubtotal: serverSubtotal,
+        serverValidated: true,
+        isQuoteRequest: isQuote,
+        requiresRenewedReview: changedFromEstimate,
+      };
+    }
+  } catch (err: any) {
+    return {
+      ...analysis,
+      serverValidated: false,
+      serverNotice: err?.message || 'Server quote request failed.',
+    };
+  }
+
+  return analysis;
 }
 
 export function getReorderItems(
