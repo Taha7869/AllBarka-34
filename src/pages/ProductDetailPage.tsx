@@ -228,7 +228,7 @@ export default function ProductDetailPage() {
 
   };
 
-  const siteOrigin = typeof window === 'undefined' ? 'https://allbarka.com' : window.location.origin;
+  const siteOrigin = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'https://allbarka.com';
 
   return (
     <div dir={language === 'en' ? 'ltr' : 'rtl'} data-product-kind={isPackaging ? 'packaging' : 'food'} className="pdp-editorial w-full bg-[var(--color-base,#F6F1EA)] pt-6 sm:pt-10 pb-24">
