@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCart } from '../contexts/CartContext';
 import { useCatalogProducts, useCatalogRefresh } from '../contexts/CatalogContext';
+import { PRODUCTS as BASE_PRODUCTS } from '../data/products';
 import { resolveProductPrice } from '../lib/productVariants';
 import { openCustomQuoteModal } from './CustomQuoteModal';
 import { reviewReorderItems, revalidateReorderWithServerQuote, trackingProgress, TRACKING_STEPS, type ReorderAnalysis } from '../lib/orderPresentation';
@@ -54,9 +55,9 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
   useEffect(() => {
     let active = true;
     setShowAdminWorkspace(false);
-    if (isOpen && currentUser) {
+    if (isOpen && currentUser && typeof currentUser.getIdTokenResult === 'function') {
       currentUser.getIdTokenResult().then(result => {
-        if (active) setShowAdminWorkspace(result.claims.admin === true || result.claims.role === 'admin');
+        if (active) setShowAdminWorkspace(result?.claims?.admin === true || result?.claims?.role === 'admin');
       }).catch(() => {});
     }
     return () => { active = false; };
@@ -257,7 +258,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
 
     let allConsistent = true;
     for (const item of reorderAnalysis.reorderable) {
-      const liveProd = PRODUCTS.find(p => p.id === item.productId);
+      const liveProd = BASE_PRODUCTS.find(p => p.id === item.productId) || PRODUCTS.find(p => p.id === item.productId);
       const localPrice = liveProd ? resolveProductPrice(liveProd, item.weight) : null;
       if (localPrice !== item.currentUnitPrice) {
         allConsistent = false;
@@ -268,7 +269,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
     if (!allConsistent && refreshCatalog) {
       await refreshCatalog({ force: true } as any).catch(() => {});
       allConsistent = reorderAnalysis.reorderable.every(item => {
-        const liveProd = PRODUCTS.find(p => p.id === item.productId);
+        const liveProd = BASE_PRODUCTS.find(p => p.id === item.productId) || PRODUCTS.find(p => p.id === item.productId);
         const localPrice = liveProd ? resolveProductPrice(liveProd, item.weight) : null;
         return localPrice === item.currentUnitPrice;
       });
@@ -287,7 +288,8 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
     }
 
     reorderAnalysis.reorderable.forEach(({ product, weight, quantity }) => {
-      addToCart(product, weight, quantity, undefined, { silent: true, openCart: false });
+      const liveProduct = BASE_PRODUCTS.find(p => p.id === product.id) || product;
+      addToCart(liveProduct, weight, quantity, undefined, { silent: true, openCart: false });
     });
     setReviewingOrder(null);
     setReorderAnalysis(null);
@@ -628,8 +630,36 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                                 )}
 
                                 {reorderAnalysis.quoteRequiredNotice && (
-                                  <div className="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-xs text-blue-900 dark:text-blue-200" data-quote-notice>
-                                    <p className="font-semibold">{reorderAnalysis.quoteRequiredNotice}</p>
+                                  <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-xs text-blue-900 dark:text-blue-200 space-y-2" data-quote-notice>
+                                    <div className="flex items-start gap-2">
+                                      <Sparkles size={15} className="text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                                      <div>
+                                        <p className="font-semibold">{reorderAnalysis.quoteRequiredNotice}</p>
+                                        <p className="text-[11px] text-blue-700 dark:text-blue-300 mt-0.5">
+                                          These boutique packaging selections require personalized concierge assistance.
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="pt-1">
+                                      <button
+                                        type="button"
+                                        data-action="open-personalized-inquiry"
+                                        onClick={() => {
+                                          const firstItem = reorderAnalysis.reorderable[0] || reorderAnalysis.unavailable[0];
+                                          onClose();
+                                          openCustomQuoteModal({
+                                            productId: firstItem?.productId,
+                                            variantLabel: firstItem?.weight,
+                                            mode: 'filled',
+                                            quantity: ('quantity' in (firstItem || {}) ? (firstItem as any).quantity : undefined) || 50,
+                                          });
+                                        }}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#043327] hover:bg-[#074b39] text-[#FAF9F5] text-[11px] font-bold shadow-sm transition-colors cursor-pointer"
+                                      >
+                                        <MessageSquare size={13} />
+                                        <span>Request Personalized Quote</span>
+                                      </button>
+                                    </div>
                                   </div>
                                 )}
 
@@ -659,7 +689,13 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                                   <button
                                     type="button"
                                     data-action="confirm-reorder"
-                                    disabled={reorderValidating || !reorderAnalysis.serverValidated || reorderAnalysis.reorderable.length === 0}
+                                    disabled={
+                                      reorderValidating ||
+                                      !reorderAnalysis ||
+                                      !reorderAnalysis.serverValidated ||
+                                      reorderAnalysis.itemsApprovedForCart !== true ||
+                                      reorderAnalysis.reorderable.length === 0
+                                    }
                                     onClick={confirmReorder}
                                     className="px-4 py-2 rounded-xl bg-[#043327] hover:bg-[#074b39] text-[#FAF9F5] text-xs font-bold transition-all disabled:opacity-40 flex items-center gap-1.5 shadow-sm"
                                   >

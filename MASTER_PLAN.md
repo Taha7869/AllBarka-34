@@ -5,6 +5,23 @@
 >
 > **Owner Direction (01 Nov 2026):** Manual cloud provisioning (creating GCP/Firebase project `allbarka-preview`, IAM role assignments, billing, live credential rotation, and merchant price/recipe confirmations) is skipped while the owner is away. These items remain explicitly in the GitHub pending list to be executed when the owner is active on PC. Ongoing development and testing continue locally using existing available keys and isolated fixtures.
 
+02 November 2026 — **M29 Patron Reorder UI, Inquiry Action & Browser Regressions / DONE & VERIFIED**. Continued on `codex/admin-catalog-foundation-20261023`:
+1. M29 Reorder Confirm Button Guard (`src/components/PatronLoungeModal.tsx`):
+   - Disabled the confirmation button (`data-action="confirm-reorder"`) whenever `reorderAnalysis.itemsApprovedForCart !== true`, eliminating any discrepancy between handler guard and button state.
+2. Personalized Concierge Inquiry Action (`src/components/PatronLoungeModal.tsx`):
+   - Added interactive concierge inquiry button (`data-action="open-personalized-inquiry"`) inside quote-required banner, closing Patron Lounge cleanly (`onClose()`) before dispatching `openCustomQuoteModal` with selected prefill fields (product, portion, and quantity) to prevent modal backdrop and focus collision.
+3. Executed Real Browser Regressions (`tests/batch-e-browser.test.tsx`):
+   - Executed all 7 real customer reorder journeys in Playwright with mounted `PatronLoungeModal` and live `CartProvider`:
+     1. Quote-required items: confirmation button remains disabled, cart count stays 0, and clicking the inquiry button closes Patron Lounge and opens `CustomQuoteModal`.
+     2. Unavailable products & variants (`PRODUCT_UNAVAILABLE`, `VARIANT_UNAVAILABLE`): confirmation button remains disabled and cart count stays 0.
+     3. Network/server 500 error: actionable error message displayed, confirm disabled, cart count stays 0.
+     4. Stale catalog consistency: server price changed while client catalog was stale; halts confirmation and guards cart count at 0 with error displayed.
+     5. Changed price with updated catalog: renewed review displayed, confirm button enabled, exactly commits 2 units @ Rs. 1,400 to bag.
+     6. Successful unchanged quote: commits exact product (pista), variant (250g), quantity (2), and unit price (Rs. 1,250) to bag.
+     7. Cancelled / superseded late quote: in-flight delayed quote cancelled via Cancel button; late delayed response cannot reopen panel or modify cart.
+4. Studio Viewport Isolation:
+   - Studio preview viewport isolation is recorded separately as container-scoped preview breakpoint simulation; distinct from unverified storefront-wide page-level theme/RTL parity.
+
 02 November 2026 — **Complete Roadmap & Remaining Confirmed Defect Repairs (c8b7b37) / DONE & FULL SUITE PASSING**. Continued on `codex/admin-catalog-foundation-20261023`. Repaired all confirmed defects from checkpoint `c8b7b37`:
 1. P0 Admin Authority Guard on Gift Reveal (`src/lib/giftRevealRouter.ts`, `server.ts`): Admin branch strictly authorizes via `isCurrentAdministrator(options.getAuth(), user)` and `options.requireAdmin`. Cached tokens, demoted claims, disabled/revoked accounts, or identity mismatches are strictly rejected (403/401). Fail-closed 503 on authority lookup failures.
 2. M29 Real Reorder Journey (`src/lib/orderPresentation.ts`, `src/components/PatronLoungeModal.tsx`): Replaced naive hyphen-splitting with unambiguous `resolveReorderProduct` checking exact stable ID, exact item ID, composite key `${id}-${weight}`, and longest matching prefix (preventing prefix collisions like `gift` vs `gift-box`). Wired `PatronLoungeModal` to live catalog via `useCatalogProducts()` and added interactive review step with price change/discontinued warnings.

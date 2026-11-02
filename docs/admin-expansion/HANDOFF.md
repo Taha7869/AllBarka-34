@@ -341,6 +341,25 @@ Private merchant-data migration review, new-feature Auth/Storage/n8n integration
     - `node scripts/verify-production.mjs` (36/36 checks passed)
     - `node scripts/run-all-tests.mjs` (Full master offline suite: 101 test files + backend + assets + production checks: 815 browser tests passed, 1 skipped, 11 hardening tests passed, 21 backend tests passed, 0 failures).
 
+- **02 Nov 2026 — Checkpoint f873219 Reorder UI, Personalized Inquiry & Real Browser Regressions Verified:**
+  - **1. Reorder Confirm Button State Guarded (`src/components/PatronLoungeModal.tsx`):**
+    - Updated rendered confirm button (`data-action="confirm-reorder"`) disabled expression to explicitly require `reorderAnalysis.itemsApprovedForCart === true`.
+    - Prevents unapproved quotes from having an active confirm button even when nonempty reorder items exist.
+  - **2. Interactive Personalized Concierge Inquiry Action (`src/components/PatronLoungeModal.tsx`):**
+    - Rendered `data-action="open-personalized-inquiry"` inside quote-required notice banner.
+    - Closes Patron Lounge (`onClose()`) before dispatching `openCustomQuoteModal` with prefilled product ID, weight, and quantity to avoid dialog backdrop and focus collisions.
+  - **3. Executed Real Browser Regressions in Playwright (`tests/batch-e-browser.test.tsx`):**
+    - Verified all 7 customer flows end-to-end against mounted `PatronLoungeModal` and real `CartProvider`:
+      1. `QUOTE_REQUIRED`: confirm disabled, cart count remains 0, inquiry button closes Patron Lounge and opens `CustomQuoteModal`.
+      2. `PRODUCT_UNAVAILABLE` & `VARIANT_UNAVAILABLE`: confirm disabled, cart count remains 0.
+      3. Network 500 error: actionable error message displayed, confirm disabled, cart count remains 0.
+      4. Stale catalog consistency: server price changed while catalog was stale; halts confirmation and guards cart count at 0 with error displayed.
+      5. Changed price with updated catalog: renewed review displayed, confirm button enabled, exactly commits 2 units @ Rs. 1,400 to bag.
+      6. Successful unchanged quote: commits exact product (pista), variant (250g), quantity (2), and unit price (Rs. 1,250) to bag.
+      7. Cancelled / superseded late quote: in-flight delayed quote cancelled via Cancel button; late delayed response cannot reopen panel or modify cart.
+  - **4. Studio Responsive Viewport Isolation Alignment:**
+    - Recorded separately as container preview breakpoint simulation; distinct from unverified page-wide storefront theme/RTL parity.
+
 - **02 Nov 2026 — Checkpoint 0026c4a Reorder Defect Repairs Completed & Verified:**
   - **1. Separated Server Response Received from Cart Approval (`src/lib/orderPresentation.ts`, `src/components/PatronLoungeModal.tsx`):**
     - In `revalidateReorderWithServerQuote`, differentiated `serverResponseReceived: true` from `itemsApprovedForCart: boolean`.
