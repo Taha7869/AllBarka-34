@@ -333,10 +333,30 @@ Private merchant-data migration review, new-feature Auth/Storage/n8n integration
     - Replaced container width scaling with an isolated viewport (`iframe.preview-storefront-iframe`) so CSS media queries (`md:`, `lg:`) evaluate against the exact device width (Mobile 390px, Tablet 768px, Desktop 100%).
     - Preserved host-level synchronized `.content-hero-preview` for DOM compatibility.
     - Maintained surface switching (Homepage, Journal, FAQ) with live/draft isolation without mutating live content.
-    - Verified via `tests/batch-d-browser.test.tsx`.
+    - Verified via `tests/batch-d-browser.test.tsx`. (Note: Studio responsive viewport isolation evaluates breakpoint dimensions specifically; full storefront page/theme/RTL parity remains recorded separately where verified).
   - **Full Quality Gates & Master Offline Suite Pass:**
     - `npm run typecheck` (0 errors)
     - `npm run lint:hooks` (0 warnings)
     - Production build & release privacy audit (84 artifacts clean)
     - `node scripts/verify-production.mjs` (36/36 checks passed)
     - `node scripts/run-all-tests.mjs` (Full master offline suite: 101 test files + backend + assets + production checks: 815 browser tests passed, 1 skipped, 11 hardening tests passed, 21 backend tests passed, 0 failures).
+
+- **02 Nov 2026 — Checkpoint 0026c4a Reorder Defect Repairs Completed & Verified:**
+  - **1. Separated Server Response Received from Cart Approval (`src/lib/orderPresentation.ts`, `src/components/PatronLoungeModal.tsx`):**
+    - In `revalidateReorderWithServerQuote`, differentiated `serverResponseReceived: true` from `itemsApprovedForCart: boolean`.
+    - Explicitly set `itemsApprovedForCart: false` whenever server rejects quote (`QUOTE_REQUIRED`, `PRODUCT_UNAVAILABLE`, `VARIANT_UNAVAILABLE`) or returns quote request.
+    - Disabled the confirm button (`data-action="confirm-reorder"`) and guarded the `confirmReorder` handler so rejected quotes never authorize cart addition.
+    - Surfaced actionable notices (`data-quote-notice`, `data-reorder-error`, `data-unavailable-warning`) including personalized concierge inquiry button (`data-action="open-personalized-inquiry"`) opening `CustomQuoteModal`.
+  - **2. Synchronized Review and Cart Prices (`src/lib/orderPresentation.ts`, `src/contexts/CatalogContext.tsx`, `src/components/PatronLoungeModal.tsx`):**
+    - In `revalidateReorderWithServerQuote`, updated each reorder item's `product` prices and variant rates to match the authoritative server quote rate (`found.price`).
+    - Added `force` option to `useCatalogRefresh` (`refresh({ force: true })`) to guarantee fresh synchronization of `PRODUCTS` with server catalog pricing.
+    - In `PatronLoungeModal.tsx`, invoked catalog refresh on review initialization and price change detection.
+    - In `confirmReorder`, verified consistency between reviewed prices (`item.currentUnitPrice`) and local catalog resolved prices before adding to cart. If consistency cannot be established, halts cart acceptance, displays actionable notice, and requests refreshed review.
+    - Retained explicit customer review of price changes without client-side price overrides.
+  - **3. Real Browser Acceptance Regressions (`tests/batch-e-browser.test.tsx`, `tests/batch-e-signature.test.ts`):**
+    - Verified all 5 customer flows with Playwright against mounted `PatronLoungeModal` and real `CartProvider`:
+      1. Each rejected quote code (`QUOTE_REQUIRED`, `PRODUCT_UNAVAILABLE`, `VARIANT_UNAVAILABLE`) disables confirmation, exposes personalized inquiry, and leaves cart unchanged.
+      2. Changed server price requires review, and accepted cart stores matching reviewed price (400).
+      3. Network/invalid-response failure leaves cart unchanged.
+      4. Successful unchanged quote adds intended exact product, variant, and quantity (pista-250g, 2 units, Rs. 350).
+      5. Cancelling or superseding in-flight request closes review and prevents delayed responses from reopening panel or modifying cart.

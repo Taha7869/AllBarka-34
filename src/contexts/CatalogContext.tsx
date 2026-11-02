@@ -8,7 +8,7 @@ import { HAMPER_BOXES, type HamperBox } from '../lib/hamperCatalog';
 import { HAMPER_BOX_SEEDS, boxFromPricing, validateHamperBoxPricing } from '../lib/hamperBoxSchema';
 
 const seeds = PRODUCTS.map(product => ({ ...product }));
-const CatalogContext = createContext({ products: PRODUCTS, hamperBoxes: HAMPER_BOXES, taxonomy: [] as TaxonomyEntry[], hiddenTaxonomy: [] as string[], refresh: async () => {} });
+const CatalogContext = createContext({ products: PRODUCTS, hamperBoxes: HAMPER_BOXES, taxonomy: [] as TaxonomyEntry[], hiddenTaxonomy: [] as string[], refresh: async (_options?: { force?: boolean }) => {} });
 export function CatalogProvider({ children, initialProducts, initialTaxonomy }: { children: ReactNode; initialProducts?: Product[]; initialTaxonomy?: TaxonomyEntry[] }) {
   const [products, setProducts] = useState<Product[]>(() => initialProducts || PRODUCTS);
   const [hamperBoxes, setHamperBoxes] = useState<HamperBox[]>(() => [...HAMPER_BOXES]);
@@ -18,7 +18,7 @@ export function CatalogProvider({ children, initialProducts, initialTaxonomy }: 
   const active = useRef(false);
   const inFlight = useRef<AbortController | null>(null);
   const version = useRef('');
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (options?: { force?: boolean }) => {
     if (inFlight.current) return;
     const controller = new AbortController(); inFlight.current = controller;
     const timer = setTimeout(() => controller.abort(), 10_000);
@@ -34,7 +34,7 @@ export function CatalogProvider({ children, initialProducts, initialTaxonomy }: 
       const response = await fetch(apiUrl('/api/catalog'), { signal: controller.signal, credentials: 'omit', cache: 'no-cache', headers: { Accept: 'application/json' } });
       if (!response.ok) return;
       const data = await response.json();
-      if (!active.current || controller.signal.aborted || !Array.isArray(data.products) || typeof data.version !== 'string' || data.version === version.current) return;
+      if (!active.current || controller.signal.aborted || !Array.isArray(data.products) || typeof data.version !== 'string' || (data.version === version.current && !options?.force)) return;
       // Revalidate the public adapter and retain source-owned descriptive metadata only.
       const handledIds = new Set<string>();
       const next: Product[] = [];

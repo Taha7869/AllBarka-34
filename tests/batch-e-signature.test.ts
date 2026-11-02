@@ -642,8 +642,10 @@ test('M29: Reorder revalidation with canonical server quote detects price change
 
   const revalidatedSuccess = await revalidateReorderWithServerQuote(initialAnalysis, { fetchFn: mockFetchSuccess });
   assert.equal(revalidatedSuccess.serverValidated, true);
+  assert.equal(revalidatedSuccess.itemsApprovedForCart, true, 'Valid successful server quote approves items for cart');
   assert.equal(revalidatedSuccess.estimatedSubtotal, 10000);
   assert.equal(revalidatedSuccess.reorderable[0].currentUnitPrice, 5000);
+  assert.equal(revalidatedSuccess.reorderable[0].product.prices?.['500g'], 5000, 'Reorder item product price is updated to authoritative server quote rate');
   assert.equal(revalidatedSuccess.hasPriceChanges, true);
   assert.equal(revalidatedSuccess.requiresRenewedReview, true, 'Customer renewed review required when server rate changes');
 
@@ -659,6 +661,7 @@ test('M29: Reorder revalidation with canonical server quote detects price change
 
   const revalidatedQuoteReq = await revalidateReorderWithServerQuote(initialAnalysis, { fetchFn: mockFetchQuoteReq });
   assert.equal(revalidatedQuoteReq.serverValidated, true);
+  assert.equal(revalidatedQuoteReq.itemsApprovedForCart, false, 'Quote required must never approve items for cart');
   assert.equal(revalidatedQuoteReq.isQuoteRequest, true);
   assert.equal(revalidatedQuoteReq.requiresRenewedReview, true);
   assert.ok(revalidatedQuoteReq.quoteRequiredNotice?.includes('Custom packaging requires personalized quote'));
@@ -675,6 +678,7 @@ test('M29: Reorder revalidation with canonical server quote detects price change
 
   const revalidatedUnavail = await revalidateReorderWithServerQuote(initialAnalysis, { fetchFn: mockFetchUnavail });
   assert.equal(revalidatedUnavail.serverValidated, true);
+  assert.equal(revalidatedUnavail.itemsApprovedForCart, false, 'Unavailable product must never approve items for cart');
   assert.equal(revalidatedUnavail.hasUnavailableItems, true);
   assert.equal(revalidatedUnavail.requiresRenewedReview, true);
   assert.ok(revalidatedUnavail.serverNotice?.includes('out of harvest'));
@@ -686,6 +690,7 @@ test('M29: Reorder revalidation with canonical server quote detects price change
 
   const revalidatedFail = await revalidateReorderWithServerQuote(initialAnalysis, { fetchFn: mockFetchNetworkFail });
   assert.equal(revalidatedFail.serverValidated, false);
+  assert.equal(revalidatedFail.itemsApprovedForCart, false, 'Network failure must not approve items for cart');
   assert.ok(revalidatedFail.serverNotice?.includes('NETWORK_TIMEOUT'));
 
   // 5. Payload contract: shippingMethodId and city are sent, and cancelled request handles abort cleanly

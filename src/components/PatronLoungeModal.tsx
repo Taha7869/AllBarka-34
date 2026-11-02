@@ -2,11 +2,13 @@ import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefers
 import {staffRequest} from '../lib/adminClient';
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, User, Package, MapPin, Phone, Crown, LogOut, Clock, Calendar, CheckCircle2, RotateCcw, ShoppingBag, AlertCircle, ShieldCheck, Bell } from 'lucide-react';
+import { X, User, Package, MapPin, Phone, Crown, LogOut, Clock, Calendar, CheckCircle2, RotateCcw, ShoppingBag, AlertCircle, ShieldCheck, Bell, MessageSquare, Sparkles } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCart } from '../contexts/CartContext';
-import { useCatalogProducts } from '../contexts/CatalogContext';
+import { useCatalogProducts, useCatalogRefresh } from '../contexts/CatalogContext';
+import { resolveProductPrice } from '../lib/productVariants';
+import { openCustomQuoteModal } from './CustomQuoteModal';
 import { reviewReorderItems, revalidateReorderWithServerQuote, trackingProgress, TRACKING_STEPS, type ReorderAnalysis } from '../lib/orderPresentation';
 import { Link } from 'react-router-dom';
 import { acquireScrollLock } from '../utils/scrollLock';
@@ -24,6 +26,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
   const { t } = useLanguage();
   const { addToCart, openCart } = useCart();
   const PRODUCTS = useCatalogProducts();
+  const refreshCatalog = useCatalogRefresh();
   const [reviewingOrder, setReviewingOrder] = useState<any | null>(null);
   const [reorderAnalysis, setReorderAnalysis] = useState<ReorderAnalysis | null>(null);
   const [reorderValidating, setReorderValidating] = useState(false);
@@ -178,6 +181,11 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
     const controller = new AbortController();
     reorderAbortRef.current = controller;
 
+    if (refreshCatalog) {
+      await refreshCatalog({ force: true } as any).catch(() => {});
+    }
+    if (controller.signal.aborted) return;
+
     const initialAnalysis = reviewReorderItems(order.items || [], PRODUCTS);
     setReviewingOrder(order);
     setReorderAnalysis(initialAnalysis);
@@ -203,9 +211,20 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
 
       if (controller.signal.aborted) return;
 
+      if (validated.hasPriceChanges && refreshCatalog) {
+        await refreshCatalog({ force: true } as any).catch(() => {});
+      }
+      if (controller.signal.aborted) return;
+
       setReorderAnalysis(validated);
       if (!validated.serverValidated) {
         setReorderError(validated.serverNotice || 'Authoritative order quote verification failed.');
+      } else if (!validated.itemsApprovedForCart) {
+        if (validated.quoteErrorCode === 'PRODUCT_UNAVAILABLE' || validated.quoteErrorCode === 'VARIANT_UNAVAILABLE' || validated.hasUnavailableItems) {
+          setReorderError(validated.serverNotice || 'One or more items are currently unavailable for reorder.');
+        } else if (validated.isQuoteRequest || validated.quoteErrorCode === 'QUOTE_REQUIRED') {
+          setReorderError('');
+        }
       }
     } catch (err: any) {
       if (controller.signal.aborted) return;
@@ -213,7 +232,9 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
       setReorderError(msg);
       setReorderAnalysis({
         ...initialAnalysis,
+        serverResponseReceived: false,
         serverValidated: false,
+        itemsApprovedForCart: false,
         serverNotice: msg,
       });
     } finally {
@@ -223,13 +244,45 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
     }
   };
 
-  const confirmReorder = () => {
+  const confirmReorder = async () => {
     if (
       reorderValidating ||
       !reorderAnalysis ||
       !reorderAnalysis.serverValidated ||
+      !reorderAnalysis.itemsApprovedForCart ||
       reorderAnalysis.reorderable.length === 0
     ) {
+      return;
+    }
+
+    let allConsistent = true;
+    for (const item of reorderAnalysis.reorderable) {
+      const liveProd = PRODUCTS.find(p => p.id === item.productId);
+      const localPrice = liveProd ? resolveProductPrice(liveProd, item.weight) : null;
+      if (localPrice !== item.currentUnitPrice) {
+        allConsistent = false;
+        break;
+      }
+    }
+
+    if (!allConsistent && refreshCatalog) {
+      await refreshCatalog({ force: true } as any).catch(() => {});
+      allConsistent = reorderAnalysis.reorderable.every(item => {
+        const liveProd = PRODUCTS.find(p => p.id === item.productId);
+        const localPrice = liveProd ? resolveProductPrice(liveProd, item.weight) : null;
+        return localPrice === item.currentUnitPrice;
+      });
+    }
+
+    if (!allConsistent) {
+      const msg = 'Catalog pricing was updated. Please refresh your review before confirming.';
+      setReorderError(msg);
+      setReorderAnalysis(prev => prev ? {
+        ...prev,
+        itemsApprovedForCart: false,
+        requiresRenewedReview: true,
+        serverNotice: msg,
+      } : null);
       return;
     }
 

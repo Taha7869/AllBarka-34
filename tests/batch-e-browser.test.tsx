@@ -146,7 +146,12 @@ root.render(
         setup(builder) {
           builder.onResolve({ filter: /\/AuthContext$/ }, () => ({ path: 'auth', namespace: 'isolated' }));
           builder.onLoad({ filter: /.*/, namespace: 'isolated' }, () => ({
-            contents: 'export const useAuth=()=>({currentUser:null,patronProfile:null,loading:false,logout:async()=>{}});',
+            contents: `export const useAuth=()=>({
+              currentUser: { uid: 'test-patron-uid', getIdToken: async () => 'test-auth-token' },
+              patronProfile: { name: 'Begum Salma Qureshi', email: 'salma@example.com' },
+              loading: false,
+              logout: async () => {},
+            });`,
             loader: 'js',
           }));
         },
@@ -161,7 +166,82 @@ root.render(
   app.use(createCatalogConfigurationRouter({ getDb: () => db, requireAdmin }));
   app.use(createStorefrontContentRouter({ getDb: () => db, requireAdmin }));
   app.use(createGiftRevealRouter({ getDb: () => db, requireAdmin }));
-  app.get('/api/product-media', (_req, res) => res.json({ overrides: {} }));
+  app.get('/api/product-media', (_req, res) => res.json({ overrides: {} }));
+
+  let quoteMode = 'success';
+
+  app.get('/api/me/orders', (_req, res) => {
+    return res.json({
+      orders: [
+        {
+          orderId: 'AB-HIST-001',
+          status: 'DELIVERED',
+          createdAt: '2026-10-15T12:00:00.000Z',
+          city: 'Lahore',
+          items: [
+            {
+              productId: 'pista',
+              name: 'Roasted Iranian Pistachios (Pista)',
+              selectedWeight: '250g',
+              quantity: 2,
+              price: 350,
+              unitPrice: 350,
+            },
+          ],
+          totals: { subtotal: 700, total: 700, discount: 0, shipping: 0 },
+        },
+      ],
+    });
+  });
+
+  app.post('/api/orders/quote', async (_req, res) => {
+    if (quoteMode === 'network_error') {
+      return res.status(500).json({ error: 'Database connection failed', code: 'SERVER_ERROR' });
+    }
+    if (quoteMode === 'quote_required') {
+      return res.status(400).json({
+        code: 'QUOTE_REQUIRED',
+        error: 'Please request a personalized quote for custom boutique items.',
+      });
+    }
+    if (quoteMode === 'product_unavailable') {
+      return res.status(400).json({
+        code: 'PRODUCT_UNAVAILABLE',
+        error: 'Product "Roasted Iranian Pistachios (Pista)" is currently out of harvest.',
+      });
+    }
+    if (quoteMode === 'variant_unavailable') {
+      return res.status(400).json({
+        code: 'VARIANT_UNAVAILABLE',
+        error: 'Portion 250g is currently unavailable for this product.',
+      });
+    }
+    if (quoteMode === 'delayed') {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      return res.json({
+        success: true,
+        totals: { subtotal: 700, isQuoteRequest: false },
+        items: [{ productId: 'pista', selectedWeight: '250g', price: 350, quantity: 2 }],
+      });
+    }
+    if (quoteMode === 'price_changed') {
+      return res.json({
+        success: true,
+        totals: { subtotal: 800, isQuoteRequest: false },
+        items: [{ productId: 'pista', selectedWeight: '250g', price: 400, quantity: 2 }],
+      });
+    }
+    return res.json({
+      success: true,
+      totals: { subtotal: 700, isQuoteRequest: false },
+      items: [{ productId: 'pista', selectedWeight: '250g', price: 350, quantity: 2 }],
+    });
+  });
+
+  app.post('/api/test-control/quote-mode', (req, res) => {
+    quoteMode = req.body.mode;
+    return res.json({ quoteMode });
+  });
 
   for (const folder of ['images', 'fonts', 'videos']) {
     app.use('/' + folder, express.static(path.resolve('public', folder)));

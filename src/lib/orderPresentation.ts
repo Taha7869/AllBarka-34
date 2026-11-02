@@ -45,10 +45,13 @@ export interface ReorderAnalysis {
   hasPriceChanges: boolean;
   estimatedSubtotal: number;
   serverValidated?: boolean;
+  serverResponseReceived?: boolean;
+  itemsApprovedForCart?: boolean;
   isQuoteRequest?: boolean;
   requiresRenewedReview?: boolean;
   serverNotice?: string;
   quoteRequiredNotice?: string;
+  quoteErrorCode?: string;
 }
 
 /**
@@ -187,12 +190,12 @@ export async function revalidateReorderWithServerQuote(
   options?: RevalidateReorderOptions
 ): Promise<ReorderAnalysis> {
   if (analysis.reorderable.length === 0) {
-    return { ...analysis, serverValidated: true };
+    return { ...analysis, serverResponseReceived: true, serverValidated: true, itemsApprovedForCart: false };
   }
 
   const fetchImpl = options?.fetchFn || (typeof fetch !== 'undefined' ? fetch : null);
   if (!fetchImpl) {
-    return analysis;
+    return { ...analysis, serverResponseReceived: false, serverValidated: false, itemsApprovedForCart: false };
   }
 
   const city = options?.city || 'Lahore';
@@ -235,24 +238,33 @@ export async function revalidateReorderWithServerQuote(
       if (res.status === 400 && err.code === 'QUOTE_REQUIRED') {
         return {
           ...analysis,
+          serverResponseReceived: true,
           serverValidated: true,
+          itemsApprovedForCart: false,
           isQuoteRequest: true,
           requiresRenewedReview: true,
+          quoteErrorCode: 'QUOTE_REQUIRED',
           quoteRequiredNotice: err.error || 'One or more items require a personalized quote from our concierge.',
         };
       }
       if (res.status === 400 && (err.code === 'PRODUCT_UNAVAILABLE' || err.code === 'VARIANT_UNAVAILABLE')) {
         return {
           ...analysis,
+          serverResponseReceived: true,
           serverValidated: true,
+          itemsApprovedForCart: false,
           hasUnavailableItems: true,
           requiresRenewedReview: true,
+          quoteErrorCode: err.code,
           serverNotice: err.error || 'One or more items are currently unavailable for reorder.',
         };
       }
       return {
         ...analysis,
+        serverResponseReceived: true,
         serverValidated: false,
+        itemsApprovedForCart: false,
+        quoteErrorCode: err.code || 'SERVER_ERROR',
         serverNotice: err.error || 'Authoritative order quote verification failed.',
       };
     }
@@ -274,8 +286,21 @@ export async function revalidateReorderWithServerQuote(
         if (found && typeof found.price === 'number') {
           const changed = item.originalUnitPrice !== undefined && item.originalUnitPrice !== found.price;
           if (changed) priceChanged = true;
+
+          const updatedProduct: Product = {
+            ...item.product,
+            prices: {
+              ...(item.product.prices || {}),
+              [item.weight]: found.price,
+            },
+            variants: item.product.variants?.map(v =>
+              v.label.trim() === item.weight.trim() ? { ...v, price: found.price } : v
+            ),
+          };
+
           updatedReorderable.push({
             ...item,
+            product: updatedProduct,
             currentUnitPrice: found.price,
             priceChanged: changed,
             status: (changed ? 'price_changed' : 'available') as 'price_changed' | 'available',
@@ -305,34 +330,45 @@ export async function revalidateReorderWithServerQuote(
         isQuote ||
         serverSubtotal !== analysis.estimatedSubtotal;
 
+      const itemsApprovedForCart = !isQuote && updatedReorderable.length > 0;
+
       return {
         reorderable: updatedReorderable,
         unavailable: additionalUnavailable,
         hasUnavailableItems: hasUnavailable,
         hasPriceChanges,
         estimatedSubtotal: serverSubtotal,
+        serverResponseReceived: true,
         serverValidated: true,
+        itemsApprovedForCart,
         isQuoteRequest: isQuote,
         requiresRenewedReview,
+        quoteRequiredNotice: isQuote ? (data.totals.quoteNotice || 'One or more items require a personalized quote from our concierge.') : undefined,
       };
     }
 
     return {
       ...analysis,
+      serverResponseReceived: true,
       serverValidated: false,
+      itemsApprovedForCart: false,
       serverNotice: 'The quote service returned an invalid response format.',
     };
   } catch (err: any) {
     if (err?.name === 'AbortError') {
       return {
         ...analysis,
+        serverResponseReceived: false,
         serverValidated: false,
+        itemsApprovedForCart: false,
         serverNotice: 'Reorder validation was cancelled.',
       };
     }
     return {
       ...analysis,
+      serverResponseReceived: false,
       serverValidated: false,
+      itemsApprovedForCart: false,
       serverNotice: err?.message || 'Server quote request failed.',
     };
   }
