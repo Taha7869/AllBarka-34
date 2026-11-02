@@ -53,6 +53,7 @@ export default function ProductDetailPage() {
   const bidBoxConfig = useMemo(() => product ? resolveBidBoxConfig(product) : null, [product]);
   const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
   const [showVarietyComparison, setShowVarietyComparison] = useState(false);
+  const [presentationView, setPresentationView] = useState<'closed' | 'inside'>('closed');
   const photoViewerOpener = useRef<HTMLButtonElement | null>(null);
   const { savedIds, setSaved } = useSavedProducts();
   const { view } = useCatalogActivity();
@@ -342,6 +343,56 @@ export default function ProductDetailPage() {
               </div>
             )}
             <ProductVideo videoUrl={productMedia.videoUrl} poster={productMedia.videoPoster || productMedia.images[0]} productName={getLocalized(product, 'name', language)} />
+
+            {/* Packaging Preview & Scale Guide */}
+            <div className="pdp-packaging-preview rounded-2xl bg-white dark:bg-[#1A201E] border border-[var(--color-accent,#C7982F)]/25 p-3.5 space-y-3 shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)]">
+                  {t('pdp.packagingMode', 'Packaging & Arrival View')}
+                </span>
+                <div className="flex items-center gap-1 p-0.5 rounded-lg bg-neutral-100 dark:bg-zinc-800 border border-neutral-200 dark:border-zinc-700 text-[11px]">
+                  <button
+                    type="button"
+                    data-view-mode="closed"
+                    onClick={() => setPresentationView('closed')}
+                    className={`px-2.5 py-1 rounded-md font-semibold transition-all ${presentationView === 'closed' ? 'bg-[#043327] text-white shadow-xs' : 'text-neutral-600 dark:text-neutral-400'}`}
+                  >
+                    {t('pdp.closedBox', 'Closed Box')}
+                  </button>
+                  <button
+                    type="button"
+                    data-view-mode="inside"
+                    onClick={() => setPresentationView('inside')}
+                    className={`px-2.5 py-1 rounded-md font-semibold transition-all ${presentationView === 'inside' ? 'bg-[#043327] text-white shadow-xs' : 'text-neutral-600 dark:text-neutral-400'}`}
+                  >
+                    {t('pdp.whatArrives', 'What Arrives Inside')}
+                  </button>
+                </div>
+              </div>
+
+              {presentationView === 'inside' ? (
+                <div className="pdp-inside-breakdown rounded-xl bg-[#FAF9F5] dark:bg-zinc-900 border border-[var(--color-accent,#C7982F)]/20 p-3 space-y-2 text-xs">
+                  <div className="flex items-start gap-2 text-neutral-700 dark:text-neutral-200">
+                    <Package size={15} className="text-[#043327] dark:text-emerald-400 shrink-0 mt-0.5" />
+                    <span>{t('pdp.airtightSeal', 'Food-grade airtight nitrogen-flushed seal for peak crunch and fragrance.')}</span>
+                  </div>
+                  <div className="flex items-start gap-2 text-neutral-700 dark:text-neutral-200">
+                    <Gift size={15} className="text-[#D4AF37] shrink-0 mt-0.5" />
+                    <span>{t('pdp.calligraphyEnvelope', 'Includes personalized boutique calligraphy card with artisan wax seal.')}</span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-[11px] text-neutral-500 dark:text-neutral-400 leading-relaxed">
+                  {t('pdp.closedDesc', 'Rigid keepsake presentation box with gold foil branding and magnetic closure.')}
+                </p>
+              )}
+
+              {/* Scale Guide relative to everyday items */}
+              <div data-scale-guide className="pt-2 border-t border-[var(--color-accent,#C7982F)]/15 flex items-center gap-2 text-[11px] text-neutral-600 dark:text-neutral-400">
+                <Info size={14} className="text-[#D4AF37] shrink-0" />
+                <span>{t('pdp.sizeComparison', 'Scale: ~22×16×6 cm footprint · Compares to standard luxury tea tin or hardbound book.')}</span>
+              </div>
+            </div>
           </div>
 
           {/* Right: Product Purchase Details */}

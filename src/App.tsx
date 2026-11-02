@@ -18,6 +18,7 @@ import JournalPage from './pages/JournalPage';
 import CartPage from './pages/CartPage';
 import PoliciesPage, { type PolicyTab } from './pages/PoliciesPage';
 import AdminOrdersPage from './pages/AdminOrdersPage';
+import GiftRevealPage from './pages/GiftRevealPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 const PageLoadingFallback = () => (
@@ -82,6 +83,7 @@ export default function App() {
               <Route path="cart" element={<CartPage />} />
               <Route path="admin/orders" element={<AdminOrdersPage />} />
               <Route path="staff/orders" element={<StaffOrdersWorkspace />} />
+              <Route path="reveal/:token" element={<GiftRevealPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Route>
           </Routes>

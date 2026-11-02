@@ -68,6 +68,7 @@ import {
   addAdminOrderNote, updateAdminOrderPayment,
 } from './src/lib/adminOperations';
 import { createInquiriesRouter } from './src/lib/inquiriesRouter';
+import { createGiftRevealRouter } from './src/lib/giftRevealRouter';
 
 // Load environment variables
 if (process.env.ALLBARKA_SKIP_LOCAL_ENV !== 'true') {
@@ -315,6 +316,7 @@ app.use(createCatalogRouter({ getDb: () => db, requireAdmin }));
 app.use(createStaffRouter({ getDb: () => db, getAuth: () => adminAuth, requireAuth, requireAdmin }));
 app.use(createStorefrontContentRouter({getDb:()=>db,requireAdmin}));
 app.use(createStoreUpdatesRouter({ getDb: () => db, requireAuth, requireAdmin }));
+app.use(createGiftRevealRouter({ getDb: () => db, requireAdmin }));
 
 // Auth & Session Endpoints
 app.post('/api/auth/sessionLogin', async (req, res) => {

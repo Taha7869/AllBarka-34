@@ -32,6 +32,7 @@ import CustomHamperBuilderModal from '../components/CustomHamperBuilderModal';
 import StoreUpdatesDialog from '../components/StoreUpdatesDialog';
 import MehmaanTablePlannerModal from '../components/MehmaanTablePlannerModal';
 import OccasionInquiryModal from '../components/OccasionInquiryModal';
+import ShopTheTableModal from '../components/ShopTheTableModal';
 import type { EventType } from '../lib/occasionPlanning';
 
 import LahoreExpressTimer from '../components/LahoreExpressTimer';
@@ -79,6 +80,7 @@ export default function RootLayout() {
   const [mehmaanModalOpen, setMehmaanModalOpen] = useState(false);
   const [occasionModalOpen, setOccasionModalOpen] = useState(false);
   const [defaultOccasion, setDefaultOccasion] = useState<EventType>('wedding');
+  const [shopTheTableOpen, setShopTheTableOpen] = useState(false);
 
   // Global listeners for modals
   useEffect(() => {
@@ -95,6 +97,7 @@ export default function RootLayout() {
     const handleOpenUpdates = () => setUpdatesOpen(true);
     const handleOpenHamper = () => setHamperModalOpen(true);
     const handleOpenMehmaan = () => setMehmaanModalOpen(true);
+    const handleOpenTable = () => setShopTheTableOpen(true);
     const handleOpenOccasion = (e?: Event) => {
       const customEvent = e as CustomEvent<{ defaultOccasion?: EventType }>;
       if (customEvent?.detail?.defaultOccasion) {
@@ -108,6 +111,7 @@ export default function RootLayout() {
     window.addEventListener('open-hamper-builder', handleOpenHamper);
     window.addEventListener('open-mehmaan-planner', handleOpenMehmaan);
     window.addEventListener('open-occasion-inquiry', handleOpenOccasion);
+    window.addEventListener('open-shop-the-table', handleOpenTable);
     return () => {
       window.removeEventListener('open-auth-modal', handleOpenAuth);
       window.removeEventListener('open-patron-lounge', handleOpenLounge);
@@ -115,6 +119,7 @@ export default function RootLayout() {
       window.removeEventListener('open-hamper-builder', handleOpenHamper);
       window.removeEventListener('open-mehmaan-planner', handleOpenMehmaan);
       window.removeEventListener('open-occasion-inquiry', handleOpenOccasion);
+      window.removeEventListener('open-shop-the-table', handleOpenTable);
     };
   }, []);
   
@@ -471,6 +476,7 @@ export default function RootLayout() {
       <CustomQuoteModal />
       <MehmaanTablePlannerModal isOpen={mehmaanModalOpen} onClose={() => setMehmaanModalOpen(false)} />
       <OccasionInquiryModal isOpen={occasionModalOpen} defaultOccasion={defaultOccasion} onClose={() => setOccasionModalOpen(false)} />
+      <ShopTheTableModal isOpen={shopTheTableOpen} onClose={() => setShopTheTableOpen(false)} />
     </div>
   );
 }

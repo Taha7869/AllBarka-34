@@ -12,7 +12,8 @@ import PlaceholdersAndVanishInput from './ui/placeholders-and-vanish-input';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { getLocalized } from '../utils/localize';
 import { openMehmaanPlannerModal } from './MehmaanTablePlannerModal';
-import { Sparkles } from 'lucide-react';
+import { openShopTheTableModal } from './ShopTheTableModal';
+import { Sparkles, Eye } from 'lucide-react';
 const SelectionGuide = lazy(() => import('./SelectionGuide'));
 
 interface AllBarkaHeroProps {
@@ -146,6 +147,7 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
         <div className="flex flex-wrap items-center gap-2">
           <button ref={guideOpener} type="button" className="heritage-hero-guide focus-ring" onClick={() => setGuideOpen(true)} aria-haspopup="dialog"><Compass size={18} aria-hidden="true" />{t('guide.launch')}<ArrowRight size={14} className="rtl-flip" aria-hidden="true" /></button>
           <button type="button" className="heritage-hero-mehmaan focus-ring inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold bg-[#FAF9F5]/90 dark:bg-zinc-800/90 text-[#043327] dark:text-emerald-300 border border-[#D4AF37]/40 hover:bg-[#FAF9F5] transition-all shadow-xs" onClick={() => openMehmaanPlannerModal()} aria-haspopup="dialog"><Sparkles size={14} aria-hidden="true" />{t('mehmaan.cta', 'Plan Mehmaan Table')}</button>
+          <button type="button" className="heritage-hero-table-scene focus-ring inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold bg-[#FAF9F5]/90 dark:bg-zinc-800/90 text-[#043327] dark:text-emerald-300 border border-[#D4AF37]/40 hover:bg-[#FAF9F5] transition-all shadow-xs" onClick={() => openShopTheTableModal()} aria-haspopup="dialog"><Eye size={14} aria-hidden="true" />{t('table.cta', 'Shop Table Scene')}</button>
         </div>
       </div>
         <div className="heritage-hero-pills">
