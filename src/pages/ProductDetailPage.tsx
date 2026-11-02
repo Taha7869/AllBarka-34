@@ -14,6 +14,7 @@ import { clampPhotoIndex } from '../lib/productPhotoViewer';
 import ProductVideo from '../components/ProductVideo';
 import { Product, CartItem } from '../types';
 import ProductDetailAccordion from '../components/ProductDetailAccordion';
+import VarietyComparisonModal from '../components/VarietyComparisonModal';
 import SEO from '../components/SEO';
 import { ShieldCheck, Sparkles, ArrowRight, Truck, Award, AlertCircle, Info, Share2, Maximize2, MessageSquareQuote, Package, Gift } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
@@ -51,6 +52,7 @@ export default function ProductDetailPage() {
   const isPackaging = Boolean(product && isPackagingProduct(product));
   const bidBoxConfig = useMemo(() => product ? resolveBidBoxConfig(product) : null, [product]);
   const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
+  const [showVarietyComparison, setShowVarietyComparison] = useState(false);
   const photoViewerOpener = useRef<HTMLButtonElement | null>(null);
   const { savedIds, setSaved } = useSavedProducts();
   const { view } = useCatalogActivity();
@@ -677,6 +679,18 @@ export default function ProductDetailPage() {
 
             {/* Accordions for Sourcing, Storage, and Packaging */}
             <div id="pdp-product-details" className="mb-10">
+              {!isPackaging && (
+                <div className="mb-3 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setShowVarietyComparison(true)}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--color-accent-text)] hover:underline focus-ring"
+                  >
+                    <Sparkles size={13} />
+                    <span>{t('variety.compareButton', 'Compare with other harvest varieties →')}</span>
+                  </button>
+                </div>
+              )}
               <ProductDetailAccordion product={product} defaultOpenKey={isPackaging ? 'packaging' : 'storage'} />
             </div>
 
@@ -768,6 +782,12 @@ export default function ProductDetailPage() {
 
       </div>
       {photoViewerOpen && <Suspense fallback={<span className="sr-only" role="status">{t('viewer.loading')}</span>}><ProductPhotoViewer key={product.id} images={galleryImages} productName={getLocalized(product, 'name', language)} hideSingleImageCounter={isSingleImageCatalogProduct(product)} initialIndex={activeGalleryIndex} restoreFocusTo={photoViewerOpener.current} onClose={() => setPhotoViewerOpen(false)} onIndexChange={index => { setActiveGalleryIdx(index); setImageError(false); }} /></Suspense>}
+      {showVarietyComparison && (
+        <VarietyComparisonModal
+          product={product}
+          onClose={() => setShowVarietyComparison(false)}
+        />
+      )}
     </div>
   );
 }

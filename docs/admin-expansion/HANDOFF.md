@@ -1,5 +1,21 @@
 # Admin expansion handoff
 
+02 November 2026 — **Batch B: Discovery & Comparison (M10, M27, M31, M06) / DONE locally**. Continued on `codex/admin-catalog-foundation-20261023`.
+Implemented and verified discovery and comparison roadmap items:
+1. M31 Local-language Search Aliases (`src/lib/catalogDiscovery.ts`): Expanded `CATALOG_ALIASES` with comprehensive Roman Urdu (`chalgoza`, `anjir`, `kismis`, `mamra`, `ajwa`, etc.), Urdu script (`چلغوزہ`, `انجیر`, `بادام`, `پستہ`), Arabic (`صنوبر`, `تين`, `تمر`), and colloquial packaging synonyms (`potli`, `dabba`). Enhanced `productSearchScore` to index `variety`, `ingredients`, `certifications`, `tasteProfile`, and `keywords`. Exact name matches strictly rank above background keyword matches.
+2. M10 "Find Your Taste" Attribute & Texture Finder (`src/lib/selectionGuide.ts`, `src/components/SelectionGuide.tsx`): Extended `SelectionPreferences` with `taste` ('sweet' | 'savory' | 'salted' | 'rich') and `texture` ('crunchy' | 'chewy' | 'buttery'). Implemented weighted attribute scoring in `selectionMatches` matching customer preferences against passport attributes and catalog data. Updated `SelectionGuide.tsx` with taste/texture chip selectors, match badges (`data-match-attr`), and query preservation in `selectionResultsPath`.
+3. M27 Variety Comparison Table (`src/lib/varietyComparison.ts`, `src/components/VarietyComparisonModal.tsx`, `src/pages/ProductDetailPage.tsx`): Built peer variety comparison with verified passport facts (Variety, Origin, Roast/Processing, Texture/Crunch, Flavor Profile, Best Before, Verified Certifications, Starting Price) and in-modal "Add to Bag" action. Integrated comparison trigger into `ProductDetailPage.tsx`.
+4. M06 Editorial Entrances: Connected category routes (`/shop/dry-fruits`, `/shop/dates`, `/shop/celebration-boxes`, `/shop/seeds-snacks`) and pantry browsing entrances with localized category definitions.
+5. Localization & RTL Parity: Full EN, UR, and AR translations in `trendTranslations.ts` and `catalogTranslations.ts`. `VarietyComparisonModal` enforces strict dialog accessibility (`role="dialog"`, `aria-labelledby`, `acquireScrollLock`, Escape dismiss) and native `dir="rtl"` support.
+6. Playwright Real Browser Acceptance (`tests/batch-b-browser.test.tsx`): Mounted real application routing with full context providers via `launchTestBrowser()`, verifying:
+   - M10 Selection Guide launch, Sweet + Chewy chip selection, matched attribute tags rendering, in-guide "Add to Cart".
+   - M27 PDP variety comparison modal launch, 7+ criteria rows, 3+ comparative harvest peers, in-modal "Add to Bag", and Escape close.
+   - M31 Search query for `chalgoza` surfacing pine nuts.
+   - Full Urdu RTL direction (`dir="rtl"`) on modal and layout.
+   - Dark mode theme class propagation.
+   - Responsive mobile viewport (390x844) with horizontal table scrolling.
+Verification: `tests/batch-b-discovery.test.ts` (3/3 PASS), `tests/batch-b-browser.test.tsx` (1/1 PASS in 9.2s), `npm run typecheck` (0 errors), `npm run lint:hooks` (0 warnings), production build passing in 10.9s, `verify-production.mjs` (36/36 PASS). Manual cloud provisioning remains deferred on GitHub pending list for owner on PC.
+
 02 November 2026 — **Batch A: Product Facts & Admin Foundation (M11, M23, M33, M34) / DONE locally**. Continued on `codex/admin-catalog-foundation-20261023`.
 The owner clarified that completing core launch readiness is insufficient; proceed with implementing the full premium roadmap (M01–M34) across Batches A–F.
 Batch A completed:
