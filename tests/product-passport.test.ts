@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import express from 'express';
+import { once } from 'node:events';
 import {
   validateProductPassport,
   validateClaimsVerification,
@@ -10,6 +12,7 @@ import {
   CatalogError,
 } from '../src/lib/catalogSchema';
 import { updateAdminProduct, loadAuthoritativeCatalog, invalidateCatalogCache } from '../src/lib/catalogStore';
+import { createCatalogRouter } from '../src/lib/catalogRouter';
 import { memoryFirestore } from './helpers/memoryFirestore';
 import { generateCatalogHealthReport } from '../src/lib/catalogHealthReport';
 import type { Product } from '../src/types';
@@ -92,10 +95,14 @@ test('validateMediaFocalPoint: validates bounds (0.0 to 1.0) and precision', () 
   );
 });
 
-test('validateCropMode: enforces allowed crop modes', () => {
+test('validateCropMode: enforces allowed crop modes and rejects custom without semantics', () => {
   assert.equal(validateCropMode('cover'), 'cover');
   assert.equal(validateCropMode('contain'), 'contain');
-  assert.equal(validateCropMode('custom'), 'custom');
+
+  assert.throws(
+    () => validateCropMode('custom'),
+    (err: any) => err instanceof CatalogError && err.code === 'INVALID_CROP_MODE'
+  );
 
   assert.throws(
     () => validateCropMode('stretch'),
@@ -103,122 +110,372 @@ test('validateCropMode: enforces allowed crop modes', () => {
   );
 });
 
-test('validateDynamicProduct: seamlessly integrates passport, focal point, and claims', () => {
-  const baseCandidate = {
-    id: 'test-mamra-badam',
-    name_en: 'Premium Mamra Badam',
-    desc_en: 'Single-origin wild harvested almonds',
+test('Public Data Privacy: stripPrivateProductFields suppresses private notes and unapproved claims', () => {
+  // Case A: Verified product
+  const verifiedProduct: Product = {
+    id: 'prod-verified',
+    name_en: 'Organic Almonds',
+    name_ur: '',
+    name_ar: '',
+    desc_en: 'Raw organic almonds',
+    desc_ur: '',
+    desc_ar: '',
     category: 'dry-fruits',
-    status: 'published',
-    prices: { '250g': 1500, '500g': 2900 },
-    image: '/images/products/mamra.jpg',
-    passport: {
-      variety: 'Gardi Mamra',
-      roastLevel: 'raw',
-      ingredients: ['100% Raw Almonds'],
-      allergens: ['Tree nuts'],
-      bestBeforeDays: 240,
-      certifications: ['halal', 'raw_natural'],
-    },
-    claimsVerification: {
-      status: 'verified',
-      verifiedAt: '2026-10-30',
-      notes: 'Direct orchard procurement verified',
-    },
-    mediaFocalPoint: { x: 0.5, y: 0.3 },
-    cropMode: 'cover',
-  };
-
-  const product = validateDynamicProduct(baseCandidate);
-  assert.equal(product.id, 'test-mamra-badam');
-  assert.equal(product.passport?.variety, 'Gardi Mamra');
-  assert.equal(product.passport?.roastLevel, 'raw');
-  assert.equal(product.claimsVerification?.status, 'verified');
-  assert.equal(product.mediaFocalPoint?.y, 0.3);
-  assert.equal(product.cropMode, 'cover');
-
-  // Strip private fields check
-  const publicView = stripPrivateProductFields(product);
-  assert.equal(publicView.passport?.variety, 'Gardi Mamra');
-  assert.equal(publicView.claimsVerification?.status, 'verified');
-  assert.equal(publicView.mediaFocalPoint?.x, 0.5);
-  assert.equal(publicView.cropMode, 'cover');
-});
-
-test('Persistence round-trip: admin update persists passport and increments revision', async () => {
-  const { db } = memoryFirestore();
-  const productId = 'pista';
-  invalidateCatalogCache();
-
-  // Seed initial pista document in memoryFirestore
-  await db.collection('products').doc(productId).set({
-    schemaVersion: 1,
-    id: productId,
-    revision: 2,
     active: true,
     status: 'published',
     orderMode: 'standard',
-    name_en: 'Royal Iranian Pistachios',
-    name_ur: 'شاہی ایرانی پستہ',
-    name_ar: 'فستق إيراني ملكي',
-    desc_en: 'Freshly roasted lightly salted pistachios',
-    desc_ur: 'تازہ بھنا ہوا ہلکا نمکین پستہ',
-    desc_ar: 'فستق محمص ومملح خفيف',
-    category: 'dry-fruits',
-    image: '/images/products/pista.jpg',
-    prices: { '250g': 1200, '500g': 2200, '1kg': 4500 },
-    variants: [
-      { id: '250g', label: '250g', price: 1200, available: true, weightGrams: 250 },
-      { id: '500g', label: '500g', price: 2200, available: true, weightGrams: 500 },
-      { id: '1kg', label: '1kg', price: 4500, available: true, weightGrams: 1000 },
-    ],
-    wholesale: 4000,
-    pricePer100g: 500,
-  });
-
-  const updatePayload = {
-    expectedRevision: 2,
+    image: '/images/almonds.jpg',
+    imageName: null,
+    prices: { '250g': 1200 },
+    wholesale: 1000,
     passport: {
-      variety: 'Akbari Jumbo',
-      roastLevel: 'salted',
-      processingMethod: 'Slow roasted in copper vats',
-      ingredients: ['Pistachios', 'Sea Salt'],
-      allergens: ['Tree Nuts (Pistachios)'],
-      storageInstructions: 'Keep refrigerated for maximum crunch.',
-      bestBeforeDays: 120,
-      certifications: ['halal', 'raw_natural'],
+      variety: 'Nonpareil',
+      harvestSeason: '2026 Autumn',
+      roastLevel: 'raw',
+      certifications: ['organic', 'halal'],
     },
     claimsVerification: {
       status: 'verified',
       verifiedAt: '2026-11-01',
-      notes: 'Import bill of lading verified',
+      notes: 'PRIVATE_SENTINEL_NOTES_VERIFIED_INTERNAL_EVIDENCE',
     },
-    mediaFocalPoint: { x: 0.6, y: 0.4 },
+    mediaFocalPoint: { x: 0.5, y: 0.5 },
     cropMode: 'cover',
+  };
+
+  const publicVerified = stripPrivateProductFields(verifiedProduct);
+  assert.equal(publicVerified.claimsVerification?.status, 'verified');
+  assert.equal(publicVerified.claimsVerification?.verifiedAt, '2026-11-01');
+  assert.equal((publicVerified.claimsVerification as any)?.notes, undefined, 'Private notes must be stripped');
+  assert.deepEqual(publicVerified.passport?.certifications, ['organic', 'halal'], 'Approved certifications exposed');
+  assert.equal(JSON.stringify(publicVerified).includes('PRIVATE_SENTINEL_NOTES'), false);
+
+  // Case B: Unverified product with claimed certifications
+  const unverifiedProduct: Product = {
+    ...verifiedProduct,
+    id: 'prod-unverified',
+    claimsVerification: {
+      status: 'unverified',
+      notes: 'PRIVATE_SENTINEL_NOTES_UNVERIFIED_EVIDENCE',
+    },
+  };
+
+  const publicUnverified = stripPrivateProductFields(unverifiedProduct);
+  assert.equal(publicUnverified.claimsVerification?.status, 'unverified');
+  assert.equal((publicUnverified.claimsVerification as any)?.notes, undefined, 'Private notes must be stripped');
+  assert.equal(publicUnverified.passport?.certifications, undefined, 'Unverified certifications must be suppressed from public DTO');
+  assert.equal(JSON.stringify(publicUnverified).includes('PRIVATE_SENTINEL_NOTES'), false);
+
+  // Case C: Discrepant product
+  const discrepantProduct: Product = {
+    ...verifiedProduct,
+    id: 'prod-discrepant',
+    claimsVerification: {
+      status: 'discrepant',
+      notes: 'PRIVATE_SENTINEL_DISCREPANCY_LAB_FAILED',
+    },
+  };
+
+  const publicDiscrepant = stripPrivateProductFields(discrepantProduct);
+  assert.equal(publicDiscrepant.claimsVerification?.status, 'discrepant');
+  assert.equal((publicDiscrepant.claimsVerification as any)?.notes, undefined, 'Private discrepancy notes must be stripped');
+  assert.equal(publicDiscrepant.passport?.certifications, undefined, 'Discrepant certifications must be suppressed');
+  assert.equal(JSON.stringify(publicDiscrepant).includes('PRIVATE_SENTINEL_DISCREPANCY'), false);
+});
+
+test('Public Catalog Endpoints: /api/catalog and /api/catalog/products/:id suppress private notes and unapproved claims', async () => {
+  const { db } = memoryFirestore();
+  invalidateCatalogCache();
+
+  const pVerified: any = {
+    schemaVersion: 1,
+    id: 'almonds-verified',
+    revision: 1,
+    active: true,
+    status: 'published',
+    orderMode: 'standard',
+    name_en: 'Verified Almonds',
+    name_ur: '',
+    name_ar: '',
+    desc_en: 'Description',
+    desc_ur: '',
+    desc_ar: '',
+    category: 'dry-fruits',
+    image: '/images/almonds.jpg',
+    prices: { '250g': 1200 },
+    variants: [{ id: '250g', label: '250g', price: 1200, available: true, weightGrams: 250 }],
+    wholesale: 1000,
+    passport: {
+      variety: 'Mamra',
+      certifications: ['organic'],
+    },
+    claimsVerification: {
+      status: 'verified',
+      verifiedAt: '2026-11-01',
+      notes: 'SENTINEL_INTERNAL_VERIFIED_NOTES',
+    },
+  };
+
+  const pUnverified: any = {
+    schemaVersion: 1,
+    id: 'almonds-unverified',
+    revision: 1,
+    active: true,
+    status: 'published',
+    orderMode: 'standard',
+    name_en: 'Unverified Almonds',
+    name_ur: '',
+    name_ar: '',
+    desc_en: 'Description',
+    desc_ur: '',
+    desc_ar: '',
+    category: 'dry-fruits',
+    image: '/images/almonds.jpg',
+    prices: { '250g': 1200 },
+    variants: [{ id: '250g', label: '250g', price: 1200, available: true, weightGrams: 250 }],
+    wholesale: 1000,
+    passport: {
+      variety: 'Kaghzi',
+      certifications: ['halal', 'organic'],
+    },
+    claimsVerification: {
+      status: 'unverified',
+      notes: 'SENTINEL_INTERNAL_UNVERIFIED_AUDIT_NOTES',
+    },
+  };
+
+  await db.collection('products').doc('almonds-verified').set(pVerified);
+  await db.collection('products').doc('almonds-unverified').set(pUnverified);
+
+  const app = express();
+  app.use(express.json());
+  app.use(createCatalogRouter({ getDb: () => db, requireAdmin: (_req, _res, next) => next() }));
+
+  const server = app.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  const address = server.address() as any;
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+
+  try {
+    // 1. GET /api/catalog
+    const listRes = await fetch(`${baseUrl}/api/catalog`);
+    assert.equal(listRes.status, 200);
+    const listJson = await listRes.json();
+    const listRawText = JSON.stringify(listJson);
+
+    assert.equal(listRawText.includes('SENTINEL_INTERNAL_VERIFIED_NOTES'), false);
+    assert.equal(listRawText.includes('SENTINEL_INTERNAL_UNVERIFIED_AUDIT_NOTES'), false);
+
+    const vFromList = listJson.products.find((p: any) => p.id === 'almonds-verified');
+    assert.ok(vFromList);
+    assert.deepEqual(vFromList.passport?.certifications, ['organic']);
+    assert.equal(vFromList.claimsVerification?.status, 'verified');
+    assert.equal(vFromList.claimsVerification?.notes, undefined);
+
+    const uFromList = listJson.products.find((p: any) => p.id === 'almonds-unverified');
+    assert.ok(uFromList);
+    assert.equal(uFromList.claimsVerification?.status, 'unverified');
+    assert.equal(uFromList.passport?.certifications, undefined, 'Unverified certifications must be suppressed from public /api/catalog');
+    assert.equal(uFromList.claimsVerification?.notes, undefined);
+
+    // 2. GET /api/catalog/products/:id
+    const singleVerifiedRes = await fetch(`${baseUrl}/api/catalog/products/almonds-verified`);
+    assert.equal(singleVerifiedRes.status, 200);
+    const singleVJson = await singleVerifiedRes.json();
+    assert.equal(JSON.stringify(singleVJson).includes('SENTINEL_INTERNAL'), false);
+    assert.deepEqual(singleVJson.product.passport?.certifications, ['organic']);
+    assert.equal(singleVJson.product.claimsVerification?.notes, undefined);
+
+    const singleUnverifiedRes = await fetch(`${baseUrl}/api/catalog/products/almonds-unverified`);
+    assert.equal(singleUnverifiedRes.status, 200);
+    const singleUJson = await singleUnverifiedRes.json();
+    assert.equal(JSON.stringify(singleUJson).includes('SENTINEL_INTERNAL'), false);
+    assert.equal(singleUJson.product.passport?.certifications, undefined, 'Unverified certs suppressed on single item');
+    assert.equal(singleUJson.product.claimsVerification?.notes, undefined);
+  } finally {
+    server.closeAllConnections?.();
+    await new Promise<void>(resolve => server.close(() => resolve()));
+  }
+});
+
+test('Persistence & Clearing: explicit null clears passport, media and claims without resurrecting old data', async () => {
+  const { db } = memoryFirestore();
+  const productId = 'pista';
+  invalidateCatalogCache();
+
+  // Initial document with passport, mediaFocalPoint, cropMode, claimsVerification
+  await db.collection('products').doc(productId).set({
+    schemaVersion: 1,
+    id: productId,
+    revision: 1,
+    active: true,
+    status: 'published',
+    orderMode: 'standard',
+    name_en: 'Pistachios',
+    name_ur: '',
+    name_ar: '',
+    desc_en: 'Description',
+    desc_ur: '',
+    desc_ar: '',
+    category: 'dry-fruits',
+    image: '/images/pista.jpg',
+    prices: { '250g': 1200 },
+    variants: [{ id: '250g', label: '250g', price: 1200, available: true, weightGrams: 250 }],
+    wholesale: 1000,
+    pricePer100g: 500,
+    passport: {
+      variety: 'Akbari',
+      roastLevel: 'salted',
+      bestBeforeDays: 90,
+      certifications: ['halal'],
+    },
+    claimsVerification: {
+      status: 'verified',
+      verifiedAt: '2026-11-01',
+      notes: 'Initial verification',
+    },
+    mediaFocalPoint: { x: 0.2, y: 0.8 },
+    cropMode: 'cover',
+  });
+
+  // Explicitly clear all new fields
+  const clearPayload = {
+    expectedRevision: 1,
+    passport: null,
+    claimsVerification: null,
+    mediaFocalPoint: null,
+    cropMode: null,
+  };
+
+  const updated = await updateAdminProduct({
+    db,
+    productId,
+    body: clearPayload,
+    actorUid: 'admin-1',
+  });
+
+  assert.equal(updated.revision, 2);
+  assert.equal(updated.passport, undefined, 'Passport must be cleared');
+  assert.equal(updated.claimsVerification, undefined, 'ClaimsVerification must be cleared');
+  assert.equal(updated.mediaFocalPoint, undefined, 'MediaFocalPoint must be cleared');
+  assert.equal(updated.cropMode, undefined, 'CropMode must be cleared');
+
+  // Verify reload from database confirms fields are truly deleted
+  const snapshot = await loadAuthoritativeCatalog(db, { fresh: true });
+  const reloaded = snapshot.products.find(p => p.id === productId);
+  assert.ok(reloaded);
+  assert.equal(reloaded.passport, undefined);
+  assert.equal(reloaded.claimsVerification, undefined);
+  assert.equal(reloaded.mediaFocalPoint, undefined);
+  assert.equal(reloaded.cropMode, undefined);
+});
+
+test('Shelf-life clearing: clearing bestBeforeDays removes it without converting to 0', async () => {
+  const { db } = memoryFirestore();
+  const productId = 'pista-shelf';
+  invalidateCatalogCache();
+
+  await db.collection('products').doc(productId).set({
+    schemaVersion: 1,
+    id: productId,
+    revision: 1,
+    active: true,
+    status: 'published',
+    orderMode: 'standard',
+    name_en: 'Pistachios',
+    name_ur: '',
+    name_ar: '',
+    desc_en: 'Description',
+    desc_ur: '',
+    desc_ar: '',
+    category: 'dry-fruits',
+    image: '/images/pista.jpg',
+    prices: { '250g': 1200 },
+    variants: [{ id: '250g', label: '250g', price: 1200, available: true, weightGrams: 250 }],
+    wholesale: 1000,
+    passport: {
+      variety: 'Akbari',
+      bestBeforeDays: 180,
+    },
+  });
+
+  // Update passport without bestBeforeDays (cleared)
+  const updatePayload = {
+    expectedRevision: 1,
+    passport: {
+      variety: 'Akbari',
+      bestBeforeDays: undefined, // Cleared input
+    },
   };
 
   const updated = await updateAdminProduct({
     db,
     productId,
     body: updatePayload,
-    actorUid: 'admin-auditor-1',
+    actorUid: 'admin-1',
   });
 
-  assert.equal(updated.revision, 3);
-  assert.equal(updated.passport?.variety, 'Akbari Jumbo');
-  assert.equal(updated.claimsVerification?.status, 'verified');
-  assert.equal(updated.mediaFocalPoint?.x, 0.6);
-  assert.equal(updated.cropMode, 'cover');
+  assert.equal(updated.passport?.variety, 'Akbari');
+  assert.equal(updated.passport?.bestBeforeDays, undefined, 'Shelf life must be undefined, never 0');
+});
 
-  // Reload authoritative catalog
-  const snapshot = await loadAuthoritativeCatalog(db, { fresh: true });
-  const reloaded = snapshot.products.find(p => p.id === productId);
-  assert.ok(reloaded, 'Product pista must be found');
-  assert.equal(reloaded.revision, 3);
-  assert.equal(reloaded.passport?.variety, 'Akbari Jumbo');
-  assert.equal(reloaded.passport?.roastLevel, 'salted');
-  assert.equal(reloaded.claimsVerification?.status, 'verified');
-  assert.equal(reloaded.mediaFocalPoint?.y, 0.4);
+test('Re-verification Safety: modifying certifications or passport facts automatically revokes verified status', async () => {
+  const { db } = memoryFirestore();
+  const productId = 'dates-reverify';
+  invalidateCatalogCache();
+
+  await db.collection('products').doc(productId).set({
+    schemaVersion: 1,
+    id: productId,
+    revision: 1,
+    active: true,
+    status: 'published',
+    orderMode: 'standard',
+    name_en: 'Ajwa Dates',
+    name_ur: '',
+    name_ar: '',
+    desc_en: 'Description',
+    desc_ur: '',
+    desc_ar: '',
+    category: 'dry-fruits',
+    image: '/images/ajwa.jpg',
+    prices: { '250g': 1200 },
+    variants: [{ id: '250g', label: '250g', price: 1200, available: true, weightGrams: 250 }],
+    wholesale: 1000,
+    passport: {
+      variety: 'Aliya Ajwa',
+      certifications: ['organic'],
+    },
+    claimsVerification: {
+      status: 'verified',
+      verifiedAt: '2026-10-25',
+      notes: 'Audited harvest certificate',
+    },
+  });
+
+  // Admin edits certifications by adding 'halal' without explicitly providing claimsVerification reconfirmation
+  const editPayload = {
+    expectedRevision: 1,
+    passport: {
+      variety: 'Aliya Ajwa',
+      certifications: ['organic', 'halal'],
+    },
+  };
+
+  const updated = await updateAdminProduct({
+    db,
+    productId,
+    body: editPayload,
+    actorUid: 'admin-1',
+  });
+
+  assert.equal(updated.revision, 2);
+  assert.equal(updated.claimsVerification?.status, 'unverified', 'Status must drop to unverified upon content change');
+  assert.equal(updated.claimsVerification?.verifiedAt, undefined, 'Verified date must be cleared');
+
+  // Verify that in public projection, certifications are suppressed because status is now unverified
+  const publicView = stripPrivateProductFields(updated);
+  assert.equal(publicView.passport?.certifications, undefined, 'Newly modified unverified claims must not reach public DTO');
 });
 
 test('Catalog Health Report: audits unverified claims and missing allergen advisories', () => {
@@ -242,7 +499,7 @@ test('Catalog Health Report: audits unverified claims and missing allergen advis
       certifications: ['organic', 'halal'],
     },
     claimsVerification: {
-      status: 'unverified', // Unverified certifications!
+      status: 'unverified',
     },
   };
 

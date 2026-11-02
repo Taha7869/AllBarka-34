@@ -702,9 +702,34 @@ export async function updateAdminProduct(input: { db: Firestore | null; productI
       updatedBy: input.actorUid,
     };
 
-    // An explicit null clears a saved recipe; omitted fields keep the stored recipe untouched.
+    // An explicit null clears a saved recipe, passport, claims or media; omitted fields keep existing.
     for (const field of ['recipeIngredients', 'filledRecipes'] as const) {
       if (body[field] === null || validated[field] === undefined) delete updatedData[field];
+    }
+    for (const field of ['passport', 'claimsVerification', 'mediaFocalPoint'] as const) {
+      if (body[field] === null) {
+        delete updatedData[field];
+      }
+    }
+    if (body.cropMode === null || body.cropMode === '') {
+      delete updatedData.cropMode;
+    }
+
+    // Re-verification Safety:
+    // If existing claims was verified, and passport facts/certifications were modified
+    // without an explicit verified claim reconfirmation in the same request,
+    // automatically revoke verified status down to 'unverified' and clear verifiedAt.
+    if (existingData.claimsVerification?.status === 'verified' && body.passport !== undefined && body.passport !== null) {
+      const existingPassport = existingData.passport || {};
+      const newPassport = updatedData.passport || {};
+      const factsChanged = JSON.stringify(existingPassport) !== JSON.stringify(newPassport);
+      const isExplicitlyReconfirmed = body.claimsVerification && body.claimsVerification.status === 'verified';
+      if (factsChanged && !isExplicitlyReconfirmed) {
+        updatedData.claimsVerification = {
+          status: 'unverified',
+          notes: 'Passport facts or certifications modified; re-verification required',
+        };
+      }
     }
 
     if (finalProdMoq === undefined) {

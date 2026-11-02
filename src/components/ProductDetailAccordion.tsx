@@ -22,7 +22,7 @@ export default function ProductDetailAccordion({ product, className = '', defaul
   useEffect(() => { setOpenSection(defaultOpenKey); }, [product.id, defaultOpenKey]);
 
   const origin = getLocalized(product, 'origin', language);
-  const harvest = getLocalized(product, 'harvest', language);
+  const harvest = product.passport?.harvestSeason || getLocalized(product, 'harvest', language);
   const sourcing = getLocalized(product, 'sourcingDetails', language) || t('care.sourcingFallback', 'Source details are not listed for this selection. Ask our team for more information.');
   const storage = getLocalized(product, 'storageTips', language) || t('care.storageFallback', 'Follow the storage guidance on the product label and keep the packaging closed between uses.');
   const packaging = getLocalized(product, 'packagingDetails', language) || t('care.packagingFallback', 'Packaging varies by selection. Ask our team for the available options.');
@@ -63,7 +63,7 @@ export default function ProductDetailAccordion({ product, className = '', defaul
           </div>}
           {passport?.roastLevel && <div className="min-w-0">
             <dt dir="auto" className="mb-1 text-start text-[10px] font-semibold uppercase tracking-wider text-[var(--color-accent-text)]">{t('item.roastLevel', 'Roast level')}</dt>
-            <dd dir="auto" className="text-start leading-5 text-[var(--color-text-primary)] capitalize">{passport.roastLevel.replace('_', ' ')}</dd>
+            <dd dir="auto" className="text-start leading-5 text-[var(--color-text-primary)]">{t('item.roast.' + passport.roastLevel, passport.roastLevel.replace('_', ' '))}</dd>
           </div>}
           {passport?.processingMethod && <div className="min-w-0">
             <dt dir="auto" className="mb-1 text-start text-[10px] font-semibold uppercase tracking-wider text-[var(--color-accent-text)]">{t('item.processingMethod', 'Processing')}</dt>
@@ -102,7 +102,7 @@ export default function ProductDetailAccordion({ product, className = '', defaul
       {verifiedCertifications.length > 0 && <div className="flex flex-wrap gap-2 pt-1">
         {verifiedCertifications.map(cert => (
           <span key={cert} className="inline-flex items-center gap-1 rounded-full border border-[var(--color-border-accent)] bg-[var(--color-base)] px-3 py-1 text-[11px] font-medium text-[var(--color-accent-text)]">
-            <Award size={13} /> {cert.replace('_', ' ').toUpperCase()}
+            <Award size={13} /> {t('item.cert.' + cert, cert.replace('_', ' ').toUpperCase())}
           </span>
         ))}
       </div>}

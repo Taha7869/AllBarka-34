@@ -276,7 +276,8 @@ export default function ProductDetailPage() {
                   referrerPolicy="no-referrer"
                   decoding="async"
                   onError={() => setImageError(true)}
-                  className="w-full h-full object-contain rounded-2xl"
+                  style={product.mediaFocalPoint ? { objectPosition: `${product.mediaFocalPoint.x * 100}% ${product.mediaFocalPoint.y * 100}%` } : undefined}
+                  className={`w-full h-full ${product.cropMode === 'cover' ? 'object-cover' : 'object-contain'} rounded-2xl`}
                 />
               )}
             </div>

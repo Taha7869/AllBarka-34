@@ -53,7 +53,7 @@ export type OrderMode = 'standard' | 'inquiry_quote' | 'both';
 export type RoastLevel = 'raw' | 'lightly_roasted' | 'salted' | 'slow_roasted' | 'unprocessed';
 export type ClaimVerificationStatus = 'unverified' | 'verified' | 'discrepant';
 export type CertificationType = 'halal' | 'organic' | 'gluten_free' | 'raw_natural' | 'vegan';
-export type CropMode = 'cover' | 'contain' | 'custom';
+export type CropMode = 'cover' | 'contain';
 
 export interface ProductPassport {
   variety?: string;

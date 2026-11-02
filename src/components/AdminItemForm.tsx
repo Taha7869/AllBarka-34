@@ -145,7 +145,6 @@ export default function AdminItemForm({product,onClose,onSaved,initialCategory}:
               <select value={form.cropMode || 'cover'} onChange={e => set('cropMode', e.target.value)}>
                 <option value="cover">{t('item.cropCover', 'Cover (Fill & Crop)')}</option>
                 <option value="contain">{t('item.cropContain', 'Contain (Fit Full Image)')}</option>
-                <option value="custom">{t('item.cropCustom', 'Custom')}</option>
               </select>
             </ItemField>
           </div>
@@ -153,8 +152,8 @@ export default function AdminItemForm({product,onClose,onSaved,initialCategory}:
         <details id="item-section-passport" className="item-section"><summary>{t('item.passport', 'Product Passport & Claims')}</summary>
           <div className="item-stack">
             <div className="item-grid">
-              {field('variety', { label: t('item.variety', 'Cultivar / Variety'), value: form.passport?.variety || '', onChange: (v: string) => set('passport', { ...form.passport, variety: v }) })}
-              {field('harvestSeason', { label: t('item.harvestSeason', 'Harvest Season'), value: form.passport?.harvestSeason || '', onChange: (v: string) => set('passport', { ...form.passport, harvestSeason: v }) })}
+              {field('variety', { label: t('item.variety', 'Cultivar / Variety'), value: form.passport?.variety || '', onChange: (v: string) => set('passport', { ...form.passport, variety: v.trim() || undefined }) })}
+              {field('harvestSeason', { label: t('item.harvestSeason', 'Harvest Season'), value: form.passport?.harvestSeason || '', onChange: (v: string) => set('passport', { ...form.passport, harvestSeason: v.trim() || undefined }) })}
               <ItemField label={t('item.roastLevel', 'Roast Level')}>
                 <select value={form.passport?.roastLevel || ''} onChange={e => set('passport', { ...form.passport, roastLevel: e.target.value || undefined })} className="focus-ring rounded-lg border border-[var(--color-border)] bg-[var(--color-base)] p-2">
                   <option value="">{t('item.none', 'None / N/A')}</option>
@@ -165,8 +164,8 @@ export default function AdminItemForm({product,onClose,onSaved,initialCategory}:
                   <option value="unprocessed">{t('item.roast.unprocessed', 'Unprocessed')}</option>
                 </select>
               </ItemField>
-              {field('processingMethod', { label: t('item.processingMethod', 'Processing Method'), value: form.passport?.processingMethod || '', onChange: (v: string) => set('passport', { ...form.passport, processingMethod: v }) })}
-              {field('bestBeforeDays', { label: t('item.bestBeforeDays', 'Shelf Life (Days)'), type: 'number', value: form.passport?.bestBeforeDays ?? '', onChange: (v: any) => set('passport', { ...form.passport, bestBeforeDays: v !== '' ? Number(v) : undefined }) })}
+              {field('processingMethod', { label: t('item.processingMethod', 'Processing Method'), value: form.passport?.processingMethod || '', onChange: (v: string) => set('passport', { ...form.passport, processingMethod: v.trim() || undefined }) })}
+              {field('bestBeforeDays', { label: t('item.bestBeforeDays', 'Shelf Life (Days)'), type: 'number', value: form.passport?.bestBeforeDays ?? '', onChange: (v: any) => set('passport', { ...form.passport, bestBeforeDays: (v === null || v === '' || v === undefined) ? undefined : Number(v) }) })}
             </div>
             <div className="item-grid">
               <ItemField label={t('item.ingredients', 'Ingredients (List)')}>
@@ -176,7 +175,7 @@ export default function AdminItemForm({product,onClose,onSaved,initialCategory}:
                 <AdminDelimitedInput value={form.passport?.allergens || []} onChange={(v: string[]) => set('passport', { ...form.passport, allergens: v })} />
               </ItemField>
             </div>
-            {field('storageInstructions', { label: t('item.storageInstructions', 'Storage Instructions'), multiline: true, value: form.passport?.storageInstructions || '', onChange: (v: string) => set('passport', { ...form.passport, storageInstructions: v }) })}
+            {field('storageInstructions', { label: t('item.storageInstructions', 'Storage Instructions'), multiline: true, value: form.passport?.storageInstructions || '', onChange: (v: string) => set('passport', { ...form.passport, storageInstructions: v.trim() || undefined }) })}
             <div className="item-stack rounded-xl border border-[var(--color-border)] p-4 bg-[var(--color-base)]">
               <h5 className="font-semibold text-sm">{t('item.certifications', 'Certifications')}</h5>
               <div className="flex flex-wrap gap-4">

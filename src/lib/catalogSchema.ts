@@ -335,8 +335,6 @@ export const PUBLIC_PRODUCT_FIELDS = [
   'recipeIngredients',
   'filledRecipes',
   'catalogRevision',
-  'passport',
-  'claimsVerification',
   'mediaFocalPoint',
   'cropMode',
 ] as const;
@@ -346,7 +344,7 @@ export const VALID_PACKAGING_SUBCATEGORIES = ['tin', 'tabarruk', 'wedding', 'bab
 export const VALID_ROAST_LEVELS = ['raw', 'lightly_roasted', 'salted', 'slow_roasted', 'unprocessed'] as const;
 export const VALID_CLAIM_STATUSES = ['unverified', 'verified', 'discrepant'] as const;
 export const VALID_CERTIFICATIONS = ['halal', 'organic', 'gluten_free', 'raw_natural', 'vegan'] as const;
-export const VALID_CROP_MODES = ['cover', 'contain', 'custom'] as const;
+export const VALID_CROP_MODES = ['cover', 'contain'] as const;
 
 export function validateProductPassport(value: unknown): ProductPassport {
   if (!object(value)) throw new CatalogError('INVALID_PRODUCT_PASSPORT', 400);
@@ -445,6 +443,55 @@ export function stripPrivateProductFields(product: Product): Product {
       for (const field of extensionFields) delete sanitized[field];
     }
   }
+
+  // Nested public projection for claimsVerification (Admin notes & internal review details are STRICTLY private)
+  if (product.claimsVerification && typeof product.claimsVerification === 'object') {
+    const rawStatus = (product.claimsVerification as any).status;
+    const status = (VALID_CLAIM_STATUSES as readonly string[]).includes(rawStatus) ? rawStatus : 'unverified';
+    sanitized.claimsVerification = {
+      status,
+      ...(status === 'verified' && typeof (product.claimsVerification as any).verifiedAt === 'string'
+        ? { verifiedAt: (product.claimsVerification as any).verifiedAt }
+        : {}),
+    };
+  }
+
+  // Nested public projection for passport
+  // Certifications are ONLY exposed in public DTO if claimsVerification.status === 'verified'!
+  if (product.passport && typeof product.passport === 'object') {
+    const rawPassport = product.passport as ProductPassport;
+    const isVerified = sanitized.claimsVerification && (sanitized.claimsVerification as any).status === 'verified';
+    const passport: ProductPassport = {};
+    if (rawPassport.variety) passport.variety = rawPassport.variety;
+    if (rawPassport.harvestSeason) passport.harvestSeason = rawPassport.harvestSeason;
+    if (rawPassport.roastLevel) passport.roastLevel = rawPassport.roastLevel;
+    if (rawPassport.processingMethod) passport.processingMethod = rawPassport.processingMethod;
+    if (Array.isArray(rawPassport.ingredients) && rawPassport.ingredients.length > 0) {
+      passport.ingredients = [...rawPassport.ingredients];
+    }
+    if (Array.isArray(rawPassport.allergens) && rawPassport.allergens.length > 0) {
+      passport.allergens = [...rawPassport.allergens];
+    }
+    if (typeof rawPassport.bestBeforeDays === 'number') passport.bestBeforeDays = rawPassport.bestBeforeDays;
+    if (rawPassport.storageInstructions) passport.storageInstructions = rawPassport.storageInstructions;
+    if (isVerified && Array.isArray(rawPassport.certifications) && rawPassport.certifications.length > 0) {
+      passport.certifications = [...rawPassport.certifications];
+    }
+    sanitized.passport = passport;
+  }
+
+  if (product.mediaFocalPoint && typeof product.mediaFocalPoint === 'object') {
+    try {
+      sanitized.mediaFocalPoint = validateMediaFocalPoint(product.mediaFocalPoint);
+    } catch {
+      delete sanitized.mediaFocalPoint;
+    }
+  }
+
+  if (typeof product.cropMode === 'string' && (VALID_CROP_MODES as readonly string[]).includes(product.cropMode as any)) {
+    sanitized.cropMode = product.cropMode;
+  }
+
   return sanitized as unknown as Product;
 }
 
