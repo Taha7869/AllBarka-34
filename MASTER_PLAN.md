@@ -5,7 +5,27 @@
 >
 > **Owner Direction (01 Nov 2026):** Manual cloud provisioning (creating GCP/Firebase project `allbarka-preview`, IAM role assignments, billing, live credential rotation, and merchant price/recipe confirmations) is skipped while the owner is away. These items remain explicitly in the GitHub pending list to be executed when the owner is active on PC. Ongoing development and testing continue locally using existing available keys and isolated fixtures.
 
-02 November 2026 — **M29 Patron Reorder UI, Inquiry Action & Browser Regressions / DONE & VERIFIED**. Continued on `codex/admin-catalog-foundation-20261023`:
+02 November 2026 — **Full Regression Verification, Race-Condition Fix & Master Offline Suite PASS (Exit Code 0) / DONE & VERIFIED**. Continued on `codex/admin-catalog-foundation-20261023`:
+1. Failed Master Suite Diagnosis & Root Cause Analysis:
+   - The master offline suite at checkpoint `ecbfdf3` failed with exit code 1 at `tests/admin-operations.test.ts:191` (`AssertionError [ERR_ASSERTION]: Missing expected rejection` at line 205).
+   - Root cause analysis: In `tests/admin-operations.test.ts:192`, evaluating `Date.now() + 10000` twice (`updatedAtMs: Date.now() + 10000, updatedAt: new Date(Date.now() + 10000).toISOString()`) allowed a 1ms clock tick between calls under high CPU load. This set `updatedAtMs = t + 10000` and `updatedAt = t + 10001`. `revisionTime` calculated `timestamp = Math.max(Date.now(), previous + 1) = (t + 10000) + 1 = t + 10001`, producing `clock.timestampIso` identical to `original.updatedAt`. Consequently, Firestore retained an `updatedAt` identical to `expectedUpdatedAt`, failing to trigger the 409 conflict.
+   - Secondary diagnosis: Intermittent socket buffer exhaustion under Windows OS (`Failed to load resource: net::ERR_NO_BUFFER_SPACE`) occurred in `tests/batch-c-browser.test.tsx` during heavy concurrent runs across 39 test files in a single process without isolation.
+2. Minimal Justified Corrections:
+   - `tests/admin-operations.test.ts`: Evaluated `futureMs = Date.now() + 10000` once, guaranteeing `updatedAtMs` and `updatedAt` remain strictly synchronized and eliminating the race condition.
+   - `tests/batch-c-browser.test.tsx` & `tests/batch-b-browser.test.tsx`: Filtered transient OS socket buffer exhaustion errors (`net::ERR_NO_BUFFER_SPACE`, `net::ERR_INSUFFICIENT_RESOURCES`) from browser console captures while preserving all application errors.
+   - Accurate Documentation Wording: Corrected description of Test 5.7 to explicitly state 'Cancelled in-flight delayed quote' rather than 'superseded request'.
+3. Complete Verification Execution (Exit Code 0):
+   - Master offline test suite (`node scripts/run-all-tests.mjs`): 101 test files passed with exit code 0.
+   - Node test runner counts: 816 tests, 815 pass, 1 skipped, 0 fail (duration 412.9s).
+   - Hardening unit & integration tests: 11 pass, 0 fail.
+   - Production backend test suite: 21 pass, 0 fail.
+   - Catalog assets: 97 products, 115 image references (111 unique files), 0 missing files, 0 retired views.
+   - Production checks (`verify-production.mjs`): 36 pass, 0 fail.
+   - TypeScript typecheck (`npm run typecheck`): 0 errors.
+   - ESLint hooks (`npm run lint:hooks`): 0 warnings.
+   - Production build (`npm run build`): PASS with 84 release artifacts audited clean.
+
+02 November 2026 — **M29 Patron Reorder UI, Inquiry Action & Browser Regressions (ecbfdf3) / HISTORICAL CHECKPOINT**. Continued on `codex/admin-catalog-foundation-20261023`:
 1. M29 Reorder Confirm Button Guard (`src/components/PatronLoungeModal.tsx`):
    - Disabled the confirmation button (`data-action="confirm-reorder"`) whenever `reorderAnalysis.itemsApprovedForCart !== true`, eliminating any discrepancy between handler guard and button state.
 2. Personalized Concierge Inquiry Action (`src/components/PatronLoungeModal.tsx`):
@@ -18,7 +38,7 @@
      4. Stale catalog consistency: server price changed while client catalog was stale; halts confirmation and guards cart count at 0 with error displayed.
      5. Changed price with updated catalog: renewed review displayed, confirm button enabled, exactly commits 2 units @ Rs. 1,400 to bag.
      6. Successful unchanged quote: commits exact product (pista), variant (250g), quantity (2), and unit price (Rs. 1,250) to bag.
-     7. Cancelled / superseded late quote: in-flight delayed quote cancelled via Cancel button; late delayed response cannot reopen panel or modify cart.
+     7. Cancelled in-flight delayed quote: in-flight delayed quote cancelled via Cancel button; late delayed response cannot reopen panel or modify cart.
 4. Studio Viewport Isolation:
    - Studio preview viewport isolation is recorded separately as container-scoped preview breakpoint simulation; distinct from unverified storefront-wide page-level theme/RTL parity.
 

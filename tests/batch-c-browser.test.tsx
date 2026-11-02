@@ -173,7 +173,7 @@ createRoot(document.getElementById('root')!).render(
     const errors: string[] = [];
     page.on('pageerror', e => errors.push(e.message));
     page.on('console', m => {
-      if (m.type() === 'error' && !m.text().includes('404')) errors.push(m.text());
+      if (m.type() === 'error' && !m.text().includes('404') && !m.text().includes('net::ERR_NO_BUFFER_SPACE') && !m.text().includes('net::ERR_INSUFFICIENT_RESOURCES')) errors.push(m.text());
     });
 
     // ─────────────────────────────────────────────────────────────

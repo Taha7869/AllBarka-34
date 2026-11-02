@@ -547,7 +547,7 @@ root.render(
     await page.evaluate(() => (window as any).fixture.clearCart());
     await page.waitForFunction(() => (window as any).fixture.cartCount === 0);
 
-    // 5.7: CANCELLED / SUPERSEDED LATE REQUEST CANNOT REVIVE OR OVERWRITE CURRENT REVIEW
+    // 5.7: CANCELLED IN-FLIGHT DELAYED REQUEST CANNOT REVIVE OR OVERWRITE CURRENT REVIEW
     await setQuoteMode('delayed');
     await page.evaluate(() => window.dispatchEvent(new CustomEvent('open-patron-lounge')));
     await page.waitForSelector('#patron-title', { timeout: 5000 });
