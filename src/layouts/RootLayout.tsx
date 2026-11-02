@@ -30,6 +30,9 @@ import PolicyPagesModal from '../components/PolicyPagesModal';
 import AIConcierge from '../components/AIConcierge';
 import CustomHamperBuilderModal from '../components/CustomHamperBuilderModal';
 import StoreUpdatesDialog from '../components/StoreUpdatesDialog';
+import MehmaanTablePlannerModal from '../components/MehmaanTablePlannerModal';
+import OccasionInquiryModal from '../components/OccasionInquiryModal';
+import type { EventType } from '../lib/occasionPlanning';
 
 import LahoreExpressTimer from '../components/LahoreExpressTimer';
 import { Menu, X, ShoppingBag, User, Gift, Languages, ChevronDown, Search } from 'lucide-react';
@@ -73,6 +76,9 @@ export default function RootLayout() {
   const [patronLoungeOpen, setPatronLoungeOpen] = useState(false);
   const [updatesOpen, setUpdatesOpen] = useState(false);
   const [selectedQuickViewProduct, setSelectedQuickViewProduct] = useState<Product | null>(null);
+  const [mehmaanModalOpen, setMehmaanModalOpen] = useState(false);
+  const [occasionModalOpen, setOccasionModalOpen] = useState(false);
+  const [defaultOccasion, setDefaultOccasion] = useState<EventType>('wedding');
 
   // Global listeners for modals
   useEffect(() => {
@@ -88,15 +94,27 @@ export default function RootLayout() {
     const handleOpenLounge = () => setPatronLoungeOpen(true);
     const handleOpenUpdates = () => setUpdatesOpen(true);
     const handleOpenHamper = () => setHamperModalOpen(true);
+    const handleOpenMehmaan = () => setMehmaanModalOpen(true);
+    const handleOpenOccasion = (e?: Event) => {
+      const customEvent = e as CustomEvent<{ defaultOccasion?: EventType }>;
+      if (customEvent?.detail?.defaultOccasion) {
+        setDefaultOccasion(customEvent.detail.defaultOccasion);
+      }
+      setOccasionModalOpen(true);
+    };
     window.addEventListener('open-auth-modal', handleOpenAuth);
     window.addEventListener('open-patron-lounge', handleOpenLounge);
     window.addEventListener('open-store-updates', handleOpenUpdates);
     window.addEventListener('open-hamper-builder', handleOpenHamper);
+    window.addEventListener('open-mehmaan-planner', handleOpenMehmaan);
+    window.addEventListener('open-occasion-inquiry', handleOpenOccasion);
     return () => {
       window.removeEventListener('open-auth-modal', handleOpenAuth);
       window.removeEventListener('open-patron-lounge', handleOpenLounge);
       window.removeEventListener('open-store-updates', handleOpenUpdates);
       window.removeEventListener('open-hamper-builder', handleOpenHamper);
+      window.removeEventListener('open-mehmaan-planner', handleOpenMehmaan);
+      window.removeEventListener('open-occasion-inquiry', handleOpenOccasion);
     };
   }, []);
   
@@ -451,6 +469,8 @@ export default function RootLayout() {
       {(policyModalOpen || loadedOverlays.policy) && <PolicyPagesModal isOpen={policyModalOpen} initialTab={policyModalTab} onClose={() => setPolicyModalOpen(false)} />}
       {!isAdminRoute && <AIConcierge hide={isAnyModalOrDrawerOpen && !aiConciergeOpen} hasCartBar={totalItemsCount > 0 && location.pathname !== '/checkout' && location.pathname !== '/cart'} onOpenChange={setAiConciergeOpen} />}
       <CustomQuoteModal />
+      <MehmaanTablePlannerModal isOpen={mehmaanModalOpen} onClose={() => setMehmaanModalOpen(false)} />
+      <OccasionInquiryModal isOpen={occasionModalOpen} defaultOccasion={defaultOccasion} onClose={() => setOccasionModalOpen(false)} />
     </div>
   );
 }
