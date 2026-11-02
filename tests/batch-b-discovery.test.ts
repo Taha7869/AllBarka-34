@@ -148,5 +148,5 @@ test('M27: Variety comparison accurately generates comparable peers and extracts
     },
   };
   const unverifiedClaims = certCriterion.render(unverifiedPista);
-  assert.equal(unverifiedClaims, 'Standard Quality Checked');
+  assert.equal(unverifiedClaims, '—');
 });

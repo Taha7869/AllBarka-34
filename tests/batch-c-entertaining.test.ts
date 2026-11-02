@@ -62,32 +62,34 @@ test('M12: Mehmaan Table Planner accurately scales portions, resolves catalog un
 });
 
 test('M13 & M30: Occasion & Event Planning calculates lead times, evaluates urgency, and generates verified inquiry handoffs', () => {
-  // 1. City transit lead times
+  // 1. City options have transit notes and localized labels
   const lahore = CITY_OPTIONS.find(c => c.id === 'lahore');
-  assert.equal(lahore?.transitDays, 1);
+  assert.ok(lahore?.transitNote.includes('Lahore'));
   const karachi = CITY_OPTIONS.find(c => c.id === 'karachi');
-  assert.equal(karachi?.transitDays, 2);
+  assert.ok(karachi?.transitNote.includes('courier'));
 
-  // 2. Packaging prep lead times
+  // 2. Packaging options
   const tin = PACKAGING_OPTIONS.find(p => p.id === 'luxury_tin');
-  assert.equal(tin?.prepDays, 1);
+  assert.equal(tin?.label_en, 'Luxury Gold Embossed Tin');
   const bespoke = PACKAGING_OPTIONS.find(p => p.id === 'custom');
-  assert.equal(bespoke?.prepDays, 5);
+  assert.equal(bespoke?.label_en, 'Bespoke Custom Packaging with Logo');
 
-  // 3. Lead time calculation
+  // 3. Lead time calculation with standard 10-calendar-day policy
   const fixedNow = new Date('2026-11-02T10:00:00Z');
 
-  // A. Safe lead time: 10 days out
-  const safeCheck = checkEventLeadTime('lahore', 'luxury_tin', '2026-11-15', fixedNow);
+  // A. Safe lead time: 18 days out
+  const safeCheck = checkEventLeadTime('lahore', 'luxury_tin', '2026-11-20', fixedNow);
   assert.equal(safeCheck.status, 'safe');
-  assert.equal(safeCheck.totalRequiredDays, 2); // 1 prep + 1 transit
+  assert.equal(safeCheck.totalRequiredDays, 10);
 
-  // B. Tight lead time: 3 days out with 2 required
-  const tightCheck = checkEventLeadTime('lahore', 'luxury_tin', '2026-11-05', fixedNow);
+  // B. Tight lead time: 12 days out (within 10-14 days)
+  const tightCheck = checkEventLeadTime('lahore', 'luxury_tin', '2026-11-14', fixedNow);
   assert.equal(tightCheck.status, 'tight');
+  assert.equal(tightCheck.totalRequiredDays, 10);
 
-  // C. Urgent lead time: tomorrow with 2 required
-  const urgentCheck = checkEventLeadTime('lahore', 'luxury_tin', '2026-11-03', fixedNow);
+  // C. Urgent lead time: 3 days out (< 10 days required)
+  const urgentCheck = checkEventLeadTime('lahore', 'luxury_tin', '2026-11-05', fixedNow);
+  assert.equal(urgentCheck.status, 'urgent');
   assert.equal(urgentCheck.status, 'urgent');
 
   // 4. WhatsApp inquiry URL builder

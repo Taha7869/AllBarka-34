@@ -9,35 +9,36 @@ export function normalizeSearch(value: string): string {
     .replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim();
 }
 
+/**
+ * Linguistic and multilingual script synonyms keyed strictly by valid canonical product IDs
+ */
 export const CATALOG_ALIASES: Record<string, string> = {
-  pista: 'pistachio pistachios pistachiyo pista pesteh پستہ فستق akbari fandoghi ahmad aghaei salted roasted raw green nut',
-  badam: 'badam badaam almond almonds badamain بادام لوز mamra irani mamra kaghzi american sweet almond nuts',
-  kaju: 'kaju kaaju cashew cashews caju کاجو كاجو roasted salted raw w240 w320 whole splits whole nuts',
-  akhroot: 'akhrot akhroot walnut walnuts akrot اخروٹ جوز kagzi kaghzi giri extra light halves pieces brain food',
-  khajoor: 'khajur khajoor dates dates کھجور تمر ajwa medjool mabroom amber sukkari kalmi rabia khadrawi madina dates',
-  kishmish: 'kishmish kismis raisins sultanas کشمش زبيب sundekhani green golden afghani black round seedless',
+  pista: 'pistachio pistachios pistachiyo pista pesteh پستہ فستق salted roasted raw green nut',
+  badam: 'badam badaam almond almonds mamra badamain بادام لوز sweet almond nuts',
+  kaju: 'kaju kaaju cashew cashews caju کاجو كاجو roasted salted raw whole nuts',
+  akhroot: 'akhrot akhroot walnut walnuts akrot اخروٹ جوز kaghzi giri halves pieces brain food',
+  khajoor: 'khajur khajoor dates ajwa کھجور تمر madina dates',
+  'ajwa-dates': 'ajwa dates khajoor madina ajwa عجوة',
+  kishmish: 'kishmish kismis raisins sultanas کشمش زبيب green golden afghani black round seedless',
   khubani: 'khubani khobani apricot apricots خوبانی مشمش afghani dried hunza sweet seedless khobani',
   'pine-nuts': 'chilgoza chalgoza chalghoza pine nuts pine nut چلغوزہ صنوبر roasted in shell jumbo afghani',
-  chilgoza: 'chilgoza chalgoza chalghoza pine nuts pine nut چلغوزہ صنوبر roasted in shell jumbo afghani',
   'afghan-figs': 'anjeer anjir fig figs انجیر تين afghani open mouth jumbo string dry fig',
-  anjeer: 'anjeer anjir fig figs انجیر تين afghani open mouth jumbo string dry fig',
-  makhana: 'makhana phool makhana fox nuts lotus seeds پھول مکھانہ بذور اللوتس roasted salted healthy snack',
-  chironji: 'chironji charoli charonji چرونجی حب السمنة',
-  gond: 'gond gond katira gum tragacanth گوند کتیرا صمغ کثیرا panjeeri cooling gum',
-  zafran: 'zafran kesar saffron saffron threads زعفران نگین super negin kashmiri irani mongra',
-  'aloe-vera': 'aloe vera kawar gandal کوار گندل صبر حقيقي',
+  'fox-nuts': 'makhana phool makhana fox nuts lotus seeds پھول مکھانہ بذور اللوتس roasted salted healthy snack',
+  'gond-katira': 'gond katira gum tragacanth گوند کتیرا صمغ کثیرا panjeeri cooling gum',
+  'edible-gond': 'edible gond dink babool panjeeri gum گوند',
+  'org-saffron': 'zafran kesar saffron saffron threads زعفران نگین mongra super negin',
   'flax-seeds': 'flax seeds alsi alsii السی بذور الكتان',
-  'chia-seeds': 'chia seeds tukhm-e-sharbati تخم شربتی بذور الشيا',
+  chia_seeds: 'chia seeds chia seed tukhm e sharbati تخم شربتی بذور الشيا',
   'sunflower-seeds': 'sunflower seeds surajmukhi سورج مکھی بذور دوار الشمس',
-  'pumpkin-seeds': 'pumpkin seeds kaddu ke beej کدو کے بیج بذور القرع',
-  'bid-box-luxury-tin': 'tin box dabba gold tin metallic bid box wedding favor shadi box nikkah favor keepsake keepsake dabba',
+  pumpkin_seeds: 'pumpkin seeds kaddu ke beej کدو کے بیج بذور القرع',
+  'bid-box-luxury-tin': 'tin box dabba gold tin metallic bid box wedding favor shadi box nikkah favor keepsake',
   'bid-box-umrah-tabarruk': 'tabarruk umrah hajj potli pouch velvet batwa sacred gift hadiya makkah madinah ziarat',
-  'bid-box-velvet-chest': 'velvet chest dabba sandooq bari gift wedding favor luxury velvet royal box mahr favor',
-  'bid-box-acrylic-chest': 'acrylic box clear transparent chest trousseau nikah favors shadi bari favors glass chest',
-  'bid-box-mughal-four-compartment': 'mughal box four compartment barat bid box sweet box shadi box family gift royal box',
-  'bid-box-baby-celebration': 'baby announcement box aqeeqah favor baby boy baby girl newborn favor chocolates panjeeri',
-  'bid-box-jamawar-potli': 'potli pouch jamawar batwa jute pouch drawstring favor nikah potli batwa favor',
-  'bid-box-hexagonal-wooden-chest': 'wooden chest hexagonal lakri dabba handcrafted keepsake shadi box wooden box',
+  'bid-box-acrylic-royal': 'acrylic favor box clear royal dome wedding favor nikkah favors',
+  'bid-box-birth-announcement': 'baby announcement box aqeeqah favor baby boy baby girl newborn favor',
+  'bid-box-jute-pouch': 'jute pouch potli batwa drawstring favor nikah potli',
+  'bid-box-pyramid-favor': 'pyramid favor box gift box favor wedding favor',
+  'bid-box-card-nikkah': 'nikkah card bid box favor envelope invitation',
+  'bid-box-sweet-nikkah': 'sweet nikkah box favor box mithai dabba',
 };
 
 export function productSearchScore(product: Product, query: string): number {
@@ -59,10 +60,10 @@ export function productSearchScore(product: Product, query: string): number {
     product.name_ur,
     product.name_ar,
     product.name,
-    CATALOG_ALIASES[product.id] || '',
     product.id,
     product.passport?.variety || '',
-  ].join(' '));
+    CATALOG_ALIASES[product.id] || '',
+  ].filter(Boolean).join(' '));
 
   const details = normalizeSearch([
     product.category,
@@ -82,15 +83,19 @@ export function productSearchScore(product: Product, query: string): number {
     ...(product.keywords || []),
     ...(product.occasions || []),
     ...(product.collections || []),
-  ].join(' '));
+  ].filter(Boolean).join(' '));
 
   if (!terms.every(term => names.includes(term) || details.includes(term))) return 0;
   return terms.reduce((score, term) => score + (names.split(' ').includes(term) ? 5 : names.includes(term) ? 3 : 1), 0);
 }
 
 export function searchCatalog(products: Product[], query: string): Product[] {
-  return products.filter(product => product.active !== false).map(product => ({ product, score: productSearchScore(product, query) }))
-    .filter(result => result.score > 0).sort((a, b) => b.score - a.score).map(result => result.product);
+  return products
+    .filter(product => product.active !== false)
+    .map(product => ({ product, score: productSearchScore(product, query) }))
+    .filter(result => result.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map(result => result.product);
 }
 
 export function startingPrice(product: Product): number {
@@ -103,10 +108,33 @@ export function readCatalogFilters(params: URLSearchParams) {
   const price = Number(params.get('budget'));
   return {
     query: params.get('search') || '',
-    sort: CATALOG_SORTS.includes(params.get('sort') as CatalogSort) ? params.get('sort') as CatalogSort : 'featured' as CatalogSort,
+    sort: CATALOG_SORTS.includes(params.get('sort') as CatalogSort) ? (params.get('sort') as CatalogSort) : ('featured' as CatalogSort),
     budget: params.has('budget') && Number.isFinite(price) ? Math.max(300, Math.min(10000, price)) : 10000,
     origin: params.get('origin') || 'all',
     special: params.get('special') === '1',
     saved: params.get('saved') === '1',
   };
+}
+
+export function sortProducts(products: Product[], sort: CatalogSort): Product[] {
+  const list = [...products];
+  switch (sort) {
+    case 'price-asc':
+      return list.sort((a, b) => {
+        const pa = Math.min(...Object.values(a.prices || { 0: Infinity }));
+        const pb = Math.min(...Object.values(b.prices || { 0: Infinity }));
+        return pa - pb;
+      });
+    case 'price-desc':
+      return list.sort((a, b) => {
+        const pa = Math.max(...Object.values(a.prices || { 0: 0 }));
+        const pb = Math.max(...Object.values(b.prices || { 0: 0 }));
+        return pb - pa;
+      });
+    case 'name-asc':
+      return list.sort((a, b) => a.name_en.localeCompare(b.name_en));
+    case 'featured':
+    default:
+      return list;
+  }
 }

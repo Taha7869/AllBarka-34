@@ -43,7 +43,18 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
   const [notes, setNotes] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitted, setSubmitted] = useState<boolean>(false);
+  const [ticketId, setTicketId] = useState<string>('');
   const [formError, setFormError] = useState<string>('');
+  const idempotencyKeyRef = useRef<string>('');
+
+  useEffect(() => {
+    if (isOpen) {
+      idempotencyKeyRef.current = `occ-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      setSubmitted(false);
+      setTicketId('');
+      setFormError('');
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -67,6 +78,18 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
 
   const leadTime = checkEventLeadTime(city, packagingPreference, requestedDate || null);
 
+  const currentPayload: OccasionInquiryPayload = {
+    name: name.trim(),
+    phone: phone.trim(),
+    city,
+    eventType,
+    requestedDate,
+    quantity,
+    packagingPreference,
+    includeCard,
+    notes,
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
@@ -74,49 +97,56 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
       return;
     }
     if (!phone.trim() || phone.replace(/\D/g, '').length < 10) {
-      setFormError(t('phoneRequired', 'Please enter a valid WhatsApp contact number'));
+      setFormError(t('phoneRequired', 'Please enter a valid WhatsApp contact number (at least 10 digits)'));
       return;
     }
     setFormError('');
     setIsSubmitting(true);
 
-    const payload: OccasionInquiryPayload = {
-      name: name.trim(),
-      phone: phone.trim(),
-      city,
-      eventType,
-      requestedDate,
-      quantity,
-      packagingPreference,
-      includeCard,
-      notes,
-    };
+    const packagingLabel = PACKAGING_OPTIONS.find(p => p.id === packagingPreference)?.label_en || packagingPreference;
+    const combinedNotes = `[Packaging: ${packagingLabel}] [Greeting Card: ${includeCard ? 'Yes, personalized' : 'Standard'}] ${notes.trim()}`.trim();
 
     try {
-      // Submit to backend inquiries endpoint (fails gracefully if offline or mock)
-      await fetch('/api/inquiries', {
+      const res = await fetch('/api/inquiries', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': idempotencyKeyRef.current,
+        },
         body: JSON.stringify({
-          inquiryType: 'corporate_event',
-          topic: eventType,
-          eventType,
+          customerName: name.trim(),
+          phone: phone.trim(),
           city,
-          requestedDate,
-          quantity,
-          packaging: packagingPreference,
-          recipientName: name.trim(),
-          recipientPhone: phone.trim(),
-          notes: notes.trim(),
+          type: 'general',
+          eventType,
+          targetEventDate: requestedDate || null,
+          quantity: Math.max(1, Math.min(50000, Math.floor(quantity) || 1)),
+          notes: combinedNotes,
+          idempotencyKey: idempotencyKeyRef.current,
         }),
-      }).catch(() => {
-        // network or server unavailable; WhatsApp remains direct backup
       });
-    } finally {
-      setIsSubmitting(false);
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        setFormError(
+          errorData.error ||
+          errorData.message ||
+          t('occasion.errorFailed', 'Unable to register inquiry on server. You can retry or message concierge via WhatsApp.')
+        );
+        setIsSubmitting(false);
+        return;
+      }
+
+      const result = await res.json();
+      const refId = result.ticketId || result.id || 'INQ-RECEIVED';
+      setTicketId(refId);
       setSubmitted(true);
-      const url = buildOccasionWhatsAppUrl(payload);
-      window.open(url, '_blank', 'noopener,noreferrer');
+      setIsSubmitting(false);
+    } catch {
+      setFormError(
+        t('occasion.errorNetwork', 'Network issue. Inquiry was not registered on our server. You can retry or message our concierge directly via WhatsApp.')
+      );
+      setIsSubmitting(false);
     }
   };
 
@@ -139,14 +169,14 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
         <header className="flex items-center justify-between px-6 py-4 border-b border-[#D4AF37]/20 bg-white/50 dark:bg-zinc-800/50 backdrop-blur-md">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[#043327]/10 dark:bg-emerald-950/40 text-[#043327] dark:text-emerald-400 flex items-center justify-center border border-[#D4AF37]/30">
-              <Calendar size={20} />
+              <HeartHandshake size={20} />
             </div>
             <div>
               <span className="text-[10px] font-semibold tracking-widest uppercase text-[#043327] dark:text-emerald-400">
-                {t('occasion.eyebrow', 'Celebrations, Nikkah Favors & Corporate Gifting')}
+                {t('occasion.eyebrow', 'Celebrations & Corporate Gifting')}
               </span>
               <h2 id={titleId} className="text-xl font-serif font-bold text-[#120F17] dark:text-[#FAF9F5]">
-                {t('occasion.title', 'Bespoke Occasion & Event Planner')}
+                {t('occasion.title', 'Event & Occasion Inquiry Kit')}
               </h2>
             </div>
           </div>
@@ -160,54 +190,97 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
           </button>
         </header>
 
-        {/* Scrollable Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
-          {formError && (
-            <div role="alert" className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 text-xs flex items-center gap-2">
-              <AlertCircle size={16} className="shrink-0" />
-              <span>{formError}</span>
+        {submitted ? (
+          /* Submission Success State */
+          <div className="p-6 sm:p-8 text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 flex items-center justify-center mx-auto border border-emerald-300">
+              <CheckCircle2 size={32} />
             </div>
-          )}
-
-          {/* Event Type */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-2">
-              {t('occasion.eventType', 'Event or Occasion')}
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {EVENT_OPTIONS.map((opt) => {
-                const isSelected = eventType === opt.id;
-                const label = language === 'ur' ? opt.label_ur : language === 'ar' ? opt.label_ar : opt.label_en;
-                return (
-                  <button
-                    type="button"
-                    key={opt.id}
-                    onClick={() => setEventType(opt.id)}
-                    className={`p-2.5 rounded-xl text-xs font-semibold border transition-all text-left focus-ring ${
-                      isSelected
-                        ? 'border-[#043327] dark:border-emerald-500 bg-[#043327]/5 dark:bg-emerald-950/30 text-[#043327] dark:text-emerald-300 shadow-xs'
-                        : 'border-[#D4AF37]/20 bg-white dark:bg-zinc-800 text-neutral-700 dark:text-neutral-300 hover:border-[#D4AF37]/40'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
+            <h3 className="text-xl font-serif font-bold text-[#120F17] dark:text-[#FAF9F5]">
+              {t('occasion.successTitle', 'Inquiry Registered Successfully')}
+            </h3>
+            <p className="text-xs text-neutral-600 dark:text-neutral-300 max-w-md mx-auto leading-relaxed">
+              {t('occasion.successMessage', 'Your celebration inquiry has been recorded in our concierge registry.')}{' '}
+              {ticketId && (
+                <span className="block mt-2 font-mono font-bold text-[#043327] dark:text-emerald-400 text-sm">
+                  Reference #{ticketId}
+                </span>
+              )}
+            </p>
+            <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <a
+                href={buildOccasionWhatsAppUrl({
+                  ...currentPayload,
+                  notes: `[Inquiry Ref: #${ticketId}] ${notes.trim()}`.trim(),
+                })}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-[#043327] hover:bg-[#074b39] text-[#FAF9F5] text-xs font-semibold shadow-md transition-all focus-ring"
+              >
+                <MessageCircle size={16} />
+                <span>{t('occasion.openWhatsAppWithRef', 'Open WhatsApp with Reference')}</span>
+              </a>
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-6 py-3 rounded-2xl border border-neutral-300 dark:border-neutral-700 text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-zinc-800 transition-all focus-ring"
+              >
+                {t('close', 'Close')}
+              </button>
             </div>
           </div>
+        ) : (
+          /* Form Body */
+          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
+            {formError && (
+              <div role="alert" className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-200 text-xs space-y-2">
+                <div className="flex items-start gap-2">
+                  <AlertCircle size={16} className="shrink-0 mt-0.5 text-rose-600" />
+                  <span>{formError}</span>
+                </div>
+                <div className="pt-1">
+                  <a
+                    href={buildOccasionWhatsAppUrl(currentPayload)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 font-bold underline hover:opacity-80"
+                  >
+                    <MessageCircle size={14} />
+                    <span>{t('occasion.fallbackWhatsApp', 'Message Concierge Directly on WhatsApp instead')}</span>
+                  </a>
+                </div>
+              </div>
+            )}
 
-          {/* Delivery City & Destination */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="occasion-city" className="block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-1.5">
-                {t('occasion.city', 'Delivery Destination')}
-              </label>
-              <div className="relative">
+            {/* Event Type & Destination */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="occasion-type" className="block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-1.5">
+                  {t('occasion.eventType', 'Occasion / Event Type')}
+                </label>
+                <select
+                  id="occasion-type"
+                  value={eventType}
+                  onChange={(e) => setEventType(e.target.value as EventType)}
+                  className="w-full px-3 py-2 rounded-xl border border-[#D4AF37]/30 bg-white dark:bg-zinc-800 text-sm text-[#120F17] dark:text-[#FAF9F5] focus-ring"
+                >
+                  {EVENT_OPTIONS.map((opt) => (
+                    <option key={opt.id} value={opt.id}>
+                      {language === 'ur' ? opt.label_ur : language === 'ar' ? opt.label_ar : opt.label_en}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="occasion-city" className="block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-1.5">
+                  {t('occasion.city', 'Delivery Destination')}
+                </label>
                 <select
                   id="occasion-city"
                   value={city}
                   onChange={(e) => setCity(e.target.value as DeliveryCity)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-[#D4AF37]/30 bg-white dark:bg-zinc-800 text-sm text-[#120F17] dark:text-[#FAF9F5] focus-ring"
+                  className="w-full px-3 py-2 rounded-xl border border-[#D4AF37]/30 bg-white dark:bg-zinc-800 text-sm text-[#120F17] dark:text-[#FAF9F5] focus-ring"
                 >
                   {CITY_OPTIONS.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -218,177 +291,174 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
               </div>
             </div>
 
-            {/* Requested Date */}
+            {/* Target Event Date & Lead Time Notice */}
             <div>
               <label htmlFor="occasion-date" className="block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-1.5">
-                {t('occasion.date', 'Requested Event Date')}
+                {t('occasion.targetDate', 'Target Event Date (Optional)')}
               </label>
-              <input
-                id="occasion-date"
-                type="date"
-                min={new Date().toISOString().slice(0, 10)}
-                value={requestedDate}
-                onChange={(e) => setRequestedDate(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-[#D4AF37]/30 bg-white dark:bg-zinc-800 text-sm text-[#120F17] dark:text-[#FAF9F5] focus-ring"
-              />
-            </div>
-          </div>
-
-          {/* Lead-Time Turnaround Guidance Banner */}
-          <div
-            className={`p-3 rounded-2xl border text-xs flex items-start gap-2.5 ${
-              leadTime.status === 'urgent'
-                ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-200'
-                : leadTime.status === 'tight'
-                ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200'
-                : 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200'
-            }`}
-          >
-            {leadTime.status === 'urgent' ? (
-              <ShieldAlert size={18} className="shrink-0 mt-0.5 text-amber-600" />
-            ) : (
-              <CheckCircle2 size={18} className="shrink-0 mt-0.5 text-emerald-600" />
-            )}
-            <div>
-              <p className="font-semibold">
-                {leadTime.status === 'urgent'
-                  ? t('occasion.leadUrgent', 'Urgent timeline: rush preparation required. We will prioritize your inquiry via WhatsApp.')
-                  : leadTime.status === 'tight'
-                  ? t('occasion.leadTight', 'Tight turnaround: we recommend confirming your selection promptly.')
-                  : t('occasion.leadSafe', 'Standard lead time is sufficient for handcrafted preparation and express delivery.')}
-              </p>
-              <p className="text-[11px] opacity-80 mt-0.5">
-                Earliest standard delivery: <strong>{leadTime.earliestDeliveryDate}</strong> ({leadTime.prepDays} days craft + {leadTime.transitDays} days transit).
-              </p>
-            </div>
-          </div>
-
-          {/* Packaging Style & Quantity */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="occasion-packaging" className="block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-1.5">
-                {t('occasion.packaging', 'Favor & Packaging Style')}
-              </label>
-              <select
-                id="occasion-packaging"
-                value={packagingPreference}
-                onChange={(e) => setPackagingPreference(e.target.value as PackagingPreference)}
-                className="w-full px-3 py-2.5 rounded-xl border border-[#D4AF37]/30 bg-white dark:bg-zinc-800 text-sm text-[#120F17] dark:text-[#FAF9F5] focus-ring"
-              >
-                {PACKAGING_OPTIONS.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {language === 'ur' ? p.label_ur : language === 'ar' ? p.label_ar : p.label_en}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="occasion-quantity" className="block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-1.5">
-                {t('occasion.quantity', 'Estimated Favor Quantity (Units)')}: <strong>{quantity}</strong>
-              </label>
-              <div className="flex items-center gap-2">
-                {[25, 50, 100, 250].map((q) => (
-                  <button
-                    type="button"
-                    key={q}
-                    onClick={() => setQuantity(q)}
-                    className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-colors focus-ring ${
-                      quantity === q
-                        ? 'bg-[#043327] text-white border-[#043327]'
-                        : 'bg-white dark:bg-zinc-800 text-neutral-700 dark:text-neutral-300 border-[#D4AF37]/20 hover:bg-neutral-100'
-                    }`}
-                  >
-                    {q}
-                  </button>
-                ))}
+              <div className="relative">
+                <input
+                  id="occasion-date"
+                  type="date"
+                  value={requestedDate}
+                  min={new Date().toISOString().slice(0, 10)}
+                  onChange={(e) => setRequestedDate(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-[#D4AF37]/30 bg-white dark:bg-zinc-800 text-sm text-[#120F17] dark:text-[#FAF9F5] focus-ring"
+                />
               </div>
             </div>
-          </div>
 
-          {/* Card Toggle */}
-          <label className="flex items-center gap-3 p-3 rounded-2xl border border-[#D4AF37]/20 bg-white dark:bg-zinc-800 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={includeCard}
-              onChange={(e) => setIncludeCard(e.target.checked)}
-              className="w-4 h-4 rounded text-[#043327] accent-[#043327] focus-ring"
-            />
-            <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-200">
-              {t('occasion.card', 'Include Personalized Calligraphy Card & Satin Ribbons')}
-            </span>
-          </label>
-
-          {/* Client Contact Info */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-            <div>
-              <label htmlFor="occasion-name" className="block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-1">
-                {t('occasion.name', 'Your Full Name')} *
-              </label>
-              <input
-                id="occasion-name"
-                type="text"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Usman Malik"
-                className="w-full px-3 py-2 rounded-xl border border-[#D4AF37]/30 bg-white dark:bg-zinc-800 text-sm text-[#120F17] dark:text-[#FAF9F5] focus-ring"
-              />
-            </div>
-            <div>
-              <label htmlFor="occasion-phone" className="block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-1">
-                {t('occasion.phone', 'WhatsApp Contact Number')} *
-              </label>
-              <input
-                id="occasion-phone"
-                type="tel"
-                required
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="0300 1234567"
-                className="w-full px-3 py-2 rounded-xl border border-[#D4AF37]/30 bg-white dark:bg-zinc-800 text-sm text-[#120F17] dark:text-[#FAF9F5] focus-ring"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="occasion-notes" className="block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-1">
-              {t('occasion.notes', 'Special Instructions or Color Theme')}
-            </label>
-            <textarea
-              id="occasion-notes"
-              rows={2}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="e.g. Emerald green theme with golden calligraphy, delivery directly to venue."
-              className="w-full px-3 py-2 rounded-xl border border-[#D4AF37]/30 bg-white dark:bg-zinc-800 text-sm text-[#120F17] dark:text-[#FAF9F5] focus-ring"
-            />
-          </div>
-
-          {/* Disclaimer */}
-          <p className="text-[11px] text-neutral-400 italic px-1">
-            {t(
-              'occasion.disclaimer',
-              'A quotation request is an inquiry and estimate, not an accepted order or guaranteed delivery promise.'
-            )}
-          </p>
-
-          {/* Submit CTA */}
-          <div className="pt-2">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl bg-[#043327] hover:bg-[#074b39] text-[#FAF9F5] font-semibold text-sm transition-all focus-ring shadow-md disabled:opacity-50"
+            {/* Transparent Lead Time Banner */}
+            <div
+              className={`p-3.5 rounded-2xl border text-xs flex items-start gap-3 ${
+                leadTime.status === 'urgent'
+                  ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-200'
+                  : leadTime.status === 'tight'
+                  ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200'
+                  : 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200'
+              }`}
             >
-              <MessageCircle size={18} />
-              <span>
-                {isSubmitting
-                  ? t('loading', 'Loading...')
-                  : t('occasion.submit', 'Request Event Quote & Consult on WhatsApp')}
-              </span>
-            </button>
-          </div>
-        </form>
+              {leadTime.status === 'urgent' ? (
+                <ShieldAlert size={18} className="shrink-0 mt-0.5 text-amber-600" />
+              ) : (
+                <CheckCircle2 size={18} className="shrink-0 mt-0.5 text-emerald-600" />
+              )}
+              <div>
+                <p className="font-semibold">
+                  {leadTime.status === 'urgent'
+                    ? t('occasion.leadUrgent', 'Urgent timeline: custom preparation requires at least 10 calendar days. We will review urgent feasibility via WhatsApp.')
+                    : leadTime.status === 'tight'
+                    ? t('occasion.leadTight', 'Tight turnaround: we recommend confirming your selection promptly to protect your event date.')
+                    : t('occasion.leadSafe', 'Standard lead time is sufficient for handcrafted artisanal preparation.')}
+                </p>
+                <p className="text-[11px] opacity-80 mt-0.5">
+                  Earliest artisanal readiness: <strong>{leadTime.earliestDeliveryDate}</strong> ({leadTime.prepDays}-day preparation policy; {leadTime.transitNote}).
+                </p>
+              </div>
+            </div>
+
+            {/* Packaging Style & Quantity */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="occasion-packaging" className="block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-1.5">
+                  {t('occasion.packaging', 'Favor & Packaging Style')}
+                </label>
+                <select
+                  id="occasion-packaging"
+                  value={packagingPreference}
+                  onChange={(e) => setPackagingPreference(e.target.value as PackagingPreference)}
+                  className="w-full px-3 py-2 rounded-xl border border-[#D4AF37]/30 bg-white dark:bg-zinc-800 text-sm text-[#120F17] dark:text-[#FAF9F5] focus-ring"
+                >
+                  {PACKAGING_OPTIONS.map((pkg) => (
+                    <option key={pkg.id} value={pkg.id}>
+                      {language === 'ur' ? pkg.label_ur : language === 'ar' ? pkg.label_ar : pkg.label_en}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="occasion-quantity" className="block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-1.5">
+                  {t('occasion.quantity', 'Estimated Units / Favors')}
+                </label>
+                <input
+                  id="occasion-quantity"
+                  type="number"
+                  min={1}
+                  max={50000}
+                  value={quantity}
+                  onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="w-full px-3 py-2 rounded-xl border border-[#D4AF37]/30 bg-white dark:bg-zinc-800 text-sm text-[#120F17] dark:text-[#FAF9F5] focus-ring"
+                />
+              </div>
+            </div>
+
+            {/* Custom Greeting Card Checkbox */}
+            <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-white dark:bg-zinc-800 border border-[#D4AF37]/20">
+              <input
+                id="occasion-card"
+                type="checkbox"
+                checked={includeCard}
+                onChange={(e) => setIncludeCard(e.target.checked)}
+                className="w-4 h-4 rounded text-[#043327] accent-[#043327] cursor-pointer"
+              />
+              <label htmlFor="occasion-card" className="text-xs text-neutral-700 dark:text-neutral-300 cursor-pointer">
+                {t('occasion.includeCard', 'Include personalized boutique greeting card & satin ribbon finish')}
+              </label>
+            </div>
+
+            {/* Contact Details */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="occasion-name" className="block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-1">
+                  {t('occasion.name', 'Your Full Name')} *
+                </label>
+                <input
+                  id="occasion-name"
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Begum Salma Qureshi"
+                  className="w-full px-3 py-2 rounded-xl border border-[#D4AF37]/30 bg-white dark:bg-zinc-800 text-sm text-[#120F17] dark:text-[#FAF9F5] focus-ring"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="occasion-phone" className="block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-1">
+                  {t('occasion.phone', 'WhatsApp Contact Number')} *
+                </label>
+                <input
+                  id="occasion-phone"
+                  type="tel"
+                  required
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="0300 1234567"
+                  className="w-full px-3 py-2 rounded-xl border border-[#D4AF37]/30 bg-white dark:bg-zinc-800 text-sm text-[#120F17] dark:text-[#FAF9F5] focus-ring"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="occasion-notes" className="block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-1">
+                {t('occasion.notes', 'Special Instructions or Color Theme')}
+              </label>
+              <textarea
+                id="occasion-notes"
+                rows={2}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="e.g. Emerald green theme with golden calligraphy, delivery directly to venue."
+                className="w-full px-3 py-2 rounded-xl border border-[#D4AF37]/30 bg-white dark:bg-zinc-800 text-sm text-[#120F17] dark:text-[#FAF9F5] focus-ring"
+              />
+            </div>
+
+            {/* Disclaimer */}
+            <p className="text-[11px] text-neutral-400 italic px-1">
+              {t(
+                'occasion.disclaimer',
+                'A quotation request is an inquiry and estimate, not an accepted order or guaranteed delivery promise.'
+              )}
+            </p>
+
+            {/* Submit CTA */}
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl bg-[#043327] hover:bg-[#074b39] text-[#FAF9F5] font-semibold text-sm transition-all focus-ring shadow-md disabled:opacity-50"
+              >
+                <MessageCircle size={18} />
+                <span>
+                  {isSubmitting
+                    ? t('loading', 'Submitting...')
+                    : t('occasion.submit', 'Request Event Quote & Register Inquiry')}
+                </span>
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </dialog>,
     document.body

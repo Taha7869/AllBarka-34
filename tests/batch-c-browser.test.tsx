@@ -12,6 +12,7 @@ import { PRODUCTS } from '../src/data/products';
 import { createCatalogRouter } from '../src/lib/catalogRouter';
 import { createCatalogConfigurationRouter } from '../src/lib/catalogConfigurationRouter';
 import { createStorefrontContentRouter } from '../src/lib/storefrontContentRouter';
+import { createInquiriesRouter } from '../src/lib/inquiriesRouter';
 
 test('Batch C Browser Acceptance: M12 Mehmaan Table Planner, M13 & M30 Occasion Planning Kit, RTL, Dark Mode, and Mobile Parity', async () => {
   const temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'allbarka-batch-c-'));
@@ -123,12 +124,11 @@ createRoot(document.getElementById('root')!).render(
   app.use(createStorefrontContentRouter({ getDb: () => db, requireAdmin }));
   app.get('/api/product-media', (_req, res) => res.json({ overrides: {} }));
 
-  // Inquiries capture for verification
-  const receivedInquiries: any[] = [];
-  app.post('/api/inquiries', (req, res) => {
-    receivedInquiries.push(req.body);
-    res.json({ ok: true, reference: 'INQ-TEST-BATCH-C', status: 'RECEIVED' });
-  });
+  // Mount real Authoritative Inquiries Router & Persistence Adapter
+  app.use(createInquiriesRouter({
+    getDb: () => db,
+    getCatalog: () => PRODUCTS,
+  }));
 
   for (const folder of ['images', 'fonts', 'videos']) {
     app.use('/' + folder, express.static(path.resolve('public', folder)));
@@ -258,12 +258,22 @@ createRoot(document.getElementById('root')!).render(
     // Submit inquiry
     const submitBtn = occasionModal.locator('button[type="submit"]');
     await submitBtn.click();
-    await page.waitForTimeout(800);
+    await page.waitForTimeout(1000);
 
-    // Verify backend received the inquiry
-    assert.ok(receivedInquiries.length >= 1, 'Inquiry must be dispatched to /api/inquiries');
-    assert.equal(receivedInquiries[0].recipientName, 'Fawad Chaudhry');
-    assert.equal(receivedInquiries[0].city, 'karachi');
+    // Verify backend persisted the inquiry in Firestore via real inquiriesRouter
+    const inqDocs = await db.collection('inquiries').get();
+    assert.ok(inqDocs.docs.length >= 1, 'Inquiry must be stored in database');
+    const savedInquiry = inqDocs.docs[0].data();
+    assert.equal(savedInquiry.customerName, 'Fawad Chaudhry');
+    assert.equal(savedInquiry.phone, '03009876543');
+    assert.equal(savedInquiry.city, 'karachi');
+    assert.ok(savedInquiry.notes.includes('Emerald ribbons'));
+    assert.ok(savedInquiry.ticketId);
+
+    // Verify modal displays registration confirmation
+    const successMsg = occasionModal.locator('text=Inquiry Registered Successfully');
+    await successMsg.waitFor();
+    assert.ok(await successMsg.isVisible());
 
     // Close modal
     await page.keyboard.press('Escape');

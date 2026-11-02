@@ -1,6 +1,6 @@
 import React, { useState, useId, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Users, Sparkles, ShoppingBag, Check, Coffee, Utensils, Moon, PartyPopper } from 'lucide-react';
+import { X, Users, ShoppingBag, Check, Coffee, Utensils, Moon, PartyPopper, AlertCircle } from 'lucide-react';
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCart } from '../contexts/CartContext';
@@ -35,6 +35,7 @@ export default function MehmaanTablePlannerModal({ isOpen, onClose }: MehmaanTab
   const [guests, setGuests] = useState<number>(10);
   const [setting, setSetting] = useState<MehmaanSetting>('dawat');
   const [addedAll, setAddedAll] = useState<boolean>(false);
+  const [addNotice, setAddNotice] = useState<string>('');
 
   useEffect(() => {
     if (!isOpen) return;
@@ -64,17 +65,42 @@ export default function MehmaanTablePlannerModal({ isOpen, onClose }: MehmaanTab
   const activeAssumptions = MEHMAAN_SETTINGS[setting];
 
   const handleAddAll = () => {
-    for (const item of plan.items) {
-      addToCart(
-        item.product,
-        item.recommendedPortionWeight,
-        item.recommendedUnits,
-        undefined,
-        { silent: true, openCart: false }
-      );
+    if (plan.items.length === 0) {
+      setAddNotice(t('mehmaan.noItems', 'No eligible harvest items available in this category.'));
+      setTimeout(() => setAddNotice(''), 3000);
+      return;
     }
+
+    let addedCount = 0;
+    for (const item of plan.items) {
+      if (item.product && item.recommendedPortionWeight && item.unitPrice > 0) {
+        addToCart(
+          item.product,
+          item.recommendedPortionWeight,
+          item.recommendedUnits,
+          undefined,
+          { silent: true, openCart: false }
+        );
+        addedCount++;
+      }
+    }
+
+    if (addedCount === 0) {
+      setAddNotice(t('mehmaan.noItems', 'No eligible items available to add to cart.'));
+      setTimeout(() => setAddNotice(''), 3000);
+      return;
+    }
+
     setAddedAll(true);
-    setTimeout(() => setAddedAll(false), 3000);
+    setAddNotice(
+      addedCount === plan.items.length
+        ? t('mehmaan.allAdded', `Added all ${addedCount} items to bag!`)
+        : t('mehmaan.partialAdded', `${addedCount} of ${plan.items.length} items added to bag.`)
+    );
+    setTimeout(() => {
+      setAddedAll(false);
+      setAddNotice('');
+    }, 3000);
   };
 
   if (!isOpen) return null;
@@ -121,7 +147,7 @@ export default function MehmaanTablePlannerModal({ isOpen, onClose }: MehmaanTab
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
           {/* Guest Count Selector */}
           <section className="bg-white dark:bg-zinc-800/80 p-4 rounded-2xl border border-[#D4AF37]/20 shadow-xs">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-2">
+            <label htmlFor="mehmaan-guests-range" className="block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-2">
               {t('mehmaan.guestCount', 'Number of Guests')}: <span className="text-[#043327] dark:text-emerald-400 font-bold text-base">{guests}</span>
             </label>
             <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -141,6 +167,7 @@ export default function MehmaanTablePlannerModal({ isOpen, onClose }: MehmaanTab
               ))}
             </div>
             <input
+              id="mehmaan-guests-range"
               type="range"
               min={2}
               max={100}
@@ -188,12 +215,17 @@ export default function MehmaanTablePlannerModal({ isOpen, onClose }: MehmaanTab
             </p>
           </section>
 
-          {/* Transparent Serving Calculations Breakdown */}
+          {/* Transparent Serving Calculations Breakdown with Explicit Assumption Labeling */}
           <section className="bg-[#FAF9F5] dark:bg-zinc-800/40 border border-[#D4AF37]/30 rounded-2xl p-4">
-            <div className="flex items-center justify-between mb-3 border-b border-[#D4AF37]/20 pb-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-[#043327] dark:text-emerald-400">
-                {t('mehmaan.servingAssumptions', 'Artisan Serving Calculations')}
-              </span>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 border-b border-[#D4AF37]/20 pb-2 gap-1">
+              <div>
+                <span className="text-xs font-semibold uppercase tracking-wider text-[#043327] dark:text-emerald-400 block">
+                  {t('mehmaan.servingAssumptions', 'Recommended boutique guidelines (editable)')}
+                </span>
+                <span className="text-[10px] text-neutral-500 italic">
+                  {activeAssumptions.assumptionSource}
+                </span>
+              </div>
               <span className="text-xs font-bold text-neutral-700 dark:text-neutral-200">
                 {t('mehmaan.totalGrams', 'Total Net Weight')}: {plan.totalGrams}g
               </span>
@@ -222,48 +254,57 @@ export default function MehmaanTablePlannerModal({ isOpen, onClose }: MehmaanTab
             <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-3">
               {t('mehmaan.recommendedItems', 'Curated Harvest Selections')}
             </h3>
-            <div className="space-y-2.5">
-              {plan.items.map((item) => (
-                <div
-                  key={item.product.id}
-                  className="flex items-center justify-between p-3 bg-white dark:bg-zinc-800 rounded-2xl border border-[#D4AF37]/20 shadow-xs gap-3"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-neutral-100 border border-neutral-200 shrink-0">
-                      <img
-                        src={mediaCover(item.product)}
-                        alt={getLocalized(item.product, 'name', language)}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/images/product-placeholder.svg';
-                        }}
-                      />
+            {plan.items.length === 0 ? (
+              <div className="p-6 rounded-2xl bg-white dark:bg-zinc-800 border border-neutral-200 dark:border-zinc-700 text-center space-y-2">
+                <AlertCircle size={24} className="mx-auto text-amber-500" />
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  {t('mehmaan.emptyCandidates', 'No active published products currently available for this table configuration.')}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {plan.items.map((item) => (
+                  <div
+                    key={item.product.id}
+                    className="flex items-center justify-between p-3 bg-white dark:bg-zinc-800 rounded-2xl border border-[#D4AF37]/20 shadow-xs gap-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl overflow-hidden bg-neutral-100 border border-neutral-200 shrink-0">
+                        <img
+                          src={mediaCover(item.product)}
+                          alt={getLocalized(item.product, 'name', language)}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = '/images/product-placeholder.svg';
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-[#120F17] dark:text-[#FAF9F5] line-clamp-1">
+                          {getLocalized(item.product, 'name', language)}
+                        </h4>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                          {item.recommendedUnits} × {item.recommendedPortionWeight} ({item.targetGrams}g table need)
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-[#120F17] dark:text-[#FAF9F5] line-clamp-1">
-                        {getLocalized(item.product, 'name', language)}
-                      </h4>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                        {item.recommendedUnits} × {item.recommendedPortionWeight} ({item.targetGrams}g table need)
-                      </p>
+                    <div className="text-right shrink-0">
+                      <span className="text-xs font-bold text-[#043327] dark:text-emerald-400 block">
+                        Rs. {item.itemTotal.toLocaleString()}
+                      </span>
+                      <span className="text-[10px] text-neutral-400">
+                        Rs. {item.unitPrice.toLocaleString()} / {item.recommendedPortionWeight}
+                      </span>
                     </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <span className="text-xs font-bold text-[#043327] dark:text-emerald-400 block">
-                      Rs. {item.itemTotal.toLocaleString()}
-                    </span>
-                    <span className="text-[10px] text-neutral-400">
-                      Rs. {item.unitPrice.toLocaleString()} / {item.recommendedPortionWeight}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </section>
         </div>
 
         {/* Footer with Subtotal & Add All CTA */}
-        <footer className="p-4 sm:p-6 border-t border-[#D4AF37]/20 bg-white/60 dark:bg-zinc-800/60 backdrop-blur-md flex items-center justify-between gap-4">
+        <footer className="p-4 sm:p-6 border-t border-[#D4AF37]/20 bg-white/60 dark:bg-zinc-800/60 backdrop-blur-md flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
             <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-500 block">
               {t('mehmaan.estimatedTotal', 'Estimated Table Total')}
@@ -272,18 +313,31 @@ export default function MehmaanTablePlannerModal({ isOpen, onClose }: MehmaanTab
               Rs. {plan.estimatedTotalPkr.toLocaleString()}
             </span>
           </div>
-          <button
-            type="button"
-            onClick={handleAddAll}
-            className={`inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-semibold transition-all focus-ring shadow-md ${
-              addedAll
-                ? 'bg-emerald-600 text-white'
-                : 'bg-[#043327] hover:bg-[#074b39] text-[#FAF9F5]'
-            }`}
-          >
-            {addedAll ? <Check size={18} /> : <ShoppingBag size={18} />}
-            <span>{addedAll ? t('mehmaan.addedToBag', 'Added to your boutique bag!') : t('mehmaan.addToBag', 'Add All Selections to Bag')}</span>
-          </button>
+
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            {addNotice && (
+              <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                {addNotice}
+              </span>
+            )}
+            <button
+              type="button"
+              disabled={plan.items.length === 0}
+              onClick={handleAddAll}
+              className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl text-sm font-semibold transition-all focus-ring shadow-md disabled:opacity-50 ${
+                addedAll
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-[#043327] hover:bg-[#074b39] text-[#FAF9F5]'
+              }`}
+            >
+              {addedAll ? <Check size={18} /> : <ShoppingBag size={18} />}
+              <span>
+                {addedAll
+                  ? t('added', 'Added to Bag!')
+                  : t('mehmaan.addAll', 'Add All Selections to Bag')}
+              </span>
+            </button>
+          </div>
         </footer>
       </div>
     </dialog>,

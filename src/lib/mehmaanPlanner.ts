@@ -13,6 +13,7 @@ export interface ServingAssumptions {
   description_en: string;
   description_ur: string;
   description_ar: string;
+  assumptionSource: string;
 }
 
 export const MEHMAAN_SETTINGS: Record<MehmaanSetting, ServingAssumptions> = {
@@ -24,9 +25,10 @@ export const MEHMAAN_SETTINGS: Record<MehmaanSetting, ServingAssumptions> = {
     nutsGramsPerGuest: 35,
     datesGramsPerGuest: 15,
     driedFruitsGramsPerGuest: 20,
-    description_en: 'Crisp roasted pistachios, cashews, and delicate dried apricots paired with tea.',
-    description_ur: 'چائے کے ساتھ کرسپی بھنے ہوئے پستے، کاجو اور خستہ خوبانی۔',
-    description_ar: 'فستق محمص مقرمش، كاجو، ومشمش مجفف فاخر يقدم مع الشاي.',
+    description_en: 'Crisp roasted pistachios, cashews, and delicate dried fruits paired with tea.',
+    description_ur: 'چائے کے ساتھ کرسپی بھنے ہوئے پستے، کاجو اور خستہ میوہ جات۔',
+    description_ar: 'فستق محمص مقرمش، كاجو، وفواكه مجففة فاخرة تقدم مع الشاي.',
+    assumptionSource: 'Recommended boutique guidelines (editable)',
   },
   dawat: {
     setting: 'dawat',
@@ -38,7 +40,8 @@ export const MEHMAAN_SETTINGS: Record<MehmaanSetting, ServingAssumptions> = {
     driedFruitsGramsPerGuest: 25,
     description_en: 'A grand feast presentation featuring premium mixed nuts, Medjool/Safawi dates, and Afghan figs.',
     description_ur: 'بڑے پیمانے کی دعوت کے لیے اعلٰی ترین مکس گری دار میوہ جات، کھجوریں اور افغانی انجیر۔',
-    description_ar: 'وليمة فخمة تشتمل على مكسرات مشكلة فاخرة، تمور مجدول/صفاوي، وتين أفغاني.',
+    description_ar: 'وليمة فخمة تشتمل على مكسرات مشكلة فاخرة، تمور، وتين أفغاني.',
+    assumptionSource: 'Recommended boutique guidelines (editable)',
   },
   iftar: {
     setting: 'iftar',
@@ -49,8 +52,9 @@ export const MEHMAAN_SETTINGS: Record<MehmaanSetting, ServingAssumptions> = {
     datesGramsPerGuest: 40,
     driedFruitsGramsPerGuest: 20,
     description_en: 'Rich Ajwa or Safawi dates to break the fast, accompanied by energy-dense almonds and roasted seeds.',
-    description_ur: 'افطار کی برکت کے لیے اعلیٰ عجوہ و صفاوی کھجوریں، طاقت بخش بادام اور تلسی چیا بیج۔',
-    description_ar: 'تمور عجوة وصفاوي مباركة لكسر الصيام، مع لوز مغذٍ وبذور محمصة.',
+    description_ur: 'افطار کی برکت کے لیے اعلیٰ کھجوریں اور طاقت بخش بادام۔',
+    description_ar: 'تمور مباركة لكسر الصيام، مع لوز مغذٍ.',
+    assumptionSource: 'Recommended boutique guidelines (editable)',
   },
   majlis: {
     setting: 'majlis',
@@ -63,8 +67,15 @@ export const MEHMAAN_SETTINGS: Record<MehmaanSetting, ServingAssumptions> = {
     description_en: 'A steady nibble spread of savory pistachios, salted cashews, and chewy golden raisins for conversation.',
     description_ur: 'محفل کی گفتگو کے لیے نمکین پستے، کاجو اور میٹھی کشمش کا شاندار امتزاج۔',
     description_ar: 'تشكيلة للتسالي المسائية من فستق مملح، كاجو، وزبيب ذهبي طازج.',
+    assumptionSource: 'Recommended boutique guidelines (editable)',
   },
 };
+
+export interface CustomServingAssumptions {
+  nutsGramsPerGuest?: number;
+  datesGramsPerGuest?: number;
+  driedFruitsGramsPerGuest?: number;
+}
 
 export interface MehmaanRecommendationItem {
   product: Product;
@@ -80,6 +91,7 @@ export interface MehmaanPlanResult {
   setting: MehmaanSetting;
   guests: number;
   totalGrams: number;
+  assumptionSource: string;
   breakdown: {
     nutsGrams: number;
     datesGrams: number;
@@ -91,24 +103,28 @@ export interface MehmaanPlanResult {
 
 /**
  * Maps a required net gram weight to standard catalog portions (e.g. 250g, 500g, 1kg)
+ * Returns null if the product has no valid positive pricing or portions.
  */
-export function resolveBestPortion(product: Product, targetGrams: number): { weight: string; units: number; unitPrice: number; total: number } {
+export function resolveBestPortion(
+  product: Product,
+  targetGrams: number
+): { weight: string; units: number; unitPrice: number; total: number } | null {
   const portions = Object.entries(product.prices || {})
     .filter(([_, price]) => typeof price === 'number' && price > 0)
     .map(([w, price]) => {
-      let g = 250;
+      let g = 0;
       if (w.endsWith('kg')) g = parseFloat(w) * 1000;
       else if (w.endsWith('g')) g = parseFloat(w);
       return { weight: w, grams: g, price };
     })
+    .filter(p => p.grams > 0)
     .sort((a, b) => b.grams - a.grams); // Largest to smallest
 
   if (portions.length === 0) {
-    return { weight: '250g', units: 1, unitPrice: 0, total: 0 };
+    return null;
   }
 
   // Find portion that fits target with minimum excess units
-  // Prefer 1kg or 500g if target is large, otherwise 250g
   for (const p of portions) {
     if (targetGrams >= p.grams) {
       const units = Math.ceil(targetGrams / p.grams);
@@ -132,87 +148,121 @@ export function resolveBestPortion(product: Product, targetGrams: number): { wei
 }
 
 /**
- * Calculates Mehmaan table servings and selects matching catalog items
+ * Calculates Mehmaan table servings and selects matching catalog items strictly from
+ * published, active, non-quote-only products.
+ * Empty categories remain empty; inactive products cannot be recommended or priced.
  */
 export function calculateMehmaanPlan(
   allProducts: Product[],
   guests: number,
-  settingKey: MehmaanSetting = 'dawat'
+  settingKey: MehmaanSetting = 'dawat',
+  customAssumptions?: CustomServingAssumptions
 ): MehmaanPlanResult {
   const guestCount = Math.max(1, Math.min(200, Math.round(guests)));
   const assumptions = MEHMAAN_SETTINGS[settingKey] || MEHMAAN_SETTINGS.dawat;
 
-  const nutsGrams = assumptions.nutsGramsPerGuest * guestCount;
-  const datesGrams = assumptions.datesGramsPerGuest * guestCount;
-  const driedFruitsGrams = assumptions.driedFruitsGramsPerGuest * guestCount;
+  const nutsRate = customAssumptions?.nutsGramsPerGuest !== undefined
+    ? Math.max(0, customAssumptions.nutsGramsPerGuest)
+    : assumptions.nutsGramsPerGuest;
+  const datesRate = customAssumptions?.datesGramsPerGuest !== undefined
+    ? Math.max(0, customAssumptions.datesGramsPerGuest)
+    : assumptions.datesGramsPerGuest;
+  const driedFruitsRate = customAssumptions?.driedFruitsGramsPerGuest !== undefined
+    ? Math.max(0, customAssumptions.driedFruitsGramsPerGuest)
+    : assumptions.driedFruitsGramsPerGuest;
+
+  const nutsGrams = nutsRate * guestCount;
+  const datesGrams = datesRate * guestCount;
+  const driedFruitsGrams = driedFruitsRate * guestCount;
   const totalGrams = nutsGrams + datesGrams + driedFruitsGrams;
 
-  // Filter candidate products
-  const nutsCandidates = allProducts.filter(p =>
+  // Filter ONLY published, active, non-quote-only products with valid positive prices
+  const isAvailable = (p: Product) =>
+    p.active !== false &&
+    !p.quoteOnly &&
+    p.orderMode !== 'inquiry_quote' &&
+    Object.values(p.prices || {}).some(pr => typeof pr === 'number' && pr > 0);
+
+  const availableProducts = allProducts.filter(isAvailable);
+
+  // Nuts: strictly nuts/dry-fruits category matching authentic nut varieties
+  const nutsCandidates = availableProducts.filter(p =>
     (p.category === 'dry-fruits' || p.category === 'nuts') &&
-    (p.id === 'pista' || p.id === 'kaju' || p.id === 'badam' || p.name_en.toLowerCase().includes('pistachio') || p.name_en.toLowerCase().includes('cashew'))
+    (p.id === 'pista' || p.id === 'kaju' || p.id === 'badam' || p.id === 'akhroot' ||
+     p.name_en.toLowerCase().includes('pistachio') || p.name_en.toLowerCase().includes('cashew') || p.name_en.toLowerCase().includes('almond') || p.name_en.toLowerCase().includes('walnut'))
   );
-  const primaryNut = nutsCandidates[0] || allProducts.find(p => p.id === 'pista') || allProducts[0];
+  const primaryNut = nutsCandidates[0] || null;
 
-  const datesCandidates = allProducts.filter(p =>
-    p.category === 'dates' || p.id.includes('date') || p.id === 'khajoor' || p.id === 'safawi' || p.id === 'ajwa-dates'
+  // Dates: strictly dates category or date products
+  const datesCandidates = availableProducts.filter(p =>
+    p.category === 'dates' || p.id.includes('date') || p.id === 'khajoor' || p.name_en.toLowerCase().includes('date')
   );
-  const primaryDate = datesCandidates[0] || allProducts.find(p => p.id === 'safawi' || p.id === 'ajwa-dates') || allProducts[1] || allProducts[0];
+  const primaryDate = datesCandidates[0] || null;
 
-  const fruitsCandidates = allProducts.filter(p =>
-    p.id === 'afghan-figs' || p.id === 'anjeer' || p.id === 'kishmish' || p.id === 'khubani' || p.name_en.toLowerCase().includes('fig') || p.name_en.toLowerCase().includes('apricot')
+  // Dried fruits: strictly dried fruits (figs, raisins, apricots, cranberries, mulberry)
+  const fruitsCandidates = availableProducts.filter(p =>
+    (p.category === 'dry-fruits' || p.category === 'fruits' || p.category === 'nuts') &&
+    (p.id === 'afghan-figs' || p.id === 'kishmish' || p.id === 'khubani' || p.id === 'alubukhara' || p.id === 'golden-raisins' || p.id === 'black-raisins' || p.id === 'dried-mulberry' || p.id === 'dried-cranberries' ||
+     p.name_en.toLowerCase().includes('fig') || p.name_en.toLowerCase().includes('apricot') || p.name_en.toLowerCase().includes('raisin'))
   );
-  const primaryFruit = fruitsCandidates[0] || allProducts.find(p => p.id === 'afghan-figs' || p.id === 'anjeer') || allProducts[2] || allProducts[0];
+  const primaryFruit = fruitsCandidates[0] || null;
 
   const items: MehmaanRecommendationItem[] = [];
   let estimatedTotalPkr = 0;
 
-  if (primaryNut) {
+  if (primaryNut && nutsGrams > 0) {
     const nutRes = resolveBestPortion(primaryNut, nutsGrams);
-    items.push({
-      product: primaryNut,
-      category: 'nuts',
-      targetGrams: nutsGrams,
-      recommendedPortionWeight: nutRes.weight,
-      recommendedUnits: nutRes.units,
-      unitPrice: nutRes.unitPrice,
-      itemTotal: nutRes.total,
-    });
-    estimatedTotalPkr += nutRes.total;
+    if (nutRes) {
+      items.push({
+        product: primaryNut,
+        category: 'nuts',
+        targetGrams: nutsGrams,
+        recommendedPortionWeight: nutRes.weight,
+        recommendedUnits: nutRes.units,
+        unitPrice: nutRes.unitPrice,
+        itemTotal: nutRes.total,
+      });
+      estimatedTotalPkr += nutRes.total;
+    }
   }
 
-  if (primaryDate) {
+  if (primaryDate && datesGrams > 0) {
     const dateRes = resolveBestPortion(primaryDate, datesGrams);
-    items.push({
-      product: primaryDate,
-      category: 'dates',
-      targetGrams: datesGrams,
-      recommendedPortionWeight: dateRes.weight,
-      recommendedUnits: dateRes.units,
-      unitPrice: dateRes.unitPrice,
-      itemTotal: dateRes.total,
-    });
-    estimatedTotalPkr += dateRes.total;
+    if (dateRes) {
+      items.push({
+        product: primaryDate,
+        category: 'dates',
+        targetGrams: datesGrams,
+        recommendedPortionWeight: dateRes.weight,
+        recommendedUnits: dateRes.units,
+        unitPrice: dateRes.unitPrice,
+        itemTotal: dateRes.total,
+      });
+      estimatedTotalPkr += dateRes.total;
+    }
   }
 
-  if (primaryFruit) {
+  if (primaryFruit && driedFruitsGrams > 0) {
     const fruitRes = resolveBestPortion(primaryFruit, driedFruitsGrams);
-    items.push({
-      product: primaryFruit,
-      category: 'driedFruits',
-      targetGrams: driedFruitsGrams,
-      recommendedPortionWeight: fruitRes.weight,
-      recommendedUnits: fruitRes.units,
-      unitPrice: fruitRes.unitPrice,
-      itemTotal: fruitRes.total,
-    });
-    estimatedTotalPkr += fruitRes.total;
+    if (fruitRes) {
+      items.push({
+        product: primaryFruit,
+        category: 'driedFruits',
+        targetGrams: driedFruitsGrams,
+        recommendedPortionWeight: fruitRes.weight,
+        recommendedUnits: fruitRes.units,
+        unitPrice: fruitRes.unitPrice,
+        itemTotal: fruitRes.total,
+      });
+      estimatedTotalPkr += fruitRes.total;
+    }
   }
 
   return {
     setting: settingKey,
     guests: guestCount,
     totalGrams,
+    assumptionSource: assumptions.assumptionSource,
     breakdown: {
       nutsGrams,
       datesGrams,

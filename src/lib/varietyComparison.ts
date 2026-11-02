@@ -1,4 +1,5 @@
 import type { Product } from '../types';
+import { unitPrice } from './catalogActivity';
 
 export interface VarietyCriterion {
   key: string;
@@ -36,14 +37,14 @@ export const VARIETY_CRITERIA: VarietyCriterion[] = [
     label_en: 'Variety / Cultivar',
     label_ur: 'قسم / ورائٹی',
     label_ar: 'الصنف / النوع',
-    render: p => p.passport?.variety || p.name_en,
+    render: p => p.passport?.variety || p.name_en || '—',
   },
   {
     key: 'origin',
     label_en: 'Origin & Terroir',
     label_ur: 'پیداوار کا علاقہ',
     label_ar: 'المنشأ والمنطقة',
-    render: p => p.origin_en || 'Hand-selected Orchards',
+    render: p => p.origin_en || '—',
   },
   {
     key: 'roast',
@@ -51,9 +52,10 @@ export const VARIETY_CRITERIA: VarietyCriterion[] = [
     label_ur: 'بھنائی اور تیاری',
     label_ar: 'التحميص والمعالجة',
     render: p => {
-      const roast = p.passport?.roastLevel ? p.passport.roastLevel.replace('_', ' ') : 'Natural';
+      if (!p.passport?.roastLevel && !p.passport?.processingMethod) return '—';
+      const roast = p.passport?.roastLevel ? p.passport.roastLevel.replace('_', ' ') : '';
       const method = p.passport?.processingMethod ? ` (${p.passport.processingMethod})` : '';
-      return `${roast}${method}`;
+      return `${roast}${method}`.trim() || '—';
     },
   },
   {
@@ -66,7 +68,7 @@ export const VARIETY_CRITERIA: VarietyCriterion[] = [
       if (/crunch|crisp|snapp/.test(desc)) return 'Crisp & Crunchy';
       if (/chew/.test(desc)) return 'Soft & Chewy';
       if (/butter|melt|silk/.test(desc)) return 'Rich & Buttery';
-      return 'Tender Whole Kernel';
+      return '—';
     },
   },
   {
@@ -74,14 +76,14 @@ export const VARIETY_CRITERIA: VarietyCriterion[] = [
     label_en: 'Taste Profile',
     label_ur: 'ذائقہ کی خصوصیات',
     label_ar: 'مذاق ونكهة',
-    render: p => p.tasteProfile_en || p.desc_en.slice(0, 80) + '...',
+    render: p => p.tasteProfile_en || (p.desc_en ? p.desc_en.slice(0, 80) + '...' : '—'),
   },
   {
     key: 'shelfLife',
     label_en: 'Shelf Life',
     label_ur: 'استعمال کی مدت',
     label_ar: 'الصلاحية',
-    render: p => p.passport?.bestBeforeDays ? `${p.passport.bestBeforeDays} Days` : '90 Days',
+    render: p => (p.passport?.bestBeforeDays ? `${p.passport.bestBeforeDays} Days` : '—'),
   },
   {
     key: 'certifications',
@@ -92,20 +94,28 @@ export const VARIETY_CRITERIA: VarietyCriterion[] = [
       if (p.claimsVerification?.status === 'verified' && p.passport?.certifications?.length) {
         return p.passport.certifications.map(c => c.replace('_', ' ').toUpperCase());
       }
-      return 'Standard Quality Checked';
+      return '—';
     },
   },
   {
     key: 'price',
-    label_en: 'Starting Price',
-    label_ur: 'ابتدائی قیمت',
-    label_ar: 'السعر الابتدائي',
+    label_en: 'Normalized Unit Price',
+    label_ur: 'معیاری فی 100 گرام قیمت',
+    label_ar: 'السعر المعياري لكل 100 جم',
     render: p => {
-      const prices = Object.entries(p.prices || {}).sort((a, b) => a[1] - b[1]);
-      if (prices.length > 0) {
-        return `Rs. ${prices[0][1].toLocaleString()} (${prices[0][0]})`;
+      const entries = Object.entries(p.prices || {}).filter(([_, pr]) => typeof pr === 'number' && pr > 0);
+      if (entries.length === 0) return '—';
+
+      // Look for a normalizable portion
+      for (const [portion, price] of entries) {
+        const u = unitPrice(price, portion);
+        if (u) {
+          return `Rs. ${u.amount.toLocaleString()} / ${u.unit} (Rs. ${price.toLocaleString()} / ${portion})`;
+        }
       }
-      return 'Standard rates';
+
+      // Fallback if no portion pattern matched
+      return `Rs. ${entries[0][1].toLocaleString()} (${entries[0][0]})`;
     },
   },
 ];

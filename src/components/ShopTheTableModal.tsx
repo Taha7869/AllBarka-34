@@ -1,6 +1,6 @@
 import React, { useState, useId, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Sparkles, ShoppingBag, Check, Eye, Tag } from 'lucide-react';
+import { X, Sparkles, ShoppingBag, Check, AlertCircle } from 'lucide-react';
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCart } from '../contexts/CartContext';
@@ -25,7 +25,7 @@ interface HotspotItem {
 const TABLE_HOTSPOTS: HotspotItem[] = [
   { productId: 'pista', xPercent: 28, yPercent: 42, label: 'Roasted Pistachios' },
   { productId: 'kaju', xPercent: 72, yPercent: 38, label: 'Roasted Cashews' },
-  { productId: 'safawi', xPercent: 48, yPercent: 65, label: 'Safawi Dates' },
+  { productId: 'khajoor', xPercent: 48, yPercent: 65, label: 'Madina Dates' },
   { productId: 'afghan-figs', xPercent: 46, yPercent: 25, label: 'Sun-dried Figs' },
 ];
 
@@ -60,10 +60,14 @@ export default function ShopTheTableModal({ isOpen, onClose }: { isOpen: boolean
     };
   }, [isOpen]);
 
-  const activeProduct = allProducts.find(p => p.id === selectedProductId) || allProducts.find(p => p.id === 'pista') || allProducts[0];
+  // Honest product lookup: do not silently substitute another product if one is missing/inactive
+  const activeProduct = allProducts.find(p => p.id === selectedProductId && p.active !== false);
+  const selectedHotspot = TABLE_HOTSPOTS.find(h => h.productId === selectedProductId);
 
   const handleAdd = (p: Product) => {
-    const portions = Object.entries(p.prices || {}).sort((a, b) => a[1] - b[1]);
+    const portions = Object.entries(p.prices || {})
+      .filter(([_, price]) => typeof price === 'number' && price > 0)
+      .sort((a, b) => a[1] - b[1]);
     const [weight] = portions[0] || ['250g'];
     addToCart(p, weight, 1, undefined, { silent: true, openCart: false });
     setAddedId(p.id);
@@ -72,7 +76,11 @@ export default function ShopTheTableModal({ isOpen, onClose }: { isOpen: boolean
 
   if (!isOpen) return null;
 
-  const portions = activeProduct ? Object.entries(activeProduct.prices || {}).sort((a, b) => a[1] - b[1]) : [];
+  const portions = activeProduct
+    ? Object.entries(activeProduct.prices || {})
+        .filter(([_, price]) => typeof price === 'number' && price > 0)
+        .sort((a, b) => a[1] - b[1])
+    : [];
   const primaryWeight = portions[0]?.[0] || '250g';
   const primaryPrice = portions[0]?.[1] || 0;
 
@@ -161,7 +169,7 @@ export default function ShopTheTableModal({ isOpen, onClose }: { isOpen: boolean
                     />
                   </div>
                   <span className="text-[10px] uppercase font-bold tracking-wider text-[#043327] dark:text-emerald-400 block mb-1">
-                    {getLocalized(activeProduct, 'origin', language) || 'Orchard Reserve'}
+                    {getLocalized(activeProduct, 'origin', language) || '—'}
                   </span>
                   <h3 className="text-lg font-serif font-bold text-[#120F17] dark:text-[#FAF9F5]">
                     {getLocalized(activeProduct, 'name', language)}
@@ -195,7 +203,15 @@ export default function ShopTheTableModal({ isOpen, onClose }: { isOpen: boolean
                 </div>
               </>
             ) : (
-              <p className="text-xs text-neutral-400">Select a hotspot on the table to view harvest details.</p>
+              <div className="flex flex-col items-center justify-center p-6 text-center space-y-3 h-full">
+                <AlertCircle size={28} className="text-amber-500" />
+                <h4 className="text-sm font-bold text-[#120F17] dark:text-[#FAF9F5]">
+                  {selectedHotspot?.label || 'Selected Harvest'}
+                </h4>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  {t('table.unavailable', 'This seasonal selection is currently out of stock or awaiting fresh harvest arrival.')}
+                </p>
+              </div>
             )}
           </div>
         </div>

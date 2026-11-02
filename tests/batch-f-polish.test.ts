@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { recordFunnelEvent, type FunnelPayload } from '../src/lib/funnelTelemetry';
 
 test('M24: Privacy-preserving funnel telemetry dispatches sanitized milestones without PII', () => {
+  const origWindow = (globalThis as any).window;
+  const origCustomEvent = (globalThis as any).CustomEvent;
   const events: FunnelPayload[] = [];
   const target = new EventTarget();
   (globalThis as any).window = target;
@@ -41,6 +43,16 @@ test('M24: Privacy-preserving funnel telemetry dispatches sanitized milestones w
     }
   } finally {
     target.removeEventListener('allbarka-funnel-event', listener);
+    if (origWindow === undefined) {
+      delete (globalThis as any).window;
+    } else {
+      (globalThis as any).window = origWindow;
+    }
+    if (origCustomEvent === undefined) {
+      delete (globalThis as any).CustomEvent;
+    } else {
+      (globalThis as any).CustomEvent = origCustomEvent;
+    }
   }
 });
 
