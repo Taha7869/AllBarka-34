@@ -251,6 +251,7 @@ Performance targets for field measurement are LCP <=2.5s, INP <=200ms and CLS <=
 | 25 Oct 2026 | Recommend A / The Signature Table; preserve current brand and services. | Working V1 direction based on confirmed balanced priorities. |
 | 27 Oct 2026 | Owner accepted current look and requested phased continuation. | Six delivery phases recorded; V2-A product cards/collection continuity selected as next slice. No new implementation claimed in this planning checkpoint. |
 | 02 Nov 2026 | Checkpoint 1d6ce10 defect repairs completed: gift reveal async admin auth timing, Studio preview surfaces & viewports, reorder server quote revalidation, and truthful planner cart capping. Full offline suite (101 test files, 815 browser tests passed, 1 skipped, 11 hardening, 21 backend, 36 production checks) verified green. | Completed and verified locally; manual cloud provisioning remains deferred. |
+| 02 Nov 2026 | Checkpoint 04f5670 defect repairs completed: gift reveal read fail-closed expiry and recipient-item private field stripping, Patron Lounge reorder server quote validation contract and renewed customer review, synchronous CartContext capacity enforcement and truthful Mehmaan planner capping notices, genuine responsive Studio preview iframe viewports with breakpoint evaluation. Full offline suite (101 test files, 815 browser tests passed, 1 skipped, 11 hardening, 21 backend, 36 production checks) verified green. | Completed and verified locally; manual cloud provisioning remains deferred. |
 
 ## Next session
 

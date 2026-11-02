@@ -55,6 +55,9 @@ function Controls() {
       cartCount: cart.cartItems.reduce((acc, item) => acc + item.quantity, 0),
       closeCart: () => cart.setIsCartOpen(false),
       clearCart: () => cart.clearCart(),
+      addToCart: cart.addToCart,
+      updateQuantity: cart.updateQuantity,
+      removeFromCart: cart.removeFromCart,
     };
   });
   return null;
@@ -215,6 +218,113 @@ createRoot(document.getElementById('root')!).render(
     await page.keyboard.press('Escape');
     await page.waitForTimeout(300);
     assert.ok(!(await mehmaanModal.isVisible()), 'Modal must close on Escape key');
+
+    // ─────────────────────────────────────────────────────────────
+    // 1b. Real CartProvider Truthfulness & Quantity Limit Tests
+    // ─────────────────────────────────────────────────────────────
+    // Clear cart first
+    await page.evaluate(() => (window as any).fixture.clearCart());
+    await page.waitForTimeout(100);
+
+    // Case 1: Empty cart, request 200 food units -> accepted 50, requested 200, capped: true
+    const result200 = await page.evaluate(() => {
+      const p = { id: 'pista', name_en: 'Pistachios', prices: { '250g': 1200 } };
+      return (window as any).fixture.addToCart(p, '250g', 200, undefined, { silent: true, openCart: false });
+    });
+    assert.equal(result200.accepted, true);
+    assert.equal(result200.requestedQuantity, 200, 'Original requested quantity must be 200');
+    assert.equal(result200.acceptedQuantity, 50, 'Accepted quantity must be capped at 50');
+    assert.equal(result200.capped, true, 'Result must be flagged as capped');
+
+    await page.waitForFunction(() => (window as any).fixture.cartCount === 50);
+    let currentCartCount = await page.evaluate(() => (window as any).fixture.cartCount);
+    assert.equal(currentCartCount, 50, 'Committed cart items must be capped at 50');
+
+    // Case 2: Clear and set 25 units, then request 32 -> accepted 25, requested 32, capped: true
+    await page.evaluate(() => {
+      const fix = (window as any).fixture;
+      fix.clearCart();
+      const p = { id: 'pista', name_en: 'Pistachios', prices: { '250g': 1200 } };
+      fix.addToCart(p, '250g', 25, undefined, { silent: true, openCart: false });
+    });
+    await page.waitForTimeout(100);
+
+    const result32 = await page.evaluate(() => {
+      const p = { id: 'pista', name_en: 'Pistachios', prices: { '250g': 1200 } };
+      return (window as any).fixture.addToCart(p, '250g', 32, undefined, { silent: true, openCart: false });
+    });
+    assert.equal(result32.accepted, true);
+    assert.equal(result32.requestedQuantity, 32);
+    assert.equal(result32.acceptedQuantity, 25, 'Accepted quantity must be capped to remaining allowance 25');
+    assert.equal(result32.capped, true);
+
+    await page.waitForFunction(() => (window as any).fixture.cartCount === 50);
+    currentCartCount = await page.evaluate(() => (window as any).fixture.cartCount);
+    assert.equal(currentCartCount, 50, 'Total committed quantity must be 50');
+
+    // Case 3: Already-full cart (50 units) -> request 10 units -> accepted: false, acceptedQuantity: 0, capped: true
+    const resultFull = await page.evaluate(() => {
+      const p = { id: 'pista', name_en: 'Pistachios', prices: { '250g': 1200 } };
+      return (window as any).fixture.addToCart(p, '250g', 10, undefined, { silent: true, openCart: false });
+    });
+    assert.equal(resultFull.accepted, false);
+    assert.equal(resultFull.requestedQuantity, 10);
+    assert.equal(resultFull.acceptedQuantity, 0);
+    assert.equal(resultFull.capped, true);
+
+    // Case 4: Consecutive additions in one tick
+    await page.evaluate(() => (window as any).fixture.clearCart());
+    const consecutiveResults = await page.evaluate(() => {
+      const fix = (window as any).fixture;
+      const p = { id: 'pista', name_en: 'Pistachios', prices: { '250g': 1200 } };
+      const r1 = fix.addToCart(p, '250g', 30, undefined, { silent: true, openCart: false });
+      const r2 = fix.addToCart(p, '250g', 30, undefined, { silent: true, openCart: false });
+      return { r1, r2, totalCart: fix.cartCount };
+    });
+    assert.equal(consecutiveResults.r1.accepted, true);
+    assert.equal(consecutiveResults.r1.acceptedQuantity, 30);
+    assert.equal(consecutiveResults.r1.capped, false);
+    assert.equal(consecutiveResults.r2.accepted, true);
+    assert.equal(consecutiveResults.r2.acceptedQuantity, 20, 'Second add in same tick must be capped to 20');
+    assert.equal(consecutiveResults.r2.capped, true);
+    await page.waitForFunction(() => (window as any).fixture.cartCount === 50);
+    assert.equal(await page.evaluate(() => (window as any).fixture.cartCount), 50);
+
+    // Case 5: Rejected portion
+    const resultUnavailable = await page.evaluate(() => {
+      const p = { id: 'pista', name_en: 'Pistachios', prices: { '250g': 1200 } };
+      return (window as any).fixture.addToCart(p, 'non-existent-size', 5, undefined, { silent: true, openCart: false });
+    });
+    assert.equal(resultUnavailable.accepted, false);
+    assert.equal(resultUnavailable.reason, 'portion_unavailable');
+
+    // Case 6: Mounted planner with high serving demand displays truthful capping feedback
+    await page.evaluate(() => {
+      const fix = (window as any).fixture;
+      fix.clearCart();
+      const p = { id: 'pista', name_en: 'Pistachios', prices: { '250g': 1200, '500g': 2400 } };
+      fix.addToCart(p, '500g', 50, undefined, { silent: true, openCart: false });
+    });
+    await page.waitForTimeout(100);
+
+    await mehmaanTrigger.click();
+    await mehmaanModal.waitFor();
+    await page.waitForTimeout(300);
+
+    // Click Add All Selections to Bag - adding will cap pista at remaining 2 units
+    const addAllCta = mehmaanModal.locator('footer button').last();
+    await addAllCta.click();
+    await page.waitForTimeout(500);
+
+    const feedbackLocator = mehmaanModal.locator('[data-testid="planner-cart-feedback"]');
+    await feedbackLocator.waitFor({ state: 'visible', timeout: 5000 });
+    const feedbackText = await feedbackLocator.innerText();
+    assert.ok(
+      feedbackText.includes('50') || feedbackText.includes('adjusted') || feedbackText.includes('limit'),
+      `Feedback must report adjustment or limit, got: "${feedbackText}"`
+    );
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(300);
 
     // ─────────────────────────────────────────────────────────────
     // 2. M13 & M30: Occasion & Event Planning Kit Acceptance

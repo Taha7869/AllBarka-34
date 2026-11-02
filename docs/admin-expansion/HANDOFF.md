@@ -310,3 +310,33 @@ Private merchant-data migration review, new-feature Auth/Storage/n8n integration
     - Production build & release privacy audit (84 artifacts clean)
     - `node scripts/verify-production.mjs` (36/36 checks passed)
     - `node scripts/run-all-tests.mjs` (Full master offline suite: 101 test files + backend + assets + production checks: 815 browser tests passed, 1 skipped, 11 hardening tests passed, 21 backend tests passed, 0 failures).
+
+- **02 Nov 2026 — Checkpoint 04f5670 Defect Repairs Completed & Verified:**
+  - **1. Restore Gift Reveal Read Protections (`src/lib/giftRevealRouter.ts`):**
+    - Enforced fail-closed timestamp validation: `Number.isFinite(Date.parse(data.expiresAt)) && expiryMs > Date.now()`. Missing, non-finite, or expired timestamps return HTTP 410 (`REVEAL_EXPIRED`).
+    - Explicitly constructed recipient items using an allowlist of public fields (`productId`, `name_en`, `name_ur`, `name_ar`, `image`, `weight`, `quantity`).
+    - Guaranteed zero leakage of stored prices, internal notes, customer contact details, or extra private metadata.
+    - Verified via `tests/batch-e-signature.test.ts` (missing/malformed/expired timestamps, stripped private fields).
+  - **2. Wire Reorder into Real Server Quote Flow (`src/lib/orderPresentation.ts`, `src/components/PatronLoungeModal.tsx`):**
+    - Connected Patron Lounge mounted reorder UI to authoritative server revalidation (`revalidateReorderWithServerQuote`) calling `/api/orders/quote`.
+    - Included `shippingMethodId: 'standard'` and `city: 'Lahore'` in the quote request payload to satisfy the server's quote contract.
+    - Handled price changes, unavailable items, and quote-required configurations with explicit `requiresRenewedReview` gating.
+    - Added `AbortController` cancellation and network timeout handling; prevented stale/direct cart adds upon validation failure.
+    - Replaced prefix matching with strict exact identity matching (`si.productId === item.productId && (si.selectedWeight === item.weight || si.weight === item.weight)`).
+    - Verified via `tests/batch-e-signature.test.ts` and `tests/batch-e-browser.test.tsx`.
+  - **3. Synchronous Planner Quantity Capping & Truthful Feedback (`src/contexts/CartContext.tsx`, `src/components/MehmaanTablePlannerModal.tsx`):**
+    - Preserved normalized `requestedQuantity` separately from `acceptedQuantity` (eliminated pre-clamping of requested quantity to 50).
+    - Updated `cartItemsRef.current = updatedCart` synchronously in `addToCart`, `removeFromCart`, `updateQuantity`, and `clearCart`, ensuring consecutive additions within the same event tick accurately observe committed cart capacity.
+    - Truthfully reported capped results in `AddToCartResult` and in mounted planner UI feedback (`[data-testid="planner-cart-feedback"]`).
+    - Verified via real `CartProvider` browser tests in `tests/batch-c-browser.test.tsx`.
+  - **4. Genuine Responsive Studio Viewport (`src/components/AdminContentPanel.tsx`):**
+    - Replaced container width scaling with an isolated viewport (`iframe.preview-storefront-iframe`) so CSS media queries (`md:`, `lg:`) evaluate against the exact device width (Mobile 390px, Tablet 768px, Desktop 100%).
+    - Preserved host-level synchronized `.content-hero-preview` for DOM compatibility.
+    - Maintained surface switching (Homepage, Journal, FAQ) with live/draft isolation without mutating live content.
+    - Verified via `tests/batch-d-browser.test.tsx`.
+  - **Full Quality Gates & Master Offline Suite Pass:**
+    - `npm run typecheck` (0 errors)
+    - `npm run lint:hooks` (0 warnings)
+    - Production build & release privacy audit (84 artifacts clean)
+    - `node scripts/verify-production.mjs` (36/36 checks passed)
+    - `node scripts/run-all-tests.mjs` (Full master offline suite: 101 test files + backend + assets + production checks: 815 browser tests passed, 1 skipped, 11 hardening tests passed, 21 backend tests passed, 0 failures).

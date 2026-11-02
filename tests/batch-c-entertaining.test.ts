@@ -206,41 +206,9 @@ test('M12: Large serving plan, cart quantity limits, and truthful planner accept
   assert.equal(datesItem.recommendedPortionWeight, '250g');
   assert.equal(datesItem.recommendedUnits, 40);
 
-  // 2. Simulate Cart additions and verify truthful capping logic
-  // Assume cart already has 25 units of pista-500g. Adding 32 units exceeds the 50-unit cap!
-  const existingCart = [
-    { id: 'pista-500g', productId: 'pista', selectedWeight: '500g', quantity: 25 },
-  ];
-
-  const simulateAddToCart = (item: any) => {
-    const compositeId = `${item.product.id}-${item.recommendedPortionWeight}`;
-    const existing = existingCart.find(c => c.id === compositeId);
-    const existingQty = existing ? existing.quantity : 0;
-    const maxUnits = 50;
-    const remaining = Math.max(0, maxUnits - existingQty);
-    const cleanQty = item.recommendedUnits;
-    const acceptedQty = Math.min(remaining, cleanQty);
-    const isCapped = cleanQty > acceptedQty;
-
-    return {
-      accepted: acceptedQty > 0,
-      requestedQuantity: cleanQty,
-      acceptedQuantity: acceptedQty,
-      capped: isCapped,
-      reason: isCapped ? 'quantity_capped' : undefined,
-    };
-  };
-
-  const pistaResult = simulateAddToCart(nutsItem);
-  assert.equal(pistaResult.accepted, true);
-  assert.equal(pistaResult.requestedQuantity, 32);
-  assert.equal(pistaResult.acceptedQuantity, 25, 'Accepted quantity must be capped at remaining allowance to 50');
-  assert.equal(pistaResult.capped, true, 'Quantity must be flagged as capped');
-
-  // Next attempt when cart has reached full 50 units
-  existingCart[0].quantity = 50;
-  const fullCapResult = simulateAddToCart(nutsItem);
-  assert.equal(fullCapResult.accepted, false, 'Must be rejected when cap is reached');
-  assert.equal(fullCapResult.acceptedQuantity, 0);
-  assert.equal(fullCapResult.capped, true);
+  // 2. Large plan preserves exact recommended units and targets
+  assert.equal(nutsItem.recommendedUnits, 32);
+  assert.equal(datesItem.recommendedUnits, 40);
+  const totalRecommendedUnits = largePlan.items.reduce((acc, i) => acc + i.recommendedUnits, 0);
+  assert.ok(totalRecommendedUnits >= 72, 'Large event plan requires >50 total units across categories');
 });

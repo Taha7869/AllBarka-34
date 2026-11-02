@@ -350,21 +350,38 @@ export function createGiftRevealRouter(options: GiftRevealRouterOptions) {
       }
 
       const data = doc.data() as StoredGiftRevealRecord;
+      if (!data || typeof data !== 'object') {
+        return res.status(404).json({ code: 'REVEAL_NOT_FOUND', error: 'This gift reveal link was not found or has expired.' });
+      }
 
       if (data.revoked) {
         return res.status(410).json({ code: 'REVEAL_REVOKED', error: 'This gift unboxing experience has been revoked by the sender.' });
       }
 
-      if (new Date(data.expiresAt).getTime() <= Date.now()) {
+      // Fail-closed validation for missing, invalid, or expired timestamps
+      const expiryMs = typeof data.expiresAt === 'string' ? Date.parse(data.expiresAt) : NaN;
+      if (!Number.isFinite(expiryMs) || expiryMs <= Date.now()) {
         return res.status(410).json({ code: 'REVEAL_EXPIRED', error: 'This gift reveal link has expired.' });
       }
 
-      // Safe, bounded recipient DTO with strictly zero prices, zero order IDs, zero creator UIDs
+      // Safe, bounded recipient DTO with strictly permitted recipient fields only:
+      // Zero prices, zero internal notes, zero customer contact details, zero order IDs, zero creator UIDs
+      const rawItems = Array.isArray(data.items) ? data.items : [];
+      const sanitizedRecipientItems: GiftRevealItem[] = rawItems.map((raw: any) => ({
+        productId: String(raw?.productId || '').trim(),
+        name_en: String(raw?.name_en || '').trim(),
+        name_ur: String(raw?.name_ur || '').trim(),
+        name_ar: String(raw?.name_ar || '').trim(),
+        image: String(raw?.image || '/images/product-placeholder.svg').trim(),
+        weight: String(raw?.weight || '').trim(),
+        quantity: Math.max(1, Math.min(50, Math.floor(Number(raw?.quantity) || 1))),
+      }));
+
       const recipientDTO: GiftRevealRecipientDTO = {
-        senderName: data.senderName,
-        recipientName: data.recipientName,
-        giftMessage: data.giftMessage,
-        items: data.items,
+        senderName: String(data.senderName || '').trim(),
+        recipientName: String(data.recipientName || '').trim(),
+        giftMessage: String(data.giftMessage || '').trim(),
+        items: sanitizedRecipientItems,
         expiresAt: data.expiresAt,
       };
 

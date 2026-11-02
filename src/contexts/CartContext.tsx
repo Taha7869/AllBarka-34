@@ -292,7 +292,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       const isPackaging = identity.product ? isPackagingProduct(identity.product) : false;
       const unitPrice = hamper?.unitPrice ?? resolveCartUnitPrice(identity.product, selectedWeight, rawPrice);
-      const cleanQty = resolveCartQuantity((productOrItem as any).quantity, quantity, identity.product, selectedWeight);
+
+      // Parse normalized requested quantity WITHOUT pre-clamping to maxUnits
+      const rawRequested = quantity !== undefined ? quantity : ((productOrItem as any)?.quantity ?? 1);
+      const parsedRequested = typeof rawRequested === 'number' || typeof rawRequested === 'string' ? Number(rawRequested) : NaN;
+      const requestedQuantity = Number.isFinite(parsedRequested) ? Math.floor(parsedRequested) : 1;
+
+      const minUnits = isPackaging && identity.product
+        ? calculateMinOrderQuantityUnits(identity.product, selectedWeight)
+        : 1;
+      const maxUnits = isPackaging ? 10000 : 50;
+      const normalizedRequested = Math.max(minUnits, requestedQuantity);
+
       const imageSrc = hamper?.image || (identity.product ? getProductImage(identity.product) : ((productOrItem as any).image || ''));
       const isWholesale = !identity.product && typeof (productOrItem as any).wholesale === 'boolean'
         ? (productOrItem as any).wholesale
@@ -301,10 +312,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Reliable accepted quantity determination using current synchronous cart reference
       const existingItem = cartItemsRef.current.find((item) => item.id === compositeId);
       const existingQty = existingItem ? existingItem.quantity : 0;
-      const maxUnits = isPackaging ? 10000 : 50;
       const remainingCapacity = Math.max(0, maxUnits - existingQty);
-      const acceptedQty = Math.min(remainingCapacity, cleanQty);
-      const isCapped = cleanQty > acceptedQty;
+      const acceptedQty = Math.min(remainingCapacity, normalizedRequested);
+      const isCapped = normalizedRequested > acceptedQty;
 
       if (acceptedQty <= 0) {
         addToast(t('cart.limitReached', 'Maximum allowable cart quantity (50 units) reached for this selection.'), 'error');
@@ -312,46 +322,44 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           accepted: false,
           productId: rawProdId,
           weight: selectedWeight,
-          requestedQuantity: cleanQty,
+          requestedQuantity: normalizedRequested,
           acceptedQuantity: 0,
           capped: true,
           reason: 'quantity_capped',
         };
       }
 
-      setCartItems((prev) => {
-        const existingIndex = prev.findIndex((item) => item.id === compositeId);
-        let next: CartItem[];
-        if (existingIndex > -1) {
-          next = [...prev];
-          const newQty = Math.min(maxUnits, next[existingIndex].quantity + acceptedQty);
-          next[existingIndex] = {
-            ...next[existingIndex],
-            quantity: newQty,
-            unitPrice: unitPrice || next[existingIndex].unitPrice,
-            price: unitPrice || next[existingIndex].price,
-          };
-        } else {
-          const newItem: CartItem = {
-            id: compositeId,
-            productId: rawProdId,
-            name_en: fullProd.name_en || (productOrItem as any).name_en || (productOrItem as any).name || 'Artisanal Selection',
-            name_ur: fullProd.name_ur || (productOrItem as any).name_ur || (productOrItem as any).name || 'Artisanal Selection',
-            name_ar: fullProd.name_ar || (productOrItem as any).name_ar || (productOrItem as any).name || 'Artisanal Selection',
-            slug: fullProd.id || rawProdId,
-            image: imageSrc,
-            selectedWeight,
-            unitPrice,
-            price: unitPrice,
-            quantity: acceptedQty,
-            wholesale: isWholesale,
-            ...(hamper ? { hamperConfiguration: hamper.configuration } : {}),
-          };
-          next = [...prev, newItem];
-        }
-        cartItemsRef.current = next;
-        return next;
-      });
+      const existingIndex = cartItemsRef.current.findIndex((item) => item.id === compositeId);
+      let updatedCart: CartItem[];
+      if (existingIndex > -1) {
+        updatedCart = [...cartItemsRef.current];
+        const newQty = Math.min(maxUnits, updatedCart[existingIndex].quantity + acceptedQty);
+        updatedCart[existingIndex] = {
+          ...updatedCart[existingIndex],
+          quantity: newQty,
+          unitPrice: unitPrice || updatedCart[existingIndex].unitPrice,
+          price: unitPrice || updatedCart[existingIndex].price,
+        };
+      } else {
+        const newItem: CartItem = {
+          id: compositeId,
+          productId: rawProdId,
+          name_en: fullProd.name_en || (productOrItem as any).name_en || (productOrItem as any).name || 'Artisanal Selection',
+          name_ur: fullProd.name_ur || (productOrItem as any).name_ur || (productOrItem as any).name || 'Artisanal Selection',
+          name_ar: fullProd.name_ar || (productOrItem as any).name_ar || (productOrItem as any).name || 'Artisanal Selection',
+          slug: fullProd.id || rawProdId,
+          image: imageSrc,
+          selectedWeight,
+          unitPrice,
+          price: unitPrice,
+          quantity: acceptedQty,
+          wholesale: isWholesale,
+          ...(hamper ? { hamperConfiguration: hamper.configuration } : {}),
+        };
+        updatedCart = [...cartItemsRef.current, newItem];
+      }
+      cartItemsRef.current = updatedCart;
+      setCartItems(updatedCart);
 
       recordFunnelEvent('add_to_cart', { productId: rawProdId, quantity: acceptedQty });
 
@@ -372,7 +380,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         accepted: true,
         productId: rawProdId,
         weight: selectedWeight,
-        requestedQuantity: cleanQty,
+        requestedQuantity: normalizedRequested,
         acceptedQuantity: acceptedQty,
         capped: isCapped,
         reason: isCapped ? 'quantity_capped' : undefined,
@@ -385,7 +393,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
    * Remove item from cart by composite ID (or by legacy ID match).
    */
   const removeFromCart = useCallback((cartItemId: string) => {
-    setCartItems((prev) => prev.filter((item) => item.id !== cartItemId && `${item.productId}-${item.selectedWeight}` !== cartItemId));
+    setCartItems((prev) => {
+      const next = prev.filter((item) => item.id !== cartItemId && `${item.productId}-${item.selectedWeight}` !== cartItemId);
+      cartItemsRef.current = next;
+      return next;
+    });
   }, []);
 
   /**
@@ -396,10 +408,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateQuantity = useCallback((cartItemId: string, newQty: number) => {
     setCartItems((prev) => {
       if (newQty <= 0) {
-        return prev.filter((item) => item.id !== cartItemId && `${item.productId}-${item.selectedWeight}` !== cartItemId);
+        const next = prev.filter((item) => item.id !== cartItemId && `${item.productId}-${item.selectedWeight}` !== cartItemId);
+        cartItemsRef.current = next;
+        return next;
       }
       if (!Number.isFinite(newQty)) return prev;
-      return prev.map((item) => {
+      const next = prev.map((item) => {
         if (item.id === cartItemId || `${item.productId}-${item.selectedWeight}` === cartItemId) {
           const identity = resolveCartIdentity(item, PRODUCTS);
           const isPackaging = identity?.product ? isPackagingProduct(identity.product) : false;
@@ -412,6 +426,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         return item;
       });
+      cartItemsRef.current = next;
+      return next;
     });
   }, [PRODUCTS]);
 
@@ -419,6 +435,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
    * Clear entire cart.
    */
   const clearCart = useCallback(() => {
+    cartItemsRef.current = [];
     setCartItems([]);
     try {
       localStorage.removeItem(CART_STORAGE_KEY);

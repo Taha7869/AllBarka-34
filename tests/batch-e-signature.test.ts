@@ -243,6 +243,82 @@ test('P0 & M14: Gift Reveal API enforces current authority, derives from saved o
     const expiredData = await expiredRes.json();
     assert.equal(expiredData.code, 'REVEAL_EXPIRED');
 
+    // 12b. Missing expiresAt returns 410 REVEAL_EXPIRED fail-closed
+    const missingExpiryToken = '11111111111111111111111111111111';
+    const missingExpiryHash = hashRevealToken(missingExpiryToken);
+    await db.collection('giftReveals').doc(missingExpiryHash).set({
+      tokenHash: missingExpiryHash,
+      orderId: 'AB-NO-EXPIRY',
+      creatorUid: 'patron-owner-123',
+      senderName: 'Sender',
+      recipientName: 'Recipient',
+      giftMessage: 'No expiry set',
+      items: [{ productId: 'pista', weight: '250g', quantity: 1 }],
+      createdAt: new Date().toISOString(),
+      revoked: false,
+    });
+    const missingExpiryRes = await fetch(`${origin}/api/gift-reveal/${missingExpiryToken}`);
+    assert.equal(missingExpiryRes.status, 410);
+    assert.equal((await missingExpiryRes.json()).code, 'REVEAL_EXPIRED');
+
+    // 12c. Malformed expiresAt returns 410 REVEAL_EXPIRED fail-closed
+    const malformedExpiryToken = '22222222222222222222222222222222';
+    const malformedExpiryHash = hashRevealToken(malformedExpiryToken);
+    await db.collection('giftReveals').doc(malformedExpiryHash).set({
+      tokenHash: malformedExpiryHash,
+      orderId: 'AB-MALFORMED-EXPIRY',
+      creatorUid: 'patron-owner-123',
+      senderName: 'Sender',
+      recipientName: 'Recipient',
+      giftMessage: 'Malformed expiry date',
+      items: [],
+      expiresAt: 'not-a-valid-date-string',
+      createdAt: new Date().toISOString(),
+      revoked: false,
+    });
+    const malformedExpiryRes = await fetch(`${origin}/api/gift-reveal/${malformedExpiryToken}`);
+    assert.equal(malformedExpiryRes.status, 410);
+    assert.equal((await malformedExpiryRes.json()).code, 'REVEAL_EXPIRED');
+
+    // 12d. Stored items with injected private fields (price, internalNotes, customerPhone) are stripped
+    const injectedFieldsToken = '33333333333333333333333333333333';
+    const injectedFieldsHash = hashRevealToken(injectedFieldsToken);
+    await db.collection('giftReveals').doc(injectedFieldsHash).set({
+      tokenHash: injectedFieldsHash,
+      orderId: 'AB-INJECTED',
+      creatorUid: 'patron-owner-123',
+      senderName: 'Begum Salma',
+      recipientName: 'Amina',
+      giftMessage: 'Enjoy the harvest!',
+      items: [
+        {
+          productId: 'pista',
+          name_en: 'Roasted Pistachios',
+          weight: '500g',
+          quantity: 2,
+          price: 5200,
+          internalNotes: 'Customer requested extra ribbon',
+          customerPhone: '+923001234567',
+          wholesaleTier: 'platinum',
+        },
+      ],
+      expiresAt: new Date(Date.now() + 86400000).toISOString(),
+      createdAt: new Date().toISOString(),
+      revoked: false,
+    });
+    const injectedRes = await fetch(`${origin}/api/gift-reveal/${injectedFieldsToken}`);
+    assert.equal(injectedRes.status, 200);
+    const injectedData = await injectedRes.json();
+    assert.equal(injectedData.items.length, 1);
+    const sanitizedItem = injectedData.items[0];
+    assert.equal(sanitizedItem.productId, 'pista');
+    assert.equal(sanitizedItem.weight, '500g');
+    assert.equal(sanitizedItem.quantity, 2);
+    assert.equal('price' in sanitizedItem, false, 'Injected price must not be exposed');
+    assert.equal('internalNotes' in sanitizedItem, false, 'Injected internalNotes must not be exposed');
+    assert.equal('customerPhone' in sanitizedItem, false, 'Injected customerPhone must not be exposed');
+    assert.equal('wholesaleTier' in sanitizedItem, false, 'Injected wholesaleTier must not be exposed');
+
     // 13. Missing / invalid token returns 404
     const notFoundRes = await fetch(`${origin}/api/gift-reveal/ffffffffffffffffffffffffffffffff`);
     assert.equal(notFoundRes.status, 404);
@@ -611,6 +687,46 @@ test('M29: Reorder revalidation with canonical server quote detects price change
   const revalidatedFail = await revalidateReorderWithServerQuote(initialAnalysis, { fetchFn: mockFetchNetworkFail });
   assert.equal(revalidatedFail.serverValidated, false);
   assert.ok(revalidatedFail.serverNotice?.includes('NETWORK_TIMEOUT'));
+
+  // 5. Payload contract: shippingMethodId and city are sent, and cancelled request handles abort cleanly
+  let recordedPayload: any = null;
+  const mockFetchInspector: any = async (_url: string, opts: any) => {
+    recordedPayload = JSON.parse(opts.body);
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        totals: { subtotal: 9000, isQuoteRequest: false },
+        items: [{ productId: 'pista', selectedWeight: '500g', price: 4500, quantity: 2 }],
+      }),
+    };
+  };
+
+  const revalidatedContract = await revalidateReorderWithServerQuote(initialAnalysis, {
+    city: 'Faisalabad',
+    shippingMethodId: 'express',
+    fetchFn: mockFetchInspector,
+  });
+  assert.equal(revalidatedContract.serverValidated, true);
+  assert.equal(recordedPayload.city, 'Faisalabad');
+  assert.equal(recordedPayload.shippingMethodId, 'express', 'Payload must include shippingMethodId');
+
+  // 6. Exact matching: prefix collision does NOT match different item (e.g. pista-salted vs pista)
+  const mockFetchDisjoint: any = async () => ({
+    ok: true,
+    status: 200,
+    json: async () => ({
+      success: true,
+      totals: { subtotal: 0, isQuoteRequest: false },
+      items: [{ productId: 'pista-salted', selectedWeight: '500g', price: 4500, quantity: 2 }],
+    }),
+  });
+  const revalidatedDisjoint = await revalidateReorderWithServerQuote(initialAnalysis, { fetchFn: mockFetchDisjoint });
+  assert.equal(revalidatedDisjoint.serverValidated, true);
+  assert.equal(revalidatedDisjoint.reorderable.length, 0, 'Prefix collision item must not match exact productId');
+  assert.equal(revalidatedDisjoint.hasUnavailableItems, true);
+  assert.equal(revalidatedDisjoint.requiresRenewedReview, true);
 });
 
 test('M12 & M26: Mehmaan planner respects custom assumptions, canonical eligibility, and honest packaging facts', () => {

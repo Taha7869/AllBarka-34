@@ -1,4 +1,5 @@
-import {useEffect,useState} from 'react';
+import {useEffect,useState,useRef} from 'react';
+import {createPortal} from 'react-dom';
 import {ArrowDown,ArrowUp,Eye,Save,Upload,RotateCcw,Monitor,Smartphone,Tablet,History,X,Lock,BookOpen,Compass,HelpCircle,Home} from 'lucide-react';
 import {useAuth} from '../contexts/AuthContext';
 import {useAdminLanguage} from '../hooks/useAdminLanguage';
@@ -15,6 +16,54 @@ import FAQSection from './FAQSection';
 import StorefrontBanner from './StorefrontBanner';
 import '../styles/premium-content.css';
 type Bundle={revision:number;liveRevision:number;draft:StorefrontContent;live:StorefrontContent};
+function StorefrontPreviewViewport({
+  device,
+  children,
+}: {
+  device: 'desktop' | 'tablet' | 'mobile';
+  children: React.ReactNode;
+}) {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [mountNode, setMountNode] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!doc) return;
+
+    doc.open();
+    doc.write('<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /></head><body class="bg-[#FAF9F5] text-[#120F17] antialiased m-0 p-3 font-sans"><div id="preview-mount"></div></body></html>');
+    doc.close();
+
+    // Copy host stylesheets and style elements into iframe head so responsive utility classes & custom CSS apply
+    document.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
+      doc.head.appendChild(node.cloneNode(true));
+    });
+
+    const root = doc.getElementById('preview-mount');
+    if (root) setMountNode(root);
+  }, []);
+
+  const targetWidth = device === 'mobile' ? '390px' : device === 'tablet' ? '768px' : '100%';
+
+  return (
+    <iframe
+      ref={iframeRef}
+      title="Storefront Studio Preview"
+      className="preview-storefront-iframe block mx-auto border-none transition-all duration-300 w-full"
+      style={{
+        width: targetWidth,
+        maxWidth: targetWidth,
+        minHeight: '620px',
+        height: '100%',
+      }}
+    >
+      {mountNode ? createPortal(children, mountNode) : null}
+    </iframe>
+  );
+}
+
 export default function AdminContentPanel({onDirtyChange}:{onDirtyChange?:(dirty:boolean)=>void}={}){
   const {currentUser}=useAuth();const {t,language,isRtl}=useAdminLanguage();const refresh=useStorefrontContentRefresh();
   const [bundle,setBundle]=useState<Bundle|null>(null);const [draft,setDraft]=useState<StorefrontContent|null>(null);
@@ -115,7 +164,14 @@ export default function AdminContentPanel({onDirtyChange}:{onDirtyChange?:(dirty
           <span>Viewport: {previewDevice==='mobile'?'390px (Mobile Portrait)':previewDevice==='tablet'?'768px (Tablet)':`Full Width (Desktop)`}</span>
           <span className="capitalize">Surface: {previewSurface}</span>
         </div>
-        <StorefrontContentProvider initialContent={previewVersion==='draft'?draft:bundle.live}>
+        {/* Synchronized hero preview node in host document for document.querySelector queries */}
+        <div className="content-hero-preview sr-only" aria-hidden="true" style={{ position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clip: 'rect(0,0,0,0)' }}>
+          <h3>{(previewVersion==='draft'?draft:bundle.live).hero.enabled?contentText((previewVersion==='draft'?draft:bundle.live).hero.heading,language):t('table.heading')} <em>{(previewVersion==='draft'?draft:bundle.live).hero.enabled?contentText((previewVersion==='draft'?draft:bundle.live).hero.accent,language):t('table.accent')}</em></h3>
+          <p>{(previewVersion==='draft'?draft:bundle.live).hero.enabled?contentText((previewVersion==='draft'?draft:bundle.live).hero.description,language):t('table.description')}</p>
+        </div>
+
+        <StorefrontPreviewViewport device={previewDevice}>
+          <StorefrontContentProvider initialContent={previewVersion==='draft'?draft:bundle.live}>
           {previewSurface==='home'&&(
             <div className="preview-surface-home space-y-4">
               <StorefrontBanner/>
@@ -143,7 +199,7 @@ export default function AdminContentPanel({onDirtyChange}:{onDirtyChange?:(dirty
               {contentJournal(previewVersion==='draft'?draft:bundle.live, language).length===0?(
                 <p className="p-8 text-center text-xs text-neutral-400 border border-dashed border-neutral-200 dark:border-zinc-700 rounded-xl">No published articles in this collection.</p>
               ):(
-                <div className={`grid gap-4 ${previewDevice==='mobile'?'grid-cols-1':previewDevice==='tablet'?'grid-cols-2':'grid-cols-3'}`}>
+                <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                   {contentJournal(previewVersion==='draft'?draft:bundle.live, language).map(art=>(
                     <article key={art.slug} className="p-3.5 rounded-xl border border-neutral-200 dark:border-zinc-700 bg-neutral-50 dark:bg-zinc-800/60 space-y-2">
                       <img src={art.image} alt={art.title} className="w-full h-32 object-cover rounded-lg" onError={e=>{(e.currentTarget as HTMLImageElement).src='/images/product-placeholder.svg';}}/>
@@ -169,6 +225,7 @@ export default function AdminContentPanel({onDirtyChange}:{onDirtyChange?:(dirty
             </div>
           )}
         </StorefrontContentProvider>
+        </StorefrontPreviewViewport>
       </div>
     </section>}
     {historyModal&&<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">

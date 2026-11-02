@@ -153,19 +153,92 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
     return () => { releaseLock(); document.removeEventListener('keydown', handleKey); previous?.focus(); };
   }, [isOpen]);
 
-  const startReorderReview = (order: any) => {
-    const analysis = reviewReorderItems(order.items || [], PRODUCTS);
+  const reorderAbortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      reorderAbortRef.current?.abort();
+    };
+  }, []);
+
+  const cancelReorderReview = () => {
+    if (reorderAbortRef.current) {
+      reorderAbortRef.current.abort();
+    }
+    setReviewingOrder(null);
+    setReorderAnalysis(null);
+    setReorderError('');
+    setReorderValidating(false);
+  };
+
+  const startReorderReview = async (order: any) => {
+    if (reorderAbortRef.current) {
+      reorderAbortRef.current.abort();
+    }
+    const controller = new AbortController();
+    reorderAbortRef.current = controller;
+
+    const initialAnalysis = reviewReorderItems(order.items || [], PRODUCTS);
     setReviewingOrder(order);
-    setReorderAnalysis(analysis);
+    setReorderAnalysis(initialAnalysis);
+    setReorderError('');
+
+    if (initialAnalysis.reorderable.length === 0) {
+      setReorderValidating(false);
+      return;
+    }
+
+    setReorderValidating(true);
+
+    try {
+      const idToken = currentUser ? await currentUser.getIdToken().catch(() => null) : null;
+      if (controller.signal.aborted) return;
+
+      const validated = await revalidateReorderWithServerQuote(initialAnalysis, {
+        city: order.city || 'Lahore',
+        shippingMethodId: 'standard',
+        authToken: idToken,
+        signal: controller.signal,
+      });
+
+      if (controller.signal.aborted) return;
+
+      setReorderAnalysis(validated);
+      if (!validated.serverValidated) {
+        setReorderError(validated.serverNotice || 'Authoritative order quote verification failed.');
+      }
+    } catch (err: any) {
+      if (controller.signal.aborted) return;
+      const msg = err?.message || 'Price verification service unreachable';
+      setReorderError(msg);
+      setReorderAnalysis({
+        ...initialAnalysis,
+        serverValidated: false,
+        serverNotice: msg,
+      });
+    } finally {
+      if (!controller.signal.aborted) {
+        setReorderValidating(false);
+      }
+    }
   };
 
   const confirmReorder = () => {
-    if (!reorderAnalysis || reorderAnalysis.reorderable.length === 0) return;
+    if (
+      reorderValidating ||
+      !reorderAnalysis ||
+      !reorderAnalysis.serverValidated ||
+      reorderAnalysis.reorderable.length === 0
+    ) {
+      return;
+    }
+
     reorderAnalysis.reorderable.forEach(({ product, weight, quantity }) => {
       addToCart(product, weight, quantity, undefined, { silent: true, openCart: false });
     });
     setReviewingOrder(null);
     setReorderAnalysis(null);
+    setReorderError('');
     onClose();
     openCart();
   };
@@ -458,7 +531,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                                   </div>
                                   <button
                                     type="button"
-                                    onClick={() => { setReviewingOrder(null); setReorderAnalysis(null); }}
+                                    onClick={cancelReorderReview}
                                     className="text-[11px] text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
                                   >
                                     {t('cancel', 'Cancel')}
@@ -533,7 +606,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                                   <button
                                     type="button"
                                     data-action="confirm-reorder"
-                                    disabled={reorderValidating || reorderAnalysis.reorderable.length === 0}
+                                    disabled={reorderValidating || !reorderAnalysis.serverValidated || reorderAnalysis.reorderable.length === 0}
                                     onClick={confirmReorder}
                                     className="px-4 py-2 rounded-xl bg-[#043327] hover:bg-[#074b39] text-[#FAF9F5] text-xs font-bold transition-all disabled:opacity-40 flex items-center gap-1.5 shadow-sm"
                                   >

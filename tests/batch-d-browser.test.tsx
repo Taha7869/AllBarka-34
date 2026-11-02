@@ -138,6 +138,41 @@ createRoot(document.getElementById('root')!).render(
     const mobileFrame = page.locator('.content-draft-preview .max-w-\\[390px\\]');
     assert.ok(await mobileFrame.isVisible(), 'Mobile 390px preview frame must be mounted');
 
+    // Verify genuine isolated responsive iframe exists with 390px width
+    const previewIframe = page.locator('iframe.preview-storefront-iframe');
+    assert.ok(await previewIframe.isVisible(), 'Storefront preview iframe must be mounted');
+    let iframeBox = await previewIframe.boundingBox();
+    assert.ok(iframeBox && Math.abs(iframeBox.width - 390) < 5, 'Mobile preview iframe width must be 390px');
+
+    // Test Tablet Preview (768px)
+    const tabletBtn = page.locator('button:has-text("Tablet")');
+    await tabletBtn.click();
+    await page.waitForTimeout(300);
+    iframeBox = await previewIframe.boundingBox();
+    assert.ok(iframeBox && Math.abs(iframeBox.width - 768) < 5, 'Tablet preview iframe width must be 768px');
+
+    // Test Desktop Preview (100% / >1000px)
+    await desktopBtn.click();
+    await page.waitForTimeout(300);
+    iframeBox = await previewIframe.boundingBox();
+    assert.ok(iframeBox && iframeBox.width > 900, 'Desktop preview iframe must expand to full width');
+
+    // Test Surface Switcher (Home, Journal, FAQ)
+    const journalTab = page.locator('button[data-surface="journal"]');
+    const faqTab = page.locator('button[data-surface="faq"]');
+    const homeTab = page.locator('button[data-surface="home"]');
+
+    await journalTab.click();
+    await page.waitForTimeout(200);
+    assert.ok(await page.locator('.preview-surface-tabs button[data-surface="journal"]').isVisible());
+
+    await faqTab.click();
+    await page.waitForTimeout(200);
+    assert.ok(await page.locator('.preview-surface-tabs button[data-surface="faq"]').isVisible());
+
+    await homeTab.click();
+    await page.waitForTimeout(200);
+
     // 3. Edit draft with experimental changes
     await heroSection.getByLabel(/^Heading · EN/).fill('Unpublished Experimental Heading.');
     await page.getByRole('button', { name: 'Save draft', exact: true }).click();
