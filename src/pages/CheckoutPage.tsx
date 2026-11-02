@@ -57,6 +57,7 @@ import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { PRODUCTS } from '../data/products';
 import { fetchLoyaltyProfile } from '../lib/loyaltyClient';
 import type { IssuedPatronReward } from '../lib/rewardPolicy';
+import { recordFunnelEvent } from '../lib/funnelTelemetry';
 
 // Popular Lahore Neighborhoods for Rapid Delivery Pinning
 
@@ -97,6 +98,9 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   const [selectedRewardId, setSelectedRewardId] = useState<string | null>(null);
 
   // 1. All Hooks declared unconditionally at the top (Rules of Hooks)
+  useEffect(() => {
+    recordFunnelEvent('begin_checkout', { itemCount: cartItems.length });
+  }, [cartItems.length]);
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('details');
   const [orderItemsSnapshot, setOrderItemsSnapshot] = useState<CartItem[]>([]);
   const [savedTotals, setSavedTotals] = useState<{

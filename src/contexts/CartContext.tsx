@@ -11,6 +11,7 @@ import { useLanguage } from './LanguageContext';
 import { calculateOrderSummary, isLahoreCity } from '../lib/pricing';
 import { readCheckoutDraft } from '../lib/checkoutPreferences';
 import { resolveHamper, hamperCartKey, type HamperConfiguration } from '../lib/hamperCatalog';
+import { recordFunnelEvent } from '../lib/funnelTelemetry';
 
 const CART_STORAGE_KEY = 'allbarka_cart_v1';
 const DELIVERY_CITY_KEY = 'allbarka_delivery_city';
@@ -288,6 +289,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         return [...prev, newItem];
       });
+
+      recordFunnelEvent('add_to_cart', { productId: rawProdId, quantity: cleanQty });
 
       // Subtle toast notification & auto-open cart drawer
       if (!options?.silent) addToast(`${fullProd[`name_${language}`] || fullProd.name_en || 'Item'} (${selectedWeight}) — ${t('cart.addedToast')}`, 'success');

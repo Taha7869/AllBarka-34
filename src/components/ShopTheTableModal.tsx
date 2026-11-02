@@ -133,7 +133,7 @@ export default function ShopTheTableModal({ isOpen, onClose }: { isOpen: boolean
                   onClick={() => setSelectedProductId(hotspot.productId)}
                   style={{ top: `${hotspot.yPercent}%`, left: `${hotspot.xPercent}%` }}
                   aria-label={`View ${hotspot.label}`}
-                  className={`absolute -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center transition-transform focus-ring ${
+                  className={`absolute -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center transition-transform motion-reduce:transition-none focus-ring ${
                     isSelected
                       ? 'bg-[#043327] text-[#D4AF37] ring-4 ring-[#D4AF37] scale-125 z-20'
                       : 'bg-white/90 text-[#043327] hover:scale-110 shadow-lg z-10'

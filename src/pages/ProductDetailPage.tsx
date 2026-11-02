@@ -31,6 +31,7 @@ import ProductPhotoViewer from '../components/ProductPhotoViewer';
 import { isPackagingProduct, getPackagingMoqDisplay } from '../lib/packagingMoq';
 import { isFilledPackagingVariant } from '../lib/filledGiftPricing';
 import { resolveBidBoxConfig } from '../lib/bidBoxPricing';
+import { recordFunnelEvent } from '../lib/funnelTelemetry';
 
 export default function ProductDetailPage() {
   const PRODUCTS = useCatalogProducts();
@@ -68,7 +69,10 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    if (id) view(id);
+    if (id) {
+      view(id);
+      recordFunnelEvent('view_item', { productId: id, category: product?.category });
+    }
     setSelectedWeightIndex(0);
     setCustomWeightSelected(false);
     setCustomGrams('100');
@@ -77,7 +81,7 @@ export default function ProductDetailPage() {
     setActiveGalleryIdx(0);
     setPhotoViewerOpen(false);
     setShareStatus('idle');
-  }, [id, view]);
+  }, [id, view, product?.category]);
 
   const handleSave = (next: boolean) => { if (id) setSaved(id, next); };
 

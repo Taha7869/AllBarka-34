@@ -62,7 +62,7 @@ export default function GiftRevealPage() {
   if (loading) {
     return (
       <main className="w-full min-h-[75vh] flex flex-col items-center justify-center p-6 bg-[#FAF9F5] dark:bg-zinc-950" aria-busy="true">
-        <div className="w-12 h-12 rounded-full border-2 border-[#D4AF37]/30 border-t-[#D4AF37] animate-spin mb-4" />
+        <div className="w-12 h-12 rounded-full border-2 border-[#D4AF37]/30 border-t-[#D4AF37] animate-spin motion-reduce:animate-none mb-4" />
         <span className="text-xs uppercase tracking-widest font-bold text-[#043327] dark:text-emerald-400">
           {t('reveal.loading', 'Preparing your private gift presentation…')}
         </span>
@@ -138,7 +138,7 @@ export default function GiftRevealPage() {
               <button
                 type="button"
                 onClick={() => setIsOpened(true)}
-                className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-[#043327] hover:bg-[#074b39] text-[#FAF9F5] font-semibold text-sm transition-all shadow-md focus-ring"
+                className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-[#043327] hover:bg-[#074b39] text-[#FAF9F5] font-semibold text-sm transition-all motion-reduce:transition-none shadow-md focus-ring"
               >
                 <Sparkles size={16} />
                 <span>{t('reveal.openButton', 'Break Wax Seal & Open Gift Card')}</span>
