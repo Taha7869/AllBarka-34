@@ -1,5 +1,41 @@
 # Admin expansion handoff
 
+02 November 2026 — **Complete Roadmap & Remaining Confirmed Defect Repairs (c8b7b37) / DONE & FULL SUITE PASSING**. Continued on `codex/admin-catalog-foundation-20261023`.
+Repaired all confirmed defects from probes and inspection at checkpoint `c8b7b37`:
+1. P0 Admin Authority Guard on Gift Reveal (`src/lib/giftRevealRouter.ts`, `server.ts`):
+   - Admin branch strictly authorizes via `isCurrentAdministrator(options.getAuth(), user)` and `options.requireAdmin`.
+   - Stale/cached admin tokens, demoted claims, disabled/revoked accounts, or identity mismatches are strictly rejected (403/401).
+   - Authority lookup errors fail closed with 503 `AUTH_SERVICE_UNAVAILABLE`.
+   - Tested and verified across all 6 auth paths: current admin, demoted admin, ordinary order owner, stranger, disabled/revoked account, and auth service failure.
+2. M29 Real Reorder Journey (`src/lib/orderPresentation.ts`, `src/components/PatronLoungeModal.tsx`):
+   - Replaced naive hyphen-splitting with unambiguous `resolveReorderProduct` checking exact stable ID, exact item ID, composite key `${id}-${weight}`, and longest matching prefix (preventing prefix collisions like `gift` vs `gift-box`).
+   - Wired `PatronLoungeModal` to live catalog via `useCatalogProducts()`.
+   - Added interactive `.reorder-review-panel` showing price change alerts (`[data-price-change]`), unavailable item warnings (`[data-unavailable-warning]`), subtotal calculation, and explicit confirmation (`[data-action="confirm-reorder"]`).
+3. M12 Planner Inputs and Canonical Product Eligibility (`src/lib/mehmaanPlanner.ts`, `src/components/MehmaanTablePlannerModal.tsx`):
+   - Added customer-editable assumptions (`customAssumptions`: `nutsGramsPerGuest`, `datesGramsPerGuest`, `driedFruitsGramsPerGuest`) with live recalculation and transparent labeling (`assumptionSource: 'Custom patron configuration (editable)'`).
+   - Canonical eligibility checks: items must be active (`active !== false`), not draft (`status !== 'draft'`), not archived (`status !== 'archived'`), not quote-only (`quoteOnly: false`, `orderMode !== 'inquiry_quote'`), and must have valid weight portion pricing.
+   - Portion resolution with strict weight regex `/^(\d+(?:\.\d+)?)\s*(kg|g)$/i` and variant availability check (`product.variants.available !== false`).
+4. M26 Actual Rendered Product Facts (`src/contexts/shoppingQualityTranslations.ts`, `src/pages/ProductDetailPage.tsx`):
+   - Removed unsupported universal claims (`pdp.closedDesc`, `pdp.airtightSeal`, `pdp.calligraphyEnvelope`, `pdp.sizeComparison`) across EN, UR, AR (e.g. nitrogen flushing, wax seals, magnetic closure, hardcoded 22x16x6 cm).
+   - Render physical details and dimensions only from explicitly supported product/variant data.
+5. M32 Complete Full Preview (`src/components/AdminContentPanel.tsx`):
+   - Real storefront surface switcher (Homepage sections, Journal editorial articles, FAQs) with draft/live toggle and genuine responsive viewport mechanism (Desktop, Tablet 768px, Mobile 390px) with simulated browser chrome bar.
+6. Verification & Suite Stability (`tests/batch-e-signature.test.ts`, `tests/admin-finishing-browser.test.tsx`, `tests/admin-passport-browser.test.tsx`):
+   - Updated `tests/batch-e-signature.test.ts` covering 6 auth paths, reorder prefix collision, custom mehmaan assumptions, and packaging claim sanitation.
+   - Fixed SEO section shortcut targeting in `tests/admin-finishing-browser.test.tsx` via `button[aria-controls="item-section-seo"]`.
+   - Fixed concurrent response filter in `tests/admin-passport-browser.test.tsx` to match `method === 'PUT'`.
+   - Executed full test runner `node scripts/run-all-tests.mjs`:
+     - 11 unit & integration hardening tests: 11 PASSED, 0 FAILED.
+     - 813 browser & acceptance tests: 812 PASSED, 1 SKIPPED, 0 FAILED.
+     - 21 production backend tests: 21 PASSED, 0 FAILED.
+     - Catalog assets: 97 products, 115 image references, 0 missing files, 0 retired views.
+     - Production verification checks: 36 PASSED, 0 FAILED.
+     - Full offline suite passed (101 test files + backend + assets + production checks) with exit code 0.
+   - TypeScript (`npm run typecheck`): 0 errors.
+   - ESLint (`npm run lint:hooks`): 0 warnings.
+   - Production build (`npm run build`): PASS with 84 text artifacts audited clean.
+   - `scripts/verify-production.mjs`: 36/36 checks PASS.
+
 02 November 2026 — **Roadmap Defect Repairs & Batches E–F Finalization / DONE locally**. Continued on `codex/admin-catalog-foundation-20261023`.
 Repaired all confirmed defects from probes and inspection at checkpoint `59b64b9`:
 1. P0 Gift Reveal Security (`src/lib/giftRevealRouter.ts`, `server.ts`, `src/pages/AdminOrdersPage.tsx`): Server-enforced authentication (`requireAuth`/`requireAdmin`), authoritative derivation strictly from `order.items`, zero prices/currency/PII stored or returned in recipient DTO, SHA-256 token hashing (`tokenHash` stored as doc ID; raw token never persisted), authenticated revocation endpoint (`POST /api/gift-reveal/:token/revoke`), fail-closed checks on expired/revoked tokens (410) and unknown tokens (404), and admin management UI in `AdminOrdersPage.tsx` (copyable URL, unboxing preview, link revocation).

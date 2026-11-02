@@ -5,6 +5,23 @@
 >
 > **Owner Direction (01 Nov 2026):** Manual cloud provisioning (creating GCP/Firebase project `allbarka-preview`, IAM role assignments, billing, live credential rotation, and merchant price/recipe confirmations) is skipped while the owner is away. These items remain explicitly in the GitHub pending list to be executed when the owner is active on PC. Ongoing development and testing continue locally using existing available keys and isolated fixtures.
 
+02 November 2026 — **Complete Roadmap & Remaining Confirmed Defect Repairs (c8b7b37) / DONE & FULL SUITE PASSING**. Continued on `codex/admin-catalog-foundation-20261023`. Repaired all confirmed defects from checkpoint `c8b7b37`:
+1. P0 Admin Authority Guard on Gift Reveal (`src/lib/giftRevealRouter.ts`, `server.ts`): Admin branch strictly authorizes via `isCurrentAdministrator(options.getAuth(), user)` and `options.requireAdmin`. Cached tokens, demoted claims, disabled/revoked accounts, or identity mismatches are strictly rejected (403/401). Fail-closed 503 on authority lookup failures.
+2. M29 Real Reorder Journey (`src/lib/orderPresentation.ts`, `src/components/PatronLoungeModal.tsx`): Replaced naive hyphen-splitting with unambiguous `resolveReorderProduct` checking exact stable ID, exact item ID, composite key `${id}-${weight}`, and longest matching prefix (preventing prefix collisions like `gift` vs `gift-box`). Wired `PatronLoungeModal` to live catalog via `useCatalogProducts()` and added interactive review step with price change/discontinued warnings.
+3. M12 Planner Inputs and Canonical Product Eligibility (`src/lib/mehmaanPlanner.ts`, `src/components/MehmaanTablePlannerModal.tsx`): Customer-editable assumptions (`customAssumptions`) with live recalculation and transparent labeling. Canonical eligibility checks: items must be active, published (not draft or archived), not quote-only, and have valid weight portion pricing. Strict portion resolution rejecting unavailable variants.
+4. M26 Actual Rendered Product Facts (`src/contexts/shoppingQualityTranslations.ts`, `src/pages/ProductDetailPage.tsx`): Removed unsupported universal claims (`pdp.closedDesc`, `pdp.airtightSeal`, `pdp.calligraphyEnvelope`, `pdp.sizeComparison`) across EN, UR, AR. Physical details render only from explicit data.
+5. M32 Complete Full Preview (`src/components/AdminContentPanel.tsx`): Real storefront surface switcher (Homepage sections, Journal editorial articles, FAQs) with draft/live toggle and genuine responsive viewport mechanism (Desktop, Tablet 768px, Mobile 390px) with simulated browser chrome.
+6. Full Suite Offline Verification:
+   - Full master test suite (`node scripts/run-all-tests.mjs`): 101 test files passing with exit code 0.
+   - 11 unit & integration hardening tests: 11 PASS, 0 FAIL.
+   - 813 browser & acceptance tests: 812 PASS, 1 SKIPPED, 0 FAIL.
+   - 21 production backend tests: 21 PASS, 0 FAIL.
+   - Catalog assets: 97 products, 115 image references, 0 missing files, 0 retired views.
+   - Production verification checks: 36 PASS, 0 FAIL.
+   - TypeScript (`npm run typecheck`): 0 errors.
+   - ESLint (`npm run lint:hooks`): 0 warnings.
+   - Production build: PASS with 84 text artifacts audited clean.
+
 02 November 2026 — **Full Premium Roadmap (Batches A–F) & Defect Repairs / DONE locally**. Continued on `codex/admin-catalog-foundation-20261023`. Repaired all confirmed defects from probes and inspection at checkpoint `59b64b9`:
 1. M14 Gift Reveal Security (`src/lib/giftRevealRouter.ts`, `server.ts`, `src/pages/AdminOrdersPage.tsx`): Authenticated creation/revocation, derived strictly from `order.items`, zero prices/PII to recipient, SHA-256 token hashing (`tokenHash` stored as doc ID), fail-closed on expired/revoked tokens (410), admin management UI.
 2. M13 & M30 Event Inquiry Contract (`src/components/OccasionInquiryModal.tsx`): Canonical fields, HTTP response status validation, fallback WhatsApp link, real router mounted in browser tests.

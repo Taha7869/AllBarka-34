@@ -1,7 +1,9 @@
-import { Router, type RequestHandler } from 'express';
+import { Router, type RequestHandler, type Request, type Response } from 'express';
 import type { Firestore } from 'firebase-admin/firestore';
+import type { Auth } from 'firebase-admin/auth';
 import { randomBytes, createHash } from 'node:crypto';
 import { PRODUCTS } from '../data/products';
+import { isCurrentAdministrator } from './adminAuthentication';
 
 export interface GiftRevealItem {
   productId: string;
@@ -36,15 +38,82 @@ export interface GiftRevealRecipientDTO {
   expiresAt: string;
 }
 
+export interface GiftRevealRouterOptions {
+  getDb: () => Firestore | null;
+  getAuth?: () => Pick<Auth, 'getUser'> | null;
+  requireAuth?: RequestHandler;
+  requireAdmin?: RequestHandler;
+}
+
 export function hashRevealToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
 }
 
-export function createGiftRevealRouter(options: {
-  getDb: () => Firestore | null;
-  requireAuth?: RequestHandler;
-  requireAdmin?: RequestHandler;
-}) {
+async function verifyAdminAuthorization(
+  req: Request,
+  res: Response,
+  options: GiftRevealRouterOptions,
+  user: any
+): Promise<boolean> {
+  if (options.requireAdmin) {
+    let nextCalled = false;
+    await new Promise<void>((resolve, reject) => {
+      try {
+        const next = (err?: any) => {
+          if (err) reject(err);
+          else {
+            nextCalled = true;
+            resolve();
+          }
+        };
+        const p = options.requireAdmin!(req, res, next) as unknown;
+        if (p && typeof (p as any).then === 'function') {
+          (p as Promise<any>).then(() => resolve()).catch(reject);
+        } else {
+          resolve();
+        }
+      } catch (err) {
+        reject(err);
+      }
+    });
+
+    if (res.headersSent || (res as any).writableEnded) {
+      return false;
+    }
+    if (!nextCalled) {
+      if (!res.headersSent) {
+        res.status(403).json({ code: 'FORBIDDEN_ADMIN', error: 'Authoritative admin privileges required.' });
+      }
+      return false;
+    }
+  }
+
+  if (options.getAuth) {
+    try {
+      const isCurrent = await isCurrentAdministrator(options.getAuth(), user);
+      if (!isCurrent) {
+        if (!res.headersSent) {
+          res.status(403).json({ code: 'FORBIDDEN_ADMIN', error: 'Authoritative admin privileges required.' });
+        }
+        return false;
+      }
+    } catch (err: any) {
+      if (!res.headersSent) {
+        res.status(503).json({ code: 'AUTH_SERVICE_UNAVAILABLE', error: 'Authority verification unavailable.' });
+      }
+      return false;
+    }
+  } else if (!options.requireAdmin) {
+    if (!res.headersSent) {
+      res.status(403).json({ code: 'FORBIDDEN_ADMIN', error: 'Authoritative admin privileges required.' });
+    }
+    return false;
+  }
+
+  return true;
+}
+
+export function createGiftRevealRouter(options: GiftRevealRouterOptions) {
   const router = Router();
   const authMiddleware = options.requireAuth || options.requireAdmin || ((_req, _res, next) => next());
 
@@ -73,17 +142,17 @@ export function createGiftRevealRouter(options: {
       }
 
       const orderData = orderDoc.data() || {};
-      const isAdmin =
-        user.admin === true ||
-        user.role === 'admin' ||
-        (user.claims && (user.claims.admin === true || user.claims.role === 'admin'));
+      const isOwner = Boolean(
+        user.uid &&
+        ((orderData.uid && orderData.uid === user.uid) ||
+         (orderData.customerUid && orderData.customerUid === user.uid))
+      );
 
-      const isOwner =
-        (orderData.uid && orderData.uid === user.uid) ||
-        (orderData.customerUid && orderData.customerUid === user.uid);
-
-      if (!isAdmin && !isOwner) {
-        return res.status(403).json({ code: 'FORBIDDEN', error: 'Unauthorized to create reveal for this order.' });
+      if (!isOwner) {
+        const authorized = await verifyAdminAuthorization(req, res, options, user);
+        if (!authorized) {
+          return;
+        }
       }
 
       const orderItems = Array.isArray(orderData.items) ? orderData.items : [];
@@ -170,13 +239,13 @@ export function createGiftRevealRouter(options: {
       }
 
       const data = doc.data() as StoredGiftRevealRecord;
-      const isAdmin =
-        user.admin === true ||
-        user.role === 'admin' ||
-        (user.claims && (user.claims.admin === true || user.claims.role === 'admin'));
+      const isCreator = Boolean(user.uid && data.creatorUid === user.uid);
 
-      if (!isAdmin && data.creatorUid !== user.uid) {
-        return res.status(403).json({ code: 'FORBIDDEN', error: 'Unauthorized to revoke this reveal link.' });
+      if (!isCreator) {
+        const authorized = await verifyAdminAuthorization(req, res, options, user);
+        if (!authorized) {
+          return;
+        }
       }
 
       await db.collection('giftReveals').doc(tokenHash).set(

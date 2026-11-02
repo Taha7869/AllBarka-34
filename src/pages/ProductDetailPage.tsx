@@ -390,12 +390,12 @@ export default function ProductDetailPage() {
                   <div className="pdp-inside-breakdown rounded-xl bg-[#FAF9F5] dark:bg-zinc-900 border border-[var(--color-accent,#C7982F)]/20 p-3 space-y-2 text-xs">
                     <div className="flex items-start gap-2 text-neutral-700 dark:text-neutral-200">
                       <Package size={15} className="text-[#043327] dark:text-emerald-400 shrink-0 mt-0.5" />
-                      <span>{getLocalized(product, 'packagingDetails', language) || (product.isBidBox ? t('pdp.bidBoxInside', 'Individual keepsake compartments with protective wrap.') : t('pdp.airtightSeal', 'Food-grade protective seal for peak freshness and fragrance.'))}</span>
+                      <span>{getLocalized(product, 'packagingDetails', language) || (product.isBidBox ? t('pdp.bidBoxInside', 'Individual keepsake compartments with protective wrap.') : t('pdp.airtightSeal', 'Food-grade protective seal for dispatch.'))}</span>
                     </div>
                   </div>
                 ) : (
                   <p className="text-[11px] text-neutral-500 dark:text-neutral-400 leading-relaxed">
-                    {getLocalized(product, 'packagingDetails', language) || (product.isBidBox ? t('pdp.closedBidBox', 'Boutique celebration keepsake presentation with gold accents.') : t('pdp.standardClosed', 'Artisan boutique packaging.'))}
+                    {getLocalized(product, 'packagingDetails', language) || (product.isBidBox ? t('pdp.closedBidBox', 'Boutique celebration keepsake presentation with gold accents.') : t('pdp.closedDesc', 'Artisan boutique packaging.'))}
                   </p>
                 )}
 
@@ -403,7 +403,7 @@ export default function ProductDetailPage() {
                 {verifiedDimensions && (
                   <div data-scale-guide className="pt-2 border-t border-[var(--color-accent,#C7982F)]/15 flex items-center gap-2 text-[11px] text-neutral-600 dark:text-neutral-400">
                     <Info size={14} className="text-[#D4AF37] shrink-0" />
-                    <span>{t('pdp.sizeComparison', 'Verified Scale')}: {verifiedDimensions}</span>
+                    <span>{t('pdp.sizeComparison', 'Verified Dimensions')}: {verifiedDimensions}</span>
                   </div>
                 )}
               </div>

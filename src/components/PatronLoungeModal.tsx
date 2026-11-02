@@ -6,8 +6,8 @@ import { X, User, Package, MapPin, Phone, Crown, LogOut, Clock, Calendar, CheckC
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCart } from '../contexts/CartContext';
-import { PRODUCTS } from '../data/products';
-import { getReorderItems, trackingProgress, TRACKING_STEPS } from '../lib/orderPresentation';
+import { useCatalogProducts } from '../contexts/CatalogContext';
+import { reviewReorderItems, trackingProgress, TRACKING_STEPS, type ReorderAnalysis } from '../lib/orderPresentation';
 import { Link } from 'react-router-dom';
 import { acquireScrollLock } from '../utils/scrollLock';
 import { apiUrl } from '../lib/apiUrl';
@@ -23,6 +23,9 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
   const { currentUser, patronProfile, logout } = useAuth();
   const { t } = useLanguage();
   const { addToCart, openCart } = useCart();
+  const PRODUCTS = useCatalogProducts();
+  const [reviewingOrder, setReviewingOrder] = useState<any | null>(null);
+  const [reorderAnalysis, setReorderAnalysis] = useState<ReorderAnalysis | null>(null);
   const reduceMotion = useReducedMotion();
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef(onClose);
@@ -148,10 +151,19 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
     return () => { releaseLock(); document.removeEventListener('keydown', handleKey); previous?.focus(); };
   }, [isOpen]);
 
-  const reorder = (order: any) => {
-    const items = getReorderItems(order.items || [], PRODUCTS);
-    if (!items.length) return;
-    items.forEach(({ product, weight, quantity }) => addToCart(product, weight, quantity, undefined, { silent: true, openCart: false }));
+  const startReorderReview = (order: any) => {
+    const analysis = reviewReorderItems(order.items || [], PRODUCTS);
+    setReviewingOrder(order);
+    setReorderAnalysis(analysis);
+  };
+
+  const confirmReorder = () => {
+    if (!reorderAnalysis || reorderAnalysis.reorderable.length === 0) return;
+    reorderAnalysis.reorderable.forEach(({ product, weight, quantity }) => {
+      addToCart(product, weight, quantity, undefined, { silent: true, openCart: false });
+    });
+    setReviewingOrder(null);
+    setReorderAnalysis(null);
     onClose();
     openCart();
   };
@@ -376,7 +388,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                 <div className="space-y-4">
                   {orders.map((order) => {
                     const progress = trackingProgress(order.status || '');
-                    const reorderItems = getReorderItems(order.items || [], PRODUCTS);
+                    const reorderItems = reviewReorderItems(order.items || [], PRODUCTS).reorderable;
                     const totalAmt = order.totals?.total ?? order.total ?? 0;
                     const subtotalAmt = order.totals?.subtotal ?? order.subtotal ?? 0;
                     const discountAmt = order.totals?.discount ?? order.discount ?? 0;
@@ -414,7 +426,97 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
 
                         <div className="p-5">
                           {progress >= 0 && <ol className="mb-6 grid grid-cols-3 sm:grid-cols-6 gap-2" aria-label={t('account.orders')}>{TRACKING_STEPS.map((stage, index) => <li key={stage} aria-current={index === progress ? 'step' : undefined} className="min-w-0"><div className={`mb-2 h-1 rounded-full ${index <= progress ? 'bg-[#c7982f]' : 'bg-[var(--color-border)]'}`} /><span className={`block text-[10px] [overflow-wrap:anywhere] ${index <= progress ? 'font-bold text-[var(--color-accent-text)]' : 'text-[var(--color-text-secondary)]'}`}>{t(`tracking.${stage}`)}</span></li>)}</ol>}
-                          <div className="mb-5 rounded-xl border border-[var(--color-border)] p-3"><button type="button" disabled={!reorderItems.length} onClick={() => reorder(order)} className="flex min-h-11 items-center gap-2 text-xs font-semibold disabled:opacity-40"><ShoppingBag size={15} />{t('account.reorder')}</button><p className="text-[10px] leading-5 text-[var(--color-text-secondary)]">{t('account.currentPrice')}{reorderItems.length !== (order.items || []).length && ` ${t('account.reorderMissing')}`}</p></div>
+                          <div className="mb-5 rounded-xl border border-[var(--color-border)] p-3">
+                            <button
+                              type="button"
+                              data-action="start-reorder"
+                              disabled={!reorderItems.length}
+                              onClick={() => startReorderReview(order)}
+                              className="flex min-h-11 items-center gap-2 text-xs font-semibold disabled:opacity-40"
+                            >
+                              <ShoppingBag size={15} />
+                              {t('account.reorder')}
+                            </button>
+                            <p className="text-[10px] leading-5 text-[var(--color-text-secondary)]">
+                              {t('account.currentPrice')}{reorderItems.length !== (order.items || []).length && ` ${t('account.reorderMissing')}`}
+                            </p>
+
+                            {reviewingOrder?.orderId === order.orderId && reorderAnalysis && (
+                              <div className="reorder-review-panel mt-3 p-4 rounded-xl bg-amber-50/60 dark:bg-zinc-800/80 border border-[var(--color-gold,#B8935F)]/30 space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary,#042821)] dark:text-emerald-400">
+                                    {t('account.reorderReviewTitle', 'Review Items Before Reorder')}
+                                  </h4>
+                                  <button
+                                    type="button"
+                                    onClick={() => { setReviewingOrder(null); setReorderAnalysis(null); }}
+                                    className="text-[11px] text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
+                                  >
+                                    {t('cancel', 'Cancel')}
+                                  </button>
+                                </div>
+
+                                {reorderAnalysis.reorderable.length > 0 && (
+                                  <div className="space-y-2">
+                                    <p className="text-[11px] font-medium text-neutral-600 dark:text-neutral-300">
+                                      {t('account.reorderableItems', 'Available selections at current catalog rates:')}
+                                    </p>
+                                    {reorderAnalysis.reorderable.map((item, rIdx) => (
+                                      <div key={rIdx} className="flex items-center justify-between p-2 rounded-lg bg-white dark:bg-zinc-900 border border-neutral-200 dark:border-zinc-700 text-xs">
+                                        <div>
+                                          <span className="font-bold text-neutral-900 dark:text-neutral-100">{item.product.name_en}</span>
+                                          <span className="text-neutral-500 ml-1.5">({item.weight} × {item.quantity})</span>
+                                        </div>
+                                        <div className="text-right">
+                                          <span className="font-bold text-emerald-800 dark:text-emerald-400 block">
+                                            Rs. {(item.currentUnitPrice * item.quantity).toLocaleString()}
+                                          </span>
+                                          {item.priceChanged && (
+                                            <span className="text-[10px] text-amber-700 dark:text-amber-400 block" data-price-change>
+                                              Price updated: was Rs. {item.originalUnitPrice?.toLocaleString()}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+                                    <div className="flex justify-between items-center pt-2 border-t border-neutral-200 dark:border-zinc-700 text-xs font-bold">
+                                      <span>{t('estimatedSubtotal', 'Estimated Subtotal')}:</span>
+                                      <span>Rs. {reorderAnalysis.estimatedSubtotal.toLocaleString()}</span>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {reorderAnalysis.hasUnavailableItems && (
+                                  <div className="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 text-xs space-y-1" data-unavailable-warning>
+                                    <div className="flex items-center gap-1.5 text-rose-800 dark:text-rose-300 font-semibold">
+                                      <AlertCircle size={14} />
+                                      <span>{t('account.reorderUnavailable', 'Some items cannot be reordered:')}</span>
+                                    </div>
+                                    <ul className="list-disc list-inside text-[11px] text-rose-700 dark:text-rose-400 space-y-0.5">
+                                      {reorderAnalysis.unavailable.map((u, uIdx) => (
+                                        <li key={uIdx}>
+                                          {u.productId} ({u.weight || 'standard'}) — {u.reason === 'discontinued' ? 'Discontinued' : u.reason === 'inactive' ? 'Temporarily unavailable' : u.reason === 'quote_only' ? 'Custom quote required' : 'Size unavailable'}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+
+                                <div className="flex items-center justify-end gap-2 pt-1">
+                                  <button
+                                    type="button"
+                                    data-action="confirm-reorder"
+                                    disabled={reorderAnalysis.reorderable.length === 0}
+                                    onClick={confirmReorder}
+                                    className="px-4 py-2 rounded-xl bg-[#043327] hover:bg-[#074b39] text-[#FAF9F5] text-xs font-bold transition-all disabled:opacity-40 flex items-center gap-1.5 shadow-sm"
+                                  >
+                                    <ShoppingBag size={14} />
+                                    <span>{t('account.confirmReorder', 'Add Available Items to Bag')}</span>
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                           <div className="mb-3 flex items-center justify-between text-xs text-[var(--color-ink,#1F120F)]/70 dark:text-[#FDFBF7]/70">
                             <span className="font-medium">Payment Method: <strong className="text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">{paymentMethodStr}</strong></span>
                             {order.earnedPoints > 0 && (

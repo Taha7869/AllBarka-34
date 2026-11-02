@@ -1,5 +1,5 @@
 import {useEffect,useState} from 'react';
-import {ArrowDown,ArrowUp,Eye,Save,Upload,RotateCcw,Monitor,Smartphone,Tablet,History,X} from 'lucide-react';
+import {ArrowDown,ArrowUp,Eye,Save,Upload,RotateCcw,Monitor,Smartphone,Tablet,History,X,Lock,BookOpen,Compass,HelpCircle} from 'lucide-react';
 import {useAuth} from '../contexts/AuthContext';
 import {useAdminLanguage} from '../hooks/useAdminLanguage';
 import {useStorefrontContentRefresh,StorefrontContentProvider} from '../contexts/StorefrontContentContext';
@@ -18,7 +18,7 @@ export default function AdminContentPanel({onDirtyChange}:{onDirtyChange?:(dirty
   const {currentUser}=useAuth();const {t,language,isRtl}=useAdminLanguage();const refresh=useStorefrontContentRefresh();
   const [bundle,setBundle]=useState<Bundle|null>(null);const [draft,setDraft]=useState<StorefrontContent|null>(null);
   const [owner,setOwner]=useState('');const [loading,setLoading]=useState(true);const [busy,setBusy]=useState(false);const [dirty,setDirty]=useState(false);const [preview,setPreview]=useState(false);const [error,setError]=useState('');const [notice,setNotice]=useState('');
-  const [previewDevice,setPreviewDevice]=useState<'desktop'|'tablet'|'mobile'>('desktop');const [previewVersion,setPreviewVersion]=useState<'draft'|'live'>('draft');
+  const [previewDevice,setPreviewDevice]=useState<'desktop'|'tablet'|'mobile'>('desktop');const [previewVersion,setPreviewVersion]=useState<'draft'|'live'>('draft');const [previewSurface,setPreviewSurface]=useState<'home'|'journal'|'faq'>('home');
   const [historyModal,setHistoryModal]=useState(false);const [historyList,setHistoryList]=useState<any[]>([]);const [historyLoading,setHistoryLoading]=useState(false);
   useEffect(()=>{const controller=new AbortController();setBundle(null);setDraft(null);setLoading(true);if(!currentUser){setLoading(false);return;}adminRequest<Bundle>(()=>currentUser.getIdToken(),'/api/admin/storefront-content',{signal:controller.signal}).then(value=>{if(!controller.signal.aborted){setOwner(currentUser.uid);setBundle(value);setDraft(value.draft);setDirty(false);}}).catch(e=>{if(!controller.signal.aborted)setError(e.code||'REQUEST_FAILED');}).finally(()=>{if(!controller.signal.aborted)setLoading(false);});return()=>controller.abort();},[currentUser]);
   useEffect(()=>{onDirtyChange?.(dirty);return()=>onDirtyChange?.(false);},[dirty,onDirtyChange]);

@@ -109,12 +109,28 @@ export function resolveBestPortion(
   product: Product,
   targetGrams: number
 ): { weight: string; units: number; unitPrice: number; total: number } | null {
+  if (!product || targetGrams <= 0) return null;
+
+  const disabledLabels = new Set(
+    Array.isArray(product.variants)
+      ? product.variants.filter(v => v && v.available === false).map(v => v.label.trim())
+      : []
+  );
+
   const portions = Object.entries(product.prices || {})
-    .filter(([_, price]) => typeof price === 'number' && price > 0)
+    .filter(([label, price]) => {
+      const trimmed = label.trim();
+      return typeof price === 'number' && price > 0 && !disabledLabels.has(trimmed);
+    })
     .map(([w, price]) => {
+      const trimmed = w.trim();
+      const match = /^(\d+(?:\.\d+)?)\s*(kg|g)$/i.exec(trimmed);
       let g = 0;
-      if (w.endsWith('kg')) g = parseFloat(w) * 1000;
-      else if (w.endsWith('g')) g = parseFloat(w);
+      if (match) {
+        const val = parseFloat(match[1]);
+        const unit = match[2].toLowerCase();
+        g = unit === 'kg' ? Math.round(val * 1000) : Math.round(val);
+      }
       return { weight: w, grams: g, price };
     })
     .filter(p => p.grams > 0)
@@ -161,6 +177,17 @@ export function calculateMehmaanPlan(
   const guestCount = Math.max(1, Math.min(200, Math.round(guests)));
   const assumptions = MEHMAAN_SETTINGS[settingKey] || MEHMAAN_SETTINGS.dawat;
 
+  const hasCustom = Boolean(
+    customAssumptions &&
+    (customAssumptions.nutsGramsPerGuest !== undefined ||
+     customAssumptions.datesGramsPerGuest !== undefined ||
+     customAssumptions.driedFruitsGramsPerGuest !== undefined)
+  );
+
+  const assumptionSource = hasCustom
+    ? 'Custom patron configuration (editable)'
+    : 'Recommended boutique guidelines (editable)';
+
   const nutsRate = customAssumptions?.nutsGramsPerGuest !== undefined
     ? Math.max(0, customAssumptions.nutsGramsPerGuest)
     : assumptions.nutsGramsPerGuest;
@@ -176,11 +203,13 @@ export function calculateMehmaanPlan(
   const driedFruitsGrams = driedFruitsRate * guestCount;
   const totalGrams = nutsGrams + datesGrams + driedFruitsGrams;
 
-  // Filter ONLY published, active, non-quote-only products with valid positive prices
+  // Canonical eligibility check: published, active, non-draft, non-archived, non-quote-only
   const isAvailable = (p: Product) =>
     p.active !== false &&
     !p.quoteOnly &&
     p.orderMode !== 'inquiry_quote' &&
+    (p as any).status !== 'draft' &&
+    (p as any).status !== 'archived' &&
     Object.values(p.prices || {}).some(pr => typeof pr === 'number' && pr > 0);
 
   const availableProducts = allProducts.filter(isAvailable);
@@ -262,7 +291,7 @@ export function calculateMehmaanPlan(
     setting: settingKey,
     guests: guestCount,
     totalGrams,
-    assumptionSource: assumptions.assumptionSource,
+    assumptionSource,
     breakdown: {
       nutsGrams,
       datesGrams,

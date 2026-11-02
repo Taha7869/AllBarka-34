@@ -34,6 +34,9 @@ export default function MehmaanTablePlannerModal({ isOpen, onClose }: MehmaanTab
 
   const [guests, setGuests] = useState<number>(10);
   const [setting, setSetting] = useState<MehmaanSetting>('dawat');
+  const [customNuts, setCustomNuts] = useState<number | undefined>(undefined);
+  const [customDates, setCustomDates] = useState<number | undefined>(undefined);
+  const [customFruits, setCustomFruits] = useState<number | undefined>(undefined);
   const [addedAll, setAddedAll] = useState<boolean>(false);
   const [addNotice, setAddNotice] = useState<string>('');
 
@@ -58,8 +61,13 @@ export default function MehmaanTablePlannerModal({ isOpen, onClose }: MehmaanTab
   }, [isOpen]);
 
   const plan = useMemo(
-    () => calculateMehmaanPlan(allProducts, guests, setting),
-    [allProducts, guests, setting]
+    () =>
+      calculateMehmaanPlan(allProducts, guests, setting, {
+        nutsGramsPerGuest: customNuts,
+        datesGramsPerGuest: customDates,
+        driedFruitsGramsPerGuest: customFruits,
+      }),
+    [allProducts, guests, setting, customNuts, customDates, customFruits]
   );
 
   const activeAssumptions = MEHMAAN_SETTINGS[setting];
@@ -197,7 +205,7 @@ export default function MehmaanTablePlannerModal({ isOpen, onClose }: MehmaanTab
                   <button
                     type="button"
                     key={id}
-                    onClick={() => setSetting(id)}
+                    onClick={() => { setSetting(id); setCustomNuts(undefined); setCustomDates(undefined); setCustomFruits(undefined); }}
                     className={`flex flex-col items-center text-center p-3 rounded-2xl border transition-all focus-ring ${
                       isSelected
                         ? 'border-[#043327] dark:border-emerald-500 bg-[#043327]/5 dark:bg-emerald-950/30 text-[#043327] dark:text-emerald-300 font-bold shadow-xs'
@@ -223,7 +231,7 @@ export default function MehmaanTablePlannerModal({ isOpen, onClose }: MehmaanTab
                   {t('mehmaan.servingAssumptions', 'Recommended boutique guidelines (editable)')}
                 </span>
                 <span className="text-[10px] text-neutral-500 italic">
-                  {activeAssumptions.assumptionSource}
+                  {plan.assumptionSource}
                 </span>
               </div>
               <span className="text-xs font-bold text-neutral-700 dark:text-neutral-200">
@@ -231,20 +239,53 @@ export default function MehmaanTablePlannerModal({ isOpen, onClose }: MehmaanTab
               </span>
             </div>
             <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="bg-white dark:bg-zinc-800 p-2.5 rounded-xl border border-neutral-200 dark:border-zinc-700">
+              <div className="bg-white dark:bg-zinc-800 p-2.5 rounded-xl border border-neutral-200 dark:border-zinc-700 space-y-1">
                 <span className="text-[10px] uppercase font-bold text-neutral-400 block">{t('nav.dryFruits', 'Roasted Nuts')}</span>
-                <span className="text-sm font-bold text-[#120F17] dark:text-[#FAF9F5]">{plan.breakdown.nutsGrams}g</span>
-                <span className="text-[10px] text-neutral-500 block">({activeAssumptions.nutsGramsPerGuest}g / {t('guest', 'guest')})</span>
+                <span className="text-sm font-bold text-[#120F17] dark:text-[#FAF9F5] block">{plan.breakdown.nutsGrams}g</span>
+                <div className="flex items-center justify-center gap-1">
+                  <input
+                    type="number"
+                    min="0"
+                    max="500"
+                    aria-label="Nuts grams per guest"
+                    value={customNuts ?? activeAssumptions.nutsGramsPerGuest}
+                    onChange={(e) => setCustomNuts(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                    className="w-12 text-center text-xs font-bold border border-neutral-300 dark:border-zinc-600 rounded bg-transparent p-0.5 focus-ring"
+                  />
+                  <span className="text-[10px] text-neutral-500">g/{t('guest', 'guest')}</span>
+                </div>
               </div>
-              <div className="bg-white dark:bg-zinc-800 p-2.5 rounded-xl border border-neutral-200 dark:border-zinc-700">
+              <div className="bg-white dark:bg-zinc-800 p-2.5 rounded-xl border border-neutral-200 dark:border-zinc-700 space-y-1">
                 <span className="text-[10px] uppercase font-bold text-neutral-400 block">{t('nav.dates', 'Select Dates')}</span>
-                <span className="text-sm font-bold text-[#120F17] dark:text-[#FAF9F5]">{plan.breakdown.datesGrams}g</span>
-                <span className="text-[10px] text-neutral-500 block">({activeAssumptions.datesGramsPerGuest}g / {t('guest', 'guest')})</span>
+                <span className="text-sm font-bold text-[#120F17] dark:text-[#FAF9F5] block">{plan.breakdown.datesGrams}g</span>
+                <div className="flex items-center justify-center gap-1">
+                  <input
+                    type="number"
+                    min="0"
+                    max="500"
+                    aria-label="Dates grams per guest"
+                    value={customDates ?? activeAssumptions.datesGramsPerGuest}
+                    onChange={(e) => setCustomDates(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                    className="w-12 text-center text-xs font-bold border border-neutral-300 dark:border-zinc-600 rounded bg-transparent p-0.5 focus-ring"
+                  />
+                  <span className="text-[10px] text-neutral-500">g/{t('guest', 'guest')}</span>
+                </div>
               </div>
-              <div className="bg-white dark:bg-zinc-800 p-2.5 rounded-xl border border-neutral-200 dark:border-zinc-700">
+              <div className="bg-white dark:bg-zinc-800 p-2.5 rounded-xl border border-neutral-200 dark:border-zinc-700 space-y-1">
                 <span className="text-[10px] uppercase font-bold text-neutral-400 block">{t('driedFruits', 'Dried Fruits')}</span>
-                <span className="text-sm font-bold text-[#120F17] dark:text-[#FAF9F5]">{plan.breakdown.driedFruitsGrams}g</span>
-                <span className="text-[10px] text-neutral-500 block">({activeAssumptions.driedFruitsGramsPerGuest}g / {t('guest', 'guest')})</span>
+                <span className="text-sm font-bold text-[#120F17] dark:text-[#FAF9F5] block">{plan.breakdown.driedFruitsGrams}g</span>
+                <div className="flex items-center justify-center gap-1">
+                  <input
+                    type="number"
+                    min="0"
+                    max="500"
+                    aria-label="Dried fruits grams per guest"
+                    value={customFruits ?? activeAssumptions.driedFruitsGramsPerGuest}
+                    onChange={(e) => setCustomFruits(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                    className="w-12 text-center text-xs font-bold border border-neutral-300 dark:border-zinc-600 rounded bg-transparent p-0.5 focus-ring"
+                  />
+                  <span className="text-[10px] text-neutral-500">g/{t('guest', 'guest')}</span>
+                </div>
               </div>
             </div>
           </section>

@@ -62,7 +62,7 @@ test('admin finishing: section navigation, independent unsaved scopes, pending s
       await page.setViewportSize({ width, height }); await page.evaluate(({ language, dark }) => { (window as any).fixtureLanguage(language); document.documentElement.classList.toggle('dark', dark); document.documentElement.dataset.theme = dark ? 'dark' : 'light'; }, { language, dark });
       await page.waitForTimeout(35); assert.equal(await dialog.getAttribute('dir'), language === 'en' ? 'ltr' : 'rtl');
       const shortcuts = dialog.locator('.item-section-nav');
-      if (width === 1440) { const button = shortcuts.getByRole('button').nth(3); await button.click(); assert.equal(await dialog.locator('#item-section-seo>summary').evaluate(node => node === document.activeElement), true); assert.ok((await button.boundingBox())!.height >= 44); }
+      if (width === 1440) { const button = shortcuts.locator('button[aria-controls="item-section-seo"]'); await button.click(); assert.equal(await dialog.locator('#item-section-seo>summary').evaluate(node => node === document.activeElement), true); assert.ok((await button.boundingBox())!.height >= 44); }
       else { const select = shortcuts.getByRole('combobox'); await select.selectOption('seo'); assert.ok((await select.boundingBox())!.height >= 44); }
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `${width}/${language}/${dark}`);
       assert.equal(await dialog.evaluate(node => node.scrollWidth <= node.clientWidth), true);

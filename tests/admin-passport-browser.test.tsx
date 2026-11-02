@@ -295,7 +295,7 @@ createRoot(document.getElementById('root')!).render(
     await db.collection('products').doc('pista').set({ revision: 5, adminRevision: 5 }, { merge: true });
 
     // Submit save from current form (still holding expectedRevision: 2)
-    const staleSaveResPromise = page.waitForResponse(r => r.url().includes('/api/admin/catalog/products/pista'));
+    const staleSaveResPromise = page.waitForResponse(r => r.url().includes('/api/admin/catalog/products/pista') && r.request().method() === 'PUT');
     await publishButton.click();
     const staleSaveRes = await staleSaveResPromise;
     assert.equal(staleSaveRes.status(), 409);
