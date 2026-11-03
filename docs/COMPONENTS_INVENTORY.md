@@ -22,6 +22,7 @@ Existing AllBarkaHero owns the signature composition and separate discovery stat
 ## Admin expansion — Stage 5
 
 - `AdminContentPanel` is the existing admin workspace's Storefront studio tab; `StorefrontBanner` renders the saved announcement.
+- FINAL-20261103: Studio reuses HomePage, JournalPage and FAQPage inside its existing iframe, with shared BubbleMenu/Footer, actual 390/768/1440 viewports, synchronized language/theme and blocked commerce/navigation actions. Journal/FAQ preview mode suppresses host SEO/scroll effects; no duplicate storefront renderer or hidden assertion proxy. See `FINAL_VERIFICATION_20261103.md`.
 - `StorefrontContentProvider` supplies only public live content; optional explicit `initialContent` supports an isolated private editor preview.
 - `storefrontContent.ts` validates the bounded localized schema, `storefrontContentRouter.ts` owns draft/live revision and audit transactions, and `contentPresentation.ts` adapts existing navigation/journal models.
 - Existing AllBarkaHero, HomePage, desktop/mobile navigation, FAQSection and JournalPage consume the published configuration. `premium-content.css` refines existing tokens without new application dependencies.

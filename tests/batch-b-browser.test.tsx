@@ -7,6 +7,7 @@ import os from 'node:os';
 import { once } from 'node:events';
 import { build } from 'esbuild';
 import { launchTestBrowser } from './helpers/browser.mjs';
+import { collectBrowserDiagnostics, useLocalFixtureFonts } from './helpers/browser-diagnostics.mjs';
 import { memoryFirestore } from './helpers/memoryFirestore';
 import { PRODUCTS } from '../src/data/products';
 import { createCatalogRouter } from '../src/lib/catalogRouter';
@@ -133,6 +134,7 @@ createRoot(document.getElementById('root')!).render(
   const styles = [...builtHtml.matchAll(/<link\b[^>]*href="(\/assets\/[^"]+\.css)"[^>]*>/g)].map(m => m[1]);
   const css = styles.map(href => `<link rel="stylesheet" href="${href}">`).join('');
 
+  app.use('/fonts', express.static(path.resolve('public/fonts')));
   app.get(/.*/, (req, res) => {
     if (req.path.startsWith('/api/')) return res.status(404).json({ code: 'NOT_FOUND' });
     return res.type('html').send(`<!DOCTYPE html>
@@ -160,11 +162,8 @@ createRoot(document.getElementById('root')!).render(
     });
     const page = await context.newPage();
     page.setDefaultTimeout(30000);
-    const errors: string[] = [];
-    page.on('pageerror', e => errors.push(e.message));
-    page.on('console', m => {
-      if (m.type() === 'error' && !m.text().includes('404') && !m.text().includes('net::ERR_NO_BUFFER_SPACE') && !m.text().includes('net::ERR_INSUFFICIENT_RESOURCES')) errors.push(m.text());
-    });
+    await useLocalFixtureFonts(context, origin);
+    const errors = collectBrowserDiagnostics(page, origin);
 
     // ─────────────────────────────────────────────────────────────
     // 1. M10: "Find Your Taste" Attribute & Texture Finder

@@ -1,5 +1,7 @@
 # AllBarka admin expansion — working instructions
 
+03 November 2026 — **FINAL-20261103 / bounded repairs DONE locally, full offline gate PASS**. Reviewed the eight-layer AI reference against the existing application. Implemented QA-NET1 required-resource failure diagnostics (removing blanket OS-error suppression), S7-FINAL1 provider cancellation/late-catalog deadline guard and bounded private-safe timings, and M32-PARITY1 actual shared storefront iframe preview with EN/UR/AR, theme and 390/768/1440 breakpoints. Focused checks, final static/build gates and full offline suite PASS: 821 passed, 0 failed, 1 emulator-only skip across 103 test files, plus 11 hardening, 21 backend and 36 production checks. A separate read-only offline CI workflow is added; GitHub-hosted execution remains unverified until observed. See [final verification evidence](docs/FINAL_VERIFICATION_20261103.md) for actual results, failure/fix records and the explicit code/manual/live pending list. Historical “DONE locally” entries do not certify live integrations or erase M04/M05/M16 remaining scope. Public deployed commit differs from this branch; no production mutation or deployment performed.
+
 02 November 2026 — **Batch A: Product Facts & Admin Foundation (M11, M23, M33, M34) / DONE locally**. Continued on `codex/admin-catalog-foundation-20261023`.
 The owner explicitly directed implementation of the full existing premium roadmap (M01–M34) across Batches A–F.
 Batch A delivered:

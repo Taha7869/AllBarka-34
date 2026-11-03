@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
 interface SEOProps {
+  disabled?: boolean;
   title?: string;
   description?: string;
   canonicalPath?: string;
@@ -13,6 +14,7 @@ interface SEOProps {
 }
 
 export default function SEO({
+  disabled = false,
   title,
   description = 'Hand-sorted, unbleached, orchard-fresh dry fruits, roasted pistachios, Chilean walnuts and luxury gift hampers delivered in Lahore and nationwide.',
   canonicalPath,
@@ -31,6 +33,7 @@ export default function SEO({
     : 'AllBarka | Premium Dry Fruits, Nuts & Gifts';
 
   useEffect(() => {
+    if (disabled) return;
     // 1. Page Title
     document.title = fullTitle;
 
@@ -102,7 +105,7 @@ export default function SEO({
       const el = document.getElementById('route-structured-data');
       if (el) el.remove();
     };
-  }, [fullTitle, description, canonicalUrl, image, structuredData, siteOrigin, type, currentPath, keywords,noindex]);
+  }, [disabled, fullTitle, description, canonicalUrl, image, structuredData, siteOrigin, type, currentPath, keywords,noindex]);
 
   return null;
 }

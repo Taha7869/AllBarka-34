@@ -25,18 +25,19 @@ test('Batch D Browser Acceptance: M32 Studio Preview & Restore, Responsive Devic
   const entry = `import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { LanguageProvider } from './src/contexts/LanguageContext';
-import { ThemeProvider } from './src/contexts/ThemeContext';
+import { LanguageProvider, useLanguage } from './src/contexts/LanguageContext';
+import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 import { StorefrontContentProvider } from './src/contexts/StorefrontContentContext';
 import { CatalogProvider } from './src/contexts/CatalogContext';
 import { MerchandisingProvider } from './src/contexts/MerchandisingContext';
 import { CartProvider } from './src/contexts/CartContext';
 import AdminContentPanel from './src/components/AdminContentPanel';
+function PreviewControls(){const {setLanguage}=useLanguage();const {setTheme}=useTheme();React.useEffect(()=>{window.previewFixture={setLanguage,setTheme};},[setLanguage,setTheme]);return null;}
 
 createRoot(document.getElementById('root')!).render(
   <BrowserRouter>
     <ThemeProvider>
-      <LanguageProvider>
+      <LanguageProvider><PreviewControls/>
         <CatalogProvider>
           <MerchandisingProvider>
             <StorefrontContentProvider>
@@ -84,6 +85,7 @@ createRoot(document.getElementById('root')!).render(
   app.get('/api/product-media', (_req, res) => res.json({ overrides: {} }));
   app.use('/assets', express.static(path.resolve('dist/assets')));
   app.use('/images', express.static(path.resolve('public/images')));
+  app.use('/fonts', express.static(path.resolve('public/fonts')));
   app.get('/fixture.js', (_req, res) => res.sendFile(path.join(temporary, 'fixture.js')));
 
   const distFiles = await fs.readdir('dist/assets').catch(() => []);
@@ -127,36 +129,39 @@ createRoot(document.getElementById('root')!).render(
     await page.locator('.content-draft-preview').waitFor();
 
     // Verify preview contains device mode switcher
-    const desktopBtn = page.locator('button:has-text("Desktop")');
-    const mobileBtn = page.locator('button:has-text("Mobile")');
+    const desktopBtn = page.locator('button[data-preview-device="desktop"]');
+    const mobileBtn = page.locator('button[data-preview-device="mobile"]');
     assert.ok(await desktopBtn.isVisible(), 'Desktop preview button must be visible');
     assert.ok(await mobileBtn.isVisible(), 'Mobile preview button must be visible');
 
     // Switch to Mobile Preview
     await mobileBtn.click();
     await page.waitForTimeout(300);
-    const mobileFrame = page.locator('.content-draft-preview .max-w-\\[390px\\]');
-    assert.ok(await mobileFrame.isVisible(), 'Mobile 390px preview frame must be mounted');
 
     // Verify genuine isolated responsive iframe exists with 390px width
     const previewIframe = page.locator('iframe.preview-storefront-iframe');
     assert.ok(await previewIframe.isVisible(), 'Storefront preview iframe must be mounted');
     let iframeBox = await previewIframe.boundingBox();
     assert.ok(iframeBox && Math.abs(iframeBox.width - 390) < 5, 'Mobile preview iframe width must be 390px');
+    assert.equal(await previewIframe.evaluate((element: HTMLIFrameElement) => element.contentWindow!.matchMedia('(min-width: 768px)').matches), false);
 
     // Test Tablet Preview (768px)
-    const tabletBtn = page.locator('button:has-text("Tablet")');
+    const tabletBtn = page.locator('button[data-preview-device="tablet"]');
     await tabletBtn.click();
     await page.waitForTimeout(300);
     iframeBox = await previewIframe.boundingBox();
     assert.ok(iframeBox && Math.abs(iframeBox.width - 768) < 5, 'Tablet preview iframe width must be 768px');
+    assert.equal(await previewIframe.evaluate((element: HTMLIFrameElement) => element.contentWindow!.matchMedia('(min-width: 768px)').matches), true);
 
-    // Test Desktop Preview (100% / >1000px)
+    // Test actual 1440px desktop viewport
     await desktopBtn.click();
     await page.waitForTimeout(300);
     iframeBox = await previewIframe.boundingBox();
-    assert.ok(iframeBox && iframeBox.width > 900, 'Desktop preview iframe must expand to full width');
+    assert.ok(iframeBox && Math.abs(iframeBox.width - 1440) < 5, 'Desktop preview iframe must have its actual 1440px viewport');
 
+    // Preview pages must never rewrite the authenticated host's metadata.
+    const editorTitle = await page.title();
+    const editorCanonicalCount = await page.locator('link[rel=canonical]').count();
     // Test Surface Switcher (Home, Journal, FAQ)
     const journalTab = page.locator('button[data-surface="journal"]');
     const faqTab = page.locator('button[data-surface="faq"]');
@@ -173,16 +178,46 @@ createRoot(document.getElementById('root')!).render(
     await homeTab.click();
     await page.waitForTimeout(200);
 
+    const frame = page.frameLocator('iframe.preview-storefront-iframe');
+    assert.equal(await frame.locator('.editorial-home').count(), 1, 'Preview must use actual homepage sections');
+    assert.equal(await page.locator('.content-hero-preview').count(), 0, 'No hidden host proxy may satisfy preview assertions');
+    const captureEvidence = process.env.ALLBARKA_CAPTURE_EVIDENCE === 'true';
+    if (captureEvidence) await fs.mkdir('docs/evidence/studio-final', { recursive: true });
+    for (const language of ['en', 'ur', 'ar']) {
+      for (const theme of ['light', 'dark']) {
+        await page.evaluate(({language,theme}) => { (window as any).previewFixture.setLanguage(language); (window as any).previewFixture.setTheme(theme); }, {language,theme});
+        await frame.locator(`html[lang="${language}"][dir="${language === 'en' ? 'ltr' : 'rtl'}"][data-theme="${theme}"]`).waitFor();
+        assert.equal(await frame.locator('html').evaluate(root => root.classList.contains('dark')), theme === 'dark');
+        if (captureEvidence && language === 'en' && theme === 'light') await previewIframe.screenshot({ path: 'docs/evidence/studio-final/after-desktop-en-light.jpg', type: 'jpeg', quality: 78 });
+        if (language === 'ar' && theme === 'dark') {
+          await mobileBtn.click();
+          await page.waitForFunction(() => Math.abs(document.querySelector<HTMLIFrameElement>('iframe.preview-storefront-iframe')!.getBoundingClientRect().width - 390) < 2);
+          if (captureEvidence) await previewIframe.screenshot({ path: 'docs/evidence/studio-final/after-mobile-ar-dark.jpg', type: 'jpeg', quality: 78 });
+          await desktopBtn.click();
+        }
+      }
+    }
+    await page.evaluate(() => { (window as any).previewFixture.setLanguage('en'); (window as any).previewFixture.setTheme('light'); });
+    await frame.locator('html[lang="en"][data-theme="light"]').waitFor();
+    await journalTab.click();
+    await frame.locator('.editorial-journal.journal-index').waitFor();
+    assert.equal(await page.title(), editorTitle, 'Journal preview must not replace host metadata');
+    assert.equal(await page.locator('link[rel=canonical]').count(), editorCanonicalCount);
+    await faqTab.click();
+    await frame.locator('.preview-surface-faq .premium-faq').waitFor();
+    await homeTab.click();
+    // A real preview link cannot navigate the authenticated editor or submit commerce actions.
+    const editorUrl = page.url();
+    await frame.locator('.table-hero-primary').click();
+    assert.equal(page.url(), editorUrl);
+
     // 3. Edit draft with experimental changes
     await heroSection.getByLabel(/^Heading · EN/).fill('Unpublished Experimental Heading.');
     await page.getByRole('button', { name: 'Save draft', exact: true }).click();
     await page.getByText('Draft saved. Customers still see the published version.', { exact: true }).waitFor();
 
     // Verify draft preview reflects the new edit
-    await page.waitForFunction(() => {
-      const h3 = document.querySelector('.content-hero-preview h3');
-      return h3 && h3.textContent && h3.textContent.includes('Unpublished Experimental');
-    });
+    await page.frameLocator('iframe.preview-storefront-iframe').getByRole('heading', { name: /Unpublished Experimental/ }).waitFor();
 
     // Switch preview version to Live
     const liveVersionBtn = page.locator('.content-draft-preview button:has-text("Live")');
@@ -190,10 +225,7 @@ createRoot(document.getElementById('root')!).render(
     await page.waitForTimeout(300);
 
     // Verify live preview reflects the live baseline ('Heritage Orchard')
-    await page.waitForFunction(() => {
-      const h3 = document.querySelector('.content-hero-preview h3');
-      return h3 && h3.textContent && h3.textContent.includes('Heritage Orchard');
-    });
+    await page.frameLocator('iframe.preview-storefront-iframe').getByRole('heading', { name: /Heritage Orchard/ }).waitFor();
 
     // 4. Test Restore Live to Draft
     // Auto-confirm window.confirm

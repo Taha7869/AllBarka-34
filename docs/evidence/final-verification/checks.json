@@ -1,0 +1,100 @@
+{
+  "task": "FINAL-20261103",
+  "generatedAt": "2026-11-03T13:32:13.330190+00:00",
+  "baselineCommit": "4a45fc4b92db048969885af022fc64afec043a00",
+  "branch": "codex/admin-catalog-foundation-20261023",
+  "mode": "isolated offline fixtures and read-only public GET preflight",
+  "environment": {
+    "node": "24.22.1",
+    "npm": "11.9.0",
+    "browser": "Chromium 153.0.8010.0, operator-selected headless binary; software rendering"
+  },
+  "gates": {
+    "typecheck": {
+      "status": "PASS",
+      "exitCode": 0
+    },
+    "hooksLint": {
+      "status": "PASS",
+      "exitCode": 0
+    },
+    "productionBuildPrivacy": {
+      "status": "PASS",
+      "exitCode": 0,
+      "artifacts": 84
+    },
+    "aiLifecycle": {
+      "status": "PASS",
+      "passed": 5
+    },
+    "batchBCAndDiagnostic": {
+      "status": "PASS",
+      "passed": 3
+    },
+    "stage5ContentJourney": {
+      "status": "PASS",
+      "passed": 1
+    },
+    "batchDLatest": {
+      "status": "PASS",
+      "passed": 1,
+      "extraVisualFixtureRuns": 2
+    },
+    "fullOffline": {
+      "status": "PASS",
+      "exitCode": 0,
+      "testFiles": 103,
+      "total": 822,
+      "passed": 821,
+      "failed": 0,
+      "skipped": 1,
+      "skipReason": "Firestore emulator unavailable; emulator-only test",
+      "durationMs": 535942.202416,
+      "hardeningPassed": 11,
+      "backendPassed": 21,
+      "productionChecksPassed": 36,
+      "catalogProducts": 97,
+      "imageReferences": 115,
+      "missingImages": 0,
+      "retiredViews": 0
+    },
+    "workflowDefinition": {
+      "status": "SOURCE_VALIDATED",
+      "yamlParsed": true,
+      "contentsPermission": "read",
+      "deploymentSteps": 0,
+      "integrationSecretsReferenced": 0,
+      "githubHostedExecution": "NOT_RUN"
+    }
+  },
+  "writes": {
+    "productionFirestore": 0,
+    "credentialChanges": 0,
+    "liveWorkflowExecutions": 0,
+    "deployments": 0
+  },
+  "review": {
+    "method": "self-review plus local tests",
+    "independentHumanOrCodeRabbit": false,
+    "scope": "changed files only; see findings in docs/FINAL_VERIFICATION_20261103.md"
+  },
+  "logSha256": {
+    "verify-full-final.log": "c986a19fafaa1b6eac965dfb3354eda5a9d1aa424e965475f8981efcf2163053",
+    "verify-typecheck.log": "5bbc3fdf46a6027bf7c3df97208b8a567446a6517a0fd01d72258d03fef30d2c",
+    "verify-hooks.log": "29112cbed4d61e9cab78ffc483cfdea17ecd58418a018cebf4ba3684c3c60542",
+    "verify-build.log": "824de878b8173f457922b3d96352129cd258c2a6f0d0822098bf74838873b6e7",
+    "verify-final-doc-build.log": "23db7ce85d94a4d0b0b71e7c289f246e072f6d5476268525d5b7da192833ba31",
+    "verify-ai-lifecycle.log": "3eed634df246d8eb2412cf9e2b2b784596da3278a46149811ed862843bf09214",
+    "verify-browser-bc-final.log": "92224a5ca639dbc4e6f0a5fe744c921efe379aadae0d95acae684e2f10e63700",
+    "verify-content-stage5.log": "d9e4853487d99d14d73152cd2580b60c50e573deeb2a02be5adf418e108ec681",
+    "verify-studio-final.log": "866992a088ee9e496a97f76a7f02122ec0696ee455fe15e5e10efe050bba6205",
+    "verify-studio-evidence-final.log": "25dca32b880eecfc4616ae0188b3f47a2b21e1e0674cd6b0e6f587a16e612af9"
+  },
+  "visualSha256": {
+    "docs/evidence/studio-final/after-desktop-en-light.jpg": "ba1eb6dc96ea4897a8a31c2124bd1dd5c77be41b6341c79512e3a96f15c15106",
+    "docs/evidence/studio-final/after-mobile-ar-dark.jpg": "a67863fe31ea0033a5dcde22aa5f50eafb3ddeed92c0cd8618d4ad853515198f",
+    "docs/evidence/studio-final/before-desktop-en-light.jpg": "2f6863046d82b940722cd35c271d613fbc67b0a2f5c0ea977103ce62aa3ce4ea",
+    "docs/evidence/studio-final/before-mobile-ar-dark.jpg": "47f460d2e5164d2eff0c66499d18e102e5b06daa7c7a028717f902d72d0d5c15"
+  },
+  "remaining": "See explicit pending list in docs/FINAL_VERIFICATION_20261103.md; no overall roadmap/launch completion claim."
+}

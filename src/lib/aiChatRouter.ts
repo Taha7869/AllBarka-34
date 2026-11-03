@@ -1,4 +1,5 @@
 import { Router, type RequestHandler } from 'express';
+import { randomUUID } from 'node:crypto';
 import type { Firestore } from 'firebase-admin/firestore';
 import type { Product } from '../types';
 import { PRODUCTS } from '../data/products';
@@ -15,14 +16,24 @@ import {
   getCustomerVisibleCatalog,
 } from './aiBuddyResolution';
 
+export interface AiChatDiagnostic {
+  requestId: string;
+  status: number;
+  outcome: 'completed' | 'timeout' | 'cancelled';
+  totalMs: number;
+  catalogMs: number | null;
+  providerMs: number | null;
+}
+
 export interface AiChatRouterOptions {
   getDb: () => Firestore | null;
   getCatalog?: () => Product[] | Promise<Product[]>;
-  askConsultant?: (params: { message: string; history?: unknown; system: string }) => Promise<any>;
+  askConsultant?: (params: { message: string; history?: unknown; system: string; signal?: AbortSignal }) => Promise<any>;
   reserveGuestTrial?: (ip: string, userAgent: string) => Promise<number | null>;
   authenticateOptionalUser?: RequestHandler;
   patronChatLimiter?: RequestHandler;
   timeoutMs?: number;
+  recordDiagnostic?: (event: AiChatDiagnostic) => void;
 }
 
 export function createAiChatRouter(options: AiChatRouterOptions) {
@@ -33,6 +44,35 @@ export function createAiChatRouter(options: AiChatRouterOptions) {
 
   router.post(['/api/chat', '/api/concierge/chat'], authMiddleware, limiterMiddleware, async (req, res) => {
     const requestStartTime = Date.now();
+    const requestId = randomUUID();
+    const controller = new AbortController();
+    let outcome: AiChatDiagnostic['outcome'] = 'completed';
+    let catalogMs: number | null = null;
+    let providerMs: number | null = null;
+    let recorded = false;
+    const record = () => {
+      if (recorded) return;
+      recorded = true;
+      const event: AiChatDiagnostic = {
+        requestId, status: res.statusCode, outcome,
+        totalMs: Date.now() - requestStartTime, catalogMs, providerMs,
+      };
+      // Fixed metadata allowlist: never log prompts, history, identities, provider payloads or secrets.
+      try {
+        if (options.recordDiagnostic) options.recordDiagnostic(event);
+        else console.info('AI_CHAT_DIAGNOSTIC', JSON.stringify(event));
+      } catch { /* Diagnostics must not affect the customer response. */ }
+    };
+    const cancel = () => { outcome = 'cancelled'; controller.abort(); };
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('X-AllBarka-Request-Id', requestId);
+    req.once('aborted', cancel);
+    res.once('finish', record);
+    res.once('close', () => {
+      req.removeListener('aborted', cancel);
+      if (!res.writableEnded) cancel();
+      record();
+    });
     const userText = req.body?.userText ?? req.body?.message;
     const rawLang = req.body?.language;
     const language: 'en' | 'ur' | 'ar' = ['ur', 'ar'].includes(rawLang) ? rawLang : 'en';
@@ -48,6 +88,8 @@ export function createAiChatRouter(options: AiChatRouterOptions) {
     }
 
     const deadline = setTimeout(() => {
+      outcome = 'timeout';
+      controller.abort();
       if (!res.headersSent) {
         res.status(503).json({ error: 'AI_UNAVAILABLE', code: 'AI_TIMEOUT', available: false });
       }
@@ -98,6 +140,7 @@ export function createAiChatRouter(options: AiChatRouterOptions) {
       let isCatalogFailure = false;
 
       try {
+        const catalogStarted = Date.now();
         if (options.getCatalog) {
           mergedProducts = await options.getCatalog();
         } else {
@@ -108,11 +151,14 @@ export function createAiChatRouter(options: AiChatRouterOptions) {
           const snapshot = await loadAuthoritativeCatalog(db, { fresh: true });
           mergedProducts = mergeAuthoritativeCatalog(PRODUCTS, snapshot.products);
         }
+        catalogMs = Date.now() - catalogStarted;
       } catch (catErr) {
-        console.warn('AI Buddy catalog resolution failure:', catErr);
         isCatalogFailure = true;
         mergedProducts = [];
       }
+
+      // A slow catalog must not start a billable provider call after the HTTP deadline or disconnect.
+      if (res.headersSent || controller.signal.aborted) return;
 
       // Public catalog restriction: filter out drafts, archived, and unpublished items
       const publicCatalog = getCustomerVisibleCatalog(mergedProducts);
@@ -124,13 +170,16 @@ export function createAiChatRouter(options: AiChatRouterOptions) {
       });
 
       const sanitizedMessage = sanitizeBuddyPrompt(userText);
+      const providerStarted = Date.now();
       const answer = await consultant({
         message: sanitizedMessage,
         history: messages,
         system: systemInstruction,
+        signal: controller.signal,
       });
+      providerMs = Date.now() - providerStarted;
 
-      if (res.headersSent) return;
+      if (res.headersSent || controller.signal.aborted) return;
       if (!answer) {
         return res.status(503).json({ error: 'AI_UNAVAILABLE', code: 'AI_UNAVAILABLE', available: false });
       }
@@ -167,10 +216,12 @@ export function createAiChatRouter(options: AiChatRouterOptions) {
         timing: {
           bridgeMs: (answer as any).latencyMs ?? null,
           totalMs: totalElapsedMs,
+          catalogMs,
+          providerMs,
         },
       });
     } catch (error) {
-      if (res.headersSent) return;
+      if (res.headersSent || controller.signal.aborted) return;
       const code =
         error instanceof Error && error.message === 'AI_RATE_LIMITED'
           ? 'AI_RATE_LIMITED'
@@ -182,6 +233,7 @@ export function createAiChatRouter(options: AiChatRouterOptions) {
         .json({ error: code === 'AI_RATE_LIMITED' ? code : 'AI_UNAVAILABLE', code, available: false });
     } finally {
       clearTimeout(deadline);
+      req.removeListener('aborted', cancel);
     }
   });
 

@@ -8,7 +8,7 @@ import { contentJournal } from '../lib/contentPresentation';
 import SEO from '../components/SEO';
 import ProductCard from '../components/ProductCard';
 
-export default function JournalPage() {
+export default function JournalPage({ preview = false }: { preview?: boolean } = {}) {
   const { slug } = useParams<{ slug: string }>();
   const content = useStorefrontContent();
   const loading = useStorefrontContentLoading();
@@ -18,7 +18,7 @@ export default function JournalPage() {
   const [category, setCategory] = useState('All');
   const [search, setSearch] = useState('');
   const [shareState, setShareState] = useState<'idle' | 'copied' | 'failed'>('idle');
-  useEffect(() => { window.scrollTo(0, 0); setShareState('idle'); }, [slug]);
+  useEffect(() => { if (!preview) window.scrollTo(0, 0); setShareState('idle'); }, [slug, preview]);
   useEffect(() => {
     if (shareState !== 'copied') return;
     const timer = window.setTimeout(() => setShareState('idle'), 2000);
@@ -45,14 +45,14 @@ export default function JournalPage() {
   };
   if (slug && loading && !article) return <p role="status" className="p-10 text-center">{t('content.loading')}</p>;
   if (slug && !article) return <section className="editorial-journal journal-empty" dir={direction}>
-    <SEO noindex title={t('editorial.missing')} canonicalPath={`/journal/${slug}`} />
+    <SEO disabled={preview} noindex title={t('editorial.missing')} canonicalPath={`/journal/${slug}`} />
     <BookOpen aria-hidden="true" /><h1>{t('editorial.missing')}</h1><p>{t('editorial.missingCopy')}</p>
     <Link to="/journal">{t('editorial.back')} <ArrowLeft size={16} /></Link>
   </section>;
   if (article) {
     const related = products.filter(product => product.active !== false && article.relatedProductIds.includes(product.id));
     return <article className="editorial-journal journal-article" dir={direction}>
-      <SEO title={article.title} description={article.excerpt} canonicalPath={`/journal/${article.slug}`} type="article" image={article.image}
+      <SEO disabled={preview} title={article.title} description={article.excerpt} canonicalPath={`/journal/${article.slug}`} type="article" image={article.image}
         structuredData={{ '@context': 'https://schema.org', '@type': 'Article', headline: article.title, description: article.excerpt,
           image: new URL(article.image, typeof window === 'undefined' ? 'https://allbarka.com' : window.location.origin).href,
           datePublished: article.publishedDate, dateModified: article.updatedDate, author: { '@type': 'Person', name: article.author.name },
@@ -86,7 +86,7 @@ export default function JournalPage() {
     </article>;
   }
   return <div className="editorial-journal journal-index" dir={direction}>
-    <SEO title={t('content.journalTitle')} description={t('editorial.intro')} canonicalPath="/journal" />
+    <SEO disabled={preview} title={t('content.journalTitle')} description={t('editorial.intro')} canonicalPath="/journal" />
     <header className="journal-masthead"><p className="journal-eyebrow">{t('content.journalEyebrow')}</p><h1>{t('content.journalTitle')}</h1><p>{t('editorial.intro')}</p></header>
     <div className="journal-discovery"><nav aria-label={t('category')}>{categories.map(value => <button type="button" key={value} aria-pressed={category === value} onClick={() => setCategory(value)}>{t(`content.category.${value}`, value)}</button>)}</nav>
       <label><Search size={18} aria-hidden="true" /><span className="sr-only">{t('content.searchArticles')}</span><input type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder={t('content.searchArticles')} /></label></div>

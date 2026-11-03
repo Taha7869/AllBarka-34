@@ -1,28 +1,36 @@
 import {useEffect,useState,useRef} from 'react';
-import {createPortal} from 'react-dom';
+import {createPortal} from 'react-dom';
+import HomePage from '../pages/HomePage';
+import JournalPage from '../pages/JournalPage';
+import FAQPage from '../pages/FAQPage';
+import BubbleMenu from './BubbleMenu';
+import Footer from './Footer';
 import {ArrowDown,ArrowUp,Eye,Save,Upload,RotateCcw,Monitor,Smartphone,Tablet,History,X,Lock,BookOpen,Compass,HelpCircle,Home} from 'lucide-react';
 import {useAuth} from '../contexts/AuthContext';
 import {useAdminLanguage} from '../hooks/useAdminLanguage';
 import {useStorefrontContentRefresh,StorefrontContentProvider} from '../contexts/StorefrontContentContext';
 import {adminRequest} from '../lib/adminClient';
 import {blankText,contentText,type StorefrontContent,type LocalText} from '../lib/storefrontContent';
-import {contentJournal} from '../lib/contentPresentation';
+
 import {MAIN_NAV_ITEMS} from '../config/navigation';
 import {JOURNAL_ARTICLES} from '../data/articles';
 import {getKarachiTime} from '../lib/deliveryCalendar';
 import {ItemField} from './AdminItemField';
 import AdminDelimitedInput from './AdminDelimitedInput';
-import FAQSection from './FAQSection';
-import StorefrontBanner from './StorefrontBanner';
+
+
 import '../styles/premium-content.css';
 type Bundle={revision:number;liveRevision:number;draft:StorefrontContent;live:StorefrontContent};
 function StorefrontPreviewViewport({
   device,
+  language,
   children,
 }: {
   device: 'desktop' | 'tablet' | 'mobile';
+  language: 'en' | 'ur' | 'ar';
   children: React.ReactNode;
 }) {
+  const { t } = useAdminLanguage();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [mountNode, setMountNode] = useState<HTMLElement | null>(null);
 
@@ -33,7 +41,7 @@ function StorefrontPreviewViewport({
     if (!doc) return;
 
     doc.open();
-    doc.write('<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /></head><body class="bg-[#FAF9F5] text-[#120F17] antialiased m-0 p-3 font-sans"><div id="preview-mount"></div></body></html>');
+    doc.write('<!DOCTYPE html><html><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /></head><body class="bg-[var(--color-base)] text-[var(--color-ink)] antialiased m-0 font-sans"><div id="preview-mount"></div></body></html>');
     doc.close();
 
     // Copy host stylesheets and style elements into iframe head so responsive utility classes & custom CSS apply
@@ -43,14 +51,28 @@ function StorefrontPreviewViewport({
 
     const root = doc.getElementById('preview-mount');
     if (root) setMountNode(root);
+    const syncTheme = () => {
+      doc.documentElement.className = document.documentElement.className;
+      doc.documentElement.dataset.theme = document.documentElement.dataset.theme || 'light';
+      doc.documentElement.style.colorScheme = document.documentElement.style.colorScheme;
+    };
+    syncTheme();
+    const observer = new MutationObserver(syncTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme', 'style'] });
+    return () => observer.disconnect();
   }, []);
 
-  const targetWidth = device === 'mobile' ? '390px' : device === 'tablet' ? '768px' : '100%';
+  useEffect(() => {
+    const root = mountNode?.ownerDocument.documentElement;
+    if (root) { root.lang = language; root.dir = language === 'en' ? 'ltr' : 'rtl'; }
+  }, [mountNode, language]);
+
+  const targetWidth = device === 'mobile' ? '390px' : device === 'tablet' ? '768px' : '1440px';
 
   return (
     <iframe
       ref={iframeRef}
-      title="Storefront Studio Preview"
+      title={t('content.preview.title')}
       className="preview-storefront-iframe block mx-auto border-none transition-all duration-300 w-full"
       style={{
         width: targetWidth,
@@ -125,106 +147,52 @@ export default function AdminContentPanel({onDirtyChange}:{onDirtyChange?:(dirty
         <div className="flex items-center gap-2">
           <p className="admin-eyebrow m-0 font-bold">{t('content.draftOnly')}</p>
           <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200 font-semibold">
-            {previewVersion==='draft'?`Draft Rev ${bundle.revision}`:`Live Rev ${bundle.liveRevision}`}
+            {t(`content.preview.${previewVersion}`)} · <bdi>{previewVersion==='draft'?bundle.revision:bundle.liveRevision}</bdi>
           </span>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {/* Surface Switcher */}
           <div className="preview-surface-tabs flex items-center gap-1 bg-white dark:bg-zinc-700 p-0.5 rounded-lg border border-neutral-200 dark:border-zinc-600">
-            <button type="button" data-surface="home" className={`px-2 py-1 text-xs font-semibold rounded flex items-center gap-1 ${previewSurface==='home'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewSurface('home')}><Home size={13}/>Homepage</button>
-            <button type="button" data-surface="journal" className={`px-2 py-1 text-xs font-semibold rounded flex items-center gap-1 ${previewSurface==='journal'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewSurface('journal')}><BookOpen size={13}/>Journal</button>
-            <button type="button" data-surface="faq" className={`px-2 py-1 text-xs font-semibold rounded flex items-center gap-1 ${previewSurface==='faq'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewSurface('faq')}><HelpCircle size={13}/>FAQ</button>
+            <button type="button" data-surface="home" className={`min-h-11 px-2 py-1 text-xs font-semibold rounded flex items-center gap-1 ${previewSurface==='home'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewSurface('home')}><Home size={13}/>{t('content.preview.home')}</button>
+            <button type="button" data-surface="journal" className={`min-h-11 px-2 py-1 text-xs font-semibold rounded flex items-center gap-1 ${previewSurface==='journal'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewSurface('journal')}><BookOpen size={13}/>{t('content.preview.journal')}</button>
+            <button type="button" data-surface="faq" className={`min-h-11 px-2 py-1 text-xs font-semibold rounded flex items-center gap-1 ${previewSurface==='faq'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewSurface('faq')}><HelpCircle size={13}/>{t('content.preview.faq')}</button>
           </div>
           {/* Viewport Device Switcher */}
           <div className="flex items-center gap-1 bg-white dark:bg-zinc-700 p-0.5 rounded-lg border border-neutral-200 dark:border-zinc-600">
-            <button type="button" className={`px-2 py-1 text-xs font-semibold rounded flex items-center gap-1 ${previewDevice==='desktop'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewDevice('desktop')}><Monitor size={14}/>Desktop</button>
-            <button type="button" className={`px-2 py-1 text-xs font-semibold rounded flex items-center gap-1 ${previewDevice==='tablet'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewDevice('tablet')}><Tablet size={14}/>Tablet</button>
-            <button type="button" className={`px-2 py-1 text-xs font-semibold rounded flex items-center gap-1 ${previewDevice==='mobile'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewDevice('mobile')}><Smartphone size={14}/>Mobile</button>
+            <button type="button" data-preview-device="desktop" aria-pressed={previewDevice==='desktop'} className={`min-h-11 px-2 py-1 text-xs font-semibold rounded flex items-center gap-1 ${previewDevice==='desktop'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewDevice('desktop')}><Monitor size={14}/>{t('content.preview.desktop')}</button>
+            <button type="button" data-preview-device="tablet" aria-pressed={previewDevice==='tablet'} className={`min-h-11 px-2 py-1 text-xs font-semibold rounded flex items-center gap-1 ${previewDevice==='tablet'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewDevice('tablet')}><Tablet size={14}/>{t('content.preview.tablet')}</button>
+            <button type="button" data-preview-device="mobile" aria-pressed={previewDevice==='mobile'} className={`min-h-11 px-2 py-1 text-xs font-semibold rounded flex items-center gap-1 ${previewDevice==='mobile'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewDevice('mobile')}><Smartphone size={14}/>{t('content.preview.mobile')}</button>
           </div>
           {/* Version Switcher */}
           <div className="flex items-center gap-1 bg-white dark:bg-zinc-700 p-0.5 rounded-lg border border-neutral-200 dark:border-zinc-600">
-            <button type="button" className={`px-2 py-1 text-xs font-semibold rounded ${previewVersion==='draft'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewVersion('draft')}>Draft</button>
-            <button type="button" className={`px-2 py-1 text-xs font-semibold rounded ${previewVersion==='live'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewVersion('live')}>Live</button>
+            <button type="button" className={`min-h-11 px-2 py-1 text-xs font-semibold rounded ${previewVersion==='draft'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewVersion('draft')}>{t('content.preview.draft')}</button>
+            <button type="button" className={`min-h-11 px-2 py-1 text-xs font-semibold rounded ${previewVersion==='live'?'bg-[#043327] text-white':'text-neutral-600 dark:text-neutral-300'}`} onClick={()=>setPreviewVersion('live')}>{t('content.preview.live')}</button>
           </div>
         </div>
       </div>
       {/* Viewport Frame with Responsive Width and Breakpoints */}
       <div
-        className={`preview-viewport-container mx-auto transition-all duration-200 ${
-          previewDevice==='mobile'
-            ? 'w-[390px] max-w-[390px] border-4 border-neutral-700 rounded-[28px] p-2 bg-white dark:bg-zinc-900 shadow-xl overflow-hidden'
-            : previewDevice==='tablet'
-            ? 'w-[768px] max-w-[768px] border-2 border-neutral-600 rounded-2xl p-3 bg-white dark:bg-zinc-900 shadow-lg overflow-hidden'
-            : 'w-full rounded-xl border border-neutral-200 dark:border-zinc-700 p-4 bg-white dark:bg-zinc-900'
-        }`}
+        className="preview-viewport-container w-full min-w-0 overflow-x-auto rounded-xl border border-neutral-200 dark:border-zinc-700"
         data-viewport-device={previewDevice}
         data-viewport-width={previewDevice==='mobile'?'390':previewDevice==='tablet'?'768':'1440'}
       >
         <div className="text-[10px] text-neutral-400 font-mono mb-2 pb-1.5 border-b border-neutral-100 dark:border-zinc-800 flex items-center justify-between">
-          <span>Viewport: {previewDevice==='mobile'?'390px (Mobile Portrait)':previewDevice==='tablet'?'768px (Tablet)':`Full Width (Desktop)`}</span>
-          <span className="capitalize">Surface: {previewSurface}</span>
+          <span>{t('content.preview.viewport')}: <bdi>{previewDevice==='mobile'?'390px':previewDevice==='tablet'?'768px':'1440px'}</bdi></span>
+          <span>{t('content.preview.surface')}: {t(`content.preview.${previewSurface}`)}</span>
         </div>
-        {/* Synchronized hero preview node in host document for document.querySelector queries */}
-        <div className="content-hero-preview sr-only" aria-hidden="true" style={{ position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clip: 'rect(0,0,0,0)' }}>
-          <h3>{(previewVersion==='draft'?draft:bundle.live).hero.enabled?contentText((previewVersion==='draft'?draft:bundle.live).hero.heading,language):t('table.heading')} <em>{(previewVersion==='draft'?draft:bundle.live).hero.enabled?contentText((previewVersion==='draft'?draft:bundle.live).hero.accent,language):t('table.accent')}</em></h3>
-          <p>{(previewVersion==='draft'?draft:bundle.live).hero.enabled?contentText((previewVersion==='draft'?draft:bundle.live).hero.description,language):t('table.description')}</p>
-        </div>
-
-        <StorefrontPreviewViewport device={previewDevice}>
+        <p className="p-3 text-xs" role="note">{t('content.preview.readOnly')}</p>
+        <StorefrontPreviewViewport device={previewDevice} language={language}>
           <StorefrontContentProvider initialContent={previewVersion==='draft'?draft:bundle.live}>
-          {previewSurface==='home'&&(
-            <div className="preview-surface-home space-y-4">
-              <StorefrontBanner/>
-              <div className="content-hero-preview">
-                <img src={(previewVersion==='draft'?draft:bundle.live).hero.enabled?(previewVersion==='draft'?draft:bundle.live).hero.image:'/images/dryfruit_flatlay_hero.webp'} alt=""/>
-                <div>
-                  <h3>{(previewVersion==='draft'?draft:bundle.live).hero.enabled?contentText((previewVersion==='draft'?draft:bundle.live).hero.heading,language):t('table.heading')} <em>{(previewVersion==='draft'?draft:bundle.live).hero.enabled?contentText((previewVersion==='draft'?draft:bundle.live).hero.accent,language):t('table.accent')}</em></h3>
-                  <p>{(previewVersion==='draft'?draft:bundle.live).hero.enabled?contentText((previewVersion==='draft'?draft:bundle.live).hero.description,language):t('table.description')}</p>
-                </div>
-              </div>
-              <FAQSection/>
+            <div data-storefront-preview onClickCapture={event => {
+              if ((event.target as Element).closest?.('a,button')) { event.preventDefault(); event.stopPropagation(); }
+            }} onSubmitCapture={event => { event.preventDefault(); event.stopPropagation(); }}>
+              <BubbleMenu showFoodRow/>
+              {previewSurface==='home'&&<div className="preview-surface-home"><HomePage/></div>}
+              {previewSurface==='journal'&&<div className="preview-surface-journal"><JournalPage preview/></div>}
+              {previewSurface==='faq'&&<div className="preview-surface-faq"><FAQPage preview/></div>}
+              <Footer/>
             </div>
-          )}
-          {previewSurface==='journal'&&(
-            <div className="preview-surface-journal p-4 space-y-4">
-              <div className="flex items-center justify-between border-b border-neutral-200 dark:border-zinc-700 pb-3">
-                <div>
-                  <h2 className="font-serif font-bold text-lg text-[#043327] dark:text-emerald-400">AllBarka Editorial Journal</h2>
-                  <p className="text-xs text-neutral-500">Authentic harvest stories and connoisseur guides.</p>
-                </div>
-                <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 font-semibold">
-                  {contentJournal(previewVersion==='draft'?draft:bundle.live, language).length} Articles
-                </span>
-              </div>
-              {contentJournal(previewVersion==='draft'?draft:bundle.live, language).length===0?(
-                <p className="p-8 text-center text-xs text-neutral-400 border border-dashed border-neutral-200 dark:border-zinc-700 rounded-xl">No published articles in this collection.</p>
-              ):(
-                <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                  {contentJournal(previewVersion==='draft'?draft:bundle.live, language).map(art=>(
-                    <article key={art.slug} className="p-3.5 rounded-xl border border-neutral-200 dark:border-zinc-700 bg-neutral-50 dark:bg-zinc-800/60 space-y-2">
-                      <img src={art.image} alt={art.title} className="w-full h-32 object-cover rounded-lg" onError={e=>{(e.currentTarget as HTMLImageElement).src='/images/product-placeholder.svg';}}/>
-                      <div className="flex items-center justify-between text-[11px] text-neutral-400">
-                        <span className="font-semibold text-emerald-700 dark:text-emerald-300">{art.category}</span>
-                        <span>{art.publishedDate}</span>
-                      </div>
-                      <h4 className="font-serif font-bold text-sm text-[#120F17] dark:text-[#FAF9F5] line-clamp-1">{art.title}</h4>
-                      <p className="text-xs text-neutral-600 dark:text-neutral-300 line-clamp-2">{art.excerpt}</p>
-                    </article>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-          {previewSurface==='faq'&&(
-            <div className="preview-surface-faq p-4 space-y-3">
-              <div className="border-b border-neutral-200 dark:border-zinc-700 pb-3">
-                <h2 className="font-serif font-bold text-lg text-[#043327] dark:text-emerald-400">Frequently Asked Questions</h2>
-                <p className="text-xs text-neutral-500">Concierge answers on orders, packaging and authenticity.</p>
-              </div>
-              <FAQSection/>
-            </div>
-          )}
-        </StorefrontContentProvider>
+          </StorefrontContentProvider>
         </StorefrontPreviewViewport>
       </div>
     </section>}
