@@ -1,5 +1,9 @@
 # AllBarka design direction
 
+## Current owner decisions — 4 November 2026
+
+Box 3D is DEFERRED; preserve accurate existing-photo contents presentation and the accepted Signature Table. Printing treatments are possible according to owner but no physical samples are prepared; render reference art honestly and validate actual materials/fonts/sizes before claiming physical availability. Merchandising selection is delegated, subject to current price/contents review. Balance is commercial direction, not a mandatory numerical50/50 split or exactly four homepage sections. VOICE-01 is selected for a separate reviewed speech slice; use existing Buddy/search UI and preserve reduced-motion/touch/keyboard behavior. [Current decisions and findings](docs/REVIEW_RECONCILIATION_2026-11-04.md).
+
 Status: OWNER-CONFIRMED direction; Stage 5 implemented and locally browser-verified. Live release remains Stage 6.
 
 This status describes the existing design implementation below. Owner confirmed retail + gifting balance and existing assets first. Current bounded V1 implementation/evidence is in [PREMIUM_V1.md](docs/PREMIUM_V1.md); remaining proposals in [MASTER_PLAN.md](MASTER_PLAN.md) retain their own statuses. Apply [RULES.md](RULES.md) to each design/implementation checkpoint.

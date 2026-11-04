@@ -1,39 +1,24 @@
-# AllBarka AI Concierge Setup
+# AllBarka AI Buddy — current architecture
 
-This project uses a local **Ollama** instance to power the AllBarka AI Concierge, utilizing the `gemma3:4b` model to provide fast, privacy-first, offline-capable AI support directly from the browser to your local machine.
+Updated 4 November 2026 from implementation baseline 47f9acde89d58a7a25a122ed80252d51d0f0f4f2. Resume through [instructions.md](instructions.md), [RULES.md](RULES.md) and [INTEGRATIONS.md](INTEGRATIONS.md).
 
-## Prerequisites & Installation
+## Existing request path
 
-1. **Install Ollama**: Download from [ollama.com](https://ollama.com/) and install it on your Windows machine.
-2. **Download Model**: Open Windows Terminal / PowerShell and run:
-   ```bash
-   ollama run gemma3:4b
-   ```
-   *Wait for the model to download and verify it answers interactively.*
+1. src/services/aiConcierge.ts posts to apiUrl('/api/concierge/chat').
+2. server.ts mounts src/lib/aiChatRouter.ts; that router accepts /api/chat and /api/concierge/chat.
+3. The server reads the validated catalog and delegates through src/services/n8nAIConsultant.ts. Read that service for supported environment names and exact request/authentication contracts; do not invent configuration from this overview.
+4. Public replies/recommendations are validated; existing request deadlines, guest limits, private-safe diagnostics and cancellation remain intact.
 
-## Local Host Configuration (Crucial for Web UI)
+The current browser client does not call a shopper's localhost:11434. Do not enable wildcard Ollama origins or put a provider secret in a VITE_* browser variable. Actual n8n/model configuration and real provider execution are separate from the presence of this code.
 
-By default, Ollama blocks connection attempts from web browsers (CORS). You must explicitly allow your development origin.
+## VOICE-01 — selected, implementation pending
 
-1. Open PowerShell **as Administrator**.
-2. Run:
-   ```powershell
-   setx OLLAMA_ORIGINS "*"
-   ```
-3. Restart the Ollama application entirely (Quit it from the Windows system tray in the bottom right, and relaunch it from the start menu).
+Owner prefers a suitable free API. Initial candidate is Groq (not Grok/xAI) Whisper for bounded, user-triggered multilingual transcription into an editable transcript. Reuse existing grounded AI Buddy/search; optional tested device/browser speech output. Confirm actual account free-tier/model access, accuracy for Urdu/English product names and amounts, cancellation, rate limits and typing fallback. No automatic paid fallback or billing change; no always-listening microphone or default retained raw audio.
 
-## Production Setup (Scaling)
+No voice endpoint, credential, audio upload or model execution is implemented by this documentation checkpoint. See [current reconciliation](docs/REVIEW_RECONCILIATION_2026-11-04.md).
 
-The current implementation in `src/services/aiConcierge.ts` points to `http://localhost:11434/api/chat`. 
+## Verification and history
 
-When deploying AllBarka to production (e.g., Vercel / Cloudflare), the users' browsers will NOT be able to connect to `localhost:11434`.
+Code presence, local/CI results, actual preview/provider execution and live behavior are separate. Railway payment is pending, so live checks await owner reactivation. Tests must use isolated authorized data; no message/order/provider call is implied by a guide.
 
-To scale this:
-1. **Option A (Hosted Endpoint)**: Point `OLLAMA_URL` to a cloud-hosted LLM endpoint (e.g., Groq, Together API, or a proxy server handling authentication).
-2. **Option B (n8n Webhook)**: You can connect `src/services/aiConcierge.ts` to an n8n webhook, which then communicates with an LLM of your choice and returns the response. Note: Ensure `stream: false` if your webhook doesn't support NDJSON streaming.
-
-## Known Limitations
-
-- **CORS Handling**: `stream: true` utilizes `fetch` to read chunked NDJSON directly on the client. It relies heavily on proper headers.
-- **Context Size**: Our current system injects ~2000 tokens of the absolute product catalog into the system prompt. Scaling the catalog further might require an intermediate retrieval layer (RAG) rather than full prompt stuffing.
-- **Graceful degradation**: If Ollama goes offline or CORS blocks the request, the chat widget immediately switches to an offline fallback error state linking to human WhatsApp support.
+The obsolete direct-browser Ollama guide is retained as [historical evidence](docs/archive/2026-11-04/README-AI.md); its instructions are not current setup.

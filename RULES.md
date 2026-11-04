@@ -1,6 +1,6 @@
 # AllBarka — mandatory working and delivery rules
 
-Updated: 25 October 2026 (Asia/Karachi).
+Updated: 4 November 2026 (Asia/Karachi).
 
 Owner request: review the work before delivery, verify that new/updated Firestore products reach the correct categories, preserve working behavior, and keep a reliable record across chats and agents.
 
@@ -56,13 +56,15 @@ If current Firestore access is unavailable, finish source/fixture checks, record
 
 ## R05 — Preserve commerce and data contracts
 
-- Latest owner pricing decision (30 October 2026, R04-KG1): [filled-gift pricing architecture](docs/admin-expansion/FILLED_GIFT_PRICING.md). Filled/custom ingredient estimates use current stored kilogram rates and explicit net recipe grams, with final WhatsApp quotation. This supersedes historical 250g-pack proration without repricing standalone retail/custom weights. Missing kg/recipe data stays unpriced; no compiled/per-100g inferred fallback or automatic live mutation. Apply the policy in the pending source implementation and verify UI/server inquiry guards.
+- Latest owner pricing decision (30 October 2026, R04-KG1): [filled-gift pricing architecture](docs/admin-expansion/FILLED_GIFT_PRICING.md). Filled/custom ingredient estimates use current stored kilogram rates and explicit net recipe grams, with final WhatsApp quotation. This supersedes historical 250g-pack proration without repricing standalone retail/custom weights. Missing kg/recipe data stays unpriced; no compiled/per-100g inferred fallback or automatic live mutation. Implementation status belongs in the current task evidence; preserve the recorded source fixes and verify UI/server inquiry guards for the touched scope.
 - Firestore remains the live catalog/pricing authority. Reuse the existing server quote/order services and the same canonical projection for n8n. Do not create an independently editable duplicate price list or invent missing prices.
 - Keep stable product/box IDs, exact historical option labels, units, packaging MOQ, ten-calendar-day preparation and saved receipt/cart compatibility. Existing 9999 stock is the availability convention, not measured physical inventory.
 - Preserve current shipping/coupon/loyalty rules: Lahore standard Rs.150, free at discounted subtotal >= Rs.3,000; express Rs.350; outside Lahore actual canonical weight × Rs.250/kg with Rs.250 minimum and the existing ZAFRANI exception. The existing oil tariff treats 1ml as 1g for billing only. Reuse calculation code; do not reimplement it in the UI.
 - The server validates current totals. Handle repricing, unavailable options and changed quotes explicitly. Preserve idempotency and saved-order recovery; do not show success before accepted/persisted state.
 - Metadata changes must not silently publish drafts, archive active items, reset merchant rates or materialize missing records from compiled defaults.
 - For integration changes, verify DTOs, retries, acknowledgements and duplicate behavior. Preserve the receiver-before-sender dependency in [N8N_COMPATIBILITY.md](docs/admin-expansion/N8N_COMPATIBILITY.md).
+
+Every cleanup must follow [trash.md](trash.md): reference check, exact path/blob, reason, retained recovery source and verification. Record zero removals honestly when no disposable tracked files are found.
 
 ## R06 — Reuse architecture and keep dependencies deliberate
 

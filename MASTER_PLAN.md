@@ -1,5 +1,30 @@
 # AllBarka — visual identity and experience master plan
 
+## Current checkpoint — 4 November 2026
+
+Reviewed implementation baseline: 47f9acde89d58a7a25a122ed80252d51d0f0f4f2, PR #16, codex/admin-catalog-foundation-20261023 against launch. Fetch current HEAD before edits. [instructions.md](instructions.md) is the current concise guide; [instruction.md](instruction.md) is an alias. [Review reconciliation](docs/REVIEW_RECONCILIATION_2026-11-04.md) resolves the latest external review without changing prices or runtime code.
+
+| Gate at implementation baseline | Status / scope |
+| --- | --- |
+| Code / local history | Existing implemented slices retained; historical local record821 pass,0 fail,1 emulator-only skip. Incomplete M03/M04/M05/M08/M09/M16 and merchant-dependent scope remain open. |
+| Hosted CI | FAIL at run41645560854:819 pass,2 fail,1 skip. Reproduce actual passport-revision and error-surface RTL assertions; root causes not yet confirmed. |
+| Preview / providers | Studio fixture scope recorded; isolated Firebase/Auth/Storage/n8n/WhatsApp/accepted-order provider gates remain incomplete. |
+| Live | BLOCKED on owner-confirmed unpaid Railway hosting; resume after owner reactivation. No new app/Firestore outage diagnosis. |
+
+| Task | Current scope / work | Next action |
+| --- | --- | --- |
+| DOC-CLEAN-01 | SELECTED / documentation cleanup in this checkpoint | Verify links, stable IDs, build/checks, final diff and remote save; evidence in [cleanup record](docs/CLEANUP_VERIFICATION_2026-11-04.md), removals in [trash.md](trash.md). |
+| CI-PASS1 / CI-RTL1 | SELECTED / TODO | Deterministic reproduction at actual failing tests; preserve existing transaction/RTL behavior and record traces before changes. |
+| PRICE-REVIEW-01 | SELECTED read-only review / merchant correction BLOCKED | Reconcile current Firestore records/cost/packing. Pumpkin100g anomaly and DailyGrind component comparison are flags, not approved seed edits. |
+| M34-PRICE | PROPOSED / TODO | Scope comparable unit/bundle warnings with merchant exceptions and actual cost data; no universal monotonic-price law or automatic repricing. |
+| M08-3D | DEFERRED by owner,4Nov2026 | Revisit only when selected later; no current model/prototype dependency. |
+| VOICE-01 | SELECTED / TODO | Groq free-tier Whisper input into existing Buddy/search, editable transcript, tested optional device voice, server-side bounds and no paid fallback. |
+| Tasting Flight dual packaging | PROPOSED / NOT SELECTED | Real contents, costs and sample capability first; no Rs2200 gift tier or invented discount approved. |
+
+Owner confirms printing capability, no physical samples yet. Product merchandising is delegated: pista,kaju,badam,khajoor,khubani,pumpkin_seeds plus bundle-tasting-flight/bundle-daily-grind, subject to disputed price/contents validation. Dark-date ID khajoor is the everyday candidate; ajwa/medjool origin prose remains disputed. Exact sampler mix/price is not yet approved.
+
+Individual M01–M34 rows preserve their IDs and bounded local status. Old dated narrative and phase summaries are historical context, not permission to restart already-implemented features. M31 remains local-language finding; M32 remains Studio preview/restore. Infrastructure is Stage6.
+
 03 November 2026 — **FINAL-20261103 / bounded repairs DONE locally, full offline gate PASS**. Reviewed the eight-layer AI reference against the existing application. Implemented QA-NET1 required-resource failure diagnostics (removing blanket OS-error suppression), S7-FINAL1 provider cancellation/late-catalog deadline guard and bounded private-safe timings, and M32-PARITY1 actual shared storefront iframe preview with EN/UR/AR, theme and 390/768/1440 breakpoints. Focused checks, final static/build gates and full offline suite PASS: 821 passed, 0 failed, 1 emulator-only skip across 103 test files, plus 11 hardening, 21 backend and 36 production checks. A separate read-only offline CI workflow is added; GitHub-hosted execution remains unverified until observed. See [final verification evidence](docs/FINAL_VERIFICATION_20261103.md) for actual results, failure/fix records and the explicit code/manual/live pending list. Historical “DONE locally” entries do not certify live integrations or erase M04/M05/M16 remaining scope. Public deployed commit differs from this branch; no production mutation or deployment performed.
 
 > [!NOTE]
@@ -217,7 +242,7 @@ Selected rows below refer only to the bounded V1 **new upgrade**. Reuse notes de
 | M23 | Extend admin control for selected upgrades: crop/focal points, facts, styles, supported editorial content. | Existing Studio/item forms, revisions, validation and admin guards. | V1–V5 | SELECTED / DONE locally (media crop & focal points, claims verification editor, responsive draft preview and atomic restore) |
 | M24 | Baseline image/JS performance and useful consent-appropriate purchase-funnel measurement. | Inspect existing instrumentation; local/lab and live field evidence stay separate. | V1/V6 | SELECTED / DONE locally (privacy-preserving client funnel telemetry for view_item, add_to_cart, begin_checkout, order_placed without PII) |
 
-M08-3D remains an optional **feasibility item**, not a prerequisite. Evaluate real model assets, weight/performance, accessibility, licensing and maintenance before deciding on true 3D. A CSS tilt is not a 3D product model.
+M08-3D is **DEFERRED by the owner on 4 November 2026**. Its optional feasibility record is retained for later; it is not a current implementation task or prerequisite. Evaluate real model assets, weight/performance, accessibility, licensing and maintenance before deciding on true 3D. A CSS tilt is not a 3D product model.
 
 ## Additional recommendations
 
@@ -244,7 +269,7 @@ Owner accepted the current look ("Okay ha yaar") and asked how to divide the rem
 | **V2 — Browsing and product cards** | Matching collection entrances, readable product cards, better shop/category layout, filters and mobile browsing. | M05–M07/M17; relevant M20/M22, plus M04/M21/M23 as needed. R04 category audit accompanies discovery changes. M31 aliases/M34 automated report remain optional follow-ups. | **DONE locally for core cards/shop browsing, including in-session Back recovery.** See PREMIUM_V2.md; richer editorial/alias/monitoring proposals retain their own status. |
 | **V3 — Product detail and brand story** | Distinct food/packaging product pages, useful photography, clear selected quantity/price/purchase panel, editorial story/journal. | M15/M19; M11/M26 only from verified facts and real contents/scale assets. Richer M10/M27 need catalog attributes. Typography/motion/admin support ship with each changed surface. | M15 and bounded M19 layouts DONE locally; factual/photo-dependent work remains pending. |
 | **V4 — Gifting and purchase** | Dedicated gifting page, improved hamper configuration, personalization where supported, coherent cart/checkout. | M16/M08/M09/M18/M30. Accurate box/filling photos and merchant printing options before claiming a realistic preview. Keep canonical totals, MOQ/preparation and saved-order recovery. | IN_PROGRESS; bounded landing/builder/message scope DONE locally with recorded gates. M18 purchase pass also DONE locally; merchant-dependent physical/printing and live scope pending. |
-| **V5 — Optional signature experiences** | Selected taste/hosting/occasion planners, useful comparison/reorder, optional shop-the-table or private gift reveal. | Remaining M10/M12–M14/M27–M29 when selected and supported by verified data. True 3D is separate feasibility work. | PROPOSED / TODO; can be deferred without blocking core launch. |
+| **V5 — Signature experiences** | Taste/hosting/occasion planners, comparison/reorder, shop-the-table and private gift reveal. | M10/M12–M14/M27–M29 have selected/local implementation evidence in the newer individual rows. Provider, merchant-data and release gates remain separate. Box3D deferred. | Selected bounded code/local slices recorded; do not restart from this old phase summary. Current evidence and per-item dependencies govern completion. |
 | **V6 — Integration and release readiness** | Consistent experience across devices/languages; verified performance, catalog freshness, admin editing and supported live checkout/integrations. | M24, remaining cross-page M20–M23/M25/M32/M33 as selected, existing R03/R04/R11 gates and original admin Stage 6 external blockers. | IN_PROGRESS — V6-R01 recovery and read-only Railway/public-catalog checks; private provider/release gates remain BLOCKED. See RESUME_VERIFICATION.md. |
 
 **Every phase includes design → implementation/admin support → browser/functional verification → self-review/fixes → saved GitHub checkpoint.** Review, accessibility, localization, performance and tests start in the phase that changes a surface; they are not postponed until V6. Finish one reviewable slice before expanding scope. Keep the compact homepage and single product showcase.
