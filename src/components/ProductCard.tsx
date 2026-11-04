@@ -1,3 +1,5 @@
+import BundleContentsSummary from './BundleContentsSummary';
+import { initialCardPortion } from '../lib/merchandisingPresentation';
 import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import ProductImageGallery from './ProductImageGallery';
 import React, { useState } from 'react';
@@ -41,8 +43,8 @@ export default function ProductCard({
   const weights = Object.keys(product.prices || {}).filter(
     weight => !disabledLabels.has(weight) && Number.isFinite(product.prices[weight]) && product.prices[weight] > 0
   );
-  const [preferredWeight, setSelectedWeight] = useState(weights[0] || '');
-  const selectedWeight = weights.includes(preferredWeight) ? preferredWeight : weights[0] || '';
+  const [preferredWeight, setSelectedWeight] = useState(initialCardPortion(product, weights));
+  const selectedWeight = weights.includes(preferredWeight) ? preferredWeight : initialCardPortion(product, weights);
   const titleTypography = language === 'ur' ? 'font-urdu text-[20px]' : language === 'ar' ? 'font-arabic text-[23px]' : 'font-serif text-[21px] leading-[1.25]';
 
   const hasPositivePrice = weights.length > 0;
@@ -104,11 +106,12 @@ export default function ProductCard({
       {/* Product Details */}
       <div dir={language === 'en' ? 'ltr' : 'rtl'} className="table-card-details min-w-0 flex-1 space-y-2 pb-4 pt-1 text-start">
         <Link to={`/product/${product.id}`} className="block max-w-full focus-ring rounded-sm w-fit">
-          <h3 lang={language} className={`whitespace-normal break-words [overflow-wrap:anywhere] font-medium text-[var(--color-text-primary)] transition-colors hover:text-[var(--color-accent-text)] ${titleTypography}`}>
+          <h3 lang={language} className={`min-h-[3.75rem] whitespace-normal break-words [overflow-wrap:anywhere] font-medium text-[var(--color-text-primary)] transition-colors hover:text-[var(--color-accent-text)] ${titleTypography}`}>
             {getLocalized(product, 'name', language)}
           </h3>
         </Link>
-        <p className="line-clamp-2 text-xs leading-6 text-[var(--color-text-secondary)]">
+        <BundleContentsSummary product={product} />
+        <p className="min-h-[3rem] line-clamp-2 text-xs leading-6 text-[var(--color-text-secondary)]">
           {language !== 'en' && getLocalized(product, 'desc', language) === product.desc_en ? t('slider.cardCopy') : getLocalized(product, 'desc', language)}
         </p>
         <Link

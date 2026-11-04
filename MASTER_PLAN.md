@@ -1,5 +1,7 @@
 # AllBarka — visual identity and experience master plan
 
+4 November 2026 — Phase 2: default shortlist/combos, available pumpkin 250g card selection and truthful bundle net-weight/component summaries. No price or saved-settings mutation. Type/hooks/build PASS; targeted 38/38 PASS. Earlier whole-suite hover-clock failure remains a caveat pending final rerun. [Evidence](docs/execution-2026-11-04/PHASE_2.md).
+
 4 November 2026 — Phase1 execution: revision test now waits for its actual post-save reload and proves stale expectedRevision2 is rejected against stored5; RTL test waits for committed language/specific surface. Targeted6/6PASS; full820PASS/1FAIL/1SKIP (separate showcase hover test). No hosted-green/provider/live claim. Dedicated evidence: [execution index](docs/execution-2026-11-04/README.md).
 
 ## Current checkpoint — 4 November 2026

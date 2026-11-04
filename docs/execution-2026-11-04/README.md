@@ -17,7 +17,7 @@ VOICE-01 design amendment: a client timer or claimed duration cannot enforce ser
 | Phase | Scope | Status / evidence |
 | --- | --- | --- |
 | 1 | CI harness synchronization and strict revision/RTL assertions | [PHASE_1.md](PHASE_1.md); targetedPASS, new separate full-suite hover blocker |
-| 2 | Existing default merchandising, selected portion and truthful bundle summaries | TODO; preserve saved merchant overrides and prices |
+| 2 | Existing default merchandising, selected portion and truthful bundle summaries | [PHASE_2.md](PHASE_2.md); 38/38 targeted PASS, type/hooks/buildPASS; prices and saved overrides preserved |
 | 3 | Bounded Groq voice input, editable transcript/search and optional device speech | TODO; actual provider configuration/accuracy pending |
 | Release | Real isolated provider/physical-device/deployment checks | BLOCKED on owner environment/hosting reactivation |
 

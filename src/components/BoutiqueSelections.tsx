@@ -67,6 +67,7 @@ export default function BoutiqueSelections({
             prod &&
             prod.active !== false &&
             (prod as any).status !== 'archived' &&
+            (prod as any).status !== 'draft' &&
             (prod as any).inStock !== false &&
             !seenIds.has(prod.id)
           ) {

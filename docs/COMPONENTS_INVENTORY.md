@@ -1,5 +1,9 @@
 # AllBarka Components Inventory
 
+## Shared bundle contents summary
+
+`BundleContentsSummary` is shared by ProductCard, CategoryPLP and ProductDetailPage; existing components had separate prose-only presentations. `merchandisingPresentation.ts` resolves declared net pack format and the available initial portion without changing catalog data. Unknown bundle ingredients remain explicitly unconfirmed. No dependency or schema change.
+
 ## M18 purchase continuation
 
 CartPage and CartDrawer reuse current Catalog/Cart/ProductMedia contexts, CartTools and shared CartAddButton. New CartItemPersonalization renders the same saved hamper contents/recipient/message on cart, drawer and checkout; the inventory had no equivalent reusable read-only component. It invents no printing options or prices. CheckoutPage keeps its existing quote/order/retry handlers; guarded acceptedCheckoutReceipt adapts current quoted line prices for all normal checkout summaries. purchase.css scopes presentation and mobile summary/drawer behavior. No new dependency or data schema. See PREMIUM_PURCHASE.md.

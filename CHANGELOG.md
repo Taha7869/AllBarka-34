@@ -1,3 +1,7 @@
+## 4 November 2026 — Phase 2 merchandise clarity
+
+4 November 2026 — Phase 2: default shortlist/combos, available pumpkin 250g card selection and truthful bundle net-weight/component summaries. No price or saved-settings mutation. Type/hooks/build PASS; targeted 38/38 PASS. Earlier whole-suite hover-clock failure remains a caveat pending final rerun. [Evidence](docs/execution-2026-11-04/PHASE_2.md).
+
 ## 4 November 2026 — Phase1 CI synchronization
 
 Post-save editor reload is now explicitly awaited before stale-revision mutation; asserts outgoing revision2, HTTP409 and preserved concurrent revision5. RTL tests await actual locale/surface state. NotFound adds a stable test marker only. Type/hooks/build and targeted6/6PASS; full820P/1F/1S with a separate hover-clock blocker. [Evidence](docs/execution-2026-11-04/PHASE_1.md). No runtime price/auth changes.

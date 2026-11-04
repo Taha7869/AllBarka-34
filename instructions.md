@@ -1,5 +1,7 @@
 # AllBarka — AI agent working guide
 
+4 November 2026 — Phase 2: default shortlist/combos, available pumpkin 250g card selection and truthful bundle net-weight/component summaries. No price or saved-settings mutation. Type/hooks/build PASS; targeted 38/38 PASS. Earlier whole-suite hover-clock failure remains a caveat pending final rerun. [Evidence](docs/execution-2026-11-04/PHASE_2.md).
+
 4 November 2026 — Phase1 execution: revision test now waits for its actual post-save reload and proves stale expectedRevision2 is rejected against stored5; RTL test waits for committed language/specific surface. Targeted6/6PASS; full820PASS/1FAIL/1SKIP (separate showcase hover test). No hosted-green/provider/live claim. Dedicated evidence: [execution index](docs/execution-2026-11-04/README.md).
 
 Updated 4 November 2026 (Asia/Karachi). Canonical working branch: **codex/admin-catalog-foundation-20261023**, draft [PR #16](https://github.com/Taha7869/AllBarka-34/pull/16), targeting **launch**. Default main, this working branch and deployed build are separate states.

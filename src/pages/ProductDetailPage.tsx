@@ -1,3 +1,5 @@
+import BundleContentsSummary from '../components/BundleContentsSummary';
+import { readBundleFormat } from '../lib/merchandisingPresentation';
 import CartAddButton from '../components/CartAddButton';
 import { productSeo } from '../lib/productSeo';
 import { useCatalogProducts } from '../contexts/CatalogContext';
@@ -432,7 +434,8 @@ export default function ProductDetailPage() {
                 </div>
               )}
 
-              {getLocalized(product, 'contents', language) && (
+              <BundleContentsSummary product={product} />
+              {!readBundleFormat(product) && getLocalized(product, 'contents', language) && (
                 <div className="mt-2.5 p-3 rounded-xl bg-[var(--color-surface,#FFFCF7)] dark:bg-[#1A201E] border border-[var(--color-accent,#C7982F)]/25 text-xs text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)]">
                   <span className="font-bold text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] uppercase tracking-wider text-[10px] block mb-0.5">
                     {t('packContents')}
