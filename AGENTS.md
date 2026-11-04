@@ -1,8 +1,10 @@
 # AllBarka — repository entry for AI agents
 
+5 November 2026 — CI-GALLERY1: exact fixture HTTP diagnostics replace the gallery test's timing flag; controlled late-response regression and explicit preview-fallback gate added. Historical404 trigger remains unconfirmed. Current verification is IN_PROGRESS; provider/device/merchant/live gates remain open. [Evidence](docs/execution-2026-11-04/GALLERY_VERIFICATION_2026-11-05.md).
+
 Hosted source4065e35 verification subsequently completed PASS:834 tests,0 failures,1 emulator-only skip across106 test files, plus backend/assets/36 production checks; run41851671404. This does not erase the local gallery404 or verify real providers/live. [CI](https://github.com/Taha7869/AllBarka-34/actions/runs/41851671404).
 
-Latest saved source: 4065e357633586f186143191282c5809584e6f9a. Read [current verification/blocker](docs/execution-2026-11-04/FINAL_STATUS.md) before continuing: targeted gates PASS; full local suite has one unresolved gallery404 diagnostic and execution environment is unavailable. Do not claim release-ready.
+Previous application source: 4065e357633586f186143191282c5809584e6f9a. The continuation above supersedes the earlier execution-environment blocker; historical results remain in [FINAL_STATUS.md](docs/execution-2026-11-04/FINAL_STATUS.md). Do not claim release-ready from fixture or CI checks.
 
 ## Mandatory entry and current branch
 

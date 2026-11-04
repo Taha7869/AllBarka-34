@@ -7,6 +7,7 @@ import os from 'node:os';
 import { once } from 'node:events';
 import { build } from 'esbuild';
 import { launchTestBrowser } from './helpers/browser.mjs';
+import { collectBrowserDiagnostics } from './helpers/browser-diagnostics.mjs';
 import { memoryFirestore } from './helpers/memoryFirestore';
 import { PRODUCTS } from '../src/data/products';
 import { createCatalogRouter } from '../src/lib/catalogRouter';
@@ -42,6 +43,12 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     else quotes.push(res);
   });
   app.post('/api/orders', (_req, res) => { orderCalls++; res.status(503).json({ code: 'UNAVAILABLE' }); });
+  const missingPreviews: express.Response[] = []; let releaseMissingPreviews = false;
+  app.get('/images/missing-preview.webp', (_req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    if (releaseMissingPreviews) res.status(404).end();
+    else missingPreviews.push(res);
+  });
   app.use('/assets', express.static(path.resolve('dist/assets'))); app.use('/images', express.static(path.resolve('public/images')));
   app.use('/videos', express.static(path.resolve('public/videos')));
   app.get('/fixture.js', (_req, res) => res.sendFile(path.join(temporary, 'fixture.js')));
@@ -54,9 +61,11 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'no-preference' });
     // External font/provider resources are not part of isolated browser certification.
     await context.route('**/*', route => new URL(route.request().url()).origin === origin ? route.continue() : route.fulfill({ status: 200, body: '' }));
-    const page = await context.newPage(); const errors: string[] = []; let expectedFailure = false;
-    page.on('pageerror', error => errors.push(error.message));
-    page.on('console', message => { if (message.type() === 'error' && !(expectedFailure && /status of (?:503|404)/.test(message.text()))) errors.push(message.text()); });
+    const page = await context.newPage();
+    const errors = collectBrowserDiagnostics(page, origin, { expectedHttpFailures: [
+      { method: 'POST', path: '/api/orders/quote', status: 503 },
+      { method: 'GET', path: '/images/missing-preview.webp', status: 404 },
+    ] });
     await page.goto(`${origin}/polish-lab`); await page.locator('#lab-add').waitFor();
     const gallery = page.locator('#lab-gallery .product-gallery');
     await gallery.hover(); await page.waitForFunction(() => document.querySelector('#lab-gallery .product-gallery')?.getAttribute('data-previewing') === 'true');
@@ -181,29 +190,32 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     await page.getByRole('button', { name: 'Proceed to Payment & Review', exact: true }).click();
     const submit = page.locator('button[type="submit"][aria-busy]'); await submit.waitFor(); assert.equal(await submit.isDisabled(), true); assert.equal(await submit.getAttribute('aria-busy'), 'true');
     assert.equal(await submit.locator('.boutique-request-spinner').evaluate(element => getComputedStyle(element).animationName), 'none');
-    expectedFailure = true; releaseQuotes = true; for (const response of quotes) if (!response.writableEnded) response.status(503).json({ success: false, code: 'FIXTURE_UNAVAILABLE', error: 'Quote unavailable in isolated test' });
+    releaseQuotes = true; for (const response of quotes) if (!response.writableEnded) response.status(503).json({ success: false, code: 'FIXTURE_UNAVAILABLE', error: 'Quote unavailable in isolated test' });
     await page.getByText('Quote unavailable in isolated test', { exact: true }).waitFor();
     await page.waitForFunction(() => document.querySelector('button[type="submit"][aria-busy]')?.getAttribute('aria-busy') === 'false');
-    expectedFailure = false; assert.equal(await submit.isDisabled(), true); assert.equal(orderCalls, 0); assert.equal(await page.getByText('Quote unavailable in isolated test', { exact: true }).count(), 1, await page.locator('main').innerText());
+    assert.equal(await submit.isDisabled(), true); assert.equal(orderCalls, 0); assert.equal(await page.getByText('Quote unavailable in isolated test', { exact: true }).count(), 1, await page.locator('main').innerText());
     await page.evaluate(() => (window as any).fixture.navigate('/polish-lab')); await page.locator('#lab-anchor').waitFor();
     assert.equal(await page.locator('#lab-anchor').evaluate(element => getComputedStyle(element).opacity), '0.7');
     await page.setViewportSize({ width: 1440, height: 900 }); await page.locator('#lab-gallery').hover(); assert.equal(await gallery.getAttribute('data-previewing'), 'false');
-    await page.emulateMedia({reducedMotion:'no-preference'});await page.mouse.move(0,0);expectedFailure=true;
+    await page.emulateMedia({reducedMotion:'no-preference'});await page.mouse.move(0,0);
+    const missingPreview = page.waitForResponse(response => response.url() === `${origin}/images/missing-preview.webp` && response.status() === 404);
     await page.evaluate(()=>(window as any).fixture.media('deal-1',{images:['/images/products/deal-1.jpg','/images/missing-preview.webp'],videoUrl:'',videoPoster:''}));
     await page.waitForFunction(()=>document.querySelector('#lab-gallery .product-gallery-slide img')?.getAttribute('src')==='/images/products/deal-1.jpg');
-    await gallery.hover();await page.waitForFunction(()=>document.querySelector('#lab-gallery .product-gallery')?.getAttribute('data-previewing')==='false'&&!document.querySelector('#lab-gallery .product-gallery-preview'));
+    await gallery.hover();await gallery.locator('.product-gallery-preview').waitFor();
+    releaseMissingPreviews = true; for (const response of missingPreviews) if (!response.writableEnded) response.status(404).end();
+    await missingPreview;await page.waitForFunction(()=>document.querySelector('#lab-gallery .product-gallery')?.getAttribute('data-previewing')==='false'&&!document.querySelector('#lab-gallery .product-gallery-preview'));
     assert.equal(await gallery.locator('.product-gallery-slide img').first().getAttribute('src'),'/images/products/deal-1.jpg');
-    await page.evaluate(()=>(window as any).fixture.media('deal-1',null));expectedFailure=false;
+    await page.evaluate(()=>(window as any).fixture.media('deal-1',null));
     assert.deepEqual(errors, []);
     const touch = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: 'no-preference' });
     await touch.route('**/*', route => new URL(route.request().url()).origin === origin ? route.continue() : route.fulfill({status:200,body:''}));
-    const mobile = await touch.newPage();mobile.on('pageerror',error=>errors.push(error.message));mobile.on('console',message=>{if(message.type()==='error')errors.push(message.text());}); await mobile.goto(`${origin}/polish-lab`); await mobile.locator('#lab-gallery').waitFor();
+    const mobile = await touch.newPage();const mobileErrors = collectBrowserDiagnostics(mobile, origin); await mobile.goto(`${origin}/polish-lab`); await mobile.locator('#lab-gallery').waitFor();
     await mobile.locator('#lab-gallery .product-gallery-track').evaluate(element => element.scrollTo({ left: element.clientWidth, behavior: 'instant' }));
     await mobile.waitForFunction(() => document.querySelector('#lab-gallery .product-gallery-counter')?.getAttribute('aria-label') === 'Photo 2/4');
     assert.equal(await mobile.locator('#lab-gallery .product-gallery').getAttribute('data-previewing'), 'false');
     assert.equal(await mobile.locator('#lab-anchor').evaluate(element => getComputedStyle(element).opacity), '0.7');
     await mobile.locator('#lab-add').tap(); await mobile.waitForFunction(() => document.querySelector('#lab-add')?.getAttribute('data-confirmed') === 'true');
-    assert.deepEqual(errors,[]);await touch.close(); await context.close();
+    assert.deepEqual(errors,[]);assert.deepEqual(mobileErrors,[]);await touch.close(); await context.close();
   } finally {
     await browser.close(); server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); await fs.rm(temporary, { recursive: true, force: true });
   }

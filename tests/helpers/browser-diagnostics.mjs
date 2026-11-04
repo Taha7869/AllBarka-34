@@ -1,5 +1,9 @@
 /** Capture required-resource failures with their URLs; never hide OS resource errors by message text. */
-export function collectBrowserDiagnostics(page, origin) {
+export function collectBrowserDiagnostics(page, origin, { expectedHttpFailures = [] } = {}) {
+  // Exceptions identify deliberate fixture responses, never a time window or all 404/503s.
+  const expectedResponse = (url, status, method) => expectedHttpFailures.some(expected =>
+    new URL(expected.path, origin).href === url && expected.status === status &&
+    (method === undefined || expected.method === method));
   const errors = [];
   const requiredFailure = request => {
     const url = new URL(request.url());
@@ -11,6 +15,9 @@ export function collectBrowserDiagnostics(page, origin) {
     const location = message.location();
     // Only the browser's optional same-origin favicon is excluded, never an API/script/stylesheet.
     if (location.url && new URL(location.url, origin).href === `${origin}/favicon.ico`) return;
+    const httpError = /^Failed to load resource: the server responded with a status of (\d{3})\b/.exec(message.text());
+    // Missing/unknown locations and application console errors must remain failures.
+    if (httpError && location.url && expectedResponse(new URL(location.url, origin).href, Number(httpError[1]))) return;
     errors.push(`Console: ${message.text()}${location.url ? ` (${location.url})` : ''}`);
   });
   page.on('requestfailed', request => {
@@ -20,7 +27,8 @@ export function collectBrowserDiagnostics(page, origin) {
     if (requiredFailure(request)) errors.push(`Request: ${request.method()} ${request.url()} — ${failure}`);
   });
   page.on('response', response => {
-    if (response.status() >= 400 && requiredFailure(response.request())) {
+    if (response.status() >= 400 && requiredFailure(response.request()) &&
+        !expectedResponse(response.url(), response.status(), response.request().method())) {
       errors.push(`HTTP ${response.status()}: ${response.url()}`);
     }
   });

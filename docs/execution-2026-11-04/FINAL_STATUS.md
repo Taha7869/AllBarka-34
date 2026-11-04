@@ -1,5 +1,7 @@
 # Final verification checkpoint — 4 November 2026
 
+Latest continuation: [CI-GALLERY1 — 5 November](GALLERY_VERIFICATION_2026-11-05.md). Earlier dated outcomes below are historical and are not overwritten by later runs.
+
 Source branch: codex/admin-catalog-foundation-20261023. PR16 remains draft against launch. Source commit: `4065e357633586f186143191282c5809584e6f9a`. This documentation checkpoint preserves that runtime. A fresh documentation-checkpoint build could not run after the local execution environment became unavailable; the source build below is the last observed build, not a new documentation-build claim.
 
 | Gate | Observed outcome |

@@ -1,5 +1,7 @@
 # AllBarka — visual identity and experience master plan
 
+5 November 2026 — CI-GALLERY1: exact fixture HTTP diagnostics replace the gallery test's timing flag; controlled late-response regression and explicit preview-fallback gate added. Historical404 trigger remains unconfirmed. Current verification is IN_PROGRESS; provider/device/merchant/live gates remain open. [Evidence](docs/execution-2026-11-04/GALLERY_VERIFICATION_2026-11-05.md).
+
 Hosted source4065e35 verification subsequently completed PASS:834 tests,0 failures,1 emulator-only skip across106 test files, plus backend/assets/36 production checks; run41851671404. This does not erase the local gallery404 or verify real providers/live. [CI](https://github.com/Taha7869/AllBarka-34/actions/runs/41851671404).
 
 4 November 2026 — Final local gate on source 4065e357633586f186143191282c5809584e6f9a: typecheck/hooks/build and targeted 20/20 PASS; complete npm test FAIL (833 PASS, 1 FAIL, 1 emulator SKIP; 835 total). Remaining failure: tests/interaction-polish-browser.test.tsx:206, one unexpected HTTP404 console event. Exact resource URL was not captured; do not assume it is the intentionally missing preview or suppress arbitrary404s. Local execution environment became unavailable during the URL diagnostic. Voice/source checkpoint is saved, but release verification remains unfinished. [Current status](docs/execution-2026-11-04/FINAL_STATUS.md).
