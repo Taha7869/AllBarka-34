@@ -1,5 +1,7 @@
 # AllBarka — AI agent working guide
 
+4 November 2026 — VOICE-01: bounded Groq transcription, editable Buddy/hero/shop input, matching device read-aloud, unit-aware product search and dedicated filter focus target. Typecheck/hooks/build and targeted 20/20 PASS. Final whole-suite result is pending; real provider/device/live gates remain open. [Evidence](docs/execution-2026-11-04/PHASE_3.md).
+
 4 November 2026 — Phase 2: default shortlist/combos, available pumpkin 250g card selection and truthful bundle net-weight/component summaries. No price or saved-settings mutation. Type/hooks/build PASS; targeted 38/38 PASS. Earlier whole-suite hover-clock failure remains a caveat pending final rerun. [Evidence](docs/execution-2026-11-04/PHASE_2.md).
 
 4 November 2026 — Phase1 execution: revision test now waits for its actual post-save reload and proves stale expectedRevision2 is rejected against stored5; RTL test waits for committed language/specific surface. Targeted6/6PASS; full820PASS/1FAIL/1SKIP (separate showcase hover test). No hosted-green/provider/live claim. Dedicated evidence: [execution index](docs/execution-2026-11-04/README.md).
@@ -22,7 +24,7 @@ Reviewed implementation baseline: **47f9acde89d58a7a25a122ed80252d51d0f0f4f2**. 
 - Preserve balanced retail/gifting, accepted Signature Table direction, existing assets first, mobile priority, EN/UR/AR, dark mode and emerald/ivory/gold. Balance does not mean a new compulsory 50/50 layout or exactly four sections.
 - Product merchandising is delegated: candidates pista, kaju, badam, khajoor (the specific dark-date ID), khubani, pumpkin_seeds; discovery bundle-tasting-flight and larger bundle-daily-grind. This is a design shortlist, not approval of seed prices, inventory, discounts or claims. Hold disputed options/promotion until reconciled.
 - Printing capability is available according to owner; no physical samples are prepared. Editable designs may proceed; exact supported dimensions/materials/fonts, costs and real packing handoff remain pending.
-- VOICE-01 is selected for future implementation: Groq free-tier Whisper voice input, editable transcript into existing AI Buddy/search, optional tested device speech output. No paid fallback, billing upgrade or client-exposed key. See the [review reconciliation](docs/REVIEW_RECONCILIATION_2026-11-04.md).
+- VOICE-01 code is implemented with isolated checks; actual provider/device verification remains pending: Groq free-tier Whisper voice input, editable transcript into existing AI Buddy/search, optional tested device speech output. No paid fallback, billing upgrade or client-exposed key. See the [review reconciliation](docs/REVIEW_RECONCILIATION_2026-11-04.md).
 - Website orders remain in Firestore, WhatsApp orders in Sheets, with manual synchronization for now. Do not silently add bidirectional order sync.
 
 ## Protected business/data rules
@@ -39,7 +41,7 @@ Current instructions authorize no production merge/deploy, live Firestore/rules/
 
 - Reproduce the actual failure at the actual source revision. Record observed request/state/response and distinguish hypotheses from demonstrated causes.
 - Known hosted baseline: run 41645560854 reports 819 pass / 2 fail / 1 skip; local docs separately record 821 pass / 0 fail / 1 skip. Do not combine these into a green hosted result.
-- Failures: admin-passport-browser.test.tsx:301 (409 expected, 200 observed) and error-surfaces.test.tsx:390 (rtl expected, ltr observed). Catalog revision checks already use transaction.get within db.runTransaction; AdminItemForm/ErrorBoundary/NotFound already bind direction. Root causes remain unconfirmed; do not insert guessed cache-bypass/duplicate-dir fixes or call failures mere flakiness.
+- Failures: admin-passport-browser.test.tsx:301 (409 expected, 200 observed) and error-surfaces.test.tsx:390 (rtl expected, ltr observed). Catalog revision checks already use transaction.get within db.runTransaction; AdminItemForm/ErrorBoundary/NotFound already bind direction. Revision failure was reproduced as a post-save fixture reload race, fixed in74c215b without server changes; the historical RTL failure did not reproduce, so its exact cause remains unconfirmed. Strict surface/locale synchronization is retained. Hosted run41846554561 at7a9bb0c passes825 tests with one emulator skip. Read docs/execution-2026-11-04/ before restarting these tasks; do not insert guessed cache-bypass/duplicate-dir fixes or dismiss failures as flakiness.
 - Source prices are bundled examples, not current Firestore evidence. Flag anomalies; never invent corrective prices or change bundle contents to manufacture savings.
 - Preserve M01–M34 meanings: M31 is local-language finding, M32 Studio preview/restore; infrastructure is Stage 6. Retain incomplete M03/M04/M05/M08/M09/M16/merchant-dependent scope despite broader local completion claims.
 
@@ -59,4 +61,4 @@ Read [trash.md](trash.md) before removing/archiving anything. Remove only eviden
 
 Update MASTER_PLAN, relevant handoff, CHANGELOG and task evidence together. Use one register, existing IDs and compatible paths. Review the final diff and findings under RULES R03/R11. Save only intended changes against the verified upstream parent, verify candidate tree/deletions, use expected-parent fast-forward and read back the saved commit. Do not force-push or claim independent review when only self-review occurred.
 
-The next executable work is baseline CI reproduction, followed by scoped M04/M05/M16 finishing, merchant data/media/printing and VOICE-01. Follow the specific selected task; recording this sequence does not execute every item automatically. Earlier guide: [archived instructions](docs/archive/2026-11-04/instructions.md).
+Latest execution/checkpoints are in docs/execution-2026-11-04/. Source/fixture voice is implemented; real free-plan credentials, physical-device recognition, current merchant data/media/printing, remaining M04/M05/M16 scope and owner-reactivated live verification remain separate gates. Follow the specific selected task; recording this sequence does not execute every item automatically. Earlier guide: [archived instructions](docs/archive/2026-11-04/instructions.md).

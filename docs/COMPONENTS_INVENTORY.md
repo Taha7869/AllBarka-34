@@ -1,5 +1,9 @@
 # AllBarka Components Inventory
 
+## VOICE-01
+
+`VoiceInputButton` owns shared mic/cancel/review state for AIConcierge, AllBarkaHero and CategoryPLP. No existing component provided audio capture or transcript review. `voiceInput.ts` supplies the shared bounded WAV adapter/client; `voiceRouter.ts` and `voiceTranscription.ts` stay server-only behind the existing AI router guards. `VoiceReadButton` provides optional matching device-language output in AIConcierge. `voiceTranslations.ts` uses the existing LanguageContext. No application dependency or catalog schema change.
+
 ## Shared bundle contents summary
 
 `BundleContentsSummary` is shared by ProductCard, CategoryPLP and ProductDetailPage; existing components had separate prose-only presentations. `merchandisingPresentation.ts` resolves declared net pack format and the available initial portion without changing catalog data. Unknown bundle ingredients remain explicitly unconfirmed. No dependency or schema change.

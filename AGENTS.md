@@ -16,7 +16,7 @@ The older repository verification helper defaults to feat/renovation-v2 unless e
 - Product seed/reference data: src/data/products.ts. Live prices: validated Firestore/server projection through src/lib/catalogStore.ts and catalogSchema.ts. Seeds are not current merchant approval.
 - Catalog taxonomy: src/config/categories.ts and src/lib/catalogConfiguration.ts. Read [component inventory](docs/COMPONENTS_INVENTORY.md) before adding a component.
 - Admin catalog: src/lib/catalogRouter.ts + catalogStore.ts; Add/Edit: src/components/AdminItemForm.tsx; preserve revisions, draft privacy, templates/options/translation and staff orders-only boundaries.
-- AI browser client: src/services/aiConcierge.ts -> /api/concierge/chat. Server: src/lib/aiChatRouter.ts -> src/services/n8nAIConsultant.ts. Provider keys remain server-side; no browser localhost/Ollama requirement.
+- AI browser client: src/services/aiConcierge.ts -> /api/concierge/chat. Server: src/lib/aiChatRouter.ts -> src/services/n8nAIConsultant.ts. Provider keys remain server-side; no browser localhost/Ollama requirement. Optional voice: src/components/VoiceInputButton.tsx -> src/services/voiceInput.ts -> /api/concierge/transcribe -> src/lib/voiceRouter.ts and voiceTranscription.ts; setup/evidence in README-AI.md and docs/execution-2026-11-04/.
 - Commerce/outbox/provider contracts: [INTEGRATIONS.md](INTEGRATIONS.md). Existing website/WhatsApp order channels remain separate until an explicit integration change.
 - Tests: tests/; full offline runner: scripts/run-all-tests.mjs; production artifact/privacy checks run during npm run build.
 
@@ -31,7 +31,7 @@ Existing customer routes include /, /shop, /shop/:category, /category/:category,
 - Follow RULES R05 for canonical prices, shipping/coupons, MOQ, preparation and receipts; never change server pricing policy to resolve an assumed data anomaly.
 - Staff can view orders only; server APIs enforce roles. Never expose supplier/internal/draft data or keys.
 - Confirm orders only after durable accepted state. Product facts/reviews/certification/physical contents must be supported.
-- Owner says Railway is unpaid/offline; live gates await reactivation. Box 3D is deferred. Printing capability exists but samples are not ready. VOICE-01 free-tier speech is selected, not implemented.
+- Owner says Railway is unpaid/offline; live gates await reactivation. Box 3D is deferred. Printing capability exists but samples are not ready. VOICE-01 code and isolated tests are present; real free-plan/provider/phone checks remain pending.
 - Reuse existing code/components; explain any new dependency before installation. Preserve unrelated work and all stable M01–M34 meanings.
 - Run the required impact-based gates in instructions.md/RULES R08, including npm run build for documentation work. Distinguish local, hosted CI, fixture preview, real provider and live evidence.
 - Log every actual deletion or archive in [trash.md](trash.md). Do not blindly remove configuration, tests, history or assets. Review, verify the remote parent, save scoped changes and verify read-back before delivery.

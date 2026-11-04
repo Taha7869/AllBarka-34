@@ -1,3 +1,4 @@
+import VoiceInputButton from './VoiceInputButton';
 import BundleContentsSummary from './BundleContentsSummary';
 import { initialCardPortion, readBundleFormat } from '../lib/merchandisingPresentation';
 import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
@@ -199,6 +200,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
       <div className="relative flex-1" onFocusCapture={() => setSearchOpen(true)}
         onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setSearchOpen(false); }}
         onKeyDownCapture={event => {
+          if ((event.target as HTMLElement).closest('[data-voice-control]')) return;
           if (event.key === 'Escape') { event.preventDefault(); setSearchOpen(false); event.currentTarget.querySelector('input')?.focus(); }
           if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && suggestions.length) {
             event.preventDefault(); setSearchOpen(true);
@@ -213,6 +215,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
       <div className="flex min-h-12 items-center gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 focus-within:border-[#c7982f] focus-within:ring-2 focus-within:ring-[#c7982f]/15 lg:min-h-14">
         <Search size={19} className="shrink-0 text-[var(--color-accent-text)]" />
         <input type="search" role="combobox" aria-autocomplete="list" aria-controls={suggestionId} aria-expanded={searchOpen && !!filters.query.trim()} dir="auto" aria-label={t('shop.search')} placeholder={t('shop.hint')} value={filters.query} onChange={e => { update({ search: e.target.value || null }); setSearchOpen(true); }} className="min-w-0 flex-1 bg-transparent py-3 text-base outline-none" />
+        <VoiceInputButton onTranscript={text => { update({ search: text }); setSearchOpen(true); }} />
         {filters.query && <button type="button" aria-label={t('shop.clear')} onClick={() => update({ search: null })} className="flex h-11 w-11 items-center justify-center"><X size={17} /></button>}
       </div>
       {searchOpen && filters.query.trim() && <div className="boutique-search-suggestions z-30">
@@ -225,7 +228,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
       </div>}
       </div>
       <div className="flex gap-2">
-        <button type="button" onClick={openFilters} aria-haspopup={mobileControls ? 'dialog' : undefined} aria-expanded={mobileControls ? !!filterDraft : showFilters} aria-controls={mobileControls ? sheetFilterId : desktopFilterId} className="focus-ring flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-xs font-semibold"><SlidersHorizontal size={17} aria-hidden="true" /><span dir="auto">{t(mobileControls ? 'filters.title' : 'shop.filters')}</span>{chips.length > 0 && <span aria-label={t('filters.applied').replace('{count}', String(chips.length))} className="rounded-full bg-[#c7982f]/15 px-2 py-1">{chips.length}</span>}</button>
+        <button data-catalog-filter-trigger="" type="button" onClick={openFilters} aria-haspopup={mobileControls ? 'dialog' : undefined} aria-expanded={mobileControls ? !!filterDraft : showFilters} aria-controls={mobileControls ? sheetFilterId : desktopFilterId} className="focus-ring flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-xs font-semibold"><SlidersHorizontal size={17} aria-hidden="true" /><span dir="auto">{t(mobileControls ? 'filters.title' : 'shop.filters')}</span>{chips.length > 0 && <span aria-label={t('filters.applied').replace('{count}', String(chips.length))} className="rounded-full bg-[#c7982f]/15 px-2 py-1">{chips.length}</span>}</button>
         <button type="button" aria-pressed={filters.saved} onClick={() => update({ saved: filters.saved ? null : '1' })} className={`flex min-h-12 flex-1 items-center justify-center gap-2 rounded-2xl border px-4 text-xs font-semibold ${filters.saved ? 'border-[#c7982f] bg-[#c7982f]/10' : 'border-[var(--color-border)] bg-[var(--color-surface)]'}`}><Heart size={17} fill={filters.saved ? 'currentColor' : 'none'} />{t('shop.saved')} <span>{savedIds.length}</span></button>
       </div>
     </div>

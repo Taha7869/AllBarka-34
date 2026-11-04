@@ -1,3 +1,4 @@
+import VoiceInputButton from './VoiceInputButton';
 import {useStorefrontContent} from '../contexts/StorefrontContentContext';
 import {contentText} from '../lib/storefrontContent';
 import { useCatalogProducts } from '../contexts/CatalogContext';
@@ -98,6 +99,7 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
             if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setSearchOpen(false);
           }}
           onKeyDownCapture={event => {
+            if ((event.target as HTMLElement).closest('[data-voice-control]')) return;
             if (event.key === 'Escape') { event.preventDefault(); event.currentTarget.querySelector('input')?.focus(); setSearchOpen(false); }
             if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && suggestions.length) {
               if (!searchOpen) { setSearchOpen(true); event.preventDefault(); return; }
@@ -109,7 +111,8 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
             }
           }}
         >
-          <PlaceholdersAndVanishInput
+          <div className="flex min-w-0 items-center gap-2">
+          <div className="min-w-0 flex-1"><PlaceholdersAndVanishInput
             id="hero-search-input"
             label={t('heroSearchLabel')}
             placeholder={t('heroSearchLabel')}
@@ -119,7 +122,9 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
             onSubmit={submitSearch}
             suggestionsId="hero-search-suggestions"
             suggestionsOpen={searchOpen && !!query.trim()}
-          />
+          /></div>
+          <VoiceInputButton onTranscript={text => { setQuery(text); setSearchOpen(true); }} />
+          </div>
           {searchOpen && query.trim() && (
             <div id="hero-search-suggestions" className="boutique-search-suggestions heritage-hero-suggestions" role="listbox" aria-label={t('boutique.suggestions')}>
               {suggestions.length ? suggestions.map(product => (

@@ -34,7 +34,7 @@ export default function CatalogFilterSheet({ id, draft, categoryLabel, results, 
     const activeAtOpen = document.activeElement instanceof HTMLElement && document.activeElement !== document.body
       ? document.activeElement
       : null;
-    const previous = activeAtOpen || document.querySelector<HTMLElement>('.catalog-quick-controls button[aria-controls]');
+    const previous = activeAtOpen || document.querySelector<HTMLElement>('.catalog-quick-controls [data-catalog-filter-trigger]');
     const root = document.getElementById('root');
     const previousInert = root?.inert ?? false;
     if (root) root.inert = true;
@@ -71,7 +71,7 @@ export default function CatalogFilterSheet({ id, draft, categoryLabel, results, 
       if (window.location.pathname !== initialPath) return;
       const active = document.activeElement as HTMLElement | null;
       if (active && active !== document.body && !dialog?.contains(active)) return;
-      const fallback = document.querySelector<HTMLElement>('.catalog-quick-controls button[aria-controls], .catalog-quick-controls input[type="search"], header a[href], header button');
+      const fallback = document.querySelector<HTMLElement>('.catalog-quick-controls [data-catalog-filter-trigger], .catalog-quick-controls input[type="search"], header a[href], header button');
       const target = previous?.isConnected && previous.getClientRects().length && !previous.closest('[inert]')
         ? previous
         : fallback && fallback.getClientRects().length && !fallback.closest('[inert]')

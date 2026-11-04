@@ -1,3 +1,7 @@
+## 4 November 2026 — VOICE-01 and search integration
+
+4 November 2026 — VOICE-01: bounded Groq transcription, editable Buddy/hero/shop input, matching device read-aloud, unit-aware product search and dedicated filter focus target. Typecheck/hooks/build and targeted 20/20 PASS. Final whole-suite result is pending; real provider/device/live gates remain open. [Evidence](docs/execution-2026-11-04/PHASE_3.md).
+
 ## 4 November 2026 — Phase 2 merchandise clarity
 
 4 November 2026 — Phase 2: default shortlist/combos, available pumpkin 250g card selection and truthful bundle net-weight/component summaries. No price or saved-settings mutation. Type/hooks/build PASS; targeted 38/38 PASS. Earlier whole-suite hover-clock failure remains a caveat pending final rerun. [Evidence](docs/execution-2026-11-04/PHASE_2.md).

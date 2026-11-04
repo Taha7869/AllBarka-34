@@ -1,3 +1,4 @@
+import { voiceTranslations } from './voiceTranslations';
 import {contentTranslations} from './contentTranslations';
 import {staffTranslations} from './staffTranslations';
 import { adminExpansionTranslations } from './adminExpansionTranslations';
@@ -632,6 +633,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode; initialLang
   }, [language, isRtl]);
 
   const t = useCallback((key: string, defaultText = ''): string => {
+    if (voiceTranslations[language]?.[key]) return voiceTranslations[language][key];
     if (rewardTranslations[language]?.[key]) return rewardTranslations[language][key];
     return contentTranslations[language]?.[key] || staffTranslations[language]?.[key] || adminExpansionTranslations[language]?.[key] || destinationTranslations[language]?.[key] || shoppingQualityTranslations[language]?.[key] || trackingTranslations[language]?.[key] || weightTranslations[language]?.[key] || checkoutReliabilityTranslations[language]?.[key] || (conciergeTranslations[language] as Record<string, string>)[key] || shippingTranslations[language]?.[key] || updateTranslations[language]?.[key] || authTranslations[language]?.[key] || trendTranslations[language]?.[key] || catalogTranslations[language]?.[key] || boutiqueTranslations[language]?.[key] || TRANSLATIONS[language]?.[key] || TRANSLATIONS.en[key] || defaultText || key;
   }, [language]);

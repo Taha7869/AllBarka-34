@@ -1,10 +1,14 @@
 # AllBarka — visual identity and experience master plan
 
+4 November 2026 — VOICE-01: bounded Groq transcription, editable Buddy/hero/shop input, matching device read-aloud, unit-aware product search and dedicated filter focus target. Typecheck/hooks/build and targeted 20/20 PASS. Final whole-suite result is pending; real provider/device/live gates remain open. [Evidence](docs/execution-2026-11-04/PHASE_3.md).
+
 4 November 2026 — Phase 2: default shortlist/combos, available pumpkin 250g card selection and truthful bundle net-weight/component summaries. No price or saved-settings mutation. Type/hooks/build PASS; targeted 38/38 PASS. Earlier whole-suite hover-clock failure remains a caveat pending final rerun. [Evidence](docs/execution-2026-11-04/PHASE_2.md).
 
 4 November 2026 — Phase1 execution: revision test now waits for its actual post-save reload and proves stale expectedRevision2 is rejected against stored5; RTL test waits for committed language/specific surface. Targeted6/6PASS; full820PASS/1FAIL/1SKIP (separate showcase hover test). No hosted-green/provider/live claim. Dedicated evidence: [execution index](docs/execution-2026-11-04/README.md).
 
-## Current checkpoint — 4 November 2026
+## Baseline reconciliation — 4 November 2026
+
+Latest source/checkpoint evidence: [execution index](docs/execution-2026-11-04/README.md). The table below describes the earlier baseline, not current hosted status.
 
 Reviewed implementation baseline: 47f9acde89d58a7a25a122ed80252d51d0f0f4f2, PR #16, codex/admin-catalog-foundation-20261023 against launch. Fetch current HEAD before edits. [instructions.md](instructions.md) is the current concise guide; [instruction.md](instruction.md) is an alias. [Review reconciliation](docs/REVIEW_RECONCILIATION_2026-11-04.md) resolves the latest external review without changing prices or runtime code.
 
@@ -17,12 +21,12 @@ Reviewed implementation baseline: 47f9acde89d58a7a25a122ed80252d51d0f0f4f2, PR #
 
 | Task | Current scope / work | Next action |
 | --- | --- | --- |
-| DOC-CLEAN-01 | SELECTED / documentation cleanup in this checkpoint | Verify links, stable IDs, build/checks, final diff and remote save; evidence in [cleanup record](docs/CLEANUP_VERIFICATION_2026-11-04.md), removals in [trash.md](trash.md). |
-| CI-PASS1 / CI-RTL1 | SELECTED / TODO | Deterministic reproduction at actual failing tests; preserve existing transaction/RTL behavior and record traces before changes. |
+| DOC-CLEAN-01 | COMPLETED source/documentation at9d9fd13 | Verify links, stable IDs, build/checks, final diff and remote save; evidence in [cleanup record](docs/CLEANUP_VERIFICATION_2026-11-04.md), removals in [trash.md](trash.md). |
+| CI-PASS1 / CI-RTL1 | Source/targeted checks PASS; hosted PASS at7a9bb0c | Strict tests retained. Revision fixture reload race reproduced; exact historical RTL trigger unconfirmed. Hosted run41846554561:825PASS/0FAIL/1 emulator SKIP. See [Phase1 evidence](docs/execution-2026-11-04/PHASE_1.md). |
 | PRICE-REVIEW-01 | SELECTED read-only review / merchant correction BLOCKED | Reconcile current Firestore records/cost/packing. Pumpkin100g anomaly and DailyGrind component comparison are flags, not approved seed edits. |
 | M34-PRICE | PROPOSED / TODO | Scope comparable unit/bundle warnings with merchant exceptions and actual cost data; no universal monotonic-price law or automatic repricing. |
 | M08-3D | DEFERRED by owner,4Nov2026 | Revisit only when selected later; no current model/prototype dependency. |
-| VOICE-01 | SELECTED / TODO | Groq free-tier Whisper input into existing Buddy/search, editable transcript, tested optional device voice, server-side bounds and no paid fallback. |
+| VOICE-01 | IMPLEMENTED / isolated targeted20/20PASS; real provider/device PENDING | Buddy/hero/shop editable input and optional matching device voice. Canonical audio/server bounds, rate guards, cancellation and no paid fallback. See [Phase3](docs/execution-2026-11-04/PHASE_3.md); hosted/current full gate recorded separately in execution index. |
 | Tasting Flight dual packaging | PROPOSED / NOT SELECTED | Real contents, costs and sample capability first; no Rs2200 gift tier or invented discount approved. |
 
 Owner confirms printing capability, no physical samples yet. Product merchandising is delegated: pista,kaju,badam,khajoor,khubani,pumpkin_seeds plus bundle-tasting-flight/bundle-daily-grind, subject to disputed price/contents validation. Dark-date ID khajoor is the everyday candidate; ajwa/medjool origin prose remains disputed. Exact sampler mix/price is not yet approved.

@@ -1,10 +1,12 @@
 # Admin expansion handoff
 
+4 November 2026 — VOICE-01: bounded Groq transcription, editable Buddy/hero/shop input, matching device read-aloud, unit-aware product search and dedicated filter focus target. Typecheck/hooks/build and targeted 20/20 PASS. Final whole-suite result is pending; real provider/device/live gates remain open. [Evidence](../execution-2026-11-04/PHASE_3.md).
+
 4 November 2026 — Phase 2: default shortlist/combos, available pumpkin 250g card selection and truthful bundle net-weight/component summaries. No price or saved-settings mutation. Type/hooks/build PASS; targeted 38/38 PASS. Earlier whole-suite hover-clock failure remains a caveat pending final rerun. [Evidence](../execution-2026-11-04/PHASE_2.md).
 
 4 November 2026 — Phase1 execution: revision test now waits for its actual post-save reload and proves stale expectedRevision2 is rejected against stored5; RTL test waits for committed language/specific surface. Targeted6/6PASS; full820PASS/1FAIL/1SKIP (separate showcase hover test). No hosted-green/provider/live claim. Dedicated evidence: [execution index](../execution-2026-11-04/README.md).
 
-## Current continuation — 4 November 2026 / DOC-CLEAN-01
+## Earlier continuation — 4 November 2026 / DOC-CLEAN-01
 
 Baseline 47f9acde89d58a7a25a122ed80252d51d0f0f4f2. Current guide is [instructions.md](../../instructions.md); singular [instruction.md](../../instruction.md) is an alias. [Review reconciliation](../REVIEW_RECONCILIATION_2026-11-04.md) records pricing flags without repricing, incomplete roadmap slices, selected VOICE-01 and deferred box3D. Railway unpaid/offline is owner-confirmed; real provider/live gates remain blocked. Hosted baseline has819 pass,2 fail,1 skip despite historical local821-pass record. Next executable source work: reproduce tests/admin-passport-browser.test.tsx:301 and tests/error-surfaces.test.tsx:390; do not assume their root cause. Cleanup removes no tracked runtime files; obsolete root AI instructions/history are retained in the [archive ledger](../../trash.md). Exact current checks/save state: [cleanup verification](../CLEANUP_VERIFICATION_2026-11-04.md). Earlier entries below are historical outcomes, not a fresh PASS or deployment claim.
 

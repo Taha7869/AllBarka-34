@@ -76,24 +76,32 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
       if((width===390||width===1440)&&language==='en'&&theme==='light')await page.screenshot({path:path.join(evidence,`shop-${width}.jpg`),quality:82,animations:'disabled'});
     }
     await page.evaluate(()=>{(window as any).fixture.lang('en');(window as any).fixture.theme('light');});await page.setViewportSize({width:390,height:844});
-    const trigger=page.locator('.catalog-quick-controls button[aria-controls]');
+    const trigger=page.locator('.catalog-quick-controls [data-catalog-filter-trigger]');
     const sheet=page.getByRole('dialog');
     // Early user interaction inside the filter sheet must not be stolen by delayed initial focus.
-    const earlyFocusPreserved=await page.evaluate(async()=>{
-      document.querySelector<HTMLButtonElement>('.catalog-quick-controls button[aria-controls]')!.click();
-      await new Promise<void>(resolve=>setTimeout(resolve,0));
-      const range=document.querySelector<HTMLInputElement>('[role="dialog"] input[type="range"]');
-      range?.focus();
-      await new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())));
-      return document.activeElement===range;
+    // A zero-delay timer does not establish that React committed the portal.
+    // Focus at its first observed DOM commit, before the delayed initial-focus frame.
+    await page.evaluate(()=>{
+      const probe={focused:false,preserved:null as boolean|null};(window as any).earlyFilterFocusProbe=probe;
+      const observer=new MutationObserver(()=>{
+        const range=document.querySelector<HTMLInputElement>('[role="dialog"] input[type="range"]');
+        if(!range)return;
+        observer.disconnect();range.focus();probe.focused=document.activeElement===range;
+        requestAnimationFrame(()=>requestAnimationFrame(()=>{probe.preserved=document.activeElement===range;}));
+      });
+      observer.observe(document.body,{childList:true,subtree:true});
+      document.querySelector<HTMLButtonElement>('.catalog-quick-controls [data-catalog-filter-trigger]')!.click();
     });
-    assert.equal(earlyFocusPreserved,true,'initial focus yields to an early user interaction');
+    await page.waitForFunction(()=>typeof (window as any).earlyFilterFocusProbe?.preserved==='boolean');
+    const earlyFocus=await page.evaluate(()=>(window as any).earlyFilterFocusProbe);
+    assert.equal(earlyFocus.focused,true,'early interaction targets an actual committed range');
+    assert.equal(earlyFocus.preserved,true,'initial focus yields to an early user interaction');
     await sheet.locator('input[type=range]').fill('1000');
     await page.keyboard.press('Escape');await sheet.waitFor({state:'hidden'});
     assert.equal(new URL(page.url()).searchParams.has('budget'),false,'cancelled filters never apply');
     assert.equal(await trigger.evaluate(e=>e===document.activeElement),true,'Escape restores focus to filter trigger');
     // Cancel button and backdrop dismissal discard drafts; touch-like open still restores focus to visible trigger.
-    await page.evaluate(()=>{(document.activeElement as HTMLElement|null)?.blur?.();document.querySelector<HTMLButtonElement>('.catalog-quick-controls button[aria-controls]')!.click();});
+    await page.evaluate(()=>{(document.activeElement as HTMLElement|null)?.blur?.();document.querySelector<HTMLButtonElement>('.catalog-quick-controls [data-catalog-filter-trigger]')!.click();});
     await sheet.waitFor();
     await sheet.locator('input[type=range]').fill('1500');
     await sheet.locator('input[type=checkbox]').first().check();
@@ -245,7 +253,7 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     await touch.route('**/*',r=>new URL(r.request().url()).origin===origin?r.continue():r.fulfill({status:200,body:''}));
     const mobile=await touch.newPage();mobile.on('pageerror',e=>errors.push(e.message));
     await mobile.goto(origin+'/shop/nuts');await mobile.locator('.table-catalog-card').first().waitFor();
-    await mobile.locator('.catalog-quick-controls button[aria-controls]').tap();
+    await mobile.locator('.catalog-quick-controls [data-catalog-filter-trigger]').tap();
     const mobileSheet=mobile.getByRole('dialog');await mobileSheet.waitFor();
     assert.notEqual(await mobileSheet.evaluate(e=>getComputedStyle(e).animationName),'none');
     await mobileSheet.locator('.catalog-filter-cancel').tap();await mobileSheet.waitFor({state:'hidden'});

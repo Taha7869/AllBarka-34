@@ -6,6 +6,13 @@ export type CatalogSort = typeof CATALOG_SORTS[number];
 export function normalizeSearch(value: string): string {
   return value.normalize('NFKD').toLowerCase().replace(/[\u064B-\u065F\u0670\u0640]/g, '')
     .replace(/[أإآ]/g, 'ا').replace(/ي/g, 'ی').replace(/ك/g, 'ک')
+    .replace(/[٠-٩۰-۹]/g, digit => String(digit.charCodeAt(0) - (digit >= '۰' ? 0x06f0 : 0x0660)))
+    // Search equivalence only: never selects a portion or computes a commercial price.
+    .replace(/(\d+(?:\.\d+)?)\s*(kilograms?|kilogrammes?|kilos?|kg|grams?|g|(?:کلو|کیلو)\s*(?:گرام|غرام)?|گرام|غرام)(?=$|[^\p{L}\p{N}])/gu,
+      (match, count: string, unit: string) => {
+        const grams = Number(count) * (/^(?:kil|kg|کلو|کیلو)/u.test(unit) ? 1000 : 1);
+        return Number.isFinite(grams) && grams > 0 ? `${grams}g` : match;
+      })
     .replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim();
 }
 
@@ -83,6 +90,7 @@ export function productSearchScore(product: Product, query: string): number {
     ...(product.keywords || []),
     ...(product.occasions || []),
     ...(product.collections || []),
+    ...Object.keys(product.prices || {}).filter(label => Number.isFinite(product.prices[label]) && product.prices[label] > 0),
   ].filter(Boolean).join(' '));
 
   if (!terms.every(term => names.includes(term) || details.includes(term))) return 0;

@@ -1,3 +1,4 @@
+import { createVoiceRouter } from './voiceRouter';
 import { Router, type RequestHandler } from 'express';
 import { randomUUID } from 'node:crypto';
 import type { Firestore } from 'firebase-admin/firestore';
@@ -41,6 +42,7 @@ export function createAiChatRouter(options: AiChatRouterOptions) {
   const authMiddleware = options.authenticateOptionalUser || ((_req, _res, next) => next());
   const limiterMiddleware = options.patronChatLimiter || ((_req, _res, next) => next());
   const timeoutMs = options.timeoutMs ?? 22000;
+  router.use(createVoiceRouter({ authenticateOptionalUser: authMiddleware, limiter: limiterMiddleware }));
 
   router.post(['/api/chat', '/api/concierge/chat'], authMiddleware, limiterMiddleware, async (req, res) => {
     const requestStartTime = Date.now();
