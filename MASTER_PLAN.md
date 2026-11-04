@@ -1,6 +1,6 @@
 # AllBarka — visual identity and experience master plan
 
-5 November 2026 — CI-GALLERY1: exact fixture HTTP diagnostics replace the gallery test's timing flag; controlled late-response regression and explicit preview-fallback gate added. Historical404 trigger remains unconfirmed. Current verification is IN_PROGRESS; provider/device/merchant/live gates remain open. [Evidence](docs/execution-2026-11-04/GALLERY_VERIFICATION_2026-11-05.md).
+5 November 2026 — CI-GALLERY1 / CI-VOICE-SYNC1: gallery diagnostics saved02fa4a2; committed hero voice assertion saved203623404979b52837963c4750d7724acdfec305. Latest typecheck/hooks/build/privacy, affected gallery3/3 and voice9/9, full835PASS/0FAIL/1 emulator SKIP across106 files plus21 backend,97-product/115-reference asset audit and36 production checks PASS locally. Hosted outcomes are recorded separately in the execution evidence; historical404 trigger and real provider/device/merchant/live gates remain open. [Evidence](docs/execution-2026-11-04/GALLERY_VERIFICATION_2026-11-05.md).
 
 Hosted source4065e35 verification subsequently completed PASS:834 tests,0 failures,1 emulator-only skip across106 test files, plus backend/assets/36 production checks; run41851671404. This does not erase the local gallery404 or verify real providers/live. [CI](https://github.com/Taha7869/AllBarka-34/actions/runs/41851671404).
 
@@ -29,6 +29,8 @@ Reviewed implementation baseline: 47f9acde89d58a7a25a122ed80252d51d0f0f4f2, PR #
 | --- | --- | --- |
 | DOC-CLEAN-01 | COMPLETED source/documentation at9d9fd13 | Verify links, stable IDs, build/checks, final diff and remote save; evidence in [cleanup record](docs/CLEANUP_VERIFICATION_2026-11-04.md), removals in [trash.md](trash.md). |
 | CI-PASS1 / CI-RTL1 | Source/targeted checks PASS; hosted PASS at7a9bb0c | Strict tests retained. Revision fixture reload race reproduced; exact historical RTL trigger unconfirmed. Hosted run41846554561:825PASS/0FAIL/1 emulator SKIP. See [Phase1 evidence](docs/execution-2026-11-04/PHASE_1.md). |
+| CI-GALLERY1 | Bounded source/local verification PASS; hosted gallery targets PASS at02fa4a2 | Exact fixture HTTP exceptions, real pending preview/fallback and retained unknown-resource errors. [Current evidence](docs/execution-2026-11-04/GALLERY_VERIFICATION_2026-11-05.md); historical404 trigger remains unconfirmed. |
+| CI-VOICE-SYNC1 | Saved2036234; affected9/9 and fresh local full835PASS/0FAIL/1 emulator SKIP | Wait for the actual hero transcript value before strict assertion; no application change or arbitrary delay. [Evidence](docs/execution-2026-11-04/VOICE_SYNC_2026-11-05.md); current hosted result recorded there. |
 | PRICE-REVIEW-01 | SELECTED read-only review / merchant correction BLOCKED | Reconcile current Firestore records/cost/packing. Pumpkin100g anomaly and DailyGrind component comparison are flags, not approved seed edits. |
 | M34-PRICE | PROPOSED / TODO | Scope comparable unit/bundle warnings with merchant exceptions and actual cost data; no universal monotonic-price law or automatic repricing. |
 | M08-3D | DEFERRED by owner,4Nov2026 | Revisit only when selected later; no current model/prototype dependency. |

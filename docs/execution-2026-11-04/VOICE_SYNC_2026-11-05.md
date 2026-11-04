@@ -1,6 +1,6 @@
 # CI-VOICE-SYNC1 — committed hero transcript, 5 November 2026
 
-Scope SELECTED / IN_PROGRESS: resolve the actual hosted follow-up failure while preserving the voice acceptance criteria. Remote parent02fa4a24d4098ed7a8deb2482f3c6f8ae80ec77a, PR16 working branch. No application, price, key, provider, data or deployment change.
+Scope SELECTED / DONE for bounded local and hosted acceptance: resolve the actual hosted follow-up failure while preserving the voice acceptance criteria. Remote parent02fa4a24d4098ed7a8deb2482f3c6f8ae80ec77a, PR16 working branch. No application, price, key, provider, data or deployment change.
 
 Hosted run41905051979 failed:836 total,834PASS/1FAIL/1 emulator SKIP. Both browser-diagnostic cases and the gallery interaction case PASS. Sole failure is tests/voice-concierge-browser.test.tsx:99: hero input expected `pista 250g`, observed empty immediately after clicking Use this text. Local complete run on the same candidate tree had835PASS/0FAIL/1SKIP; these separate observations are retained. Failed hosted gate did not execute its backend/assets/production follow-on commands.
 
@@ -8,6 +8,8 @@ Source trace: VoiceInputButton invokes AllBarkaHero.onTranscript, which sets the
 
 Minimal change: await the actual hero input value `pista 250g`, then retain the original strict equality, correct product suggestion and no-auto-submit assertions. No arbitrary sleep, looser expected value, skipped test, provider stub change or application refactor. The browser fixture still exercises actual Buddy/hero/shop components and the real HTTP voice router with explicitly mocked hardware/provider.
 
-Affected verification: voice unit/HTTP/browser9/9PASS, exit0 (5.88s). Required current-candidate static/build/full gates and new hosted follow-up are pending at this source-save checkpoint. Real Groq/free-plan/physical-device recognition and TTS, current merchant facts and live checks remain NOT VERIFIED/BLOCKED as previously recorded.
+Affected verification: voice unit/HTTP/browser9/9PASS, exit0 (5.88s). Fresh2036234 candidate typecheck/hooks/build/privacy PASS; complete local gate836 total,835PASS/0FAIL/1 emulator SKIP (294.67s), exit0;21 backend,97 products/115 image references with0 missing,36 production checks PASS. Source2036234 hosted retry[41907251379](https://github.com/Taha7869/AllBarka-34/actions/runs/41907251379) PASS:835PASS/0FAIL/1 emulator SKIP,836 total across106 files (596.61s);21 backend,97 products/115 image references/0 missing and36 production checks PASS; typecheck/hooks/build/privacy also PASS. This does not erase the earlier failed run or verify providers/live. The final documentation-only successor retains this test/runtime source; its new CI is separate. Real Groq/free-plan/physical-device recognition and TTS, current merchant facts and live checks remain NOT VERIFIED/BLOCKED as previously recorded.
 
 Review: implementation self-review of event/state path and three-line test diff; no independent reviewer claimed. Source checkpoint and final full-gate results will be referenced in the main gallery evidence, master plan and handoff after completion. Final save uses verified source parent/tree, expected-parent fast-forward and read-back. No tracked file deletion; historical evidence remains intact.
+
+Source save203623404979b52837963c4750d7724acdfec305 was read back: exact tree32bc4232c8e405b8990c0d27b4ce493e6ef6ba58, parent02fa4a2, two intended paths and no deletions. Main tracker/handoff now include this task and the fresh local outcomes. No application source differs from4065e35.
