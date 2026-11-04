@@ -96,6 +96,9 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     await page.evaluate(()=>(window as any).fixture.resolvePermission());await page.waitForFunction(n=>(window as any).fixture.tracksStopped>n,stopLate);
     assert.equal(transcriptions,before,'cancelled permission result never uploads');
     await page.goto(origin+'/hero');await record();await page.getByRole('button',{name:'Use this text',exact:true}).click();
+    // Hero's controlled query reaches the animated input through its state-sync effect.
+    // Observe the committed value before the strict assertion, not click completion.
+    await page.waitForFunction(()=>document.querySelector<HTMLInputElement>('#hero-search-input')?.value==='pista 250g');
     assert.equal(await page.locator('#hero-search-input').inputValue(),'pista 250g');
     await page.locator('#hero-search-suggestions a[href="/product/pista"]').waitFor();
     assert.deepEqual(await page.evaluate(()=>(window as any).fixture.searches),[],'using transcript does not submit hero search');
