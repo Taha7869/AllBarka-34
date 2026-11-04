@@ -1,5 +1,9 @@
 # AllBarka — repository entry for AI agents
 
+Hosted source4065e35 verification subsequently completed PASS:834 tests,0 failures,1 emulator-only skip across106 test files, plus backend/assets/36 production checks; run41851671404. This does not erase the local gallery404 or verify real providers/live. [CI](https://github.com/Taha7869/AllBarka-34/actions/runs/41851671404).
+
+Latest saved source: 4065e357633586f186143191282c5809584e6f9a. Read [current verification/blocker](docs/execution-2026-11-04/FINAL_STATUS.md) before continuing: targeted gates PASS; full local suite has one unresolved gallery404 diagnostic and execution environment is unavailable. Do not claim release-ready.
+
 ## Mandatory entry and current branch
 
 Read [instructions.md](instructions.md), [RULES.md](RULES.md), [MASTER_PLAN.md](MASTER_PLAN.md) and the [current handoff](docs/admin-expansion/HANDOFF.md) before editing. [instruction.md](instruction.md) is only an alias. These guides describe evidence and process, not a guarantee of zero defects.
