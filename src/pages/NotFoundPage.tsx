@@ -22,6 +22,7 @@ export default function NotFoundPage() {
 
   return (
     <div
+      data-error-surface="not-found"
       dir={isRtl ? 'rtl' : 'ltr'}
       className="w-full min-h-[70vh] bg-[var(--color-base,#FAF9F5)] flex items-center justify-center py-20 px-4 select-none"
     >

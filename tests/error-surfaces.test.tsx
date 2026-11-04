@@ -371,22 +371,20 @@ test('Browser: Real ErrorBoundary catches child failure, recovers via onReset, c
 
         for (const lang of languages) {
           for (const dark of themes) {
+            await page.waitForFunction(() => typeof (window as any).__setLanguage === 'function');
             await page.evaluate(
               ({ lang, dark }) => {
-                if ((window as any).__setLanguage) {
-                  (window as any).__setLanguage(lang);
-                }
+                (window as any).__setLanguage(lang);
                 document.documentElement.classList.toggle('dark', dark);
               },
               { lang, dark }
             );
 
-            // Await layout stabilization
-            await page.waitForTimeout(40);
-
-            // 1. Verify RTL direction
+            // Await the committed language and the specific surface, not elapsed time.
             const expectedDir = lang === 'en' ? 'ltr' : 'rtl';
-            const surfaceContainer = surface === 'error' ? page.locator('[role="alert"]') : page.locator('div[dir]').first();
+            const selector = surface === 'error' ? '[role="alert"]' : '[data-error-surface="not-found"]';
+            await page.waitForFunction(({ selector, lang, dir }) => document.documentElement.lang === lang && document.querySelector(selector)?.getAttribute('dir') === dir, { selector, lang, dir: expectedDir });
+            const surfaceContainer = page.locator(selector);
             assert.equal(await surfaceContainer.getAttribute('dir'), expectedDir);
 
             // 2. Verify zero horizontal overflow at standard zoom

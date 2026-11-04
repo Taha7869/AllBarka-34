@@ -253,7 +253,9 @@ createRoot(document.getElementById('root')!).render(
     await claimsNotesInput.fill('CONFIDENTIAL_INTERNAL_AUDIT_BATCH_99');
 
     // 3. Save as published
-    const saveResponsePromise = page.waitForResponse(r => r.url().includes('/api/admin/catalog/products/pista') && r.status() === 200);
+    const saveResponsePromise = page.waitForResponse(r => r.url().includes('/api/admin/catalog/products/pista') && r.request().method() === 'PUT' && r.status() === 200);
+    // onSaved replaces the parent product, which triggers an authoritative editor reload.
+    const savedEditorReload = page.waitForResponse(r => r.url().includes('/api/admin/catalog/products/pista') && r.request().method() === 'GET');
     const publishButton = dialog.locator('footer.item-actions button.item-primary');
     await publishButton.click();
     await saveResponsePromise;
@@ -276,6 +278,10 @@ createRoot(document.getElementById('root')!).render(
     assert.equal(savedData.claimsVerification?.status, 'verified');
     assert.equal(savedData.claimsVerification?.notes, 'CONFIDENTIAL_INTERNAL_AUDIT_BATCH_99');
     assert.equal(savedData.revision, 2);
+    const reloaded = await savedEditorReload;
+    assert.equal((await reloaded.json()).product.revision, 2);
+    await page.waitForFunction(() => document.querySelector('.item-editor')?.getAttribute('aria-busy') === 'false' && document.querySelector('fieldset')?.disabled === false);
+    await page.waitForFunction(() => (window as any).fixtureSavedProduct?.revision === 2);
 
     // 5. Verify Public API Privacy
     const publicSingleRes = await fetch(`${origin}/api/catalog/products/pista`);
@@ -298,7 +304,9 @@ createRoot(document.getElementById('root')!).render(
     const staleSaveResPromise = page.waitForResponse(r => r.url().includes('/api/admin/catalog/products/pista') && r.request().method() === 'PUT');
     await publishButton.click();
     const staleSaveRes = await staleSaveResPromise;
+    assert.equal(staleSaveRes.request().postDataJSON().expectedRevision, 2, 'The editor must actually submit the stale revision under test');
     assert.equal(staleSaveRes.status(), 409);
+    assert.equal((await db.collection('products').doc('pista').get()).data()?.revision, 5, 'A rejected stale save must not overwrite the concurrent edit');
 
     // Verify conflict alert appears
     const errorAlert = dialog.locator('p.item-error');
@@ -361,7 +369,7 @@ createRoot(document.getElementById('root')!).render(
     await page.evaluate(() => {
       (window as any).fixtureSetLanguage('ur');
     });
-    await page.waitForTimeout(100);
+    await page.waitForFunction(() => document.querySelector('[role="dialog"]')?.getAttribute('dir') === 'rtl');
     assert.equal(await dialog.getAttribute('dir'), 'rtl');
 
     // 10. Test Dark Mode

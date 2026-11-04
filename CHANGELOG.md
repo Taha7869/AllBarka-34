@@ -1,3 +1,7 @@
+## 4 November 2026 — Phase1 CI synchronization
+
+Post-save editor reload is now explicitly awaited before stale-revision mutation; asserts outgoing revision2, HTTP409 and preserved concurrent revision5. RTL tests await actual locale/surface state. NotFound adds a stable test marker only. Type/hooks/build and targeted6/6PASS; full820P/1F/1S with a separate hover-clock blocker. [Evidence](docs/execution-2026-11-04/PHASE_1.md). No runtime price/auth changes.
+
 ## 4 November 2026 — DOC-CLEAN-01 / AI guide, review reconciliation and safe cleanup
 
 - Before: mixed continuation/history in instructions.md, obsolete browser-localhost/Ollama README, stale phase summaries and reviewer claims could misdirect new agents.

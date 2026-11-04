@@ -1,5 +1,7 @@
 # AllBarka — visual identity and experience master plan
 
+4 November 2026 — Phase1 execution: revision test now waits for its actual post-save reload and proves stale expectedRevision2 is rejected against stored5; RTL test waits for committed language/specific surface. Targeted6/6PASS; full820PASS/1FAIL/1SKIP (separate showcase hover test). No hosted-green/provider/live claim. Dedicated evidence: [execution index](docs/execution-2026-11-04/README.md).
+
 ## Current checkpoint — 4 November 2026
 
 Reviewed implementation baseline: 47f9acde89d58a7a25a122ed80252d51d0f0f4f2, PR #16, codex/admin-catalog-foundation-20261023 against launch. Fetch current HEAD before edits. [instructions.md](instructions.md) is the current concise guide; [instruction.md](instruction.md) is an alias. [Review reconciliation](docs/REVIEW_RECONCILIATION_2026-11-04.md) resolves the latest external review without changing prices or runtime code.
