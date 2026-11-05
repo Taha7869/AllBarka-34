@@ -42,4 +42,17 @@ jobs:
       - name: Production build and release privacy audit
         run: npm run build
       - name: Complete offline regression gate
+        env:
+          ALLBARKA_CAPTURE_EVIDENCE: 'true'
         run: node scripts/run-all-tests.mjs
+      - name: Retain fixture storefront screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: storefront-visual-evidence
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            docs/evidence/premium-gifting/after-*.jpg
+            docs/evidence/premium-gifting/layouts.json
+            docs/evidence/premium-v1-revision/after-*.jpg

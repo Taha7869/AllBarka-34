@@ -1,3 +1,4 @@
+import type { GiftRecipient } from './giftRecipient';
 import { apiUrl } from './apiUrl';
 import { withApiDeadline } from './apiDeadline';
 
@@ -15,6 +16,7 @@ export interface CustomQuoteSubmissionInput {
   hamperConfiguration?: any;
   quantity: number;
   eventType: string;
+  giftRecipient?: GiftRecipient;
   targetEventDate?: string;
   preferredFillings?: string[];
   customFillingsNotes?: string;

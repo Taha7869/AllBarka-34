@@ -1,3 +1,5 @@
+import { GIFT_RECIPIENT_LABELS, isGiftRecipient } from './giftRecipient';
+import type { GiftRecipient } from './giftRecipient';
 /**
  * WhatsApp Inquiry & Quote URL Builder
  *
@@ -34,6 +36,7 @@ export interface CustomerInquiryWhatsAppParams {
   quantityUnit?: 'pieces' | 'packs' | 'sets';
   piecesPerPack?: number;
   eventType: string;
+  giftRecipient?: GiftRecipient;
   targetEventDate?: string | null;
   preferredFillings?: string[];
   customFillingsNotes?: string;
@@ -71,6 +74,7 @@ export interface AdminWhatsAppPitchParams {
   quantityUnit?: 'pieces' | 'packs' | 'sets';
   piecesPerPack?: number;
   eventType?: string;
+  giftRecipient?: GiftRecipient;
   targetEventDate?: string | null;
   preferredFillings?: string[];
   monogramText?: string;
@@ -170,6 +174,8 @@ export function buildCustomerInquiryWhatsAppUrl(params: CustomerInquiryWhatsAppP
     `• *Occasion / Event:* ${params.eventType}`,
     params.targetEventDate ? `• *Target Event Date:* ${params.targetEventDate}` : '',
   );
+
+  if (isGiftRecipient(params.giftRecipient)) lines.push(`• *Gift for:* ${GIFT_RECIPIENT_LABELS[params.giftRecipient]}`);
 
   // Exact lead time notice with honest acknowledgment state
   if (params.leadTimeNoticeAcknowledged) {
@@ -293,6 +299,7 @@ export function buildAdminWhatsAppPitchUrl(params: AdminWhatsAppPitchParams): st
     }
   }
 
+  if (isGiftRecipient(params.giftRecipient)) lines.push(`• *Gift for:* ${GIFT_RECIPIENT_LABELS[params.giftRecipient]}`);
   if (params.eventType) lines.push(`• *Occasion:* ${params.eventType}`);
   if (params.targetEventDate) lines.push(`• *Target Event Date:* ${params.targetEventDate}`);
   if (params.preferredFillings && params.preferredFillings.length > 0) {

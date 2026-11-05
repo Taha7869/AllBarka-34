@@ -1,3 +1,4 @@
+import { isGiftRecipient, type GiftRecipient } from '../lib/giftRecipient';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   MessageCircle,
@@ -44,6 +45,7 @@ export interface AdminInquiryRecord {
   quantityUnit?: 'pieces' | 'packs' | 'sets';
   piecesPerPack?: number;
   eventType: string;
+  giftRecipient?: GiftRecipient;
   targetEventDate?: string | null;
   budgetType?: 'per_piece' | 'total' | null;
   preferredFillings?: string[];
@@ -96,7 +98,7 @@ function buildLiveWhatsAppPitch(
 
 export default function AdminInquiriesPanel() {
   const { currentUser } = useAuth();
-  const { language } = useAdminLanguage();
+  const { language, t } = useAdminLanguage();
 
   const [inquiries, setInquiries] = useState<AdminInquiryRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -180,6 +182,7 @@ export default function AdminInquiriesPanel() {
         item.productName,
         item.productId,
         item.eventType,
+        item.giftRecipient,
         item.customPrintText,
         item.notes,
         item.adminNotes,
@@ -490,6 +493,8 @@ export default function AdminInquiriesPanel() {
                         {item.eventType}
                       </span>
                     )}
+
+                    {isGiftRecipient(item.giftRecipient) && <span className="gift-recipient-summary">{t('gift.recipientLabel')}: {t(`gift.recipient.${item.giftRecipient}`)}</span>}
 
                     {/* Target Event Date Badge */}
                     {item.targetEventDate && (

@@ -11,6 +11,7 @@ import { memoryFirestore } from './helpers/memoryFirestore';
 import { HAMPER_BOX_SEEDS } from '../src/lib/hamperBoxSchema';
 import { hamperSelectionPrice } from '../src/lib/hamperCatalog';
 import { PRODUCTS } from '../src/data/products';
+import { createInquiriesRouter } from '../src/lib/inquiriesRouter';
 import { createCatalogRouter } from '../src/lib/catalogRouter';
 import { createCatalogConfigurationRouter } from '../src/lib/catalogConfigurationRouter';
 import { createStorefrontContentRouter } from '../src/lib/storefrontContentRouter';
@@ -19,7 +20,7 @@ import { createStorefrontContentRouter } from '../src/lib/storefrontContentRoute
 test('gift atelier: discovery, current catalogue total, message preview and saved hamper', async () => {
   const temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'allbarka-hero-'));
   const fixtureProducts=PRODUCTS.map(product=>product.id==='pista'?{...product,prices:{...product.prices,'1kg':(product.prices['1kg']||4500)+500,'250g':product.prices['250g']+500}}:product);
-  const { db } = memoryFirestore(Object.fromEntries([...fixtureProducts.map(product => [`products/${product.id}`, product] as const),...HAMPER_BOX_SEEDS.map(box=>[`hamperBoxes/${box.id}`,{schemaVersion:1,boxId:box.id,revision:0,price:box.price,active:true}] as const)]));
+  const { db, records } = memoryFirestore(Object.fromEntries([...fixtureProducts.map(product => [`products/${product.id}`, product] as const),...HAMPER_BOX_SEEDS.map(box=>[`hamperBoxes/${box.id}`,{schemaVersion:1,boxId:box.id,revision:0,price:box.price,active:true}] as const)]));
   const entry = `import React,{useEffect}from'react';import{createRoot}from'react-dom/client';import{BrowserRouter,Routes,Route,useNavigate}from'react-router-dom';
 import{LanguageProvider,useLanguage}from'./src/contexts/LanguageContext';import{ThemeProvider,useTheme}from'./src/contexts/ThemeContext';import{CartProvider,useCart}from'./src/contexts/CartContext';import{CatalogProvider,useCatalogProducts}from'./src/contexts/CatalogContext';import{MerchandisingProvider}from'./src/contexts/MerchandisingContext';import{ProductMediaProvider}from'./src/contexts/ProductMediaContext';import{StorefrontContentProvider,useStorefrontContentRefresh}from'./src/contexts/StorefrontContentContext';
 import RootLayout from'./src/layouts/RootLayout';import HomePage from'./src/pages/HomePage';import ShopPage from'./src/pages/ShopPage';import ProductDetailPage from'./src/pages/ProductDetailPage';import CartPage from'./src/pages/CartPage';import CheckoutPage from'./src/pages/CheckoutPage';import{PRODUCTS}from'./src/data/products';
@@ -33,6 +34,7 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     } }] });
   const app = express(); app.use(express.json());
   const requireAdmin: any = (_req: any, res: any) => res.status(403).json({ code: 'FORBIDDEN_ADMIN' });
+  app.use(createInquiriesRouter({ getDb: () => db, getCatalog: () => fixtureProducts, requireAdmin }));
   app.use(createCatalogRouter({ getDb: () => db, requireAdmin }));
   app.use(createCatalogConfigurationRouter({ getDb: () => db, requireAdmin }));
   app.use(createStorefrontContentRouter({ getDb: () => db, requireAdmin }));
@@ -77,6 +79,71 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     await page.locator('.gift-occasions button').nth(1).click();assert.equal(new URL(page.url()).searchParams.get('occasion'),'wedding');assert.equal(new URL(page.url()).searchParams.get('utm_source'),'fixture');await page.locator('.gift-occasions button').first().click();
     await page.locator('.gift-budget button').nth(1).click();assert.equal(new URL(page.url()).searchParams.get('budget'),'3000');assert.equal(new URL(page.url()).searchParams.get('utm_source'),'fixture');
     await page.locator('.gift-budget button').first().click();assert.equal(new URL(page.url()).searchParams.has('budget'),false);
+    // Recipient intent stays separate from catalog eligibility, budget and printing.
+    const countBefore = await page.locator('.gift-product-grid > *').count();
+    await page.locator('#gift-recipient').selectOption('family');
+    await page.waitForURL(/recipient=family/);
+    assert.equal(new URL(page.url()).searchParams.get('utm_source'), 'fixture');
+    assert.equal(await page.locator('.gift-product-grid > *').count(), countBefore);
+    await page.reload(); await page.waitForFunction(() => document.querySelector<HTMLSelectElement>('#gift-recipient')?.value === 'family');
+    await page.locator('.gift-recipient-action').click();
+    const inquiry = page.locator('.custom-quote-dialog'); await inquiry.waitFor();
+    await page.waitForFunction(() => document.querySelector('.custom-quote-dialog')?.contains(document.activeElement));
+    assert.equal(await page.locator('#root').evaluate(e => (e as HTMLElement).inert), true);
+    assert.equal(await page.locator('#quote-gift-recipient').inputValue(), 'family');
+    assert.equal(await page.locator('#quote-product-select').inputValue(), '', 'guidance does not preselect an unrelated product');
+    assert.equal(await page.locator('#quote-target-budget').inputValue(), '', 'pack budget is not silently treated as total inquiry budget');
+    assert.equal(await page.locator('#quote-event-type').inputValue(), 'Other Celebration');
+    const firstControl = inquiry.locator('button').first();
+    await firstControl.focus(); await page.keyboard.press('Shift+Tab');
+    const lastControl = inquiry.locator('a').last();
+    assert.equal(await lastControl.evaluate(e => e === document.activeElement), true);
+    await page.keyboard.press('Tab'); assert.equal(await firstControl.evaluate(e => e === document.activeElement), true);
+    for (const language of ['en', 'ur', 'ar']) for (const theme of ['light', 'dark']) {
+      await page.evaluate(({language, theme}) => { (window as any).fixture.lang(language); (window as any).fixture.theme(theme); }, {language, theme});
+      await page.waitForFunction(rtl => document.querySelector('.custom-quote-dialog')?.getAttribute('dir') === (rtl ? 'rtl' : 'ltr'), language !== 'en');
+      for (const size of [{width:360,height:640},{width:844,height:390},{width:1440,height:900}]) {
+        await page.setViewportSize(size); await page.screenshot({animations:'disabled'});
+        assert.equal(await inquiry.evaluate(e => e.scrollWidth <= e.clientWidth + 1), true, `quote ${language}/${theme}/${size.width}`);
+        assert.ok(await page.locator('.custom-quote-body').evaluate(e => e.clientHeight) >= 80);
+        assert.ok(await page.locator('#quote-gift-recipient').evaluate(e => e.getBoundingClientRect().height) >= 44);
+        layouts.push({surface:'quote',width:size.width,language,theme});
+      }
+      await page.setViewportSize({width:360,height:640});
+      await page.evaluate(() => document.documentElement.style.fontSize = '200%');
+      await page.screenshot({animations:'disabled'});
+      assert.equal(await inquiry.evaluate(e => e.scrollWidth <= e.clientWidth + 1), true, `quote doubled text ${language}/${theme}`);
+      assert.ok(await page.locator('.custom-quote-body').evaluate(e => e.clientHeight) >= 80);
+      await page.evaluate(() => document.documentElement.style.fontSize = '');
+    }
+    await page.evaluate(() => { (window as any).fixture.lang('en'); (window as any).fixture.theme('light'); });
+    await page.setViewportSize({width:390,height:844});
+    await page.locator('#quote-customer-name').fill('Fixture Customer');
+    await page.locator('#quote-customer-phone').fill('03001234567');
+    await page.locator('#quote-gift-recipient').selectOption('friend');
+    const failSave = (route:any) => route.fulfill({status:503,json:{ok:false,code:'PERSISTENCE_UNAVAILABLE',message:'Fixture storage unavailable'}});
+    await page.route('**/api/quotes', failSave);
+    const failedResponse = page.waitForResponse(r => r.url().endsWith('/api/quotes') && r.status() === 503);
+    await inquiry.locator('button[type=submit]').click(); await failedResponse;
+    await inquiry.getByText('Fixture storage unavailable', {exact:true}).waitFor();
+    assert.equal(await page.locator('#quote-gift-recipient').inputValue(), 'friend');
+    assert.equal(await page.locator('#quote-customer-name').inputValue(), 'Fixture Customer');
+    await page.unroute('**/api/quotes', failSave);
+    const savedResponse = page.waitForResponse(r => r.url().endsWith('/api/quotes') && r.status() === 200);
+    await inquiry.locator('button[type=submit]').click();
+    const saved = await (await savedResponse).json();
+    await inquiry.locator('[data-gift-recipient=friend]').waitFor();
+    const savedRecord:any = records.get(`inquiries/${saved.id}`);
+    assert.equal(savedRecord.giftRecipient, 'friend'); assert.equal(savedRecord.customPrintText, '');
+    assert.equal(savedRecord.productId, 'custom'); assert.equal(savedRecord.standardPrice, null);
+    assert.match(new URL(savedRecord.whatsappUrl).searchParams.get('text')!, /Gift for:\* A friend/);
+    await page.keyboard.press('Escape'); await inquiry.waitFor({state:'hidden'});
+    assert.equal(await page.locator('#root').evaluate(e => (e as HTMLElement).inert), false);
+    assert.equal(await page.locator('.gift-recipient-action').evaluate(e => e === document.activeElement), true);
+    assert.equal(await page.evaluate(() => document.body.style.overflow), '');
+    await page.locator('.gift-recipient-action').click(); await inquiry.waitFor();
+    assert.equal(await page.locator('#quote-gift-recipient').inputValue(), 'family', 'fresh inquiry uses current page choice');
+    await page.keyboard.press('Escape'); await inquiry.waitFor({state:'hidden'});
     const unavailablePortion=async(route:any)=>{const response=await route.fetch();const data=await response.json();data.products=data.products.filter((product:any)=>product.id!=='pista');data.version+='-unavailable-portion';await route.fulfill({response,json:data});};
     await page.route('**/api/catalog',unavailablePortion);await page.reload();await page.waitForFunction(()=>(window as any).fixture.catalog.find((p:any)=>p.id==='pista')?.active===false);
     await page.locator('.gift-open-builder').click();await page.locator('.gift-builder-steps button').nth(1).click();

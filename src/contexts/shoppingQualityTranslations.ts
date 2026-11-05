@@ -1,4 +1,14 @@
 const rows: [string, string, string, string][] = [
+  ["gift.recipientLabel", "Who is the gift for?", "تحفہ کس کے لیے ہے؟", "لمن هذه الهدية؟"],
+  ["gift.recipientOptional", "Gift recipient (optional)", "تحفہ کس کے لیے ہے؟ (اختیاری)", "مستلم الهدية (اختياري)"],
+  ["gift.recipientAny", "Anyone / not decided yet", "ابھی فیصلہ نہیں کیا", "لم أحدد بعد"],
+  ["gift.recipient.family", "Family", "گھر والوں کے لیے", "العائلة"],
+  ["gift.recipient.friend", "A friend", "دوست کے لیے", "صديق"],
+  ["gift.recipient.colleagues", "Colleagues", "ساتھیوں کے لیے", "الزملاء"],
+  ["gift.recipient.clients", "Clients", "کلائنٹس کے لیے", "العملاء"],
+  ["gift.recipientNote", "Your choice helps our team discuss your gift. Browse all gifts below; contents and suitability need your review.", "آپ کا انتخاب ہماری ٹیم کو رہنمائی میں مدد دے گا۔ نیچے تمام تحائف دیکھیں اور مشمولات و موزونیت کا جائزہ لیں۔", "يساعد اختيارك فريقنا في مناقشة الهدية. تصفح جميع الهدايا أدناه وراجع المحتويات ومدى ملاءمتها."],
+  ["gift.recipientAction", "Ask for gift guidance", "تحفے کے انتخاب میں مدد لیں", "اطلب المساعدة في اختيار هدية"],
+
   ["purchase.bag", "Your shopping bag", "آپ کا شاپنگ بیگ", "حقيبة التسوق"],
   ["purchase.eyebrow", "Your AllBarka selection", "آپ کا آلبرکہ انتخاب", "اختياراتك من البركة"],
   ["purchase.intro", "Review your favourites, check the details and make them yours.", "اپنی پسند کی مصنوعات اور تفصیلات دیکھیں، پھر آرڈر مکمل کریں۔", "راجع مفضلاتك وتفاصيلها ثم أكمل طلبك."],

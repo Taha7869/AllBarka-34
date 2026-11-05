@@ -1,3 +1,4 @@
+import { isGiftRecipient } from './giftRecipient';
 import { Router, type RequestHandler } from 'express';
 import type { Firestore } from 'firebase-admin/firestore';
 import type { InquiryRecord, InquiryStatus, InquiryType, Product } from '../types';
@@ -270,6 +271,10 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
       const budgetVal = body.targetPricePkr ?? body.offeredPrice ?? body.customerOfferedRate ?? null;
       const notes = String(body.notes ?? body.message ?? body.customHamperNotes ?? '').trim();
       const submissionKey = String(req.headers['idempotency-key'] ?? body.submissionKey ?? body.idempotencyKey ?? '').trim() || undefined;
+      if (body.giftRecipient != null && body.giftRecipient !== '' && !isGiftRecipient(body.giftRecipient)) {
+        return res.status(400).json({ code: 'INVALID_GIFT_RECIPIENT', error: 'Please select a supported gift recipient.' });
+      }
+      const giftRecipient = isGiftRecipient(body.giftRecipient) ? body.giftRecipient : undefined;
 
       if (customerName.length < 2 || customerName.length > 100) {
         return res.status(400).json({ error: 'Please provide your name (at least 2 characters).', code: 'MISSING_NAME' });
@@ -357,6 +362,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
             monogramText: body.monogramText || '',
             cardMessage: body.cardMessage || '',
             customPrintText,
+            giftRecipient,
             budgetType: body.budgetType || null,
             targetPricePkr: offPrice,
             leadTimeNoticeAcknowledged: Boolean(body.leadTimeNoticeAcknowledged),
@@ -381,6 +387,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
             monogramText: body.monogramText || '',
             cardMessage: body.cardMessage || '',
             customPrintText,
+            giftRecipient,
             budgetType: body.budgetType || null,
             targetPricePkr: offPrice,
             leadTimeNoticeAcknowledged: Boolean(body.leadTimeNoticeAcknowledged),
@@ -406,6 +413,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         monogramText: body.monogramText ? String(body.monogramText).slice(0, 200) : '',
         cardMessage: body.cardMessage ? String(body.cardMessage).slice(0, 500) : '',
         customPrintText,
+        giftRecipient,
         budgetType: body.budgetType === 'per_piece' || body.budgetType === 'total' ? body.budgetType : null,
         targetPricePkr: offPrice,
         referenceUnitPrice: resolution.standardPrice,
@@ -447,6 +455,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         monogramText: body.monogramText ? String(body.monogramText).trim().slice(0, 200) : '',
         cardMessage: body.cardMessage ? String(body.cardMessage).trim().slice(0, 500) : '',
         customPrintText,
+        giftRecipient,
         standardPrice: resolution.standardPrice,
         estimatedTotalPkr: resolution.estimatedTotalPkr ?? (resolution.standardPrice != null ? resolution.standardPrice * rawQuantity : null),
         packPrice: resolution.packPrice,
@@ -536,6 +545,10 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
       const budgetVal = raw.targetPricePkr ?? raw.offeredPrice ?? raw.customerOfferedRate ?? null;
       const notes = String(raw.notes ?? raw.message ?? raw.customHamperNotes ?? '').trim();
       const submissionKey = String(req.headers['idempotency-key'] ?? raw.submissionKey ?? raw.idempotencyKey ?? '').trim() || undefined;
+      if (raw.giftRecipient != null && raw.giftRecipient !== '' && !isGiftRecipient(raw.giftRecipient)) {
+        return res.status(400).json({ code: 'INVALID_GIFT_RECIPIENT', error: 'Please select a supported gift recipient.' });
+      }
+      const giftRecipient = isGiftRecipient(raw.giftRecipient) ? raw.giftRecipient : undefined;
 
       if (resolvedName.length < 2 || resolvedName.length > 100) {
         return res.status(400).json({ error: 'Please provide your name (at least 2 characters).', code: 'MISSING_NAME' });
@@ -618,6 +631,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
             monogramText: raw.monogramText || '',
             cardMessage: raw.cardMessage || '',
             customPrintText,
+            giftRecipient,
             budgetType: raw.budgetType || null,
             targetPricePkr: offPrice,
             leadTimeNoticeAcknowledged: Boolean(raw.leadTimeNoticeAcknowledged),
@@ -642,6 +656,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
             monogramText: raw.monogramText || '',
             cardMessage: raw.cardMessage || '',
             customPrintText,
+            giftRecipient,
             budgetType: raw.budgetType || null,
             targetPricePkr: offPrice,
             leadTimeNoticeAcknowledged: Boolean(raw.leadTimeNoticeAcknowledged),
@@ -667,6 +682,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         monogramText: raw.monogramText ? String(raw.monogramText).slice(0, 200) : '',
         cardMessage: raw.cardMessage ? String(raw.cardMessage).slice(0, 500) : '',
         customPrintText,
+        giftRecipient,
         budgetType: raw.budgetType === 'per_piece' || raw.budgetType === 'total' ? raw.budgetType : null,
         targetPricePkr: offPrice,
         referenceUnitPrice: resolution.standardPrice,
@@ -708,6 +724,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         monogramText: raw.monogramText ? String(raw.monogramText).trim().slice(0, 200) : '',
         cardMessage: raw.cardMessage ? String(raw.cardMessage).trim().slice(0, 500) : '',
         customPrintText,
+        giftRecipient,
         standardPrice: resolution.standardPrice,
         estimatedTotalPkr: resolution.estimatedTotalPkr ?? (resolution.standardPrice != null ? resolution.standardPrice * rawQuantity : null),
         packPrice: resolution.packPrice,

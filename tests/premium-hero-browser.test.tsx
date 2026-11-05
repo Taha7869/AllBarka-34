@@ -76,6 +76,17 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
       await page.locator('#allbarka-pantry').screenshot({path:path.join(shots,`collections-${width}.jpg`),quality:82});
     }
     assert.equal(await page.evaluate(()=>{const first=document.querySelector('[data-content-section]');const assurances=document.querySelector('.editorial-assurances');return !!first&&!!assurances&&!!(first.compareDocumentPosition(assurances)&Node.DOCUMENT_POSITION_FOLLOWING);}),true,'collections and products precede secondary assurances');
+    assert.deepEqual(await page.locator('.editorial-care-link').evaluateAll(links => links.map(link => link.getAttribute('href'))), ['/shop','/gifting','/policies/shipping']);
+    for (const language of ['en','ur','ar']) {
+      await page.evaluate(language => (window as any).fixture.lang(language), language);
+      await page.waitForFunction(rtl => document.querySelector('.editorial-care')?.getAttribute('dir') === (rtl ? 'rtl' : 'ltr'), language !== 'en');
+      await page.setViewportSize({width:360,height:640});
+      await page.evaluate(() => document.documentElement.style.fontSize = '200%');
+      await page.locator('.editorial-care').scrollIntoViewIfNeeded(); await page.screenshot({animations:'disabled'});
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `care enlarged ${language}`);
+      assert.equal(await page.locator('.editorial-care-link').evaluateAll(links => links.every(link => link.getBoundingClientRect().height >= 44)), true);
+      await page.evaluate(() => document.documentElement.style.fontSize = '');
+    }
     assert.equal(await page.locator('.table-gift-figure').evaluate(e=>getComputedStyle(e).animationName),'none');
     await page.evaluate(()=>{(window as any).fixture.lang('en');(window as any).fixture.theme('light');});await page.setViewportSize({width:390,height:844});
     const search=page.locator('#hero-search-input');await search.fill('pistachio');await page.locator('.boutique-suggestion').first().waitFor();

@@ -1,3 +1,4 @@
+import type { GiftRecipient } from './giftRecipient';
 import crypto from 'node:crypto';
 import type { Firestore } from 'firebase-admin/firestore';
 import type { InquiryRecord, InquiryStatus, InquiryType, Product } from '../types';
@@ -81,6 +82,7 @@ export interface InquiryPayloadFields {
   boxMode: string;
   quantity: number;
   eventType: string;
+  giftRecipient?: GiftRecipient;
   targetEventDate?: string | null;
   preferredFillings?: string[];
   customFillingsNotes?: string;
@@ -116,6 +118,8 @@ export function computeInquiryPayloadHash(
     monogramText: fields.monogramText ? String(fields.monogramText).trim() : '',
     cardMessage: fields.cardMessage ? String(fields.cardMessage).trim() : '',
     customPrintText: printText,
+    // Omit absent intent so pre-existing submission hashes remain valid.
+    ...(fields.giftRecipient ? { giftRecipient: fields.giftRecipient } : {}),
     budgetType: fields.budgetType || null,
     targetPricePkr: fields.targetPricePkr ?? null,
     leadTimeNoticeAcknowledged: Boolean(fields.leadTimeNoticeAcknowledged),

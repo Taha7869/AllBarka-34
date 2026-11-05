@@ -211,3 +211,29 @@
 @media(max-width:1023px) { .gift-opening { padding:28px; gap:28px; }.gift-product-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }.gift-builder-layout { grid-template-columns:minmax(0,1fr); } }
 @media(max-width:639px) { .gift-opening { grid-template-columns:minmax(0,1fr) 110px; padding:24px 20px; gap:18px 14px; }.gift-opening>div { display:contents; }.gift-opening .gift-eyebrow,.gift-opening>div>p:not(.gift-eyebrow),.gift-opening-actions,.gift-opening ul { grid-column:1/-1; }.gift-opening h1 { grid-column:1; grid-row:2; font-size:1.9rem; margin:0; }.gift-opening figure { grid-column:2; grid-row:2; align-self:center; }.gift-opening img { aspect-ratio:.85; }.gift-opening figcaption { font-size:.6rem; line-height:1.6; margin-top:6px; }.gift-opening-actions { margin-block:0; gap:12px 20px; }.gift-opening ul { margin-top:0; }.gift-opening .gift-opening-note { padding-top:14px; }.gift-product-grid { grid-template-columns:minmax(0,1fr); }.gift-builder-preview { padding:14px; }.gift-builder-preview li { grid-template-columns:40px minmax(0,1fr); }.gift-builder-preview li>bdi { grid-column:2; }.gift-builder-preview li img { width:40px; height:40px; grid-row:span 2; } }
 @media(prefers-reduced-motion:reduce) { .gift-destination *,.gift-builder-dialog * { transition:none!important; scroll-behavior:auto!important; } }
+
+/* M16: neutral recipient intent, shared by the existing gifting and quote surfaces. */
+.gift-recipient-guide { display:flex; flex-wrap:wrap; align-items:center; gap:20px; padding:24px; margin-block:24px; border:1px solid var(--color-border); background:var(--color-surface); }
+.gift-recipient-field { display:grid; gap:10px; flex:1 1 260px; min-width:0; color:var(--color-text-primary); }
+.gift-recipient-field label { font-weight:600; line-height:1.8; overflow-wrap:anywhere; }
+.gift-recipient-field select { width:100%; min-width:0; min-height:44px; padding:10px; border:1px solid var(--color-border); border-radius:8px; background:var(--color-surface); color:var(--color-text-primary); font:inherit; }
+.gift-recipient-field p { max-width:65ch; font-size:.875rem; line-height:1.9; color:var(--color-text-secondary); overflow-wrap:anywhere; }
+.gift-recipient-action { display:inline-flex; align-items:center; gap:12px; min-height:44px; max-width:100%; padding:12px 16px; background:var(--color-primary); color:var(--color-primary-fg); line-height:1.8; text-align:start; overflow-wrap:anywhere; }
+.gift-recipient-action svg { flex-shrink:0; }
+.gift-recipient-field select:focus-visible { outline:2px solid var(--color-accent-text); outline-offset:3px; }
+.gift-recipient-summary { color:var(--color-text-primary); background:var(--color-surface); padding:8px 12px; border:1px solid var(--color-border); font-size:.875rem; line-height:1.8; }
+
+.editorial-care-link { display:inline-flex; align-items:center; gap:10px; min-height:44px; max-width:100%; margin-top:16px; font-size:.875rem; line-height:1.8; color:#E4C783; overflow-wrap:anywhere; }
+.editorial-care-link svg { flex-shrink:0; }
+.editorial-care[dir=rtl] :is(h2,h3) { line-height:1.8; }
+.editorial-care :is(h2,h3,p,a,button) { overflow-wrap:anywhere; }
+
+/* M04: quote controls stay readable and reachable on short/enlarged layouts. */
+.custom-quote-panel { min-width:0; max-height:92dvh; }
+.custom-quote-header { flex-shrink:0; max-height:32dvh; overflow-y:auto; }
+.custom-quote-body { min-height:0; }
+.custom-quote-dialog :is(button,select,input:not([type=checkbox]),a) { min-height:44px; }
+.custom-quote-dialog :is(input,select,textarea) { max-width:100%; min-width:0; }
+.custom-quote-dialog :is(h2,h3,p,label,button,a,span,strong) { overflow-wrap:anywhere; }
+.custom-quote-dialog[dir=rtl] :is(label,h2,h3) { letter-spacing:normal; line-height:1.9; }
+.custom-quote-dialog :is(button,a,input,select,textarea):focus-visible { outline:2px solid var(--color-accent-text); outline-offset:3px; }

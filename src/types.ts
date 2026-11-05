@@ -1,3 +1,4 @@
+import type { GiftRecipient } from './lib/giftRecipient';
 import type { HamperConfiguration } from './lib/hamperCatalog';
 import type { ProductCommerce, ProductSeo, ProductAttribute } from './lib/productCommerce';
 import type { RecipeIngredient } from './lib/filledGiftPricing';
@@ -387,6 +388,7 @@ export interface InquiryRecord {
   quantityUnit?: 'pieces' | 'packs' | 'sets';
   piecesPerPack?: number;
   eventType: string;
+  giftRecipient?: GiftRecipient;
   targetEventDate?: string | null;
   budgetType?: 'per_piece' | 'total' | null;
   preferredFillings?: string[];
@@ -427,6 +429,7 @@ export interface CustomQuoteModalInit {
   mode?: 'empty' | 'filled' | 'custom';
   quantity?: number;
   eventType?: string;
+  giftRecipient?: GiftRecipient;
   occasion?: string;
   targetUnitPrice?: number;
   variantLabel?: string;

@@ -1,5 +1,7 @@
 # Admin expansion handoff
 
+5 November 2026 — **Website completion continuation IN_PROGRESS:** M16 recipient guidance and typed inquiry persistence, M05 evidence-aware service information, M04 quote accessibility/readability. See [current report](../execution-2026-11-04/WEBSITE_COMPLETION_2026-11-05.md). Local browser socket restriction requires hosted verification; no provider/live certification.
+
 5 November2026 — **CI-404-NAV1:**002250f branch CI passed; PR merge failed only Batch F recovery synchronization. Corrected the actual recovery-action target and awaited real URL/route/telemetry instead of fixed waits. Affected1/1 and static gates PASS; renewed full/hosted checks IN_PROGRESS. App source13e09d08 unchanged. [Current evidence](../execution-2026-11-04/VOICE_02_IMPLEMENTATION_2026-11-05.md).
 
 5 November2026 — **CI-STAFF-FOCUS2 / CI-HOVER-PREMISE2:**39facbd merge CI passed, branch CI failed the two recurring browser assertions. Staff test now gates/releases the real focus frame and waits focus; showcase verifies font readiness and stable CSS:hover before preserving timing checks. Application source unchanged; targeted12/12PASS and full838/0/1 plus backend/assets/36 production PASS; hosted checks IN_PROGRESS. [Current evidence](../execution-2026-11-04/VOICE_02_IMPLEMENTATION_2026-11-05.md).

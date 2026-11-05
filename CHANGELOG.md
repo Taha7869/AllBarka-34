@@ -1,5 +1,12 @@
 ## 4 November 2026 — verification checkpoint / unfinished release gate
 
+## 5 November 2026 — recipient inquiry handoff and storefront clarity
+
+- Add neutral recipient guidance with validated/idempotent inquiry persistence, admin visibility and WhatsApp draft continuity.
+- Preserve explicitly unselected custom requests; improve modal focus, background isolation, theme and short-height controls.
+- Replace unsupported homepage process claims with shopping/gifting/delivery guidance and useful links.
+- Verification and release limits: [current report](docs/execution-2026-11-04/WEBSITE_COMPLETION_2026-11-05.md).
+
 ## 5 November2026 — CI-404-NAV1 recovery/telemetry synchronization
 
 002250f branch CI passed; PR merge failed only the Batch F404 recovery fixture-path assertion after a500ms sleep. Focus/hover/voice/layout checks passed in both runs. Select the actual404 recovery link and await URL, committed fixture route and removed404 surface; await actual view/add-cart telemetry instead of fixed timing. Original strict assertions retained; no application behavior change. Affected1/1 and typecheck/hooks pass; renewed full/hosted verification in progress. [Evidence](docs/execution-2026-11-04/VOICE_02_IMPLEMENTATION_2026-11-05.md).

@@ -81,7 +81,7 @@ export function sanitizePublicInquiryInput(raw: any): Record<string, any> {
     'customerName', 'name', 'phone', 'customerPhone', 'contact', 'email', 'city',
     'type', 'source', 'productId', 'productName', 'boxId', 'boxName', 'boxMode', 'mode',
     'quantity', 'estimatedQuantity', 'standardPrice', 'referenceUnitPrice',
-    'offeredPrice', 'targetPricePkr', 'customerOfferedRate', 'eventType', 'occasion',
+    'giftRecipient', 'offeredPrice', 'targetPricePkr', 'customerOfferedRate', 'eventType', 'occasion',
     'customPrintText', 'customPrinting', 'packagingVariant', 'variantLabel', 'portion', 'targetEventDate',
     'deliveryCity', 'notes', 'message', 'customHamperNotes', 'metadata', 'topic',
     'budgetType', 'preferredFillings', 'customFillingsNotes', 'monogramText', 'cardMessage',

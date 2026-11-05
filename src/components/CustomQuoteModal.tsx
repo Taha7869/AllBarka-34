@@ -1,4 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { acquireScrollLock } from '../utils/scrollLock';
+import { GIFT_RECIPIENTS, isGiftRecipient, type GiftRecipient } from '../lib/giftRecipient';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   X,
   Sparkles,
@@ -73,6 +76,7 @@ export default function CustomQuoteModal() {
   const hamperBoxes = useCatalogHamperBoxes();
   const { t, isRtl } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   const eligibleProducts = useMemo(() => {
     const bidBoxes = products.filter(p => (p.isBidBox || p.category === 'celebration-boxes') && p.active !== false);
@@ -95,6 +99,7 @@ export default function CustomQuoteModal() {
   const [selectedVariantLabel, setSelectedVariantLabel] = useState<string>('');
   const [mode, setMode] = useState<'empty' | 'filled' | 'custom'>('empty');
   const [quantity, setQuantity] = useState<number>(50);
+  const [giftRecipient, setGiftRecipient] = useState<GiftRecipient | ''>('');
   const [eventType, setEventType] = useState<string>('Nikkah');
   const [targetEventDate, setTargetEventDate] = useState<string>('');
   const [leadTimeAcknowledged, setLeadTimeAcknowledged] = useState<boolean>(false);
@@ -140,7 +145,7 @@ export default function CustomQuoteModal() {
       setHamperConfiguration(detail.hamperConfiguration || null);
 
       // 2. Set product identity without silent fallback to unrelated first item
-      const initialId = detail.productId || (eligibleProducts[0]?.id ?? '');
+      const initialId = detail.productId ?? (eligibleProducts[0]?.id ?? '');
       setSelectedProductId(initialId);
 
       // 3. Reset product-specific variant, occasion, fillings, design text, event date and budget
@@ -148,6 +153,7 @@ export default function CustomQuoteModal() {
       setSelectedVariantLabel(detail.variantLabel || detail.portion || '');
       setMode(detail.mode || 'empty');
       setQuantity(detail.quantity && detail.quantity > 0 ? Math.round(detail.quantity) : 50);
+      setGiftRecipient(isGiftRecipient(detail.giftRecipient) ? detail.giftRecipient : '');
       setEventType(detail.eventType || detail.occasion || 'Nikkah');
       setTargetEventDate(detail.targetEventDate ? String(detail.targetEventDate).trim() : '');
       setLeadTimeAcknowledged(false);
@@ -217,13 +223,28 @@ export default function CustomQuoteModal() {
 
   useEffect(() => {
     if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setIsOpen(false);
-      }
+    const previous = document.activeElement as HTMLElement | null;
+    const root = document.getElementById('root');
+    const wasInert = root?.inert ?? false;
+    const release = acquireScrollLock();
+    if (root) root.inert = true;
+    const frame = requestAnimationFrame(() => {
+      if (!dialogRef.current?.contains(document.activeElement)) dialogRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
+    });
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); setIsOpen(false); return; }
+      if (event.key !== 'Tab') return;
+      const controls = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]') || []).filter(element => element.getClientRects().length);
+      const first = controls[0], last = controls.at(-1);
+      if (event.shiftKey && (document.activeElement === first || !dialogRef.current?.contains(document.activeElement))) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && (document.activeElement === last || !dialogRef.current?.contains(document.activeElement))) { event.preventDefault(); first?.focus(); }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      cancelAnimationFrame(frame); document.removeEventListener('keydown', handleKeyDown); release();
+      if (root) root.inert = wasInert;
+      if (previous?.isConnected && previous.getClientRects().length && !previous.closest('[inert]')) previous.focus({ preventScroll: true });
+    };
   }, [isOpen]);
 
   // Product resolution without silent fallback to unrelated first item
@@ -341,6 +362,7 @@ export default function CustomQuoteModal() {
     quantityUnit: resolution.quantityUnit,
     piecesPerPack: resolution.piecesPerPack,
     eventType,
+    giftRecipient: giftRecipient || undefined,
     targetEventDate: targetEventDate || null,
     preferredFillings,
     customFillingsNotes,
@@ -415,6 +437,7 @@ export default function CustomQuoteModal() {
         boxMode: mode,
         quantity,
         eventType,
+        giftRecipient: giftRecipient || undefined,
         targetEventDate: targetEventDate || undefined,
         preferredFillings: preferredFillings.length > 0 ? preferredFillings : undefined,
         customFillingsNotes: customFillingsNotes.trim() || undefined,
@@ -452,6 +475,7 @@ export default function CustomQuoteModal() {
           quantityUnit: resolution.quantityUnit,
           piecesPerPack: resolution.piecesPerPack,
           eventType,
+          giftRecipient: giftRecipient || undefined,
           targetEventDate: targetEventDate || null,
           preferredFillings,
           customFillingsNotes,
@@ -492,17 +516,18 @@ export default function CustomQuoteModal() {
     }
   };
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[19000] flex items-center justify-center bg-[#042821]/75 p-3 sm:p-5 backdrop-blur-md overflow-y-auto"
+      ref={dialogRef}
+      className="custom-quote-dialog fixed inset-0 z-[19000] flex items-center justify-center bg-[#042821]/75 p-3 sm:p-5 backdrop-blur-md overflow-y-auto"
       role="dialog"
       aria-modal="true"
       aria-labelledby="custom-quote-modal-title"
       dir={isRtl ? 'rtl' : 'ltr'}
     >
-      <div className="relative w-full max-w-2xl rounded-3xl border border-[#D4AF6A]/40 bg-[#FAF6EE] text-[#0D2B22] shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col">
+      <div className="custom-quote-panel relative w-full max-w-2xl rounded-3xl border border-[#D4AF6A]/40 bg-[var(--color-base)] text-[var(--color-text-primary)] shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col">
         {/* Luxury Emerald Header */}
-        <div className="bg-gradient-to-r from-[#072A20] via-[#0B3B2D] to-[#072A20] px-6 py-5 text-[#F7F1E3] border-b border-[#D4AF6A]/30 flex items-start justify-between gap-4">
+        <div className="custom-quote-header bg-gradient-to-r from-[#072A20] via-[#0B3B2D] to-[#072A20] px-6 py-5 text-[#F7F1E3] border-b border-[#D4AF6A]/30 flex items-start justify-between gap-4">
           <div>
             <div className="inline-flex items-center gap-1.5 rounded-full bg-[#D4AF6A]/20 border border-[#D4AF6A]/40 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#E6C786] mb-2">
               <Sparkles size={12} /> Bespoke Event & Wholesale Concierge
@@ -518,28 +543,28 @@ export default function CustomQuoteModal() {
             type="button"
             onClick={() => setIsOpen(false)}
             aria-label="Close Custom Quote Modal"
-            className="rounded-full p-2 text-[#E6C786] hover:bg-white/10 transition-colors shrink-0"
+            className="rounded-full p-2 text-[#E6C786] hover:bg-[var(--color-surface)]/10 transition-colors shrink-0"
           >
             <X size={20} />
           </button>
         </div>
 
         {/* Body */}
-        <div className="p-5 sm:p-6 overflow-y-auto space-y-5">
+        <div className="custom-quote-body p-5 sm:p-6 overflow-y-auto space-y-5">
           {submittedQuote ? (
             /* SUCCESS CONFIRMATION STATE (Durable persistence confirmed) */
-            <div className="rounded-2xl border border-[#1B5E43]/30 bg-white p-6 text-center space-y-4 shadow-sm">
+            <div className="rounded-2xl border border-[#1B5E43]/30 bg-[var(--color-surface)] p-6 text-center space-y-4 shadow-sm">
               <div className="mx-auto w-14 h-14 rounded-full bg-[#0B3B2D]/10 text-[#0B3B2D] flex items-center justify-center">
                 <CheckCircle2 size={30} className="text-[#127A4D]" />
               </div>
               <div className="space-y-1">
-                <span className="text-xs uppercase tracking-[0.2em] font-bold text-[#8C6B1B]">
+                <span className="text-xs uppercase tracking-[0.2em] font-bold text-[var(--color-accent-text)]">
                   Quote Saved & Logged • Ref #{submittedQuote.quoteId}
                 </span>
-                <h3 className="font-serif text-2xl font-bold text-[#072A20]">
+                <h3 className="font-serif text-2xl font-bold text-[var(--color-text-primary)]">
                   Your Custom Request Is Saved!
                 </h3>
-                <p className="text-sm text-[#3E564D] max-w-lg mx-auto">
+                <p className="text-sm text-[var(--color-text-secondary)] max-w-lg mx-auto">
                   We have durably logged your inquiry for{' '}
                   <strong>
                     {quantity} × {selectedProduct?.name_en}
@@ -549,17 +574,17 @@ export default function CustomQuoteModal() {
               </div>
 
               {/* Summary Review Card */}
-              <div className="rounded-xl bg-[#FAF6EE] border border-[#D4AF6A]/40 p-4 text-left text-xs sm:text-sm space-y-2">
+              <div className="rounded-xl bg-[var(--color-base)] border border-[#D4AF6A]/40 p-4 text-left text-xs sm:text-sm space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-[#566B63]">Box / Selection:</span>
-                  <span className="font-semibold text-[#072A20]">
+                  <span className="text-[var(--color-text-secondary)]">Box / Selection:</span>
+                  <span className="font-semibold text-[var(--color-text-primary)]">
                     {selectedProduct?.name_en || (selectedProductId === 'custom' ? 'Custom Packaging Request' : resolution.productName)}
                     {selectedVariantLabel ? ` (${selectedVariantLabel})` : ''}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#566B63]">Configuration:</span>
-                  <span className="font-semibold text-[#072A20]">
+                  <span className="text-[var(--color-text-secondary)]">Configuration:</span>
+                  <span className="font-semibold text-[var(--color-text-primary)]">
                     {mode === 'empty'
                       ? 'Box Only (Empty Packaging)'
                       : mode === 'custom'
@@ -568,31 +593,32 @@ export default function CustomQuoteModal() {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#566B63]">Quantity & Event:</span>
-                  <span className="font-semibold text-[#072A20]">
+                  <span className="text-[var(--color-text-secondary)]">Quantity & Event:</span>
+                  <span className="font-semibold text-[var(--color-text-primary)]">
                     {quantity} pcs • {eventType}
                   </span>
                 </div>
+                {giftRecipient && <p className="gift-recipient-summary" data-gift-recipient={giftRecipient}>{t('gift.recipientLabel')}: {t(`gift.recipient.${giftRecipient}`)}</p>}
                 {targetEventDate && (
                   <div className="flex justify-between">
-                    <span className="text-[#566B63]">Target Event Date:</span>
-                    <span className="font-semibold text-[#072A20]">{targetEventDate}</span>
+                    <span className="text-[var(--color-text-secondary)]">Target Event Date:</span>
+                    <span className="font-semibold text-[var(--color-text-primary)]">{targetEventDate}</span>
                   </div>
                 )}
                 {preferredFillings.length > 0 && mode !== 'empty' && (
                   <div className="flex justify-between">
-                    <span className="text-[#566B63]">Fillings Selected:</span>
-                    <span className="font-semibold text-[#072A20]">{formatFillingsLabel(preferredFillings)}</span>
+                    <span className="text-[var(--color-text-secondary)]">Fillings Selected:</span>
+                    <span className="font-semibold text-[var(--color-text-primary)]">{formatFillingsLabel(preferredFillings)}</span>
                   </div>
                 )}
                 {monogramText && (
                   <div className="flex justify-between">
-                    <span className="text-[#566B63]">Monogram / Tag:</span>
-                    <span className="font-semibold text-[#072A20]">{monogramText}</span>
+                    <span className="text-[var(--color-text-secondary)]">Monogram / Tag:</span>
+                    <span className="font-semibold text-[var(--color-text-primary)]">{monogramText}</span>
                   </div>
                 )}
                 {targetPricePkr && (
-                  <div className="flex justify-between text-[#8C6B1B] border-t border-[#D4AF6A]/30 pt-1.5">
+                  <div className="flex justify-between text-[var(--color-accent-text)] border-t border-[#D4AF6A]/30 pt-1.5">
                     <span className="font-medium">Target Offer / Budget:</span>
                     <span className="font-bold">
                       Rs. {Number(targetPricePkr).toLocaleString()} PKR ({budgetType === 'per_piece' ? 'per piece' : 'total budget'})
@@ -615,13 +641,13 @@ export default function CustomQuoteModal() {
                 <button
                   type="button"
                   onClick={() => setSubmittedQuote(null)}
-                  className="rounded-xl border border-[#072A20]/20 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-[#072A20] hover:bg-[#072A20]/5"
+                  className="rounded-xl border border-[#072A20]/20 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-primary)] hover:bg-[#072A20]/5"
                 >
                   Edit Details
                 </button>
               </div>
 
-              <p className="text-[11px] text-[#566B63]">
+              <p className="text-[11px] text-[var(--color-text-secondary)]">
                 Note: Opening WhatsApp pre-fills your inquiry message; send it in WhatsApp to connect with our senior pricing concierge.
               </p>
             </div>
@@ -656,7 +682,7 @@ export default function CustomQuoteModal() {
                         setSubmissionKey(freshKey);
                         setErrorMsg(null);
                       }}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-amber-400 bg-white text-amber-900 px-3 py-1.5 text-xs font-semibold hover:bg-amber-100"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-amber-400 bg-[var(--color-surface)] text-amber-900 px-3 py-1.5 text-xs font-semibold hover:bg-amber-100"
                     >
                       Start Fresh Inquiry
                     </button>
@@ -675,13 +701,13 @@ export default function CustomQuoteModal() {
 
               {/* Tabarruk Default Empty Mode Notice */}
               {isTabarruk && (
-                <div className="rounded-2xl border border-[#D4AF6A]/60 bg-[#FAF6EE] p-3.5 text-xs text-[#072A20] flex items-start gap-2.5 shadow-xs">
-                  <Info size={17} className="text-[#8C6B1B] shrink-0 mt-0.5" />
+                <div className="rounded-2xl border border-[#D4AF6A]/60 bg-[var(--color-base)] p-3.5 text-xs text-[var(--color-text-primary)] flex items-start gap-2.5 shadow-xs">
+                  <Info size={17} className="text-[var(--color-accent-text)] shrink-0 mt-0.5" />
                   <div>
-                    <strong className="block font-bold text-[#8C6B1B] uppercase tracking-wider text-[11px]">
+                    <strong className="block font-bold text-[var(--color-accent-text)] uppercase tracking-wider text-[11px]">
                       Tabarruk Packaging Notice
                     </strong>
-                    <span className="text-[12px] leading-relaxed text-[#3E564D]">
+                    <span className="text-[12px] leading-relaxed text-[var(--color-text-secondary)]">
                       {TABARRUK_EMPTY_DEFAULT_NOTICE}
                     </span>
                   </div>
@@ -691,7 +717,7 @@ export default function CustomQuoteModal() {
               {/* 1. Product & Variant Selection */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="sm:col-span-2">
-                  <label htmlFor="quote-product-select" className="block text-xs font-bold uppercase tracking-wider text-[#072A20] mb-1.5">
+                  <label htmlFor="quote-product-select" className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-primary)] mb-1.5">
                     1. Select Packaging, Gift Box or Deal
                   </label>
                   <select
@@ -713,7 +739,7 @@ export default function CustomQuoteModal() {
                         setSelectedVariantLabel('');
                       }
                     }}
-                    className="w-full rounded-xl border border-[#D4AF6A]/50 bg-white px-3.5 py-2.5 text-sm font-medium text-[#072A20] focus:border-[#072A20] focus:outline-none"
+                    className="w-full rounded-xl border border-[#D4AF6A]/50 bg-[var(--color-surface)] px-3.5 py-2.5 text-sm font-medium text-[var(--color-text-primary)] focus:border-[#072A20] focus:outline-none"
                   >
                     {!eligibleProducts.some(p => p.id === selectedProductId) && (
                       <option value={selectedProductId}>
@@ -742,7 +768,7 @@ export default function CustomQuoteModal() {
                 </div>
 
                 <div>
-                  <label htmlFor="quote-variant-select" className="block text-xs font-bold uppercase tracking-wider text-[#072A20] mb-1.5">
+                  <label htmlFor="quote-variant-select" className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-primary)] mb-1.5">
                     Size / Variant
                   </label>
                   <select
@@ -763,7 +789,7 @@ export default function CustomQuoteModal() {
                         }
                       }
                     }}
-                    className="w-full rounded-xl border border-[#D4AF6A]/50 bg-white px-3 py-2.5 text-sm font-medium text-[#072A20] focus:border-[#072A20] focus:outline-none"
+                    className="w-full rounded-xl border border-[#D4AF6A]/50 bg-[var(--color-surface)] px-3 py-2.5 text-sm font-medium text-[var(--color-text-primary)] focus:border-[#072A20] focus:outline-none"
                   >
                     <option value="">Default Size / Pack</option>
                     {selectedVariantLabel && !availableVariants.includes(selectedVariantLabel) && (
@@ -780,7 +806,7 @@ export default function CustomQuoteModal() {
 
               {/* 2. Packaging Mode Selection */}
               <div>
-                <span className="block text-xs font-bold uppercase tracking-wider text-[#072A20] mb-1.5">
+                <span className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-primary)] mb-1.5">
                   2. Packaging Mode
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -790,13 +816,13 @@ export default function CustomQuoteModal() {
                     className={`flex items-start gap-2.5 rounded-xl border p-3 text-left transition-all ${
                       mode === 'empty'
                         ? 'border-[#072A20] bg-[#072A20] text-white shadow-sm'
-                        : 'border-[#D4AF6A]/40 bg-white text-[#072A20] hover:border-[#072A20]/50'
+                        : 'border-[#D4AF6A]/40 bg-[var(--color-surface)] text-[var(--color-text-primary)] hover:border-[#072A20]/50'
                     }`}
                   >
-                    <Package size={17} className={mode === 'empty' ? 'text-[#E6C786]' : 'text-[#8C6B1B]'} />
+                    <Package size={17} className={mode === 'empty' ? 'text-[#E6C786]' : 'text-[var(--color-accent-text)]'} />
                     <div>
                       <div className="text-xs font-bold">Box Only</div>
-                      <div className={`text-[10px] ${mode === 'empty' ? 'text-[#E5DEC9]' : 'text-[#566B63]'}`}>
+                      <div className={`text-[10px] ${mode === 'empty' ? 'text-[#E5DEC9]' : 'text-[var(--color-text-secondary)]'}`}>
                         Empty packaging wholesale
                       </div>
                     </div>
@@ -808,13 +834,13 @@ export default function CustomQuoteModal() {
                     className={`flex items-start gap-2.5 rounded-xl border p-3 text-left transition-all ${
                       mode === 'filled'
                         ? 'border-[#072A20] bg-[#072A20] text-white shadow-sm'
-                        : 'border-[#D4AF6A]/40 bg-white text-[#072A20] hover:border-[#072A20]/50'
+                        : 'border-[#D4AF6A]/40 bg-[var(--color-surface)] text-[var(--color-text-primary)] hover:border-[#072A20]/50'
                     }`}
                   >
-                    <Gift size={17} className={mode === 'filled' ? 'text-[#E6C786]' : 'text-[#8C6B1B]'} />
+                    <Gift size={17} className={mode === 'filled' ? 'text-[#E6C786]' : 'text-[var(--color-accent-text)]'} />
                     <div>
                       <div className="text-xs font-bold">Filled with AllBarka</div>
-                      <div className={`text-[10px] ${mode === 'filled' ? 'text-[#E5DEC9]' : 'text-[#566B63]'}`}>
+                      <div className={`text-[10px] ${mode === 'filled' ? 'text-[#E5DEC9]' : 'text-[var(--color-text-secondary)]'}`}>
                         Fresh nuts &amp; royal dates
                       </div>
                     </div>
@@ -826,13 +852,13 @@ export default function CustomQuoteModal() {
                     className={`flex items-start gap-2.5 rounded-xl border p-3 text-left transition-all ${
                       mode === 'custom'
                         ? 'border-[#072A20] bg-[#072A20] text-white shadow-sm'
-                        : 'border-[#D4AF6A]/40 bg-white text-[#072A20] hover:border-[#072A20]/50'
+                        : 'border-[#D4AF6A]/40 bg-[var(--color-surface)] text-[var(--color-text-primary)] hover:border-[#072A20]/50'
                     }`}
                   >
-                    <Sparkles size={17} className={mode === 'custom' ? 'text-[#E6C786]' : 'text-[#8C6B1B]'} />
+                    <Sparkles size={17} className={mode === 'custom' ? 'text-[#E6C786]' : 'text-[var(--color-accent-text)]'} />
                     <div>
                       <div className="text-xs font-bold">Custom Sourced</div>
-                      <div className={`text-[10px] ${mode === 'custom' ? 'text-[#E5DEC9]' : 'text-[#566B63]'}`}>
+                      <div className={`text-[10px] ${mode === 'custom' ? 'text-[#E5DEC9]' : 'text-[var(--color-text-secondary)]'}`}>
                         Chocolates, confections, tea
                       </div>
                     </div>
@@ -842,16 +868,16 @@ export default function CustomQuoteModal() {
 
               {/* 2b. Net Filling Weight per Box */}
               {(mode === 'filled' || mode === 'custom') && (
-                <div className="rounded-2xl border border-[#D4AF6A]/40 bg-white/80 dark:bg-[#192720]/80 p-4 space-y-3 shadow-xs">
+                <div className="rounded-2xl border border-[#D4AF6A]/40 bg-[var(--color-surface)]/80 dark:bg-[#192720]/80 p-4 space-y-3 shadow-xs">
                   <div className="flex items-center justify-between gap-2">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[#072A20] dark:text-[#E6C786]">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-primary)] dark:text-[#E6C786]">
                       {t('quote.netFillingWeight', 'Net Filling Weight per Box')}
                     </label>
-                    <span className="text-[11px] text-[#566B63] dark:text-[#a3b8af]">
+                    <span className="text-[11px] text-[var(--color-text-secondary)] dark:text-[#a3b8af]">
                       {t('quote.netFillingExcludesPackaging', 'Excludes packaging mass')}
                     </span>
                   </div>
-                  <p className="text-[11px] text-[#566B63] dark:text-[#a3b8af] leading-relaxed">
+                  <p className="text-[11px] text-[var(--color-text-secondary)] dark:text-[#a3b8af] leading-relaxed">
                     {t('quote.netFillingHint', 'Select the combined net ingredient weight for one box. Mixed ingredients together equal this total.')}
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -869,8 +895,8 @@ export default function CustomQuoteModal() {
                           }}
                           className={`min-h-11 rounded-xl px-4 py-2 text-xs font-bold transition-all focus-visible:ring-2 focus-visible:ring-[#072A20] focus:outline-none ${
                             isSelected
-                              ? 'bg-[#072A20] text-white shadow-sm ring-2 ring-[#D4AF6A]/50 dark:bg-[#E6C786] dark:text-[#072A20]'
-                              : 'bg-white dark:bg-[#1f3128] border border-[#D4AF6A]/40 text-[#072A20] dark:text-[#f4edd9] hover:bg-[#D4AF6A]/15'
+                              ? 'bg-[#072A20] text-white shadow-sm ring-2 ring-[#D4AF6A]/50 dark:bg-[#E6C786] dark:text-[var(--color-text-primary)]'
+                              : 'bg-[var(--color-surface)] dark:bg-[#1f3128] border border-[#D4AF6A]/40 text-[var(--color-text-primary)] dark:text-[#f4edd9] hover:bg-[#D4AF6A]/15'
                           }`}
                         >
                           {label}
@@ -890,8 +916,8 @@ export default function CustomQuoteModal() {
                       }}
                       className={`min-h-11 rounded-xl px-4 py-2 text-xs font-bold transition-all focus-visible:ring-2 focus-visible:ring-[#072A20] focus:outline-none ${
                         isCustomWeight
-                          ? 'bg-[#072A20] text-white shadow-sm ring-2 ring-[#D4AF6A]/50 dark:bg-[#E6C786] dark:text-[#072A20]'
-                          : 'bg-white dark:bg-[#1f3128] border border-[#D4AF6A]/40 text-[#072A20] dark:text-[#f4edd9] hover:bg-[#D4AF6A]/15'
+                          ? 'bg-[#072A20] text-white shadow-sm ring-2 ring-[#D4AF6A]/50 dark:bg-[#E6C786] dark:text-[var(--color-text-primary)]'
+                          : 'bg-[var(--color-surface)] dark:bg-[#1f3128] border border-[#D4AF6A]/40 text-[var(--color-text-primary)] dark:text-[#f4edd9] hover:bg-[#D4AF6A]/15'
                       }`}
                     >
                       {t('quote.customWeight', 'Custom Weight')}
@@ -923,14 +949,14 @@ export default function CustomQuoteModal() {
                               setNetFillingGrams(null);
                             }
                           }}
-                          className="min-h-11 w-36 rounded-xl border border-[#D4AF6A]/60 bg-white dark:bg-[#1f3128] px-3 py-2 text-sm font-semibold text-[#072A20] dark:text-[#f4edd9] focus:border-[#072A20] dark:focus:border-[#E6C786] focus:outline-none"
+                          className="min-h-11 w-36 rounded-xl border border-[#D4AF6A]/60 bg-[var(--color-surface)] dark:bg-[#1f3128] px-3 py-2 text-sm font-semibold text-[var(--color-text-primary)] dark:text-[#f4edd9] focus:border-[#072A20] dark:focus:border-[#E6C786] focus:outline-none"
                           dir="ltr"
                         />
-                        <span className="text-xs font-bold text-[#072A20] dark:text-[#E6C786]">
+                        <span className="text-xs font-bold text-[var(--color-text-primary)] dark:text-[#E6C786]">
                           {t('quote.customWeightGrams', 'grams (g)')}
                         </span>
                       </div>
-                      <p className="text-[10px] text-[#566B63] dark:text-[#a3b8af] mt-1.5">
+                      <p className="text-[10px] text-[var(--color-text-secondary)] dark:text-[#a3b8af] mt-1.5">
                         {t('quote.customWeightHint', 'Enter requested ingredient grams per box (e.g. 750g or 775g). Box quantity is multiplied separately.')}
                       </p>
                     </div>
@@ -941,8 +967,8 @@ export default function CustomQuoteModal() {
               {/* 3. Quantity & Authoritative MOQ */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="quote-quantity-input" className="block text-xs font-bold uppercase tracking-wider text-[#072A20] mb-1.5">
-                    <Layers size={13} className="inline mr-1 text-[#8C6B1B]" />
+                  <label htmlFor="quote-quantity-input" className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-primary)] mb-1.5">
+                    <Layers size={13} className="inline mr-1 text-[var(--color-accent-text)]" />
                     3. Quantity ({resolution.quantityUnit === 'packs' ? `Packs — ${resolution.piecesPerPack} pcs/pack` : resolution.quantityUnit === 'sets' ? 'Sets' : 'Boxes / Pieces'})
                   </label>
                   <div className="flex flex-wrap gap-1.5 mb-2">
@@ -955,7 +981,7 @@ export default function CustomQuoteModal() {
                           className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
                             quantity === preset
                               ? 'bg-[#8C6B1B] text-white'
-                              : 'bg-white border border-[#D4AF6A]/40 text-[#072A20] hover:bg-[#D4AF6A]/15'
+                              : 'bg-[var(--color-surface)] border border-[#D4AF6A]/40 text-[var(--color-text-primary)] hover:bg-[#D4AF6A]/15'
                           }`}
                         >
                           {preset} {preset === 1 ? 'pack' : 'packs'} ({preset * resolution.piecesPerPack} pcs)
@@ -970,7 +996,7 @@ export default function CustomQuoteModal() {
                           className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
                             quantity === preset
                               ? 'bg-[#8C6B1B] text-white'
-                              : 'bg-white border border-[#D4AF6A]/40 text-[#072A20] hover:bg-[#D4AF6A]/15'
+                              : 'bg-[var(--color-surface)] border border-[#D4AF6A]/40 text-[var(--color-text-primary)] hover:bg-[#D4AF6A]/15'
                           }`}
                         >
                           {preset === 500 ? '500+' : `${preset} ${resolution.quantityUnit === 'sets' ? 'sets' : 'pcs'}`}
@@ -985,18 +1011,18 @@ export default function CustomQuoteModal() {
                     max={10000}
                     value={quantity}
                     onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
-                    className="w-full rounded-xl border border-[#D4AF6A]/50 bg-white px-3.5 py-2 text-sm font-semibold text-[#072A20]"
+                    className="w-full rounded-xl border border-[#D4AF6A]/50 bg-[var(--color-surface)] px-3.5 py-2 text-sm font-semibold text-[var(--color-text-primary)]"
                   />
 
                   {/* MOQ Indicator */}
                   <div className="mt-1.5 text-[11px]">
                     {resolution.requiresTeamQuote && !resolution.standardPrice ? (
-                      <span className="text-[#8C6B1B] font-medium">
+                      <span className="text-[var(--color-accent-text)] font-medium">
                         • Pricing &amp; minimums subject to concierge review (Custom / unpriced configuration)
                       </span>
                     ) : resolution.moqRequired != null ? (
                       <div>
-                        <span className="text-[#566B63]">
+                        <span className="text-[var(--color-text-secondary)]">
                           • Authoritative Minimum: <strong>{resolution.moqRequired} pcs</strong>
                           {resolution.minPacksRequired ? ` (${resolution.minPacksRequired} pack${resolution.minPacksRequired > 1 ? 's' : ''})` : ''}
                         </span>
@@ -1013,16 +1039,17 @@ export default function CustomQuoteModal() {
                 {/* 4. Event / Occasion Type & Target Event Date */}
                 <div className="space-y-3">
                   <div>
-                    <label htmlFor="quote-event-type" className="block text-xs font-bold uppercase tracking-wider text-[#072A20] mb-1.5">
-                      <Calendar size={13} className="inline mr-1 text-[#8C6B1B]" />
+                    <label htmlFor="quote-event-type" className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-primary)] mb-1.5">
+                      <Calendar size={13} className="inline mr-1 text-[var(--color-accent-text)]" />
                       4. Event / Occasion
                     </label>
                     <select
                       id="quote-event-type"
                       value={eventType}
                       onChange={(e) => setEventType(e.target.value)}
-                      className="w-full rounded-xl border border-[#D4AF6A]/50 bg-white px-3.5 py-2 text-sm font-medium text-[#072A20]"
+                      className="w-full rounded-xl border border-[#D4AF6A]/50 bg-[var(--color-surface)] px-3.5 py-2 text-sm font-medium text-[var(--color-text-primary)]"
                     >
+                      {eventType && !EVENT_TYPES.some(value => value === eventType) && <option value={eventType}>{eventType}</option>}
                       {EVENT_TYPES.map(ev => (
                         <option key={ev} value={ev}>
                           {ev}
@@ -1032,8 +1059,8 @@ export default function CustomQuoteModal() {
                   </div>
 
                   <div>
-                    <label htmlFor="quote-event-date" className="block text-xs font-bold uppercase tracking-wider text-[#072A20] mb-1">
-                      <Clock size={13} className="inline mr-1 text-[#8C6B1B]" />
+                    <label htmlFor="quote-event-date" className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-primary)] mb-1">
+                      <Clock size={13} className="inline mr-1 text-[var(--color-accent-text)]" />
                       Target Event Date (Optional)
                     </label>
                     <input
@@ -1041,26 +1068,35 @@ export default function CustomQuoteModal() {
                       type="date"
                       value={targetEventDate}
                       onChange={(e) => setTargetEventDate(e.target.value)}
-                      className="w-full rounded-xl border border-[#D4AF6A]/50 bg-white px-3 py-1.5 text-xs text-[#072A20]"
+                      className="w-full rounded-xl border border-[#D4AF6A]/50 bg-[var(--color-surface)] px-3 py-1.5 text-xs text-[var(--color-text-primary)]"
                     />
                   </div>
                 </div>
               </div>
 
+              <div className="gift-recipient-field">
+                <label htmlFor="quote-gift-recipient">{t('gift.recipientOptional')}</label>
+                <select id="quote-gift-recipient" value={giftRecipient} onChange={event => setGiftRecipient(isGiftRecipient(event.target.value) ? event.target.value : '')}>
+                  <option value="">{t('gift.recipientAny')}</option>
+                  {GIFT_RECIPIENTS.map(value => <option key={value} value={value}>{t(`gift.recipient.${value}`)}</option>)}
+                </select>
+                <p>{t('gift.recipientNote')}</p>
+              </div>
+
               {/* 10-Calendar-Day Preparation Notice */}
-              <div className="rounded-xl border border-[#D4AF6A]/50 bg-[#FAF6EE] p-3 text-xs text-[#072A20] space-y-1.5">
+              <div className="rounded-xl border border-[#D4AF6A]/50 bg-[var(--color-base)] p-3 text-xs text-[var(--color-text-primary)] space-y-1.5">
                 <div className="flex items-start gap-2">
-                  <Clock size={15} className="text-[#8C6B1B] shrink-0 mt-0.5" />
+                  <Clock size={15} className="text-[var(--color-accent-text)] shrink-0 mt-0.5" />
                   <span className="text-[11px] leading-relaxed">
                     <strong>Lead Time Notice:</strong> {MANDATORY_LEAD_TIME_NOTICE}
                   </span>
                 </div>
-                <label className="flex items-center gap-2 cursor-pointer pt-1 text-[11px] font-medium text-[#566B63]">
+                <label className="flex items-center gap-2 cursor-pointer pt-1 text-[11px] font-medium text-[var(--color-text-secondary)]">
                   <input
                     type="checkbox"
                     checked={leadTimeAcknowledged}
                     onChange={(e) => setLeadTimeAcknowledged(e.target.checked)}
-                    className="rounded border-[#D4AF6A] text-[#072A20] focus:ring-0"
+                    className="rounded border-[#D4AF6A] text-[var(--color-text-primary)] focus:ring-0"
                   />
                   <span>I acknowledge the required 10-calendar-day preparation lead time</span>
                 </label>
@@ -1068,18 +1104,18 @@ export default function CustomQuoteModal() {
 
               {/* 5. Preferred Fillings Selection (when mode !== 'empty') */}
               {mode !== 'empty' && (
-                <div className="rounded-2xl border border-[#D4AF6A]/50 bg-white p-3.5 space-y-2.5">
-                  <span className="block text-xs font-bold uppercase tracking-wider text-[#072A20]">
+                <div className="rounded-2xl border border-[#D4AF6A]/50 bg-[var(--color-surface)] p-3.5 space-y-2.5">
+                  <span className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-primary)]">
                     5. Preferred Fillings &amp; Inclusions
                   </span>
                   <div className="space-y-1.5">
                     {FILLING_OPTIONS.map(opt => (
-                      <label key={opt.id} className="flex items-center gap-2 text-xs text-[#072A20] cursor-pointer">
+                      <label key={opt.id} className="flex items-center gap-2 text-xs text-[var(--color-text-primary)] cursor-pointer">
                         <input
                           type="checkbox"
                           checked={preferredFillings.includes(opt.id)}
                           onChange={() => toggleFilling(opt.id)}
-                          className="rounded border-[#D4AF6A] text-[#072A20] focus:ring-0"
+                          className="rounded border-[#D4AF6A] text-[var(--color-text-primary)] focus:ring-0"
                         />
                         <span>{opt.label}</span>
                       </label>
@@ -1087,8 +1123,8 @@ export default function CustomQuoteModal() {
                   </div>
 
                   {/* Sourced Fillings Disclaimer */}
-                  <div className="rounded-lg bg-[#FAF6EE] p-2.5 text-[11px] text-[#566B63] border border-[#D4AF6A]/30">
-                    <Info size={13} className="inline mr-1 text-[#8C6B1B]" />
+                  <div className="rounded-lg bg-[var(--color-base)] p-2.5 text-[11px] text-[var(--color-text-secondary)] border border-[#D4AF6A]/30">
+                    <Info size={13} className="inline mr-1 text-[var(--color-accent-text)]" />
                     {NON_CATALOG_FILLINGS_DISCLAIMER}
                   </div>
 
@@ -1098,20 +1134,20 @@ export default function CustomQuoteModal() {
                       placeholder="Special fillings notes (e.g. 50g Ajwa + 50g Irani Pistachio per box)..."
                       value={customFillingsNotes}
                       onChange={(e) => setCustomFillingsNotes(e.target.value)}
-                      className="w-full rounded-xl border border-[#D4AF6A]/40 bg-[#FAF6EE]/50 px-3 py-1.5 text-xs text-[#072A20]"
+                      className="w-full rounded-xl border border-[#D4AF6A]/40 bg-[var(--color-base)]/50 px-3 py-1.5 text-xs text-[var(--color-text-primary)]"
                     />
                   </div>
                 </div>
               )}
 
               {/* 6. Custom Branding, Monogram & Card Message */}
-              <div className="rounded-2xl border border-[#D4AF6A]/50 bg-white p-3.5 space-y-3">
-                <span className="block text-xs font-bold uppercase tracking-wider text-[#072A20]">
+              <div className="rounded-2xl border border-[#D4AF6A]/50 bg-[var(--color-surface)] p-3.5 space-y-3">
+                <span className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-primary)]">
                   6. Monogram, Name Tag &amp; Custom Message
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label htmlFor="quote-monogram-text" className="block text-[11px] font-semibold text-[#566B63] mb-1">
+                    <label htmlFor="quote-monogram-text" className="block text-[11px] font-semibold text-[var(--color-text-secondary)] mb-1">
                       Couple / Baby / Corporate Name Tag
                     </label>
                     <input
@@ -1120,11 +1156,11 @@ export default function CustomQuoteModal() {
                       placeholder="e.g. Ahmed &amp; Ayesha"
                       value={monogramText}
                       onChange={(e) => setMonogramText(e.target.value)}
-                      className="w-full rounded-xl border border-[#D4AF6A]/40 px-3 py-1.5 text-xs text-[#072A20]"
+                      className="w-full rounded-xl border border-[#D4AF6A]/40 px-3 py-1.5 text-xs text-[var(--color-text-primary)]"
                     />
                   </div>
                   <div>
-                    <label htmlFor="quote-card-message" className="block text-[11px] font-semibold text-[#566B63] mb-1">
+                    <label htmlFor="quote-card-message" className="block text-[11px] font-semibold text-[var(--color-text-secondary)] mb-1">
                       Ribbon or Card Greeting Message
                     </label>
                     <input
@@ -1133,7 +1169,7 @@ export default function CustomQuoteModal() {
                       placeholder="e.g. JazakAllah Khair for celebrating with us"
                       value={cardMessage}
                       onChange={(e) => setCardMessage(e.target.value)}
-                      className="w-full rounded-xl border border-[#D4AF6A]/40 px-3 py-1.5 text-xs text-[#072A20]"
+                      className="w-full rounded-xl border border-[#D4AF6A]/40 px-3 py-1.5 text-xs text-[var(--color-text-primary)]"
                     />
                   </div>
                 </div>
@@ -1144,13 +1180,13 @@ export default function CustomQuoteModal() {
                     placeholder="Additional design preferences (e.g. Emerald ribbon, gold foil calligraphy, specific box colors)..."
                     value={customPrinting}
                     onChange={(e) => setCustomPrinting(e.target.value)}
-                    className="w-full rounded-xl border border-[#D4AF6A]/40 px-3 py-2 text-xs text-[#072A20]"
+                    className="w-full rounded-xl border border-[#D4AF6A]/40 px-3 py-2 text-xs text-[var(--color-text-primary)]"
                   />
                 </div>
 
                 {/* Artwork Sharing Notice */}
-                <div className="flex items-start gap-2 text-[11px] text-[#566B63] bg-[#FAF6EE] p-2.5 rounded-lg border border-[#D4AF6A]/30">
-                  <FileText size={14} className="text-[#8C6B1B] shrink-0 mt-0.5" />
+                <div className="flex items-start gap-2 text-[11px] text-[var(--color-text-secondary)] bg-[var(--color-base)] p-2.5 rounded-lg border border-[#D4AF6A]/30">
+                  <FileText size={14} className="text-[var(--color-accent-text)] shrink-0 mt-0.5" />
                   <span>
                     Need custom logo or monogram printing? Share your high-resolution artwork or vector file directly with our concierge on WhatsApp after submitting.
                   </span>
@@ -1158,9 +1194,9 @@ export default function CustomQuoteModal() {
               </div>
 
               {/* 7. Target Budget / Offer Price (Bargain Desk) */}
-              <div className="rounded-2xl border border-[#D4AF6A]/60 bg-white p-3.5 shadow-sm space-y-2">
+              <div className="rounded-2xl border border-[#D4AF6A]/60 bg-[var(--color-surface)] p-3.5 shadow-sm space-y-2">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="quote-target-budget" className="text-xs font-bold uppercase tracking-wider text-[#8C6B1B]">
+                  <label htmlFor="quote-target-budget" className="text-xs font-bold uppercase tracking-wider text-[var(--color-accent-text)]">
                     <Tag size={13} className="inline mr-1" />
                     7. Your Target Budget / Offer Price (PKR)
                   </label>
@@ -1169,7 +1205,7 @@ export default function CustomQuoteModal() {
                       type="button"
                       onClick={() => setBudgetType('total')}
                       className={`px-2 py-0.5 rounded-md font-semibold transition-colors ${
-                        budgetType === 'total' ? 'bg-[#8C6B1B] text-white' : 'text-[#566B63]'
+                        budgetType === 'total' ? 'bg-[#8C6B1B] text-white' : 'text-[var(--color-text-secondary)]'
                       }`}
                     >
                       Total Budget
@@ -1178,7 +1214,7 @@ export default function CustomQuoteModal() {
                       type="button"
                       onClick={() => setBudgetType('per_piece')}
                       className={`px-2 py-0.5 rounded-md font-semibold transition-colors ${
-                        budgetType === 'per_piece' ? 'bg-[#8C6B1B] text-white' : 'text-[#566B63]'
+                        budgetType === 'per_piece' ? 'bg-[#8C6B1B] text-white' : 'text-[var(--color-text-secondary)]'
                       }`}
                     >
                       Per Piece
@@ -1186,8 +1222,8 @@ export default function CustomQuoteModal() {
                   </div>
                 </div>
                 {mode === 'filled' && filledEstimate?.ingredientsAvailable && (
-                  <div className="rounded-xl bg-[#FAF6EE] border border-[#D4AF6A]/40 p-3 space-y-2 text-xs">
-                    <div className="flex items-center justify-between font-bold text-[#072A20]">
+                  <div className="rounded-xl bg-[var(--color-base)] border border-[#D4AF6A]/40 p-3 space-y-2 text-xs">
+                    <div className="flex items-center justify-between font-bold text-[var(--color-text-primary)]">
                       <span>Recipe Estimate ({quantity} boxes):</span>
                       <span>
                         {filledEstimate.estimatedTotalPkr != null
@@ -1195,19 +1231,19 @@ export default function CustomQuoteModal() {
                           : 'Packaging Quote Required'}
                       </span>
                     </div>
-                    <div className="space-y-1 text-[11px] text-[#566B63] border-t border-[#D4AF6A]/20 pt-1.5">
+                    <div className="space-y-1 text-[11px] text-[var(--color-text-secondary)] border-t border-[#D4AF6A]/20 pt-1.5">
                       {filledEstimate.ingredientLines.map(line => (
                         <div key={line.productId} className="flex justify-between">
                           <span>{line.name_en} ({line.gramsPerBox}g/box):</span>
-                          <span className="font-semibold text-[#072A20]">Rs. {line.estimatePkr.toLocaleString()}</span>
+                          <span className="font-semibold text-[var(--color-text-primary)]">Rs. {line.estimatePkr.toLocaleString()}</span>
                         </div>
                       ))}
-                      <div className="flex justify-between font-semibold text-[#072A20] border-t border-[#D4AF6A]/20 pt-1">
+                      <div className="flex justify-between font-semibold text-[var(--color-text-primary)] border-t border-[#D4AF6A]/20 pt-1">
                         <span>Ingredients Subtotal:</span>
                         <span>Rs. {filledEstimate.ingredientsSubtotalPkr?.toLocaleString()}</span>
                       </div>
                       {filledEstimate.packagingTotalPkr != null && (
-                        <div className="flex justify-between font-semibold text-[#072A20]">
+                        <div className="flex justify-between font-semibold text-[var(--color-text-primary)]">
                           <span>Packaging Total:</span>
                           <span>Rs. {filledEstimate.packagingTotalPkr.toLocaleString()}</span>
                         </div>
@@ -1216,38 +1252,38 @@ export default function CustomQuoteModal() {
                   </div>
                 )}
                 <div className="flex items-center gap-2 py-1 text-xs">
-                  <span className="text-[#566B63]">Catalog Reference Rate:</span>
+                  <span className="text-[var(--color-text-secondary)]">Catalog Reference Rate:</span>
                   {effectiveReferenceRate.requiresTeamQuote || !effectiveReferenceRate.standardPrice ? (
-                    <span className="font-semibold text-[#8C6B1B]">Custom Quote on Request (Team Review)</span>
+                    <span className="font-semibold text-[var(--color-accent-text)]">Custom Quote on Request (Team Review)</span>
                   ) : effectiveReferenceRate.isEstimate ? (
-                    <span className="font-bold text-[#072A20]">
+                    <span className="font-bold text-[var(--color-text-primary)]">
                       Rs. {Number(effectiveReferenceRate.standardPrice).toLocaleString()} / box
                       {quantity > 1 && (
-                        <span className="text-[11px] font-normal text-[#566B63] ml-1">
+                        <span className="text-[11px] font-normal text-[var(--color-text-secondary)] ml-1">
                           (Est. Rs. {Number(effectiveReferenceRate.estimatedTotalPkr).toLocaleString()} total)
                         </span>
                       )}
                     </span>
                   ) : resolution.quantityUnit === 'packs' ? (
-                    <span className="font-bold text-[#072A20]">
+                    <span className="font-bold text-[var(--color-text-primary)]">
                       Rs. {Number(resolution.standardPrice).toLocaleString()} / pack
                       {resolution.perPiecePrice ? (
-                        <span className="text-[11px] font-normal text-[#566B63] ml-1">
+                        <span className="text-[11px] font-normal text-[var(--color-text-secondary)] ml-1">
                           (Rs. {resolution.perPiecePrice} / pc)
                         </span>
                       ) : null}
                     </span>
                   ) : (
-                    <span className="font-bold text-[#072A20]">
+                    <span className="font-bold text-[var(--color-text-primary)]">
                       Rs. {Number(resolution.standardPrice).toLocaleString()} / {resolution.quantityUnit === 'sets' ? 'set' : 'pc'}
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-[#566B63]">
+                <p className="text-[11px] text-[var(--color-text-secondary)]">
                   Pitch your target budget in PKR. Our senior concierge actively reviews and accommodates reasonable bulk offers for family and corporate events.
                 </p>
                 <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-[#8C6B1B]">PKR</span>
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-[var(--color-accent-text)]">PKR</span>
                   <input
                     id="quote-target-budget"
                     type="number"
@@ -1261,7 +1297,7 @@ export default function CustomQuoteModal() {
                     }
                     value={targetPricePkr}
                     onChange={(e) => setTargetPricePkr(e.target.value)}
-                    className="w-full rounded-xl border border-[#D4AF6A]/50 bg-[#FAF6EE]/60 pl-12 pr-4 py-2 text-sm font-semibold text-[#072A20] focus:border-[#8C6B1B] focus:outline-none"
+                    className="w-full rounded-xl border border-[#D4AF6A]/50 bg-[var(--color-base)] pl-12 pr-4 py-2 text-sm font-semibold text-[var(--color-text-primary)] focus:border-[#8C6B1B] focus:outline-none"
                   />
                 </div>
               </div>
@@ -1269,7 +1305,7 @@ export default function CustomQuoteModal() {
               {/* 8. Patron Contact Details */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label htmlFor="quote-customer-name" className="block text-[11px] font-bold uppercase tracking-wider text-[#072A20] mb-1">
+                  <label htmlFor="quote-customer-name" className="block text-[11px] font-bold uppercase tracking-wider text-[var(--color-text-primary)] mb-1">
                     Your Name *
                   </label>
                   <input
@@ -1279,11 +1315,11 @@ export default function CustomQuoteModal() {
                     placeholder="Full Name"
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
-                    className="w-full rounded-xl border border-[#D4AF6A]/50 bg-white px-3 py-2 text-sm text-[#072A20]"
+                    className="w-full rounded-xl border border-[#D4AF6A]/50 bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)]"
                   />
                 </div>
                 <div>
-                  <label htmlFor="quote-customer-phone" className="block text-[11px] font-bold uppercase tracking-wider text-[#072A20] mb-1">
+                  <label htmlFor="quote-customer-phone" className="block text-[11px] font-bold uppercase tracking-wider text-[var(--color-text-primary)] mb-1">
                     WhatsApp / Phone *
                   </label>
                   <input
@@ -1293,11 +1329,11 @@ export default function CustomQuoteModal() {
                     placeholder="03160666083"
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
-                    className="w-full rounded-xl border border-[#D4AF6A]/50 bg-white px-3 py-2 text-sm text-[#072A20]"
+                    className="w-full rounded-xl border border-[#D4AF6A]/50 bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)]"
                   />
                 </div>
                 <div>
-                  <label htmlFor="quote-customer-city" className="block text-[11px] font-bold uppercase tracking-wider text-[#072A20] mb-1">
+                  <label htmlFor="quote-customer-city" className="block text-[11px] font-bold uppercase tracking-wider text-[var(--color-text-primary)] mb-1">
                     Delivery City
                   </label>
                   <input
@@ -1306,7 +1342,7 @@ export default function CustomQuoteModal() {
                     placeholder="Lahore, Islamabad..."
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
-                    className="w-full rounded-xl border border-[#D4AF6A]/50 bg-white px-3 py-2 text-sm text-[#072A20]"
+                    className="w-full rounded-xl border border-[#D4AF6A]/50 bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)]"
                   />
                 </div>
               </div>
@@ -1335,6 +1371,6 @@ export default function CustomQuoteModal() {
           )}
         </div>
       </div>
-    </div>
+    </div>, document.body
   );
 }
