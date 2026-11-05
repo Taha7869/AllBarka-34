@@ -1,5 +1,7 @@
 # AllBarka — repository entry for AI agents
 
+5 November 2026 — **VOICE-02 planning checkpoint:** owner selected the corrected approach for website and WhatsApp and deferred implementation to their PC session. Current VOICE-01 limits remain unchanged; 45s capture and WhatsApp adaptation are TODO. PR16 merge run41909530222 failed two non-voice tests (833 pass / 2 fail / 1 skip); root causes remain unconfirmed. Read the [current plan and evidence](docs/execution-2026-11-04/VOICE_02_PLAN_2026-11-05.md) before following the historical results below.
+
 5 November 2026 — CI-GALLERY1 / CI-VOICE-SYNC1: gallery diagnostics saved02fa4a2; committed hero voice assertion saved203623404979b52837963c4750d7724acdfec305. Latest typecheck/hooks/build/privacy, affected gallery3/3 and voice9/9, full835PASS/0FAIL/1 emulator SKIP across106 files plus21 backend,97-product/115-reference asset audit and36 production checks PASS locally. Hosted outcomes are recorded separately in the execution evidence; historical404 trigger and real provider/device/merchant/live gates remain open. [Evidence](docs/execution-2026-11-04/GALLERY_VERIFICATION_2026-11-05.md).
 
 Hosted source4065e35 verification subsequently completed PASS:834 tests,0 failures,1 emulator-only skip across106 test files, plus backend/assets/36 production checks; run41851671404. This does not erase the local gallery404 or verify real providers/live. [CI](https://github.com/Taha7869/AllBarka-34/actions/runs/41851671404).

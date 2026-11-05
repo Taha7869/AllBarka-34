@@ -1,5 +1,7 @@
 # AllBarka AI Buddy — current architecture
 
+5 November 2026 — **VOICE-02 accepted plan, implementation deferred:** [website + WhatsApp continuation](docs/execution-2026-11-04/VOICE_02_PLAN_2026-11-05.md). The45s/single-request upgrade is TODO; the14s/15s VOICE-01 behavior documented below is still actual source behavior. WhatsApp voice-note transport is a separate adaptation, not already provided by the website route. PR16 merge CI has two documented unresolved non-voice failures; older successful runs do not establish current release readiness.
+
 Updated 4 November 2026 from implementation baseline 47f9acde89d58a7a25a122ed80252d51d0f0f4f2. Resume through [instructions.md](instructions.md), [RULES.md](RULES.md) and [INTEGRATIONS.md](INTEGRATIONS.md).
 
 ## Existing request path

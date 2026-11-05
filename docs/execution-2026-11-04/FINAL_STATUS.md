@@ -1,5 +1,7 @@
 # Final verification checkpoint — 4 November 2026
 
+5 November 2026 — **Newer status correction:** [VOICE-02 plan and verified PR16 failure details](VOICE_02_PLAN_2026-11-05.md). Owner deferred implementation to PC and selected website + WhatsApp use. No45s upgrade or WhatsApp adaptation is implemented by this documentation change. Actual merge run41909530222 at3c88379 failed staff-focus and hover-delay assertions (833 pass / 2 fail / 1 emulator skip); root causes unconfirmed. Preserve earlier local/hosted outcomes below as dated evidence, not current merge readiness.
+
 Latest continuation: [CI-GALLERY1 — 5 November](GALLERY_VERIFICATION_2026-11-05.md). Earlier dated outcomes below are historical and are not overwritten by later runs.
 
 Source branch: codex/admin-catalog-foundation-20261023. PR16 remains draft against launch. Source commit: `4065e357633586f186143191282c5809584e6f9a`. This documentation checkpoint preserves that runtime. A fresh documentation-checkpoint build could not run after the local execution environment became unavailable; the source build below is the last observed build, not a new documentation-build claim.

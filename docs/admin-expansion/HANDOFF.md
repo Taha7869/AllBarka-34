@@ -1,5 +1,7 @@
 # Admin expansion handoff
 
+5 November 2026 — **Resume VOICE-02 on PC:** owner accepted voice for website + WhatsApp and requested documentation now; implementation is TODO. Read the [plan](../execution-2026-11-04/VOICE_02_PLAN_2026-11-05.md) before coding. Existing capture still stops at14s under15s validation. New website target is45s with one request; WhatsApp needs current full workflow exports and its own authenticated media/confirmation path. PR16 merge run41909530222 failed staff-focus and hover-delay tests (833 pass / 2 fail / 1 skip); reproduce, do not assume root causes. No keys, code, workflows or deployment changed in this checkpoint.
+
 5 November 2026 — CI-GALLERY1 / CI-VOICE-SYNC1: gallery diagnostics saved02fa4a2; committed hero voice assertion saved203623404979b52837963c4750d7724acdfec305. Latest typecheck/hooks/build/privacy, affected gallery3/3 and voice9/9, full835PASS/0FAIL/1 emulator SKIP across106 files plus21 backend,97-product/115-reference asset audit and36 production checks PASS locally. Hosted outcomes are recorded separately in the execution evidence; historical404 trigger and real provider/device/merchant/live gates remain open. [Evidence](../execution-2026-11-04/GALLERY_VERIFICATION_2026-11-05.md).
 
 Hosted source4065e35 verification subsequently completed PASS:834 tests,0 failures,1 emulator-only skip across106 test files, plus backend/assets/36 production checks; run41851671404. This does not erase the local gallery404 or verify real providers/live. [CI](https://github.com/Taha7869/AllBarka-34/actions/runs/41851671404).

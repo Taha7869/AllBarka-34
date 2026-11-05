@@ -1,5 +1,11 @@
 ## 4 November 2026 — verification checkpoint / unfinished release gate
 
+## 5 November 2026 — VOICE-02 website and WhatsApp plan
+
+Owner selected the corrected voice approach for both channels and deferred implementation to their PC session. Saved a continuation specification: website45s capture with a single WAV request,60s defensive ceiling with visible truncation warning, optional duration-correct chunking, partial recovery, safe timer/mic/TTS lifecycle and separate verified WhatsApp media/confirmation flow. Existing VOICE-01 runtime remains unchanged. Reconciled the supplied audit: mic release, Buffer guard, TTS cancellation and most vocabulary terms already exist; metadata WAV support is a compatibility improvement. No zero-failure promise or silent long-note truncation.
+
+Read actual PR16 merge-run41909530222 logs:833 pass,2 fail,1 emulator skip at merge3c88379; staff-dialog focus and showcase hover-delay failures need reproduction and root-cause diagnosis. Older passing results are preserved separately. Updated entry guides, master plan, AI/integration overview, execution index/current status and handoff. Required build/privacy and document-review outcomes are recorded in [VOICE-02 evidence](docs/execution-2026-11-04/VOICE_02_PLAN_2026-11-05.md). This is documentation only: no implementation, keys, live workflow edit, messages, order sync, production merge/deploy, dependency change or tracked removal.
+
 5 November 2026 — CI-GALLERY1 / CI-VOICE-SYNC1: gallery diagnostics saved02fa4a2; committed hero voice assertion saved203623404979b52837963c4750d7724acdfec305. Latest typecheck/hooks/build/privacy, affected gallery3/3 and voice9/9, full835PASS/0FAIL/1 emulator SKIP across106 files plus21 backend,97-product/115-reference asset audit and36 production checks PASS locally. Hosted outcomes are recorded separately in the execution evidence; historical404 trigger and real provider/device/merchant/live gates remain open. [Evidence](docs/execution-2026-11-04/GALLERY_VERIFICATION_2026-11-05.md).
 
 Hosted source4065e35 verification subsequently completed PASS:834 tests,0 failures,1 emulator-only skip across106 test files, plus backend/assets/36 production checks; run41851671404. This does not erase the local gallery404 or verify real providers/live. [CI](https://github.com/Taha7869/AllBarka-34/actions/runs/41851671404).

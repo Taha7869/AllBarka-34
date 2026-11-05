@@ -1,5 +1,7 @@
 # AllBarka — reviewed execution, 4 November 2026
 
+Latest owner decision,5 November: [VOICE-02 website + WhatsApp plan](VOICE_02_PLAN_2026-11-05.md). Implementation is deferred to PC; existing source limits remain. The actual PR16 merge run41909530222 failed two unrelated assertions (staff focus and hover delay),833 pass / 2 fail / 1 skip. Root causes are unconfirmed; older green outcomes below remain historical evidence.
+
 Latest continuation: [CI-GALLERY1 — 5 November](GALLERY_VERIFICATION_2026-11-05.md). Earlier dated outcomes below are historical and are not overwritten by later runs.
 
 Baseline: 9d9fd13645a24994964749e0e695e223cd81edc5 on PR16 / codex/admin-catalog-foundation-20261023. Working checkpoint SHAs are recorded in Git history and the next phase report, not invented self-referential hashes.
