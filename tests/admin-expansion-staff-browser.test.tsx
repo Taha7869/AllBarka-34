@@ -34,7 +34,19 @@ test('Stage 4 browser: administrator grants access; staff sees read-only orders,
       assert.equal(await page.locator('main.staff-workspace').getAttribute('dir'),language==='en'?'ltr':'rtl');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
       if((language==='en'&&!dark)||(width===390&&language==='ur'&&dark)||(width===1440&&language==='ar'&&dark))await page.screenshot({path:path.join(shots,`stage4-${width}-${language}-${dark?'dark':'light'}.png`),fullPage:true});
     }
-    await page.evaluate(()=>(window as any).fixtureLanguage('en'));await page.getByRole('button',{name:'View details',exact:true}).click();const dialog=page.getByRole('dialog');await dialog.getByText('Gulberg III',{exact:true}).waitFor();assert.doesNotMatch(await dialog.innerText(),/SECRET|Internal|audit|Supplier|Change status|Export/i);assert.match(await dialog.innerText(),/500g × 2/);
+    await page.evaluate(()=>{
+      (window as any).fixtureLanguage('en');
+      const native=window.requestAnimationFrame.bind(window),pending:Array<()=>void>=[];
+      window.requestAnimationFrame=callback=>native(time=>pending.push(()=>callback(time)));
+      (window as any).fixturePendingFocusFrames=pending;
+      (window as any).fixtureReleaseFocusFrames=()=>{window.requestAnimationFrame=native;pending.splice(0).forEach(callback=>callback());};
+    });await page.getByRole('button',{name:'View details',exact:true}).click();const dialog=page.getByRole('dialog');await dialog.getByText('Gulberg III',{exact:true}).waitFor();assert.doesNotMatch(await dialog.innerText(),/SECRET|Internal|audit|Supplier|Change status|Export/i);assert.match(await dialog.innerText(),/500g × 2/);
+    // Network content can render before the scheduled focus frame. Prove that ordering,
+    // release the real callback, then wait for focus rather than assuming content implies it.
+    await page.waitForFunction(()=>(window as any).fixturePendingFocusFrames.length>0,undefined,{polling:10});
+    assert.notEqual(await page.evaluate(()=>document.activeElement?.getAttribute('aria-label')),'Close order details');
+    await page.evaluate(()=>(window as any).fixtureReleaseFocusFrames());
+    await page.waitForFunction(()=>document.activeElement?.getAttribute('aria-label')==='Close order details');
     assert.equal(await page.evaluate(()=>document.activeElement?.getAttribute('aria-label')),'Close order details');await page.keyboard.press('Shift+Tab');assert.equal(await page.evaluate(()=>document.activeElement?.getAttribute('aria-label')),'Close order details');await page.keyboard.press('Escape');await dialog.waitFor({state:'detached'});assert.equal(await page.evaluate(()=>document.activeElement?.textContent?.trim()),'View details');
     assert.deepEqual(errors,[]);
     const revoke=await fetch(`${origin}/api/admin/staff/reader`,{method:'PUT',headers:{Authorization:'Bearer owner','Content-Type':'application/json'},body:JSON.stringify({enabled:false,expectedRevision:1})});assert.equal(revoke.status,200);

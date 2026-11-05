@@ -53,6 +53,7 @@ async function openControlledPage(page) {
   await page.clock.pauseAt(new Date(initialTime.getTime() + 1000));
   await page.goto(`http://localhost:${PORT}/`, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('#boutique-selections');
+  await page.evaluate(()=>document.fonts.ready);
 }
 
 describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () => {
@@ -257,9 +258,14 @@ describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () =
     // User clicks Play button while pointer is hovered
     await page.click('#boutique-selections button[aria-label*="autoplay"]');
     assert.equal(await isAutoplayPlaying(page), true, 'Showcase is armed for play');
+    // Play changes the button geometry. Keep the stationary pointer in the stable
+    // product panel, then assert the actual hover premise before advancing time.
+    await page.hover('#boutique-selections [role="tabpanel"]');
+    assert.equal(await page.locator('#boutique-selections').evaluate(e=>e.matches(':hover')),true,'pointer must actually remain inside the showcase');
 
     // Pointer is STILL hovered over the showcase: hover protection MUST remain active!
     await page.clock.runFor(15000);
+    assert.equal(await page.locator('#boutique-selections').evaluate(e=>e.matches(':hover')),true,'layout/scroll must not move the target out from under the stationary pointer');
     assert.equal(await getActiveTabId(page), 'dry-fruits', 'Must NOT advance while hovered even after Play was clicked');
 
     // Pointer leaves showcase to footer
@@ -438,6 +444,7 @@ describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () =
 
     await page.goto(`http://localhost:${PORT}/`);
     await page.waitForSelector('#boutique-selections');
+  await page.evaluate(()=>document.fonts.ready);
 
     const visibleTabs = await page.evaluate(() => {
       return Array.from(document.querySelectorAll('#boutique-selections [role="tab"]')).map(t => t.getAttribute('data-tab-id') || t.id.split('-').pop());

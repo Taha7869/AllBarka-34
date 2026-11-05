@@ -1,8 +1,12 @@
 ## 4 November 2026 — verification checkpoint / unfinished release gate
 
+## 5 November2026 — CI-STAFF-FOCUS2 / CI-HOVER-PREMISE2
+
+Observed39facbd PR merge PASS838/0/1 but branch FAIL836/2/1 at recurring staff focus and showcase hover checks. The staff test now proves the pending real focus-frame ordering, releases it and waits actual focus before retaining strict keyboard/revoke assertions. Showcase waits actual fonts, moves the pointer inside a stable panel and asserts CSS:hover before/after15s while retaining resume timing. No application logic or acceptance assertion is weakened. Fresh static/build gates and targeted12/12 pass; full/hosted reruns are in progress. [Evidence](docs/execution-2026-11-04/VOICE_02_IMPLEMENTATION_2026-11-05.md).
+
 ## 5 November 2026 — VOICE02-LAYOUT1 responsive follow-up
 
-Additional checks reproduced a360px English voice-panel edge and enlarged-text shop-toolbar overflow. Align the shared panel layout within viewport margins on resize/scroll/locale/content changes; wrap the existing filter/saved controls, give the saved control a useful wrapping basis and preserve word-readable label width. Expanded browser journey passes30 layout/theme/language/enlarged-text cases; renewed full/hosted verification is in progress. Initial754d969 full-suite evidence remains historical. No commerce/filter logic, new dependency or live changes. See [current evidence](docs/execution-2026-11-04/VOICE_02_IMPLEMENTATION_2026-11-05.md).
+Additional checks reproduced a360px English voice-panel edge and enlarged-text shop-toolbar overflow. Align the shared panel layout within viewport margins on resize/scroll/locale/content changes; wrap the existing filter/saved controls, give the saved control a useful wrapping basis and preserve word-readable label width. Expanded browser journey passes30 layout/theme/language/enlarged-text cases; final39facbd local full verification passes838/0/1 plus backend/assets/36 production checks; hosted checks remain in progress until observed. Initial754d969 full-suite evidence remains historical. No commerce/filter logic, new dependency or live changes. See [current evidence](docs/execution-2026-11-04/VOICE_02_IMPLEMENTATION_2026-11-05.md).
 
 ## 5 November 2026 — VOICE-02 website implementation
 
