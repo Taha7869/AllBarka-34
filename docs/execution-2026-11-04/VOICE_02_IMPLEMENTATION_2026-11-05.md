@@ -1,5 +1,11 @@
 # VOICE-02 — implementation and verification
 
+## VOICE02-LAYOUT1 — additional screen/text verification
+
+After source754d969 was saved, the additional layout pass reproduced a panel edge at x=-1px on360px English and shop toolbar overflow at200% enlarged text (document width521px on390px English, then415px in Urdu). The shared voice panel now aligns its actual layout box within the viewport on open/language/resize/scroll/content resize, with listener/observer cleanup. The existing shop filter/saved row wraps and its saved-label flex item can shrink/wrap without pushing the counter offscreen. No filter/category data or behavior changed.
+
+Expanded committed browser regression: **30/30 layouts PASS** —360/390/768/1440px × English/Urdu/Arabic × light/dark, plus390px × three languages × two themes at200% root text size. Panel bounds, page overflow and44px controls retained. The complete voice journey also passes. Initial full838P/0F/1S evidence below belongs to754d969; renewed typecheck/hooks/build/privacy gates PASS. Final full-suite and hosted checks for this layout follow-up are IN_PROGRESS and must be recorded separately. Application source hash: `09c69b2002e393cfbbd2d419b3e281faeba25f5665b23141e2cf35631c51b210`. This is an unfinished verification checkpoint, not release certification.
+
 5 November 2026 (Asia/Karachi). Owner follow-up: complete everything available now; leave only actual PC/provider dependencies. This supersedes the PC-only implementation deferral in the [original plan](VOICE_02_PLAN_2026-11-05.md).
 
 Remote parent inspected: `9d6075fe7db16c8c74a57844529959315cb6c517`, branch `codex/admin-catalog-foundation-20261023`, PR16 targeting `launch`. The isolated local baseline has the exact same verified Git tree `f8961b705c2912280bbf255d02ba07ca7bd0e11c`; its temporary local commit identity is not pushed. Final source/docs are saved against the actual verified remote parent with the Git tree API. The containing commit identifies the final saved revision; fetch actual HEAD before continuing.

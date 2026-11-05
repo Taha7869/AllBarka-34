@@ -122,6 +122,28 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     const evidence=process.env.ALLBARKA_VOICE_EVIDENCE_DIR?path.resolve(process.env.ALLBARKA_VOICE_EVIDENCE_DIR):temporary;await fs.mkdir(evidence,{recursive:true});
     await page.evaluate(()=>document.fonts.ready);
     await page.screenshot({path:path.join(evidence,'voice-ur-dark.png'),animations:'disabled'});
+    let layouts=0;
+    for(const width of [360,390,768,1440])for(const language of ['en','ur','ar'])for(const theme of ['light','dark']){
+      await page.setViewportSize({width,height:width>=768?900:844});
+      await page.evaluate(({language,theme})=>{(window as any).fixture.lang(language);(window as any).fixture.theme(theme);},{language,theme});
+      await page.waitForFunction(({language,theme})=>document.documentElement.dir===(language==='en'?'ltr':'rtl')&&document.documentElement.classList.contains('dark')===(theme==='dark'),{language,theme});
+      const box=await page.locator('[data-voice-control] [role="region"]').boundingBox();
+      assert.ok(box&&box.x>=0&&box.x+box.width<=width+.5,JSON.stringify({width,language,theme,box}));
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+      const button=await page.locator('[data-voice-control] button').first().boundingBox();assert.ok(button&&button.width>=44&&button.height>=44);
+      layouts++;
+    }
+    await page.setViewportSize({width:390,height:844});
+    for(const language of ['en','ur','ar'])for(const theme of ['light','dark']){
+      await page.evaluate(({language,theme})=>{(window as any).fixture.lang(language);(window as any).fixture.theme(theme);document.documentElement.style.fontSize='200%';},{language,theme});
+      await page.waitForFunction(({language,theme})=>document.documentElement.dir===(language==='en'?'ltr':'rtl')&&document.documentElement.classList.contains('dark')===(theme==='dark'),{language,theme});
+      const box=await page.locator('[data-voice-control] [role="region"]').boundingBox();assert.ok(box&&box.x>=0&&box.x+box.width<=390.5,JSON.stringify({language,theme,box}));
+      const overflow=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,nodes:Array.from(document.querySelectorAll('body *')).map(e=>({tag:e.tagName,cls:typeof e.className==='string'?e.className:'',left:e.getBoundingClientRect().left,right:e.getBoundingClientRect().right})).filter(e=>e.left<0||e.right>innerWidth).slice(0,20)}));
+      assert.ok(overflow.scroll<=overflow.width,JSON.stringify({language,theme,overflow}));layouts++;
+    }
+    await page.evaluate(()=>{document.documentElement.style.fontSize='';(window as any).fixture.lang('ur');(window as any).fixture.theme('dark');});
+    await page.waitForFunction(()=>document.documentElement.dir==='rtl');
+    console.info('VOICE_02_LAYOUTS_PASS',layouts);
     await panel.getByRole('button').first().focus();await page.keyboard.press('Escape');await panel.waitFor({state:'hidden'});
 
     // Exact capture boundary and codec overrun through real UI -> WAV -> HTTP path.

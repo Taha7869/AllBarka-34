@@ -1,5 +1,9 @@
 ## 4 November 2026 — verification checkpoint / unfinished release gate
 
+## 5 November 2026 — VOICE02-LAYOUT1 responsive follow-up
+
+Additional checks reproduced a360px English voice-panel edge and enlarged-text shop-toolbar overflow. Align the shared panel layout within viewport margins on resize/scroll/locale/content changes; wrap the existing filter/saved controls and allow the saved label to shrink. Expanded browser journey passes30 layout/theme/language/enlarged-text cases; renewed full/hosted verification is in progress. Initial754d969 full-suite evidence remains historical. No commerce/filter logic, new dependency or live changes. See [current evidence](docs/execution-2026-11-04/VOICE_02_IMPLEMENTATION_2026-11-05.md).
+
 ## 5 November 2026 — VOICE-02 website implementation
 
 Owner authorized completing available work now. Extended existing shared website microphone control to45s with a countdown, graceful auto-stop and4MiB raw guard. Decode/resample allocation is bounded to60s; excluded audio is disclosed. Single WAV requests stay below2MiB; metadata-aware strict server validation uses real PCM bytes. Preparation and upload deadlines are separate. Up to4,000 transcript characters are preserved for review, with the existing1,000-character submission limit enforced explicitly. Animated drawer close cancels mic/TTS before unmount. English/Urdu/Arabic recovery copy updated; no dependency, pricing, order-storage, credential or deployment change.

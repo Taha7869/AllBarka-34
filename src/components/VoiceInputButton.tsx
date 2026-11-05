@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { Mic, MicOff, Loader2, X, Check } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,6 +11,7 @@ export default function VoiceInputButton({ onTranscript, disabled = false, place
   const { currentUser } = useAuth();
   const id = useId();
   const trigger = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const [supported, setSupported] = useState(false);
   const [phase, setPhase] = useState<Phase>('idle');
   const [draft, setDraft] = useState('');
@@ -53,6 +54,29 @@ export default function VoiceInputButton({ onTranscript, disabled = false, place
     document.addEventListener('visibilitychange', hide);
     return () => { window.removeEventListener('allbarka:voice-start', stop); window.removeEventListener('allbarka:voice-cancel', stop); document.removeEventListener('visibilitychange', hide); };
   }, [release]);
+
+  // The same control sits at different positions in Buddy/hero/shop and RTL.
+  // Keep its anchored panel readable even near a narrow viewport edge or at enlarged text.
+  useLayoutEffect(() => {
+    const panel = panelRef.current;
+    if (!panel) return;
+    const align = () => {
+      panel.style.left = ''; panel.style.right = '';
+      const rect = panel.getBoundingClientRect();
+      const left = Math.min(Math.max(rect.left, 16), Math.max(16, window.innerWidth - 16 - rect.width));
+      if (left !== rect.left) {
+        // Move the layout box itself; a transform can retain its old scroll overflow.
+        panel.style.left = `${panel.offsetLeft + left - rect.left}px`;
+        panel.style.right = 'auto';
+      }
+    };
+    align();
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(align);
+    observer?.observe(panel);
+    window.addEventListener('resize', align);
+    window.addEventListener('scroll', align, true);
+    return () => { observer?.disconnect(); window.removeEventListener('resize', align); window.removeEventListener('scroll', align, true); };
+  }, [phase, isRtl, placement]);
 
   const start = async () => {
     if (disabled || busy.current) return;
@@ -126,7 +150,7 @@ export default function VoiceInputButton({ onTranscript, disabled = false, place
       className={`focus-ring flex h-11 w-11 items-center justify-center rounded-full border border-[var(--color-border)] text-[var(--color-accent-text)] disabled:opacity-50 ${phase === 'recording' ? 'bg-[var(--color-surface-subtle)] ring-2 ring-[var(--color-gold)]' : 'bg-[var(--color-surface)]'}`}>
       {phase === 'permission' || phase === 'processing' ? <Loader2 size={18} className="motion-safe:animate-spin" /> : phase === 'recording' ? <MicOff size={18} /> : <Mic size={18} />}
     </button>
-    {open && <div id={id} role="region" aria-label={t('voice.panel')} onKeyDown={event => { if (event.key === 'Escape') { event.stopPropagation(); cancel(); } }}
+    {open && <div ref={panelRef} id={id} role="region" aria-label={t('voice.panel')} onKeyDown={event => { if (event.key === 'Escape') { event.stopPropagation(); cancel(); } }}
       className={`absolute ${placement === 'above' ? 'bottom-full mb-2' : 'top-full mt-2'} end-0 z-50 w-[min(18rem,calc(100vw-2rem))] rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-start text-sm text-[var(--color-text-primary)] shadow-xl`}>
       <div className="flex items-center justify-between gap-2"><span role={phase === 'error' ? 'alert' : 'status'}>{phase === 'error' ? t(`voice.${errorKey}`) : t(`voice.${phase}`)}</span>
         <button type="button" aria-label={t('voice.cancel')} onClick={cancel} className="focus-ring flex h-11 w-11 shrink-0 items-center justify-center rounded-full"><X size={17} /></button></div>
