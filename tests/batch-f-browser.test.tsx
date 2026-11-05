@@ -173,6 +173,7 @@ root.render(
     // ----------------------------------------------------
     await page.goto(`${origin}/product/pista`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('h1:has-text("Pistachio")', { timeout: 10000 });
+    await page.waitForFunction(()=>(window as any).__funnelEvents.some((event:any)=>event.milestone==='view_item'&&event.productId==='pista'));
 
     const capturedEvents = await page.evaluate(() => (window as any).__funnelEvents);
     const viewItemEvent = capturedEvents.find((e: any) => e.milestone === 'view_item');
@@ -182,7 +183,7 @@ root.render(
     // Add to cart and verify add_to_cart event
     const addBtn = page.locator('button:has-text("Add to")').first();
     await addBtn.click();
-    await page.waitForTimeout(400);
+    await page.waitForFunction(()=>(window as any).__funnelEvents.some((event:any)=>event.milestone==='add_to_cart'&&event.productId==='pista'));
 
     const updatedEvents = await page.evaluate(() => (window as any).__funnelEvents);
     const addToCartEvent = updatedEvents.find((e: any) => e.milestone === 'add_to_cart');
@@ -195,10 +196,12 @@ root.render(
     await page.goto(`${origin}/page-that-does-not-exist`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('text=Page Not Found', { timeout: 10000 });
 
-    const returnBtn = page.locator('a[href="/"]').first();
+    const returnBtn = page.locator('[data-error-surface="not-found"] a[href="/"]');
     assert.equal(await returnBtn.isVisible(), true);
     await returnBtn.click();
-    await page.waitForTimeout(500);
+    await page.waitForURL(`${origin}/`);
+    await page.waitForFunction(()=>(window as any).fixture?.pathname==='/');
+    await page.locator('[data-error-surface="not-found"]').waitFor({state:'detached'});
 
     // Returned to homepage
     const pathname = await page.evaluate(() => (window as any).fixture.pathname);

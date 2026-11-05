@@ -1,8 +1,12 @@
 ## 4 November 2026 — verification checkpoint / unfinished release gate
 
+## 5 November2026 — CI-404-NAV1 recovery/telemetry synchronization
+
+002250f branch CI passed; PR merge failed only the Batch F404 recovery fixture-path assertion after a500ms sleep. Focus/hover/voice/layout checks passed in both runs. Select the actual404 recovery link and await URL, committed fixture route and removed404 surface; await actual view/add-cart telemetry instead of fixed timing. Original strict assertions retained; no application behavior change. Affected1/1 and typecheck/hooks pass; renewed full/hosted verification in progress. [Evidence](docs/execution-2026-11-04/VOICE_02_IMPLEMENTATION_2026-11-05.md).
+
 ## 5 November2026 — CI-STAFF-FOCUS2 / CI-HOVER-PREMISE2
 
-Observed39facbd PR merge PASS838/0/1 but branch FAIL836/2/1 at recurring staff focus and showcase hover checks. The staff test now proves the pending real focus-frame ordering, releases it and waits actual focus before retaining strict keyboard/revoke assertions. Showcase waits actual fonts, moves the pointer inside a stable panel and asserts CSS:hover before/after15s while retaining resume timing. No application logic or acceptance assertion is weakened. Fresh static/build gates and targeted12/12 pass; full/hosted reruns are in progress. [Evidence](docs/execution-2026-11-04/VOICE_02_IMPLEMENTATION_2026-11-05.md).
+Observed39facbd PR merge PASS838/0/1 but branch FAIL836/2/1 at recurring staff focus and showcase hover checks. The staff test now proves the pending real focus-frame ordering, releases it and waits actual focus before retaining strict keyboard/revoke assertions. Showcase waits actual fonts, moves the pointer inside a stable panel and asserts CSS:hover before/after15s while retaining resume timing. No application logic or acceptance assertion is weakened. Fresh static/build gates, targeted12/12 and full838/0/1 plus backend/assets/36 production pass; hosted reruns are in progress. [Evidence](docs/execution-2026-11-04/VOICE_02_IMPLEMENTATION_2026-11-05.md).
 
 ## 5 November 2026 — VOICE02-LAYOUT1 responsive follow-up
 

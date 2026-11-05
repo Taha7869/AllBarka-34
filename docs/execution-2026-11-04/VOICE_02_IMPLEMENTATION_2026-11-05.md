@@ -1,5 +1,13 @@
 # VOICE-02 — implementation and verification
 
+## CI-404-NAV1 — observed recovery/telemetry synchronization
+
+At harness002250f, [branch41969313565](https://github.com/Taha7869/AllBarka-34/actions/runs/41969313565) completed PASS; [PR merge41969321646](https://github.com/Taha7869/AllBarka-34/actions/runs/41969321646) failed837/1/1 only at `batch-f-browser.test.tsx:205`, where the recovery fixture pathname was still `/page-that-does-not-exist` after a fixed500ms delay. Staff/focus and hover-premise checks passed in both runs, as did the voice and30 layouts.
+
+The affected test now selects the actual homepage recovery link inside the branded404 surface, instead of the first homepage link elsewhere in the layout. It waits for the real URL, committed fixture pathname and removal of the404 surface before the original strict `/` assertion. Initial view-item and add-to-cart telemetry also wait for their real recorded events, replacing the fixed400ms cart delay. No application navigation, telemetry emitter, payload or acceptance assertion changed.
+
+Affected Batch F browser journey PASS1/1; fresh typecheck/hooks PASS. Renewed build/full/hosted gates are IN_PROGRESS on this final test-only continuation. Application source remains hash13e09d08f2f5a7d1; earlier successful and failed runs below remain separately recorded.
+
 ## CI-STAFF-FOCUS2 / CI-HOVER-PREMISE2 — final harness continuation
 
 Observed hosted source39facbd: [PR merge41967346943](https://github.com/Taha7869/AllBarka-34/actions/runs/41967346943) PASS838/0/1 plus backend/assets/36 production checks; [branch41967339003](https://github.com/Taha7869/AllBarka-34/actions/runs/41967339003) FAIL836/2/1 at the same staff-focus and showcase-hover assertions. Both builds report application hash13e09d08f2f5a7d1. Voice and30 layouts pass in both. A merge PASS is not rewritten as a branch PASS.
@@ -8,7 +16,7 @@ Staff reproduction now deliberately holds the real requestAnimationFrame callbac
 
 The showcase harness now waits for actual fonts and parks the pointer inside the stable product panel after Play changes the control geometry. It asserts actual CSS:hover before and after15s, then retains the existing no-advance and exact resume-delay/countdown assertions. A separate original-harness diagnostic passed with CSS:hover true; the exact historical hover-loss trigger is still unconfirmed. This is stronger verification of the test premise, not a claimed application autoplay fix or an arbitrary sleep. No assertion is skipped or relaxed.
 
-Fresh typecheck/hooks/build/privacy PASS; targeted12/12 PASS on the final focus/hover harness, retaining every original timing/accessibility assertion. Complete/hosted reruns for these final two test changes are IN_PROGRESS. Application source remains unchanged at hash `13e09d08f2f5a7d1e297e5c721fd4dc70efa58767546231e46dae0c269072fb8`. The containing commit records the harness checkpoint; final outcomes must be read separately from the older39facbd evidence below.
+Fresh typecheck/hooks/build/privacy PASS; targeted12/12 PASS on the final focus/hover harness, retaining every original timing/accessibility assertion. Final complete local `npm test` PASS on002250f:839 total/838 pass/0 fail/1 emulator skip,106 files,21 backend,0 missing/retired catalog assets and36 production checks (509,294ms). Hosted reruns for these final two test changes remain IN_PROGRESS until observed. Application source remains unchanged at hash `13e09d08f2f5a7d1e297e5c721fd4dc70efa58767546231e46dae0c269072fb8`. The containing commit records the harness checkpoint; final outcomes must be read separately from the older39facbd evidence below.
 
 ## Latest verified source — 39facbd
 
