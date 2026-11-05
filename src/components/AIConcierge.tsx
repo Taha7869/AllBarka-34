@@ -63,7 +63,12 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
 
   useEffect(() => {
     onOpenChange?.(isOpen);
-    if (previouslyOpenRef.current && !isOpen) launcherRef.current?.focus();
+    if (previouslyOpenRef.current && !isOpen) {
+      // AnimatePresence can retain the exiting drawer; stop audio before unmount.
+      window.dispatchEvent(new Event('allbarka:voice-cancel'));
+      window.speechSynthesis?.cancel();
+      launcherRef.current?.focus();
+    }
     previouslyOpenRef.current = isOpen;
   }, [isOpen, onOpenChange]);
   useEffect(() => () => requestRef.current?.abort(), []);

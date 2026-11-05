@@ -7,7 +7,8 @@ import { once } from 'node:events';
 import { createAiChatRouter } from '../src/lib/aiChatRouter';
 import { createVoiceRouter } from '../src/lib/voiceRouter';
 import { getVoiceConfig, validateVoiceWav, transcribeVoice, VoiceError } from '../src/lib/voiceTranscription';
-import { encodeVoiceWav } from '../src/services/voiceInput';
+import { encodeVoiceWav, prepareVoiceAudio } from '../src/services/voiceInput';
+import { voiceTranslations } from '../src/contexts/voiceTranslations';
 
 const config = { key: 'isolated-voice-fixture', model: 'whisper-large-v3' };
 async function wav(seconds = 1) {
@@ -26,10 +27,81 @@ test('canonical WAV validates bytes and actual duration, not supplied MIME or du
   const wrong = Buffer.from(audio); wrong.writeUInt32LE(8000, 24);
   assert.throws(() => validateVoiceWav(wrong), /VOICE_INVALID_AUDIO/);
   assert.throws(() => validateVoiceWav(Buffer.concat([audio,Buffer.alloc(2)])), /VOICE_INVALID_AUDIO/);
-  const long = Buffer.alloc(44 + 16 * 32000); audio.copy(long,0,0,44); long.writeUInt32LE(long.length - 8,4);long.writeUInt32LE(long.length - 44,40);
+  const long = Buffer.alloc(44 + 60 * 32000 + 2); audio.copy(long,0,0,44); long.writeUInt32LE(long.length - 8,4);long.writeUInt32LE(long.length - 44,40);
   assert.throws(() => validateVoiceWav(long), /VOICE_AUDIO_TOO_LONG/);
   const silence = Buffer.from(audio);silence.fill(0,44);
   assert.throws(() => validateVoiceWav(silence), /VOICE_NO_SPEECH/);
+});
+test('24, 30, 45 and 60-second PCM fits one request; metadata is scanned with strict chunk bounds', async () => {
+  for (const seconds of [24, 30, 45, 60]) {
+    const audio = await wav(seconds);
+    assert.equal(validateVoiceWav(audio), seconds);
+    assert.equal(audio.length, 44 + seconds * 32000);
+  }
+  const audio = await wav();
+  const chunk = (id: string, data: Buffer) => {
+    const header = Buffer.alloc(8); header.write(id); header.writeUInt32LE(data.length, 4);
+    return Buffer.concat([header, data, Buffer.alloc(data.length % 2)]);
+  };
+  const riff = (...chunks: Buffer[]) => {
+    const result = Buffer.concat([audio.subarray(0, 12), ...chunks]); result.writeUInt32LE(result.length - 8, 4); return result;
+  };
+  const fmt = audio.subarray(12, 36), data = audio.subarray(36);
+  const metadata = riff(chunk('JUNK', Buffer.from('odd')), fmt, chunk('LIST', Buffer.from('fixture')), data, chunk('JUNK', Buffer.alloc(30, 255)));
+  assert.equal(validateVoiceWav(metadata), 1);
+  for (const invalid of [riff(fmt, fmt, data), riff(fmt, data, data), riff(data, fmt), riff(fmt), riff(chunk('fmt ', Buffer.alloc(2)), data)]) {
+    assert.throws(() => validateVoiceWav(invalid), /VOICE_INVALID_AUDIO/);
+  }
+  const overrun = Buffer.from(metadata); overrun.writeUInt32LE(0xffffffff, 16);
+  assert.throws(() => validateVoiceWav(overrun), /VOICE_INVALID_AUDIO/);
+  const trailing = riff(fmt, data, Buffer.from([1]));
+  assert.throws(() => validateVoiceWav(trailing), /VOICE_INVALID_AUDIO/);
+  const silentMetadata = Buffer.from(metadata);
+  const offset = silentMetadata.indexOf(Buffer.from('data')) + 8; silentMetadata.fill(0, offset, offset + 32000);
+  assert.throws(() => validateVoiceWav(silentMetadata), /VOICE_NO_SPEECH/, 'metadata bytes must not masquerade as speech');
+  for (const invalid of [undefined, null, {}, 'audio', Buffer.alloc(0)]) assert.throws(() => validateVoiceWav(invalid as any), /VOICE_INVALID_AUDIO/);
+});
+test('browser preparation bounds render allocation before overrun, reports truncation and closes decoder on errors/cancel', async () => {
+  const originalAudio = globalThis.AudioContext, originalOffline = globalThis.OfflineAudioContext;
+  let duration = 45, closed = 0, allocated = 0, decodeCalls = 0;
+  (globalThis as any).AudioContext = class {
+    async decodeAudioData() { decodeCalls++; return { duration }; }
+    async close() { closed++; }
+  };
+  (globalThis as any).OfflineAudioContext = class {
+    destination = {};
+    constructor(_channels: number, length: number, rate: number) { allocated = length; assert.equal(rate, 16000); }
+    createBufferSource() { return { connect() {}, start() {} }; }
+    async startRendering() { return { getChannelData: () => new Float32Array(allocated).fill(.1) }; }
+  };
+  try {
+    for (const seconds of [24, 30, 45, 60, 60.01, 600]) {
+      duration = seconds;
+      const result = await prepareVoiceAudio(new Blob(['fixture']), new AbortController().signal);
+      assert.equal(result.truncated, seconds > 60);
+      assert.equal(allocated, Math.min(960000, Math.ceil(seconds * 16000)));
+      assert.equal(validateVoiceWav(Buffer.from(await result.audio.arrayBuffer())), Math.min(seconds, 60));
+    }
+    const before = decodeCalls;
+    await assert.rejects(prepareVoiceAudio(new Blob([new Uint8Array(4 * 1024 * 1024 + 1)]), new AbortController().signal), /VOICE_AUDIO_TOO_LARGE/);
+    const cancelled = new AbortController(); cancelled.abort();
+    await assert.rejects(prepareVoiceAudio(new Blob(['fixture']), cancelled.signal), /VOICE_CANCELLED/);
+    assert.equal(decodeCalls, before);
+    duration = Infinity;
+    await assert.rejects(prepareVoiceAudio(new Blob(['fixture']), new AbortController().signal), /VOICE_INVALID_AUDIO/);
+    assert.equal(closed, decodeCalls);
+  } finally {
+    if (originalAudio) globalThis.AudioContext = originalAudio; else delete (globalThis as any).AudioContext;
+    if (originalOffline) globalThis.OfflineAudioContext = originalOffline; else delete (globalThis as any).OfflineAudioContext;
+  }
+});
+test('longer transcript is preserved for editing while response size remains bounded; translations cover recovery', async () => {
+  const audio = await wav(45), signal = new AbortController().signal;
+  const text = 'pista 250g '.repeat(120).trim();
+  assert.ok(text.length > 1000);
+  assert.equal(await transcribeVoice(audio, config, signal, async () => new Response(JSON.stringify({ text, duration: 45, segments: [] }))), text);
+  await assert.rejects(transcribeVoice(audio, config, signal, async () => answer('x'.repeat(4001))), /VOICE_NO_SPEECH/);
+  for (const language of ['en', 'ur', 'ar']) for (const key of ['voice.remaining', 'voice.truncated', 'voice.shorten', 'voice.VOICE_INVALID_AUDIO']) assert.ok(voiceTranslations[language][key]);
 });
 test('provider wire format is bounded multilingual transcription, never translation/chat or a fallback model', async () => {
   const audio = await wav(); let calls = 0;
@@ -71,6 +143,7 @@ test('real HTTP router enforces auth/limiter, byte limit, configuration and priv
     assert.equal((await send(await wav(),{'X-Fixture-Rate':'limited'})).status,429);
     assert.equal((await send(Buffer.alloc(2*1024*1024+1))).status,413);
     assert.equal((await send(Buffer.from('not audio'))).status,400);assert.equal(calls,0);
+    const empty = await send(Buffer.alloc(0)); assert.equal(empty.status, 400); assert.deepEqual(await empty.json(), { code: 'VOICE_INVALID_AUDIO' }); assert.equal(calls, 0);
     const response = await send(await wav());assert.equal(response.status,200);assert.equal(response.headers.get('cache-control'),'no-store');
     assert.deepEqual(await response.json(),{text:'khajoor aur tasting flight'});assert.equal(calls,1);
   } finally {server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));}

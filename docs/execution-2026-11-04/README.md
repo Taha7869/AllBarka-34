@@ -1,5 +1,7 @@
 # AllBarka — reviewed execution, 4 November 2026
 
+Latest continuation: [VOICE-02 source implementation](VOICE_02_IMPLEMENTATION_2026-11-05.md), authorized by owner after the documentation checkpoint. Website45s capture and reliability changes are implemented; WhatsApp/provider/live gates remain separate.9d6075f branch and PR merge workflows both passed; earlier failed-run evidence is retained.
+
 Latest owner decision,5 November: [VOICE-02 website + WhatsApp plan](VOICE_02_PLAN_2026-11-05.md). Implementation is deferred to PC; existing source limits remain. The actual PR16 merge run41909530222 failed two unrelated assertions (staff focus and hover delay),833 pass / 2 fail / 1 skip. Root causes are unconfirmed; older green outcomes below remain historical evidence.
 
 Latest continuation: [CI-GALLERY1 — 5 November](GALLERY_VERIFICATION_2026-11-05.md). Earlier dated outcomes below are historical and are not overwritten by later runs.

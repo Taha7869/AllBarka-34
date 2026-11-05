@@ -25,11 +25,11 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
       builder.onResolve({ filter: /\/AuthContext$/ }, () => ({ path: 'auth', namespace: 'fixture' }));
       builder.onLoad({ filter: /.*/, namespace: 'fixture' }, () => ({ contents: 'export const useAuth=()=>({currentUser:null});' }));
     } }] });
-  let transcriptions = 0, chats = 0, unavailable = false;
+  let transcriptions = 0, chats = 0, unavailable = false, transcriptText = 'pista 250g';
   const app = express();app.use(express.json());
   app.use(createVoiceRouter({ authenticateOptionalUser: (_q,_s,n) => n(), limiter: (_q,_s,n) => n(),
     getConfig: () => unavailable ? null : { key: 'isolated-fixture', model: 'whisper-large-v3' },
-    fetcher: async () => { transcriptions++;return new Response(JSON.stringify({text:'pista 250g',duration:1,segments:[]})); },
+    fetcher: async (_url, init) => { transcriptions++;const file = (init!.body as FormData).get('file') as Blob;return new Response(JSON.stringify({text:transcriptText,duration:(file.size-44)/32000,segments:[]})); },
   }));
   app.post('/api/concierge/chat', (_q,res) => {chats++;res.json({available:true,action:'answer',text:'Choose a portion to continue.'});});
   app.get('/fixture.js',(_q,res)=>res.sendFile(path.join(temporary,'fixture.js')));
@@ -54,15 +54,16 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
       class Recorder {
         state='inactive';mimeType='audio/webm';ondataavailable;onstop;
         static isTypeSupported(){return true;}
-        start(){this.state='recording';}
-        stop(){this.state='inactive';queueMicrotask(()=>{this.ondataavailable?.({data:new Blob(['fixture'])});this.onstop?.();});}
+        start(){this.state='recording';get().recorder=this;}
+        stop(){this.state='inactive';queueMicrotask(()=>{this.ondataavailable?.({data:get().mode==='oversize'?new Blob([new Uint8Array(4*1024*1024+1)]):new Blob(['fixture'])});this.onstop?.();});}
       }
       class Audio {
-        async decodeAudioData(){return{duration:1};}async close(){}
+        async decodeAudioData(){if(get().mode==='decode-late')await new Promise(resolve=>{get().resolveDecode=resolve;});return{duration:get().duration||1};}async close(){}
       }
       class Offline {
+        constructor(channels,length,rate){this.length=length;get().renderSamples=length;}
         destination={};createBufferSource(){return{connect(){},start(){}};}
-        async startRendering(){return{getChannelData:()=>Float32Array.from({length:16000},(_,i)=>Math.sin(i/10)*.1)};}
+        async startRendering(){return{getChannelData:()=>Float32Array.from({length:this.length},(_,i)=>Math.sin(i/10)*.1)};}
       }
       Object.assign(window,{MediaRecorder:Recorder,AudioContext:Audio,OfflineAudioContext:Offline});
       const synth=new EventTarget();Object.assign(synth,{getVoices:()=>get().voices,cancel:()=>{get().speechCancels++;},speak:(utterance)=>{get().spoken.push(utterance.lang);utterance.onstart?.();}});
@@ -91,7 +92,7 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     await page.getByRole('button',{name:'Close',exact:true}).click();
     await page.waitForFunction(n=>(window as any).fixture.tracksStopped>n,stopped);
     const before=transcriptions;await page.getByRole('button',{name:/Open.*(Buddy|concierge)/i}).click();
-    await page.evaluate(()=>{(window as any).fixture.mode='late';});await mic().click();await page.getByRole('button',{name:'Cancel voice input',exact:true}).click();
+    await page.evaluate(()=>{(window as any).fixture.mode='late';});await mic().click();await review().getByRole('button',{name:'Cancel voice input',exact:true}).click();
     const stopLate=await page.evaluate(()=>(window as any).fixture.tracksStopped);
     await page.evaluate(()=>(window as any).fixture.resolvePermission());await page.waitForFunction(n=>(window as any).fixture.tracksStopped>n,stopLate);
     assert.equal(transcriptions,before,'cancelled permission result never uploads');
@@ -108,9 +109,9 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     await page.getByRole('button',{name:'Use this text',exact:true}).click();await page.waitForFunction(()=>new URL(location.href).searchParams.get('search')==='badam'&&document.querySelector<HTMLInputElement>('input[type=search]')?.value==='badam');assert.equal(await page.getByRole('combobox').first().inputValue(),'badam');
     unavailable=true;await mic().click();await page.getByRole('button',{name:'Stop recording',exact:true}).click();
     await page.getByRole('alert').waitFor();assert.match(await review().innerText(),/unavailable.*typing/s);
-    await page.getByRole('button',{name:'Cancel voice input',exact:true}).click();await page.getByRole('combobox').first().fill('kaju');await page.waitForFunction(()=>document.querySelector<HTMLInputElement>('input[type=search]')?.value==='kaju');assert.equal(await page.getByRole('combobox').first().inputValue(),'kaju');
+    await review().getByRole('button',{name:'Cancel voice input',exact:true}).click();await page.getByRole('combobox').first().fill('kaju');await page.waitForFunction(()=>document.querySelector<HTMLInputElement>('input[type=search]')?.value==='kaju');assert.equal(await page.getByRole('combobox').first().inputValue(),'kaju');
     unavailable=false;await page.evaluate(()=>{(window as any).fixture.mode='denied';});await mic().click();await page.getByRole('alert').waitFor();assert.match(await review().innerText(),/permission was not granted/);
-    await page.getByRole('button',{name:'Cancel voice input',exact:true}).click();
+    await review().getByRole('button',{name:'Cancel voice input',exact:true}).click();
     await page.evaluate(()=>{(window as any).fixture.mode='ok';(window as any).fixture.lang('ur');(window as any).fixture.theme('dark');});
     await page.waitForFunction(()=>document.documentElement.dir==='rtl');
     await page.locator('[data-voice-control] button').first().click();await page.waitForFunction(()=>document.querySelector('[data-voice-control] button')?.getAttribute('aria-pressed')==='true');
@@ -122,6 +123,65 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     await page.evaluate(()=>document.fonts.ready);
     await page.screenshot({path:path.join(evidence,'voice-ur-dark.png'),animations:'disabled'});
     await panel.getByRole('button').first().focus();await page.keyboard.press('Escape');await panel.waitFor({state:'hidden'});
+
+    // Exact capture boundary and codec overrun through real UI -> WAV -> HTTP path.
+    await page.goto(origin+'/hero');
+    await page.evaluate(()=>(window as any).fixture.lang('en'));await page.waitForFunction(()=>document.documentElement.dir==='ltr');
+    const initialTime = new Date('2026-11-05T00:00:00Z');
+    await page.clock.install({time:initialTime});await page.clock.pauseAt(new Date(initialTime.getTime()+1000));
+    await page.evaluate(()=>{(window as any).fixture.duration=45;});
+    const before45=transcriptions, tracks45=await page.evaluate(()=>(window as any).fixture.tracksStopped);
+    await mic().click();assert.equal(await page.getByRole('timer').innerText(),'0:45');
+    await page.clock.runFor(44000);assert.equal(await page.getByRole('timer').innerText(),'0:01');assert.equal(transcriptions,before45);
+    await page.clock.runFor(1000);await page.getByRole('textbox',{name:'Edit transcript',exact:true}).waitFor();
+    assert.equal(transcriptions,before45+1,'45s uses exactly one provider request');
+    assert.ok(await page.evaluate(()=>(window as any).fixture.tracksStopped)>tracks45);
+    await review().getByRole('button',{name:'Cancel voice input',exact:true}).click();
+    await page.evaluate(()=>{(window as any).fixture.duration=65;});await record();
+    assert.equal(await page.evaluate(()=>(window as any).fixture.renderSamples),960000,'bound allocation before resampling');
+    assert.match(await review().innerText(),/first 60 seconds.*remaining part/s);
+    await review().getByRole('button',{name:'Cancel voice input',exact:true}).click();
+
+    transcriptText='pista 250g '.repeat(120).trim();await record();
+    assert.equal(await page.getByRole('textbox',{name:'Edit transcript',exact:true}).inputValue(),transcriptText);
+    assert.equal(await page.getByRole('button',{name:'Use this text',exact:true}).isDisabled(),true);
+    await page.getByRole('textbox',{name:'Edit transcript',exact:true}).fill('pista 250g');
+    assert.equal(await page.getByRole('button',{name:'Use this text',exact:true}).isEnabled(),true);
+    await review().getByRole('button',{name:'Cancel voice input',exact:true}).click();transcriptText='pista 250g';
+
+    // Oversized final recorder event must release the device and never upload corrupt slices.
+    await page.evaluate(()=>{(window as any).fixture.mode='oversize';});
+    const oversizeCalls=transcriptions, oversizeTracks=await page.evaluate(()=>(window as any).fixture.tracksStopped);
+    await mic().click();await page.getByRole('button',{name:'Stop recording',exact:true}).click();await page.getByRole('alert').waitFor();
+    assert.equal(transcriptions,oversizeCalls);assert.ok(await page.evaluate(()=>(window as any).fixture.tracksStopped)>oversizeTracks);
+    await review().getByRole('button',{name:'Cancel voice input',exact:true}).click();
+
+    // Upload has its own 25s budget even after 14s preparation.
+    let held: any;let reached!:()=>void;const uploading=new Promise<void>(resolve=>{reached=resolve;});
+    await page.route('**/api/concierge/transcribe',route=>{held=route;reached();});
+    await page.evaluate(()=>{(window as any).fixture.mode='decode-late';(window as any).fixture.duration=45;});
+    await mic().click();await page.getByRole('button',{name:'Stop recording',exact:true}).click();
+    await page.waitForFunction(()=>!!(window as any).fixture.resolveDecode);
+    await page.clock.runFor(14000);await page.evaluate(()=>(window as any).fixture.resolveDecode());await uploading;
+    await page.clock.runFor(24000);assert.equal(await page.getByRole('alert').count(),0,'preparation budget must not abort a valid upload');
+    await held.fulfill({status:200,contentType:'application/json',body:JSON.stringify({text:'badam 500g'})});
+    await page.getByRole('textbox',{name:'Edit transcript',exact:true}).waitFor();
+    assert.equal(await page.getByRole('textbox',{name:'Edit transcript',exact:true}).inputValue(),'badam 500g');
+    await page.unroute('**/api/concierge/transcribe');await review().getByRole('button',{name:'Cancel voice input',exact:true}).click();
+
+    // Non-reduced-motion drawer remains mounted during exit; cancellation happens immediately.
+    await page.goto(origin+'/buddy');await page.emulateMedia({reducedMotion:'no-preference'});
+    await page.getByRole('button',{name:/Open.*(Buddy|concierge)/i}).click();await page.locator('[role="dialog"]').waitFor();await page.clock.runFor(1000);await record();
+    await page.getByRole('button',{name:'Use this text',exact:true}).click();await page.locator('[role="dialog"] form button[type="submit"]').click();
+    await page.waitForFunction(()=>document.body.textContent?.includes('Choose a portion to continue.'));
+    await page.evaluate(()=>{(window as any).fixture.voices=[{lang:'en-GB',name:'Fixture local English',localService:true}];speechSynthesis.dispatchEvent(new Event('voiceschanged'));});
+    await page.getByRole('button',{name:'Listen to reply',exact:true}).click();
+    const cancels=await page.evaluate(()=>(window as any).fixture.speechCancels);
+    await page.getByRole('button',{name:'Close',exact:true}).click();
+    await page.waitForFunction(n=>(window as any).fixture.speechCancels>n,cancels);
+    assert.equal(await page.locator('[role="dialog"]').count(),1,'exit is retained while the clock is paused');
+    // This case deliberately holds the exit frame to test audio cleanup before unmount.
+    // Context teardown ends the fixture; animation completion is not driven by this clock.
     assert.deepEqual(errors,[]);
     console.info('VOICE_FIXTURE_EVIDENCE',path.join(evidence,'voice-ur-dark.png'));
     await context.close();

@@ -1,5 +1,7 @@
 # AllBarka order integration contract
 
+5 November 2026 — **VOICE-02 website implementation available:** shared validated Groq transcription accepts up to60s PCM WAV within2MiB; browser capture stops at45s. [Current code/evidence and WhatsApp gates](docs/execution-2026-11-04/VOICE_02_IMPLEMENTATION_2026-11-05.md). No WhatsApp-specific authenticated audio endpoint or live media workflow is added here; preserve existing Meta intake, order storage, dedup and send authorization.
+
 5 November 2026 — **Planned shared voice principles:** owner selected website and WhatsApp use, with implementation deferred to their PC session. [VOICE-02 plan](docs/execution-2026-11-04/VOICE_02_PLAN_2026-11-05.md) defines website45s input and separate verified WhatsApp media intake/confirmation, quota sharing, cancellation and partial recovery. No active n8n workflow, endpoint contract, credential, order-storage or notification policy changes in this documentation checkpoint. Current complete bot exports must be compared before implementation.
 
 Firestore is authoritative. Express validates orders, computes prices, applies fulfillment updates, awards points, and authorizes WhatsApp sends. n8n transports events and mirrors backend snapshots to `Order_Control`; it must never price an order, award points, or write directly to Firestore. Nothing in this PR imports/publishes n8n workflows or deploys Railway.

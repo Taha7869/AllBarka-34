@@ -13,7 +13,8 @@ export default function VoiceReadButton({ text }: { text: string }) {
     const stop = () => { synth.cancel(); setSpeaking(false); };
     synth.addEventListener('voiceschanged', update);
     window.addEventListener('allbarka:voice-start', stop);
-    return () => { synth.removeEventListener('voiceschanged', update); window.removeEventListener('allbarka:voice-start', stop); synth.cancel(); };
+    window.addEventListener('allbarka:voice-cancel', stop);
+    return () => { synth.removeEventListener('voiceschanged', update); window.removeEventListener('allbarka:voice-start', stop); window.removeEventListener('allbarka:voice-cancel', stop); synth.cancel(); };
   }, []);
   useEffect(() => { window.speechSynthesis?.cancel(); setSpeaking(false); }, [text, language]);
   const voice = voices.find(item => item.lang.toLowerCase().split(/[-_]/)[0] === language);

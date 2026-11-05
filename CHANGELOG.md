@@ -1,5 +1,11 @@
 ## 4 November 2026 — verification checkpoint / unfinished release gate
 
+## 5 November 2026 — VOICE-02 website implementation
+
+Owner authorized completing available work now. Extended existing shared website microphone control to45s with a countdown, graceful auto-stop and4MiB raw guard. Decode/resample allocation is bounded to60s; excluded audio is disclosed. Single WAV requests stay below2MiB; metadata-aware strict server validation uses real PCM bytes. Preparation and upload deadlines are separate. Up to4,000 transcript characters are preserved for review, with the existing1,000-character submission limit enforced explicitly. Animated drawer close cancels mic/TTS before unmount. English/Urdu/Arabic recovery copy updated; no dependency, pricing, order-storage, credential or deployment change.
+
+Service/server tests and real UI/HTTP fixture expanded for duration boundaries, overrun warning, large capture cleanup, metadata/malformed input, preserved overlong text, fresh upload deadlines and cancellation before exit unmount. Historical staff/hover failures did not reproduce in12 local diagnostics; both9d6075f hosted workflows subsequently passed, so no speculative application fix is included. Full exact gates, self-review, remaining WhatsApp intake/provider/phone/live blockers and save state: [VOICE-02 implementation evidence](docs/execution-2026-11-04/VOICE_02_IMPLEMENTATION_2026-11-05.md).
+
 ## 5 November 2026 — VOICE-02 website and WhatsApp plan
 
 Owner selected the corrected voice approach for both channels and deferred implementation to their PC session. Saved a continuation specification: website45s capture with a single WAV request,60s defensive ceiling with visible truncation warning, optional duration-correct chunking, partial recovery, safe timer/mic/TTS lifecycle and separate verified WhatsApp media/confirmation flow. Existing VOICE-01 runtime remains unchanged. Reconciled the supplied audit: mic release, Buffer guard, TTS cancellation and most vocabulary terms already exist; metadata WAV support is a compatibility improvement. No zero-failure promise or silent long-note truncation.

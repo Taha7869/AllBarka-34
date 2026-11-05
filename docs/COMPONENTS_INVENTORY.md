@@ -1,5 +1,9 @@
 # AllBarka Components Inventory
 
+## VOICE-02 continuation
+
+Existing VoiceInputButton/voiceInput/voiceRouter/voiceTranscription and VoiceReadButton retain ownership; voiceLimits.ts shares public size/duration/text bounds without server credentials. Capture45s, bounded60s preparation, countdown/recovery and immediate drawer audio cancellation extend the existing components. No new component, dependency or catalog schema. See [implementation evidence](execution-2026-11-04/VOICE_02_IMPLEMENTATION_2026-11-05.md).
+
 ## VOICE-01
 
 `VoiceInputButton` owns shared mic/cancel/review state for AIConcierge, AllBarkaHero and CategoryPLP. No existing component provided audio capture or transcript review. `voiceInput.ts` supplies the shared bounded WAV adapter/client; `voiceRouter.ts` and `voiceTranscription.ts` stay server-only behind the existing AI router guards. `VoiceReadButton` provides optional matching device-language output in AIConcierge. `voiceTranslations.ts` uses the existing LanguageContext. No application dependency or catalog schema change.

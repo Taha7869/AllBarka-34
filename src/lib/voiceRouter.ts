@@ -36,6 +36,7 @@ export function createVoiceRouter(options: {
       if (res.headersSent || controller.signal.aborted) return;
       if (error) return res.status((error as any).type === 'entity.too.large' ? 413 : 400).json({ code: (error as any).type === 'entity.too.large' ? 'VOICE_AUDIO_TOO_LARGE' : 'VOICE_INVALID_AUDIO' });
       try {
+        if (!Buffer.isBuffer(req.body) || req.body.length === 0) throw new VoiceError('VOICE_INVALID_AUDIO', 400);
         validateVoiceWav(req.body);
         const text = await transcribeVoice(req.body, config, controller.signal, options.fetcher);
         if (!res.headersSent && !controller.signal.aborted) res.json({ text });

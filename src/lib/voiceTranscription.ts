@@ -1,26 +1,43 @@
 /** Bounded server-only transcription. Never import this module into the browser. */
-export const VOICE_MAX_BYTES = 2 * 1024 * 1024;
-export const VOICE_MAX_SECONDS = 15;
+import { VOICE_MAX_BYTES, VOICE_MAX_SECONDS, VOICE_MAX_TRANSCRIPT_CHARS } from './voiceLimits';
+export { VOICE_MAX_BYTES, VOICE_MAX_SECONDS } from './voiceLimits';
 const MODELS = new Set(['whisper-large-v3', 'whisper-large-v3-turbo']);
 export class VoiceError extends Error {
   constructor(public code: string, public status = 503) { super(code); }
 }
 
-/** Accept one canonical PCM WAV, so duration is verified from bytes before provider work. */
+/** Scan bounded RIFF chunks; metadata does not count as PCM duration or speech. */
 export function validateVoiceWav(audio: Buffer): number {
   if (!Buffer.isBuffer(audio)) throw new VoiceError('VOICE_INVALID_AUDIO', 400);
   if (audio.length > VOICE_MAX_BYTES) throw new VoiceError('VOICE_AUDIO_TOO_LARGE', 413);
   if (audio.length < 46 || audio.toString('ascii', 0, 4) !== 'RIFF' || audio.toString('ascii', 8, 12) !== 'WAVE' ||
-      audio.readUInt32LE(4) !== audio.length - 8 || audio.toString('ascii', 12, 16) !== 'fmt ' || audio.readUInt32LE(16) !== 16 ||
-      audio.readUInt16LE(20) !== 1 || audio.readUInt16LE(22) !== 1 || audio.readUInt32LE(24) !== 16000 ||
-      audio.readUInt32LE(28) !== 32000 || audio.readUInt16LE(32) !== 2 || audio.readUInt16LE(34) !== 16 ||
-      audio.toString('ascii', 36, 40) !== 'data' || audio.readUInt32LE(40) !== audio.length - 44 || (audio.length - 44) % 2) {
+      audio.readUInt32LE(4) !== audio.length - 8) {
     throw new VoiceError('VOICE_INVALID_AUDIO', 400);
   }
-  const seconds = (audio.length - 44) / 32000;
+  let hasFormat = false, dataOffset = 0, dataBytes = 0;
+  for (let offset = 12; offset < audio.length;) {
+    if (audio.length - offset < 8) throw new VoiceError('VOICE_INVALID_AUDIO', 400);
+    const id = audio.toString('ascii', offset, offset + 4), size = audio.readUInt32LE(offset + 4);
+    const start = offset + 8, end = start + size, paddedEnd = end + size % 2;
+    if (paddedEnd > audio.length) throw new VoiceError('VOICE_INVALID_AUDIO', 400);
+    if (id === 'fmt ') {
+      if (hasFormat || (size !== 16 && size !== 18) ||
+          audio.readUInt16LE(start) !== 1 || audio.readUInt16LE(start + 2) !== 1 ||
+          audio.readUInt32LE(start + 4) !== 16000 || audio.readUInt32LE(start + 8) !== 32000 ||
+          audio.readUInt16LE(start + 12) !== 2 || audio.readUInt16LE(start + 14) !== 16 ||
+          (size === 18 && audio.readUInt16LE(start + 16) !== 0)) throw new VoiceError('VOICE_INVALID_AUDIO', 400);
+      hasFormat = true;
+    } else if (id === 'data') {
+      if (!hasFormat || dataOffset || !size || size % 2) throw new VoiceError('VOICE_INVALID_AUDIO', 400);
+      dataOffset = start; dataBytes = size;
+    }
+    offset = paddedEnd;
+  }
+  if (!hasFormat || !dataOffset) throw new VoiceError('VOICE_INVALID_AUDIO', 400);
+  const seconds = dataBytes / 32000;
   if (seconds > VOICE_MAX_SECONDS) throw new VoiceError('VOICE_AUDIO_TOO_LONG', 413);
   let peak = 0;
-  for (let i = 44; i < audio.length; i += 2) peak = Math.max(peak, Math.abs(audio.readInt16LE(i)));
+  for (let i = dataOffset; i < dataOffset + dataBytes; i += 2) peak = Math.max(peak, Math.abs(audio.readInt16LE(i)));
   if (seconds < 0.2 || peak < 16) throw new VoiceError('VOICE_NO_SPEECH', 422);
   return seconds;
 }
@@ -41,7 +58,7 @@ export async function transcribeVoice(audio: Buffer, config: { key: string; mode
   form.append('model', config.model);
   form.append('response_format', 'verbose_json');
   form.append('temperature', '0');
-  form.append('prompt', 'AllBarka, Pista, Kaju, Badam, Khajoor, Khubani, Kishmish, Chilgoza, Akhroot, Pumpkin Seeds, Tasting Flight, Daily Grind, 100g, 250g, 500g, 1kg, rupees, Lahore.');
+  form.append('prompt', 'AllBarka, Pista, Kaju, Badam, Khajoor, Khubani, Kishmish, Chilgoza, Akhroot, Pumpkin Seeds, Tasting Flight, Daily Grind, 100g, 250g, 500g, 1kg, Rs, rupees, Lahore.');
   const response = await fetcher('https://api.groq.com/openai/v1/audio/transcriptions', {
     method: 'POST', headers: { Authorization: `Bearer ${config.key}` }, body: form, signal,
   });
@@ -64,7 +81,7 @@ export async function transcribeVoice(audio: Buffer, config: { key: string; mode
   try { body = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { throw new VoiceError('VOICE_PROVIDER_UNAVAILABLE'); }
   if (signal.aborted) throw new VoiceError('VOICE_CANCELLED');
   const text = typeof body?.text === 'string' ? body.text.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').trim() : '';
-  if (!text || text.length > 1000 || !Number.isFinite(body.duration) || body.duration <= 0 || body.duration > VOICE_MAX_SECONDS + 0.1 ||
+  if (!text || text.length > VOICE_MAX_TRANSCRIPT_CHARS || !Number.isFinite(body.duration) || body.duration <= 0 || body.duration > VOICE_MAX_SECONDS + 0.1 ||
       (Array.isArray(body.segments) && body.segments.length > 0 && body.segments.every((s: any) => s.no_speech_prob > 0.85 && s.avg_logprob < -0.75))) {
     throw new VoiceError('VOICE_NO_SPEECH', 422);
   }
