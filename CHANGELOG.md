@@ -2,7 +2,7 @@
 
 ## 5 November 2026 — VOICE02-LAYOUT1 responsive follow-up
 
-Additional checks reproduced a360px English voice-panel edge and enlarged-text shop-toolbar overflow. Align the shared panel layout within viewport margins on resize/scroll/locale/content changes; wrap the existing filter/saved controls and allow the saved label to shrink. Expanded browser journey passes30 layout/theme/language/enlarged-text cases; renewed full/hosted verification is in progress. Initial754d969 full-suite evidence remains historical. No commerce/filter logic, new dependency or live changes. See [current evidence](docs/execution-2026-11-04/VOICE_02_IMPLEMENTATION_2026-11-05.md).
+Additional checks reproduced a360px English voice-panel edge and enlarged-text shop-toolbar overflow. Align the shared panel layout within viewport margins on resize/scroll/locale/content changes; wrap the existing filter/saved controls, give the saved control a useful wrapping basis and preserve word-readable label width. Expanded browser journey passes30 layout/theme/language/enlarged-text cases; renewed full/hosted verification is in progress. Initial754d969 full-suite evidence remains historical. No commerce/filter logic, new dependency or live changes. See [current evidence](docs/execution-2026-11-04/VOICE_02_IMPLEMENTATION_2026-11-05.md).
 
 ## 5 November 2026 — VOICE-02 website implementation
 

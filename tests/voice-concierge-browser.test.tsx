@@ -139,7 +139,8 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
       await page.waitForFunction(({language,theme})=>document.documentElement.dir===(language==='en'?'ltr':'rtl')&&document.documentElement.classList.contains('dark')===(theme==='dark'),{language,theme});
       const box=await page.locator('[data-voice-control] [role="region"]').boundingBox();assert.ok(box&&box.x>=0&&box.x+box.width<=390.5,JSON.stringify({language,theme,box}));
       const overflow=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,nodes:Array.from(document.querySelectorAll('body *')).map(e=>({tag:e.tagName,cls:typeof e.className==='string'?e.className:'',left:e.getBoundingClientRect().left,right:e.getBoundingClientRect().right})).filter(e=>e.left<0||e.right>innerWidth).slice(0,20)}));
-      assert.ok(overflow.scroll<=overflow.width,JSON.stringify({language,theme,overflow}));layouts++;
+      assert.ok(overflow.scroll<=overflow.width,JSON.stringify({language,theme,overflow}));
+      assert.equal(await page.locator('button[aria-pressed].flex-1 > span').first().evaluate(e=>e.getBoundingClientRect().width>=4*parseFloat(getComputedStyle(e).fontSize)),true,'enlarged saved label must retain word-readable width');layouts++;
     }
     await page.evaluate(()=>{document.documentElement.style.fontSize='';(window as any).fixture.lang('ur');(window as any).fixture.theme('dark');});
     await page.waitForFunction(()=>document.documentElement.dir==='rtl');

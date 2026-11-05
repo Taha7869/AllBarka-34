@@ -1,6 +1,6 @@
 # Admin expansion handoff
 
-5 November2026 — **VOICE02-LAYOUT1 follow-up:** panel viewport alignment and enlarged-text shop-toolbar repairs pass30 browser layouts. Renewed full/source-hosted checks are IN_PROGRESS; earlier754d969 full pass does not certify this follow-up. [Current evidence](../execution-2026-11-04/VOICE_02_IMPLEMENTATION_2026-11-05.md). WhatsApp/provider/device/live gates remain separate.
+5 November2026 — **VOICE02-LAYOUT1 follow-up:** panel viewport alignment and enlarged-text shop-toolbar repairs pass30 browser layouts, including word-readable saved labels. Renewed full/source-hosted checks are IN_PROGRESS; earlier754d969 full pass does not certify this follow-up. [Current evidence](../execution-2026-11-04/VOICE_02_IMPLEMENTATION_2026-11-05.md). WhatsApp/provider/device/live gates remain separate.
 
 5 November 2026 — **VOICE-02 source continuation:** owner authorized finishing available code now. Website45s capture/countdown, visible60s recovery warning, preserved editable transcript and metadata-safe server validation are implemented. Service11/11 and expanded UI journey PASS; full gates/save details and exact PC tasks are in [implementation evidence](../execution-2026-11-04/VOICE_02_IMPLEMENTATION_2026-11-05.md). Both9d6075f workflows passed; local staff/hover diagnostic12/12PASS, no speculative app fix. WhatsApp current parent/media exports, real phones/Groq and live activation remain pending.
 
