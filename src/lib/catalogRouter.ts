@@ -45,6 +45,22 @@ export function createCatalogRouter(options: { getDb: () => Firestore | null; re
     }
   });
 
+  // Public Single Product Endpoint (Sanitized & active-only)
+  router.get('/api/catalog/products/:productId', async (request, response) => {
+    try {
+      const snapshot = await loadAuthoritativeCatalog(options.getDb());
+      const product = snapshot.products.find(p => p.id === request.params.productId);
+      if (!product || !isProductPubliclyVisible(product)) {
+        return response.status(404).json({ error: 'Product not found', code: 'PRODUCT_NOT_FOUND' });
+      }
+      response.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+      return response.json({ product: stripPrivateProductFields(product) });
+    } catch (error) {
+      response.setHeader('Cache-Control', 'no-store');
+      return fail(error, response);
+    }
+  });
+
   // Public Merchandising Settings
   router.get('/api/merchandising', async (_request, response) => {
     try {

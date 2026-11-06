@@ -1,5 +1,6 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../../hooks/usePrefersReducedMotion';
 import React, { useRef } from 'react';
-import { motion, useMotionValue, useSpring, useReducedMotion } from 'motion/react';
+import { motion, useMotionValue, useSpring } from 'motion/react';
 
 interface MagneticButtonProps {
   children: React.ReactNode;
@@ -11,6 +12,9 @@ interface MagneticButtonProps {
   type?: 'button' | 'submit' | 'reset';
   id?: string;
   'aria-label'?: string;
+  'aria-busy'?: boolean;
+  'data-confirmed'?: boolean;
+  disabled?: boolean;
   style?: React.CSSProperties;
 }
 
@@ -30,6 +34,7 @@ const MagneticButton: React.FC<MagneticButtonProps> = ({
   type = 'button',
   id,
   style,
+  disabled = false,
   ...rest
 }) => {
   const ref = useRef<HTMLElement>(null);
@@ -43,10 +48,11 @@ const MagneticButton: React.FC<MagneticButtonProps> = ({
   const sy = useSpring(y, springConfig);
 
   const isTouchDevice = typeof window !== 'undefined'
+    && typeof window.matchMedia === 'function'
     && window.matchMedia('(hover: none), (pointer: coarse)').matches;
 
   const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
-    if (shouldReduceMotion || isTouchDevice || !ref.current) return;
+    if (disabled || shouldReduceMotion || isTouchDevice || !ref.current) return;
     const rect = ref.current.getBoundingClientRect();
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
@@ -59,9 +65,7 @@ const MagneticButton: React.FC<MagneticButtonProps> = ({
     y.set(0);
   };
 
-  const motionProps = shouldReduceMotion || isTouchDevice
-    ? {}
-    : { style: { x: sx, y: sy, ...style } };
+  const motionProps = { style: shouldReduceMotion || isTouchDevice || disabled ? style : { x: sx, y: sy, ...style } };
 
   // Render as motion.a for anchor, motion.button otherwise
   if (Tag === 'a') {
@@ -69,6 +73,7 @@ const MagneticButton: React.FC<MagneticButtonProps> = ({
       <motion.a
         ref={ref as React.Ref<HTMLAnchorElement>}
         href={href}
+        onClick={onClick}
         className={className}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
@@ -89,6 +94,7 @@ const MagneticButton: React.FC<MagneticButtonProps> = ({
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         id={id}
+        onClick={onClick}
         style={motionProps.style}
         {...rest}
       >
@@ -101,6 +107,7 @@ const MagneticButton: React.FC<MagneticButtonProps> = ({
     <motion.button
       ref={ref as React.Ref<HTMLButtonElement>}
       type={type}
+      disabled={disabled}
       className={className}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}

@@ -1,6 +1,6 @@
 import type { User } from 'firebase/auth';
 import type { LanguageCode } from '../contexts/LanguageContext';
-import firebaseConfig from '../../firebase-applet-config.json';
+import { resolveFirebaseClientConfig } from './environmentConfig';
 import { emailAuthErrorKey } from './emailAuthentication';
 
 export interface GoogleAuthSdk { signIn: (language: LanguageCode) => Promise<User> }
@@ -26,10 +26,16 @@ let preparedSdk: Promise<GoogleAuthSdk> | undefined;
 /** Preload while the modal opens so signInWithPopup begins inside the button gesture. */
 export function prepareGoogleSignIn(): Promise<GoogleAuthSdk> {
   const environment = (import.meta.env || {}) as Record<string, string | undefined>;
+  let clientConfig;
+  try {
+    clientConfig = resolveFirebaseClientConfig(environment);
+  } catch {
+    return Promise.reject(new GoogleAuthenticationError('auth/google-unavailable'));
+  }
   if (!googleAuthConfigured({
-    apiKey: environment.VITE_FIREBASE_API_KEY || firebaseConfig.apiKey,
-    appId: environment.VITE_FIREBASE_APP_ID || firebaseConfig.appId,
-    authDomain: environment.VITE_FIREBASE_AUTH_DOMAIN || firebaseConfig.authDomain,
+    apiKey: clientConfig.apiKey,
+    appId: clientConfig.appId,
+    authDomain: clientConfig.authDomain,
   })) return Promise.reject(new GoogleAuthenticationError('auth/google-unavailable'));
   if (!preparedSdk) preparedSdk = Promise.all([import('firebase/auth'), import('./firebaseAuth')]).then(([sdk, { auth }]) => {
     if (!auth) throw new GoogleAuthenticationError('auth/google-unavailable');

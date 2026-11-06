@@ -1,0 +1,10 @@
+{
+  "retrievedAt": "2026-10-27T21:28:39.048690+00:00",
+  "timezone": "Asia/Karachi",
+  "source": "GET https://allbarka.com/api/catalog",
+  "version": "e911ff4c059a56799c438e03089dde03694ec6bc1235e04582b26778667fd1db",
+  "publicProducts": 97,
+  "privateTaxonomyRead": false,
+  "semanticAudit": "BLOCKED: public watermark only, no current authorized private snapshot",
+  "writes": 0
+}

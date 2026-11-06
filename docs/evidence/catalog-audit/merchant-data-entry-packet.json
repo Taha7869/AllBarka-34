@@ -1,0 +1,367 @@
+{
+  "worksheetId": "M34-MERCHANT-REVIEW-WORKSHEET",
+  "generatedAt": "2026-11-02T00:45:00.000Z",
+  "documentClassification": "REVIEW_WORKSHEET_NOT_DIRECT_WRITE_PAYLOAD",
+  "provenance": {
+    "sourceCodeBaseline": "codex/admin-catalog-foundation-20261023",
+    "compiledSeedsSource": "src/data/products.ts & src/lib/hamperCatalog.ts",
+    "datedAuditEvidence": "R04-CAT1 read-only live Firestore audit (2026-10-30T01:02:51.073Z) & R04-CAT2 remediation dry run (2026-10-30T06:45:00.000Z)",
+    "notice": "All values in this worksheet are unconfirmed compiled audit references and review questions for merchant decision. Placeholder null values and reference prices are not automatically valid write payloads for admin update APIs."
+  },
+  "pricingRulesAndInvariants": {
+    "zeroInventedPrices": true,
+    "unconfirmedValuesLeftBlank": true,
+    "giftIngredientEstimatePolicy": "kilogram-based only (kgRatePkr * grams / 1000) per FILLED_GIFT_PRICING.md; requires explicit 1kg rate; never prorated from 250g/500g packs",
+    "standaloneRetailCustomWeightPolicy": "uses product.pricePer100g rounded to nearest Rs. 5 per resolveCustomWeight; standalone retail custom orders function without a 1kg variant as long as pricePer100g > 0",
+    "dynamicMoqPolicy": "dynamic Rule D1 MOQ (min(25, max(1, ceil(5000 / perPiecePrice)))) applies when moqOverride is omitted; fixed MOQ 10 is not hardcoded",
+    "zeroLiveWritesExecuted": true
+  },
+  "hamperBoxesReview": [
+    {
+      "boxId": "box-wood",
+      "name_en": "Sheesham Artisan Wooden Chest",
+      "name_ur": "شیشم کاریگری لکڑی کا صندوق",
+      "name_ar": "صندوق خشبي حرفي من خشب الشيشام",
+      "minSelections": 4,
+      "maxSelections": 6,
+      "image": "/images/generated/hamper-sheesham-chest-v1.webp",
+      "referenceSeedPricePkr": 1800,
+      "confirmedPricePkr": null,
+      "status": "UNCONFIRMED_AUDIT_REFERENCE",
+      "reviewQuestion": "Confirm whether the packaging price for Sheesham Artisan Wooden Chest should be Rs. 1,800 or a different approved rate before persisting to hamperBoxes collection."
+    },
+    {
+      "boxId": "box-velvet",
+      "name_en": "Royal Emerald Velvet Coffer",
+      "name_ur": "شاہی زمرد مخمل صندوقچہ",
+      "name_ar": "صندوق مخملي ملكي من الزمرد الأخضر",
+      "minSelections": 3,
+      "maxSelections": 5,
+      "image": "/images/generated/hamper-emerald-coffer-v1.webp",
+      "referenceSeedPricePkr": 1400,
+      "confirmedPricePkr": null,
+      "status": "UNCONFIRMED_AUDIT_REFERENCE",
+      "reviewQuestion": "Confirm whether the packaging price for Royal Emerald Velvet Coffer should be Rs. 1,400 or a different approved rate before persisting to hamperBoxes collection."
+    },
+    {
+      "boxId": "box-tin",
+      "name_en": "Heritage Gold Keepsake Tin",
+      "name_ur": "ورثہ سنہری یادگار ٹن",
+      "name_ar": "علبة تذكارية ذهبية تراثية",
+      "minSelections": 3,
+      "maxSelections": 4,
+      "image": "/images/generated/hamper-gold-tin-v1.webp",
+      "referenceSeedPricePkr": 950,
+      "confirmedPricePkr": null,
+      "status": "UNCONFIRMED_AUDIT_REFERENCE",
+      "reviewQuestion": "Confirm whether the packaging price for Heritage Gold Keepsake Tin should be Rs. 950 or a different approved rate before persisting to hamperBoxes collection."
+    }
+  ],
+  "celebrationBoxesReview": [
+    {
+      "id": "bid-box-umrah-tabarruk",
+      "name_en": "Umrah & Hajj Tabarruk Box Set",
+      "name_ur": "عمرہ و حج تبرک باکس سیٹ",
+      "name_ar": "طقم صناديق تبرك العمرة والحج",
+      "category": "celebration-boxes",
+      "packagingSubcategory": "tabarruk",
+      "occasions": ["umrah"],
+      "compiledOrderMode": "both",
+      "confirmedPublicationStatus": null,
+      "confirmedOrderMode": null,
+      "dynamicMoqNote": "Dynamic Rule D1 MOQ applies; moqOverride is null.",
+      "moqOverride": null,
+      "variants": [
+        { "label": "Empty Box (1 pc)", "referencePricePkr": 200, "pieces": 1, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 25 },
+        { "label": "Empty Pack (10 pcs)", "referencePricePkr": 2000, "pieces": 10, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 3 },
+        { "label": "Empty Pack (25 pcs)", "referencePricePkr": 4800, "pieces": 25, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 1 },
+        { "label": "Empty Bulk (50 pcs)", "referencePricePkr": 9250, "pieces": 50, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 1 },
+        { "label": "Empty Bulk (100 pcs)", "referencePricePkr": 17000, "pieces": 100, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 1 },
+        { "label": "Filled Standard (Irani Dates, Badam, Kaju & Kishmish)", "referencePricePkr": 850, "pieces": 1, "confirmedPricePkr": null, "dynamicMoqPieces": 6, "minOrderUnits": 6 },
+        { "label": "Filled Royal (Jumbo Panjgur Dates, Iranian Pista, Mammra Badam & Honey Nuts)", "referencePricePkr": 1650, "pieces": 1, "confirmedPricePkr": null, "dynamicMoqPieces": 4, "minOrderUnits": 4 }
+      ],
+      "confirmedRecipeIngredients": null,
+      "reviewQuestions": [
+        "Confirm whether publication status should be 'published', 'draft', or 'archived'.",
+        "Confirm whether orderMode should be 'both' (direct cart + inquiry quote), 'standard', or 'inquiry_quote'.",
+        "Confirm selling prices for the 7 historical variant options (compiled references: Empty Rs. 200/2000/4800/9250/17000, Filled Rs. 850/1650).",
+        "Note on wire labels: Filled Standard is 53 chars and Filled Royal is 76 chars (exceeding standard 40-char limit; allowlisted by legacyPackagingLabels; requires compatible n8n receiver before direct online checkout)."
+      ]
+    },
+    {
+      "id": "bid-box-luxury-tin",
+      "name_en": "Luxury Floral Tin Bid Box",
+      "name_ur": "لگژری فلورل ٹن بِد باکس",
+      "name_ar": "صندوق معدني فاخر بنقش الزهور",
+      "category": "celebration-boxes",
+      "packagingSubcategory": "tin",
+      "occasions": ["wedding"],
+      "compiledOrderMode": "both",
+      "confirmedPublicationStatus": null,
+      "confirmedOrderMode": null,
+      "dynamicMoqNote": "Dynamic Rule D1 MOQ applies; moqOverride is null.",
+      "moqOverride": null,
+      "variants": [
+        { "label": "Empty Box (1 pc)", "referencePricePkr": 140, "pieces": 1, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 25 },
+        { "label": "Empty Pack (10 pcs)", "referencePricePkr": 1400, "pieces": 10, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 3 },
+        { "label": "Empty Pack (25 pcs)", "referencePricePkr": 3300, "pieces": 25, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 1 },
+        { "label": "Empty Bulk (50 pcs)", "referencePricePkr": 6250, "pieces": 50, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 1 },
+        { "label": "Empty Bulk (100 pcs)", "referencePricePkr": 11500, "pieces": 100, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 1 },
+        { "label": "Filled Standard (Assorted Dry Fruits)", "referencePricePkr": 1150, "pieces": 1, "confirmedPricePkr": null, "dynamicMoqPieces": 5, "minOrderUnits": 5 },
+        { "label": "Filled Royal (VIP 4-Nut Assortment)", "referencePricePkr": 2200, "pieces": 1, "confirmedPricePkr": null, "dynamicMoqPieces": 3, "minOrderUnits": 3 }
+      ],
+      "confirmedRecipeIngredients": null,
+      "reviewQuestions": [
+        "Priority 1: Currently active via compiled seed fallback. Confirm prices to persist in Firestore so admin editing functions without 409 error."
+      ]
+    },
+    {
+      "id": "bid-box-pyramid-favor",
+      "name_en": "Royal Pyramid Favor Box",
+      "name_ur": "رائل پیرامڈ فیور باکس",
+      "name_ar": "صندوق هدايا هرمي ملكي",
+      "category": "celebration-boxes",
+      "packagingSubcategory": "wedding",
+      "occasions": ["wedding"],
+      "compiledOrderMode": "both",
+      "confirmedPublicationStatus": null,
+      "confirmedOrderMode": null,
+      "dynamicMoqNote": "Dynamic Rule D1 MOQ applies; moqOverride is null.",
+      "moqOverride": null,
+      "variants": [
+        { "label": "Empty Box (1 pc)", "referencePricePkr": 60, "pieces": 1, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 25 },
+        { "label": "Empty Pack (10 pcs)", "referencePricePkr": 600, "pieces": 10, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 3 },
+        { "label": "Empty Pack (25 pcs)", "referencePricePkr": 1375, "pieces": 25, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 1 },
+        { "label": "Empty Bulk (50 pcs)", "referencePricePkr": 2500, "pieces": 50, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 1 },
+        { "label": "Empty Bulk (100 pcs)", "referencePricePkr": 4500, "pieces": 100, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 1 },
+        { "label": "Filled Standard (Almonds, Cashews & Pistachios)", "referencePricePkr": 350, "pieces": 1, "confirmedPricePkr": null, "dynamicMoqPieces": 15, "minOrderUnits": 15 },
+        { "label": "Filled Royal (Deluxe Nut & Saffron Mix)", "referencePricePkr": 600, "pieces": 1, "confirmedPricePkr": null, "dynamicMoqPieces": 9, "minOrderUnits": 9 }
+      ],
+      "confirmedRecipeIngredients": null,
+      "reviewQuestions": [
+        "Confirm whether Filled Standard (Almonds, Cashews & Pistachios) (47 chars) should retain historical label or use concise variant label.",
+        "Confirm selling prices and publication status."
+      ]
+    },
+    {
+      "id": "bid-box-card-nikkah",
+      "name_en": "Classic Card Bid Box (Nikkah & Baat Pakki)",
+      "name_ur": "کلاسک کارڈ بِد باکس (نکاح و بات پکی)",
+      "name_ar": "صندوق بطاقة كلاسيكي للنكاح والمناسبات",
+      "category": "celebration-boxes",
+      "packagingSubcategory": "wedding",
+      "occasions": ["wedding"],
+      "compiledOrderMode": "both",
+      "confirmedPublicationStatus": null,
+      "confirmedOrderMode": null,
+      "dynamicMoqNote": "Dynamic Rule D1 MOQ applies; moqOverride is null.",
+      "moqOverride": null,
+      "variants": [
+        { "label": "Empty Box (1 pc)", "referencePricePkr": 80, "pieces": 1, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 25 },
+        { "label": "Empty Pack (10 pcs)", "referencePricePkr": 800, "pieces": 10, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 3 },
+        { "label": "Empty Pack (25 pcs)", "referencePricePkr": 1875, "pieces": 25, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 1 },
+        { "label": "Empty Bulk (50 pcs)", "referencePricePkr": 3500, "pieces": 50, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 1 },
+        { "label": "Empty Bulk (100 pcs)", "referencePricePkr": 6500, "pieces": 100, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 1 },
+        { "label": "Filled Standard (Dry Fruits & Confections)", "referencePricePkr": 550, "pieces": 1, "confirmedPricePkr": null, "dynamicMoqPieces": 10, "minOrderUnits": 10 },
+        { "label": "Filled Royal (Premium Nuts & Dates)", "referencePricePkr": 1100, "pieces": 1, "confirmedPricePkr": null, "dynamicMoqPieces": 5, "minOrderUnits": 5 }
+      ],
+      "confirmedRecipeIngredients": null,
+      "reviewQuestions": [
+        "Confirm selling prices and publication status."
+      ]
+    },
+    {
+      "id": "bid-box-jute-pouch",
+      "name_en": "Artisanal Jute & Jamawar Pouch (Potli)",
+      "name_ur": "روایتی جوٹ اور جامہ وار پوٹلی",
+      "name_ar": "كيس خيش وجاموار تقليدي فاخر",
+      "category": "celebration-boxes",
+      "packagingSubcategory": "wedding",
+      "occasions": ["wedding"],
+      "compiledOrderMode": "both",
+      "confirmedPublicationStatus": null,
+      "confirmedOrderMode": null,
+      "dynamicMoqNote": "Dynamic Rule D1 MOQ applies; moqOverride is null.",
+      "moqOverride": null,
+      "variants": [
+        { "label": "Empty Box (1 pc)", "referencePricePkr": 75, "pieces": 1, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 25 },
+        { "label": "Empty Pack (10 pcs)", "referencePricePkr": 750, "pieces": 10, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 3 },
+        { "label": "Empty Pack (25 pcs)", "referencePricePkr": 1800, "pieces": 25, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 1 },
+        { "label": "Empty Bulk (50 pcs)", "referencePricePkr": 3400, "pieces": 50, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 1 },
+        { "label": "Empty Bulk (100 pcs)", "referencePricePkr": 6000, "pieces": 100, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 1 },
+        { "label": "Filled Standard (100g Mixed Nuts)", "referencePricePkr": 450, "pieces": 1, "confirmedPricePkr": null, "dynamicMoqPieces": 12, "minOrderUnits": 12 },
+        { "label": "Filled Royal (250g Mixed Nuts)", "referencePricePkr": 850, "pieces": 1, "confirmedPricePkr": null, "dynamicMoqPieces": 6, "minOrderUnits": 6 }
+      ],
+      "confirmedRecipeIngredients": null,
+      "reviewQuestions": [
+        "Priority 1: Currently active via compiled seed fallback. Confirm prices to persist in Firestore."
+      ]
+    },
+    {
+      "id": "bid-box-sweet-nikkah",
+      "name_en": "Heritage Nikkah Sweet & Dry Fruit Box (500g / 1kg)",
+      "name_ur": "ہیریٹیج نکاح مٹھائی و ڈرائی فروٹ باکس",
+      "name_ar": "صندوق النكاح التراثي للمكسرات والحلويات",
+      "category": "celebration-boxes",
+      "packagingSubcategory": "wedding",
+      "occasions": ["wedding"],
+      "compiledOrderMode": "both",
+      "confirmedPublicationStatus": null,
+      "confirmedOrderMode": null,
+      "dynamicMoqNote": "Dynamic Rule D1 MOQ applies; moqOverride is null.",
+      "moqOverride": null,
+      "variants": [
+        { "label": "Empty Box (1 pc)", "referencePricePkr": 180, "pieces": 1, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 25 },
+        { "label": "Empty Pack (10 pcs)", "referencePricePkr": 1800, "pieces": 10, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 3 },
+        { "label": "Empty Pack (25 pcs)", "referencePricePkr": 4300, "pieces": 25, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 1 },
+        { "label": "Empty Bulk (50 pcs)", "referencePricePkr": 8250, "pieces": 50, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 1 },
+        { "label": "Empty Bulk (100 pcs)", "referencePricePkr": 15000, "pieces": 100, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 1 },
+        { "label": "Filled 500g Luxury Dry Fruit Mix", "referencePricePkr": 1750, "pieces": 1, "confirmedPricePkr": null, "dynamicMoqPieces": 3, "minOrderUnits": 3 },
+        { "label": "Filled 1kg Luxury Dry Fruit Mix", "referencePricePkr": 3800, "pieces": 1, "confirmedPricePkr": null, "dynamicMoqPieces": 2, "minOrderUnits": 2 }
+      ],
+      "confirmedRecipeIngredients": null,
+      "reviewQuestions": [
+        "Priority 1: Currently active via compiled seed fallback. Confirm prices to persist in Firestore."
+      ]
+    },
+    {
+      "id": "bid-box-birth-announcement",
+      "name_en": "Birth Announcement Favor Box (Baby Boy / Girl)",
+      "name_ur": "ولادت مٹھائی و ڈرائی فروٹ فیور باکس",
+      "name_ar": "صندوق تهنئة المولود للمكسرات والشوكولاتة",
+      "category": "celebration-boxes",
+      "packagingSubcategory": "baby",
+      "occasions": ["birth"],
+      "compiledOrderMode": "both",
+      "confirmedPublicationStatus": null,
+      "confirmedOrderMode": null,
+      "dynamicMoqNote": "Dynamic Rule D1 MOQ applies; moqOverride is null.",
+      "moqOverride": null,
+      "variants": [
+        { "label": "Empty Box (1 pc)", "referencePricePkr": 150, "pieces": 1, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 25 },
+        { "label": "Empty Pack (10 pcs)", "referencePricePkr": 1500, "pieces": 10, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 3 },
+        { "label": "Empty Pack (25 pcs)", "referencePricePkr": 3550, "pieces": 25, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 1 },
+        { "label": "Empty Bulk (50 pcs)", "referencePricePkr": 6750, "pieces": 50, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 1 },
+        { "label": "Empty Bulk (100 pcs)", "referencePricePkr": 12500, "pieces": 100, "confirmedPricePkr": null, "dynamicMoqPieces": 25, "minOrderUnits": 1 },
+        { "label": "Filled Standard (Dry Fruits & Chocolates)", "referencePricePkr": 950, "pieces": 1, "confirmedPricePkr": null, "dynamicMoqPieces": 6, "minOrderUnits": 6 },
+        { "label": "Filled Royal (Deluxe Nuts, Panjeeri & Chocolates)", "referencePricePkr": 2900, "pieces": 1, "confirmedPricePkr": null, "dynamicMoqPieces": 2, "minOrderUnits": 2 }
+      ],
+      "confirmedRecipeIngredients": null,
+      "reviewQuestions": [
+        "Confirm selling prices and publication status."
+      ]
+    },
+    {
+      "id": "bid-box-acrylic-royal",
+      "name_en": "Acrylic & Velvet Royal Bid Box",
+      "name_ur": "ایکریلک اور مخملی شاہی بِد باکس",
+      "name_ar": "صندوق ملكي من الأكريليك والمخمل",
+      "category": "celebration-boxes",
+      "packagingSubcategory": "acrylic",
+      "occasions": ["wedding"],
+      "compiledOrderMode": "inquiry_quote",
+      "confirmedPublicationStatus": null,
+      "confirmedOrderMode": "inquiry_quote",
+      "quoteOnly": true,
+      "dynamicMoqNote": "Quote only; direct cart checkout disabled.",
+      "moqOverride": null,
+      "variants": [],
+      "confirmedRecipeIngredients": null,
+      "reviewQuestions": [
+        "Confirm whether Acrylic & Velvet Royal Bid Box should remain inquiry_quote only."
+      ]
+    }
+  ],
+  "unconfirmedAuthoritative1kgRatesReview": [
+    {
+      "productId": "ajwa-dates",
+      "name_en": "Ajwa Dates Madina (Khajoor)",
+      "existingPackPrices": { "500g": 1500 },
+      "pricePer100g": 300,
+      "retailCustomWeightStatus": "FUNCTIONAL (300 PKR/100g via resolveCustomWeight)",
+      "giftIngredientEstimateStatus": "UNAVAILABLE (requires explicit 1kg rate for filled gift/hamper recipes per FILLED_GIFT_PRICING.md)",
+      "confirmed1kgRatePkr": null,
+      "copyDiscrepancyQuestion": "Legacy description mentions 'Muzafati' and 'Iran'. Confirm corrected description attributing authentic Ajwa harvest to Al-Madinah Al-Munawwarah, Saudi Arabia."
+    },
+    {
+      "productId": "medjool-dates",
+      "name_en": "Medjool Dates Jumbo",
+      "existingPackPrices": { "500g": 1800 },
+      "pricePer100g": 360,
+      "retailCustomWeightStatus": "FUNCTIONAL (360 PKR/100g via resolveCustomWeight)",
+      "giftIngredientEstimateStatus": "UNAVAILABLE (requires explicit 1kg rate for filled gift/hamper recipes)",
+      "confirmed1kgRatePkr": null,
+      "copyDiscrepancyQuestion": "Legacy description mentions 'Panjgur Amber'. Confirm corrected description reflecting authentic Medjool harvest provenance."
+    },
+    {
+      "productId": "aseel-dates",
+      "name_en": "Aseel Dates (Khajoor)",
+      "existingPackPrices": { "250g": 400, "500g": 750 },
+      "pricePer100g": 150,
+      "retailCustomWeightStatus": "FUNCTIONAL (150 PKR/100g via resolveCustomWeight)",
+      "giftIngredientEstimateStatus": "UNAVAILABLE (requires explicit 1kg rate)",
+      "confirmed1kgRatePkr": null,
+      "copyDiscrepancyQuestion": null
+    },
+    {
+      "productId": "chohara",
+      "name_en": "Yellow Dry Dates (Chohara)",
+      "existingPackPrices": { "250g": 350, "500g": 650 },
+      "pricePer100g": 130,
+      "retailCustomWeightStatus": "FUNCTIONAL (130 PKR/100g via resolveCustomWeight)",
+      "giftIngredientEstimateStatus": "UNAVAILABLE (requires explicit 1kg rate)",
+      "confirmed1kgRatePkr": null,
+      "copyDiscrepancyQuestion": null
+    },
+    {
+      "productId": "anjeer",
+      "name_en": "Afghan Dried Figs (Anjeer)",
+      "existingPackPrices": { "250g": 850, "500g": 1600 },
+      "pricePer100g": 320,
+      "retailCustomWeightStatus": "FUNCTIONAL (320 PKR/100g via resolveCustomWeight)",
+      "giftIngredientEstimateStatus": "UNAVAILABLE (requires explicit 1kg rate)",
+      "confirmed1kgRatePkr": null,
+      "copyDiscrepancyQuestion": null
+    },
+    {
+      "productId": "akhrot",
+      "name_en": "Kashmiri Snow White Walnuts (Akhrot)",
+      "existingPackPrices": { "250g": 900, "500g": 1700 },
+      "pricePer100g": 340,
+      "retailCustomWeightStatus": "FUNCTIONAL (340 PKR/100g via resolveCustomWeight)",
+      "giftIngredientEstimateStatus": "UNAVAILABLE (requires explicit 1kg rate)",
+      "confirmed1kgRatePkr": null,
+      "copyDiscrepancyQuestion": null
+    },
+    {
+      "productId": "kaju",
+      "name_en": "Roasted Iranian Cashews (Kaju)",
+      "existingPackPrices": { "250g": 950, "500g": 1800 },
+      "pricePer100g": 360,
+      "retailCustomWeightStatus": "FUNCTIONAL (360 PKR/100g via resolveCustomWeight)",
+      "giftIngredientEstimateStatus": "UNAVAILABLE (requires explicit 1kg rate)",
+      "confirmed1kgRatePkr": null,
+      "copyDiscrepancyQuestion": null
+    },
+    {
+      "productId": "chilgoza",
+      "name_en": "Roasted Pine Nuts with Shell (Chilgoza)",
+      "existingPackPrices": { "250g": 2900 },
+      "pricePer100g": 1160,
+      "retailCustomWeightStatus": "FUNCTIONAL (1160 PKR/100g via resolveCustomWeight)",
+      "giftIngredientEstimateStatus": "UNAVAILABLE (requires explicit 1kg rate)",
+      "confirmed1kgRatePkr": null,
+      "copyDiscrepancyQuestion": null
+    }
+  ],
+  "taxonomyAndClassificationReview": {
+    "giftBoxesVsBundles": {
+      "currentFinding": "deal-1 and deal-2 are currently the only items matching category 'gift-boxes', while bundle hampers (bundle-silver-hamper, bundle-gold-hamper, bundle-platinum-hamper, bundle-ramadan-ready, corporate-gifting) have category 'bundles' and empty collections.",
+      "questionForMerchant": "Confirm whether to add collections: ['gift-boxes'] to bundle hampers so they appear on /category/gift-boxes."
+    },
+    "occasionsTagging": {
+      "currentFinding": "All 89 stored Firestore products currently have empty occasions arrays, resulting in 0 matches for /category/ramadan, /category/corporate, and /category/wedding.",
+      "questionForMerchant": "Confirm adding relevant occasions tags (e.g. ramadan to dates and ramadan-ready bundle; corporate to corporate-gifting; wedding to celebration boxes)."
+    }
+  }
+}

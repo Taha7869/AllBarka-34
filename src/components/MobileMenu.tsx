@@ -1,6 +1,10 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
+import {useStorefrontContent} from '../contexts/StorefrontContentContext';
+import {contentNavigation} from '../lib/contentPresentation';
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { motion, AnimatePresence, useReducedMotion, type Variants } from 'motion/react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { getPrimaryActiveSectionId } from './BubbleMenu';
+import { motion, AnimatePresence, type Variants } from 'motion/react';
 import { 
   X, 
   ShoppingBag, 
@@ -48,6 +52,10 @@ export default function MobileMenu({
   const { theme, setTheme } = useTheme();
   const { language, setLanguage, isRtl, t } = useLanguage();
   const { currentUser, patronProfile, logout } = useAuth();
+  const content=useStorefrontContent();
+  const location = useLocation();
+  const activeSection = content.navigation.find(entry => entry.visible && entry.path === location.pathname + location.search)?.id
+    || getPrimaryActiveSectionId(location.pathname, location.search);
   const reduceMotion = useReducedMotion();
   
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
@@ -65,17 +73,57 @@ export default function MobileMenu({
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  const previousRoute = useRef(location.key);
+
+  // Back/Forward and navigation outside this drawer must release its modal state.
+  useEffect(() => {
+    if (previousRoute.current === location.key) return;
+    previousRoute.current = location.key;
+    closeRef.current();
+  }, [location.key]);
+
+  // Match Tailwind's xl breakpoint: a hidden mobile drawer must not lock desktop.
+  useEffect(() => {
+    if (!isOpen || typeof window.matchMedia !== 'function') return;
+    const desktop = window.matchMedia('(min-width: 80rem)');
+    const update = () => {
+      if (!desktop.matches) return;
+      const focusWasInside = containerRef.current?.contains(document.activeElement);
+      closeRef.current();
+      if (focusWasInside) {
+        const visibleHeaderControl = Array.from(document.querySelectorAll<HTMLElement>('header a[href], header button'))
+          .find(element => element.getClientRects().length && !element.closest('[inert]'));
+        visibleHeaderControl?.focus();
+      }
+    };
+    update();
+    if (typeof desktop.addEventListener === 'function') {
+      desktop.addEventListener('change', update);
+      return () => desktop.removeEventListener('change', update);
+    }
+    desktop.addListener(update);
+    return () => desktop.removeListener(update);
+  }, [isOpen]);
+
+  const dismissMenu = () => {
+    closeRef.current();
+    triggerRef?.current?.focus();
+  };
+
   // Focus management & Escape key handling
   useEffect(() => {
     if (!isOpen) return;
 
     const timer = setTimeout(() => {
-      closeButtonRef.current?.focus();
+      // A quick keyboard/pointer action inside the menu takes precedence.
+      if (!containerRef.current?.contains(document.activeElement)) closeButtonRef.current?.focus();
     }, 50);
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        closeRef.current();
         triggerRef?.current?.focus();
       } else if (e.key === 'Tab') {
         const controls = containerRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), [tabindex="0"]');
@@ -97,7 +145,7 @@ export default function MobileMenu({
       clearTimeout(timer);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose, triggerRef]);
+  }, [isOpen, triggerRef]);
 
   // Reference-counted background scroll lock
   useEffect(() => {
@@ -151,22 +199,26 @@ export default function MobileMenu({
   };
 
   return (
-    <AnimatePresence>
+    <div
+      id="mobile-navigation-menu"
+      role={isOpen ? 'dialog' : undefined}
+      aria-modal={isOpen ? true : undefined}
+      aria-hidden={!isOpen}
+      aria-label={t('nav.main')}
+      inert={!isOpen}
+      style={{ pointerEvents: isOpen ? 'auto' : 'none' }}
+      className="fixed inset-0 z-[120] flex xl:hidden"
+    >
+    <AnimatePresence key={location.key}>
       {isOpen && (
-        <div 
-          id="mobile-navigation-menu"
-          role="dialog"
-          aria-modal="true"
-          aria-label={t('nav.main')}
-          className="fixed inset-0 z-[120] flex xl:hidden"
-        >
+        <React.Fragment key="menu-surfaces">
           {/* Backdrop */}
           <motion.div
             variants={backdropVariants}
             initial="closed"
             animate="open"
             exit="closed"
-            onClick={onClose}
+            onClick={dismissMenu}
             className="fixed inset-0 bg-[#042821]/60 dark:bg-black/75 backdrop-blur-xs"
           />
 
@@ -181,9 +233,10 @@ export default function MobileMenu({
           >
             {/* Header / Brand in Drawer */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-[#29231D]/10 dark:border-[#F6F1EA]/10 bg-[#F6F1EA]/70 dark:bg-[#121615]/70 shrink-0">
-              <div 
+              <button
+                type="button"
                 onClick={() => handleDestination('/', 'Home')}
-                className="flex items-center gap-2 cursor-pointer focus-ring rounded-lg p-1 -m-1"
+                className="flex min-h-11 items-center gap-2 cursor-pointer focus-ring rounded-lg p-1 -m-1 text-start"
               >
                 <div className="w-8 h-8 flex items-center justify-center">
                   <AllBarkaCrestVector />
@@ -196,12 +249,12 @@ export default function MobileMenu({
                     BOUTIQUE
                   </span>
                 </div>
-              </div>
+              </button>
 
               <button
                 ref={closeButtonRef}
                 type="button"
-                onClick={onClose}
+                onClick={dismissMenu}
                 className="w-11 h-11 rounded-full flex items-center justify-center text-[#29231D] dark:text-[#F6F1EA] hover:bg-[#C7982F]/15 border border-[#29231D]/10 dark:border-[#F6F1EA]/12 transition-colors focus-ring cursor-pointer"
                 aria-label={t('nav.closeMenu')}
               >
@@ -373,7 +426,7 @@ export default function MobileMenu({
 
                 {/* Accessible Accordion for Main Navigation */}
                 <div className="space-y-1">
-                  {MAIN_NAV_ITEMS.map((item) => {
+                  {contentNavigation(MAIN_NAV_ITEMS,content,language).map((item) => {
                     const isExpanded = !!expandedSections[item.id];
 
                     return (
@@ -384,6 +437,7 @@ export default function MobileMenu({
                         <button
                           type="button"
                           aria-expanded={isExpanded}
+                          aria-current={activeSection === item.id ? 'page' : undefined}
                           aria-controls={`mobile-nav-panel-${item.id}`}
                           onClick={() => toggleSection(item.id)}
                           className="w-full min-h-[44px] flex items-center justify-between px-3.5 py-2.5 text-xs font-bold text-[#042821] dark:text-[#FFFCF7] hover:bg-[#C7982F]/10 transition-colors text-start cursor-pointer"
@@ -518,12 +572,12 @@ export default function MobileMenu({
                 <span className="text-[10px] font-sans font-bold uppercase tracking-[0.22em] text-[#806326] dark:text-[#C7982F] block mb-2 px-1">
                   {t('connectWithUs', 'Connect With Us')}
                 </span>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <a
                     href={buildHumanSupportWhatsAppUrl()}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex-1 min-h-[44px] flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-[#29231D]/12 dark:border-[#F6F1EA]/15 bg-[#F6F1EA] dark:bg-[#222A28] text-xs font-bold text-[#042821] dark:text-[#FFFCF7] hover:bg-[#FFFCF7] transition-all"
+                    className="flex-1 basis-32 min-h-[44px] flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-[#29231D]/12 dark:border-[#F6F1EA]/15 bg-[#F6F1EA] dark:bg-[#222A28] text-xs font-bold text-[#042821] dark:text-[#FFFCF7] hover:bg-[#FFFCF7] transition-all"
                   >
                     <MessageCircle size={16} className="text-[#25D366]" />
                     <span>WhatsApp</span>
@@ -533,7 +587,7 @@ export default function MobileMenu({
                     href="https://www.instagram.com/allbarka.pk"
                     target="_blank"
                     rel="noreferrer"
-                    className="flex-1 min-h-[44px] flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-[#29231D]/12 dark:border-[#F6F1EA]/15 bg-[#F6F1EA] dark:bg-[#222A28] text-xs font-bold text-[#042821] dark:text-[#FFFCF7] hover:bg-[#FFFCF7] transition-all"
+                    className="flex-1 basis-32 min-h-[44px] flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-[#29231D]/12 dark:border-[#F6F1EA]/15 bg-[#F6F1EA] dark:bg-[#222A28] text-xs font-bold text-[#042821] dark:text-[#FFFCF7] hover:bg-[#FFFCF7] transition-all"
                   >
                     <Instagram size={16} className="text-[#E4405F]" />
                     <span>Instagram</span>
@@ -543,8 +597,9 @@ export default function MobileMenu({
 
             </div>
           </motion.div>
-        </div>
+        </React.Fragment>
       )}
     </AnimatePresence>
+    </div>
   );
 }

@@ -1,6 +1,7 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import React, { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, useReducedMotion } from 'motion/react';
+import { motion } from 'motion/react';
 import { X, Mail, ShoppingBag, ArrowRight, Crown } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { acquireScrollLock } from '../utils/scrollLock';

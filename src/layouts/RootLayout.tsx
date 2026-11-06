@@ -1,6 +1,6 @@
 import { useCatalogProducts } from '../contexts/CatalogContext';
-import React, { useState, useEffect } from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { Outlet, useNavigationType, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
@@ -30,6 +30,10 @@ import PolicyPagesModal from '../components/PolicyPagesModal';
 import AIConcierge from '../components/AIConcierge';
 import CustomHamperBuilderModal from '../components/CustomHamperBuilderModal';
 import StoreUpdatesDialog from '../components/StoreUpdatesDialog';
+import MehmaanTablePlannerModal from '../components/MehmaanTablePlannerModal';
+import OccasionInquiryModal from '../components/OccasionInquiryModal';
+import ShopTheTableModal from '../components/ShopTheTableModal';
+import type { EventType } from '../lib/occasionPlanning';
 
 import LahoreExpressTimer from '../components/LahoreExpressTimer';
 import { Menu, X, ShoppingBag, User, Gift, Languages, ChevronDown, Search } from 'lucide-react';
@@ -48,6 +52,8 @@ export default function RootLayout() {
   const online = useOnlineStatus();
 
   const location = useLocation();
+  const navigationType = useNavigationType();
+  const previousScrollRoute = useRef<string | null>(null);
   const isAdminRoute = location.pathname.startsWith('/admin/');
   const { currentUser, patronProfile, logout } = useAuth();
   const { language, setLanguage, isRtl, t } = useLanguage();
@@ -71,6 +77,10 @@ export default function RootLayout() {
   const [patronLoungeOpen, setPatronLoungeOpen] = useState(false);
   const [updatesOpen, setUpdatesOpen] = useState(false);
   const [selectedQuickViewProduct, setSelectedQuickViewProduct] = useState<Product | null>(null);
+  const [mehmaanModalOpen, setMehmaanModalOpen] = useState(false);
+  const [occasionModalOpen, setOccasionModalOpen] = useState(false);
+  const [defaultOccasion, setDefaultOccasion] = useState<EventType>('wedding');
+  const [shopTheTableOpen, setShopTheTableOpen] = useState(false);
 
   // Global listeners for modals
   useEffect(() => {
@@ -86,15 +96,30 @@ export default function RootLayout() {
     const handleOpenLounge = () => setPatronLoungeOpen(true);
     const handleOpenUpdates = () => setUpdatesOpen(true);
     const handleOpenHamper = () => setHamperModalOpen(true);
+    const handleOpenMehmaan = () => setMehmaanModalOpen(true);
+    const handleOpenTable = () => setShopTheTableOpen(true);
+    const handleOpenOccasion = (e?: Event) => {
+      const customEvent = e as CustomEvent<{ defaultOccasion?: EventType }>;
+      if (customEvent?.detail?.defaultOccasion) {
+        setDefaultOccasion(customEvent.detail.defaultOccasion);
+      }
+      setOccasionModalOpen(true);
+    };
     window.addEventListener('open-auth-modal', handleOpenAuth);
     window.addEventListener('open-patron-lounge', handleOpenLounge);
     window.addEventListener('open-store-updates', handleOpenUpdates);
     window.addEventListener('open-hamper-builder', handleOpenHamper);
+    window.addEventListener('open-mehmaan-planner', handleOpenMehmaan);
+    window.addEventListener('open-occasion-inquiry', handleOpenOccasion);
+    window.addEventListener('open-shop-the-table', handleOpenTable);
     return () => {
       window.removeEventListener('open-auth-modal', handleOpenAuth);
       window.removeEventListener('open-patron-lounge', handleOpenLounge);
       window.removeEventListener('open-store-updates', handleOpenUpdates);
       window.removeEventListener('open-hamper-builder', handleOpenHamper);
+      window.removeEventListener('open-mehmaan-planner', handleOpenMehmaan);
+      window.removeEventListener('open-occasion-inquiry', handleOpenOccasion);
+      window.removeEventListener('open-shop-the-table', handleOpenTable);
     };
   }, []);
   
@@ -166,8 +191,10 @@ export default function RootLayout() {
   };
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [location.pathname]);
+    if (previousScrollRoute.current === location.pathname) return;
+    previousScrollRoute.current = location.pathname;
+    if (!(navigationType === 'POP' && /^\/(shop|category)(\/|$)/.test(location.pathname))) window.scrollTo(0, 0);
+  }, [location.pathname, navigationType]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -217,7 +244,7 @@ export default function RootLayout() {
   };
 
   return (
-    <div className="min-h-screen w-full max-w-full relative flex flex-col font-sans bg-[var(--color-base)] text-[var(--color-ink)] selection:bg-[var(--color-gold)]/30 selection:text-[var(--color-ink)]">
+    <div className="boutique-experience min-h-screen w-full max-w-full relative flex flex-col font-sans bg-[var(--color-base)] text-[var(--color-ink)] selection:bg-[var(--color-gold)]/30 selection:text-[var(--color-ink)]">
       <ToastManager />
       {!isAdminRoute && <GradualBlur preset="header" strength={1.5} opacity={0.9} />}
       
@@ -237,7 +264,7 @@ export default function RootLayout() {
         {!online && <div role="status" className="fixed inset-x-0 top-0 z-[20000] border-b border-[#c7982f] bg-[#092e23] px-4 py-2 text-center text-xs text-[#fff8e9]">{t('checkout.offline')}</div>}
       {!isAdminRoute && <ScrollProgressBar showGlow={false} />}
         <div className="w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 flex flex-col justify-center">
-          <div className="flex justify-between items-center gap-2 sm:gap-4 w-full">
+          <div className="boutique-header-row flex justify-between items-center gap-2 sm:gap-4 w-full">
             
             {/* Leading Brand Mark: Desktop shows full logo, Mobile shows crest + animated intro */}
             <div className="flex items-center shrink-0">
@@ -255,7 +282,7 @@ export default function RootLayout() {
             </div>
             
             {/* Center Navigation (Desktop Only) */}
-            <div className="hidden xl:flex flex-1 justify-center px-2">
+            <div className="boutique-header-navigation hidden xl:flex flex-1 justify-center px-2">
               <BubbleMenu 
                 activeItem={activeNavItem} 
                 onItemClick={(item) => navigate(item.path)} 
@@ -263,7 +290,7 @@ export default function RootLayout() {
             </div>
 
             {/* Trailing Utility Controls */}
-            <div className="flex items-center gap-1.5 sm:gap-2.5 justify-end shrink-0">
+            <div className="boutique-header-tools flex items-center gap-1.5 sm:gap-2.5 justify-end shrink-0">
               {/* Search button */}
               <button
                 id="header-search-btn"
@@ -382,14 +409,6 @@ export default function RootLayout() {
         cartCount={totalItemsCount}
         onOpenCart={() => setIsCartOpen(true)}
         triggerRef={mobileMenuTriggerRef}
-        onNavItemClick={(item) => {
-          if (item === 'Home') navigate('/');
-          else if (item === 'Shop') navigate('/shop');
-          else if (item === 'Herbs & Spices') navigate('/shop/herbs-spices');
-          else if (item === 'Gift Boxes') navigate('/shop/combos');
-          else if (item === 'Contact') navigate('/pages/contact');
-          else navigate('/shop');
-        }}
       />
 
       <main className="flex-1 w-full relative z-10 flex flex-col items-center">
@@ -455,6 +474,9 @@ export default function RootLayout() {
       {(policyModalOpen || loadedOverlays.policy) && <PolicyPagesModal isOpen={policyModalOpen} initialTab={policyModalTab} onClose={() => setPolicyModalOpen(false)} />}
       {!isAdminRoute && <AIConcierge hide={isAnyModalOrDrawerOpen && !aiConciergeOpen} hasCartBar={totalItemsCount > 0 && location.pathname !== '/checkout' && location.pathname !== '/cart'} onOpenChange={setAiConciergeOpen} />}
       <CustomQuoteModal />
+      <MehmaanTablePlannerModal isOpen={mehmaanModalOpen} onClose={() => setMehmaanModalOpen(false)} />
+      <OccasionInquiryModal isOpen={occasionModalOpen} defaultOccasion={defaultOccasion} onClose={() => setOccasionModalOpen(false)} />
+      <ShopTheTableModal isOpen={shopTheTableOpen} onClose={() => setShopTheTableOpen(false)} />
     </div>
   );
 }

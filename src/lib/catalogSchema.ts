@@ -1,5 +1,9 @@
-import type { Product } from '../types';
+import type { Product, ProductPassport, ClaimsVerification, MediaFocalPoint, CropMode, RoastLevel, ClaimVerificationStatus, CertificationType } from '../types';
+import { BID_BOX_PRODUCTS } from '../data/products';
 import { resolveProductVariant } from './productVariants';
+import { prepareCommercePrices, validateProductCommerce, validateProductAttributes } from './productCommerce';
+import { validateProductMediaUrl } from './productMedia';
+import { validateRecipeIngredients, validateFilledRecipes, readRecipeIngredients, readFilledRecipes } from './filledGiftPricing';
 
 export class CatalogError extends Error {
   constructor(public code: string, public httpStatus = 400, message?: string) {
@@ -32,6 +36,18 @@ const positivePrice = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value) && (value as number) > 0 && (value as number) <= 10_000_000;
 export const catalogVariantId = (label: string) => `portion-${encodeURIComponent(label)}`;
 
+// Historical packaging selections are identifiers in carts/receipts, not editable prose.
+// Preserve only exact compiled labels for their original product; arbitrary new labels
+// and configured commerce retain the 40-character limit. No price is copied here.
+const legacyPackagingLabels = new Map(BID_BOX_PRODUCTS.map(product => [product.id,
+  new Set(Object.keys(product.prices).filter(label => label.length > 40 && label.length <= 160))]));
+export const isKnownLegacyPackagingLabel = (productId: string, label: string) =>
+  legacyPackagingLabels.get(productId)?.has(label) === true;
+const supportedPortionLength = (productId: string, label: string) =>
+  label.length <= 40 || isKnownLegacyPackagingLabel(productId, label);
+export const requiresStoredLegacyPackagingPricing = (productId: string) =>
+  (legacyPackagingLabels.get(productId)?.size || 0) > 0;
+
 export function validateMoqOverride(value: unknown): number | null | undefined {
   if (value === undefined) return undefined;
   if (value === null || value === '') return null;
@@ -55,15 +71,16 @@ export function validateCatalogPricing(value: unknown, seed: Product): CatalogPr
 
   const seen = new Set<string>();
   const variants = value.variants.map((raw): CatalogVariant => {
-    if (!object(raw) || typeof raw.label !== 'string' || !raw.label.trim() || raw.label.length > 40
+    if (!object(raw) || typeof raw.label !== 'string' || !raw.label.trim() || !supportedPortionLength(seed.id, raw.label)
       || /[\u0000-\u001f\u007f]/.test(raw.label) || raw.label !== raw.label.trim()
       || raw.id !== catalogVariantId(raw.label) || !positivePrice(raw.price) || typeof raw.available !== 'boolean'
       || !(raw.weightGrams === null || integer(raw.weightGrams, 0)) || seen.has(raw.label)) throw new CatalogError('INVALID_CATALOG_VARIANT');
     // A merchant can retain existing fixed bundle labels; new arbitrary units cannot enter checkout.
-    const supported = /^\d+(?:\.\d+)?\s*(?:kg|g|ml|pc|pcs|piece|pieces|pack|box|boxes)$/i.test(raw.label)
+    const supported = /^\d+(?:\.\d+)?\s*(?:kg|g|mg|ml|L|pc|pcs|piece|pieces|pack|box|boxes)$/i.test(raw.label)
       || Object.hasOwn(seed.prices, raw.label)
-      || /^(?:empty|filled|sample|portion|bundle|box)/i.test(raw.label);
-    if (!supported || (/ml$/i.test(raw.label) && seed.category !== 'oils')) throw new CatalogError('INVALID_CATALOG_UNIT');
+      || /^(?:empty|filled|sample|portion|bundle|box)/i.test(raw.label)
+      || (seed.commerce?.options?.some(opt => opt?.label === raw.label) ?? false);
+    if (!supported || (/ml$/i.test(raw.label) && seed.category !== 'oils' && !seed.commerce)) throw new CatalogError('INVALID_CATALOG_UNIT');
     const rawVarMoq = raw.moqOverride !== undefined ? raw.moqOverride : (raw as any).minOrderQuantity;
     const varMoq = validateMoqOverride(rawVarMoq);
     seen.add(raw.label);
@@ -76,7 +93,7 @@ export function validateCatalogPricing(value: unknown, seed: Product): CatalogPr
       ...(varMoq !== undefined ? { moqOverride: varMoq } : {}),
     };
   });
-  if (!value.quoteOnly && variants.length === 0) throw new CatalogError('INVALID_CATALOG_PRICING');
+  if (!value.quoteOnly && variants.length === 0 && !(seed.commerce && seed.status === 'draft')) throw new CatalogError('INVALID_CATALOG_PRICING');
   if (value.allowCustomWeight && (!positive(value.pricePer100g) || seed.isBundle || ['oils', 'bundles', 'gift-boxes'].includes(seed.category))) throw new CatalogError('INVALID_CATALOG_CUSTOM_WEIGHT');
   return {
     schemaVersion: 1,
@@ -226,6 +243,11 @@ export function unavailableProduct(seed: Product): Product {
 }
 
 export const PUBLIC_PRODUCT_FIELDS = [
+  'commerce',
+  'seo',
+  'attributes',
+  'templateId',
+  'galleryImages',
   'id',
   'name',
   'name_en',
@@ -310,10 +332,97 @@ export const PUBLIC_PRODUCT_FIELDS = [
   'tag_ur',
   'tag_ar',
   'packagingSubcategory',
+  'recipeIngredients',
+  'filledRecipes',
   'catalogRevision',
+  'mediaFocalPoint',
+  'cropMode',
 ] as const;
 
 export const VALID_PACKAGING_SUBCATEGORIES = ['tin', 'tabarruk', 'wedding', 'baby', 'acrylic'] as const;
+
+export const VALID_ROAST_LEVELS = ['raw', 'lightly_roasted', 'salted', 'slow_roasted', 'unprocessed'] as const;
+export const VALID_CLAIM_STATUSES = ['unverified', 'verified', 'discrepant'] as const;
+export const VALID_CERTIFICATIONS = ['halal', 'organic', 'gluten_free', 'raw_natural', 'vegan'] as const;
+export const VALID_CROP_MODES = ['cover', 'contain'] as const;
+
+export function validateProductPassport(value: unknown): ProductPassport {
+  if (!object(value)) throw new CatalogError('INVALID_PRODUCT_PASSPORT', 400);
+  const raw = value as Record<string, unknown>;
+  const passport: ProductPassport = {};
+  if (typeof raw.variety === 'string' && raw.variety.trim()) {
+    passport.variety = raw.variety.trim().slice(0, 100);
+  }
+  if (typeof raw.harvestSeason === 'string' && raw.harvestSeason.trim()) {
+    passport.harvestSeason = raw.harvestSeason.trim().slice(0, 100);
+  }
+  if (raw.roastLevel !== undefined && raw.roastLevel !== null && raw.roastLevel !== '') {
+    if (typeof raw.roastLevel === 'string' && (VALID_ROAST_LEVELS as readonly string[]).includes(raw.roastLevel)) {
+      passport.roastLevel = raw.roastLevel as RoastLevel;
+    } else {
+      throw new CatalogError('INVALID_ROAST_LEVEL', 400);
+    }
+  }
+  if (typeof raw.processingMethod === 'string' && raw.processingMethod.trim()) {
+    passport.processingMethod = raw.processingMethod.trim().slice(0, 120);
+  }
+  if (Array.isArray(raw.ingredients)) {
+    passport.ingredients = raw.ingredients.filter(i => typeof i === 'string' && i.trim()).map(i => (i as string).trim().slice(0, 80));
+  }
+  if (Array.isArray(raw.allergens)) {
+    passport.allergens = raw.allergens.filter(a => typeof a === 'string' && a.trim()).map(a => (a as string).trim().slice(0, 80));
+  }
+  if (typeof raw.storageInstructions === 'string' && raw.storageInstructions.trim()) {
+    passport.storageInstructions = raw.storageInstructions.trim().slice(0, 500);
+  }
+  if (raw.bestBeforeDays !== undefined && raw.bestBeforeDays !== null && raw.bestBeforeDays !== '') {
+    const days = Number(raw.bestBeforeDays);
+    if (!Number.isSafeInteger(days) || days < 0 || days > 3650) {
+      throw new CatalogError('INVALID_BEST_BEFORE_DAYS', 400);
+    }
+    passport.bestBeforeDays = days;
+  }
+  if (Array.isArray(raw.certifications)) {
+    passport.certifications = raw.certifications.filter((c: unknown): c is CertificationType =>
+      typeof c === 'string' && (VALID_CERTIFICATIONS as readonly string[]).includes(c as CertificationType)
+    );
+  }
+  return passport;
+}
+
+export function validateClaimsVerification(value: unknown): ClaimsVerification {
+  if (!object(value)) throw new CatalogError('INVALID_CLAIMS_VERIFICATION', 400);
+  const raw = value as Record<string, unknown>;
+  const status = typeof raw.status === 'string' && (VALID_CLAIM_STATUSES as readonly string[]).includes(raw.status as ClaimVerificationStatus)
+    ? (raw.status as ClaimVerificationStatus)
+    : 'unverified';
+  const result: ClaimsVerification = { status };
+  if (typeof raw.verifiedAt === 'string' && raw.verifiedAt.trim()) {
+    result.verifiedAt = raw.verifiedAt.trim().slice(0, 60);
+  }
+  if (typeof raw.notes === 'string' && raw.notes.trim()) {
+    result.notes = raw.notes.trim().slice(0, 500);
+  }
+  return result;
+}
+
+export function validateMediaFocalPoint(value: unknown): MediaFocalPoint {
+  if (!object(value)) throw new CatalogError('INVALID_MEDIA_FOCAL_POINT', 400);
+  const raw = value as Record<string, unknown>;
+  const x = Number(raw.x);
+  const y = Number(raw.y);
+  if (!Number.isFinite(x) || x < 0 || x > 1 || !Number.isFinite(y) || y < 0 || y > 1) {
+    throw new CatalogError('INVALID_MEDIA_FOCAL_POINT_COORDINATES', 400);
+  }
+  return { x: Math.round(x * 100) / 100, y: Math.round(y * 100) / 100 };
+}
+
+export function validateCropMode(value: unknown): CropMode {
+  if (typeof value === 'string' && (VALID_CROP_MODES as readonly string[]).includes(value as CropMode)) {
+    return value as CropMode;
+  }
+  throw new CatalogError('INVALID_CROP_MODE', 400);
+}
 
 export function stripPrivateProductFields(product: Product): Product {
   const sanitized: Record<string, unknown> = {};
@@ -322,6 +431,67 @@ export function stripPrivateProductFields(product: Product): Product {
       sanitized[field] = (product as any)[field];
     }
   }
+  const extensionFields = ['commerce', 'seo', 'attributes', 'templateId', 'galleryImages'] as const;
+  if (extensionFields.some(field => product[field] !== undefined)) {
+    try {
+      const validated = validateDynamicProduct(product, product.id);
+      for (const field of extensionFields) {
+        delete sanitized[field];
+        if (validated[field] !== undefined) sanitized[field] = validated[field];
+      }
+    } catch {
+      for (const field of extensionFields) delete sanitized[field];
+    }
+  }
+
+  // Nested public projection for claimsVerification (Admin notes & internal review details are STRICTLY private)
+  if (product.claimsVerification && typeof product.claimsVerification === 'object') {
+    const rawStatus = (product.claimsVerification as any).status;
+    const status = (VALID_CLAIM_STATUSES as readonly string[]).includes(rawStatus) ? rawStatus : 'unverified';
+    sanitized.claimsVerification = {
+      status,
+      ...(status === 'verified' && typeof (product.claimsVerification as any).verifiedAt === 'string'
+        ? { verifiedAt: (product.claimsVerification as any).verifiedAt }
+        : {}),
+    };
+  }
+
+  // Nested public projection for passport
+  // Certifications are ONLY exposed in public DTO if claimsVerification.status === 'verified'!
+  if (product.passport && typeof product.passport === 'object') {
+    const rawPassport = product.passport as ProductPassport;
+    const isVerified = sanitized.claimsVerification && (sanitized.claimsVerification as any).status === 'verified';
+    const passport: ProductPassport = {};
+    if (rawPassport.variety) passport.variety = rawPassport.variety;
+    if (rawPassport.harvestSeason) passport.harvestSeason = rawPassport.harvestSeason;
+    if (rawPassport.roastLevel) passport.roastLevel = rawPassport.roastLevel;
+    if (rawPassport.processingMethod) passport.processingMethod = rawPassport.processingMethod;
+    if (Array.isArray(rawPassport.ingredients) && rawPassport.ingredients.length > 0) {
+      passport.ingredients = [...rawPassport.ingredients];
+    }
+    if (Array.isArray(rawPassport.allergens) && rawPassport.allergens.length > 0) {
+      passport.allergens = [...rawPassport.allergens];
+    }
+    if (typeof rawPassport.bestBeforeDays === 'number') passport.bestBeforeDays = rawPassport.bestBeforeDays;
+    if (rawPassport.storageInstructions) passport.storageInstructions = rawPassport.storageInstructions;
+    if (isVerified && Array.isArray(rawPassport.certifications) && rawPassport.certifications.length > 0) {
+      passport.certifications = [...rawPassport.certifications];
+    }
+    sanitized.passport = passport;
+  }
+
+  if (product.mediaFocalPoint && typeof product.mediaFocalPoint === 'object') {
+    try {
+      sanitized.mediaFocalPoint = validateMediaFocalPoint(product.mediaFocalPoint);
+    } catch {
+      delete sanitized.mediaFocalPoint;
+    }
+  }
+
+  if (typeof product.cropMode === 'string' && (VALID_CROP_MODES as readonly string[]).includes(product.cropMode as any)) {
+    sanitized.cropMode = product.cropMode;
+  }
+
   return sanitized as unknown as Product;
 }
 
@@ -345,8 +515,8 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
   if (!name_en || name_en.length < 2 || name_en.length > 120) {
     throw new CatalogError('INVALID_PRODUCT_NAME_EN', 400);
   }
-  const name_ur = typeof value.name_ur === 'string' && value.name_ur.trim() ? value.name_ur.trim() : name_en;
-  const name_ar = typeof value.name_ar === 'string' && value.name_ar.trim() ? value.name_ar.trim() : name_en;
+  const name_ur = typeof value.name_ur === 'string' ? value.name_ur.trim() : name_en;
+  const name_ar = typeof value.name_ar === 'string' ? value.name_ar.trim() : name_en;
 
   const category = typeof value.category === 'string' && value.category.trim() ? value.category.trim() : 'dry-fruits';
 
@@ -375,7 +545,7 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
   const prices: Record<string, number> = {};
   for (const [k, v] of Object.entries(rawPrices)) {
     const key = k.trim();
-    if (!key || key.length > 40) throw new CatalogError('INVALID_PORTION_KEY', 400);
+    if (!key || !supportedPortionLength(rawId, key) || /[\u0000-\u001f\u007f]/.test(key)) throw new CatalogError('INVALID_PORTION_KEY', 400);
     const num = Number(v);
     if (!Number.isFinite(num) || num <= 0) throw new CatalogError('INVALID_PORTION_PRICE', 400);
     prices[key] = Math.round(num * 100) / 100;
@@ -383,7 +553,7 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
 
   const quoteOnly = Boolean(value.quoteOnly) || value.orderMode === 'inquiry_quote';
   const hasConfiguredVariants = hasVariantsArray && (value.variants as unknown[]).length > 0;
-  if (!quoteOnly && Object.keys(prices).length === 0 && !hasConfiguredVariants) {
+  if (!quoteOnly && Object.keys(prices).length === 0 && !hasConfiguredVariants && !(value.commerce && value.status === 'draft')) {
     throw new CatalogError('PRODUCT_REQUIRES_PRICING', 400);
   }
 
@@ -392,7 +562,7 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
     : (value.active === false ? 'archived' : 'draft');
   const active = value.active !== undefined
     ? Boolean(value.active)
-    : (status === 'published' && Object.keys(prices).length > 0);
+    : (status === 'published' && (quoteOnly || Object.keys(prices).length > 0));
 
   const orderMode = value.orderMode === 'standard' || value.orderMode === 'inquiry_quote' || value.orderMode === 'both'
     ? value.orderMode
@@ -439,6 +609,45 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
     desc_ar,
     catalogRevision: typeof value.catalogRevision === 'string' ? value.catalogRevision : undefined,
   };
+
+  if (value.commerce !== undefined && value.commerce !== null) {
+    try { product.commerce = validateProductCommerce(value.commerce, status === 'draft' || quoteOnly); }
+    catch (error) { throw new CatalogError((error as { code?: string }).code || 'INVALID_COMMERCE_CONFIGURATION'); }
+    // Missing translations remain missing; fallback happens at display time.
+    product.name_ur = typeof value.name_ur === 'string' ? value.name_ur.trim() : '';
+    product.name_ar = typeof value.name_ar === 'string' ? value.name_ar.trim() : '';
+    product.desc_ur = typeof value.desc_ur === 'string' ? value.desc_ur.trim() : '';
+    product.desc_ar = typeof value.desc_ar === 'string' ? value.desc_ar.trim() : '';
+    if (!/^[a-z0-9_-]{1,80}$/.test(product.category) || product.name_ur.length > 120 || product.name_ar.length > 120
+      || [product.desc_en, product.desc_ur, product.desc_ar].some(description => description.length > 12000)) throw new CatalogError('INVALID_PRODUCT_CONTENT');
+    try {
+      if (product.image) product.image = validateProductMediaUrl(product.image, 'image');
+      if (product.imageName) product.imageName = validateProductMediaUrl(product.imageName.startsWith('products/') ? `/images/${product.imageName}` : product.imageName, 'image');
+    } catch { throw new CatalogError('INVALID_MEDIA_URL'); }
+  }
+  if (value.attributes !== undefined) {
+    try { product.attributes = validateProductAttributes(value.attributes); }
+    catch (error) { throw new CatalogError((error as { code?: string }).code || 'INVALID_PRODUCT_ATTRIBUTES'); }
+  }
+  if (value.templateId !== undefined) {
+    if (typeof value.templateId !== 'string' || !/^[a-z0-9_-]{0,80}$/.test(value.templateId)) throw new CatalogError('INVALID_TEMPLATE_ID');
+    product.templateId = value.templateId;
+  }
+  if (value.galleryImages !== undefined) {
+    if (!Array.isArray(value.galleryImages) || value.galleryImages.length > 12) throw new CatalogError('INVALID_MEDIA_IMAGES');
+    try { product.galleryImages = [...new Set(value.galleryImages.map(url => validateProductMediaUrl(url, 'image')))]; }
+    catch { throw new CatalogError('INVALID_MEDIA_URL'); }
+  }
+  if (value.seo !== undefined) {
+    if (!object(value.seo)) throw new CatalogError('INVALID_PRODUCT_SEO');
+    product.seo = {};
+    for (const [key, field] of Object.entries(value.seo)) {
+      if (!/^(?:title|description|imageAlt)_(?:en|ur|ar)$/.test(key) && key !== 'socialImage') throw new CatalogError('INVALID_PRODUCT_SEO');
+      if (typeof field !== 'string' || field.length > (key === 'socialImage' ? 2048 : key.startsWith('title_') ? 160 : 320)) throw new CatalogError('INVALID_PRODUCT_SEO');
+      try { (product.seo as Record<string, string>)[key] = key === 'socialImage' && field ? validateProductMediaUrl(field, 'image') : field.trim(); }
+      catch { throw new CatalogError('INVALID_MEDIA_URL'); }
+    }
+  }
 
   // Shipping weight and portion weights capability
   if (value.shippingWeightG !== undefined) {
@@ -566,6 +775,17 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
       throw new CatalogError('INVALID_PACKAGING_SUBCATEGORY', 400);
     }
   }
+  // Additive filled-gift recipes: explicit net grams per box, keyed by canonical ingredient product ID.
+  // Absent or null clears the field; an invalid value is rejected rather than repaired.
+  if (value.recipeIngredients !== undefined && value.recipeIngredients !== null) {
+    try { product.recipeIngredients = validateRecipeIngredients(value.recipeIngredients); }
+    catch (error) { throw new CatalogError((error as Error).message || 'INVALID_RECIPE_INGREDIENTS', 400); }
+  }
+  if (value.filledRecipes !== undefined && value.filledRecipes !== null) {
+    try { product.filledRecipes = validateFilledRecipes(value.filledRecipes); }
+    catch (error) { throw new CatalogError((error as Error).message || 'INVALID_FILLED_RECIPES', 400); }
+  }
+
   if (Array.isArray(value.collections)) {
     product.collections = value.collections.filter(c => typeof c === 'string' && c.trim()).map(c => c.trim());
   }
@@ -685,11 +905,78 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
     product.adminRevision = value.adminRevision;
   }
 
+    // M11 Product Passport, M23 Media Focal Point, Crop Mode & Claims Verification
+  if (value.passport !== undefined) {
+    if (value.passport === null) {
+      delete (product as any).passport;
+    } else {
+      product.passport = validateProductPassport(value.passport);
+    }
+  }
+  if (value.claimsVerification !== undefined) {
+    if (value.claimsVerification === null) {
+      delete (product as any).claimsVerification;
+    } else {
+      product.claimsVerification = validateClaimsVerification(value.claimsVerification);
+    }
+  }
+  if (value.mediaFocalPoint !== undefined) {
+    if (value.mediaFocalPoint === null) {
+      delete (product as any).mediaFocalPoint;
+    } else {
+      product.mediaFocalPoint = validateMediaFocalPoint(value.mediaFocalPoint);
+    }
+  }
+  if (value.cropMode !== undefined) {
+    if (value.cropMode === null || value.cropMode === '') {
+      delete (product as any).cropMode;
+    } else {
+      product.cropMode = validateCropMode(value.cropMode);
+    }
+  }
+
+  if (product.commerce && status === 'published') assertProductPublishable(product);
   return product;
 }
 
+export function normalizeCommerceInput(value: Record<string, unknown>): Record<string, unknown> {
+  try { return prepareCommercePrices(value); }
+  catch (error) { throw new CatalogError((error as { code?: string }).code || 'INVALID_COMMERCE_CONFIGURATION'); }
+}
+
+/** New configuration is opt-in; legacy products retain their existing publication contract. */
+export function assertProductPublishable(product: Product): void {
+  if (!product.commerce) return;
+  if (!product.name_en.trim() || !product.desc_en.trim() || !product.category.trim()) throw new CatalogError('PUBLISH_CONTENT_REQUIRED');
+  if (!product.image && !product.imageName && !product.galleryImages?.length) throw new CatalogError('PUBLISH_IMAGE_REQUIRED');
+  for (const attribute of product.attributes || []) if (attribute.required && attribute.value === '') throw new CatalogError('PUBLISH_ATTRIBUTE_REQUIRED');
+  const quoteOnly = product.quoteOnly || product.orderMode === 'inquiry_quote';
+  if (!quoteOnly) {
+    if (!Object.keys(product.prices).length) throw new CatalogError('PUBLISH_PRICE_REQUIRED');
+    if (product.commerce.quantityMode !== 'custom') for (const option of product.commerce.options) {
+      if (option.available && !(product.prices[option.label] > 0)) throw new CatalogError('OPTION_PRICE_REQUIRED');
+      if (option.available && product.commerce.kind === 'packaging' && option.unit === 'pack' && !option.piecesPerPack) throw new CatalogError('PUBLISH_PIECES_PER_PACK_REQUIRED');
+    }
+    for (const label of Object.keys(product.prices)) if (!(product.shippingWeights?.[label] && product.shippingWeights[label] > 0)) throw new CatalogError('PUBLISH_SHIPPING_REQUIRED');
+    const custom = product.commerce.custom;
+    if (custom && custom.unit !== 'mg' && custom.unit !== 'g' && custom.unit !== 'kg' && product.category !== 'oils' && !custom.shippingWeightGPerUnit) throw new CatalogError('PUBLISH_SHIPPING_REQUIRED');
+  }
+  if (product.commerce.kind === 'packaging' && (product.preparationDays ?? 0) < 10) throw new CatalogError('PUBLISH_PREPARATION_REQUIRED');
+}
+
+/** A corrupt stored recipe makes that recipe unpriced; it must never hide or break the product itself. */
+export function withReadableRecipes<T extends Record<string, any>>(raw: T): T {
+  const next: Record<string, any> = { ...raw };
+  for (const [field, read] of [['recipeIngredients', readRecipeIngredients], ['filledRecipes', readFilledRecipes]] as const) {
+    if (next[field] === undefined || next[field] === null) continue;
+    const readable = read(next[field]);
+    if (readable === undefined) delete next[field]; else next[field] = readable;
+  }
+  return next as T;
+}
+
 export function dynamicProductFromDocument(data: unknown, id: string): Product {
-  const raw = object(data) ? data : {};
+  const raw = object(data) ? withReadableRecipes(data) : {};
   const validated = validateDynamicProduct({ ...raw, id }, id);
   const fingerprintStr = typeof (raw as any).updatedAt === 'string'
     ? `${id}-${(raw as any).revision || 0}-${(raw as any).updatedAt}`

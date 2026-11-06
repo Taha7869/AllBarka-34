@@ -1,5 +1,9 @@
 # AllBarka order integration contract
 
+5 November 2026 — **VOICE-02 website implementation available:** shared validated Groq transcription accepts up to60s PCM WAV within2MiB; browser capture stops at45s. [Current code/evidence and WhatsApp gates](docs/execution-2026-11-04/VOICE_02_IMPLEMENTATION_2026-11-05.md). No WhatsApp-specific authenticated audio endpoint or live media workflow is added here; preserve existing Meta intake, order storage, dedup and send authorization.
+
+5 November 2026 — **Planned shared voice principles:** owner selected website and WhatsApp use, with implementation deferred to their PC session. [VOICE-02 plan](docs/execution-2026-11-04/VOICE_02_PLAN_2026-11-05.md) defines website45s input and separate verified WhatsApp media intake/confirmation, quota sharing, cancellation and partial recovery. No active n8n workflow, endpoint contract, credential, order-storage or notification policy changes in this documentation checkpoint. Current complete bot exports must be compared before implementation.
+
 Firestore is authoritative. Express validates orders, computes prices, applies fulfillment updates, awards points, and authorizes WhatsApp sends. n8n transports events and mirrors backend snapshots to `Order_Control`; it must never price an order, award points, or write directly to Firestore. Nothing in this PR imports/publishes n8n workflows or deploys Railway.
 
 ## Runtime and environment
@@ -31,7 +35,8 @@ Railway repository `Taha7869/AllBarka-34`, project `AllBarka`, service `allbarka
 | `VITE_API_BASE_URL` | **Blank** for this fullstack service; only public HTTPS origin for a deliberately separate frontend |
 | `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIRESTORE_DATABASE_ID` | Existing public Firebase Web app identifiers; no Admin secrets |
 | `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_APP_ID`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_MEASUREMENT_ID` | Existing public Web app settings; bundled public config is the fallback; measurement optional |
-| `N8N_AI_WEBHOOK_URL`, `N8N_AI_WEBHOOK_SECRET`, `N8N_AI_TIMEOUT_MS`, `AI_GUEST_HASH_SECRET` | Existing separate concierge integration; preserved. Groq credentials stay in n8n, not these order payloads |
+| `N8N_AI_WEBHOOK_URL`, `N8N_AI_WEBHOOK_SECRET`, `N8N_AI_TIMEOUT_MS`, `AI_GUEST_HASH_SECRET` | Existing separate chat integration; preserved. Its provider credentials stay in n8n, never order payloads |
+| `GROQ_API_KEY`, `GROQ_VOICE_MODEL`, `VOICE_GROQ_FREE_TIER_CONFIRMED` | Optional server-only voice transcription, separate from chat/n8n. Disabled unless key exists, model is `whisper-large-v3` (default) or `whisper-large-v3-turbo`, and free-tier acknowledgement is exactly `true`. Operator must verify actual account/quota; no automatic billing/model fallback. See [voice setup](README-AI.md) |
 | `GOOGLE_SHEETS_ID`, `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PRIVATE_KEY` | Optional existing legacy contact/newsletter Sheets helpers; not required for the n8n order bridge |
 | `ADMIN_UID` | Optional private admin-grant CLI target; does not itself grant a claim |
 | `FIRESTORE_EMULATOR_HOST`, `FIREBASE_AUTH_EMULATOR_HOST`, `GOOGLE_APPLICATION_CREDENTIALS` | Local test/SDK settings; do not set emulator hosts in production |

@@ -3,6 +3,18 @@ import type { LanguageCode } from './LanguageContext';
 // Each entry includes all three languages so administration never falls back
 // to an untranslated label when the storefront language changes.
 const entries: readonly (readonly [string, string, string, string])[] = [
+  ['content.preview.readOnly', 'Preview only: navigation, purchases and submissions are disabled.', 'صرف پیش نظارہ: نیویگیشن، خریداری اور درخواست بھیجنا غیر فعال ہیں۔', 'معاينة فقط: التنقل والشراء وإرسال الطلبات معطلة.'],
+  ['content.preview.title', 'Storefront Studio Preview', 'ویب سائٹ کا پیش نظارہ', 'معاينة المتجر'],
+  ['content.preview.home', 'Homepage', 'ہوم پیج', 'الصفحة الرئيسية'],
+  ['content.preview.journal', 'Journal', 'مضامین', 'المجلة'],
+  ['content.preview.faq', 'FAQ', 'عام سوالات', 'الأسئلة الشائعة'],
+  ['content.preview.desktop', 'Desktop', 'ڈیسک ٹاپ', 'سطح المكتب'],
+  ['content.preview.tablet', 'Tablet', 'ٹیبلٹ', 'جهاز لوحي'],
+  ['content.preview.mobile', 'Mobile', 'موبائل', 'هاتف'],
+  ['content.preview.draft', 'Draft', 'مسودہ', 'مسودة'],
+  ['content.preview.live', 'Live', 'شائع شدہ', 'منشور'],
+  ['content.preview.viewport', 'Viewport', 'منظر کا سائز', 'حجم العرض'],
+  ['content.preview.surface', 'Page', 'صفحہ', 'الصفحة'],
   ['admin.workspace', 'AllBarka workspace', 'البرکہ انتظامی مرکز', 'مساحة عمل البركة'],
   ['admin.status.QUOTE_REQUESTED', 'Quote requested', 'قیمت کی درخواست', 'تم طلب عرض السعر'],
   ['admin.payment.NOT_REQUIRED', 'No payment required', 'ادائیگی درکار نہیں', 'لا يلزم الدفع'],

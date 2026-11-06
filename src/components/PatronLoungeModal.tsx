@@ -1,11 +1,16 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
+import {staffRequest} from '../lib/adminClient';
 import React, { useEffect, useState, useRef } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
-import { X, User, Package, MapPin, Phone, Crown, LogOut, Clock, Calendar, CheckCircle2, RotateCcw, ShoppingBag, AlertCircle, ShieldCheck, Bell } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { X, User, Package, MapPin, Phone, Crown, LogOut, Clock, Calendar, CheckCircle2, RotateCcw, ShoppingBag, AlertCircle, ShieldCheck, Bell, MessageSquare, Sparkles } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCart } from '../contexts/CartContext';
-import { PRODUCTS } from '../data/products';
-import { getReorderItems, trackingProgress, TRACKING_STEPS } from '../lib/orderPresentation';
+import { useCatalogProducts, useCatalogRefresh } from '../contexts/CatalogContext';
+import { PRODUCTS as BASE_PRODUCTS } from '../data/products';
+import { resolveProductPrice } from '../lib/productVariants';
+import { openCustomQuoteModal } from './CustomQuoteModal';
+import { reviewReorderItems, revalidateReorderWithServerQuote, trackingProgress, TRACKING_STEPS, type ReorderAnalysis } from '../lib/orderPresentation';
 import { Link } from 'react-router-dom';
 import { acquireScrollLock } from '../utils/scrollLock';
 import { apiUrl } from '../lib/apiUrl';
@@ -21,6 +26,12 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
   const { currentUser, patronProfile, logout } = useAuth();
   const { t } = useLanguage();
   const { addToCart, openCart } = useCart();
+  const PRODUCTS = useCatalogProducts();
+  const refreshCatalog = useCatalogRefresh();
+  const [reviewingOrder, setReviewingOrder] = useState<any | null>(null);
+  const [reorderAnalysis, setReorderAnalysis] = useState<ReorderAnalysis | null>(null);
+  const [reorderValidating, setReorderValidating] = useState(false);
+  const [reorderError, setReorderError] = useState('');
   const reduceMotion = useReducedMotion();
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef(onClose);
@@ -38,13 +49,15 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
   const loyaltyIdentity = useRef(currentUser?.uid);
   loyaltyIdentity.current = currentUser?.uid;
   const [showAdminWorkspace, setShowAdminWorkspace] = useState(false);
+  const [staffAccessUid,setStaffAccessUid]=useState<string|null>(null);
+  useEffect(()=>{const controller=new AbortController();setStaffAccessUid(null);if(isOpen&&currentUser)staffRequest(()=>currentUser.getIdToken(),'/api/staff/access',{signal:controller.signal}).then(()=>{if(!controller.signal.aborted)setStaffAccessUid(currentUser.uid);}).catch(()=>{});return()=>controller.abort();},[currentUser,isOpen]);
 
   useEffect(() => {
     let active = true;
     setShowAdminWorkspace(false);
-    if (isOpen && currentUser) {
+    if (isOpen && currentUser && typeof currentUser.getIdTokenResult === 'function') {
       currentUser.getIdTokenResult().then(result => {
-        if (active) setShowAdminWorkspace(result.claims.admin === true || result.claims.role === 'admin');
+        if (active) setShowAdminWorkspace(result?.claims?.admin === true || result?.claims?.role === 'admin');
       }).catch(() => {});
     }
     return () => { active = false; };
@@ -144,10 +157,143 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
     return () => { releaseLock(); document.removeEventListener('keydown', handleKey); previous?.focus(); };
   }, [isOpen]);
 
-  const reorder = (order: any) => {
-    const items = getReorderItems(order.items || [], PRODUCTS);
-    if (!items.length) return;
-    items.forEach(({ product, weight, quantity }) => addToCart(product, weight, quantity, undefined, { silent: true, openCart: false }));
+  const reorderAbortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      reorderAbortRef.current?.abort();
+    };
+  }, []);
+
+  const cancelReorderReview = () => {
+    if (reorderAbortRef.current) {
+      reorderAbortRef.current.abort();
+    }
+    setReviewingOrder(null);
+    setReorderAnalysis(null);
+    setReorderError('');
+    setReorderValidating(false);
+  };
+
+  const startReorderReview = async (order: any) => {
+    if (reorderAbortRef.current) {
+      reorderAbortRef.current.abort();
+    }
+    const controller = new AbortController();
+    reorderAbortRef.current = controller;
+
+    if (refreshCatalog) {
+      await refreshCatalog({ force: true } as any).catch(() => {});
+    }
+    if (controller.signal.aborted) return;
+
+    const initialAnalysis = reviewReorderItems(order.items || [], PRODUCTS);
+    setReviewingOrder(order);
+    setReorderAnalysis(initialAnalysis);
+    setReorderError('');
+
+    if (initialAnalysis.reorderable.length === 0) {
+      setReorderValidating(false);
+      return;
+    }
+
+    setReorderValidating(true);
+
+    try {
+      const idToken = currentUser ? await currentUser.getIdToken().catch(() => null) : null;
+      if (controller.signal.aborted) return;
+
+      const validated = await revalidateReorderWithServerQuote(initialAnalysis, {
+        city: order.city || 'Lahore',
+        shippingMethodId: 'standard',
+        authToken: idToken,
+        signal: controller.signal,
+      });
+
+      if (controller.signal.aborted) return;
+
+      if (validated.hasPriceChanges && refreshCatalog) {
+        await refreshCatalog({ force: true } as any).catch(() => {});
+      }
+      if (controller.signal.aborted) return;
+
+      setReorderAnalysis(validated);
+      if (!validated.serverValidated) {
+        setReorderError(validated.serverNotice || 'Authoritative order quote verification failed.');
+      } else if (!validated.itemsApprovedForCart) {
+        if (validated.quoteErrorCode === 'PRODUCT_UNAVAILABLE' || validated.quoteErrorCode === 'VARIANT_UNAVAILABLE' || validated.hasUnavailableItems) {
+          setReorderError(validated.serverNotice || 'One or more items are currently unavailable for reorder.');
+        } else if (validated.isQuoteRequest || validated.quoteErrorCode === 'QUOTE_REQUIRED') {
+          setReorderError('');
+        }
+      }
+    } catch (err: any) {
+      if (controller.signal.aborted) return;
+      const msg = err?.message || 'Price verification service unreachable';
+      setReorderError(msg);
+      setReorderAnalysis({
+        ...initialAnalysis,
+        serverResponseReceived: false,
+        serverValidated: false,
+        itemsApprovedForCart: false,
+        serverNotice: msg,
+      });
+    } finally {
+      if (!controller.signal.aborted) {
+        setReorderValidating(false);
+      }
+    }
+  };
+
+  const confirmReorder = async () => {
+    if (
+      reorderValidating ||
+      !reorderAnalysis ||
+      !reorderAnalysis.serverValidated ||
+      !reorderAnalysis.itemsApprovedForCart ||
+      reorderAnalysis.reorderable.length === 0
+    ) {
+      return;
+    }
+
+    let allConsistent = true;
+    for (const item of reorderAnalysis.reorderable) {
+      const liveProd = BASE_PRODUCTS.find(p => p.id === item.productId) || PRODUCTS.find(p => p.id === item.productId);
+      const localPrice = liveProd ? resolveProductPrice(liveProd, item.weight) : null;
+      if (localPrice !== item.currentUnitPrice) {
+        allConsistent = false;
+        break;
+      }
+    }
+
+    if (!allConsistent && refreshCatalog) {
+      await refreshCatalog({ force: true } as any).catch(() => {});
+      allConsistent = reorderAnalysis.reorderable.every(item => {
+        const liveProd = BASE_PRODUCTS.find(p => p.id === item.productId) || PRODUCTS.find(p => p.id === item.productId);
+        const localPrice = liveProd ? resolveProductPrice(liveProd, item.weight) : null;
+        return localPrice === item.currentUnitPrice;
+      });
+    }
+
+    if (!allConsistent) {
+      const msg = 'Catalog pricing was updated. Please refresh your review before confirming.';
+      setReorderError(msg);
+      setReorderAnalysis(prev => prev ? {
+        ...prev,
+        itemsApprovedForCart: false,
+        requiresRenewedReview: true,
+        serverNotice: msg,
+      } : null);
+      return;
+    }
+
+    reorderAnalysis.reorderable.forEach(({ product, weight, quantity }) => {
+      const liveProduct = BASE_PRODUCTS.find(p => p.id === product.id) || product;
+      addToCart(liveProduct, weight, quantity, undefined, { silent: true, openCart: false });
+    });
+    setReviewingOrder(null);
+    setReorderAnalysis(null);
+    setReorderError('');
     onClose();
     openCart();
   };
@@ -261,6 +407,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                 <div className="mt-6 pt-4 border-t border-[var(--color-gold,#B8935F)]/20">
                   <button type="button" className="focus-ring mb-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[var(--color-border-accent)] px-3 text-xs font-semibold" onClick={() => { onClose(); requestAnimationFrame(() => window.dispatchEvent(new CustomEvent('open-store-updates'))); }}><Bell size={16}/><span dir="auto">{t('updates.open')}</span></button>
                   {showAdminWorkspace && <Link to="/admin/orders" onClick={onClose} dir="ltr" className="focus-ring mb-3 flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[var(--color-border-accent)] bg-[var(--color-primary)] px-3 text-xs font-semibold text-[var(--color-primary-fg)]"><ShieldCheck size={16} /><span dir="auto">{t('admin.workspace')}</span></Link>}
+                  {staffAccessUid===currentUser?.uid&&<Link to="/staff/orders" onClick={onClose} className="focus-ring mb-3 flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[var(--color-border-accent)] px-3 text-xs font-semibold"><ShieldCheck size={16}/>{t('staff.workspace')}</Link>}
                   <button
                     onClick={handleLogout}
                     className="w-full py-2.5 rounded-xl border border-[var(--color-ink,#1F120F)]/20 text-[var(--color-ink,#1F120F)] hover:bg-[var(--color-ink,#1F120F)]/5 text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2"
@@ -371,7 +518,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                 <div className="space-y-4">
                   {orders.map((order) => {
                     const progress = trackingProgress(order.status || '');
-                    const reorderItems = getReorderItems(order.items || [], PRODUCTS);
+                    const reorderItems = reviewReorderItems(order.items || [], PRODUCTS).reorderable;
                     const totalAmt = order.totals?.total ?? order.total ?? 0;
                     const subtotalAmt = order.totals?.subtotal ?? order.subtotal ?? 0;
                     const discountAmt = order.totals?.discount ?? order.discount ?? 0;
@@ -409,7 +556,156 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
 
                         <div className="p-5">
                           {progress >= 0 && <ol className="mb-6 grid grid-cols-3 sm:grid-cols-6 gap-2" aria-label={t('account.orders')}>{TRACKING_STEPS.map((stage, index) => <li key={stage} aria-current={index === progress ? 'step' : undefined} className="min-w-0"><div className={`mb-2 h-1 rounded-full ${index <= progress ? 'bg-[#c7982f]' : 'bg-[var(--color-border)]'}`} /><span className={`block text-[10px] [overflow-wrap:anywhere] ${index <= progress ? 'font-bold text-[var(--color-accent-text)]' : 'text-[var(--color-text-secondary)]'}`}>{t(`tracking.${stage}`)}</span></li>)}</ol>}
-                          <div className="mb-5 rounded-xl border border-[var(--color-border)] p-3"><button type="button" disabled={!reorderItems.length} onClick={() => reorder(order)} className="flex min-h-11 items-center gap-2 text-xs font-semibold disabled:opacity-40"><ShoppingBag size={15} />{t('account.reorder')}</button><p className="text-[10px] leading-5 text-[var(--color-text-secondary)]">{t('account.currentPrice')}{reorderItems.length !== (order.items || []).length && ` ${t('account.reorderMissing')}`}</p></div>
+                          <div className="mb-5 rounded-xl border border-[var(--color-border)] p-3">
+                            <button
+                              type="button"
+                              data-action="start-reorder"
+                              disabled={!reorderItems.length}
+                              onClick={() => startReorderReview(order)}
+                              className="flex min-h-11 items-center gap-2 text-xs font-semibold disabled:opacity-40"
+                            >
+                              <ShoppingBag size={15} />
+                              {t('account.reorder')}
+                            </button>
+                            <p className="text-[10px] leading-5 text-[var(--color-text-secondary)]">
+                              {t('account.currentPrice')}{reorderItems.length !== (order.items || []).length && ` ${t('account.reorderMissing')}`}
+                            </p>
+
+                            {reviewingOrder?.orderId === order.orderId && reorderAnalysis && (
+                              <div className="reorder-review-panel mt-3 p-4 rounded-xl bg-amber-50/60 dark:bg-zinc-800/80 border border-[var(--color-gold,#B8935F)]/30 space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary,#042821)] dark:text-emerald-400">
+                                      {t('account.reorderReviewTitle', 'Review Items Before Reorder')}
+                                    </h4>
+                                    {reorderValidating && (
+                                      <span className="text-[10px] text-amber-700 dark:text-amber-400 font-semibold animate-pulse" data-reorder-validating>
+                                        · Verifying live rates...
+                                      </span>
+                                    )}
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={cancelReorderReview}
+                                    className="text-[11px] text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
+                                  >
+                                    {t('cancel', 'Cancel')}
+                                  </button>
+                                </div>
+
+                                {reorderAnalysis.reorderable.length > 0 && (
+                                  <div className="space-y-2">
+                                    <p className="text-[11px] font-medium text-neutral-600 dark:text-neutral-300">
+                                      {t('account.reorderableItems', 'Available selections at current catalog rates:')}
+                                    </p>
+                                    {reorderAnalysis.reorderable.map((item, rIdx) => (
+                                      <div key={rIdx} className="flex items-center justify-between p-2 rounded-lg bg-white dark:bg-zinc-900 border border-neutral-200 dark:border-zinc-700 text-xs">
+                                        <div>
+                                          <span className="font-bold text-neutral-900 dark:text-neutral-100">{item.product.name_en}</span>
+                                          <span className="text-neutral-500 ml-1.5">({item.weight} × {item.quantity})</span>
+                                        </div>
+                                        <div className="text-right">
+                                          <span className="font-bold text-emerald-800 dark:text-emerald-400 block">
+                                            Rs. {(item.currentUnitPrice * item.quantity).toLocaleString()}
+                                          </span>
+                                          {item.priceChanged && (
+                                            <span className="text-[10px] text-amber-700 dark:text-amber-400 block" data-price-change>
+                                              Price updated: was Rs. {item.originalUnitPrice?.toLocaleString()}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+                                    <div className="flex justify-between items-center pt-2 border-t border-neutral-200 dark:border-zinc-700 text-xs font-bold">
+                                      <span>{t('estimatedSubtotal', 'Estimated Subtotal')}:</span>
+                                      <span>Rs. {reorderAnalysis.estimatedSubtotal.toLocaleString()}</span>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {reorderError && (
+                                  <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200" data-reorder-error>
+                                    <p className="font-semibold">{reorderError}</p>
+                                  </div>
+                                )}
+
+                                {reorderAnalysis.quoteRequiredNotice && (
+                                  <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-xs text-blue-900 dark:text-blue-200 space-y-2" data-quote-notice>
+                                    <div className="flex items-start gap-2">
+                                      <Sparkles size={15} className="text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                                      <div>
+                                        <p className="font-semibold">{reorderAnalysis.quoteRequiredNotice}</p>
+                                        <p className="text-[11px] text-blue-700 dark:text-blue-300 mt-0.5">
+                                          These boutique packaging selections require personalized concierge assistance.
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="pt-1">
+                                      <button
+                                        type="button"
+                                        data-action="open-personalized-inquiry"
+                                        onClick={() => {
+                                          const firstItem = reorderAnalysis.reorderable[0] || reorderAnalysis.unavailable[0];
+                                          onClose();
+                                          openCustomQuoteModal({
+                                            productId: firstItem?.productId,
+                                            variantLabel: firstItem?.weight,
+                                            mode: 'filled',
+                                            quantity: ('quantity' in (firstItem || {}) ? (firstItem as any).quantity : undefined) || 50,
+                                          });
+                                        }}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#043327] hover:bg-[#074b39] text-[#FAF9F5] text-[11px] font-bold shadow-sm transition-colors cursor-pointer"
+                                      >
+                                        <MessageSquare size={13} />
+                                        <span>Request Personalized Quote</span>
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {reorderAnalysis.requiresRenewedReview && (
+                                  <div className="p-2 rounded bg-amber-100/80 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700 text-[11px] text-amber-900 dark:text-amber-200" data-renewed-review-notice>
+                                    <p className="font-semibold">Boutique rates or product availability have changed. Please review the updated selection below before confirming.</p>
+                                  </div>
+                                )}
+
+                                {reorderAnalysis.hasUnavailableItems && (
+                                  <div className="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 text-xs space-y-1" data-unavailable-warning>
+                                    <div className="flex items-center gap-1.5 text-rose-800 dark:text-rose-300 font-semibold">
+                                      <AlertCircle size={14} />
+                                      <span>{t('account.reorderUnavailable', 'Some items cannot be reordered:')}</span>
+                                    </div>
+                                    <ul className="list-disc list-inside text-[11px] text-rose-700 dark:text-rose-400 space-y-0.5">
+                                      {reorderAnalysis.unavailable.map((u, uIdx) => (
+                                        <li key={uIdx}>
+                                          {u.productId} ({u.weight || 'standard'}) — {u.reason === 'discontinued' ? 'Discontinued' : u.reason === 'inactive' ? 'Temporarily unavailable' : u.reason === 'quote_only' ? 'Custom quote required' : 'Size unavailable'}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+
+                                <div className="flex items-center justify-end gap-2 pt-1">
+                                  <button
+                                    type="button"
+                                    data-action="confirm-reorder"
+                                    disabled={
+                                      reorderValidating ||
+                                      !reorderAnalysis ||
+                                      !reorderAnalysis.serverValidated ||
+                                      reorderAnalysis.itemsApprovedForCart !== true ||
+                                      reorderAnalysis.reorderable.length === 0
+                                    }
+                                    onClick={confirmReorder}
+                                    className="px-4 py-2 rounded-xl bg-[#043327] hover:bg-[#074b39] text-[#FAF9F5] text-xs font-bold transition-all disabled:opacity-40 flex items-center gap-1.5 shadow-sm"
+                                  >
+                                    <ShoppingBag size={14} />
+                                    <span>{t('account.confirmReorder', 'Add Available Items to Bag')}</span>
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                           <div className="mb-3 flex items-center justify-between text-xs text-[var(--color-ink,#1F120F)]/70 dark:text-[#FDFBF7]/70">
                             <span className="font-medium">Payment Method: <strong className="text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">{paymentMethodStr}</strong></span>
                             {order.earnedPoints > 0 && (

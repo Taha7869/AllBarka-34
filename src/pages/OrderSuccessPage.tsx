@@ -9,6 +9,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getCheckoutAuthToken } from '../lib/checkoutAttempt';
 import { recoverOrderSuccessReceipt, refreshOrderSuccessReceipt, type ConfirmedSuccessReceipt } from '../lib/orderSuccessRecovery';
 import { TRACKING_POLL_MS, TRACKING_STEPS, trackingProgress } from '../lib/orderPresentation';
+import { recordFunnelEvent } from '../lib/funnelTelemetry';
 
 export type OrderSuccessSnapshot = ConfirmedSuccessReceipt;
 
@@ -55,6 +56,7 @@ export default function OrderSuccessPage() {
     }).then(receipt => {
       if (!active) return;
       setOrder(receipt);
+      if (receipt) recordFunnelEvent('order_placed', { itemCount: receipt.items?.length });
       if (receipt) {
         try {
           const saved = JSON.stringify(receipt);

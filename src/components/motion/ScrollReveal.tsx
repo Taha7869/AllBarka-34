@@ -1,5 +1,6 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../../hooks/usePrefersReducedMotion';
 import React from 'react';
-import { motion, useReducedMotion } from 'motion/react';
+import { motion } from 'motion/react';
 
 interface ScrollRevealProps {
   children: React.ReactNode;
@@ -25,19 +26,16 @@ const ScrollReveal: React.FC<ScrollRevealProps> = ({
 }) => {
   const shouldReduceMotion = useReducedMotion();
 
-  if (shouldReduceMotion) {
-    return <div className={className}>{children}</div>;
-  }
-
   return (
     <motion.div
       className={className}
-      initial={{ opacity: 0, y: rise }}
-      whileInView={{ opacity: 1, y: 0 }}
+      initial={shouldReduceMotion ? false : { opacity: 0, y: rise }}
+      animate={shouldReduceMotion ? { opacity: 1, y: 0 } : undefined}
+      whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-60px' }}
       transition={{
-        duration: 0.55,
-        delay: index * 0.08,
+        duration: shouldReduceMotion ? 0 : 0.55,
+        delay: shouldReduceMotion ? 0 : Math.min(4, Math.max(0, index)) * 0.06,
         ease: [0.22, 1, 0.36, 1],
       }}
     >

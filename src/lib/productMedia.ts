@@ -106,6 +106,10 @@ function applyCatalogImagePolicy(product: Product, media: ProductMedia): Product
 }
 
 export function resolveProductMedia(product: Product, overrides: ProductMediaOverrides = {}): ResolvedProductMedia {
+  if(product.commerce || product.galleryImages !== undefined) {
+    const images=[...new Set([product.image,...product.galleryImages||[]].filter((x):x is string=>typeof x==='string'&&!!x))];
+    try { if(images.length) return {...validateProductMedia({images,videoUrl:'',videoPoster:''}),source:'catalogue'}; } catch { /* Retain existing media fallback for malformed stored data. */ }
+  }
   const override = overrides[product.id];
   if (override) {
     try { return { ...applyCatalogImagePolicy(product, validateProductMedia(override)), source: 'override' }; } catch { /* Safe fallback. */ }

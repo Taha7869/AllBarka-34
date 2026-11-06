@@ -1,5 +1,5 @@
 interface PatronCredentialVerifier<TClaims> {
-  verifyIdToken: (token: string) => Promise<TClaims>;
+  verifyIdToken: (token: string, checkRevoked: boolean) => Promise<TClaims>;
   verifySessionCookie: (cookie: string, checkRevoked: boolean) => Promise<TClaims>;
 }
 
@@ -14,7 +14,7 @@ export async function authenticatePatronCredentials<TClaims>(
     const token = authorization.slice(7).trim();
     if (!token) throw new Error('Missing bearer token');
     // Failed explicit credentials never fall back to another account's cookie.
-    return verifier.verifyIdToken(token);
+    return verifier.verifyIdToken(token, true);
   }
   return sessionCookie ? verifier.verifySessionCookie(sessionCookie, true) : null;
 }

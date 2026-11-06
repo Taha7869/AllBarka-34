@@ -23,7 +23,10 @@ import {
   buildAdminWhatsAppPitchUrl,
 } from '../src/lib/inquiryWhatsApp';
 import { submitCustomQuoteInquiry } from '../src/lib/storefrontSubmissions';
+import { validateAndPriceOrder } from '../src/lib/orderValidation';
 import type { Product, InquiryRecord } from '../src/types';
+import { HAMPER_BOXES } from '../src/lib/hamperCatalog';
+import { PRODUCTS } from '../src/data/products';
 
 // ============================================================================
 // TEST FIXTURES & MOCK FIRESTORE
@@ -233,6 +236,7 @@ function createTestServer(options: {
   const router = createInquiriesRouter({
     getDb: () => options.db,
     getCatalog: getCatalogFn,
+    getHamperBoxes: () => HAMPER_BOXES,
     requireAdmin,
   });
 
@@ -1062,3 +1066,749 @@ test('inquiryWhatsApp: pack rates and quantities never label pack prices as /pc'
   assert.match(decodedAdmin, /Standard Rate Ref:\* Rs\. 7,500\/pack \(Rs\. 300\/pc\)/);
   assert.doesNotMatch(decodedAdmin, /Standard Rate Ref:\* Rs\. 7,500\/pc/);
 });
+
+test('endpoint & WhatsApp: 750g custom weight survives submission, persistence, reload/display, and generates WhatsApp with net filling weight (Checks 2, 3, 4)', async () => {
+  const db = createMockFirestore();
+  const app = createTestServer({ db });
+  const server = app.listen(0);
+  const port = (server.address() as any).port;
+
+  try {
+    // 1. Submit custom 750g quote to /api/quotes
+    const quoteRes = await fetch(`http://127.0.0.1:${port}/api/quotes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerName: 'Fatima',
+        customerPhone: '03160666083',
+        city: 'Lahore',
+        productId: 'bid-box-luxury-tin',
+        boxMode: 'filled',
+        quantity: 50,
+        netFillingGrams: 750,
+      }),
+    });
+    const quoteJson = await quoteRes.json();
+    assert.equal(quoteRes.status, 200);
+    assert.equal(quoteJson.ok, true);
+    assert.equal(quoteJson.inquiry.netFillingGrams, 750);
+
+    // Verify persisted in database
+    const savedDoc = await db.collection('inquiries').doc(quoteJson.quoteId).get();
+    assert.equal(savedDoc.exists, true);
+    assert.equal(savedDoc.data().netFillingGrams, 750);
+
+    // Verify WhatsApp message text
+    const decodedQuoteWa = decodeURIComponent(quoteJson.whatsappUrl);
+    assert.match(decodedQuoteWa, /• \*Net Filling Weight:\* 750g per box/);
+
+    // 2. Submit custom 750g inquiry to /api/inquiries
+    const inqRes = await fetch(`http://127.0.0.1:${port}/api/inquiries`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Fatima',
+        phone: '03160666083',
+        city: 'Lahore',
+        productId: 'bid-box-luxury-tin',
+        boxMode: 'filled',
+        quantity: 50,
+        netFillingGrams: '750g',
+      }),
+    });
+    const inqJson = await inqRes.json();
+    assert.equal(inqRes.status, 200);
+    assert.equal(inqJson.ok, true);
+    assert.equal(inqJson.inquiry.netFillingGrams, 750);
+
+    const savedInqDoc = await db.collection('inquiries').doc(inqJson.id).get();
+    assert.equal(savedInqDoc.exists, true);
+    assert.equal(savedInqDoc.data().netFillingGrams, 750);
+
+    const decodedInqWa = decodeURIComponent(inqJson.whatsappUrl);
+    assert.match(decodedInqWa, /• \*Net Filling Weight:\* 750g per box/);
+
+    // 3. Preset 1kg normalizes to 1000
+    const inq1kgRes = await fetch(`http://127.0.0.1:${port}/api/inquiries`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Usman',
+        phone: '03160666083',
+        city: 'Lahore',
+        productId: 'bid-box-luxury-tin',
+        boxMode: 'filled',
+        quantity: 25,
+        netFillingGrams: '1kg',
+      }),
+    });
+    const inq1kgJson = await inq1kgRes.json();
+    assert.equal(inq1kgRes.status, 200);
+    assert.equal(inq1kgJson.inquiry.netFillingGrams, 1000);
+    const decoded1kgWa = decodeURIComponent(inq1kgJson.whatsappUrl);
+    assert.match(decoded1kgWa, /• \*Net Filling Weight:\* 1kg per box/);
+  } finally {
+    server.close();
+  }
+});
+
+test('endpoint: valid unpriced requests remain unpriced, preserve weight and say Quote on Request (Check 4)', async () => {
+  const db = createMockFirestore();
+  const app = createTestServer({ db });
+  const server = app.listen(0);
+  const port = (server.address() as any).port;
+
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/api/quotes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerName: 'Zain',
+        customerPhone: '03160666083',
+        city: 'Lahore',
+        productId: 'bid-box-luxury-tin',
+        boxMode: 'filled',
+        quantity: 50,
+        netFillingGrams: 750,
+      }),
+    });
+    const json = await res.json();
+    assert.equal(res.status, 200);
+    assert.equal(json.ok, true);
+    assert.equal(json.inquiry.requiresTeamQuote, true);
+    assert.equal(json.inquiry.standardPrice, null);
+    assert.equal(json.inquiry.estimatedTotalPkr, null);
+    assert.equal(json.inquiry.netFillingGrams, 750);
+
+    const decodedWa = decodeURIComponent(json.whatsappUrl);
+    assert.match(decodedWa, /• \*Standard Rate Ref:\* Custom Quote on Request \(Team Confirmation Required\)/);
+    assert.match(decodedWa, /• \*Net Filling Weight:\* 750g per box/);
+  } finally {
+    server.close();
+  }
+});
+
+test('endpoint: invalid weight inputs are rejected server-side with HTTP 400 INVALID_NET_FILLING_WEIGHT (Check 5)', async () => {
+  const db = createMockFirestore();
+  const app = createTestServer({ db });
+  const server = app.listen(0);
+  const port = (server.address() as any).port;
+
+  try {
+    const invalidInputs = [-50, 0, 'invalid-weight', 15000, 100.12345];
+    for (const badWeight of invalidInputs) {
+      const res = await fetch(`http://127.0.0.1:${port}/api/quotes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerName: 'Tariq',
+          customerPhone: '03160666083',
+          city: 'Lahore',
+          productId: 'bid-box-luxury-tin',
+          boxMode: 'filled',
+          quantity: 25,
+          netFillingGrams: badWeight,
+        }),
+      });
+      assert.equal(res.status, 400);
+      const json = await res.json();
+      assert.equal(json.code, 'INVALID_NET_FILLING_WEIGHT');
+    }
+  } finally {
+    server.close();
+  }
+});
+
+test('endpoint: changing netFillingGrams under same submissionKey triggers 409 IDEMPOTENCY_PAYLOAD_MISMATCH (Check 12)', async () => {
+  const db = createMockFirestore();
+  const app = createTestServer({ db });
+  const server = app.listen(0);
+  const port = (server.address() as any).port;
+
+  try {
+    const submissionKey = 'idemp-weight-test-key-1';
+
+    // 1. Initial submission with 250g
+    const res1 = await fetch(`http://127.0.0.1:${port}/api/quotes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        submissionKey,
+        customerName: 'Bilal',
+        customerPhone: '03160666083',
+        city: 'Lahore',
+        productId: 'bid-box-luxury-tin',
+        boxMode: 'filled',
+        quantity: 50,
+        netFillingGrams: 250,
+      }),
+    });
+    const json1 = await res1.json();
+    assert.equal(res1.status, 200);
+    assert.equal(json1.ok, true);
+
+    // 2. Replay with identical 250g -> succeeds with same ID
+    const res2 = await fetch(`http://127.0.0.1:${port}/api/quotes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        submissionKey,
+        customerName: 'Bilal',
+        customerPhone: '03160666083',
+        city: 'Lahore',
+        productId: 'bid-box-luxury-tin',
+        boxMode: 'filled',
+        quantity: 50,
+        netFillingGrams: 250,
+      }),
+    });
+    const json2 = await res2.json();
+    assert.equal(res2.status, 200);
+    assert.equal(json2.quoteId, json1.quoteId);
+
+    // 3. Changed weight 250g -> 750g under same key -> 409 IDEMPOTENCY_PAYLOAD_MISMATCH
+    const res3 = await fetch(`http://127.0.0.1:${port}/api/quotes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        submissionKey,
+        customerName: 'Bilal',
+        customerPhone: '03160666083',
+        city: 'Lahore',
+        productId: 'bid-box-luxury-tin',
+        boxMode: 'filled',
+        quantity: 50,
+        netFillingGrams: 750,
+      }),
+    });
+    const json3 = await res3.json();
+    assert.equal(res3.status, 409);
+    assert.equal(json3.code, 'IDEMPOTENCY_PAYLOAD_MISMATCH');
+  } finally {
+    server.close();
+  }
+});
+
+
+test('endpoint: top-level 750g with legacy-shaped configuration produces honest unpriced 750g inquiry and never an 800g estimate', async () => {
+  const db = createMockFirestore();
+  const app = createTestServer({ db });
+  const server = app.listen(0);
+  const port = (server.address() as any).port;
+
+  try {
+    const payload = {
+      type: 'custom_hamper',
+      productId: 'custom-hamper',
+      customerName: 'Zainab Bibi',
+      customerPhone: '03001234567',
+      city: 'Lahore',
+      boxMode: 'custom',
+      quantity: 10,
+      netFillingGrams: 750,
+      hamperConfiguration: {
+        version: 1,
+        boxId: 'box-wood',
+        selections: ['pista', 'kaju', 'badam', 'akhroot'],
+        recipientName: 'Patron Recipient',
+        giftMessage: 'Best Wishes',
+      },
+    };
+
+    // 1. Test POST /api/quotes
+    const resQuotes = await fetch(`http://127.0.0.1:${port}/api/quotes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    assert.equal(resQuotes.status, 200);
+    const jsonQuotes = await resQuotes.json();
+    assert.equal(jsonQuotes.ok, true);
+    assert.equal(jsonQuotes.inquiry.requiresTeamQuote, true);
+    assert.equal(jsonQuotes.inquiry.standardPrice, null);
+    assert.equal(jsonQuotes.inquiry.estimatedTotalPkr, null);
+    assert.equal(jsonQuotes.inquiry.netFillingGrams, 750);
+    assert.equal(jsonQuotes.inquiry.packagingVariant, '4 selections · 750g');
+    assert.notEqual(jsonQuotes.inquiry.packagingVariant, '4 × 200g');
+    assert.notEqual(jsonQuotes.inquiry.estimatedTotalPkr, 18008);
+
+    const persistedQuote = (db._store.get('inquiries')?.get(jsonQuotes.quoteId) || db._store.get('quotes')?.get(jsonQuotes.quoteId)) as any;
+    assert.ok(persistedQuote);
+    assert.equal(persistedQuote.netFillingGrams, 750);
+    assert.equal(persistedQuote.standardPrice, null);
+    assert.equal(persistedQuote.estimatedTotalPkr, null);
+    assert.equal(persistedQuote.requiresTeamQuote, true);
+    assert.equal(persistedQuote.hamperConfiguration.netFillingGrams, 750);
+
+    const waQuotes = decodeURIComponent(jsonQuotes.whatsappUrl || persistedQuote.whatsappUrl);
+    assert.match(waQuotes, /• \*Net Filling Weight:\* 750g per box/);
+    assert.match(waQuotes, /Custom Quote on Request/);
+    assert.doesNotMatch(waQuotes, /Rs.s*18,008/);
+
+    // 2. Test POST /api/inquiries
+    const resInq = await fetch(`http://127.0.0.1:${port}/api/inquiries`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    assert.equal(resInq.status, 200);
+    const jsonInq = await resInq.json();
+    assert.equal(jsonInq.ok, true);
+    assert.equal(jsonInq.inquiry.requiresTeamQuote, true);
+    assert.equal(jsonInq.inquiry.standardPrice, null);
+    assert.equal(jsonInq.inquiry.estimatedTotalPkr, null);
+    assert.equal(jsonInq.inquiry.netFillingGrams, 750);
+    assert.equal(jsonInq.inquiry.packagingVariant, '4 selections · 750g');
+    assert.notEqual(jsonInq.inquiry.packagingVariant, '4 × 200g');
+    assert.notEqual(jsonInq.inquiry.estimatedTotalPkr, 18008);
+
+    const persistedInq = db._store.get('inquiries')?.get(jsonInq.id || jsonInq.ticketId) as any;
+    assert.ok(persistedInq);
+    assert.equal(persistedInq.netFillingGrams, 750);
+    assert.equal(persistedInq.standardPrice, null);
+    assert.equal(persistedInq.estimatedTotalPkr, null);
+    assert.equal(persistedInq.requiresTeamQuote, true);
+    assert.equal(persistedInq.hamperConfiguration.netFillingGrams, 750);
+  } finally {
+    server.close();
+  }
+});
+
+test('endpoint: nested-only weight, equivalent duplicates, and conflicting duplicates rejected with HTTP 400', async () => {
+  const db = createMockFirestore();
+  const app = createTestServer({ db });
+  const server = app.listen(0);
+  const port = (server.address() as any).port;
+
+  try {
+    // 1. Nested-only weight (omitted at top-level)
+    const resNested = await fetch(`http://127.0.0.1:${port}/api/quotes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerName: 'Ahmad',
+        customerPhone: '03160666083',
+        city: 'Lahore',
+        productId: 'custom-hamper',
+        boxMode: 'custom',
+        quantity: 5,
+        hamperConfiguration: {
+          version: 1,
+          boxId: 'box-wood',
+          selections: ['pista', 'kaju', 'badam', 'akhroot'],
+          recipientName: 'Recipient',
+          giftMessage: 'Message',
+          netFillingGrams: 750,
+        },
+      }),
+    });
+    assert.equal(resNested.status, 200);
+    const jsonNested = await resNested.json();
+    assert.equal(jsonNested.inquiry.netFillingGrams, 750);
+
+    // 2. Equivalent duplicates (top "750g" and nested 750)
+    const resEquiv = await fetch(`http://127.0.0.1:${port}/api/quotes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerName: 'Ahmad',
+        customerPhone: '03160666083',
+        city: 'Lahore',
+        productId: 'custom-hamper',
+        boxMode: 'custom',
+        quantity: 5,
+        netFillingGrams: '750g',
+        hamperConfiguration: {
+          version: 1,
+          boxId: 'box-wood',
+          selections: ['pista', 'kaju', 'badam', 'akhroot'],
+          recipientName: 'Recipient',
+          giftMessage: 'Message',
+          netFillingGrams: 750,
+        },
+      }),
+    });
+    assert.equal(resEquiv.status, 200);
+    const jsonEquiv = await resEquiv.json();
+    assert.equal(jsonEquiv.inquiry.netFillingGrams, 750);
+
+    // 3. Conflicting duplicates (top 750 and nested 500) in /api/quotes
+    const resConflictQuotes = await fetch(`http://127.0.0.1:${port}/api/quotes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerName: 'Ahmad',
+        customerPhone: '03160666083',
+        city: 'Lahore',
+        productId: 'custom-hamper',
+        boxMode: 'custom',
+        quantity: 5,
+        netFillingGrams: 750,
+        hamperConfiguration: {
+          version: 1,
+          boxId: 'box-wood',
+          selections: ['pista', 'kaju', 'badam', 'akhroot'],
+          recipientName: 'Recipient',
+          giftMessage: 'Message',
+          netFillingGrams: 500,
+        },
+      }),
+    });
+    assert.equal(resConflictQuotes.status, 400);
+    const jsonConflictQuotes = await resConflictQuotes.json();
+    assert.equal(jsonConflictQuotes.code, 'CONFLICTING_NET_FILLING_WEIGHT');
+
+    // 4. Conflicting duplicates (top 750 and nested 500) in /api/inquiries
+    const resConflictInq = await fetch(`http://127.0.0.1:${port}/api/inquiries`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerName: 'Ahmad',
+        customerPhone: '03160666083',
+        city: 'Lahore',
+        productId: 'custom-hamper',
+        boxMode: 'custom',
+        quantity: 5,
+        netFillingGrams: 750,
+        hamperConfiguration: {
+          version: 1,
+          boxId: 'box-wood',
+          selections: ['pista', 'kaju', 'badam', 'akhroot'],
+          recipientName: 'Recipient',
+          giftMessage: 'Message',
+          netFillingGrams: 500,
+        },
+      }),
+    });
+    assert.equal(resConflictInq.status, 400);
+    const jsonConflictInq = await resConflictInq.json();
+    assert.equal(jsonConflictInq.code, 'CONFLICTING_NET_FILLING_WEIGHT');
+  } finally {
+    server.close();
+  }
+});
+
+test('endpoint: packaging price available but composition missing produces null complete totals and Quote on Request', async () => {
+  const db = createMockFirestore();
+  const app = createTestServer({ db });
+  const server = app.listen(0);
+  const port = (server.address() as any).port;
+
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/api/quotes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerName: 'Mariam',
+        customerPhone: '03160666083',
+        city: 'Lahore',
+        productId: 'custom-hamper',
+        boxMode: 'custom',
+        quantity: 10,
+        netFillingGrams: 750,
+        hamperConfiguration: {
+          version: 1,
+          boxId: 'box-wood',
+          selections: ['pista', 'kaju', 'badam', 'akhroot'],
+          recipientName: 'Mariam',
+          giftMessage: 'Eid Mubarak',
+          netFillingGrams: 750,
+        },
+      }),
+    });
+    assert.equal(res.status, 200);
+    const json = await res.json();
+    assert.equal(json.inquiry.requiresTeamQuote, true);
+    assert.equal(json.inquiry.standardPrice, null);
+    assert.equal(json.inquiry.estimatedTotalPkr, null);
+
+    const wa = decodeURIComponent(json.whatsappUrl);
+    assert.match(wa, /Custom Quote on Request/);
+    assert.doesNotMatch(wa, /• *Estimated Total Ref:* Rs.s*10,?000/);
+    assert.doesNotMatch(wa, /• *Estimated Total Ref:* Rs.s*1,?000/);
+  } finally {
+    server.close();
+  }
+});
+
+test('endpoint: idempotency includes hamper selections, recipient, gift message, boxId and weight', async () => {
+  const db = createMockFirestore();
+  const app = createTestServer({ db });
+  const server = app.listen(0);
+  const port = (server.address() as any).port;
+
+  try {
+    const submissionKey = 'idemp-hamper-composition-test';
+    const baseHamperConfig = {
+      version: 1 as const,
+      boxId: 'box-wood',
+      selections: ['pista', 'kaju', 'badam', 'akhroot'],
+      recipientName: 'Recipient Alpha',
+      giftMessage: 'Message Alpha',
+      netFillingGrams: 750,
+    };
+
+    const basePayload = {
+      submissionKey,
+      customerName: 'Usman',
+      customerPhone: '03160666083',
+      city: 'Lahore',
+      productId: 'custom-hamper',
+      boxMode: 'custom',
+      quantity: 5,
+      netFillingGrams: 750,
+      hamperConfiguration: { ...baseHamperConfig },
+    };
+
+    // 1. Initial submission
+    const res1 = await fetch(`http://127.0.0.1:${port}/api/quotes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(basePayload),
+    });
+    assert.equal(res1.status, 200);
+    const json1 = await res1.json();
+
+    // 2. Exact identical replay succeeds with same ID
+    const res2 = await fetch(`http://127.0.0.1:${port}/api/quotes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(basePayload),
+    });
+    assert.equal(res2.status, 200);
+    const json2 = await res2.json();
+    assert.equal(json2.quoteId, json1.quoteId);
+
+    // 3. Changed selections triggers 409
+    const resDiffSelections = await fetch(`http://127.0.0.1:${port}/api/quotes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...basePayload,
+        hamperConfiguration: { ...baseHamperConfig, selections: ['pista', 'kaju', 'badam', 'kishmish'] },
+      }),
+    });
+    assert.equal(resDiffSelections.status, 409);
+    assert.equal((await resDiffSelections.json()).code, 'IDEMPOTENCY_PAYLOAD_MISMATCH');
+
+    // 4. Changed recipient triggers 409
+    const resDiffRecipient = await fetch(`http://127.0.0.1:${port}/api/quotes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...basePayload,
+        hamperConfiguration: { ...baseHamperConfig, recipientName: 'Recipient Beta' },
+      }),
+    });
+    assert.equal(resDiffRecipient.status, 409);
+
+    // 5. Changed message triggers 409
+    const resDiffMsg = await fetch(`http://127.0.0.1:${port}/api/quotes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...basePayload,
+        hamperConfiguration: { ...baseHamperConfig, giftMessage: 'Message Beta' },
+      }),
+    });
+    assert.equal(resDiffMsg.status, 409);
+
+    // 6. Changed boxId triggers 409
+    const resDiffBox = await fetch(`http://127.0.0.1:${port}/api/quotes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...basePayload,
+        hamperConfiguration: { ...baseHamperConfig, boxId: 'box-tin' },
+      }),
+    });
+    assert.equal(resDiffBox.status, 409);
+  } finally {
+    server.close();
+  }
+});
+
+test('orderValidation: direct-order rejection with QUOTE_REQUIRED for custom hampers', () => {
+  // Direct order (allowInquiryItems = false) on custom hamper must throw QUOTE_REQUIRED
+  assert.throws(
+    () => {
+      validateAndPriceOrder({
+        city: 'Lahore',
+        shippingMethodId: 'standard',
+        products: TEST_CATALOG,
+        hamperBoxes: HAMPER_BOXES,
+        allowInquiryItems: false,
+        items: [
+          {
+            productId: 'custom-hamper',
+            quantity: 1,
+            hamperConfiguration: {
+              version: 1,
+              boxId: 'box-wood',
+              selections: ['pista', 'kaju', 'badam', 'akhroot'],
+              recipientName: 'Patron',
+              giftMessage: 'Gift',
+            },
+          },
+        ],
+      });
+    },
+    (err: any) => err.code === 'QUOTE_REQUIRED'
+  );
+
+  // Read-only quote (allowInquiryItems = true) on custom hamper with unpriced custom weight (750g) must throw QUOTE_REQUIRED
+  assert.throws(
+    () => {
+      validateAndPriceOrder({
+        city: 'Lahore',
+        shippingMethodId: 'standard',
+        products: TEST_CATALOG,
+        hamperBoxes: HAMPER_BOXES,
+        allowInquiryItems: true,
+        items: [
+          {
+            productId: 'custom-hamper',
+            quantity: 1,
+            hamperConfiguration: {
+              version: 1,
+              boxId: 'box-wood',
+              selections: ['pista', 'kaju', 'badam', 'akhroot'],
+              recipientName: 'Patron',
+              giftMessage: 'Gift',
+              netFillingGrams: 750,
+            },
+          },
+        ],
+      });
+    },
+    (err: any) => err.code === 'QUOTE_REQUIRED'
+  );
+});
+
+
+// ============================================================================
+// HISTORICAL INQUIRY REPLAY COMPATIBILITY (pre-composition-hash intents)
+// ============================================================================
+import cryptoNode from 'node:crypto';
+import { normalizeWhatsAppPhone } from '../src/lib/inquiryService';
+
+/** Independent reproduction of the historical hash algorithm: no hamper composition. */
+function historicalIntentHash(rec: any, rawPhone: string): string {
+  const normalized: any = {
+    customerName: String(rec.customerName || '').trim().toLowerCase(),
+    phone: normalizeWhatsAppPhone(rawPhone),
+    city: String(rec.city || '').trim().toLowerCase(),
+    productId: String(rec.productId || '').trim().toLowerCase(),
+    packagingVariant: rec.packagingVariant ? String(rec.packagingVariant).trim() : null,
+    boxMode: String(rec.boxMode || '').trim().toLowerCase(),
+    quantity: rec.quantity,
+    eventType: String(rec.eventType || '').trim().toLowerCase(),
+    targetEventDate: null,
+    preferredFillings: [],
+    customFillingsNotes: '',
+    monogramText: '',
+    cardMessage: '',
+    customPrintText: '',
+    budgetType: null,
+    targetPricePkr: null,
+    leadTimeNoticeAcknowledged: false,
+  };
+  return cryptoNode.createHash('sha256').update(JSON.stringify(normalized)).digest('hex');
+}
+
+for (const endpoint of ['/api/quotes', '/api/inquiries'] as const) {
+  test(`historical replay via ${endpoint}: equivalent replays original, changed/insufficient config fails closed`, async () => {
+    const db = createMockFirestore();
+    const app = createTestServer({ db, catalog: [...TEST_CATALOG, ...PRODUCTS.filter(p => ['pista', 'kaju', 'badam', 'akhroot'].includes(p.id))] });
+    const server = app.listen(0);
+    const port = (server.address() as any).port;
+    const url = `http://127.0.0.1:${port}${endpoint}`;
+    const post = (body: any) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const idOf = (j: any) => j.quoteId || j.id || j.ticketId;
+    const phone = '03160666083';
+    const baseCfg = { version: 1 as const, boxId: 'box-wood', selections: ['pista', 'kaju', 'badam', 'akhroot'], recipientName: 'Recipient Alpha', giftMessage: 'Message Alpha' };
+    const base = {
+      customerName: 'Usman', customerPhone: phone, city: 'Lahore', productId: 'custom-hamper',
+      type: 'custom_hamper', boxMode: 'custom', quantity: 5, eventType: 'Nikkah',
+      hamperConfiguration: baseCfg,
+    };
+
+    try {
+      // Seed a historical intent: create the original inquiry normally, then rewrite the intent hash
+      // to the value the historical algorithm produced (composition omitted).
+      const seed = async (key: string, mutate?: (intent: any) => void) => {
+        const res = await post({ ...base, submissionKey: key });
+        assert.equal(res.status, 200);
+        const original = await res.json();
+        const intents = db._store.get('inquiryIntents')!;
+        const intent = intents.get(key);
+        assert.ok(intent, 'intent stored');
+        intent.payloadHash = historicalIntentHash(intent.inquiry, phone);
+        mutate?.(intent);
+        intents.set(key, intent);
+        return { original, intent };
+      };
+
+      // 1. Identical historical replay returns original ID, totals and does not rewrite records.
+      const k1 = `hist-identical-${endpoint.slice(5)}`;
+      const { original, intent } = await seed(k1);
+      const inquiriesBefore = db._store.get('inquiries')!.size;
+      const intentBefore = JSON.stringify(db._store.get('inquiryIntents')!.get(k1));
+      const replay = await post({ ...base, submissionKey: k1 });
+      assert.equal(replay.status, 200);
+      const replayJson = await replay.json();
+      assert.equal(idOf(replayJson), idOf(original));
+      assert.equal(replayJson.inquiry.estimatedTotalPkr, original.inquiry.estimatedTotalPkr);
+      assert.equal(replayJson.inquiry.standardPrice, original.inquiry.standardPrice);
+      assert.equal(db._store.get('inquiries')!.size, inquiriesBefore, 'no new inquiry written');
+      assert.equal(JSON.stringify(db._store.get('inquiryIntents')!.get(k1)), intentBefore, 'intent not overwritten');
+      assert.equal(db._store.get('inquiryIntents')!.get(k1).payloadHash, intent.payloadHash, 'historical hash retained');
+
+      // 2. Selection reordering replays consistently.
+      const reordered = await post({ ...base, submissionKey: k1, hamperConfiguration: { ...baseCfg, selections: ['akhroot', 'badam', 'kaju', 'pista'] } });
+      assert.equal(reordered.status, 200);
+      assert.equal(idOf(await reordered.json()), idOf(original));
+
+      // 3. Changed selections / box / weight / recipient / message conflict.
+      const changes: Array<[string, any]> = [
+        ['selections', { ...baseCfg, selections: ['pista', 'kaju', 'badam', 'kishmish'] }],
+        ['box', { ...baseCfg, boxId: 'box-tin' }],
+        ['recipient', { ...baseCfg, recipientName: 'Recipient Beta' }],
+        ['message', { ...baseCfg, giftMessage: 'Message Beta' }],
+      ];
+      for (const [label, cfg] of changes) {
+        const res = await post({ ...base, submissionKey: k1, hamperConfiguration: cfg });
+        assert.equal(res.status, 409, `changed ${label} conflicts`);
+        assert.equal((await res.json()).code, 'IDEMPOTENCY_PAYLOAD_MISMATCH');
+      }
+      const weightRes = await post({ ...base, submissionKey: k1, netFillingGrams: 750 });
+      assert.equal(weightRes.status, 409, 'added weight conflicts');
+      const afterConflicts = db._store.get('inquiries')!.get(idOf(original));
+      assert.equal(afterConflicts.hamperConfiguration.recipientName, 'Recipient Alpha', 'original untouched');
+
+      // 4. Insufficient historical configuration fails closed.
+      const k2 = `hist-nocfg-${endpoint.slice(5)}`;
+      await seed(k2, (it) => { delete it.inquiry.hamperConfiguration; });
+      const noCfg = await post({ ...base, submissionKey: k2 });
+      assert.equal(noCfg.status, 409);
+      assert.equal((await noCfg.json()).code, 'IDEMPOTENCY_PAYLOAD_MISMATCH');
+
+      const k3 = `hist-emptysel-${endpoint.slice(5)}`;
+      await seed(k3, (it) => { it.inquiry.hamperConfiguration.selections = []; });
+      assert.equal((await post({ ...base, submissionKey: k3 })).status, 409);
+
+      // 5. New canonical submissions and retries remain correct.
+      const k4 = `hist-new-${endpoint.slice(5)}`;
+      const first = await post({ ...base, submissionKey: k4 });
+      assert.equal(first.status, 200);
+      const firstJson = await first.json();
+      const retry = await post({ ...base, submissionKey: k4 });
+      assert.equal(retry.status, 200);
+      assert.equal(idOf(await retry.json()), idOf(firstJson));
+      const changed = await post({ ...base, submissionKey: k4, hamperConfiguration: { ...baseCfg, giftMessage: 'Other' } });
+      assert.equal(changed.status, 409);
+    } finally {
+      server.close();
+    }
+  });
+}

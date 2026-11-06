@@ -1,7 +1,12 @@
-import { useCatalogProducts } from '../contexts/CatalogContext';
-import React, { useEffect, useId, useMemo, useState } from 'react';
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+import VoiceInputButton from './VoiceInputButton';
+import BundleContentsSummary from './BundleContentsSummary';
+import { initialCardPortion, readBundleFormat } from '../lib/merchandisingPresentation';
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
+import CartAddButton from './CartAddButton';
+import { useCatalogProducts, useCatalogTaxonomy, useCatalogHiddenTaxonomy } from '../contexts/CatalogContext';
+import React, { useEffect, useId, useMemo, useState, useRef } from 'react';
+import { Link, useLocation, useNavigate, useSearchParams, useNavigationType } from 'react-router-dom';
+import { motion, AnimatePresence } from 'motion/react';
 import { Search, SlidersHorizontal, X, Heart, ArrowUpRight, ShoppingBag, Eye, Share2, Scale } from 'lucide-react';
 import CatalogTools from './CatalogTools';
 import SquishSwitch from './SquishSwitch';
@@ -29,12 +34,16 @@ export interface CategoryPLPProps {
   onQuickView?: (product: Product) => void;
   isWholesale?: boolean; isModal?: boolean; onClose?: () => void;
 }
+// Session-only, bounded history of catalogue depth; no customer/catalog data is persisted.
+const browsingPositions = new Map<string, { y: number; count: number }>();
 export type SortOption = CatalogSort;
 export function CategoryPLPSkeleton() {
   return <div className="grid grid-cols-2 gap-4 lg:grid-cols-4" aria-busy="true">{Array.from({ length: 8 }, (_, i) => <div key={i} className="aspect-[3/5] rounded-2xl bg-[var(--color-border)] motion-safe:animate-pulse" />)}</div>;
 }
 export default function CategoryPLP({ searchFilter: initialSearch, initialCategory = 'all', onAddToCart, onQuickView, isWholesale = false, isModal = false, onClose }: CategoryPLPProps) {
   const PRODUCTS = useCatalogProducts();
+  const taxonomy=useCatalogTaxonomy();const hiddenTaxonomy=useCatalogHiddenTaxonomy();
+  const categoryLabel=(id:string)=>{const entry=taxonomy.find(x=>x.id===id&&x.type!=='occasion');return entry?.[`name_${language}`]||entry?.name_en||t(`shop.${id}`,getCategoryMeta(id)?.name||id);};
   const { t, language } = useCatalogFilterLanguage();
   const mediaCover = useProductMediaCover();
   const { addToCart } = useCart();
@@ -44,6 +53,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
   const [params, setParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const navigationType = useNavigationType();
   const reduceMotion = useReducedMotion();
   const [localParams, setLocalParams] = useState(() => new URLSearchParams({ search: initialSearch || '' }));
   const [modalCategory, setModalCategory] = useState(initialCategory);
@@ -61,15 +71,17 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
   const occasion = activeParams.get('occasion');
   const sharedIds = useMemo(() => readSharedSelections(activeParams.get('shared'), PRODUCTS), [activeParams, PRODUCTS]);
   const listView = activeParams.get('view') === 'list';
-  const [visibleCount, setVisibleCount] = useState(12);
+  const [visibleCount, setVisibleCount] = useState(() => !isModal && navigationType === 'POP' ? browsingPositions.get(location.key)?.count || 12 : 12);
+  const visibleCountRef = useRef(visibleCount);
+  visibleCountRef.current = visibleCount;
   const [shareStatus, setShareStatus] = useState('');
   const [manualLink, setManualLink] = useState('');
   const suggestions = useMemo(() => filters.query.trim() ? searchCatalog(PRODUCTS, filters.query).slice(0, 5) : [], [filters.query, PRODUCTS]);
-  const category = resolveCategorySlug(isModal ? modalCategory : initialCategory) || 'all';
+  const category = resolveCategorySlug(isModal ? modalCategory : initialCategory) || (isModal ? modalCategory : initialCategory);
   const filterSignature = activeParams.toString();
-  useEffect(() => { setVisibleCount(12); }, [category, filters.query, filters.origin, filters.budget, filters.sort, filters.saved, filters.special, occasion]);
+  useEffect(() => { setVisibleCount(!isModal && navigationType === 'POP' ? browsingPositions.get(location.key)?.count || 12 : 12); }, [category, filters.query, filters.origin, filters.budget, filters.sort, filters.saved, filters.special, occasion, isModal, location.key, navigationType]);
   // Browser navigation or a new collection cancels the draft instead of committing stale choices.
-  useEffect(() => { setFilterDraft(null); }, [filterSignature, category]);
+  useEffect(() => { setFilterDraft(null); }, [filterSignature, category, location.key]);
   useEffect(() => {
     const viewport = window.matchMedia('(max-width: 1023px)');
     const changed = () => setMobileControls(viewport.matches);
@@ -86,6 +98,23 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
       window.removeEventListener('resize', measure); window.removeEventListener('scroll', measure);
     };
   }, [isModal]);
+  useEffect(() => {
+    if (isModal) return;
+    const key = location.key;
+    const saved = navigationType === 'POP' ? browsingPositions.get(key) : undefined;
+    let frame = 0;
+    let restoring = !!saved;
+    if (saved) frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => { window.scrollTo({ top: saved.y, behavior: 'instant' }); restoring = false; });
+    });
+    const remember = () => {
+      if (restoring) return;
+      browsingPositions.set(key, { y: window.scrollY, count: visibleCountRef.current });
+      if (browsingPositions.size > 40) browsingPositions.delete(browsingPositions.keys().next().value!);
+    };
+    window.addEventListener('scroll', remember, { passive: true });
+    return () => { cancelAnimationFrame(frame); window.removeEventListener('scroll', remember); const last = browsingPositions.get(key); if (last) last.count = visibleCountRef.current; };
+  }, [isModal, location.key, navigationType]);
   const share = async (saved = false) => {
     const url = saved ? selectionLink(window.location.origin, savedIds, PRODUCTS) : new URL(`${location.pathname}?${activeParams}`, window.location.origin).toString();
     const result = await shareOrCopy(t(saved ? 'shop.shareSaved' : 'shop.shareCollection'), url);
@@ -139,18 +168,18 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
     ...(filters.sort !== 'featured' ? [{ key: 'sort', label: t(`shop.${filters.sort}`) }] : []),
   ];
   return <section id="category-plp-container" className="w-full pb-12 text-[var(--color-text-primary)]" style={{ '--catalog-header-clearance': `${headerClearance}px` } as React.CSSProperties}>
-    {filterDraft && <CatalogFilterSheet id={sheetFilterId} draft={filterDraft} categoryLabel={t(`shop.${category}`, getCategoryMeta(category)?.name || category)} results={previewCount(filterDraft)} origins={draftOrigins} savedCount={savedIds.length} onChange={setFilterDraft} onApply={applyDraft} onCancel={() => setFilterDraft(null)} />}
+    {filterDraft && <CatalogFilterSheet id={sheetFilterId} draft={filterDraft} categoryLabel={categoryLabel(category)} results={previewCount(filterDraft)} origins={draftOrigins} savedCount={savedIds.length} onChange={setFilterDraft} onApply={applyDraft} onCancel={() => setFilterDraft(null)} />}
     {isModal && <button type="button" onClick={onClose} aria-label={t('close')} className="ms-auto flex h-11 w-11 items-center justify-center rounded-full border border-[var(--color-border)]"><X size={20} /></button>}
-    <header className="relative mb-7 overflow-hidden rounded-[28px] border border-[#c7982f]/25 bg-[#092e23] px-6 py-9 text-[#fff8e9] sm:px-10 sm:py-14">
+    <header className="table-catalog-header relative mb-7 overflow-hidden rounded-[28px] border border-[#c7982f]/25 bg-[#092e23] px-6 py-9 text-[#fff8e9] sm:px-10 sm:py-14">
       <div className="pointer-events-none absolute -end-12 -top-12 h-72 w-72 rounded-full border border-[#d5b876]/15" aria-hidden="true" />
       <div className="pointer-events-none absolute -bottom-36 end-6 h-80 w-80 rounded-full border border-[#d5b876]/15" aria-hidden="true" />
       <p className="relative mb-4 text-[10px] font-semibold tracking-[.25em] text-[#e4c783]">{t('shop.eyebrow')}</p>
-      <h1 className="relative max-w-3xl font-serif text-4xl leading-[1.12] sm:text-6xl">{category === 'all' ? t('shop.title') : t(`shop.${category}`, getCategoryMeta(category)?.name || category)}</h1>
+      <h1 className="relative max-w-3xl font-serif text-4xl leading-[1.12] sm:text-6xl">{category === 'all' ? t('shop.title') : categoryLabel(category)}</h1>
       <div className="relative mt-5 flex flex-wrap items-end justify-between gap-5"><p className="max-w-lg text-sm leading-7 text-[#d1ded5]">{t('shop.copy')}</p><span className="text-xs text-[#e4c783]">{PRODUCTS.length} / {t('shop.results')}</span></div>
     </header>
     {isWholesale && <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--color-border)] p-4"><p className="max-w-lg text-sm leading-6">{t('shop.wholesaleCopy')}</p><a href={buildHumanSupportWhatsAppUrl('I would like to enquire about wholesale products.')} target="_blank" rel="noreferrer" className="focus-ring inline-flex min-h-11 items-center rounded-full bg-[#1e3a2b] px-5 text-xs text-[#fff8e9]">{t('shop.wholesaleEnquiry')}</a></div>}
     <nav aria-label={t('category')} className="catalog-category-nav mb-6 flex gap-2 overflow-x-auto pb-2">
-      {['all', ...CUSTOMER_FACING_CATEGORIES].map(id => {
+      {['all', ...new Set([...CUSTOMER_FACING_CATEGORIES.filter(id=>!hiddenTaxonomy.includes(id)),...taxonomy.filter(x=>x.type!=='occasion').map(x=>x.id)])].map(id => {
         const isActive = category === id || (category === 'nuts' && id === 'dry-fruits') || (category === 'snacks-seeds' && id === 'seeds-snacks') || (category === 'combos' && id === 'gift-boxes');
         return (
           <button
@@ -160,16 +189,18 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
             aria-pressed={isActive}
             className={`min-h-11 shrink-0 rounded-full border px-5 text-xs font-semibold transition-colors ${isActive ? 'border-[#1e3a2b] bg-[#1e3a2b] text-[#fff8e9]' : 'border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[#c7982f]'}`}
           >
-            {t(`shop.${id}`, getCategoryMeta(id)?.name || id)}
+            {categoryLabel(id)}
           </button>
         );
       })}
       <button type="button" onClick={() => openCustomQuoteModal({ mode: 'filled', quantity: 50 })} className="min-h-11 shrink-0 rounded-full border border-[#8C6B1B] bg-[#FAF6EE] px-5 text-xs font-bold text-[#8C6B1B] transition-colors hover:bg-[#8C6B1B] hover:text-white">Bid Boxes &amp; Custom Quote</button>
     </nav>
+    {taxonomy.some(x=>x.type==='occasion')&&<nav className="catalog-category-nav mb-5 flex gap-2 overflow-x-auto" aria-label={t('item.occasions')}>{taxonomy.filter(x=>x.type==='occasion').map(x=><button key={x.id} type="button" className="min-h-11 shrink-0 rounded-full border border-[var(--color-border)] px-4 text-xs" aria-pressed={occasion===x.id} onClick={()=>update({occasion:occasion===x.id?null:x.id})}>{x[`name_${language}`]||x.name_en}</button>)}</nav>}
     <div className={`catalog-quick-controls mb-5 flex flex-col gap-3 lg:flex-row ${isModal ? 'catalog-quick-controls-modal' : ''}`}>
       <div className="relative flex-1" onFocusCapture={() => setSearchOpen(true)}
         onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setSearchOpen(false); }}
         onKeyDownCapture={event => {
+          if ((event.target as HTMLElement).closest('[data-voice-control]')) return;
           if (event.key === 'Escape') { event.preventDefault(); setSearchOpen(false); event.currentTarget.querySelector('input')?.focus(); }
           if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && suggestions.length) {
             event.preventDefault(); setSearchOpen(true);
@@ -184,6 +215,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
       <div className="flex min-h-12 items-center gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 focus-within:border-[#c7982f] focus-within:ring-2 focus-within:ring-[#c7982f]/15 lg:min-h-14">
         <Search size={19} className="shrink-0 text-[var(--color-accent-text)]" />
         <input type="search" role="combobox" aria-autocomplete="list" aria-controls={suggestionId} aria-expanded={searchOpen && !!filters.query.trim()} dir="auto" aria-label={t('shop.search')} placeholder={t('shop.hint')} value={filters.query} onChange={e => { update({ search: e.target.value || null }); setSearchOpen(true); }} className="min-w-0 flex-1 bg-transparent py-3 text-base outline-none" />
+        <VoiceInputButton onTranscript={text => { update({ search: text }); setSearchOpen(true); }} />
         {filters.query && <button type="button" aria-label={t('shop.clear')} onClick={() => update({ search: null })} className="flex h-11 w-11 items-center justify-center"><X size={17} /></button>}
       </div>
       {searchOpen && filters.query.trim() && <div className="boutique-search-suggestions z-30">
@@ -195,9 +227,9 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
         <button type="button" className="boutique-search-all" onClick={() => setSearchOpen(false)}>{t('boutique.allResults')} <ArrowUpRight size={16} /></button>
       </div>}
       </div>
-      <div className="flex gap-2">
-        <button type="button" onClick={openFilters} aria-haspopup={mobileControls ? 'dialog' : undefined} aria-expanded={mobileControls ? !!filterDraft : showFilters} aria-controls={mobileControls ? sheetFilterId : desktopFilterId} className="focus-ring flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-xs font-semibold"><SlidersHorizontal size={17} aria-hidden="true" /><span dir="auto">{t(mobileControls ? 'filters.title' : 'shop.filters')}</span>{chips.length > 0 && <span aria-label={t('filters.applied').replace('{count}', String(chips.length))} className="rounded-full bg-[#c7982f]/15 px-2 py-1">{chips.length}</span>}</button>
-        <button type="button" aria-pressed={filters.saved} onClick={() => update({ saved: filters.saved ? null : '1' })} className={`flex min-h-12 flex-1 items-center justify-center gap-2 rounded-2xl border px-4 text-xs font-semibold ${filters.saved ? 'border-[#c7982f] bg-[#c7982f]/10' : 'border-[var(--color-border)] bg-[var(--color-surface)]'}`}><Heart size={17} fill={filters.saved ? 'currentColor' : 'none'} />{t('shop.saved')} <span>{savedIds.length}</span></button>
+      <div className="flex flex-wrap gap-2">
+        <button data-catalog-filter-trigger="" type="button" onClick={openFilters} aria-haspopup={mobileControls ? 'dialog' : undefined} aria-expanded={mobileControls ? !!filterDraft : showFilters} aria-controls={mobileControls ? sheetFilterId : desktopFilterId} className="focus-ring flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-xs font-semibold"><SlidersHorizontal size={17} aria-hidden="true" /><span dir="auto">{t(mobileControls ? 'filters.title' : 'shop.filters')}</span>{chips.length > 0 && <span aria-label={t('filters.applied').replace('{count}', String(chips.length))} className="rounded-full bg-[#c7982f]/15 px-2 py-1">{chips.length}</span>}</button>
+        <button type="button" aria-pressed={filters.saved} onClick={() => update({ saved: filters.saved ? null : '1' })} className={`flex min-h-12 min-w-0 flex-1 basis-40 items-center justify-center gap-2 rounded-2xl border px-4 text-xs font-semibold ${filters.saved ? 'border-[#c7982f] bg-[#c7982f]/10' : 'border-[var(--color-border)] bg-[var(--color-surface)]'}`}><Heart size={17} className="shrink-0" fill={filters.saved ? 'currentColor' : 'none'} /><span className="min-w-0 [overflow-wrap:anywhere]">{t('shop.saved')}</span><span className="shrink-0">{savedIds.length}</span></button>
       </div>
     </div>
     <AnimatePresence initial={false}>{showFilters && <motion.div id={desktopFilterId} initial={reduceMotion ? false : { opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={reduceMotion ? undefined : { opacity: 0, height: 0 }} transition={{ duration: reduceMotion ? 0 : .2 }} className="hidden overflow-hidden lg:block">
@@ -221,19 +253,20 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
     <CatalogTools mode="compare" />
     {compareMessage && <p role="status" className="mb-4 text-xs">{compareMessage}</p>}
     {products.length ? <div id="plp-products-grid" className={listView ? 'grid grid-cols-1 gap-4 md:grid-cols-2' : 'grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:gap-6'}>{products.slice(0, visibleCount).map((product, index) => {
-      const weights = Object.keys(product.prices).filter(weight => Number.isFinite(product.prices[weight]) && product.prices[weight] > 0);
-      const weight = sizes[product.id] || weights[0];
+      const disabled = new Set(product.variants?.filter(variant => variant.available === false).map(variant => variant.label) || []);
+      const weights = Object.keys(product.prices).filter(weight => !disabled.has(weight) && Number.isFinite(product.prices[weight]) && product.prices[weight] > 0);
+      const weight = weights.includes(sizes[product.id]) ? sizes[product.id] : initialCardPortion(product, weights);
       const saved = savedIds.includes(product.id);
       const unit = product.quoteOnly ? null : unitPrice(product.prices[weight], weight || '');
       const supportsBargain = product.isBidBox || product.category === 'gift-boxes' || product.category === 'bundles' || product.isBundle;
-      return <React.Fragment key={product.id}>{category === 'all' && filters.sort === 'featured' && (index === 0 || products[index - 1].category !== product.category) && <h2 className="col-span-full mt-4 border-b border-[var(--color-border)] pb-3 font-serif text-2xl text-[var(--color-text-primary)]">{t(`shop.${product.category}`, getCategoryMeta(product.category)?.name || product.category)}</h2>}<article className={`group relative flex min-w-0 cursor-pointer flex-col rounded-[22px] border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5 transition-[border-color,box-shadow] duration-300 hover:border-[var(--color-border-accent)] hover:shadow-md motion-reduce:transition-none sm:p-4 ${listView ? "catalog-list-card" : ""}`} onClick={event => { if (!(event.target as HTMLElement).closest('a,button,input,select,textarea,[role="button"]')) navigate(`/product/${product.id}`); }}>
+      return <React.Fragment key={product.id}>{category === 'all' && filters.sort === 'featured' && (index === 0 || products[index - 1].category !== product.category) && <h2 className="col-span-full mt-4 border-b border-[var(--color-border)] pb-3 font-serif text-2xl text-[var(--color-text-primary)]">{categoryLabel(product.category)}</h2>}<article data-product-id={product.id} className={`table-catalog-card group relative flex min-w-0 cursor-pointer flex-col rounded-[22px] border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5 transition-[border-color,box-shadow] duration-300 hover:border-[var(--color-border-accent)] hover:shadow-md motion-reduce:transition-none sm:p-4 ${listView ? "catalog-list-card" : ""}`} onClick={event => { if (!(event.target as HTMLElement).closest('a,button,input,select,textarea,[role="button"]')) navigate(`/product/${product.id}`); }}>
         <ProductImageGallery product={product} />
         <div className="flex items-center justify-between gap-2 pt-3"><span className="truncate text-[9px] font-semibold uppercase tracking-[.14em] text-[var(--color-accent-text)]" dir="auto">{getLocalized(product, 'origin', language)}</span><button type="button" onClick={e => { e.stopPropagation(); setSaved(product.id, !saved); }} aria-label={saved ? t('shop.unsave') : t('shop.save')} aria-pressed={saved} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[var(--color-accent-text)] hover:bg-[#c7982f]/10"><Heart size={18} fill={saved ? 'currentColor' : 'none'} /></button></div>
         <Link to={`/product/${product.id}`} lang={language} dir="auto" className={`focus-ring mb-1 block min-w-0 max-w-full whitespace-normal break-words [overflow-wrap:anywhere] text-start font-medium ${language === 'ur' ? 'font-urdu text-[20px]' : language === 'ar' ? 'font-arabic text-[23px]' : 'font-serif text-[21px] leading-[1.25]'}`}><span>{getLocalized(product, 'name', language)}</span></Link>
         <div className="mb-3"><Link to={`/product/${product.id}`} className="focus-ring inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--color-accent-text)] hover:underline"><span>{t('dest.common.viewDetails', 'View Details')}</span></Link></div>
-        <div className="mt-auto">{product.quoteOnly ? <><p className="mb-4 text-xs leading-6 text-[var(--color-text-secondary)]">{t('catalog.quoteCopy')}</p><button type="button" onClick={e => { e.stopPropagation(); openCustomQuoteModal({ productId: product.id, variantLabel: weight, mode: 'filled', quantity: 50 }); }} className="focus-ring flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#1e3a2b] px-2 text-xs font-semibold text-[#fff8e9] transition-colors hover:bg-[#092e23]">{t('catalog.requestQuote')}<ArrowUpRight size={15} /></button></> : <>{product.isBundle ? <div className="mb-3"><span className="inline-flex rounded-full border border-[var(--color-border-accent)] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-wide text-[var(--color-accent-text)]">{t('catalog.bundle')}</span><p className="mt-2 text-xs leading-6 text-[var(--color-text-secondary)]" dir="auto">{getLocalized(product, 'contents', language)}</p></div> : <><label className="sr-only" htmlFor={`size-${product.id}`}>{t('shop.portion')}</label><select id={`size-${product.id}`} value={weight} onClick={e => e.stopPropagation()} onChange={e => { e.stopPropagation(); setSizes(prev => ({ ...prev, [product.id]: e.target.value })); }} className="mb-3 min-h-11 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-base sm:text-xs">{weights.map(size => <option key={size} value={size}>{size}</option>)}</select></>}
-          <p className="mb-4 font-serif text-xl font-semibold"><bdi>Rs. {(product.prices[weight] || 0).toLocaleString()}</bdi>{unit && <small className="mt-1 block font-sans text-[10px] font-normal text-[var(--color-text-secondary)]"><bdi>Rs. {unit.amount.toLocaleString()} / {unit.unit}</bdi></small>}</p>
-          <button type="button" onClick={e => { e.stopPropagation(); onAddToCart ? onAddToCart(product.id, weight) : addToCart(product, weight, 1); }} className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#1e3a2b] px-2 text-xs font-semibold text-[#fff8e9] transition-colors hover:bg-[#092e23]"><ShoppingBag size={15} />{t('addToCart')}</button>
+        <div className="mt-auto">{product.quoteOnly ? <><p className="mb-4 text-xs leading-6 text-[var(--color-text-secondary)]">{t('catalog.quoteCopy')}</p><button type="button" onClick={e => { e.stopPropagation(); openCustomQuoteModal({ productId: product.id, variantLabel: weight, mode: 'filled', quantity: 50 }); }} className="focus-ring flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#1e3a2b] px-2 text-xs font-semibold text-[#fff8e9] transition-colors hover:bg-[#092e23]">{t('catalog.requestQuote')}<ArrowUpRight size={15} /></button></> : <>{product.isBundle ? <div className="mb-3"><span className="inline-flex rounded-full border border-[var(--color-border-accent)] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-wide text-[var(--color-accent-text)]">{t('catalog.bundle')}</span><p className="mt-2 text-xs leading-6 text-[var(--color-text-secondary)]" dir="auto">{!readBundleFormat(product) && getLocalized(product, 'contents', language)}</p><BundleContentsSummary product={product} /></div> : <><label className="sr-only" htmlFor={`size-${product.id}`}>{t('shop.portion')}</label><select id={`size-${product.id}`} value={weight} onClick={e => e.stopPropagation()} onChange={e => { e.stopPropagation(); setSizes(prev => ({ ...prev, [product.id]: e.target.value })); }} className="mb-3 min-h-11 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-base sm:text-xs">{weights.map(size => <option key={size} value={size}>{size}</option>)}</select></>}
+          <p className="mb-4 font-serif text-xl font-semibold"><bdi>{weight ? `Rs. ${product.prices[weight].toLocaleString()}` : t('outOfStock')}</bdi>{unit && <small className="mt-1 block font-sans text-[10px] font-normal text-[var(--color-text-secondary)]"><bdi>Rs. {unit.amount.toLocaleString()} / {unit.unit}</bdi></small>}</p>
+          <CartAddButton disabled={!weight} productId={product.id} portion={weight || ''} onAdd={() => { onAddToCart ? onAddToCart(product.id, weight) : addToCart(product, weight, 1); }} className="focus-ring flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#1e3a2b] px-2 text-xs font-semibold text-[#fff8e9] transition-colors hover:bg-[#092e23]" />
           {supportsBargain && <button type="button" onClick={e => { e.stopPropagation(); openCustomQuoteModal({ productId: product.id, variantLabel: weight, mode: weight?.startsWith('Empty') ? 'empty' : 'filled', quantity: 50 }); }} className="mt-2 flex min-h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-[#c7982f]/50 bg-[#c7982f]/10 px-2 text-[11px] font-bold text-[var(--color-accent-text)] transition-colors hover:bg-[#c7982f]/20">Request Custom Quote / Bargain</button>}</>}
           <div className="mt-2 grid grid-cols-2 gap-2"><button type="button" aria-pressed={compareIds.includes(product.id)} onClick={e => { e.stopPropagation(); const added = toggleCompare(product.id); setCompareMessage(added ? t('shop.compareUpdated') : t('shop.compareFull')); }} className="focus-ring flex min-h-11 w-full items-center justify-center gap-2 rounded-xl text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-base)]"><Scale size={15} />{t(compareIds.includes(product.id) ? 'shop.compared' : 'shop.compareAdd')} ({compareIds.length}/3)</button>
           {onQuickView && <button type="button" onClick={e => { e.stopPropagation(); onQuickView(product); }} className="focus-ring flex min-h-11 w-full items-center justify-center gap-2 rounded-xl text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-base)] hover:text-[var(--color-accent-text)]"><Eye size={15} />{t('shop.quick')}</button>}</div>

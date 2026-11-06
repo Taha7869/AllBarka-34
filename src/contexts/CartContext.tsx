@@ -1,5 +1,5 @@
 import { useCatalogProducts } from '../contexts/CatalogContext';
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { CartItem, Product } from '../types';
 import { PRODUCTS, getProductImage } from '../data/products';
 import { useToast } from '../components/ToastManager';
@@ -11,6 +11,7 @@ import { useLanguage } from './LanguageContext';
 import { calculateOrderSummary, isLahoreCity } from '../lib/pricing';
 import { readCheckoutDraft } from '../lib/checkoutPreferences';
 import { resolveHamper, hamperCartKey, type HamperConfiguration } from '../lib/hamperCatalog';
+import { recordFunnelEvent } from '../lib/funnelTelemetry';
 
 const CART_STORAGE_KEY = 'allbarka_cart_v1';
 const DELIVERY_CITY_KEY = 'allbarka_delivery_city';
@@ -61,6 +62,16 @@ export type AddToCartInput =
       hamperConfiguration?: HamperConfiguration;
     };
 
+export interface AddToCartResult {
+  accepted: boolean;
+  productId: string;
+  weight: string;
+  requestedQuantity: number;
+  acceptedQuantity: number;
+  capped: boolean;
+  reason?: 'portion_unavailable' | 'quantity_capped' | 'unknown_product';
+}
+
 export interface CartContextValue {
   cartItems: CartItem[];
   subtotal: number;
@@ -84,7 +95,7 @@ export interface CartContextValue {
     quantity?: number,
     customUnitPrice?: number,
     options?: { silent?: boolean; openCart?: boolean }
-  ) => void;
+  ) => AddToCartResult | void;
   removeFromCart: (cartItemId: string) => void;
   updateQuantity: (cartItemId: string, newQty: number) => void;
   clearCart: () => void;
@@ -122,12 +133,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (!item || typeof item !== 'object') return [];
             const identity = resolveCartIdentity(item, PRODUCTS);
             if (!identity) return [];
-            const hamper = identity.productId === 'custom-hamper' ? resolveHamper(item.hamperConfiguration) : null;
+            const hamper = identity.productId === 'custom-hamper' ? resolveHamper(item.hamperConfiguration, PRODUCTS) : null;
             const rawWeight = hamper?.portion || resolveCartPortion(identity.product, item.selectedWeight || identity.portion);
             if (!rawWeight) return [];
             const rawProductId = identity.productId;
             const compositeId = hamper ? hamperCartKey(hamper.configuration) : `${rawProductId}-${rawWeight}`;
-            const unitPrice = hamper?.unitPrice ?? resolveCartUnitPrice(identity.product, rawWeight, item.unitPrice ?? item.price ?? 0);
+            const unitPrice = (hamper ? (hamper.estimatedTotalPkr != null ? hamper.unitPrice : null) : null) ?? resolveCartUnitPrice(identity.product, rawWeight, item.unitPrice ?? item.price ?? 0);
             return [{
               id: compositeId,
               productId: rawProductId,
@@ -151,6 +162,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     return [];
   });
+  const cartItemsRef = useRef<CartItem[]>(cartItems);
 
   // Sync with localStorage on changes
   // Keep an already-open bag in step with merchant prices while preserving unavailable lines for review.
@@ -162,7 +174,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const hamper = item.productId === 'custom-hamper' ? resolveHamper(item.hamperConfiguration, PRODUCTS) : null;
         const product = identity?.product;
         if (!hamper && (!product || product.active === false || product.quoteOnly)) return item;
-        const price = hamper?.unitPrice ?? (product ? resolveCartUnitPrice(product, item.selectedWeight, 0) : 0);
+        const price = (hamper ? (hamper.estimatedTotalPkr != null ? hamper.unitPrice : null) : null) ?? (product ? resolveCartUnitPrice(product, item.selectedWeight, 0) : 0);
         if (price <= 0 || price === item.unitPrice) return item;
         changed = true;
         return { ...item, unitPrice: price, price };
@@ -173,6 +185,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     try {
+      cartItemsRef.current = cartItems;
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
     } catch (e) {
       console.warn('Failed to save cart to localStorage:', e);
@@ -221,16 +234,46 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       quantity?: number,
       customUnitPrice?: number,
       options?: { silent?: boolean; openCart?: boolean }
-    ) => {
+    ): AddToCartResult => {
       const identity = resolveCartIdentity(productOrItem, PRODUCTS);
-      if (!identity) return;
+      if (!identity) {
+        return {
+          accepted: false,
+          productId: typeof productOrItem === 'string' ? productOrItem : (productOrItem as any)?.id || '',
+          weight: weight || '',
+          requestedQuantity: quantity || 1,
+          acceptedQuantity: 0,
+          capped: false,
+          reason: 'unknown_product',
+        };
+      }
       const rawProdId = identity.productId;
-      const hamper = rawProdId === 'custom-hamper' ? resolveHamper((productOrItem as CartItem).hamperConfiguration) : null;
+      const hamper = rawProdId === 'custom-hamper' ? resolveHamper((productOrItem as CartItem).hamperConfiguration, PRODUCTS) : null;
+      if (rawProdId === 'custom-hamper' && !hamper) {
+        addToast(t('cart.portionUnavailable'), 'error');
+        return {
+          accepted: false,
+          productId: rawProdId,
+          weight: weight || '',
+          requestedQuantity: quantity || 1,
+          acceptedQuantity: 0,
+          capped: false,
+          reason: 'portion_unavailable',
+        };
+      }
       const fullProd = hamper ? { ...hamper, id: 'custom-hamper' } : identity.product || (productOrItem as any);
       const selectedWeight = hamper?.portion || resolveCartPortion(identity.product, weight || (productOrItem as any).selectedWeight || identity.portion);
       if (!selectedWeight) {
         addToast(t('cart.portionUnavailable', 'This portion is unavailable. Please choose another size.'), 'error');
-        return;
+        return {
+          accepted: false,
+          productId: rawProdId,
+          weight: weight || '',
+          requestedQuantity: quantity || 1,
+          acceptedQuantity: 0,
+          capped: false,
+          reason: 'portion_unavailable',
+        };
       }
       const compositeId = hamper ? hamperCartKey(hamper.configuration) : `${rawProdId}-${selectedWeight}`;
 
@@ -249,27 +292,55 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       const isPackaging = identity.product ? isPackagingProduct(identity.product) : false;
       const unitPrice = hamper?.unitPrice ?? resolveCartUnitPrice(identity.product, selectedWeight, rawPrice);
-      const cleanQty = resolveCartQuantity((productOrItem as any).quantity, quantity, identity.product, selectedWeight);
+
+      // Parse normalized requested quantity WITHOUT pre-clamping to maxUnits
+      const rawRequested = quantity !== undefined ? quantity : ((productOrItem as any)?.quantity ?? 1);
+      const parsedRequested = typeof rawRequested === 'number' || typeof rawRequested === 'string' ? Number(rawRequested) : NaN;
+      const requestedQuantity = Number.isFinite(parsedRequested) ? Math.floor(parsedRequested) : 1;
+
+      const minUnits = isPackaging && identity.product
+        ? calculateMinOrderQuantityUnits(identity.product, selectedWeight)
+        : 1;
+      const maxUnits = isPackaging ? 10000 : 50;
+      const normalizedRequested = Math.max(minUnits, requestedQuantity);
+
       const imageSrc = hamper?.image || (identity.product ? getProductImage(identity.product) : ((productOrItem as any).image || ''));
       const isWholesale = !identity.product && typeof (productOrItem as any).wholesale === 'boolean'
         ? (productOrItem as any).wholesale
         : false;
 
-      setCartItems((prev) => {
-        const existingIndex = prev.findIndex((item) => item.id === compositeId);
-        if (existingIndex > -1) {
-          const next = [...prev];
-          const maxUnits = isPackaging ? 10000 : 50;
-          const newQty = Math.min(maxUnits, next[existingIndex].quantity + cleanQty);
-          next[existingIndex] = {
-            ...next[existingIndex],
-            quantity: newQty,
-            unitPrice: unitPrice || next[existingIndex].unitPrice,
-            price: unitPrice || next[existingIndex].price,
-          };
-          return next;
-        }
+      // Reliable accepted quantity determination using current synchronous cart reference
+      const existingItem = cartItemsRef.current.find((item) => item.id === compositeId);
+      const existingQty = existingItem ? existingItem.quantity : 0;
+      const remainingCapacity = Math.max(0, maxUnits - existingQty);
+      const acceptedQty = Math.min(remainingCapacity, normalizedRequested);
+      const isCapped = normalizedRequested > acceptedQty;
 
+      if (acceptedQty <= 0) {
+        addToast(t('cart.limitReached', 'Maximum allowable cart quantity (50 units) reached for this selection.'), 'error');
+        return {
+          accepted: false,
+          productId: rawProdId,
+          weight: selectedWeight,
+          requestedQuantity: normalizedRequested,
+          acceptedQuantity: 0,
+          capped: true,
+          reason: 'quantity_capped',
+        };
+      }
+
+      const existingIndex = cartItemsRef.current.findIndex((item) => item.id === compositeId);
+      let updatedCart: CartItem[];
+      if (existingIndex > -1) {
+        updatedCart = [...cartItemsRef.current];
+        const newQty = Math.min(maxUnits, updatedCart[existingIndex].quantity + acceptedQty);
+        updatedCart[existingIndex] = {
+          ...updatedCart[existingIndex],
+          quantity: newQty,
+          unitPrice: unitPrice || updatedCart[existingIndex].unitPrice,
+          price: unitPrice || updatedCart[existingIndex].price,
+        };
+      } else {
         const newItem: CartItem = {
           id: compositeId,
           productId: rawProdId,
@@ -281,20 +352,39 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           selectedWeight,
           unitPrice,
           price: unitPrice,
-          quantity: cleanQty,
+          quantity: acceptedQty,
           wholesale: isWholesale,
           ...(hamper ? { hamperConfiguration: hamper.configuration } : {}),
         };
-        return [...prev, newItem];
-      });
+        updatedCart = [...cartItemsRef.current, newItem];
+      }
+      cartItemsRef.current = updatedCart;
+      setCartItems(updatedCart);
+
+      recordFunnelEvent('add_to_cart', { productId: rawProdId, quantity: acceptedQty });
 
       // Subtle toast notification & auto-open cart drawer
-      if (!options?.silent) addToast(`${fullProd[`name_${language}`] || fullProd.name_en || 'Item'} (${selectedWeight}) — ${t('cart.addedToast')}`, 'success');
+      if (!options?.silent) {
+        const toastMsg = isCapped
+          ? `${fullProd[`name_${language}`] || fullProd.name_en || 'Item'} (${selectedWeight}) — ${acceptedQty} added (capped at 50-unit limit)`
+          : `${fullProd[`name_${language}`] || fullProd.name_en || 'Item'} (${selectedWeight}) — ${t('cart.addedToast')}`;
+        addToast(toastMsg, isCapped ? 'error' : 'success');
+      }
       if (options?.openCart !== false) {
         setIsCartPulsing(true);
         setTimeout(() => setIsCartPulsing(false), 800);
         setIsCartOpen(true);
       }
+
+      return {
+        accepted: true,
+        productId: rawProdId,
+        weight: selectedWeight,
+        requestedQuantity: normalizedRequested,
+        acceptedQuantity: acceptedQty,
+        capped: isCapped,
+        reason: isCapped ? 'quantity_capped' : undefined,
+      };
     },
     [addToast, t, language, PRODUCTS]
   );
@@ -303,7 +393,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
    * Remove item from cart by composite ID (or by legacy ID match).
    */
   const removeFromCart = useCallback((cartItemId: string) => {
-    setCartItems((prev) => prev.filter((item) => item.id !== cartItemId && `${item.productId}-${item.selectedWeight}` !== cartItemId));
+    setCartItems((prev) => {
+      const next = prev.filter((item) => item.id !== cartItemId && `${item.productId}-${item.selectedWeight}` !== cartItemId);
+      cartItemsRef.current = next;
+      return next;
+    });
   }, []);
 
   /**
@@ -314,10 +408,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateQuantity = useCallback((cartItemId: string, newQty: number) => {
     setCartItems((prev) => {
       if (newQty <= 0) {
-        return prev.filter((item) => item.id !== cartItemId && `${item.productId}-${item.selectedWeight}` !== cartItemId);
+        const next = prev.filter((item) => item.id !== cartItemId && `${item.productId}-${item.selectedWeight}` !== cartItemId);
+        cartItemsRef.current = next;
+        return next;
       }
       if (!Number.isFinite(newQty)) return prev;
-      return prev.map((item) => {
+      const next = prev.map((item) => {
         if (item.id === cartItemId || `${item.productId}-${item.selectedWeight}` === cartItemId) {
           const identity = resolveCartIdentity(item, PRODUCTS);
           const isPackaging = identity?.product ? isPackagingProduct(identity.product) : false;
@@ -330,6 +426,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         return item;
       });
+      cartItemsRef.current = next;
+      return next;
     });
   }, [PRODUCTS]);
 
@@ -337,6 +435,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
    * Clear entire cart.
    */
   const clearCart = useCallback(() => {
+    cartItemsRef.current = [];
     setCartItems([]);
     try {
       localStorage.removeItem(CART_STORAGE_KEY);

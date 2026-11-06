@@ -147,7 +147,7 @@ export function resolveCelebrationCardVariant(
         filledKeys.has(label) ||
         (!/^empty\b/i.test(label) && /\bfilled\b|\bassorted\b|\bwith\s+dry\s+fruits\b/i.test(label));
       if (!isFilled) {
-        const qty = parsePiecesPerPack(label);
+        const qty = parsePiecesPerPack(label, product);
         const unitPrice = Math.round((price / qty) * 100) / 100;
         emptyTiers.push({
           qty,
@@ -167,7 +167,7 @@ export function resolveCelebrationCardVariant(
           filledKeys.has(v.label) ||
           (!/^empty\b/i.test(v.label) && /\bfilled\b|\bassorted\b|\bwith\s+dry\s+fruits\b/i.test(v.label));
         if (!isFilled) {
-          const qty = parsePiecesPerPack(v.label);
+          const qty = parsePiecesPerPack(v.label, product);
           const unitPrice = Math.round((v.price / qty) * 100) / 100;
           emptyTiers.push({
             qty,
@@ -260,7 +260,7 @@ export function resolveCelebrationCardVariant(
       const rawIdx = typeof requestedTierIndex === 'number' && Number.isInteger(requestedTierIndex) ? requestedTierIndex : 0;
       const safeIdx = Math.max(0, Math.min(rawIdx, filledOptions.length - 1));
       const option = filledOptions[safeIdx];
-      const pieces = parsePiecesPerPack(option.variantKey);
+      const pieces = parsePiecesPerPack(option.variantKey, product);
       const unitPrice = pieces > 1 ? Math.round((option.price / pieces) * 100) / 100 : option.price;
       const packPrice = option.price;
       let moq = 1;

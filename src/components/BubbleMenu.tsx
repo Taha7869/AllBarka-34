@@ -1,3 +1,5 @@
+import {useStorefrontContent} from '../contexts/StorefrontContentContext';
+import {contentNavigation} from '../lib/contentPresentation';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronDown, Gift, MessageCircle, Sparkles } from 'lucide-react';
@@ -85,7 +87,9 @@ export default function BubbleMenu({
   className = '',
   showFoodRow = false,
 }: BubbleMenuProps) {
-  const { t, isRtl } = useLanguage();
+  const { t, isRtl, language } = useLanguage();
+  const content=useStorefrontContent();
+  const configuredNavigation=contentNavigation(MAIN_NAV_ITEMS,content,language);
   const location = useLocation();
 
   const [openId, setOpenId] = useState<string | null>(null);
@@ -175,7 +179,8 @@ export default function BubbleMenu({
 
   // Resolve active path / item
   const currentPath = location.pathname;
-  const primaryActiveId = getPrimaryActiveSectionId(location.pathname, location.search, activeItem);
+  const customActive=content.navigation.find(x=>x.visible&&x.path===location.pathname+location.search)?.id;
+  const primaryActiveId = customActive || getPrimaryActiveSectionId(location.pathname, location.search, activeItem);
 
   const isMainItemActive = (item: NavItem): boolean => {
     return primaryActiveId === item.id;
@@ -221,7 +226,7 @@ export default function BubbleMenu({
           path: drop.path,
         })),
       }))
-    : MAIN_NAV_ITEMS;
+    : configuredNavigation;
 
   return (
     <nav
@@ -229,7 +234,7 @@ export default function BubbleMenu({
       aria-label={t('nav.main', 'Main navigation')}
       onBlur={handleContainerBlur}
       dir={isRtl ? 'rtl' : 'ltr'}
-      className={`pointer-events-auto flex flex-col items-center gap-1 transition-colors duration-300 ${className}`}
+      className={`boutique-navigation pointer-events-auto flex flex-col items-center gap-1 transition-colors duration-300 ${className}`}
     >
       {/* LEVEL 1: Single Clean Desktop Navigation Row */}
       <div className="flex items-center gap-3 xl:gap-5 px-2 py-1 bg-transparent dark:bg-transparent">

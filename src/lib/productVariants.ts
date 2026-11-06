@@ -1,5 +1,6 @@
 import type { Product } from '../types';
 import { ValidationError } from './validationError';
+import { resolveCommerceQuantity } from './productCommerce';
 
 export const MIN_CUSTOM_WEIGHT_G = 100;
 export const MAX_CUSTOM_WEIGHT_G = 5000;
@@ -15,6 +16,9 @@ export interface ProductVariant {
 
 /** Custom portions are an explicit catalogue capability, never a client flag. */
 export function supportsCustomWeight(product: Product): boolean {
+  if (product.status === 'draft' || product.status === 'archived') return false;
+  if (product.commerce) return product.active !== false && product.quoteOnly !== true
+    && product.orderMode !== 'inquiry_quote' && product.commerce.quantityMode !== 'fixed' && !!product.commerce.custom;
   return product.active !== false && product.quoteOnly !== true && product.allowCustomWeight === true
     && product.isBundle !== true && !['oils', 'bundles', 'gift-boxes'].includes(product.category)
     && typeof product.pricePer100g === 'number' && Number.isFinite(product.pricePer100g) && product.pricePer100g > 0;
@@ -47,6 +51,7 @@ export function resolveCustomWeight(product: Product, value: unknown): ProductVa
   if (!supportsCustomWeight(product)) {
     throw new ValidationError('Custom weight is unavailable for this selection.', 'CUSTOM_WEIGHT_UNAVAILABLE');
   }
+  if (product.commerce) return resolveCommerceQuantity(product, value);
   const grams = parseCustomGrams(value);
   const minimum = Math.max(MIN_CUSTOM_WEIGHT_G, product.minCustomWeightG ?? MIN_CUSTOM_WEIGHT_G);
   const maximum = Math.min(MAX_CUSTOM_WEIGHT_G, product.maxCustomWeightG ?? MAX_CUSTOM_WEIGHT_G);
@@ -81,11 +86,13 @@ function fixedShippingWeight(product: Product, label: string): number | null {
 
 /** Resolve a supported canonical label; unknown labels never borrow another price. */
 export function resolveProductVariant(product: Product, value: unknown): ProductVariant | null {
-  if (product.active === false || product.quoteOnly === true || typeof value !== 'string') return null;
+  if (product.active === false || product.quoteOnly === true || product.status === 'draft' || product.status === 'archived' || typeof value !== 'string') return null;
   const label = value.trim();
   if (/^Custom\s+/i.test(label)) {
     try { return resolveCustomWeight(product, label); } catch { return null; }
   }
+  if (product.commerce?.quantityMode === 'custom') return null;
+  if (product.variants?.some(variant => variant.label === label && variant.available === false)) return null;
   if (!Object.hasOwn(product.prices || {}, label)) return null;
   const price = product.prices[label];
   if (!Number.isFinite(price) || price <= 0) return null;

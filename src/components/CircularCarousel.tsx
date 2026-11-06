@@ -1,8 +1,9 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useReducedMotion } from 'motion/react';
+
 import type { Product } from '../types';
 import ProductCard from './ProductCard';
 import { getLocalized } from '../utils/localize';

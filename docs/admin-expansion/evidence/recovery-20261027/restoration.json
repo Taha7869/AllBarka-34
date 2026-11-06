@@ -1,0 +1,13 @@
+{
+  "upstream": "81eedbfe0b09cdd29ba599f4733968a05a60fdbe",
+  "remoteBlobCount": 941,
+  "verifiedLocalBlobs": 937,
+  "mismatches": [],
+  "notMaterialized": [
+    "docs/artifacts/stage5a_homepage_desktop_light.png",
+    "docs/artifacts/stage5b_deals_desktop_light.png",
+    "docs/artifacts/stage5b_gifting_desktop_light.png",
+    "docs/artifacts/stage5b_occasions_desktop_light.png"
+  ],
+  "reason": "GitHub contents API returns empty content for four historical PNGs above 1 MB; blob readers reject non-UTF8. They remain in remote base tree."
+}

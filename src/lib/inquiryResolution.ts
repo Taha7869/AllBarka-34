@@ -1,3 +1,5 @@
+import { calculateFilledGiftEstimate, resolveFilledRecipe, resolveEmptyPackagingUnitPrice, normalizeNetFillingGrams, isValidNetFillingGrams } from './filledGiftPricing';
+import { resolveHamper, HAMPER_BOXES, HamperBox, HamperConfiguration, HAMPER_PORTION_GRAMS } from './hamperCatalog';
 import type { Product } from '../types';
 import { calculatePackagingMoq, parsePiecesPerPack, isPackagingProduct } from './packagingMoq';
 
@@ -7,6 +9,9 @@ export interface ResolveInquiryParams {
   requestedVariantLabel?: string | null;
   boxMode: 'empty' | 'filled' | 'custom';
   quantity: number;
+  hamperConfiguration?: any;
+  hamperBoxes?: HamperBox[];
+  netFillingGrams?: number | null;
 }
 
 export interface InquiryVariantResolution {
@@ -26,6 +31,9 @@ export interface InquiryVariantResolution {
   moqRequired: number | null;
   minPacksRequired: number | null;
   isTabarruk: boolean;
+  hamperConfiguration?: HamperConfiguration;
+  estimatedTotalPkr?: number | null;
+  netFillingGrams?: number | null;
 }
 
 /**
@@ -73,11 +81,12 @@ export function sanitizePublicInquiryInput(raw: any): Record<string, any> {
     'customerName', 'name', 'phone', 'customerPhone', 'contact', 'email', 'city',
     'type', 'source', 'productId', 'productName', 'boxId', 'boxName', 'boxMode', 'mode',
     'quantity', 'estimatedQuantity', 'standardPrice', 'referenceUnitPrice',
-    'offeredPrice', 'targetPricePkr', 'customerOfferedRate', 'eventType', 'occasion',
+    'giftRecipient', 'offeredPrice', 'targetPricePkr', 'customerOfferedRate', 'eventType', 'occasion',
     'customPrintText', 'customPrinting', 'packagingVariant', 'variantLabel', 'portion', 'targetEventDate',
     'deliveryCity', 'notes', 'message', 'customHamperNotes', 'metadata', 'topic',
     'budgetType', 'preferredFillings', 'customFillingsNotes', 'monogramText', 'cardMessage',
-    'leadTimeNoticeAcknowledged', 'submissionKey', 'idempotencyKey'
+    'leadTimeNoticeAcknowledged', 'submissionKey', 'idempotencyKey', 'hamperConfiguration', 'customHamperConfig',
+    'netFillingGrams', 'netWeightGrams', 'fillingWeightGrams', 'netWeight'
   ]);
   const sanitized: Record<string, any> = {};
   for (const [key, val] of Object.entries(raw)) {
@@ -100,7 +109,99 @@ export function sanitizePublicInquiryInput(raw: any): Record<string, any> {
  * 5. Default selection is permitted ONLY when the customer supplied no variant, and must follow valid available variants and selected mode.
  */
 export function resolveInquiryProductVariant(params: ResolveInquiryParams): InquiryVariantResolution {
-  const { catalog, productId, requestedVariantLabel, boxMode, quantity } = params;
+  const { catalog, productId, requestedVariantLabel, boxMode, quantity, hamperConfiguration, hamperBoxes, netFillingGrams } = params;
+  if (productId === 'custom-hamper' || productId?.startsWith('custom-hamper:') || hamperConfiguration) {
+    if (hamperConfiguration) {
+      // Validate that top-level netFillingGrams and hamperConfiguration.netFillingGrams do not conflict
+      const rawNested = (hamperConfiguration as any).netFillingGrams;
+      const nestedWeight = rawNested !== undefined && rawNested !== null && rawNested !== ''
+        ? normalizeNetFillingGrams(rawNested)
+        : null;
+      const rawTop = netFillingGrams as unknown;
+      const topWeight = rawTop !== undefined && rawTop !== null && rawTop !== ''
+        ? normalizeNetFillingGrams(rawTop)
+        : null;
+
+      if (nestedWeight !== null && topWeight !== null && nestedWeight !== topWeight) {
+        // Conflicting weights: fail closed as unresolved unpriced quote-required
+        return {
+          productId: 'custom-hamper',
+          productName: 'Custom Luxury Hamper',
+          isVerifiedCatalogProduct: false,
+          packagingVariant: requestedVariantLabel ? String(requestedVariantLabel).slice(0, 80) : 'Custom Hamper',
+          unresolvedVariant: true,
+          quantityUnit: 'pieces',
+          piecesPerPack: 1,
+          standardPrice: null,
+          packPrice: null,
+          perPiecePrice: null,
+          estimatedTotalPkr: null,
+          totalPieces: quantity,
+          requiresTeamQuote: true,
+          belowMoq: false,
+          moqRequired: null,
+          minPacksRequired: null,
+          isTabarruk: false,
+          netFillingGrams: null,
+        };
+      }
+
+      const effectiveNetWeight = topWeight ?? nestedWeight ?? null;
+      const effectiveHamperConfig: HamperConfiguration = {
+        ...hamperConfiguration,
+        ...(effectiveNetWeight != null ? { netFillingGrams: effectiveNetWeight } : {}),
+      };
+      if (effectiveNetWeight == null) {
+        delete (effectiveHamperConfig as any).netFillingGrams;
+      }
+
+      const resolvedHamper = resolveHamper(effectiveHamperConfig, catalog, hamperBoxes ?? [], quantity);
+      if (resolvedHamper) {
+        const isEstimated = resolvedHamper.estimatedTotalPkr != null;
+        return {
+          productId: 'custom-hamper',
+          productName: resolvedHamper.name_en,
+          isVerifiedCatalogProduct: true,
+          packagingVariant: resolvedHamper.portion,
+          unresolvedVariant: false,
+          quantityUnit: 'pieces',
+          piecesPerPack: 1,
+          standardPrice: isEstimated ? resolvedHamper.unitPrice : null,
+          packPrice: isEstimated ? resolvedHamper.unitPrice : null,
+          perPiecePrice: isEstimated ? resolvedHamper.unitPrice : null,
+          estimatedTotalPkr: isEstimated ? resolvedHamper.estimatedTotalPkr : null,
+          totalPieces: quantity,
+          requiresTeamQuote: !isEstimated,
+          belowMoq: false,
+          moqRequired: null,
+          minPacksRequired: null,
+          isTabarruk: false,
+          hamperConfiguration: resolvedHamper.configuration,
+          netFillingGrams: resolvedHamper.configuration.netFillingGrams ?? null,
+        };
+      }
+    }
+    return {
+      productId: 'custom-hamper',
+      productName: 'Custom Luxury Hamper',
+      isVerifiedCatalogProduct: false,
+      packagingVariant: requestedVariantLabel ? String(requestedVariantLabel).slice(0, 80) : 'Custom Hamper',
+      unresolvedVariant: true,
+      quantityUnit: 'pieces',
+      piecesPerPack: 1,
+      standardPrice: null,
+      packPrice: null,
+      perPiecePrice: null,
+      estimatedTotalPkr: null,
+      totalPieces: quantity,
+      requiresTeamQuote: true,
+      belowMoq: false,
+      moqRequired: null,
+      minPacksRequired: null,
+      isTabarruk: false,
+      netFillingGrams: netFillingGrams ?? null,
+    };
+  }
   const catalogProduct = catalog.find(p => p.id === productId);
 
   if (!catalogProduct) {
@@ -121,6 +222,7 @@ export function resolveInquiryProductVariant(params: ResolveInquiryParams): Inqu
       moqRequired: null,
       minPacksRequired: null,
       isTabarruk: String(productId || '').toLowerCase().includes('tabarruk'),
+      netFillingGrams: netFillingGrams ?? null,
     };
   }
 
@@ -195,7 +297,7 @@ export function resolveInquiryProductVariant(params: ResolveInquiryParams): Inqu
   }
 
   const selectedLabel = requestedLabel ? requestedLabel : (matchedVariant ? matchedVariant.label : null);
-  const piecesPerPack = parsePiecesPerPack(selectedLabel);
+  const piecesPerPack = parsePiecesPerPack(selectedLabel, catalogProduct);
   const totalPieces = quantity * piecesPerPack;
 
   // 3. Define quantity units explicitly: packs vs pieces vs sets
@@ -211,6 +313,7 @@ export function resolveInquiryProductVariant(params: ResolveInquiryParams): Inqu
   let packPrice: number | null = null;
   let perPiecePrice: number | null = null;
   let requiresTeamQuote = false;
+  let authoritativeEstimatedTotalPkr: number | null = null;
 
   if (!isPublicActive || isQuoteOnly || unresolvedVariant) {
     requiresTeamQuote = true;
@@ -223,15 +326,48 @@ export function resolveInquiryProductVariant(params: ResolveInquiryParams): Inqu
       standardPrice = matchedVariant.price;
       packPrice = matchedVariant.price;
       perPiecePrice = Math.round((matchedVariant.price / piecesPerPack) * 100) / 100;
+      authoritativeEstimatedTotalPkr = standardPrice * quantity;
     } else {
       requiresTeamQuote = true;
     }
   } else {
-    // Filled mode: must not use an empty box price
+    // Filled mode: recompute estimate server-side using shared estimator
     if (matchedVariant && matchedVariant.isFilled) {
-      standardPrice = matchedVariant.price;
-      packPrice = matchedVariant.price;
-      perPiecePrice = Math.round((matchedVariant.price / piecesPerPack) * 100) / 100;
+      const recipe = resolveFilledRecipe(catalogProduct, matchedVariant.label, netFillingGrams);
+      if (recipe) {
+        const emptyUnitPrice = resolveEmptyPackagingUnitPrice(catalogProduct, quantity);
+        const est = calculateFilledGiftEstimate({
+          packagingProduct: catalogProduct,
+          packagingUnitPrice: emptyUnitPrice ?? undefined,
+          recipe,
+          expectedNetFillingGrams: netFillingGrams,
+          catalogProducts: catalog,
+          requestedBoxes: quantity,
+        });
+        if (est.isAvailable && est.estimatedTotalPkr != null) {
+          // Documented precision policy:
+          // standardPrice is the nominal unit rate for display (half-up integer PKR rounding).
+          // However, the downstream total (authoritativeEstimatedTotalPkr) preserves the shared estimator's
+          // exact total directly without drift from multiplying a rounded unit rate by box quantity.
+          const perBox = Math.round(est.estimatedTotalPkr / quantity);
+          standardPrice = perBox;
+          packPrice = perBox;
+          perPiecePrice = perBox;
+          requiresTeamQuote = false;
+          authoritativeEstimatedTotalPkr = est.estimatedTotalPkr;
+        } else {
+          standardPrice = null;
+          packPrice = null;
+          perPiecePrice = null;
+          requiresTeamQuote = true;
+        }
+      } else {
+        // Missing recipe: remains unpriced, including known legacy packaging IDs!
+        standardPrice = null;
+        packPrice = null;
+        perPiecePrice = null;
+        requiresTeamQuote = true;
+      }
     } else {
       requiresTeamQuote = true;
     }
@@ -272,5 +408,7 @@ export function resolveInquiryProductVariant(params: ResolveInquiryParams): Inqu
     moqRequired,
     minPacksRequired,
     isTabarruk,
+    estimatedTotalPkr: authoritativeEstimatedTotalPkr ?? (standardPrice != null ? standardPrice * quantity : null),
+    netFillingGrams: netFillingGrams ?? null,
   };
 }

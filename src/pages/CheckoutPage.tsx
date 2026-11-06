@@ -1,3 +1,4 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import { getLocalized } from '../utils/localize';
 import React, { useState, useEffect } from 'react';
@@ -6,13 +7,15 @@ import { readCheckoutDraft, CHECKOUT_DRAFT_KEY } from '../lib/checkoutPreference
 import { acceptedCheckoutReceipt, appliedPromotionMessage } from '../lib/checkoutReceipt';
 import { checkoutFingerprint, checkoutQuoteKey, getCheckoutAuthToken, CheckoutAuthenticationError, clearCheckoutAttempt, persistCheckoutAttempt, readCheckoutAttempt, resolveCheckoutAttempt, writeCheckoutSession, type CheckoutAttempt } from '../lib/checkoutAttempt';
 import { checkoutReliabilityTranslations } from '../contexts/checkoutReliabilityTranslations';
+import CartItemPersonalization from '../components/CartItemPersonalization';
 import AddressBook from '../components/AddressBook';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   X,
   CheckCircle,
+  LoaderCircle,
   Clock,
   Gift,
   Sparkles,
@@ -54,6 +57,7 @@ import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { PRODUCTS } from '../data/products';
 import { fetchLoyaltyProfile } from '../lib/loyaltyClient';
 import type { IssuedPatronReward } from '../lib/rewardPolicy';
+import { recordFunnelEvent } from '../lib/funnelTelemetry';
 
 // Popular Lahore Neighborhoods for Rapid Delivery Pinning
 
@@ -78,6 +82,8 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   const { language, t: storefrontTranslation } = useLanguage();
   const t = React.useCallback((key: string, fallback = '') => checkoutReliabilityTranslations[language][key] || storefrontTranslation(key, fallback), [language, storefrontTranslation]);
   const mediaCover = useProductMediaCover();
+  const [summaryExpanded, setSummaryExpanded] = useState(() => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(min-width:1024px)').matches);
+  useEffect(() => { if (typeof window.matchMedia !== 'function') return; const media=window.matchMedia('(min-width:1024px)'); const update=()=>setSummaryExpanded(media.matches); media.addEventListener('change',update); return()=>media.removeEventListener('change',update); }, []);
   const online = useOnlineStatus();
   const reduceMotion = useReducedMotion();
   const [restoredDraft] = useState(readCheckoutDraft);
@@ -92,6 +98,9 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   const [selectedRewardId, setSelectedRewardId] = useState<string | null>(null);
 
   // 1. All Hooks declared unconditionally at the top (Rules of Hooks)
+  useEffect(() => {
+    recordFunnelEvent('begin_checkout', { itemCount: cartItems.length });
+  }, [cartItems.length]);
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('details');
   const [orderItemsSnapshot, setOrderItemsSnapshot] = useState<CartItem[]>([]);
   const [savedTotals, setSavedTotals] = useState<{
@@ -127,7 +136,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
 
   const [couponCode, setCouponCode] = useState(restoredDraft?.coupon || '');
   const [appliedCoupon, setAppliedCoupon] = useState(restoredDraft?.coupon || '');
-  const [quote, setQuote] = useState<{ key: string; totals: PricingSummary } | null>(null);
+  const [quote, setQuote] = useState<{ key: string; totals: PricingSummary; items?: any[] } | null>(null);
   const [quoteError, setQuoteError] = useState('');
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteRefresh, setQuoteRefresh] = useState(0);
@@ -159,7 +168,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
         const result = await getOrderQuote({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping, discountCode: appliedCoupon, rewardId: selectedRewardId, isWholesale, authToken, signal: controller.signal });
         if (!active) return;
         if (result.success && result.totals) {
-          setQuote({ key: quoteKey, totals: result.totals }); setIsQuoteRequestMode(result.totals.isQuoteRequest === true);
+          setQuote({ key: quoteKey, totals: result.totals, items: result.items }); setIsQuoteRequestMode(result.totals.isQuoteRequest === true);
           if (appliedCoupon) setCouponErrorMsg(null);
         }
         else {
@@ -399,6 +408,7 @@ const handleInputChange = (field: string, value: any) => {
   const selectedMethodObj = SHIPPING_METHODS.find(method => method.id === activeShippingMethod) || SHIPPING_METHODS[0];
   const giftFeeTotal = summary.giftWrapFee;
   const finalPayable = summary.total;
+  const displayItems = verifiedQuote ? acceptedCheckoutReceipt(cartItems, { subtotal, finalPayable, shippingFee: currentShippingFee, discountAmt, giftFee: giftFeeTotal }, { items: quote?.items }).items : cartItems;
   const appliedPromoMessage = appliedPromotionMessage(verifiedQuote, t) || couponSuccessMsg;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -552,7 +562,35 @@ const handleInputChange = (field: string, value: any) => {
   };
 
   return (
-    <div dir={language === 'en' ? 'ltr' : 'rtl'} className="boutique-checkout w-full max-w-6xl mx-auto grid lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] items-start gap-8 py-10 px-4 sm:px-6 relative z-10">
+    <div dir={language === 'en' ? 'ltr' : 'rtl'} className="boutique-checkout purchase-checkout w-full max-w-6xl mx-auto grid lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] items-start gap-8 py-10 px-4 sm:px-6 relative z-10" data-checkout-step={currentStep}>
+
+      {currentStep !== 'success' && <aside className="boutique-order-summary" aria-label={t('boutique.order')}>
+        <div className="purchase-overview-heading"><h2>{t('boutique.order')}</h2><bdi className="purchase-mobile-total">{isQuoteRequestMode?t('checkout.quoteRequestTitle'):hasEstimate?formatPrice(finalPayable):t('shipping.pending')}</bdi></div>
+        <p className="purchase-quote-state" role="status">{t(verifiedQuote ? 'purchase.checked' : 'purchase.estimate')}</p>
+        <details className="purchase-order-details" open={summaryExpanded} onToggle={event => setSummaryExpanded(event.currentTarget.open)}><summary>{t('purchase.bag')} ({cartItems.length})</summary><div className="boutique-order-items">
+          {displayItems.map(item => <div key={item.id} className="boutique-order-item">
+            <img src={mediaCover(PRODUCTS.find(product => product.id === item.productId || product.id === item.id), item.image)} alt={getLocalized(item, 'name', language)} width={80} height={80} onError={event=>{if(!event.currentTarget.src.endsWith('/images/product-placeholder.svg'))event.currentTarget.src='/images/product-placeholder.svg';}} />
+            <div><strong>{getLocalized(item, 'name', language)}</strong><small>{item.selectedWeight} × {item.quantity}</small><CartItemPersonalization configuration={item.hamperConfiguration} expanded /></div>
+            {!isQuoteRequestMode && <bdi>Rs. {(parsePrice(item.unitPrice ?? item.price) * item.quantity).toLocaleString()}</bdi>}
+          </div>)}
+        </div></details>
+        {!!activeRewards.length && <div className="mb-4 rounded-xl border border-[var(--color-border)] p-3">
+          <label htmlFor="checkout-patron-reward" className="mb-2 block text-xs font-semibold">{t('rewards.select')}</label>
+          <select id="checkout-patron-reward" value={selectedRewardId || ''} onChange={event => setSelectedRewardId(event.target.value || null)} className="focus-ring min-h-11 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm text-[var(--color-text)]" aria-describedby="checkout-patron-reward-help">
+            <option value="">{t('rewards.none')}</option>
+            {activeRewards.map(reward => <option key={reward.id} value={reward.id}>{t(`rewards.${reward.rewardId}.name`)}</option>)}
+          </select>
+          <p id="checkout-patron-reward-help" className="mt-2 text-xs leading-relaxed text-[var(--color-text-secondary)]">{selectedRewardId ? t(`rewards.${activeRewards.find(reward => reward.id === selectedRewardId)?.rewardId}.description`) : t('rewards.ready')}</p>
+        </div>}
+        {isQuoteRequestMode ? <div role="status" className="rounded-xl border border-[var(--color-gold)]/30 p-4"><h3 className="font-serif text-lg">{t('checkout.quoteRequestTitle')}</h3><p className="mt-2 text-sm">{t('checkout.quoteRequestNotice')}</p><p className="mt-2 text-xs">{t('checkout.quoteNoPayment')}</p></div> : <dl>
+          <div><dt>{t('subtotal', 'Subtotal')}</dt><dd>Rs. {subtotal.toLocaleString()}</dd></div>
+          <div><dt>{t('boutique.shipping')}</dt><dd>{hasEstimate ? `Rs. ${currentShippingFee.toLocaleString()}` : t('shipping.pending')}</dd></div>
+          {discountAmt > 0 && <div><dt>{t('boutique.discount')}</dt><dd>− Rs. {discountAmt.toLocaleString()}</dd></div>}
+          {giftFeeTotal > 0 && <div><dt>{t('boutique.wrapping')}</dt><dd>Rs. {giftFeeTotal.toLocaleString()}</dd></div>}
+          <div className="boutique-order-total"><dt>{t('total', 'Total')}</dt><dd>{hasEstimate ? `Rs. ${finalPayable.toLocaleString()}` : t('shipping.pending')}</dd></div>
+        </dl>}
+        <p>{t('boutique.orderNote')}</p>
+      </aside>}
 
       {/* Main Checkout Modal Container: 24px Outer Padding without restrictive max-h */}
       <motion.div
@@ -560,22 +598,21 @@ const handleInputChange = (field: string, value: any) => {
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.96, opacity: 0, y: 16 }}
         transition={{ duration: reduceMotion ? 0 : 0.28, ease: 'easeOut' }}
-        className="bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/35 w-full rounded-2xl shadow-sm relative overflow-hidden z-10 flex flex-col"
+        className="purchase-checkout-form bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/35 w-full rounded-2xl shadow-sm relative overflow-hidden z-10 flex flex-col"
       >
         <div className="absolute top-0 right-0 w-44 h-44 bg-[var(--color-gold,#B8935F)]/10 rounded-full blur-3xl pointer-events-none" />
 
         {/* 1. Header (24px padding on sides) */}
-        <div className="px-4 sm:px-6 py-4.5 border-b border-[var(--color-gold,#B8935F)]/20 bg-[var(--color-surface,#FDFBF7)]/85 backdrop-blur-md flex items-center justify-between shrink-0">
+        <div className="purchase-checkout-header px-4 sm:px-6 py-4.5 border-b border-[var(--color-gold,#B8935F)]/20 bg-[var(--color-surface,#FDFBF7)]/85 backdrop-blur-md flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[var(--color-ink,#1F120F)] border border-[var(--color-gold,#B8935F)]/60 flex items-center justify-center text-[var(--color-gold,#B8935F)] shadow-xs shrink-0">
               <ShoppingBag size={18} className="text-[var(--color-gold,#B8935F)]" />
             </div>
             <div>
-              <h3 className="text-lg font-serif font-bold text-[var(--color-ink,#1F120F)] leading-tight">
-                {t('checkout.heading')}
-              </h3>
+              <p className="purchase-eyebrow">{t('purchase.checkoutEyebrow')}</p>
+              <h1 className="font-serif">{t('checkout.heading')}</h1>
               <p className="text-[9.5px] text-[var(--color-gold,#B8935F)] font-bold uppercase tracking-widest leading-none mt-0.5">
-                {t('checkout.orderHeading')}
+                {t('purchase.checkoutIntro')}
               </p>
             </div>
           </div>
@@ -590,10 +627,11 @@ const handleInputChange = (field: string, value: any) => {
 
         {/* 2. Vertical Multi-Step Process Header */}
         <div className="px-4 sm:px-6 pt-3 pb-2 border-b border-[var(--color-gold,#B8935F)]/15 bg-[var(--color-surface,#FDFBF7)]/50 shrink-0">
-          <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+          <div className="purchase-checkout-steps grid grid-cols-3 gap-1.5 sm:gap-2">
             {/* Step 1 */}
             <button
               type="button"
+              aria-current={currentStep === 'details' ? 'step' : undefined}
               onClick={() => setCurrentStep('details')}
               className={`flex min-h-11 items-center justify-center sm:justify-start gap-1.5 sm:gap-2 py-1.5 sm:py-2 px-1 sm:px-2.5 rounded-xl border text-center sm:text-start transition-all cursor-pointer ${
                 currentStep === 'details'
@@ -612,6 +650,7 @@ const handleInputChange = (field: string, value: any) => {
             {/* Step 2 */}
             <button
               type="button"
+              aria-current={currentStep === 'shipping' ? 'step' : undefined}
               onClick={() => { if (validateStep1(true)) setCurrentStep('shipping'); }}
               className={`flex min-h-11 items-center justify-center sm:justify-start gap-1.5 sm:gap-2 py-1.5 sm:py-2 px-1 sm:px-2.5 rounded-xl border text-center sm:text-start transition-all cursor-pointer ${
                 currentStep === 'shipping'
@@ -630,6 +669,7 @@ const handleInputChange = (field: string, value: any) => {
             {/* Step 3 */}
             <button
               type="button"
+              aria-current={currentStep === 'payment' || currentStep === 'review' ? 'step' : undefined}
               onClick={() => {
                 if (!validateStep1(true)) { setCurrentStep('details'); return; }
                 if (!validateStep2(true)) { setCurrentStep('shipping'); return; }
@@ -903,7 +943,7 @@ const handleInputChange = (field: string, value: any) => {
                       </span>
                     </div>
                     <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
-                      {cartItems.map((item, idx) => (
+                      {displayItems.map((item, idx) => (
                         <div key={idx} className="flex justify-between items-center text-[11px] text-[var(--color-ink,#1F120F)]/80">
                           <span className="truncate max-w-[240px]">
                             {getLocalized(item, 'name', language)} <span className="text-[10px] text-[var(--color-gold,#B8935F)]">({item.selectedWeight})</span> x {item.quantity}
@@ -918,7 +958,7 @@ const handleInputChange = (field: string, value: any) => {
                   <button
                     type="button"
                     onClick={handleProceedToStep2}
-                    className="w-full py-3.5 rounded-full bg-[var(--color-ink,#1F120F)] text-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)] text-xs font-black uppercase tracking-widest hover:bg-[var(--color-ink,#1F120F)]/90 hover:shadow-[0_4px_20px_rgba(184,147,95,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                    className="purchase-primary w-full py-3.5 rounded-full bg-[var(--color-ink,#1F120F)] text-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)] text-xs font-black uppercase tracking-widest hover:bg-[var(--color-ink,#1F120F)]/90 hover:shadow-[0_4px_20px_rgba(184,147,95,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                   >
                     <span>{t('checkout.continueDelivery')}</span>
                     <ArrowRight size={14} className="text-[var(--color-gold,#B8935F)]" />
@@ -1124,7 +1164,7 @@ const handleInputChange = (field: string, value: any) => {
                     <button
                       type="button"
                       onClick={handleProceedToStep3}
-                      className="flex-1 py-3.5 rounded-full bg-[var(--color-ink,#1F120F)] text-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)] text-xs font-black uppercase tracking-widest hover:bg-[var(--color-ink,#1F120F)]/90 hover:shadow-[0_4px_20px_rgba(184,147,95,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                      className="purchase-checkout-submit flex-1 py-3.5 rounded-full bg-[var(--color-ink,#1F120F)] text-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)] text-xs font-black uppercase tracking-widest hover:bg-[var(--color-ink,#1F120F)]/90 hover:shadow-[0_4px_20px_rgba(184,147,95,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                     >
                       <span>{isQuoteRequestMode ? t('checkout.reviewRequest') : t('checkout.proceedReview', 'Proceed to Payment & Review')}</span>
                       <ArrowRight size={14} className="text-[var(--color-gold,#B8935F)]" />
@@ -1209,7 +1249,7 @@ const handleInputChange = (field: string, value: any) => {
                         <div className="bg-[var(--color-emerald-dark,#042821)]/5 dark:bg-[#42f5bf]/10 p-3 rounded-xl border border-[var(--color-emerald-dark,#042821)]/10 text-start mt-3">
                           <p className="text-[10px] font-black uppercase tracking-wider mb-2 opacity-80">{t('checkout.items')}</p>
                           <div className="space-y-1.5">
-                            {cartItems.map((item, idx) => (
+                            {displayItems.map((item, idx) => (
                               <div key={idx} className="flex justify-between items-center text-[11px]">
                                 <span className="truncate max-w-[240px] font-medium text-[var(--color-ink,#1F120F)] dark:text-white">
                                   {getLocalized(item, 'name', language)} <span className="text-[10px] font-bold">({item.selectedWeight})</span>
@@ -1321,10 +1361,11 @@ const handleInputChange = (field: string, value: any) => {
                     </button>
                       <button
                         type="submit"
+                        aria-busy={isSubmittingOrder || quoteLoading}
                         disabled={isSubmittingOrder || isValidatingCoupon || !online || authLoading || quoteLoading || !verifiedQuote}
-                        className="flex-1 py-3.5 rounded-full bg-[var(--color-ink,#1F120F)] text-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)] text-xs font-black uppercase tracking-widest hover:bg-[var(--color-ink,#1F120F)]/90 hover:shadow-[0_4px_20px_rgba(184,147,95,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
+                        className="purchase-checkout-submit flex-1 py-3.5 rounded-full bg-[var(--color-ink,#1F120F)] text-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)] text-xs font-black uppercase tracking-widest hover:bg-[var(--color-ink,#1F120F)]/90 hover:shadow-[0_4px_20px_rgba(184,147,95,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
                       >
-                        <CheckCircle size={16} className="text-[var(--color-gold,#B8935F)]" />
+                        {isSubmittingOrder || quoteLoading ? <LoaderCircle size={16} aria-hidden="true" className="boutique-request-spinner text-[var(--color-gold,#B8935F)]" /> : <CheckCircle size={16} aria-hidden="true" className="text-[var(--color-gold,#B8935F)]" />}
                         <span>{isQuoteRequestMode ? t(isSubmittingOrder ? 'checkout.quoteSubmitting' : 'checkout.quoteSubmit') : isSubmittingOrder ? t('checkout.placingOrder', 'Placing Order…') : t('checkout.confirmOrder', 'Confirm & Place Order')}</span>
                       </button>
                   </div>
@@ -1344,7 +1385,7 @@ const handleInputChange = (field: string, value: any) => {
 
                   <div>
                     <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--color-gold,#B8935F)] block mb-1">
-                      {t('checkout.orderHeading')}
+                      {t('purchase.checkoutIntro')}
                     </span>
                     <h3 className="text-2xl font-serif font-black text-[var(--color-ink,#1F120F)] mb-1">
                       {t(orderSuccessResult.isQuoteRequest ? 'checkout.quoteReceived' : 'checkout.receiptReceived')}
@@ -1355,7 +1396,7 @@ const handleInputChange = (field: string, value: any) => {
                   </div>
 
                   {/* Official Order ID Badge */}
-                  <div className="bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/35 rounded-2xl p-4 shadow-2xs">
+                  <div className="purchase-checkout-form bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/35 rounded-2xl p-4 shadow-2xs">
                     <p className="text-[10px] uppercase font-bold text-[var(--color-ink,#1F120F)]/60 mb-1 tracking-wider">
                       {t('checkout.trackingId')}
                     </p>
@@ -1488,32 +1529,7 @@ const handleInputChange = (field: string, value: any) => {
           </div>
         )}
       </motion.div>
-      {currentStep !== 'success' && <aside className="boutique-order-summary" aria-label={t('boutique.order')}>
-        <h2>{t('boutique.order')}</h2>
-        <div className="boutique-order-items">
-          {cartItems.map(item => <div key={item.id} className="boutique-order-item">
-            <img src={mediaCover(PRODUCTS.find(product => product.id === item.productId || product.id === item.id), item.image)} alt={getLocalized(item, 'name', language)} width={64} height={64} />
-            <div><strong>{getLocalized(item, 'name', language)}</strong><small>{item.selectedWeight} × {item.quantity}</small></div>
-            {!isQuoteRequestMode && <bdi>Rs. {(parsePrice(item.unitPrice ?? item.price) * item.quantity).toLocaleString()}</bdi>}
-          </div>)}
-        </div>
-        {!!activeRewards.length && <div className="mb-4 rounded-xl border border-[var(--color-border)] p-3">
-          <label htmlFor="checkout-patron-reward" className="mb-2 block text-xs font-semibold">{t('rewards.select')}</label>
-          <select id="checkout-patron-reward" value={selectedRewardId || ''} onChange={event => setSelectedRewardId(event.target.value || null)} className="focus-ring min-h-11 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm text-[var(--color-text)]" aria-describedby="checkout-patron-reward-help">
-            <option value="">{t('rewards.none')}</option>
-            {activeRewards.map(reward => <option key={reward.id} value={reward.id}>{t(`rewards.${reward.rewardId}.name`)}</option>)}
-          </select>
-          <p id="checkout-patron-reward-help" className="mt-2 text-xs leading-relaxed text-[var(--color-text-secondary)]">{selectedRewardId ? t(`rewards.${activeRewards.find(reward => reward.id === selectedRewardId)?.rewardId}.description`) : t('rewards.ready')}</p>
-        </div>}
-        {isQuoteRequestMode ? <div role="status" className="rounded-xl border border-[var(--color-gold)]/30 p-4"><h3 className="font-serif text-lg">{t('checkout.quoteRequestTitle')}</h3><p className="mt-2 text-sm">{t('checkout.quoteRequestNotice')}</p><p className="mt-2 text-xs">{t('checkout.quoteNoPayment')}</p></div> : <dl>
-          <div><dt>{t('subtotal', 'Subtotal')}</dt><dd>Rs. {subtotal.toLocaleString()}</dd></div>
-          <div><dt>{t('boutique.shipping')}</dt><dd>{hasEstimate ? `Rs. ${currentShippingFee.toLocaleString()}` : t('shipping.pending')}</dd></div>
-          {discountAmt > 0 && <div><dt>{t('boutique.discount')}</dt><dd>− Rs. {discountAmt.toLocaleString()}</dd></div>}
-          {giftFeeTotal > 0 && <div><dt>{t('boutique.wrapping')}</dt><dd>Rs. {giftFeeTotal.toLocaleString()}</dd></div>}
-          <div className="boutique-order-total"><dt>{t('total', 'Total')}</dt><dd>{hasEstimate ? `Rs. ${finalPayable.toLocaleString()}` : t('shipping.pending')}</dd></div>
-        </dl>}
-        <p>{t('boutique.orderNote')}</p>
-      </aside>}
+
     </div>
   );
 }

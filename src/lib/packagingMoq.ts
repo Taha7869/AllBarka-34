@@ -29,6 +29,7 @@ export const FOOD_CATEGORY_IDS: ReadonlySet<string> = new Set([
  */
 export function isPackagingProduct(product: Partial<Product> | null | undefined): boolean {
   if (!product) return false;
+  if (product.commerce?.kind === 'packaging') return true;
 
   // Explicit packaging flags and taxonomy
   if (product.isBidBox === true) return true;
@@ -58,8 +59,12 @@ export function isPackagingProduct(product: Partial<Product> | null | undefined)
  * - "Empty Box (1 pc)" -> 1
  * - "250g" -> 1
  */
-export function parsePiecesPerPack(variantLabel: string | undefined | null): number {
+export function parsePiecesPerPack(variantLabel: string | undefined | null, product?: Pick<Product, 'commerce'>): number {
   if (!variantLabel || typeof variantLabel !== 'string') return 1;
+
+  const configured = product?.commerce?.options.find(option => option.label === variantLabel);
+  if (configured?.piecesPerPack) return configured.piecesPerPack;
+  if (configured?.unit === 'piece') return configured.quantity;
 
   const trimmed = variantLabel.trim();
   // Check for patterns like "(25 pcs)", "(50 pcs)", "25 pcs", "100+ pcs"
@@ -97,13 +102,13 @@ export function getPublishedPerPiecePrice(product: Product, variantLabel?: strin
     if (Object.hasOwn(prices, variantLabel)) {
       const packPrice = prices[variantLabel];
       if (!Number.isFinite(packPrice) || packPrice <= 0) return null;
-      const pieces = parsePiecesPerPack(variantLabel);
+      const pieces = parsePiecesPerPack(variantLabel, product);
       return Math.round((packPrice / pieces) * 100) / 100;
     }
     if (Array.isArray(product.variants)) {
       const v = product.variants.find((item: any) => item.label === variantLabel);
       if (v && Number.isFinite(v.price) && v.price > 0 && v.available !== false) {
-        const pieces = parsePiecesPerPack(variantLabel);
+        const pieces = parsePiecesPerPack(variantLabel, product);
         return Math.round((v.price / pieces) * 100) / 100;
       }
     }
@@ -125,7 +130,7 @@ export function getPublishedPerPiecePrice(product: Product, variantLabel?: strin
   for (const [label, price] of Object.entries(prices)) {
     if (disabledLabels.has(label)) continue;
     if (Number.isFinite(price) && price > 0) {
-      const pieces = parsePiecesPerPack(label);
+      const pieces = parsePiecesPerPack(label, product);
       const piecePrice = price / pieces;
       if (minPiecePrice === null || piecePrice < minPiecePrice) {
         minPiecePrice = piecePrice;
@@ -137,7 +142,7 @@ export function getPublishedPerPiecePrice(product: Product, variantLabel?: strin
     for (const v of product.variants) {
       if (!v || v.available === false || typeof v.label !== 'string') continue;
       if (Number.isFinite(v.price) && v.price > 0) {
-        const pieces = parsePiecesPerPack(v.label);
+        const pieces = parsePiecesPerPack(v.label, product);
         const piecePrice = v.price / pieces;
         if (minPiecePrice === null || piecePrice < minPiecePrice) {
           minPiecePrice = piecePrice;
@@ -209,7 +214,7 @@ export function calculateMinOrderQuantityUnits(product: Product, variantLabel?: 
   }
 
   const moqPieces = calculatePackagingMoq(product, variantLabel);
-  const piecesPerPack = parsePiecesPerPack(variantLabel);
+  const piecesPerPack = parsePiecesPerPack(variantLabel, product);
 
   return Math.max(1, Math.ceil(moqPieces / piecesPerPack));
 }
@@ -278,7 +283,7 @@ export function getPackagingMoqDisplay(
 
   try {
     const moqPieces = calculatePackagingMoq(product, variantLabel);
-    const piecesPerPack = parsePiecesPerPack(variantLabel);
+    const piecesPerPack = parsePiecesPerPack(variantLabel, product);
     const minUnits = Math.max(1, Math.ceil(moqPieces / piecesPerPack));
     const totalPieces = minUnits * piecesPerPack;
     const isSet =
@@ -331,7 +336,7 @@ export function validatePackagingQuantity(
   }
 
   const moqPieces = calculatePackagingMoq(product, variantLabel);
-  const piecesPerPack = parsePiecesPerPack(variantLabel);
+  const piecesPerPack = parsePiecesPerPack(variantLabel, product);
   const minUnits = Math.max(1, Math.ceil(moqPieces / piecesPerPack));
   const totalPieces = quantity * piecesPerPack;
 
