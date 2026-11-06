@@ -1,4 +1,4 @@
-# Website completion and verification — 5 November 2026
+# Website completion and verification — 5–6 November 2026
 
 ## Scope and inspected source
 
@@ -17,15 +17,22 @@ Selected continuation: M16 recipient guidance and typed inquiry handoff; M05 use
 
 ## Verification checkpoint
 
+Application source is saved at [`26dac54`](https://github.com/Taha7869/AllBarka-34/commit/26dac546ff9937d3d98b74a465e6e0f6f9d72b79). The follow-up [`4bdad3c`](https://github.com/Taha7869/AllBarka-34/commit/4bdad3c7ad847f8c4e5553c1bbd582dd2d35a8e2) changes the browser test and screenshot upload condition. Its tree and two changed paths were verified against the remote branch.
+
+The [first hosted run](https://github.com/Taha7869/AllBarka-34/actions/runs/42089323677) recorded 840 passed, one failed and one emulator-only skip. The quote recovery test used a generic submit selector after the failed-save banner introduced a second submit button. The follow-up selects **Retry Saving Quote** by name and joins the click and POST response wait. It asserts the response status before checking the saved record, preserved recipient and WhatsApp draft. Screenshot upload follows a passing regression gate so old files from the checkout cannot stand in for new captures.
+
+The [passing follow-up](https://github.com/Taha7869/AllBarka-34/actions/runs/42172614765) checked out PR test merge `1d603e01fb008e4ece7c74d30292e1e17486d320`. Its tree `46d790cd77e4c07133a276bc13abe05ad158c7b6` exactly matches `4bdad3c`. The hosted log confirms the quote retry journey passed. The fixture matrix records 24 gifting landing, 18 quote and 18 hamper builder layouts. The desktop English/light and mobile Urdu/dark quote captures were visually inspected. [Screenshot bundle](https://github.com/Taha7869/AllBarka-34/actions/runs/42172614765/artifacts/13482326277)
+
 | Gate | State |
 | --- | --- |
-| Source implementation | Implemented; final checks in progress |
+| Source implementation | Saved on the PR #16 working branch |
 | Local typecheck / hooks lint | PASS (both exit 0) |
-| Production build / privacy | PASS; 84 release text artifacts audited |
+| Production build / privacy | PASS on 6 November. 84 release text artifacts audited |
+| Local backend, catalog assets and production | 21 backend checks and 36 production checks passed. 97 products reference 115 images with zero missing files |
 | Local targeted API regressions | PASS: 37 tests across gift-recipient, stage6-inquiry-flow and inquiry-and-sync-security. Initial new assertion incorrectly assumed both legacy endpoints used the same empty-product marker; corrected to their existing distinct contracts |
 | Local browser / before-after screenshots | BLOCKED: official Chrome starts but the executor denies its process singleton socket (`Operation not permitted`); locked Playwright download was also invalid. No browser launch flags or policy workarounds are introduced |
 | Local full suite | INCOMPLETE/FAIL: timed out at 60 seconds (exit 124), with browser startup and other incomplete tests; no full local pass claimed. Exact full result requires hosted CI |
-| New hosted CI / browser evidence | Pending save and execution |
+| Hosted typecheck, hooks lint, build and full offline gate | PASS on 6 November. 841 passed, zero failed and one Firestore emulator skip across 107 test files. The same run passed 21 backend and 36 production checks and found zero missing catalog images |
 | Current merchant catalog reconciliation | BLOCKED: no current private export or authorized live snapshot is available in this task; no live catalog/taxonomy/price write |
 | Real Firebase/Auth/Storage/n8n/Groq/WhatsApp and physical devices | NOT_RUN; isolated fixtures do not establish provider behavior |
 | Deployment / accepted live order | NOT_RUN; owner-paused Railway activation and separate release gates remain |
@@ -38,12 +45,19 @@ Merchant confirmation still controls prices/recipes, missing packaging/hamper re
 
 Existing English-only portions of the legacy quote form are not represented as newly translated: the new recipient labels and updated homepage copy support all three languages; completing the remaining form translation is a separate M04 follow-up. No blanket full-roadmap or launch-ready claim is made.
 
+## Next release checks
+
+1. Confirm merchant prices, recipes, actual gift contents, photos and supported print options before publishing those claims.
+2. Configure the isolated Firebase preview and confirm Auth, Storage, catalog and admin inquiry permissions. Complete the Firestore emulator case skipped by offline CI.
+3. Validate website chat, voice on physical phones, n8n/WhatsApp handoff and a durable test order. Confirm the provider receipts and the tracking lookup using test data.
+4. Once Railway is active, repeat checkout, order tracking and contact smoke tests on the deployed release candidate. The current PR is a draft.
+
 ## R11 checkpoint
 
 - [x] Scope and pending physical/provider work identified.
-- [ ] Final diff and test evidence complete.
-- [ ] New hosted browser/full regression gates complete.
+- [x] Final diff and test evidence recorded.
+- [x] Hosted browser and full regression gates passed for the tested application and test tree.
 - [x] Current live catalog audit explicitly blocked; no seed data substituted for live evidence.
 - [x] Pricing, shipping, stock, keys, roles and production data unchanged.
 - [x] Register/handoff/changelog linked to this current record.
-- [ ] Remote save/read-back verified; no merge/deployment.
+- [x] Remote source and retry test tree verified. Release remains at draft PR review.
