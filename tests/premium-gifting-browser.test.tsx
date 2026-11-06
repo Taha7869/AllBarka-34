@@ -80,12 +80,16 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     await page.locator('.gift-budget button').nth(1).click();assert.equal(new URL(page.url()).searchParams.get('budget'),'3000');assert.equal(new URL(page.url()).searchParams.get('utm_source'),'fixture');
     await page.locator('.gift-budget button').first().click();assert.equal(new URL(page.url()).searchParams.has('budget'),false);
     // Recipient intent stays separate from catalog eligibility, budget and printing.
+    // Router URL updates can arrive before React commits the filtered cards.
+    await page.waitForFunction(() => ['.gift-occasions', '.gift-budget'].every(selector =>
+      document.querySelector(`${selector} button:first-child`)?.getAttribute('aria-pressed') === 'true'));
     const countBefore = await page.locator('.gift-product-grid > *').count();
     await page.locator('#gift-recipient').selectOption('family');
     await page.waitForURL(/recipient=family/);
     assert.equal(new URL(page.url()).searchParams.get('utm_source'), 'fixture');
-    assert.equal(await page.locator('.gift-product-grid > *').count(), countBefore);
     await page.reload(); await page.waitForFunction(() => document.querySelector<HTMLSelectElement>('#gift-recipient')?.value === 'family');
+    await page.waitForFunction(price => (window as any).fixture.catalog.find((p:any) => p.id === 'pista')?.prices['250g'] === price, fixtureProducts.find(p => p.id === 'pista')!.prices['250g']);
+    assert.equal(await page.locator('.gift-product-grid > *').count(), countBefore);
     await page.locator('.gift-recipient-action').click();
     const inquiry = page.locator('.custom-quote-dialog'); await inquiry.waitFor();
     await page.waitForFunction(() => document.querySelector('.custom-quote-dialog')?.contains(document.activeElement));
