@@ -1,3 +1,7 @@
+## 6 November 2026 — voice panel position on language changes
+
+- Realign the open voice panel after the document direction changes. A browser regression reproduces the late RTL/LTR commit and verifies the panel stays within the tablet viewport. [Evidence](docs/execution-2026-11-04/WEBSITE_COMPLETION_2026-11-05.md).
+
 ## 6 November 2026 — quote form language pass
 
 - Localize the quote form, notices, retry and confirmation in English, Urdu and Arabic.

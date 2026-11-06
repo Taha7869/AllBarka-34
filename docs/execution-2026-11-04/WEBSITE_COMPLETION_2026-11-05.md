@@ -70,6 +70,19 @@ Inspected parent `c7eeaa352db42ec41c2827ecf8b4492a0df5b2f9` on the PR #16 workin
 The browser journey checks translated headings, close labels and event options across the layout matrix. It submits in Arabic, verifies the localized failure, switches to Urdu while the error is visible and retries. The saved record and draft still use the same recipient, canonical event and quote contract.
 
 - Local typecheck, hooks lint and production build/privacy audit passed. The affected inquiry/API/security suite passed 37 tests.
-- Hosted layout and full regression verification is pending for this language checkpoint. The earlier 841-pass run above describes its own tree.
-- Firestore rules emulator verification is tracked separately from live provider acceptance.
+- Translation source is saved at `da49e34babd9c41284d991032bdc82bd388a919a`. The first local browser run passed the filled gift and reorder journeys but the gifting test counted cards before React committed the cleared budget filter. Follow-up `25fe624e72398c4c720288cdf3e7df089ec6dbd1` waits for the rendered filter state and verifies the same catalog count after the recipient choice is restored from the URL. The targeted journey passed after the correction.
+- Full local gate passed on `25fe624`, tree `82971c83ed858eb83068dc380ec643feac2a4ce9`, using Chrome Headless Shell 153. The 107 test files had 841 passes, zero failures and one emulator-only skip. The runner also passed 21 backend and 36 production checks and found zero missing catalog assets across 97 products and 115 references.
+- The separate Firestore emulator test passed 1/1 with no skips using the repository rules, CLI 13.35.1, Firestore emulator 1.19.8 and demo project `demo-allbarka-security` on loopback. It covers rejected private reads and writes even with stale admin claims, as well as allowed owner contact updates. This is fixture evidence.
+- The 60-layout gifting run passed with 24 landing, 18 quote and 18 builder layouts. Inspected the 360px Urdu/dark and desktop English/light screenshots and compared the same surfaces with the prior captured checkpoint.
+- [Hosted run for the corrected quote tree](https://github.com/Taha7869/AllBarka-34/actions/runs/42177284911) passed the quote journey and reported 840 passes, one voice layout failure and one emulator-only skip. The voice failure and correction are recorded below.
 - Broader M04 typography and merchant-dependent content remain tracked in the master plan.
+
+
+**M04-QUOTE handoff:** The quote language slice and independent local Firestore rules check are complete. The remote source and test correction were read back and matched the intended trees. The code change has no catalog classification impact. Actual packaging contents, merchant pricing confirmation and live provider smoke checks require their existing prerequisites.
+
+
+## 6 November continuation — VOICE-DIR open-panel positioning
+
+The hosted 768px voice layout measured a right edge of 882px. The shop toolbar inherits the document direction. When the root direction commits after the voice control's layout effect, the microphone moves while the panel can retain its old inline position. A controlled browser reproduction changed the inherited direction with the real shop panel open. Before the fix its right edge reached 939px at 768px.
+
+The open panel now realigns on document direction changes and disconnects the observer when the panel closes or unmounts. The existing browser test reproduces the late direction change and checks the panel remains inside the viewport. The corrected test, all 30 voice layouts and the capture, cancellation, transcription and fallback fixture flows passed locally. Exact full regression verification for this follow-up is pending.

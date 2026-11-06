@@ -73,9 +73,18 @@ export default function VoiceInputButton({ onTranscript, disabled = false, place
     align();
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(align);
     observer?.observe(panel);
+    // The document's inherited direction can move the toolbar after this
+    // component commits, even if the panel itself keeps the same dimensions.
+    const directionObserver = new MutationObserver(align);
+    directionObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['dir'] });
     window.addEventListener('resize', align);
     window.addEventListener('scroll', align, true);
-    return () => { observer?.disconnect(); window.removeEventListener('resize', align); window.removeEventListener('scroll', align, true); };
+    return () => {
+      observer?.disconnect();
+      directionObserver.disconnect();
+      window.removeEventListener('resize', align);
+      window.removeEventListener('scroll', align, true);
+    };
   }, [phase, isRtl, placement]);
 
   const start = async () => {

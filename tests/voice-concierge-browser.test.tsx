@@ -133,6 +133,21 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
       const button=await page.locator('[data-voice-control] button').first().boundingBox();assert.ok(button&&button.width>=44&&button.height>=44);
       layouts++;
     }
+    // The document direction can commit after the control has already aligned.
+    // Move the inherited shop toolbar direction while keeping the voice panel open.
+    await page.setViewportSize({width:768,height:900});
+    await page.evaluate(()=>(window as any).fixture.lang('ur'));
+    await page.waitForFunction(()=>document.documentElement.dir==='rtl');
+    const directionBounds=await panel.evaluate(async element=>{
+      const previous=document.documentElement.dir;
+      document.documentElement.dir='ltr';
+      try {
+        await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));
+        const {left,right}=element.getBoundingClientRect();
+        return {left,right,width:innerWidth};
+      } finally { document.documentElement.dir=previous; }
+    });
+    assert.ok(directionBounds.left>=0&&directionBounds.right<=directionBounds.width+.5,JSON.stringify(directionBounds));
     await page.setViewportSize({width:390,height:844});
     for(const language of ['en','ur','ar'])for(const theme of ['light','dark']){
       await page.evaluate(({language,theme})=>{(window as any).fixture.lang(language);(window as any).fixture.theme(theme);document.documentElement.style.fontSize='200%';},{language,theme});
