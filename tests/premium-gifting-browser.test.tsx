@@ -99,9 +99,19 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     const lastControl = inquiry.locator('a').last();
     assert.equal(await lastControl.evaluate(e => e === document.activeElement), true);
     await page.keyboard.press('Tab'); assert.equal(await firstControl.evaluate(e => e === document.activeElement), true);
-    for (const language of ['en', 'ur', 'ar']) for (const theme of ['light', 'dark']) {
+    const quoteLabels = {
+      en: ['Request Custom Quote / Bargain Your Price', 'Other Celebration', 'Close Custom Quote Modal'],
+      ur: ['اپنی ضرورت کے مطابق قیمت کی درخواست دیں', 'دیگر تقریب', 'قیمت کی درخواست کا فارم بند کریں'],
+      ar: ['اطلب عرض سعر مخصصًا', 'مناسبة أخرى', 'إغلاق نموذج طلب عرض السعر'],
+    };
+    for (const language of ['en', 'ur', 'ar'] as const) for (const theme of ['light', 'dark']) {
       await page.evaluate(({language, theme}) => { (window as any).fixture.lang(language); (window as any).fixture.theme(theme); }, {language, theme});
-      await page.waitForFunction(rtl => document.querySelector('.custom-quote-dialog')?.getAttribute('dir') === (rtl ? 'rtl' : 'ltr'), language !== 'en');
+      const [title, occasion, close] = quoteLabels[language];
+      await inquiry.getByRole('heading', { name: title, exact: true }).waitFor();
+      assert.equal(await inquiry.getAttribute('dir'), language === 'en' ? 'ltr' : 'rtl');
+      assert.equal(await inquiry.getByRole('button', { name: close, exact: true }).count(), 1);
+      assert.equal(await page.locator('#quote-event-type option:checked').innerText(), occasion);
+      assert.equal(await page.locator('#quote-event-type').inputValue(), 'Other Celebration');
       for (const size of [{width:360,height:640},{width:844,height:390},{width:1440,height:900}]) {
         await page.setViewportSize(size); await page.screenshot({animations:'disabled'});
         assert.equal(await inquiry.evaluate(e => e.scrollWidth <= e.clientWidth + 1), true, `quote ${language}/${theme}/${size.width}`);
@@ -121,7 +131,7 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
       assert.ok(await page.locator('.custom-quote-body').evaluate(e => e.clientHeight) >= 80);
       await page.evaluate(() => document.documentElement.style.fontSize = '');
     }
-    await page.evaluate(() => { (window as any).fixture.lang('en'); (window as any).fixture.theme('light'); });
+    await page.evaluate(() => { (window as any).fixture.lang('ar'); (window as any).fixture.theme('light'); });
     await page.setViewportSize({width:390,height:844});
     await page.locator('#quote-customer-name').fill('Fixture Customer');
     await page.locator('#quote-customer-phone').fill('03001234567');
@@ -132,25 +142,30 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
       new URL(response.url()).pathname === '/api/quotes' && response.request().method() === 'POST';
     const [failedResponse] = await Promise.all([
       page.waitForResponse(isQuoteSave),
-      inquiry.getByRole('button', { name: 'Submit & Save Custom Quote', exact: true }).click(),
+      inquiry.getByRole('button', { name: 'إرسال طلب عرض السعر وحفظه', exact: true }).click(),
     ]);
     assert.equal(failedResponse.status(), 503);
-    await inquiry.getByText('Fixture storage unavailable', {exact:true}).waitFor();
+    await inquiry.getByRole('alert').filter({ hasText: 'تعذر تأكيد حفظ طلبك. ما زالت تفاصيلك موجودة. يرجى إعادة المحاولة.' }).waitFor();
     assert.equal(await page.locator('#quote-gift-recipient').inputValue(), 'friend');
     assert.equal(await page.locator('#quote-customer-name').inputValue(), 'Fixture Customer');
+    await page.evaluate(() => (window as any).fixture.lang('ur'));
+    await inquiry.getByRole('alert').filter({ hasText: 'درخواست محفوظ ہونے کی تصدیق نہیں ہو سکی۔ آپ کی تفصیلات موجود ہیں، دوبارہ کوشش کریں۔' }).waitFor();
     await page.unroute('**/api/quotes', failSave);
     const [savedResponse] = await Promise.all([
       page.waitForResponse(isQuoteSave),
-      inquiry.getByRole('button', { name: 'Retry Saving Quote', exact: true }).click(),
+      inquiry.getByRole('button', { name: 'دوبارہ محفوظ کریں', exact: true }).click(),
     ]);
     const saved = await savedResponse.json();
     assert.equal(savedResponse.status(), 200, JSON.stringify(saved));
     await inquiry.locator('[data-gift-recipient=friend]').waitFor();
+    await inquiry.getByRole('heading', { name: 'آپ کی درخواست محفوظ ہو گئی ہے', exact: true }).waitFor();
     const savedRecord:any = records.get(`inquiries/${saved.id}`);
     assert.equal(savedRecord.giftRecipient, 'friend'); assert.equal(savedRecord.customPrintText, '');
+    assert.equal(savedRecord.eventType, 'Other Celebration');
     assert.equal(savedRecord.productId, 'custom'); assert.equal(savedRecord.standardPrice, null);
     assert.match(new URL(savedRecord.whatsappUrl).searchParams.get('text')!, /Gift for:\* A friend/);
     await page.keyboard.press('Escape'); await inquiry.waitFor({state:'hidden'});
+    await page.evaluate(() => (window as any).fixture.lang('en'));
     assert.equal(await page.locator('#root').evaluate(e => (e as HTMLElement).inert), false);
     assert.equal(await page.locator('.gift-recipient-action').evaluate(e => e === document.activeElement), true);
     assert.equal(await page.evaluate(() => document.body.style.overflow), '');

@@ -61,3 +61,15 @@ Existing English-only portions of the legacy quote form are not represented as n
 - [x] Pricing, shipping, stock, keys, roles and production data unchanged.
 - [x] Register/handoff/changelog linked to this current record.
 - [x] Remote source and retry test tree verified. Release remains at draft PR review.
+
+
+## 6 November continuation — M04-QUOTE language pass
+
+Inspected parent `c7eeaa352db42ec41c2827ecf8b4492a0df5b2f9` on the PR #16 working branch. The quote form now displays headings, options, preparation and sourcing notices, prices and quantities, validation, retry and saved summaries in English, Urdu and Arabic. The form shows localized catalog names when the catalog has them. Variant labels stored in the catalog and free text retain their original wording. The API values, recorded quote IDs, WhatsApp draft contract, prices and lead times retain their canonical values. An example placeholder that suggested a 10% reduction was replaced with a neutral budget prompt.
+
+The browser journey checks translated headings, close labels and event options across the layout matrix. It submits in Arabic, verifies the localized failure, switches to Urdu while the error is visible and retries. The saved record and draft still use the same recipient, canonical event and quote contract.
+
+- Local typecheck, hooks lint and production build/privacy audit passed. The affected inquiry/API/security suite passed 37 tests.
+- Hosted layout and full regression verification is pending for this language checkpoint. The earlier 841-pass run above describes its own tree.
+- Firestore rules emulator verification is tracked separately from live provider acceptance.
+- Broader M04 typography and merchant-dependent content remain tracked in the master plan.

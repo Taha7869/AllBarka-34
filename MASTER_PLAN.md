@@ -1,5 +1,7 @@
 # AllBarka — visual identity and experience master plan
 
+6 November 2026 — **M04-QUOTE language pass:** quote form controls, notices, errors and saved summary translated for EN/UR/AR. Local static/build and inquiry/security gates pass. Hosted browser/full verification pending. [Evidence](docs/execution-2026-11-04/WEBSITE_COMPLETION_2026-11-05.md).
+
 5 November 2026 — **M16 / M05 / M04 continuation IN_PROGRESS:** recipient intent now follows the existing inquiry/admin/WhatsApp handoff; homepage care content removes unsupported assurances; quote modal gains keyboard/scroll/theme/readability fixes. Local/browser/hosted evidence and remaining owner gates: [current report](docs/execution-2026-11-04/WEBSITE_COMPLETION_2026-11-05.md). No release claim.
 
 5 November 2026 — **VOICE-02 implementation continuation:** website source is implemented, targeted service11/11 and expanded browser journey PASS. Shared server transcription now accepts validated60s PCM; WhatsApp transport is not wired without current full exports. Full-suite/save state and owner PC steps: [current evidence](docs/execution-2026-11-04/VOICE_02_IMPLEMENTATION_2026-11-05.md). This supersedes the earlier implementation deferral, while preserving physical-device/provider/live gates. Branch/PR workflows at9d6075f both passed; historical staff/hover failures remain unreproduced, not a claimed fix.

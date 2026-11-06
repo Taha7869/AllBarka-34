@@ -1,3 +1,9 @@
+## 6 November 2026 — quote form language pass
+
+- Localize the quote form, notices, retry and confirmation in English, Urdu and Arabic.
+- Display catalog-provided product names and keep the persisted event, variant, price and WhatsApp contract stable.
+- Verify that switching languages after an inquiry save error preserves the entered details and permits a successful retry. [Evidence](docs/execution-2026-11-04/WEBSITE_COMPLETION_2026-11-05.md).
+
 ## 4 November 2026 — verification checkpoint / unfinished release gate
 
 ## 5 November 2026 — recipient inquiry handoff and storefront clarity
