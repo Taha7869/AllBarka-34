@@ -1,5 +1,7 @@
 # AllBarka — visual identity and experience master plan
 
+6 November 2026 — **M13/M30 event inquiry follow-up implemented.** Confirmation requires a saved reference and preparation copy is localized. Hosted verification pending. [Evidence](docs/execution-2026-11-04/WEBSITE_COMPLETION_2026-11-05.md#6-november--event-inquiry-confirmation)
+
 6 November 2026 — **M04-QUOTE language pass:** quote form controls, notices, errors and saved summary translated for EN/UR/AR. Local static/build and inquiry/security gates pass. Hosted browser/full verification pending. [Evidence](docs/execution-2026-11-04/WEBSITE_COMPLETION_2026-11-05.md).
 
 5 November 2026 — **M16 / M05 / M04 continuation IN_PROGRESS:** recipient intent now follows the existing inquiry/admin/WhatsApp handoff; homepage care content removes unsupported assurances; quote modal gains keyboard/scroll/theme/readability fixes. Local/browser/hosted evidence and remaining owner gates: [current report](docs/execution-2026-11-04/WEBSITE_COMPLETION_2026-11-05.md). No release claim.

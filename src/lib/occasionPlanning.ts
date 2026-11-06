@@ -56,7 +56,7 @@ export const EVENT_OPTIONS: EventOption[] = [
 ];
 
 export const CITY_OPTIONS: CityOption[] = [
-  { id: 'lahore', label_en: 'Lahore (Same-Day / Next-Day Dispatch)', label_ur: 'لاہور (اسی دن / اگلے دن ڈسپیچ)', label_ar: 'لاهور (نفس اليوم / اليوم التالي)', transitNote: 'Lahore local boutique dispatch' },
+  { id: 'lahore', label_en: 'Lahore', label_ur: 'لاہور', label_ar: 'لاهور', transitNote: 'Lahore local boutique dispatch' },
   { id: 'karachi', label_en: 'Karachi (Courier Dispatch)', label_ur: 'کراچی (کوریئر ڈسپیچ)', label_ar: 'كراتشي (شحن کوریئر)', transitNote: 'Nationwide courier transit applies separately' },
   { id: 'islamabad', label_en: 'Islamabad / Rawalpindi (Courier Dispatch)', label_ur: 'اسلام آباد / راولپنڈی (کوریئر ڈسپیچ)', label_ar: 'إسلام آباد / راولبندي', transitNote: 'Nationwide courier transit applies separately' },
   { id: 'faisalabad', label_en: 'Faisalabad (Courier Dispatch)', label_ur: 'فیصل آباد (کوریئر ڈسپیچ)', label_ar: 'فيصل آباد', transitNote: 'Nationwide courier transit applies separately' },

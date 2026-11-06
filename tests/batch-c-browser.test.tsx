@@ -364,25 +364,45 @@ createRoot(document.getElementById('root')!).render(
     await occasionModal.locator('#occasion-phone').fill('03009876543');
     await occasionModal.locator('#occasion-notes').fill('Emerald ribbons and gold typography for executive retreat.');
 
-    // Submit inquiry
-    const submitBtn = occasionModal.locator('button[type="submit"]');
-    await submitBtn.click();
-    await page.waitForTimeout(1000);
+    // A saved record with an incomplete response must not create a fake receipt.
+    const pathPattern = '**/api/inquiries';
+    const unreadableReceipt = async (route: import('playwright-core').Route) => {
+      const response = await route.fetch();
+      await route.fulfill({ response, json: { ok: true } });
+    };
+    await page.route(pathPattern, unreadableReceipt);
+    const isInquiryResponse = (response: import('playwright-core').Response) =>
+      new URL(response.url()).pathname === '/api/inquiries' && response.request().method() === 'POST';
+    const submitBtn = occasionModal.getByRole('button', { name: 'Save Event Inquiry', exact: true });
+    const [firstResponse] = await Promise.all([page.waitForResponse(isInquiryResponse), submitBtn.click()]);
+    assert.equal(firstResponse.status(), 200);
+    await occasionModal.getByRole('alert').waitFor();
+    assert.equal(await occasionModal.getByText('Inquiry Registered Successfully').count(), 0);
+    assert.equal(await occasionModal.locator('#occasion-name').inputValue(), 'Fawad Chaudhry');
+    const initialRecords = await db.collection('inquiries').get();
+    assert.equal(initialRecords.docs.length, 1);
 
-    // Verify backend persisted the inquiry in Firestore via real inquiriesRouter
+    await page.evaluate(() => (window as any).fixture.setLanguage('ur'));
+    await occasionModal.getByRole('alert').filter({ hasText: 'درخواست محفوظ ہونے کی تصدیق نہیں ہو سکی' }).waitFor();
+    await page.unroute(pathPattern, unreadableReceipt);
+    const [retryResponse] = await Promise.all([
+      page.waitForResponse(isInquiryResponse),
+      occasionModal.getByRole('button', { name: 'تقریب کی درخواست محفوظ کریں', exact: true }).click(),
+    ]);
+    assert.equal(retryResponse.status(), 200);
+    assert.equal(retryResponse.request().headers()['idempotency-key'], firstResponse.request().headers()['idempotency-key']);
+    const receipt = await retryResponse.json();
+    await occasionModal.getByRole('heading', { name: 'آپ کی درخواست محفوظ ہو گئی ہے', exact: true }).waitFor();
+    assert.equal(await occasionModal.getByText(`#${receipt.ticketId}`, { exact: true }).count(), 1);
+
     const inqDocs = await db.collection('inquiries').get();
-    assert.ok(inqDocs.docs.length >= 1, 'Inquiry must be stored in database');
+    assert.equal(inqDocs.docs.length, 1, 'retry uses the original persisted inquiry');
     const savedInquiry = inqDocs.docs[0].data();
     assert.equal(savedInquiry.customerName, 'Fawad Chaudhry');
     assert.equal(savedInquiry.phone, '03009876543');
     assert.equal(savedInquiry.city, 'karachi');
     assert.ok(savedInquiry.notes.includes('Emerald ribbons'));
-    assert.ok(savedInquiry.ticketId);
-
-    // Verify modal displays registration confirmation
-    const successMsg = occasionModal.locator('text=Inquiry Registered Successfully');
-    await successMsg.waitFor();
-    assert.ok(await successMsg.isVisible());
+    assert.equal(receipt.ticketId, savedInquiry.ticketId);
 
     // Close modal
     await page.keyboard.press('Escape');

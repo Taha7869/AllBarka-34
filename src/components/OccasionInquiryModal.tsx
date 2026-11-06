@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { X, Calendar, MapPin, Package, HeartHandshake, MessageCircle, AlertCircle, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { acquireScrollLock } from '../utils/scrollLock';
+import { withApiDeadline } from '../lib/apiDeadline';
+import { apiUrl } from '../lib/apiUrl';
 import {
   type EventType,
   type DeliveryCity,
@@ -44,8 +46,9 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitted, setSubmitted] = useState<boolean>(false);
   const [ticketId, setTicketId] = useState<string>('');
-  const [formError, setFormError] = useState<string>('');
+  const [formError, setFormError] = useState('');
   const idempotencyKeyRef = useRef<string>('');
+  const requestRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -53,7 +56,12 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
       setSubmitted(false);
       setTicketId('');
       setFormError('');
+      setIsSubmitting(false);
     }
+    return () => {
+      requestRef.current?.abort();
+      requestRef.current = null;
+    };
   }, [isOpen]);
 
   useEffect(() => {
@@ -92,14 +100,17 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) {
-      setFormError(t('nameRequired', 'Please enter your full name'));
+    if (requestRef.current) return;
+    if (name.trim().length < 2 || name.trim().length > 100) {
+      setFormError('occasion.errorName');
       return;
     }
     if (!phone.trim() || phone.replace(/\D/g, '').length < 10) {
-      setFormError(t('phoneRequired', 'Please enter a valid WhatsApp contact number (at least 10 digits)'));
+      setFormError('occasion.errorPhone');
       return;
     }
+    const request = new AbortController();
+    requestRef.current = request;
     setFormError('');
     setIsSubmitting(true);
 
@@ -107,46 +118,48 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
     const combinedNotes = `[Packaging: ${packagingLabel}] [Greeting Card: ${includeCard ? 'Yes, personalized' : 'Standard'}] ${notes.trim()}`.trim();
 
     try {
-      const res = await fetch('/api/inquiries', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Idempotency-Key': idempotencyKeyRef.current,
-        },
-        body: JSON.stringify({
-          customerName: name.trim(),
-          phone: phone.trim(),
-          city,
-          type: 'general',
-          eventType,
-          targetEventDate: requestedDate || null,
-          quantity: Math.max(1, Math.min(50000, Math.floor(quantity) || 1)),
-          notes: combinedNotes,
-          idempotencyKey: idempotencyKeyRef.current,
-        }),
-      });
+      const { ok, result } = await withApiDeadline(async signal => {
+        const res = await fetch(apiUrl('/api/inquiries'), {
+          signal,
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Idempotency-Key': idempotencyKeyRef.current,
+          },
+          body: JSON.stringify({
+            customerName: name.trim(),
+            phone: phone.trim(),
+            city,
+            type: 'general',
+            eventType,
+            targetEventDate: requestedDate || null,
+            quantity: Math.max(1, Math.min(50000, Math.floor(quantity) || 1)),
+            notes: combinedNotes,
+            idempotencyKey: idempotencyKeyRef.current,
+          }),
+        });
 
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        setFormError(
-          errorData.error ||
-          errorData.message ||
-          t('occasion.errorFailed', 'Unable to register inquiry on server. You can retry or message concierge via WhatsApp.')
-        );
-        setIsSubmitting(false);
+        return { ok: res.ok, result: await res.json().catch(() => null) };
+      }, 12000, request.signal);
+      if (request.signal.aborted) return;
+
+      const id = result?.ticketId ?? result?.id;
+      if (!ok || (result?.ok !== true && result?.success !== true) ||
+          typeof id !== 'string' || !id.trim() || id.length > 100) {
+        if (result?.code === 'MISSING_NAME') setFormError('occasion.errorName');
+        else if (result?.code === 'MISSING_PHONE') setFormError('occasion.errorPhone');
+        else setFormError('occasion.errorSave');
         return;
       }
-
-      const result = await res.json();
-      const refId = result.ticketId || result.id || 'INQ-RECEIVED';
-      setTicketId(refId);
+      setTicketId(id.trim());
       setSubmitted(true);
-      setIsSubmitting(false);
     } catch {
-      setFormError(
-        t('occasion.errorNetwork', 'Network issue. Inquiry was not registered on our server. You can retry or message our concierge directly via WhatsApp.')
-      );
-      setIsSubmitting(false);
+      if (!request.signal.aborted) setFormError('occasion.errorSave');
+    } finally {
+      if (requestRef.current === request) {
+        requestRef.current = null;
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -197,13 +210,13 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
               <CheckCircle2 size={32} />
             </div>
             <h3 className="text-xl font-serif font-bold text-[#120F17] dark:text-[#FAF9F5]">
-              {t('occasion.successTitle', 'Inquiry Registered Successfully')}
+              {t('occasion.successTitle')}
             </h3>
             <p className="text-xs text-neutral-600 dark:text-neutral-300 max-w-md mx-auto leading-relaxed">
-              {t('occasion.successMessage', 'Your celebration inquiry has been recorded in our concierge registry.')}{' '}
+              {t('occasion.successMessage')}{' '}
               {ticketId && (
                 <span className="block mt-2 font-mono font-bold text-[#043327] dark:text-emerald-400 text-sm">
-                  Reference #{ticketId}
+                  {t('occasion.reference')} <bdi>#{ticketId}</bdi>
                 </span>
               )}
             </p>
@@ -218,7 +231,7 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-[#043327] hover:bg-[#074b39] text-[#FAF9F5] text-xs font-semibold shadow-md transition-all focus-ring"
               >
                 <MessageCircle size={16} />
-                <span>{t('occasion.openWhatsAppWithRef', 'Open WhatsApp with Reference')}</span>
+                <span>{t('occasion.openWhatsAppWithRef')}</span>
               </a>
               <button
                 type="button"
@@ -236,7 +249,7 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
               <div role="alert" className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-200 text-xs space-y-2">
                 <div className="flex items-start gap-2">
                   <AlertCircle size={16} className="shrink-0 mt-0.5 text-rose-600" />
-                  <span>{formError}</span>
+                  <span>{t(formError)}</span>
                 </div>
                 <div className="pt-1">
                   <a
@@ -246,7 +259,7 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
                     className="inline-flex items-center gap-1.5 font-bold underline hover:opacity-80"
                   >
                     <MessageCircle size={14} />
-                    <span>{t('occasion.fallbackWhatsApp', 'Message Concierge Directly on WhatsApp instead')}</span>
+                    <span>{t('occasion.fallbackWhatsApp')}</span>
                   </a>
                 </div>
               </div>
@@ -284,7 +297,7 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
                 >
                   {CITY_OPTIONS.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {language === 'ur' ? c.label_ur : language === 'ar' ? c.label_ar : c.label_en}
+                      {c[`label_${language}`]}
                     </option>
                   ))}
                 </select>
@@ -294,7 +307,7 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
             {/* Target Event Date & Lead Time Notice */}
             <div>
               <label htmlFor="occasion-date" className="block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-1.5">
-                {t('occasion.targetDate', 'Target Event Date (Optional)')}
+                {t('occasion.date')}
               </label>
               <div className="relative">
                 <input
@@ -326,13 +339,13 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
               <div>
                 <p className="font-semibold">
                   {leadTime.status === 'urgent'
-                    ? t('occasion.leadUrgent', 'Urgent timeline: custom preparation requires at least 10 calendar days. We will review urgent feasibility via WhatsApp.')
+                    ? t('occasion.leadUrgent')
                     : leadTime.status === 'tight'
-                    ? t('occasion.leadTight', 'Tight turnaround: we recommend confirming your selection promptly to protect your event date.')
-                    : t('occasion.leadSafe', 'Standard lead time is sufficient for handcrafted artisanal preparation.')}
+                    ? t('occasion.leadTight')
+                    : t('occasion.leadSafe')}
                 </p>
                 <p className="text-[11px] opacity-80 mt-0.5">
-                  Earliest artisanal readiness: <strong>{leadTime.earliestDeliveryDate}</strong> ({leadTime.prepDays}-day preparation policy; {leadTime.transitNote}).
+                  {t('occasion.preparation').replace('{days}', String(leadTime.prepDays))}
                 </p>
               </div>
             </div>
@@ -383,7 +396,7 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
                 className="w-4 h-4 rounded text-[#043327] accent-[#043327] cursor-pointer"
               />
               <label htmlFor="occasion-card" className="text-xs text-neutral-700 dark:text-neutral-300 cursor-pointer">
-                {t('occasion.includeCard', 'Include personalized boutique greeting card & satin ribbon finish')}
+                {t('occasion.card')}
               </label>
             </div>
 
@@ -399,7 +412,10 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Begum Salma Qureshi"
+                  autoComplete="name"
+                  dir="auto"
+                  maxLength={100}
+                  placeholder={t('occasion.name')}
                   className="w-full px-3 py-2 rounded-xl border border-[#D4AF37]/30 bg-white dark:bg-zinc-800 text-sm text-[#120F17] dark:text-[#FAF9F5] focus-ring"
                 />
               </div>
@@ -414,6 +430,8 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
                   required
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
+                  autoComplete="tel"
+                  dir="ltr"
                   placeholder="0300 1234567"
                   className="w-full px-3 py-2 rounded-xl border border-[#D4AF37]/30 bg-white dark:bg-zinc-800 text-sm text-[#120F17] dark:text-[#FAF9F5] focus-ring"
                 />
@@ -429,7 +447,8 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
                 rows={2}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="e.g. Emerald green theme with golden calligraphy, delivery directly to venue."
+                dir="auto"
+                placeholder={t('occasion.notesExample')}
                 className="w-full px-3 py-2 rounded-xl border border-[#D4AF37]/30 bg-white dark:bg-zinc-800 text-sm text-[#120F17] dark:text-[#FAF9F5] focus-ring"
               />
             </div>
@@ -453,7 +472,7 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
                 <span>
                   {isSubmitting
                     ? t('loading', 'Submitting...')
-                    : t('occasion.submit', 'Request Event Quote & Register Inquiry')}
+                    : t('occasion.submit')}
                 </span>
               </button>
             </div>

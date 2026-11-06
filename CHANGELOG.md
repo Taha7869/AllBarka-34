@@ -1,3 +1,8 @@
+## 6 November 2026 — event inquiry confirmation
+
+- Show a confirmation only after the server acknowledges the save and returns the inquiry reference. Preserve details and retry identity after an uncertain response.
+- Localize preparation guidance, validation, retry and the saved receipt. Clarify the preparation window and separate courier transit.
+
 ## 6 November 2026 — voice panel position on language changes
 
 - Realign the open voice panel after the document direction changes. A browser regression reproduces the late RTL/LTR commit and verifies the panel stays within the tablet viewport. [Evidence](docs/execution-2026-11-04/WEBSITE_COMPLETION_2026-11-05.md).
