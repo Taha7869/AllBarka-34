@@ -46,7 +46,6 @@ jobs:
           ALLBARKA_CAPTURE_EVIDENCE: 'true'
         run: node scripts/run-all-tests.mjs
       - name: Retain fixture storefront screenshots
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: storefront-visual-evidence

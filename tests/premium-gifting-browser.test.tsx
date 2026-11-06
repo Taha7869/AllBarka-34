@@ -107,6 +107,11 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
         assert.equal(await inquiry.evaluate(e => e.scrollWidth <= e.clientWidth + 1), true, `quote ${language}/${theme}/${size.width}`);
         assert.ok(await page.locator('.custom-quote-body').evaluate(e => e.clientHeight) >= 80);
         assert.ok(await page.locator('#quote-gift-recipient').evaluate(e => e.getBoundingClientRect().height) >= 44);
+        if ((size.width === 360 && language === 'ur' && theme === 'dark') ||
+            (size.width === 1440 && language === 'en' && theme === 'light')) {
+          await page.locator('#quote-gift-recipient').scrollIntoViewIfNeeded();
+          await page.screenshot({ path: path.join(evidence, `after-quote-${size.width}-${language}-${theme}.jpg`), quality: 82, animations: 'disabled' });
+        }
         layouts.push({surface:'quote',width:size.width,language,theme});
       }
       await page.setViewportSize({width:360,height:640});
@@ -123,15 +128,23 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     await page.locator('#quote-gift-recipient').selectOption('friend');
     const failSave = (route:any) => route.fulfill({status:503,json:{ok:false,code:'PERSISTENCE_UNAVAILABLE',message:'Fixture storage unavailable'}});
     await page.route('**/api/quotes', failSave);
-    const failedResponse = page.waitForResponse(r => r.url().endsWith('/api/quotes') && r.status() === 503);
-    await inquiry.locator('button[type=submit]').click(); await failedResponse;
+    const isQuoteSave = (response: import('playwright-core').Response) =>
+      new URL(response.url()).pathname === '/api/quotes' && response.request().method() === 'POST';
+    const [failedResponse] = await Promise.all([
+      page.waitForResponse(isQuoteSave),
+      inquiry.getByRole('button', { name: 'Submit & Save Custom Quote', exact: true }).click(),
+    ]);
+    assert.equal(failedResponse.status(), 503);
     await inquiry.getByText('Fixture storage unavailable', {exact:true}).waitFor();
     assert.equal(await page.locator('#quote-gift-recipient').inputValue(), 'friend');
     assert.equal(await page.locator('#quote-customer-name').inputValue(), 'Fixture Customer');
     await page.unroute('**/api/quotes', failSave);
-    const savedResponse = page.waitForResponse(r => r.url().endsWith('/api/quotes') && r.status() === 200);
-    await inquiry.locator('button[type=submit]').click();
-    const saved = await (await savedResponse).json();
+    const [savedResponse] = await Promise.all([
+      page.waitForResponse(isQuoteSave),
+      inquiry.getByRole('button', { name: 'Retry Saving Quote', exact: true }).click(),
+    ]);
+    const saved = await savedResponse.json();
+    assert.equal(savedResponse.status(), 200, JSON.stringify(saved));
     await inquiry.locator('[data-gift-recipient=friend]').waitFor();
     const savedRecord:any = records.get(`inquiries/${saved.id}`);
     assert.equal(savedRecord.giftRecipient, 'friend'); assert.equal(savedRecord.customPrintText, '');
