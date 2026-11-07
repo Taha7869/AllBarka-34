@@ -1,4 +1,26 @@
-# Website completion and verification — 5–6 November 2026
+# Website completion and verification — 5–7 November 2026
+
+## 7 November — completed offline verification checkpoint
+
+The quote translation, saved event-inquiry confirmation and open voice-panel direction correction are complete for their recorded scopes. The verified application source is `74dad9e2f36bbd7b3fc50ed61d2b182149f59db3`. Hosted run [42179191612](https://github.com/Taha7869/AllBarka-34/actions/runs/42179191612) tested PR merge `1451ab05f9ddc2c5645635d7209acb711327104f`. Both have tree `9aacd0340dfe28292e2c7072f88844c3f1f6940f`.
+
+| Check | Outcome |
+| --- | --- |
+| Hosted typecheck, hooks lint and production build/privacy | PASS |
+| Full hosted offline suite | 841 passed, zero failed and one emulator-only skip across 107 test files |
+| Additional backend and production checks in the same run | 21 backend and 36 production checks passed |
+| Catalog image references | 97 products, 115 references and zero missing files |
+| Local browser follow-up on the current application source | Three journeys passed for occasion inquiry, gifting and voice |
+| Separate local demo Firestore rules test | 1/1 passed on the same rules file, with no skips |
+| Screenshots | The 60-layout gifting run and 30-layout voice journey passed. Mobile Urdu/dark and desktop English/light quote screenshots were inspected |
+| Current live provider and merchant acceptance | Pending the existing external prerequisites |
+
+The hosted skip and the separately passed emulator check remain distinct results. The report history below retains the earlier failures, corrections and source revisions. This completion checkpoint changes documentation only. The runtime and test source are identical to the verified tree.
+
+Self-review covered translation/display values, retry identity and saved-reference handling, voice observer cleanup, RTL and viewport alignment. A new regression reproduced the panel overflow before the fix and passed afterwards. No independent reviewer result is claimed.
+
+The broader M04 page typography sweep and authentic M03/M08/M09 media, contents and printing work retain their existing status in MASTER_PLAN.md. Railway activation, actual provider/device checks, current merchant data and live accepted-order verification remain release dependencies.
+
 
 ## Scope and inspected source
 
@@ -85,7 +107,10 @@ The browser journey checks translated headings, close labels and event options a
 
 The hosted 768px voice layout measured a right edge of 882px. The shop toolbar inherits the document direction. When the root direction commits after the voice control's layout effect, the microphone moves while the panel can retain its old inline position. A controlled browser reproduction changed the inherited direction with the real shop panel open. Before the fix its right edge reached 939px at 768px.
 
-The open panel now realigns on document direction changes and disconnects the observer when the panel closes or unmounts. The existing browser test reproduces the late direction change and checks the panel remains inside the viewport. The corrected test, all 30 voice layouts and the capture, cancellation, transcription and fallback fixture flows passed locally. Exact full regression verification for this follow-up is pending.
+The open panel now realigns on document direction changes and disconnects the observer when the panel closes or unmounts. The existing browser test reproduces the late direction change and checks the panel remains inside the viewport. The corrected test, all 30 voice layouts and the capture, cancellation, transcription and fallback fixture flows passed locally. The corrected source and test tree were read back from `3242acf752e5421b784a9b221438b2502414e9b5` (`c44ea586fbdb966481c9e049b3ad3e0bc3c4a004`). Full local verification passed with 841 passes, zero failures and one emulator-only skip in 107 test files, plus 21 backend and 36 production checks. The 97-product, 115-reference asset audit found no missing files. Typecheck, hooks lint and the 84-artifact privacy audit passed. The separately passing demo Firestore test applies to the same rules file.
+
+
+[Hosted run for the voice correction](https://github.com/Taha7869/AllBarka-34/actions/runs/42178941118) was canceled after the branch advanced to the event inquiry checkpoint.
 
 ## 6 November — event inquiry confirmation
 
@@ -94,3 +119,6 @@ Inspected parent `3242acf752e5421b784a9b221438b2502414e9b5` on the draft PR #16 
 - **M13/M30:** event inquiry success requires an acknowledged response and a real ticket ID. An unconfirmed save keeps form details and the original retry key while the dialog is open. Requests have a deadline, and results from closed dialogs cannot update another dialog session. The existing WhatsApp action keeps the event, date, quantity and packaging values. Preparation guidance starts the minimum time from approval and receipt of the advance. Courier transit is separate. The Lahore label identifies the city without a dispatch promise.
 - **Review and regression:** the Batch C test sends the first request to the real fixture backend and removes the returned reference. It verifies the localized error and saved receipt on retry, matching request keys and one stored record. Typecheck, hooks lint, build/privacy audit and the 57 focused tests cover the local application and service checks. Local Chromium is blocked by an executor socket restriction. The separate demo Firestore rules test passed 1/1 on the unchanged rules.
 - **Scope and release:** catalog classification N/A. Product records, provider settings and pricing logic are outside this change. Next, confirm the hosted Batch C journey and full offline regression on the new branch and PR runs. Live provider acceptance remains a separate release gate.
+
+
+**Local follow-up on `74dad9e2f36bbd7b3fc50ed61d2b182149f59db3`:** Typecheck, hooks lint, build/privacy and three browser journeys passed with Chrome Headless Shell 153. Batch C verified the real fixture-backed occasion save and retry. Gifting verified Arabic submission and Urdu retry. Voice verified late root-direction changes and all 30 layouts. [Hosted full regression](https://github.com/Taha7869/AllBarka-34/actions/runs/42179191612) passed.

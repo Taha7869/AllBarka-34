@@ -1,3 +1,8 @@
+## 7 November 2026 — verified offline completion
+
+- Record the passing source74dad9e hosted suite for quote translation, event inquiry confirmation and voice-panel positioning.
+- Record the separate passing demo rules check, local browser follow-up, inspected screenshots and release dependencies. [Evidence](docs/execution-2026-11-04/WEBSITE_COMPLETION_2026-11-05.md).
+
 ## 6 November 2026 — event inquiry confirmation
 
 - Show a confirmation only after the server acknowledges the save and returns the inquiry reference. Preserve details and retry identity after an uncertain response.
