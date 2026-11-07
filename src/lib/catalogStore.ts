@@ -5,13 +5,17 @@ import { PRODUCTS, BID_BOX_PRODUCT_IDS } from '../data/products';
 import type { Product, MerchandisingSettings } from '../types';
 import {
   CatalogError,
+  requiresStoredLegacyPackagingPricing,
   readCatalogPricing,
   productFromPricing,
   unavailableProduct,
   validateCatalogPricing,
   validateMoqOverride,
   dynamicProductFromDocument,
+  withReadableRecipes,
   validateDynamicProduct,
+  normalizeCommerceInput,
+  assertProductPublishable,
   validateMerchandisingSettings,
   catalogVariantId,
   VALID_PACKAGING_SUBCATEGORIES,
@@ -21,6 +25,7 @@ import {
 } from './catalogSchema';
 import { resolveCartIdentity } from './cartInput';
 import { CUSTOM_HAMPER_PRODUCT_ID, HAMPER_SELECTION_IDS, type HamperBox } from './hamperCatalog';
+import { readFilledRecipes, readRecipeIngredients } from './filledGiftPricing';
 import { HAMPER_BOX_SEEDS, validateHamperBoxPricing, boxFromPricing, type HamperBoxRecord } from './hamperBoxSchema';
 import { applyReferenceImportPricing, type ReferencePricingResult } from './pricingImport';
 
@@ -28,6 +33,14 @@ export const CATALOG_CACHE_MS = 15_000;
 export const CATALOG_COLLECTION = 'products';
 export const MERCHANDISING_COLLECTION = 'merchandising';
 const seeds = new Map(PRODUCTS.map(product => [product.id, product]));
+// Existing compiled products predate explicit lifecycle fields. A metadata edit
+// must preserve their public state without publishing a new/explicit draft.
+function storedPublicationStatus(data: Record<string, any>, productId: string) {
+  if (data.status !== undefined) return data.status;
+  if (seeds.has(productId) && !data.commerce && data.active !== false && data.inStock !== false && data.isDraft !== true
+    && data.publicationStatus !== 'draft' && data.publicationStatus !== 'archived') return 'published';
+  return undefined;
+}
 const fingerprint = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 export interface CatalogSnapshot { products: Product[]; hamperBoxes: HamperBox[]; version: string; invalidProductIds: string[]; checkedAt: string }
 let cache: { db: Firestore; snapshot: CatalogSnapshot; at: number } | null = null;
@@ -74,7 +87,7 @@ export function storedCatalogRecord(productId: string, value: unknown): CatalogR
         };
         const pricing = validateCatalogPricing(normalizedPricing, prod);
         const updatedAt = typeof raw.updatedAt === 'string' ? raw.updatedAt : null;
-        return { pricing, version: fingerprint(pricing), updatedAt };
+        return { pricing, version: fingerprint(prod.commerce ? { pricing, commerce: prod.commerce } : pricing), updatedAt };
       }
       const variants = Array.isArray((value as any).variants)
         ? (value as any).variants.map((v: any) => {
@@ -112,13 +125,15 @@ export function storedCatalogRecord(productId: string, value: unknown): CatalogR
         ...(typeof prod.moqOverride === 'number' ? { moqOverride: prod.moqOverride } : {}),
       };
       const updatedAt = typeof (value as any).updatedAt === 'string' ? (value as any).updatedAt : null;
-      return { pricing, version: fingerprint(pricing), updatedAt };
+      return { pricing, version: fingerprint(prod.commerce ? { pricing, commerce: prod.commerce } : pricing), updatedAt };
     }
     throw new CatalogError('UNKNOWN_CATALOG_PRODUCT', 404);
   }
-  const pricing = readCatalogPricing(value, seed);
+  const raw = value && typeof value === 'object' ? value as Record<string, unknown> : {};
+  const commerceSeed = raw.commerce ? { ...seed, ...validateDynamicProduct({ ...seed, ...raw, id: productId }, productId) } : seed;
+  const pricing = readCatalogPricing(value, commerceSeed);
   const updatedAt = value && typeof value === 'object' && typeof (value as any).updatedAt === 'string' ? (value as any).updatedAt : null;
-  return { pricing, version: fingerprint(pricing), updatedAt };
+  return { pricing, version: fingerprint(raw.commerce ? { pricing, commerce: commerceSeed.commerce } : pricing), updatedAt };
 }
 
 function snapshotFromDocuments(snapshots: DocumentSnapshot[], now: number): CatalogSnapshot {
@@ -145,6 +160,7 @@ function snapshotFromDocuments(snapshots: DocumentSnapshot[], now: number): Cata
         products.push({
           ...base,
           ...raw,
+          ...(raw.commerce ? { commerce: validateDynamicProduct({ ...seed, ...raw, id: seed.id }, seed.id).commerce } : {}),
           id: seed.id,
           name_en: raw.name_en || base.name_en,
           prices: base.prices,
@@ -163,6 +179,9 @@ function snapshotFromDocuments(snapshots: DocumentSnapshot[], now: number): Cata
           occasions: Array.isArray(raw.occasions) ? raw.occasions : base.occasions,
           personalization: raw.personalization || base.personalization,
           inclusions: Array.isArray(raw.inclusions) ? raw.inclusions : base.inclusions,
+          // Stored recipes are re-validated on read; an invalid or absent recipe stays unpriced.
+          recipeIngredients: readRecipeIngredients(raw.recipeIngredients ?? base.recipeIngredients),
+          filledRecipes: readFilledRecipes(raw.filledRecipes ?? base.filledRecipes),
           exclusions: Array.isArray(raw.exclusions) ? raw.exclusions : base.exclusions,
           moqOverride: raw.moqOverride === null ? undefined : (typeof raw.moqOverride === 'number' ? raw.moqOverride : base.moqOverride),
           preparationDays: typeof raw.preparationDays === 'number' ? raw.preparationDays : base.preparationDays,
@@ -177,7 +196,7 @@ function snapshotFromDocuments(snapshots: DocumentSnapshot[], now: number): Cata
       // Dynamic product absent from static seeds
       try {
         const dynamicProd = dynamicProductFromDocument(document.data(), document.id);
-        products.push(dynamicProd);
+        products.push({ ...dynamicProd, catalogRevision: storedCatalogRecord(document.id, document.data()).version });
       } catch {
         invalidProductIds.push(document.id);
       }
@@ -191,6 +210,9 @@ function snapshotFromDocuments(snapshots: DocumentSnapshot[], now: number): Cata
       if (!doc || !doc.exists) {
         try {
           if (BID_BOX_PRODUCT_IDS.includes(seed.id)) {
+            // Reading a valid saved legacy label must not activate a previously
+            // unavailable product from compiled prices when its record is missing.
+            if (requiresStoredLegacyPackagingPricing(seed.id)) throw new CatalogError('MISSING_CATALOG_PRODUCT', 503);
             const record = storedCatalogRecord(seed.id, seed);
             products.push(productFromPricing(seed, record.pricing, record.version));
           } else {
@@ -360,6 +382,7 @@ export async function updateCatalogPricing(input: { db: Firestore | null; produc
   const result = await db.runTransaction(async transaction => {
     const snapshot = await transaction.get(reference);
     if (!snapshot.exists) throw new CatalogError('MISSING_CATALOG_PRODUCT', 409);
+    if (snapshot.data()?.commerce) throw new CatalogError('USE_PRODUCT_OPTIONS_EDITOR', 409);
     const current = storedCatalogRecord(input.productId, snapshot.data());
     if (current.pricing.revision !== body.expectedRevision || current.version !== body.expectedVersion || current.pricing.revision >= Number.MAX_SAFE_INTEGER) throw new CatalogError('CATALOG_REVISION_CONFLICT', 409);
     const targetProduct = seed || dynamicProductFromDocument(snapshot.data(), input.productId);
@@ -443,7 +466,7 @@ export async function getAdminProductRecord(db: Firestore | null, productId: str
   const snapshot = await db.collection(CATALOG_COLLECTION).doc(productId).get();
   if (snapshot.exists) {
     const data = (snapshot.data() || {}) as Record<string, any>;
-    const dynamicProd = dynamicProductFromDocument(data, productId);
+    const dynamicProd = dynamicProductFromDocument({ ...data, status: storedPublicationStatus(data, productId) }, productId);
     // In admin representation, preserve ALL variants (including disabled ones) with full status and MOQ overrides
     const allVariants = Array.isArray(data.variants)
       ? data.variants.map((v: any) => {
@@ -493,14 +516,15 @@ export async function listAdminProducts(db: Firestore | null): Promise<Product[]
 export async function createAdminProduct(input: { db: Firestore | null; body: unknown; actorUid: string }): Promise<Product & { revision: number }> {
   if (!input.db) throw new CatalogError('CATALOG_STORE_UNAVAILABLE', 503);
   if (!input.actorUid) throw new CatalogError('FORBIDDEN_ADMIN', 403);
-  const validated = validateDynamicProduct(input.body);
+  const prepared = normalizeCommerceInput((input.body && typeof input.body === 'object' ? input.body : {}) as Record<string, unknown>);
+  const validated = validateDynamicProduct(prepared);
   const db = input.db;
   const ref = db.collection(CATALOG_COLLECTION).doc(validated.id);
   const auditRef = db.collection('catalogAudits').doc(randomUUID());
   const now = new Date().toISOString();
   const revision = 1;
 
-  const rawBody = (input.body && typeof input.body === 'object' ? input.body : {}) as Record<string, any>;
+  const rawBody = prepared as Record<string, any>;
   const variants = Array.isArray(rawBody.variants)
     ? rawBody.variants.map((v: any) => {
         const rawVarMoq = v?.moqOverride !== undefined ? v.moqOverride : v?.minOrderQuantity;
@@ -571,8 +595,8 @@ export async function updateAdminProduct(input: { db: Firestore | null; productI
   if (!input.actorUid) throw new CatalogError('FORBIDDEN_ADMIN', 403);
   const db = input.db;
   const ref = db.collection(CATALOG_COLLECTION).doc(input.productId);
-  const body = (input.body && typeof input.body === 'object' ? input.body : {}) as Record<string, any>;
-  const expectedRevision = body.expectedRevision !== undefined ? Number(body.expectedRevision) : NaN;
+  const rawBody = (input.body && typeof input.body === 'object' ? input.body : {}) as Record<string, any>;
+  const expectedRevision = rawBody.expectedRevision !== undefined ? Number(rawBody.expectedRevision) : NaN;
   if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0) {
     throw new CatalogError('CATALOG_REVISION_CONFLICT', 409);
   }
@@ -581,6 +605,10 @@ export async function updateAdminProduct(input: { db: Firestore | null; productI
     const snap = await transaction.get(ref);
     const existingData = snap.exists ? (snap.data() as Record<string, any>) : (seeds.get(input.productId) as Record<string, any> | undefined);
     if (!existingData) throw new CatalogError('UNKNOWN_CATALOG_PRODUCT', 404);
+    if (existingData.commerce && rawBody.commerce === null) throw new CatalogError('COMMERCE_CONFIGURATION_REQUIRED');
+    if (existingData.commerce && rawBody.commerce === undefined && (rawBody.prices !== undefined || rawBody.variants !== undefined)) throw new CatalogError('USE_PRODUCT_OPTIONS_EDITOR', 409);
+    const body = rawBody.commerce
+      ? normalizeCommerceInput({ ...existingData, ...rawBody }) as Record<string, any> : rawBody;
 
     const currentRevision = Number.isSafeInteger(existingData.revision) ? existingData.revision : (existingData.adminRevision || 0);
     if (currentRevision !== expectedRevision) {
@@ -656,7 +684,8 @@ export async function updateAdminProduct(input: { db: Firestore | null; productI
             : undefined;
 
     const validated = validateDynamicProduct({
-      ...existingData,
+      ...withReadableRecipes(existingData),
+      status: storedPublicationStatus(existingData, input.productId),
       ...body,
       id: input.productId,
       variants: canonicalVariants || existingData.variants,
@@ -672,6 +701,36 @@ export async function updateAdminProduct(input: { db: Firestore | null; productI
       updatedAt: now,
       updatedBy: input.actorUid,
     };
+
+    // An explicit null clears a saved recipe, passport, claims or media; omitted fields keep existing.
+    for (const field of ['recipeIngredients', 'filledRecipes'] as const) {
+      if (body[field] === null || validated[field] === undefined) delete updatedData[field];
+    }
+    for (const field of ['passport', 'claimsVerification', 'mediaFocalPoint'] as const) {
+      if (body[field] === null) {
+        delete updatedData[field];
+      }
+    }
+    if (body.cropMode === null || body.cropMode === '') {
+      delete updatedData.cropMode;
+    }
+
+    // Re-verification Safety:
+    // If existing claims was verified, and passport facts/certifications were modified
+    // without an explicit verified claim reconfirmation in the same request,
+    // automatically revoke verified status down to 'unverified' and clear verifiedAt.
+    if (existingData.claimsVerification?.status === 'verified' && body.passport !== undefined && body.passport !== null) {
+      const existingPassport = existingData.passport || {};
+      const newPassport = updatedData.passport || {};
+      const factsChanged = JSON.stringify(existingPassport) !== JSON.stringify(newPassport);
+      const isExplicitlyReconfirmed = body.claimsVerification && body.claimsVerification.status === 'verified';
+      if (factsChanged && !isExplicitlyReconfirmed) {
+        updatedData.claimsVerification = {
+          status: 'unverified',
+          notes: 'Passport facts or certifications modified; re-verification required',
+        };
+      }
+    }
 
     if (finalProdMoq === undefined) {
       delete updatedData.moqOverride;
@@ -846,6 +905,8 @@ export async function publishAdminProduct(input: { db: Firestore | null; product
       updatedAt: now,
       updatedBy: input.actorUid,
     };
+
+    if (existing.commerce) assertProductPublishable(validateDynamicProduct(updated, input.productId));
 
     transaction.set(ref, updated);
     transaction.set(db.collection('catalogAudits').doc(randomUUID()), {

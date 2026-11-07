@@ -1,0 +1,218 @@
+[
+  {
+    "route": "journal",
+    "width": 390,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "route": "journal",
+    "width": 390,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "route": "journal",
+    "width": 390,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "route": "journal",
+    "width": 390,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "route": "journal",
+    "width": 390,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "route": "journal",
+    "width": 390,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "route": "journal",
+    "width": 1440,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "route": "journal",
+    "width": 1440,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "route": "journal",
+    "width": 1440,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "route": "journal",
+    "width": 1440,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "route": "journal",
+    "width": 1440,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "route": "journal",
+    "width": 1440,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "route": "journal/choosing-pack-sizes",
+    "width": 390,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "route": "journal/choosing-pack-sizes",
+    "width": 390,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "route": "journal/choosing-pack-sizes",
+    "width": 390,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "route": "journal/choosing-pack-sizes",
+    "width": 390,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "route": "journal/choosing-pack-sizes",
+    "width": 390,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "route": "journal/choosing-pack-sizes",
+    "width": 390,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "route": "journal/choosing-pack-sizes",
+    "width": 1440,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "route": "journal/choosing-pack-sizes",
+    "width": 1440,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "route": "journal/choosing-pack-sizes",
+    "width": 1440,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "route": "journal/choosing-pack-sizes",
+    "width": 1440,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "route": "journal/choosing-pack-sizes",
+    "width": 1440,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "route": "journal/choosing-pack-sizes",
+    "width": 1440,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "route": "story",
+    "width": 390,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "route": "story",
+    "width": 390,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "route": "story",
+    "width": 390,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "route": "story",
+    "width": 390,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "route": "story",
+    "width": 390,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "route": "story",
+    "width": 390,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "route": "story",
+    "width": 1440,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "route": "story",
+    "width": 1440,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "route": "story",
+    "width": 1440,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "route": "story",
+    "width": 1440,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "route": "story",
+    "width": 1440,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "route": "story",
+    "width": 1440,
+    "language": "ar",
+    "theme": "dark"
+  }
+]

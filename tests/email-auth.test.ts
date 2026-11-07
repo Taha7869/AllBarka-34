@@ -9,7 +9,7 @@ import { authenticatePatronCredentials } from '../src/lib/serverAuthentication';
 test('explicit email account token wins over a previous account session during guest order claims', async () => {
   const calls: string[] = [];
   const claims = await authenticatePatronCredentials('Bearer new-account-token', 'old-account-session', {
-    verifyIdToken: async token => { calls.push(token); return { uid: 'new-account' }; },
+    verifyIdToken: async (token, checkRevoked) => { assert.equal(checkRevoked, true); calls.push(token); return { uid: 'new-account' }; },
     verifySessionCookie: async () => { calls.push('old-cookie'); return { uid: 'old-account' }; },
   });
   assert.equal(claims?.uid, 'new-account');
@@ -204,5 +204,6 @@ test('website auth surfaces expose no phone/SMS/reCAPTCHA flows or former allowa
   assert.match(service, /signInWithEmailAndPassword/);
   assert.match(service, /createUserWithEmailAndPassword/);
   assert.match(service, /sendPasswordResetEmail/);
-  assert.match(source, /hasAdminClaim\(user\)/);
+  assert.match(source, /requireCurrentAdministrator/);
+  assert.match(source, /isCurrentAdministrator\(adminAuth, user\)/);
 });

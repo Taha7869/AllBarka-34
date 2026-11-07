@@ -1,8 +1,11 @@
+import { isGiftRecipient } from './giftRecipient';
 import { Router, type RequestHandler } from 'express';
 import type { Firestore } from 'firebase-admin/firestore';
 import type { InquiryRecord, InquiryStatus, InquiryType, Product } from '../types';
 import { PRODUCTS } from '../data/products';
+import type { HamperBox, HamperConfiguration } from './hamperCatalog';
 import { loadAuthoritativeCatalog, mergeAuthoritativeCatalog } from './catalogStore';
+import { normalizeNetFillingGrams, isValidNetFillingGrams } from './filledGiftPricing';
 import {
   isValidPhone,
   isValidQuantity,
@@ -24,9 +27,84 @@ import { buildCustomerInquiryWhatsAppUrl } from './inquiryWhatsApp';
 export interface InquiriesRouterOptions {
   getDb: () => Firestore | null;
   getCatalog?: () => Product[] | Promise<Product[]>;
+  getHamperBoxes?: () => HamperBox[] | Promise<HamperBox[]>;
+  getSnapshot?: () => Promise<{ products: Product[]; hamperBoxes: HamperBox[] }>;
   requireAdmin?: RequestHandler;
   inMemoryStore?: Map<string, InquiryRecord>;
   inquiryLimiter?: RequestHandler;
+}
+
+
+interface ExtractedWeightAndConfig {
+  netFillingGrams: number | null;
+  hamperConfiguration: HamperConfiguration | null;
+}
+
+function normalizeAndValidateInquiryWeightAndHamper(
+  rawTopFilling: unknown,
+  rawHamperConfig: unknown
+): { ok: true; data: ExtractedWeightAndConfig } | { ok: false; status: 400; error: string; code: string } {
+  let topNormalized: number | null = null;
+  if (rawTopFilling !== undefined && rawTopFilling !== null && rawTopFilling !== '') {
+    const norm = normalizeNetFillingGrams(rawTopFilling);
+    if (norm === null || !isValidNetFillingGrams(norm)) {
+      return {
+        ok: false,
+        status: 400,
+        error: 'Please provide a valid net filling weight per box (e.g. 250g, 500g, 1kg or custom weight).',
+        code: 'INVALID_NET_FILLING_WEIGHT',
+      };
+    }
+    topNormalized = norm;
+  }
+
+  let nestedNormalized: number | null = null;
+  const configObj = rawHamperConfig && typeof rawHamperConfig === 'object' && !Array.isArray(rawHamperConfig)
+    ? (rawHamperConfig as Record<string, unknown>)
+    : null;
+
+  if (configObj && configObj.netFillingGrams !== undefined && configObj.netFillingGrams !== null && configObj.netFillingGrams !== '') {
+    const norm = normalizeNetFillingGrams(configObj.netFillingGrams);
+    if (norm === null || !isValidNetFillingGrams(norm)) {
+      return {
+        ok: false,
+        status: 400,
+        error: 'Please provide a valid net filling weight per box (e.g. 250g, 500g, 1kg or custom weight).',
+        code: 'INVALID_NET_FILLING_WEIGHT',
+      };
+    }
+    nestedNormalized = norm;
+  }
+
+  if (topNormalized !== null && nestedNormalized !== null && topNormalized !== nestedNormalized) {
+    return {
+      ok: false,
+      status: 400,
+      error: 'Conflicting net filling weight values provided in request.',
+      code: 'CONFLICTING_NET_FILLING_WEIGHT',
+    };
+  }
+
+  const canonicalWeight = topNormalized ?? nestedNormalized ?? null;
+
+  let canonicalHamper: HamperConfiguration | null = null;
+  if (configObj) {
+    canonicalHamper = {
+      ...(configObj as any),
+      ...(canonicalWeight != null ? { netFillingGrams: canonicalWeight } : {}),
+    };
+    if (canonicalWeight == null) {
+      delete (canonicalHamper as any).netFillingGrams;
+    }
+  }
+
+  return {
+    ok: true,
+    data: {
+      netFillingGrams: canonicalWeight,
+      hamperConfiguration: canonicalHamper,
+    },
+  };
 }
 
 export function createInquiriesRouter(options: InquiriesRouterOptions) {
@@ -35,18 +113,39 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
   const adminGuard = options.requireAdmin || ((_req, _res, next) => next());
   const limiter = options.inquiryLimiter || ((_req, _res, next) => next());
 
-  // Asynchronous authoritative catalog resolver
-  // Never falls back to compiled selling prices if authoritative resolution fails
-  const resolveCatalog = options.getCatalog
-    ? async () => await options.getCatalog!()
-    : async () => {
-        const db = options.getDb();
-        if (!db) {
-          throw new Error('CATALOG_STORE_UNAVAILABLE');
-        }
-        const snapshot = await loadAuthoritativeCatalog(db, { fresh: true });
-        return mergeAuthoritativeCatalog(PRODUCTS, snapshot.products);
+  // Asynchronous authoritative catalog and hamper box resolver
+  // Never falls back to compiled selling prices or default hamper boxes if authoritative resolution fails
+  const resolveCatalogAndBoxes = async (): Promise<{ catalog: Product[]; hamperBoxes: HamperBox[] }> => {
+    if (options.getSnapshot) {
+      const snap = await options.getSnapshot();
+      return {
+        catalog: snap.products,
+        hamperBoxes: snap.hamperBoxes,
       };
+    }
+    const db = options.getDb();
+    if (db) {
+      const snapshot = await loadAuthoritativeCatalog(db, { fresh: true });
+      const catalog = options.getCatalog
+        ? await options.getCatalog()
+        : mergeAuthoritativeCatalog(PRODUCTS, snapshot.products);
+      const hamperBoxes = options.getHamperBoxes
+        ? await options.getHamperBoxes()
+        : snapshot.hamperBoxes;
+      return { catalog, hamperBoxes };
+    }
+    if (options.getCatalog) {
+      const catalog = await options.getCatalog();
+      const hamperBoxes = options.getHamperBoxes
+        ? await options.getHamperBoxes()
+        : [];
+      return { catalog, hamperBoxes };
+    }
+    throw new Error('CATALOG_STORE_UNAVAILABLE');
+  };
+
+  // Retain resolveCatalog for backward compatibility if needed internally
+  const resolveCatalog = async (): Promise<Product[]> => (await resolveCatalogAndBoxes()).catalog;
 
   // 1. Boutique / Contact API
   router.post('/api/contact', limiter, async (req, res) => {
@@ -172,6 +271,10 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
       const budgetVal = body.targetPricePkr ?? body.offeredPrice ?? body.customerOfferedRate ?? null;
       const notes = String(body.notes ?? body.message ?? body.customHamperNotes ?? '').trim();
       const submissionKey = String(req.headers['idempotency-key'] ?? body.submissionKey ?? body.idempotencyKey ?? '').trim() || undefined;
+      if (body.giftRecipient != null && body.giftRecipient !== '' && !isGiftRecipient(body.giftRecipient)) {
+        return res.status(400).json({ code: 'INVALID_GIFT_RECIPIENT', error: 'Please select a supported gift recipient.' });
+      }
+      const giftRecipient = isGiftRecipient(body.giftRecipient) ? body.giftRecipient : undefined;
 
       if (customerName.length < 2 || customerName.length > 100) {
         return res.status(400).json({ error: 'Please provide your name (at least 2 characters).', code: 'MISSING_NAME' });
@@ -190,6 +293,19 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         return res.status(400).json({ error: 'Target budget must be a positive number.', code: 'INVALID_BUDGET' });
       }
 
+      const rawNetFilling = body.netFillingGrams ?? body.netWeightGrams ?? body.fillingWeightGrams ?? body.netWeight;
+      const weightCheck = normalizeAndValidateInquiryWeightAndHamper(rawNetFilling, body.hamperConfiguration);
+      if (!weightCheck.ok) {
+        const err = weightCheck as { ok: false; status: number; error: string; code: string };
+        return res.status(err.status).json({ error: err.error, code: err.code });
+      }
+      const canonicalNetFillingGrams = weightCheck.data.netFillingGrams;
+      const canonicalHamperConfig = weightCheck.data.hamperConfiguration;
+      const netFillingGrams = canonicalNetFillingGrams;
+      if (canonicalHamperConfig) {
+        body.hamperConfiguration = canonicalHamperConfig;
+      }
+
       const rawType = String(body.type || 'general');
       const type: InquiryType = VALID_INQUIRY_TYPES.includes(rawType as InquiryType) ? (rawType as InquiryType) : 'general';
 
@@ -198,8 +314,11 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         rawMode === 'empty' ? 'empty' : rawMode === 'custom' ? 'custom' : 'filled';
 
       let catalog: Product[];
+      let hamperBoxes: HamperBox[];
       try {
-        catalog = await resolveCatalog();
+        const resolved = await resolveCatalogAndBoxes();
+        catalog = resolved.catalog;
+        hamperBoxes = resolved.hamperBoxes;
       } catch (catErr: any) {
         console.warn('Authoritative catalog resolution error:', catErr);
         return res.status(503).json({
@@ -214,12 +333,16 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
       const productId = String(body.productId ?? body.boxId ?? (type === 'custom_hamper' ? 'custom-hamper' : 'general')).trim();
       const resolution = resolveInquiryProductVariant({
         catalog,
+        hamperBoxes,
         productId,
         requestedVariantLabel: requestedVariant,
         boxMode,
         quantity: rawQuantity,
+        hamperConfiguration: canonicalHamperConfig || body.hamperConfiguration,
+        netFillingGrams: canonicalNetFillingGrams,
       });
 
+      const effectiveNetFilling = resolution.netFillingGrams ?? netFillingGrams;
       const offPrice = budgetVal != null ? Number(budgetVal) : null;
       const eventType = rawEventType || (type === 'bid_box_quote' ? 'Nikkah' : 'General');
 
@@ -239,10 +362,38 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
             monogramText: body.monogramText || '',
             cardMessage: body.cardMessage || '',
             customPrintText,
+            giftRecipient,
             budgetType: body.budgetType || null,
             targetPricePkr: offPrice,
             leadTimeNoticeAcknowledged: Boolean(body.leadTimeNoticeAcknowledged),
+            netFillingGrams: effectiveNetFilling,
+            hamperConfiguration: resolution.hamperConfiguration || canonicalHamperConfig || body.hamperConfiguration,
           })
+        : undefined;
+
+      const legacyPayloadHash = submissionKey && (resolution.hamperConfiguration || canonicalHamperConfig || body.hamperConfiguration)
+        ? computeInquiryPayloadHash({
+            customerName,
+            phone,
+            city,
+            productId,
+            packagingVariant: resolution.packagingVariant,
+            boxMode,
+            quantity: rawQuantity,
+            eventType,
+            targetEventDate: body.targetEventDate ? String(body.targetEventDate).slice(0, 30) : null,
+            preferredFillings: Array.isArray(body.preferredFillings) ? body.preferredFillings : [],
+            customFillingsNotes: body.customFillingsNotes || '',
+            monogramText: body.monogramText || '',
+            cardMessage: body.cardMessage || '',
+            customPrintText,
+            giftRecipient,
+            budgetType: body.budgetType || null,
+            targetPricePkr: offPrice,
+            leadTimeNoticeAcknowledged: Boolean(body.leadTimeNoticeAcknowledged),
+            netFillingGrams: effectiveNetFilling,
+            hamperConfiguration: resolution.hamperConfiguration || canonicalHamperConfig || body.hamperConfiguration,
+          }, { legacyHamper: true })
         : undefined;
 
       const id = generateInquiryReferenceId(type);
@@ -262,10 +413,12 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         monogramText: body.monogramText ? String(body.monogramText).slice(0, 200) : '',
         cardMessage: body.cardMessage ? String(body.cardMessage).slice(0, 500) : '',
         customPrintText,
+        giftRecipient,
         budgetType: body.budgetType === 'per_piece' || body.budgetType === 'total' ? body.budgetType : null,
         targetPricePkr: offPrice,
         referenceUnitPrice: resolution.standardPrice,
         perPiecePrice: resolution.perPiecePrice,
+        estimatedTotalPkr: resolution.estimatedTotalPkr ?? (resolution.standardPrice != null ? resolution.standardPrice * rawQuantity : null),
         requiresTeamQuote: resolution.requiresTeamQuote,
         belowMoq: resolution.belowMoq,
         moqRequired: resolution.moqRequired,
@@ -274,6 +427,8 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         customerPhone: isEmailOnly ? '' : phone.slice(0, 40),
         city: city.slice(0, 80),
         isTabarruk: resolution.isTabarruk,
+        hamperConfiguration: resolution.hamperConfiguration || canonicalHamperConfig || body.hamperConfiguration,
+        netFillingGrams: effectiveNetFilling,
       });
 
       const record: InquiryRecord = {
@@ -300,7 +455,9 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         monogramText: body.monogramText ? String(body.monogramText).trim().slice(0, 200) : '',
         cardMessage: body.cardMessage ? String(body.cardMessage).trim().slice(0, 500) : '',
         customPrintText,
+        giftRecipient,
         standardPrice: resolution.standardPrice,
+        estimatedTotalPkr: resolution.estimatedTotalPkr ?? (resolution.standardPrice != null ? resolution.standardPrice * rawQuantity : null),
         packPrice: resolution.packPrice,
         perPiecePrice: resolution.perPiecePrice,
         requiresTeamQuote: resolution.requiresTeamQuote,
@@ -320,12 +477,17 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         assignedTo: null,
         followUpDate: null,
         leadTimeNoticeAcknowledged: Boolean(body.leadTimeNoticeAcknowledged),
+        hamperConfiguration: resolution.hamperConfiguration || undefined,
+        netFillingGrams: effectiveNetFilling,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
       record.whatsappReplyUrl = buildAdminWhatsAppPitchUrl(record);
 
-      const result = await persistInquiryAtomically(db, record, submissionKey, payloadHash);
+      const result = await persistInquiryAtomically(db, record, submissionKey, payloadHash, legacyPayloadHash, {
+        hamperConfiguration: resolution.hamperConfiguration || canonicalHamperConfig,
+        netFillingGrams: effectiveNetFilling,
+      });
       inMemory.set(result.inquiry.id, result.inquiry);
 
       return res.json({
@@ -383,6 +545,10 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
       const budgetVal = raw.targetPricePkr ?? raw.offeredPrice ?? raw.customerOfferedRate ?? null;
       const notes = String(raw.notes ?? raw.message ?? raw.customHamperNotes ?? '').trim();
       const submissionKey = String(req.headers['idempotency-key'] ?? raw.submissionKey ?? raw.idempotencyKey ?? '').trim() || undefined;
+      if (raw.giftRecipient != null && raw.giftRecipient !== '' && !isGiftRecipient(raw.giftRecipient)) {
+        return res.status(400).json({ code: 'INVALID_GIFT_RECIPIENT', error: 'Please select a supported gift recipient.' });
+      }
+      const giftRecipient = isGiftRecipient(raw.giftRecipient) ? raw.giftRecipient : undefined;
 
       if (resolvedName.length < 2 || resolvedName.length > 100) {
         return res.status(400).json({ error: 'Please provide your name (at least 2 characters).', code: 'MISSING_NAME' });
@@ -399,13 +565,29 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         return res.status(400).json({ error: 'Target budget must be a positive number.', code: 'INVALID_BUDGET' });
       }
 
+      const rawNetFilling = raw.netFillingGrams ?? raw.netWeightGrams ?? raw.fillingWeightGrams ?? raw.netWeight;
+      const weightCheck = normalizeAndValidateInquiryWeightAndHamper(rawNetFilling, raw.hamperConfiguration);
+      if (!weightCheck.ok) {
+        const err = weightCheck as { ok: false; status: number; error: string; code: string };
+        return res.status(err.status).json({ error: err.error, code: err.code });
+      }
+      const canonicalNetFillingGrams = weightCheck.data.netFillingGrams;
+      const canonicalHamperConfig = weightCheck.data.hamperConfiguration;
+      const netFillingGrams = canonicalNetFillingGrams;
+      if (canonicalHamperConfig) {
+        raw.hamperConfiguration = canonicalHamperConfig;
+      }
+
       const rawMode = String(raw.boxMode ?? raw.mode ?? '').toLowerCase();
       const safeMode: 'empty' | 'filled' | 'custom' =
         rawMode === 'empty' ? 'empty' : rawMode === 'custom' ? 'custom' : 'filled';
 
       let catalog: Product[];
+      let hamperBoxes: HamperBox[];
       try {
-        catalog = await resolveCatalog();
+        const resolved = await resolveCatalogAndBoxes();
+        catalog = resolved.catalog;
+        hamperBoxes = resolved.hamperBoxes;
       } catch (catErr: any) {
         console.warn('Authoritative catalog resolution error:', catErr);
         return res.status(503).json({
@@ -420,12 +602,16 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
       const productId = String(raw.productId || 'custom').trim();
       const resolution = resolveInquiryProductVariant({
         catalog,
+        hamperBoxes,
         productId,
         requestedVariantLabel: requestedVariant,
         boxMode: safeMode,
         quantity: rawQuantity,
+        hamperConfiguration: canonicalHamperConfig || raw.hamperConfiguration,
+        netFillingGrams: canonicalNetFillingGrams,
       });
 
+      const effectiveNetFilling = resolution.netFillingGrams ?? canonicalNetFillingGrams;
       const offPrice = budgetVal != null ? Number(budgetVal) : null;
       const eventType = rawEventType || 'Nikkah';
 
@@ -445,10 +631,38 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
             monogramText: raw.monogramText || '',
             cardMessage: raw.cardMessage || '',
             customPrintText,
+            giftRecipient,
             budgetType: raw.budgetType || null,
             targetPricePkr: offPrice,
             leadTimeNoticeAcknowledged: Boolean(raw.leadTimeNoticeAcknowledged),
+            netFillingGrams: effectiveNetFilling,
+            hamperConfiguration: resolution.hamperConfiguration || canonicalHamperConfig || raw.hamperConfiguration,
           })
+        : undefined;
+
+      const legacyPayloadHash = submissionKey && (resolution.hamperConfiguration || canonicalHamperConfig || raw.hamperConfiguration)
+        ? computeInquiryPayloadHash({
+            customerName: resolvedName,
+            phone: resolvedPhone,
+            city,
+            productId,
+            packagingVariant: resolution.packagingVariant,
+            boxMode: safeMode,
+            quantity: rawQuantity,
+            eventType,
+            targetEventDate: raw.targetEventDate ? String(raw.targetEventDate).slice(0, 30) : null,
+            preferredFillings: Array.isArray(raw.preferredFillings) ? raw.preferredFillings : [],
+            customFillingsNotes: raw.customFillingsNotes || '',
+            monogramText: raw.monogramText || '',
+            cardMessage: raw.cardMessage || '',
+            customPrintText,
+            giftRecipient,
+            budgetType: raw.budgetType || null,
+            targetPricePkr: offPrice,
+            leadTimeNoticeAcknowledged: Boolean(raw.leadTimeNoticeAcknowledged),
+            netFillingGrams: effectiveNetFilling,
+            hamperConfiguration: resolution.hamperConfiguration || canonicalHamperConfig || raw.hamperConfiguration,
+          }, { legacyHamper: true })
         : undefined;
 
       const quoteId = generateInquiryReferenceId('bid_box_quote');
@@ -468,10 +682,12 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         monogramText: raw.monogramText ? String(raw.monogramText).slice(0, 200) : '',
         cardMessage: raw.cardMessage ? String(raw.cardMessage).slice(0, 500) : '',
         customPrintText,
+        giftRecipient,
         budgetType: raw.budgetType === 'per_piece' || raw.budgetType === 'total' ? raw.budgetType : null,
         targetPricePkr: offPrice,
         referenceUnitPrice: resolution.standardPrice,
         perPiecePrice: resolution.perPiecePrice,
+        estimatedTotalPkr: resolution.estimatedTotalPkr ?? (resolution.standardPrice != null ? resolution.standardPrice * rawQuantity : null),
         requiresTeamQuote: resolution.requiresTeamQuote,
         belowMoq: resolution.belowMoq,
         moqRequired: resolution.moqRequired,
@@ -480,6 +696,8 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         customerPhone: resolvedPhone.slice(0, 40),
         city: city.slice(0, 80),
         isTabarruk: resolution.isTabarruk,
+        hamperConfiguration: resolution.hamperConfiguration || canonicalHamperConfig || raw.hamperConfiguration,
+        netFillingGrams: effectiveNetFilling,
       });
 
       const record: InquiryRecord = {
@@ -506,7 +724,9 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         monogramText: raw.monogramText ? String(raw.monogramText).trim().slice(0, 200) : '',
         cardMessage: raw.cardMessage ? String(raw.cardMessage).trim().slice(0, 500) : '',
         customPrintText,
+        giftRecipient,
         standardPrice: resolution.standardPrice,
+        estimatedTotalPkr: resolution.estimatedTotalPkr ?? (resolution.standardPrice != null ? resolution.standardPrice * rawQuantity : null),
         packPrice: resolution.packPrice,
         perPiecePrice: resolution.perPiecePrice,
         requiresTeamQuote: resolution.requiresTeamQuote,
@@ -526,12 +746,17 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         assignedTo: null,
         followUpDate: null,
         leadTimeNoticeAcknowledged: Boolean(raw.leadTimeNoticeAcknowledged),
+        hamperConfiguration: resolution.hamperConfiguration || undefined,
+        netFillingGrams: effectiveNetFilling,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
       record.whatsappReplyUrl = buildAdminWhatsAppPitchUrl(record);
 
-      const result = await persistInquiryAtomically(db, record, submissionKey, payloadHash);
+      const result = await persistInquiryAtomically(db, record, submissionKey, payloadHash, legacyPayloadHash, {
+        hamperConfiguration: resolution.hamperConfiguration || canonicalHamperConfig,
+        netFillingGrams: effectiveNetFilling,
+      });
       inMemory.set(result.inquiry.id, result.inquiry);
 
       return res.json({

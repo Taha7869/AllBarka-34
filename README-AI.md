@@ -1,39 +1,34 @@
-# AllBarka AI Concierge Setup
+# AllBarka AI Buddy — current architecture
 
-This project uses a local **Ollama** instance to power the AllBarka AI Concierge, utilizing the `gemma3:4b` model to provide fast, privacy-first, offline-capable AI support directly from the browser to your local machine.
+5 November 2026 — **Current website voice implementation: VOICE-02.** [Evidence and remaining integration steps](docs/execution-2026-11-04/VOICE_02_IMPLEMENTATION_2026-11-05.md). The owner authorized source work now; earlier PC-only planning notes are historical. Capture45s, countdown, defensive60s recovery and explicit transcript review are implemented; actual Groq/phone/live verification remains pending. WhatsApp voice-note transport still needs current complete workflow exports.
 
-## Prerequisites & Installation
+5 November 2026 — **VOICE-02 accepted plan, implementation deferred:** [website + WhatsApp continuation](docs/execution-2026-11-04/VOICE_02_PLAN_2026-11-05.md). The45s/single-request upgrade is TODO; the14s/15s VOICE-01 behavior documented below is still actual source behavior. WhatsApp voice-note transport is a separate adaptation, not already provided by the website route. PR16 merge CI has two documented unresolved non-voice failures; older successful runs do not establish current release readiness.
 
-1. **Install Ollama**: Download from [ollama.com](https://ollama.com/) and install it on your Windows machine.
-2. **Download Model**: Open Windows Terminal / PowerShell and run:
-   ```bash
-   ollama run gemma3:4b
-   ```
-   *Wait for the model to download and verify it answers interactively.*
+Updated 4 November 2026 from implementation baseline 47f9acde89d58a7a25a122ed80252d51d0f0f4f2. Resume through [instructions.md](instructions.md), [RULES.md](RULES.md) and [INTEGRATIONS.md](INTEGRATIONS.md).
 
-## Local Host Configuration (Crucial for Web UI)
+## Existing request path
 
-By default, Ollama blocks connection attempts from web browsers (CORS). You must explicitly allow your development origin.
+1. src/services/aiConcierge.ts posts to apiUrl('/api/concierge/chat').
+2. server.ts mounts src/lib/aiChatRouter.ts; that router accepts /api/chat and /api/concierge/chat.
+3. The server reads the validated catalog and delegates through src/services/n8nAIConsultant.ts. Read that service for supported environment names and exact request/authentication contracts; do not invent configuration from this overview.
+4. Public replies/recommendations are validated; existing request deadlines, guest limits, private-safe diagnostics and cancellation remain intact.
 
-1. Open PowerShell **as Administrator**.
-2. Run:
-   ```powershell
-   setx OLLAMA_ORIGINS "*"
-   ```
-3. Restart the Ollama application entirely (Quit it from the Windows system tray in the bottom right, and relaunch it from the start menu).
+The current browser client does not call a shopper's localhost:11434. Do not enable wildcard Ollama origins or put a provider secret in a VITE_* browser variable. Actual n8n/model configuration and real provider execution are separate from the presence of this code.
 
-## Production Setup (Scaling)
+## VOICE-01 — implementation and setup
 
-The current implementation in `src/services/aiConcierge.ts` points to `http://localhost:11434/api/chat`. 
+Groq (not Grok/xAI) Whisper input reuses the existing Buddy, hero search and shop search. Explicit tap records up to45 seconds with a live countdown and graceful auto-stop. Defensive codec/stop overruns are bounded to60 seconds before resampling allocation; any excluded tail is disclosed for a separate recording. The user reviews/edits the transcript before using it; using text never sends a chat/order automatically. Search applies reviewed text through the existing filter path. Typing remains available.
 
-When deploying AllBarka to production (e.g., Vercel / Cloudflare), the users' browsers will NOT be able to connect to `localhost:11434`.
+`MediaRecorder` capture is decoded/resampled locally into canonical mono16kHz PCM16 WAV. `POST /api/concierge/transcribe` reuses optional authentication and the existing chat limiter. It accepts16kHz mono PCM16 WAV with safely scanned metadata subchunks, checks actual duration from data bytes before upstream work, enforces2MiB/60s limits, one pending request per IP and six per process,20s server timeout, cancellation, and a64KiB provider-response ceiling. Server returns only bounded text or private-safe error code. Provider text is bounded to4,000 characters; transcripts over the existing1,000-character input limit remain editable, with Use disabled until shortened. Preparation/token work has a15s client budget, then upload has a fresh25s deadline. A4MiB raw capture overflow releases the microphone and shows recovery instead of slicing a corrupt container. Application code does not persist/log raw audio. Groq receives audio after stopping; its own processing/retention terms still apply. Noise heuristics can reject valid quiet speech; editable typing is the fallback.
 
-To scale this:
-1. **Option A (Hosted Endpoint)**: Point `OLLAMA_URL` to a cloud-hosted LLM endpoint (e.g., Groq, Together API, or a proxy server handling authentication).
-2. **Option B (n8n Webhook)**: You can connect `src/services/aiConcierge.ts` to an n8n webhook, which then communicates with an LLM of your choice and returns the response. Note: Ensure `stream: false` if your webhook doesn't support NDJSON streaming.
+Set private server `GROQ_API_KEY` only after the owner verifies their actual free-plan/model access and quota. `GROQ_VOICE_MODEL` allows `whisper-large-v3` (default) or `whisper-large-v3-turbo`; set `VOICE_GROQ_FREE_TIER_CONFIRMED=true` only for that verified account. Otherwise the route returns503. A flag cannot prove provider billing, and the code neither changes billing nor selects a paid fallback. Never use `VITE_GROQ_*`, commit a key, or alter n8n chat credentials for this feature. No credential/environment change was made in this implementation.
 
-## Known Limitations
+Secure-context browsers with MediaRecorder and Web Audio show the mic. Unsupported browsers retain typing. Mic tracks stop on cancellation, closing/unmounting the UI, account change or backgrounding. Starting another voice control cancels the previous capture. Transcription/permission failures, quota and timeout return to typing without a confirmed order or invented product action.
 
-- **CORS Handling**: `stream: true` utilizes `fetch` to read chunked NDJSON directly on the client. It relies heavily on proper headers.
-- **Context Size**: Our current system injects ~2000 tokens of the absolute product catalog into the system prompt. Scaling the catalog further might require an intermediate retrieval layer (RAG) rather than full prompt stuffing.
-- **Graceful degradation**: If Ollama goes offline or CORS blocks the request, the chat widget immediately switches to an offline fallback error state linking to human WhatsApp support.
+AI Buddy optionally reads replies only after a tap and when a matching device language voice exists (`voiceschanged` supported). No English fallback for Arabic/Urdu script; unavailable voices hide the button. Stop/close/start-recording cancels output. Device voice availability/processing varies; actual phones and Urdu/English recognition remain separate manual/provider gates. Tests isolate hardware/provider responses and do not prove STT accuracy. See [execution evidence](docs/execution-2026-11-04/README.md).
+
+## Verification and history
+
+Code presence, local/CI results, actual preview/provider execution and live behavior are separate. Railway payment is pending, so live checks await owner reactivation. Tests must use isolated authorized data; no message/order/provider call is implied by a guide.
+
+The obsolete direct-browser Ollama guide is retained as [historical evidence](docs/archive/2026-11-04/README-AI.md); its instructions are not current setup.

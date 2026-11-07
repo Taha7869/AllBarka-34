@@ -1,5 +1,6 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import React, { useEffect, useRef, useState } from 'react';
-import { useReducedMotion } from 'motion/react';
+
 
 export interface LogoItem {
   node?: React.ReactNode;

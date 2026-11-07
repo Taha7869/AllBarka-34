@@ -5,6 +5,7 @@ import { ADMIN_STATUSES } from '../lib/adminOperations';
 import type { AppliedPromo } from '../types/promo';
 import { outboxErrorDetails } from './outboxDiagnostics';
 import { storedOrderStatus } from '../lib/orderStatuses';
+import { isKnownLegacyPackagingLabel } from '../lib/catalogSchema';
 
 export interface N8nNotificationResult {
   sent: boolean;
@@ -136,7 +137,10 @@ export function projectCanonicalOrderForN8n(order: CanonicalOrder): N8nOrderData
       // Cart identities can contain a complete hamper configuration and exceed the receiver's 120-character limit.
       const projected: N8nOrderData['items'][number] = {
         id: requiredText(item.productId || item.id, 120), name: requiredText(item.name, 200),
-        selectedWeight: requiredText(item.selectedWeight, 50), quantity: item.quantity, price: money(item.price, true),
+        // Historical selection strings are receipt identities; never truncate them for transport.
+        selectedWeight: requiredText(item.selectedWeight,
+          isKnownLegacyPackagingLabel(item.productId || item.id, item.selectedWeight) ? 160 : 50),
+        quantity: item.quantity, price: money(item.price, true),
       };
       if (item.hamperConfiguration) {
         const configuration = item.hamperConfiguration;

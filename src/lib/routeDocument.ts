@@ -1,3 +1,7 @@
+import {contentJournal} from './contentPresentation';
+import type {StorefrontContent} from './storefrontContent';
+import { productSeo } from './productSeo';
+import type { TaxonomyEntry } from './catalogConfiguration';
 import type { Product } from '../types';
 import { CANONICAL_CATEGORIES, resolveCategorySlug } from '../config/categories';
 import { JOURNAL_ARTICLES } from '../data/articles';
@@ -10,6 +14,7 @@ export interface RouteMetadata {
   type: 'website' | 'product' | 'article';
   image: string;
   noindex?: boolean;
+  keywords?: string[];
   structuredData?: Record<string, unknown>;
 }
 
@@ -28,6 +33,7 @@ const pages: Record<string, [string, string]> = {
   '/cart': ['Your Cart', 'Review your AllBarka selections and current checkout quote.'],
   '/checkout': ['Checkout', 'Confirm your AllBarka order and delivery details.'],
   '/success': ['Order Confirmation', 'View your saved AllBarka order confirmation.'],
+  '/staff/orders': ['Order room', 'AllBarka staff order reader.'],
   '/admin/orders': ['Merchant Workspace', 'AllBarka merchant workspace.'],
 };
 
@@ -35,10 +41,10 @@ function text(value: string) { return value.replace(/<[^>]*>/g, '').replace(/\s+
 function branded(title: string) { return title.includes('AllBarka') ? title : `${title} — AllBarka`; }
 function basic(route: string, title: string, description: string): RouteMetadata {
   return { status: 200, path: route, title: branded(title), description, type: 'website', image: DEFAULT_IMAGE,
-    ...(['/cart', '/checkout', '/success', '/admin/orders'].includes(route) ? { noindex: true } : {}) };
+    ...((['/cart', '/checkout', '/success'].includes(route) || route.startsWith('/admin') || route.startsWith('/staff')) ? { noindex: true } : {}) };
 }
 
-export function routeMetadata(pathname: string, origin: string, products: Product[]): RouteMetadata {
+export function routeMetadata(pathname: string, origin: string, products: Product[], taxonomy: TaxonomyEntry[] = [], content?:StorefrontContent): RouteMetadata {
   let route: string;
   try { route = decodeURIComponent(pathname).replace(/\/+$/, '') || '/'; }
   catch { route = '/invalid-route'; }
@@ -46,10 +52,12 @@ export function routeMetadata(pathname: string, origin: string, products: Produc
   const productId = /^\/product\/([^/]+)$/.exec(route)?.[1];
   const product = productId ? products.find(item => item.id === productId) : undefined;
   if (product) {
-    const description = text(product.desc_en || product.description || product.name_en).slice(0, 260);
-    const metadata = basic(route, product.name_en, description);
+    const seo=productSeo(product);
+    const description = text(seo.description).slice(0, 600);
+    const metadata = basic(route, seo.title, description);
     metadata.type = 'product';
-    metadata.image = product.image || DEFAULT_IMAGE;
+    metadata.image = seo.image || DEFAULT_IMAGE;
+    metadata.keywords=seo.keywords;
     const prices = Object.values(product.prices).filter(price => Number.isSafeInteger(price) && price > 0);
     metadata.structuredData = {
       '@context': 'https://schema.org', '@type': 'Product', name: product.name_en,
@@ -69,8 +77,10 @@ export function routeMetadata(pathname: string, origin: string, products: Produc
     const category = CANONICAL_CATEGORIES[categoryId];
     return basic(`/shop/${categoryId}`, category.name, text(category.description));
   }
+  const extra=taxonomy.find(x=>x.visible&&x.type!=='occasion'&&x.id===categorySlug);
+  if(extra) return basic(`/shop/${extra.id}`,extra.name_en,text(extra.description_en));
   const articleSlug = /^\/journal\/([^/]+)$/.exec(route)?.[1];
-  const article = JOURNAL_ARTICLES.find(item => item.slug === articleSlug);
+  const article = (content?contentJournal(content,'en'):JOURNAL_ARTICLES).find(item => item.slug === articleSlug);
   if (article) return { ...basic(route, article.title, article.excerpt), type: 'article', image: article.image };
   const infoSlug = /^\/pages\/(our-story|sourcing-policy|orchard-provenance|lahore-boutique|blog-nutrition|hand-sorting|vacuum-sealing|freshness-guarantee|shipping|contact)$/.exec(route)?.[1];
   const policySlug = /^\/policies\/(shipping|refund|privacy|terms)$/.exec(route)?.[1];
@@ -94,6 +104,7 @@ export function renderRouteDocument(template: string, metadata: RouteMetadata, o
     html = pattern.test(html) ? html.replace(pattern, () => tag) : html.replace('</head>', () => `${tag}\n</head>`);
   };
   setMeta('name', 'description', metadata.description);
+  setMeta('name','keywords',(metadata.keywords||[]).join(', '));
   for (const [key, value] of Object.entries({ title: metadata.title, description: metadata.description,
     type: metadata.type, url: canonical, image: new URL(metadata.image, origin).href })) setMeta('property', `og:${key}`, value);
   for (const [key, value] of Object.entries({ card: 'summary_large_image', title: metadata.title,

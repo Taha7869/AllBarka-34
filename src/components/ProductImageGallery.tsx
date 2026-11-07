@@ -1,7 +1,9 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
+import { productSeo } from '../lib/productSeo';
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useReducedMotion } from 'motion/react';
+
 import { Product } from '../types';
 import { useProductMedia } from '../contexts/ProductMediaContext';
 import { clampPhotoIndex } from '../lib/productPhotoViewer';
@@ -14,18 +16,26 @@ export default function ProductImageGallery({ product, linkToDetails = true }: {
   const reduceMotion = useReducedMotion();
   const viewport = useRef<HTMLDivElement>(null);
   const [selected, setSelected] = useState(0);
+  const [previewing, setPreviewing] = useState(false);
+  const [browsed, setBrowsed] = useState(false);
+  const [previewFailed, setPreviewFailed] = useState(false);
   const { images } = useProductMedia(product);
   const active = clampPhotoIndex(selected, images.length);
   const activeIndex = useRef(active);
   activeIndex.current = active;
   const galleryKey = images.join('\u0000');
   useEffect(() => {
+    setPreviewing(false);
+    setBrowsed(false);
+    setPreviewFailed(false);
     setSelected(current => clampPhotoIndex(current, images.length));
     const track = viewport.current;
     if (track) track.scrollTo({ left: activeIndex.current * track.clientWidth, behavior: 'instant' });
   }, [galleryKey, images.length]);
   const goTo = (index: number) => {
     if (images.length === 0) return;
+    setPreviewing(false);
+    setBrowsed(true);
     const next = (index + images.length) % images.length;
     setSelected(next);
     viewport.current?.scrollTo({ left: next * viewport.current.clientWidth, behavior: reduceMotion ? 'instant' : 'smooth' });
@@ -40,19 +50,33 @@ export default function ProductImageGallery({ product, linkToDetails = true }: {
     </div>;
   }
   return (
-    <div className="product-gallery" role="group" aria-label={`${getLocalized(product, 'name', language)} — ${t('gallery.photos')}`}
+    <div className="product-gallery" data-previewing={previewing && !reduceMotion && !previewFailed && active === 0 && !browsed}
+      role="group" aria-label={`${getLocalized(product, 'name', language)} — ${t('gallery.photos')}`}
+      onPointerEnter={event => {
+        if (event.pointerType === 'mouse' && !reduceMotion && active === 0 && !browsed && images.length > 1
+          && window.matchMedia('(hover: hover) and (pointer: fine)').matches) setPreviewing(true);
+      }}
+      onPointerLeave={() => setPreviewing(false)}
+      onPointerDown={() => { setPreviewing(false); setBrowsed(true); }}
+      onFocusCapture={() => setPreviewing(false)}
       onMouseDown={event => event.stopPropagation()} onTouchStart={event => event.stopPropagation()}>
       <div ref={viewport} className="product-gallery-track" dir="ltr"
-        onScroll={event => { const width = event.currentTarget.clientWidth; if (width > 0) setSelected(Math.max(0, Math.min(images.length - 1, Math.round(event.currentTarget.scrollLeft / width)))); }}>
+        onScroll={event => { const width = event.currentTarget.clientWidth; if (width > 0) {
+          const next = Math.max(0, Math.min(images.length - 1, Math.round(event.currentTarget.scrollLeft / width)));
+          if (next !== activeIndex.current) { setPreviewing(false); setBrowsed(true); }
+          setSelected(next);
+        } }}>
         {images.map((src, index) => {
-          const photo = <img src={src} width={960} height={960} alt={`${t(`imageAlt.${product.id}`, getLocalized(product, 'name', language))} — ${index + 1}`}
+          const photo = <img src={src} width={960} height={960} alt={`${product.seo?productSeo(product,language).imageAlt:t(`imageAlt.${product.id}`, getLocalized(product, 'name', language))} — ${index + 1}`}
               loading="lazy" decoding="async" draggable={false}
-              onError={event => { if (!event.currentTarget.src.endsWith('/images/product-placeholder.svg')) event.currentTarget.src = '/images/product-placeholder.svg'; }} />;
+              style={{ objectPosition: product.mediaFocalPoint ? `${Math.round(product.mediaFocalPoint.x * 100)}% ${Math.round(product.mediaFocalPoint.y * 100)}%` : undefined, objectFit: product.cropMode === 'contain' ? 'contain' : 'cover' }} onError={event => { if (!event.currentTarget.src.endsWith('/images/product-placeholder.svg')) event.currentTarget.src = '/images/product-placeholder.svg'; }} />;
           return linkToDetails ? <Link key={src} to={`/product/${product.id}`} className="product-gallery-slide focus-ring" tabIndex={active === index ? 0 : -1}
             aria-label={`${getLocalized(product, 'name', language)} — ${index + 1}/${images.length}`}>{photo}</Link>
             : <div key={src} className="product-gallery-slide">{photo}</div>;
         })}
       </div>
+      {images.length > 1 && previewing && !previewFailed && <img className="product-gallery-preview" src={images[1]} alt="" aria-hidden="true"
+        decoding="async" draggable={false} onError={() => { setPreviewFailed(true); setPreviewing(false); }} />}
       {images.length > 1 && <>
         <button type="button" className="product-gallery-arrow product-gallery-prev focus-ring" onClick={() => goTo(active - 1)} aria-label={t('gallery.previous')}><ChevronLeft size={17} /></button>
         <button type="button" className="product-gallery-arrow product-gallery-next focus-ring" onClick={() => goTo(active + 1)} aria-label={t('gallery.next')}><ChevronRight size={17} /></button>

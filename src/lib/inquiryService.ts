@@ -1,6 +1,8 @@
+import type { GiftRecipient } from './giftRecipient';
 import crypto from 'node:crypto';
 import type { Firestore } from 'firebase-admin/firestore';
 import type { InquiryRecord, InquiryStatus, InquiryType, Product } from '../types';
+import type { HamperConfiguration } from './hamperCatalog';
 import { sanitizeFirestoreData } from './firestoreData';
 import {
   isValidPhone,
@@ -71,7 +73,7 @@ export function normalizeWhatsAppPhone(rawPhone: string): string {
  * Computes deterministic SHA-256 hash of canonical inquiry fields for idempotency.
  * Normalizes customPrintText and customPrinting aliases to produce identical hashes.
  */
-export function computeInquiryPayloadHash(fields: {
+export interface InquiryPayloadFields {
   customerName: string;
   phone: string;
   city?: string;
@@ -80,6 +82,7 @@ export function computeInquiryPayloadHash(fields: {
   boxMode: string;
   quantity: number;
   eventType: string;
+  giftRecipient?: GiftRecipient;
   targetEventDate?: string | null;
   preferredFillings?: string[];
   customFillingsNotes?: string;
@@ -90,7 +93,14 @@ export function computeInquiryPayloadHash(fields: {
   budgetType?: string | null;
   targetPricePkr?: number | null;
   leadTimeNoticeAcknowledged?: boolean;
-}): string {
+  netFillingGrams?: number | null;
+  hamperConfiguration?: HamperConfiguration | null;
+}
+
+export function computeInquiryPayloadHash(
+  fields: InquiryPayloadFields,
+  options?: { legacyHamper?: boolean }
+): string {
   const printText = (fields.customPrintText ?? fields.customPrinting)?.trim() || '';
 
   const normalized = {
@@ -108,11 +118,70 @@ export function computeInquiryPayloadHash(fields: {
     monogramText: fields.monogramText ? String(fields.monogramText).trim() : '',
     cardMessage: fields.cardMessage ? String(fields.cardMessage).trim() : '',
     customPrintText: printText,
+    // Omit absent intent so pre-existing submission hashes remain valid.
+    ...(fields.giftRecipient ? { giftRecipient: fields.giftRecipient } : {}),
     budgetType: fields.budgetType || null,
     targetPricePkr: fields.targetPricePkr ?? null,
     leadTimeNoticeAcknowledged: Boolean(fields.leadTimeNoticeAcknowledged),
+    ...(fields.netFillingGrams != null && Number.isFinite(fields.netFillingGrams) && Number(fields.netFillingGrams) > 0
+      ? { netFillingGrams: Number(fields.netFillingGrams) }
+      : {}),
+    ...(fields.hamperConfiguration && !options?.legacyHamper
+      ? {
+          hamperConfiguration: {
+            boxId: String(fields.hamperConfiguration.boxId || '').trim().toLowerCase(),
+            selections: Array.isArray(fields.hamperConfiguration.selections)
+              ? [...fields.hamperConfiguration.selections].sort()
+              : [],
+            recipientName: String(fields.hamperConfiguration.recipientName || '').trim(),
+            giftMessage: String(fields.hamperConfiguration.giftMessage || '').trim(),
+            ...(fields.hamperConfiguration.netFillingGrams != null && Number.isFinite(fields.hamperConfiguration.netFillingGrams) && Number(fields.hamperConfiguration.netFillingGrams) > 0
+              ? { netFillingGrams: Number(fields.hamperConfiguration.netFillingGrams) }
+              : {}),
+          },
+        }
+      : {}),
   };
   return crypto.createHash('sha256').update(JSON.stringify(normalized)).digest('hex');
+}
+
+function positiveWeight(value: unknown): number | null {
+  const n = typeof value === 'number' ? value : Number.NaN;
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/**
+ * Centralized historical replay compatibility check. Pre-repair intents hashed without hamper
+ * composition, so a legacy hash match alone proves nothing about box/selections/recipient/message.
+ * Returns true only if the stored original inquiry carries a complete composition that is
+ * canonically equal to the current request (selection order ignored, effective weight equal).
+ * A stored record lacking a verifiable composition fails closed (returns false).
+ * A request without a hamper replays only against a stored record that also has none.
+ */
+export function isHistoricalHamperReplayEquivalent(
+  stored: Partial<InquiryRecord> | null | undefined,
+  request?: { hamperConfiguration?: HamperConfiguration | null; netFillingGrams?: number | null } | null
+): boolean {
+  if (!stored) return false;
+  const reqCfg = (request?.hamperConfiguration || null) as HamperConfiguration | null;
+  const stCfg = (stored.hamperConfiguration || null) as HamperConfiguration | null;
+  if (!reqCfg) return !stCfg;
+  if (!stCfg) return false;
+  const complete = (c: any) =>
+    typeof c.boxId === 'string' && c.boxId.trim() !== '' &&
+    Array.isArray(c.selections) && c.selections.length > 0 &&
+    c.selections.every((s: unknown) => typeof s === 'string' && s !== '');
+  if (!complete(stCfg) || !complete(reqCfg)) return false;
+  const canon = (c: HamperConfiguration) => ({
+    boxId: String(c.boxId).trim().toLowerCase(),
+    selections: [...c.selections].sort(),
+    recipientName: String(c.recipientName || '').trim(),
+    giftMessage: String(c.giftMessage || '').trim(),
+  });
+  if (JSON.stringify(canon(stCfg)) !== JSON.stringify(canon(reqCfg))) return false;
+  const stWeight = positiveWeight(stored.netFillingGrams) ?? positiveWeight((stCfg as any).netFillingGrams);
+  const reqWeight = positiveWeight(request?.netFillingGrams) ?? positiveWeight((reqCfg as any).netFillingGrams);
+  return stWeight === reqWeight;
 }
 
 /**
@@ -133,7 +202,9 @@ export async function persistInquiryAtomically(
   db: Firestore | null,
   record: InquiryRecord,
   submissionKey?: string,
-  payloadHash?: string
+  payloadHash?: string,
+  legacyPayloadHash?: string,
+  requestHamper?: { hamperConfiguration?: HamperConfiguration | null; netFillingGrams?: number | null } | null
 ): Promise<{ isDuplicate: boolean; inquiry: InquiryRecord }> {
   if (!db) {
     throw new PersistenceUnavailableError('Inquiry storage is temporarily unavailable. Your inquiry has not been registered.');
@@ -145,7 +216,11 @@ export async function persistInquiryAtomically(
       const intentDoc = await tx.get(intentRef);
       if (intentDoc.exists) {
         const intentData = intentDoc.data();
-        if (intentData?.payloadHash !== payloadHash) {
+        const matchesCurrent = intentData?.payloadHash === payloadHash;
+        const matchesLegacy = Boolean(legacyPayloadHash && intentData?.payloadHash === legacyPayloadHash);
+        // Historical hashes omitted hamper composition: accept a legacy match only when the stored
+        // original inquiry verifiably carries the same canonical composition (fail closed otherwise).
+        if (!matchesCurrent && (!matchesLegacy || !isHistoricalHamperReplayEquivalent(intentData?.inquiry, requestHamper))) {
           throw new IdempotencyConflictError();
         }
         // Duplicate retry of identical submission: return existing record

@@ -1,3 +1,7 @@
+import { voiceTranslations } from './voiceTranslations';
+import {contentTranslations} from './contentTranslations';
+import {staffTranslations} from './staffTranslations';
+import { adminExpansionTranslations } from './adminExpansionTranslations';
 import { catalogTranslations } from './catalogTranslations';
 import { shoppingQualityTranslations } from './shoppingQualityTranslations';
 import { trendTranslations } from './trendTranslations';
@@ -204,7 +208,13 @@ const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     'stats.customers': 'Happy Customers',
     'stats.products': 'Premium Products',
     'stats.cities': 'Cities Served',
-    'stats.years': 'Years of Trust'
+    'stats.years': 'Years of Trust',
+    'error.badge': 'AllBarka Boutique Care',
+    'error.title': 'A Momentary Interruption',
+    'error.description': 'Our boutique encountered an unexpected display issue. Please refresh or return to the main table.',
+    'error.refresh': 'Refresh Boutique',
+    'error.home': 'Return to Table',
+    'notFound': 'Page Not Found'
   },
   ur: {
     'admin.workspace': 'البرکہ انتظامی مرکز',
@@ -383,7 +393,13 @@ const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     'stats.customers': 'خوش گاہک',
     'stats.products': 'اعلیٰ مصنوعات',
     'stats.cities': 'شہر جہاں خدمت',
-    'stats.years': 'سالوں کا اعتماد'
+    'stats.years': 'سالوں کا اعتماد',
+    'error.badge': 'آلبرکہ بوتیک نگہداشت',
+    'error.title': 'عارضی رکاوٹ',
+    'error.description': 'ہمارے بوتیک کو ڈسپلے میں ایک غیر متوقع مسئلہ پیش آیا ہے۔ براہ کرم صفحہ ریفریش کریں یا مرکزی صفحے پر واپس جائیں۔',
+    'error.refresh': 'صفحہ ریفریش کریں',
+    'error.home': 'مرکزی صفحہ',
+    'notFound': 'صفحہ دستیاب نہیں ہے'
   },
   ar: {
     'admin.workspace': 'مساحة عمل البركة',
@@ -562,7 +578,13 @@ const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     'stats.customers': 'عملاء سعداء',
     'stats.products': 'منتجات فاخرة',
     'stats.cities': 'مدن مخدومة',
-    'stats.years': 'سنوات من الثقة'
+    'stats.years': 'سنوات من الثقة',
+    'error.badge': 'عناية متجر البركة',
+    'error.title': 'انقطاع مؤقت',
+    'error.description': 'واجه المتجر مشكلة غير متوقعة في العرض. يُرجى تحديث الصفحة أو العودة إلى الواجهة الرئيسية.',
+    'error.refresh': 'تحديث المتجر',
+    'error.home': 'العودة للرئيسية',
+    'notFound': 'الصفحة غير موجودة'
   }
 };
 
@@ -581,8 +603,11 @@ function getInitialLanguage(): LanguageCode {
   return 'en';
 }
 
-export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [language, setLanguageState] = useState<LanguageCode>(getInitialLanguage);
+export const LanguageProvider: React.FC<{ children: React.ReactNode; initialLanguage?: LanguageCode }> = ({
+  children,
+  initialLanguage,
+}) => {
+  const [language, setLanguageState] = useState<LanguageCode>(() => initialLanguage || getInitialLanguage());
 
   const isRtl = useMemo(() => language === 'ur' || language === 'ar', [language]);
 
@@ -608,8 +633,9 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [language, isRtl]);
 
   const t = useCallback((key: string, defaultText = ''): string => {
+    if (voiceTranslations[language]?.[key]) return voiceTranslations[language][key];
     if (rewardTranslations[language]?.[key]) return rewardTranslations[language][key];
-    return destinationTranslations[language]?.[key] || shoppingQualityTranslations[language]?.[key] || trackingTranslations[language]?.[key] || weightTranslations[language]?.[key] || checkoutReliabilityTranslations[language]?.[key] || (conciergeTranslations[language] as Record<string, string>)[key] || shippingTranslations[language]?.[key] || updateTranslations[language]?.[key] || authTranslations[language]?.[key] || trendTranslations[language]?.[key] || catalogTranslations[language]?.[key] || boutiqueTranslations[language]?.[key] || TRANSLATIONS[language]?.[key] || TRANSLATIONS.en[key] || defaultText || key;
+    return contentTranslations[language]?.[key] || staffTranslations[language]?.[key] || adminExpansionTranslations[language]?.[key] || destinationTranslations[language]?.[key] || shoppingQualityTranslations[language]?.[key] || trackingTranslations[language]?.[key] || weightTranslations[language]?.[key] || checkoutReliabilityTranslations[language]?.[key] || (conciergeTranslations[language] as Record<string, string>)[key] || shippingTranslations[language]?.[key] || updateTranslations[language]?.[key] || authTranslations[language]?.[key] || trendTranslations[language]?.[key] || catalogTranslations[language]?.[key] || boutiqueTranslations[language]?.[key] || TRANSLATIONS[language]?.[key] || TRANSLATIONS.en[key] || defaultText || key;
   }, [language]);
 
   const value = useMemo(() => ({

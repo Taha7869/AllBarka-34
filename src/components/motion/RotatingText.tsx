@@ -1,5 +1,6 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../../hooks/usePrefersReducedMotion';
 import React, { useState, useEffect } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 
 interface RotatingTextProps {
   words: string[];

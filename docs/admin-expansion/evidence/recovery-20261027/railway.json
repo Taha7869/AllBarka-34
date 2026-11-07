@@ -1,0 +1,57 @@
+{
+  "date": "2026-10-27",
+  "timezone": "Asia/Karachi",
+  "mode": "read-only",
+  "project": {
+    "id": "38281b46-1362-4307-8c2e-7633570fa37b",
+    "name": "AllBarka"
+  },
+  "environment": {
+    "id": "0ae5a09d-9763-41f1-b635-d096d6a07904",
+    "name": "production"
+  },
+  "service": {
+    "id": "c5ba8961-3b40-4df6-ae1f-e36bf98dad18",
+    "name": "allbarka-fullstack"
+  },
+  "latestDeployment": {
+    "id": "4b42bdd8-cd53-42cf-9abc-8d806ca54a60",
+    "status": "SUCCESS",
+    "createdAt": "2026-10-17T07:22:40.382Z",
+    "commitHash": "8cf4410d4cc9d1a2d4840a62cf0f328c4bdaaee0",
+    "branch": "launch",
+    "canRollback": true
+  },
+  "source": {
+    "repo": "Taha7869/AllBarka-34",
+    "branch": "launch",
+    "checkSuites": false
+  },
+  "build": {
+    "builder": "RAILPACK",
+    "buildCommand": "npm run build",
+    "buildEnvironment": "V3"
+  },
+  "deploy": {
+    "startCommand": "npm start",
+    "healthcheckPath": "/api/health",
+    "healthcheckTimeout": 120,
+    "restartPolicyMaxRetries": 3,
+    "useLegacyStacker": false,
+    "ipv6EgressEnabled": false,
+    "runtime": "V2",
+    "multiRegionConfig": {
+      "asia-southeast1-eqsg3a": {
+        "numReplicas": 1
+      }
+    }
+  },
+  "domains": [
+    "allbarka.com"
+  ],
+  "configurationVariableCount": 32,
+  "providerVariableValuesRedacted": true,
+  "stagedChanges": null,
+  "scope": "Authenticated Railway metadata and public GET diagnostics. No secret value, private merchant record, live order or workflow mutation.",
+  "writesPerformed": 0
+}

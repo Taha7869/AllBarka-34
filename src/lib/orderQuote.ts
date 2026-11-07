@@ -11,7 +11,7 @@ export async function quoteOrderForCustomer(db: Firestore | null, payload: any, 
   const catalog = await loadAuthoritativeCatalog(db, { fresh: true });
   const validated = validateAndPriceOrder({ items, city, shippingMethodId, discountCode,
     giftWrapping: Boolean(giftWrapping), isWholesale: Boolean(isWholesale && user?.wholesaleEligible), promoContext,
-    products: catalog.products, hamperBoxes: catalog.hamperBoxes });
+    products: catalog.products, hamperBoxes: catalog.hamperBoxes, allowInquiryItems: true });
   if (rewardId) {
     if (!user?.uid) throw new ValidationError('Please sign in to use a patron reward.', 'REWARD_REQUIRES_AUTH');
     const snapshot = await db!.collection('users').doc(user.uid).collection('activeRewards').doc(validateRewardInstanceId(rewardId)).get();

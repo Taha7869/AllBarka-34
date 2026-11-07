@@ -1,3 +1,5 @@
+import { GIFT_RECIPIENT_LABELS, isGiftRecipient } from './giftRecipient';
+import type { GiftRecipient } from './giftRecipient';
 /**
  * WhatsApp Inquiry & Quote URL Builder
  *
@@ -34,6 +36,7 @@ export interface CustomerInquiryWhatsAppParams {
   quantityUnit?: 'pieces' | 'packs' | 'sets';
   piecesPerPack?: number;
   eventType: string;
+  giftRecipient?: GiftRecipient;
   targetEventDate?: string | null;
   preferredFillings?: string[];
   customFillingsNotes?: string;
@@ -53,6 +56,9 @@ export interface CustomerInquiryWhatsAppParams {
   customerPhone: string;
   city: string;
   isTabarruk?: boolean;
+  hamperConfiguration?: any;
+  estimatedTotalPkr?: number | null;
+  netFillingGrams?: number | null;
 }
 
 export interface AdminWhatsAppPitchParams {
@@ -68,6 +74,7 @@ export interface AdminWhatsAppPitchParams {
   quantityUnit?: 'pieces' | 'packs' | 'sets';
   piecesPerPack?: number;
   eventType?: string;
+  giftRecipient?: GiftRecipient;
   targetEventDate?: string | null;
   preferredFillings?: string[];
   monogramText?: string;
@@ -81,6 +88,7 @@ export interface AdminWhatsAppPitchParams {
   finalAgreedPrice?: number | string | null;
   adminNotes?: string | null;
   isTabarruk?: boolean;
+  netFillingGrams?: number | null;
 }
 
 export function formatFillingsLabel(fillings?: string[]): string {
@@ -123,6 +131,9 @@ export function buildCustomerInquiryWhatsAppUrl(params: CustomerInquiryWhatsAppP
     ``,
     `• *Selected Product:* ${params.productName} (${params.productId})`,
     params.packagingVariant ? `• *Variant / Portion:* ${params.packagingVariant}` : '',
+    params.netFillingGrams != null && Number(params.netFillingGrams) > 0
+      ? `• *Net Filling Weight:* ${Number(params.netFillingGrams) >= 1000 ? `${Number(params.netFillingGrams) / 1000}kg` : `${Number(params.netFillingGrams)}g`} per box`
+      : '',
     `• *Packaging Mode:* ${modeLabel}`,
   ];
 
@@ -144,10 +155,27 @@ export function buildCustomerInquiryWhatsAppUrl(params: CustomerInquiryWhatsAppP
     lines.push(`• *MOQ Review:* Requested quantity is below standard minimum order (${params.moqRequired} pcs); team review requested`);
   }
 
+  if (params.hamperConfiguration) {
+    const config = params.hamperConfiguration;
+    lines.push(`• *Hamper Coffer:* ${config.boxId}`);
+    const configNetWeight = config.netFillingGrams ?? params.netFillingGrams;
+    if (Array.isArray(config.selections)) {
+      if (configNetWeight != null && Number(configNetWeight) > 0) {
+        lines.push(`• *Selections:* ${config.selections.join(', ')}`);
+      } else {
+        lines.push(`• *Selections:* ${config.selections.map((s: string) => `${s} (200g)`).join(', ')}`);
+      }
+    }
+    if (config.recipientName) lines.push(`• *Recipient:* ${config.recipientName}`);
+    if (config.giftMessage) lines.push(`• *Gift Message:* ${config.giftMessage}`);
+  }
+
   lines.push(
     `• *Occasion / Event:* ${params.eventType}`,
     params.targetEventDate ? `• *Target Event Date:* ${params.targetEventDate}` : '',
   );
+
+  if (isGiftRecipient(params.giftRecipient)) lines.push(`• *Gift for:* ${GIFT_RECIPIENT_LABELS[params.giftRecipient]}`);
 
   // Exact lead time notice with honest acknowledgment state
   if (params.leadTimeNoticeAcknowledged) {
@@ -176,13 +204,19 @@ export function buildCustomerInquiryWhatsAppUrl(params: CustomerInquiryWhatsAppP
   // Reference pricing with pack/piece clarity
   if (params.requiresTeamQuote || !params.referenceUnitPrice || params.referenceUnitPrice <= 0) {
     lines.push(`• *Standard Rate Ref:* Custom Quote on Request (Team Confirmation Required)`);
-  } else if (params.quantityUnit === 'packs') {
-    const perPiece = params.perPiecePrice ? ` (Rs. ${Number(params.perPiecePrice).toLocaleString()}/pc)` : '';
-    lines.push(`• *Standard Rate Ref:* Rs. ${Number(params.referenceUnitPrice).toLocaleString()}/pack${perPiece}`);
-  } else if (params.quantityUnit === 'sets') {
-    lines.push(`• *Standard Rate Ref:* Rs. ${Number(params.referenceUnitPrice).toLocaleString()}/set`);
   } else {
-    lines.push(`• *Standard Rate Ref:* Rs. ${Number(params.referenceUnitPrice).toLocaleString()}/pc`);
+    if (params.quantityUnit === 'packs') {
+      const perPiece = params.perPiecePrice ? ` (Rs. ${Number(params.perPiecePrice).toLocaleString()}/pc)` : '';
+      lines.push(`• *Standard Rate Ref:* Rs. ${Number(params.referenceUnitPrice).toLocaleString()}/pack${perPiece}`);
+    } else if (params.quantityUnit === 'sets') {
+      lines.push(`• *Standard Rate Ref:* Rs. ${Number(params.referenceUnitPrice).toLocaleString()}/set`);
+    } else {
+      lines.push(`• *Standard Rate Ref:* Rs. ${Number(params.referenceUnitPrice).toLocaleString()}/pc`);
+    }
+
+    if (params.estimatedTotalPkr != null && Number(params.estimatedTotalPkr) > 0) {
+      lines.push(`• *Estimated Total Ref:* Rs. ${Number(params.estimatedTotalPkr).toLocaleString()} PKR`);
+    }
   }
 
   if (params.targetPricePkr) {
@@ -245,6 +279,9 @@ export function buildAdminWhatsAppPitchUrl(params: AdminWhatsAppPitchParams): st
     } (*Ref #${params.id}*):`,
     params.productName ? `• *Selection:* ${params.productName}` : '',
     params.packagingVariant ? `• *Variant / Portion:* ${params.packagingVariant}` : '',
+    params.netFillingGrams != null && Number(params.netFillingGrams) > 0
+      ? `• *Net Filling Weight:* ${Number(params.netFillingGrams) >= 1000 ? `${Number(params.netFillingGrams) / 1000}kg` : `${Number(params.netFillingGrams)}g`} per box`
+      : '',
     params.boxMode ? `• *Configuration:* ${modeLabel}` : '',
     isTabarruk ? `• *Tabarruk Packaging Notice:* Bottles are empty for customer-provided Zamzam water; packaging is empty by default` : '',
   ];
@@ -262,6 +299,7 @@ export function buildAdminWhatsAppPitchUrl(params: AdminWhatsAppPitchParams): st
     }
   }
 
+  if (isGiftRecipient(params.giftRecipient)) lines.push(`• *Gift for:* ${GIFT_RECIPIENT_LABELS[params.giftRecipient]}`);
   if (params.eventType) lines.push(`• *Occasion:* ${params.eventType}`);
   if (params.targetEventDate) lines.push(`• *Target Event Date:* ${params.targetEventDate}`);
   if (params.preferredFillings && params.preferredFillings.length > 0) {

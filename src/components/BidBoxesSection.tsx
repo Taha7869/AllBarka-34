@@ -7,6 +7,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { Product } from '../types';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { openCustomQuoteModal } from './CustomQuoteModal';
+import { isFilledPackagingVariant, calculateFilledGiftEstimate, resolveFilledRecipe } from '../lib/filledGiftPricing';
 
 interface BidBoxesSectionProps {
   onQuickView?: (product: Product) => void;
@@ -60,6 +61,18 @@ export default function BidBoxesSection({ onQuickView, compact = false }: BidBox
           variantKey = filledOpt.variantKey;
         }
       }
+    }
+
+    if (mode === 'filled' || isFilledPackagingVariant(variantKey)) {
+      const tierIndex = selectedEmptyTierIdx[product.id] ?? 2;
+      const chosenTier = cfg?.emptyTiers[tierIndex] || cfg?.emptyTiers[0];
+      openCustomQuoteModal({
+        productId: product.id,
+        mode: 'filled',
+        variantLabel: variantKey,
+        quantity: chosenTier?.qty || 25,
+      });
+      return;
     }
 
     addToCart(product, variantKey, 1);
@@ -153,6 +166,18 @@ export default function BidBoxesSection({ onQuickView, compact = false }: BidBox
             const activeEmptyTier = isQuoteOnly ? null : (cfg.emptyTiers[emptyTierIdx] || cfg.emptyTiers[0]);
             const filledIdx = selectedFilledIdx[product.id] ?? 0;
             const activeFilledOpt = isQuoteOnly ? null : (cfg.filledOptions[filledIdx] || cfg.filledOptions[0]);
+            const selectedBoxes = activeEmptyTier?.qty || 25;
+            const filledRecipe = resolveFilledRecipe(product, activeFilledOpt?.variantKey);
+            const filledEst = calculateFilledGiftEstimate({
+              packagingProduct: product,
+              packagingUnitPrice: activeEmptyTier?.unitPrice,
+              recipe: filledRecipe || undefined,
+              catalogProducts: products,
+              requestedBoxes: 1,
+            });
+            const displayFilledPrice = (filledEst.isAvailable && filledEst.estimatedTotalPkr)
+              ? filledEst.estimatedTotalPkr
+              : null;
 
             const cover = mediaCover(product) || product.image || '/images/products/bid-box-umrah-tabarruk-1.webp';
 
@@ -246,7 +271,7 @@ export default function BidBoxesSection({ onQuickView, compact = false }: BidBox
                         </span>
                         <span className="text-[#D4AF6A]">•</span>
                         <span>
-                          Filled: <strong className="text-[#072A20]">Rs. {cfg.filledMin.toLocaleString()}</strong>
+                          Filled: <strong className="text-[#072A20]">{displayFilledPrice ? `Rs. ${displayFilledPrice.toLocaleString()}` : t('catalog.quoteOnRequest', 'Quote on Request')}</strong>
                         </span>
                       </div>
                     )}
@@ -333,27 +358,41 @@ export default function BidBoxesSection({ onQuickView, compact = false }: BidBox
                           <div className="flex items-center justify-between text-[11px]">
                             <span className="font-semibold text-[#566B63]">Filled Assortment:</span>
                             <span className="font-bold text-[#072A20]">
-                              Rs. {activeFilledOpt?.price.toLocaleString()}/box
+                              {displayFilledPrice ? `Rs. ${displayFilledPrice.toLocaleString()}/box` : t('catalog.quoteOnRequest', 'Quote on Request')}
                             </span>
                           </div>
                           <div className="space-y-1.5">
-                            {cfg.filledOptions.map((opt, idx) => (
-                              <button
-                                key={opt.variantKey}
-                                type="button"
-                                onClick={() => setSelectedFilledIdx(prev => ({ ...prev, [product.id]: idx }))}
-                                className={`w-full rounded-lg border px-2.5 py-1.5 text-left transition-all flex items-center justify-between gap-2 ${
-                                  filledIdx === idx
-                                    ? 'border-[#072A20] bg-[#072A20]/5 text-[#072A20]'
-                                    : 'border-[#D4AF6A]/30 bg-white text-[#566B63] hover:border-[#072A20]/40'
-                                }`}
-                              >
-                                <span className="text-[11px] font-bold truncate">{opt.label}</span>
-                                <span className="text-xs font-extrabold text-[#8C6B1B] shrink-0">
-                                  Rs. {opt.price.toLocaleString()}
-                                </span>
-                              </button>
-                            ))}
+                            {cfg.filledOptions.map((opt, idx) => {
+                              const optRecipe = resolveFilledRecipe(product, opt.variantKey);
+                              const optEst = calculateFilledGiftEstimate({
+                                packagingProduct: product,
+                                packagingUnitPrice: activeEmptyTier?.unitPrice,
+                                recipe: optRecipe || undefined,
+                                catalogProducts: products,
+                                requestedBoxes: 1,
+                              });
+                              const optPriceDisplay = (optEst.isAvailable && optEst.estimatedTotalPkr)
+                                ? `Rs. ${optEst.estimatedTotalPkr.toLocaleString()}/box`
+                                : t('catalog.quoteOnRequest', 'Quote on Request');
+
+                              return (
+                                <button
+                                  key={opt.variantKey}
+                                  type="button"
+                                  onClick={() => setSelectedFilledIdx(prev => ({ ...prev, [product.id]: idx }))}
+                                  className={`w-full rounded-lg border px-2.5 py-1.5 text-left transition-all flex items-center justify-between gap-2 ${
+                                    filledIdx === idx
+                                      ? 'border-[#072A20] bg-[#072A20]/5 text-[#072A20]'
+                                      : 'border-[#D4AF6A]/30 bg-white text-[#566B63] hover:border-[#072A20]/40'
+                                  }`}
+                                >
+                                  <span className="text-[11px] font-bold truncate">{opt.label}</span>
+                                  <span className="text-xs font-extrabold text-[#8C6B1B] shrink-0">
+                                    {optPriceDisplay}
+                                  </span>
+                                </button>
+                              );
+                            })}
                           </div>
                         </div>
                       )}
@@ -380,24 +419,40 @@ export default function BidBoxesSection({ onQuickView, compact = false }: BidBox
                       </button>
                     ) : (
                       <>
-                        <button
-                          type="button"
-                          onClick={() => handleAddBidBox(product)}
-                          className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#072A20] hover:bg-[#0D3F30] text-[#F7F1E3] py-2.5 px-3 text-xs font-bold uppercase tracking-wider transition-all shadow-sm"
-                        >
-                          {addedId === product.id ? (
-                            <>
-                              <Check size={15} className="text-[#E6C786]" /> Added to Cart
-                            </>
-                          ) : (
-                            <>
-                              <ShoppingBag size={14} className="text-[#E6C786]" />
-                              {mode === 'empty'
-                                ? `Add ${activeEmptyTier?.qty} Empty Boxes (Rs. ${activeEmptyTier?.packPrice.toLocaleString()})`
-                                : `Add Filled Box (Rs. ${activeFilledOpt?.price.toLocaleString()})`}
-                            </>
-                          )}
-                        </button>
+                        {mode === 'empty' ? (
+                          <button
+                            type="button"
+                            onClick={() => handleAddBidBox(product)}
+                            className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#072A20] hover:bg-[#0D3F30] text-[#F7F1E3] py-2.5 px-3 text-xs font-bold uppercase tracking-wider transition-all shadow-sm"
+                          >
+                            {addedId === product.id ? (
+                              <>
+                                <Check size={15} className="text-[#E6C786]" /> Added to Cart
+                              </>
+                            ) : (
+                              <>
+                                <ShoppingBag size={14} className="text-[#E6C786]" />
+                                Add {activeEmptyTier?.qty} Empty Boxes (Rs. {activeEmptyTier?.packPrice.toLocaleString()})
+                              </>
+                            )}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openCustomQuoteModal({
+                                productId: product.id,
+                                mode: 'filled',
+                                variantLabel: activeFilledOpt?.variantKey,
+                                quantity: selectedBoxes,
+                              })
+                            }
+                            className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#072A20] hover:bg-[#0D3F30] text-[#F7F1E3] py-2.5 px-3 text-xs font-bold uppercase tracking-wider transition-all shadow-sm cursor-pointer"
+                          >
+                            <MessageSquareQuote size={14} className="text-[#E6C786]" />
+                            {t('catalog.requestQuote', 'Request Custom Quote')}{displayFilledPrice ? ` (Est. Rs. ${displayFilledPrice.toLocaleString()}/box)` : ''}
+                          </button>
+                        )}
 
                         <button
                           type="button"
@@ -405,10 +460,8 @@ export default function BidBoxesSection({ onQuickView, compact = false }: BidBox
                             openCustomQuoteModal({
                               productId: product.id,
                               mode,
-                              quantity: mode === 'empty' ? (activeEmptyTier?.qty || 50) : 50,
-                              targetUnitPrice: mode === 'empty'
-                                ? ((activeEmptyTier?.unitPrice || 0) * (activeEmptyTier?.qty || 50))
-                                : ((activeFilledOpt?.price || 0) * 50),
+                              variantLabel: mode === 'filled' ? activeFilledOpt?.variantKey : activeEmptyTier?.variantKey,
+                              quantity: selectedBoxes,
                             })
                           }
                           className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#8C6B1B]/50 bg-[#FAF6EE] hover:bg-[#8C6B1B] text-[#8C6B1B] hover:text-white py-2 px-3 text-[11px] font-bold uppercase tracking-wider transition-all"

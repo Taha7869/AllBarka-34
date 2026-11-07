@@ -1,5 +1,6 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../../hooks/usePrefersReducedMotion';
 import React, { useEffect, useRef, useState } from 'react';
-import { useInView, useReducedMotion } from 'motion/react';
+import { useInView } from 'motion/react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 // ─── Edit stats here ─────────────────────────────────────────────────────────

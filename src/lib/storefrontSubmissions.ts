@@ -1,3 +1,4 @@
+import type { GiftRecipient } from './giftRecipient';
 import { apiUrl } from './apiUrl';
 import { withApiDeadline } from './apiDeadline';
 
@@ -9,9 +10,13 @@ export interface CustomQuoteSubmissionInput {
   productId: string;
   productName: string;
   packagingVariant?: string;
-  boxMode: 'empty' | 'filled' | 'custom';
+  mode?: 'empty' | 'filled' | 'custom';
+  boxMode?: 'empty' | 'filled' | 'custom';
+  variantLabel?: string;
+  hamperConfiguration?: any;
   quantity: number;
   eventType: string;
+  giftRecipient?: GiftRecipient;
   targetEventDate?: string;
   preferredFillings?: string[];
   customFillingsNotes?: string;
@@ -27,6 +32,7 @@ export interface CustomQuoteSubmissionInput {
   email?: string;
   city: string;
   leadTimeNoticeAcknowledged?: boolean;
+  netFillingGrams?: number | null;
 }
 
 export interface CustomQuoteSubmissionResult {

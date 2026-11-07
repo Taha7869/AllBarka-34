@@ -1,4 +1,5 @@
-import { motion, useReducedMotion } from 'motion/react';
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
+import { motion } from 'motion/react';
 
 interface SquishSwitchProps {
   checked: boolean;

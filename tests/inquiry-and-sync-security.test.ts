@@ -5,7 +5,7 @@ import { once } from 'node:events';
 import { PRODUCTS } from '../src/data/products';
 import { mergeAuthoritativeCatalog } from '../src/lib/catalogStore';
 import { buildWaProductRows, serializeWaProductsCsv } from '../src/lib/waProductsExport';
-import { verifyN8nIntegrationSecret } from '../src/lib/integrationAuthentication';
+import { requireN8nIntegration } from '../src/lib/integrationAuthentication';
 import { createN8nCommerceRouter } from '../src/lib/n8nCommerceRouter';
 import type { Product } from '../src/types';
 
@@ -106,24 +106,8 @@ test('mergeAuthoritativeCatalog respects inactive products and appends dynamic p
 test('wa_products endpoint mounted before n8nCommerceRouter is reachable and supports CSV and auth', async () => {
   const app = express();
 
-  function checkAuth(req: express.Request): boolean {
-    const configuredSecret = TEST_SECRET;
-    const headerSecret = req.headers['x-allbarka-integration-secret'];
-    if (typeof headerSecret === 'string' && verifyN8nIntegrationSecret(headerSecret, configuredSecret)) {
-      return true;
-    }
-    const querySecret = req.query.secret || req.query.key;
-    if (typeof querySecret === 'string' && verifyN8nIntegrationSecret(querySecret, configuredSecret)) {
-      return true;
-    }
-    return false;
-  }
-
   // Mount wa-products before n8nCommerceRouter
-  app.get('/api/integrations/n8n/wa-products', (req, res) => {
-    if (!checkAuth(req)) {
-      return res.status(401).json({ ok: false, error: 'Integration authentication required.', code: 'INTEGRATION_AUTH_REQUIRED' });
-    }
+  app.get('/api/integrations/n8n/wa-products', requireN8nIntegration(() => TEST_SECRET), (req, res) => {
     const sampleProducts: Product[] = [
       {
         id: 'badam',
@@ -177,14 +161,14 @@ test('wa_products endpoint mounted before n8nCommerceRouter is reachable and sup
     assert.ok(Array.isArray(jsonBody.products));
     assert.equal(jsonBody.products[0].base_product_id, 'badam');
 
-    // 3. Authenticated via query param (?secret=...)
+    // 3. Secrets in query strings cannot authenticate (URLs leak into logs/history).
     const authQueryRes = await fetch(`${baseUrl}/wa-products?secret=${encodeURIComponent(TEST_SECRET)}`);
-    assert.equal(authQueryRes.status, 200);
+    assert.equal(authQueryRes.status, 401);
     const queryBody = await authQueryRes.json();
-    assert.equal(queryBody.ok, true);
+    assert.equal(queryBody.ok, false);
 
     // 4. Authenticated CSV format
-    const csvRes = await fetch(`${baseUrl}/wa-products?secret=${encodeURIComponent(TEST_SECRET)}&format=csv`);
+    const csvRes = await fetch(`${baseUrl}/wa-products?format=csv`, { headers: { 'X-AllBarka-Integration-Secret': TEST_SECRET } });
     assert.equal(csvRes.status, 200);
     assert.ok(csvRes.headers.get('content-type')?.includes('text/csv'));
     const csvText = await csvRes.text();

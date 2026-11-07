@@ -1,6 +1,7 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, useReducedMotion } from 'motion/react';
+import { motion } from 'motion/react';
 import { X, Crown, AlertCircle, ArrowRight, ArrowLeft, CheckCircle2, Eye, EyeOff, Mail } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';

@@ -1,6 +1,7 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import React, { useEffect, useId, useState } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
-import { AlertCircle, ChevronDown, Leaf, PackageCheck, ThermometerSnowflake } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { AlertCircle, ChevronDown, Leaf, PackageCheck, ThermometerSnowflake, ShieldCheck, Award } from 'lucide-react';
 import type { Product } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getLocalized } from '../utils/localize';
@@ -21,12 +22,17 @@ export default function ProductDetailAccordion({ product, className = '', defaul
   useEffect(() => { setOpenSection(defaultOpenKey); }, [product.id, defaultOpenKey]);
 
   const origin = getLocalized(product, 'origin', language);
-  const harvest = getLocalized(product, 'harvest', language);
+  const harvest = product.passport?.harvestSeason || getLocalized(product, 'harvest', language);
   const sourcing = getLocalized(product, 'sourcingDetails', language) || t('care.sourcingFallback', 'Source details are not listed for this selection. Ask our team for more information.');
   const storage = getLocalized(product, 'storageTips', language) || t('care.storageFallback', 'Follow the storage guidance on the product label and keep the packaging closed between uses.');
   const packaging = getLocalized(product, 'packagingDetails', language) || t('care.packagingFallback', 'Packaging varies by selection. Ask our team for the available options.');
   const suggestedUse = getLocalized(product, 'recipe', language) || t('care.useFallback', 'Follow the product label for serving and use instructions.');
   const allergens = getLocalized(product, 'allergenWarning', language) || t('care.allergenFallback', 'Allergen details are not listed for this selection. If you have an allergy, contact our team before ordering.');
+
+  const passport = product.passport;
+  const claims = product.claimsVerification;
+  const isClaimsVerified = claims?.status === 'verified';
+  const verifiedCertifications = isClaimsVerified ? (passport?.certifications || []) : [];
 
   const sections = [
     {
@@ -38,15 +44,31 @@ export default function ProductDetailAccordion({ product, className = '', defaul
         </div>
         <div>
           <p dir="auto" className="mb-1 text-start text-[10px] font-semibold uppercase tracking-wider text-[var(--color-accent-text)]">{t('care.storageLabel', 'Storage guidance')}</p>
-          <p dir="auto" className="text-start">{storage}</p>
+          <p dir="auto" className="text-start">{passport?.storageInstructions || storage}</p>
         </div>
+        {passport?.bestBeforeDays !== undefined && <div>
+          <p dir="auto" className="mb-1 text-start text-[10px] font-semibold uppercase tracking-wider text-[var(--color-accent-text)]">{t('care.shelfLife', 'Best before / Shelf life')}</p>
+          <p dir="auto" className="text-start leading-5">{passport.bestBeforeDays} {t('care.days', 'days from packaging')}</p>
+        </div>}
       </div>,
     },
     {
       key: 'sourcing', Icon: Leaf, title: t('care.sourcing', 'Details & sourcing'),
       content: <div className="space-y-3">
         <p dir="auto" className="text-start">{sourcing}</p>
-        {(origin || harvest) && <dl className="grid grid-cols-1 gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] p-3 sm:grid-cols-2">
+        {(origin || harvest || passport?.variety || passport?.roastLevel || passport?.processingMethod) && <dl className="grid grid-cols-1 gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] p-3 sm:grid-cols-2">
+          {passport?.variety && <div className="min-w-0">
+            <dt dir="auto" className="mb-1 text-start text-[10px] font-semibold uppercase tracking-wider text-[var(--color-accent-text)]">{t('item.variety', 'Variety')}</dt>
+            <dd dir="auto" className="text-start leading-5 text-[var(--color-text-primary)]">{passport.variety}</dd>
+          </div>}
+          {passport?.roastLevel && <div className="min-w-0">
+            <dt dir="auto" className="mb-1 text-start text-[10px] font-semibold uppercase tracking-wider text-[var(--color-accent-text)]">{t('item.roastLevel', 'Roast level')}</dt>
+            <dd dir="auto" className="text-start leading-5 text-[var(--color-text-primary)]">{t('item.roast.' + passport.roastLevel, passport.roastLevel.replace('_', ' '))}</dd>
+          </div>}
+          {passport?.processingMethod && <div className="min-w-0">
+            <dt dir="auto" className="mb-1 text-start text-[10px] font-semibold uppercase tracking-wider text-[var(--color-accent-text)]">{t('item.processingMethod', 'Processing')}</dt>
+            <dd dir="auto" className="text-start leading-5 text-[var(--color-text-primary)]">{passport.processingMethod}</dd>
+          </div>}
           {origin && <div className="min-w-0">
             <dt dir="auto" className="mb-1 text-start text-[10px] font-semibold uppercase tracking-wider text-[var(--color-accent-text)]">{t('shop.origin')}</dt>
             <dd dir="auto" className="text-start leading-5 text-[var(--color-text-primary)]">{origin}</dd>
@@ -59,7 +81,33 @@ export default function ProductDetailAccordion({ product, className = '', defaul
       </div>,
     },
     { key: 'packaging', Icon: PackageCheck, title: t('care.packaging', 'Packaging details'), content: <p dir="auto" className="text-start">{packaging}</p> },
-    { key: 'allergens', Icon: AlertCircle, title: t('care.allergens', 'Allergen information'), content: <p dir="auto" className="text-start">{allergens}</p> },
+    { key: 'allergens', Icon: AlertCircle, title: t('care.allergens', 'Allergen information'), content: <div className="space-y-3">
+  <p dir="auto" className="text-start">{allergens}</p>
+  {!!passport?.allergens?.length && <div>
+    <p dir="auto" className="mb-1 text-start text-[10px] font-semibold uppercase tracking-wider text-[var(--color-accent-text)]">{t('care.containsAllergens', 'Contains / Advisory')}</p>
+    <div className="flex flex-wrap gap-1.5">{passport.allergens.map((a, i) => <span key={i} className="rounded-md border border-[var(--color-border)] bg-[var(--color-base)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-text-primary)]">{a}</span>)}</div>
+  </div>}
+  {!!passport?.ingredients?.length && <div>
+    <p dir="auto" className="mb-1 text-start text-[10px] font-semibold uppercase tracking-wider text-[var(--color-accent-text)]">{t('item.ingredients', 'Ingredients')}</p>
+    <p dir="auto" className="text-start leading-5 text-[var(--color-text-primary)]">{passport.ingredients.join(', ')}</p>
+  </div>}
+</div> },
+  ...(verifiedCertifications.length > 0 || isClaimsVerified ? [{
+    key: 'passport', Icon: ShieldCheck, title: t('care.passport', 'Verified Passport & Quality'), content: <div className="space-y-3">
+      <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-400">
+        <ShieldCheck size={16} />
+        <span className="font-semibold text-xs">{t('care.verifiedClaims', 'AllBarka Verified Quality')}</span>
+        {claims?.verifiedAt && <span className="text-[10px] opacity-75">· {claims.verifiedAt}</span>}
+      </div>
+      {verifiedCertifications.length > 0 && <div className="flex flex-wrap gap-2 pt-1">
+        {verifiedCertifications.map(cert => (
+          <span key={cert} className="inline-flex items-center gap-1 rounded-full border border-[var(--color-border-accent)] bg-[var(--color-base)] px-3 py-1 text-[11px] font-medium text-[var(--color-accent-text)]">
+            <Award size={13} /> {t('item.cert.' + cert, cert.replace('_', ' ').toUpperCase())}
+          </span>
+        ))}
+      </div>}
+    </div>
+  }] : []),
   ];
 
   return <div dir="ltr" className={`w-full overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-xs ${className}`}>

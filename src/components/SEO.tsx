@@ -2,21 +2,27 @@ import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
 interface SEOProps {
+  disabled?: boolean;
   title?: string;
   description?: string;
   canonicalPath?: string;
   type?: 'website' | 'product' | 'article';
   image?: string;
+  keywords?: string[];
+  noindex?:boolean;
   structuredData?: Record<string, any>;
 }
 
 export default function SEO({
+  disabled = false,
   title,
   description = 'Hand-sorted, unbleached, orchard-fresh dry fruits, roasted pistachios, Chilean walnuts and luxury gift hampers delivered in Lahore and nationwide.',
   canonicalPath,
   type = 'website',
   image = '/images/generated/og-image.jpg',
   structuredData,
+  keywords,
+  noindex=false,
 }: SEOProps) {
   const location = useLocation();
   const currentPath = canonicalPath || location.pathname;
@@ -27,6 +33,7 @@ export default function SEO({
     : 'AllBarka | Premium Dry Fruits, Nuts & Gifts';
 
   useEffect(() => {
+    if (disabled) return;
     // 1. Page Title
     document.title = fullTitle;
 
@@ -65,12 +72,13 @@ export default function SEO({
       }
       element.setAttribute('content', content);
     };
+    setMeta('name','keywords',(keywords||[]).join(', '));
     setMeta('property', 'og:type', type);
     setMeta('name', 'twitter:card', 'summary_large_image');
     setMeta('name', 'twitter:title', fullTitle);
     setMeta('name', 'twitter:description', description);
     setMeta('name', 'twitter:image', new URL(image, siteOrigin).href);
-    setMeta('name', 'robots', /^\/(?:admin|cart|checkout|success)(?:\/|$)/.test(currentPath) ? 'noindex, nofollow' : 'index, follow');
+    setMeta('name', 'robots', (noindex || /^\/(?:admin|staff|cart|checkout|success)(?:\/|$)/.test(currentPath)) ? 'noindex, nofollow' : 'index, follow');
 
     const ogImage = document.querySelector('meta[property="og:image"]');
     if (ogImage && image) {
@@ -97,7 +105,7 @@ export default function SEO({
       const el = document.getElementById('route-structured-data');
       if (el) el.remove();
     };
-  }, [fullTitle, description, canonicalUrl, image, structuredData, siteOrigin, type, currentPath]);
+  }, [disabled, fullTitle, description, canonicalUrl, image, structuredData, siteOrigin, type, currentPath, keywords,noindex]);
 
   return null;
 }

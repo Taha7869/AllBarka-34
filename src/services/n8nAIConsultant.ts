@@ -4,6 +4,7 @@ export interface ConsultantRequest {
   message: string;
   history: unknown;
   system: string;
+  signal?: AbortSignal;
 }
 
 export interface ProductSelectionReference {
@@ -139,13 +140,21 @@ export async function askN8nConsultant(input: ConsultantRequest): Promise<Consul
   const config = getN8nAiConfig();
   if (!config) return null;
   if (typeof input.message !== 'string' || !input.message.trim() || input.message.length > 1000) throw new Error('INVALID_MESSAGE');
+  if (input.signal?.aborted) throw new DOMException('Request cancelled.', 'AbortError');
   const controller = new AbortController();
+  let rejectCancellation: (reason: Error) => void = () => {};
+  const cancelled = new Promise<never>((_, reject) => { rejectCancellation = reject; });
+  const cancel = () => {
+    controller.abort();
+    rejectCancellation(new DOMException('Request cancelled.', 'AbortError'));
+  };
+  input.signal?.addEventListener('abort', cancel, { once: true });
   let timer: ReturnType<typeof setTimeout> | undefined;
   const deadline = new Promise<never>((_, reject) => {
     timer = setTimeout(() => { controller.abort(); reject(new Error('AI_TIMEOUT')); }, config.timeoutMs);
   });
   try {
-    return await Promise.race([deadline, (async () => {
+    return await Promise.race([deadline, cancelled, (async () => {
       const bridgeStart = Date.now();
       const response = await fetch(config.url, {
         method: 'POST', redirect: 'error', signal: controller.signal,
@@ -160,5 +169,8 @@ export async function askN8nConsultant(input: ConsultantRequest): Promise<Consul
       }
       return parsed;
     })()]);
-  } finally { clearTimeout(timer); }
+  } finally {
+    clearTimeout(timer);
+    input.signal?.removeEventListener('abort', cancel);
+  }
 }

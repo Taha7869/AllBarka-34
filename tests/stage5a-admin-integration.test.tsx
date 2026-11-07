@@ -7,7 +7,7 @@ import path from 'node:path';
 import { once } from 'node:events';
 import { type AddressInfo } from 'node:net';
 import express from 'express';
-import { chromium } from 'playwright-core';
+import { launchTestBrowser } from './helpers/browser.mjs';
 import {
   getPublicMerchandising,
   getAdminMerchandisingBundle,
@@ -822,9 +822,7 @@ test('7. Browser/client-mounted provider-fetch verification with real local HTTP
 
   let browser: any = null;
   try {
-    browser = await chromium.launch({ channel: 'chrome', headless: true }).catch(() =>
-      chromium.launch({ channel: 'msedge', headless: true })
-    );
+    browser = await launchTestBrowser();
     const page = await browser.newPage();
 
     // Step 1: Initial client mount — NO initialSettings or direct settings injected

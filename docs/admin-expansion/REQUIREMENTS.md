@@ -1,0 +1,29 @@
+# Requirement matrix
+
+Statuses refer to the expansion, not whether an older partial implementation exists.
+
+27 October continuation: [current recovery verification](../RESUME_VERIFICATION.md) records the latest local checks and mobile-menu correction. Earlier counts below remain historical; Stage 6 private/provider release gates retain their IN_PROGRESS/BLOCKED states.
+
+| ID | Requirement | Stage | Status | Evidence/path |
+| --- | --- | --- | --- | --- |
+| A01 | Verified baseline, stage plan, decisions and handoff | 1 | DONE | ROADMAP.md; instructions.md; design.md |
+| A02 | mg/g/kg/ml/L/piece/pack selection with safe dimension conversion | 2 | DONE | productCommerce.ts and shared form; conversion and dimensional mismatch tests |
+| A03 | Manual and calculated option prices, explicit overrides | 2 | DONE | Explicit-save canonical pricing; exact half-up calculation and preservation tests |
+| A04 | Fixed/custom/both quantity with min/max/step | 2–3 | DONE | Configured food/liquid custom mass/volume controls; fixed count packs; custom 750mg cart and server pricing verified |
+| A05 | Reusable templates and bounded attribute definitions | 2–3 | DONE | Revisioned template/typed attribute editor and explicit application controls; browser save plus schema tests |
+| A06 | Admin-created category/collection/occasion extensions | 2–3 | DONE | Category/collection/occasion editor, hidden IDs and shop discovery; initial route metadata and sitemap integration |
+| A07 | Complete add/edit form and visible Required/Optional labels | 3 | DONE | Shared AdminItemForm with visible markers, eight section shortcuts and independent unsaved settings guards; original item journey plus finishing browser matrix |
+| A08 | Separate EN/UR/AR descriptions and translation status | 3 | DONE | Separate EN/UR/AR names/descriptions/origin; missing translations stay empty and display English fallback |
+| A09 | Durable image upload, cover, gallery and alt text | 3 | DONE | Authenticated durable upload implementation, cover/gallery controls and alt text; local provider success/failure tests; live bucket unverified |
+| A10 | Localized SEO fields and social preview | 2–3 | DONE | Localized form and client metadata; saved English metadata in initial HTML; keywords/social image and fallback tests |
+| A11 | Draft, preview, duplicate, publish, archive and revision conflict handling | 3 | DONE | Existing duplicate/archive lifecycle retained; shared draft/preview/publish flow and real stale-edit conflict browser case; item/settings draft separation, pending-save/reload protection and error focus |
+| A12 | Admin-controlled staff access and read-only order workspace | 4 | DONE | staffAccess.ts, AdminStaffPanel, StaffOrdersWorkspace; grant/read/revoke browser test |
+| A13 | Staff denied all admin mutations/private catalog/settings | 4 | DONE | HTTP permission matrix, strict DTO, disabled/revoked/stale claims, audit rollback and concurrency checks |
+| A14 | Approved content/banner/navigation/FAQ/journal controls | 5 | DONE | AdminContentPanel, revisioned draft/live router, actual hero/banner/sections/menus/FAQ/journal; HTTP and browser persistence/privacy/conflict checks |
+| A15 | Gold/ivory/emerald polish with mobile, desktop, dark and RTL parity | 5 | DONE | premium-content.css, native FAQ/Studio plus interaction-polish.css; actual RootLayout/PDP/cart at 360/390/768/1440 × EN/UR/AR × light/dark, touch/keyboard/reduced motion; admin finishing 18 layouts and 200% enlarged text/control-size checks |
+| A16 | Shared prices in catalog/cart/quote/order/AI exports | 2–6 | IN_PROGRESS | Stage 3 custom cart and server pricing; Stage 6 exact legacy labels/merchant rates plus new mg/liquid custom units pass quote, durable receipt, outbox and bundled receiver code; saved replay and retry/duplicate checks pass locally; live provider execution remains pending |
+| A17 | Changes, evidence and continuation state recorded | All | DONE at checkpoint | CHANGELOG.md; HANDOFF.md; RELEASE_PACKET.md; next external gates explicitly recorded |
+| A18 | Type/build/hooks, regression suite and browser verification | 6 | IN_PROGRESS | Stage 6 type/build/hooks, 705/705 tests across 72 files, 21 backend, 36 production and assets pass; actual-layout browser matrix passes; deployed-service checks BLOCKED |
+| A19 | Safe migration preview, preserved owner edits/IDs/history, rollback | 6 | IN_PROGRESS | Updated isolated impact: 97 fixture records and 97 resolved price lists unchanged; four exact legacy-label reader findings corrected locally; empty-store unavailability retained with zero writes. Private owner-data review and rollback rehearsal BLOCKED |
+
+No requirement is DONE solely because a form or endpoint scaffold exists.

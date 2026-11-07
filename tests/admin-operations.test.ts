@@ -189,7 +189,8 @@ test('allowlisted admin order/detail responses preserve useful information but r
 });
 
 test('note transaction preserves legacy notes and pricing, audits actor and advances revision monotonically', async () => {
-  const original = order({ adminNotes: ['Legacy note'], updatedAtMs: Date.now() + 10000, updatedAt: new Date(Date.now() + 10000).toISOString() });
+  const futureMs = Date.now() + 10000;
+  const original = order({ adminNotes: ['Legacy note'], updatedAtMs: futureMs, updatedAt: new Date(futureMs).toISOString() });
   const db = new FakeFirestore([original]);
   const result = await addAdminOrderNote({ ...actor(db, original), note: '  Confirmed address by phone  ' });
   assert.deepEqual(result.adminNotes, ['Legacy note']);

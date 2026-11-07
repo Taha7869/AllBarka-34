@@ -1,15 +1,14 @@
 rules_version = '2';
+// Scoped prototype: users/{uid} stores optional bounded name/phone/address/city
+// strings and numeric createdAt/updatedAt. Existing server loyalty/role fields
+// are immutable to browsers. Canonical commerce/admin collections are API-only.
+// Public read-only reviews/content and existing contact-field schema are retained.
 service cloud.firestore {
   match /databases/{database}/documents {
     
     // Helper to verify authenticated owner
     function isOwner(userId) {
       return request.auth != null && request.auth.uid == userId;
-    }
-
-    // Helper to verify authenticated store administrator
-    function isAdmin() {
-      return request.auth != null && (request.auth.token.admin == true || request.auth.token.role == 'admin');
     }
 
     // Validate only contact fields. Existing server-managed membership/loyalty fields
@@ -49,9 +48,11 @@ service cloud.firestore {
         allow write: if false;
       }
 
-      // Customer favorites and saved bag: client writable for owner
+      // Current bag/favorites use browser storage, not this legacy collection.
+      // Retain owner access to historical data without an arbitrary-document write API.
       match /favorites/{favId} {
-        allow read, write: if isOwner(userId);
+        allow read, delete: if isOwner(userId);
+        allow create, update: if false;
       }
     }
     
@@ -70,10 +71,10 @@ service cloud.firestore {
     // Products collection contains sensitive supplier costs, reference prices,
     // draft/archived status, and internal margin notes. Public storefront consumes
     // the sanitized, active-only /api/catalog and /api/catalog/products/:id endpoints.
-    // Direct client reads are restricted strictly to store administrators.
+    // Admin operations also go through the backend's current-account guard.
+    // A removed admin's old ID token must not bypass it with direct SDK reads.
     match /products/{productId} {
-      allow read: if isAdmin();
-      allow write: if false;
+      allow read, write: if false;
     }
 
     match /reviews/{reviewId} {
@@ -88,13 +89,13 @@ service cloud.firestore {
 
     // Customer inquiries and custom Bid Box / wholesale quotes:
     // Written and managed via backend API (/api/inquiries, /api/quotes, /api/admin/inquiries);
-    // authenticated admins may also read/write directly.
+    // no direct browser access, including a cached admin claim.
     match /inquiries/{inquiryId} {
-      allow read, write: if isAdmin();
+      allow read, write: if false;
     }
 
     match /quotes/{quoteId} {
-      allow read, write: if isAdmin();
+      allow read, write: if false;
     }
 
     // Default deny all other paths
