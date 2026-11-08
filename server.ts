@@ -860,6 +860,7 @@ app.use(createAiChatRouter({
 
 // Vite Middleware & Static Asset pipeline integration
 async function startServer() {
+  let closeDevelopmentServer: (() => Promise<void>) | undefined;
   // API failures must never fall through to the SPA document.
   app.use('/api', (_req, res) => res.status(404).json({ error: 'API endpoint not found', code: 'NOT_FOUND' }));
   if (process.env.NODE_ENV !== 'production') {
@@ -867,9 +868,22 @@ async function startServer() {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
-      appType: 'spa'
+      appType: 'custom'
     });
+    closeDevelopmentServer = () => vite.close();
     app.use(vite.middlewares);
+    app.get('*', async (req, res, next) => {
+      try {
+        const template = readFileSync(path.resolve('index.html'), 'utf8');
+        const html = await vite.transformIndexHtml(req.originalUrl, template);
+        // Helmet's nonce disables unsafe-inline in modern browsers. Vite's
+        // refresh preamble needs that same request nonce, just like our scripts.
+        res.type('html').send(html.replace(/<script\b/g, () => `<script nonce="${res.locals.cspNonce}"`));
+      } catch (error) {
+        vite.ssrFixStacktrace(error as Error);
+        next(error);
+      }
+    });
     console.timeEnd('[dev] Vite middleware');
   } else {
     const distPath = path.join(process.cwd(), 'dist');
@@ -944,6 +958,7 @@ async function startServer() {
     const timer = setTimeout(() => process.exit(1), 40000);
     timer.unref();
     await worker.stop();
+    await closeDevelopmentServer?.();
     server.close(() => { clearTimeout(timer); process.exitCode = 0; });
     server.closeIdleConnections();
   };
