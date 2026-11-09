@@ -8,7 +8,7 @@ Owner request: review the work before delivery, verify that new/updated Firestor
 
 ## R01 — Resume from verified repository state
 
-1. Read [AGENTS.md](AGENTS.md), [instructions.md](instructions.md), this file, [MASTER_PLAN.md](MASTER_PLAN.md), [design.md](design.md) and the current [handoff](docs/admin-expansion/HANDOFF.md).
+1. Read [AGENTS.md](AGENTS.md), [instructions.md](instructions.md), this file, [MASTER_PLAN.md](MASTER_PLAN.md), [design.md](design.md), [CAUTION.md](CAUTION.md) and the current [handoff](docs/admin-expansion/HANDOFF.md). Apply CAUTION's change-impact checks and update relevant risk dispositions; the register does not itself enable any protection.
 2. Inspect the current remote branch/PR head, local changes and the relevant source. Do not infer that `main`, the working branch and the deployed build are identical.
 3. Preserve unrelated changes and completed work. Use an isolated checkout if another working copy is dirty. Never overwrite another agent's draft or force-push reconstructed snapshot history.
 4. Before a feature checkpoint, select its stable task ID and record scope, acceptance criteria, dependencies and owner/agent. Do not silently add a new app, service or parallel catalog.

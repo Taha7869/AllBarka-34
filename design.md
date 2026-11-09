@@ -1,5 +1,9 @@
 # AllBarka design direction
 
+## Owner-confirmed continuation — 10 November 2026
+
+Enhance the cinematic Living Gallery while preserving the existing premium components: animated bordered product cards, explicit Quick View, native detail links, desktop sticky-photo PDP, complete navigation, existing tools, fonts, languages and themes. New desktop/mobile films can be supplied; gifting artwork is a reference until physical packaging is verified. The [confirmed storefront/AI plan](docs/SMART_STOREFRONT_AND_AI_PLAN_2026-11-10.md) records role-based composer, mobile photo swipe rail, safe reference uploads and approximate location/hours. These are selected pending implementation, not a new completed visual pass. True modeled gift-box 3D remains deferred; lightweight layers do not imply a real 3D model. Follow [CAUTION.md](CAUTION.md) for motion, media, embed, upload and AI safety rechecks. Historical completion statements below retain their original scope.
+
 ## Current owner decisions — 4 November 2026
 
 Box 3D is DEFERRED; preserve accurate existing-photo contents presentation and the accepted Signature Table. Printing treatments are possible according to owner but no physical samples are prepared; render reference art honestly and validate actual materials/fonts/sizes before claiming physical availability. Merchandising selection is delegated, subject to current price/contents review. Balance is commercial direction, not a mandatory numerical50/50 split or exactly four homepage sections. VOICE-01 is selected for a separate reviewed speech slice; use existing Buddy/search UI and preserve reduced-motion/touch/keyboard behavior. [Current decisions and findings](docs/REVIEW_RECONCILIATION_2026-11-04.md).

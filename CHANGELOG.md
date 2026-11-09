@@ -1,3 +1,9 @@
+## 10 November 2026 — safety audit and confirmed storefront/AI plan
+
+- Add [CAUTION.md](CAUTION.md): actual storage boundaries, read-only Railway state, existing source controls, recurring change checks and SEC02 risk register. Record offline `launch`, one configured replica, unverified edge/rules/IAM/backups, fresh moderate dependency findings and pending Run #47 diagnosis.
+- Record all nine owner answers, original card/Quick View/sticky PDP preservation, cinematic motion/media brief, three scoped AI roles retaining Groq, bounded private reference uploads, map/hours and supplied-component adaptations in the [pending plan](docs/SMART_STOREFRONT_AND_AI_PLAN_2026-11-10.md).
+- Link the plan/register from agent rules, design, master plan and handoff. Documentation only; no runtime/security fix, dependency/key change, merge or deployment. [Exact results](docs/evidence/security-20261110/verification.json).
+
 ## 7 November 2026 — verified offline completion
 
 - Record the passing source74dad9e hosted suite for quote translation, event inquiry confirmation and voice-panel positioning.

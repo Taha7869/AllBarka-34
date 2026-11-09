@@ -1,0 +1,121 @@
+{
+  "task": "SEC02 / premium storefront and AI planning",
+  "recordedAtUtc": "2026-11-09T21:22:36.762883+00:00",
+  "ownerDate": "2026-11-10",
+  "ownerTimezone": "Asia/Karachi",
+  "source": {
+    "repository": "Taha7869/AllBarka-34",
+    "branch": "codex/premium-table-kit-20261108",
+    "inspectedParent": "3b1a1ef71d0be2b34c0e879a0c549c99c3a0c18f",
+    "parentTree": "3786b23dfbed651039df7b698b49c67a04637863",
+    "pullRequest": 17
+  },
+  "scope": {
+    "code": "SOURCE_INSPECTED_UNCHANGED",
+    "work": "DOCUMENTATION_CHECKPOINT",
+    "redesign": "SELECTED_TODO",
+    "securityRemediation": "TODO_NOT_IMPLEMENTED",
+    "review": "Codex source inspection and self-review; no independent review claimed",
+    "removedFiles": 0
+  },
+  "environment": {
+    "node": "24.22.1",
+    "npm": "11.9.0",
+    "dependencies": "npm ci --no-audit --no-fund: exit 0, locked dependencies; package files unchanged"
+  },
+  "localChecks": {
+    "build": {
+      "command": "npm run build",
+      "status": "PASS",
+      "exitCode": 0,
+      "privacyAuditTextArtifacts": 85,
+      "warning": "Existing Vite chunk-size warning; no chunk-size fix claimed"
+    },
+    "targetedSecurity": {
+      "command": "node --import tsx --test --test-isolation=none --test-concurrency=1 tests/admin-authentication.test.ts tests/integration-authentication.test.ts tests/inquiry-and-sync-security.test.ts tests/release-privacy.test.mjs tests/voice-concierge.test.ts tests/ai-guest-trial.mjs tests/concierge-integration.test.ts tests/firestore-security.test.mjs",
+      "status": "PASS_WITH_ONE_SKIP",
+      "total": 35,
+      "pass": 34,
+      "fail": 0,
+      "skip": 1,
+      "skipped": "Firestore security demo-emulator test: ALLBARKA_RULES_TEST_ORIGIN unset; published rules not tested"
+    },
+    "dependencyAudit": {
+      "all": {
+        "info": 0,
+        "low": 0,
+        "moderate": 8,
+        "high": 0,
+        "critical": 0,
+        "total": 8
+      },
+      "productionOnly": {
+        "info": 0,
+        "low": 0,
+        "moderate": 6,
+        "high": 0,
+        "critical": 0,
+        "total": 6
+      },
+      "status": "OPEN_MODERATE_FINDINGS",
+      "uniqueAdvisories": [
+        "GHSA-3g3m-2fjr-6pw4",
+        "GHSA-g3hv-75wg-m249"
+      ],
+      "noDependencyMutation": true
+    },
+    "fullOfflineSuite": "NOT_RUN_DOCUMENTATION_ONLY; existing hosted failure remains open",
+    "redesignBrowserMatrix": "NOT_RUN_NO_UI_IMPLEMENTATION",
+    "catalogReconciliation": "N/A_FOR_DOCUMENTATION_ONLY; live catalog data not read or certified"
+  },
+  "hostedCi": {
+    "runId": 42476709865,
+    "source": "3b1a1ef71d0be2b34c0e879a0c549c99c3a0c18f",
+    "status": "FAIL",
+    "passedSteps": [
+      "Typecheck",
+      "Hooks lint",
+      "Production build and release privacy audit"
+    ],
+    "failedStep": "Complete offline regression gate",
+    "rootCause": "UNCONFIRMED; exact failing test output not obtained",
+    "newCheckpointChecks": "NOT_RUN_AT_FILE_CREATION; inspect source and PR merge runs after save"
+  },
+  "railwayReadOnly": {
+    "project": "AllBarka",
+    "service": "allbarka-fullstack",
+    "environment": "production",
+    "sourceBranch": "launch",
+    "runtimeStatus": "OFFLINE",
+    "activeDeployments": 0,
+    "latestDeploymentReturned": false,
+    "configuredReplicas": 1,
+    "configuredRegion": "asia-southeast1-eqsg3a",
+    "stagedChanges": 0,
+    "sourceCheckSuites": false,
+    "tracingEnabled": false,
+    "volumes": 0,
+    "buckets": 0,
+    "variableValuesRead": false,
+    "configurationChanged": false
+  },
+  "unverifiedExternalGates": [
+    "Firestore production project/database values, region, edition, IAM and published rules",
+    "Storage rules/IAM and private attachment lifecycle",
+    "edge WAF, bot/DDoS settings and origin restrictions",
+    "n8n current model/credential and execution retention; receiver compatibility",
+    "real Groq voice/free-tier/account-device connectivity",
+    "backups, retention, restore drill, budgets and monitoring",
+    "exact Neelum Block locality and opening weekdays",
+    "merchant packaging, claims, prices and live orders"
+  ],
+  "deliveryChecklist": {
+    "scope": "Scoped audit/plan checkpoint; runtime feature and risk remediation completion expressly not claimed",
+    "review": "Self-review; open SEC02 risks dispositioned in CAUTION.md",
+    "checks": "Build/privacy and targeted security results above; unrun tests/external gates explicit",
+    "catalog": "N/A no catalog mutation, live audit not certified",
+    "preservation": "No runtime change; OG preservation requirements source-verified and recorded",
+    "handoff": "MASTER_PLAN, CHANGELOG, agent guides, rules and handoff linked",
+    "save": "Expected-parent fast-forward and remote diff/content read-back required; the containing Git commit identifies this checkpoint"
+  }
+}
