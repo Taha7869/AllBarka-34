@@ -9,6 +9,11 @@ export interface CategoryMeta {
 }
 
 export const FOOD_CATEGORIES: Record<string, CategoryMeta> = {
+  saunf: {
+    id: 'saunf', name: 'Saunf & Mouth Fresheners', shortName: 'Saunf',
+    description: 'Plain fennel, colourful sugar-coated saunf and traditional mouth-freshener mixes.',
+    bannerTitle: 'Saunf & After-Meal Selections', provenance: 'AllBarka Pantry Selections',
+  },
   'dry-fruits': {
     id: 'dry-fruits',
     name: 'Dry Fruits & Nuts',
@@ -107,6 +112,7 @@ export const OCCASION_TAGS = [
 ] as const;
 
 export const CANONICAL_CATEGORIES: Record<string, CategoryMeta> = {
+  saunf: FOOD_CATEGORIES.saunf,
   nuts: {
     id: 'nuts',
     name: 'Dry Fruits & Nuts',
@@ -156,6 +162,7 @@ export const CANONICAL_CATEGORIES: Record<string, CategoryMeta> = {
  * Excludes legacy internal aliases (nuts, snacks-seeds) while preserving them in CANONICAL_CATEGORIES & CATEGORY_ALIASES.
  */
 export const CUSTOMER_FACING_CATEGORIES = [
+  'saunf',
   'dry-fruits',
   'dates',
   'seeds-snacks',
@@ -245,6 +252,9 @@ export function productMatchesCategory(
 
   // Exact match
   if (prodCat === target || product.collections?.includes(target)) return true;
+
+  // Group the existing plain fennel without changing its saved category or ID.
+  if (target === 'saunf') return product.id === 'fennel-seeds';
 
   // Dry Fruits & Nuts equivalence
   if ((target === 'dry-fruits' || target === 'nuts') && (prodCat === 'nuts' || prodCat === 'dry-fruits')) {

@@ -1,3 +1,7 @@
+## 10 November 2026 — additive catalog intake and exact PR17 diagnosis
+
+Prepare17 trilingual draft products and17 AI-styled WebP illustrations, safe create-only import, existing-ID reuse and Saunf grouping. Preserve all97 existing source products and media. Prefill five owner-authorized old photo-tag draft rates only; other rates stay blank. Correct the demonstrated mobile-viewport premise of the desktop-brand browser assertion without changing app logo behavior. Guard development static-asset404 fallback while preserving SPA deep links and JSON API404. [Evidence and live boundary](docs/CATALOG_INTAKE_2026-11-10.md).
+
 ## 10 November 2026 — safety audit and confirmed storefront/AI plan
 
 - Add [CAUTION.md](CAUTION.md): actual storage boundaries, read-only Railway state, existing source controls, recurring change checks and SEC02 risk register. Record offline `launch`, one configured replica, unverified edge/rules/IAM/backups, fresh moderate dependency findings and pending Run #47 diagnosis.

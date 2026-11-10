@@ -1,5 +1,6 @@
 export const catalogTranslations: Record<string, Record<string, string>> = {
   en: {
+    'shop.saunf': 'Saunf & mouth fresheners',
     "table.eyebrow": "The AllBarka Table",
     "table.heading": "For your table.",
     "table.accent": "For your people.",
@@ -257,6 +258,7 @@ export const catalogTranslations: Record<string, Record<string, string>> = {
     'occasion.exploreDest': 'Explore favors',
   },
   ur: {
+    'shop.saunf': 'سونف اور مکھواس',
     "table.eyebrow": "البَرکہ کا دسترخوان",
     "table.heading": "آپ کے دسترخوان کے لیے۔",
     "table.accent": "آپ کے اپنوں کے لیے۔",
@@ -514,6 +516,7 @@ export const catalogTranslations: Record<string, Record<string, string>> = {
     'occasion.exploreDest': 'تفصیلات دیکھیں',
   },
   ar: {
+    'shop.saunf': 'الشمر ومعطرات الفم',
     "table.eyebrow": "مائدة البركة",
     "table.heading": "لمائدتكم.",
     "table.accent": "ولأحبابكم.",

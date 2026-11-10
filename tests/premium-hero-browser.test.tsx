@@ -89,7 +89,15 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     }
     assert.equal(await page.locator('.table-hero-film').count(),0,'reduced-motion loads no film');
     assert.equal(await page.locator('.table-gift-editorial').count(),1,'photographic gifting stays in published occasions section');
-    assert.equal(await page.getByRole('button',{name:'AllBarka — Home',exact:true}).count(),1,'desktop brand has native keyboard semantics');
+    // The preceding enlarged-care pass leaves a 390px mobile viewport. The
+    // desktop brand is correctly hidden there and absent from the role tree.
+    // Establish the desktop premise before testing its native keyboard control.
+    await page.setViewportSize({width:1440,height:1000});
+    const desktopBrand=page.getByRole('button',{name:'AllBarka — Home',exact:true});
+    await desktopBrand.waitFor({state:'visible'});
+    assert.equal(await desktopBrand.count(),1,'desktop brand has native keyboard semantics');
+    await desktopBrand.focus();
+    assert.equal(await desktopBrand.evaluate(element=>element===document.activeElement),true,'desktop brand is keyboard focusable');
     await page.evaluate(()=>{(window as any).fixture.lang('en');(window as any).fixture.theme('light');});await page.setViewportSize({width:390,height:844});
     const search=page.locator('#hero-search-input');await search.fill('pistachio');await page.locator('.boutique-suggestion').first().waitFor();
     await page.keyboard.press('ArrowDown');assert.equal(await page.locator('.boutique-suggestion').first().evaluate(e=>e===document.activeElement),true);

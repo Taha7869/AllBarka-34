@@ -36,6 +36,14 @@ test('development preview honours its port and gives the Vite preamble the reque
     const missing = await fetch(`http://127.0.0.1:${port}/api/not-a-real-endpoint`);
     assert.equal(missing.status, 404, 'API failures cannot become the SPA document');
     assert.match(missing.headers.get('content-type') || '', /application\/json/);
+    for (const path of ['/missing.webp', '/missing.png', '/missing.mp4', '/missing.js', '/missing.css', '/assets/missing-module']) {
+      const asset = await fetch(`http://127.0.0.1:${port}${path}`);
+      assert.equal(asset.status, 404, `${path} must not become a successful SPA document`);
+      assert.doesNotMatch(asset.headers.get('content-type') || '', /text\/html/);
+    }
+    const deepLink = await fetch(`http://127.0.0.1:${port}/shop/saunf`);
+    assert.equal(deepLink.status, 200, 'extensionless storefront deep links retain the SPA');
+    assert.match(deepLink.headers.get('content-type') || '', /text\/html/);
   } finally {
     if (child.exitCode === null) {
       const exited = once(child, 'exit');

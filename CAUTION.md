@@ -71,6 +71,10 @@ Priority P0 = release blocker; P1 = resolve or explicitly disposition before the
 | SEC02-14 | P1 / TODO for maps | CSP frame sources currently allow self and the Firebase Auth domain, not Google Maps. Session endpoints need an explicit origin/CSRF abuse review; broad HTTPS script/media sources also merit tightening. | Add only the required map frame origin when MAP-01 ships; test CSP + Google sign-in + all locales. Keep nonce enforcement, review script-src-elem separately, and verify cookie/CSRF policy with actual credential flows. |
 | SEC02-15 | P1 / TODO for release | Railway source config reports `checkSuites=false`; passing docs/build does not gate auto-deploy by itself. | Review branch protection/deployment approvals and verify only a reviewed, green SHA can reach launch. Record rollback SHA and data compatibility. No branch/settings change in this checkpoint. |
 
+## 10 November CI follow-up
+
+Decoded Run47 and42702581732 logs now establish SEC02-12 failure at the desktop-brand assertion in a390px viewport. The fixture sets1440px before asserting desktop visibility/keyboard semantics; hosted verification is pending. Prior unknown-cause wording above records the earlier audit state. [Exact evidence and checkpoint](docs/CATALOG_INTAKE_2026-11-10.md). No MP4 codec fix is claimed. New intake imports are draft-only/create-only and never replace existing merchant products.
+
 ## Firestore rules source assessment
 
 Static scope only; current deployment and IAM are **not scored**. No unauthenticated private-collection or cross-user profile bypass was found in the inspected rules. Create/update checks restrict both identity and allowed contact fields; caller-supplied roles do not grant authority. Existing emulator test is skipped in this audit session because no local demo emulator was started.

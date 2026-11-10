@@ -873,6 +873,11 @@ async function startServer() {
     closeDevelopmentServer = () => vite.close();
     app.use(vite.middlewares);
     app.get('*', async (req, res, next) => {
+      // Missing media/modules must retain a real 404 instead of an HTML SPA
+      // response; Vite has already handled assets that exist.
+      if (req.path.startsWith('/assets/') || path.extname(req.path)) {
+        return res.status(404).type('text/plain').send('Asset not found');
+      }
       try {
         const template = readFileSync(path.resolve('index.html'), 'utf8');
         const html = await vite.transformIndexHtml(req.originalUrl, template);

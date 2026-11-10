@@ -4,6 +4,14 @@
 
 Read [CAUTION.md](../CAUTION.md) before implementing or improving these features. This file records the pending work without claiming that a prototype or selected idea has been integrated. Earlier M01–M34 and Stage 6 tasks remain intact in [MASTER_PLAN.md](../MASTER_PLAN.md).
 
+## Current source follow-up — 10 November 2026
+
+[Catalog intake and CI/server follow-up](CATALOG_INTAKE_2026-11-10.md) now supplies17 generated-image/trilingual drafts, a create-only import and the exact hosted logo assertion diagnosis/fix. Live import/publication and hosted re-verification remain open. The original storefront redesign/AI/upload/map work below remains pending. New owner decisions in the following paragraph supersede older OPEN/locality/retention notes below; no runtime capability is implied.
+
+## Owner follow-up — confirmed 10 November 2026
+
+Neelum Block, Allama Iqbal Town, Lahore is approved as an approximate map area; no exact pin or weekdays invented. Use the morphing pattern for Ask AllBarka / Request a quote. Attachment policy approved: incomplete uploads24h, submitted images30days after inquiry closure, with earlier deletion support. These remain runtime TODO. New product-intake authority and completed source package: [CATALOG_INTAKE_2026-11-10.md](CATALOG_INTAKE_2026-11-10.md). Keep all OG upgrades.
+
 ## Owner answers — keep these decisions
 
 | Answer | Confirmed direction | Implementation boundary |
