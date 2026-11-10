@@ -89,7 +89,7 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     }
     assert.equal(await page.locator('.table-hero-film').count(),0,'reduced-motion loads no film');
     assert.equal(await page.locator('.table-gift-editorial').count(),1,'photographic gifting stays in published occasions section');
-    // The preceding enlarged-care pass leaves a 390px mobile viewport. The
+    // The preceding enlarged-care pass leaves a 360px mobile viewport. The
     // desktop brand is correctly hidden there and absent from the role tree.
     // Establish the desktop premise before testing its native keyboard control.
     await page.setViewportSize({width:1440,height:1000});
