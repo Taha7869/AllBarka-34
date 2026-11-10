@@ -1,5 +1,6 @@
 export const catalogTranslations: Record<string, Record<string, string>> = {
   en: {
+    'pdp.handoffReview': 'Your previous selection has changed. Please review the current option and quantity.',
     'shop.saunf': 'Saunf & mouth fresheners',
     "table.eyebrow": "The AllBarka Table",
     "table.heading": "For your table.",
@@ -258,6 +259,7 @@ export const catalogTranslations: Record<string, Record<string, string>> = {
     'occasion.exploreDest': 'Explore favors',
   },
   ur: {
+    'pdp.handoffReview': 'آپ کا پچھلا انتخاب تبدیل ہو گیا ہے۔ موجودہ آپشن اور مقدار دوبارہ دیکھ لیں۔',
     'shop.saunf': 'سونف اور مکھواس',
     "table.eyebrow": "البَرکہ کا دسترخوان",
     "table.heading": "آپ کے دسترخوان کے لیے۔",
@@ -516,6 +518,7 @@ export const catalogTranslations: Record<string, Record<string, string>> = {
     'occasion.exploreDest': 'تفصیلات دیکھیں',
   },
   ar: {
+    'pdp.handoffReview': 'تغيّر اختيارك السابق. يرجى مراجعة الخيار والكمية الحاليين.',
     'shop.saunf': 'الشمر ومعطرات الفم',
     "table.eyebrow": "مائدة البركة",
     "table.heading": "لمائدتكم.",

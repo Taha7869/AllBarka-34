@@ -18,9 +18,9 @@ test('editorial product detail: food and packaging layouts, selected totals, gal
   const temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'allbarka-hero-'));
   const { db } = memoryFirestore(Object.fromEntries(PRODUCTS.map(product => [`products/${product.id}`, product])));
   const entry = `import React,{useEffect}from'react';import{createRoot}from'react-dom/client';import{BrowserRouter,Routes,Route,useNavigate}from'react-router-dom';
-import{LanguageProvider,useLanguage}from'./src/contexts/LanguageContext';import{ThemeProvider,useTheme}from'./src/contexts/ThemeContext';import{CartProvider,useCart}from'./src/contexts/CartContext';import{CatalogProvider}from'./src/contexts/CatalogContext';import{MerchandisingProvider}from'./src/contexts/MerchandisingContext';import{ProductMediaProvider}from'./src/contexts/ProductMediaContext';import{StorefrontContentProvider,useStorefrontContentRefresh}from'./src/contexts/StorefrontContentContext';
+import{LanguageProvider,useLanguage}from'./src/contexts/LanguageContext';import{ThemeProvider,useTheme}from'./src/contexts/ThemeContext';import{CartProvider,useCart}from'./src/contexts/CartContext';import{CatalogProvider,useCatalogRefresh}from'./src/contexts/CatalogContext';import{MerchandisingProvider}from'./src/contexts/MerchandisingContext';import{ProductMediaProvider}from'./src/contexts/ProductMediaContext';import{StorefrontContentProvider,useStorefrontContentRefresh}from'./src/contexts/StorefrontContentContext';
 import RootLayout from'./src/layouts/RootLayout';import HomePage from'./src/pages/HomePage';import ShopPage from'./src/pages/ShopPage';import ProductDetailPage from'./src/pages/ProductDetailPage';import CartPage from'./src/pages/CartPage';import CheckoutPage from'./src/pages/CheckoutPage';import{PRODUCTS}from'./src/data/products';
-function Controls(){const{setLanguage}=useLanguage();const{setTheme}=useTheme();const refresh=useStorefrontContentRefresh();const cart=useCart();useEffect(()=>{window.fixture={refresh,lang:setLanguage,theme:setTheme,cart:cart.cartItems,close:()=>cart.setIsCartOpen(false),clear:()=>cart.clearCart()};});return null;}
+function Controls(){const{setLanguage}=useLanguage();const{setTheme}=useTheme();const refresh=useStorefrontContentRefresh();const catalogRefresh=useCatalogRefresh();const cart=useCart();useEffect(()=>{window.fixture={refresh,catalogRefresh,lang:setLanguage,theme:setTheme,cart:cart.cartItems,close:()=>cart.setIsCartOpen(false),clear:()=>cart.clearCart()};});return null;}
 createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider><LanguageProvider><CatalogProvider initialProducts={PRODUCTS}><MerchandisingProvider><ProductMediaProvider><CartProvider><StorefrontContentProvider><Controls/><Routes><Route path="/" element={<RootLayout/>}><Route index element={<HomePage/>}/><Route path="shop" element={<ShopPage/>}/><Route path="shop/:category" element={<ShopPage/>}/><Route path="product/:id" element={<ProductDetailPage/>}/><Route path="cart" element={<CartPage/>}/><Route path="checkout" element={<CheckoutPage/>}/><Route path="gifting" element={<ShopPage/>}/></Route></Routes></StorefrontContentProvider></CartProvider></ProductMediaProvider></MerchandisingProvider></CatalogProvider></LanguageProvider></ThemeProvider></BrowserRouter>);`;
   await build({ stdin: { contents: entry, loader: 'tsx', resolveDir: process.cwd(), sourcefile: 'interaction-fixture.tsx' },
     bundle: true, format: 'iife', platform: 'browser', outfile: path.join(temporary, 'fixture.js'), jsx: 'automatic',
@@ -72,6 +72,50 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
       if(width===390&&language==='ur'&&theme==='dark')await fs.writeFile(path.join(evidence,'after-390-ur-dark.jpg'),painted);
     }
     await page.evaluate(()=>{(window as any).fixture.lang('en');(window as any).fixture.theme('light');});
+    // Quick View and details remain separate actions; only canonical selection hints cross the route.
+    await page.setViewportSize({width:1440,height:1100});
+    await page.goto(origin+'/shop?search=pista');
+    const pistaCard=page.locator('article[data-product-id="pista"]');
+    await pistaCard.getByRole('button',{name:'Quick view',exact:true}).click();
+    const quickView=page.locator('#quickview-modal-container');await quickView.waitFor();
+    await quickView.getByRole('button',{name:'500g',exact:true}).click();
+    await quickView.getByRole('button',{name:'Increase quantity',exact:true}).click();
+    await quickView.getByRole('button',{name:'Increase quantity',exact:true}).click();
+    const fullDetails=quickView.locator('a[href*="variant=500g"]');
+    assert.equal(await fullDetails.getAttribute('href'),'/product/pista?variant=500g&quantity=3');
+    await fullDetails.click();await page.waitForURL('**/product/pista?variant=500g&quantity=3');
+    await quickView.waitFor({state:'hidden'});
+    await page.waitForFunction(()=>document.querySelector('.pdp-selection-summary')?.textContent?.includes('7,500'));
+    assert.equal(await page.getByRole('button',{name:'500g',exact:true}).getAttribute('aria-pressed'),'true');
+    await page.reload();
+    await page.waitForFunction(()=>document.querySelector('.pdp-selection-summary')?.textContent?.includes('7,500'));
+    await page.locator('.pdp-purchase [data-confirmed]').click();
+    await page.waitForFunction(()=>(window as any).fixture.cart.some((item:any)=>item.productId==='pista'&&item.selectedWeight==='500g'&&item.quantity===3));
+    await page.evaluate(()=>{(window as any).fixture.close();(window as any).fixture.clear();});
+    // Manual changes win after initialization; the original URL is not replayed on rerender.
+    await page.getByRole('button',{name:'250g',exact:true}).click();
+    await page.getByRole('button',{name:'Increase quantity',exact:true}).click();
+    await page.waitForFunction(()=>document.querySelector('.pdp-selection-summary')?.textContent?.includes('5,000'));
+    const catalogResponse=await page.request.get(origin+'/api/catalog');assert.equal(catalogResponse.status(),200);
+    const reorderedCatalog=await catalogResponse.json();
+    const refreshedPista=reorderedCatalog.products.find((product:any)=>product.id==='pista');assert.ok(refreshedPista);
+    refreshedPista.prices=Object.fromEntries(Object.entries(refreshedPista.prices).reverse());
+    refreshedPista.catalogRevision+='-handoff-reorder';reorderedCatalog.version+='-handoff-reorder';
+    await page.route(origin+'/api/catalog',route=>route.fulfill({json:reorderedCatalog}));
+    await page.evaluate(async()=>{await(window as any).fixture.catalogRefresh({force:true});await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));});
+    assert.equal(await page.getByRole('button',{name:'250g',exact:true}).getAttribute('aria-pressed'),'true');
+    assert.match(await page.locator('.pdp-selection-summary').innerText(),/5,000/);
+    assert.equal(await page.locator('.pdp-handoff-review').count(),0);
+    await page.unroute(origin+'/api/catalog');
+    await page.evaluate(async()=>{await(window as any).fixture.catalogRefresh({force:true});});
+    await page.goto(origin+'/product/pista?variant=retired&quantity=999999');
+    await page.locator('.pdp-handoff-review').waitFor();
+    assert.equal(await page.getByRole('button',{name:'250g',exact:true}).getAttribute('aria-pressed'),'true');
+    assert.match(await page.locator('.pdp-selection-summary').innerText(),/1,250/);
+    await page.goto(origin+'/product/pista?variant=500g&quantity=0');
+    await page.locator('.pdp-handoff-review').waitFor();
+    assert.equal(await page.getByRole('button',{name:'500g',exact:true}).getAttribute('aria-pressed'),'true');
+    assert.match(await page.locator('.pdp-selection-summary').innerText(),/2,500/);
     const packaging=PRODUCTS.find(p=>p.isBidBox&&Object.keys(p.prices).length>0)!;assert.ok(packaging);
     await page.goto(origin+'/product/'+packaging.id);await page.locator('.pdp-editorial[data-product-kind="packaging"]').waitFor();
     assert.equal(await page.locator('.pdp-food-notes').count(),0);
