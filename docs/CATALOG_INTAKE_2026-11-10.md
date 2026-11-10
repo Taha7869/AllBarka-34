@@ -2,6 +2,10 @@
 
 10 November 2026, Asia/Karachi. Branch `codex/premium-table-kit-20261108`, draft PR #17. Inspected parent `3436bac48e0d0014ae88517877fd6d116485a289`. Owner authorizes adding missing items, improving copy and generating AI images; existing products/rates and OG design must remain unchanged. Website launch/payment and live verification remain later work.
 
+## Current visual correction follow-up
+
+[Prepared owner-requested image/content corrections and Phool Makhana verification](CATALOG_VISUAL_CORRECTIONS_2026-11-10.md): seven v2 images and a review gallery are prepared. Automatic approval review blocks publishing the exact catalog JSON because it contains draft prices/provenance; explicit owner approval is still required. Consequently the published input remains unchanged:17 new drafts,12 reused IDs and its earlier media wiring. Local prepared wiring would use round gachak first, retained broken view second and13 reuse IDs including existing fox-nuts. Existing Phool Makhana is already searchable without this change. Historical evidence below retains its original scope.
+
 ## Completed source package
 
 - [17 new draft product payloads](../src/data/catalogIntake20261110.json): English/Urdu/Arabic names and copy, keywords, categories, local media and editable commerce configuration. They are an import input, not a second live price authority.

@@ -1,0 +1,239 @@
+{
+  "task": "MEDIA-CORRECTION-01",
+  "date": "2026-11-10",
+  "timezone": "Asia/Karachi",
+  "parent": "f9998d1800c1233decda5cecc3f9140170c609dd",
+  "newImages": 7,
+  "newDraftProducts": 17,
+  "reusedExistingIds": 13,
+  "mediaReviewed": [
+    {
+      "id": "sweet-fruit-balls",
+      "path": "public/images/catalog-intake-20261110/sweet-fruit-balls-v2.webp",
+      "sha256": "66fd720af910a9cd2afd3a3b9812196f48d61af82923b4987f043387fc89c8e7",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "bytes": 305296
+    },
+    {
+      "id": "mixed-mukhwas",
+      "path": "public/images/catalog-intake-20261110/mixed-mukhwas.webp",
+      "sha256": "5bb8778bf4ad945af9f61a537e3facaef9173dfa05bda15f1565b2e4ed17b8ed",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "bytes": 345624
+    },
+    {
+      "id": "sweet-makhana-large",
+      "path": "public/images/catalog-intake-20261110/sweet-makhana-large.webp",
+      "sha256": "4685759b1f78420f91df51f9cae8c86f6bf32b96168dd6dd940b5077c4710040",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "bytes": 238958
+    },
+    {
+      "id": "nakul-dana-small",
+      "path": "public/images/catalog-intake-20261110/nakul-dana-small.webp",
+      "sha256": "db15dd322e2b9ddbb84c663c66a03e12ad774c6ce0236f5b08297a42c37b3999",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "bytes": 232964
+    },
+    {
+      "id": "sugar-coated-saunf",
+      "path": "public/images/catalog-intake-20261110/sugar-coated-saunf.webp",
+      "sha256": "7e2cce5b75e2356cd44f6e15d8fd24374bb5852bef3e2eb16b73ad6d2fca5811",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "bytes": 294306
+    },
+    {
+      "id": "peanut-jaggery-gachak",
+      "path": "public/images/catalog-intake-20261110/peanut-jaggery-gachak-v2.webp",
+      "sha256": "b75c2d4ff9f054c94df9ec0f95450766d2194f50868ff57c8f41c4211bcda5e6",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "bytes": 477226
+    },
+    {
+      "id": "peanut-jaggery-gachak",
+      "path": "public/images/catalog-intake-20261110/peanut-jaggery-gachak.webp",
+      "sha256": "78a16da1b37fe34e33840b0b65c45282b23e6f80c51f70a233569a700f4c12fb",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "bytes": 347306
+    },
+    {
+      "id": "sesame-rewari",
+      "path": "public/images/catalog-intake-20261110/sesame-rewari.webp",
+      "sha256": "7a5718592f92f4a44cfce7f47a6a2d0007ead3b00fbddc14268dba455ede8ac0",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "bytes": 309568
+    },
+    {
+      "id": "brown-raisins",
+      "path": "public/images/catalog-intake-20261110/brown-raisins.webp",
+      "sha256": "1a1d2dc189ca9a5d5adb6bea028ea18ec34af48e99872bb7aa6ebbbf9a15d15b",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "bytes": 307834
+    },
+    {
+      "id": "dates-soft-brown",
+      "path": "public/images/catalog-intake-20261110/dates-soft-brown.webp",
+      "sha256": "4c8dbe423a8022e4c44ac76616b82ac87ea9e943fce6d2a07538b466efa7f3a8",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "bytes": 285350
+    },
+    {
+      "id": "dates-dark-round",
+      "path": "public/images/catalog-intake-20261110/dates-dark-round.webp",
+      "sha256": "c2994f491a4a275193caf155adb517609756b47a875a08eb955248adb88ee4fd",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "bytes": 307776
+    },
+    {
+      "id": "dates-dark-long",
+      "path": "public/images/catalog-intake-20261110/dates-dark-long.webp",
+      "sha256": "d6fc9056d71f9d89c977cc4dfdcf9f8eba1d0651bf0501869639d9a15b393402",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "bytes": 359032
+    },
+    {
+      "id": "dates-golden-brown",
+      "path": "public/images/catalog-intake-20261110/dates-golden-brown.webp",
+      "sha256": "25f73240e0f6e3164d5faf5a2f5300b912de3b3b19c6a0add3b0a8f355fea743",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "bytes": 279150
+    },
+    {
+      "id": "oil-peanut",
+      "path": "public/images/catalog-intake-20261110/oil-peanut-v2.webp",
+      "sha256": "aed778a8410b20d1398bd8a048929a3734601038248ff2c847d4db38055ba837",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "bytes": 212568
+    },
+    {
+      "id": "oil-sunflower",
+      "path": "public/images/catalog-intake-20261110/oil-sunflower-v2.webp",
+      "sha256": "e81dda289fdc709a769168dad6dacaea8b1dcb0b4fac843ab7f4201d78f81f2d",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "bytes": 243780
+    },
+    {
+      "id": "oil-neem",
+      "path": "public/images/catalog-intake-20261110/oil-neem-v2.webp",
+      "sha256": "55df16a70b71948a12b7961e259b62c11ac254239ce34ef4698d737f12d4c9a7",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "bytes": 209926
+    },
+    {
+      "id": "oil-taramira",
+      "path": "public/images/catalog-intake-20261110/oil-taramira-v2.webp",
+      "sha256": "32f2e3859c5fe07701fbe0fcc26f2805c8335efbb0ded0781e914cb02c1d0f02",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "bytes": 208612
+    },
+    {
+      "id": "oil-soybean",
+      "path": "public/images/catalog-intake-20261110/oil-soybean-v2.webp",
+      "sha256": "5003cfdf7c6693aaa37be14bb62384be96e88c7a39d32da9bccb98314ec9a5b9",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "bytes": 217002
+    },
+    {
+      "id": "fox-nuts",
+      "path": "public/images/products/fox-nuts-1.webp",
+      "sha256": "3c1e8106839553f647892aa68ef4b8147d39b72e99cceec84a9945b821a30987",
+      "dimensions": [
+        1200,
+        896
+      ],
+      "bytes": 102174
+    }
+  ],
+  "visualMethod": "Manual self-review of7 generated outputs against owner references and existing bottle master; remaining10 intake images and existing fox-nuts retained, all19 selected media decoded/hash checked",
+  "targeted": {
+    "passed": 39,
+    "failed": 0
+  },
+  "typecheck": "PASS",
+  "hooksLint": "PASS",
+  "buildPrivacy": "PASS",
+  "pricingAndCommercePreservation": "PASS all17 compared with parent",
+  "original97AndOGComponentsAndBottleMasters": "UNCHANGED",
+  "liveFirestore": "NOT_READ_OR_WRITTEN",
+  "liveImportOrPublish": false,
+  "hostedCurrent": "Not inferred from baseline; inspect actual new-commit PR17 check after save",
+  "zeroDeletions": true,
+  "allNewDraftsInactiveQuoteOnly": true,
+  "referenceMatchLimit": "Reference-informed illustrations, not pixel-perfect batch or actual packaging verification",
+  "importRule": "Create-only script skips existing IDs; previously imported drafts require reviewed revisioned media/copy edits, not bulk overwrites",
+  "publication": {
+    "assetsAndReports": "Safe checkpoint prepared",
+    "catalogJSON": "BLOCKED by automatic approval review; exact public upload permission required",
+    "sourceFile": "src/data/catalogIntake20261110.json",
+    "reason": "Existing draft prices/provenance in the public payload; low-risk unchanged-field proof did not satisfy review",
+    "publicRuntimeMapping": "UNCHANGED from f9998d1",
+    "pendingLocalFiles": [
+      "src/data/catalogIntake20261110.json",
+      "tests/catalog-intake-20261110.test.ts"
+    ],
+    "twoNewTests": "Prepared local only;39-pass result does not describe published old test source",
+    "noBypass": true
+  },
+  "publicPreviewOnlyChecks": {
+    "passed": 37,
+    "failed": 0,
+    "typecheck": "PASS",
+    "hooks": "PASS",
+    "buildPrivacy": "PASS85 artifacts",
+    "method": "Separate detached checkout of public candidate; blocked catalog/test changes excluded"
+  }
+}

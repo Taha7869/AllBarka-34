@@ -1,0 +1,114 @@
+[
+  {
+    "id": "peanut-jaggery-gachak",
+    "source": "/workspace/scratch/4c255c5140fd/generated_images/exec-f0097b47-1f3a-465f-9360-4b90396a33ca.png",
+    "target": "public/images/catalog-intake-20261110/peanut-jaggery-gachak-v2.webp",
+    "prompt": "Use case: precise-object-edit. Asset type: AllBarka peanut and jaggery gachak primary catalog photograph, square. Image1 is the owner's real product SUBJECT reference: a single thin ROUND intact handmade peanut-and-jaggery disc with visible halved peanuts, irregular gently scalloped perimeter and glossy amber gur binder. Image2 is STYLE/background reference only: warm ivory travertine, emerald cloth corner, warm natural side lighting, premium realistic macro food detail. Produce ONE WHOLE ROUND UNCUT DISC lying flat on the same warm travertine in image2. Entire circular perimeter visible, ample clean margin all sides, slightly overhead three-quarter view, disc occupies about75% of square. Match actual peanut density and thin translucent amber gur sheet of image1; avoid a thick nougat base. Change the broken stacked pieces of image2 into the single intact round disc only. Preserve the emerald/ivory editorial look, realistic peanuts and natural jaggery specular shine. No broken shards, no wedge removed, no stacked rectangular bars, no sesame, no extra ingredients, no plastic wrapper, no text, logo, sticker or watermark.",
+    "method": "built-in image_gen",
+    "underlyingModelId": "not exposed",
+    "kind": "AI-styled illustration",
+    "visualReview": "Inspected generated output against owner reference / existing mustard-oil master; reference-informed, not pixel-identical or physical packaging proof",
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "b75c2d4ff9f054c94df9ec0f95450766d2194f50868ff57c8f41c4211bcda5e6",
+    "bytes": 477226
+  },
+  {
+    "id": "sweet-fruit-balls",
+    "source": "/workspace/scratch/4c255c5140fd/generated_images/exec-c69354a1-fb74-4ec1-b405-3cef29b1accf.png",
+    "target": "public/images/catalog-intake-20261110/sweet-fruit-balls-v2.webp",
+    "prompt": "Use case: precise-object-edit. Edit image1 (current AllBarka candy bowl photograph); image2 is the owner's real-product reference and has authority over candy material and colours. Preserve the exact matte ivory bowl, emerald cloth, warm travertine, square composition and camera angle of image1. Change ONLY the candy balls' material/finish and subtle shape variation: opaque round coloured SUGAR candies with thin firm glazed sugar shells, a fine close crystalline microtexture and tiny natural specular glints. Owner specifies slightly shiny and sparkling sugar-shell finish. Replace the current coarse chalky frosted gumdrop texture with finer tighter glossy sugar surfaces matching image2; no large stuck-on sugar grains. Tiny reflected light points should come from real crystalline sugar, NOT decorative glitter. Keep small round pea-sized pieces with natural slight irregularities, bright pink, yellow, green, blue, orange, red and white mixed through the bowl. Keep same product quantities and photorealistic daylight. Do not turn these into transparent jelly/gummies or smooth plastic gumballs; no chrome or metallic coating, no starbursts or artificial sparkle overlays. No fruit pieces, no new ingredients, no labels, logo or text. This is a product illustration informed by reference, not a claim of pixel-identical batch photography.",
+    "method": "built-in image_gen",
+    "underlyingModelId": "not exposed",
+    "kind": "AI-styled illustration",
+    "visualReview": "Inspected generated output against owner reference / existing mustard-oil master; reference-informed, not pixel-identical or physical packaging proof",
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "66fd720af910a9cd2afd3a3b9812196f48d61af82923b4987f043387fc89c8e7",
+    "bytes": 305296
+  },
+  {
+    "id": "oil-peanut",
+    "source": "/workspace/scratch/4c255c5140fd/generated_images/exec-c6653858-c9fe-4c89-b6b9-4ef3be652b6c.png",
+    "target": "public/images/catalog-intake-20261110/oil-peanut-v2.webp",
+    "prompt": "Use case: precise-object-edit. Reference/edit target is the EXISTING AllBarka mustard-oil catalog image. Preserve the bottle identity exactly: same clear CYLINDRICAL straight-sided body, rounded shoulders, short neck, white ribbed plastic screw cap, same relative proportions and same front ivory paper label with the SAME small gold botanical crest, green serif AllBarka wordmark, thin gold divider and widely spaced black product name. Preserve bottle position/scale, square framing, warm travertine tabletop and backdrop, soft botanical shadow, light direction, and emerald linen on the RIGHT. Do NOT redesign the packaging. Change only product-name line and the ingredient props on the LEFT to the requested oil. Keep lettering accurately spelled and label fully readable, the entire bottle and cap visible. No added volumes, purity/cold-pressed/organic claims, health claims, seals, badges or marketing text. No gold cap, no cork, no pump/dropper, no long-neck rectangular/flat-sided bottle, no new bottle style. This is a consistent branded catalog illustration; not actual packaging proof. Requested variant: PEANUT OIL. Product name text exactly: \"PEANUT OIL\". Keep \"AllBarka\" unchanged. Replace mustard bowl/seeds/flowers with the SAME style dark wooden bowl containing peanuts, plus a few shelled peanuts and two recognizable peanut pods at the lower LEFT. Remove mustard flowers and mustard grains. A modest peanut foliage background is optional; avoid invented flowers. Same golden oil tone and identical white-cap bottle.",
+    "method": "built-in image_gen",
+    "underlyingModelId": "not exposed",
+    "kind": "AI-styled illustration",
+    "visualReview": "Inspected generated output against owner reference / existing mustard-oil master; reference-informed, not pixel-identical or physical packaging proof",
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "aed778a8410b20d1398bd8a048929a3734601038248ff2c847d4db38055ba837",
+    "bytes": 212568
+  },
+  {
+    "id": "oil-sunflower",
+    "source": "/workspace/scratch/4c255c5140fd/generated_images/exec-d59b90b2-b964-49f1-83f1-c62f21ddc4d9.png",
+    "target": "public/images/catalog-intake-20261110/oil-sunflower-v2.webp",
+    "prompt": "Use case: precise-object-edit. Reference/edit target is the EXISTING AllBarka mustard-oil catalog image. Preserve the bottle identity exactly: same clear CYLINDRICAL straight-sided body, rounded shoulders, short neck, white ribbed plastic screw cap, same relative proportions and same front ivory paper label with the SAME small gold botanical crest, green serif AllBarka wordmark, thin gold divider and widely spaced black product name. Preserve bottle position/scale, square framing, warm travertine tabletop and backdrop, soft botanical shadow, light direction, and emerald linen on the RIGHT. Do NOT redesign the packaging. Change only product-name line and the ingredient props on the LEFT to the requested oil. Keep lettering accurately spelled and label fully readable, the entire bottle and cap visible. No added volumes, purity/cold-pressed/organic claims, health claims, seals, badges or marketing text. No gold cap, no cork, no pump/dropper, no long-neck rectangular/flat-sided bottle, no new bottle style. This is a consistent branded catalog illustration; not actual packaging proof. Requested variant: SUNFLOWER OIL. Product name text exactly: \"SUNFLOWER OIL\". Keep \"AllBarka\" unchanged. Replace mustard bowl/seeds/flowers with the same dark wooden bowl filled with striped sunflower seeds, a few seeds scattered at the lower LEFT and a natural yellow sunflower head/foliage softly on the LEFT only. Preserve the bottle, white cap, crest/wordmark/label geometry, camera and background exactly as the reference; retain the same golden oil tone. No mustard grains or mustard blossoms.",
+    "method": "built-in image_gen",
+    "underlyingModelId": "not exposed",
+    "kind": "AI-styled illustration",
+    "visualReview": "Inspected generated output against owner reference / existing mustard-oil master; reference-informed, not pixel-identical or physical packaging proof",
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "e81dda289fdc709a769168dad6dacaea8b1dcb0b4fac843ab7f4201d78f81f2d",
+    "bytes": 243780
+  },
+  {
+    "id": "oil-neem",
+    "source": "/workspace/scratch/4c255c5140fd/generated_images/exec-56325d97-50df-4f62-85dc-e29ef63af623.png",
+    "target": "public/images/catalog-intake-20261110/oil-neem-v2.webp",
+    "prompt": "Use case: precise-object-edit. Reference/edit target is the EXISTING AllBarka mustard-oil catalog image. Preserve the bottle identity exactly: same clear CYLINDRICAL straight-sided body, rounded shoulders, short neck, white ribbed plastic screw cap, same relative proportions and same front ivory paper label with the SAME small gold botanical crest, green serif AllBarka wordmark, thin gold divider and widely spaced black product name. Preserve bottle position/scale, square framing, warm travertine tabletop and backdrop, soft botanical shadow, light direction, and emerald linen on the RIGHT. Do NOT redesign the packaging. Change only product-name line and the ingredient props on the LEFT to the requested oil. Keep lettering accurately spelled and label fully readable, the entire bottle and cap visible. No added volumes, purity/cold-pressed/organic claims, health claims, seals, badges or marketing text. No gold cap, no cork, no pump/dropper, no long-neck rectangular/flat-sided bottle, no new bottle style. This is a consistent branded catalog illustration; not actual packaging proof. Requested variant: NEEM OIL. Product name text exactly: \"NEEM OIL\". Keep \"AllBarka\" unchanged. Replace mustard ingredient bowl/seeds/flowers with the same style dark wooden bowl with oval neem seeds, and natural green serrated neem leaf sprigs at the LEFT only; show a few oval seeds at lower LEFT, no mustard grains or yellow flowers. Preserve identical cylindrical bottle and white cap, label brand/crest and all packaging dimensions. Retain a warm golden oil as a styling convention, not a batch-colour guarantee. Do not add edible/food-grade, treatment, hair, skincare or medical claims.",
+    "method": "built-in image_gen",
+    "underlyingModelId": "not exposed",
+    "kind": "AI-styled illustration",
+    "visualReview": "Inspected generated output against owner reference / existing mustard-oil master; reference-informed, not pixel-identical or physical packaging proof",
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "55df16a70b71948a12b7961e259b62c11ac254239ce34ef4698d737f12d4c9a7",
+    "bytes": 209926
+  },
+  {
+    "id": "oil-taramira",
+    "source": "/workspace/scratch/4c255c5140fd/generated_images/exec-f3872a52-1bb1-4fd1-93bd-5626c0c2bad6.png",
+    "target": "public/images/catalog-intake-20261110/oil-taramira-v2.webp",
+    "prompt": "Use case: precise-object-edit. Reference/edit target is the EXISTING AllBarka mustard-oil catalog image. Preserve the bottle identity exactly: same clear CYLINDRICAL straight-sided body, rounded shoulders, short neck, white ribbed plastic screw cap, same relative proportions and same front ivory paper label with the SAME small gold botanical crest, green serif AllBarka wordmark, thin gold divider and widely spaced black product name. Preserve bottle position/scale, square framing, warm travertine tabletop and backdrop, soft botanical shadow, light direction, and emerald linen on the RIGHT. Do NOT redesign the packaging. Change only product-name line and the ingredient props on the LEFT to the requested oil. Keep lettering accurately spelled and label fully readable, the entire bottle and cap visible. No added volumes, purity/cold-pressed/organic claims, health claims, seals, badges or marketing text. No gold cap, no cork, no pump/dropper, no long-neck rectangular/flat-sided bottle, no new bottle style. This is a consistent branded catalog illustration; not actual packaging proof. Requested variant: TARAMIRA OIL. Product name text exactly: \"TARAMIRA OIL\". Keep \"AllBarka\" unchanged. Replace the mustard ingredients with a dark wooden bowl of small dry brown/reddish-brown taramira (rocket) seeds at LEFT, with only a few matching seeds on the tabletop. No flowers; remove all yellow mustard blooms. A simple subtle green rocket leaf at LEFT is optional, not a main focus. Preserve the white ribbed screw cap, cylindrical clear bottle, rounded shoulders, label geometry/gold crest/brand typography and same golden liquid styling. No edible, therapeutic, hair or cosmetic use claims.",
+    "method": "built-in image_gen",
+    "underlyingModelId": "not exposed",
+    "kind": "AI-styled illustration",
+    "visualReview": "Inspected generated output against owner reference / existing mustard-oil master; reference-informed, not pixel-identical or physical packaging proof",
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "32f2e3859c5fe07701fbe0fcc26f2805c8335efbb0ded0781e914cb02c1d0f02",
+    "bytes": 208612
+  },
+  {
+    "id": "oil-soybean",
+    "source": "/workspace/scratch/4c255c5140fd/generated_images/exec-47ce2f92-b729-4122-afc5-5195a9178c11.png",
+    "target": "public/images/catalog-intake-20261110/oil-soybean-v2.webp",
+    "prompt": "Use case: precise-object-edit. Reference/edit target is the EXISTING AllBarka mustard-oil catalog image. Preserve the bottle identity exactly: same clear CYLINDRICAL straight-sided body, rounded shoulders, short neck, white ribbed plastic screw cap, same relative proportions and same front ivory paper label with the SAME small gold botanical crest, green serif AllBarka wordmark, thin gold divider and widely spaced black product name. Preserve bottle position/scale, square framing, warm travertine tabletop and backdrop, soft botanical shadow, light direction, and emerald linen on the RIGHT. Do NOT redesign the packaging. Change only product-name line and the ingredient props on the LEFT to the requested oil. Keep lettering accurately spelled and label fully readable, the entire bottle and cap visible. No added volumes, purity/cold-pressed/organic claims, health claims, seals, badges or marketing text. No gold cap, no cork, no pump/dropper, no long-neck rectangular/flat-sided bottle, no new bottle style. This is a consistent branded catalog illustration; not actual packaging proof. Requested variant: SOYBEAN OIL. Product name text exactly: \"SOYBEAN OIL\". Keep \"AllBarka\" unchanged. Replace mustard bowl/seeds/flowers with a matching dark wooden bowl containing pale yellow rounded dry soybeans with their visible natural hilum, a few matching beans scattered lower LEFT, and a modest soybean leaf/pod sprig at LEFT. No mustard blooms, no peanut pods. Preserve identical cylindrical bottle silhouette, white ribbed cap, ivory brand label layout/crest/wordmark and same golden oil styling, bottle scale and emerald cloth on RIGHT.",
+    "method": "built-in image_gen",
+    "underlyingModelId": "not exposed",
+    "kind": "AI-styled illustration",
+    "visualReview": "Inspected generated output against owner reference / existing mustard-oil master; reference-informed, not pixel-identical or physical packaging proof",
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "5003cfdf7c6693aaa37be14bb62384be96e88c7a39d32da9bccb98314ec9a5b9",
+    "bytes": 217002
+  }
+]
