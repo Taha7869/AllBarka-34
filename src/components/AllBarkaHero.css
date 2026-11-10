@@ -177,3 +177,83 @@
  [dir=rtl] .table-hero-actions a:hover svg { translate:-4px 0; }
 }
 @media(prefers-reduced-motion:reduce) { .table-hero-actions a { transition:none; } }
+
+/* M01 / M25: the supplied film lives inside the Signature Table, with real
+   HTML copy and controls. Published Studio artwork retains its own layout. */
+.signature-table-hero {
+  display:block;
+  min-height:clamp(560px,48vw,720px);
+  padding-block:64px 72px;
+  background:#14211b;
+  overflow:hidden;
+}
+.dark .signature-table-hero { background:#14211b; }
+.signature-table-hero::before { display:none; }
+.signature-table-hero .heritage-hero-content { z-index:3; width:52%; max-width:650px; padding-block:0; }
+.table-hero-signature { width:50px; height:50px; margin-bottom:20px; }
+.signature-table-hero .table-eyebrow { margin-bottom:20px; }
+.signature-table-hero .heritage-hero-title { font-size:clamp(3.25rem,5.7vw,6rem); line-height:1.07; letter-spacing:-.045em; }
+.signature-table-hero .heritage-hero-description { max-width:35ch; margin-top:24px; color:#e3e5db; }
+.signature-table-hero .table-hero-actions { margin-top:28px; }
+.signature-table-hero .table-hero-primary { background:#fdfbf7; border-color:#fdfbf7; color:#14211b; }
+.signature-table-hero .table-hero-primary:hover { background:#efe5d0; border-color:#efe5d0; }
+.signature-table-hero .table-hero-secondary { border-color:#e4c78380; color:#fdfbf7; }
+.signature-table-hero .table-hero-note { max-width:38ch; margin-top:28px; padding-top:18px; }
+.signature-table-hero .table-hero-art { position:absolute; inset:0; padding:0; }
+.signature-table-hero .table-pantry-figure,.signature-table-hero .table-photo-frame { width:100%; height:100%; }
+.signature-table-hero .table-pantry-figure::before { display:none; }
+.signature-table-hero .table-photo-frame { border-radius:0; aspect-ratio:auto; background:#14211b; }
+.signature-table-hero .table-photo-frame::after { content:''; position:absolute; inset:0; z-index:2; pointer-events:none; background:linear-gradient(90deg,#14211bf5 0%,#14211bdf 25%,#14211b82 44%,#14211b18 62%,transparent 80%); }
+.signature-table-hero .heritage-hero-background img { object-position:center; }
+.signature-table-hero .table-film-caption { display:none; }
+.signature-table-hero[dir=rtl] .table-photo-frame { transform:scaleX(-1); }
+.signature-table-hero[dir=rtl] .heritage-hero-title { font-size:clamp(2.75rem,4.3vw,4.75rem); line-height:1.65; letter-spacing:normal; }
+.table-hero-film { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity .45s ease; }
+.table-hero-film[data-ready=true] { opacity:1; }
+.table-scene-toggle { position:absolute; z-index:4; inset-inline-end:max(24px,calc((100vw - 1280px)/2)); bottom:22px; display:inline-flex; align-items:center; justify-content:center; gap:9px; min-height:44px; max-width:calc(100% - 40px); padding:9px 14px; border:1px solid #e4c78370; border-radius:2px; background:#14211bd9; color:#fdfbf7; font-size:.72rem; line-height:1.5; }
+.table-scene-toggle svg { flex-shrink:0; }
+.table-scene-toggle:hover { background:#14211b; border-color:#e4c783; }
+
+/* Discovery has two distinct levels: find a product, then explore the tools. */
+.table-discovery { padding-block:28px 12px; }
+.table-discovery-top { grid-template-columns:minmax(150px,.8fr) minmax(0,2fr) auto; gap:28px; }
+.table-discovery-guide { min-width:0; }
+.table-discovery .heritage-hero-guide { padding-inline:12px; border-inline-start:1px solid var(--color-border); }
+.table-discovery-experiences { display:flex; flex-wrap:wrap; align-items:center; gap:8px 24px; padding-top:10px; margin-top:14px; border-top:1px solid var(--color-border); }
+.table-discovery-experiences>p { margin-inline-end:auto; color:var(--color-text-secondary); font:400 1rem/1.6 var(--localized-heading-font,var(--font-serif)); }
+.table-discovery-experiences>button { display:inline-flex; align-items:center; justify-content:space-between; gap:10px; min-width:0; min-height:44px; max-width:100%; padding:8px 0; color:var(--color-text-primary); font-size:.75rem; line-height:1.6; }
+.table-discovery-experiences>button svg { flex-shrink:0; color:var(--color-accent-text); }
+.table-discovery-experiences>button:hover { color:var(--color-accent-text); }
+@media (max-width:1023px) {
+  .signature-table-hero { min-height:560px; padding-block:48px 64px; }
+  .signature-table-hero .heritage-hero-content { width:57%; }
+  .signature-table-hero .heritage-hero-title { font-size:clamp(3rem,5.5vw,4.25rem); }
+  .table-discovery-top { grid-template-columns:minmax(0,1fr) auto; gap:14px; }
+  .table-discovery h2 { grid-column:1/-1; }
+  .table-discovery .heritage-hero-guide { grid-column:auto; }
+}
+@media (max-width:767px) {
+  .signature-table-hero { min-height:0; padding:30px 0 0; }
+  .signature-table-hero .heritage-hero-content { width:100%; max-width:none; padding-inline:24px; }
+  .table-hero-signature { display:none; }
+  .signature-table-hero .table-eyebrow { font-size:.65rem; margin-bottom:16px; }
+  .signature-table-hero .heritage-hero-title { font-size:clamp(2.65rem,11.8vw,3.8rem); line-height:1.1; }
+  .signature-table-hero[dir=rtl] .heritage-hero-title { font-size:clamp(2.1rem,8.5vw,3rem); line-height:1.65; }
+  .signature-table-hero .heritage-hero-description { font-size:.9rem; margin-top:16px; max-width:38ch; }
+  .signature-table-hero .table-hero-actions { gap:10px; margin-top:22px; }
+  .signature-table-hero .table-hero-actions>a { flex:1 1 140px; min-height:48px; gap:8px; padding:12px; }
+  .signature-table-hero .table-hero-art { position:relative; inset:auto; width:100%; height:clamp(235px,71vw,400px); margin-top:0; padding:0; }
+  .signature-table-hero .table-photo-frame::after { background:linear-gradient(180deg,#14211b 0%,#14211b60 18%,transparent 44%); }
+  .signature-table-hero .heritage-hero-background img,.table-hero-film { object-position:center bottom; }
+  .table-scene-toggle { inset-inline-end:18px; bottom:14px; }
+  .table-discovery { padding:22px 20px 10px; }
+  .table-discovery-top { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; }
+  .table-discovery h2 { grid-column:1; font-size:1.15rem; }
+  .table-discovery-guide { grid-column:2; grid-row:1; }
+  .table-discovery .heritage-hero-guide { margin:0; padding:4px 0 4px 10px; font-size:.72rem; }
+  .table-discovery .heritage-hero-search-wrap { grid-column:1/-1; grid-row:2; order:0; }
+  .table-discovery-experiences { gap:6px 16px; }
+  .table-discovery-experiences>p { flex-basis:100%; font-size:.9rem; }
+  .table-discovery-experiences>button { flex:1 1 140px; font-size:.72rem; }
+}
+@media (prefers-reduced-motion:reduce) { .table-hero-film { transition:none; } }

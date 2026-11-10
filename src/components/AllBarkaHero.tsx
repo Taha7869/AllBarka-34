@@ -3,9 +3,9 @@ import {useStorefrontContent} from '../contexts/StorefrontContentContext';
 import {contentText} from '../lib/storefrontContent';
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import { searchCatalog, startingPrice } from '../lib/catalogDiscovery';
-import React, { lazy, Suspense, useMemo, useRef, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Compass } from 'lucide-react';
+import { ArrowRight, Compass, Pause, Play } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { AllBarkaCrestVector } from './AllBarkaLogo';
 import CategoryQuickPills from './CategoryQuickPills';
@@ -15,6 +15,7 @@ import { getLocalized } from '../utils/localize';
 import { openMehmaanPlannerModal } from './MehmaanTablePlannerModal';
 import { openShopTheTableModal } from './ShopTheTableModal';
 import { Sparkles, Eye } from 'lucide-react';
+import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 const SelectionGuide = lazy(() => import('./SelectionGuide'));
 
 interface AllBarkaHeroProps {
@@ -33,6 +34,42 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
   const [selected, setSelected] = useState('all');
   const [guideOpen, setGuideOpen] = useState(false);
   const guideOpener = useRef<HTMLButtonElement>(null);
+  const sceneRef = useRef<HTMLElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const reducedMotion = usePrefersReducedMotion();
+  const [scenePaused, setScenePaused] = useState(false);
+  const [sceneInView, setSceneInView] = useState(true);
+  const [documentVisible, setDocumentVisible] = useState(() => typeof document === 'undefined' || !document.hidden);
+  const [mobileScene, setMobileScene] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches);
+  const [sceneUnavailable, setSceneUnavailable] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
+  const scenePlaying = !hero.enabled && !reducedMotion && !scenePaused && sceneInView && documentVisible && !sceneUnavailable;
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 767px)');
+    const resize = () => { setMobileScene(media.matches); setVideoReady(false); };
+    const visibility = () => setDocumentVisible(!document.hidden);
+    media.addEventListener('change', resize);
+    document.addEventListener('visibilitychange', visibility);
+    const observer = typeof IntersectionObserver === 'undefined' ? null : new IntersectionObserver(
+      entries => setSceneInView(entries[0]?.isIntersecting ?? false), { threshold: 0.05 },
+    );
+    if (sceneRef.current) observer?.observe(sceneRef.current);
+    return () => { media.removeEventListener('change', resize); document.removeEventListener('visibilitychange', visibility); observer?.disconnect(); };
+  }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    let current = true;
+    if (scenePlaying) {
+      video.muted = true;
+      void video.play().catch(error => {
+        if (current && error?.name !== 'AbortError') setScenePaused(true);
+      });
+    } else video.pause();
+    return () => { current = false; video.pause(); };
+  }, [scenePlaying, mobileScene]);
   const suggestions = useMemo(() => query.trim() ? searchCatalog(PRODUCTS, query).slice(0, 5) : [], [query, PRODUCTS]);
 
   const placeholders = [
@@ -49,8 +86,9 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
 
   return (
     <>
-    <section className="heritage-hero" dir={isRtl ? 'rtl' : 'ltr'} aria-labelledby="table-hero-title">
+    <section ref={sceneRef} className={`heritage-hero${hero.enabled ? '' : ' signature-table-hero'}`} data-scene-playing={scenePlaying} dir={isRtl ? 'rtl' : 'ltr'} aria-labelledby="table-hero-title">
       <div className="heritage-hero-content">
+        {!hero.enabled && <div className="table-hero-signature" aria-hidden="true"><AllBarkaCrestVector /></div>}
         <p className="table-eyebrow"><span aria-hidden="true">✦</span>{t('table.eyebrow')}</p>
         <h1 id="table-hero-title" className="heritage-hero-title" dir="auto">
           {hero.enabled ? contentText(hero.heading, language) : t('table.heading')}{' '}
@@ -70,24 +108,31 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
         <p className="table-hero-note">{t('table.note')}</p>
       </div>
       <div className={`table-hero-art${hero.enabled ? ' table-hero-art-custom' : ''}`}>
-        {!hero.enabled && <div className="table-hero-crest" aria-hidden="true"><AllBarkaCrestVector /></div>}
         <figure className="table-pantry-figure">
           <div className="table-photo-frame">
             <span className="table-photo-fallback" aria-hidden="true">{t('table.eyebrow')}</span>
             <picture className="heritage-hero-background" key={`${hero.enabled}-${hero.image}-${hero.mobileImage}`}>
-              <source media="(max-width: 767px)" srcSet={hero.enabled ? hero.mobileImage : '/images/dryfruit_flatlay_hero_mobile.webp'} />
-              <img src={hero.enabled ? hero.image : '/images/dryfruit_flatlay_hero.webp'} width={1400} height={781} alt="" fetchPriority="high" onLoad={event => { event.currentTarget.style.visibility = 'visible'; }} onError={event => { event.currentTarget.style.visibility = 'hidden'; }} />
+              <source media="(max-width: 767px)" srcSet={hero.enabled ? hero.mobileImage : '/images/generated/signature-film-mobile-v2.webp'} />
+              <img src={hero.enabled ? hero.image : '/images/generated/signature-film-desktop-v2.webp'} width={792} height={414} alt="" fetchPriority="high" onLoad={event => { event.currentTarget.style.visibility = 'visible'; }} onError={event => { event.currentTarget.style.visibility = 'hidden'; }} />
             </picture>
+            {!hero.enabled && !reducedMotion && !sceneUnavailable && <video
+              ref={videoRef}
+              className="table-hero-film"
+              data-ready={videoReady}
+              src={mobileScene ? '/videos/signature-table-mobile-detail-v2.mp4' : '/videos/signature-table-desktop-v2.mp4'}
+              muted loop playsInline preload="none" tabIndex={-1} aria-hidden="true"
+              onLoadedData={() => setVideoReady(true)}
+              onError={() => setSceneUnavailable(true)}
+            />}
           </div>
-          {!hero.enabled && <figcaption>{t('table.pantryCaption')}</figcaption>}
+          {!hero.enabled && <figcaption className="table-film-caption">{t('table.pantryCaption')}</figcaption>}
         </figure>
-        {!hero.enabled && <figure className="table-gift-figure">
-          <div className="table-photo-frame">
-            <img src="/images/generated/gift-box-1.webp" width={640} height={640} alt="" decoding="async" onError={event => { event.currentTarget.style.visibility = 'hidden'; }} />
-          </div>
-          <figcaption>{t('table.giftCaption')}</figcaption>
-        </figure>}
       </div>
+      {!hero.enabled && !reducedMotion && !sceneUnavailable && <button
+        type="button" className="table-scene-toggle focus-ring" aria-pressed={!scenePaused}
+        aria-label={t(scenePaused ? 'table.playScene' : 'table.pauseScene')}
+        onClick={() => setScenePaused(value => !value)}
+      >{scenePaused ? <Play size={14} aria-hidden="true" /> : <Pause size={14} aria-hidden="true" />}<span>{t(scenePaused ? 'table.playScene' : 'table.pauseScene')}</span></button>}
     </section>
     <section className="table-discovery" dir={isRtl ? 'rtl' : 'ltr'} aria-labelledby="table-discovery-title">
       <div className="table-discovery-top">
@@ -149,10 +194,8 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="table-discovery-guide">
           <button ref={guideOpener} type="button" className="heritage-hero-guide focus-ring" onClick={() => setGuideOpen(true)} aria-haspopup="dialog"><Compass size={18} aria-hidden="true" />{t('guide.launch')}<ArrowRight size={14} className="rtl-flip" aria-hidden="true" /></button>
-          <button type="button" className="heritage-hero-mehmaan focus-ring inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold bg-[#FAF9F5]/90 dark:bg-zinc-800/90 text-[#043327] dark:text-emerald-300 border border-[#D4AF37]/40 hover:bg-[#FAF9F5] transition-all shadow-xs" onClick={() => openMehmaanPlannerModal()} aria-haspopup="dialog"><Sparkles size={14} aria-hidden="true" />{t('mehmaan.cta', 'Plan Mehmaan Table')}</button>
-          <button type="button" className="heritage-hero-table-scene focus-ring inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold bg-[#FAF9F5]/90 dark:bg-zinc-800/90 text-[#043327] dark:text-emerald-300 border border-[#D4AF37]/40 hover:bg-[#FAF9F5] transition-all shadow-xs" onClick={() => openShopTheTableModal()} aria-haspopup="dialog"><Eye size={14} aria-hidden="true" />{t('table.cta', 'Shop Table Scene')}</button>
         </div>
       </div>
         <div className="heritage-hero-pills">
@@ -161,6 +204,11 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
             if (item.categoryFilter) onSelectCategory?.(item.categoryFilter, item.searchTerm);
           }} />
         </div>
+      <div className="table-discovery-experiences">
+        <p>{t('table.experiences')}</p>
+        <button type="button" className="heritage-hero-mehmaan focus-ring" onClick={() => openMehmaanPlannerModal()} aria-haspopup="dialog"><Sparkles size={16} aria-hidden="true" />{t('mehmaan.cta', 'Plan Mehmaan Table')}<ArrowRight size={14} className="rtl-flip" aria-hidden="true" /></button>
+        <button type="button" className="heritage-hero-table-scene focus-ring" onClick={() => openShopTheTableModal()} aria-haspopup="dialog"><Eye size={16} aria-hidden="true" />{t('table.cta', 'Shop Table Scene')}<ArrowRight size={14} className="rtl-flip" aria-hidden="true" /></button>
+      </div>
       {guideOpen && <Suspense fallback={<p className="heritage-hero-guide-loading" role="status">{t('guide.loading')}</p>}><SelectionGuide opener={guideOpener.current} onClose={() => setGuideOpen(false)} /></Suspense>}
     </section>
     </>

@@ -1,0 +1,139 @@
+[
+  {
+    "id": "sweet-fruit-balls",
+    "source": "/workspace/scratch/4c255c5140fd/generated_images/exec-28583f3d-d380-42b6-8c1b-c18792a5d029.png",
+    "prompt": "Sweet Fruit Balls: reference-based AllBarka bowl on ivory travertine, emerald linen; round mixed-colour sugar candies; no text or logo.",
+    "target": "public/images/catalog-intake-20261110/sweet-fruit-balls.webp",
+    "method": "built-in image_gen",
+    "kind": "AI-styled product illustration",
+    "promptRecord": "Summary of the executed prompt; other entries contain their recorded full prompt"
+  },
+  {
+    "id": "mixed-mukhwas",
+    "source": "/workspace/scratch/4c255c5140fd/generated_images/exec-d8b0daad-0a49-4c76-b3ea-5a7df5e48403.png",
+    "prompt": "Use case: product-mockup. One square single-product premium AllBarka ecommerce illustration styled as realistic food photography. Reference image is subject reference only, not background. Subject: a traditional colourful mixed saunf mouth-freshener exactly matching the reference mix: tiny coloured oval sugar pellets, thin pale yellow-green fennel-like strands, brown pieces and translucent irregular sugar crystals. No whole almonds or imaginary fruit. Present in a small matte ivory ceramic bowl on warm ivory travertine, dark emerald linen at one corner, soft side daylight, tasteful editorial styling, 45 degree close view with entire bowl visible and a few same-product pieces beside it, clean product detail, no text, no logo, no labels, no packaging, no collage. Keep actual reference product shapes and colours; do not add other ingredients.",
+    "target": "public/images/catalog-intake-20261110/mixed-mukhwas.webp",
+    "method": "built-in image_gen",
+    "kind": "AI-styled product illustration"
+  },
+  {
+    "id": "sweet-makhana-large",
+    "source": "/workspace/scratch/4c255c5140fd/generated_images/exec-7de333e5-299a-4d98-8c52-26297f03019d.png",
+    "prompt": "Use case: product-mockup. One square single-product premium AllBarka ecommerce illustration styled as realistic food photography. Reference image is subject reference only, not background. Subject: large white irregular rough cauliflower-like clustered sugar confections as shown in reference, Pakistani sweet makhana / large Nakul Dana, NOT popcorn, NOT lotus seeds, NOT smooth cake pearls. Preserve characteristic bumpy white sugar texture. Present in a small matte ivory ceramic bowl on warm ivory travertine, dark emerald linen at one corner, soft side daylight, tasteful editorial styling, 45 degree close view with entire bowl visible and a few same-product pieces beside it, clean product detail, no text, no logo, no labels, no packaging, no collage. Keep actual reference product shapes and colours; do not add other ingredients.",
+    "target": "public/images/catalog-intake-20261110/sweet-makhana-large.webp",
+    "method": "built-in image_gen",
+    "kind": "AI-styled product illustration"
+  },
+  {
+    "id": "nakul-dana-small",
+    "source": "/workspace/scratch/4c255c5140fd/generated_images/exec-25c48194-87f0-47d9-a891-86fb276cef28.png",
+    "prompt": "Use case: product-mockup. One square single-product premium AllBarka ecommerce illustration styled as realistic food photography. Reference image is subject reference only, not background. Subject: small white irregular rough granular sugar confections as reference, small Nakul Dana for mixing with roasted chana; show only the small WHITE sugar pieces, no chickpeas or nuts. These are sugar sweets, not lotus seeds or popcorn. Present in a small matte ivory ceramic bowl on warm ivory travertine, dark emerald linen at one corner, soft side daylight, tasteful editorial styling, 45 degree close view with entire bowl visible and a few same-product pieces beside it, clean product detail, no text, no logo, no labels, no packaging, no collage. Keep actual reference product shapes and colours; do not add other ingredients.",
+    "target": "public/images/catalog-intake-20261110/nakul-dana-small.webp",
+    "method": "built-in image_gen",
+    "kind": "AI-styled product illustration"
+  },
+  {
+    "id": "sugar-coated-saunf",
+    "source": "/workspace/scratch/4c255c5140fd/generated_images/exec-6ce24d07-cb53-4a5b-9bae-fdc167d9b65b.png",
+    "prompt": "Use case: product-mockup. One square single-product premium AllBarka ecommerce illustration styled as realistic food photography. Reference image is subject reference only, not background. Subject: tiny smooth OVAL candy-coated fennel seeds, in pink white green orange yellow exactly as the reference, long oval sugar-coated saunf, not round candy balls. Present in a small matte ivory ceramic bowl on warm ivory travertine, dark emerald linen at one corner, soft side daylight, tasteful editorial styling, 45 degree close view with entire bowl visible and a few same-product pieces beside it, clean product detail, no text, no logo, no labels, no packaging, no collage. Keep actual reference product shapes and colours; do not add other ingredients.",
+    "target": "public/images/catalog-intake-20261110/sugar-coated-saunf.webp",
+    "method": "built-in image_gen",
+    "kind": "AI-styled product illustration"
+  },
+  {
+    "id": "peanut-jaggery-gachak",
+    "source": "/workspace/scratch/4c255c5140fd/generated_images/exec-90b5a69f-6519-495c-9d98-47d15b711515.png",
+    "prompt": "Use case: product-mockup. One SQUARE single-product AllBarka ecommerce asset, realistic editorial studio product illustration. Subject: broken irregular thin slabs of Pakistani peanut jaggery brittle (gur peanut gachak), closely matching the reference: clearly visible split peanut halves bound in glossy amber-brown jaggery, not sesame brittle. Warm ivory travertine surface, a restrained dark emerald linen corner, soft natural side light, entire product in frame, close 45-degree view, clean luxurious minimal composition, no text, no brand, no logo, no collage, no invented claims. Use reference for subject identity only; remove shop sacks, plastic glare, price tags and other products.",
+    "target": "public/images/catalog-intake-20261110/peanut-jaggery-gachak.webp",
+    "method": "built-in image_gen",
+    "kind": "AI-styled product illustration"
+  },
+  {
+    "id": "sesame-rewari",
+    "source": "/workspace/scratch/4c255c5140fd/generated_images/exec-2849977e-0afc-466e-916c-c97bcd5f2f8f.png",
+    "prompt": "Use case: product-mockup. One SQUARE single-product AllBarka ecommerce asset, realistic editorial studio product illustration. Subject: traditional Pakistani sesame rewari: small flat oval discs coated densely with white sesame seeds, ivory beige colour, piled in a small ivory bowl; no peanuts, no round laddoo, not brittle slabs. Warm ivory travertine surface, a restrained dark emerald linen corner, soft natural side light, entire product in frame, close 45-degree view, clean luxurious minimal composition, no text, no brand, no logo, no collage, no invented claims. ",
+    "target": "public/images/catalog-intake-20261110/sesame-rewari.webp",
+    "method": "built-in image_gen",
+    "kind": "AI-styled product illustration"
+  },
+  {
+    "id": "brown-raisins",
+    "source": "/workspace/scratch/4c255c5140fd/generated_images/exec-44aad3e9-b86e-47ce-a5ac-f0086d66c3f0.png",
+    "prompt": "Use case: product-mockup. One SQUARE single-product AllBarka ecommerce asset, realistic editorial studio product illustration. Subject: brown raisins only, dark amber to medium brown naturally wrinkled dried grapes, a small ivory bowl; match only the RIGHT tray of brown raisins in the reference, exclude all black and yellow-golden raisins. Warm ivory travertine surface, a restrained dark emerald linen corner, soft natural side light, entire product in frame, close 45-degree view, clean luxurious minimal composition, no text, no brand, no logo, no collage, no invented claims. Use reference for subject identity only; remove shop sacks, plastic glare, price tags and other products.",
+    "target": "public/images/catalog-intake-20261110/brown-raisins.webp",
+    "method": "built-in image_gen",
+    "kind": "AI-styled product illustration"
+  },
+  {
+    "id": "oil-peanut",
+    "source": "/workspace/scratch/4c255c5140fd/generated_images/exec-df237f55-fdb7-4d56-af9e-ce3d0720adea.png",
+    "prompt": "Use case: product-mockup. One SQUARE single-product AllBarka ecommerce asset, realistic editorial studio product illustration. Subject: one plain clear glass bottle with simple gold screw cap containing pale golden peanut oil, a very small ivory dish of shelled peanuts with some whole peanut pods beside it as ingredient identity. Bottle blank, no label and no measurement markings; illustrative packaging only. Warm ivory travertine surface, a restrained dark emerald linen corner, soft natural side light, entire product in frame, close 45-degree view, clean luxurious minimal composition, no text, no brand, no logo, no collage, no invented claims. ",
+    "target": "public/images/catalog-intake-20261110/oil-peanut.webp",
+    "method": "built-in image_gen",
+    "kind": "AI-styled product illustration"
+  },
+  {
+    "id": "oil-sunflower",
+    "source": "/workspace/scratch/4c255c5140fd/generated_images/exec-fb05d47d-a6fa-4e9e-bf94-f569aedf8ab6.png",
+    "prompt": "Use case: product-mockup. One SQUARE single-product AllBarka ecommerce asset, realistic editorial studio product illustration. Subject: one plain clear glass bottle with simple gold screw cap containing pale golden sunflower oil, a very small ivory dish of black sunflower seeds beside it as ingredient identity. Bottle blank, no label and no measurement markings; illustrative packaging only. Warm ivory travertine surface, a restrained dark emerald linen corner, soft natural side light, entire product in frame, close 45-degree view, clean luxurious minimal composition, no text, no brand, no logo, no collage, no invented claims. ",
+    "target": "public/images/catalog-intake-20261110/oil-sunflower.webp",
+    "method": "built-in image_gen",
+    "kind": "AI-styled product illustration"
+  },
+  {
+    "id": "oil-neem",
+    "source": "/workspace/scratch/4c255c5140fd/generated_images/exec-8f593a28-54b9-4bca-999b-74a5c59698b7.png",
+    "prompt": "Use case: product-mockup. One SQUARE single-product AllBarka ecommerce asset, realistic editorial studio product illustration. Subject: one plain clear glass bottle with simple gold screw cap containing dark golden-brown neem oil, a very small ivory dish of neem leaves and a few neem fruits beside it as ingredient identity. Bottle blank, no label and no measurement markings; illustrative packaging only. Warm ivory travertine surface, a restrained dark emerald linen corner, soft natural side light, entire product in frame, close 45-degree view, clean luxurious minimal composition, no text, no brand, no logo, no collage, no invented claims. ",
+    "target": "public/images/catalog-intake-20261110/oil-neem.webp",
+    "method": "built-in image_gen",
+    "kind": "AI-styled product illustration"
+  },
+  {
+    "id": "oil-taramira",
+    "source": "/workspace/scratch/4c255c5140fd/generated_images/exec-149d845b-a05c-4ec7-a316-8fc5eef77413.png",
+    "prompt": "Use case: product-mockup. One SQUARE single-product AllBarka ecommerce asset, realistic editorial studio product illustration. Subject: one plain clear glass bottle with simple gold screw cap containing golden amber taramira oil, a very small ivory dish of small brown arugula/rocket taramira seeds beside it as ingredient identity. Bottle blank, no label and no measurement markings; illustrative packaging only. Warm ivory travertine surface, a restrained dark emerald linen corner, soft natural side light, entire product in frame, close 45-degree view, clean luxurious minimal composition, no text, no brand, no logo, no collage, no invented claims. ",
+    "target": "public/images/catalog-intake-20261110/oil-taramira.webp",
+    "method": "built-in image_gen",
+    "kind": "AI-styled product illustration"
+  },
+  {
+    "id": "oil-soybean",
+    "source": "/workspace/scratch/4c255c5140fd/generated_images/exec-d61f3418-8fe6-4160-908c-c9145d88f978.png",
+    "prompt": "Use case: product-mockup. One SQUARE single-product AllBarka ecommerce asset, realistic editorial studio product illustration. Subject: one plain clear glass bottle with simple gold screw cap containing pale golden soybean oil, a very small ivory dish of round pale-yellow soybeans beside it as ingredient identity. Bottle blank, no label and no measurement markings; illustrative packaging only. Warm ivory travertine surface, a restrained dark emerald linen corner, soft natural side light, entire product in frame, close 45-degree view, clean luxurious minimal composition, no text, no brand, no logo, no collage, no invented claims. ",
+    "target": "public/images/catalog-intake-20261110/oil-soybean.webp",
+    "method": "built-in image_gen",
+    "kind": "AI-styled product illustration"
+  },
+  {
+    "id": "dates-soft-brown",
+    "source": "/workspace/scratch/4c255c5140fd/generated_images/exec-e118f000-6dad-4501-b686-62af1bc75adf.png",
+    "prompt": "Use case: product-mockup. One square premium AllBarka ecommerce product illustration styled as realistic natural photography. Subject: glossy reddish-brown plump dates as in the main foreground tray of the reference, softly wrinkled skin, no invented cultivar/origin, no price tags. Reference is subject-shape and colour reference only. Fill a small matte ivory ceramic bowl with only this date selection on warm ivory travertine, subtle dark emerald linen corner, soft daylight, close 45-degree view, entire bowl visible, a few matching dates beside it. No other ingredients, no nuts, no filled dates, no text, no logos, no packages, no collage. Preserve reference appearance without inventing specific variety.",
+    "target": "public/images/catalog-intake-20261110/dates-soft-brown.webp",
+    "method": "built-in image_gen",
+    "kind": "AI-styled product illustration"
+  },
+  {
+    "id": "dates-dark-round",
+    "source": "/workspace/scratch/4c255c5140fd/generated_images/exec-faa89c7f-abc2-47a5-95db-1fdb9ad2327b.png",
+    "prompt": "Use case: product-mockup. One square premium AllBarka ecommerce product illustration styled as realistic natural photography. Subject: dark brown rounded plump dates matching ONLY the LEFT tray in the reference; exclude long narrow dates of the right tray. Reference is subject-shape and colour reference only. Fill a small matte ivory ceramic bowl with only this date selection on warm ivory travertine, subtle dark emerald linen corner, soft daylight, close 45-degree view, entire bowl visible, a few matching dates beside it. No other ingredients, no nuts, no filled dates, no text, no logos, no packages, no collage. Preserve reference appearance without inventing specific variety.",
+    "target": "public/images/catalog-intake-20261110/dates-dark-round.webp",
+    "method": "built-in image_gen",
+    "kind": "AI-styled product illustration"
+  },
+  {
+    "id": "dates-dark-long",
+    "source": "/workspace/scratch/4c255c5140fd/generated_images/exec-dc5e259e-6fbe-45d6-96ff-884b8b7df767.png",
+    "prompt": "Use case: product-mockup. One square premium AllBarka ecommerce product illustration styled as realistic natural photography. Subject: elongated dark brown deeply wrinkled dates matching ONLY the RIGHT tray in the reference; exclude round dates of the left tray. Reference is subject-shape and colour reference only. Fill a small matte ivory ceramic bowl with only this date selection on warm ivory travertine, subtle dark emerald linen corner, soft daylight, close 45-degree view, entire bowl visible, a few matching dates beside it. No other ingredients, no nuts, no filled dates, no text, no logos, no packages, no collage. Preserve reference appearance without inventing specific variety.",
+    "target": "public/images/catalog-intake-20261110/dates-dark-long.webp",
+    "method": "built-in image_gen",
+    "kind": "AI-styled product illustration"
+  },
+  {
+    "id": "dates-golden-brown",
+    "source": "/workspace/scratch/4c255c5140fd/generated_images/exec-27e9f36d-44c4-473b-9d31-6e89e2e24ed9.png",
+    "prompt": "Use case: product-mockup. One square premium AllBarka ecommerce product illustration styled as realistic natural photography. Subject: golden tan to light brown oval dates with pale patches and natural small wrinkles, matching the foreground dates in the reference; no invented cultivar/origin. Reference is subject-shape and colour reference only. Fill a small matte ivory ceramic bowl with only this date selection on warm ivory travertine, subtle dark emerald linen corner, soft daylight, close 45-degree view, entire bowl visible, a few matching dates beside it. No other ingredients, no nuts, no filled dates, no text, no logos, no packages, no collage. Preserve reference appearance without inventing specific variety.",
+    "target": "public/images/catalog-intake-20261110/dates-golden-brown.webp",
+    "method": "built-in image_gen",
+    "kind": "AI-styled product illustration"
+  }
+]

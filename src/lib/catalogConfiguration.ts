@@ -33,8 +33,11 @@ export const DEFAULT_CATALOG_CONFIGURATION: CatalogConfiguration = {
     { id: 'gift', name_en: 'Gift or hamper', name_ur: 'تحفہ یا ہیمپر', name_ar: 'هدية أو سلة', kind: 'gift', defaultCategory: 'gift-boxes', defaultUnit: 'pack', archived: false, attributes: [] },
   ],
   taxonomy: [
-    ...Object.values(FOOD_CATEGORIES).map(c => ({ id: c.id, type: 'category' as const, name_en: c.name, name_ur: '', name_ar: '',
-      description_en: c.description, description_ur: '', description_ar: '', visible: true })),
+    ...Object.values(FOOD_CATEGORIES).map(c => ({ id: c.id, type: 'category' as const, name_en: c.name,
+      name_ur: c.id === 'saunf' ? 'سونف اور مکھواس' : '', name_ar: c.id === 'saunf' ? 'الشمر ومعطرات الفم' : '',
+      description_en: c.description,
+      description_ur: c.id === 'saunf' ? 'سادہ سونف، چینی لگی رنگین سونف اور روایتی مکھواس۔' : '',
+      description_ar: c.id === 'saunf' ? 'بذور شمر سادة ومغلّفة بالسكر ومزيج تقليدي لما بعد الطعام.' : '', visible: true })),
     ...Object.values(COMMERCIAL_COLLECTIONS).map(c => ({ id: c.id === 'combos' ? 'gift-boxes' : c.id, type: 'collection' as const,
       name_en: c.name, name_ur: '', name_ar: '', description_en: c.description, description_ur: '', description_ar: '', visible: true })),
     ...OCCASION_TAGS.map(c => ({ id: c.id, type: 'occasion' as const, name_en: c.name, name_ur: '', name_ar: '',

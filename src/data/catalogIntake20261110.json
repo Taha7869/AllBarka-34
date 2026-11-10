@@ -1,0 +1,1426 @@
+{
+  "batch": "owner-intake-20261110",
+  "purpose": "Create-only draft import into existing canonical Firestore products; not a second price authority.",
+  "newProducts": [
+    {
+      "id": "sweet-fruit-balls",
+      "name_en": "Sweet Fruit Balls",
+      "name_ur": "رنگین میٹھی گولیاں",
+      "name_ar": "كرات السكر الملونة",
+      "desc_en": "Bright little sugar candies with a crisp shell and a sweet powdered centre around a tiny sugar crystal. A colourful choice for a treat jar, party favours or a dessert finishing touch. Colours may vary.",
+      "desc_ur": "رنگین چھوٹی میٹھی گولیاں جن کے خستہ خول کے اندر میٹھا سفوف اور چینی کا ننھا دانہ ہوتا ہے۔ ٹریٹ جار، تقریب کے تحائف یا میٹھے کی سجاوٹ کے لیے۔ رنگ مختلف ہو سکتے ہیں۔",
+      "desc_ar": "حلوى سكرية صغيرة ملوّنة بقشرة مقرمشة ومركز من مسحوق السكر حول بلورة سكر صغيرة. مناسبة لوعاء الحلوى وهدايا المناسبات وتزيين الحلويات. قد تختلف الألوان.",
+      "category": "snacks-seeds",
+      "collections": [
+        "traditional-sweets"
+      ],
+      "keywords": [
+        "candy balls",
+        "fruit balls",
+        "meethi goliyan",
+        "rang birangi"
+      ],
+      "image": "/images/catalog-intake-20261110/sweet-fruit-balls.webp",
+      "imageName": "/images/catalog-intake-20261110/sweet-fruit-balls.webp",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 100,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261110",
+      "seo": {
+        "title_en": "Sweet Fruit Balls | AllBarka",
+        "title_ur": "رنگین میٹھی گولیاں | البرکہ",
+        "title_ar": "كرات السكر الملونة | البركة",
+        "imageAlt_en": "Sweet Fruit Balls — AI-styled product illustration",
+        "imageAlt_ur": "رنگین میٹھی گولیاں — تمثیلی تصویر",
+        "imageAlt_ar": "كرات السكر الملونة — صورة توضيحية"
+      }
+    },
+    {
+      "id": "mixed-mukhwas",
+      "name_en": "Mixed Saunf Mukhwas",
+      "name_ur": "مکس سونف مکھواس",
+      "name_ar": "مزيج الشمر والحلوى",
+      "desc_en": "A colourful saunf-style mouth-freshener mix with contrasting small pieces and a sweet finish. Serve a little after a meal or include it in a celebration selection. Ask for the current batch ingredient list before ordering.",
+      "desc_ur": "رنگین چھوٹے دانوں اور میٹھے ذائقے والا سونف مکھواس۔ کھانے کے بعد تھوڑی مقدار پیش کریں یا تقریب کے انتخاب میں شامل کریں۔ آرڈر سے پہلے موجودہ بیچ کے اجزاء کی فہرست حاصل کریں۔",
+      "desc_ar": "مزيج شمر ملوّن بقطع صغيرة متنوعة ولمسة حلوة، للتقديم بعد الطعام أو ضمن اختيارات المناسبات. اطلب قائمة مكونات الدفعة الحالية قبل الطلب.",
+      "category": "herbs-spices",
+      "collections": [
+        "saunf"
+      ],
+      "keywords": [
+        "saunf",
+        "sounf",
+        "mukhwas",
+        "mouth freshener"
+      ],
+      "image": "/images/catalog-intake-20261110/mixed-mukhwas.webp",
+      "imageName": "/images/catalog-intake-20261110/mixed-mukhwas.webp",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 100,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1000g",
+            "quantity": 1000,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261110",
+      "seo": {
+        "title_en": "Mixed Saunf Mukhwas | AllBarka",
+        "title_ur": "مکس سونف مکھواس | البرکہ",
+        "title_ar": "مزيج الشمر والحلوى | البركة",
+        "imageAlt_en": "Mixed Saunf Mukhwas — AI-styled product illustration",
+        "imageAlt_ur": "مکس سونف مکھواس — تمثیلی تصویر",
+        "imageAlt_ar": "مزيج الشمر والحلوى — صورة توضيحية"
+      }
+    },
+    {
+      "id": "sweet-makhana-large",
+      "name_en": "Sweet Makhana — Large Sugar Clusters",
+      "name_ur": "بڑے میٹھے مکھانے",
+      "name_ar": "حلوى السكر البيضاء الكبيرة",
+      "desc_en": "Large, irregular white sugar clusters for traditional Nikkah bid and celebration selections. Also sold regionally as large Nakul Dana or sweet makhana; these are sugar confections, not fox nuts.",
+      "desc_ur": "نکاح کی بِد اور روایتی تقریبات کے لیے بڑے، ناہموار سفید میٹھے مکھانے۔ بعض علاقوں میں بڑے نکل دانہ بھی کہلاتے ہیں۔ یہ چینی کی مٹھائی ہے، پھول مکھانا نہیں۔",
+      "desc_ar": "كتل سكرية بيضاء كبيرة غير منتظمة لاختيارات مناسبات النكاح والاحتفالات التقليدية. تُعرف إقليميًا بأسماء ناكول دانا أو مخانا الحلوة، وهي حلوى سكرية وليست بذور اللوتس.",
+      "category": "snacks-seeds",
+      "collections": [
+        "traditional-sweets"
+      ],
+      "keywords": [
+        "sweet makhana",
+        "nakul dana large",
+        "bid",
+        "nikkah",
+        "meethay makhanay"
+      ],
+      "image": "/images/catalog-intake-20261110/sweet-makhana-large.webp",
+      "imageName": "/images/catalog-intake-20261110/sweet-makhana-large.webp",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 100,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1000g",
+            "quantity": 1000,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261110",
+      "seo": {
+        "title_en": "Sweet Makhana — Large Sugar Clusters | AllBarka",
+        "title_ur": "بڑے میٹھے مکھانے | البرکہ",
+        "title_ar": "حلوى السكر البيضاء الكبيرة | البركة",
+        "imageAlt_en": "Sweet Makhana — Large Sugar Clusters — AI-styled product illustration",
+        "imageAlt_ur": "بڑے میٹھے مکھانے — تمثیلی تصویر",
+        "imageAlt_ar": "حلوى السكر البيضاء الكبيرة — صورة توضيحية"
+      }
+    },
+    {
+      "id": "nakul-dana-small",
+      "name_en": "Nakul Dana — Small Sugar Clusters",
+      "name_ur": "چھوٹے نکل دانہ",
+      "name_ar": "حلوى ناكول دانا الصغيرة",
+      "desc_en": "Small white sugar clusters, kept separate from the large celebration size. Suitable for the traditional mix served with roasted chana; this listing contains the sugar sweets only, without chana.",
+      "desc_ur": "چنے کے ساتھ روایتی مکس میں استعمال ہونے والے چھوٹے سفید نکل دانہ۔ بڑے مکھانوں سے الگ انتخاب۔ اس آئٹم میں صرف میٹھے دانے ہیں، چنے شامل نہیں۔",
+      "desc_ar": "قطع سكرية بيضاء صغيرة منفصلة عن الحجم الكبير للمناسبات. تُستخدم في المزيج التقليدي مع الحمص المحمّص؛ هذه العبوة للحلوى السكرية فقط دون حمص.",
+      "category": "snacks-seeds",
+      "collections": [
+        "traditional-sweets"
+      ],
+      "keywords": [
+        "nakul dana small",
+        "nukal dana",
+        "small sugar balls",
+        "chana mix"
+      ],
+      "image": "/images/catalog-intake-20261110/nakul-dana-small.webp",
+      "imageName": "/images/catalog-intake-20261110/nakul-dana-small.webp",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 100,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1000g",
+            "quantity": 1000,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261110",
+      "seo": {
+        "title_en": "Nakul Dana — Small Sugar Clusters | AllBarka",
+        "title_ur": "چھوٹے نکل دانہ | البرکہ",
+        "title_ar": "حلوى ناكول دانا الصغيرة | البركة",
+        "imageAlt_en": "Nakul Dana — Small Sugar Clusters — AI-styled product illustration",
+        "imageAlt_ur": "چھوٹے نکل دانہ — تمثیلی تصویر",
+        "imageAlt_ar": "حلوى ناكول دانا الصغيرة — صورة توضيحية"
+      }
+    },
+    {
+      "id": "sugar-coated-saunf",
+      "name_en": "Sugar-Coated Saunf",
+      "name_ur": "چینی لگی رنگین سونف",
+      "name_ar": "بذور الشمر المغلّفة بالسكر",
+      "desc_en": "Fennel seeds in a colourful sweet sugar coating: a familiar after-meal selection with a light crunch and a gently aromatic centre. Serve in a small bowl or add to a celebration favour.",
+      "desc_ur": "خوشبودار سونف پر رنگین میٹھی چینی کی تہہ۔ ہلکی خستگی کے ساتھ کھانے کے بعد پیش کرنے یا تقریب کے چھوٹے تحفے میں شامل کرنے کا روایتی انتخاب۔",
+      "desc_ar": "بذور شمر بقشرة سكرية ملوّنة وقرمشة خفيفة ومركز عطري. اختيار تقليدي للتقديم بعد الطعام أو ضمن هدايا المناسبات.",
+      "category": "herbs-spices",
+      "collections": [
+        "saunf"
+      ],
+      "keywords": [
+        "saunf",
+        "sounf",
+        "sweet fennel",
+        "meethi saunf",
+        "sugar coated"
+      ],
+      "image": "/images/catalog-intake-20261110/sugar-coated-saunf.webp",
+      "imageName": "/images/catalog-intake-20261110/sugar-coated-saunf.webp",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 100,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1000g",
+            "quantity": 1000,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261110",
+      "seo": {
+        "title_en": "Sugar-Coated Saunf | AllBarka",
+        "title_ur": "چینی لگی رنگین سونف | البرکہ",
+        "title_ar": "بذور الشمر المغلّفة بالسكر | البركة",
+        "imageAlt_en": "Sugar-Coated Saunf — AI-styled product illustration",
+        "imageAlt_ur": "چینی لگی رنگین سونف — تمثیلی تصویر",
+        "imageAlt_ar": "بذور الشمر المغلّفة بالسكر — صورة توضيحية"
+      }
+    },
+    {
+      "id": "peanut-jaggery-gachak",
+      "name_en": "Peanut & Jaggery Gachak",
+      "name_ur": "مونگ پھلی اور گڑ کی گجک",
+      "name_ar": "حلوى الفول السوداني وسكر القصب التقليدية",
+      "desc_en": "Roasted peanut pieces set in an amber jaggery brittle, with a satisfying snap and a rich gur sweetness. Break into small pieces for sharing with tea. Contains peanuts.",
+      "desc_ur": "بھنی مونگ پھلی کے ٹکڑوں اور گڑ سے بنی خستہ گجک۔ گڑ کی بھرپور مٹھاس کے ساتھ چائے پر بانٹ کر پیش کریں۔ مونگ پھلی شامل ہے۔",
+      "desc_ar": "قطع فول سوداني محمّص في حلوى مقرمشة من سكر القصب التقليدي بلون كهرماني. تُقسّم إلى قطع صغيرة للمشاركة مع الشاي. تحتوي على الفول السوداني.",
+      "category": "snacks-seeds",
+      "collections": [
+        "traditional-sweets"
+      ],
+      "keywords": [
+        "gachak",
+        "gajak",
+        "chikki",
+        "gur",
+        "peanut brittle"
+      ],
+      "image": "/images/catalog-intake-20261110/peanut-jaggery-gachak.webp",
+      "imageName": "/images/catalog-intake-20261110/peanut-jaggery-gachak.webp",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 100,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1000g",
+            "quantity": 1000,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261110",
+      "seo": {
+        "title_en": "Peanut & Jaggery Gachak | AllBarka",
+        "title_ur": "مونگ پھلی اور گڑ کی گجک | البرکہ",
+        "title_ar": "حلوى الفول السوداني وسكر القصب التقليدية | البركة",
+        "imageAlt_en": "Peanut & Jaggery Gachak — AI-styled product illustration",
+        "imageAlt_ur": "مونگ پھلی اور گڑ کی گجک — تمثیلی تصویر",
+        "imageAlt_ar": "حلوى الفول السوداني وسكر القصب التقليدية — صورة توضيحية"
+      }
+    },
+    {
+      "id": "sesame-rewari",
+      "name_en": "Sesame Rewari",
+      "name_ur": "تل کی ریوڑی",
+      "name_ar": "حلوى السمسم ريواري",
+      "desc_en": "Small traditional rewari pieces with a sesame-covered surface and a sweet crunch. A familiar tea-time sweet or addition to celebration favours. Contains sesame; ask for the current batch ingredient list.",
+      "desc_ur": "تل کی تہہ والی چھوٹی روایتی خستہ ریوڑیاں۔ چائے کے ساتھ یا تقریب کے تحائف میں شامل کرنے کا مانوس انتخاب۔ تل شامل ہیں؛ موجودہ بیچ کے اجزاء کی فہرست حاصل کریں۔",
+      "desc_ar": "قطع ريواري تقليدية صغيرة بسطح مغطّى بالسمسم وقرمشة حلوة. للتقديم مع الشاي أو ضمن هدايا المناسبات. تحتوي على السمسم؛ اطلب مكونات الدفعة الحالية.",
+      "category": "snacks-seeds",
+      "collections": [
+        "traditional-sweets"
+      ],
+      "keywords": [
+        "rewari",
+        "rewri",
+        "revri",
+        "til",
+        "sesame sweets"
+      ],
+      "image": "/images/catalog-intake-20261110/sesame-rewari.webp",
+      "imageName": "/images/catalog-intake-20261110/sesame-rewari.webp",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 100,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1000g",
+            "quantity": 1000,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261110",
+      "seo": {
+        "title_en": "Sesame Rewari | AllBarka",
+        "title_ur": "تل کی ریوڑی | البرکہ",
+        "title_ar": "حلوى السمسم ريواري | البركة",
+        "imageAlt_en": "Sesame Rewari — AI-styled product illustration",
+        "imageAlt_ur": "تل کی ریوڑی — تمثیلی تصویر",
+        "imageAlt_ar": "حلوى السمسم ريواري — صورة توضيحية"
+      }
+    },
+    {
+      "id": "brown-raisins",
+      "name_en": "Brown Raisins (Kishmish)",
+      "name_ur": "بھوری کشمش",
+      "name_ar": "زبيب بني",
+      "desc_en": "Brown kishmish with a naturally wrinkled texture, for serving bowls, baking and traditional recipes. Ask our team about the current batch and availability.",
+      "desc_ur": "قدرتی جھری دار شکل والی بھوری کشمش، پیش کرنے، بیکنگ اور روایتی ترکیبوں کے لیے۔ موجودہ بیچ اور دستیابی کی تفصیل ہماری ٹیم سے حاصل کریں۔",
+      "desc_ar": "زبيب بني بمظهر مجعّد طبيعي للتقديم والخبز والوصفات التقليدية. اسأل فريقنا عن الدفعة الحالية والتوافر.",
+      "category": "dry-fruits",
+      "collections": [],
+      "keywords": [
+        "brown kishmish",
+        "brown raisins"
+      ],
+      "image": "/images/catalog-intake-20261110/brown-raisins.webp",
+      "imageName": "/images/catalog-intake-20261110/brown-raisins.webp",
+      "galleryImages": [],
+      "prices": {
+        "1kg": 1000
+      },
+      "variants": [
+        {
+          "label": "1kg",
+          "price": 1000,
+          "available": true
+        }
+      ],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified",
+        "notes": "Appearance-based selection. Cultivar, origin and seed status not established; do not infer from photo or AI imagery."
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 1000,
+        "baseUnit": "g",
+        "basePrice": 1000,
+        "options": [
+          {
+            "label": "1kg",
+            "quantity": 1,
+            "unit": "kg",
+            "override": false,
+            "available": true,
+            "shippingWeightG": 1000
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261110",
+      "seo": {
+        "title_en": "Brown Raisins (Kishmish) | AllBarka",
+        "title_ur": "بھوری کشمش | البرکہ",
+        "title_ar": "زبيب بني | البركة",
+        "imageAlt_en": "Brown Raisins (Kishmish) — AI-styled product illustration",
+        "imageAlt_ur": "بھوری کشمش — تمثیلی تصویر",
+        "imageAlt_ar": "زبيب بني — صورة توضيحية"
+      }
+    },
+    {
+      "id": "dates-soft-brown",
+      "name_en": "Soft Brown Dates",
+      "name_ur": "نرم بھوری کھجوریں",
+      "name_ar": "تمور بنية طرية",
+      "desc_en": "Reddish-brown dates with gently wrinkled skin, for a serving bowl or thoughtful gift selection. Ask our team for current batch details and availability.",
+      "desc_ur": "ہلکی جھری دار سطح والی سرخی مائل بھوری کھجوریں، پیش کرنے یا تحفے کے لیے۔ موجودہ بیچ اور دستیابی کی تفصیل ٹیم سے حاصل کریں۔",
+      "desc_ar": "تمور بنية محمرّة بقشرة خفيفة التجاعيد، للتقديم أو لاختيارات الهدايا. اسأل فريقنا عن الدفعة الحالية والتوافر.",
+      "category": "dates",
+      "collections": [],
+      "keywords": [
+        "khajoor",
+        "dates",
+        "soft brown dates"
+      ],
+      "image": "/images/catalog-intake-20261110/dates-soft-brown.webp",
+      "imageName": "/images/catalog-intake-20261110/dates-soft-brown.webp",
+      "galleryImages": [],
+      "prices": {
+        "1kg": 300
+      },
+      "variants": [
+        {
+          "label": "1kg",
+          "price": 300,
+          "available": true
+        }
+      ],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified",
+        "notes": "Appearance-based selection. Cultivar, origin and seed status not established; do not infer from photo or AI imagery."
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 1000,
+        "baseUnit": "g",
+        "basePrice": 300,
+        "options": [
+          {
+            "label": "1kg",
+            "quantity": 1,
+            "unit": "kg",
+            "override": false,
+            "available": true,
+            "shippingWeightG": 1000
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261110",
+      "seo": {
+        "title_en": "Soft Brown Dates | AllBarka",
+        "title_ur": "نرم بھوری کھجوریں | البرکہ",
+        "title_ar": "تمور بنية طرية | البركة",
+        "imageAlt_en": "Soft Brown Dates — AI-styled product illustration",
+        "imageAlt_ur": "نرم بھوری کھجوریں — تمثیلی تصویر",
+        "imageAlt_ar": "تمور بنية طرية — صورة توضيحية"
+      }
+    },
+    {
+      "id": "dates-dark-round",
+      "name_en": "Dark Round Dates",
+      "name_ur": "گول گہری رنگت کی کھجوریں",
+      "name_ar": "تمور داكنة مستديرة",
+      "desc_en": "Deep-brown dates with a rounded shape and naturally wrinkled skin. A distinct selection for serving bowls and gifting. Ask for the current batch details.",
+      "desc_ur": "گہری بھوری رنگت اور نسبتاً گول شکل والی کھجوریں۔ پیش کرنے یا تحفے کے لیے الگ انتخاب۔ موجودہ بیچ کی تفصیل حاصل کریں۔",
+      "desc_ar": "تمور بنية داكنة مستديرة نسبيًا بقشرة مجعّدة طبيعيًا. اختيار مميز للتقديم والهدايا. اطلب تفاصيل الدفعة الحالية.",
+      "category": "dates",
+      "collections": [],
+      "keywords": [
+        "khajoor",
+        "dates",
+        "dark round dates"
+      ],
+      "image": "/images/catalog-intake-20261110/dates-dark-round.webp",
+      "imageName": "/images/catalog-intake-20261110/dates-dark-round.webp",
+      "galleryImages": [],
+      "prices": {
+        "1kg": 500
+      },
+      "variants": [
+        {
+          "label": "1kg",
+          "price": 500,
+          "available": true
+        }
+      ],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified",
+        "notes": "Appearance-based selection. Cultivar, origin and seed status not established; do not infer from photo or AI imagery."
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 1000,
+        "baseUnit": "g",
+        "basePrice": 500,
+        "options": [
+          {
+            "label": "1kg",
+            "quantity": 1,
+            "unit": "kg",
+            "override": false,
+            "available": true,
+            "shippingWeightG": 1000
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261110",
+      "seo": {
+        "title_en": "Dark Round Dates | AllBarka",
+        "title_ur": "گول گہری رنگت کی کھجوریں | البرکہ",
+        "title_ar": "تمور داكنة مستديرة | البركة",
+        "imageAlt_en": "Dark Round Dates — AI-styled product illustration",
+        "imageAlt_ur": "گول گہری رنگت کی کھجوریں — تمثیلی تصویر",
+        "imageAlt_ar": "تمور داكنة مستديرة — صورة توضيحية"
+      }
+    },
+    {
+      "id": "dates-dark-long",
+      "name_en": "Dark Elongated Dates",
+      "name_ur": "لمبی گہری رنگت کی کھجوریں",
+      "name_ar": "تمور داكنة طويلة",
+      "desc_en": "Elongated dark-brown dates with a naturally wrinkled surface. Choose this longer-shaped selection for serving or gift assortments; confirm current availability with our team.",
+      "desc_ur": "قدرتی جھری دار سطح اور لمبی شکل والی گہری بھوری کھجوریں۔ پیش کرنے اور تحفے کے انتخاب کے لیے؛ موجودہ دستیابی ٹیم سے معلوم کریں۔",
+      "desc_ar": "تمور بنية داكنة طويلة الشكل بسطح مجعّد طبيعي. للتقديم وتشكيلات الهدايا؛ أكّد التوافر الحالي مع فريقنا.",
+      "category": "dates",
+      "collections": [],
+      "keywords": [
+        "khajoor",
+        "dates",
+        "dark elongated dates"
+      ],
+      "image": "/images/catalog-intake-20261110/dates-dark-long.webp",
+      "imageName": "/images/catalog-intake-20261110/dates-dark-long.webp",
+      "galleryImages": [],
+      "prices": {
+        "1kg": 900
+      },
+      "variants": [
+        {
+          "label": "1kg",
+          "price": 900,
+          "available": true
+        }
+      ],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified",
+        "notes": "Appearance-based selection. Cultivar, origin and seed status not established; do not infer from photo or AI imagery."
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 1000,
+        "baseUnit": "g",
+        "basePrice": 900,
+        "options": [
+          {
+            "label": "1kg",
+            "quantity": 1,
+            "unit": "kg",
+            "override": false,
+            "available": true,
+            "shippingWeightG": 1000
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261110",
+      "seo": {
+        "title_en": "Dark Elongated Dates | AllBarka",
+        "title_ur": "لمبی گہری رنگت کی کھجوریں | البرکہ",
+        "title_ar": "تمور داكنة طويلة | البركة",
+        "imageAlt_en": "Dark Elongated Dates — AI-styled product illustration",
+        "imageAlt_ur": "لمبی گہری رنگت کی کھجوریں — تمثیلی تصویر",
+        "imageAlt_ar": "تمور داكنة طويلة — صورة توضيحية"
+      }
+    },
+    {
+      "id": "dates-golden-brown",
+      "name_en": "Golden-Brown Dates",
+      "name_ur": "سنہری بھوری کھجوریں",
+      "name_ar": "تمور بنية ذهبية",
+      "desc_en": "Oval dates with golden to light-brown colouring and natural variation between pieces. An inviting addition to a serving bowl or gift selection. Ask for current batch details.",
+      "desc_ur": "سنہری سے ہلکی بھوری رنگت والی بیضوی کھجوریں۔ ہر دانے میں قدرتی فرق ہو سکتا ہے۔ پیش کرنے یا تحفے کے لیے؛ موجودہ بیچ کی تفصیل حاصل کریں۔",
+      "desc_ar": "تمور بيضوية بلون ذهبي إلى بني فاتح مع اختلاف طبيعي بين الحبات. إضافة للتقديم أو الهدايا. اطلب تفاصيل الدفعة الحالية.",
+      "category": "dates",
+      "collections": [],
+      "keywords": [
+        "khajoor",
+        "dates",
+        "golden-brown dates"
+      ],
+      "image": "/images/catalog-intake-20261110/dates-golden-brown.webp",
+      "imageName": "/images/catalog-intake-20261110/dates-golden-brown.webp",
+      "galleryImages": [],
+      "prices": {
+        "1kg": 350
+      },
+      "variants": [
+        {
+          "label": "1kg",
+          "price": 350,
+          "available": true
+        }
+      ],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified",
+        "notes": "Appearance-based selection. Cultivar, origin and seed status not established; do not infer from photo or AI imagery."
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 1000,
+        "baseUnit": "g",
+        "basePrice": 350,
+        "options": [
+          {
+            "label": "1kg",
+            "quantity": 1,
+            "unit": "kg",
+            "override": false,
+            "available": true,
+            "shippingWeightG": 1000
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261110",
+      "seo": {
+        "title_en": "Golden-Brown Dates | AllBarka",
+        "title_ur": "سنہری بھوری کھجوریں | البرکہ",
+        "title_ar": "تمور بنية ذهبية | البركة",
+        "imageAlt_en": "Golden-Brown Dates — AI-styled product illustration",
+        "imageAlt_ur": "سنہری بھوری کھجوریں — تمثیلی تصویر",
+        "imageAlt_ar": "تمور بنية ذهبية — صورة توضيحية"
+      }
+    },
+    {
+      "id": "oil-peanut",
+      "name_en": "Peanut Oil",
+      "name_ur": "مونگ پھلی کا تیل",
+      "name_ar": "زيت الفول السوداني",
+      "desc_en": "Peanut Oil enquiries in 100ml, 250ml, 500ml and 1 litre sizes, with custom volume available by request. Confirm current availability, product grade and intended use with the team; follow the supplied label. The bottle image is illustrative.",
+      "desc_ur": "100 ملی لیٹر، 250 ملی لیٹر، 500 ملی لیٹر اور ایک لیٹر، یا درخواست پر اپنی مقدار۔ موجودہ دستیابی، گریڈ اور مناسب استعمال کی تصدیق ٹیم سے کریں اور فراہم کردہ لیبل کی ہدایات پر عمل کریں۔ بوتل کی تصویر تمثیلی ہے۔",
+      "desc_ar": "للاستفسار بأحجام 100 و250 و500 مل ولتر واحد، أو بكمية خاصة عند الطلب. أكّد التوافر والدرجة والاستخدام المناسب مع الفريق واتبع الملصق المرفق. صورة العبوة توضيحية.",
+      "category": "oils",
+      "collections": [],
+      "keywords": [
+        "peanut oil",
+        "مونگ پھلی کا تیل"
+      ],
+      "image": "/images/catalog-intake-20261110/oil-peanut.webp",
+      "imageName": "/images/catalog-intake-20261110/oil-peanut.webp",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "liquid",
+        "pricingMode": "calculated",
+        "quantityMode": "both",
+        "baseQuantity": 100,
+        "baseUnit": "ml",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100ml",
+            "quantity": 100,
+            "unit": "ml",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250ml",
+            "quantity": 250,
+            "unit": "ml",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500ml",
+            "quantity": 500,
+            "unit": "ml",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1L",
+            "quantity": 1,
+            "unit": "L",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": {
+          "unit": "ml",
+          "min": 10,
+          "max": 5000,
+          "step": 10,
+          "shippingWeightGPerUnit": null
+        }
+      },
+      "importBatch": "owner-intake-20261110",
+      "seo": {
+        "title_en": "Peanut Oil | AllBarka",
+        "title_ur": "مونگ پھلی کا تیل | البرکہ",
+        "title_ar": "زيت الفول السوداني | البركة",
+        "imageAlt_en": "Peanut Oil — AI-styled product illustration",
+        "imageAlt_ur": "مونگ پھلی کا تیل — تمثیلی تصویر",
+        "imageAlt_ar": "زيت الفول السوداني — صورة توضيحية"
+      }
+    },
+    {
+      "id": "oil-sunflower",
+      "name_en": "Sunflower Oil",
+      "name_ur": "سورج مکھی کا تیل",
+      "name_ar": "زيت دوار الشمس",
+      "desc_en": "Sunflower Oil enquiries in 100ml, 250ml, 500ml and 1 litre sizes, with custom volume available by request. Confirm current availability, product grade and intended use with the team; follow the supplied label. The bottle image is illustrative.",
+      "desc_ur": "100 ملی لیٹر، 250 ملی لیٹر، 500 ملی لیٹر اور ایک لیٹر، یا درخواست پر اپنی مقدار۔ موجودہ دستیابی، گریڈ اور مناسب استعمال کی تصدیق ٹیم سے کریں اور فراہم کردہ لیبل کی ہدایات پر عمل کریں۔ بوتل کی تصویر تمثیلی ہے۔",
+      "desc_ar": "للاستفسار بأحجام 100 و250 و500 مل ولتر واحد، أو بكمية خاصة عند الطلب. أكّد التوافر والدرجة والاستخدام المناسب مع الفريق واتبع الملصق المرفق. صورة العبوة توضيحية.",
+      "category": "oils",
+      "collections": [],
+      "keywords": [
+        "sunflower oil",
+        "سورج مکھی کا تیل"
+      ],
+      "image": "/images/catalog-intake-20261110/oil-sunflower.webp",
+      "imageName": "/images/catalog-intake-20261110/oil-sunflower.webp",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "liquid",
+        "pricingMode": "calculated",
+        "quantityMode": "both",
+        "baseQuantity": 100,
+        "baseUnit": "ml",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100ml",
+            "quantity": 100,
+            "unit": "ml",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250ml",
+            "quantity": 250,
+            "unit": "ml",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500ml",
+            "quantity": 500,
+            "unit": "ml",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1L",
+            "quantity": 1,
+            "unit": "L",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": {
+          "unit": "ml",
+          "min": 10,
+          "max": 5000,
+          "step": 10,
+          "shippingWeightGPerUnit": null
+        }
+      },
+      "importBatch": "owner-intake-20261110",
+      "seo": {
+        "title_en": "Sunflower Oil | AllBarka",
+        "title_ur": "سورج مکھی کا تیل | البرکہ",
+        "title_ar": "زيت دوار الشمس | البركة",
+        "imageAlt_en": "Sunflower Oil — AI-styled product illustration",
+        "imageAlt_ur": "سورج مکھی کا تیل — تمثیلی تصویر",
+        "imageAlt_ar": "زيت دوار الشمس — صورة توضيحية"
+      }
+    },
+    {
+      "id": "oil-neem",
+      "name_en": "Neem Oil",
+      "name_ur": "نیم کا تیل",
+      "name_ar": "زيت النيم",
+      "desc_en": "Neem Oil enquiries in 100ml, 250ml, 500ml and 1 litre sizes, with custom volume available by request. Confirm current availability, product grade and intended use with the team; follow the supplied label. The bottle image is illustrative.",
+      "desc_ur": "100 ملی لیٹر، 250 ملی لیٹر، 500 ملی لیٹر اور ایک لیٹر، یا درخواست پر اپنی مقدار۔ موجودہ دستیابی، گریڈ اور مناسب استعمال کی تصدیق ٹیم سے کریں اور فراہم کردہ لیبل کی ہدایات پر عمل کریں۔ بوتل کی تصویر تمثیلی ہے۔",
+      "desc_ar": "للاستفسار بأحجام 100 و250 و500 مل ولتر واحد، أو بكمية خاصة عند الطلب. أكّد التوافر والدرجة والاستخدام المناسب مع الفريق واتبع الملصق المرفق. صورة العبوة توضيحية.",
+      "category": "oils",
+      "collections": [],
+      "keywords": [
+        "neem oil",
+        "نیم کا تیل"
+      ],
+      "image": "/images/catalog-intake-20261110/oil-neem.webp",
+      "imageName": "/images/catalog-intake-20261110/oil-neem.webp",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "liquid",
+        "pricingMode": "calculated",
+        "quantityMode": "both",
+        "baseQuantity": 100,
+        "baseUnit": "ml",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100ml",
+            "quantity": 100,
+            "unit": "ml",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250ml",
+            "quantity": 250,
+            "unit": "ml",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500ml",
+            "quantity": 500,
+            "unit": "ml",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1L",
+            "quantity": 1,
+            "unit": "L",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": {
+          "unit": "ml",
+          "min": 10,
+          "max": 5000,
+          "step": 10,
+          "shippingWeightGPerUnit": null
+        }
+      },
+      "importBatch": "owner-intake-20261110",
+      "seo": {
+        "title_en": "Neem Oil | AllBarka",
+        "title_ur": "نیم کا تیل | البرکہ",
+        "title_ar": "زيت النيم | البركة",
+        "imageAlt_en": "Neem Oil — AI-styled product illustration",
+        "imageAlt_ur": "نیم کا تیل — تمثیلی تصویر",
+        "imageAlt_ar": "زيت النيم — صورة توضيحية"
+      }
+    },
+    {
+      "id": "oil-taramira",
+      "name_en": "Taramira Oil",
+      "name_ur": "تارامیرا کا تیل",
+      "name_ar": "زيت الجرجير تاراميرا",
+      "desc_en": "Taramira Oil enquiries in 100ml, 250ml, 500ml and 1 litre sizes, with custom volume available by request. Confirm current availability, product grade and intended use with the team; follow the supplied label. The bottle image is illustrative.",
+      "desc_ur": "100 ملی لیٹر، 250 ملی لیٹر، 500 ملی لیٹر اور ایک لیٹر، یا درخواست پر اپنی مقدار۔ موجودہ دستیابی، گریڈ اور مناسب استعمال کی تصدیق ٹیم سے کریں اور فراہم کردہ لیبل کی ہدایات پر عمل کریں۔ بوتل کی تصویر تمثیلی ہے۔",
+      "desc_ar": "للاستفسار بأحجام 100 و250 و500 مل ولتر واحد، أو بكمية خاصة عند الطلب. أكّد التوافر والدرجة والاستخدام المناسب مع الفريق واتبع الملصق المرفق. صورة العبوة توضيحية.",
+      "category": "oils",
+      "collections": [],
+      "keywords": [
+        "taramira oil",
+        "تارامیرا کا تیل"
+      ],
+      "image": "/images/catalog-intake-20261110/oil-taramira.webp",
+      "imageName": "/images/catalog-intake-20261110/oil-taramira.webp",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "liquid",
+        "pricingMode": "calculated",
+        "quantityMode": "both",
+        "baseQuantity": 100,
+        "baseUnit": "ml",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100ml",
+            "quantity": 100,
+            "unit": "ml",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250ml",
+            "quantity": 250,
+            "unit": "ml",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500ml",
+            "quantity": 500,
+            "unit": "ml",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1L",
+            "quantity": 1,
+            "unit": "L",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": {
+          "unit": "ml",
+          "min": 10,
+          "max": 5000,
+          "step": 10,
+          "shippingWeightGPerUnit": null
+        }
+      },
+      "importBatch": "owner-intake-20261110",
+      "seo": {
+        "title_en": "Taramira Oil | AllBarka",
+        "title_ur": "تارامیرا کا تیل | البرکہ",
+        "title_ar": "زيت الجرجير تاراميرا | البركة",
+        "imageAlt_en": "Taramira Oil — AI-styled product illustration",
+        "imageAlt_ur": "تارامیرا کا تیل — تمثیلی تصویر",
+        "imageAlt_ar": "زيت الجرجير تاراميرا — صورة توضيحية"
+      }
+    },
+    {
+      "id": "oil-soybean",
+      "name_en": "Soybean Oil",
+      "name_ur": "سویابین کا تیل",
+      "name_ar": "زيت فول الصويا",
+      "desc_en": "Soybean Oil enquiries in 100ml, 250ml, 500ml and 1 litre sizes, with custom volume available by request. Confirm current availability, product grade and intended use with the team; follow the supplied label. The bottle image is illustrative.",
+      "desc_ur": "100 ملی لیٹر، 250 ملی لیٹر، 500 ملی لیٹر اور ایک لیٹر، یا درخواست پر اپنی مقدار۔ موجودہ دستیابی، گریڈ اور مناسب استعمال کی تصدیق ٹیم سے کریں اور فراہم کردہ لیبل کی ہدایات پر عمل کریں۔ بوتل کی تصویر تمثیلی ہے۔",
+      "desc_ar": "للاستفسار بأحجام 100 و250 و500 مل ولتر واحد، أو بكمية خاصة عند الطلب. أكّد التوافر والدرجة والاستخدام المناسب مع الفريق واتبع الملصق المرفق. صورة العبوة توضيحية.",
+      "category": "oils",
+      "collections": [],
+      "keywords": [
+        "soybean oil",
+        "سویابین کا تیل"
+      ],
+      "image": "/images/catalog-intake-20261110/oil-soybean.webp",
+      "imageName": "/images/catalog-intake-20261110/oil-soybean.webp",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "liquid",
+        "pricingMode": "calculated",
+        "quantityMode": "both",
+        "baseQuantity": 100,
+        "baseUnit": "ml",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100ml",
+            "quantity": 100,
+            "unit": "ml",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250ml",
+            "quantity": 250,
+            "unit": "ml",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500ml",
+            "quantity": 500,
+            "unit": "ml",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1L",
+            "quantity": 1,
+            "unit": "L",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": {
+          "unit": "ml",
+          "min": 10,
+          "max": 5000,
+          "step": 10,
+          "shippingWeightGPerUnit": null
+        }
+      },
+      "importBatch": "owner-intake-20261110",
+      "seo": {
+        "title_en": "Soybean Oil | AllBarka",
+        "title_ur": "سویابین کا تیل | البرکہ",
+        "title_ar": "زيت فول الصويا | البركة",
+        "imageAlt_en": "Soybean Oil — AI-styled product illustration",
+        "imageAlt_ur": "سویابین کا تیل — تمثیلی تصویر",
+        "imageAlt_ar": "زيت فول الصويا — صورة توضيحية"
+      }
+    }
+  ],
+  "reuseExistingIds": [
+    "fennel-seeds",
+    "golden-raisins",
+    "black-raisins",
+    "oil-mustard",
+    "oil-flaxseed",
+    "oil-blackseed",
+    "oil-coconut",
+    "oil-walnut",
+    "oil-almond",
+    "oil-sesame",
+    "oil-pumpkin",
+    "oil-chilgoza"
+  ],
+  "pricePolicy": "Owner-authorized old tag rates are prefilled for five new drafts only. Other missing rates remain blank. Existing product documents must never be overwritten.",
+  "referenceTags": {
+    "brown-raisins": {
+      "pricePkrPerKg": 1000,
+      "source": "z.jpeg: right tray",
+      "status": "Owner permitted old rates; draft reference only, requires current rate review"
+    },
+    "dates-soft-brown": {
+      "pricePkrPerKg": 300,
+      "source": "x.jpeg: tag; recheck before publishing",
+      "status": "Owner permitted old rates; draft reference only, requires current rate review"
+    },
+    "dates-dark-round": {
+      "pricePkrPerKg": 500,
+      "source": "zz.jpeg: left tray",
+      "status": "Owner permitted old rates; draft reference only, requires current rate review"
+    },
+    "dates-dark-long": {
+      "pricePkrPerKg": 900,
+      "source": "zz.jpeg: right tray",
+      "status": "Owner permitted old rates; draft reference only, requires current rate review"
+    },
+    "dates-golden-brown": {
+      "pricePkrPerKg": 350,
+      "source": "zzz.jpeg: foreground tag",
+      "status": "Owner permitted old rates; draft reference only, requires current rate review"
+    }
+  }
+}

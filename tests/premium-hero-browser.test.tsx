@@ -87,7 +87,17 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
       assert.equal(await page.locator('.editorial-care-link').evaluateAll(links => links.every(link => link.getBoundingClientRect().height >= 44)), true);
       await page.evaluate(() => document.documentElement.style.fontSize = '');
     }
-    assert.equal(await page.locator('.table-gift-figure').evaluate(e=>getComputedStyle(e).animationName),'none');
+    assert.equal(await page.locator('.table-hero-film').count(),0,'reduced-motion loads no film');
+    assert.equal(await page.locator('.table-gift-editorial').count(),1,'photographic gifting stays in published occasions section');
+    // The preceding enlarged-care pass leaves a 360px mobile viewport. The
+    // desktop brand is correctly hidden there and absent from the role tree.
+    // Establish the desktop premise before testing its native keyboard control.
+    await page.setViewportSize({width:1440,height:1000});
+    const desktopBrand=page.getByRole('button',{name:'AllBarka — Home',exact:true});
+    await desktopBrand.waitFor({state:'visible'});
+    assert.equal(await desktopBrand.count(),1,'desktop brand has native keyboard semantics');
+    await desktopBrand.focus();
+    assert.equal(await desktopBrand.evaluate(element=>element===document.activeElement),true,'desktop brand is keyboard focusable');
     await page.evaluate(()=>{(window as any).fixture.lang('en');(window as any).fixture.theme('light');});await page.setViewportSize({width:390,height:844});
     const search=page.locator('#hero-search-input');await search.fill('pistachio');await page.locator('.boutique-suggestion').first().waitFor();
     await page.keyboard.press('ArrowDown');assert.equal(await page.locator('.boutique-suggestion').first().evaluate(e=>e===document.activeElement),true);
@@ -112,27 +122,44 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     const before=await page.locator('.table-hero-art').boundingBox();custom.hero.mobileImage='/images/failed-hero.webp';await page.route('**/images/failed-*',r=>r.abort());await page.evaluate(()=>(window as any).fixture.refresh());await page.waitForFunction(()=>document.querySelector<HTMLImageElement>('.heritage-hero-background img')?.style.visibility==='hidden');assert.equal((await page.locator('.table-hero-art').boundingBox())!.height,before!.height);assert.equal(await page.locator('.table-hero-primary').isVisible(),true);
     await page.setViewportSize({width:1440,height:900});await page.waitForFunction(()=>{const i=document.querySelector<HTMLImageElement>('.heritage-hero-background img');return i?.naturalWidth&&getComputedStyle(i).visibility==='visible';});assert.equal(await page.locator('.heritage-hero-background img').evaluate(e=>getComputedStyle(e).animationName),'none');
     const touch=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce'});touch.setDefaultTimeout(10000);
-    await touch.route('**/*',r=>{const u=new URL(r.request().url());if(u.origin!==origin)return r.fulfill({status:200,body:''});if(u.pathname.startsWith('/fonts/')||u.pathname.includes('dryfruit_flatlay_hero')||u.pathname.includes('gift-box-1.webp'))return r.abort();return r.continue();});const mobile=await touch.newPage();mobile.on('pageerror',e=>errors.push(e.message));await mobile.goto(origin);await mobile.locator('.table-hero-primary').waitFor();await mobile.waitForFunction(()=>document.querySelector<HTMLImageElement>('.heritage-hero-background img')?.style.visibility==='hidden');assert.equal(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    await touch.route('**/*',r=>{const u=new URL(r.request().url());if(u.origin!==origin)return r.fulfill({status:200,body:''});if(u.pathname.startsWith('/fonts/')||u.pathname.includes('signature-film-')||u.pathname.includes('signature-table-'))return r.abort();return r.continue();});const mobile=await touch.newPage();mobile.on('pageerror',e=>errors.push(e.message));await mobile.goto(origin);await mobile.locator('.table-hero-primary').waitFor();await mobile.waitForFunction(()=>document.querySelector<HTMLImageElement>('.heritage-hero-background img')?.style.visibility==='hidden');assert.equal(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
     await mobile.locator('.heritage-hero-guide').tap();await mobile.getByRole('dialog').waitFor();await mobile.getByRole('dialog').getByRole('button',{name:'Close',exact:true}).tap();await mobile.getByRole('dialog').waitFor({state:'hidden'});await mobile.locator('.table-hero-secondary').tap();await mobile.waitForURL('**/gifting');await touch.close();
-    // Normal motion is finite, preserves immediate actions, and cancels when the preference changes.
+    // The owner-selected background film preserves immediate actions and has
+    // explicit pause/resume, responsive sources and live reduced-motion fallback.
     const animated=await browser.newContext({viewport:{width:1440,height:1000},reducedMotion:'no-preference'});animated.setDefaultTimeout(10000);
     await animated.route('**/*',r=>new URL(r.request().url()).origin===origin?r.continue():r.fulfill({status:200,body:''}));
-    const motionPage=await animated.newPage();motionPage.on('pageerror',e=>errors.push(e.message));await motionPage.goto(origin);await motionPage.locator('.table-gift-figure').waitFor();
+    const motionPage=await animated.newPage();motionPage.on('pageerror',e=>errors.push(e.message));await motionPage.goto(origin);
+    const film=motionPage.locator('.table-hero-film');
+    await motionPage.waitForFunction(()=>{const v=document.querySelector<HTMLVideoElement>('.table-hero-film');return v&&v.readyState>=2&&!v.paused&&v.currentTime>0;});
     assert.equal(await motionPage.locator('.table-hero-primary').isVisible(),true);
-    const motionInfo=await motionPage.locator('.heritage-hero-background img').evaluate(e=>{const s=getComputedStyle(e);return{name:s.animationName,iterations:s.animationIterationCount,duration:s.animationDuration};});
-    assert.equal(motionInfo.name,'table-image-settle');assert.equal(motionInfo.iterations,'1');assert.ok(parseFloat(motionInfo.duration)<=1);
-    await motionPage.waitForFunction(()=>document.querySelector('.heritage-hero-background img')!.getAnimations().length===0);
-    await motionPage.locator('.table-pantry-figure').hover();
-    await motionPage.waitForFunction(()=>{const s=getComputedStyle(document.querySelector('.heritage-hero-background img')!);return Math.abs(new DOMMatrixReadOnly(s.transform).a-1.025)<.001;});
-    await motionPage.keyboard.press('Tab');await motionPage.locator('.table-hero-primary').focus();
-    await motionPage.waitForFunction(()=>getComputedStyle(document.querySelector('.table-hero-primary svg')!).translate==='4px');
-    await motionPage.evaluate(()=>(window as any).fixture.lang('ar'));await motionPage.screenshot();
-    await motionPage.waitForFunction(()=>getComputedStyle(document.querySelector('.table-hero-primary svg')!).translate==='-4px');
-    await motionPage.emulateMedia({reducedMotion:'reduce'});await motionPage.screenshot();
-    await motionPage.waitForFunction(()=>getComputedStyle(document.querySelector('.heritage-hero-background img')!).transform==='none');
-    assert.equal(await motionPage.locator('.heritage-hero-background img').evaluate(e=>getComputedStyle(e).animationName),'none');
-    assert.equal(await motionPage.locator('.heritage-hero-background img').evaluate(e=>getComputedStyle(e).transform),'none');
-    assert.equal(await motionPage.locator('.table-hero-primary svg').evaluate(e=>getComputedStyle(e).translate),'none');
+    assert.equal(await film.evaluate((e:HTMLVideoElement)=>e.muted&&e.loop&&e.playsInline),true);
+    assert.ok((await film.getAttribute('src'))?.includes('desktop'));
+    await motionPage.getByRole('button',{name:'Pause scene',exact:true}).click();
+    await motionPage.waitForFunction(()=>document.querySelector<HTMLVideoElement>('.table-hero-film')?.paused);
+    assert.equal(await motionPage.getByRole('button',{name:'Play scene',exact:true}).getAttribute('aria-pressed'),'false');
+    await motionPage.getByRole('button',{name:'Play scene',exact:true}).click();
+    await motionPage.waitForFunction(()=>document.querySelector<HTMLVideoElement>('.table-hero-film')?.paused===false);
+    await motionPage.locator('#gift-for-occasion').scrollIntoViewIfNeeded();
+    await motionPage.waitForFunction(()=>document.querySelector<HTMLVideoElement>('.table-hero-film')?.paused);
+    await motionPage.locator('.heritage-hero').scrollIntoViewIfNeeded();
+    await motionPage.waitForFunction(()=>document.querySelector<HTMLVideoElement>('.table-hero-film')?.paused===false);
+    await motionPage.setViewportSize({width:390,height:844});
+    await motionPage.waitForFunction(()=>document.querySelector<HTMLVideoElement>('.table-hero-film')?.currentSrc.includes('mobile-detail'));
+    await motionPage.waitForFunction(()=>document.querySelector<HTMLVideoElement>('.table-hero-film')?.paused===false);
+    await motionPage.locator('.table-scene-toggle').focus();
+    await motionPage.keyboard.press('Space');
+    await motionPage.waitForFunction(()=>document.querySelector<HTMLVideoElement>('.table-hero-film')?.paused);
+    await motionPage.emulateMedia({reducedMotion:'reduce'});
+    await film.waitFor({state:'detached'});
+    assert.equal(await motionPage.locator('.table-scene-toggle').count(),0);
+    assert.equal(await motionPage.locator('.table-hero-primary').isVisible(),true);
+    // A failed film leaves the real responsive poster, links and discovery usable.
+    await motionPage.route('**/videos/signature-*',route=>route.abort());
+    await motionPage.reload();
+    await motionPage.emulateMedia({reducedMotion:'no-preference'});
+    await motionPage.waitForFunction(()=>!document.querySelector('.table-hero-film'));
+    assert.equal(await motionPage.locator('.table-hero-primary').isVisible(),true);
+    assert.equal(await motionPage.locator('.heritage-hero-background img').evaluate((e:HTMLImageElement)=>e.naturalWidth>0),true);
     await animated.close();
     await fs.writeFile(path.join(shots,'layout-matrix.json'),JSON.stringify({source:'isolated real-route fixture; external resources blocked',layouts},null,2));assert.deepEqual(errors,[]);
   }finally{await browser.close();server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));await fs.rm(temporary,{recursive:true,force:true});}

@@ -268,13 +268,14 @@ export default function RootLayout() {
             
             {/* Leading Brand Mark: Desktop shows full logo, Mobile shows crest + animated intro */}
             <div className="flex items-center shrink-0">
-              <div 
+              <button
+                type="button"
                 onClick={() => { navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
                 className="hidden lg:block cursor-pointer focus-ring rounded-xl p-1 -m-1"
                 aria-label="AllBarka — Home"
               >
                 <AllBarkaHeaderLogo />
-              </div>
+              </button>
 
               <div className="block lg:hidden">
                 <MobileHeaderBrand onHomeClick={() => { navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />

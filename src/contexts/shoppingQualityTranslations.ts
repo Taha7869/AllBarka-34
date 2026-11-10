@@ -1,4 +1,13 @@
 const rows: [string, string, string, string][] = [
+  ["table.pauseScene", "Pause scene", "منظر روکیں", "إيقاف المشهد"],
+  ["table.playScene", "Play scene", "منظر چلائیں", "تشغيل المشهد"],
+  ["table.experiences", "A little inspiration", "انتخاب میں کچھ رہنمائی", "قليل من الإلهام"],
+  ["home.giftAtelier", "The AllBarka Gift Atelier", "آلبرکہ کے خاص تحائف", "مشغل هدايا البركة"],
+  ["home.giftLead", "For the moments that deserve a little more.", "ان لمحوں کے لیے جو کچھ خاص مانگتے ہیں۔", "للحظات التي تستحق مزيدًا من الاهتمام."],
+  ["home.giftLeadCopy", "A considered selection, a personal gesture. Explore gift sets or share your ideas with our team.", "سوچ سمجھ کر کیا گیا انتخاب، اپنائیت بھرا تحفہ۔ گفٹ سیٹ دیکھیں یا اپنی پسند ہماری ٹیم کو بتائیں۔", "اختيار مدروس ولمسة شخصية. استكشف مجموعات الهدايا أو شارك أفكارك مع فريقنا."],
+  ["home.shopGifts", "Explore gift sets", "گفٹ سیٹ دیکھیں", "استكشف مجموعات الهدايا"],
+  ["home.customGifts", "Discuss a custom gift", "اپنی پسند کے تحفے پر بات کریں", "ناقش هدية مخصصة"],
+  ["home.giftReference", "Presentation inspiration · review each product’s included contents.", "پیشکش کی مثال · ہر آئٹم کے درج مشمولات دیکھیں۔", "إلهام للتقديم · راجع المحتويات المدرجة لكل منتج."],
   ["gift.recipientLabel", "Who is the gift for?", "تحفہ کس کے لیے ہے؟", "لمن هذه الهدية؟"],
   ["gift.recipientOptional", "Gift recipient (optional)", "تحفہ کس کے لیے ہے؟ (اختیاری)", "مستلم الهدية (اختياري)"],
   ["gift.recipientAny", "Anyone / not decided yet", "ابھی فیصلہ نہیں کیا", "لم أحدد بعد"],

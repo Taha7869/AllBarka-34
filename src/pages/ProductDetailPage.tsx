@@ -1,13 +1,14 @@
 import BundleContentsSummary from '../components/BundleContentsSummary';
 import { readBundleFormat } from '../lib/merchandisingPresentation';
 import CartAddButton from '../components/CartAddButton';
+import { readProductDetailHandoff } from '../lib/productDetailHandoff';
 import { productSeo } from '../lib/productSeo';
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import { useCatalogActivity } from '../hooks/useCatalogActivity';
 import { unitPrice } from '../lib/catalogActivity';
 import { useSavedProducts } from '../hooks/useSavedProducts';
 import React, { lazy, Suspense, useState, useEffect, useMemo, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { PRODUCTS, getProductImage } from '../data/products';
 import { isSingleImageCatalogProduct } from '../data/productImages';
@@ -39,16 +40,22 @@ export default function ProductDetailPage() {
   const PRODUCTS = useCatalogProducts();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { addToCart } = useCart();
   const { t, language } = useLanguage();
   
   const product = PRODUCTS.find((p) => p.id === id && p.active !== false);
   const productMedia = useProductMedia(product);
   const mediaCover = useProductMediaCover();
-  const [selectedWeightIndex, setSelectedWeightIndex] = useState(0);
+  const navigationHandoff = useMemo(() => product ? readProductDetailHandoff(product, searchParams) : null, [product, searchParams]);
+  const handoffRouteKey = JSON.stringify([id, searchParams.getAll('variant'), searchParams.getAll('quantity')]);
+  const appliedHandoff = useRef<string | null>(null);
+  const appliedProduct = useRef<Product | null>(null);
+  const [selectionReviewRequired, setSelectionReviewRequired] = useState(() => navigationHandoff?.needsReview || false);
+  const [selectedWeightLabel, setSelectedWeightLabel] = useState(() => navigationHandoff?.variant || '');
   const [customWeightSelected, setCustomWeightSelected] = useState(false);
   const [customGrams, setCustomGrams] = useState('100');
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(() => navigationHandoff?.quantity || 1);
   const [imageError, setImageError] = useState(false);
   const [activeGalleryIdx, setActiveGalleryIdx] = useState(0);
 
@@ -86,10 +93,6 @@ export default function ProductDetailPage() {
       view(id);
       recordFunnelEvent('view_item', { productId: id, category: product?.category });
     }
-    setSelectedWeightIndex(0);
-    setCustomWeightSelected(false);
-    setCustomGrams('100');
-    setQuantity(1);
     setImageError(false);
     setActiveGalleryIdx(0);
     setPhotoViewerOpen(false);
@@ -143,7 +146,6 @@ export default function ProductDetailPage() {
     [product, disabledLabels]
   );
 
-  useEffect(()=>{if(product?.commerce?.custom){setCustomGrams(String(product.commerce.custom.min));setCustomWeightSelected(product.commerce.quantityMode==='custom');}},[product?.commerce,product?.id]);
 
   const hasCustomPriceOption = Boolean(
     product && supportsCustomWeight(product)
@@ -162,7 +164,7 @@ export default function ProductDetailPage() {
       /* Input shows the reason. */
     }
   }
-  const selectedWeight = customWeightSelected ? customSelection?.label || '' : weights[selectedWeightIndex] || weights[0] || '';
+  const selectedWeight = customWeightSelected ? customSelection?.label || '' : (weights.includes(selectedWeightLabel) ? selectedWeightLabel : weights[0]) || '';
   const isFilledPackaging = Boolean(isPackaging && isFilledPackagingVariant(selectedWeight));
   const requiresInquiry = isQuoteOnly || isFilledPackaging;
   const candidatePrice = customWeightSelected ? customSelection?.price : (selectedWeight ? product?.prices?.[selectedWeight] : undefined);
@@ -178,8 +180,30 @@ export default function ProductDetailPage() {
   const maxUnits = isPackaging ? 10000 : 50;
 
   useEffect(() => {
-    setQuantity(prev => Math.max(minUnits, Math.min(maxUnits, prev)));
-  }, [minUnits, maxUnits]);
+    if (!product) return;
+    const catalogChanged = appliedProduct.current !== product;
+    appliedProduct.current = product;
+    if (appliedHandoff.current !== handoffRouteKey) {
+      appliedHandoff.current = handoffRouteKey;
+      const initialVariant = navigationHandoff?.variant || weights[0] || '';
+      const initialMinimum = getPackagingMoqDisplay(product, initialVariant || undefined).minUnits ?? 1;
+      setSelectedWeightLabel(initialVariant);
+      setCustomWeightSelected(!navigationHandoff?.variant && product.commerce?.quantityMode === 'custom');
+      setCustomGrams(String(product.commerce?.custom?.min ?? 100));
+      setQuantity(navigationHandoff?.requested ? navigationHandoff.quantity : Math.max(1, initialMinimum));
+      setSelectionReviewRequired(Boolean(navigationHandoff?.needsReview));
+      return;
+    }
+    if (!customWeightSelected && selectedWeightLabel && !weights.includes(selectedWeightLabel)) {
+      setSelectedWeightLabel(weights[0] || '');
+      setSelectionReviewRequired(true);
+    }
+    const clampedQuantity = Math.max(minUnits, Math.min(maxUnits, quantity));
+    if (clampedQuantity !== quantity) {
+      setQuantity(clampedQuantity);
+      if (catalogChanged) setSelectionReviewRequired(true);
+    }
+  }, [product, handoffRouteKey, navigationHandoff, weights, selectedWeightLabel, customWeightSelected, minUnits, maxUnits, quantity]);
 
   if (!product) {
     return (
@@ -274,6 +298,7 @@ export default function ProductDetailPage() {
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
+        {selectionReviewRequired && <p role="status" className="pdp-handoff-review mb-5 rounded-xl border border-[var(--color-border-accent)] bg-[var(--color-surface)] px-4 py-3 text-sm leading-6 text-[var(--color-text-primary)]">{t('pdp.handoffReview')}</p>}
         <div className="pdp-composition grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-start">
           
           {/* Left: Product Visual Showcase */}
@@ -531,7 +556,7 @@ export default function ProductDetailPage() {
                             weights[0] ||
                             '';
                           const idx = weights.indexOf(firstEmptyWeight);
-                          setSelectedWeightIndex(idx >= 0 ? idx : 0);
+                          setSelectedWeightLabel(weights[idx >= 0 ? idx : 0] || '');
                           setCustomWeightSelected(false);
                         }}
                         className={`flex items-center gap-2.5 rounded-xl border p-3 text-left transition-all ${
@@ -555,7 +580,7 @@ export default function ProductDetailPage() {
                         type="button"
                         onClick={() => {
                           const idx = weights.indexOf(filledOptions[0]?.variantKey || '');
-                          setSelectedWeightIndex(idx >= 0 ? idx : 0);
+                          setSelectedWeightLabel(weights[idx >= 0 ? idx : 0] || '');
                           setCustomWeightSelected(false);
                         }}
                         className={`flex items-center gap-2.5 rounded-xl border p-3 text-left transition-all ${
@@ -594,7 +619,7 @@ export default function ProductDetailPage() {
                               key={tier.variantKey}
                               type="button"
                               onClick={() => {
-                                if (idx >= 0) setSelectedWeightIndex(idx);
+                                if (idx >= 0) setSelectedWeightLabel(weights[idx]);
                                 setCustomWeightSelected(false);
                               }}
                               className={`rounded-xl border p-2 text-left transition-all ${
@@ -638,13 +663,13 @@ export default function ProductDetailPage() {
 
               <div className="flex flex-wrap gap-2.5">
                 {weights.map((w, idx) => {
-                  const isSelected = selectedWeightIndex === idx;
+                  const isSelected = selectedWeight === w;
                   return (
                     <button
                       key={idx}
                       type="button"
                       aria-pressed={isSelected && !customWeightSelected}
-                      onClick={() => { setSelectedWeightIndex(idx); setCustomWeightSelected(false); }}
+                      onClick={() => { setSelectedWeightLabel(weights[idx]); setCustomWeightSelected(false); }}
                       className={`min-h-[44px] min-w-[70px] px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer ${
                         isSelected && !customWeightSelected
                           ? 'bg-[var(--color-primary,#042821)] border-[var(--color-primary,#042821)] text-[var(--color-text-on-emerald,#FFFCF7)] shadow-sm' 
