@@ -1,0 +1,26 @@
+# AllBarka pending work
+
+Last reviewed 11 November 2026 (Asia/Karachi). Review branch `claude/home-approved-20261111`, inspected at `cdbb8eb`, passed hosted CI. Production health returned `ok` on `5e63490`. [PR #18](https://github.com/Taha7869/AllBarka-34/pull/18) · [CI run](https://github.com/Taha7869/AllBarka-34/actions/runs/43074150149)
+
+Start here when resuming AllBarka. The table shows open work across the project. The linked trackers hold detailed tasks, decisions and verification evidence.
+
+| ID | Open work | Status | Next action and dependency | Detail |
+| --- | --- | --- | --- | --- |
+| REL-18 | Release the latest verified storefront to Railway | BLOCKED | Check PR #18 at its current head and close N8N-ORDER-COMPAT. Then deploy from the intended production branch and verify the commit, catalog, checkout, tracking and concierge. Railway is serving `launch`. A switch to `main` was staged separately and should be checked against the intended release. | [PR #18](https://github.com/Taha7869/AllBarka-34/pull/18), [release checklist](PREVIEW_RELEASE_ROLLBACK_CHECKLIST.md) |
+| N8N-ORDER-COMPAT | Verify website order delivery to the live n8n receiver | BLOCKED | Read the published `Validate Website Order` node. Verify that it accepts both documented long Umrah gift-box labels before enabling that order path. The checked-in workflow is an inactive import. | [Compatibility evidence](admin-expansion/N8N_COMPATIBILITY.md) |
+| HOME-LG2 | Review the implemented Living Gallery homepage and finish motion | TODO | Review the desktop and mobile screenshots against the brief. Add the matching films when available and verify poster-to-film playback. The current review build uses stills. | [Homepage handoff and evidence](HOME_LIVING_GALLERY_2026-11-11.md) |
+| WT-D1 | Decide whether to proceed with The Weightless Table | BLOCKED | Owner to review the proposal. Track the associated media, copy and build tasks by their existing WT IDs. | [Design tracker](WEIGHTLESS_TABLE_TRACKER.md) |
+| CATALOG-INTAKE-01 | Reconcile and review the new catalog drafts | BLOCKED | Obtain the approved target and exact payload, run the read-only collision plan, and use the create-only draft import after approval. Review merchant facts and prices before publication. | [Catalog intake handoff](CATALOG_INTAKE_HANDOFF_2026-11-10.md) |
+| PRICE-REVIEW-01 | Reconcile the catalog price discrepancies | TODO | Compare Firestore, storefront and concierge for the same product ID and variant. Include the live 250g Pista display discrepancy and the existing pumpkin seed and bundle flags. Confirm merchant rates before editing them. | [Catalog audit](CATALOG_AUDIT.md), [master plan](../MASTER_PLAN.md) |
+| AI-WEB-429 | Diagnose intermittent website concierge rate limiting | BLOCKED | Match the 11 November 429 to the n8n execution and inspect the failed node. A subsequent API request and a browser chat reply succeeded. | [Website AI integration](N8N_AI_WORKFLOW_STAGE7.md) |
+| AI-SPECIALISTS | Implement the selected specialist AI and storefront integrations | TODO | Use the plan to sequence assistant role routing, bounded attachments and the map. Verify the applicable permissions, provider behavior and location details before claiming live support. | [Storefront and AI plan](SMART_STOREFRONT_AND_AI_PLAN_2026-11-10.md) |
+| VOICE-02 | Verify website voice on a real phone and finish WhatsApp voice wiring | TODO | Run the website capture-to-reply journey on a real device. Use the current WhatsApp parent and media workflow exports for the separate transport work. | [Voice implementation handoff](execution-2026-11-04/VOICE_02_IMPLEMENTATION_2026-11-05.md) |
+| SEC02 | Verify live access, rules and operational controls | TODO | Use the current evidence and work through the production checks for Auth, staff, Firestore rules, IAM, Storage and backup recovery. | [Caution register](../CAUTION.md), [admin handoff](admin-expansion/HANDOFF.md) |
+| CLEAN-AUDIT-02 | Decide the proposed repository cleanup | BLOCKED | Owner to review the proposed removals. Apply approved rows in a separate commit and record removals in `trash.md`. | [Cleanup audit](CLEANUP_AUDIT_2026-11-11.md) |
+
+## Update the tracker
+
+- At each handoff, add new open work and update any item that changed. Reuse its existing ID where available. Record the specific next action and what or who is needed for blocked work.
+- Use `TODO`, `IN_PROGRESS` or `BLOCKED`. Keep unfinished verification or deployment visible even when implementation is complete. Keep deferred ideas in the [master plan](../MASTER_PLAN.md) until selected.
+- When closing an item, record its outcome and evidence in the [changelog](../CHANGELOG.md) or linked handoff, then remove it from this table. Keep a separate completed-work file only when its evidence or history is still useful.
+- Keep the [master plan](../MASTER_PLAN.md), [design tracker](WEIGHTLESS_TABLE_TRACKER.md) and relevant handoff aligned with any change recorded here. Update the review date and verified revisions when refreshing the checkpoint.

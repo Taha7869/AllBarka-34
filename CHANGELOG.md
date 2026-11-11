@@ -1,3 +1,7 @@
+## 11 November 2026 — Project-wide pending work
+
+- Add [docs/PENDING_WORK.md](docs/PENDING_WORK.md) as the open-work list for releases, storefront, catalog and integrations. Link it from the repository entry, master plan and admin handoff. Closed work keeps a short evidence pointer in the changelog or relevant handoff.
+
 ## 11 November 2026 — pending work tracker
 
 - Add [docs/WEIGHTLESS_TABLE_TRACKER.md](docs/WEIGHTLESS_TABLE_TRACKER.md): one list of owner decisions, owner media and build items with stable `WT-` IDs and update rules. Documentation only.

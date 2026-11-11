@@ -1,5 +1,7 @@
 # Admin expansion handoff
 
+11 November 2026 — Start with [AllBarka pending work](../PENDING_WORK.md) for the release, catalog, integration and storefront queue. Use the linked workstream handoffs for detailed evidence.
+
 11 November 2026 — **Next work:** read the [pending tracker](../WEIGHTLESS_TABLE_TRACKER.md) and the [blueprint](../STOREFRONT_EXPERIENCE_BLUEPRINT_2026-11-12.md) on branch `claude/home-approved-20261111`. First unblocked step is owner decision WT-D1.
 
 11 November 2026 — **HOME-LG2**: final homepage handoff implemented on `claude/home-approved-20261111` (design `9f77686`). Next: owner supplies matching hero films, then set `film` in `src/lib/heroScene.ts`. [Record](../HOME_LIVING_GALLERY_2026-11-11.md).

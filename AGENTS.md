@@ -1,5 +1,7 @@
 # AllBarka — repository entry for AI agents
 
+Start each handoff with [Pending work](docs/PENDING_WORK.md). Update its open items alongside the relevant tracker or handoff whenever work changes status.
+
 10 November 2026 — **SEC02 / premium storefront planning checkpoint.** Owner-selected branch for this work is `codex/premium-table-kit-20261108`, draft PR #17; inspected source `3b1a1ef`. This overrides the historical branch pointer below for this workstream. Read [CAUTION.md](CAUTION.md) and the [confirmed design/AI plan](docs/SMART_STOREFRONT_AND_AI_PLAN_2026-11-10.md). Preserve OG animated/bordered cards, distinct Quick View and sticky-photo PDP. Security inventory is source/read-only hosting evidence; new role routing/design/uploads/maps remain TODO. Railway production uses `launch`, is OFFLINE and has one configured replica; do not equate this branch with deployment. [Exact verification](docs/evidence/security-20261110/verification.json).
 
 7 November 2026 — **Offline quote/event/voice checkpoint verified.** Source74dad9e and its PR merge have the same tested tree. Hosted841PASS/0FAIL/1 emulator SKIP, plus21 backend and36 production checks passed. The demo rules test passed separately. Current evidence and remaining release dependencies are in the [website report](docs/execution-2026-11-04/WEBSITE_COMPLETION_2026-11-05.md).
