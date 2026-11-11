@@ -1,6 +1,6 @@
 ## 11 November 2026 — HOME-LG1 homepage pass and cleanup audit
 
-- Homepage presentation pass on the PR #17 head `261888d`: emerald film hero, compact discovery bar, round travertine collection rail, large-photo showcase cards with a separate Quick View / View Details row, emerald Gift Atelier panel. No dependency, string, price or commerce change. Local gates: typecheck, hooks lint, build/privacy audit, full offline suite 862 pass / 0 fail / 1 skip. Not pushed (403), not deployed. [Record](docs/HOME_LIVING_GALLERY_2026-11-11.md).
+- Homepage presentation pass on the PR #17 head `261888d`: emerald film hero, compact discovery bar, round travertine collection rail, large-photo showcase cards with a separate Quick View / View Details row, emerald Gift Atelier panel. No dependency, string, price or commerce change. Local gates: typecheck, hooks lint, build/privacy audit, full offline suite 862 pass / 0 fail / 1 skip. Pushed to review branch `claude/home-approved-20261111` only; not merged, not deployed. [Record](docs/HOME_LIVING_GALLERY_2026-11-11.md).
 - Audit 92 candidate paths against the same head: proposed 35 delete, 15 archive, 42 keep; nothing removed pending owner approval. [Audit](docs/CLEANUP_AUDIT_2026-11-11.md).
 
 ## 10 November 2026 — additive catalog intake and exact PR17 diagnosis

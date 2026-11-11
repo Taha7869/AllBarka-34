@@ -5,9 +5,9 @@
 ```text
 Task ID and scope:   HOME-LG1 — presentation pass on the existing homepage; CLEAN-AUDIT-02 — audit of 92 candidate paths
 Branch + parent:     claude/home-approved-20261111, from codex/premium-table-kit-20261108 @ 261888ddcf9a (draft PR #17 head, confirmed by ls-remote)
-Resulting commits:   design aa2402a; this record and evidence in the following docs commit
+Resulting commits:   design aa2402a; record and evidence f083c36; this status correction in the following commit
 Status:              scope SELECTED (owner instruction 11 Nov) / work DONE for the items below / local verification PASS / hosted CI NOT_RUN / live NOT_RUN
-Release state:       not pushed (GitHub returned 403 for this session), not merged, not deployed
+Release state:       pushed to review branch origin/claude/home-approved-20261111 (an earlier 403 cleared on 11 Nov); PR #17 branch untouched; not merged, not deployed
 ```
 
 ## Source of the design brief
@@ -72,6 +72,6 @@ Not run: hosted CI, 768px, 200% text zoom beyond what the existing browser tests
 - [x] Catalog audit not triggered
 - [x] Commerce, privacy, roles, localisation and existing behaviour preserved (suite green)
 - [x] Status, blockers and next action recorded
-- [ ] Remote branch saved — BLOCKED: push returned 403; delivered as `git format-patch` files
+- [x] Review branch saved to origin and read back; integration branch and PR #17 not modified
 
 Next executable action: owner approves or edits the audit decisions, then a separate cleanup commit applies only approved rows and records each in `trash.md`.

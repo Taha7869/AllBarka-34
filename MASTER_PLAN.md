@@ -1,6 +1,6 @@
 # AllBarka — visual identity and experience master plan
 
-11 November 2026 — **HOME-LG1 / CLEAN-AUDIT-02 local checkpoint.** Homepage Living Gallery presentation pass implemented on `claude/home-approved-20261111` from PR #17 head `261888d`; local gates pass, owner aesthetic acceptance and hosted CI pending, not pushed. Cleanup audit awaits owner approval; zero removals. [Record and TODO board](docs/HOME_LIVING_GALLERY_2026-11-11.md).
+11 November 2026 — **HOME-LG1 / CLEAN-AUDIT-02 local checkpoint.** Homepage Living Gallery presentation pass implemented on `claude/home-approved-20261111` from PR #17 head `261888d`; local gates pass, owner aesthetic acceptance and hosted CI pending; saved to its own review branch, PR #17 untouched. Cleanup audit awaits owner approval; zero removals. [Record and TODO board](docs/HOME_LIVING_GALLERY_2026-11-11.md).
 
 10 November 2026 — **CATALOG-INTAKE-01 / CI-PR17 source checkpoint.** Owner-approved missing products:17 draft payloads,17 generated illustrations, create-only audited import and additive Saunf grouping. Existing97 products/rates/images stay unchanged. Exact Run47/latest failure is the desktop-logo assertion at mobile viewport; fixture premise corrected, hosted result pending. [Intake, research, commands and limitations](docs/CATALOG_INTAKE_2026-11-10.md). [Current safe handoff](docs/CATALOG_INTAKE_HANDOFF_2026-11-10.md). Live Firestore import/publication and broad redesign/security gates remain open.
 
