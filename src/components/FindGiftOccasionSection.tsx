@@ -196,9 +196,9 @@ export default function FindGiftOccasionSection({ settings: propSettings }: Find
         <div className="table-gift-editorial">
           <figure className="table-gift-editorial-figure">
             <div className="table-gift-editorial-photo">
-              <img src="/images/generated/higgsfield-gifting-v1.jpg" width={2048} height={1152} alt="" loading="lazy" decoding="async" onError={event => { event.currentTarget.style.visibility = 'hidden'; }} />
+              <img src="/images/living-gallery-final/gift-atelier-concept.webp" width={1200} height={900} alt="" loading="lazy" decoding="async" onError={event => { event.currentTarget.style.visibility = 'hidden'; }} />
             </div>
-            <figcaption>{t('home.giftReference')}</figcaption>
+            <figcaption>{t('home.giftConcept')}</figcaption>
           </figure>
           <div className="table-gift-editorial-copy">
             <p className="table-section-eyebrow">{t('home.giftAtelier')}</p>

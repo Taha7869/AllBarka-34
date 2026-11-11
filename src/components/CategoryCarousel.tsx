@@ -366,6 +366,7 @@ export default function CategoryCarousel({ settings: propSettings }: CategoryCar
                 <div key={category.id} className="editorial-pantry-slide" aria-hidden={!visible.has(index)} inert={!visible.has(index)}>
                   <Link to={category.link} draggable={false} aria-label={category.title || t(`pantry.${category.id}`, category.name)}
                     className="editorial-category group relative block w-full overflow-hidden border border-[var(--color-border-accent)] bg-[var(--color-surface)] focus-ring hover:border-[#C7982F]/60 pointer-events-auto select-none">
+                    <div className="pantry-tile-media absolute inset-0">
                     {category.image ? <img src={category.image} alt={category.title || t(category.altKey, category.name)} draggable={false}
                       onError={event => { const node = event.currentTarget; node.onerror = null; node.src = '/images/product-placeholder.svg'; }}
                       className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:transform-none"
@@ -380,6 +381,7 @@ export default function CategoryCarousel({ settings: propSettings }: CategoryCar
                         {t(category.id === 'all' ? 'pantry.start' : 'pantry.value')}
                       </span>
                     ) : null}
+                    </div>
                     <div className="pantry-tile-label absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-5 pointer-events-none z-10">
                       <div className="min-w-0">
                         <span dir="auto" className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#e4c783] sm:text-[10px]">{category.badge || t(`pantry.${category.id}Eyebrow`, 'Collection')}</span>

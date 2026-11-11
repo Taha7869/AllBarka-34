@@ -469,6 +469,7 @@ export default function BoutiqueSelections({
                   isWholesale={false}
                   onAddToCart={onAddToCart}
                   onQuickView={onQuickView}
+                  separateActions
                 />
               </div>
             ))}

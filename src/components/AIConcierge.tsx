@@ -1,4 +1,5 @@
 import VoiceInputButton from './VoiceInputButton';
+import { OPEN_AI_BUDDY_EVENT } from '../lib/heroScene';
 import VoiceReadButton from './VoiceReadButton';
 import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import React, { useState, useEffect, useRef } from 'react';
@@ -94,6 +95,13 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
   useEffect(() => {
     if (isOpen) messagesEndRef.current?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'nearest' });
   }, [messages, streamingText, isOpen, reducedMotion]);
+
+  // Other entries on the page (e.g. the homepage "Ask AllBarka" button) open this same panel.
+  useEffect(() => {
+    const open = () => setIsOpen(true);
+    window.addEventListener(OPEN_AI_BUDDY_EVENT, open);
+    return () => window.removeEventListener(OPEN_AI_BUDDY_EVENT, open);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;

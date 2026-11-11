@@ -16,6 +16,7 @@ import { openMehmaanPlannerModal } from './MehmaanTablePlannerModal';
 import { openShopTheTableModal } from './ShopTheTableModal';
 import { Sparkles, Eye } from 'lucide-react';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
+import { HERO_SCENE, OPEN_AI_BUDDY_EVENT } from '../lib/heroScene';
 const SelectionGuide = lazy(() => import('./SelectionGuide'));
 
 interface AllBarkaHeroProps {
@@ -43,7 +44,8 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
   const [mobileScene, setMobileScene] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches);
   const [sceneUnavailable, setSceneUnavailable] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
-  const scenePlaying = !hero.enabled && !reducedMotion && !scenePaused && sceneInView && documentVisible && !sceneUnavailable;
+  const sceneFilm = (mobileScene ? HERO_SCENE.mobile : HERO_SCENE.desktop).film;
+  const scenePlaying = !!sceneFilm && !hero.enabled && !reducedMotion && !scenePaused && sceneInView && documentVisible && !sceneUnavailable;
 
   useEffect(() => {
     const media = window.matchMedia('(max-width: 767px)');
@@ -91,8 +93,8 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
         {!hero.enabled && <div className="table-hero-signature" aria-hidden="true"><AllBarkaCrestVector /></div>}
         <p className="table-eyebrow"><span aria-hidden="true">✦</span>{t('table.eyebrow')}</p>
         <h1 id="table-hero-title" className="heritage-hero-title" dir="auto">
-          {hero.enabled ? contentText(hero.heading, language) : t('table.heading')}{' '}
-          <em>{hero.enabled ? contentText(hero.accent, language) : t('table.accent')}</em>
+          {hero.enabled ? contentText(hero.heading, language) : t('heroHeadlinePart1')}{' '}
+          <em>{hero.enabled ? contentText(hero.accent, language) : t('heroHeadlinePart2')}</em>
         </h1>
         <p className="heritage-hero-description" dir="auto">{hero.enabled ? contentText(hero.description, language) : t('table.description')}</p>
         <div className="table-hero-actions">
@@ -112,14 +114,14 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
           <div className="table-photo-frame">
             <span className="table-photo-fallback" aria-hidden="true">{t('table.eyebrow')}</span>
             <picture className="heritage-hero-background" key={`${hero.enabled}-${hero.image}-${hero.mobileImage}`}>
-              <source media="(max-width: 767px)" srcSet={hero.enabled ? hero.mobileImage : '/images/generated/signature-film-mobile-v2.webp'} />
-              <img src={hero.enabled ? hero.image : '/images/generated/signature-film-desktop-v2.webp'} width={792} height={414} alt="" fetchPriority="high" onLoad={event => { event.currentTarget.style.visibility = 'visible'; }} onError={event => { event.currentTarget.style.visibility = 'hidden'; }} />
+              <source media="(max-width: 767px)" srcSet={hero.enabled ? hero.mobileImage : HERO_SCENE.mobile.poster} />
+              <img src={hero.enabled ? hero.image : HERO_SCENE.desktop.poster} width={hero.enabled ? 792 : HERO_SCENE.desktop.width} height={hero.enabled ? 414 : HERO_SCENE.desktop.height} alt="" fetchPriority="high" onLoad={event => { event.currentTarget.style.visibility = 'visible'; }} onError={event => { event.currentTarget.style.visibility = 'hidden'; }} />
             </picture>
-            {!hero.enabled && !reducedMotion && !sceneUnavailable && <video
+            {sceneFilm && !hero.enabled && !reducedMotion && !sceneUnavailable && <video
               ref={videoRef}
               className="table-hero-film"
               data-ready={videoReady}
-              src={mobileScene ? '/videos/signature-table-mobile-detail-v2.mp4' : '/videos/signature-table-desktop-v2.mp4'}
+              src={sceneFilm}
               muted loop playsInline preload="none" tabIndex={-1} aria-hidden="true"
               onLoadedData={() => setVideoReady(true)}
               onError={() => setSceneUnavailable(true)}
@@ -128,7 +130,7 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
           {!hero.enabled && <figcaption className="table-film-caption">{t('table.pantryCaption')}</figcaption>}
         </figure>
       </div>
-      {!hero.enabled && !reducedMotion && !sceneUnavailable && <button
+      {sceneFilm && !hero.enabled && !reducedMotion && !sceneUnavailable && <button
         type="button" className="table-scene-toggle focus-ring" aria-pressed={!scenePaused}
         aria-label={t(scenePaused ? 'table.playScene' : 'table.pauseScene')}
         onClick={() => setScenePaused(value => !value)}
@@ -195,6 +197,7 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
         </div>
 
         <div className="table-discovery-guide">
+          <button type="button" className="table-ask-buddy focus-ring" onClick={() => window.dispatchEvent(new CustomEvent(OPEN_AI_BUDDY_EVENT))} aria-haspopup="dialog"><Sparkles size={17} aria-hidden="true" />{t('home.askAllBarka')}</button>
           <button ref={guideOpener} type="button" className="heritage-hero-guide focus-ring" onClick={() => setGuideOpen(true)} aria-haspopup="dialog"><Compass size={18} aria-hidden="true" />{t('guide.launch')}<ArrowRight size={14} className="rtl-flip" aria-hidden="true" /></button>
         </div>
       </div>

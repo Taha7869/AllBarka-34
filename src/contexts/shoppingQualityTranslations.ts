@@ -7,6 +7,8 @@ const rows: [string, string, string, string][] = [
   ["home.giftLeadCopy", "A considered selection, a personal gesture. Explore gift sets or share your ideas with our team.", "سوچ سمجھ کر کیا گیا انتخاب، اپنائیت بھرا تحفہ۔ گفٹ سیٹ دیکھیں یا اپنی پسند ہماری ٹیم کو بتائیں۔", "اختيار مدروس ولمسة شخصية. استكشف مجموعات الهدايا أو شارك أفكارك مع فريقنا."],
   ["home.shopGifts", "Explore gift sets", "گفٹ سیٹ دیکھیں", "استكشف مجموعات الهدايا"],
   ["home.customGifts", "Discuss a custom gift", "اپنی پسند کے تحفے پر بات کریں", "ناقش هدية مخصصة"],
+  ["home.giftConcept", "Packaging concept · review each product’s listed contents before ordering.", "پیکجنگ کا تصوراتی نمونہ · آرڈر سے پہلے ہر آئٹم کے درج مشمولات دیکھ لیں۔", "تصوّر للتغليف · راجعوا المحتويات المذكورة لكل منتج قبل الطلب."],
+  ["home.askAllBarka", "Ask AllBarka", "آلبرکہ سے پوچھیں", "اسأل البركة"],
   ["home.giftReference", "Presentation inspiration · review each product’s included contents.", "پیشکش کی مثال · ہر آئٹم کے درج مشمولات دیکھیں۔", "إلهام للتقديم · راجع المحتويات المدرجة لكل منتج."],
   ["gift.recipientLabel", "Who is the gift for?", "تحفہ کس کے لیے ہے؟", "لمن هذه الهدية؟"],
   ["gift.recipientOptional", "Gift recipient (optional)", "تحفہ کس کے لیے ہے؟ (اختیاری)", "مستلم الهدية (اختياري)"],

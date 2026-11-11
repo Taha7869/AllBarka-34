@@ -21,6 +21,8 @@ interface ProductCardProps {
   onAddToCart?: (productId: string, weight: string) => void;
   onQuickView?: (product: Product) => void;
   viewMode?: 'grid' | 'list';
+  /** Homepage showcase: Quick View and View Details become full buttons beside/below Add to Bag. */
+  separateActions?: boolean;
 }
 
 export default function ProductCard({
@@ -28,6 +30,7 @@ export default function ProductCard({
   isWholesale,
   onAddToCart,
   onQuickView,
+  separateActions = false,
 }: ProductCardProps) {
   const { t, language } = useLanguage();
   const { addToCart } = useCart();
@@ -114,6 +117,14 @@ export default function ProductCard({
         <p className="min-h-[3rem] line-clamp-2 text-xs leading-6 text-[var(--color-text-secondary)]">
           {language !== 'en' && getLocalized(product, 'desc', language) === product.desc_en ? t('slider.cardCopy') : getLocalized(product, 'desc', language)}
         </p>
+        {!separateActions && (
+        <Link
+            to={`/product/${product.id}`}
+            className="focus-ring inline-flex items-center gap-1 pt-0.5 text-[11px] font-semibold text-[var(--color-accent-text)] hover:underline"
+          >
+            <span>{t('dest.common.viewDetails', 'View Details')}</span>
+          </Link>
+        )}
       </div>
 
       {/* Weights & Action Area */}
@@ -141,8 +152,8 @@ export default function ProductCard({
         </div>}
 
         {/* Pricing & Add to Cart */}
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-end justify-between gap-2">
+        <div className={separateActions ? 'table-card-cta' : 'flex flex-col gap-3'}>
+          <div className="table-card-cta-price flex flex-wrap items-end justify-between gap-2">
             <div className="flex flex-col text-start">
               <span dir="auto" className="text-[9px] font-sans font-medium uppercase tracking-[0.12em] text-[var(--color-text-secondary)]">
                 {t('price', 'Price')}
@@ -156,9 +167,10 @@ export default function ProductCard({
                 </span>
               )}
             </div>
+            {onQuickView && !separateActions && <button type="button" onClick={(e) => { e.stopPropagation(); onQuickView(product); }} className="focus-ring inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-lg px-2 text-[10px] font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-base)] hover:text-[var(--color-accent-text)]" aria-label={`${t('quickView')}: ${getLocalized(product, 'name', language)}`}><Eye size={15} strokeWidth={1.7} /><span dir="auto">{t('quickView')}</span></button>}
           </div>
 
-          <div className="w-full">
+          <div className="table-card-cta-add w-full">
             {/* Magnetic Add-to-Cart */}
             {isQuoteOnly ? (
               <button
@@ -186,14 +198,16 @@ export default function ProductCard({
               className="focus-ring flex min-h-[46px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#C7982F]/35 bg-[#1E3A2B] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#FFFCF7] transition-colors duration-200 hover:border-[#C7982F]/70 hover:bg-[#14281E]"
             />}
           </div>
-
-          {/* Secondary actions: Quick View opens the dialog, View Details goes to the product page */}
-          <div className="table-card-actions" data-actions={onQuickView ? 2 : 1}>
-            {onQuickView && <button type="button" onClick={(e) => { e.stopPropagation(); onQuickView(product); }} className="table-card-action focus-ring" aria-label={`${t('quickView')}: ${getLocalized(product, 'name', language)}`}><Eye size={15} strokeWidth={1.7} /><span dir="auto">{t('quickView')}</span></button>}
-            <Link to={`/product/${product.id}`} className="table-card-action focus-ring" aria-label={`${t('dest.common.viewDetails', 'View Details')}: ${getLocalized(product, 'name', language)}`}>
+          {separateActions && onQuickView && (
+            <button type="button" onClick={event => { event.stopPropagation(); onQuickView(product); }} className="table-card-action table-card-cta-quick focus-ring" aria-label={`${t('quickView')} - ${getLocalized(product, 'name', language)}`}>
+              <Eye size={15} strokeWidth={1.6} aria-hidden="true" /><span dir="auto">{t('quickView')}</span>
+            </button>
+          )}
+          {separateActions && (
+            <Link to={`/product/${product.id}`} className="table-card-action table-card-cta-details focus-ring" aria-label={`${t('dest.common.viewDetails', 'View Details')}: ${getLocalized(product, 'name', language)}`}>
               <span dir="auto">{t('dest.common.viewDetails', 'View Details')}</span><ArrowUpRight size={14} strokeWidth={1.7} aria-hidden="true" />
             </Link>
-          </div>
+          )}
         </div>
       </div>
     </motion.div>

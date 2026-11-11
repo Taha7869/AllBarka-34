@@ -107,6 +107,12 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     await page.goto(origin);await search.fill('missing-xyz');await page.locator('.boutique-search-empty').waitFor();await page.keyboard.press('Escape');await search.fill('walnut');await page.keyboard.press('Enter');await page.waitForURL('**/shop?search=walnut');
     await page.goto(origin);await page.locator('.table-category-pill').filter({hasText:'Pistachios'}).click();await page.waitForURL(/shop\/nuts.*pistachio/);
     await page.goto(origin);await page.locator('.heritage-hero-guide').click();await page.getByRole('dialog').waitFor();await page.keyboard.press('Escape');await page.getByRole('dialog').waitFor({state:'hidden'});assert.equal(await page.locator('.heritage-hero-guide').evaluate(e=>e===document.activeElement),true);
+    // "Ask AllBarka" opens the existing AI Buddy panel; the floating launcher stays the same control.
+    await page.goto(origin);await page.locator('.table-ask-buddy').click();const buddy=page.getByRole('dialog',{name:'AllBarka Concierge'});await buddy.waitFor();
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'buddy open on mobile');
+    await page.keyboard.press('Escape');await buddy.waitFor({state:'hidden'});
+    for(const selector of ['.table-ask-buddy','.heritage-hero-guide','.table-discovery button[type=submit]','.table-discovery [data-voice-control]']){const box=await page.locator(selector).first().boundingBox();assert.ok(box&&box.height>=44&&box.width>=44,`${selector} touch size`);}
+    assert.equal(await page.evaluate(()=>{const r=[...document.querySelectorAll('.table-ask-buddy,.heritage-hero-guide,.table-discovery form,.table-discovery [data-voice-control]')].map(e=>e.getBoundingClientRect());return r.every((a,i)=>r.every((b,j)=>i>=j||a.right<=b.left+1||b.right<=a.left+1||a.bottom<=b.top+1||b.bottom<=a.top+1));}),true,'mobile discovery controls do not overlap');
     await page.locator('.table-hero-secondary').click();await page.waitForURL('**/gifting');await page.goto(origin);await page.locator('.table-hero-primary').click();await page.waitForURL('**/shop/dry-fruits');await page.goto(origin);
     // Enlarged root text includes the real header and existing homepage sections.
     for(const width of [360,1440]){
@@ -122,7 +128,7 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     const before=await page.locator('.table-hero-art').boundingBox();custom.hero.mobileImage='/images/failed-hero.webp';await page.route('**/images/failed-*',r=>r.abort());await page.evaluate(()=>(window as any).fixture.refresh());await page.waitForFunction(()=>document.querySelector<HTMLImageElement>('.heritage-hero-background img')?.style.visibility==='hidden');assert.equal((await page.locator('.table-hero-art').boundingBox())!.height,before!.height);assert.equal(await page.locator('.table-hero-primary').isVisible(),true);
     await page.setViewportSize({width:1440,height:900});await page.waitForFunction(()=>{const i=document.querySelector<HTMLImageElement>('.heritage-hero-background img');return i?.naturalWidth&&getComputedStyle(i).visibility==='visible';});assert.equal(await page.locator('.heritage-hero-background img').evaluate(e=>getComputedStyle(e).animationName),'none');
     const touch=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce'});touch.setDefaultTimeout(10000);
-    await touch.route('**/*',r=>{const u=new URL(r.request().url());if(u.origin!==origin)return r.fulfill({status:200,body:''});if(u.pathname.startsWith('/fonts/')||u.pathname.includes('signature-film-')||u.pathname.includes('signature-table-'))return r.abort();return r.continue();});const mobile=await touch.newPage();mobile.on('pageerror',e=>errors.push(e.message));await mobile.goto(origin);await mobile.locator('.table-hero-primary').waitFor();await mobile.waitForFunction(()=>document.querySelector<HTMLImageElement>('.heritage-hero-background img')?.style.visibility==='hidden');assert.equal(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    await touch.route('**/*',r=>{const u=new URL(r.request().url());if(u.origin!==origin)return r.fulfill({status:200,body:''});if(u.pathname.startsWith('/fonts/')||u.pathname.includes('signature-film-')||u.pathname.includes('signature-table-')||u.pathname.includes('living-gallery-final/hero-'))return r.abort();return r.continue();});const mobile=await touch.newPage();mobile.on('pageerror',e=>errors.push(e.message));await mobile.goto(origin);await mobile.locator('.table-hero-primary').waitFor();await mobile.waitForFunction(()=>document.querySelector<HTMLImageElement>('.heritage-hero-background img')?.style.visibility==='hidden');assert.equal(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
     await mobile.locator('.heritage-hero-guide').tap();await mobile.getByRole('dialog').waitFor();await mobile.getByRole('dialog').getByRole('button',{name:'Close',exact:true}).tap();await mobile.getByRole('dialog').waitFor({state:'hidden'});await mobile.locator('.table-hero-secondary').tap();await mobile.waitForURL('**/gifting');await touch.close();
     // The owner-selected background film preserves immediate actions and has
     // explicit pause/resume, responsive sources and live reduced-motion fallback.
@@ -130,36 +136,50 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     await animated.route('**/*',r=>new URL(r.request().url()).origin===origin?r.continue():r.fulfill({status:200,body:''}));
     const motionPage=await animated.newPage();motionPage.on('pageerror',e=>errors.push(e.message));await motionPage.goto(origin);
     const film=motionPage.locator('.table-hero-film');
-    await motionPage.waitForFunction(()=>{const v=document.querySelector<HTMLVideoElement>('.table-hero-film');return v&&v.readyState>=2&&!v.paused&&v.currentTime>0;});
-    assert.equal(await motionPage.locator('.table-hero-primary').isVisible(),true);
-    assert.equal(await film.evaluate((e:HTMLVideoElement)=>e.muted&&e.loop&&e.playsInline),true);
-    assert.ok((await film.getAttribute('src'))?.includes('desktop'));
-    await motionPage.getByRole('button',{name:'Pause scene',exact:true}).click();
-    await motionPage.waitForFunction(()=>document.querySelector<HTMLVideoElement>('.table-hero-film')?.paused);
-    assert.equal(await motionPage.getByRole('button',{name:'Play scene',exact:true}).getAttribute('aria-pressed'),'false');
-    await motionPage.getByRole('button',{name:'Play scene',exact:true}).click();
-    await motionPage.waitForFunction(()=>document.querySelector<HTMLVideoElement>('.table-hero-film')?.paused===false);
-    await motionPage.locator('#gift-for-occasion').scrollIntoViewIfNeeded();
-    await motionPage.waitForFunction(()=>document.querySelector<HTMLVideoElement>('.table-hero-film')?.paused);
-    await motionPage.locator('.heritage-hero').scrollIntoViewIfNeeded();
-    await motionPage.waitForFunction(()=>document.querySelector<HTMLVideoElement>('.table-hero-film')?.paused===false);
-    await motionPage.setViewportSize({width:390,height:844});
-    await motionPage.waitForFunction(()=>document.querySelector<HTMLVideoElement>('.table-hero-film')?.currentSrc.includes('mobile-detail'));
-    await motionPage.waitForFunction(()=>document.querySelector<HTMLVideoElement>('.table-hero-film')?.paused===false);
-    await motionPage.locator('.table-scene-toggle').focus();
-    await motionPage.keyboard.press('Space');
-    await motionPage.waitForFunction(()=>document.querySelector<HTMLVideoElement>('.table-hero-film')?.paused);
-    await motionPage.emulateMedia({reducedMotion:'reduce'});
-    await film.waitFor({state:'detached'});
-    assert.equal(await motionPage.locator('.table-scene-toggle').count(),0);
-    assert.equal(await motionPage.locator('.table-hero-primary').isVisible(),true);
-    // A failed film leaves the real responsive poster, links and discovery usable.
-    await motionPage.route('**/videos/signature-*',route=>route.abort());
-    await motionPage.reload();
-    await motionPage.emulateMedia({reducedMotion:'no-preference'});
-    await motionPage.waitForFunction(()=>!document.querySelector('.table-hero-film'));
-    assert.equal(await motionPage.locator('.table-hero-primary').isVisible(),true);
-    assert.equal(await motionPage.locator('.heritage-hero-background img').evaluate((e:HTMLImageElement)=>e.naturalWidth>0),true);
+    const {HERO_SCENE}=await import('../src/lib/heroScene');
+    if(!HERO_SCENE.desktop.film||!HERO_SCENE.mobile.film){
+      // Still-art scene: no film is paired until matching motion assets exist, so
+      // there is no video, no pause control, and each breakpoint gets its own artwork.
+      await motionPage.waitForFunction(poster=>{const i=document.querySelector<HTMLImageElement>('.heritage-hero-background img');return !!i&&i.naturalWidth>0&&i.currentSrc.endsWith(poster);},HERO_SCENE.desktop.poster);
+      assert.equal(await film.count(),0,'no unrelated film plays over the still art');
+      assert.equal(await motionPage.locator('.table-scene-toggle').count(),0);
+      assert.equal(await motionPage.locator('.table-hero-primary').isVisible(),true);
+      assert.equal(await motionPage.locator('.table-hero-secondary').isVisible(),true);
+      await motionPage.setViewportSize({width:390,height:844});
+      await motionPage.waitForFunction(poster=>document.querySelector<HTMLImageElement>('.heritage-hero-background img')?.currentSrc.endsWith(poster),HERO_SCENE.mobile.poster);
+      assert.equal(await motionPage.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    }else{
+      await motionPage.waitForFunction(()=>{const v=document.querySelector<HTMLVideoElement>('.table-hero-film');return v&&v.readyState>=2&&!v.paused&&v.currentTime>0;});
+      assert.equal(await motionPage.locator('.table-hero-primary').isVisible(),true);
+      assert.equal(await film.evaluate((e:HTMLVideoElement)=>e.muted&&e.loop&&e.playsInline),true);
+      assert.equal(await film.getAttribute('src'),HERO_SCENE.desktop.film);
+      await motionPage.getByRole('button',{name:'Pause scene',exact:true}).click();
+      await motionPage.waitForFunction(()=>document.querySelector<HTMLVideoElement>('.table-hero-film')?.paused);
+      assert.equal(await motionPage.getByRole('button',{name:'Play scene',exact:true}).getAttribute('aria-pressed'),'false');
+      await motionPage.getByRole('button',{name:'Play scene',exact:true}).click();
+      await motionPage.waitForFunction(()=>document.querySelector<HTMLVideoElement>('.table-hero-film')?.paused===false);
+      await motionPage.locator('#gift-for-occasion').scrollIntoViewIfNeeded();
+      await motionPage.waitForFunction(()=>document.querySelector<HTMLVideoElement>('.table-hero-film')?.paused);
+      await motionPage.locator('.heritage-hero').scrollIntoViewIfNeeded();
+      await motionPage.waitForFunction(()=>document.querySelector<HTMLVideoElement>('.table-hero-film')?.paused===false);
+      await motionPage.setViewportSize({width:390,height:844});
+      await motionPage.waitForFunction(src=>document.querySelector<HTMLVideoElement>('.table-hero-film')?.currentSrc.endsWith(src),HERO_SCENE.mobile.film!);
+      await motionPage.waitForFunction(()=>document.querySelector<HTMLVideoElement>('.table-hero-film')?.paused===false);
+      await motionPage.locator('.table-scene-toggle').focus();
+      await motionPage.keyboard.press('Space');
+      await motionPage.waitForFunction(()=>document.querySelector<HTMLVideoElement>('.table-hero-film')?.paused);
+      await motionPage.emulateMedia({reducedMotion:'reduce'});
+      await film.waitFor({state:'detached'});
+      assert.equal(await motionPage.locator('.table-scene-toggle').count(),0);
+      assert.equal(await motionPage.locator('.table-hero-primary').isVisible(),true);
+      // A failed film leaves the real responsive poster, links and discovery usable.
+      await motionPage.route('**/videos/**',route=>route.abort());
+      await motionPage.reload();
+      await motionPage.emulateMedia({reducedMotion:'no-preference'});
+      await motionPage.waitForFunction(()=>!document.querySelector('.table-hero-film'));
+      assert.equal(await motionPage.locator('.table-hero-primary').isVisible(),true);
+      assert.equal(await motionPage.locator('.heritage-hero-background img').evaluate((e:HTMLImageElement)=>e.naturalWidth>0),true);
+    }
     await animated.close();
     await fs.writeFile(path.join(shots,'layout-matrix.json'),JSON.stringify({source:'isolated real-route fixture; external resources blocked',layouts},null,2));assert.deepEqual(errors,[]);
   }finally{await browser.close();server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));await fs.rm(temporary,{recursive:true,force:true});}
