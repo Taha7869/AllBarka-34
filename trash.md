@@ -30,5 +30,5 @@ The new instruction.md is an entry alias, not a second rulebook. Current verific
 
 | Date / task | Deleted or archived path | Pre-change commit + blob | Reason and reference check | Recovery action | Verification |
 | --- | --- | --- | --- | --- | --- |
-| — | No further removals recorded | — | — | — | — |
+| 11 Nov 2026 / CLEAN-AUDIT-02 | None. 92 candidate paths audited at `261888d`; proposal: 35 delete, 15 archive, 42 keep | Pre-change commit `261888ddcf9a`; blobs listed per path in the audit | Path and basename reference check across code, tests, scripts, npm scripts, CI and docs: [audit](docs/CLEANUP_AUDIT_2026-11-11.md) | Nothing to recover; no file removed or moved | Awaiting owner approval before any change |
 
