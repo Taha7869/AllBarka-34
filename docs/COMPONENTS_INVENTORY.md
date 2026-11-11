@@ -38,6 +38,7 @@ This document is auto-generated and lists every component, page, context, hook, 
 | `components/ErrorBoundary.tsx` | **ErrorBoundary** | Component | Has Props Interface | App.tsx, RootLayout.tsx |
 | `components/FAQSection.tsx` | **FAQSection** | Component | - | FAQPage.tsx, HomePage.tsx |
 | `components/Footer.tsx` | **Footer** | Component | - | AllBarkaDarkReviews.tsx, AllBarkaLogo.tsx, AnimatedModalDemo.tsx, CheckoutAuthChoiceModal.tsx, CustomHamperBuilderModal.tsx, FAQSection.tsx, InfoPagesModal.tsx, PolicyPagesModal.tsx, animated-modal.tsx, demo.tsx, footer-7.tsx, infinite-moving-cards.tsx, RootLayout.tsx, AdminOrdersPage.tsx, InfoPage.tsx, PoliciesPage.tsx |
+| `components/GiftBoxStory.tsx` | **GiftBoxStory** | Component | - | HomePage.tsx (scroll-driven 3D gift box; scene in `lib/giftBoxScene.ts`, loaded on demand) |
 | `components/GradientText.tsx` | **GradientText** | Component | Has Props Interface | *Unused* |
 | `components/Hero.tsx` | **Hero** | Component | Has Props Interface | AllBarkaHero.tsx, AllBarkaLogo.tsx, HeroOrbit.tsx, HeroStampBadge.tsx, TheatricalSpotlight.tsx, HomePage.tsx, JournalPage.tsx |
 | `components/HeroOrbit.tsx` | **HeroOrbit** | Component | Has Props Interface | *Unused* |

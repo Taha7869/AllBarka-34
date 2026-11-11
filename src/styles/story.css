@@ -1,0 +1,107 @@
+/* Gift box story: a pinned emerald stage. Dark by design in both themes, like the care section. */
+.gift-story {
+  position: relative;
+  width: 100%;
+  color: #fffaf0;
+  background:
+    radial-gradient(ellipse 60% 55% at 32% 52%, #c7982f26, transparent 70%),
+    radial-gradient(ellipse at 90% 10%, #2a4a3855, transparent 60%),
+    #042821;
+  border-block: 1px solid #e4c78330;
+}
+.gift-story-stage {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 28px;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding: 56px 20px 64px;
+}
+.gift-story-visual { position: relative; aspect-ratio: 1; width: min(100%, 520px); margin-inline: auto; }
+.gift-story-poster {
+  width: 100%; height: 100%; object-fit: cover;
+  border-radius: 6px 6px 40px 6px;
+  box-shadow: 0 30px 60px -30px #000c;
+}
+.gift-story-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: none; }
+
+.gift-story-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 6.4vw, 5.5rem);
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  color: #fff8e9;
+  text-wrap: balance;
+}
+.gift-story-chapters { display: grid; gap: 22px; margin-top: 28px; padding: 0; list-style: none; }
+.gift-story-chapter { padding-inline-start: 18px; border-inline-start: 1px solid #e4c78366; }
+.gift-story-chapter h3 { font-family: var(--font-display); font-size: 1.35rem; font-weight: 500; color: #ead097; }
+.gift-story-chapter p { max-width: 38ch; margin-top: 8px; font-size: 0.98rem; line-height: 1.7; color: #f5f0e5d9; }
+.gift-story-cta {
+  display: inline-flex; align-items: center; min-height: 48px; margin-top: 30px; padding-inline: 28px;
+  border-radius: 999px; background: #e4c783; color: #092e23; font-size: 0.82rem; font-weight: 600;
+  transition: background var(--duration-base, 250ms) ease;
+}
+.gift-story-cta:hover { background: #f1dca9; }
+
+.rtl .gift-story-title { letter-spacing: 0; line-height: 1.5; }
+.rtl .gift-story-chapter h3 { line-height: 1.8; }
+.rtl .gift-story-chapter p { line-height: 2.1; }
+
+/* The pinned, scroll-driven version only when the 3D scene is running. */
+.gift-story.is-live { height: 340vh; height: 340svh; }
+.gift-story.is-live .gift-story-stage {
+  position: sticky; top: 0; height: 100vh; height: 100svh;
+  grid-template-rows: minmax(0, 1.15fr) auto; align-content: center; gap: 0;
+  padding-block: 84px 28px;
+}
+.gift-story.is-live .gift-story-visual { aspect-ratio: auto; width: 100%; height: 100%; min-height: 0; }
+.gift-story.is-live .gift-story-poster { display: none; }
+.gift-story.is-live .gift-story-canvas { display: block; }
+.gift-story.is-live .gift-story-chapters { position: relative; display: block; min-height: 132px; margin-top: 18px; }
+.gift-story.is-live .gift-story-chapter {
+  position: absolute; inset-block-start: 0; inset-inline: 0;
+  opacity: 0; transform: translateY(14px); visibility: hidden;
+  transition: opacity 0.5s var(--easing-luxury, ease), transform 0.5s var(--easing-luxury, ease), visibility 0s 0.5s;
+}
+.gift-story.is-live .gift-story-chapter[data-active='true'] {
+  opacity: 1; transform: none; visibility: visible; transition-delay: 0.12s, 0.12s, 0s;
+}
+.gift-story.is-live .gift-story-title { font-size: clamp(2.1rem, 9vw, 3rem); }
+.gift-story.is-live .gift-story-cta { margin-top: 14px; }
+.rtl .gift-story.is-live .gift-story-chapters { min-height: 170px; }
+
+@media (min-width: 900px) {
+  .gift-story-stage { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: center; gap: 48px; padding: 96px 40px; }
+  .gift-story.is-live .gift-story-stage { grid-template-rows: minmax(0, 1fr); padding-block: 96px 40px; gap: 32px; }
+  .gift-story.is-live .gift-story-title { font-size: clamp(3rem, 5.6vw, 5.5rem); }
+  .gift-story.is-live .gift-story-chapters { min-height: 170px; margin-top: 36px; }
+  .gift-story-chapter h3 { font-size: 1.6rem; }
+  .gift-story-chapter p { font-size: 1.05rem; }
+  .gift-story.is-live .gift-story-cta { margin-top: 22px; }
+}
+
+/* Floating page buttons sit on the trailing edge on phones; keep the copy clear of them. */
+@media (max-width: 899px) { .gift-story.is-live .gift-story-copy { padding-inline-end: 64px; } }
+
+/* Hero: the photograph and one large line of type carry the first screen. */
+.editorial-home .heritage-hero { min-height: min(860px, calc(100svh - 80px)); }
+.editorial-home .heritage-hero-title {
+  max-width: 15ch;
+  font-size: clamp(2.7rem, 6.6vw, 6.25rem);
+  line-height: 1.03;
+  letter-spacing: -0.035em;
+}
+.editorial-home .heritage-hero-description { max-width: 52ch; margin-top: 26px; }
+.editorial-home .heritage-hero-content > * { animation: hero-arrive 0.9s var(--easing-luxury, ease) both; }
+.editorial-home .heritage-hero-content > :nth-child(2) { animation-delay: 0.12s; }
+.editorial-home .heritage-hero-content > :nth-child(3) { animation-delay: 0.22s; }
+.editorial-home .heritage-hero-content > :nth-child(n + 4) { animation-delay: 0.32s; }
+@keyframes hero-arrive { from { opacity: 0; transform: translateY(22px); } }
+.rtl .editorial-home .heritage-hero-title { max-width: 18ch; font-size: clamp(2.2rem, 5vw, 4.4rem); line-height: 1.7; letter-spacing: 0; }
+@media (max-width: 767px) {
+  .editorial-home .heritage-hero { min-height: min(720px, calc(100svh - 62px)); }
+  .editorial-home .heritage-hero-title { line-height: 1.08; }
+}
+@media (prefers-reduced-motion: reduce) { .editorial-home .heritage-hero-content > * { animation: none; } }

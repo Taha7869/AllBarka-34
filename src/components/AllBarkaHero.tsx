@@ -4,8 +4,6 @@ import React, { lazy, Suspense, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Compass, ArrowDown } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { AllBarkaFullLogo } from './AllBarkaLogo';
-import CategoryQuickPills from './CategoryQuickPills';
 import GradientText from './GradientText';
 import PlaceholdersAndVanishInput from './ui/placeholders-and-vanish-input';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
@@ -18,13 +16,12 @@ interface AllBarkaHeroProps {
   onSelectCategory?: (category: string, query?: string) => void;
 }
 
-export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps = {}) {
+export function AllBarkaHero({ onSearch }: AllBarkaHeroProps = {}) {
   const PRODUCTS = useCatalogProducts();
   const { t, language, isRtl } = useLanguage();
   const mediaCover = useProductMediaCover();
   const [query, setQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
-  const [selected, setSelected] = useState('all');
   const [guideOpen, setGuideOpen] = useState(false);
   const guideOpener = useRef<HTMLButtonElement>(null);
   const suggestions = useMemo(() => query.trim() ? searchCatalog(PRODUCTS, query).slice(0, 5) : [], [query, PRODUCTS]);
@@ -50,7 +47,6 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
       <div className="heritage-hero-wash" aria-hidden="true" />
 
       <div className="heritage-hero-content">
-        <AllBarkaFullLogo size="md" variant="light" as="span" className="heritage-hero-brand" />
         <h1 className="heritage-hero-title">
           {t('heroHeadlinePart1')}{' '}
           <em><GradientText colors={['#e4c783', '#fff0bd', '#d7b263', '#fff0bd', '#e4c783']} animationSpeed={12}>{t('heroHeadlinePart2')}</GradientText></em>
@@ -113,12 +109,6 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
           )}
         </div>
 
-        <div className="heritage-hero-pills">
-          <CategoryQuickPills selectedId={selected} onSelectCategory={item => {
-            setSelected(item.id);
-            if (item.categoryFilter) onSelectCategory?.(item.categoryFilter, item.searchTerm);
-          }} />
-        </div>
         <button ref={guideOpener} type="button" className="heritage-hero-guide focus-ring" onClick={() => setGuideOpen(true)} aria-haspopup="dialog"><Compass size={15} aria-hidden="true" />{t('guide.launch')}<ArrowRight size={14} aria-hidden="true" /></button>
         <a href="#allbarka-pantry" className="heritage-hero-scroll focus-ring" aria-label={t('home.scroll')}><ArrowDown size={18} aria-hidden="true" /></a>
       </div>

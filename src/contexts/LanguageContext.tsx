@@ -13,6 +13,7 @@ import React, { createContext, useContext, useEffect, useState, useMemo, useCall
 
 import { boutiqueTranslations } from './boutiqueTranslations';
 import { destinationTranslations } from './destinationTranslations';
+import { storyTranslations } from './storyTranslations';
 
 export type LanguageCode = 'en' | 'ur' | 'ar';
 
@@ -609,7 +610,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const t = useCallback((key: string, defaultText = ''): string => {
     if (rewardTranslations[language]?.[key]) return rewardTranslations[language][key];
-    return destinationTranslations[language]?.[key] || shoppingQualityTranslations[language]?.[key] || trackingTranslations[language]?.[key] || weightTranslations[language]?.[key] || checkoutReliabilityTranslations[language]?.[key] || (conciergeTranslations[language] as Record<string, string>)[key] || shippingTranslations[language]?.[key] || updateTranslations[language]?.[key] || authTranslations[language]?.[key] || trendTranslations[language]?.[key] || catalogTranslations[language]?.[key] || boutiqueTranslations[language]?.[key] || TRANSLATIONS[language]?.[key] || TRANSLATIONS.en[key] || defaultText || key;
+    return storyTranslations[language]?.[key] || destinationTranslations[language]?.[key] || shoppingQualityTranslations[language]?.[key] || trackingTranslations[language]?.[key] || weightTranslations[language]?.[key] || checkoutReliabilityTranslations[language]?.[key] || (conciergeTranslations[language] as Record<string, string>)[key] || shippingTranslations[language]?.[key] || updateTranslations[language]?.[key] || authTranslations[language]?.[key] || trendTranslations[language]?.[key] || catalogTranslations[language]?.[key] || boutiqueTranslations[language]?.[key] || TRANSLATIONS[language]?.[key] || TRANSLATIONS.en[key] || defaultText || key;
   }, [language]);
 
   const value = useMemo(() => ({

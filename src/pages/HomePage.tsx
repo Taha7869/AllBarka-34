@@ -8,6 +8,7 @@ import FindGiftOccasionSection from '../components/FindGiftOccasionSection';
 import CollectionLogoLoop from '../components/CollectionLogoLoop';
 import AllBarkaMovingReviews from '../components/AllBarkaMovingReviews';
 import FAQSection from '../components/FAQSection';
+import GiftBoxStory from '../components/GiftBoxStory';
 import ScrollReveal from '../components/motion/ScrollReveal';
 import WordScrollReveal from '../components/motion/WordScrollReveal';
 import MagneticButton from '../components/motion/MagneticButton';
@@ -79,10 +80,8 @@ export default function HomePage() {
         <CollectionLogoLoop />
       </div>
 
-      {/* ── Section Divider ──────────────────────────────────────────────── */}
-      <div className="w-full px-6 sm:px-10 py-6" aria-hidden="true">
-        <div className="section-divider" />
-      </div>
+      {/* ── Signature moment: the gift box opens as the visitor scrolls ───── */}
+      <GiftBoxStory />
 
       {/* ── 2. Explore Our Collections (Compact destination cards) ───────── */}
       <ScrollReveal className="w-full">
