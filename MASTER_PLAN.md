@@ -1,5 +1,7 @@
 # AllBarka — visual identity and experience master plan
 
+11 November 2026 — **Pending storefront work is tracked in [WEIGHTLESS_TABLE_TRACKER.md](docs/WEIGHTLESS_TABLE_TRACKER.md)** (`WT-` IDs; these do not replace M01–M34). Update that file when an item changes state.
+
 11 November 2026 — **Storefront experience blueprint PROPOSED.** Whole-site direction, media list and phased build order awaiting owner approval; nothing implemented. [Blueprint](docs/STOREFRONT_EXPERIENCE_BLUEPRINT_2026-11-12.md).
 
 11 November 2026 — **HOME-LG2 local checkpoint.** Final homepage handoff implemented on the review branch (design `9f77686`); matching hero films, owner aesthetic acceptance and integration into PR #17 pending; cleanup stays a separate review. [Record](docs/HOME_LIVING_GALLERY_2026-11-11.md).

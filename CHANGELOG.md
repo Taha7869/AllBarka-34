@@ -1,3 +1,7 @@
+## 11 November 2026 — pending work tracker
+
+- Add [docs/WEIGHTLESS_TABLE_TRACKER.md](docs/WEIGHTLESS_TABLE_TRACKER.md): one list of owner decisions, owner media and build items with stable `WT-` IDs and update rules. Documentation only.
+
 ## 11 November 2026 — storefront experience blueprint (proposal)
 
 - Add a researched, whole-site design proposal, "The Weightless Table": levitation hero loop, two scroll-driven frame sequences, quiet motion system, page-by-page changes, library choices, media list, budgets and build order. Documentation only; owner approval pending; no runtime change. [Blueprint](docs/STOREFRONT_EXPERIENCE_BLUEPRINT_2026-11-12.md).

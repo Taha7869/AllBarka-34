@@ -1,5 +1,7 @@
 # Admin expansion handoff
 
+11 November 2026 — **Next work:** read the [pending tracker](../WEIGHTLESS_TABLE_TRACKER.md) and the [blueprint](../STOREFRONT_EXPERIENCE_BLUEPRINT_2026-11-12.md) on branch `claude/home-approved-20261111`. First unblocked step is owner decision WT-D1.
+
 11 November 2026 — **HOME-LG2**: final homepage handoff implemented on `claude/home-approved-20261111` (design `9f77686`). Next: owner supplies matching hero films, then set `film` in `src/lib/heroScene.ts`. [Record](../HOME_LIVING_GALLERY_2026-11-11.md).
 
 11 November 2026 — **HOME-LG1 local checkpoint**, branch `claude/home-approved-20261111` from PR #17 head `261888d`. Homepage presentation pass and a 92-path cleanup audit; local gates pass; saved to that review branch on origin, PR #17 untouched. [Record](../HOME_LIVING_GALLERY_2026-11-11.md) · [audit](../CLEANUP_AUDIT_2026-11-11.md).

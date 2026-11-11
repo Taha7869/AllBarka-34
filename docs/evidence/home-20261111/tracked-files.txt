@@ -91,6 +91,7 @@ docs/STAGE_5C3_DRY_RUN_RESULT.json
 docs/STOREFRONT_EXPERIENCE_BLUEPRINT_2026-11-12.md
 docs/UPGRADES-2026-10-02.md
 docs/UPGRADES-2026-10-03.md
+docs/WEIGHTLESS_TABLE_TRACKER.md
 docs/admin-expansion/ADMIN_FINISHING.md
 docs/admin-expansion/ADMIN_FORMS.md
 docs/admin-expansion/API_CONTRACTS.md
