@@ -1,6 +1,59 @@
 # AllBarka Components Inventory
 
+## VOICE-02 continuation
+
+Existing VoiceInputButton/voiceInput/voiceRouter/voiceTranscription and VoiceReadButton retain ownership; voiceLimits.ts shares public size/duration/text bounds without server credentials. Capture45s, bounded60s preparation, countdown/recovery and immediate drawer audio cancellation extend the existing components. No new component, dependency or catalog schema. See [implementation evidence](execution-2026-11-04/VOICE_02_IMPLEMENTATION_2026-11-05.md).
+
+## VOICE-01
+
+`VoiceInputButton` owns shared mic/cancel/review state for AIConcierge, AllBarkaHero and CategoryPLP. No existing component provided audio capture or transcript review. `voiceInput.ts` supplies the shared bounded WAV adapter/client; `voiceRouter.ts` and `voiceTranscription.ts` stay server-only behind the existing AI router guards. `VoiceReadButton` provides optional matching device-language output in AIConcierge. `voiceTranslations.ts` uses the existing LanguageContext. No application dependency or catalog schema change.
+
+## Shared bundle contents summary
+
+`BundleContentsSummary` is shared by ProductCard, CategoryPLP and ProductDetailPage; existing components had separate prose-only presentations. `merchandisingPresentation.ts` resolves declared net pack format and the available initial portion without changing catalog data. Unknown bundle ingredients remain explicitly unconfirmed. No dependency or schema change.
+
+## M18 purchase continuation
+
+CartPage and CartDrawer reuse current Catalog/Cart/ProductMedia contexts, CartTools and shared CartAddButton. New CartItemPersonalization renders the same saved hamper contents/recipient/message on cart, drawer and checkout; the inventory had no equivalent reusable read-only component. It invents no printing options or prices. CheckoutPage keeps its existing quote/order/retry handlers; guarded acceptedCheckoutReceipt adapts current quoted line prices for all normal checkout summaries. purchase.css scopes presentation and mobile summary/drawer behavior. No new dependency or data schema. See PREMIUM_PURCHASE.md.
+
+## V4 gifting continuation
+
+GiftsHampersDestination reuses ProductCard/media/cart acknowledgement and existing occasion routes. CustomHamperBuilderModal owns current-box/contents summary, unavailable selection recovery and existing-message preview; CartContext resolves the same current provider snapshot. No new component, dependency, printing style or data schema. Shared ProductCard price/Quick View row wraps at enlarged text. Source-controlled composition/copy remain outside M23 admin-editability; see PREMIUM_GIFTING.md.
+
 This document is auto-generated and lists every component, page, context, hook, and utility with their usage.
+
+## Premium V1
+
+Existing AllBarkaHero owns the signature composition and separate discovery state. CategoryQuickPills has an editorial variant preserving routes. AdminContentPanel defaults follow hero copy/art. No new component/dependency. See PREMIUM_V1.md.
+
+## Boutique interaction refinement
+
+- `CartAddButton` reuses MagneticButton and observes the existing CartProvider; confirmation requires the matching committed line quantity to increase. Used by ProductCard, CategoryPLP and ProductDetailPage. Quick view retains its existing close/toast flow.
+- The existing gallery, menus, motion helpers and ToastManager remain the presentation owners. No new application dependency.
+
+## Admin expansion — Stage 5
+
+- `AdminContentPanel` is the existing admin workspace's Storefront studio tab; `StorefrontBanner` renders the saved announcement.
+- FINAL-20261103: Studio reuses HomePage, JournalPage and FAQPage inside its existing iframe, with shared BubbleMenu/Footer, actual 390/768/1440 viewports, synchronized language/theme and blocked commerce/navigation actions. Journal/FAQ preview mode suppresses host SEO/scroll effects; no duplicate storefront renderer or hidden assertion proxy. See `FINAL_VERIFICATION_20261103.md`.
+- `StorefrontContentProvider` supplies only public live content; optional explicit `initialContent` supports an isolated private editor preview.
+- `storefrontContent.ts` validates the bounded localized schema, `storefrontContentRouter.ts` owns draft/live revision and audit transactions, and `contentPresentation.ts` adapts existing navigation/journal models.
+- Existing AllBarkaHero, HomePage, desktop/mobile navigation, FAQSection and JournalPage consume the published configuration. `premium-content.css` refines existing tokens without new application dependencies.
+
+## Admin expansion — Stage 4
+
+- `AdminStaffPanel` is the Team access tab in the existing admin workspace.
+- `StaffOrdersWorkspace` owns `/staff/orders` and uses dedicated `staffContracts.ts` responses.
+- `AdminWorkspaceDialog` extracts the existing portal/focus/scroll behavior for both admin and staff.
+- `staffAccess.ts` mounts guarded role-management and read-only order routes; `staffTranslations.ts` and `staff.css` supply trilingual responsive styling. No new application dependency.
+
+## Admin expansion — Stage 3
+
+- `AdminProductCreateModal` and `AdminProductEditModal` retain their entry-point contracts and share `AdminItemForm` for product editing, preview and publication.
+- `AdminItemField` supplies visible required/publish-required/optional markers; `AdminDelimitedInput` retains separators while editing gallery, keywords and taxonomy lists.
+- `AdminCatalogConfiguration` manages revisioned category/collection/occasion entries, reusable templates and typed attribute definitions inside the existing admin workflow.
+- `CustomWeightInput` remains the customer quantity component, now using configured units/ranges when present and retaining legacy gram controls otherwise.
+- `adminItemForm.ts`, `productSeo.ts`, `productUploadClient.ts` and `productUploadRouter.ts` provide form payload/readiness, localized metadata and authenticated durable photo upload. No new application dependency was added.
+- `adminExpansionTranslations.ts` integrates all new form labels with LanguageContext. `styles/admin-item.css` scopes responsive, token-based form styling.
 
 | File Path | Name | Category | Props | Included By (Pages/Files) |
 |-----------|------|----------|-------|--------------------------|
@@ -221,3 +274,35 @@ Existing ProductImageGallery uses a single numeric photo counter and retains arr
 - `lib/hamperCatalog.ts` is the shared packaging/contents registry and configuration resolver. The existing CustomHamperBuilderModal emits this configuration; CartContext, server validation, admin packing and WhatsApp checkout preserve it.
 - `contexts/shippingTranslations.ts` supplies destination, tariff and payment-confirmation copy in all three languages.
 - `styles/luminous.css` adds non-interactive gold light and borders to existing surfaces, with a finite crest ripple and reduced-motion fallback. It is imported last in main.tsx.
+
+### Admin finishing continuation — 25 October 2026
+
+Reuse `AdminItemForm`, `AdminCatalogConfiguration` and `ItemField`: eight-section navigation and independent dirty/busy/error-focus contracts are implemented in those existing components. No new component or dependency was added. Configuration changes notify the parent synchronously; item save/publish waits for unsaved settings to be saved, and the settings revision swap follows catalog refresh. See `admin-expansion/ADMIN_FINISHING.md` before changing dismissal or save behavior.
+
+
+## 26 October visual/motion revision
+
+AllBarkaHero reuses AllBarkaCrestVector and existing state/providers; scoped CSS supplies the emerald/arch composition and finite motion. Existing CategoryCarousel keeps routes/merchant overrides while default badges follow destinations and Dates gets existing date imagery. HomePage repositions existing assurances after configurable sections. No new component/dependency. See PREMIUM_V1_REVISION.md.
+
+
+## V2 product presentation — 27 October 2026
+
+Reuse existing ProductCard (homepage), CategoryPLP (shop), ProductImageGallery, CartAddButton, CategoryCarousel and CatalogFilterSheet. Shared styling is scoped in editorial.css; no new component or dependency. CategoryPLP retains a bounded session-only history-entry map for position/loaded depth; ShopPage/RootLayout cooperate on POP navigation. ProductShowcase.tsx is not an existing component; follow actual HomePage consumers rather than creating that duplicate. See PREMIUM_V2.md.
+
+
+## V3 product-detail pass — 27 October 2026
+
+ProductDetailPage reuses ProductDetailAccordion (packaging default for packaging), ProductPhotoViewer, ProductVideo, CartAddButton, CustomWeightInput and existing catalog/media/cart contexts. The read-only selection summary is inline in the existing page and uses existing displayProductPrice state. Styles extend editorial.css; labels use shoppingQualityTranslations. No new component/dependency/schema. See PREMIUM_V3.md.
+
+
+## M19 editorial pass — 27 October 2026
+
+JournalPage reuses existing public contentJournal/StorefrontContentProvider, SEO and ProductCard (therefore CartAddButton, media, portion and MOQ behavior). Native contents links require no new component. Standalone InfoPage our-story branch reuses current PAGES copy, existing hero still-life, SEO and LanguageContext; other info/modal routes remain. Styles extend editorial.css; UI labels use shoppingQualityTranslations. No new component/dependency/settings model.
+
+## M21 live motion preference — 28 October 2026
+
+`hooks/usePrefersReducedMotion.ts` is the shared subscribed device preference for 35 existing UI consumers. It uses React useSyncExternalStore with SSR and legacy-listener fallback; no new component or dependency. ScrollReveal retains its wrapper/child state through live changes. See [MOTION_PREFERENCE.md](MOTION_PREFERENCE.md).
+
+## M20-NAV1 — mobile navigation lifecycle
+
+Reuse MobileMenu/RootLayout and existing CartDrawer. Menu owns one destination navigation; RootLayout no longer adds a competing mobile callback. Route and xl breakpoint effects clear modal state, brand uses a native button, and delayed focus yields to current menu focus. Existing social actions wrap for enlarged text. No new component. See [NAVIGATION_LIFECYCLE.md](NAVIGATION_LIFECYCLE.md).

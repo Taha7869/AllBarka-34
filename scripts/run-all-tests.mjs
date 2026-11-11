@@ -5,7 +5,8 @@ import { spawnSync } from 'node:child_process';
 const env = { ...process.env, ALLBARKA_SKIP_LOCAL_ENV: 'true' };
 for (const key of ['FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY', 'FIRESTORE_EMULATOR_HOST',
   'FIREBASE_AUTH_EMULATOR_HOST', 'GOOGLE_APPLICATION_CREDENTIALS', 'N8N_AI_WEBHOOK_URL',
-  'N8N_ORDER_WEBHOOK_URL', 'N8N_STATUS_WEBHOOK_URL', 'WHATSAPP_META_APP_SECRET',
+  'N8N_ORDER_WEBHOOK_URL', 'N8N_STATUS_WEBHOOK_URL', 'GROQ_API_KEY', 'GROQ_VOICE_MODEL',
+  'VOICE_GROQ_FREE_TIER_CONFIRMED', 'WHATSAPP_META_APP_SECRET',
   'WHATSAPP_BUSINESS_PHONE_ID', 'WHATSAPP_PARENT_VERIFIED', 'LOYALTY_POINTS_PER_100_RUPEES']) delete env[key];
 const files = fs.readdirSync('tests').filter(name => /\.test\.(?:ts|tsx|mjs)$/.test(name)).sort().map(name => `tests/${name}`);
 const commands = [

@@ -306,7 +306,7 @@ export function validateAiRecommendations(
             availableVariants.push({
               label: v.label,
               price: v.price,
-              piecesPerPack: parsePiecesPerPack(v.label),
+              piecesPerPack: parsePiecesPerPack(v.label, product),
             });
           }
         }
@@ -316,7 +316,7 @@ export function validateAiRecommendations(
             availableVariants.push({
               label: portion,
               price,
-              piecesPerPack: parsePiecesPerPack(portion),
+              piecesPerPack: parsePiecesPerPack(portion, product),
             });
           }
         }
@@ -817,7 +817,7 @@ export function validateAndSanitizeAssistantReply(options: SanitizeReplyOptions)
           const rounded = Math.round(v.price);
           prices.add(rounded);
           portionPrices.set(v.label.toLowerCase().trim(), rounded);
-          const ppp = parsePiecesPerPack(v.label);
+          const ppp = parsePiecesPerPack(v.label, p);
           if (ppp > 1) {
             const perPc = Math.round(v.price / ppp);
             prices.add(perPc);
@@ -1022,7 +1022,7 @@ export function formatProductPriceBasis(product: Product, label: string, price: 
   if (!isPkg) {
     return `Rs. ${price.toLocaleString()}`;
   }
-  const pieces = parsePiecesPerPack(label);
+  const pieces = parsePiecesPerPack(label, product);
   if (pieces > 1) {
     return `Rs. ${price.toLocaleString()} per pack of ${pieces} pcs (Rs. ${Math.round(price / pieces)}/pc)`;
   }

@@ -1,14 +1,17 @@
+import BundleContentsSummary from './BundleContentsSummary';
+import { initialCardPortion } from '../lib/merchandisingPresentation';
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import ProductImageGallery from './ProductImageGallery';
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, ShoppingBag, Heart } from 'lucide-react';
+import { Eye, ShoppingBag, Heart, ArrowUpRight } from 'lucide-react';
 import { useSavedProducts } from '../hooks/useSavedProducts';
-import { motion, useReducedMotion } from 'motion/react';
+import { motion } from 'motion/react';
 import { Product } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCart } from '../contexts/CartContext';
 import { getLocalized } from '../utils/localize';
-import MagneticButton from './motion/MagneticButton';
+import CartAddButton from './CartAddButton';
 import { isPackagingProduct, getPackagingMoqDisplay } from '../lib/packagingMoq';
 import { openCustomQuoteModal } from './CustomQuoteModal';
 
@@ -18,6 +21,8 @@ interface ProductCardProps {
   onAddToCart?: (productId: string, weight: string) => void;
   onQuickView?: (product: Product) => void;
   viewMode?: 'grid' | 'list';
+  /** Homepage showcase: Quick View and View Details become full buttons beside/below Add to Bag. */
+  separateActions?: boolean;
 }
 
 export default function ProductCard({
@@ -25,6 +30,7 @@ export default function ProductCard({
   isWholesale,
   onAddToCart,
   onQuickView,
+  separateActions = false,
 }: ProductCardProps) {
   const { t, language } = useLanguage();
   const { addToCart } = useCart();
@@ -40,7 +46,8 @@ export default function ProductCard({
   const weights = Object.keys(product.prices || {}).filter(
     weight => !disabledLabels.has(weight) && Number.isFinite(product.prices[weight]) && product.prices[weight] > 0
   );
-  const [selectedWeight, setSelectedWeight] = useState(weights[0] || '');
+  const [preferredWeight, setSelectedWeight] = useState(initialCardPortion(product, weights));
+  const selectedWeight = weights.includes(preferredWeight) ? preferredWeight : initialCardPortion(product, weights);
   const titleTypography = language === 'ur' ? 'font-urdu text-[20px]' : language === 'ar' ? 'font-arabic text-[23px]' : 'font-serif text-[21px] leading-[1.25]';
 
   const hasPositivePrice = weights.length > 0;
@@ -84,7 +91,7 @@ export default function ProductCard({
 
     >
       {/* Top Meta Line */}
-      <div className="mb-1 flex min-h-11 items-center gap-2">
+      <div className="table-card-meta mb-1 flex min-h-11 items-center gap-2">
         <span dir="auto" className="min-w-0 flex-1 truncate text-[9px] font-sans font-medium uppercase tracking-[0.12em] text-[var(--color-accent-text)]">
           {getLocalized(product, 'origin', language)}
         </span>
@@ -100,25 +107,28 @@ export default function ProductCard({
       <ProductImageGallery product={product} />
 
       {/* Product Details */}
-      <div dir={language === 'en' ? 'ltr' : 'rtl'} className="min-w-0 flex-1 space-y-2 pb-4 pt-1 text-start">
+      <div dir={language === 'en' ? 'ltr' : 'rtl'} className="table-card-details min-w-0 flex-1 space-y-2 pb-4 pt-1 text-start">
         <Link to={`/product/${product.id}`} className="block max-w-full focus-ring rounded-sm w-fit">
-          <h3 lang={language} className={`whitespace-normal break-words [overflow-wrap:anywhere] font-medium text-[var(--color-text-primary)] transition-colors hover:text-[var(--color-accent-text)] ${titleTypography}`}>
+          <h3 lang={language} className={`min-h-[3.75rem] whitespace-normal break-words [overflow-wrap:anywhere] font-medium text-[var(--color-text-primary)] transition-colors hover:text-[var(--color-accent-text)] ${titleTypography}`}>
             {getLocalized(product, 'name', language)}
           </h3>
         </Link>
-        <p className="line-clamp-2 text-xs leading-6 text-[var(--color-text-secondary)]">
+        <BundleContentsSummary product={product} />
+        <p className="min-h-[3rem] line-clamp-2 text-xs leading-6 text-[var(--color-text-secondary)]">
           {language !== 'en' && getLocalized(product, 'desc', language) === product.desc_en ? t('slider.cardCopy') : getLocalized(product, 'desc', language)}
         </p>
+        {!separateActions && (
         <Link
-          to={`/product/${product.id}`}
-          className="focus-ring inline-flex items-center gap-1 pt-0.5 text-[11px] font-semibold text-[var(--color-accent-text)] hover:underline"
-        >
-          <span>{t('dest.common.viewDetails', 'View Details')}</span>
-        </Link>
+            to={`/product/${product.id}`}
+            className="focus-ring inline-flex items-center gap-1 pt-0.5 text-[11px] font-semibold text-[var(--color-accent-text)] hover:underline"
+          >
+            <span>{t('dest.common.viewDetails', 'View Details')}</span>
+          </Link>
+        )}
       </div>
 
       {/* Weights & Action Area */}
-      <div className="mt-auto space-y-4 border-t border-[var(--color-border)] pt-4">
+      <div className="table-card-purchase mt-auto space-y-4 border-t border-[var(--color-border)] pt-4">
         {/* Weight Selector */}
         {!isQuoteOnly && <div className="flex w-full flex-wrap gap-1.5" role="group" aria-label={t('shop.portion')}>
           {weights.map((w) => (
@@ -142,13 +152,13 @@ export default function ProductCard({
         </div>}
 
         {/* Pricing & Add to Cart */}
-        <div className="flex flex-col gap-3">
-          <div className="flex items-end justify-between gap-2">
+        <div className={separateActions ? 'table-card-cta' : 'flex flex-col gap-3'}>
+          <div className="table-card-cta-price flex flex-wrap items-end justify-between gap-2">
             <div className="flex flex-col text-start">
               <span dir="auto" className="text-[9px] font-sans font-medium uppercase tracking-[0.12em] text-[var(--color-text-secondary)]">
                 {t('price', 'Price')}
               </span>
-              <span className="font-serif text-2xl font-medium leading-tight tracking-tight text-[var(--color-text-price)]">
+              <span className="table-card-price font-serif text-2xl font-medium leading-tight tracking-tight text-[var(--color-text-price)]">
                 {isQuoteOnly ? <span className="text-base">{t('catalog.requestQuote')}</span> : <bdi dir="ltr">Rs. {unitPrice?.toLocaleString()}</bdi>}
               </span>
               {isPackaging && !isQuoteOnly && moqPieces !== null && (
@@ -157,10 +167,10 @@ export default function ProductCard({
                 </span>
               )}
             </div>
-            {onQuickView && <button type="button" onClick={(e) => { e.stopPropagation(); onQuickView(product); }} className="focus-ring inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-lg px-2 text-[10px] font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-base)] hover:text-[var(--color-accent-text)]" aria-label={`${t('quickView')}: ${getLocalized(product, 'name', language)}`}><Eye size={15} strokeWidth={1.7} /><span dir="auto">{t('quickView')}</span></button>}
+            {onQuickView && !separateActions && <button type="button" onClick={(e) => { e.stopPropagation(); onQuickView(product); }} className="focus-ring inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-lg px-2 text-[10px] font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-base)] hover:text-[var(--color-accent-text)]" aria-label={`${t('quickView')}: ${getLocalized(product, 'name', language)}`}><Eye size={15} strokeWidth={1.7} /><span dir="auto">{t('quickView')}</span></button>}
           </div>
 
-          <div className="w-full">
+          <div className="table-card-cta-add w-full">
             {/* Magnetic Add-to-Cart */}
             {isQuoteOnly ? (
               <button
@@ -178,22 +188,26 @@ export default function ProductCard({
               >
                 {t('catalog.requestQuote')}
               </button>
-            ) : <MagneticButton
-              strength={3}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onAddToCart) {
-                  onAddToCart(product.id, selectedWeight);
-                } else {
-                  addToCart(product, selectedWeight, minUnits);
-                }
+            ) : <CartAddButton
+              productId={product.id}
+              portion={selectedWeight}
+              onAdd={() => {
+                if (onAddToCart) onAddToCart(product.id, selectedWeight);
+                else addToCart(product, selectedWeight, minUnits);
               }}
-              className="focus-ring flex min-h-[46px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#C7982F]/35 bg-[#1E3A2B] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#FFFCF7] transition-colors duration-200 hover:border-[#C7982F]/70 hover:bg-[#14281E] motion-safe:active:scale-[0.99]"
-            >
-              <ShoppingBag size={14} strokeWidth={1.7} className="text-[#E4C783]" />
-              <span dir="auto">{t('addToCart', 'Add to Cart')}</span>
-            </MagneticButton>}
+              className="focus-ring flex min-h-[46px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#C7982F]/35 bg-[#1E3A2B] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#FFFCF7] transition-colors duration-200 hover:border-[#C7982F]/70 hover:bg-[#14281E]"
+            />}
           </div>
+          {separateActions && onQuickView && (
+            <button type="button" onClick={event => { event.stopPropagation(); onQuickView(product); }} className="table-card-action table-card-cta-quick focus-ring" aria-label={`${t('quickView')} - ${getLocalized(product, 'name', language)}`}>
+              <Eye size={15} strokeWidth={1.6} aria-hidden="true" /><span dir="auto">{t('quickView')}</span>
+            </button>
+          )}
+          {separateActions && (
+            <Link to={`/product/${product.id}`} className="table-card-action table-card-cta-details focus-ring" aria-label={`${t('dest.common.viewDetails', 'View Details')}: ${getLocalized(product, 'name', language)}`}>
+              <span dir="auto">{t('dest.common.viewDetails', 'View Details')}</span><ArrowUpRight size={14} strokeWidth={1.7} aria-hidden="true" />
+            </Link>
+          )}
         </div>
       </div>
     </motion.div>

@@ -193,6 +193,7 @@ export async function createDurableOrder({
       promoContext,
       products: catalog.products,
       hamperBoxes: catalog.hamperBoxes,
+
     });
     // Persist usage counters only. Firestore never overrides server promotion definitions.
     const couponSnap = couponRef ? await transaction.get(couponRef) : null;

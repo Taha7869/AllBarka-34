@@ -1,0 +1,135 @@
+/*
+ * Living Gallery homepage — final pass, 11 November 2026.
+ * See docs/ALLBARKA_FINAL_HOME_HANDOFF_2026-11-11.md.
+ * Presentation only, scoped to .editorial-home: emerald still-art hero, discovery bar
+ * with an Ask AllBarka entry, round collection tiles on a travertine shelf,
+ * large-photo showcase cards, ivory Gift Atelier editorial.
+ */
+
+/* ── 1. Hero: calm emerald copy area, platter and oil down/right ──────────── */
+.editorial-home .signature-table-hero { --hero-emerald:#082217; background:var(--hero-emerald); }
+.editorial-home .signature-table-hero .table-photo-frame { background:var(--hero-emerald); }
+.editorial-home .signature-table-hero .table-photo-frame::after { background:linear-gradient(90deg,var(--hero-emerald) 0%,color-mix(in srgb,var(--hero-emerald) 78%,transparent) 24%,color-mix(in srgb,var(--hero-emerald) 30%,transparent) 42%,transparent 56%); }
+.editorial-home .signature-table-hero .heritage-hero-background img { object-position:right bottom; }
+.editorial-home .signature-table-hero .heritage-hero-title { font-size:clamp(2.7rem,4.3vw,4.4rem); line-height:1.1; letter-spacing:-.035em; }
+.editorial-home .signature-table-hero[dir=rtl] .heritage-hero-title { font-size:clamp(2.3rem,3.6vw,3.6rem); line-height:1.7; letter-spacing:normal; }
+.editorial-home .signature-table-hero .table-hero-primary { color:#0b3025; }
+.editorial-home .table-scene-toggle { background:color-mix(in srgb,#082217 86%,transparent); }
+@media(min-width:1024px) {
+  .editorial-home .signature-table-hero { min-height:clamp(600px,calc(100svh - 150px),800px); padding-block:76px 88px; }
+  .editorial-home .signature-table-hero .heritage-hero-content { width:46%; max-width:600px; }
+  .editorial-home .signature-table-hero .heritage-hero-description { margin-top:28px; }
+  .editorial-home .signature-table-hero .table-hero-actions { margin-top:34px; }
+  .editorial-home .signature-table-hero[dir=rtl] { padding-block:48px 56px; }
+}
+@media(min-width:768px) and (max-width:1023px) {
+  /* Tablet: keep the copy on the wall, clear of the platter. */
+  .editorial-home .signature-table-hero .heritage-hero-content { width:44%; }
+  .editorial-home .signature-table-hero .heritage-hero-title { font-size:clamp(2.1rem,4.6vw,2.9rem); }
+  .editorial-home .signature-table-hero .table-photo-frame::after { background:linear-gradient(90deg,var(--hero-emerald) 0%,color-mix(in srgb,var(--hero-emerald) 92%,transparent) 36%,color-mix(in srgb,var(--hero-emerald) 45%,transparent) 50%,transparent 64%); }
+  .editorial-home .signature-table-hero .heritage-hero-background img { object-position:100% bottom; }
+}
+@media(max-width:767px) {
+  /* Portrait art: copy first, subject below it. */
+  .editorial-home .signature-table-hero { padding-top:34px; }
+  .editorial-home .signature-table-hero .heritage-hero-title { font-size:clamp(2.1rem,9.2vw,3rem); line-height:1.12; }
+  .editorial-home .signature-table-hero[dir=rtl] .heritage-hero-title { font-size:clamp(1.9rem,7.6vw,2.6rem); line-height:1.7; }
+  .editorial-home .signature-table-hero .table-hero-art { height:clamp(300px,104vw,520px); }
+  .editorial-home .signature-table-hero .table-photo-frame::after { background:linear-gradient(180deg,var(--hero-emerald) 0%,color-mix(in srgb,var(--hero-emerald) 55%,transparent) 14%,transparent 34%); }
+  .editorial-home .signature-table-hero .heritage-hero-background img { object-position:center bottom; }
+}
+
+/* ── 2. Discovery: search, voice, Ask AllBarka and the selection guide ────── */
+.editorial-home .table-discovery { padding-block:14px 4px; }
+.editorial-home .table-discovery-top { grid-template-columns:auto minmax(0,1fr) auto; gap:18px; }
+.editorial-home .table-discovery h2 { font-size:1.05rem; white-space:nowrap; }
+.editorial-home .table-discovery form { border-radius:999px; }
+.editorial-home .table-discovery-guide { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.editorial-home .table-discovery .heritage-hero-guide,
+.editorial-home .table-ask-buddy { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:48px; padding:6px 18px; border:1px solid var(--color-border-accent); border-radius:999px; font-size:.8rem; font-weight:600; line-height:1.3; cursor:pointer; }
+.editorial-home .table-ask-buddy { border-color:#0b3025; background:#0b3025; color:#fdfbf7; transition:background .2s,border-color .2s; }
+.editorial-home .table-ask-buddy svg { color:#e4c783; }
+.editorial-home .table-ask-buddy:hover { background:#123f31; border-color:#123f31; }
+.dark .editorial-home .table-ask-buddy { border-color:#e4c78380; background:#0b3025; }
+.editorial-home .heritage-hero-pills { margin-top:6px; }
+.editorial-home .table-discovery-experiences { margin-top:2px; padding-top:2px; border-top:0; gap:2px 22px; }
+.editorial-home .table-discovery-experiences>p { font-size:.88rem; }
+@media(max-width:1023px) {
+  .editorial-home .table-discovery-top { grid-template-columns:minmax(0,1fr); gap:10px; }
+  .editorial-home .table-discovery h2 { white-space:normal; }
+  .editorial-home .table-discovery-guide { grid-column:auto; grid-row:auto; justify-self:stretch; }
+  .editorial-home .table-discovery-guide>button { flex:1 1 150px; }
+}
+@media(max-width:767px) { .editorial-home .table-discovery { padding:16px 20px 6px; } }
+@media(prefers-reduced-motion:reduce) { .editorial-home .table-ask-buddy { transition:none; } }
+
+/* ── 3. Collections: round tiles standing on a travertine shelf ───────────── */
+.editorial-home .editorial-pantry-viewport {
+  --tile:44; --shelf-pad:18px; --shelf-height:30px; --shelf-overlap:12px;
+  --stone:#e6d8c1; --stone-light:#f3e9d8; --stone-dark:#cdbb9e; --stone-pit:#b9a4847a;
+  position:relative; container-type:inline-size;
+}
+.dark .editorial-home .editorial-pantry-viewport { --stone:#9c8d75; --stone-light:#b3a48b; --stone-dark:#7d705b; --stone-pit:#5d523f8c; }
+/* The shelf: brushed-gold top edge, pitted warm stone face, soft shadow underneath. */
+.editorial-home .editorial-pantry-viewport::before {
+  content:''; position:absolute; inset-inline:0; z-index:0; pointer-events:none;
+  top:calc(var(--shelf-pad) + var(--tile) * 1cqw - var(--shelf-overlap)); height:var(--shelf-height);
+  background:
+    linear-gradient(90deg,#a9802e,#e8cf8d 18%,#c7982f 36%,#f1dfa8 52%,#b98a2c 70%,#e4c783 86%,#a9802e) top / 100% 3px no-repeat,
+    radial-gradient(circle at 12% 62%,var(--stone-pit) 0 1.5px,transparent 2.5px) 0 0 / 46px 19px,
+    radial-gradient(circle at 71% 38%,var(--stone-pit) 0 1px,transparent 2px) 0 0 / 31px 23px,
+    repeating-linear-gradient(180deg,transparent 0 6px,color-mix(in srgb,var(--stone-dark) 28%,transparent) 6px 7px,transparent 7px 13px),
+    linear-gradient(180deg,var(--stone-light),var(--stone) 45%,var(--stone-dark));
+  box-shadow:0 14px 18px -12px #3d2f1880;
+}
+.editorial-home .editorial-pantry-track { position:relative; z-index:1; align-items:flex-start; gap:0; padding-block:var(--shelf-pad) 26px; }
+.editorial-home .editorial-pantry-slide { flex-basis:calc(var(--tile) * 1%); perspective:none; }
+.editorial-home .editorial-pantry-slide .editorial-category { display:flex; flex-direction:column; align-items:center; height:auto; overflow:visible; border:0; border-radius:0; background:transparent; box-shadow:none; transform:none; }
+.editorial-home .editorial-category::after { display:none; }
+.editorial-home .pantry-tile-media {
+  position:relative; inset:auto; flex:0 0 auto; width:100%; aspect-ratio:1; overflow:hidden; border-radius:50%;
+  transform:scale(max(.76,calc(1 - (1 - var(--pantry-scale,1)) * 26))); transform-origin:center bottom;
+  border:1px solid #c7982f8c; box-shadow:0 0 0 5px var(--color-surface),0 0 0 6px #c7982f59,0 18px 22px -16px #3d2f18a6;
+  transition:box-shadow .25s;
+}
+.editorial-home .editorial-category:hover .pantry-tile-media,
+.editorial-home .editorial-category:focus-visible .pantry-tile-media { box-shadow:0 0 0 5px var(--color-surface),0 0 0 7px #c7982f,0 18px 22px -16px #3d2f18a6; }
+.editorial-home .pantry-tile-media>.bg-gradient-to-t { display:none; }
+.editorial-home .pantry-tile-media>[role=img] { font-size:1.25rem; }
+.editorial-home .pantry-tile-badge { top:auto; bottom:12%; }
+.editorial-home .pantry-tile-label { position:static; display:block; margin-top:calc(var(--shelf-height) - var(--shelf-overlap) + 14px); padding:0 8px; text-align:center; pointer-events:auto; }
+.editorial-home .pantry-tile-label span[dir] { margin-bottom:4px; color:var(--color-accent-text); }
+.editorial-home .pantry-tile-label h3 { color:var(--color-ink); font-size:clamp(1rem,1.5vw,1.3rem); text-shadow:none; filter:none; text-wrap:balance; }
+.editorial-home .pantry-tile-arrow { display:none; }
+@media(min-width:640px) { .editorial-home .editorial-pantry-viewport { --tile:30; --shelf-height:34px; } }
+@media(min-width:1024px) { .editorial-home .editorial-pantry-viewport { --tile:21; --shelf-height:38px; --shelf-overlap:14px; } }
+@media(prefers-reduced-motion:reduce) { .editorial-home .pantry-tile-media { transform:scale(.88); transition:none; } }
+
+/* ── 4. Showcase cards: large photo, three distinct actions ───────────────── */
+.editorial-home .boutique-product-card { padding:0; overflow:hidden; }
+.editorial-home .boutique-product-card .product-gallery { margin-bottom:0; border:0; border-bottom:1px solid var(--color-border); border-radius:0; aspect-ratio:1; }
+.editorial-home .boutique-product-card .product-gallery-slide img,
+.editorial-home .boutique-product-card .product-gallery-preview { object-fit:cover; }
+.editorial-home .boutique-product-card .table-card-meta { margin:0; padding:10px 18px 0; }
+.editorial-home .boutique-product-card .table-card-details { padding:2px 18px 14px; }
+.editorial-home .boutique-product-card .table-card-details h3,
+.editorial-home .boutique-product-card .table-card-details>p { min-height:0; }
+.editorial-home .boutique-product-card .table-card-purchase { margin-inline:18px; padding-bottom:18px; }
+.table-card-cta { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px 8px; }
+.table-card-cta-price,.table-card-cta-add { grid-column:1 / -1; }
+.table-card-action { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:46px; padding:8px 10px; border:1px solid var(--color-border); border-radius:3px; background:transparent; color:var(--color-text-primary); font-size:.7rem; font-weight:600; line-height:1.35; text-align:center; text-decoration:none; cursor:pointer; transition:border-color .2s,color .2s,background .2s; }
+.table-card-action:hover { border-color:var(--color-accent-text); color:var(--color-accent-text); background:var(--color-base); }
+.table-card-action svg { flex:0 0 auto; }
+@media(min-width:768px) {
+  /* Desktop: Add to Bag and Quick View side by side, View Details below. */
+  .table-card-cta { grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); }
+  .table-card-cta-add { grid-column:1; }
+  .table-card-cta-quick { grid-column:2; }
+  .table-card-cta-details { grid-column:1 / -1; border-color:transparent; border-bottom-color:var(--color-border); min-height:44px; }
+  .table-card-cta:not(:has(.table-card-cta-quick)) .table-card-cta-add { grid-column:1 / -1; }
+}
+@media(prefers-reduced-motion:reduce) { .table-card-action { transition:none; } }
+
+/* ── 5. Gift Atelier: ivory editorial with the packaging-concept photograph ── */
+.editorial-home .table-gift-editorial-photo img { object-position:center; }
+.editorial-home .table-gift-editorial-figure figcaption { font-style:italic; }

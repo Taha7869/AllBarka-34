@@ -1,0 +1,237 @@
+{
+  "task": "CATALOG-INTAKE-01 / CI-PR17",
+  "date": "2026-11-10",
+  "timezone": "Asia/Karachi",
+  "branch": "codex/premium-table-kit-20261108",
+  "inspectedParent": "3436bac48e0d0014ae88517877fd6d116485a289",
+  "review": "Source and fixture self-review; no independent reviewer claimed",
+  "catalog": {
+    "existingSeedCount": 97,
+    "existingSeedFileModified": false,
+    "newDraftCount": 17,
+    "reusedExistingCount": 12,
+    "newOilCount": 5,
+    "boardOilCount": 14,
+    "images": [
+      {
+        "id": "sweet-fruit-balls",
+        "path": "public/images/catalog-intake-20261110/sweet-fruit-balls.webp",
+        "bytes": 301716,
+        "sha256": "eaeb95f501c7e3075640e270c611e28fa44eaef392dac4f340d9b59c8ab35c33"
+      },
+      {
+        "id": "mixed-mukhwas",
+        "path": "public/images/catalog-intake-20261110/mixed-mukhwas.webp",
+        "bytes": 345624,
+        "sha256": "5bb8778bf4ad945af9f61a537e3facaef9173dfa05bda15f1565b2e4ed17b8ed"
+      },
+      {
+        "id": "sweet-makhana-large",
+        "path": "public/images/catalog-intake-20261110/sweet-makhana-large.webp",
+        "bytes": 238958,
+        "sha256": "4685759b1f78420f91df51f9cae8c86f6bf32b96168dd6dd940b5077c4710040"
+      },
+      {
+        "id": "nakul-dana-small",
+        "path": "public/images/catalog-intake-20261110/nakul-dana-small.webp",
+        "bytes": 232964,
+        "sha256": "db15dd322e2b9ddbb84c663c66a03e12ad774c6ce0236f5b08297a42c37b3999"
+      },
+      {
+        "id": "sugar-coated-saunf",
+        "path": "public/images/catalog-intake-20261110/sugar-coated-saunf.webp",
+        "bytes": 294306,
+        "sha256": "7e2cce5b75e2356cd44f6e15d8fd24374bb5852bef3e2eb16b73ad6d2fca5811"
+      },
+      {
+        "id": "peanut-jaggery-gachak",
+        "path": "public/images/catalog-intake-20261110/peanut-jaggery-gachak.webp",
+        "bytes": 347306,
+        "sha256": "78a16da1b37fe34e33840b0b65c45282b23e6f80c51f70a233569a700f4c12fb"
+      },
+      {
+        "id": "sesame-rewari",
+        "path": "public/images/catalog-intake-20261110/sesame-rewari.webp",
+        "bytes": 309568,
+        "sha256": "7a5718592f92f4a44cfce7f47a6a2d0007ead3b00fbddc14268dba455ede8ac0"
+      },
+      {
+        "id": "brown-raisins",
+        "path": "public/images/catalog-intake-20261110/brown-raisins.webp",
+        "bytes": 307834,
+        "sha256": "1a1d2dc189ca9a5d5adb6bea028ea18ec34af48e99872bb7aa6ebbbf9a15d15b"
+      },
+      {
+        "id": "dates-soft-brown",
+        "path": "public/images/catalog-intake-20261110/dates-soft-brown.webp",
+        "bytes": 285350,
+        "sha256": "4c8dbe423a8022e4c44ac76616b82ac87ea9e943fce6d2a07538b466efa7f3a8"
+      },
+      {
+        "id": "dates-dark-round",
+        "path": "public/images/catalog-intake-20261110/dates-dark-round.webp",
+        "bytes": 307776,
+        "sha256": "c2994f491a4a275193caf155adb517609756b47a875a08eb955248adb88ee4fd"
+      },
+      {
+        "id": "dates-dark-long",
+        "path": "public/images/catalog-intake-20261110/dates-dark-long.webp",
+        "bytes": 359032,
+        "sha256": "d6fc9056d71f9d89c977cc4dfdcf9f8eba1d0651bf0501869639d9a15b393402"
+      },
+      {
+        "id": "dates-golden-brown",
+        "path": "public/images/catalog-intake-20261110/dates-golden-brown.webp",
+        "bytes": 279150,
+        "sha256": "25f73240e0f6e3164d5faf5a2f5300b912de3b3b19c6a0add3b0a8f355fea743"
+      },
+      {
+        "id": "oil-peanut",
+        "path": "public/images/catalog-intake-20261110/oil-peanut.webp",
+        "bytes": 261074,
+        "sha256": "bc0d9a94c6e70b21b548e64ef1067553164f0b5e8edd965af8b8ab1ed3c70d49"
+      },
+      {
+        "id": "oil-sunflower",
+        "path": "public/images/catalog-intake-20261110/oil-sunflower.webp",
+        "bytes": 253170,
+        "sha256": "e7fbf2af7d789156df8f919af9d13fe73acc0f0373b3632e9efefe8ae6aa014c"
+      },
+      {
+        "id": "oil-neem",
+        "path": "public/images/catalog-intake-20261110/oil-neem.webp",
+        "bytes": 223496,
+        "sha256": "05f56eebb252893bfd19ecffede536ac95acb465f2a02aa63401831fa721f2fa"
+      },
+      {
+        "id": "oil-taramira",
+        "path": "public/images/catalog-intake-20261110/oil-taramira.webp",
+        "bytes": 303906,
+        "sha256": "c6a31bcf54c690c3c36f963ee5e466e6d1637a8fdf7832c226a6d63043825b9e"
+      },
+      {
+        "id": "oil-soybean",
+        "path": "public/images/catalog-intake-20261110/oil-soybean.webp",
+        "bytes": 186270,
+        "sha256": "6cb019c413d8e85e4367e22bf200a4c93b183f98bf2f0446a8c7a1322e969992"
+      }
+    ],
+    "imageBytes": 4837500,
+    "liveImport": "NOT_PERFORMED",
+    "liveInventoryAndClassification": "BLOCKED: authenticated current Firestore target unavailable; bundled records do not establish live state",
+    "databaseEdition": "UNVERIFIED",
+    "publication": "ALL_NEW_DRAFTS_INACTIVE_QUOTE_ONLY"
+  },
+  "checks": {
+    "typecheck": "PASS",
+    "hooksLint": "PASS",
+    "productionBuild": "PASS after dev fallback fix; release privacy audit85 text artifacts",
+    "affectedCatalogTests": {
+      "passed": 30,
+      "failed": 0
+    },
+    "taxonomyCrudTests": {
+      "passed": 32,
+      "failed": 0
+    },
+    "backend": {
+      "passed": 21,
+      "failed": 0,
+      "freshResumeRun": true
+    },
+    "production": {
+      "passed": 36,
+      "failed": 0,
+      "freshResumeRun": true
+    },
+    "existingAssets": "PASS:97 products,115 references,111 unique images",
+    "devServerHTTP": "PASS: real dev server missing6 asset paths404/nonHTML, deep link200/HTML, API404/JSON and CSP nonce retained",
+    "localFullSuite": "BLOCKED: local Chromium socket Operation not permitted; no full PASS claimed",
+    "matchingPlaywrightDownload": "FAILED: official browser download did not complete; no application dependency change",
+    "resumedAffectedTests": {
+      "passed": 37,
+      "failed": 0,
+      "command": "node --import tsx --test --test-isolation=none tests/catalog-intake-20261110.test.ts tests/catalog-categories.test.tsx tests/stage2-catalog-crud.test.ts tests/dev-server.test.mjs"
+    },
+    "assetCommand": "node --import tsx scripts/verify-catalog-assets.ts: PASS; npm test:assets tsx CLI entry hit local Unix-pipe EPERM, same audit rerun successfully with Node loader used by full CI"
+  },
+  "ci": {
+    "priorRuns": [
+      42476709865,
+      42702581732
+    ],
+    "priorFailure": "tests/premium-hero-browser.test.tsx:92 desktop brand has native keyboard semantics actual0 expected1; prior loop left360px viewport",
+    "priorLatestCounts": {
+      "passed": 841,
+      "failed": 1,
+      "skipped": 1
+    },
+    "fix": "Explicit1440px desktop premise, visible native role/name/count plus keyboard focus; preserves app behavior and later video checks",
+    "currentHostedStatus": "PASS for source77975be64cfe3776e582b40fe7e5e024a7401a61",
+    "viewportEvidence": "The enlarged-care loop explicitly sets width360,height640; the earlier390px description is corrected here. Desktop1440px premise fix is unchanged.",
+    "verified": {
+      "source": "77975be64cfe3776e582b40fe7e5e024a7401a61",
+      "run": 42735336005,
+      "runNumber": 49,
+      "job": 129563061125,
+      "url": "https://github.com/Taha7869/AllBarka-34/actions/runs/42735336005",
+      "status": "completed",
+      "conclusion": "success",
+      "passed": 846,
+      "failed": 0,
+      "skipped": 1,
+      "total": 847,
+      "testFiles": 109,
+      "backendPassed": 21,
+      "productionPassed": 36,
+      "assetMissing": 0,
+      "visualArtifact": 13727825117,
+      "visualArtifactManuallyInspected": false
+    }
+  },
+  "releaseReady": false,
+  "remaining": [
+    "Verify new hosted full suite result",
+    "Identify authenticated Firestore project/database/edition, read-only collision plan, then authorized create-only draft import",
+    "Owner reviews current rates, ingredient/grade facts and readiness before publish",
+    "Actual storefront catalog journeys after publication",
+    "Broader cinematic redesign, role AI, attachments/maps and security/live gates remain tracked in confirmed plan"
+  ],
+  "zeroDeletions": true,
+  "productionDeployment": "NOT_PERFORMED",
+  "checklist": {
+    "scope": "PASS: bounded additive intake and demonstrated CI/server fixes",
+    "sourceAndAssetReview": "PASS",
+    "existingDataPreservation": "PASS in create-only transactional fixtures; live unavailable",
+    "localGates": "PASS for listed checks; complete browser environment BLOCKED",
+    "hostedGates": "PASS: source77975be Run49",
+    "liveGates": "BLOCKED",
+    "trackers": "UPDATED",
+    "remoteSaveAndReadback": "PASS: source77975be,36 intended files, exact tree match; this follow-up records evidence and corrects viewport comment only"
+  },
+  "handoffDisposition": {
+    "blockedAction": "Re-upload full historical docs/admin-expansion/HANDOFF.md and CAUTION.md",
+    "reason": "Automatic approval review identified sensitive infrastructure/security/personal-account details",
+    "safeAlternative": "Historical files retained unchanged; minimal current-task handoff and CATALOG_CI_VERIFICATION_2026-11-10.md carry current evidence",
+    "bypass": "NONE"
+  },
+  "postSave": {
+    "commit": "77975be64cfe3776e582b40fe7e5e024a7401a61",
+    "tree": "95bd9fd3fdb0ad81815bd9d5f4947eac89aa4a5d",
+    "remoteCommitReadBack": true,
+    "gitFetchedTreeMatchedReviewedTree": true,
+    "all36ChangedFilesVerified": true,
+    "newImageHashesAndDecode": 17,
+    "imageDimensions": [
+      1254,
+      1254
+    ],
+    "unchangedSeedAndOGComponents": true,
+    "historicalHandoffUnchanged": true,
+    "deletions": 0,
+    "fixtureCategoryItems": 17,
+    "fixtureCardLocaleRenders": 51,
+    "fixtureLiveWrites": 0
+  },
+  "followupScope": "Evidence/documentation and a comment correction390px->360px only; no functional application/test assertion changes after the verified source."
+}

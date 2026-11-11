@@ -1,6 +1,7 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 
 import React, { useRef, useEffect, useState } from 'react';
-import { motion, useScroll, useTransform, useReducedMotion } from 'motion/react';
+import { motion, useScroll, useTransform } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { useDragScroll } from '../hooks/useDragScroll';

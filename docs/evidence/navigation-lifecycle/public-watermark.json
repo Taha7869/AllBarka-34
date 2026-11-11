@@ -1,0 +1,9 @@
+{
+  "retrievedAt": "2026-10-27T23:58:38.078520+00:00",
+  "timezone": "Asia/Karachi",
+  "source": "GET https://allbarka.com/api/catalog",
+  "version": "e911ff4c059a56799c438e03089dde03694ec6bc1235e04582b26778667fd1db",
+  "publicProducts": 97,
+  "semanticAudit": "BLOCKED: public watermark only; private merchant/taxonomy snapshot unavailable",
+  "writes": 0
+}

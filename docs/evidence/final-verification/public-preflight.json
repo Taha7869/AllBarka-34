@@ -1,0 +1,85 @@
+{
+  "generatedAt": "2026-11-03T13:12:38.702Z",
+  "timezone": "Asia/Karachi",
+  "scope": "Public deployed endpoints only; not private merchant records or feature deployment certification",
+  "mode": "read-only",
+  "origin": "https://allbarka.com",
+  "methods": [
+    "GET"
+  ],
+  "requests": [
+    {
+      "path": "/api/health",
+      "status": 200,
+      "bytes": 448
+    },
+    {
+      "path": "/api/commerce/readiness",
+      "status": 200,
+      "bytes": 549
+    },
+    {
+      "path": "/api/catalog",
+      "status": 200,
+      "bytes": 591098
+    }
+  ],
+  "expectedFeatureCommit": "4a45fc4b92db048969885af022fc64afec043a00",
+  "deployedCommit": "5e6349051980abd1a20f719f289a24a3fd2cba7b",
+  "deployedMatchesExpected": false,
+  "health": {
+    "status": "ok",
+    "aiConfigured": true,
+    "aiConnectivityVerified": false
+  },
+  "readiness": {
+    "authActive": true,
+    "databaseInitialized": true,
+    "databaseConnected": true,
+    "durablePersistenceReady": false,
+    "savedOrderVerifiedThisProcess": false,
+    "aiConfigured": true,
+    "orderWebhookConfigured": true
+  },
+  "publicProductCount": 93,
+  "flaggedProducts": [
+    {
+      "id": "bid-box-umrah-tabarruk",
+      "found": false,
+      "active": null,
+      "priceOptions": null,
+      "variants": null
+    },
+    {
+      "id": "bid-box-pyramid-favor",
+      "found": false,
+      "active": null,
+      "priceOptions": null,
+      "variants": null
+    },
+    {
+      "id": "bid-box-card-nikkah",
+      "found": false,
+      "active": null,
+      "priceOptions": null,
+      "variants": null
+    },
+    {
+      "id": "bid-box-birth-announcement",
+      "found": false,
+      "active": null,
+      "priceOptions": null,
+      "variants": null
+    }
+  ],
+  "writesPerformed": 0,
+  "acceptedOrderTested": false,
+  "authRolesTested": false,
+  "storageUploadTested": false,
+  "n8nExecutionTested": false,
+  "limitations": [
+    "An older deployed build cannot certify the feature branch.",
+    "Configured flags do not establish successful order, Auth, Storage or n8n execution.",
+    "Unavailable public products do not expose the underlying private saved records."
+  ]
+}

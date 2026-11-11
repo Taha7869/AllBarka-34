@@ -6,7 +6,7 @@ import { validateShippingRewardDestination } from '../src/lib/shippingPolicy';
 import { validateAndPriceOrder, validateCustomerDetails, ValidationError } from '../src/lib/orderValidation';
 import { calculateDeliverySchedule } from '../src/lib/deliveryCalendar';
 import { createDurableOrder } from '../src/lib/orderDatabase';
-import { hashPayload } from '../src/lib/serverOrderService';
+import { hashPayload, generateAuthoritativeWhatsAppMessage } from '../src/lib/serverOrderService';
 import { resolveHamper, type HamperConfiguration } from '../src/lib/hamperCatalog';
 import { fixtureCatalogSnapshot } from './helpers/catalogFixtures';
 
@@ -199,7 +199,7 @@ const hamper = { productId: 'custom-hamper', selectedWeight: 'fake 1g', quantity
   price: 1, shippingWeightGrams: 1, hamperConfiguration };
 
 test('custom hampers use canonical packaging, contents price and mass despite forged client fields', () => {
-  const result = validateAndPriceOrder({ city: 'Karachi', shippingMethodId: 'standard', items: [hamper], isWholesale: true });
+  const result = validateAndPriceOrder({ city: 'Karachi', shippingMethodId: 'standard', items: [hamper], isWholesale: true, allowInquiryItems: true });
   const expectedUnitPrice = 1400 + hamperConfiguration.selections.reduce((sum, id) => sum +
     Math.round(PRODUCTS.find(product => product.id === id)!.prices['250g'] * 200 / 250), 0);
   assert.equal(result.items[0].price, expectedUnitPrice);
@@ -216,7 +216,7 @@ test('invalid or obsolete hamper selections cannot reach an authoritative quote'
     { ...hamperConfiguration, selections: ['pista', 'pista', 'badam'] }, { ...hamperConfiguration, boxId: 'forged-free-box' },
     { ...hamperConfiguration, giftMessage: 'x'.repeat(501) }]) {
     const invalid = { ...hamper, hamperConfiguration: configuration };
-    assert.throws(() => validateAndPriceOrder({ city: 'Lahore', shippingMethodId: 'standard', items: [invalid] }), isCode('INVALID_HAMPER_CONFIGURATION'));
+    assert.throws(() => validateAndPriceOrder({ city: 'Lahore', shippingMethodId: 'standard', items: [invalid], allowInquiryItems: true }), isCode('INVALID_HAMPER_CONFIGURATION'));
     assert.equal(getCartShippingWeightGrams([invalid] as never), null);
   }
 });
@@ -235,10 +235,75 @@ test('hamper idempotency includes contents, box and card while ignoring client p
 
 test('persisted hamper and WhatsApp packing details preserve complete normalized configuration', async () => {
   const mock = mockDatabase();
-  const result = await createDurableOrder({ db: mock.db as never, uid: null,
-    payload: { ...destination, shippingMethodId: 'standard', items: [hamper] }, idempotencyKey: 'hamper-test' });
+  const payload = { ...destination, shippingMethodId: 'standard', items: [hamper] };
+  await assert.rejects(createDurableOrder({ db: mock.db as never, uid: null, payload, idempotencyKey: 'hamper-test' }), isCode('QUOTE_REQUIRED'));
+  await assert.rejects(createDurableOrder({ db: mock.db as never, uid: null, payload: { ...payload, allowInquiryItems: true }, idempotencyKey: 'hamper-test-bypass' }), isCode('QUOTE_REQUIRED'));
+  await assert.rejects(createDurableOrder({ db: mock.db as never, uid: null, payload: { ...payload, allowPackagingQuote: true }, idempotencyKey: 'hamper-test-bypass-2' }), isCode('QUOTE_REQUIRED'));
+
+  const resolved = resolveHamper(hamperConfiguration)!;
+  const quote = validateAndPriceOrder({ city: 'Karachi', shippingMethodId: 'standard', items: [hamper], allowInquiryItems: true });
+  const historicalOrderId = 'AB-20261025-HAMP01';
+  const historicalOrder: any = {
+    schemaVersion: '2.0.0',
+    orderId: historicalOrderId,
+    source: 'website',
+    createdAt: '2026-10-25T10:00:00.000Z',
+    createdAtMs: 1792922400000,
+    updatedAt: '2026-10-25T10:00:00.000Z',
+    updatedAtMs: 1792922400000,
+    status: 'ORDER_RECEIVED',
+    orderType: 'ORDER',
+    paymentStatus: 'UNPAID',
+    paymentMethod: 'cod',
+    uid: null,
+    isWholesale: false,
+    customer: {
+      name: destination.name,
+      phone: destination.phone,
+      address: destination.address,
+      city: destination.city,
+      deliverySlot: 'Fastest Dispatch',
+    },
+    gifting: { giftWrapping: false },
+    items: quote.items,
+    totals: quote.summary,
+    shippingMethodId: 'standard',
+    destinationCity: 'Karachi',
+    promoCode: null,
+    discountAmount: 0,
+    freeShipping: false,
+    freeGiftWrap: false,
+    freeGift: false,
+    isQuoteRequest: false,
+    rewardId: null,
+    rewardDiscount: 0,
+    earnedPoints: 0,
+    pointsAwarded: false,
+  };
+  const idempotencyKey = 'hamper-historical';
+  mock.records.set(`orders/${historicalOrderId}`, historicalOrder);
+  mock.records.set(`checkoutIntents/${idempotencyKey}`, {
+    idempotencyKey,
+    orderId: historicalOrderId,
+    payloadHash: hashPayload(payload),
+    createdAt: 1792922400000,
+    response: {
+      orderId: historicalOrderId,
+      status: 'ORDER_RECEIVED',
+      orderType: 'ORDER',
+      whatsappMessage: generateAuthoritativeWhatsAppMessage(historicalOrder),
+      totals: quote.summary,
+      items: quote.items,
+      claimToken: null,
+      uid: null,
+    },
+  });
+
+  const result = await createDurableOrder({ db: mock.db as never, uid: null, payload, idempotencyKey });
+  assert.equal(result.isDuplicate, true);
+  assert.equal(result.orderId, historicalOrderId);
   const persisted = mock.records.get(`orders/${result.orderId}`);
-  assert.deepEqual(persisted.items[0].hamperConfiguration, resolveHamper(hamperConfiguration)!.configuration);
+  assert.deepEqual(persisted.items[0].hamperConfiguration, resolved.configuration);
   assert.equal(persisted.totals.shipping, 300);
   assert.match(result.whatsappMessage, /Hamper contents:/);
   assert.match(result.whatsappMessage, /Gift card recipient: Gift Recipient/);

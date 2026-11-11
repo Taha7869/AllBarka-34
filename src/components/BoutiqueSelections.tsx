@@ -1,7 +1,8 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import React, { useState, useEffect, useCallback, useRef, useId, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Play, Pause, ArrowRight, Sparkles } from 'lucide-react';
-import { useReducedMotion } from 'motion/react';
+
 import type { Product, MerchandisingSettings } from '../types';
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -66,6 +67,7 @@ export default function BoutiqueSelections({
             prod &&
             prod.active !== false &&
             (prod as any).status !== 'archived' &&
+            (prod as any).status !== 'draft' &&
             (prod as any).inStock !== false &&
             !seenIds.has(prod.id)
           ) {
@@ -357,13 +359,13 @@ export default function BoutiqueSelections({
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header: Eyebrow, Title, Subtitle, and Autoplay Toggle */}
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between text-left">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between text-start">
           <div className="max-w-2xl">
-            <div className="mb-2.5 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-[#C7982F]">
+            <div className="mb-2.5 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-[var(--color-accent-text)]">
               <Sparkles size={13} aria-hidden="true" />
               <span>{t('boutique.showcaseEyebrow', 'Single Sourced & Hand Picked')}</span>
             </div>
-            <h2 className="font-serif text-3xl font-medium tracking-tight text-[var(--color-ink)] sm:text-4xl lg:text-[42px] leading-tight">
+            <h2 className="font-serif text-3xl font-medium break-words [overflow-wrap:anywhere] tracking-tight text-[var(--color-ink)] sm:text-4xl lg:text-[42px] leading-tight">
               {t('boutique.showcaseTitle', 'Boutique Selections')}
             </h2>
             <p className="mt-2.5 text-sm leading-relaxed text-[var(--color-text-secondary)]">
@@ -375,7 +377,7 @@ export default function BoutiqueSelections({
           </div>
 
           {/* Autoplay Play/Pause Toggle & View All Link */}
-          <div className="flex flex-wrap items-center gap-3 self-start sm:self-end">
+          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-3 self-start sm:self-end">
             <button
               type="button"
               onClick={handleTogglePlayPause}
@@ -386,18 +388,18 @@ export default function BoutiqueSelections({
                   : t('boutique.playShowcase', 'Play showcase autoplay')
               }
               aria-pressed={isShowcasePlaying}
-              className={`focus-ring inline-flex min-h-9 items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-base)] px-3.5 py-1.5 text-xs font-semibold text-[var(--color-ink)] transition-colors hover:border-[#C7982F] hover:text-[#C7982F] ${
+              className={`focus-ring inline-flex max-w-full min-h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-base)] px-3.5 py-1.5 text-xs font-semibold text-[var(--color-ink)] transition-colors hover:border-[#C7982F] hover:text-[var(--color-accent-text)] ${
                 !isRotationPossible ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
               {isShowcasePlaying ? (
                 <>
-                  <Pause size={13} className="text-[#C7982F]" aria-hidden="true" />
+                  <Pause size={13} className="text-[var(--color-accent-text)]" aria-hidden="true" />
                   <span>{t('boutique.pause', 'Pause')}</span>
                 </>
               ) : (
                 <>
-                  <Play size={13} className="text-[#C7982F]" aria-hidden="true" />
+                  <Play size={13} className="text-[var(--color-accent-text)]" aria-hidden="true" />
                   <span>{t('boutique.play', 'Play')}</span>
                 </>
               )}
@@ -405,7 +407,7 @@ export default function BoutiqueSelections({
 
             <Link
               to={currentTab.destination}
-              className="focus-ring inline-flex min-h-9 items-center gap-2 rounded-full border border-transparent px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-[#C7982F] transition-colors hover:text-[#092E23] dark:hover:text-[#F6F1EA]"
+              className="focus-ring inline-flex max-w-full min-h-11 items-center gap-2 rounded-full border border-transparent px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--color-accent-text)] transition-colors hover:text-[#092E23] dark:hover:text-[#F6F1EA]"
             >
               <span>{t('boutique.viewCollection', 'View collection')}</span>
               <ArrowRight size={13} className={isRtl ? 'rotate-180' : ''} aria-hidden="true" />
@@ -467,6 +469,7 @@ export default function BoutiqueSelections({
                   isWholesale={false}
                   onAddToCart={onAddToCart}
                   onQuickView={onQuickView}
+                  separateActions
                 />
               </div>
             ))}

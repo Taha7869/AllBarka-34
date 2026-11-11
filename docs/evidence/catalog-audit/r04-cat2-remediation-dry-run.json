@@ -1,0 +1,2262 @@
+{
+  "taskId": "R04-CAT2",
+  "generatedAt": "2026-10-30T06:45:00.000Z",
+  "mode": "READ_ONLY_LOCAL_FIXTURE_DRY_RUN_NO_LIVE_WRITES",
+  "baselineCommit": "0ccb8c373889296eb791abd96869b6c03b1972d7",
+  "liveFirestoreWritesExecuted": 0,
+  "invariantsVerified": {
+    "pistaMerchantPricesPreserved": {
+      "revision": 2,
+      "pricesPkr": {
+        "250g": 1200,
+        "500g": 2200,
+        "1kg": 4500
+      },
+      "pricePer100gPkr": 500,
+      "allowCustomWeight": true,
+      "hamper200gPortionDerivedPkr": 960,
+      "sampleBoxWood4SelectionResolvedUnitPricePkr": 4500
+    },
+    "all88OtherStoredProductPricesPreserved": true,
+    "seedMoq10HardcodePrevented": true,
+    "importMarkup5PercentReapplicationPrevented": true,
+    "revisionConflictPreconditionVerified": true,
+    "totalCatalogProductsAfterDryRun": 97,
+    "totalHamperBoxesAfterDryRun": 3
+  },
+  "categoryCountsComparison": {
+    "before": {
+      "dry-fruits": 22,
+      "dates": 5,
+      "seeds-snacks": 13,
+      "oils": 15,
+      "essentials": 5,
+      "herbs-spices": 19,
+      "celebration-boxes": 4,
+      "deals": 15,
+      "gift-boxes": 2,
+      "bundles": 13
+    },
+    "afterIfAllProposalsApprovedAndPublished": {
+      "dry-fruits": 22,
+      "dates": 5,
+      "seeds-snacks": 13,
+      "oils": 15,
+      "essentials": 5,
+      "herbs-spices": 19,
+      "celebration-boxes": 8,
+      "deals": 15,
+      "gift-boxes": 7,
+      "bundles": 15
+    }
+  },
+  "occasionCountsComparison": {
+    "before": {
+      "wedding": 4,
+      "umrah": 0,
+      "birth": 0,
+      "ramadan": 0,
+      "corporate": 0
+    },
+    "afterIfAllProposalsApprovedAndPublished": {
+      "wedding": 11,
+      "umrah": 3,
+      "birth": 1,
+      "ramadan": 6,
+      "corporate": 6
+    }
+  },
+  "missingBidBoxProposals": [
+    {
+      "productId": "bid-box-umrah-tabarruk",
+      "priorityGroup": "PRIORITY_2_FAIL_CLOSED_INACTIVE_MISSING_DOC",
+      "name_en": "Umrah & Hajj Tabarruk Box Set",
+      "currentLiveBehavior": "Missing Firestore document; currently fail-closed unavailable (active=false) via requiresStoredLegacyPackagingPricing",
+      "category": "celebration-boxes",
+      "packagingSubcategory": "tabarruk",
+      "occasions": [
+        "umrah"
+      ],
+      "collections": [],
+      "moqOverride": null,
+      "moqPolicyNote": "moqOverride is omitted (undefined) so calculatePackagingMoq dynamically applies Rule D1: min(25, max(1, ceil(5000 / publishedPerPiecePrice))). Seed MOQ of 10 is NOT hardcoded, and 5% import markup is NOT applied.",
+      "unconfirmedWholesaleReferencePerPiecePkr": 170,
+      "supportedPublicationStatusValues": [
+        "published",
+        "draft",
+        "archived"
+      ],
+      "supportedOrderModeValues": [
+        "standard",
+        "inquiry_quote",
+        "both"
+      ],
+      "seedDefaultPublicationStatus": "published",
+      "seedDefaultOrderMode": "both",
+      "unresolvedMerchantDecisions": [
+        "publicationStatus: Confirm whether to set status to \"published\", \"draft\", or \"archived\".",
+        "orderMode: Confirm whether to set orderMode to \"both\" (direct checkout + inquiry quote), \"standard\" (direct checkout only), or \"inquiry_quote\" (quote-only, no direct cart checkout).",
+        "optionPricesPkr: Confirm or replace each of the 7 UNCONFIRMED compiled reference PKR prices before any live write.",
+        "moqOverride: Confirm keeping dynamic Rule D1 MOQ (moqOverride omitted) or specify an explicit merchant integer override.",
+        "occasions: Confirm whether to keep [\"umrah\"] only or add \"ramadan\" ([\"umrah\", \"ramadan\"]).",
+        "n8nReceiverPrerequisite: Filled option wire labels are 53 and 76 chars; live publication for direct checkout requires Stage 6 compatible n8n receiver deployment."
+      ],
+      "options": [
+        {
+          "sortOrder": 0,
+          "label": "Empty Box (1 pc)",
+          "labelLength": 16,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 1,
+          "shippingWeightGrams": 450,
+          "unconfirmedCompiledReferencePricePkr": 200,
+          "unconfirmedPerPieceReferencePkr": 200,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 25,
+            "totalPiecesOrderedAtMinUnits": 25,
+            "minimumOrderTotalAtReferencePkr": 5000
+          }
+        },
+        {
+          "sortOrder": 1,
+          "label": "Empty Pack (10 pcs)",
+          "labelLength": 19,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 10,
+          "shippingWeightGrams": 450,
+          "unconfirmedCompiledReferencePricePkr": 2000,
+          "unconfirmedPerPieceReferencePkr": 200,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 3,
+            "totalPiecesOrderedAtMinUnits": 30,
+            "minimumOrderTotalAtReferencePkr": 6000
+          }
+        },
+        {
+          "sortOrder": 2,
+          "label": "Empty Pack (25 pcs)",
+          "labelLength": 19,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 25,
+          "shippingWeightGrams": 450,
+          "unconfirmedCompiledReferencePricePkr": 4800,
+          "unconfirmedPerPieceReferencePkr": 192,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 1,
+            "totalPiecesOrderedAtMinUnits": 25,
+            "minimumOrderTotalAtReferencePkr": 4800
+          }
+        },
+        {
+          "sortOrder": 3,
+          "label": "Empty Bulk (50 pcs)",
+          "labelLength": 19,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 50,
+          "shippingWeightGrams": 450,
+          "unconfirmedCompiledReferencePricePkr": 9250,
+          "unconfirmedPerPieceReferencePkr": 185,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 1,
+            "totalPiecesOrderedAtMinUnits": 50,
+            "minimumOrderTotalAtReferencePkr": 9250
+          }
+        },
+        {
+          "sortOrder": 4,
+          "label": "Empty Bulk (100 pcs)",
+          "labelLength": 20,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 100,
+          "shippingWeightGrams": 450,
+          "unconfirmedCompiledReferencePricePkr": 17000,
+          "unconfirmedPerPieceReferencePkr": 170,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 1,
+            "totalPiecesOrderedAtMinUnits": 100,
+            "minimumOrderTotalAtReferencePkr": 17000
+          }
+        },
+        {
+          "sortOrder": 5,
+          "label": "Filled Standard (Irani Dates, Badam, Kaju & Kishmish)",
+          "labelLength": 53,
+          "exceeds40Chars": true,
+          "unitType": "pack",
+          "piecesPerPack": 1,
+          "shippingWeightGrams": 450,
+          "unconfirmedCompiledReferencePricePkr": 850,
+          "unconfirmedPerPieceReferencePkr": 850,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 6,
+            "minOrderUnits": 6,
+            "totalPiecesOrderedAtMinUnits": 6,
+            "minimumOrderTotalAtReferencePkr": 5100
+          }
+        },
+        {
+          "sortOrder": 6,
+          "label": "Filled Royal (Jumbo Panjgur Dates, Iranian Pista, Mammra Badam & Honey Nuts)",
+          "labelLength": 76,
+          "exceeds40Chars": true,
+          "unitType": "pack",
+          "piecesPerPack": 1,
+          "shippingWeightGrams": 450,
+          "unconfirmedCompiledReferencePricePkr": 1650,
+          "unconfirmedPerPieceReferencePkr": 1650,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 4,
+            "minOrderUnits": 4,
+            "totalPiecesOrderedAtMinUnits": 4,
+            "minimumOrderTotalAtReferencePkr": 6600
+          }
+        }
+      ],
+      "proposedPayloadTemplate": {
+        "id": "bid-box-umrah-tabarruk",
+        "schemaVersion": 1,
+        "expectedRevision": 0,
+        "targetRevision": 1,
+        "status": "<UNCONFIRMED_MERCHANT_DECISION: \"published\" | \"draft\" | \"archived\">",
+        "orderMode": "<UNCONFIRMED_MERCHANT_DECISION: \"both\" | \"standard\" | \"inquiry_quote\">",
+        "category": "celebration-boxes",
+        "occasions": [
+          "umrah"
+        ],
+        "allowCustomWeight": false,
+        "variants": [
+          {
+            "id": "portion-Empty%20Box%20(1%20pc)",
+            "label": "Empty Box (1 pc)",
+            "price": 200,
+            "available": true,
+            "weightGrams": 450,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Empty%20Pack%20(10%20pcs)",
+            "label": "Empty Pack (10 pcs)",
+            "price": 2000,
+            "available": true,
+            "weightGrams": 450,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Empty%20Pack%20(25%20pcs)",
+            "label": "Empty Pack (25 pcs)",
+            "price": 4800,
+            "available": true,
+            "weightGrams": 450,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Empty%20Bulk%20(50%20pcs)",
+            "label": "Empty Bulk (50 pcs)",
+            "price": 9250,
+            "available": true,
+            "weightGrams": 450,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Empty%20Bulk%20(100%20pcs)",
+            "label": "Empty Bulk (100 pcs)",
+            "price": 17000,
+            "available": true,
+            "weightGrams": 450,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Filled%20Standard%20(Irani%20Dates%2C%20Badam%2C%20Kaju%20%26%20Kishmish)",
+            "label": "Filled Standard (Irani Dates, Badam, Kaju & Kishmish)",
+            "price": 850,
+            "available": true,
+            "weightGrams": 450,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Filled%20Royal%20(Jumbo%20Panjgur%20Dates%2C%20Iranian%20Pista%2C%20Mammra%20Badam%20%26%20Honey%20Nuts)",
+            "label": "Filled Royal (Jumbo Panjgur Dates, Iranian Pista, Mammra Badam & Honey Nuts)",
+            "price": 1650,
+            "available": true,
+            "weightGrams": 450,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          }
+        ]
+      },
+      "dryRunValidation": {
+        "adapterUsed": "updateAdminProduct -> validateDynamicProduct -> storedCatalogRecord",
+        "publishedCandidateValid": true,
+        "draftInquiryCandidateValid": true,
+        "auditEntryWritten": true
+      }
+    },
+    {
+      "productId": "bid-box-luxury-tin",
+      "priorityGroup": "PRIORITY_1_PUBLICLY_PURCHASABLE_SEED_FALLBACK",
+      "name_en": "Luxury Floral Tin Bid Box",
+      "currentLiveBehavior": "Missing Firestore document; currently active & publicly purchasable via compiled seed fallback (status=published, orderMode=both)",
+      "category": "celebration-boxes",
+      "packagingSubcategory": "tin",
+      "occasions": [
+        "wedding"
+      ],
+      "collections": [],
+      "moqOverride": null,
+      "moqPolicyNote": "moqOverride is omitted (undefined) so calculatePackagingMoq dynamically applies Rule D1: min(25, max(1, ceil(5000 / publishedPerPiecePrice))). Seed MOQ of 10 is NOT hardcoded, and 5% import markup is NOT applied.",
+      "unconfirmedWholesaleReferencePerPiecePkr": 115,
+      "supportedPublicationStatusValues": [
+        "published",
+        "draft",
+        "archived"
+      ],
+      "supportedOrderModeValues": [
+        "standard",
+        "inquiry_quote",
+        "both"
+      ],
+      "seedDefaultPublicationStatus": "published",
+      "seedDefaultOrderMode": "both",
+      "unresolvedMerchantDecisions": [
+        "publicationStatus: Confirm whether to set status to \"published\", \"draft\", or \"archived\".",
+        "orderMode: Confirm whether to set orderMode to \"both\" (direct checkout + inquiry quote), \"standard\" (direct checkout only), or \"inquiry_quote\" (quote-only, no direct cart checkout).",
+        "optionPricesPkr: Confirm or replace each of the 7 UNCONFIRMED compiled reference PKR prices before any live write.",
+        "moqOverride: Confirm keeping dynamic Rule D1 MOQ (moqOverride omitted) or specify an explicit merchant integer override."
+      ],
+      "options": [
+        {
+          "sortOrder": 0,
+          "label": "Empty Box (1 pc)",
+          "labelLength": 16,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 1,
+          "shippingWeightGrams": 500,
+          "unconfirmedCompiledReferencePricePkr": 140,
+          "unconfirmedPerPieceReferencePkr": 140,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 25,
+            "totalPiecesOrderedAtMinUnits": 25,
+            "minimumOrderTotalAtReferencePkr": 3500
+          }
+        },
+        {
+          "sortOrder": 1,
+          "label": "Empty Pack (10 pcs)",
+          "labelLength": 19,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 10,
+          "shippingWeightGrams": 500,
+          "unconfirmedCompiledReferencePricePkr": 1400,
+          "unconfirmedPerPieceReferencePkr": 140,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 3,
+            "totalPiecesOrderedAtMinUnits": 30,
+            "minimumOrderTotalAtReferencePkr": 4200
+          }
+        },
+        {
+          "sortOrder": 2,
+          "label": "Empty Pack (25 pcs)",
+          "labelLength": 19,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 25,
+          "shippingWeightGrams": 500,
+          "unconfirmedCompiledReferencePricePkr": 3300,
+          "unconfirmedPerPieceReferencePkr": 132,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 1,
+            "totalPiecesOrderedAtMinUnits": 25,
+            "minimumOrderTotalAtReferencePkr": 3300
+          }
+        },
+        {
+          "sortOrder": 3,
+          "label": "Empty Bulk (50 pcs)",
+          "labelLength": 19,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 50,
+          "shippingWeightGrams": 500,
+          "unconfirmedCompiledReferencePricePkr": 6250,
+          "unconfirmedPerPieceReferencePkr": 125,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 1,
+            "totalPiecesOrderedAtMinUnits": 50,
+            "minimumOrderTotalAtReferencePkr": 6250
+          }
+        },
+        {
+          "sortOrder": 4,
+          "label": "Empty Bulk (100 pcs)",
+          "labelLength": 20,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 100,
+          "shippingWeightGrams": 500,
+          "unconfirmedCompiledReferencePricePkr": 11500,
+          "unconfirmedPerPieceReferencePkr": 115,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 1,
+            "totalPiecesOrderedAtMinUnits": 100,
+            "minimumOrderTotalAtReferencePkr": 11500
+          }
+        },
+        {
+          "sortOrder": 5,
+          "label": "Filled Standard (Assorted Dry Fruits)",
+          "labelLength": 37,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 1,
+          "shippingWeightGrams": 500,
+          "unconfirmedCompiledReferencePricePkr": 1150,
+          "unconfirmedPerPieceReferencePkr": 1150,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 5,
+            "minOrderUnits": 5,
+            "totalPiecesOrderedAtMinUnits": 5,
+            "minimumOrderTotalAtReferencePkr": 5750
+          }
+        },
+        {
+          "sortOrder": 6,
+          "label": "Filled Royal (VIP 4-Nut Assortment)",
+          "labelLength": 35,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 1,
+          "shippingWeightGrams": 500,
+          "unconfirmedCompiledReferencePricePkr": 2200,
+          "unconfirmedPerPieceReferencePkr": 2200,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 3,
+            "minOrderUnits": 3,
+            "totalPiecesOrderedAtMinUnits": 3,
+            "minimumOrderTotalAtReferencePkr": 6600
+          }
+        }
+      ],
+      "proposedPayloadTemplate": {
+        "id": "bid-box-luxury-tin",
+        "schemaVersion": 1,
+        "expectedRevision": 0,
+        "targetRevision": 1,
+        "status": "<UNCONFIRMED_MERCHANT_DECISION: \"published\" | \"draft\" | \"archived\">",
+        "orderMode": "<UNCONFIRMED_MERCHANT_DECISION: \"both\" | \"standard\" | \"inquiry_quote\">",
+        "category": "celebration-boxes",
+        "occasions": [
+          "wedding"
+        ],
+        "allowCustomWeight": false,
+        "variants": [
+          {
+            "id": "portion-Empty%20Box%20(1%20pc)",
+            "label": "Empty Box (1 pc)",
+            "price": 140,
+            "available": true,
+            "weightGrams": 500,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Empty%20Pack%20(10%20pcs)",
+            "label": "Empty Pack (10 pcs)",
+            "price": 1400,
+            "available": true,
+            "weightGrams": 500,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Empty%20Pack%20(25%20pcs)",
+            "label": "Empty Pack (25 pcs)",
+            "price": 3300,
+            "available": true,
+            "weightGrams": 500,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Empty%20Bulk%20(50%20pcs)",
+            "label": "Empty Bulk (50 pcs)",
+            "price": 6250,
+            "available": true,
+            "weightGrams": 500,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Empty%20Bulk%20(100%20pcs)",
+            "label": "Empty Bulk (100 pcs)",
+            "price": 11500,
+            "available": true,
+            "weightGrams": 500,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Filled%20Standard%20(Assorted%20Dry%20Fruits)",
+            "label": "Filled Standard (Assorted Dry Fruits)",
+            "price": 1150,
+            "available": true,
+            "weightGrams": 500,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Filled%20Royal%20(VIP%204-Nut%20Assortment)",
+            "label": "Filled Royal (VIP 4-Nut Assortment)",
+            "price": 2200,
+            "available": true,
+            "weightGrams": 500,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          }
+        ]
+      },
+      "dryRunValidation": {
+        "adapterUsed": "updateAdminProduct -> validateDynamicProduct -> storedCatalogRecord",
+        "publishedCandidateValid": true,
+        "draftInquiryCandidateValid": true,
+        "auditEntryWritten": true
+      }
+    },
+    {
+      "productId": "bid-box-pyramid-favor",
+      "priorityGroup": "PRIORITY_2_FAIL_CLOSED_INACTIVE_MISSING_DOC",
+      "name_en": "Royal Pyramid Favor Box",
+      "currentLiveBehavior": "Missing Firestore document; currently fail-closed unavailable (active=false) via requiresStoredLegacyPackagingPricing",
+      "category": "celebration-boxes",
+      "packagingSubcategory": "wedding",
+      "occasions": [
+        "wedding"
+      ],
+      "collections": [],
+      "moqOverride": null,
+      "moqPolicyNote": "moqOverride is omitted (undefined) so calculatePackagingMoq dynamically applies Rule D1: min(25, max(1, ceil(5000 / publishedPerPiecePrice))). Seed MOQ of 10 is NOT hardcoded, and 5% import markup is NOT applied.",
+      "unconfirmedWholesaleReferencePerPiecePkr": 45,
+      "supportedPublicationStatusValues": [
+        "published",
+        "draft",
+        "archived"
+      ],
+      "supportedOrderModeValues": [
+        "standard",
+        "inquiry_quote",
+        "both"
+      ],
+      "seedDefaultPublicationStatus": "published",
+      "seedDefaultOrderMode": "both",
+      "unresolvedMerchantDecisions": [
+        "publicationStatus: Confirm whether to set status to \"published\", \"draft\", or \"archived\".",
+        "orderMode: Confirm whether to set orderMode to \"both\" (direct checkout + inquiry quote), \"standard\" (direct checkout only), or \"inquiry_quote\" (quote-only, no direct cart checkout).",
+        "optionPricesPkr: Confirm or replace each of the 7 UNCONFIRMED compiled reference PKR prices before any live write.",
+        "moqOverride: Confirm keeping dynamic Rule D1 MOQ (moqOverride omitted) or specify an explicit merchant integer override."
+      ],
+      "options": [
+        {
+          "sortOrder": 0,
+          "label": "Empty Box (1 pc)",
+          "labelLength": 16,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 1,
+          "shippingWeightGrams": 250,
+          "unconfirmedCompiledReferencePricePkr": 60,
+          "unconfirmedPerPieceReferencePkr": 60,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 25,
+            "totalPiecesOrderedAtMinUnits": 25,
+            "minimumOrderTotalAtReferencePkr": 1500
+          }
+        },
+        {
+          "sortOrder": 1,
+          "label": "Empty Pack (10 pcs)",
+          "labelLength": 19,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 10,
+          "shippingWeightGrams": 250,
+          "unconfirmedCompiledReferencePricePkr": 600,
+          "unconfirmedPerPieceReferencePkr": 60,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 3,
+            "totalPiecesOrderedAtMinUnits": 30,
+            "minimumOrderTotalAtReferencePkr": 1800
+          }
+        },
+        {
+          "sortOrder": 2,
+          "label": "Empty Pack (25 pcs)",
+          "labelLength": 19,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 25,
+          "shippingWeightGrams": 250,
+          "unconfirmedCompiledReferencePricePkr": 1375,
+          "unconfirmedPerPieceReferencePkr": 55,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 1,
+            "totalPiecesOrderedAtMinUnits": 25,
+            "minimumOrderTotalAtReferencePkr": 1375
+          }
+        },
+        {
+          "sortOrder": 3,
+          "label": "Empty Bulk (50 pcs)",
+          "labelLength": 19,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 50,
+          "shippingWeightGrams": 250,
+          "unconfirmedCompiledReferencePricePkr": 2500,
+          "unconfirmedPerPieceReferencePkr": 50,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 1,
+            "totalPiecesOrderedAtMinUnits": 50,
+            "minimumOrderTotalAtReferencePkr": 2500
+          }
+        },
+        {
+          "sortOrder": 4,
+          "label": "Empty Bulk (100 pcs)",
+          "labelLength": 20,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 100,
+          "shippingWeightGrams": 250,
+          "unconfirmedCompiledReferencePricePkr": 4500,
+          "unconfirmedPerPieceReferencePkr": 45,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 1,
+            "totalPiecesOrderedAtMinUnits": 100,
+            "minimumOrderTotalAtReferencePkr": 4500
+          }
+        },
+        {
+          "sortOrder": 5,
+          "label": "Filled Standard (Almonds, Cashews & Pistachios)",
+          "labelLength": 47,
+          "exceeds40Chars": true,
+          "unitType": "pack",
+          "piecesPerPack": 1,
+          "shippingWeightGrams": 250,
+          "unconfirmedCompiledReferencePricePkr": 350,
+          "unconfirmedPerPieceReferencePkr": 350,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 15,
+            "minOrderUnits": 15,
+            "totalPiecesOrderedAtMinUnits": 15,
+            "minimumOrderTotalAtReferencePkr": 5250
+          }
+        },
+        {
+          "sortOrder": 6,
+          "label": "Filled Royal (Deluxe Nut & Saffron Mix)",
+          "labelLength": 39,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 1,
+          "shippingWeightGrams": 250,
+          "unconfirmedCompiledReferencePricePkr": 600,
+          "unconfirmedPerPieceReferencePkr": 600,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 9,
+            "minOrderUnits": 9,
+            "totalPiecesOrderedAtMinUnits": 9,
+            "minimumOrderTotalAtReferencePkr": 5400
+          }
+        }
+      ],
+      "proposedPayloadTemplate": {
+        "id": "bid-box-pyramid-favor",
+        "schemaVersion": 1,
+        "expectedRevision": 0,
+        "targetRevision": 1,
+        "status": "<UNCONFIRMED_MERCHANT_DECISION: \"published\" | \"draft\" | \"archived\">",
+        "orderMode": "<UNCONFIRMED_MERCHANT_DECISION: \"both\" | \"standard\" | \"inquiry_quote\">",
+        "category": "celebration-boxes",
+        "occasions": [
+          "wedding"
+        ],
+        "allowCustomWeight": false,
+        "variants": [
+          {
+            "id": "portion-Empty%20Box%20(1%20pc)",
+            "label": "Empty Box (1 pc)",
+            "price": 60,
+            "available": true,
+            "weightGrams": 250,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Empty%20Pack%20(10%20pcs)",
+            "label": "Empty Pack (10 pcs)",
+            "price": 600,
+            "available": true,
+            "weightGrams": 250,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Empty%20Pack%20(25%20pcs)",
+            "label": "Empty Pack (25 pcs)",
+            "price": 1375,
+            "available": true,
+            "weightGrams": 250,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Empty%20Bulk%20(50%20pcs)",
+            "label": "Empty Bulk (50 pcs)",
+            "price": 2500,
+            "available": true,
+            "weightGrams": 250,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Empty%20Bulk%20(100%20pcs)",
+            "label": "Empty Bulk (100 pcs)",
+            "price": 4500,
+            "available": true,
+            "weightGrams": 250,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Filled%20Standard%20(Almonds%2C%20Cashews%20%26%20Pistachios)",
+            "label": "Filled Standard (Almonds, Cashews & Pistachios)",
+            "price": 350,
+            "available": true,
+            "weightGrams": 250,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Filled%20Royal%20(Deluxe%20Nut%20%26%20Saffron%20Mix)",
+            "label": "Filled Royal (Deluxe Nut & Saffron Mix)",
+            "price": 600,
+            "available": true,
+            "weightGrams": 250,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          }
+        ]
+      },
+      "dryRunValidation": {
+        "adapterUsed": "updateAdminProduct -> validateDynamicProduct -> storedCatalogRecord",
+        "publishedCandidateValid": true,
+        "draftInquiryCandidateValid": true,
+        "auditEntryWritten": true
+      }
+    },
+    {
+      "productId": "bid-box-card-nikkah",
+      "priorityGroup": "PRIORITY_2_FAIL_CLOSED_INACTIVE_MISSING_DOC",
+      "name_en": "Classic Card Bid Box (Nikkah & Baat Pakki)",
+      "currentLiveBehavior": "Missing Firestore document; currently fail-closed unavailable (active=false) via requiresStoredLegacyPackagingPricing",
+      "category": "celebration-boxes",
+      "packagingSubcategory": "wedding",
+      "occasions": [
+        "wedding"
+      ],
+      "collections": [],
+      "moqOverride": null,
+      "moqPolicyNote": "moqOverride is omitted (undefined) so calculatePackagingMoq dynamically applies Rule D1: min(25, max(1, ceil(5000 / publishedPerPiecePrice))). Seed MOQ of 10 is NOT hardcoded, and 5% import markup is NOT applied.",
+      "unconfirmedWholesaleReferencePerPiecePkr": 65,
+      "supportedPublicationStatusValues": [
+        "published",
+        "draft",
+        "archived"
+      ],
+      "supportedOrderModeValues": [
+        "standard",
+        "inquiry_quote",
+        "both"
+      ],
+      "seedDefaultPublicationStatus": "published",
+      "seedDefaultOrderMode": "both",
+      "unresolvedMerchantDecisions": [
+        "publicationStatus: Confirm whether to set status to \"published\", \"draft\", or \"archived\".",
+        "orderMode: Confirm whether to set orderMode to \"both\" (direct checkout + inquiry quote), \"standard\" (direct checkout only), or \"inquiry_quote\" (quote-only, no direct cart checkout).",
+        "optionPricesPkr: Confirm or replace each of the 7 UNCONFIRMED compiled reference PKR prices before any live write.",
+        "moqOverride: Confirm keeping dynamic Rule D1 MOQ (moqOverride omitted) or specify an explicit merchant integer override."
+      ],
+      "options": [
+        {
+          "sortOrder": 0,
+          "label": "Empty Box (1 pc)",
+          "labelLength": 16,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 1,
+          "shippingWeightGrams": 350,
+          "unconfirmedCompiledReferencePricePkr": 80,
+          "unconfirmedPerPieceReferencePkr": 80,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 25,
+            "totalPiecesOrderedAtMinUnits": 25,
+            "minimumOrderTotalAtReferencePkr": 2000
+          }
+        },
+        {
+          "sortOrder": 1,
+          "label": "Empty Pack (10 pcs)",
+          "labelLength": 19,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 10,
+          "shippingWeightGrams": 350,
+          "unconfirmedCompiledReferencePricePkr": 800,
+          "unconfirmedPerPieceReferencePkr": 80,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 3,
+            "totalPiecesOrderedAtMinUnits": 30,
+            "minimumOrderTotalAtReferencePkr": 2400
+          }
+        },
+        {
+          "sortOrder": 2,
+          "label": "Empty Pack (25 pcs)",
+          "labelLength": 19,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 25,
+          "shippingWeightGrams": 350,
+          "unconfirmedCompiledReferencePricePkr": 1875,
+          "unconfirmedPerPieceReferencePkr": 75,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 1,
+            "totalPiecesOrderedAtMinUnits": 25,
+            "minimumOrderTotalAtReferencePkr": 1875
+          }
+        },
+        {
+          "sortOrder": 3,
+          "label": "Empty Bulk (50 pcs)",
+          "labelLength": 19,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 50,
+          "shippingWeightGrams": 350,
+          "unconfirmedCompiledReferencePricePkr": 3500,
+          "unconfirmedPerPieceReferencePkr": 70,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 1,
+            "totalPiecesOrderedAtMinUnits": 50,
+            "minimumOrderTotalAtReferencePkr": 3500
+          }
+        },
+        {
+          "sortOrder": 4,
+          "label": "Empty Bulk (100 pcs)",
+          "labelLength": 20,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 100,
+          "shippingWeightGrams": 350,
+          "unconfirmedCompiledReferencePricePkr": 6500,
+          "unconfirmedPerPieceReferencePkr": 65,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 1,
+            "totalPiecesOrderedAtMinUnits": 100,
+            "minimumOrderTotalAtReferencePkr": 6500
+          }
+        },
+        {
+          "sortOrder": 5,
+          "label": "Filled Standard (Dry Fruits & Confections)",
+          "labelLength": 42,
+          "exceeds40Chars": true,
+          "unitType": "pack",
+          "piecesPerPack": 1,
+          "shippingWeightGrams": 350,
+          "unconfirmedCompiledReferencePricePkr": 550,
+          "unconfirmedPerPieceReferencePkr": 550,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 10,
+            "minOrderUnits": 10,
+            "totalPiecesOrderedAtMinUnits": 10,
+            "minimumOrderTotalAtReferencePkr": 5500
+          }
+        },
+        {
+          "sortOrder": 6,
+          "label": "Filled Royal (Premium Nuts & Dates)",
+          "labelLength": 35,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 1,
+          "shippingWeightGrams": 350,
+          "unconfirmedCompiledReferencePricePkr": 1100,
+          "unconfirmedPerPieceReferencePkr": 1100,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 5,
+            "minOrderUnits": 5,
+            "totalPiecesOrderedAtMinUnits": 5,
+            "minimumOrderTotalAtReferencePkr": 5500
+          }
+        }
+      ],
+      "proposedPayloadTemplate": {
+        "id": "bid-box-card-nikkah",
+        "schemaVersion": 1,
+        "expectedRevision": 0,
+        "targetRevision": 1,
+        "status": "<UNCONFIRMED_MERCHANT_DECISION: \"published\" | \"draft\" | \"archived\">",
+        "orderMode": "<UNCONFIRMED_MERCHANT_DECISION: \"both\" | \"standard\" | \"inquiry_quote\">",
+        "category": "celebration-boxes",
+        "occasions": [
+          "wedding"
+        ],
+        "allowCustomWeight": false,
+        "variants": [
+          {
+            "id": "portion-Empty%20Box%20(1%20pc)",
+            "label": "Empty Box (1 pc)",
+            "price": 80,
+            "available": true,
+            "weightGrams": 350,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Empty%20Pack%20(10%20pcs)",
+            "label": "Empty Pack (10 pcs)",
+            "price": 800,
+            "available": true,
+            "weightGrams": 350,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Empty%20Pack%20(25%20pcs)",
+            "label": "Empty Pack (25 pcs)",
+            "price": 1875,
+            "available": true,
+            "weightGrams": 350,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Empty%20Bulk%20(50%20pcs)",
+            "label": "Empty Bulk (50 pcs)",
+            "price": 3500,
+            "available": true,
+            "weightGrams": 350,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Empty%20Bulk%20(100%20pcs)",
+            "label": "Empty Bulk (100 pcs)",
+            "price": 6500,
+            "available": true,
+            "weightGrams": 350,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Filled%20Standard%20(Dry%20Fruits%20%26%20Confections)",
+            "label": "Filled Standard (Dry Fruits & Confections)",
+            "price": 550,
+            "available": true,
+            "weightGrams": 350,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Filled%20Royal%20(Premium%20Nuts%20%26%20Dates)",
+            "label": "Filled Royal (Premium Nuts & Dates)",
+            "price": 1100,
+            "available": true,
+            "weightGrams": 350,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          }
+        ]
+      },
+      "dryRunValidation": {
+        "adapterUsed": "updateAdminProduct -> validateDynamicProduct -> storedCatalogRecord",
+        "publishedCandidateValid": true,
+        "draftInquiryCandidateValid": true,
+        "auditEntryWritten": true
+      }
+    },
+    {
+      "productId": "bid-box-jute-pouch",
+      "priorityGroup": "PRIORITY_1_PUBLICLY_PURCHASABLE_SEED_FALLBACK",
+      "name_en": "Artisanal Jute & Jamawar Pouch (Potli)",
+      "currentLiveBehavior": "Missing Firestore document; currently active & publicly purchasable via compiled seed fallback (status=published, orderMode=both)",
+      "category": "celebration-boxes",
+      "packagingSubcategory": "wedding",
+      "occasions": [
+        "wedding"
+      ],
+      "collections": [],
+      "moqOverride": null,
+      "moqPolicyNote": "moqOverride is omitted (undefined) so calculatePackagingMoq dynamically applies Rule D1: min(25, max(1, ceil(5000 / publishedPerPiecePrice))). Seed MOQ of 10 is NOT hardcoded, and 5% import markup is NOT applied.",
+      "unconfirmedWholesaleReferencePerPiecePkr": 60,
+      "supportedPublicationStatusValues": [
+        "published",
+        "draft",
+        "archived"
+      ],
+      "supportedOrderModeValues": [
+        "standard",
+        "inquiry_quote",
+        "both"
+      ],
+      "seedDefaultPublicationStatus": "published",
+      "seedDefaultOrderMode": "both",
+      "unresolvedMerchantDecisions": [
+        "publicationStatus: Confirm whether to set status to \"published\", \"draft\", or \"archived\".",
+        "orderMode: Confirm whether to set orderMode to \"both\" (direct checkout + inquiry quote), \"standard\" (direct checkout only), or \"inquiry_quote\" (quote-only, no direct cart checkout).",
+        "optionPricesPkr: Confirm or replace each of the 7 UNCONFIRMED compiled reference PKR prices before any live write.",
+        "moqOverride: Confirm keeping dynamic Rule D1 MOQ (moqOverride omitted) or specify an explicit merchant integer override."
+      ],
+      "options": [
+        {
+          "sortOrder": 0,
+          "label": "Empty Box (1 pc)",
+          "labelLength": 16,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 1,
+          "shippingWeightGrams": 250,
+          "unconfirmedCompiledReferencePricePkr": 75,
+          "unconfirmedPerPieceReferencePkr": 75,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 25,
+            "totalPiecesOrderedAtMinUnits": 25,
+            "minimumOrderTotalAtReferencePkr": 1875
+          }
+        },
+        {
+          "sortOrder": 1,
+          "label": "Empty Pack (10 pcs)",
+          "labelLength": 19,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 10,
+          "shippingWeightGrams": 250,
+          "unconfirmedCompiledReferencePricePkr": 750,
+          "unconfirmedPerPieceReferencePkr": 75,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 3,
+            "totalPiecesOrderedAtMinUnits": 30,
+            "minimumOrderTotalAtReferencePkr": 2250
+          }
+        },
+        {
+          "sortOrder": 2,
+          "label": "Empty Pack (25 pcs)",
+          "labelLength": 19,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 25,
+          "shippingWeightGrams": 250,
+          "unconfirmedCompiledReferencePricePkr": 1800,
+          "unconfirmedPerPieceReferencePkr": 72,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 1,
+            "totalPiecesOrderedAtMinUnits": 25,
+            "minimumOrderTotalAtReferencePkr": 1800
+          }
+        },
+        {
+          "sortOrder": 3,
+          "label": "Empty Bulk (50 pcs)",
+          "labelLength": 19,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 50,
+          "shippingWeightGrams": 250,
+          "unconfirmedCompiledReferencePricePkr": 3400,
+          "unconfirmedPerPieceReferencePkr": 68,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 1,
+            "totalPiecesOrderedAtMinUnits": 50,
+            "minimumOrderTotalAtReferencePkr": 3400
+          }
+        },
+        {
+          "sortOrder": 4,
+          "label": "Empty Bulk (100 pcs)",
+          "labelLength": 20,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 100,
+          "shippingWeightGrams": 250,
+          "unconfirmedCompiledReferencePricePkr": 6000,
+          "unconfirmedPerPieceReferencePkr": 60,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 1,
+            "totalPiecesOrderedAtMinUnits": 100,
+            "minimumOrderTotalAtReferencePkr": 6000
+          }
+        },
+        {
+          "sortOrder": 5,
+          "label": "Filled Standard (100g Mixed Nuts)",
+          "labelLength": 33,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 1,
+          "shippingWeightGrams": 250,
+          "unconfirmedCompiledReferencePricePkr": 450,
+          "unconfirmedPerPieceReferencePkr": 450,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 12,
+            "minOrderUnits": 12,
+            "totalPiecesOrderedAtMinUnits": 12,
+            "minimumOrderTotalAtReferencePkr": 5400
+          }
+        },
+        {
+          "sortOrder": 6,
+          "label": "Filled Royal (250g Mixed Nuts)",
+          "labelLength": 30,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 1,
+          "shippingWeightGrams": 250,
+          "unconfirmedCompiledReferencePricePkr": 850,
+          "unconfirmedPerPieceReferencePkr": 850,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 6,
+            "minOrderUnits": 6,
+            "totalPiecesOrderedAtMinUnits": 6,
+            "minimumOrderTotalAtReferencePkr": 5100
+          }
+        }
+      ],
+      "proposedPayloadTemplate": {
+        "id": "bid-box-jute-pouch",
+        "schemaVersion": 1,
+        "expectedRevision": 0,
+        "targetRevision": 1,
+        "status": "<UNCONFIRMED_MERCHANT_DECISION: \"published\" | \"draft\" | \"archived\">",
+        "orderMode": "<UNCONFIRMED_MERCHANT_DECISION: \"both\" | \"standard\" | \"inquiry_quote\">",
+        "category": "celebration-boxes",
+        "occasions": [
+          "wedding"
+        ],
+        "allowCustomWeight": false,
+        "variants": [
+          {
+            "id": "portion-Empty%20Box%20(1%20pc)",
+            "label": "Empty Box (1 pc)",
+            "price": 75,
+            "available": true,
+            "weightGrams": 250,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Empty%20Pack%20(10%20pcs)",
+            "label": "Empty Pack (10 pcs)",
+            "price": 750,
+            "available": true,
+            "weightGrams": 250,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Empty%20Pack%20(25%20pcs)",
+            "label": "Empty Pack (25 pcs)",
+            "price": 1800,
+            "available": true,
+            "weightGrams": 250,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Empty%20Bulk%20(50%20pcs)",
+            "label": "Empty Bulk (50 pcs)",
+            "price": 3400,
+            "available": true,
+            "weightGrams": 250,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Empty%20Bulk%20(100%20pcs)",
+            "label": "Empty Bulk (100 pcs)",
+            "price": 6000,
+            "available": true,
+            "weightGrams": 250,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Filled%20Standard%20(100g%20Mixed%20Nuts)",
+            "label": "Filled Standard (100g Mixed Nuts)",
+            "price": 450,
+            "available": true,
+            "weightGrams": 250,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Filled%20Royal%20(250g%20Mixed%20Nuts)",
+            "label": "Filled Royal (250g Mixed Nuts)",
+            "price": 850,
+            "available": true,
+            "weightGrams": 250,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          }
+        ]
+      },
+      "dryRunValidation": {
+        "adapterUsed": "updateAdminProduct -> validateDynamicProduct -> storedCatalogRecord",
+        "publishedCandidateValid": true,
+        "draftInquiryCandidateValid": true,
+        "auditEntryWritten": true
+      }
+    },
+    {
+      "productId": "bid-box-sweet-nikkah",
+      "priorityGroup": "PRIORITY_1_PUBLICLY_PURCHASABLE_SEED_FALLBACK",
+      "name_en": "Heritage Nikkah Sweet & Dry Fruit Box (500g / 1kg)",
+      "currentLiveBehavior": "Missing Firestore document; currently active & publicly purchasable via compiled seed fallback (status=published, orderMode=both)",
+      "category": "celebration-boxes",
+      "packagingSubcategory": "wedding",
+      "occasions": [
+        "wedding"
+      ],
+      "collections": [],
+      "moqOverride": null,
+      "moqPolicyNote": "moqOverride is omitted (undefined) so calculatePackagingMoq dynamically applies Rule D1: min(25, max(1, ceil(5000 / publishedPerPiecePrice))). Seed MOQ of 10 is NOT hardcoded, and 5% import markup is NOT applied.",
+      "unconfirmedWholesaleReferencePerPiecePkr": 150,
+      "supportedPublicationStatusValues": [
+        "published",
+        "draft",
+        "archived"
+      ],
+      "supportedOrderModeValues": [
+        "standard",
+        "inquiry_quote",
+        "both"
+      ],
+      "seedDefaultPublicationStatus": "published",
+      "seedDefaultOrderMode": "both",
+      "unresolvedMerchantDecisions": [
+        "publicationStatus: Confirm whether to set status to \"published\", \"draft\", or \"archived\".",
+        "orderMode: Confirm whether to set orderMode to \"both\" (direct checkout + inquiry quote), \"standard\" (direct checkout only), or \"inquiry_quote\" (quote-only, no direct cart checkout).",
+        "optionPricesPkr: Confirm or replace each of the 7 UNCONFIRMED compiled reference PKR prices before any live write.",
+        "moqOverride: Confirm keeping dynamic Rule D1 MOQ (moqOverride omitted) or specify an explicit merchant integer override."
+      ],
+      "options": [
+        {
+          "sortOrder": 0,
+          "label": "Empty Box (1 pc)",
+          "labelLength": 16,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 1,
+          "shippingWeightGrams": 750,
+          "unconfirmedCompiledReferencePricePkr": 180,
+          "unconfirmedPerPieceReferencePkr": 180,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 25,
+            "totalPiecesOrderedAtMinUnits": 25,
+            "minimumOrderTotalAtReferencePkr": 4500
+          }
+        },
+        {
+          "sortOrder": 1,
+          "label": "Empty Pack (10 pcs)",
+          "labelLength": 19,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 10,
+          "shippingWeightGrams": 750,
+          "unconfirmedCompiledReferencePricePkr": 1800,
+          "unconfirmedPerPieceReferencePkr": 180,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 3,
+            "totalPiecesOrderedAtMinUnits": 30,
+            "minimumOrderTotalAtReferencePkr": 5400
+          }
+        },
+        {
+          "sortOrder": 2,
+          "label": "Empty Pack (25 pcs)",
+          "labelLength": 19,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 25,
+          "shippingWeightGrams": 750,
+          "unconfirmedCompiledReferencePricePkr": 4300,
+          "unconfirmedPerPieceReferencePkr": 172,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 1,
+            "totalPiecesOrderedAtMinUnits": 25,
+            "minimumOrderTotalAtReferencePkr": 4300
+          }
+        },
+        {
+          "sortOrder": 3,
+          "label": "Empty Bulk (50 pcs)",
+          "labelLength": 19,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 50,
+          "shippingWeightGrams": 750,
+          "unconfirmedCompiledReferencePricePkr": 8250,
+          "unconfirmedPerPieceReferencePkr": 165,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 1,
+            "totalPiecesOrderedAtMinUnits": 50,
+            "minimumOrderTotalAtReferencePkr": 8250
+          }
+        },
+        {
+          "sortOrder": 4,
+          "label": "Empty Bulk (100 pcs)",
+          "labelLength": 20,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 100,
+          "shippingWeightGrams": 750,
+          "unconfirmedCompiledReferencePricePkr": 15000,
+          "unconfirmedPerPieceReferencePkr": 150,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 1,
+            "totalPiecesOrderedAtMinUnits": 100,
+            "minimumOrderTotalAtReferencePkr": 15000
+          }
+        },
+        {
+          "sortOrder": 5,
+          "label": "Filled 500g Luxury Dry Fruit Mix",
+          "labelLength": 32,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 1,
+          "shippingWeightGrams": 750,
+          "unconfirmedCompiledReferencePricePkr": 1750,
+          "unconfirmedPerPieceReferencePkr": 1750,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 3,
+            "minOrderUnits": 3,
+            "totalPiecesOrderedAtMinUnits": 3,
+            "minimumOrderTotalAtReferencePkr": 5250
+          }
+        },
+        {
+          "sortOrder": 6,
+          "label": "Filled 1kg Luxury Dry Fruit Mix",
+          "labelLength": 31,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 1,
+          "shippingWeightGrams": 750,
+          "unconfirmedCompiledReferencePricePkr": 3800,
+          "unconfirmedPerPieceReferencePkr": 3800,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 2,
+            "minOrderUnits": 2,
+            "totalPiecesOrderedAtMinUnits": 2,
+            "minimumOrderTotalAtReferencePkr": 7600
+          }
+        }
+      ],
+      "proposedPayloadTemplate": {
+        "id": "bid-box-sweet-nikkah",
+        "schemaVersion": 1,
+        "expectedRevision": 0,
+        "targetRevision": 1,
+        "status": "<UNCONFIRMED_MERCHANT_DECISION: \"published\" | \"draft\" | \"archived\">",
+        "orderMode": "<UNCONFIRMED_MERCHANT_DECISION: \"both\" | \"standard\" | \"inquiry_quote\">",
+        "category": "celebration-boxes",
+        "occasions": [
+          "wedding"
+        ],
+        "allowCustomWeight": false,
+        "variants": [
+          {
+            "id": "portion-Empty%20Box%20(1%20pc)",
+            "label": "Empty Box (1 pc)",
+            "price": 180,
+            "available": true,
+            "weightGrams": 750,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Empty%20Pack%20(10%20pcs)",
+            "label": "Empty Pack (10 pcs)",
+            "price": 1800,
+            "available": true,
+            "weightGrams": 750,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Empty%20Pack%20(25%20pcs)",
+            "label": "Empty Pack (25 pcs)",
+            "price": 4300,
+            "available": true,
+            "weightGrams": 750,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Empty%20Bulk%20(50%20pcs)",
+            "label": "Empty Bulk (50 pcs)",
+            "price": 8250,
+            "available": true,
+            "weightGrams": 750,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Empty%20Bulk%20(100%20pcs)",
+            "label": "Empty Bulk (100 pcs)",
+            "price": 15000,
+            "available": true,
+            "weightGrams": 750,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Filled%20500g%20Luxury%20Dry%20Fruit%20Mix",
+            "label": "Filled 500g Luxury Dry Fruit Mix",
+            "price": 1750,
+            "available": true,
+            "weightGrams": 750,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Filled%201kg%20Luxury%20Dry%20Fruit%20Mix",
+            "label": "Filled 1kg Luxury Dry Fruit Mix",
+            "price": 3800,
+            "available": true,
+            "weightGrams": 750,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          }
+        ]
+      },
+      "dryRunValidation": {
+        "adapterUsed": "updateAdminProduct -> validateDynamicProduct -> storedCatalogRecord",
+        "publishedCandidateValid": true,
+        "draftInquiryCandidateValid": true,
+        "auditEntryWritten": true
+      }
+    },
+    {
+      "productId": "bid-box-birth-announcement",
+      "priorityGroup": "PRIORITY_2_FAIL_CLOSED_INACTIVE_MISSING_DOC",
+      "name_en": "Birth Announcement Favor Box (Baby Boy / Girl)",
+      "currentLiveBehavior": "Missing Firestore document; currently fail-closed unavailable (active=false) via requiresStoredLegacyPackagingPricing",
+      "category": "celebration-boxes",
+      "packagingSubcategory": "baby",
+      "occasions": [
+        "birth"
+      ],
+      "collections": [],
+      "moqOverride": null,
+      "moqPolicyNote": "moqOverride is omitted (undefined) so calculatePackagingMoq dynamically applies Rule D1: min(25, max(1, ceil(5000 / publishedPerPiecePrice))). Seed MOQ of 10 is NOT hardcoded, and 5% import markup is NOT applied.",
+      "unconfirmedWholesaleReferencePerPiecePkr": 125,
+      "supportedPublicationStatusValues": [
+        "published",
+        "draft",
+        "archived"
+      ],
+      "supportedOrderModeValues": [
+        "standard",
+        "inquiry_quote",
+        "both"
+      ],
+      "seedDefaultPublicationStatus": "published",
+      "seedDefaultOrderMode": "both",
+      "unresolvedMerchantDecisions": [
+        "publicationStatus: Confirm whether to set status to \"published\", \"draft\", or \"archived\".",
+        "orderMode: Confirm whether to set orderMode to \"both\" (direct checkout + inquiry quote), \"standard\" (direct checkout only), or \"inquiry_quote\" (quote-only, no direct cart checkout).",
+        "optionPricesPkr: Confirm or replace each of the 7 UNCONFIRMED compiled reference PKR prices before any live write.",
+        "moqOverride: Confirm keeping dynamic Rule D1 MOQ (moqOverride omitted) or specify an explicit merchant integer override."
+      ],
+      "options": [
+        {
+          "sortOrder": 0,
+          "label": "Empty Box (1 pc)",
+          "labelLength": 16,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 1,
+          "shippingWeightGrams": 500,
+          "unconfirmedCompiledReferencePricePkr": 150,
+          "unconfirmedPerPieceReferencePkr": 150,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 25,
+            "totalPiecesOrderedAtMinUnits": 25,
+            "minimumOrderTotalAtReferencePkr": 3750
+          }
+        },
+        {
+          "sortOrder": 1,
+          "label": "Empty Pack (10 pcs)",
+          "labelLength": 19,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 10,
+          "shippingWeightGrams": 500,
+          "unconfirmedCompiledReferencePricePkr": 1500,
+          "unconfirmedPerPieceReferencePkr": 150,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 3,
+            "totalPiecesOrderedAtMinUnits": 30,
+            "minimumOrderTotalAtReferencePkr": 4500
+          }
+        },
+        {
+          "sortOrder": 2,
+          "label": "Empty Pack (25 pcs)",
+          "labelLength": 19,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 25,
+          "shippingWeightGrams": 500,
+          "unconfirmedCompiledReferencePricePkr": 3550,
+          "unconfirmedPerPieceReferencePkr": 142,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 1,
+            "totalPiecesOrderedAtMinUnits": 25,
+            "minimumOrderTotalAtReferencePkr": 3550
+          }
+        },
+        {
+          "sortOrder": 3,
+          "label": "Empty Bulk (50 pcs)",
+          "labelLength": 19,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 50,
+          "shippingWeightGrams": 500,
+          "unconfirmedCompiledReferencePricePkr": 6750,
+          "unconfirmedPerPieceReferencePkr": 135,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 1,
+            "totalPiecesOrderedAtMinUnits": 50,
+            "minimumOrderTotalAtReferencePkr": 6750
+          }
+        },
+        {
+          "sortOrder": 4,
+          "label": "Empty Bulk (100 pcs)",
+          "labelLength": 20,
+          "exceeds40Chars": false,
+          "unitType": "pack",
+          "piecesPerPack": 100,
+          "shippingWeightGrams": 500,
+          "unconfirmedCompiledReferencePricePkr": 12500,
+          "unconfirmedPerPieceReferencePkr": 125,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 25,
+            "minOrderUnits": 1,
+            "totalPiecesOrderedAtMinUnits": 100,
+            "minimumOrderTotalAtReferencePkr": 12500
+          }
+        },
+        {
+          "sortOrder": 5,
+          "label": "Filled Standard (Dry Fruits & Chocolates)",
+          "labelLength": 41,
+          "exceeds40Chars": true,
+          "unitType": "pack",
+          "piecesPerPack": 1,
+          "shippingWeightGrams": 500,
+          "unconfirmedCompiledReferencePricePkr": 950,
+          "unconfirmedPerPieceReferencePkr": 950,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 6,
+            "minOrderUnits": 6,
+            "totalPiecesOrderedAtMinUnits": 6,
+            "minimumOrderTotalAtReferencePkr": 5700
+          }
+        },
+        {
+          "sortOrder": 6,
+          "label": "Filled Royal (Deluxe Nuts, Panjeeri & Chocolates)",
+          "labelLength": 49,
+          "exceeds40Chars": true,
+          "unitType": "pack",
+          "piecesPerPack": 1,
+          "shippingWeightGrams": 500,
+          "unconfirmedCompiledReferencePricePkr": 2900,
+          "unconfirmedPerPieceReferencePkr": 2900,
+          "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+          "dynamicMoqWhenOverrideUnset": {
+            "formula": "min(25, max(1, ceil(5000 / publishedPerPiecePrice)))",
+            "moqPieces": 2,
+            "minOrderUnits": 2,
+            "totalPiecesOrderedAtMinUnits": 2,
+            "minimumOrderTotalAtReferencePkr": 5800
+          }
+        }
+      ],
+      "proposedPayloadTemplate": {
+        "id": "bid-box-birth-announcement",
+        "schemaVersion": 1,
+        "expectedRevision": 0,
+        "targetRevision": 1,
+        "status": "<UNCONFIRMED_MERCHANT_DECISION: \"published\" | \"draft\" | \"archived\">",
+        "orderMode": "<UNCONFIRMED_MERCHANT_DECISION: \"both\" | \"standard\" | \"inquiry_quote\">",
+        "category": "celebration-boxes",
+        "occasions": [
+          "birth"
+        ],
+        "allowCustomWeight": false,
+        "variants": [
+          {
+            "id": "portion-Empty%20Box%20(1%20pc)",
+            "label": "Empty Box (1 pc)",
+            "price": 150,
+            "available": true,
+            "weightGrams": 500,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Empty%20Pack%20(10%20pcs)",
+            "label": "Empty Pack (10 pcs)",
+            "price": 1500,
+            "available": true,
+            "weightGrams": 500,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Empty%20Pack%20(25%20pcs)",
+            "label": "Empty Pack (25 pcs)",
+            "price": 3550,
+            "available": true,
+            "weightGrams": 500,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Empty%20Bulk%20(50%20pcs)",
+            "label": "Empty Bulk (50 pcs)",
+            "price": 6750,
+            "available": true,
+            "weightGrams": 500,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Empty%20Bulk%20(100%20pcs)",
+            "label": "Empty Bulk (100 pcs)",
+            "price": 12500,
+            "available": true,
+            "weightGrams": 500,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Filled%20Standard%20(Dry%20Fruits%20%26%20Chocolates)",
+            "label": "Filled Standard (Dry Fruits & Chocolates)",
+            "price": 950,
+            "available": true,
+            "weightGrams": 500,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          },
+          {
+            "id": "portion-Filled%20Royal%20(Deluxe%20Nuts%2C%20Panjeeri%20%26%20Chocolates)",
+            "label": "Filled Royal (Deluxe Nuts, Panjeeri & Chocolates)",
+            "price": 2900,
+            "available": true,
+            "weightGrams": 500,
+            "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE"
+          }
+        ]
+      },
+      "dryRunValidation": {
+        "adapterUsed": "updateAdminProduct -> validateDynamicProduct -> storedCatalogRecord",
+        "publishedCandidateValid": true,
+        "draftInquiryCandidateValid": true,
+        "auditEntryWritten": true
+      }
+    },
+    {
+      "productId": "bid-box-acrylic-royal",
+      "priorityGroup": "PRIORITY_3_QUOTE_ONLY_SEED_FALLBACK",
+      "name_en": "Acrylic & Velvet Royal Bid Box",
+      "currentLiveBehavior": "Missing Firestore document; currently active as quote-only via compiled seed fallback on feature branch (status=published, orderMode=inquiry_quote)",
+      "category": "celebration-boxes",
+      "packagingSubcategory": "acrylic",
+      "occasions": [
+        "wedding"
+      ],
+      "collections": [],
+      "moqOverride": null,
+      "moqPolicyNote": "moqOverride is omitted (undefined) so calculatePackagingMoq dynamically applies Rule D1: min(25, max(1, ceil(5000 / publishedPerPiecePrice))). Seed MOQ of 10 is NOT hardcoded, and 5% import markup is NOT applied.",
+      "unconfirmedWholesaleReferencePerPiecePkr": 0,
+      "supportedPublicationStatusValues": [
+        "published",
+        "draft",
+        "archived"
+      ],
+      "supportedOrderModeValues": [
+        "standard",
+        "inquiry_quote",
+        "both"
+      ],
+      "seedDefaultPublicationStatus": "published",
+      "seedDefaultOrderMode": "inquiry_quote",
+      "unresolvedMerchantDecisions": [
+        "publicationStatus: Confirm whether to set status to \"published\", \"draft\", or \"archived\".",
+        "orderMode: Confirm whether to set orderMode to \"both\" (direct checkout + inquiry quote), \"standard\" (direct checkout only), or \"inquiry_quote\" (quote-only, no direct cart checkout).",
+        "variantsAndPrices: Confirm whether bid-box-acrylic-royal remains quote-only with 0 priced variants (variants: []) or requires approved empty/filled option labels and PKR prices."
+      ],
+      "options": [],
+      "proposedPayloadTemplate": {
+        "id": "bid-box-acrylic-royal",
+        "schemaVersion": 1,
+        "expectedRevision": 0,
+        "targetRevision": 1,
+        "status": "<UNCONFIRMED_MERCHANT_DECISION: \"published\" | \"draft\" | \"archived\">",
+        "orderMode": "<UNCONFIRMED_MERCHANT_DECISION: \"both\" | \"standard\" | \"inquiry_quote\">",
+        "category": "celebration-boxes",
+        "occasions": [
+          "wedding"
+        ],
+        "allowCustomWeight": false,
+        "variants": []
+      },
+      "dryRunValidation": {
+        "adapterUsed": "updateAdminProduct -> validateDynamicProduct -> storedCatalogRecord",
+        "publishedCandidateValid": true,
+        "draftInquiryCandidateValid": true,
+        "auditEntryWritten": true
+      }
+    }
+  ],
+  "missingHamperBoxProposals": [
+    {
+      "boxId": "box-wood",
+      "name_en": "Sheesham Artisan Wooden Chest",
+      "portionRange": "4–6 portions (800g–1200g)",
+      "currentLiveBehavior": "Missing hamperBoxes/{boxId} document in live Firestore; /api/catalog returns hamperBoxes: [], blocking custom hamper checkout via MISSING_HAMPER_BOX (409).",
+      "unconfirmedCompiledReferencePricePkr": 1800,
+      "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+      "supportedPublicationStateField": "active: boolean (true = published/selectable, false = disabled/draft)",
+      "supportedOrderModeNote": "Custom hampers use standard cart/order checkout when active: true; when active: false or missing, custom hamper checkout is blocked.",
+      "unresolvedMerchantDecisions": [
+        "active: Confirm whether box-wood should be enabled (active: true) or kept disabled (active: false).",
+        "price: Confirm or replace the UNCONFIRMED compiled reference price (1800 PKR) for box-wood."
+      ],
+      "proposedPayloadTemplate": {
+        "schemaVersion": 1,
+        "boxId": "box-wood",
+        "revision": 1,
+        "price": 1800,
+        "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE",
+        "active": "<UNCONFIRMED_MERCHANT_DECISION: true | false>"
+      },
+      "dryRunValidation": {
+        "adapterUsed": "validateHamperBoxPricing + transactional create + storedHamperBoxRecord",
+        "schemaValid": true
+      }
+    },
+    {
+      "boxId": "box-velvet",
+      "name_en": "Royal Emerald Velvet Coffer",
+      "portionRange": "3–5 portions (600g–1000g)",
+      "currentLiveBehavior": "Missing hamperBoxes/{boxId} document in live Firestore; /api/catalog returns hamperBoxes: [], blocking custom hamper checkout via MISSING_HAMPER_BOX (409).",
+      "unconfirmedCompiledReferencePricePkr": 1400,
+      "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+      "supportedPublicationStateField": "active: boolean (true = published/selectable, false = disabled/draft)",
+      "supportedOrderModeNote": "Custom hampers use standard cart/order checkout when active: true; when active: false or missing, custom hamper checkout is blocked.",
+      "unresolvedMerchantDecisions": [
+        "active: Confirm whether box-velvet should be enabled (active: true) or kept disabled (active: false).",
+        "price: Confirm or replace the UNCONFIRMED compiled reference price (1400 PKR) for box-velvet."
+      ],
+      "proposedPayloadTemplate": {
+        "schemaVersion": 1,
+        "boxId": "box-velvet",
+        "revision": 1,
+        "price": 1400,
+        "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE",
+        "active": "<UNCONFIRMED_MERCHANT_DECISION: true | false>"
+      },
+      "dryRunValidation": {
+        "adapterUsed": "validateHamperBoxPricing + transactional create + storedHamperBoxRecord",
+        "schemaValid": true
+      }
+    },
+    {
+      "boxId": "box-tin",
+      "name_en": "Heritage Gold Keepsake Tin",
+      "portionRange": "3–4 portions (600g–800g)",
+      "currentLiveBehavior": "Missing hamperBoxes/{boxId} document in live Firestore; /api/catalog returns hamperBoxes: [], blocking custom hamper checkout via MISSING_HAMPER_BOX (409).",
+      "unconfirmedCompiledReferencePricePkr": 950,
+      "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE_NOT_APPROVED_SELLING_PRICE",
+      "supportedPublicationStateField": "active: boolean (true = published/selectable, false = disabled/draft)",
+      "supportedOrderModeNote": "Custom hampers use standard cart/order checkout when active: true; when active: false or missing, custom hamper checkout is blocked.",
+      "unresolvedMerchantDecisions": [
+        "active: Confirm whether box-tin should be enabled (active: true) or kept disabled (active: false).",
+        "price: Confirm or replace the UNCONFIRMED compiled reference price (950 PKR) for box-tin."
+      ],
+      "proposedPayloadTemplate": {
+        "schemaVersion": 1,
+        "boxId": "box-tin",
+        "revision": 1,
+        "price": 950,
+        "priceApprovalStatus": "UNCONFIRMED_COMPILED_REFERENCE",
+        "active": "<UNCONFIRMED_MERCHANT_DECISION: true | false>"
+      },
+      "dryRunValidation": {
+        "adapterUsed": "validateHamperBoxPricing + transactional create + storedHamperBoxRecord",
+        "schemaValid": true
+      }
+    }
+  ],
+  "taxonomyAndDateDescriptionProposals": [
+    {
+      "productId": "bundle-silver-hamper",
+      "name_en": "Silver Hamper",
+      "purpose": "Add gift-boxes collection membership and wedding/corporate occasion tags while preserving primary category=bundles and /category/deals match",
+      "expectedRevision": 0,
+      "newRevision": 1,
+      "preservedCategory": "bundles",
+      "proposedCollections": [
+        "gift-boxes"
+      ],
+      "proposedOccasions": [
+        "wedding",
+        "corporate"
+      ],
+      "pricesPreservedIdentical": true,
+      "storedPricesPkr": {
+        "Bundle": 2500
+      },
+      "storedPricePer100gPkr": 0,
+      "unresolvedMerchantDecisions": [
+        "Confirm adding collections: [\"gift-boxes\"] so Silver Gifting Hamper appears in /category/gift-boxes while remaining in /category/bundles and /category/deals.",
+        "Confirm occasions: [\"wedding\", \"corporate\"]."
+      ]
+    },
+    {
+      "productId": "bundle-gold-hamper",
+      "name_en": "Gold Hamper",
+      "purpose": "Add gift-boxes collection membership and wedding/corporate occasion tags while preserving primary category=bundles and /category/deals match",
+      "expectedRevision": 0,
+      "newRevision": 1,
+      "preservedCategory": "bundles",
+      "proposedCollections": [
+        "gift-boxes"
+      ],
+      "proposedOccasions": [
+        "wedding",
+        "corporate"
+      ],
+      "pricesPreservedIdentical": true,
+      "storedPricesPkr": {
+        "Bundle": 5500
+      },
+      "storedPricePer100gPkr": 0,
+      "unresolvedMerchantDecisions": [
+        "Confirm adding collections: [\"gift-boxes\"] so Golden Dry Fruit Tray appears in /category/gift-boxes while remaining in /category/bundles and /category/deals.",
+        "Confirm occasions: [\"wedding\", \"corporate\"]."
+      ]
+    },
+    {
+      "productId": "bundle-platinum-hamper",
+      "name_en": "Platinum Hamper",
+      "purpose": "Add gift-boxes collection membership and wedding/corporate occasion tags while preserving primary category=bundles and /category/deals match",
+      "expectedRevision": 0,
+      "newRevision": 1,
+      "preservedCategory": "bundles",
+      "proposedCollections": [
+        "gift-boxes"
+      ],
+      "proposedOccasions": [
+        "wedding",
+        "corporate"
+      ],
+      "pricesPreservedIdentical": true,
+      "storedPricesPkr": {
+        "Bundle": 12500
+      },
+      "storedPricePer100gPkr": 0,
+      "unresolvedMerchantDecisions": [
+        "Confirm adding collections: [\"gift-boxes\"] so Platinum VIP Chest appears in /category/gift-boxes while remaining in /category/bundles and /category/deals.",
+        "Confirm occasions: [\"wedding\", \"corporate\"]."
+      ]
+    },
+    {
+      "productId": "bundle-ramadan-ready",
+      "name_en": "Ramadan Ready",
+      "purpose": "Add gift-boxes collection membership and ramadan occasion tag while preserving primary category=bundles and /category/deals match",
+      "expectedRevision": 0,
+      "newRevision": 1,
+      "preservedCategory": "bundles",
+      "proposedCollections": [
+        "gift-boxes"
+      ],
+      "proposedOccasions": [
+        "ramadan"
+      ],
+      "pricesPreservedIdentical": true,
+      "storedPricesPkr": {
+        "Bundle": 4500
+      },
+      "storedPricePer100gPkr": 0,
+      "unresolvedMerchantDecisions": [
+        "Confirm adding collections: [\"gift-boxes\"] and occasions: [\"ramadan\"].",
+        "Confirm whether componentIds/description for bundle-ramadan-ready should keep or revise Irani Muzafati / Panjgur Amber date references alongside ajwa-dates and medjool-dates."
+      ]
+    },
+    {
+      "productId": "corporate-gifting",
+      "name_en": "Corporate Gifting",
+      "purpose": "Add gift-boxes collection membership and corporate occasion tag while preserving primary category=bundles and quote-only orderMode",
+      "expectedRevision": 0,
+      "newRevision": 1,
+      "preservedCategory": "bundles",
+      "proposedCollections": [
+        "gift-boxes"
+      ],
+      "proposedOccasions": [
+        "corporate"
+      ],
+      "pricesPreservedIdentical": true,
+      "storedPricesPkr": {},
+      "storedPricePer100gPkr": 0,
+      "unresolvedMerchantDecisions": [
+        "Confirm adding collections: [\"gift-boxes\"] and occasions: [\"corporate\"] on corporate-gifting."
+      ]
+    },
+    {
+      "productId": "bundle-royal-feast",
+      "name_en": "Royal Feast",
+      "purpose": "Add wedding occasion tag while preserving primary category=bundles",
+      "expectedRevision": 0,
+      "newRevision": 1,
+      "preservedCategory": "bundles",
+      "proposedOccasions": [
+        "wedding"
+      ],
+      "pricesPreservedIdentical": true,
+      "storedPricesPkr": {
+        "Bundle": 12000
+      },
+      "storedPricePer100gPkr": 0,
+      "unresolvedMerchantDecisions": [
+        "Confirm adding occasions: [\"wedding\"] on bundle-royal-feast.",
+        "Confirm whether componentIds/description for bundle-royal-feast should keep or revise Panjgur Amber date reference alongside medjool-dates."
+      ]
+    },
+    {
+      "productId": "deal-1",
+      "name_en": "The Classics (Walnut & Pista Duo)",
+      "purpose": "Preserve primary category=gift-boxes (presented in luxury presentation gift box) and add collections=[\"bundles\"] + occasions=[\"corporate\"] if approved",
+      "expectedRevision": 0,
+      "newRevision": 1,
+      "preservedCategory": "gift-boxes",
+      "proposedCollections": [
+        "bundles"
+      ],
+      "proposedOccasions": [
+        "corporate"
+      ],
+      "pricesPreservedIdentical": true,
+      "storedPricesPkr": {
+        "Combo (500g + 500g)": 2800
+      },
+      "storedPricePer100gPkr": 0,
+      "unresolvedMerchantDecisions": [
+        "Confirm keeping deal-1 primary category as \"gift-boxes\" (since it includes a luxury presentation gift box) and optionally adding collections: [\"bundles\"] and occasions: [\"corporate\"], OR changing primary category to \"bundles\"."
+      ]
+    },
+    {
+      "productId": "deal-2",
+      "name_en": "Work-Day Fuel (Almonds & Cashews)",
+      "purpose": "Preserve primary category=gift-boxes (presented in luxury presentation gift box) and add collections=[\"bundles\"] + occasions=[\"corporate\"] if approved",
+      "expectedRevision": 0,
+      "newRevision": 1,
+      "preservedCategory": "gift-boxes",
+      "proposedCollections": [
+        "bundles"
+      ],
+      "proposedOccasions": [
+        "corporate"
+      ],
+      "pricesPreservedIdentical": true,
+      "storedPricesPkr": {
+        "Combo (500g + 500g)": 3500
+      },
+      "storedPricePer100gPkr": 0,
+      "unresolvedMerchantDecisions": [
+        "Confirm keeping deal-2 primary category as \"gift-boxes\" (since it includes a luxury presentation gift box) and optionally adding collections: [\"bundles\"] and occasions: [\"corporate\"], OR changing primary category to \"bundles\"."
+      ]
+    },
+    {
+      "productId": "khajoor",
+      "name_en": "Premium Dark Dates (Kali Khajoor)",
+      "purpose": "Add ramadan occasion tag to Premium Dates (Khajoor)",
+      "expectedRevision": 0,
+      "newRevision": 1,
+      "preservedCategory": "nuts",
+      "proposedOccasions": [
+        "ramadan"
+      ],
+      "pricesPreservedIdentical": true,
+      "storedPricesPkr": {
+        "250g": 240,
+        "500g": 475,
+        "1kg": 950
+      },
+      "storedPricePer100gPkr": 96,
+      "unresolvedMerchantDecisions": [
+        "Confirm adding occasions: [\"ramadan\"] (and whether to also add \"umrah\") on khajoor."
+      ]
+    },
+    {
+      "productId": "aseel-dates",
+      "name_en": "Aseel Dates Khairpur",
+      "purpose": "Add ramadan occasion tag to Pakistani Aseel Dates",
+      "expectedRevision": 0,
+      "newRevision": 1,
+      "preservedCategory": "nuts",
+      "proposedOccasions": [
+        "ramadan"
+      ],
+      "pricesPreservedIdentical": true,
+      "storedPricesPkr": {
+        "500g": 600
+      },
+      "storedPricePer100gPkr": 120,
+      "unresolvedMerchantDecisions": [
+        "Confirm adding occasions: [\"ramadan\"] on aseel-dates."
+      ]
+    },
+    {
+      "productId": "chohara",
+      "name_en": "Chohara (Winter Special)",
+      "purpose": "Add ramadan/wedding occasion tags to Dry Dates (Chohara)",
+      "expectedRevision": 0,
+      "newRevision": 1,
+      "preservedCategory": "nuts",
+      "proposedOccasions": [
+        "ramadan",
+        "wedding"
+      ],
+      "pricesPreservedIdentical": true,
+      "storedPricesPkr": {
+        "250g": 500
+      },
+      "storedPricePer100gPkr": 200,
+      "unresolvedMerchantDecisions": [
+        "Confirm adding occasions: [\"ramadan\", \"wedding\"] on chohara."
+      ]
+    },
+    {
+      "productId": "ajwa-dates",
+      "name_en": "Ajwa Dates Madina (Khajoor)",
+      "purpose": "Replace mismatched Irani Muzafati description with verified-fact Ajwa description and add ramadan/umrah occasion tags",
+      "expectedRevision": 0,
+      "newRevision": 1,
+      "preservedCategory": "nuts",
+      "proposedOccasions": [
+        "ramadan",
+        "umrah"
+      ],
+      "pricesPreservedIdentical": true,
+      "storedPricesPkr": {
+        "250g": 1800,
+        "500g": 3400
+      },
+      "storedPricePer100gPkr": 720,
+      "proposedDescriptions": {
+        "currentStoredDescEn": "Fresh, succulent Irani Muzafati dates with a soft caramel melt-in-mouth texture for thoughtful gifting and daily nourishment.",
+        "proposedVerifiedFactDescEn": "Ajwa dates (Khajoor) available in 250g, 500g, and custom weighed selections for daily use and gifting. Store in an airtight container in a cool, dry place.",
+        "proposedVerifiedFactDescUr": "روزمرہ استعمال اور تحفے کے لیے 250 گرام، 500 گرام اور حسبِ ضرورت وزن میں عجوہ کھجور۔ ٹھنڈی اور خشک جگہ پر بند ڈبے میں رکھیں۔",
+        "proposedVerifiedFactDescAr": "تمر عجوة متوفر بوزن 250 غرام و500 غرام وأوزان مخصصة للاستخدام اليومي والهدايا. يُحفظ في وعاء محكم في مكان بارد وجاف.",
+        "flaggedConflictingCompiledMetadata": {
+          "catalogOriginsTs": {
+            "origin_en": "Irani Muzafati · Packed in Pakistan",
+            "origin_ur": "ایرانی مضافاتی · پاکستان میں پیک شدہ",
+            "origin_ar": "مضافاتي إيراني · معبأ في باكستان"
+          },
+          "dryCareTsUseEn": "Serve Irani Muzafati dates whole after removing the stones. Their soft caramel-like flesh makes a considered tea-time pairing or a finely chopped addition to a dessert.",
+          "dryCareTsUseUr": "ایرانی مضافاتی کھجور گٹھلی نکال کر ثابت پیش کریں۔ اس کا نرم ذائقہ چائے کے ساتھ یا میٹھے میں باریک کاٹ کر ڈالنے کے لیے موزوں ہے۔",
+          "dryCareTsUseAr": "قدّم تمر المضافاتي الإيراني كاملًا بعد إزالة النوى. قوامه الكراميلي الطري يناسب الشاي أو الإضافة المقطعة جيدًا للحلوى.",
+          "referencedInBundles": [
+            "bundle-immunity-shield",
+            "bundle-ramadan-ready"
+          ]
+        }
+      },
+      "unresolvedMerchantDecisions": [
+        "Confirm whether physical inventory for ajwa-dates (\"Ajwa Dates Madina (Khajoor)\", 250g=1800 PKR, 500g=3400 PKR, pricePer100g=720 PKR) is authentic Madina-grown Ajwa or Irani Muzafati.",
+        "Confirm replacement desc_en/desc_ur/desc_ar (drafted strictly from verified title/portion facts without unverified crop-origin, packaging claims, or grading claims).",
+        "Confirm whether stored/compiled origin_* (\"Irani Muzafati · Packed in Pakistan\" in src/data/catalogOrigins.ts), recipe_* (\"Serve Irani Muzafati dates whole...\" in src/data/care/dry.ts), and bundle references in bundle-immunity-shield / bundle-ramadan-ready should be updated in tandem."
+      ]
+    },
+    {
+      "productId": "medjool-dates",
+      "name_en": "Medjool Dates Jumbo",
+      "purpose": "Replace mismatched Balochistan Panjgur Amber description with verified-fact Medjool description and add ramadan/umrah occasion tags",
+      "expectedRevision": 0,
+      "newRevision": 1,
+      "preservedCategory": "nuts",
+      "proposedOccasions": [
+        "ramadan",
+        "umrah"
+      ],
+      "pricesPreservedIdentical": true,
+      "storedPricesPkr": {
+        "250g": 2200,
+        "500g": 4200
+      },
+      "storedPricePer100gPkr": 880,
+      "proposedDescriptions": {
+        "currentStoredDescEn": "Premium jumbo amber dates from the fertile Panjgur date palms of Balochistan, prized for their luscious sweetness and rich flesh.",
+        "proposedVerifiedFactDescEn": "Jumbo Medjool dates (Khajoor) available in 250g, 500g, and custom weighed selections for everyday sharing and gifting. Store in an airtight container in a cool, dry place.",
+        "proposedVerifiedFactDescUr": "روزمرہ استعمال، مہمان نوازی اور تحفے کے لیے 250 گرام، 500 گرام اور حسبِ ضرورت وزن میں جمبو میڈجول کھجور۔ ٹھنڈی اور خشک جگہ پر بند ڈبے میں رکھیں۔",
+        "proposedVerifiedFactDescAr": "تمر مجهول جامبو متوفر بوزن 250 غرام و500 غرام وأوزان مخصصة للضيافة والاستخدام اليومي والهدايا. يُحفظ في وعاء محكم في مكان بارد وجاف.",
+        "flaggedConflictingCompiledMetadata": {
+          "catalogOriginsTs": {
+            "origin_en": "Amber Variety · Packed in Pakistan",
+            "origin_ur": "امبر ورائٹی · پاکستان میں پیک شدہ",
+            "origin_ar": "صنف العنبر · معبأ في باكستان"
+          },
+          "dryCareTsUseEn": "Split a jumbo Panjgur amber date and remove its stone before filling with roasted nuts or cream cheese. The luscious soft flesh also blends into a dessert paste; add liquid gradually to control the texture.",
+          "dryCareTsUseUr": "پنجگور کی جمبو امبر کھجور کھول کر گٹھلی نکالیں، پھر بھنے میوے یا کریم چیز سے بھریں۔ نرم گودے سے میٹھے کا پیسٹ بھی بن سکتا ہے؛ ساخت کے لیے مائع آہستہ ڈالیں۔",
+          "dryCareTsUseAr": "افتح تمرة عنبر بنجكور الكبيرة وأزل نواتها قبل حشوها بالمكسرات المحمصة أو الجبن الكريمي. امزج اللب الطري لمعجون الحلوى وأضف السائل تدريجيًا لضبط القوام.",
+          "referencedInBundles": [
+            "bundle-royal-feast",
+            "bundle-ramadan-ready"
+          ]
+        }
+      },
+      "unresolvedMerchantDecisions": [
+        "Confirm whether physical inventory for medjool-dates (\"Medjool Dates Jumbo\", 250g=2200 PKR, 500g=4200 PKR, pricePer100g=880 PKR) is Medjool variety or Balochistan Panjgur Amber.",
+        "Confirm replacement desc_en/desc_ur/desc_ar (drafted strictly from verified title/portion facts without unverified geographic origin, packaging claims, or variety claims).",
+        "Confirm whether stored/compiled origin_* (\"Amber Variety · Packed in Pakistan\" in src/data/catalogOrigins.ts), recipe_* (\"Split a jumbo Panjgur amber date...\" in src/data/care/dry.ts), and bundle references in bundle-royal-feast / bundle-ramadan-ready should be updated in tandem."
+      ]
+    }
+  ],
+  "proposedWriteAndVerificationProcedure": {
+    "reusedExistingAdapters": [
+      "updateAdminProduct (src/lib/catalogStore.ts:588-763) for creating missing seed-backed products (expectedRevision: 0) and updating existing stored products (expectedRevision: currentRevision)",
+      "validateDynamicProduct + storedCatalogRecord (src/lib/catalogSchema.ts & src/lib/catalogStore.ts)",
+      "validateHamperBoxPricing + storedHamperBoxRecord (src/lib/hamperBoxSchema.ts & src/lib/catalogStore.ts) inside db.runTransaction with snapshot.exists precondition and catalogAudits logging",
+      "loadAuthoritativeCatalog(db, { fresh: true }) for post-write authoritative read-back verification"
+    ],
+    "steps": [
+      "1. Pre-flight read: Fetch current revision and full document snapshot for each approved target ID in products and hamperBoxes; abort immediately if any target revision differs from expectedRevision (or if a missing doc was concurrently created). Confirm products/pista is NOT in the write target set.",
+      "2. Apply approved product writes one by one via updateAdminProduct({ db, productId, body: { expectedRevision, ...approvedFields }, actorUid }), which runs inside db.runTransaction, validates via validateDynamicProduct, increments revision, preserves untouched fields/prices/MOQ behavior, and writes an atomic PRODUCT_UPDATED entry to catalogAudits.",
+      "3. Apply approved hamperBoxes writes via db.runTransaction using validateHamperBoxPricing({ schemaVersion: 1, boxId, revision: 1, price: approvedPrice, active: approvedActive }, boxId), checking !snap.exists (or expectedRevision match if already created) and writing an atomic HAMPER_BOX_CREATED/HAMPER_BOX_UPDATED entry to catalogAudits.",
+      "4. Post-write verification: Run loadAuthoritativeCatalog(db, { fresh: true }) and verify exact stored fields, revisions, option labels, prices, dynamic MOQs, and products/pista (revision 2: 1200/2200/4500 PKR, pricePer100g: 500) integrity."
+    ]
+  }
+}

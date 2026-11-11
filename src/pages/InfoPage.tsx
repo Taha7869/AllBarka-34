@@ -1,3 +1,5 @@
+import SEO from '../components/SEO';
+import { useLanguage } from '../contexts/LanguageContext';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
@@ -226,6 +228,7 @@ export default function InfoPagesModal({
   onExploreProducts,
   asPage = false
 }: InfoPagesModalProps) {
+  const {t, language} = useLanguage();
   const [activeTab, setActiveTab] = useState<InfoPageTab>(initialTab);
 
   useEffect(() => {
@@ -309,6 +312,17 @@ export default function InfoPagesModal({
       </div>
     );
   }
+
+  if (asPage && activeTab === 'our-story') return <article className="heritage-story" dir={language === 'en' ? 'ltr' : 'rtl'}>
+    <SEO title={t('editorial.storyEyebrow')} description={t('editorial.storyIntro')} canonicalPath="/story" image="/images/dryfruit_flatlay_hero.webp" />
+    <header className="story-opening"><div><p className="journal-eyebrow">{t('editorial.storyEyebrow')}</p><h1>{t('editorial.storyTitle')}</h1><p className="story-intro">{t('editorial.storyIntro')}</p>
+      <Link to="/shop">{t('shop')} <ArrowRight size={17} /></Link></div>
+      <figure><img src="/images/dryfruit_flatlay_hero.webp" width={1400} height={781} alt={t('editorial.tableAlt')} decoding="async" onError={event => { if (!event.currentTarget.src.endsWith('/images/product-placeholder.svg')) { event.currentTarget.src = '/images/product-placeholder.svg'; event.currentTarget.alt = 'AllBarka'; } }} /></figure></header>
+    <section className="story-letter"><span aria-hidden="true">01</span><div><h2>{current.headline}</h2><p dir="auto">{current.content}</p>{current.quote && <blockquote dir="auto">{current.quote}</blockquote>}</div></section>
+    <section className="story-paths"><div><p className="journal-eyebrow">{t('editorial.pantry')}</p><h2>{t('editorial.pantryTitle')}</h2><Link to="/shop">{t('shop')} <ArrowRight size={16}/></Link></div>
+      <div><p className="journal-eyebrow">{t('editorial.gifting')}</p><h2>{t('editorial.giftingTitle')}</h2><Link to="/gifting">{t('hero.exploreGifts')} <ArrowRight size={16}/></Link></div></section>
+    <footer className="story-journal-link"><p>{t('editorial.storyJournal')}</p><Link to="/journal">{t('content.journalTitle')} <ArrowRight size={18}/></Link></footer>
+  </article>;
 
   const IconComponent = current.icon;
 

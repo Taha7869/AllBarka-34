@@ -11,6 +11,7 @@ import { CartProvider } from '../src/contexts/CartContext';
 import { catalogTranslations } from '../src/contexts/catalogTranslations';
 import { searchCatalog, readCatalogFilters, startingPrice } from '../src/lib/catalogDiscovery';
 import { filterCatalogSelection } from '../src/lib/catalogFilterDraft';
+import { readBundleFormat } from '../src/lib/merchandisingPresentation';
 import { selectionMatches, selectionResultsPath } from '../src/lib/selectionGuide';
 import CategoryPLP from '../src/components/CategoryPLP';
 import BubbleMenu from '../src/components/BubbleMenu';
@@ -117,7 +118,24 @@ test('fixed bundles show their contents and price without a portion selector', (
   const bundle = PRODUCTS.find(product => product.category === 'bundles' && !product.quoteOnly)!;
   assert.ok(bundle?.isBundle);
   const html = render(<CategoryPLP initialCategory="bundles" />, 'en', `/shop/bundles?search=${encodeURIComponent(bundle.name_en)}`);
-  assert.ok(html.includes(bundle.contents_en!));
+  const format = readBundleFormat(bundle);
+  if (format) {
+    assert.ok(html.includes(format.label));
+    assert.ok(html.includes(`${format.netGrams}g`));
+    for (const id of bundle.componentIds || []) {
+      const component = PRODUCTS.find(item => item.id === id)!;
+      const escaped = component.name_en.replaceAll('&', '&amp;').replaceAll("'", '&#x27;').replaceAll('"', '&quot;');
+      assert.ok(html.includes(escaped), `resolved bundle component ${id}: ${escaped}`);
+    }
+  } else assert.ok(html.includes(bundle.contents_en!));
   assert.match(html, /Rs\./);
   assert.doesNotMatch(html, new RegExp(`id="size-${bundle.id}"`));
+});
+
+test('pumpkin shop card initially selects available 250g without changing disputed 100g', () => {
+  const html = render(<CategoryPLP initialCategory="seeds-snacks" />, 'en', '/shop/seeds-snacks?search=pumpkin');
+  assert.match(html, /<option value="250g" selected="">250g<\/option>/);
+  assert.match(html, /<option value="100g">100g<\/option>/);
+  assert.equal(PRODUCTS.find(item => item.id === 'pumpkin_seeds')!.prices['100g'], 500);
+  assert.match(html, /Rs\. 400/);
 });

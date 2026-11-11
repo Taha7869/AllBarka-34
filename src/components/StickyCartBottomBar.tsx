@@ -1,5 +1,6 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { ShoppingBag, ArrowRight, Sparkles } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import type { CartItem } from '../types';

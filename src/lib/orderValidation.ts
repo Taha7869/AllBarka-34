@@ -10,13 +10,15 @@ import { resolveCartIdentity } from './cartInput';
 import { resolveCustomWeight, resolveProductVariant } from './productVariants';
 import { calculateLoyaltyPoints } from './loyaltyPoints';
 import type { Product } from '../types';
-import { catalogVariantId } from './catalogSchema';
+import { catalogVariantId, isKnownLegacyPackagingLabel } from './catalogSchema';
 import {
   isPackagingProduct,
   validatePackagingQuantity,
   parsePiecesPerPack,
   calculatePackagingMoq,
 } from './packagingMoq';
+import { isFilledPackagingVariant, packagingVariantRequiresInquiry, classifyPackagingVariant, calculateFilledGiftEstimate, resolveFilledRecipe } from './filledGiftPricing';
+export { isFilledPackagingVariant, packagingVariantRequiresInquiry };
 
 export interface ValidatedOrderItem {
   id: string; // composite cart item id, e.g. "pista-250g"
@@ -152,6 +154,8 @@ export function validateAndPriceOrder({
   promoContext,
   products = PRODUCTS,
   hamperBoxes,
+  allowInquiryItems = false,
+  allowPackagingQuote = false,
 }: {
   items: any[];
   shippingMethodId: string;
@@ -162,7 +166,10 @@ export function validateAndPriceOrder({
   promoContext?: { hasPastOrders?: boolean; identityVerified?: boolean; now?: number };
   products?: Product[];
   hamperBoxes?: HamperBox[];
+  allowInquiryItems?: boolean;
+  allowPackagingQuote?: boolean;
 }): ValidatedOrder {
+  const permitInquiry = Boolean(allowInquiryItems || allowPackagingQuote);
   if (!Array.isArray(items) || items.length === 0) {
     throw new ValidationError('Order must contain at least one item.', 'EMPTY_CART');
   }
@@ -190,9 +197,15 @@ export function validateAndPriceOrder({
 
     // Resolve canonical product ID
     const rawId = String(clientItem.productId || clientItem.id || '').trim();
-    if (rawId === CUSTOM_HAMPER_PRODUCT_ID) {
+    if (rawId === CUSTOM_HAMPER_PRODUCT_ID || rawId.startsWith(`${CUSTOM_HAMPER_PRODUCT_ID}:`) || clientItem.hamperConfiguration) {
+      if (!permitInquiry) {
+        throw new ValidationError('Custom hampers are quoted by our team. Please request a personalized quote.', 'QUOTE_REQUIRED');
+      }
       const hamper = resolveHamper(clientItem.hamperConfiguration, products, hamperBoxes);
       if (!hamper) throw new ValidationError('Please rebuild this hamper with a supported box and valid harvest selections.', 'INVALID_HAMPER_CONFIGURATION');
+      if (hamper.estimatedTotalPkr == null) {
+        throw new ValidationError('Custom hampers with custom weight require a personalized quote from our concierge.', 'QUOTE_REQUIRED');
+      }
       const quantity = typeof clientItem.quantity === 'number' ? clientItem.quantity : Number(clientItem.quantity);
       if (!Number.isInteger(quantity) || quantity < 1 || quantity > 50) {
         throw new ValidationError('Invalid quantity for this hamper: must be an integer between 1 and 50 units.', 'INVALID_QUANTITY');
@@ -221,6 +234,9 @@ export function validateAndPriceOrder({
       throw new ValidationError(`Please request a personalized quote for "${product.name_en}".`, 'QUOTE_REQUIRED');
     }
     const requestedWeight = String(clientItem.selectedWeight || clientItem.weight || clientItem.portion || identity?.portion || '250g').trim();
+    if (!permitInquiry && packagingVariantRequiresInquiry(product, requestedWeight)) {
+      throw new ValidationError(`Please request a personalized quote for filled packaging "${product.name_en}" (${requestedWeight}).`, 'QUOTE_REQUIRED');
+    }
     const allowedWeights = product.prices ? Object.keys(product.prices) : [];
     const variant = /^Custom\s+/i.test(requestedWeight)
       ? resolveCustomWeight(product, requestedWeight)
@@ -241,19 +257,9 @@ export function validateAndPriceOrder({
       );
     }
     const weight = variant.label;
-    // Existing fixed wholesale pricing remains compatible. Custom grams always
-    // use the catalogue retail rate, never a client-supplied wholesale amount.
-    const authoritativeUnitPrice = !variant.isCustom && isWholesale && product.wholesale > 0
-      ? product.wholesale : variant.price;
-
-    // Never treat an unknown or zero price as purchasable
-    if (!Number.isFinite(authoritativeUnitPrice) || authoritativeUnitPrice <= 0) {
-      throw new ValidationError(
-        `Pricing is unavailable for "${product.name_en}". Please request a personalized quote.`,
-        'PRICING_UNAVAILABLE'
-      );
+    if (!permitInquiry && packagingVariantRequiresInquiry(product, weight)) {
+      throw new ValidationError(`Please request a personalized quote for filled packaging "${product.name_en}" (${weight}).`, 'QUOTE_REQUIRED');
     }
-
     // Validate quantity strictly: integer, positive, within supported bounds
     const rawQty = clientItem.quantity;
     const numQty = typeof rawQty === 'number' ? rawQty : Number(rawQty);
@@ -262,6 +268,43 @@ export function validateAndPriceOrder({
       throw new ValidationError(
         `Invalid quantity for "${product.name_en}": must be a positive integer.`,
         'INVALID_QUANTITY'
+      );
+    }
+
+    // Existing fixed wholesale pricing remains compatible. Custom grams always
+    // use the catalogue retail rate, never a client-supplied wholesale amount.
+    let authoritativeUnitPrice = !variant.isCustom && isWholesale && product.wholesale > 0
+      ? product.wholesale : variant.price;
+
+    if (classifyPackagingVariant(product, weight) === 'filled') {
+      const recipe = resolveFilledRecipe(product, weight);
+      if (recipe) {
+        const estimate = calculateFilledGiftEstimate({
+          packagingProduct: product,
+          recipe,
+          catalogProducts: products,
+          requestedBoxes: numQty,
+        });
+        if (!estimate.isAvailable || estimate.estimatedTotalPkr === null) {
+          throw new ValidationError(
+            `Pricing is unavailable for "${product.name_en}". Please request a personalized quote.`,
+            'PRICING_UNAVAILABLE'
+          );
+        }
+        authoritativeUnitPrice = Math.round(estimate.estimatedTotalPkr / numQty);
+      } else if (!isKnownLegacyPackagingLabel(product.id, weight)) {
+        throw new ValidationError(
+          `Pricing is unavailable for "${product.name_en}". Please request a personalized quote.`,
+          'PRICING_UNAVAILABLE'
+        );
+      }
+    }
+
+    // Never treat an unknown or zero price as purchasable
+    if (!Number.isFinite(authoritativeUnitPrice) || authoritativeUnitPrice <= 0) {
+      throw new ValidationError(
+        `Pricing is unavailable for "${product.name_en}". Please request a personalized quote.`,
+        'PRICING_UNAVAILABLE'
       );
     }
 

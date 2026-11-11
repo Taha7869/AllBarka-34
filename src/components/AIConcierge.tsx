@@ -1,5 +1,9 @@
+import VoiceInputButton from './VoiceInputButton';
+import { OPEN_AI_BUDDY_EVENT } from '../lib/heroScene';
+import VoiceReadButton from './VoiceReadButton';
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, 
   Send, 
@@ -60,7 +64,12 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
 
   useEffect(() => {
     onOpenChange?.(isOpen);
-    if (previouslyOpenRef.current && !isOpen) launcherRef.current?.focus();
+    if (previouslyOpenRef.current && !isOpen) {
+      // AnimatePresence can retain the exiting drawer; stop audio before unmount.
+      window.dispatchEvent(new Event('allbarka:voice-cancel'));
+      window.speechSynthesis?.cancel();
+      launcherRef.current?.focus();
+    }
     previouslyOpenRef.current = isOpen;
   }, [isOpen, onOpenChange]);
   useEffect(() => () => requestRef.current?.abort(), []);
@@ -86,6 +95,13 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
   useEffect(() => {
     if (isOpen) messagesEndRef.current?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'nearest' });
   }, [messages, streamingText, isOpen, reducedMotion]);
+
+  // Other entries on the page (e.g. the homepage "Ask AllBarka" button) open this same panel.
+  useEffect(() => {
+    const open = () => setIsOpen(true);
+    window.addEventListener(OPEN_AI_BUDDY_EVENT, open);
+    return () => window.removeEventListener(OPEN_AI_BUDDY_EVENT, open);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -470,6 +486,7 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
               ))}
             </div>
 
+            {messages.at(-1)?.role === 'assistant' && <div className="px-3"><VoiceReadButton text={messages.at(-1)?.content || ''} /></div>}
             {/* Input Form */}
             <form onSubmit={(e) => handleSendMessage(e)} className="p-3 bg-[var(--color-surface,#FFFFFF)] border-t border-[var(--color-gold,#B8935F)]/20 flex gap-2 shrink-0">
               <input
@@ -485,6 +502,7 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
                 className="min-w-0 min-h-11 flex-1 bg-[var(--color-cream,#FAF9F5)] text-base sm:text-[13px] text-[var(--color-ink,#1A1A1A)] placeholder:text-[var(--color-ink-muted,#5A5A5A)] px-4 py-2.5 rounded-full border border-[var(--color-gold,#B8935F)]/30 focus:outline-none focus:ring-1 focus:ring-[var(--color-gold,#B8935F)]"
                 dir="auto"
               />
+              <VoiceInputButton placement="above" disabled={isLoading || isOffline} onTranscript={setInputText} />
               <button
                 type="submit"
                 aria-label={t('concierge.send')}

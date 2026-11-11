@@ -8,12 +8,13 @@ export class AdminRequestError extends Error {
 }
 
 /** Authenticated, bounded requests. Customer records never go into browser storage. */
-export async function adminRequest<T>(
+async function workspaceRequest<T>(
   getToken: () => Promise<string>,
   path: string,
   options: { signal?: AbortSignal; body?: Record<string, unknown>; timeoutMs?: number; method?: 'GET' | 'POST' | 'PATCH' | 'PUT' } = {},
+  prefix = '/api/admin/',
 ): Promise<T> {
-  if (!path.startsWith('/api/admin/')) throw new AdminRequestError('INVALID_PATH');
+  if (!path.startsWith(prefix)) throw new AdminRequestError('INVALID_PATH');
   if (typeof navigator !== 'undefined' && navigator.onLine === false) throw new AdminRequestError('OFFLINE');
   if (options.signal?.aborted) throw new AdminRequestError('REQUEST_CANCELLED');
   const controller = new AbortController();
@@ -50,4 +51,12 @@ export async function adminRequest<T>(
     controller.signal.removeEventListener('abort', abortRequest);
     options.signal?.removeEventListener('abort', abort);
   }
+}
+
+export function adminRequest<T>(getToken:()=>Promise<string>,path:string,options:Parameters<typeof workspaceRequest>[2]={}):Promise<T> {
+  return workspaceRequest<T>(getToken,path,options,'/api/admin/');
+}
+/** Staff client exposes reads only; server permissions remain authoritative. */
+export function staffRequest<T>(getToken:()=>Promise<string>,path:string,options:{signal?:AbortSignal;timeoutMs?:number}={}):Promise<T> {
+  return workspaceRequest<T>(getToken,path,{...options,method:'GET'},'/api/staff/');
 }

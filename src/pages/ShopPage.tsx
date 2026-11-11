@@ -1,5 +1,7 @@
-import React, { useEffect, useMemo } from 'react';
-import { useParams, useSearchParams, useLocation, useOutletContext } from 'react-router-dom';
+import { useCatalogTaxonomy } from '../contexts/CatalogContext';
+import { useLanguage } from '../contexts/LanguageContext';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { useParams, useSearchParams, useNavigationType, useLocation, useOutletContext } from 'react-router-dom';
 import CategoryPLP from '../components/CategoryPLP';
 import CelebrationBoxesDestination from '../components/CelebrationBoxesDestination';
 import GiftsHampersDestination from '../components/GiftsHampersDestination';
@@ -17,6 +19,8 @@ export default function ShopPage() {
   }>();
   const [searchParams] = useSearchParams();
   const location = useLocation();
+  const navigationType = useNavigationType();
+  const previousScrollRoute = useRef<string | null>(null);
   const outletContext = useOutletContext<any>() || {};
   const { setSelectedQuickViewProduct, handleAddToCart } = outletContext;
 
@@ -35,8 +39,10 @@ export default function ShopPage() {
     ? 'gift-boxes'
     : (paramCategory || searchParams.get('category') || 'all');
 
-  const resolvedCategory = resolveCategorySlug(rawCategory) || 'all';
-  const categoryMeta = getCategoryMeta(resolvedCategory);
+  const taxonomy=useCatalogTaxonomy();const {language}=useLanguage();
+  const extraCategory=taxonomy.find(x=>x.type!=='occasion'&&x.id===rawCategory);
+  const resolvedCategory = resolveCategorySlug(rawCategory) || extraCategory?.id || rawCategory;
+  const categoryMeta = extraCategory?{name:extraCategory[`name_${language}`]||extraCategory.name_en,description:extraCategory[`description_${language}`]||extraCategory.description_en}:getCategoryMeta(resolvedCategory);
   const searchQuery = searchParams.get('search') || '';
 
   const isCelebrationRoute =
@@ -68,8 +74,10 @@ export default function ShopPage() {
       location.pathname.startsWith('/shop/bundles'));
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [resolvedCategory, location.pathname]);
+    if (previousScrollRoute.current === location.pathname) return;
+    previousScrollRoute.current = location.pathname;
+    if (navigationType !== 'POP') window.scrollTo(0, 0);
+  }, [resolvedCategory, location.pathname, navigationType]);
 
   const seoTitle = useMemo(() => {
     if (isWholesaleRoute) return 'Wholesale Dry Fruits & Bulk Reserve';

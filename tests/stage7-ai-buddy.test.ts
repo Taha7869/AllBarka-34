@@ -37,6 +37,24 @@ import {
 
 const TEST_CATALOG: Product[] = [
   {
+    id: 'test-filling-nut',
+    name_en: 'Test Almonds',
+    name_ur: 'ٹیسٹ بادام',
+    name_ar: 'لوز تجريبي',
+    category: 'nuts',
+    image: null,
+    imageName: null,
+    wholesale: 0,
+    desc_en: '',
+    desc_ur: '',
+    desc_ar: '',
+    prices: { '1kg': 1000 },
+    variants: [{ label: '1kg', price: 1000, available: true }],
+    active: true,
+    inStock: true,
+    status: 'published',
+  },
+  {
     id: 'roasted-iranian-pista',
     name_en: 'Roasted Iranian Pistachios (Pista)',
     name_ur: 'بھنا ہوا ایرانی پستہ',
@@ -74,6 +92,9 @@ const TEST_CATALOG: Product[] = [
       { label: 'Filled Box (1 pc)', price: 650, available: true },
       { label: 'Discontinued Lid', price: 900, available: false },
     ],
+    filledRecipes: {
+      'Filled Box (1 pc)': [{ productId: 'test-filling-nut', grams: 350 }],
+    },
     wholesale: 280,
     desc_en: 'Matte gold floral embossed keepsake tin.',
     desc_ur: '',

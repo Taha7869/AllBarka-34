@@ -5,6 +5,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useMerchandisingSettings } from '../contexts/MerchandisingContext';
 import { DEFAULT_MERCHANDISING } from '../config/merchandising';
 import type { MerchandisingSettings } from '../types';
+import { openCustomQuoteModal } from './CustomQuoteModal';
 
 export interface OccasionDestination {
   id: string;
@@ -137,11 +138,15 @@ export default function FindGiftOccasionSection({ settings: propSettings }: Find
         };
 
         // 1. Merchant-saved localized title has highest precedence
-        const rawSavedTitle =
+        const configuredTitle =
           language === 'ur'
             ? ((occ as any).title_ur || (occ as any).title_en || (occ as any).defaultTitle)
             : ((occ as any).title_en || (occ as any).title_ur || (occ as any).defaultTitle);
 
+        const defaultEntry = DEFAULT_MERCHANDISING.occasions.find(entry => entry.tag === (occ as any).tag);
+        // The legacy settings schema has EN/UR only. Translate untouched defaults
+        // in Arabic, but preserve an explicitly customised merchant title.
+        const rawSavedTitle = language === 'ar' && configuredTitle === defaultEntry?.title_en ? '' : configuredTitle;
         const savedTitle = typeof rawSavedTitle === 'string' ? rawSavedTitle.trim() : '';
 
         // 2. If merchant-saved title is present and non-empty, use it.
@@ -188,9 +193,26 @@ export default function FindGiftOccasionSection({ settings: propSettings }: Find
       className="find-gift-occasion w-full border-y border-[var(--color-border)] bg-[var(--color-base)] py-12 sm:py-16 text-[var(--color-ink)]"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="table-gift-editorial">
+          <figure className="table-gift-editorial-figure">
+            <div className="table-gift-editorial-photo">
+              <img src="/images/living-gallery-final/gift-atelier-concept.webp" width={1200} height={900} alt="" loading="lazy" decoding="async" onError={event => { event.currentTarget.style.visibility = 'hidden'; }} />
+            </div>
+            <figcaption>{t('home.giftConcept')}</figcaption>
+          </figure>
+          <div className="table-gift-editorial-copy">
+            <p className="table-section-eyebrow">{t('home.giftAtelier')}</p>
+            <h2>{t('home.giftLead')}</h2>
+            <p>{t('home.giftLeadCopy')}</p>
+            <div className="table-gift-editorial-actions">
+              <Link to="/gifting" className="focus-ring">{t('home.shopGifts')}<ArrowUpRight size={17} aria-hidden="true" /></Link>
+              <button type="button" className="focus-ring" onClick={() => openCustomQuoteModal({ mode: 'filled', quantity: 1 })}>{t('home.customGifts')}<ArrowUpRight size={17} aria-hidden="true" /></button>
+            </div>
+          </div>
+        </div>
         {/* Section Header */}
-        <div className="mb-8 max-w-2xl text-left">
-          <div className="mb-2.5 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-[#C7982F]">
+        <div className="table-occasion-heading mb-8 max-w-2xl text-start">
+          <div className="mb-2.5 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-[var(--color-accent-text)]">
             <Sparkles size={13} aria-hidden="true" />
             <span>{t('home.occasionEyebrow', 'Thoughtful Milestones')}</span>
           </div>
@@ -206,17 +228,18 @@ export default function FindGiftOccasionSection({ settings: propSettings }: Find
         </div>
 
         {/* Compact Destination Links Grid */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          {occasions.map(({ id, titleKey, defaultTitle, subtitleKey, defaultSubtitle, path, badgeKey, defaultBadge, icon: Icon }) => (
+        <div className="table-occasion-links grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {occasions.map(({ id, defaultTitle, defaultSubtitle, path, badgeKey, defaultBadge, icon: Icon }, index) => (
             <Link
               key={id}
               to={path}
               aria-label={defaultTitle}
-              className="focus-ring group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:border-[#C7982F]/70 hover:shadow-sm"
+              className="table-occasion-link focus-ring group relative flex flex-col justify-between overflow-hidden border border-[var(--color-border)] bg-[var(--color-surface)] p-5 text-start transition-colors duration-300"
             >
+              <span className="table-occasion-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
               <div>
                 <div className="mb-4 flex items-center justify-between">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#C7982F]/30 bg-[#C7982F]/10 text-[#C7982F] transition-colors group-hover:border-[#C7982F] group-hover:bg-[#C7982F] group-hover:text-[#042821]">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#C7982F]/30 bg-[#C7982F]/10 text-[var(--color-accent-text)] transition-colors group-hover:border-[#C7982F] group-hover:bg-[#C7982F] group-hover:text-[#042821]">
                     <Icon size={19} aria-hidden="true" />
                   </span>
                   {badgeKey && (
@@ -226,7 +249,7 @@ export default function FindGiftOccasionSection({ settings: propSettings }: Find
                   )}
                 </div>
 
-                <h3 className="font-serif text-lg font-semibold leading-snug text-[var(--color-ink)] group-hover:text-[#C7982F] transition-colors">
+                <h3 className="font-serif text-lg font-semibold leading-snug text-[var(--color-ink)] group-hover:text-[var(--color-accent-text)] transition-colors">
                   {defaultTitle}
                 </h3>
                 <p className="mt-1.5 text-xs leading-relaxed text-[var(--color-text-secondary)]">
@@ -234,7 +257,7 @@ export default function FindGiftOccasionSection({ settings: propSettings }: Find
                 </p>
               </div>
 
-              <div className="mt-5 flex items-center gap-1.5 text-[11px] font-semibold text-[#C7982F]">
+              <div className="mt-5 flex items-center gap-1.5 text-[11px] font-semibold text-[var(--color-accent-text)]">
                 <span>{t('occasion.exploreDest', 'Explore favors')}</span>
                 <ArrowUpRight
                   size={14}

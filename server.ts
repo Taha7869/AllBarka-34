@@ -1,3 +1,12 @@
+import {publicStorefrontContent} from './src/lib/storefrontContent';
+import {contentJournal} from './src/lib/contentPresentation';
+import {readStorefrontContent,createStorefrontContentRouter} from './src/lib/storefrontContentRouter';
+import { createStaffRouter } from './src/lib/staffAccess';
+import { isCurrentAdministrator, requireCurrentAdministrator } from './src/lib/adminAuthentication';
+import { getStorage } from 'firebase-admin/storage';
+import firebaseAppletConfig from './firebase-applet-config.json';
+import { isPreviewEnvironment, validatePreviewServerConfig, resolveStorageBucket } from './src/lib/environmentConfig';
+import { createProductUploadRouter } from './src/lib/productUploadRouter';
 import { sanitizeFirestoreData } from './src/lib/firestoreData';
 import express from 'express';
 import cookieParser from 'cookie-parser';
@@ -44,6 +53,7 @@ import { claimWelcomeVoucher } from './src/lib/welcomeCouponService';
 import { authenticatePatronCredentials } from './src/lib/serverAuthentication';
 import { createProductMediaRouter } from './src/lib/productMediaRouter';
 import { createCatalogRouter } from './src/lib/catalogRouter';
+import { readCatalogConfiguration, createCatalogConfigurationRouter } from './src/lib/catalogConfigurationRouter';
 import { loadAuthoritativeCatalog, mergeAuthoritativeCatalog } from './src/lib/catalogStore';
 import { buildWaProductRows, serializeWaProductsCsv } from './src/lib/waProductsExport';
 import { CatalogError, unavailableProduct } from './src/lib/catalogSchema';
@@ -51,16 +61,24 @@ import { redeemPatronReward } from './src/lib/loyaltyRedemption';
 import { quoteOrderForCustomer } from './src/lib/orderQuote';
 import { createStoreUpdatesRouter } from './src/lib/storeUpdatesRouter';
 import { createN8nCommerceRouter } from './src/lib/n8nCommerceRouter';
-import { verifyN8nIntegrationSecret } from './src/lib/integrationAuthentication';
+import { requireN8nIntegration } from './src/lib/integrationAuthentication';
 import {
-  AdminOperationError, hasAdminClaim, validateAdminOrderId, validateAdminStatusInput,
+  AdminOperationError, validateAdminOrderId, validateAdminStatusInput,
   parseAdminOrderFilters, listAdminOrders, getAdminOrder, sanitizeOrderForAdmin,
   addAdminOrderNote, updateAdminOrderPayment,
 } from './src/lib/adminOperations';
 import { createInquiriesRouter } from './src/lib/inquiriesRouter';
+import { createGiftRevealRouter } from './src/lib/giftRevealRouter';
 
 // Load environment variables
-if (process.env.ALLBARKA_SKIP_LOCAL_ENV !== 'true') dotenv.config({ quiet: true });
+if (process.env.ALLBARKA_SKIP_LOCAL_ENV !== 'true') {
+  const envPath = process.env.ENV_FILE || (process.env.ALLBARKA_MODE === 'preview' || process.env.APP_ENV === 'preview' ? '.env.preview' : undefined);
+  if (envPath) {
+    dotenv.config({ path: envPath, quiet: true });
+  } else {
+    dotenv.config({ quiet: true });
+  }
+}
 
 // Initialize Firebase Admin (Production or Emulator)
 let db: any = null;
@@ -68,13 +86,24 @@ let adminAuth: any = null;
 let firebaseAdminAuthAvailable = false;
 let savedOrderVerifiedThisProcess = false;
 let firebaseAdminMissingCredentialsMsg = 'Firebase Admin credentials (FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY) are not configured on the server. Please configure these environment variables.';
+const isPreview = isPreviewEnvironment(process.env);
 
 try {
-  const projectId = process.env.FIREBASE_PROJECT_ID || 'allbarka-live';
+  let projectId = process.env.FIREBASE_PROJECT_ID || 'allbarka-live';
+
+  if (isPreview) {
+    const validated = validatePreviewServerConfig(process.env, { requireCredentials: false });
+    projectId = validated.projectId;
+    console.log(`[Preview Mode] Validated isolated preview server for project '${projectId}' (bucket: '${validated.storageBucket}').`);
+  }
+
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
   if (clientEmail && privateKey) {
+    if (isPreview) {
+      validatePreviewServerConfig(process.env, { requireCredentials: true });
+    }
     const credentialOptions = cert({
       projectId,
       clientEmail: clientEmail.trim(),
@@ -93,7 +122,7 @@ try {
     } else {
       const dbId = process.env.FIRESTORE_DATABASE_ID;
       db = dbId && dbId !== '(default)' ? getFirestore(adminApp, dbId) : getFirestore(adminApp);
-      console.log(`[Firestore] Live production database initialized successfully for project '${projectId}'.`);
+      console.log(`[Firestore] Database initialized successfully for project '${projectId}'.`);
     }
   } else if (process.env.FIRESTORE_EMULATOR_HOST) {
     const adminApp = initializeApp({ projectId });
@@ -108,11 +137,11 @@ try {
     console.warn(`[Firebase Admin] ${firebaseAdminMissingCredentialsMsg}`);
   }
   if (db) db.settings({ ignoreUndefinedProperties: true });
-} catch {
+} catch (error: any) {
   adminAuth = null;
   firebaseAdminAuthAvailable = false;
-  firebaseAdminMissingCredentialsMsg = 'Firebase Admin could not initialize. Verify private credentials and project configuration on the API host.';
-  console.error('[Firebase Admin] FIREBASE_ADMIN_INITIALIZATION_FAILED');
+  firebaseAdminMissingCredentialsMsg = error?.message || 'Firebase Admin could not initialize. Verify private credentials and project configuration on the API host.';
+  console.error(`[Firebase Admin] FIREBASE_ADMIN_INITIALIZATION_FAILED: ${error?.message || error}`);
 }
 
 // Security & Authentication Middlewares
@@ -134,7 +163,7 @@ async function authenticateOptionalUser(req: express.Request, res: express.Respo
 
   try {
     (req as any).user = await authenticatePatronCredentials(authHeader, sessionCookie, {
-      verifyIdToken: token => adminAuth.verifyIdToken(token),
+      verifyIdToken: (token, checkRevoked) => adminAuth.verifyIdToken(token, checkRevoked),
       verifySessionCookie: (cookie, checkRevoked) => adminAuth.verifySessionCookie(cookie, checkRevoked),
     });
     return next();
@@ -167,17 +196,9 @@ async function requireAuth(req: express.Request, res: express.Response, next: ex
   });
 }
 
+const currentAdministrator = requireCurrentAdministrator(() => adminAuth);
 async function requireAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
-  await requireAuth(req, res, () => {
-    const user = (req as any).user;
-    if (!hasAdminClaim(user)) {
-      return res.status(403).json({
-        error: 'Forbidden. Authoritative admin privileges required.',
-        code: 'FORBIDDEN_ADMIN'
-      });
-    }
-    next();
-  });
+  await requireAuth(req, res, () => { void currentAdministrator(req, res, next); });
 }
 
 // In-memory claims for Guest -> Account linking (Order ID -> Claim Token)
@@ -245,27 +266,8 @@ app.use(helmet({
 
 app.use('/api', commerceCors(process.env.FRONTEND_ORIGINS));
 
-function checkN8nAuth(req: express.Request): boolean {
-  const configuredSecret = process.env.N8N_INTEGRATION_SECRET;
-  if (!configuredSecret || configuredSecret.trim().length < 32) {
-    return true;
-  }
-  const headerSecret = req.headers['x-allbarka-integration-secret'];
-  if (typeof headerSecret === 'string' && verifyN8nIntegrationSecret(headerSecret, configuredSecret)) {
-    return true;
-  }
-  const querySecret = req.query.secret || req.query.key;
-  if (typeof querySecret === 'string' && verifyN8nIntegrationSecret(querySecret, configuredSecret)) {
-    return true;
-  }
-  return false;
-}
-
 // Live n8n wa_products Single Source of Truth Sync Endpoint (Mounted before n8nCommerceRouter catch-all)
-app.get('/api/integrations/n8n/wa-products', async (req, res) => {
-  if (!checkN8nAuth(req)) {
-    return res.status(401).json({ ok: false, error: 'Integration authentication required.', code: 'INTEGRATION_AUTH_REQUIRED' });
-  }
+app.get('/api/integrations/n8n/wa-products', requireN8nIntegration(), async (req, res) => {
   try {
     let authoritativeProducts = PRODUCTS;
     if (db) {
@@ -290,18 +292,31 @@ app.get('/api/integrations/n8n/wa-products', async (req, res) => {
       products: rows,
     });
   } catch (err: any) {
-    return res.status(500).json({ ok: false, error: err.message || 'Failed to export wa_products.', code: 'SERVER_ERROR' });
+    return res.status(500).json({ ok: false, error: 'Failed to export wa_products.', code: 'SERVER_ERROR' });
   }
 });
 
 // Authenticate private integrations before parsing their JSON. Their router owns
 // payload limits and safe parse errors; customer/admin bearer guards remain separate.
 app.use('/api/integrations/n8n', createN8nCommerceRouter({ getDb: () => db }));
-app.use(express.json({ limit: '128kb' }));
 app.use(cookieParser());
+app.use(createProductUploadRouter({
+  requireAdmin,
+  getBucket: () => {
+    if (!adminAuth) return null;
+    const bucketName = resolveStorageBucket(process.env);
+    if (!bucketName) return null;
+    return getStorage().bucket(bucketName);
+  }
+}));
+app.use(express.json({ limit: '128kb' }));
 app.use(createProductMediaRouter({ getDb: () => db, requireAdmin }));
+app.use(createCatalogConfigurationRouter({ getDb: () => db, requireAdmin }));
 app.use(createCatalogRouter({ getDb: () => db, requireAdmin }));
+app.use(createStaffRouter({ getDb: () => db, getAuth: () => adminAuth, requireAuth, requireAdmin }));
+app.use(createStorefrontContentRouter({getDb:()=>db,requireAdmin}));
 app.use(createStoreUpdatesRouter({ getDb: () => db, requireAuth, requireAdmin }));
+app.use(createGiftRevealRouter({ getDb: () => db, getAuth: () => adminAuth, requireAuth, requireAdmin }));
 
 // Auth & Session Endpoints
 app.post('/api/auth/sessionLogin', async (req, res) => {
@@ -341,13 +356,6 @@ app.use('/api/concierge', chatLimiter);
 app.use('/api/ai', chatLimiter);
 app.use(createInquiriesRouter({
   getDb: () => db,
-  getCatalog: async () => {
-    if (!db) {
-      throw new Error('CATALOG_STORE_UNAVAILABLE');
-    }
-    const snapshot = await loadAuthoritativeCatalog(db, { fresh: true });
-    return mergeAuthoritativeCatalog(PRODUCTS, snapshot.products);
-  },
   requireAdmin,
   inquiryLimiter: contactLimiter,
 }));
@@ -549,7 +557,6 @@ app.get('/api/orders/:orderId', authenticateOptionalUser, async (req, res) => {
 
     const order = doc.data() as CanonicalOrder;
     const isOwner = user && order.uid && user.uid === order.uid;
-    const isAdmin = hasAdminClaim(user);
     let isGuestAuthorized = false;
 
     if (guestClaimToken && order.claimTokenHash) {
@@ -559,6 +566,7 @@ app.get('/api/orders/:orderId', authenticateOptionalUser, async (req, res) => {
       }
     }
 
+    const isAdmin = !isOwner && !isGuestAuthorized && await isCurrentAdministrator(adminAuth, user);
     if (!isOwner && !isAdmin && !isGuestAuthorized) {
       return res.status(404).json({ error: 'Order not found.', code: 'ORDER_NOT_FOUND' });
     }
@@ -570,7 +578,7 @@ app.get('/api/orders/:orderId', authenticateOptionalUser, async (req, res) => {
         ? Number((await db.collection('users').doc(order.uid).get()).data()?.loyaltyPoints) || 0 : 0 },
     });
   } catch (error: any) {
-    res.status(500).json({ error: error.message || 'Server error retrieving order.', code: 'SERVER_ERROR' });
+    res.status(500).json({ error: 'Server error retrieving order.', code: 'SERVER_ERROR' });
   }
 });
 
@@ -852,6 +860,7 @@ app.use(createAiChatRouter({
 
 // Vite Middleware & Static Asset pipeline integration
 async function startServer() {
+  let closeDevelopmentServer: (() => Promise<void>) | undefined;
   // API failures must never fall through to the SPA document.
   app.use('/api', (_req, res) => res.status(404).json({ error: 'API endpoint not found', code: 'NOT_FOUND' }));
   if (process.env.NODE_ENV !== 'production') {
@@ -859,9 +868,27 @@ async function startServer() {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
-      appType: 'spa'
+      appType: 'custom'
     });
+    closeDevelopmentServer = () => vite.close();
     app.use(vite.middlewares);
+    app.get('*', async (req, res, next) => {
+      // Missing media/modules must retain a real 404 instead of an HTML SPA
+      // response; Vite has already handled assets that exist.
+      if (req.path.startsWith('/assets/') || path.extname(req.path)) {
+        return res.status(404).type('text/plain').send('Asset not found');
+      }
+      try {
+        const template = readFileSync(path.resolve('index.html'), 'utf8');
+        const html = await vite.transformIndexHtml(req.originalUrl, template);
+        // Helmet's nonce disables unsafe-inline in modern browsers. Vite's
+        // refresh preamble needs that same request nonce, just like our scripts.
+        res.type('html').send(html.replace(/<script\b/g, () => `<script nonce="${res.locals.cspNonce}"`));
+      } catch (error) {
+        vite.ssrFixStacktrace(error as Error);
+        next(error);
+      }
+    });
     console.timeEnd('[dev] Vite middleware');
   } else {
     const distPath = path.join(process.cwd(), 'dist');
@@ -877,12 +904,15 @@ async function startServer() {
       }
       catch { return PRODUCTS.map(unavailableProduct); }
     };
+    const pageContent=async()=>{try{return publicStorefrontContent((await readStorefrontContent(db)).live);}catch{return undefined;}};
+    const pageTaxonomy=async()=>{try{return (await readCatalogConfiguration(db)).taxonomy.filter(x=>x.visible);}catch{return [];}};
     app.get('/robots.txt', (_req, res) => res.type('text/plain').send(
-      `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /checkout\nDisallow: /cart\nDisallow: /success\nDisallow: /admin\nSitemap: ${publicOrigin}/sitemap.xml\n`
+      `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /checkout\nDisallow: /cart\nDisallow: /success\nDisallow: /admin\nDisallow: /staff\nSitemap: ${publicOrigin}/sitemap.xml\n`
     ));
     app.get('/sitemap.xml', async (_req, res) => {
       const products = await pageCatalog();
-      const routes = ['/', '/shop', '/gifting', '/wholesale', '/journal', '/faq', '/contact',
+      const publishedContent=await pageContent();
+      const routes = [...(publishedContent?contentJournal(publishedContent,'en').map(x=>`/journal/${x.slug}`):[]), ...(await pageTaxonomy()).filter(x=>x.type!=='occasion').map(x=>`/shop/${x.id}`), '/', '/shop', '/gifting', '/wholesale', '/journal', '/faq', '/contact',
         ...products.filter(product => product.active !== false).map(product => `/product/${encodeURIComponent(product.id)}`)];
       res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${routes.map(route => `<url><loc>${publicOrigin}${route}</loc></url>`).join('')}</urlset>`);
     });
@@ -908,8 +938,8 @@ async function startServer() {
       if (req.path.startsWith('/assets/') || path.extname(req.path)) {
         return res.status(404).type('text/plain').send('Not found');
       }
-      const metadata = routeMetadata(req.path, publicOrigin, await pageCatalog());
-      if (metadata.noindex) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+      const metadata = routeMetadata(req.path, publicOrigin, await pageCatalog(), await pageTaxonomy(),await pageContent());
+      if (metadata.noindex || isPreview) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
@@ -933,6 +963,7 @@ async function startServer() {
     const timer = setTimeout(() => process.exit(1), 40000);
     timer.unref();
     await worker.stop();
+    await closeDevelopmentServer?.();
     server.close(() => { clearTimeout(timer); process.exitCode = 0; });
     server.closeIdleConnections();
   };

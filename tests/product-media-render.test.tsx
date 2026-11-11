@@ -39,9 +39,25 @@ test('quick view shows owner-supplied media without changing the full-detail act
   const html = render(<QuickViewModal isOpen product={PRODUCTS[0]} onClose={() => {}} />);
   assert.match(html, /src="\/images\/generated\/pista-secondary-v1\.webp"/);
   assert.match(html, /src="\/videos\/allbarka-gifting-motion\.mp4"/);
-  assert.match(html, /href="\/product\/pista"/);
+  assert.match(html, /href="\/product\/pista\?variant=250g&amp;quantity=1"/);
   assert.match(html.replace(/<!--.*?-->/g, ''), /Rs\. 1,250/);
   assert.doesNotMatch(html, /autoplay/);
+});
+
+test('detail route restores the canonical portion and quantity using current catalog prices', () => {
+  const html = render(<Routes><Route path="/product/:id" element={<ProductDetailPage />} /></Routes>, '/product/pista?variant=500g&quantity=4&price=1');
+  const summary = html.match(/<dl class="pdp-selection-summary"[\s\S]*?<\/dl>/)?.[0] || '';
+  assert.match(summary, /500g/);
+  assert.match(summary, /<bdi>4<\/bdi>/);
+  assert.match(summary, /10,000/);
+  assert.doesNotMatch(html, /pdp-handoff-review/);
+});
+
+test('quick view omits disabled portions instead of linking to an unavailable choice', () => {
+  const product = { ...PRODUCTS[0], variants: [{ label: '250g', price: 1250, available: false }] };
+  const html = render(<QuickViewModal isOpen product={product} onClose={() => {}} />);
+  assert.doesNotMatch(html, /aria-pressed="(?:true|false)"[^>]*>250g<\/button>/);
+  assert.match(html, /href="\/product\/pista\?variant=500g&amp;quantity=1"/);
 });
 
 test('products with no configured film render no video or invented media controls', () => {

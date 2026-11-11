@@ -1,0 +1,794 @@
+[
+  {
+    "surface": "cart",
+    "width": 360,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "surface": "cart",
+    "width": 360,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "surface": "cart",
+    "width": 360,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "surface": "cart",
+    "width": 360,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "surface": "cart",
+    "width": 360,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "surface": "cart",
+    "width": 360,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "surface": "cart",
+    "width": 390,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "surface": "cart",
+    "width": 390,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "surface": "cart",
+    "width": 390,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "surface": "cart",
+    "width": 390,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "surface": "cart",
+    "width": 390,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "surface": "cart",
+    "width": 390,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "surface": "cart",
+    "width": 768,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "surface": "cart",
+    "width": 768,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "surface": "cart",
+    "width": 768,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "surface": "cart",
+    "width": 768,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "surface": "cart",
+    "width": 768,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "surface": "cart",
+    "width": 768,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "surface": "cart",
+    "width": 1440,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "surface": "cart",
+    "width": 1440,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "surface": "cart",
+    "width": 1440,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "surface": "cart",
+    "width": 1440,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "surface": "cart",
+    "width": 1440,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "surface": "cart",
+    "width": 1440,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "surface": "cart-enlarged",
+    "width": 360,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "surface": "cart-enlarged",
+    "width": 360,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "surface": "cart-enlarged",
+    "width": 360,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "surface": "cart-enlarged",
+    "width": 360,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "surface": "cart-enlarged",
+    "width": 360,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "surface": "cart-enlarged",
+    "width": 360,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "surface": "drawer",
+    "width": 360,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "surface": "drawer",
+    "width": 360,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "surface": "drawer",
+    "width": 360,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "surface": "drawer",
+    "width": 360,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "surface": "drawer",
+    "width": 360,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "surface": "drawer",
+    "width": 360,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "surface": "drawer",
+    "width": 390,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "surface": "drawer",
+    "width": 390,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "surface": "drawer",
+    "width": 390,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "surface": "drawer",
+    "width": 390,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "surface": "drawer",
+    "width": 390,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "surface": "drawer",
+    "width": 390,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "surface": "drawer",
+    "width": 768,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "surface": "drawer",
+    "width": 768,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "surface": "drawer",
+    "width": 768,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "surface": "drawer",
+    "width": 768,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "surface": "drawer",
+    "width": 768,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "surface": "drawer",
+    "width": 768,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "surface": "drawer",
+    "width": 1440,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "surface": "drawer",
+    "width": 1440,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "surface": "drawer",
+    "width": 1440,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "surface": "drawer",
+    "width": 1440,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "surface": "drawer",
+    "width": 1440,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "surface": "drawer",
+    "width": 1440,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-details",
+    "width": 360,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-details",
+    "width": 360,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-details",
+    "width": 360,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-details",
+    "width": 360,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-details",
+    "width": 360,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-details",
+    "width": 360,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-details",
+    "width": 390,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-details",
+    "width": 390,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-details",
+    "width": 390,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-details",
+    "width": 390,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-details",
+    "width": 390,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-details",
+    "width": 390,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-details",
+    "width": 768,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-details",
+    "width": 768,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-details",
+    "width": 768,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-details",
+    "width": 768,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-details",
+    "width": 768,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-details",
+    "width": 768,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-details",
+    "width": 1440,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-details",
+    "width": 1440,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-details",
+    "width": 1440,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-details",
+    "width": 1440,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-details",
+    "width": 1440,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-details",
+    "width": 1440,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-shipping",
+    "width": 360,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-shipping",
+    "width": 360,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-shipping",
+    "width": 360,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-shipping",
+    "width": 360,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-shipping",
+    "width": 360,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-shipping",
+    "width": 360,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-shipping",
+    "width": 390,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-shipping",
+    "width": 390,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-shipping",
+    "width": 390,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-shipping",
+    "width": 390,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-shipping",
+    "width": 390,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-shipping",
+    "width": 390,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-shipping",
+    "width": 768,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-shipping",
+    "width": 768,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-shipping",
+    "width": 768,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-shipping",
+    "width": 768,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-shipping",
+    "width": 768,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-shipping",
+    "width": 768,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-shipping",
+    "width": 1440,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-shipping",
+    "width": 1440,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-shipping",
+    "width": 1440,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-shipping",
+    "width": 1440,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-shipping",
+    "width": 1440,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-shipping",
+    "width": 1440,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-review",
+    "width": 360,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-review",
+    "width": 360,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-review",
+    "width": 360,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-review",
+    "width": 360,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-review",
+    "width": 360,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-review",
+    "width": 360,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-review",
+    "width": 390,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-review",
+    "width": 390,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-review",
+    "width": 390,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-review",
+    "width": 390,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-review",
+    "width": 390,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-review",
+    "width": 390,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-review",
+    "width": 768,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-review",
+    "width": 768,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-review",
+    "width": 768,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-review",
+    "width": 768,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-review",
+    "width": 768,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-review",
+    "width": 768,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-review",
+    "width": 1440,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-review",
+    "width": 1440,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-review",
+    "width": 1440,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-review",
+    "width": 1440,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-review",
+    "width": 1440,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-review",
+    "width": 1440,
+    "language": "ar",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-enlarged",
+    "width": 360,
+    "language": "en",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-enlarged",
+    "width": 360,
+    "language": "en",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-enlarged",
+    "width": 360,
+    "language": "ur",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-enlarged",
+    "width": 360,
+    "language": "ur",
+    "theme": "dark"
+  },
+  {
+    "surface": "checkout-enlarged",
+    "width": 360,
+    "language": "ar",
+    "theme": "light"
+  },
+  {
+    "surface": "checkout-enlarged",
+    "width": 360,
+    "language": "ar",
+    "theme": "dark"
+  }
+]

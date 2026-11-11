@@ -1,8 +1,9 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { subscribeNewsletter } from '../lib/storefrontSubmissions';
 import React, { useId, useState } from 'react';
 import { useVisualRefinementLanguage } from '../hooks/useVisualRefinementLanguage';
 import { CheckCircle2, ArrowRight, AlertCircle } from 'lucide-react';
-import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { AllBarkaCrestVector } from './AllBarkaLogo';
 
 export default function NewsletterCard() {

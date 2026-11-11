@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>AllBarka Atelier · Working design kit</title>
+  <link rel="icon" href="/favicon.svg">
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#f6f1ea;color:#1e3a2b;font:14px/1.7 system-ui,sans-serif}a{color:inherit}button,a,label{touch-action:manipulation}a:focus-visible,label:focus-visible,input:focus-visible+label{outline:2px solid #806326;outline-offset:4px}header{padding:25px max(24px,calc((100vw - 1220px)/2));border-bottom:1px solid #80632640;display:flex;align-items:center;justify-content:space-between;gap:20px}header strong{font:32px/1 Georgia,serif;letter-spacing:-1px}header span{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#806326}main{max-width:1280px;margin:auto;padding:34px 24px 64px}.intro{display:flex;flex-wrap:wrap;justify-content:space-between;gap:24px;margin-bottom:28px}.intro h1{font:400 clamp(28px,4vw,48px)/1.15 Georgia,serif;max-width:650px;margin:0 0 12px}.intro p{max-width:650px;margin:0;color:#58604f}.routes{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0}.routes a{display:inline-flex;align-items:center;min-height:44px;padding:8px 16px;text-decoration:none;border:1px solid #80632650;background:#fdfbf7}.routes a:hover{background:#eae2d4}.viewport-choice{position:absolute;opacity:0;pointer-events:none}.viewport-label{display:inline-flex;align-items:center;min-height:44px;border:1px solid #80632660;padding:8px 20px;cursor:pointer;margin:0 6px 16px 0}#mobile:checked+label,#desktop:checked+label{background:#1e3a2b;color:#fdfbf7}.kit-stage{border:1px solid #80632650;background:#e6dfd2;padding:24px;display:flex;justify-content:center;overflow:auto;min-height:940px}.kit-screen{width:390px;height:844px;flex:none;background:#fdfbf7;box-shadow:0 12px 44px #04282122}.kit-screen iframe{width:100%;height:100%;border:0;display:block}#desktop:checked~.kit-stage .kit-screen{width:1440px;height:1100px;zoom:.76}#desktop:checked~.kit-stage{min-height:900px}.note{font-size:12px;color:#58604f;margin:14px 0 32px}.media{padding-top:36px;border-top:1px solid #80632640}.media h2{font:400 32px/1.2 Georgia,serif;margin:0 0 12px}.media-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:28px}.media figure{margin:0;min-width:0}.media video{width:100%;max-height:500px;display:block;background:#14211b}.media figcaption{padding-top:10px}.media a{display:inline-flex;align-items:center;min-height:44px;text-underline-offset:4px}.media p{color:#58604f;max-width:850px}@media(max-width:800px){header span{letter-spacing:1px}.kit-stage{padding:12px;justify-content:flex-start}.media-grid{grid-template-columns:1fr}#desktop:checked~.kit-stage .kit-screen{zoom:.5}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+  </style>
+</head>
+<body>
+  <header><strong>AllBarka</strong><span>Atelier / Working design kit</span></header>
+  <main>
+    <div class="intro"><div><h1>A living table. A considered experience.</h1><p>Review the real storefront at mobile and desktop widths. Search, product pages, the bag and gifting use the existing application.</p></div><a href="/" target="_blank" rel="noopener">Open full storefront ↗</a></div>
+    <nav class="routes" aria-label="Preview a customer journey"><a href="/" target="storefront">Homepage</a><a href="/shop" target="storefront">Collection</a><a href="/product/pista" target="storefront">Product</a><a href="/gifting" target="storefront">Gifting</a><a href="/cart" target="storefront">Bag</a></nav>
+    <input class="viewport-choice" id="mobile" type="radio" name="viewport" checked><label class="viewport-label" for="mobile">Mobile · 390px</label>
+    <input class="viewport-choice" id="desktop" type="radio" name="viewport"><label class="viewport-label" for="desktop">Desktop · 1440px</label>
+    <div class="kit-stage"><div class="kit-screen"><iframe name="storefront" title="AllBarka storefront preview" src="/" allow="autoplay"></iframe></div></div>
+    <p class="note">Design review environment. Prices and availability shown here require current merchant verification; live order, voice and account services depend on their configured backend. This page is excluded from indexing.</p>
+    <section class="media"><h2>The Signature Table films</h2><p>Silent, softly blended loops adapted from the supplied Flow reference. The portrait version reserves clear space for live website text. The compact mobile scene is used beneath the headline in the responsive storefront.</p><div class="media-grid">
+      <figure><video controls muted loop playsinline preload="metadata" poster="/images/generated/signature-film-desktop-v2.webp" src="/videos/signature-table-desktop-v2.mp4"></video><figcaption><a href="/videos/signature-table-desktop-v2.mp4" download>Desktop hero film ↓</a></figcaption></figure>
+      <figure><video controls muted loop playsinline preload="metadata" src="/videos/signature-table-mobile-v2.mp4"></video><figcaption><a href="/videos/signature-table-mobile-v2.mp4" download>Mobile portrait film · 720 × 1280 ↓</a> · <a href="/videos/signature-table-mobile-detail-v2.mp4" download>Compact mobile scene ↓</a></figcaption></figure>
+    </div></section>
+  </main>
+</body>
+</html>

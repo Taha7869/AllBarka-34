@@ -1,4 +1,8 @@
+import type { GiftRecipient } from './lib/giftRecipient';
 import type { HamperConfiguration } from './lib/hamperCatalog';
+import type { ProductCommerce, ProductSeo, ProductAttribute } from './lib/productCommerce';
+import type { RecipeIngredient } from './lib/filledGiftPricing';
+export type { RecipeIngredient } from './lib/filledGiftPricing';
 
 export interface ProductBadge {
   icon: string;
@@ -40,11 +44,40 @@ export interface BidBoxConfig {
   capacityG?: number;
   minUnits?: number;
   packagingSubcategory?: 'tin' | 'tabarruk' | 'wedding' | 'baby' | 'acrylic' | string | null;
+  recipeIngredients?: RecipeIngredient[];
+  filledRecipes?: Record<string, RecipeIngredient[]>;
   [key: string]: any;
 }
 
 export type ProductStatus = 'draft' | 'published' | 'archived';
 export type OrderMode = 'standard' | 'inquiry_quote' | 'both';
+export type RoastLevel = 'raw' | 'lightly_roasted' | 'salted' | 'slow_roasted' | 'unprocessed';
+export type ClaimVerificationStatus = 'unverified' | 'verified' | 'discrepant';
+export type CertificationType = 'halal' | 'organic' | 'gluten_free' | 'raw_natural' | 'vegan';
+export type CropMode = 'cover' | 'contain';
+
+export interface ProductPassport {
+  variety?: string;
+  harvestSeason?: string;
+  roastLevel?: RoastLevel;
+  processingMethod?: string;
+  ingredients?: string[];
+  allergens?: string[];
+  storageInstructions?: string;
+  bestBeforeDays?: number;
+  certifications?: CertificationType[];
+}
+
+export interface ClaimsVerification {
+  status: ClaimVerificationStatus;
+  verifiedAt?: string;
+  notes?: string;
+}
+
+export interface MediaFocalPoint {
+  x: number; // 0.0 to 1.0 (0.5 is center)
+  y: number; // 0.0 to 1.0 (0.5 is center)
+}
 
 export interface ProductPersonalizationConfig {
   supported: boolean;
@@ -106,6 +139,11 @@ export interface MerchandisingSettings {
 
 export interface Product {
   id: string;
+  commerce?: ProductCommerce;
+  seo?: ProductSeo;
+  attributes?: ProductAttribute[];
+  templateId?: string;
+  galleryImages?: string[];
   /** Purchase-time pricing fingerprint, including direct Console edits. */
   catalogRevision?: string;
   /** Owner-editable catalogue aliases; legacy localized fields remain compatible. */
@@ -127,6 +165,8 @@ export interface Product {
   isBidBox?: boolean;
   bidBoxConfig?: BidBoxConfig;
   packagingSubcategory?: 'tin' | 'tabarruk' | 'wedding' | 'baby' | 'acrylic' | string | null;
+  recipeIngredients?: RecipeIngredient[];
+  filledRecipes?: Record<string, RecipeIngredient[]>;
   components?: Array<string | { productId: string; quantity?: number; unitWeightG?: number }>;
   componentIds?: string[];
   contents?: string[];
@@ -224,6 +264,11 @@ export interface Product {
   importTimestamp?: string;
   adminRevision?: number;
   targetMarginPercent?: number;
+  // M11 Verified Product Passport & M23 Media / Claims Controls
+  passport?: ProductPassport;
+  claimsVerification?: ClaimsVerification;
+  mediaFocalPoint?: MediaFocalPoint;
+  cropMode?: CropMode;
 }
 
 export interface CartItem {
@@ -343,6 +388,7 @@ export interface InquiryRecord {
   quantityUnit?: 'pieces' | 'packs' | 'sets';
   piecesPerPack?: number;
   eventType: string;
+  giftRecipient?: GiftRecipient;
   targetEventDate?: string | null;
   budgetType?: 'per_piece' | 'total' | null;
   preferredFillings?: string[];
@@ -353,6 +399,7 @@ export interface InquiryRecord {
   standardPrice: number | null;
   packPrice?: number | null;
   perPiecePrice?: number | null;
+  estimatedTotalPkr?: number | null;
   requiresTeamQuote?: boolean;
   unresolvedVariant?: boolean;
   belowMoq?: boolean;
@@ -370,6 +417,8 @@ export interface InquiryRecord {
   assignedTo?: string | null;
   followUpDate?: string | null;
   leadTimeNoticeAcknowledged?: boolean;
+  netFillingGrams?: number | null;
+  hamperConfiguration?: HamperConfiguration;
   createdAt: string;
   updatedAt: string;
 }
@@ -380,6 +429,7 @@ export interface CustomQuoteModalInit {
   mode?: 'empty' | 'filled' | 'custom';
   quantity?: number;
   eventType?: string;
+  giftRecipient?: GiftRecipient;
   occasion?: string;
   targetUnitPrice?: number;
   variantLabel?: string;
@@ -395,4 +445,6 @@ export interface CustomQuoteModalInit {
   city?: string;
   budgetType?: 'per_piece' | 'total';
   targetPricePkr?: number | string;
+  netFillingGrams?: number | null;
+  hamperConfiguration?: HamperConfiguration;
 }

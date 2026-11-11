@@ -1,3 +1,5 @@
+import './styles/premium-content.css';
+import {StorefrontContentProvider} from './contexts/StorefrontContentContext';
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
@@ -9,8 +11,11 @@ import './styles/circular-carousel.css';
 import './styles/store-updates.css';
 import './styles/luminous.css';
 import './styles/editorial.css';
+import './styles/purchase.css';
 import './styles/selection-guide.css';
+import './styles/interaction-polish.css';
 import './components/AllBarkaHero.css';
+import './styles/living-gallery-home.css';
 import { ProductMediaProvider } from './contexts/ProductMediaContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -40,7 +45,7 @@ createRoot(document.getElementById('root')!).render(
       <LanguageProvider>
         <AuthProvider>
           <CatalogProvider><MerchandisingProvider><ProductMediaProvider><CartProvider>
-            <App />
+            <StorefrontContentProvider><App /></StorefrontContentProvider>
           </CartProvider></ProductMediaProvider></MerchandisingProvider></CatalogProvider>
         </AuthProvider>
       </LanguageProvider>

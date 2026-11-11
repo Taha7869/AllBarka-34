@@ -1,6 +1,7 @@
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, useReducedMotion } from 'motion/react';
+import { motion } from 'motion/react';
 import { X, ShoppingBag, Minus, Plus, ArrowUpRight } from 'lucide-react';
 import type { Product } from '../types';
 import ProductDetailAccordion from './ProductDetailAccordion';
@@ -14,6 +15,7 @@ import { getLocalized } from '../utils/localize';
 import { useProductMedia } from '../contexts/ProductMediaContext';
 import ProductVideo from './ProductVideo';
 import { openCustomQuoteModal } from './CustomQuoteModal';
+import { buildProductDetailsPath } from '../lib/productDetailHandoff';
 
 interface QuickViewModalProps {
   isOpen: boolean;
@@ -55,7 +57,8 @@ export default function QuickViewModal({ isOpen, onClose, product, onAddToCart }
   }, [isOpen, productId]);
 
   if (!isOpen || !product || product.active === false) return null;
-  const weights = Object.keys(product.prices).filter(weight => Number.isFinite(product.prices[weight]) && product.prices[weight] > 0);
+  const disabledLabels = new Set(product.variants?.filter(variant => variant.available === false).map(variant => variant.label) || []);
+  const weights = Object.keys(product.prices || {}).filter(label => !disabledLabels.has(label) && Number.isFinite(product.prices[label]) && product.prices[label] > 0);
   const weight = weights.includes(selectedWeight) ? selectedWeight : weights[0];
   const price = product.prices[weight] || 0;
   const supportsBargain = product.isBidBox || product.category === 'gift-boxes' || product.category === 'bundles' || product.isBundle;
@@ -117,7 +120,7 @@ export default function QuickViewModal({ isOpen, onClose, product, onAddToCart }
         <button type="button" onClick={add} id="quickview-add-to-cart-btn" disabled={!price || !weight} className="focus-ring mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[#1e3a2b] px-4 text-sm font-semibold text-[#fff8e9] hover:bg-[#092e23] disabled:opacity-40"><ShoppingBag size={17} />{t('addToCart')}<bdi>— Rs. {(price * quantity).toLocaleString()}</bdi></button>
         {supportsBargain && <button type="button" onClick={() => { onClose(); openCustomQuoteModal({ productId: product.id, variantLabel: weight, mode: weight?.startsWith('Empty') ? 'empty' : 'filled', quantity: quantity > 0 ? quantity : 50 }); }} className="focus-ring mt-2.5 flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-[#8C6B1B] bg-[#FAF6EE] px-4 text-xs font-bold uppercase tracking-wider text-[#8C6B1B] hover:bg-[#8C6B1B] hover:text-white">Request Custom Quote / Offer Your Price</button>}
         </>}
-        <Link to={`/product/${product.id}`} onClick={onClose} className="focus-ring mt-2 flex min-h-11 items-center justify-center gap-2 rounded-full text-xs font-semibold text-[var(--color-accent-text)]">{t('viewFullDetails')}<ArrowUpRight size={16} /></Link>
+        <Link to={buildProductDetailsPath(product, { variant: weight || '', quantity })} onClick={onClose} className="focus-ring mt-2 flex min-h-11 items-center justify-center gap-2 rounded-full text-xs font-semibold text-[var(--color-accent-text)]">{t('viewFullDetails')}<ArrowUpRight size={16} /></Link>
         <div className="mt-5"><ProductDetailAccordion key={product.id} product={product} defaultOpenKey="" /></div>
       </div>
     </motion.div>
