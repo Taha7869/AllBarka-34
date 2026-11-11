@@ -202,7 +202,7 @@ export function createGiftBoxScene(canvas: HTMLCanvasElement, contentsUrl: strin
   let running = false;
   let dirty = true;
   let announced = false;
-  let portrait = false;
+  let distance = 1;
   const look = new THREE.Vector3();
 
   const draw = () => {
@@ -213,7 +213,6 @@ export function createGiftBoxScene(canvas: HTMLCanvasElement, contentsUrl: strin
     box.rotation.x = easedY * 0.05;
     lid.position.set(0, H - LH + 0.06 + open * 1.45 - inside * 1.25, -open * 1.0 - inside * 1.25);
     lid.rotation.x = -open * 0.5 - inside * 0.62;
-    const distance = portrait ? 1.42 : 1;
     camera.position.set(0, mix(2.3, 6.6, inside) * distance, mix(6.6, 5.4, inside) * distance);
     look.set(0, mix(0.62, 0.45, inside) + open * 0.36 * (1 - inside), -open * 0.2 * (1 - inside) - inside * 0.45);
     camera.lookAt(look);
@@ -239,7 +238,8 @@ export function createGiftBoxScene(canvas: HTMLCanvasElement, contentsUrl: strin
     const width = canvas.clientWidth;
     const height = canvas.clientHeight;
     if (!width || !height) return;
-    portrait = width / height < 0.95;
+    // Narrow stages pull the camera back so the box and its shadow never touch the edges.
+    distance = Math.min(1.5, Math.max(1, 1.36 / (width / height)));
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
