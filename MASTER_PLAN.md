@@ -1,5 +1,7 @@
 # AllBarka — visual identity and experience master plan
 
+11 November 2026 — **Storefront experience blueprint PROPOSED.** Whole-site direction, media list and phased build order awaiting owner approval; nothing implemented. [Blueprint](docs/STOREFRONT_EXPERIENCE_BLUEPRINT_2026-11-12.md).
+
 11 November 2026 — **HOME-LG2 local checkpoint.** Final homepage handoff implemented on the review branch (design `9f77686`); matching hero films, owner aesthetic acceptance and integration into PR #17 pending; cleanup stays a separate review. [Record](docs/HOME_LIVING_GALLERY_2026-11-11.md).
 
 11 November 2026 — **HOME-LG1 / CLEAN-AUDIT-02 local checkpoint.** Homepage Living Gallery presentation pass implemented on `claude/home-approved-20261111` from PR #17 head `261888d`; local gates pass, owner aesthetic acceptance and hosted CI pending; saved to its own review branch, PR #17 untouched. Cleanup audit awaits owner approval; zero removals. [Record and TODO board](docs/HOME_LIVING_GALLERY_2026-11-11.md).

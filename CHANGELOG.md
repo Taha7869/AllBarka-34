@@ -1,3 +1,7 @@
+## 11 November 2026 — storefront experience blueprint (proposal)
+
+- Add a researched, whole-site design proposal, "The Weightless Table": levitation hero loop, two scroll-driven frame sequences, quiet motion system, page-by-page changes, library choices, media list, budgets and build order. Documentation only; owner approval pending; no runtime change. [Blueprint](docs/STOREFRONT_EXPERIENCE_BLUEPRINT_2026-11-12.md).
+
 ## 11 November 2026 — HOME-LG2 final homepage pass
 
 - Finish the homepage to the final Living Gallery handoff on `claude/home-approved-20261111`: restored localized hero headline, new desktop/portrait hero stills, film played only when it matches its still (none yet), "Ask AllBarka" entry opening the existing AI Buddy, travertine shelf with round tiles, homepage-only card action layout, ivory Gift Atelier with concept caption. Local typecheck/lint/build pass; full suite 861 pass / 1 intermittent browser failure / 1 skip. Matching hero films remain an owner asset. [Record](docs/HOME_LIVING_GALLERY_2026-11-11.md#home-lg2--final-homepage-pass-per-allbarka_final_home_handoff_2026-11-11md).
