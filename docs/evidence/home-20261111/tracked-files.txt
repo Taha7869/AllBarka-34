@@ -23,6 +23,7 @@ REQUIREMENTS.md
 RULES.md
 design.md
 docs/AI_CONSULTANT_LAUNCH.md
+docs/ALLBARKA_FINAL_HOME_HANDOFF_2026-11-11.md
 docs/ANTIGRAVITY_HOME_VISUAL_BLOCK_2026-11-10.md
 docs/AUTHENTICATION.md
 docs/BASELINE_REPORT.md
@@ -210,6 +211,13 @@ docs/evidence/home-20261111/after-390-page.jpg
 docs/evidence/home-20261111/before-1440-hero.jpg
 docs/evidence/home-20261111/before-1440-page.jpg
 docs/evidence/home-20261111/before-390-hero.jpg
+docs/evidence/home-20261111/final-1440-hero-discovery-shelf-cards.jpg
+docs/evidence/home-20261111/final-1440-page.jpg
+docs/evidence/home-20261111/final-390-ar-footer-ask.jpg
+docs/evidence/home-20261111/final-390-page.jpg
+docs/evidence/home-20261111/final-390-sections.jpg
+docs/evidence/home-20261111/final-768-360.jpg
+docs/evidence/home-20261111/final-ur-ar-dark-footer.jpg
 docs/evidence/home-20261111/tracked-files.txt
 docs/evidence/motion-preference/layouts.json
 docs/evidence/motion-preference/public-watermark.json
@@ -430,6 +438,9 @@ public/images/hero_composite_display.webp
 public/images/hero_composite_display_1782200430774.jpg
 public/images/hero_composite_luxury.webp
 public/images/hero_composite_luxury_1782200660935.jpg
+public/images/living-gallery-final/gift-atelier-concept.webp
+public/images/living-gallery-final/hero-desktop.webp
+public/images/living-gallery-final/hero-mobile.webp
 public/images/og-image.jpg
 public/images/product-placeholder.svg
 public/images/products/afghan-figs-1.webp
@@ -901,6 +912,7 @@ src/lib/giftRevealRouter.ts
 src/lib/googleAuthentication.ts
 src/lib/hamperBoxSchema.ts
 src/lib/hamperCatalog.ts
+src/lib/heroScene.ts
 src/lib/inquiriesRouter.ts
 src/lib/inquiryResolution.ts
 src/lib/inquiryService.ts

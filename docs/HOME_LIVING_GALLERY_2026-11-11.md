@@ -75,3 +75,59 @@ Not run: hosted CI, 768px, 200% text zoom beyond what the existing browser tests
 - [x] Review branch saved to origin and read back; integration branch and PR #17 not modified
 
 Next executable action: owner approves or edits the audit decisions, then a separate cleanup commit applies only approved rows and records each in `trash.md`.
+
+---
+
+# HOME-LG2 — final homepage pass per `ALLBARKA_FINAL_HOME_HANDOFF_2026-11-11.md`
+
+11 November 2026, late evening (Asia/Karachi). Same agent, self-review only.
+
+```text
+Task ID and scope:   HOME-LG2 — finish the homepage to the final handoff using the assets from 4a6db50
+Branch + parent:     claude/home-approved-20261111; assets commit 4a6db50 (on top of ea6618b)
+Resulting commits:   design 9f77686; this record and evidence in the following docs commit
+Status:              work DONE / local verification PASS with one intermittent browser test (below) / hosted CI: see final report / live NOT_RUN
+Release state:       review branch only; PR #17 branch untouched; not merged, not deployed
+```
+
+## TODO board
+
+| Handoff item | Status | Notes |
+|---|---|---|
+| Hero headline "Nature's finest, delivered with Pure Elegance", localized | DONE | Uses the existing `heroHeadlinePart1/2` strings in EN/UR/AR; CMS override still wins |
+| New desktop and portrait hero art | DONE | `/images/living-gallery-final/hero-desktop.webp` and `hero-mobile.webp` via `<picture>`; platter and oil down/right on desktop, below the copy on mobile |
+| Film pairing | DONE | `src/lib/heroScene.ts` pairs each still with its own film. Both are `null` today, so the hero is a still and the pause control is hidden. Old films and posters stay in the repo as rollback |
+| Matching desktop/mobile hero films | TODO (owner asset) | See motion brief in the handoff; set `film` in `heroScene.ts` when delivered |
+| "Ask AllBarka" opens the AI Buddy | DONE | Dispatches a window event the existing `AIConcierge` listens for; floating launcher unchanged. Verified the dialog opens at 1440, 390 and 360 |
+| Production AI provider availability | NOT_RUN | Only the panel opening was tested; no provider call was made from this session |
+| Search and mic stay working controls; mobile controls clear of each other | DONE | Browser test asserts ≥44px targets and no overlap between Ask, guide, search form and mic |
+| Travertine shelf with brushed-gold edge, round tiles, labels below, larger centre tile | DONE | CSS shelf; existing catalog imagery; links, arrows, swipe and reduced motion preserved |
+| Cards: Add to Bag + Quick View side by side, View Details below (desktop); distinct and touch-friendly on mobile | DONE | Opt-in `separateActions` prop used only by the homepage showcase; shared cards elsewhere keep the original layout |
+| Gift Atelier as ivory editorial section with new photo and concept caption | DONE | Caption string `home.giftConcept` added in EN/UR/AR; SKU photos and data untouched |
+| Full emerald footer | NO CHANGE | Already present |
+| Cleanup | SEPARATE REVIEW | Nothing deleted or moved in this pass |
+
+## Changed files (design commit 9f77686)
+
+`src/lib/heroScene.ts` (new), `src/components/AllBarkaHero.tsx`, `src/components/AIConcierge.tsx`, `src/components/CategoryCarousel.tsx`, `src/components/BoutiqueSelections.tsx`, `src/components/ProductCard.tsx`, `src/components/FindGiftOccasionSection.tsx`, `src/contexts/shoppingQualityTranslations.ts` (two strings × three languages), `src/styles/living-gallery-home.css`, `tests/premium-hero-browser.test.tsx`.
+
+No new dependency. No price, shipping, cart, checkout, auth or server change.
+
+## Verification (local, Node v24.22.1, Chrome via ALLBARKA_TEST_BROWSER)
+
+| Check | Result |
+|---|---|
+| `npm run typecheck` | exit 0 |
+| `npm run lint:hooks` | exit 0 |
+| `npm run build` | exit 0; privacy audit passed (85 text artifacts) |
+| `node scripts/run-all-tests.mjs` | 863 tests: 861 pass, **1 fail**, 1 skipped; backend, assets and production stages did not run because the runner stops after a failing stage |
+| The failing test, re-run alone 3× | `stage5a-controlled-clock` test 9: pass, fail, pass. The failure is `page.evaluate: Execution context was destroyed` inside the test's page-open helper, before any assertion. Not compared against the parent commit, so it is unproven whether this flake predates the change |
+
+Manual browser checks on the built site (`vite preview`, seed catalog): 1440, 768, 390 and 360 px in EN light; 1440 Urdu dark; 1440 Arabic light; 390 Arabic dark; 200% zoom equivalents of 1440, 768 and 390 (no horizontal overflow, CTAs 48px tall); keyboard tab order reaches Shop, Gifts, Ask AllBarka, guide and collection tiles with a visible focus style. [Screenshots](evidence/home-20261111/) (`final-*.jpg`).
+
+Not run: real phone, real AI provider, live Firestore, screen reader. Reduced motion: the hero has no film now, so there is no hero motion to reduce; other sections keep their existing reduced-motion handling (covered by the suite).
+
+## Known limitations
+
+- One collection tile ("Saunf & Mouth Fresheners") has no catalog image and no Urdu/Arabic title; it shows the emerald placeholder. Pre-existing data gap.
+- "Dates" collection label also stays in English in Urdu. Pre-existing.
