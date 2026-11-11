@@ -372,20 +372,20 @@ export default function CategoryCarousel({ settings: propSettings }: CategoryCar
                       loading="lazy" decoding="async" /> : <div role="img" aria-label={category.title || category.name} className="absolute inset-0 flex items-center justify-center bg-[#173a2c] font-serif text-3xl text-[#e4c783]">AllBarka</div>}
                     <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-emerald)]/95 via-[var(--color-emerald)]/30 to-transparent pointer-events-none" />
                     {category.badge ? (
-                      <span className="absolute left-1/2 top-8 -translate-x-1/2 rounded-full border border-white/25 bg-[#042821]/90 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-[#FFFCF7] backdrop-blur-md pointer-events-none z-10">
+                      <span className="pantry-tile-badge absolute left-1/2 top-8 -translate-x-1/2 rounded-full border border-white/25 bg-[#042821]/90 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-[#FFFCF7] backdrop-blur-md pointer-events-none z-10">
                         {category.badge}
                       </span>
                     ) : ['all', 'bundles', 'combos', 'deals'].includes(category.id) ? (
-                      <span className="absolute left-1/2 top-8 -translate-x-1/2 rounded-full border border-white/25 bg-[#042821]/90 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-[#FFFCF7] backdrop-blur-md pointer-events-none z-10">
+                      <span className="pantry-tile-badge absolute left-1/2 top-8 -translate-x-1/2 rounded-full border border-white/25 bg-[#042821]/90 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-[#FFFCF7] backdrop-blur-md pointer-events-none z-10">
                         {t(category.id === 'all' ? 'pantry.start' : 'pantry.value')}
                       </span>
                     ) : null}
-                    <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-5 pointer-events-none z-10">
+                    <div className="pantry-tile-label absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-5 pointer-events-none z-10">
                       <div className="min-w-0">
                         <span dir="auto" className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#e4c783] sm:text-[10px]">{category.badge || t(`pantry.${category.id}Eyebrow`, 'Collection')}</span>
                         <h3 dir="auto" className="font-serif text-2xl font-medium leading-tight text-[#FFFCF7] drop-shadow-md">{category.title || t(`pantry.${category.id}`, category.name)}</h3>
                       </div>
-                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#FFFCF7]/25 bg-[#FFFCF7]/10 text-[#FFFCF7] backdrop-blur-md transition-colors group-hover:border-[var(--color-gold)] group-hover:bg-[var(--color-gold)] group-hover:text-[#042821] motion-reduce:transition-none"><ArrowUpRight size={17} aria-hidden="true" /></span>
+                      <span className="pantry-tile-arrow flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#FFFCF7]/25 bg-[#FFFCF7]/10 text-[#FFFCF7] backdrop-blur-md transition-colors group-hover:border-[var(--color-gold)] group-hover:bg-[var(--color-gold)] group-hover:text-[#042821] motion-reduce:transition-none"><ArrowUpRight size={17} aria-hidden="true" /></span>
                     </div>
                   </Link>
                 </div>

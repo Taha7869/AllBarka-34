@@ -15,6 +15,7 @@ import './styles/purchase.css';
 import './styles/selection-guide.css';
 import './styles/interaction-polish.css';
 import './components/AllBarkaHero.css';
+import './styles/living-gallery-home.css';
 import { ProductMediaProvider } from './contexts/ProductMediaContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';

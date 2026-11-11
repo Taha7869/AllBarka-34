@@ -4,7 +4,7 @@ import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefers
 import ProductImageGallery from './ProductImageGallery';
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, ShoppingBag, Heart } from 'lucide-react';
+import { Eye, ShoppingBag, Heart, ArrowUpRight } from 'lucide-react';
 import { useSavedProducts } from '../hooks/useSavedProducts';
 import { motion } from 'motion/react';
 import { Product } from '../types';
@@ -114,12 +114,6 @@ export default function ProductCard({
         <p className="min-h-[3rem] line-clamp-2 text-xs leading-6 text-[var(--color-text-secondary)]">
           {language !== 'en' && getLocalized(product, 'desc', language) === product.desc_en ? t('slider.cardCopy') : getLocalized(product, 'desc', language)}
         </p>
-        <Link
-          to={`/product/${product.id}`}
-          className="focus-ring inline-flex items-center gap-1 pt-0.5 text-[11px] font-semibold text-[var(--color-accent-text)] hover:underline"
-        >
-          <span>{t('dest.common.viewDetails', 'View Details')}</span>
-        </Link>
       </div>
 
       {/* Weights & Action Area */}
@@ -162,7 +156,6 @@ export default function ProductCard({
                 </span>
               )}
             </div>
-            {onQuickView && <button type="button" onClick={(e) => { e.stopPropagation(); onQuickView(product); }} className="focus-ring inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-lg px-2 text-[10px] font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-base)] hover:text-[var(--color-accent-text)]" aria-label={`${t('quickView')}: ${getLocalized(product, 'name', language)}`}><Eye size={15} strokeWidth={1.7} /><span dir="auto">{t('quickView')}</span></button>}
           </div>
 
           <div className="w-full">
@@ -192,6 +185,14 @@ export default function ProductCard({
               }}
               className="focus-ring flex min-h-[46px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#C7982F]/35 bg-[#1E3A2B] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#FFFCF7] transition-colors duration-200 hover:border-[#C7982F]/70 hover:bg-[#14281E]"
             />}
+          </div>
+
+          {/* Secondary actions: Quick View opens the dialog, View Details goes to the product page */}
+          <div className="table-card-actions" data-actions={onQuickView ? 2 : 1}>
+            {onQuickView && <button type="button" onClick={(e) => { e.stopPropagation(); onQuickView(product); }} className="table-card-action focus-ring" aria-label={`${t('quickView')}: ${getLocalized(product, 'name', language)}`}><Eye size={15} strokeWidth={1.7} /><span dir="auto">{t('quickView')}</span></button>}
+            <Link to={`/product/${product.id}`} className="table-card-action focus-ring" aria-label={`${t('dest.common.viewDetails', 'View Details')}: ${getLocalized(product, 'name', language)}`}>
+              <span dir="auto">{t('dest.common.viewDetails', 'View Details')}</span><ArrowUpRight size={14} strokeWidth={1.7} aria-hidden="true" />
+            </Link>
           </div>
         </div>
       </div>

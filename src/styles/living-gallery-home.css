@@ -1,0 +1,108 @@
+/*
+ * Living Gallery homepage pass — 11 November 2026.
+ * Presentation only: emerald film hero, compact discovery bar, round travertine
+ * collection rail, large-photo product cards, emerald Gift Atelier panel.
+ * Everything except the shared card action row is scoped to .editorial-home, so
+ * shop, PDP, cart and checkout keep their current appearance.
+ */
+
+/* ── Shared: product card secondary actions (used wherever ProductCard renders) ── */
+.table-card-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.table-card-actions[data-actions="1"] { grid-template-columns:minmax(0,1fr); }
+.table-card-action { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:44px; padding:8px 10px; border:1px solid var(--color-border); border-radius:3px; background:transparent; color:var(--color-text-primary); font-size:.7rem; font-weight:600; line-height:1.35; text-align:center; text-decoration:none; cursor:pointer; transition:border-color .2s,color .2s,background .2s; }
+.table-card-action:hover { border-color:var(--color-accent-text); color:var(--color-accent-text); background:var(--color-base); }
+.table-card-action svg { flex:0 0 auto; }
+@media(prefers-reduced-motion:reduce) { .table-card-action { transition:none; } }
+
+/* ── 1. Hero: spacious, emerald, film-led ─────────────────────────────────── */
+.editorial-home .signature-table-hero { --hero-emerald:#0b3025; background:var(--hero-emerald); }
+.dark .editorial-home .signature-table-hero { --hero-emerald:#042821; }
+.editorial-home .signature-table-hero .table-photo-frame { background:var(--hero-emerald); }
+.editorial-home .signature-table-hero .table-photo-frame::after { background:linear-gradient(90deg,var(--hero-emerald) 0%,color-mix(in srgb,var(--hero-emerald) 90%,transparent) 26%,color-mix(in srgb,var(--hero-emerald) 52%,transparent) 45%,color-mix(in srgb,var(--hero-emerald) 10%,transparent) 63%,transparent 80%); }
+.editorial-home .table-scene-toggle { background:color-mix(in srgb,var(--hero-emerald,#0b3025) 86%,transparent); }
+.editorial-home .table-scene-toggle:hover { background:#0b3025; }
+.editorial-home .signature-table-hero .table-hero-primary { color:#0b3025; }
+/* The approved desktop film and its poster carry a ~14px black bar on the right edge; widen both so the frame clips it. */
+@media(min-width:768px) {
+  .editorial-home .signature-table-hero .table-hero-film,
+  .editorial-home .signature-table-hero .heritage-hero-background img { width:103%; max-width:none; }
+  /* The frame is mirrored for RTL, so keep the overflow on the media's own right edge in every direction. */
+  .editorial-home .signature-table-hero .table-photo-frame { direction:ltr; }
+  .editorial-home .signature-table-hero .table-hero-film { left:0; right:auto; }
+}
+@media(min-width:1024px) {
+  .editorial-home .signature-table-hero { min-height:clamp(600px,calc(100svh - 150px),800px); padding-block:84px 96px; }
+  .editorial-home .signature-table-hero .heritage-hero-description { margin-top:30px; }
+  .editorial-home .signature-table-hero .table-hero-actions { margin-top:36px; }
+  .editorial-home .signature-table-hero[dir=rtl] { padding-block:52px 60px; }
+}
+@media(max-width:767px) {
+  .editorial-home .signature-table-hero { padding-top:36px; }
+  .editorial-home .signature-table-hero .table-photo-frame::after { background:linear-gradient(180deg,var(--hero-emerald) 0%,color-mix(in srgb,var(--hero-emerald) 38%,transparent) 18%,transparent 44%); }
+}
+
+/* ── 2. Discovery: one compact search / voice / guide bar ─────────────────── */
+.editorial-home .table-discovery { padding-block:14px 4px; }
+.editorial-home .table-discovery-top { grid-template-columns:auto minmax(0,1fr) auto; gap:18px; }
+.editorial-home .table-discovery h2 { font-size:1.05rem; white-space:nowrap; }
+.editorial-home .table-discovery form { border-radius:999px; }
+.editorial-home .table-discovery .heritage-hero-guide { min-height:48px; padding-inline:18px; border:1px solid var(--color-border-accent); border-radius:999px; font-weight:600; }
+.editorial-home .heritage-hero-pills { margin-top:6px; }
+.editorial-home .table-discovery-experiences { margin-top:2px; padding-top:2px; border-top:0; gap:2px 22px; }
+.editorial-home .table-discovery-experiences>p { font-size:.88rem; }
+@media(max-width:767px) {
+  .editorial-home .table-discovery { padding:16px 20px 6px; }
+  .editorial-home .table-discovery-top { grid-template-columns:minmax(0,1fr) auto; gap:10px; }
+  .editorial-home .table-discovery h2 { white-space:normal; }
+  .editorial-home .table-discovery .heritage-hero-guide { min-height:44px; padding:4px 14px; }
+}
+
+/* ── 3. Collections: round tiles on a travertine surface ──────────────────── */
+.editorial-home .editorial-pantry {
+  --stone:#eadfcc; --stone-light:#f6eedf; --stone-vein:#cbb9977a; --stone-shadow:#5b4a2e;
+  background-color:var(--stone);
+  background-image:
+    radial-gradient(ellipse 70% 60% at 18% 0%,var(--stone-light),transparent 62%),
+    radial-gradient(ellipse 60% 55% at 88% 100%,color-mix(in srgb,var(--stone-vein) 70%,transparent),transparent 60%),
+    repeating-linear-gradient(177deg,transparent 0 13px,color-mix(in srgb,var(--stone-vein) 13%,transparent) 13px 14px,transparent 14px 41px),
+    repeating-linear-gradient(184deg,transparent 0 47px,color-mix(in srgb,var(--stone-light) 30%,transparent) 47px 50px,transparent 50px 97px);
+  border-block:1px solid color-mix(in srgb,var(--stone-shadow) 22%,transparent);
+}
+.dark .editorial-home .editorial-pantry { --stone:#26231d; --stone-light:#322d25; --stone-vein:#4a4234; --stone-shadow:#000; }
+.editorial-home .editorial-pantry-track { align-items:center; padding-block:22px 38px; }
+.editorial-home .editorial-pantry-slide { flex-basis:64%; }
+.editorial-home .editorial-pantry-slide .editorial-category { height:auto; aspect-ratio:1; border-radius:50%; border:1px solid color-mix(in srgb,var(--stone-shadow) 30%,transparent); box-shadow:0 26px 34px -24px color-mix(in srgb,var(--stone-shadow) 75%,transparent),0 0 0 7px color-mix(in srgb,var(--stone-light) 85%,transparent),0 0 0 8px #c7982f66; }
+.editorial-home .editorial-category::after { inset:10px; border-radius:50%; }
+.editorial-home .pantry-tile-label { flex-direction:column; align-items:center; justify-content:flex-end; gap:8px; padding:0 16% 13%; text-align:center; }
+.editorial-home .pantry-tile-label h3 { font-size:clamp(1.15rem,1.9vw,1.6rem); text-wrap:balance; }
+.editorial-home .pantry-tile-arrow { width:36px; height:36px; }
+.editorial-home .pantry-tile-badge { top:13%; }
+.editorial-home .editorial-category>[role=img] { align-items:flex-start; padding-top:24%; font-size:1.5rem; }
+.editorial-home .editorial-pantry-controls { border-top-color:color-mix(in srgb,var(--stone-shadow) 22%,transparent); }
+.editorial-home .editorial-pantry-progress { background:color-mix(in srgb,var(--stone-shadow) 22%,transparent); }
+@media(min-width:640px) { .editorial-home .editorial-pantry-slide { flex-basis:38%; } }
+@media(min-width:1024px) { .editorial-home .editorial-pantry-slide { flex-basis:24%; } .editorial-home .editorial-pantry-track { gap:34px; } }
+
+/* ── 4. Showcase: large-photo cards with three distinct actions ───────────── */
+.editorial-home .boutique-product-card { padding:0; overflow:hidden; }
+.editorial-home .boutique-product-card .product-gallery { margin-bottom:0; border:0; border-bottom:1px solid var(--color-border); border-radius:0; aspect-ratio:1; }
+.editorial-home .boutique-product-card .product-gallery-slide img,
+.editorial-home .boutique-product-card .product-gallery-preview { object-fit:cover; }
+.editorial-home .boutique-product-card .table-card-meta { margin:0; padding:10px 18px 0; }
+.editorial-home .boutique-product-card .table-card-details { padding:2px 18px 14px; }
+.editorial-home .boutique-product-card .table-card-details h3 { min-height:0; }
+.editorial-home .boutique-product-card .table-card-details>p { min-height:0; }
+.editorial-home .boutique-product-card .table-card-purchase { margin-inline:18px; padding-bottom:18px; }
+
+/* ── 5. Gift Atelier: an emerald feature panel ────────────────────────────── */
+.editorial-home .table-gift-editorial { padding:clamp(18px,3.4vw,48px); background:radial-gradient(ellipse at 88% 8%,#c7982f24,transparent 55%),#0b3025; color:#fdfbf7; border:1px solid #e4c78340; }
+.dark .editorial-home .table-gift-editorial { background-color:#042821; }
+.editorial-home .table-gift-editorial .table-section-eyebrow { color:#e4c783; }
+.editorial-home .table-gift-editorial-copy h2 { color:#fdfbf7; }
+.editorial-home .table-gift-editorial-copy>p:not(:first-child) { color:#e3e5db; }
+.editorial-home .table-gift-editorial-figure figcaption { color:#d4d8cd; }
+.editorial-home .table-gift-editorial-photo { border-color:#e4c78366; }
+.editorial-home .table-gift-editorial-actions>a { background:#e4c783; border-color:#e4c783; color:#0b3025; }
+.editorial-home .table-gift-editorial-actions>a:hover { background:#f1dcaa; border-color:#f1dcaa; }
+.editorial-home .table-gift-editorial-actions>button { color:#fdfbf7; border-bottom-color:#e4c78399; }
+.editorial-home .table-gift-editorial-actions>button:hover { color:#e4c783; }
