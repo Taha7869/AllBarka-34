@@ -24,11 +24,47 @@ Stack facts checked in the repo: React 19.2, React Router 7, Tailwind 4.3, `moti
 
 Rules that keep it premium rather than gimmicky:
 
-1. Three cinematic moments on the homepage, one per inner page at most. Everything else is quiet.
+1. Three cinematic moments on the homepage, one per inner page at most. Everything else is quiet, and is held together by the signature layer in section 2a.
 2. Motion always answers the visitor (scroll, hover, tap) except the single hero loop.
 3. Emerald, gold, ivory, Playfair and Inter stay exactly as they are. No sparkles, meteors, beams, globes or glassmorphism.
 4. Text is never baked into video. All copy stays live, translated and selectable.
 5. Reduced motion, slow connections and old phones get the stills, which already look finished.
+
+## 2a. Signature layer — what makes it AllBarka's and nobody else's
+
+The levitation idea alone could belong to any food brand. These six devices come from AllBarka's own world (the dastarkhwan, the brass edge in the hero art, three languages, Lahore, gifting) and are what a visitor will remember. All six use assets and data the repo already has.
+
+| # | Device | What the visitor sees | Built from |
+|---|---|---|---|
+| 1 | **The brass thread** | One thin brushed-gold line starts at the platter's brass edge in the hero and draws itself down the page as you scroll. It becomes the shelf's gold edge, the rule beside "The Rise", the ribbon that ties the Gift Atelier box, and ends as the footer's top rule. One continuous object ties the whole page together | SVG path driven by scroll; replaces the separate gold dividers used today |
+| 2 | **Two scripts, one table** | Every section opens with its English heading and one large Urdu word in gold Nastaliq beside it: دسترخوان for the table, ذخیرہ for the pantry, تحفہ for gifting. In Urdu and Arabic the pairing reverses. The bilingual identity becomes the typography, instead of a language switcher being the only sign of it | Noto Nastaliq Urdu is already in `public/fonts`; words go through `t()` |
+| 3 | **Lit like Lahore** | The hero is graded by Pakistan time, which the dispatch bar already shows: cooler morning light, warm afternoon, lamp-lit evening. Same photograph, three gradings; the theme toggle still wins | CSS colour layers over the existing stills; no new footage |
+| 4 | **Weight you can feel** | Choosing 250g, 500g or 1kg does more than change the price: the photo settles a little larger and its shadow deepens, and the price rolls to the new figure. The page behaves as if the pack got heavier | Existing pack-size state and server-priced figures; presentation only |
+| 5 | **Where it comes from** | On the product page, a single engraved-style line travels from the product's origin to Lahore, with the origin named in the visitor's language | Existing `origin_en/ur/ar` fields; shown only when the field exists, nothing invented |
+| 6 | **The gift, received** | The recipient's reveal page becomes the emotional end of the story: the brass thread is a ribbon, one tap unties it, the sender's note writes itself, then the contents rise into view | Existing `GiftRevealPage` and its `isOpened` state; API and data untouched |
+
+First visit only: a 1.2-second opening where the brass thread draws and the crest settles, over the already-visible hero poster, skippable and never repeated in the session. It must not delay the hero image.
+
+### Motion grammar
+
+Four named movements, used everywhere, so the site feels like one hand made it:
+
+| Name | Movement | Used for | Timing |
+|---|---|---|---|
+| **Lift** | Up 6–8px, shadow deepens | Cards, tiles, buttons on hover or press | 220 ms, ease-out |
+| **Settle** | Down to rest with a slight overshoot | Add to bag, pack-size change, items arriving | 420 ms, soft spring |
+| **Draw** | A line or letter traces itself | Brass thread, origin line, gift note | Tied to scroll, or 900 ms |
+| **Gather** | Many things converge to one place | Fly-to-bag, the gift box sequence | 500 ms, or tied to scroll |
+
+Shadows come in three levels (rest, lifted, floating) tinted warm brown rather than grey, so depth looks like afternoon light instead of a software drop-shadow.
+
+### Mobile is designed first, not shrunk
+
+- A slim bottom bar within thumb reach: search, Ask AllBarka, bag. It hides while a pinned sequence plays.
+- Press and hold a product card to lift it into Quick View; release to drop it back.
+- Pinned sequences are shorter on phones, and "Gather" is not pinned at all.
+- Pack-size and filters open as bottom sheets, never as dropdowns.
+- Next page is fetched when a link is touched, so navigation feels instant.
 
 ## 3. Homepage, top to bottom
 
@@ -104,14 +140,14 @@ Each phase is its own commit on the review branch with screenshots, typecheck, l
 
 | Phase | Work | Needs from owner |
 |---|---|---|
-| 1 | Hero Float loop and "The Rise" sequence | Images A, B; clips 1D, 1M, 2D, 2M; the three lines of copy |
-| 2 | Gift Atelier "Gather", gifting page header | Images C, D; clip 3 |
-| 3 | Global motion: card lift, fly-to-bag, condensing header, route cross-fade | Nothing |
-| 4 | Shop and product page | Saunf photo; decision on collection stills |
-| 5 | Cart, checkout, order success, reading pages | Nothing |
+| 1 | Motion grammar, shadow levels, brass thread, two-script headings, card lift, fly-to-bag, condensing header | Approval of the three Urdu words |
+| 2 | Hero Float loop, "Lit like Lahore" grading, "The Rise" sequence | Images A, B; clips 1D, 1M, 2D, 2M; the three lines of copy |
+| 3 | Gift Atelier "Gather", gifting page header, gift reveal page | Images C, D; clip 3 |
+| 4 | Shop and product page, including "Weight you can feel" and the origin line | Saunf photo |
+| 5 | Mobile bottom bar and sheets; cart, checkout, order success, reading pages | Nothing |
 | 6 | Performance and accessibility pass, real-phone check | A phone test by the owner |
 
-Phase 3 does not depend on any media and can start immediately on approval.
+Phase 1 does not depend on any media and can start immediately on approval. It is also the cheapest way to judge the direction: the brass thread, the two-script headings and the lift are visible on the real site within one pass.
 
 ## 8. Done means
 
@@ -127,5 +163,6 @@ Phase 3 does not depend on any media and can start immediately on approval.
 
 1. Approve "The Weightless Table" as the direction, replacing the still-life hero brief.
 2. Confirm or rewrite the three "Rise" lines.
-3. Should Ask AllBarka stay as built, or move into the search field itself?
-4. Cleanup audit decisions (separate review, unchanged).
+3. Approve the Urdu section words (دسترخوان, ذخیرہ, تحفہ) or supply your own.
+4. Should Ask AllBarka stay as built, or move into the search field itself?
+5. Cleanup audit decisions (separate review, unchanged).
