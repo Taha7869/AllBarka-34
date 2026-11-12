@@ -1,5 +1,7 @@
 12 November 2026 — **CELEBRATIONS-PLAN / approval checkpoint.** Current workstream is codex/storefront-assets-polish-20261112 from fetched 59ef714fea22f8a1a2741df7983013447633ece8. Read [celebrations coverage tracker](../CELEBRATIONS_COVERAGE_TRACKER.md), then its image manifest and approval gate before resuming. Names corrections/Style Bible/Batch 1 require final yes; no image generation or page code. Existing WT tracker remains on claude/home-approved-20261111.
 
+12 November 2026 — **CEL-WEB1**: celebrations hub, occasion, packaging and design pages are implemented on `claude/celebrations-foundation-20261112` (from `da5a540`). Next: owner generates IMG-0001 and IMG-0004 from the [prompt pack](../celebrations/GEMINI_PROMPT_PACK.md); see the [roadmap](../celebrations/WEBSITE_ROADMAP.md).
+
 # Admin expansion handoff
 
 11 November 2026 — Start with [AllBarka pending work](../PENDING_WORK.md) for the release, catalog, integration and storefront queue. Use the linked workstream handoffs for detailed evidence.

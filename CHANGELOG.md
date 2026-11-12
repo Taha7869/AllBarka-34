@@ -1,3 +1,8 @@
+## 12 November 2026 — CEL-WEB1 celebrations storefront foundation
+
+- Add the celebrations registry (10 branches, 56 occasions, ranges, formats, 10 concept designs) from the approved naming register, with `/occasions` hub, occasion pages, `/packaging`, `/packaging/:format` and `/designs/:slug`. Unpublished occasions, formats and designs are enquiry pages with `noindex`; existing ready-to-order occasion listings keep their addresses. Server metadata now covers these routes. No price, checkout, admin or dependency change. Branch `claude/celebrations-foundation-20261112`; not merged or deployed. [Roadmap](docs/celebrations/WEBSITE_ROADMAP.md).
+- Record owner approval of names, Style Bible (with travertine surface, near-frontal labels, square-crop safety, tissue in open formats, standard and gold-foil finish tiers) and Batch 1; add a copy-ready [prompt pack](docs/celebrations/GEMINI_PROMPT_PACK.md) for owner-side generation in Gemini.
+
 ## 12 November 2026 — Celebrations Batch 0 proposal
 
 - Record the corrected naming register, one-row-per-event coverage tracker, photography Style Bible and ten exact planned Batch 1 prompts. Final owner approval pending; no images or page code generated. All Arabic strings need native review. [Tracker and evidence](docs/CELEBRATIONS_COVERAGE_TRACKER.md).

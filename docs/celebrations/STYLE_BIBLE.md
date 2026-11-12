@@ -1,5 +1,15 @@
 # AllBarka celebrations — Style Bible
 
+## Owner amendments, 12 November 2026 (these override any conflicting line below)
+
+1. **Surface.** Warm honed travertine or ivory limestone with a soft warm-ivory wall, matching the storefront's travertine shelf and ivory palette. Light stays neutral daylight with no amber cast. The warm-grey tabletop is retired.
+2. **Open formats.** Baskets, crates, trays, bottle sets and open drawers are shown closed, wrapped, or lined with plain unprinted tissue so they do not look bare. Still no food, liquid or contents claim.
+3. **Label face.** The labelled face is turned no more than about 15 degrees from the camera and evenly lit, so a real typeset sample name can be composited later ("lettering pass"). No AI-rendered text of any kind.
+4. **Framing.** Every card image must also survive a centred 1:1 crop with the whole object visible.
+5. **Finishes.** Two print tiers exist because the owner prints through market suppliers: **standard print** (default, lower cost) and **gold foil** (higher cost, quoted separately). Batch 1 images show standard print. Foil variants are allowed only for Wedding, Hajj and Umrah designs, as one restrained hot-foil accent, in a later batch; the manifest records which images show foil.
+6. **Who generates.** The owner generates images in Gemini (Nano Banana Pro) or another tool from [GEMINI_PROMPT_PACK.md](GEMINI_PROMPT_PACK.md); the manifest remains the record.
+
+
 Batch 0 · Draft for owner approval · 12 November 2026 (Asia/Karachi)
 
 No images may be generated and no page code may be written until the owner approves the changed naming rows, this document and the ten Batch 1 manifest rows. Saving this proposal is not creative approval. [Naming register](NAMING_REGISTER.md) · [Image manifest](IMAGE_MANIFEST.md) · [Coverage tracker](../CELEBRATIONS_COVERAGE_TRACKER.md).
@@ -45,7 +55,7 @@ No collage/contact sheet may replace a deliverable. No crop may cut off the pack
 Replace every slot before adding the exact expanded prompt to the manifest. Once generated, preserve the text actually used; a changed retry prompt belongs to its own recorded attempt.
 
 ```text
-Create one photorealistic packaging design concept for AllBarka. Design: {design}. Occasion/use: {occasion_or_range}. Format: {format}. Proposed construction: {construction}. Palette and artwork: {palette_and_artwork}. Shot: {shot_type_and_camera}. Aspect: {aspect}. Show only: {objects}; all packaging is empty. Use neutral natural window daylight, soft contact shadows, a matte warm-grey tabletop and an off-white background. Show believable material texture, seams, thickness and fitted parts; normal matte printed labels or sleeves only. Keep the full objects visible with clear margin and realistic proportions. Leave {label_areas} clean and blank for later typesetting. No text, glyphs, numbers, logos, watermarks, people, faces, hands, food, liquids, religious symbols or unlisted props. Avoid impossible folds, intersecting objects, plastic-looking paper, amber colour cast and CGI gloss. Keep the design palette accurate. This is a concept rendering, not a manufactured-product claim.
+Create one photorealistic packaging design concept for AllBarka. Design: {design}. Occasion/use: {occasion_or_range}. Format: {format}. Proposed construction: {construction}. Palette and artwork: {palette_and_artwork}. Shot: {shot_type_and_camera}. Aspect: {aspect}. Show only: {objects}; all packaging is empty. Use neutral natural window daylight, soft contact shadows, a warm honed travertine surface and a soft warm-ivory wall. Show believable material texture, seams, thickness and fitted parts; normal matte printed labels or sleeves only. Keep the full objects visible with clear margin and realistic proportions. Leave {label_areas} clean and blank for later typesetting. No text, glyphs, numbers, logos, watermarks, people, faces, hands, food, liquids, religious symbols or unlisted props. Avoid impossible folds, intersecting objects, plastic-looking paper, amber colour cast and CGI gloss. Keep the design palette accurate. This is a concept rendering, not a manufactured-product claim.
 ```
 
 For top-down/set follow-ups, inspect and reference the selected card image; lock its artwork, geometry and colours. Add the actual reference file/version to the manifest notes before generating. A set shot cannot silently invent additional product formats.

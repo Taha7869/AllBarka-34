@@ -160,6 +160,7 @@ Existing AllBarkaHero owns the signature composition and separate discovery stat
 | `contexts/ThemeContext.tsx` | **useTheme** | Context | - | MobileMenu.tsx, QuickViewModal.tsx, ThemeToggle.tsx |
 | `hooks/useDragScroll.ts` | **useDragScroll** | Hook | - | AIConcierge.tsx, CategoryParallax.tsx, CategoryQuickPills.tsx, CategoryScrollShowcase.tsx, ProductSlider.tsx |
 | `pages/AdminOrdersPage.tsx` | **AdminOrdersPage** | Page | - | App.tsx |
+| `pages/CelebrationsPages.tsx` | **CelebrationsHubPage, OccasionRoute, PackagingHubPage, PackagingFormatPage, DesignPage** | Pages | - | App.tsx (`/occasions`, `/occasions/:occasion`, `/packaging`, `/packaging/:format`, `/designs/:design`); data from `config/celebrations.ts` |
 | `pages/CartPage.tsx` | **CartPage** | Page | - | App.tsx, StickyCartBottomBar.tsx |
 | `pages/CheckoutPage.tsx` | **CheckoutPage** | Page | Has Props Interface | App.tsx |
 | `pages/FAQPage.tsx` | **FAQPage** | Page | - | App.tsx |
