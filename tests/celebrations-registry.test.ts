@@ -47,6 +47,9 @@ test('registry is internally consistent', () => {
     assert.ok(design.finishes.includes('standard'), `${design.slug} always offers standard print`);
     if (design.publishApproved) assert.ok(design.image, `${design.slug} cannot be published without an image`);
   }
+  assert.equal(new Set(CELEBRATION_DESIGNS.map(item => item.slug)).size, CELEBRATION_DESIGNS.length, 'design slugs are unique');
+  assert.equal(new Set(CELEBRATION_DESIGNS.map(item => item.imageId)).size, CELEBRATION_DESIGNS.length, 'each design has its own manifest row');
+  for (const occasion of CELEBRATION_OCCASIONS) assert.ok(CELEBRATION_DESIGNS.some(item => item.occasion === occasion.slug), `${occasion.slug} has a design brief`);
   for (const [alias, target] of Object.entries(CELEBRATION_ALIASES)) {
     if (target.startsWith('/occasions/')) assert.ok(getOccasion(target.slice(11)), `alias ${alias} points at a real occasion`);
     else if (target.startsWith('/packaging/')) assert.ok(getFormat(target.slice(11)), `alias ${alias} points at a real format`);

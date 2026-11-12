@@ -111,3 +111,45 @@
 }
 @media(prefers-reduced-motion:reduce) { .celeb-occasion, .celeb-design-card, .celeb-button, .celeb-ready a { transition:none; } .celeb-occasion:hover, .celeb-design-card:hover { transform:none; } }
 .celeb-design-detail > * { min-width:0; }
+
+/* Design page: gallery, options and quote, laid out like a product page. */
+.celeb-design-stage { aspect-ratio:4/5; border:1px solid var(--color-border); background:var(--color-surface); overflow:hidden; }
+.celeb-design-figure > .celeb-design-stage:first-child { aspect-ratio:4/5; }
+.celeb-design-stage img { width:100%; height:100%; object-fit:cover; }
+.celeb-thumbs { display:flex; gap:8px; margin-top:10px; }
+.celeb-thumbs button { width:64px; aspect-ratio:4/5; padding:0; border:1px solid var(--color-border); background:var(--color-base); overflow:hidden; cursor:pointer; }
+.celeb-thumbs button[aria-pressed="true"] { border-color:var(--color-accent-text); box-shadow:0 0 0 1px var(--color-accent-text); }
+.celeb-thumbs img, .celeb-thumbs span { display:block; width:100%; height:100%; object-fit:cover; }
+.celeb-thumbs span { background:repeating-linear-gradient(135deg,transparent 0 6px,var(--color-border) 6px 7px); }
+.celeb-design-info .celeb-header { padding-block:0 18px; }
+.celeb-design-info .celeb-title { font-size:clamp(2rem,4vw,3.4rem); }
+
+.celeb-quote { display:grid; gap:20px; padding:clamp(18px,2.6vw,28px); border:1px solid var(--color-border); background:var(--color-surface); }
+.celeb-quote h2 { font-family:var(--font-display); font-size:1.35rem; font-weight:500; }
+.celeb-quote fieldset { margin:0; padding:0; border:0; min-width:0; }
+.celeb-quote legend, .celeb-fields label { margin-bottom:8px; padding:0; font-size:.76rem; font-weight:600; color:var(--color-text-secondary); }
+.celeb-options { display:flex; flex-wrap:wrap; gap:8px; }
+.celeb-options label { position:relative; cursor:pointer; }
+.celeb-options input { position:absolute; inset:0; opacity:0; cursor:pointer; }
+.celeb-options span { display:inline-flex; align-items:center; min-height:44px; padding-inline:16px; border:1px solid var(--color-border); border-radius:3px; font-size:.84rem; color:var(--color-text-primary); transition:border-color .2s,background .2s,color .2s; }
+.celeb-options input:checked + span { border-color:#0b3025; background:#0b3025; color:#fdfbf7; }
+.dark .celeb-options input:checked + span { border-color:#e4c783; background:#e4c783; color:#0b3025; }
+.celeb-options input:focus-visible + span { outline:2px solid var(--color-accent-text); outline-offset:2px; }
+.celeb-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.celeb-fields label { display:grid; gap:8px; margin:0; }
+.celeb-fields label.is-wide { grid-column:1 / -1; }
+.celeb-fields input { width:100%; min-height:46px; padding-inline:12px; border:1px solid var(--color-border); border-radius:3px; background:var(--color-base); color:var(--color-text-primary); font:inherit; font-size:.95rem; }
+.celeb-fields input:focus-visible { outline:2px solid var(--color-accent-text); outline-offset:1px; }
+.celeb-button-wide { width:100%; min-height:52px; font-size:.9rem; }
+.celeb-quote-note { font-size:.8rem; line-height:1.6; color:var(--color-text-secondary); }
+
+.celeb-design-notes { display:grid; gap:28px 56px; margin-top:56px; padding-top:36px; border-top:1px solid var(--color-border); }
+.celeb-design-notes h2 { font-family:var(--font-display); font-size:1.5rem; font-weight:500; }
+.celeb-design-notes p { max-width:60ch; margin-top:10px; font-size:.96rem; line-height:1.75; color:var(--color-text-secondary); }
+.celeb-steps { display:grid; gap:12px; margin:14px 0 0; padding:0; list-style:none; counter-reset:step; }
+.celeb-steps li { display:grid; grid-template-columns:34px 1fr; align-items:baseline; gap:10px; font-size:.96rem; line-height:1.6; color:var(--color-text-secondary); counter-increment:step; }
+.celeb-steps li::before { content:counter(step); display:grid; place-items:center; width:30px; height:30px; border:1px solid var(--color-border-accent,#c7982f); border-radius:50%; font-family:var(--font-display); font-size:.95rem; color:var(--color-accent-text); }
+.celeb-more { margin-top:56px; }
+@media(min-width:900px) { .celeb-design-notes { grid-template-columns:minmax(0,1fr) minmax(0,1fr); } }
+@media(max-width:560px) { .celeb-fields { grid-template-columns:1fr; } }
+@media(prefers-reduced-motion:reduce) { .celeb-options span { transition:none; } }

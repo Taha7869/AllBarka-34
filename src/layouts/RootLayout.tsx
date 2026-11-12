@@ -31,7 +31,7 @@ import AIConcierge from '../components/AIConcierge';
 import CustomHamperBuilderModal from '../components/CustomHamperBuilderModal';
 import StoreUpdatesDialog from '../components/StoreUpdatesDialog';
 import MehmaanTablePlannerModal from '../components/MehmaanTablePlannerModal';
-import OccasionInquiryModal from '../components/OccasionInquiryModal';
+import OccasionInquiryModal, { type OccasionInquiryPrefill } from '../components/OccasionInquiryModal';
 import ShopTheTableModal from '../components/ShopTheTableModal';
 import type { EventType } from '../lib/occasionPlanning';
 
@@ -80,6 +80,7 @@ export default function RootLayout() {
   const [mehmaanModalOpen, setMehmaanModalOpen] = useState(false);
   const [occasionModalOpen, setOccasionModalOpen] = useState(false);
   const [defaultOccasion, setDefaultOccasion] = useState<EventType>('wedding');
+  const [occasionPrefill, setOccasionPrefill] = useState<OccasionInquiryPrefill | undefined>(undefined);
   const [shopTheTableOpen, setShopTheTableOpen] = useState(false);
 
   // Global listeners for modals
@@ -99,7 +100,8 @@ export default function RootLayout() {
     const handleOpenMehmaan = () => setMehmaanModalOpen(true);
     const handleOpenTable = () => setShopTheTableOpen(true);
     const handleOpenOccasion = (e?: Event) => {
-      const customEvent = e as CustomEvent<{ defaultOccasion?: EventType }>;
+      const customEvent = e as CustomEvent<{ defaultOccasion?: EventType; prefill?: OccasionInquiryPrefill }>;
+      setOccasionPrefill(customEvent?.detail?.prefill);
       if (customEvent?.detail?.defaultOccasion) {
         setDefaultOccasion(customEvent.detail.defaultOccasion);
       }
@@ -476,7 +478,7 @@ export default function RootLayout() {
       {!isAdminRoute && <AIConcierge hide={isAnyModalOrDrawerOpen && !aiConciergeOpen} hasCartBar={totalItemsCount > 0 && location.pathname !== '/checkout' && location.pathname !== '/cart'} onOpenChange={setAiConciergeOpen} />}
       <CustomQuoteModal />
       <MehmaanTablePlannerModal isOpen={mehmaanModalOpen} onClose={() => setMehmaanModalOpen(false)} />
-      <OccasionInquiryModal isOpen={occasionModalOpen} defaultOccasion={defaultOccasion} onClose={() => setOccasionModalOpen(false)} />
+      <OccasionInquiryModal isOpen={occasionModalOpen} defaultOccasion={defaultOccasion} prefill={occasionPrefill} onClose={() => setOccasionModalOpen(false)} />
       <ShopTheTableModal isOpen={shopTheTableOpen} onClose={() => setShopTheTableOpen(false)} />
     </div>
   );

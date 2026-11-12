@@ -21,15 +21,19 @@ interface OccasionInquiryModalProps {
   isOpen: boolean;
   onClose: () => void;
   defaultOccasion?: EventType;
+  /** Optional context from the page that opened the form, such as a chosen design. */
+  prefill?: OccasionInquiryPrefill;
 }
 
-export function openOccasionInquiryModal(defaultOccasion: EventType = 'wedding'): void {
+export interface OccasionInquiryPrefill { notes?: string; quantity?: number; }
+
+export function openOccasionInquiryModal(defaultOccasion: EventType = 'wedding', prefill?: OccasionInquiryPrefill): void {
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('open-occasion-inquiry', { detail: { defaultOccasion } }));
+    window.dispatchEvent(new CustomEvent('open-occasion-inquiry', { detail: { defaultOccasion, prefill } }));
   }
 }
 
-export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion = 'wedding' }: OccasionInquiryModalProps) {
+export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion = 'wedding', prefill }: OccasionInquiryModalProps) {
   const { t, language, isRtl } = useLanguage();
   const titleId = useId();
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -57,12 +61,14 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
       setTicketId('');
       setFormError('');
       setIsSubmitting(false);
+      if (prefill?.notes) setNotes(prefill.notes.slice(0, 600));
+      if (prefill?.quantity && Number.isSafeInteger(prefill.quantity) && prefill.quantity > 0) setQuantity(prefill.quantity);
     }
     return () => {
       requestRef.current?.abort();
       requestRef.current = null;
     };
-  }, [isOpen]);
+  }, [isOpen, prefill]);
 
   useEffect(() => {
     if (!isOpen) return;

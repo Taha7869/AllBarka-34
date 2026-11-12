@@ -10,7 +10,7 @@ import {
   CELEBRATION_BRANCHES, PACKAGING_FORMATS,
   type CelebrationBranch, type CelebrationDesign, type CelebrationOccasion, type LegacyOccasionId, type Localized,
   designsForFormat, designsForOccasion, displayName, getBranch, getDesign, getFormat, getOccasion,
-  isFormatPublished, isOccasionPublished, localized, occasionsInBranch, rangesInBranch,
+  isFormatPublished, isOccasionPublished, localized, occasionsInBranch, rangesInBranch, relatedDesigns,
   resolveFormatSlug, resolveOccasionRoute,
 } from '../config/celebrations';
 
@@ -348,6 +348,102 @@ export function PackagingFormatPage() {
 
 /* ── /designs/:design ───────────────────────────────────────────────────── */
 
+type Shot = 'card' | 'top-down' | 'set' | 'foil';
+
+function DesignGallery({ design }: { design: CelebrationDesign }) {
+  const { t } = useLanguage();
+  const shots: { shot: Shot; src: string | null }[] = [{ shot: 'card', src: design.image }, ...(design.gallery || [])];
+  const [active, setActive] = React.useState(0);
+  const current = shots[Math.min(active, shots.length - 1)];
+  return (
+    <figure className="celeb-design-figure">
+      <div className="celeb-design-stage">
+        {current.src
+          ? <img src={current.src} alt={`${design.name}: ${t(`celeb.shot.${current.shot}`)}`} width={1280} height={1600} decoding="async" />
+          : <DesignArt design={design} />}
+      </div>
+      {shots.length > 1 && (
+        <div className="celeb-thumbs" role="group" aria-label={t('celeb.gallery')}>
+          {shots.map((item, index) => (
+            <button key={item.shot} type="button" className="focus-ring" aria-pressed={index === active} aria-label={t(`celeb.shot.${item.shot}`)} onClick={() => setActive(index)}>
+              {item.src ? <img src={item.src} alt="" loading="lazy" decoding="async" /> : <span aria-hidden="true" />}
+            </button>
+          ))}
+        </div>
+      )}
+      {design.status === 'concept' && <figcaption>{t('celeb.concept')}</figcaption>}
+    </figure>
+  );
+}
+
+/** Options the customer picks before asking for a quote. Nothing here sets a price. */
+function DesignQuoteForm({ design, branch, occasion }: { design: CelebrationDesign; branch?: CelebrationBranch; occasion?: CelebrationOccasion }) {
+  const { t, language } = useLanguage();
+  const formId = React.useId();
+  const [format, setFormat] = React.useState(design.formats[0]);
+  const [finish, setFinish] = React.useState<CelebrationDesign['finishes'][number]>('standard');
+  const [quantity, setQuantity] = React.useState(50);
+  const [names, setNames] = React.useState('');
+  const [date, setDate] = React.useState('');
+
+  const summary = [
+    `Design: ${design.name} (${design.slug})`,
+    occasion ? `Occasion: ${occasion.plain.en}` : '',
+    `Packaging: ${getFormat(format)?.plain.en || format}`,
+    `Finish: ${finish === 'foil' ? 'Gold foil' : 'Standard print'}`,
+    `Quantity: ${quantity}`,
+    names.trim() ? `Label text: ${names.trim()}` : '',
+    date ? `Event date: ${date}` : '',
+  ].filter(Boolean).join(' | ');
+  const event = branch?.inquiryEvent;
+
+  const submit = (formEvent: React.FormEvent) => {
+    formEvent.preventDefault();
+    if (event) openOccasionInquiryModal(event, { notes: summary, quantity });
+  };
+
+  return (
+    <form className="celeb-quote" onSubmit={submit} aria-labelledby={`${formId}-title`}>
+      <h2 id={`${formId}-title`}>{t('celeb.choose')}</h2>
+
+      <fieldset>
+        <legend>{t('celeb.format')}</legend>
+        <div className="celeb-options">
+          {design.formats.map(slug => (
+            <label key={slug}><input type="radio" name={`${formId}-format`} value={slug} checked={format === slug} onChange={() => setFormat(slug)} /><span>{localized(getFormat(slug)?.plain || { en: slug, ur: slug, ar: slug }, language)}</span></label>
+          ))}
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>{t('celeb.finishes')}</legend>
+        <div className="celeb-options">
+          {design.finishes.map(option => (
+            <label key={option}><input type="radio" name={`${formId}-finish`} value={option} checked={finish === option} onChange={() => setFinish(option)} /><span>{t(`celeb.finish.${option}`)}</span></label>
+          ))}
+        </div>
+      </fieldset>
+
+      <div className="celeb-fields">
+        <label>{t('celeb.quantity')}
+          <input type="number" inputMode="numeric" min={1} max={100000} value={quantity} onChange={e => setQuantity(Math.max(1, Math.min(100000, Math.round(Number(e.target.value) || 1))))} />
+        </label>
+        <label>{t('celeb.date')}
+          <input type="date" value={date} onChange={e => setDate(e.target.value)} />
+        </label>
+        <label className="is-wide">{t('celeb.names')}
+          <input type="text" maxLength={120} value={names} onChange={e => setNames(e.target.value)} dir="auto" />
+        </label>
+      </div>
+
+      {event
+        ? <button type="submit" className="celeb-button celeb-button-wide focus-ring">{t('celeb.quote')}</button>
+        : <Link to="/contact" className="celeb-button celeb-button-wide focus-ring">{t('celeb.quote')}</Link>}
+      <p className="celeb-quote-note">{t('celeb.quoteNote')}</p>
+    </form>
+  );
+}
+
 export function DesignPage() {
   const { design: raw = '' } = useParams<{ design: string }>();
   const { t, language } = useLanguage();
@@ -368,33 +464,47 @@ export function DesignPage() {
     );
   }
 
+  const related = relatedDesigns(design, preview);
   return (
     <Shell>
       <SEO title={design.name} description={t('celeb.concept')} canonicalPath={`/designs/${design.slug}`} noindex={!design.publishApproved} image={design.image || undefined} />
       {!design.publishApproved && <PreviewNote />}
       <div className="celeb-design-detail">
-        <figure className="celeb-design-figure">
-          <DesignArt design={design} />
-          {design.status === 'concept' && <figcaption>{t('celeb.concept')}</figcaption>}
-        </figure>
+        <DesignGallery design={design} />
         <div className="celeb-design-info">
           <PageHeader
             back={occasion ? { to: `/occasions/${occasion.slug}${preview ? '?preview=concepts' : ''}`, label: localized(occasion.plain, language) } : { to: '/packaging', label: t('celeb.backPackaging') }}
             eyebrow={branch ? localized(branch.plain, language) : t('celeb.eyebrow')}
             title={<h1 className="celeb-title">{design.name}</h1>}
+            plain={occasion ? `${t('celeb.designFor')}: ${displayName(occasion, language)}` : undefined}
           />
+          <DesignQuoteForm design={design} branch={branch} occasion={occasion} />
+        </div>
+      </div>
+
+      <div className="celeb-design-notes">
+        <section>
+          <h2>{t('celeb.aboutTitle')}</h2>
+          <p>{t('celeb.aboutConcept')}</p>
           <dl className="celeb-facts">
-            {occasion && <><dt>{t('celeb.designFor')}</dt><dd>{displayName(occasion, language)}</dd></>}
             <dt>{t('celeb.availableIn')}</dt>
             <dd className="celeb-chips">{design.formats.map(slug => getFormat(slug)).filter(Boolean).map(format => <Link key={format!.slug} to={`/packaging/${format!.slug}`} className="focus-ring">{localized(format!.plain, language)}</Link>)}</dd>
-            <dt>{t('celeb.finishes')}</dt>
-            <dd className="celeb-chips">{design.finishes.map(finish => <span key={finish}>{t(`celeb.finish.${finish}`)}</span>)}</dd>
             <dt>{t('celeb.palette')}</dt>
             <dd className="celeb-palette">{design.palette.map(colour => <span key={colour.hex}><i style={{ background: colour.hex }} aria-hidden="true" />{colour.name}</span>)}</dd>
           </dl>
-          <EnquiryActions branch={branch} primary="celeb.select" secondary="celeb.personalise" />
-        </div>
+        </section>
+        <section>
+          <h2>{t('celeb.howTitle')}</h2>
+          <ol className="celeb-steps"><li>{t('celeb.how1')}</li><li>{t('celeb.how2')}</li><li>{t('celeb.how3')}</li></ol>
+        </section>
       </div>
+
+      {related.length > 0 && (
+        <section aria-labelledby="celeb-more-title" className="celeb-more">
+          <h2 id="celeb-more-title" className="celeb-section-title">{t('celeb.more')}</h2>
+          <div className="celeb-design-grid">{related.map(item => <DesignCard key={item.slug} design={item} preview={preview} />)}</div>
+        </section>
+      )}
     </Shell>
   );
 }
