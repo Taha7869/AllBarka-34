@@ -1,3 +1,9 @@
+## 12 November 2026 — CEL-WEB1b design page, all-occasion briefs and backend specification
+
+- Design page rebuilt as a product-style page: gallery with further views, packaging and print-finish options, quantity, date and label text, and a quote request that opens the existing enquiry form with the choice prefilled in notes. No price or checkout change.
+- Add a design brief, manifest row and prompt for each of the 47 remaining occasions (IMG-0011 to IMG-0057), so all 56 occasions have a reference design slot; briefs await owner review.
+- Add [BACKEND_SPEC.md](docs/celebrations/BACKEND_SPEC.md): verified facts about catalog sections, taxonomy, enquiries and the assistant, and six phased backend tasks (category integrity, occasions in taxonomy, sub-categories, designs in Firestore, add-ons, assistant context). Specification only.
+
 ## 12 November 2026 — CEL-WEB1 celebrations storefront foundation
 
 - Add the celebrations registry (10 branches, 56 occasions, ranges, formats, 10 concept designs) from the approved naming register, with `/occasions` hub, occasion pages, `/packaging`, `/packaging/:format` and `/designs/:slug`. Unpublished occasions, formats and designs are enquiry pages with `noindex`; existing ready-to-order occasion listings keep their addresses. Server metadata now covers these routes. No price, checkout, admin or dependency change. Branch `claude/celebrations-foundation-20261112`; not merged or deployed. [Roadmap](docs/celebrations/WEBSITE_ROADMAP.md).

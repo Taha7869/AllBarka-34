@@ -33,6 +33,12 @@ A test refuses a design that is published without an image.
 - **Foil is a finish, not a separate design.** Every design offers standard print; Wedding, Hajj and Umrah designs also offer gold foil, shown as "quoted separately".
 - **Stories are not shown yet.** The one-line story for each name exists only in Roman Urdu; it needs EN/UR/AR text before it appears.
 
+## 3a. Added later on 12 November (CEL-WEB1b)
+
+- **Design page is now a product-style page**: gallery, packaging and print-finish choice, quantity, event date, label text, "Request a quote" that opens the enquiry form with the choice already written in, an "About this design" block, the three ordering steps and more designs from the same collection.
+- **Every occasion has a design slot**: 57 designs in the registry (10 from Batch 1, 47 drafted briefs), each tied to a manifest row and a ready prompt in [PROMPT_PACK_BATCHES_3-11.md](PROMPT_PACK_BATCHES_3-11.md).
+- **Backend work is specified, not built**: [BACKEND_SPEC.md](BACKEND_SPEC.md).
+
 ## 4. What is left
 
 | ID | Work | Needs |
@@ -44,6 +50,7 @@ A test refuses a design that is published without an image.
 | CEL-WEB4 | "Complete the set" on a design, budget filter, guests-to-pieces helper, occasion finder, season rail | Designs and real prices |
 | CEL-WEB5 | Stories in three languages; friendlier breadcrumbs on the new pages | Copy approval |
 | CEL-WEB6 | Enquiry form options for birthdays, family, school and accessories (today those branches use the contact page) | Owner decision on form fields |
-| CEL-ADMIN1 | Admin-managed branches, occasions, designs and formats with the existing revision and draft rules | Separate approved task |
+| CEL-BE1 to CEL-BE6 | Backend phases B1 to B6: category integrity, occasions in taxonomy, sub-categories, designs in Firestore, add-ons in the quote flow, assistant context | [BACKEND_SPEC.md](BACKEND_SPEC.md); B1 can start now |
+| CEL-IMG3 | Owner review of the 47 drafted briefs, then Batches 3 to 11 | Batch 1 accepted |
 | CEL-AR1 | Native review of every Arabic name and interface string | A native speaker |
 | CEL-SEO1 | Add published occasion and design pages to the sitemap as they go live | First published design |
