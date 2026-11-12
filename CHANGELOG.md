@@ -1,3 +1,7 @@
+## 12 November 2026 — Celebrations Batch 0 proposal
+
+- Record the corrected naming register, one-row-per-event coverage tracker, photography Style Bible and ten exact planned Batch 1 prompts. Final owner approval pending; no images or page code generated. All Arabic strings need native review. [Tracker and evidence](docs/CELEBRATIONS_COVERAGE_TRACKER.md).
+
 ## 12 November 2026 — Storefront artwork and collection polish
 
 - Add four generated Weightless Table motion reference stills, a new Saunf collection cover and localized Saunf and Dates labels. Shop category titles use the storefront translation when a saved taxonomy entry lacks one. Collection covers attempt the fallback image once. [Media and verification](docs/WEIGHTLESS_TABLE_TRACKER.md#still-image-handoff).
