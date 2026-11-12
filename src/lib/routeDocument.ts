@@ -3,7 +3,8 @@ import type {StorefrontContent} from './storefrontContent';
 import { productSeo } from './productSeo';
 import type { TaxonomyEntry } from './catalogConfiguration';
 import type { Product } from '../types';
-import { CANONICAL_CATEGORIES, resolveCategorySlug } from '../config/categories';
+import { CANONICAL_CATEGORIES, OCCASION_TAGS, normalizeOccasionSlug, resolveCategorySlug } from '../config/categories';
+import { getDesign, getFormat, getOccasion, isFormatPublished, isOccasionPublished, resolveFormatSlug, resolveOccasionSlug } from '../config/celebrations';
 import { JOURNAL_ARTICLES } from '../data/articles';
 
 export interface RouteMetadata {
@@ -79,6 +80,26 @@ export function routeMetadata(pathname: string, origin: string, products: Produc
   }
   const extra=taxonomy.find(x=>x.visible&&x.type!=='occasion'&&x.id===categorySlug);
   if(extra) return basic(`/shop/${extra.id}`,extra.name_en,text(extra.description_en));
+  // Celebrations: hubs are indexable; an occasion, format or design only once it has an approved design.
+  if (route === '/occasions') return basic(route, 'Celebrations & Gifting for Every Occasion', 'Browse AllBarka gifting and packaging by occasion, from weddings and new arrivals to Hajj, Umrah, Eid and corporate gifts.');
+  if (route === '/packaging') return basic(route, 'Packaging & Presentation', 'Browse AllBarka packaging formats and event accessories, and the designs made for each.');
+  const occasionSlug = /^\/occasions\/([^/]+)$/.exec(route)?.[1];
+  if (occasionSlug) {
+    const resolved = resolveOccasionSlug(occasionSlug);
+    const occasion = resolved ? getOccasion(resolved.slug) : undefined;
+    const legacy = normalizeOccasionSlug(occasionSlug);
+    if (occasion && isOccasionPublished(occasion.slug)) return basic(`/occasions/${occasion.slug}`, `${occasion.signature.en} (${occasion.plain.en})`, `AllBarka designs and packaging for ${occasion.plain.en}.`);
+    if (legacy && OCCASION_TAGS.some(item => item.id === legacy)) return basic(route, OCCASION_TAGS.find(item => item.id === legacy)!.name, 'Gift boxes and hampers from AllBarka, ready to order for this occasion.');
+    if (occasion) return { ...basic(`/occasions/${occasion.slug}`, `${occasion.signature.en} (${occasion.plain.en})`, `Enquire about AllBarka designs and packaging for ${occasion.plain.en}.`), noindex: true };
+  }
+  const formatSlug = /^\/packaging\/([^/]+)$/.exec(route)?.[1];
+  const format = formatSlug ? resolveFormatSlug(formatSlug) : null;
+  if (format) {
+    const entry = getFormat(format.slug)!;
+    return { ...basic(`/packaging/${entry.slug}`, entry.plain.en, `AllBarka designs available in ${entry.plain.en.toLowerCase()}.`), ...(isFormatPublished(entry.slug) ? {} : { noindex: true }) };
+  }
+  const design = getDesign(/^\/designs\/([^/]+)$/.exec(route)?.[1] || '');
+  if (design) return { ...basic(route, design.name, `${design.name}: an AllBarka packaging design concept.`), ...(design.publishApproved ? {} : { noindex: true }) };
   const articleSlug = /^\/journal\/([^/]+)$/.exec(route)?.[1];
   const article = (content?contentJournal(content,'en'):JOURNAL_ARTICLES).find(item => item.slug === articleSlug);
   if (article) return { ...basic(route, article.title, article.excerpt), type: 'article', image: article.image };

@@ -20,6 +20,7 @@ import PoliciesPage, { type PolicyTab } from './pages/PoliciesPage';
 import AdminOrdersPage from './pages/AdminOrdersPage';
 import GiftRevealPage from './pages/GiftRevealPage';
 import NotFoundPage from './pages/NotFoundPage';
+import { OccasionsIndexRoute, OccasionRoute, PackagingHubPage, PackagingFormatPage, DesignPage } from './pages/CelebrationsPages';
 
 const PageLoadingFallback = () => (
   <div className="w-full min-h-[50vh] flex flex-col items-center justify-center py-24" aria-busy="true">
@@ -78,8 +79,11 @@ export default function App() {
               <Route path="faq" element={<FAQPage />} />
               <Route path="wholesale" element={<ShopPage />} />
               <Route path="gifting" element={<ShopPage />} />
-              <Route path="occasions" element={<ShopPage />} />
-              <Route path="occasions/:occasion" element={<ShopPage />} />
+              <Route path="occasions" element={<OccasionsIndexRoute />} />
+              <Route path="occasions/:occasion" element={<OccasionRoute />} />
+              <Route path="packaging" element={<PackagingHubPage />} />
+              <Route path="packaging/:format" element={<PackagingFormatPage />} />
+              <Route path="designs/:design" element={<DesignPage />} />
               <Route path="cart" element={<CartPage />} />
               <Route path="admin/orders" element={<AdminOrdersPage />} />
               <Route path="staff/orders" element={<StaffOrdersWorkspace />} />
