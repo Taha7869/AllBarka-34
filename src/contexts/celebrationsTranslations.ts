@@ -23,6 +23,7 @@ const rows: [string, string, string, string][] = [
   ['celeb.finish.standard', 'Standard print', 'عام پرنٹ', 'طباعة عادية'],
   ['celeb.finish.foil', 'Gold foil, quoted separately', 'سنہری فوائل، قیمت الگ بتائی جائے گی', 'ختم ذهبي، بسعر منفصل'],
   ['celeb.palette', 'Palette', 'رنگ', 'الألوان'],
+  ['celeb.whyMatters', 'Why it matters.', 'یہ موقع کیوں اہم ہے۔', 'لماذا تهمّ هذه المناسبة.'],
   ['celeb.select', 'I want this design', 'یہی ڈیزائن چاہیے', 'أريد هذا التصميم'],
   ['celeb.personalise', 'Personalise with names and date', 'نام اور تاریخ کے ساتھ بنوائیں', 'خصّصه بالأسماء والتاريخ'],
   ['celeb.custom', 'Ask for a fully custom design', 'مکمل اپنی مرضی کا ڈیزائن بنوائیں', 'اطلب تصميمًا خاصًا بالكامل'],

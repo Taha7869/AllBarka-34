@@ -153,3 +153,6 @@
 @media(min-width:900px) { .celeb-design-notes { grid-template-columns:minmax(0,1fr) minmax(0,1fr); } }
 @media(max-width:560px) { .celeb-fields { grid-template-columns:1fr; } }
 @media(prefers-reduced-motion:reduce) { .celeb-options span { transition:none; } }
+
+.celeb-story { max-width: 62ch; line-height: 1.7; }
+.celeb-story strong { font-weight: 600; }

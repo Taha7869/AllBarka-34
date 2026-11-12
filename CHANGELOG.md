@@ -1,3 +1,9 @@
+## 13 November 2026 — Catalogue batch 2 and occasion stories
+
+- Add a create-only draft intake of 38 products (hazelnut, gurbandi almonds, dates, spices, herbs, seeds, oils, honey, gur) with a placeholder image, no price and quote-only mode; importer `scripts/import-catalog-intake-20261113.ts`, tests in `tests/catalog-intake-20261113.test.ts` including exact mg/g/kg and ml/L arithmetic. No existing price or product was changed.
+- Add [the akbarionline.pk reference check](docs/CATALOG_REFERENCE_AKBARI_2026-11-13.md): coverage, an indicative price comparison and its limits, and categories that need an owner decision.
+- Add a short story to each of the 56 occasions and a use note to each of the 22 packaging formats in EN, UR and AR (Arabic needs native review); shown on occasion, design and format pages.
+
 ## 12 November 2026 — CEL-WEB1b design page, all-occasion briefs and backend specification
 
 - Design page rebuilt as a product-style page: gallery with further views, packaging and print-finish options, quantity, date and label text, and a quote request that opens the existing enquiry form with the choice prefilled in notes. No price or checkout change.

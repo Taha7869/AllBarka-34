@@ -219,6 +219,7 @@ function OccasionHeader({ occasion, branch }: { occasion: CelebrationOccasion; b
       eyebrow={branch ? localized(branch.plain, language) : t('celeb.eyebrow')}
       title={<TwoScript as="h1" value={occasion.signature} />}
       plain={localized(occasion.plain, language)}
+      lead={localized(occasion.story, language)}
     />
   );
 }
@@ -332,7 +333,7 @@ export function PackagingFormatPage() {
   return (
     <Shell>
       <SEO title={name} description={t('celeb.packLead')} canonicalPath={`/packaging/${format.slug}`} noindex={!published} />
-      <PageHeader back={{ to: '/packaging', label: t('celeb.backPackaging') }} eyebrow={t(format.group === 'packaging' ? 'celeb.packaging' : 'celeb.accessories')} title={<h1 className="celeb-title">{name}</h1>} />
+      <PageHeader back={{ to: '/packaging', label: t('celeb.backPackaging') }} eyebrow={t(format.group === 'packaging' ? 'celeb.packaging' : 'celeb.accessories')} title={<h1 className="celeb-title">{name}</h1>} lead={localized(format.holds, language)} />
       {designs.length === 0 ? <RequestPanel title={t('celeb.formatRequestTitle')} /> : (
         <>
           {!published && <PreviewNote />}
@@ -449,6 +450,7 @@ export function DesignPage() {
   const { t, language } = useLanguage();
   const preview = usePreview();
   const design = getDesign(raw);
+  const designOccasion = design ? getOccasion(design.occasion) : undefined;
   if (!design) return <Navigate to="/occasions" replace />;
   const branch = getBranch(design.branch);
   const occasion = design.occasion ? getOccasion(design.occasion) : undefined;
@@ -486,9 +488,10 @@ export function DesignPage() {
         <section>
           <h2>{t('celeb.aboutTitle')}</h2>
           <p>{t('celeb.aboutConcept')}</p>
+          {designOccasion && <p className="celeb-story"><strong>{t('celeb.whyMatters')}</strong> {localized(designOccasion.story, language)}</p>}
           <dl className="celeb-facts">
             <dt>{t('celeb.availableIn')}</dt>
-            <dd className="celeb-chips">{design.formats.map(slug => getFormat(slug)).filter(Boolean).map(format => <Link key={format!.slug} to={`/packaging/${format!.slug}`} className="focus-ring">{localized(format!.plain, language)}</Link>)}</dd>
+            <dd className="celeb-chips">{design.formats.map(slug => getFormat(slug)).filter(Boolean).map(format => <Link key={format!.slug} to={`/packaging/${format!.slug}`} className="focus-ring" title={localized(format!.holds, language)}>{localized(format!.plain, language)}</Link>)}</dd>
             <dt>{t('celeb.palette')}</dt>
             <dd className="celeb-palette">{design.palette.map(colour => <span key={colour.hex}><i style={{ background: colour.hex }} aria-hidden="true" />{colour.name}</span>)}</dd>
           </dl>

@@ -449,3 +449,5 @@ Private merchant-data migration review, new-feature Auth/Storage/n8n integration
       3. Network/invalid-response failure leaves cart unchanged.
       4. Successful unchanged quote adds intended exact product, variant, and quantity (pista-250g, 2 units, Rs. 350).
       5. Cancelling or superseding in-flight request closes review and prevents delayed responses from reopening panel or modifying cart.
+
+- 13 Nov 2026: catalogue batch 2 (38 drafts, placeholder images, no prices) and occasion stories added on `claude/celebrations-foundation-20261112`; see CHANGELOG and docs/CATALOG_REFERENCE_AKBARI_2026-11-13.md. Prices and photos remain owner decisions (CAT-INT2).

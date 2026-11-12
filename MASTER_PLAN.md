@@ -387,3 +387,5 @@ Performance targets for field measurement are LCP <=2.5s, INP <=200ms and CLS <=
 25 Oct 2026: owner confirmed balanced retail + gifting and existing assets first. Bounded V1 is locally verified: 706 tests, 21 backend, 36 production checks. Next planned slice: V2 collections/product-card presentation; preserve V1 and obtain live catalog snapshot when authorized access is available.
 
 Saved V1 source/evidence checkpoint: `7b35e5e9cfbe4fe7188f1f95a856692729beaf91` in PR #16. Remote tree/head/parent verified; 883 blobs, no deletions. This documentation-only successor records verification; inspect the current PR head before the next task.
+
+- 13 Nov 2026: catalogue batch 2 (38 drafts, placeholder images, no prices) and occasion stories added on `claude/celebrations-foundation-20261112`; see CHANGELOG and docs/CATALOG_REFERENCE_AKBARI_2026-11-13.md. Prices and photos remain owner decisions (CAT-INT2).

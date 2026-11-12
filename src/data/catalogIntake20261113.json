@@ -1,0 +1,2996 @@
+{
+  "batch": "owner-intake-20261113",
+  "purpose": "Create-only draft import into existing canonical Firestore products; not a price authority. Every product is a draft, quote-only, with no price and a placeholder image until the owner supplies a rate and a photograph.",
+  "newProducts": [
+    {
+      "id": "hazelnuts",
+      "name_en": "Hazelnuts (Filbert)",
+      "name_ur": "ہیزل نٹس",
+      "name_ar": "البندق",
+      "desc_en": "Whole shelled hazelnuts with a mild, buttery crunch. Good for snacking, baking and chocolate or dessert toppings.",
+      "desc_ur": "چھلے ہوئے ثابت ہیزل نٹس، ہلکے مکھن جیسے ذائقے اور خستگی کے ساتھ۔ نمکو، بیکنگ اور میٹھے کی سجاوٹ کے لیے۔",
+      "desc_ar": "حبات بندق مقشّرة بقرمشة ونكهة زبدية خفيفة. مناسبة للتسالي والخَبز وتزيين الحلويات.",
+      "category": "nuts",
+      "collections": [],
+      "keywords": [
+        "filbert",
+        "cobnut",
+        "hazel nut"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 100,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1kg",
+            "quantity": 1,
+            "unit": "kg",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Hazelnuts (Filbert) | AllBarka",
+        "title_ur": "ہیزل نٹس | البرکہ",
+        "title_ar": "البندق | البركة",
+        "imageAlt_en": "Hazelnuts (Filbert) — product image coming soon",
+        "imageAlt_ur": "ہیزل نٹس — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "البندق — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "gurbandi-almonds-shelled",
+      "name_en": "Gurbandi Almonds, Shelled",
+      "name_ur": "گربندی بادام گری",
+      "name_ar": "لوز غوربندي مقشّر",
+      "desc_en": "Small desi almond kernels with a dense, rich flavour. Traditionally eaten soaked or added to sweets, kheer and winter drinks.",
+      "desc_ur": "چھوٹی دیسی بادام گری، گہرے اور بھرپور ذائقے کے ساتھ۔ روایتی طور پر بھگو کر یا مٹھائی، کھیر اور سردیوں کے مشروبات میں۔",
+      "desc_ar": "لب لوز بلدي صغير بنكهة غنية. يُؤكل منقوعًا أو يُضاف إلى الحلويات والمهلبية ومشروبات الشتاء.",
+      "category": "nuts",
+      "collections": [],
+      "keywords": [
+        "gurbandi badam giri",
+        "desi badam",
+        "wild almond"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 100,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1kg",
+            "quantity": 1,
+            "unit": "kg",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Gurbandi Almonds, Shelled | AllBarka",
+        "title_ur": "گربندی بادام گری | البرکہ",
+        "title_ar": "لوز غوربندي مقشّر | البركة",
+        "imageAlt_en": "Gurbandi Almonds, Shelled — product image coming soon",
+        "imageAlt_ur": "گربندی بادام گری — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "لوز غوربندي مقشّر — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "gurbandi-almonds-inshell",
+      "name_en": "Gurbandi Almonds, In Shell",
+      "name_ur": "گربندی بادام (چھلکے والے)",
+      "name_ar": "لوز غوربندي بقشره",
+      "desc_en": "Desi almonds sold in the shell, which keeps the kernel fresh until you crack it. Weight is of the shelled-nut pack as sold.",
+      "desc_ur": "چھلکے والے دیسی بادام؛ چھلکا گری کو توڑنے تک تازہ رکھتا ہے۔ وزن پیک کے مطابق ہے۔",
+      "desc_ar": "لوز بلدي بقشره، يحفظ القشر اللب طازجًا حتى كسره. الوزن للعبوة كما تُباع.",
+      "category": "nuts",
+      "collections": [],
+      "keywords": [
+        "katha badam",
+        "badam with shell"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 250,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1kg",
+            "quantity": 1,
+            "unit": "kg",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Gurbandi Almonds, In Shell | AllBarka",
+        "title_ur": "گربندی بادام (چھلکے والے) | البرکہ",
+        "title_ar": "لوز غوربندي بقشره | البركة",
+        "imageAlt_en": "Gurbandi Almonds, In Shell — product image coming soon",
+        "imageAlt_ur": "گربندی بادام (چھلکے والے) — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "لوز غوربندي بقشره — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "kagzi-walnut-inshell",
+      "name_en": "Paper-Shell Walnuts (Kagzi Akhroot)",
+      "name_ur": "کاغذی اخروٹ",
+      "name_ar": "جوز رقيق القشر",
+      "desc_en": "Thin-shelled walnuts that crack open by hand. Sold in the shell; the kernel is mild and creamy.",
+      "desc_ur": "پتلے چھلکے والے اخروٹ جو ہاتھ سے کھل جاتے ہیں۔ چھلکے سمیت؛ گری ہلکی اور ملائم۔",
+      "desc_ar": "جوز رقيق القشر يُكسر باليد. يُباع بقشره واللب ناعم الطعم.",
+      "category": "nuts",
+      "collections": [],
+      "keywords": [
+        "kagzi akhrot",
+        "paper walnut",
+        "whole walnut"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 250,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1kg",
+            "quantity": 1,
+            "unit": "kg",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Paper-Shell Walnuts (Kagzi Akhroot) | AllBarka",
+        "title_ur": "کاغذی اخروٹ | البرکہ",
+        "title_ar": "جوز رقيق القشر | البركة",
+        "imageAlt_en": "Paper-Shell Walnuts (Kagzi Akhroot) — product image coming soon",
+        "imageAlt_ur": "کاغذی اخروٹ — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "جوز رقيق القشر — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "dry-coconut-khopra",
+      "name_en": "Dry Coconut (Ghari Khopra)",
+      "name_ur": "گھری کھوپرہ",
+      "name_ar": "جوز الهند المجفف (كوبرا)",
+      "desc_en": "Dried coconut pieces with a sweet, nutty taste. Used in sweets, panjeeri, savoury masalas and as a snack.",
+      "desc_ur": "خشک ناریل کے ٹکڑے، میٹھے اور مغزی ذائقے کے ساتھ۔ مٹھائی، پنجیری، مصالحوں اور سنیک میں۔",
+      "desc_ar": "قطع جوز هند مجففة بطعم حلو. تُستخدم في الحلويات والبنجيري والتوابل وكتسالي.",
+      "category": "nuts",
+      "collections": [],
+      "keywords": [
+        "khopra",
+        "copra",
+        "dry nariyal"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 100,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1kg",
+            "quantity": 1,
+            "unit": "kg",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Dry Coconut (Ghari Khopra) | AllBarka",
+        "title_ur": "گھری کھوپرہ | البرکہ",
+        "title_ar": "جوز الهند المجفف (كوبرا) | البركة",
+        "imageAlt_en": "Dry Coconut (Ghari Khopra) — product image coming soon",
+        "imageAlt_ur": "گھری کھوپرہ — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "جوز الهند المجفف (كوبرا) — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "plain-cashews",
+      "name_en": "Plain Cashews (Sada Kaju)",
+      "name_ur": "سادہ کاجو",
+      "name_ar": "كاجو طبيعي",
+      "desc_en": "Unsalted, unroasted cashews with a soft, sweet bite. For snacking, gravies, desserts and gifting.",
+      "desc_ur": "بغیر نمک اور بغیر بھنے کاجو، نرم اور میٹھے ذائقے کے ساتھ۔ سنیک، سالن، میٹھے اور تحفے کے لیے۔",
+      "desc_ar": "كاجو بدون ملح أو تحميص بطعم ناعم حلو. للتسالي والمرق والحلويات والإهداء.",
+      "category": "nuts",
+      "collections": [],
+      "keywords": [
+        "kaju",
+        "plain kaju",
+        "raw cashew"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 100,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1kg",
+            "quantity": 1,
+            "unit": "kg",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Plain Cashews (Sada Kaju) | AllBarka",
+        "title_ur": "سادہ کاجو | البرکہ",
+        "title_ar": "كاجو طبيعي | البركة",
+        "imageAlt_en": "Plain Cashews (Sada Kaju) — product image coming soon",
+        "imageAlt_ur": "سادہ کاجو — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "كاجو طبيعي — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "salted-peanuts",
+      "name_en": "Salted Peanuts",
+      "name_ur": "نمکین مونگ پھلی",
+      "name_ar": "فول سوداني مملّح",
+      "desc_en": "Roasted peanuts lightly salted for everyday snacking.",
+      "desc_ur": "ہلکے نمک کے ساتھ بھنی ہوئی مونگ پھلی، روزمرہ سنیک کے لیے۔",
+      "desc_ar": "فول سوداني محمّص ومملّح بخفة للتسالي اليومية.",
+      "category": "snacks-seeds",
+      "collections": [],
+      "keywords": [
+        "namkeen mungphali",
+        "roasted peanut"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 100,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1kg",
+            "quantity": 1,
+            "unit": "kg",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Salted Peanuts | AllBarka",
+        "title_ur": "نمکین مونگ پھلی | البرکہ",
+        "title_ar": "فول سوداني مملّح | البركة",
+        "imageAlt_en": "Salted Peanuts — product image coming soon",
+        "imageAlt_ur": "نمکین مونگ پھلی — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "فول سوداني مملّح — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "pistachio-kernels",
+      "name_en": "Plain Pistachio Kernels (Pista Giri)",
+      "name_ur": "سادہ پستہ گری",
+      "name_ar": "لب الفستق الطبيعي",
+      "desc_en": "Shelled, unsalted pistachio kernels with a bright green colour. For desserts, kheer, baking and garnishing.",
+      "desc_ur": "چھلے ہوئے بغیر نمک پستے کی گری، سبز رنگت کے ساتھ۔ میٹھے، کھیر، بیکنگ اور سجاوٹ کے لیے۔",
+      "desc_ar": "لب فستق مقشّر بدون ملح بلون أخضر زاهٍ. للحلويات والمهلبية والخبز والتزيين.",
+      "category": "nuts",
+      "collections": [],
+      "keywords": [
+        "pista",
+        "shelled pistachio",
+        "plain pista"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 100,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1kg",
+            "quantity": 1,
+            "unit": "kg",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Plain Pistachio Kernels (Pista Giri) | AllBarka",
+        "title_ur": "سادہ پستہ گری | البرکہ",
+        "title_ar": "لب الفستق الطبيعي | البركة",
+        "imageAlt_en": "Plain Pistachio Kernels (Pista Giri) — product image coming soon",
+        "imageAlt_ur": "سادہ پستہ گری — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "لب الفستق الطبيعي — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "seedless-apricots",
+      "name_en": "Seedless Dried Apricots",
+      "name_ur": "بغیر گٹھلی خوبانی",
+      "name_ar": "مشمش مجفف منزوع النوى",
+      "desc_en": "Sun-dried apricots with the stone removed, soft and tangy-sweet. Ready to eat or cook with.",
+      "desc_ur": "گٹھلی نکالی ہوئی دھوپ میں خشک کی گئی خوبانی، نرم اور کھٹی میٹھی۔ سیدھا کھانے یا پکانے کے لیے۔",
+      "desc_ar": "مشمش مجفف بلا نواة، طري بطعم حلو حامض. جاهز للأكل أو الطبخ.",
+      "category": "nuts",
+      "collections": [],
+      "keywords": [
+        "khubani without gutli",
+        "pitted apricot"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 100,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1kg",
+            "quantity": 1,
+            "unit": "kg",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Seedless Dried Apricots | AllBarka",
+        "title_ur": "بغیر گٹھلی خوبانی | البرکہ",
+        "title_ar": "مشمش مجفف منزوع النوى | البركة",
+        "imageAlt_en": "Seedless Dried Apricots — product image coming soon",
+        "imageAlt_ur": "بغیر گٹھلی خوبانی — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "مشمش مجفف منزوع النوى — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "apricots-kishta",
+      "name_en": "Dried Apricots, Kishta",
+      "name_ur": "کشتہ خوبانی",
+      "name_ar": "مشمش مجفف (كشتة)",
+      "desc_en": "Whole dried apricots, chewy and tart. A traditional pantry fruit for compotes, stews and snacking.",
+      "desc_ur": "ثابت خشک خوبانی، چبانے والی اور ہلکی کھٹی۔ کمپوٹ، سالن اور سنیک کے لیے روایتی پھل۔",
+      "desc_ar": "مشمش مجفف كامل، مطاطي وحامض قليلًا. للكومبوت والطبخ والتسالي.",
+      "category": "nuts",
+      "collections": [],
+      "keywords": [
+        "kishta khubani",
+        "dried apricot"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 250,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1kg",
+            "quantity": 1,
+            "unit": "kg",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Dried Apricots, Kishta | AllBarka",
+        "title_ur": "کشتہ خوبانی | البرکہ",
+        "title_ar": "مشمش مجفف (كشتة) | البركة",
+        "imageAlt_en": "Dried Apricots, Kishta — product image coming soon",
+        "imageAlt_ur": "کشتہ خوبانی — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "مشمش مجفف (كشتة) — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "dates-mabroom",
+      "name_en": "Mabroom Dates",
+      "name_ur": "مبروم کھجور",
+      "name_ar": "تمر مبروم",
+      "desc_en": "Long, soft Madinah-region dates with a deep caramel sweetness and a tender chew.",
+      "desc_ur": "مدینہ کے علاقے کی لمبی نرم کھجوریں، گہری کیریمل مٹھاس اور نرم گودے کے ساتھ۔",
+      "desc_ar": "تمر طويل طري من منطقة المدينة بحلاوة كراميل عميقة وقوام لين.",
+      "category": "dates",
+      "collections": [],
+      "keywords": [
+        "mabroom",
+        "mabrum",
+        "madina dates"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 250,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1kg",
+            "quantity": 1,
+            "unit": "kg",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Mabroom Dates | AllBarka",
+        "title_ur": "مبروم کھجور | البرکہ",
+        "title_ar": "تمر مبروم | البركة",
+        "imageAlt_en": "Mabroom Dates — product image coming soon",
+        "imageAlt_ur": "مبروم کھجور — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "تمر مبروم — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "dates-mazafati",
+      "name_en": "Mazafati Dates",
+      "name_ur": "مضافاتی کھجور",
+      "name_ar": "تمر مضافتي",
+      "desc_en": "Soft, dark, moist dates from Iran with a rich, honeyed flavour. Best kept cool.",
+      "desc_ur": "ایران کی نرم، گہری رنگت کی رسیلی کھجوریں، شہد جیسے بھرپور ذائقے کے ساتھ۔ ٹھنڈی جگہ پر رکھیں۔",
+      "desc_ar": "تمر إيراني داكن طري بنكهة عسلية غنية. يُفضَّل حفظه في مكان بارد.",
+      "category": "dates",
+      "collections": [],
+      "keywords": [
+        "mazafati",
+        "muzaffar khajoor",
+        "bam dates"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 250,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1kg",
+            "quantity": 1,
+            "unit": "kg",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Mazafati Dates | AllBarka",
+        "title_ur": "مضافاتی کھجور | البرکہ",
+        "title_ar": "تمر مضافتي | البركة",
+        "imageAlt_en": "Mazafati Dates — product image coming soon",
+        "imageAlt_ur": "مضافاتی کھجور — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "تمر مضافتي — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "dates-piarom",
+      "name_en": "Piarom Dates",
+      "name_ur": "پیارم کھجور",
+      "name_ar": "تمر بيارم",
+      "desc_en": "Dark, glossy, thin-skinned dates with a soft centre and a mild, chocolate-like sweetness.",
+      "desc_ur": "گہری چمکدار پتلے چھلکے والی کھجوریں، نرم گودا اور ہلکی چاکلیٹ جیسی مٹھاس۔",
+      "desc_ar": "تمر داكن لامع رقيق القشرة بلب طري وحلاوة تشبه الشوكولاتة.",
+      "category": "dates",
+      "collections": [],
+      "keywords": [
+        "piarom",
+        "maryami",
+        "piyaram"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 250,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1kg",
+            "quantity": 1,
+            "unit": "kg",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Piarom Dates | AllBarka",
+        "title_ur": "پیارم کھجور | البرکہ",
+        "title_ar": "تمر بيارم | البركة",
+        "imageAlt_en": "Piarom Dates — product image coming soon",
+        "imageAlt_ur": "پیارم کھجور — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "تمر بيارم — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "dates-rubai",
+      "name_en": "Rubai Dates",
+      "name_ur": "رباعی کھجور",
+      "name_ar": "تمر رباعي",
+      "desc_en": "Semi-dry dark dates with a firm chew and a sweet, slightly smoky finish.",
+      "desc_ur": "نیم خشک گہری کھجوریں، مضبوط چباؤ اور میٹھے ہلکے دھویں جیسے ذائقے کے ساتھ۔",
+      "desc_ar": "تمر داكن شبه جاف بقوام متماسك ونكهة حلوة ذات لمسة دخانية.",
+      "category": "dates",
+      "collections": [],
+      "keywords": [
+        "rubai",
+        "rabbi",
+        "chocolate khajoor"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 250,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1kg",
+            "quantity": 1,
+            "unit": "kg",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Rubai Dates | AllBarka",
+        "title_ur": "رباعی کھجور | البرکہ",
+        "title_ar": "تمر رباعي | البركة",
+        "imageAlt_en": "Rubai Dates — product image coming soon",
+        "imageAlt_ur": "رباعی کھجور — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "تمر رباعي — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "dates-irani",
+      "name_en": "Iranian Dates (Irani Khajoor)",
+      "name_ur": "ایرانی کھجور",
+      "name_ar": "تمر إيراني",
+      "desc_en": "Everyday Iranian dates, soft and sweet. A good value choice for iftar and daily use.",
+      "desc_ur": "روزمرہ کی ایرانی کھجوریں، نرم اور میٹھی۔ افطار اور روزمرہ استعمال کے لیے کفایتی انتخاب۔",
+      "desc_ar": "تمر إيراني للاستخدام اليومي، طري وحلو. خيار اقتصادي للإفطار والاستهلاك اليومي.",
+      "category": "dates",
+      "collections": [],
+      "keywords": [
+        "irani khajoor",
+        "iranian dates"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 250,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1kg",
+            "quantity": 1,
+            "unit": "kg",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Iranian Dates (Irani Khajoor) | AllBarka",
+        "title_ur": "ایرانی کھجور | البرکہ",
+        "title_ar": "تمر إيراني | البركة",
+        "imageAlt_en": "Iranian Dates (Irani Khajoor) — product image coming soon",
+        "imageAlt_ur": "ایرانی کھجور — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "تمر إيراني — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "turmeric-powder",
+      "name_en": "Turmeric Powder (Haldi)",
+      "name_ur": "ہلدی پاؤڈر",
+      "name_ar": "كركم مطحون",
+      "desc_en": "Finely ground turmeric with a warm, earthy flavour and golden colour for curries, rice and milk.",
+      "desc_ur": "باریک پسی ہلدی، گرم مٹی جیسے ذائقے اور سنہری رنگ کے ساتھ۔ سالن، چاول اور دودھ کے لیے۔",
+      "desc_ar": "كركم مطحون ناعم بنكهة دافئة ترابية ولون ذهبي للكاري والأرز والحليب.",
+      "category": "herbs-spices",
+      "collections": [],
+      "keywords": [
+        "haldi",
+        "turmeric"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 100,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1kg",
+            "quantity": 1,
+            "unit": "kg",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Turmeric Powder (Haldi) | AllBarka",
+        "title_ur": "ہلدی پاؤڈر | البرکہ",
+        "title_ar": "كركم مطحون | البركة",
+        "imageAlt_en": "Turmeric Powder (Haldi) — product image coming soon",
+        "imageAlt_ur": "ہلدی پاؤڈر — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "كركم مطحون — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "black-pepper-powder",
+      "name_en": "Black Pepper Powder (Kali Mirch)",
+      "name_ur": "کالی مرچ پاؤڈر",
+      "name_ar": "فلفل أسود مطحون",
+      "desc_en": "Freshly ground black pepper with a sharp, aromatic heat. Keep sealed to hold its aroma.",
+      "desc_ur": "تازہ پسی کالی مرچ، تیز خوشبودار تیکھے پن کے ساتھ۔ خوشبو قائم رکھنے کے لیے بند رکھیں۔",
+      "desc_ar": "فلفل أسود مطحون طازجًا بحدّة عطرية. يُحفظ مغلقًا للمحافظة على العبير.",
+      "category": "herbs-spices",
+      "collections": [],
+      "keywords": [
+        "kali mirch powder",
+        "pepper powder"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 100,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1kg",
+            "quantity": 1,
+            "unit": "kg",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Black Pepper Powder (Kali Mirch) | AllBarka",
+        "title_ur": "کالی مرچ پاؤڈر | البرکہ",
+        "title_ar": "فلفل أسود مطحون | البركة",
+        "imageAlt_en": "Black Pepper Powder (Kali Mirch) — product image coming soon",
+        "imageAlt_ur": "کالی مرچ پاؤڈر — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "فلفل أسود مطحون — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "long-pepper-dara-mirch",
+      "name_en": "Long Pepper (Dara Mirch)",
+      "name_ur": "دارا مرچ",
+      "name_ar": "فلفل طويل",
+      "desc_en": "Slender dried long pepper catkins with a hot, sweet-spicy flavour, used whole in spice blends and traditional cooking.",
+      "desc_ur": "پتلی خشک لمبی مرچ کے ڈنڈے، تیز میٹھے مسالے دار ذائقے کے ساتھ؛ ثابت مصالحوں اور روایتی پکوان میں۔",
+      "desc_ar": "نورات فلفل طويل مجففة بنكهة حارة حلوة تُستخدم كاملة في الخلطات والطبخ التقليدي.",
+      "category": "herbs-spices",
+      "collections": [],
+      "keywords": [
+        "pippali",
+        "darra mirch",
+        "long pepper"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 50,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "50g",
+            "quantity": 50,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Long Pepper (Dara Mirch) | AllBarka",
+        "title_ur": "دارا مرچ | البرکہ",
+        "title_ar": "فلفل طويل | البركة",
+        "imageAlt_en": "Long Pepper (Dara Mirch) — product image coming soon",
+        "imageAlt_ur": "دارا مرچ — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "فلفل طويل — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "curry-leaves",
+      "name_en": "Curry Leaves (Kari Patta)",
+      "name_ur": "کڑی پتا",
+      "name_ar": "ورق الكاري",
+      "desc_en": "Dried curry leaves that add a citrusy, nutty aroma to tadka, rice and lentils.",
+      "desc_ur": "خشک کڑی پتے جو تڑکے، چاول اور دال میں لیموں اور گری جیسی خوشبو ڈالتے ہیں۔",
+      "desc_ar": "أوراق كاري مجففة تضيف عبيرًا حمضيًا جوزيًا للتتبيلة والأرز والعدس.",
+      "category": "herbs-spices",
+      "collections": [],
+      "keywords": [
+        "kari patta",
+        "curry patta"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 25,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "25g",
+            "quantity": 25,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "50g",
+            "quantity": 50,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Curry Leaves (Kari Patta) | AllBarka",
+        "title_ur": "کڑی پتا | البرکہ",
+        "title_ar": "ورق الكاري | البركة",
+        "imageAlt_en": "Curry Leaves (Kari Patta) — product image coming soon",
+        "imageAlt_ur": "کڑی پتا — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "ورق الكاري — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "dried-oregano",
+      "name_en": "Dried Oregano",
+      "name_ur": "خشک اوریگانو",
+      "name_ar": "أوريجانو مجفف",
+      "desc_en": "Aromatic dried oregano for pizza, pasta, salads and grills.",
+      "desc_ur": "خوشبودار خشک اوریگانو، پیزا، پاستا، سلاد اور گرل کے لیے۔",
+      "desc_ar": "أوريجانو مجفف عطري للبيتزا والمعكرونة والسلطات والمشويات.",
+      "category": "herbs-spices",
+      "collections": [],
+      "keywords": [
+        "oregano",
+        "pizza herb"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 25,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "25g",
+            "quantity": 25,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "50g",
+            "quantity": 50,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Dried Oregano | AllBarka",
+        "title_ur": "خشک اوریگانو | البرکہ",
+        "title_ar": "أوريجانو مجفف | البركة",
+        "imageAlt_en": "Dried Oregano — product image coming soon",
+        "imageAlt_ur": "خشک اوریگانو — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "أوريجانو مجفف — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "desi-dalchini",
+      "name_en": "Desi Dalchini (Cassia Bark)",
+      "name_ur": "دیسی دار چینی",
+      "name_ar": "قرفة بلدية (كاسيا)",
+      "desc_en": "Thick cassia cinnamon bark with a strong, sweet-spicy aroma, used in rice, tea and masala blends. Different from Ceylon cinnamon.",
+      "desc_ur": "موٹی کیسیا دار چینی کی چھال، تیز میٹھی مسالے دار خوشبو؛ چاول، چائے اور مصالحوں میں۔ سیلونی دار چینی سے مختلف۔",
+      "desc_ar": "لحاء قرفة الكاسيا السميك بعبير حلو قوي، للأرز والشاي والخلطات. يختلف عن القرفة السيلانية.",
+      "category": "herbs-spices",
+      "collections": [],
+      "keywords": [
+        "dalchini",
+        "cassia",
+        "cinnamon bark"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 100,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Desi Dalchini (Cassia Bark) | AllBarka",
+        "title_ur": "دیسی دار چینی | البرکہ",
+        "title_ar": "قرفة بلدية (كاسيا) | البركة",
+        "imageAlt_en": "Desi Dalchini (Cassia Bark) — product image coming soon",
+        "imageAlt_ur": "دیسی دار چینی — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "قرفة بلدية (كاسيا) — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "isabgol-husk",
+      "name_en": "Isabgol Husk",
+      "name_ur": "اسپغول کی بھوسی",
+      "name_ar": "قشر بذور السيليوم",
+      "desc_en": "Psyllium husk, traditionally taken stirred into water or yoghurt. Not a medicine; follow the guidance on your pack and consult a clinician for health use.",
+      "desc_ur": "اسپغول کی بھوسی جو روایتی طور پر پانی یا دہی میں ملا کر لی جاتی ہے۔ دوا نہیں؛ استعمال سے پہلے پیک کی ہدایت دیکھیں اور صحت کے لیے معالج سے مشورہ کریں۔",
+      "desc_ar": "قشر السيليوم يُؤخذ تقليديًا مخلوطًا بالماء أو اللبن. ليس دواءً؛ اتبع إرشادات العبوة واستشر مختصًا للاستخدام الصحي.",
+      "category": "herbs-spices",
+      "collections": [],
+      "keywords": [
+        "ispaghol",
+        "psyllium",
+        "chilka ispagol"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 100,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Isabgol Husk | AllBarka",
+        "title_ur": "اسپغول کی بھوسی | البرکہ",
+        "title_ar": "قشر بذور السيليوم | البركة",
+        "imageAlt_en": "Isabgol Husk — product image coming soon",
+        "imageAlt_ur": "اسپغول کی بھوسی — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "قشر بذور السيليوم — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "dried-amla",
+      "name_en": "Dried Amla",
+      "name_ur": "خشک آملہ",
+      "name_ar": "أملا مجففة",
+      "desc_en": "Sun-dried Indian gooseberry pieces with a tart, astringent taste, used in chutneys, tea and traditional preparations.",
+      "desc_ur": "دھوپ میں خشک آملے کے ٹکڑے، کھٹے کسیلے ذائقے کے ساتھ؛ چٹنی، چائے اور روایتی تیاریوں میں۔",
+      "desc_ar": "قطع أملا مجففة بالشمس بطعم حامض قابض، للصلصات والشاي والتحضيرات التقليدية.",
+      "category": "herbs-spices",
+      "collections": [],
+      "keywords": [
+        "sukha amla",
+        "amla",
+        "gooseberry"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 100,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Dried Amla | AllBarka",
+        "title_ur": "خشک آملہ | البرکہ",
+        "title_ar": "أملا مجففة | البركة",
+        "imageAlt_en": "Dried Amla — product image coming soon",
+        "imageAlt_ur": "خشک آملہ — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "أملا مجففة — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "dried-shikakai",
+      "name_en": "Dried Shikakai",
+      "name_ur": "خشک شکاکائی",
+      "name_ar": "شيكاكاي مجففة",
+      "desc_en": "Dried shikakai pods, used traditionally in homemade hair-wash preparations. For external use only.",
+      "desc_ur": "خشک شکاکائی کی پھلیاں، روایتی طور پر گھریلو بالوں کے دھونے کی تیاریوں میں۔ صرف بیرونی استعمال کے لیے۔",
+      "desc_ar": "قرون شيكاكاي مجففة تُستخدم تقليديًا في وصفات غسل الشعر المنزلية. للاستعمال الخارجي فقط.",
+      "category": "herbs-spices",
+      "collections": [],
+      "keywords": [
+        "shikakai",
+        "soap pod"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 100,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Dried Shikakai | AllBarka",
+        "title_ur": "خشک شکاکائی | البرکہ",
+        "title_ar": "شيكاكاي مجففة | البركة",
+        "imageAlt_en": "Dried Shikakai — product image coming soon",
+        "imageAlt_ur": "خشک شکاکائی — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "شيكاكاي مجففة — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "looban",
+      "name_en": "Looban (Frankincense)",
+      "name_ur": "لوبان",
+      "name_ar": "لبان",
+      "desc_en": "Aromatic frankincense resin, burned as incense or used in traditional preparations.",
+      "desc_ur": "خوشبودار لوبان کا گوند، اگربتی کے طور پر جلانے یا روایتی تیاریوں میں۔",
+      "desc_ar": "صمغ اللبان العطري يُحرق كبخور أو يُستخدم في تحضيرات تقليدية.",
+      "category": "herbs-spices",
+      "collections": [],
+      "keywords": [
+        "luban",
+        "olibanum",
+        "frankincense"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 50,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "50g",
+            "quantity": 50,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Looban (Frankincense) | AllBarka",
+        "title_ur": "لوبان | البرکہ",
+        "title_ar": "لبان | البركة",
+        "imageAlt_en": "Looban (Frankincense) — product image coming soon",
+        "imageAlt_ur": "لوبان — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "لبان — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "gum-arabic-char-gond",
+      "name_en": "Char Gond (Gum Arabic)",
+      "name_ur": "چار گوند",
+      "name_ar": "صمغ عربي",
+      "desc_en": "Edible gum arabic pieces, traditionally added to winter sweets and drinks.",
+      "desc_ur": "قابلِ خوراک گوند عربی کے ٹکڑے، روایتی طور پر سردیوں کی مٹھائی اور مشروبات میں۔",
+      "desc_ar": "قطع صمغ عربي صالحة للأكل تُضاف تقليديًا إلى حلويات ومشروبات الشتاء.",
+      "category": "herbs-spices",
+      "collections": [],
+      "keywords": [
+        "char gond",
+        "gum arabic",
+        "acacia gum"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 100,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Char Gond (Gum Arabic) | AllBarka",
+        "title_ur": "چار گوند | البرکہ",
+        "title_ar": "صمغ عربي | البركة",
+        "imageAlt_en": "Char Gond (Gum Arabic) — product image coming soon",
+        "imageAlt_ur": "چار گوند — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "صمغ عربي — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "salab-misri",
+      "name_en": "Salab Misri (Salep)",
+      "name_ur": "سلب مصری",
+      "name_ar": "سحلب",
+      "desc_en": "Dried salep orchid tubers, traditionally ground into warm winter milk drinks and desserts. Sold by small weights because of its high price.",
+      "desc_ur": "خشک سلب کی جڑیں، روایتی طور پر پیس کر سردیوں کے گرم دودھ اور میٹھوں میں۔ زیادہ قیمت کی وجہ سے چھوٹے وزن میں۔",
+      "desc_ar": "درنات السحلب المجففة تُطحن تقليديًا لمشروبات الحليب الدافئة في الشتاء والحلويات. تُباع بأوزان صغيرة لارتفاع سعرها.",
+      "category": "herbs-spices",
+      "collections": [],
+      "keywords": [
+        "salep",
+        "sahlab",
+        "salab"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 10,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "10g",
+            "quantity": 10,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "25g",
+            "quantity": 25,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "50g",
+            "quantity": 50,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Salab Misri (Salep) | AllBarka",
+        "title_ur": "سلب مصری | البرکہ",
+        "title_ar": "سحلب | البركة",
+        "imageAlt_en": "Salab Misri (Salep) — product image coming soon",
+        "imageAlt_ur": "سلب مصری — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "سحلب — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "ashwagandha",
+      "name_en": "Ashwagandha (Asghand Nagori)",
+      "name_ur": "اسگندھ ناگوری",
+      "name_ar": "أشواغاندا",
+      "desc_en": "Dried ashwagandha root, a traditional herb. Not a medicine; consult a clinician before using it for health purposes.",
+      "desc_ur": "خشک اسگندھ کی جڑ، ایک روایتی جڑی بوٹی۔ دوا نہیں؛ صحت کے لیے استعمال سے پہلے معالج سے مشورہ کریں۔",
+      "desc_ar": "جذر أشواغاندا مجفف، عشبة تقليدية. ليس دواءً؛ استشر مختصًا قبل الاستخدام الصحي.",
+      "category": "herbs-spices",
+      "collections": [],
+      "keywords": [
+        "asghand",
+        "ashwagandha",
+        "winter cherry"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 50,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "50g",
+            "quantity": 50,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Ashwagandha (Asghand Nagori) | AllBarka",
+        "title_ur": "اسگندھ ناگوری | البرکہ",
+        "title_ar": "أشواغاندا | البركة",
+        "imageAlt_en": "Ashwagandha (Asghand Nagori) — product image coming soon",
+        "imageAlt_ur": "اسگندھ ناگوری — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "أشواغاندا — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "black-myrobalan",
+      "name_en": "Black Myrobalan (Kali Harar)",
+      "name_ur": "کالی ہریڑ",
+      "name_ar": "هليلج أسود",
+      "desc_en": "Dried black myrobalan fruit, a traditional herb. Not a medicine; consult a clinician before health use.",
+      "desc_ur": "خشک کالی ہریڑ کا پھل، ایک روایتی جڑی بوٹی۔ دوا نہیں؛ صحت کے لیے استعمال سے پہلے معالج سے مشورہ کریں۔",
+      "desc_ar": "ثمر الهليلج الأسود المجفف، عشبة تقليدية. ليس دواءً؛ استشر مختصًا قبل الاستخدام الصحي.",
+      "category": "herbs-spices",
+      "collections": [],
+      "keywords": [
+        "kali harar",
+        "hareer",
+        "haritaki"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 100,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Black Myrobalan (Kali Harar) | AllBarka",
+        "title_ur": "کالی ہریڑ | البرکہ",
+        "title_ar": "هليلج أسود | البركة",
+        "imageAlt_en": "Black Myrobalan (Kali Harar) — product image coming soon",
+        "imageAlt_ur": "کالی ہریڑ — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "هليلج أسود — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "anar-dana",
+      "name_en": "Dried Pomegranate Seeds (Anar Dana)",
+      "name_ur": "انار دانہ",
+      "name_ar": "بذور الرمان المجففة",
+      "desc_en": "Dried pomegranate seeds with a sharp, sour-sweet tang, used in chutneys, chaat, chana and masala blends.",
+      "desc_ur": "خشک انار دانہ، تیز کھٹے میٹھے ذائقے کے ساتھ؛ چٹنی، چاٹ، چنے اور مصالحوں میں۔",
+      "desc_ar": "بذور رمان مجففة بحموضة حلوة حادة تُستخدم في الصلصات والشاط والحمص والخلطات.",
+      "category": "herbs-spices",
+      "collections": [],
+      "keywords": [
+        "anardana",
+        "pomegranate seed"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 50,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "50g",
+            "quantity": 50,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Dried Pomegranate Seeds (Anar Dana) | AllBarka",
+        "title_ur": "انار دانہ | البرکہ",
+        "title_ar": "بذور الرمان المجففة | البركة",
+        "imageAlt_en": "Dried Pomegranate Seeds (Anar Dana) — product image coming soon",
+        "imageAlt_ur": "انار دانہ — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "بذور الرمان المجففة — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "fenugreek-seeds-methi-dana",
+      "name_en": "Fenugreek Seeds (Methi Dana)",
+      "name_ur": "میتھی دانہ",
+      "name_ar": "حبة الحلبة",
+      "desc_en": "Whole fenugreek seeds with a bittersweet, maple-like aroma, used in tempering, pickles and curries.",
+      "desc_ur": "ثابت میتھی دانہ، کڑوی میٹھی خوشبو کے ساتھ؛ تڑکے، اچار اور سالن میں۔",
+      "desc_ar": "بذور الحلبة كاملة بعبير مرّ حلو تُستخدم في التتبيل والمخللات والكاري.",
+      "category": "herbs-spices",
+      "collections": [],
+      "keywords": [
+        "methi dana",
+        "methi",
+        "fenugreek"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 100,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1kg",
+            "quantity": 1,
+            "unit": "kg",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Fenugreek Seeds (Methi Dana) | AllBarka",
+        "title_ur": "میتھی دانہ | البرکہ",
+        "title_ar": "حبة الحلبة | البركة",
+        "imageAlt_en": "Fenugreek Seeds (Methi Dana) — product image coming soon",
+        "imageAlt_ur": "میتھی دانہ — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "حبة الحلبة — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "kalonji-nigella-seeds",
+      "name_en": "Kalonji (Nigella Seeds)",
+      "name_ur": "کلونجی",
+      "name_ar": "حبة البركة",
+      "desc_en": "Small black nigella seeds with a peppery, slightly bitter flavour for naan, pickles and curries.",
+      "desc_ur": "چھوٹے کالے کلونجی کے دانے، تیکھے ہلکے کڑوے ذائقے کے ساتھ؛ نان، اچار اور سالن میں۔",
+      "desc_ar": "بذور حبة البركة السوداء بنكهة لاذعة مرّة قليلًا للخبز والمخللات والكاري.",
+      "category": "herbs-spices",
+      "collections": [],
+      "keywords": [
+        "kalonji",
+        "nigella",
+        "tukhm-e-piyaz",
+        "onion seed"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 100,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1kg",
+            "quantity": 1,
+            "unit": "kg",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Kalonji (Nigella Seeds) | AllBarka",
+        "title_ur": "کلونجی | البرکہ",
+        "title_ar": "حبة البركة | البركة",
+        "imageAlt_en": "Kalonji (Nigella Seeds) — product image coming soon",
+        "imageAlt_ur": "کلونجی — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "حبة البركة — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "sunflower-kernels",
+      "name_en": "Sunflower Kernels (Hulled)",
+      "name_ur": "سورج مکھی گری",
+      "name_ar": "لب بذور عباد الشمس",
+      "desc_en": "Hulled sunflower seeds with a light, nutty taste for snacking, salads and baking.",
+      "desc_ur": "چھلے ہوئے سورج مکھی کے بیج، ہلکے مغزی ذائقے کے ساتھ؛ سنیک، سلاد اور بیکنگ کے لیے۔",
+      "desc_ar": "بذور عباد الشمس مقشّرة بطعم جوزي خفيف للتسالي والسلطات والخبز.",
+      "category": "snacks-seeds",
+      "collections": [],
+      "keywords": [
+        "surajmukhi",
+        "sunflower seed kernel"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 100,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100g",
+            "quantity": 100,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1kg",
+            "quantity": 1,
+            "unit": "kg",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Sunflower Kernels (Hulled) | AllBarka",
+        "title_ur": "سورج مکھی گری | البرکہ",
+        "title_ar": "لب بذور عباد الشمس | البركة",
+        "imageAlt_en": "Sunflower Kernels (Hulled) — product image coming soon",
+        "imageAlt_ur": "سورج مکھی گری — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "لب بذور عباد الشمس — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "oil-amla",
+      "name_en": "Amla Oil",
+      "name_ur": "آملہ کا تیل",
+      "name_ar": "زيت الأملا",
+      "desc_en": "Amla-infused oil for traditional hair and scalp massage. For external use only; patch-test first.",
+      "desc_ur": "روایتی بالوں اور سر کی مالش کے لیے آملہ کا تیل۔ صرف بیرونی استعمال؛ پہلے ہلکا ٹیسٹ کریں۔",
+      "desc_ar": "زيت منقوع بالأملا لتدليك الشعر وفروة الرأس التقليدي. للاستعمال الخارجي فقط؛ جرّبه على منطقة صغيرة أولًا.",
+      "category": "oils",
+      "collections": [],
+      "keywords": [
+        "amla ka tail",
+        "gooseberry oil"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "liquid",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 100,
+        "baseUnit": "ml",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100ml",
+            "quantity": 100,
+            "unit": "ml",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250ml",
+            "quantity": 250,
+            "unit": "ml",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500ml",
+            "quantity": 500,
+            "unit": "ml",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1L",
+            "quantity": 1,
+            "unit": "L",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Amla Oil | AllBarka",
+        "title_ur": "آملہ کا تیل | البرکہ",
+        "title_ar": "زيت الأملا | البركة",
+        "imageAlt_en": "Amla Oil — product image coming soon",
+        "imageAlt_ur": "آملہ کا تیل — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "زيت الأملا — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "oil-coriander",
+      "name_en": "Coriander Seed Oil",
+      "name_ur": "دھنیا کا تیل",
+      "name_ar": "زيت بذور الكزبرة",
+      "desc_en": "Pressed coriander seed oil with a warm, citrusy aroma. Check the label for intended use before applying or cooking.",
+      "desc_ur": "پیسے ہوئے دھنیا کے بیجوں کا تیل، گرم لیموں جیسی خوشبو کے ساتھ۔ استعمال سے پہلے لیبل پر مقصد دیکھیں۔",
+      "desc_ar": "زيت بذور الكزبرة المعصورة بعبير دافئ حمضي. راجع الملصق لغرض الاستخدام قبل التطبيق أو الطبخ.",
+      "category": "oils",
+      "collections": [],
+      "keywords": [
+        "dhaniya ka tail",
+        "coriander oil"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "liquid",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 100,
+        "baseUnit": "ml",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "100ml",
+            "quantity": 100,
+            "unit": "ml",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "250ml",
+            "quantity": 250,
+            "unit": "ml",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Coriander Seed Oil | AllBarka",
+        "title_ur": "دھنیا کا تیل | البرکہ",
+        "title_ar": "زيت بذور الكزبرة | البركة",
+        "imageAlt_en": "Coriander Seed Oil — product image coming soon",
+        "imageAlt_ur": "دھنیا کا تیل — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "زيت بذور الكزبرة — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "desi-gur",
+      "name_en": "Desi Gur (Jaggery)",
+      "name_ur": "دیسی گڑ",
+      "name_ar": "جاجري (غور)",
+      "desc_en": "Unrefined cane jaggery in blocks, a traditional sweetener for tea, sweets and winter dishes.",
+      "desc_ur": "بلاکس میں غیر ریفائنڈ گنے کا گڑ، چائے، مٹھائی اور سردیوں کے پکوان کا روایتی میٹھا۔",
+      "desc_ar": "جاجري قصب غير مكرر على شكل قوالب، محلٍّ تقليدي للشاي والحلويات وأطباق الشتاء.",
+      "category": "essentials",
+      "collections": [],
+      "keywords": [
+        "gur",
+        "gud",
+        "jaggery"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 250,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1kg",
+            "quantity": 1,
+            "unit": "kg",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Desi Gur (Jaggery) | AllBarka",
+        "title_ur": "دیسی گڑ | البرکہ",
+        "title_ar": "جاجري (غور) | البركة",
+        "imageAlt_en": "Desi Gur (Jaggery) — product image coming soon",
+        "imageAlt_ur": "دیسی گڑ — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "جاجري (غور) — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "honey-phulai",
+      "name_en": "Phulai Honey (Wild Acacia)",
+      "name_ur": "پھلائی کا شہد",
+      "name_ar": "عسل شجر الفلاي (الأكاسيا البرية)",
+      "desc_en": "Honey collected from wild acacia (phulai) blossom, light in colour with a mild floral taste. Crystallisation is natural.",
+      "desc_ur": "جنگلی پھلائی کے پھولوں سے حاصل کیا گیا شہد، ہلکی رنگت اور نرم پھولوں جیسا ذائقہ۔ جم جانا قدرتی ہے۔",
+      "desc_ar": "عسل من أزهار أكاسيا برية (الفلاي) فاتح اللون بطعم زهري ناعم. التبلور أمر طبيعي.",
+      "category": "essentials",
+      "collections": [],
+      "keywords": [
+        "phulai",
+        "acacia honey",
+        "kikar honey"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 250,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1kg",
+            "quantity": 1,
+            "unit": "kg",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Phulai Honey (Wild Acacia) | AllBarka",
+        "title_ur": "پھلائی کا شہد | البرکہ",
+        "title_ar": "عسل شجر الفلاي (الأكاسيا البرية) | البركة",
+        "imageAlt_en": "Phulai Honey (Wild Acacia) — product image coming soon",
+        "imageAlt_ur": "پھلائی کا شہد — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "عسل شجر الفلاي (الأكاسيا البرية) — الصورة قريبًا"
+      }
+    },
+    {
+      "id": "honey-beri",
+      "name_en": "Beri (Sidr) Honey",
+      "name_ur": "بیری کا شہد",
+      "name_ar": "عسل السدر",
+      "desc_en": "Honey from sidr (beri) blossom with a rich, deep flavour. Authenticity claims are verified before listing.",
+      "desc_ur": "بیری کے پھولوں کا شہد، بھرپور گہرے ذائقے کے ساتھ۔ اصلیت کے دعوے فہرست میں آنے سے پہلے تصدیق کیے جاتے ہیں۔",
+      "desc_ar": "عسل من أزهار السدر بنكهة غنية عميقة. تُراجَع ادعاءات الأصالة قبل النشر.",
+      "category": "essentials",
+      "collections": [],
+      "keywords": [
+        "sidr honey",
+        "beri ka shahad",
+        "ber honey"
+      ],
+      "image": "/images/product-placeholder.svg",
+      "imageName": "/images/product-placeholder.svg",
+      "galleryImages": [],
+      "prices": {},
+      "variants": [],
+      "wholesale": 0,
+      "quoteOnly": true,
+      "orderMode": "inquiry_quote",
+      "status": "draft",
+      "active": false,
+      "allowCustomWeight": false,
+      "pricePer100g": 0,
+      "claimsVerification": {
+        "status": "unverified"
+      },
+      "commerce": {
+        "version": 1,
+        "kind": "food",
+        "pricingMode": "calculated",
+        "quantityMode": "fixed",
+        "baseQuantity": 250,
+        "baseUnit": "g",
+        "basePrice": null,
+        "options": [
+          {
+            "label": "250g",
+            "quantity": 250,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "500g",
+            "quantity": 500,
+            "unit": "g",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          },
+          {
+            "label": "1kg",
+            "quantity": 1,
+            "unit": "kg",
+            "override": false,
+            "available": true,
+            "shippingWeightG": null
+          }
+        ],
+        "custom": null
+      },
+      "importBatch": "owner-intake-20261113",
+      "seo": {
+        "title_en": "Beri (Sidr) Honey | AllBarka",
+        "title_ur": "بیری کا شہد | البرکہ",
+        "title_ar": "عسل السدر | البركة",
+        "imageAlt_en": "Beri (Sidr) Honey — product image coming soon",
+        "imageAlt_ur": "بیری کا شہد — تصویر جلد آ رہی ہے",
+        "imageAlt_ar": "عسل السدر — الصورة قريبًا"
+      }
+    }
+  ],
+  "reuseExistingIds": [],
+  "pricePolicy": "No price is set in this batch. Reference figures from akbarionline.pk are listed in docs/CATALOG_REFERENCE_AKBARI_2026-11-13.md for the owner to decide; they are not applied.",
+  "referenceTags": {}
+}
