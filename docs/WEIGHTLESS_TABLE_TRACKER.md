@@ -2,7 +2,7 @@
 
 Single list of what is left. Plan and reasoning: [blueprint](STOREFRONT_EXPERIENCE_BLUEPRINT_2026-11-12.md). Homepage work already done: [HOME-LG1/LG2 record](HOME_LIVING_GALLERY_2026-11-11.md).
 
-**Branch:** `claude/home-approved-20261111` (PR #18). Integration target after final review: PR #17. Last updated: 11 November 2026, head `13bc436`.
+**Base branch:** `claude/home-approved-20261111` (PR #18). Integration target after final review: PR #17. Last updated: 12 November 2026, contribution based on `8021b14`.
 
 **How to update (any agent or the owner):** change only the Status and Evidence cells, keep the IDs, add the commit SHA when a row becomes DONE, and update "Last updated" above. Status values: `TODO`, `IN_PROGRESS`, `BLOCKED` (say on what), `DONE`, `DROPPED` (say why). A row is DONE only when its commit is pushed and the gates in RULES R08 passed.
 
@@ -22,17 +22,17 @@ Rough progress: about 15% done, 85% remaining (estimate).
 
 | ID | Asset | Tool | Status |
 |---|---|---|---|
-| WT-M1 | Image A: desktop hero with nuts in the air (16:9) | Nano Banana Pro | TODO |
-| WT-M2 | Image B: mobile hero with nuts in the air (9:16) | Nano Banana Pro | TODO |
-| WT-M3 | Image C: gift box full (16:9) | Nano Banana Pro | TODO |
-| WT-M4 | Image D: gift box empty, nuts floating above (16:9) | Nano Banana Pro | TODO |
+| WT-M1 | Image A: desktop hero with nuts in the air (16:9) | Nano Banana Pro | IN_PROGRESS — [reference ready for review](#still-image-handoff) |
+| WT-M2 | Image B: mobile hero with nuts in the air (9:16) | Nano Banana Pro | IN_PROGRESS — [reference ready for review](#still-image-handoff) |
+| WT-M3 | Image C: gift box full (16:9) | Nano Banana Pro | IN_PROGRESS — [reference ready for review](#still-image-handoff) |
+| WT-M4 | Image D: gift box empty, nuts floating above (16:9) | Nano Banana Pro | IN_PROGRESS — [reference ready for review](#still-image-handoff) |
 | WT-M5 | Clip 1D: Float loop, desktop, 8 s | Flow | TODO |
 | WT-M6 | Clip 1M: Float loop, mobile, 8 s | Flow | TODO |
 | WT-M7 | Clip 2D: Rise, desktop, 8 s, steady speed | Flow | BLOCKED on WT-M1 |
 | WT-M8 | Clip 2M: Rise, mobile, 8 s, steady speed | Flow | BLOCKED on WT-M2 |
 | WT-M9 | Clip 3: Gather, 8 s, steady speed | Flow | BLOCKED on WT-M3, WT-M4 |
-| WT-M10 | Saunf & Mouth Fresheners collection photo (1:1) | Nano Banana Pro | TODO |
-| WT-M11 | Urdu/Arabic names for "Saunf & Mouth Fresheners" and "Dates" collections | Owner or agent | TODO |
+| WT-M10 | Saunf & Mouth Fresheners collection photo (1:1) | Nano Banana Pro | IN_PROGRESS — [collection cover wired for review](#still-image-handoff) |
+| WT-M11 | Urdu/Arabic names for "Saunf & Mouth Fresheners" and "Dates" collections | Owner or agent | IN_PROGRESS — [translations implemented for review](#still-image-handoff) |
 
 ## C. Build
 
@@ -54,7 +54,7 @@ Rough progress: about 15% done, 85% remaining (estimate).
 | WT-13 | 4 | Shop: slim header band, same card language, mobile filter sheet | BLOCKED on WT-D1 | |
 | WT-14 | 4 | Product page: larger gallery, pack-size "weight you can feel", pointer depth | BLOCKED on WT-D1 | |
 | WT-15 | 4 | Product page origin line (only where origin data exists) | BLOCKED on WT-D1 | |
-| WT-16 | 4 | Saunf collection tile image and collection name translations | BLOCKED on WT-M10, WT-M11 | |
+| WT-16 | 4 | Saunf collection tile image and collection name translations | IN_PROGRESS | [Implemented for review](#still-image-handoff) |
 | WT-17 | 5 | Mobile bottom bar (search, Ask AllBarka, bag) and press-and-hold Quick View | BLOCKED on WT-D1 | |
 | WT-18 | 5 | Cart: large-photo line items, pinned mobile summary | BLOCKED on WT-D1 | |
 | WT-19 | 5 | Checkout: clearer progress and inputs, no decorative motion | BLOCKED on WT-D1 | |
@@ -70,3 +70,19 @@ Rough progress: about 15% done, 85% remaining (estimate).
 |---|---|---|
 | CLEAN-AUDIT-02 | Apply approved cleanup rows as its own commit and log them in `trash.md`; keep the four screenshots named by the recovery manifest and fix `RENOVATION_HANDOFF.md` archive links | BLOCKED on WT-D5 |
 | HERO-FILM-OLD | Old `signature-table-*` films and posters kept as rollback; remove only after WT-06 is accepted | TODO |
+
+## Still image handoff
+
+These AI-generated WebPs use the existing emerald, ivory, brass and travertine direction. A and B edit their approved Living Gallery stills to introduce airborne nuts and preserve dark space for copy. C widens the existing Gift Atelier concept, and D lifts the contents from the same four wells. S illustrates the Saunf collection with plain and sugar-coated fennel seeds. The two Gift Atelier images depict packaging concepts.
+
+| Frame | File | Size | Bytes |
+|---|---|---:|---:|
+| A, desktop Float/Rise reference | [hero-desktop.webp](assets/weightless-table/hero-desktop.webp) | 1600 × 900 | 104,450 |
+| B, mobile Float/Rise reference | [hero-mobile.webp](assets/weightless-table/hero-mobile.webp) | 900 × 1600 | 111,598 |
+| C, Gather end reference | [gift-full.webp](assets/weightless-table/gift-full.webp) | 1600 × 900 | 261,340 |
+| D, Gather start reference | [gift-empty-floating.webp](assets/weightless-table/gift-empty-floating.webp) | 1600 × 900 | 217,074 |
+| S, Saunf collection cover | [category-saunf-tile-v1.webp](../public/images/generated/category-saunf-tile-v1.webp) | 512 × 512 | 62,426 |
+
+The four motion references live under `docs/assets`. Use the accepted Living Gallery stills for the current hero and review frame continuity when the motion clips are rendered. The Saunf cover is the default on the homepage carousel and published collection image overrides still take precedence. The shop keeps merchant-provided localized names and falls back to storefront translations for missing languages.
+
+Local typecheck, hooks lint, production build and release privacy audit passed. The 14 targeted category and carousel tests, 21 backend checks, catalog asset audit and 36 production HTTP checks passed. The bundled offline suite needs hosted CI for browser coverage because this workspace denied Chromium's local socket. Real-phone and live-provider checks remain open.

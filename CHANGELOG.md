@@ -1,3 +1,7 @@
+## 12 November 2026 — Storefront artwork and collection polish
+
+- Add four generated Weightless Table motion reference stills, a new Saunf collection cover and localized Saunf and Dates labels. Shop category titles use the storefront translation when a saved taxonomy entry lacks one. Collection covers attempt the fallback image once. [Media and verification](docs/WEIGHTLESS_TABLE_TRACKER.md#still-image-handoff).
+
 ## 11 November 2026 — Project-wide pending work
 
 - Add [docs/PENDING_WORK.md](docs/PENDING_WORK.md) as the open-work list for releases, storefront, catalog and integrations. Link it from the repository entry, master plan and admin handoff. Closed work keeps a short evidence pointer in the changelog or relevant handoff.

@@ -43,8 +43,11 @@ export function CategoryPLPSkeleton() {
 export default function CategoryPLP({ searchFilter: initialSearch, initialCategory = 'all', onAddToCart, onQuickView, isWholesale = false, isModal = false, onClose }: CategoryPLPProps) {
   const PRODUCTS = useCatalogProducts();
   const taxonomy=useCatalogTaxonomy();const hiddenTaxonomy=useCatalogHiddenTaxonomy();
-  const categoryLabel=(id:string)=>{const entry=taxonomy.find(x=>x.id===id&&x.type!=='occasion');return entry?.[`name_${language}`]||entry?.name_en||t(`shop.${id}`,getCategoryMeta(id)?.name||id);};
   const { t, language } = useCatalogFilterLanguage();
+  const categoryLabel = (id: string) => {
+    const entry = taxonomy.find(item => item.id === id && item.type !== 'occasion');
+    return entry?.[`name_${language}`] || t(`shop.${id}`, entry?.name_en || getCategoryMeta(id).name);
+  };
   const mediaCover = useProductMediaCover();
   const { addToCart } = useCart();
   const { savedIds, setSaved } = useSavedProducts();

@@ -1,5 +1,7 @@
 # AllBarka — visual identity and experience master plan
 
+12 November 2026 — **Storefront artwork and collection labels.** Desktop/mobile Weightless Table hero references and two Gift Atelier concept frames are ready for review. The existing homepage carousel uses the new Saunf artwork and localized Saunf and Dates labels in this contribution. [Media and verification](docs/WEIGHTLESS_TABLE_TRACKER.md#still-image-handoff).
+
 11 November 2026 — [Pending work](docs/PENDING_WORK.md) is the project-wide entry for open items, blockers and next actions across release, storefront, catalog and integrations.
 
 11 November 2026 — **Pending storefront work is tracked in [WEIGHTLESS_TABLE_TRACKER.md](docs/WEIGHTLESS_TABLE_TRACKER.md)** (`WT-` IDs; these do not replace M01–M34). Update that file when an item changes state.
