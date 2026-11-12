@@ -1,0 +1,135 @@
+# Celebrations coverage tracker
+
+12 November 2026 (Asia/Karachi). Scope: SELECTED. Work: planning recorded; final naming corrections, Style Bible and Batch 1 await owner approval. No new images, page code, live catalog changes or manufactured samples.
+
+**RESUME:** [IMAGE_MANIFEST.md](celebrations/IMAGE_MANIFEST.md), IMG-0001; approval gate BLOCKED. On every session fetch the current working branch first. The manifest and git history, not chat, are the image record.
+
+Canonical documents: [Naming register](celebrations/NAMING_REGISTER.md) · [Style Bible](celebrations/STYLE_BIBLE.md) · [Image manifest](celebrations/IMAGE_MANIFEST.md).
+
+Existing storefront/motion work remains in [WEIGHTLESS_TABLE_TRACKER.md](WEIGHTLESS_TABLE_TRACKER.md) on [claude/home-approved-20261111](https://github.com/Taha7869/AllBarka-34/blob/claude/home-approved-20261111/docs/WEIGHTLESS_TABLE_TRACKER.md); this file does not duplicate WT tasks. Broader pending work stays in [PENDING_WORK.md](PENDING_WORK.md).
+
+Arabic rule: every Arabic signature, plain name, story, alt text, SEO label, prompt-independent UI string and future customer string is **needs native review** until an identified native speaker signs off. The row status below covers all Arabic fields of the entry. Record reviewer, date and exact text revision before changing it. English/Roman Urdu owner approval never implies native Arabic approval.
+
+## Approval and implementation queue
+
+- Final yes required: changed naming rows, Style Bible draft and the ten Batch 1 prompts/paths.
+- Printing proof is NOT confirmed; omit it from all customer copy, including inherited local drafts if later reused.
+- Publication: at least one finished publication-approved design before an occasion is indexable. Otherwise hub request link + direct enquiry page with noindex, excluded from sitemap. All sample-unconfirmed images remain visibly captioned Design concept from data.
+- Broad occasion labels do not imply exact product membership. Keep Hajj/Umrah distinct, preserve old aliases and audit live/public taxonomy before implementation. No live catalog audit was run for this documentation checkpoint.
+- Phase B code queue, in order: taxonomy/schema; alias/redirect map; /occasions hub/event page; /packaging hub/format page; design detail; navigation; zero-image and enquiry states; EN/UR/AR strings; search aliases; tracker/evidence. Extend the existing categories.ts/catalogConfiguration.ts and admin/public projections rather than introducing a second catalog authority. No runtime code before the approval gate.
+- After approved Phase B: representative designs across all ten branches before depth; image Batches 1 and 2 described in the Style Bible. Phase D adds designs/formats inside branches. Do not count requests/ranges as finished designs.
+- Code steps: one scoped commit and immediate push per step, typecheck, hooks lint, build/privacy, affected journeys and full offline suite, EN/UR desktop/mobile screenshots per new page type. Image-only batches: build/privacy plus asset audit covering new manifest paths. Never claim pending CI passed.
+- Protected: prices, shipping, coupons, checkout, auth and server pricing logic. Existing paid providers/publication/deployments are not authorized by this planning step. Preserve old artwork and the other worktree's uncommitted changes.
+
+## Branch names
+
+| Branch slug | Signature | Names approved | Arabic review | Native reviewer / date |
+|---|---|---|---|---|
+| wedding-celebrations | Rishton Ki Mehfil | APPROVED | needs native review | — |
+| baby-milestones | Nanhi Khushiyan | APPROVED | needs native review | — |
+| birthdays-parties | Khushi Ka Din | APPROVED | needs native review | — |
+| hajj-tabarruk | Yaad-e-Hajj | APPROVED | needs native review | — |
+| umrah-tabarruk | Yaad-e-Umrah | APPROVED | needs native review | — |
+| religious-festive | Lamha-e-Shukr | APPROVED | needs native review | — |
+| family-personal-gifting | Apnon Ke Naam | APPROVED | needs native review | — |
+| school-achievements | Mehnat Ke Naam | APPROVED | needs native review | — |
+| corporate-business | Considered Gestures | FINAL YES PENDING | needs native review | — |
+| event-accessories | Har Tafseel Mein Pyaar | APPROVED | needs native review | — |
+
+## Event coverage — one row per real occasion
+
+Existing supplier/old concept assets stay preserved in [packaging media](PACKAGING_AND_DRAFT_MEDIA_2026-11-12.md). They do not establish finished coverage for these new event/design entries. References below mean exact design references; the earlier Flutter/Odes breadth research is background only.
+
+| Occasion slug | Branch | Names approved | References | Artwork | Realistic image | Print file | Website entry | Price status | Arabic review | Native reviewer / date |
+|---|---|---|---|---|---|---|---|---|---|---|
+| baat-pakki | wedding-celebrations | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| engagement | wedding-celebrations | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| dholki | wedding-celebrations | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| mayoun | wedding-celebrations | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| mehndi | wedding-celebrations | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| nikah-bid | wedding-celebrations | APPROVED | TODO | TODO | IMG-0001 TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| baraat | wedding-celebrations | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| walima | wedding-celebrations | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| bridal-shower | wedding-celebrations | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| bridesmaid-appreciation | wedding-celebrations | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| baby-on-the-way | baby-milestones | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| baby-shower | baby-milestones | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| birth-announcement | baby-milestones | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| twins-announcement | baby-milestones | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| welcome-baby | baby-milestones | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| aqiqah | baby-milestones | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| naming-celebration | baby-milestones | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| first-tooth | baby-milestones | APPROVED | TODO | TODO | IMG-0002 TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| first-birthday | baby-milestones | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| kids-birthday | birthdays-parties | APPROVED | TODO | TODO | IMG-0003 TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| teen-birthday | birthdays-parties | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| adult-birthday | birthdays-parties | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| milestone-birthday | birthdays-parties | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| hajj | hajj-tabarruk | FINAL YES PENDING | TODO | TODO | IMG-0004 TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| hajj-welcome-home | hajj-tabarruk | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| umrah | umrah-tabarruk | FINAL YES PENDING | TODO | TODO | IMG-0005 TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| umrah-return | umrah-tabarruk | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| ameen | religious-festive | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| quran-completion | religious-festive | APPROVED | TODO | TODO | IMG-0006 TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| hifz-completion | religious-festive | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| bismillah-ceremony | religious-festive | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| first-fast | religious-festive | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| milad | religious-festive | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| ramadan | religious-festive | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| iftar | religious-festive | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| eid-ul-fitr | religious-festive | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| eid-ul-adha | religious-festive | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| anniversary | family-personal-gifting | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| mothers-day | family-personal-gifting | APPROVED | TODO | TODO | IMG-0007 TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| fathers-day | family-personal-gifting | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| housewarming | family-personal-gifting | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| thank-you | family-personal-gifting | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| get-well-soon | family-personal-gifting | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| welcome-home | family-personal-gifting | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| host-appreciation | family-personal-gifting | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| graduation | school-achievements | APPROVED | TODO | TODO | IMG-0008 TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| results-celebration | school-achievements | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| teacher-appreciation | school-achievements | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| farewell | school-achievements | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| achievement | school-achievements | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| employee-welcome | corporate-business | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| client-appreciation | corporate-business | APPROVED | TODO | TODO | IMG-0009 TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| conference | corporate-business | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| exhibition | corporate-business | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| product-launch | corporate-business | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+| business-anniversary | corporate-business | APPROVED | TODO | TODO | TODO | TODO | TODO — enquiry/noindex until eligible | UNPRICED — no new approved price recorded | needs native review | — |
+
+## Range/format coverage — not occasions
+
+| Range / format slug | Branch | Plain EN name | Names approved | References | Artwork | Realistic image | Print file | Website entry | Price status | Arabic review | Native reviewer / date |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| jora-presentations | wedding-celebrations | Jora Presentation Sets | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO | UNPRICED — no new approved price recorded | needs native review | — |
+| party-return-gifts | birthdays-parties | Party Return Gifts | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO | UNPRICED — no new approved price recorded | needs native review | — |
+| party-goody-bags | birthdays-parties | Party Goody Bags | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO | UNPRICED — no new approved price recorded | needs native review | — |
+| hajj-guest-favors | hajj-tabarruk | Hajj Guest Favors | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO | UNPRICED — no new approved price recorded | needs native review | — |
+| hajj-family-sets | hajj-tabarruk | Hajj Family Sets | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO | UNPRICED — no new approved price recorded | needs native review | — |
+| hajj-keepsakes | hajj-tabarruk | Hajj Keepsake Boxes | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO | UNPRICED — no new approved price recorded | needs native review | — |
+| umrah-dates-bottle-sets | umrah-tabarruk | Umrah Date-Box & Bottle Packaging Sets | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO | UNPRICED — no new approved price recorded | needs native review | — |
+| umrah-tins-pouches | umrah-tabarruk | Umrah Tins & Pouches | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO | UNPRICED — no new approved price recorded | needs native review | — |
+| umrah-baskets | umrah-tabarruk | Umrah Gift Baskets | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO | UNPRICED — no new approved price recorded | needs native review | — |
+| school-giveaways | school-achievements | School Giveaways | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO | UNPRICED — no new approved price recorded | needs native review | — |
+| corporate-festive-hampers | corporate-business | Corporate Festive Hampers | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO | UNPRICED — no new approved price recorded | needs native review | — |
+| invitations | event-accessories | Invitations | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO | UNPRICED — no new approved price recorded | needs native review | — |
+| gift-tags | event-accessories | Gift Tags | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO | UNPRICED — no new approved price recorded | needs native review | — |
+| stickers-seals | event-accessories | Stickers & Seals | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO | UNPRICED — no new approved price recorded | needs native review | — |
+| printed-sleeves | event-accessories | Printed Sleeves | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO | UNPRICED — no new approved price recorded | needs native review | — |
+| cake-cupcake-toppers | event-accessories | Cake & Cupcake Toppers | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO | UNPRICED — no new approved price recorded | needs native review | — |
+| place-cards | event-accessories | Place Cards | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO | UNPRICED — no new approved price recorded | needs native review | — |
+| table-signs | event-accessories | Table Signs | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO | UNPRICED — no new approved price recorded | needs native review | — |
+| milestone-memory-boards | event-accessories | Milestone & Memory Boards | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO | UNPRICED — no new approved price recorded | needs native review | — |
+| gift-bags | event-accessories | Gift Bags | FINAL YES PENDING | TODO | TODO | TODO | TODO | TODO | UNPRICED — no new approved price recorded | needs native review | — |
+| matching-presentation-sets | event-accessories | Matching Presentation Sets | FINAL YES PENDING | TODO | TODO | IMG-0010 TODO | TODO | TODO | UNPRICED — no new approved price recorded | needs native review | — |
+
+## Checkpoint evidence
+
+- Fetched source 59ef714fea22f8a1a2741df7983013447633ece8 on codex/storefront-assets-polish-20261112. Isolated detached worktree used to preserve the original dirty worktree; push targets the same storefront branch, no force push.
+- Documentation-only changes. Zero generated images; zero page/runtime/schema edits; zero deletes; no live mutations.
+- Self-review: checked document links, 87 naming entries (10 branches / 56 occasions / 21 plain-only ranges), unique slugs, ten unique image IDs/target paths and no source/public modifications. PASS. No independent review claimed.
+- Production build/privacy: PASS (85 text artifacts). Existing catalog asset audit: PASS (97 products, 115 references, 111 unique files). `npm run test:assets` could not start because the tsx CLI IPC socket returned EPERM; the identical script passed via `node --import tsx scripts/verify-catalog-assets.ts`. No new images exist to audit.
+- Full offline suite/typecheck/hooks: not run for this documentation-only checkpoint; required for later code steps. Screenshots: not applicable, no changed UI.
+- Push SHA / hosted CI: inspect the containing documentation commit and its GitHub checks. Hosted CI had not been observed at this pre-push checkpoint; no green CI claim.

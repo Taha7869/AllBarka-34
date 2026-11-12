@@ -39,10 +39,15 @@ export default function ShopPage() {
     ? 'gift-boxes'
     : (paramCategory || searchParams.get('category') || 'all');
 
-  const taxonomy=useCatalogTaxonomy();const {language}=useLanguage();
-  const extraCategory=taxonomy.find(x=>x.type!=='occasion'&&x.id===rawCategory);
+  const taxonomy = useCatalogTaxonomy();
+  const { language, t } = useLanguage();
+  const extraCategory = taxonomy.find(item => item.type !== 'occasion' && item.id === rawCategory);
   const resolvedCategory = resolveCategorySlug(rawCategory) || extraCategory?.id || rawCategory;
-  const categoryMeta = extraCategory?{name:extraCategory[`name_${language}`]||extraCategory.name_en,description:extraCategory[`description_${language}`]||extraCategory.description_en}:getCategoryMeta(resolvedCategory);
+  const defaultCategory = getCategoryMeta(resolvedCategory);
+  const categoryName = extraCategory?.[`name_${language}`] || (language === 'en'
+    ? defaultCategory.name
+    : t(`shop.${resolvedCategory}`, extraCategory?.name_en || defaultCategory.name));
+  const categoryDescription = extraCategory?.[`description_${language}`] || extraCategory?.description_en || defaultCategory.description;
   const searchQuery = searchParams.get('search') || '';
 
   const isCelebrationRoute =
@@ -86,7 +91,7 @@ export default function ShopPage() {
     if (isDealsRoute) return 'Value Packages & Curated Deals';
     if (isOccasionsRoute) return 'Curated Gifts for Every Occasion';
     if (searchQuery) return `Search results for "${searchQuery}"`;
-    return `${categoryMeta.name} Catalogue`;
+    return `${categoryName} Catalogue`;
   }, [
     isWholesaleRoute,
     isCelebrationRoute,
@@ -94,7 +99,7 @@ export default function ShopPage() {
     isDealsRoute,
     isOccasionsRoute,
     searchQuery,
-    categoryMeta.name,
+    categoryName,
   ]);
 
   const onQuickView = (p: Product) => setSelectedQuickViewProduct?.(p);
@@ -103,7 +108,7 @@ export default function ShopPage() {
     <div className="w-full bg-[var(--color-base,#F6F1EA)] pt-6 pb-20">
       <SEO
         title={seoTitle}
-        description={categoryMeta.description}
+        description={categoryDescription}
         canonicalPath={location.pathname}
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">

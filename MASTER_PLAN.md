@@ -1,5 +1,9 @@
 # AllBarka — visual identity and experience master plan
 
+12 November 2026 — **CELEBRATIONS-PLAN / Batch 0 approval packet.** Owner-approved naming baseline with final corrections pending, ten-branch coverage, image production Style Bible and ten TODO card-image briefs are recorded in [celebrations tracker](docs/CELEBRATIONS_COVERAGE_TRACKER.md). Start/resume image work from its linked manifest; no images or page code until the owner approves the three documents. Existing Weightless Table work remains in its original tracker.
+
+12 November 2026 — **Storefront artwork and collection labels.** Desktop/mobile Weightless Table hero references and two Gift Atelier concept frames are ready for review. The existing homepage carousel uses the new Saunf artwork and localized Saunf and Dates labels in this contribution. [Media and verification](docs/WEIGHTLESS_TABLE_TRACKER.md#still-image-handoff).
+
 11 November 2026 — [Pending work](docs/PENDING_WORK.md) is the project-wide entry for open items, blockers and next actions across release, storefront, catalog and integrations.
 
 11 November 2026 — **Pending storefront work is tracked in [WEIGHTLESS_TABLE_TRACKER.md](docs/WEIGHTLESS_TABLE_TRACKER.md)** (`WT-` IDs; these do not replace M01–M34). Update that file when an item changes state.

@@ -8,7 +8,10 @@ import { CANONICAL_CATEGORIES, resolveCategorySlug } from '../src/config/categor
 import { LanguageProvider, type LanguageCode } from '../src/contexts/LanguageContext';
 import { ThemeProvider } from '../src/contexts/ThemeContext';
 import { CartProvider } from '../src/contexts/CartContext';
+import { CatalogProvider } from '../src/contexts/CatalogContext';
 import { catalogTranslations } from '../src/contexts/catalogTranslations';
+import { DEFAULT_CATALOG_CONFIGURATION } from '../src/lib/catalogConfiguration';
+import { DEFAULT_MERCHANDISING } from '../src/config/merchandising';
 import { searchCatalog, readCatalogFilters, startingPrice } from '../src/lib/catalogDiscovery';
 import { filterCatalogSelection } from '../src/lib/catalogFilterDraft';
 import { readBundleFormat } from '../src/lib/merchandisingPresentation';
@@ -88,6 +91,30 @@ test('new shop sections show the actual active category count and matching produ
     assert.ok(/role="img" aria-label="[^"]+ — AllBarka"/.test(html) || /<img[^>]+\/images\/products\//.test(html));
     assert.doesNotMatch(html, /href="\/product\/pista"/);
     for (const newCategory of ['herbs-spices', 'bundles']) assert.ok(html.includes(catalogTranslations.en[`shop.${newCategory}`].replaceAll('&', '&amp;')));
+  }
+});
+
+test('Saunf and Dates use localized collection names even with legacy taxonomy', () => {
+  const settings = { ...DEFAULT_MERCHANDISING, collections: [] };
+  for (const language of ['en', 'ur', 'ar'] as const) {
+    const pantry = render(<CategoryCarousel settings={settings} />, language);
+    for (const category of ['saunf', 'dates']) {
+      const path = `/shop/${category}`;
+      const title = catalogTranslations[language][`pantry.${category}`].replaceAll('&', '&amp;');
+      const link = pantry.match(new RegExp(`<a [^>]*href="${path}"[^>]*>[\\s\\S]*?<\\/a>`))?.[0] || '';
+      assert.ok(link.includes(`aria-label="${title}"`), `${language} ${category} tile label`);
+      if (category === 'saunf') assert.match(link, /category-saunf-tile-v1\.webp/);
+
+      const html = render(
+        <CatalogProvider initialTaxonomy={DEFAULT_CATALOG_CONFIGURATION.taxonomy}>
+          <CategoryPLP initialCategory={category} />
+        </CatalogProvider>,
+        language,
+        path,
+      );
+      const heading = html.match(/<h1 [^>]*>([^<]+)<\/h1>/)?.[1];
+      assert.equal(heading, language === 'en' ? CANONICAL_CATEGORIES[category].name.replaceAll('&', '&amp;') : title);
+    }
   }
 });
 

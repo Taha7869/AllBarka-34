@@ -21,7 +21,9 @@ const collectionPresentation = [
   { id: 'gift-boxes', name: 'Gift Boxes', image: '/assets/categories/gifts.png', altKey: 'imageAlt.categoryGifts', link: '/gifting' },
   { id: 'oils', name: 'Cold-Pressed Oils', image: '/images/generated/category-oils-tile-v1.webp', altKey: 'imageAlt.categoryOils', link: '/shop/oils' },
   { id: 'essentials', name: 'Desi Essentials', image: '/images/generated/category-essentials-tile-v1.webp', altKey: 'imageAlt.categoryEssentials', link: '/shop/essentials' },
+  { id: 'saunf', name: CANONICAL_CATEGORIES.saunf.name, image: '/images/generated/category-saunf-tile-v1.webp', altKey: 'catalog.alt.saunf', link: '/shop/saunf' },
 ];
+const COLLECTION_IMAGE_PLACEHOLDER = '/images/product-placeholder.svg';
 export const PANTRY_CATEGORIES: CarouselSlideItem[] = [
   ...collectionPresentation,
   ...Object.values(CANONICAL_CATEGORIES).filter(category => !collectionPresentation.some(item => item.id === category.id)).map(category => {
@@ -368,7 +370,11 @@ export default function CategoryCarousel({ settings: propSettings }: CategoryCar
                     className="editorial-category group relative block w-full overflow-hidden border border-[var(--color-border-accent)] bg-[var(--color-surface)] focus-ring hover:border-[#C7982F]/60 pointer-events-auto select-none">
                     <div className="pantry-tile-media absolute inset-0">
                     {category.image ? <img src={category.image} alt={category.title || t(category.altKey, category.name)} draggable={false}
-                      onError={event => { const node = event.currentTarget; node.onerror = null; node.src = '/images/product-placeholder.svg'; }}
+                      onError={({ currentTarget }) => {
+                        if (currentTarget.getAttribute('src') !== COLLECTION_IMAGE_PLACEHOLDER) {
+                          currentTarget.src = COLLECTION_IMAGE_PLACEHOLDER;
+                        }
+                      }}
                       className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:transform-none"
                       loading="lazy" decoding="async" /> : <div role="img" aria-label={category.title || category.name} className="absolute inset-0 flex items-center justify-center bg-[#173a2c] font-serif text-3xl text-[#e4c783]">AllBarka</div>}
                     <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-emerald)]/95 via-[var(--color-emerald)]/30 to-transparent pointer-events-none" />
