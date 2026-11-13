@@ -5502,7 +5502,7 @@
    "status": "draft",
    "active": false,
    "allowCustomWeight": false,
-   "pricePer100g": 700,
+   "pricePer100g": 1000,
    "claimsVerification": {
     "status": "unverified"
    },
@@ -5513,7 +5513,7 @@
     "quantityMode": "fixed",
     "baseQuantity": 1,
     "baseUnit": "kg",
-    "basePrice": 7000,
+    "basePrice": 10000,
     "options": [
      {
       "label": "100g",
@@ -6260,7 +6260,7 @@
    "basis": "AllBarka estimate from market range; no direct reference found"
   },
   "chilgoza-inshell": {
-   "pkrPerkg": 7000,
+   "pkrPerkg": 10000,
    "basis": "Rate stated by the owner, 13 Nov 2026"
   },
   "sundarkhani-raisins": {

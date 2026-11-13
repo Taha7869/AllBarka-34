@@ -272,6 +272,7 @@ export const PUBLIC_PRODUCT_FIELDS = [
   'wholesale',
   'isBundle',
   'components',
+  'componentIds',
   'contents',
   'contents_en',
   'contents_ur',
@@ -692,6 +693,12 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
       if (object(c) && typeof c.productId === 'string') return c as any;
       throw new CatalogError('INVALID_COMPONENTS', 400);
     });
+  }
+  if (value.componentIds !== undefined) {
+    // Pack-contents ids must be plain catalogue ids so a stored bundle can link to its component pages.
+    if (!Array.isArray(value.componentIds) || value.componentIds.length > 30
+      || value.componentIds.some(id => typeof id !== 'string' || !/^[A-Za-z0-9_-]{1,80}$/.test(id))) throw new CatalogError('INVALID_COMPONENT_IDS', 400);
+    product.componentIds = [...value.componentIds] as string[];
   }
   if (value.contents !== undefined) {
     if (!Array.isArray(value.contents)) throw new CatalogError('INVALID_CONTENTS', 400);
