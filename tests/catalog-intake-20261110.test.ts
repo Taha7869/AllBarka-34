@@ -63,3 +63,12 @@ test('saunf grouping includes plain fennel and new mixes without capturing other
     }
   }
 });
+
+test('batch 1 is completed at import time without touching the manifest', () => {
+  for (const p of intakeProducts20261110() as any[]) {
+    for (const l of ['en', 'ur', 'ar']) for (const f of ['recipe', 'sourcingDetails', 'storageTips', 'packagingDetails', 'allergenWarning']) assert.ok(String(p[`${f}_${l}`]).length > 20, `${p.id} ${f}_${l}`);
+    assert.ok(Object.keys(p.prices).length > 0, p.id);
+    assert.equal(p.status, 'draft');
+  }
+  assert.equal(manifest.newProducts.find(p => p.id === 'oil-neem')!.commerce.basePrice, null);
+});

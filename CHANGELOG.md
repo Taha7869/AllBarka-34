@@ -1,5 +1,9 @@
 ## 13 November 2026 — Catalogue batch 2 and occasion stories
 
+- Add nine more dry-fruit drafts (California, kagzi and mamra almonds, in-shell chilgoza at the owner's PKR 7,000/kg, sundarkhani raisins, in-shell peanuts, skinless roasted chana, medium figs, desiccated coconut), bringing batch 20261113 to 65.
+- Complete batch 20261110 at import time with usage, sourcing, storage, packing and allergen copy in three languages and reference rates for its 12 unpriced drafts (overlay file; original manifest untouched).
+- Add [launch readiness check](docs/LAUNCH_READINESS_2026-11-13.md) listing verified areas and open gaps.
+
 - Add a create-only draft intake of 56 products (38 pantry items, 7 murabba, 11 Pakistani teas) with a placeholder image, reference rates (per kg or per litre, to be replaced from Firestore), and full EN/UR/AR copy on meaning, use, sourcing, storage, packing and allergens; importer `scripts/import-catalog-intake-20261113.ts`, tests in `tests/catalog-intake-20261113.test.ts` including exact mg/g/kg and ml/L arithmetic. No existing price or product was changed.
 - Add a Murabba Jaat category and a Chai & Herbal Teas sub-category inside Herbs & Spices, with menu entries and EN/UR/AR labels.
 - Add [the akbarionline.pk reference check](docs/CATALOG_REFERENCE_AKBARI_2026-11-13.md): coverage, an indicative price comparison and its limits, and categories that need an owner decision.

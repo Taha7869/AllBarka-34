@@ -3,6 +3,21 @@ import manifest from '../data/catalogIntake20261110.json';
 import { PRODUCTS } from '../data/products';
 import { createAdminProduct } from './catalogStore';
 import { normalizeCommerceInput, validateDynamicProduct } from './catalogSchema';
+import overlay from '../data/catalogIntake20261110Overlay.json';
+import { enrichIntakeProduct } from './catalogIntakeEnrich';
+
+/** Add care copy and, where the batch had no rate, an owner-requested reference rate. */
+function withOverlay(source: Record<string, any>) {
+  const extra = (overlay.products as Record<string, any>)[source.id];
+  if (!extra) return source;
+  const { referenceRatePerBase, ...copy } = extra;
+  const merged: Record<string, any> = { ...source, ...copy, origin_en: 'Hand-Packed in Pakistan', origin_ur: 'پاکستان میں ہاتھ سے پیک شدہ', origin_ar: 'معبأ يدويًا في باكستان' };
+  if (referenceRatePerBase && merged.commerce.basePrice === null) {
+    merged.commerce = { ...merged.commerce, basePrice: referenceRatePerBase };
+    merged.quoteOnly = false; merged.orderMode = 'standard';
+  }
+  return enrichIntakeProduct(merged);
+}
 
 /** One-time owner intake. Existing Firestore products remain the only live authority. */
 export function intakeProducts20261110() {
@@ -12,7 +27,7 @@ export function intakeProducts20261110() {
     if (protectedIds.has(source.id) || ids.has(source.id)) throw new Error('INTAKE_ID_COLLISION');
     ids.add(source.id);
     if (source.status !== 'draft' || source.active !== false) throw new Error('INTAKE_MUST_START_AS_DRAFT');
-    const body = normalizeCommerceInput(structuredClone(source));
+    const body = normalizeCommerceInput(withOverlay(structuredClone(source) as Record<string, any>) as any);
     validateDynamicProduct(body);
     return body;
   });

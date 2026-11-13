@@ -1,0 +1,175 @@
+{
+ "note": "Content and reference rates layered onto batch 20261110 at import time. referenceRatePerBase is PKR per 100 g or 100 ml (AllBarka estimates; gachak and rewari follow press-reported rates) and is applied only where the batch had no rate.",
+ "products": {
+  "sweet-fruit-balls": {
+   "careKind": "snacks",
+   "referenceRatePerBase": 80,
+   "recipe_en": "Serve in a treat jar, add to party favours or scatter over desserts. Hard candy: not for children under three.",
+   "recipe_ur": "ٹریٹ جار میں رکھیں، تقریب کے تحائف میں ڈالیں یا میٹھوں پر سجائیں۔ سخت گولی ہے: تین سال سے کم عمر بچوں کے لیے نہیں۔",
+   "recipe_ar": "قدّمها في وعاء الحلوى أو أضفها لهدايا المناسبات أو زيّن بها الحلويات. حلوى صلبة: ليست للأطفال دون الثالثة.",
+   "sourcingDetails_en": "Packed in Pakistan. The maker, ingredients and batch details are confirmed on request; no specific origin is claimed.",
+   "sourcingDetails_ur": "پاکستان میں پیک شدہ۔ بنانے والے، اجزا اور کھیپ کی تفصیل درخواست پر بتائی جاتی ہے؛ کسی مخصوص ماخذ کا دعویٰ نہیں کیا جاتا۔",
+   "sourcingDetails_ar": "معبأ في باكستان. يُؤكَّد الصانع والمكونات وتفاصيل الدفعة عند الطلب؛ ولا يُدّعى مصدر محدد."
+  },
+  "mixed-mukhwas": {
+   "careKind": "wholeSpice",
+   "referenceRatePerBase": 160,
+   "recipe_en": "Take a pinch after meals as a mouth freshener, or serve in a small bowl for guests at the end of a dawat.",
+   "recipe_ur": "کھانے کے بعد چٹکی بھر منہ کی تازگی کے لیے لیں، یا دعوت کے آخر میں مہمانوں کے لیے چھوٹی پیالی میں پیش کریں۔",
+   "recipe_ar": "خذ رشة بعد الوجبات لإنعاش الفم، أو قدّمه في وعاء صغير للضيوف في ختام الدعوة.",
+   "sourcingDetails_en": "Packed in Pakistan. The maker, ingredients and batch details are confirmed on request; no specific origin is claimed.",
+   "sourcingDetails_ur": "پاکستان میں پیک شدہ۔ بنانے والے، اجزا اور کھیپ کی تفصیل درخواست پر بتائی جاتی ہے؛ کسی مخصوص ماخذ کا دعویٰ نہیں کیا جاتا۔",
+   "sourcingDetails_ar": "معبأ في باكستان. يُؤكَّد الصانع والمكونات وتفاصيل الدفعة عند الطلب؛ ولا يُدّعى مصدر محدد."
+  },
+  "sweet-makhana-large": {
+   "careKind": "snacks",
+   "referenceRatePerBase": 80,
+   "recipe_en": "Share as bid at Nikkah and milad gatherings, fill potlis and favour boxes, or enjoy with chai.",
+   "recipe_ur": "نکاح اور میلاد کی محفلوں میں بِد کے طور پر بانٹیں، پوٹلیوں اور تحفہ باکس میں بھریں، یا چائے کے ساتھ کھائیں۔",
+   "recipe_ar": "وزّعه في مجالس النكاح والمولد، واملأ به الصرر وعلب التوزيع، أو تناوله مع الشاي.",
+   "sourcingDetails_en": "Packed in Pakistan. The maker, ingredients and batch details are confirmed on request; no specific origin is claimed.",
+   "sourcingDetails_ur": "پاکستان میں پیک شدہ۔ بنانے والے، اجزا اور کھیپ کی تفصیل درخواست پر بتائی جاتی ہے؛ کسی مخصوص ماخذ کا دعویٰ نہیں کیا جاتا۔",
+   "sourcingDetails_ar": "معبأ في باكستان. يُؤكَّد الصانع والمكونات وتفاصيل الدفعة عند الطلب؛ ولا يُدّعى مصدر محدد."
+  },
+  "nakul-dana-small": {
+   "careKind": "snacks",
+   "referenceRatePerBase": 80,
+   "recipe_en": "Distribute as tabarruk or bid, mix with roasted chana for a traditional offering, or fill small favour pouches.",
+   "recipe_ur": "تبرک یا بِد کے طور پر بانٹیں، روایتی پیشکش کے لیے بھنے چنوں کے ساتھ ملائیں، یا چھوٹی پوٹلیاں بھریں۔",
+   "recipe_ar": "وزّعه كتبرّك، أو اخلطه بالحمص المحمّص كتقدمة تقليدية، أو املأ به أكياس التوزيع الصغيرة.",
+   "sourcingDetails_en": "Packed in Pakistan. The maker, ingredients and batch details are confirmed on request; no specific origin is claimed.",
+   "sourcingDetails_ur": "پاکستان میں پیک شدہ۔ بنانے والے، اجزا اور کھیپ کی تفصیل درخواست پر بتائی جاتی ہے؛ کسی مخصوص ماخذ کا دعویٰ نہیں کیا جاتا۔",
+   "sourcingDetails_ar": "معبأ في باكستان. يُؤكَّد الصانع والمكونات وتفاصيل الدفعة عند الطلب؛ ولا يُدّعى مصدر محدد."
+  },
+  "sugar-coated-saunf": {
+   "careKind": "wholeSpice",
+   "referenceRatePerBase": 120,
+   "recipe_en": "Offer a spoonful after meals, fill a dastarkhwan bowl for guests, or add to paan and favour pouches.",
+   "recipe_ur": "کھانے کے بعد چمچ بھر پیش کریں، مہمانوں کے لیے دسترخوان کی پیالی بھریں، یا پان اور تحفہ پوٹلیوں میں ڈالیں۔",
+   "recipe_ar": "قدّم ملعقة بعد الوجبات، أو املأ وعاء المائدة للضيوف، أو أضفه إلى البان وأكياس التوزيع.",
+   "sourcingDetails_en": "Packed in Pakistan. The maker, ingredients and batch details are confirmed on request; no specific origin is claimed.",
+   "sourcingDetails_ur": "پاکستان میں پیک شدہ۔ بنانے والے، اجزا اور کھیپ کی تفصیل درخواست پر بتائی جاتی ہے؛ کسی مخصوص ماخذ کا دعویٰ نہیں کیا جاتا۔",
+   "sourcingDetails_ar": "معبأ في باكستان. يُؤكَّد الصانع والمكونات وتفاصيل الدفعة عند الطلب؛ ولا يُدّعى مصدر محدد."
+  },
+  "peanut-jaggery-gachak": {
+   "careKind": "snacks",
+   "referenceRatePerBase": 95,
+   "recipe_en": "Break into pieces and serve with chai on winter evenings; keep dry so it stays crisp. Contains peanuts.",
+   "recipe_ur": "ٹکڑے کر کے سردیوں کی شام چائے کے ساتھ پیش کریں؛ خستہ رکھنے کے لیے خشک جگہ رکھیں۔ مونگ پھلی شامل ہے۔",
+   "recipe_ar": "اكسره قطعًا وقدّمه مع الشاي في أمسيات الشتاء؛ واحفظه جافًا ليبقى مقرمشًا. يحتوي على فول سوداني.",
+   "sourcingDetails_en": "Packed in Pakistan. The maker, ingredients and batch details are confirmed on request; no specific origin is claimed.",
+   "sourcingDetails_ur": "پاکستان میں پیک شدہ۔ بنانے والے، اجزا اور کھیپ کی تفصیل درخواست پر بتائی جاتی ہے؛ کسی مخصوص ماخذ کا دعویٰ نہیں کیا جاتا۔",
+   "sourcingDetails_ar": "معبأ في باكستان. يُؤكَّد الصانع والمكونات وتفاصيل الدفعة عند الطلب؛ ولا يُدّعى مصدر محدد."
+  },
+  "sesame-rewari": {
+   "careKind": "snacks",
+   "referenceRatePerBase": 100,
+   "recipe_en": "Serve with roasted peanuts and chai in winter, or add to a Lohri or winter gift tray. Contains sesame.",
+   "recipe_ur": "سردیوں میں بھنی مونگ پھلی اور چائے کے ساتھ پیش کریں، یا سردیوں کی تحفہ ٹرے میں رکھیں۔ تل شامل ہیں۔",
+   "recipe_ar": "قدّمه مع الفول السوداني المحمّص والشاي شتاءً، أو أضفه إلى صينية هدايا الشتاء. يحتوي على سمسم.",
+   "sourcingDetails_en": "Packed in Pakistan. The maker, ingredients and batch details are confirmed on request; no specific origin is claimed.",
+   "sourcingDetails_ur": "پاکستان میں پیک شدہ۔ بنانے والے، اجزا اور کھیپ کی تفصیل درخواست پر بتائی جاتی ہے؛ کسی مخصوص ماخذ کا دعویٰ نہیں کیا جاتا۔",
+   "sourcingDetails_ar": "معبأ في باكستان. يُؤكَّد الصانع والمكونات وتفاصيل الدفعة عند الطلب؛ ولا يُدّعى مصدر محدد."
+  },
+  "brown-raisins": {
+   "careKind": "fruit",
+   "referenceRatePerBase": null,
+   "recipe_en": "Eat by the handful, plump in warm ghee for pulao and zarda, or stir into kheer and oats.",
+   "recipe_ur": "مٹھی بھر کھائیں، پلاؤ اور زردے کے لیے گرم گھی میں پھلائیں، یا کھیر اور دلیے میں ڈالیں۔",
+   "recipe_ar": "كُله بالحفنة، أو انفخه في سمن دافئ للبلاو والأرز الحلو، أو أضفه إلى المهلبية والشوفان.",
+   "sourcingDetails_en": "Packed in Pakistan. The maker, ingredients and batch details are confirmed on request; no specific origin is claimed.",
+   "sourcingDetails_ur": "پاکستان میں پیک شدہ۔ بنانے والے، اجزا اور کھیپ کی تفصیل درخواست پر بتائی جاتی ہے؛ کسی مخصوص ماخذ کا دعویٰ نہیں کیا جاتا۔",
+   "sourcingDetails_ar": "معبأ في باكستان. يُؤكَّد الصانع والمكونات وتفاصيل الدفعة عند الطلب؛ ولا يُدّعى مصدر محدد."
+  },
+  "dates-soft-brown": {
+   "careKind": "fruit",
+   "referenceRatePerBase": null,
+   "recipe_en": "Open the fast with one or three, serve with milk or chai, or blend into shakes.",
+   "recipe_ur": "ایک یا تین سے روزہ کھولیں، دودھ یا چائے کے ساتھ پیش کریں، یا شیک میں بلینڈ کریں۔",
+   "recipe_ar": "افطر على واحدة أو ثلاث، أو قدّمه مع الحليب أو الشاي، أو اخلطه في المخفوقات.",
+   "sourcingDetails_en": "Packed in Pakistan. The maker, ingredients and batch details are confirmed on request; no specific origin is claimed.",
+   "sourcingDetails_ur": "پاکستان میں پیک شدہ۔ بنانے والے، اجزا اور کھیپ کی تفصیل درخواست پر بتائی جاتی ہے؛ کسی مخصوص ماخذ کا دعویٰ نہیں کیا جاتا۔",
+   "sourcingDetails_ar": "معبأ في باكستان. يُؤكَّد الصانع والمكونات وتفاصيل الدفعة عند الطلب؛ ولا يُدّعى مصدر محدد."
+  },
+  "dates-dark-round": {
+   "careKind": "fruit",
+   "referenceRatePerBase": null,
+   "recipe_en": "Serve at iftar, stuff with almonds for guests, or chop into winter laddoo.",
+   "recipe_ur": "افطار پر پیش کریں، مہمانوں کے لیے بادام بھریں، یا سردیوں کے لڈو میں کتر کر ڈالیں۔",
+   "recipe_ar": "قدّمه عند الإفطار، أو احشه باللوز للضيوف، أو قطّعه في لدّو الشتاء.",
+   "sourcingDetails_en": "Packed in Pakistan. The maker, ingredients and batch details are confirmed on request; no specific origin is claimed.",
+   "sourcingDetails_ur": "پاکستان میں پیک شدہ۔ بنانے والے، اجزا اور کھیپ کی تفصیل درخواست پر بتائی جاتی ہے؛ کسی مخصوص ماخذ کا دعویٰ نہیں کیا جاتا۔",
+   "sourcingDetails_ar": "معبأ في باكستان. يُؤكَّد الصانع والمكونات وتفاصيل الدفعة عند الطلب؛ ولا يُدّعى مصدر محدد."
+  },
+  "dates-dark-long": {
+   "careKind": "fruit",
+   "referenceRatePerBase": null,
+   "recipe_en": "Serve with Arabic coffee or chai, stuff with nuts, or offer in a gift box.",
+   "recipe_ur": "عربی قہوے یا چائے کے ساتھ پیش کریں، میوہ بھریں، یا تحفہ باکس میں دیں۔",
+   "recipe_ar": "قدّمه مع القهوة العربية أو الشاي، أو احشه بالمكسرات، أو أهدِه في علبة.",
+   "sourcingDetails_en": "Packed in Pakistan. The maker, ingredients and batch details are confirmed on request; no specific origin is claimed.",
+   "sourcingDetails_ur": "پاکستان میں پیک شدہ۔ بنانے والے، اجزا اور کھیپ کی تفصیل درخواست پر بتائی جاتی ہے؛ کسی مخصوص ماخذ کا دعویٰ نہیں کیا جاتا۔",
+   "sourcingDetails_ar": "معبأ في باكستان. يُؤكَّد الصانع والمكونات وتفاصيل الدفعة عند الطلب؛ ولا يُدّعى مصدر محدد."
+  },
+  "dates-golden-brown": {
+   "careKind": "fruit",
+   "referenceRatePerBase": null,
+   "recipe_en": "Eat with milk at suhoor, serve at iftar, or use in puddings and sweets.",
+   "recipe_ur": "سحری میں دودھ کے ساتھ کھائیں، افطار پر پیش کریں، یا پڈنگ اور مٹھائی میں استعمال کریں۔",
+   "recipe_ar": "كُله مع الحليب في السحور، أو قدّمه عند الإفطار، أو استخدمه في البودينغ والحلويات.",
+   "sourcingDetails_en": "Packed in Pakistan. The maker, ingredients and batch details are confirmed on request; no specific origin is claimed.",
+   "sourcingDetails_ur": "پاکستان میں پیک شدہ۔ بنانے والے، اجزا اور کھیپ کی تفصیل درخواست پر بتائی جاتی ہے؛ کسی مخصوص ماخذ کا دعویٰ نہیں کیا جاتا۔",
+   "sourcingDetails_ar": "معبأ في باكستان. يُؤكَّد الصانع والمكونات وتفاصيل الدفعة عند الطلب؛ ولا يُدّعى مصدر محدد."
+  },
+  "oil-peanut": {
+   "careKind": "oil",
+   "referenceRatePerBase": 180,
+   "recipe_en": "Use for deep-frying, stir-frying and pakoras; its mild, nutty flavour suits everyday cooking. Contains peanut.",
+   "recipe_ur": "تلنے، بھوننے اور پکوڑوں کے لیے استعمال کریں؛ ہلکا مغزی ذائقہ روزمرہ پکوان کے لیے موزوں ہے۔ مونگ پھلی شامل ہے۔",
+   "recipe_ar": "استخدمه للقلي العميق والتشويح والباكورا؛ نكهته الجوزية الخفيفة تناسب الطبخ اليومي. يحتوي على فول سوداني.",
+   "sourcingDetails_en": "Packed in Pakistan. The maker, ingredients and batch details are confirmed on request; no specific origin is claimed.",
+   "sourcingDetails_ur": "پاکستان میں پیک شدہ۔ بنانے والے، اجزا اور کھیپ کی تفصیل درخواست پر بتائی جاتی ہے؛ کسی مخصوص ماخذ کا دعویٰ نہیں کیا جاتا۔",
+   "sourcingDetails_ar": "معبأ في باكستان. يُؤكَّد الصانع والمكونات وتفاصيل الدفعة عند الطلب؛ ولا يُدّعى مصدر محدد."
+  },
+  "oil-sunflower": {
+   "careKind": "oil",
+   "referenceRatePerBase": 90,
+   "recipe_en": "A light everyday oil for frying, baking and salad dressings.",
+   "recipe_ur": "تلنے، بیکنگ اور سلاد ڈریسنگ کے لیے روزمرہ کا ہلکا تیل۔",
+   "recipe_ar": "زيت يومي خفيف للقلي والخَبز وصلصات السلطة.",
+   "sourcingDetails_en": "Packed in Pakistan. The maker, ingredients and batch details are confirmed on request; no specific origin is claimed.",
+   "sourcingDetails_ur": "پاکستان میں پیک شدہ۔ بنانے والے، اجزا اور کھیپ کی تفصیل درخواست پر بتائی جاتی ہے؛ کسی مخصوص ماخذ کا دعویٰ نہیں کیا جاتا۔",
+   "sourcingDetails_ar": "معبأ في باكستان. يُؤكَّد الصانع والمكونات وتفاصيل الدفعة عند الطلب؛ ولا يُدّعى مصدر محدد."
+  },
+  "oil-neem": {
+   "careKind": "cosmetic",
+   "referenceRatePerBase": 240,
+   "recipe_en": "For external use only: dilute in a carrier oil for scalp or skin application and patch-test first. Do not swallow; keep away from children.",
+   "recipe_ur": "صرف بیرونی استعمال: سر یا جلد پر لگانے کے لیے کسی دوسرے تیل میں ملا کر لگائیں اور پہلے ٹیسٹ کریں۔ نگلیں نہیں؛ بچوں سے دور رکھیں۔",
+   "recipe_ar": "للاستعمال الخارجي فقط: خفّفه بزيت ناقل لفروة الرأس أو الجلد وجرّبه أولًا. لا يُبلع ويُحفظ بعيدًا عن الأطفال.",
+   "sourcingDetails_en": "Packed in Pakistan. The maker, ingredients and batch details are confirmed on request; no specific origin is claimed.",
+   "sourcingDetails_ur": "پاکستان میں پیک شدہ۔ بنانے والے، اجزا اور کھیپ کی تفصیل درخواست پر بتائی جاتی ہے؛ کسی مخصوص ماخذ کا دعویٰ نہیں کیا جاتا۔",
+   "sourcingDetails_ar": "معبأ في باكستان. يُؤكَّد الصانع والمكونات وتفاصيل الدفعة عند الطلب؛ ولا يُدّعى مصدر محدد."
+  },
+  "oil-taramira": {
+   "careKind": "cosmetic",
+   "referenceRatePerBase": 160,
+   "recipe_en": "Traditionally massaged into the scalp and hair; for external use, patch-test first. Its smell is strong and fades after washing.",
+   "recipe_ur": "روایتی طور پر سر اور بالوں میں مالش کے لیے؛ بیرونی استعمال، پہلے ٹیسٹ کریں۔ بو تیز ہوتی ہے جو دھونے کے بعد کم ہو جاتی ہے۔",
+   "recipe_ar": "يُدلَّك به الشعر وفروة الرأس تقليديًا؛ للاستعمال الخارجي وجرّبه أولًا. رائحته قوية وتخف بعد الغسل.",
+   "sourcingDetails_en": "Packed in Pakistan. The maker, ingredients and batch details are confirmed on request; no specific origin is claimed.",
+   "sourcingDetails_ur": "پاکستان میں پیک شدہ۔ بنانے والے، اجزا اور کھیپ کی تفصیل درخواست پر بتائی جاتی ہے؛ کسی مخصوص ماخذ کا دعویٰ نہیں کیا جاتا۔",
+   "sourcingDetails_ar": "معبأ في باكستان. يُؤكَّد الصانع والمكونات وتفاصيل الدفعة عند الطلب؛ ولا يُدّعى مصدر محدد."
+  },
+  "oil-soybean": {
+   "careKind": "oil",
+   "referenceRatePerBase": 80,
+   "recipe_en": "A neutral cooking oil for frying, baking and everyday curries. Contains soy.",
+   "recipe_ur": "تلنے، بیکنگ اور روزمرہ سالن کے لیے بے ذائقہ کھانے کا تیل۔ سویا شامل ہے۔",
+   "recipe_ar": "زيت طبخ محايد للقلي والخَبز والكاري اليومي. يحتوي على الصويا.",
+   "sourcingDetails_en": "Packed in Pakistan. The maker, ingredients and batch details are confirmed on request; no specific origin is claimed.",
+   "sourcingDetails_ur": "پاکستان میں پیک شدہ۔ بنانے والے، اجزا اور کھیپ کی تفصیل درخواست پر بتائی جاتی ہے؛ کسی مخصوص ماخذ کا دعویٰ نہیں کیا جاتا۔",
+   "sourcingDetails_ar": "معبأ في باكستان. يُؤكَّد الصانع والمكونات وتفاصيل الدفعة عند الطلب؛ ولا يُدّعى مصدر محدد."
+  }
+ }
+}

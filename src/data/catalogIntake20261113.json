@@ -5174,6 +5174,850 @@
     "imageAlt_ur": "تلسی چائے — تصویر جلد آ رہی ہے",
     "imageAlt_ar": "شاي الريحان المقدس (تولسي) — الصورة قريبًا"
    }
+  },
+  {
+   "id": "american-almonds",
+   "name_en": "California Almonds (American Badam)",
+   "name_ur": "امریکن بادام",
+   "name_ar": "لوز كاليفورنيا",
+   "desc_en": "Large, evenly sized and mildly sweet, California almonds are the everyday almond of Pakistani homes: the handful soaked overnight for children before school, the garnish on kheer and zarda, the dependable choice for a gift tray. Their uniform size makes them the easiest almond to cook and decorate with.",
+   "desc_ur": "بڑے، یکساں سائز کے اور ہلکے میٹھے امریکن بادام پاکستانی گھروں کا روزمرہ بادام ہیں: بچوں کے لیے اسکول سے پہلے رات بھر بھگوئی ہوئی مٹھی، کھیر اور زردے کی سجاوٹ، اور تحفے کی ٹرے کا قابلِ اعتماد انتخاب۔ یکساں سائز کی وجہ سے پکانے اور سجانے میں سب سے آسان۔",
+   "desc_ar": "لوز كاليفورنيا كبير متساوي الحجم حلو بخفة، وهو لوز البيوت الباكستانية اليومي: حفنة تُنقع ليلًا للأطفال قبل المدرسة، وزينة المهلبية والأرز الحلو، وخيار موثوق لصينية الهدايا. تساوي حجمه يجعله الأسهل للطبخ والتزيين.",
+   "recipe_en": "Soak overnight and peel for the morning, sliver over kheer, zarda and halwa, or toast lightly for snacking.",
+   "recipe_ur": "رات بھر بھگو کر صبح چھیل کر کھائیں، کھیر، زردے اور حلوے پر قتلے ڈالیں، یا ہلکا بھون کر سنیک بنائیں۔",
+   "recipe_ar": "انقعه ليلة وقشّره صباحًا، أو شرّحه فوق المهلبية والأرز الحلو والحلواء، أو حمّصه قليلًا للتسالي.",
+   "sourcingDetails_en": "These almonds are grown in California's Central Valley, the world's largest almond-growing region, and are imported and packed in Pakistan. Exact batch source and grade are confirmed on request; individual farm traceability is not stated.",
+   "sourcingDetails_ur": "یہ بادام کیلیفورنیا کی سینٹرل ویلی میں اگتے ہیں جو دنیا کا سب سے بڑا بادام اگانے والا علاقہ ہے، اور درآمد کر کے پاکستان میں پیک کیے جاتے ہیں۔ موجودہ کھیپ کا درست ماخذ اور درجہ درخواست پر بتایا جاتا ہے؛ کسی خاص فارم کا سراغ نہیں بتایا جاتا۔",
+   "sourcingDetails_ar": "يُزرع هذا اللوز في الوادي الأوسط بكاليفورنيا، أكبر مناطق زراعة اللوز في العالم، ويُستورد ويُعبأ في باكستان. يُؤكَّد المصدر الدقيق ودرجة الدفعة عند الطلب؛ ولا تُذكر مزرعة بعينها.",
+   "origin_en": "Hand-Packed in Pakistan",
+   "origin_ur": "پاکستان میں ہاتھ سے پیک شدہ",
+   "origin_ar": "معبأ يدويًا في باكستان",
+   "careKind": "nuts",
+   "category": "nuts",
+   "collections": [
+    "kernels-and-nuts"
+   ],
+   "keywords": [
+    "american badam",
+    "california almond",
+    "badam giri",
+    "California Almonds (American Badam)",
+    "امریکن بادام"
+   ],
+   "image": "/images/product-placeholder.svg",
+   "imageName": "/images/product-placeholder.svg",
+   "galleryImages": [],
+   "prices": {},
+   "variants": [],
+   "wholesale": 0,
+   "quoteOnly": false,
+   "orderMode": "standard",
+   "status": "draft",
+   "active": false,
+   "allowCustomWeight": false,
+   "pricePer100g": 380,
+   "claimsVerification": {
+    "status": "unverified"
+   },
+   "commerce": {
+    "version": 1,
+    "kind": "food",
+    "pricingMode": "calculated",
+    "quantityMode": "fixed",
+    "baseQuantity": 1,
+    "baseUnit": "kg",
+    "basePrice": 3800,
+    "options": [
+     {
+      "label": "100g",
+      "quantity": 100,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "250g",
+      "quantity": 250,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "500g",
+      "quantity": 500,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "1kg",
+      "quantity": 1,
+      "unit": "kg",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     }
+    ],
+    "custom": null
+   },
+   "importBatch": "owner-intake-20261113",
+   "seo": {
+    "title_en": "California Almonds (American Badam) | AllBarka",
+    "title_ur": "امریکن بادام | البرکہ",
+    "title_ar": "لوز كاليفورنيا | البركة",
+    "imageAlt_en": "California Almonds (American Badam) — product image coming soon",
+    "imageAlt_ur": "امریکن بادام — تصویر جلد آ رہی ہے",
+    "imageAlt_ar": "لوز كاليفورنيا — الصورة قريبًا"
+   }
+  },
+  {
+   "id": "kagzi-almonds-inshell",
+   "name_en": "Paper-Shell Almonds (Kagzi Badam)",
+   "name_ur": "کاغذی بادام",
+   "name_ar": "لوز رقيق القشر",
+   "desc_en": "Kagzi badam have a shell soft enough to break between the fingers, with a sweet, fresh kernel inside. A bowl of them on the table through winter is an invitation to sit, crack and talk, and they are a traditional gift to carry when visiting family.",
+   "desc_ur": "کاغذی بادام کا چھلکا اتنا نرم ہوتا ہے کہ انگلیوں سے ٹوٹ جاتا ہے، اور اندر میٹھی تازہ گری ہوتی ہے۔ سردیوں میں میز پر ان کا پیالہ بیٹھنے، توڑنے اور باتیں کرنے کی دعوت ہے، اور رشتہ داروں کے ہاں جاتے وقت کا روایتی تحفہ۔",
+   "desc_ar": "اللوز الكاغزي قشره لين يُكسر بين الأصابع وبداخله لب حلو طازج. وعاء منه على المائدة شتاءً دعوة للجلوس والكسر والحديث، وهدية تقليدية عند زيارة الأهل.",
+   "recipe_en": "Crack by hand and eat fresh, or shell a batch for sweets and milk. The weight is that of the in-shell pack.",
+   "recipe_ur": "ہاتھ سے توڑ کر تازہ کھائیں، یا مٹھائی اور دودھ کے لیے گری نکال لیں۔ وزن چھلکے سمیت پیک کا ہے۔",
+   "recipe_ar": "اكسره باليد وكُله طازجًا، أو قشّر كمية للحلويات والحليب. الوزن هو وزن العبوة بقشرها.",
+   "sourcingDetails_en": "Paper-shell almonds are grown in Balochistan, Afghanistan and Iran; we do not state a specific orchard region for the current batch. Exact batch source and grade are confirmed on request; individual farm traceability is not stated.",
+   "sourcingDetails_ur": "کاغذی بادام بلوچستان، افغانستان اور ایران میں اگتے ہیں؛ موجودہ کھیپ کے کسی مخصوص باغ کے علاقے کا دعویٰ نہیں کیا جاتا۔ موجودہ کھیپ کا درست ماخذ اور درجہ درخواست پر بتایا جاتا ہے؛ کسی خاص فارم کا سراغ نہیں بتایا جاتا۔",
+   "sourcingDetails_ar": "يُزرع اللوز رقيق القشر في بلوشستان وأفغانستان وإيران؛ ولا نذكر منطقة بساتين محددة للدفعة الحالية. يُؤكَّد المصدر الدقيق ودرجة الدفعة عند الطلب؛ ولا تُذكر مزرعة بعينها.",
+   "origin_en": "Hand-Packed in Pakistan",
+   "origin_ur": "پاکستان میں ہاتھ سے پیک شدہ",
+   "origin_ar": "معبأ يدويًا في باكستان",
+   "careKind": "nuts",
+   "category": "nuts",
+   "collections": [
+    "kernels-and-nuts"
+   ],
+   "keywords": [
+    "kagzi badam",
+    "paper almond",
+    "badam with shell",
+    "Paper-Shell Almonds (Kagzi Badam)",
+    "کاغذی بادام"
+   ],
+   "image": "/images/product-placeholder.svg",
+   "imageName": "/images/product-placeholder.svg",
+   "galleryImages": [],
+   "prices": {},
+   "variants": [],
+   "wholesale": 0,
+   "quoteOnly": false,
+   "orderMode": "standard",
+   "status": "draft",
+   "active": false,
+   "allowCustomWeight": false,
+   "pricePer100g": 190,
+   "claimsVerification": {
+    "status": "unverified"
+   },
+   "commerce": {
+    "version": 1,
+    "kind": "food",
+    "pricingMode": "calculated",
+    "quantityMode": "fixed",
+    "baseQuantity": 1,
+    "baseUnit": "kg",
+    "basePrice": 1900,
+    "options": [
+     {
+      "label": "250g",
+      "quantity": 250,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "500g",
+      "quantity": 500,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "1kg",
+      "quantity": 1,
+      "unit": "kg",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     }
+    ],
+    "custom": null
+   },
+   "importBatch": "owner-intake-20261113",
+   "seo": {
+    "title_en": "Paper-Shell Almonds (Kagzi Badam) | AllBarka",
+    "title_ur": "کاغذی بادام | البرکہ",
+    "title_ar": "لوز رقيق القشر | البركة",
+    "imageAlt_en": "Paper-Shell Almonds (Kagzi Badam) — product image coming soon",
+    "imageAlt_ur": "کاغذی بادام — تصویر جلد آ رہی ہے",
+    "imageAlt_ar": "لوز رقيق القشر — الصورة قريبًا"
+   }
+  },
+  {
+   "id": "mamra-almonds",
+   "name_en": "Mamra Almonds",
+   "name_ur": "ممرا بادام",
+   "name_ar": "لوز مامرا",
+   "desc_en": "Mamra is the connoisseur's almond: smaller and more irregular than California almonds, with a richer, oilier bite. It is what families buy for a new mother, a student in exam season or an elder, when they want to give the best almond rather than the most convenient one.",
+   "desc_ur": "ممرا بادام شوقین کا بادام ہے: امریکن بادام سے چھوٹا اور بے ترتیب، مگر زیادہ بھرپور اور روغنی ذائقے والا۔ خاندان اسے نئی ماں، امتحان کے دنوں کے طالب علم یا بزرگ کے لیے لیتے ہیں، جب سب سے آسان نہیں بلکہ سب سے اچھا بادام دینا ہو۔",
+   "desc_ar": "المامرا لوز الذوّاقة: أصغر وأقل انتظامًا من لوز كاليفورنيا لكنه أغنى وأكثر دهنية. تشتريه العائلات لأم جديدة أو طالب في موسم الامتحانات أو كبير السن حين تريد إهداء أفضل لوز لا أسهله.",
+   "recipe_en": "Soak a few overnight and eat peeled in the morning, or grind into milk, halwa and winter panjeeri.",
+   "recipe_ur": "چند بادام رات بھر بھگو کر صبح چھیل کر کھائیں، یا دودھ، حلوے اور سردیوں کی پنجیری میں پیسیں۔",
+   "recipe_ar": "انقع بضع حبات ليلة وكُلها مقشّرة صباحًا، أو اطحنه في الحليب والحلواء وبنجيري الشتاء.",
+   "sourcingDetails_en": "Mamra almonds are traditionally associated with Iran and Afghanistan. Because the name is often applied loosely, the origin and grade of the current batch are verified before the listing goes live. Exact batch source and grade are confirmed on request; individual farm traceability is not stated.",
+   "sourcingDetails_ur": "ممرا بادام روایتی طور پر ایران اور افغانستان سے منسوب ہیں۔ چونکہ یہ نام اکثر ڈھیلے انداز میں استعمال ہوتا ہے، موجودہ کھیپ کے ماخذ اور درجے کی تصدیق فہرست لائیو ہونے سے پہلے کی جاتی ہے۔ موجودہ کھیپ کا درست ماخذ اور درجہ درخواست پر بتایا جاتا ہے؛ کسی خاص فارم کا سراغ نہیں بتایا جاتا۔",
+   "sourcingDetails_ar": "يُنسب لوز المامرا تقليديًا إلى إيران وأفغانستان. ولأن الاسم يُستعمل بتساهل، يُتحقَّق من مصدر الدفعة ودرجتها قبل النشر. يُؤكَّد المصدر الدقيق ودرجة الدفعة عند الطلب؛ ولا تُذكر مزرعة بعينها.",
+   "origin_en": "Hand-Packed in Pakistan",
+   "origin_ur": "پاکستان میں ہاتھ سے پیک شدہ",
+   "origin_ar": "معبأ يدويًا في باكستان",
+   "careKind": "nuts",
+   "category": "nuts",
+   "collections": [
+    "kernels-and-nuts"
+   ],
+   "keywords": [
+    "mamra badam",
+    "mamra giri",
+    "irani badam",
+    "Mamra Almonds",
+    "ممرا بادام"
+   ],
+   "image": "/images/product-placeholder.svg",
+   "imageName": "/images/product-placeholder.svg",
+   "galleryImages": [],
+   "prices": {},
+   "variants": [],
+   "wholesale": 0,
+   "quoteOnly": false,
+   "orderMode": "standard",
+   "status": "draft",
+   "active": false,
+   "allowCustomWeight": false,
+   "pricePer100g": 650,
+   "claimsVerification": {
+    "status": "unverified"
+   },
+   "commerce": {
+    "version": 1,
+    "kind": "food",
+    "pricingMode": "calculated",
+    "quantityMode": "fixed",
+    "baseQuantity": 1,
+    "baseUnit": "kg",
+    "basePrice": 6500,
+    "options": [
+     {
+      "label": "100g",
+      "quantity": 100,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "250g",
+      "quantity": 250,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "500g",
+      "quantity": 500,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "1kg",
+      "quantity": 1,
+      "unit": "kg",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     }
+    ],
+    "custom": null
+   },
+   "importBatch": "owner-intake-20261113",
+   "seo": {
+    "title_en": "Mamra Almonds | AllBarka",
+    "title_ur": "ممرا بادام | البرکہ",
+    "title_ar": "لوز مامرا | البركة",
+    "imageAlt_en": "Mamra Almonds — product image coming soon",
+    "imageAlt_ur": "ممرا بادام — تصویر جلد آ رہی ہے",
+    "imageAlt_ar": "لوز مامرا — الصورة قريبًا"
+   }
+  },
+  {
+   "id": "chilgoza-inshell",
+   "name_en": "Chilgoza Pine Nuts, In Shell",
+   "name_ur": "چلغوزہ (چھلکے والا)",
+   "name_ar": "صنوبر (جلغوزة) بقشره",
+   "desc_en": "Chilgoza is the jewel of the Pakistani winter: slender roasted pine nuts, peeled one at a time and shared around a heater on a cold evening. Harvested by hand from high mountain forests, it is scarce, costly and offered to people you truly want to honour.",
+   "desc_ur": "چلغوزہ پاکستانی سردیوں کا نگینہ ہے: پتلے بھنے ہوئے دانے جو ایک ایک کر کے چھیلے جاتے ہیں اور سرد شام میں ہیٹر کے گرد بانٹے جاتے ہیں۔ بلند پہاڑی جنگلات سے ہاتھ سے چنا جاتا ہے، اس لیے کمیاب اور قیمتی ہے، اور انہی کو پیش کیا جاتا ہے جن کی واقعی عزت کرنی ہو۔",
+   "desc_ar": "الجلغوزة جوهرة الشتاء الباكستاني: حبات صنوبر نحيلة محمّصة تُقشَّر واحدة واحدة وتُتقاسم حول المدفأة في مساء بارد. تُجنى يدويًا من غابات الجبال العالية، فهي نادرة وثمينة وتُقدَّم لمن نريد إكرامهم حقًا.",
+   "recipe_en": "Peel and eat as they are, or scatter the kernels over pulao, salads and desserts. The weight is that of the in-shell pack.",
+   "recipe_ur": "چھیل کر ویسے ہی کھائیں، یا گری پلاؤ، سلاد اور میٹھوں پر ڈالیں۔ وزن چھلکے سمیت پیک کا ہے۔",
+   "recipe_ar": "قشّرها وكُلها كما هي، أو انثر اللب على البلاو والسلطات والحلويات. الوزن هو وزن العبوة بقشرها.",
+   "sourcingDetails_en": "Chilgoza pine (Pinus gerardiana) grows in the high forests of Balochistan, Khyber Pakhtunkhwa, Gilgit-Baltistan and Afghanistan; the forest region of the current batch is confirmed on request. Exact batch source and grade are confirmed on request; individual farm traceability is not stated.",
+   "sourcingDetails_ur": "چلغوزے کا درخت (Pinus gerardiana) بلوچستان، خیبر پختونخوا، گلگت بلتستان اور افغانستان کے بلند جنگلات میں اگتا ہے؛ موجودہ کھیپ کے جنگلاتی علاقے کی تصدیق درخواست پر ہوتی ہے۔ موجودہ کھیپ کا درست ماخذ اور درجہ درخواست پر بتایا جاتا ہے؛ کسی خاص فارم کا سراغ نہیں بتایا جاتا۔",
+   "sourcingDetails_ar": "ينمو صنوبر الجلغوزة (Pinus gerardiana) في الغابات العالية ببلوشستان وخيبر بختونخوا وغلغت-بلتستان وأفغانستان؛ وتُؤكَّد منطقة غابة الدفعة الحالية عند الطلب. يُؤكَّد المصدر الدقيق ودرجة الدفعة عند الطلب؛ ولا تُذكر مزرعة بعينها.",
+   "origin_en": "Hand-Packed in Pakistan",
+   "origin_ur": "پاکستان میں ہاتھ سے پیک شدہ",
+   "origin_ar": "معبأ يدويًا في باكستان",
+   "careKind": "nuts",
+   "category": "nuts",
+   "collections": [
+    "kernels-and-nuts"
+   ],
+   "keywords": [
+    "chilgoza",
+    "chalgoza",
+    "pine nut in shell",
+    "nioza",
+    "Chilgoza Pine Nuts, In Shell",
+    "چلغوزہ (چھلکے والا)"
+   ],
+   "image": "/images/product-placeholder.svg",
+   "imageName": "/images/product-placeholder.svg",
+   "galleryImages": [],
+   "prices": {},
+   "variants": [],
+   "wholesale": 0,
+   "quoteOnly": false,
+   "orderMode": "standard",
+   "status": "draft",
+   "active": false,
+   "allowCustomWeight": false,
+   "pricePer100g": 700,
+   "claimsVerification": {
+    "status": "unverified"
+   },
+   "commerce": {
+    "version": 1,
+    "kind": "food",
+    "pricingMode": "calculated",
+    "quantityMode": "fixed",
+    "baseQuantity": 1,
+    "baseUnit": "kg",
+    "basePrice": 7000,
+    "options": [
+     {
+      "label": "100g",
+      "quantity": 100,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "250g",
+      "quantity": 250,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "500g",
+      "quantity": 500,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "1kg",
+      "quantity": 1,
+      "unit": "kg",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     }
+    ],
+    "custom": null
+   },
+   "importBatch": "owner-intake-20261113",
+   "seo": {
+    "title_en": "Chilgoza Pine Nuts, In Shell | AllBarka",
+    "title_ur": "چلغوزہ (چھلکے والا) | البرکہ",
+    "title_ar": "صنوبر (جلغوزة) بقشره | البركة",
+    "imageAlt_en": "Chilgoza Pine Nuts, In Shell — product image coming soon",
+    "imageAlt_ur": "چلغوزہ (چھلکے والا) — تصویر جلد آ رہی ہے",
+    "imageAlt_ar": "صنوبر (جلغوزة) بقشره — الصورة قريبًا"
+   }
+  },
+  {
+   "id": "sundarkhani-raisins",
+   "name_en": "Sundarkhani Raisins",
+   "name_ur": "سندرخانی کشمش",
+   "name_ar": "زبيب سندرخاني",
+   "desc_en": "Long, pale-green and honey-sweet, Sundarkhani is the raisin kept for guests and for the dishes that matter: kabuli pulao, kheer and the dry-fruit tray at Eid. A step above everyday kishmish, in looks and in taste.",
+   "desc_ur": "لمبی، ہلکی سبز اور شہد جیسی میٹھی سندرخانی وہ کشمش ہے جو مہمانوں اور خاص پکوانوں کے لیے رکھی جاتی ہے: کابلی پلاؤ، کھیر اور عید کی میوہ ٹرے۔ روزمرہ کشمش سے شکل اور ذائقے دونوں میں ایک درجہ اوپر۔",
+   "desc_ar": "السندرخاني زبيب طويل أخضر فاتح بحلاوة العسل يُحفظ للضيوف وللأطباق المهمة: البلاو الكابلي والمهلبية وصينية المكسرات في العيد. أرقى من الزبيب اليومي شكلًا وطعمًا.",
+   "recipe_en": "Eat as a snack, plump in warm ghee for pulao, or stir into kheer and sweet rice.",
+   "recipe_ur": "سنیک کے طور پر کھائیں، پلاؤ کے لیے گرم گھی میں پھلائیں، یا کھیر اور میٹھے چاول میں ڈالیں۔",
+   "recipe_ar": "كُله كتسالٍ، أو انفخه في سمن دافئ للبلاو، أو أضفه إلى المهلبية والأرز الحلو.",
+   "sourcingDetails_en": "Sundarkhani raisins are shade-dried long green grapes associated with Afghanistan and Balochistan; the origin of the current batch is confirmed on request. Exact batch source and grade are confirmed on request; individual farm traceability is not stated.",
+   "sourcingDetails_ur": "سندرخانی کشمش سائے میں خشک کیے گئے لمبے سبز انگور ہیں جو افغانستان اور بلوچستان سے منسوب ہیں؛ موجودہ کھیپ کا ماخذ درخواست پر بتایا جاتا ہے۔ موجودہ کھیپ کا درست ماخذ اور درجہ درخواست پر بتایا جاتا ہے؛ کسی خاص فارم کا سراغ نہیں بتایا جاتا۔",
+   "sourcingDetails_ar": "السندرخاني عنب أخضر طويل يُجفف في الظل ويُنسب إلى أفغانستان وبلوشستان؛ ويُؤكَّد مصدر الدفعة الحالية عند الطلب. يُؤكَّد المصدر الدقيق ودرجة الدفعة عند الطلب؛ ولا تُذكر مزرعة بعينها.",
+   "origin_en": "Hand-Packed in Pakistan",
+   "origin_ur": "پاکستان میں ہاتھ سے پیک شدہ",
+   "origin_ar": "معبأ يدويًا في باكستان",
+   "careKind": "fruit",
+   "category": "nuts",
+   "collections": [
+    "dried-fruits"
+   ],
+   "keywords": [
+    "sundar khani",
+    "sundarkhani kishmish",
+    "green long raisin",
+    "Sundarkhani Raisins",
+    "سندرخانی کشمش"
+   ],
+   "image": "/images/product-placeholder.svg",
+   "imageName": "/images/product-placeholder.svg",
+   "galleryImages": [],
+   "prices": {},
+   "variants": [],
+   "wholesale": 0,
+   "quoteOnly": false,
+   "orderMode": "standard",
+   "status": "draft",
+   "active": false,
+   "allowCustomWeight": false,
+   "pricePer100g": 165,
+   "claimsVerification": {
+    "status": "unverified"
+   },
+   "commerce": {
+    "version": 1,
+    "kind": "food",
+    "pricingMode": "calculated",
+    "quantityMode": "fixed",
+    "baseQuantity": 1,
+    "baseUnit": "kg",
+    "basePrice": 1650,
+    "options": [
+     {
+      "label": "250g",
+      "quantity": 250,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "500g",
+      "quantity": 500,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "1kg",
+      "quantity": 1,
+      "unit": "kg",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     }
+    ],
+    "custom": null
+   },
+   "importBatch": "owner-intake-20261113",
+   "seo": {
+    "title_en": "Sundarkhani Raisins | AllBarka",
+    "title_ur": "سندرخانی کشمش | البرکہ",
+    "title_ar": "زبيب سندرخاني | البركة",
+    "imageAlt_en": "Sundarkhani Raisins — product image coming soon",
+    "imageAlt_ur": "سندرخانی کشمش — تصویر جلد آ رہی ہے",
+    "imageAlt_ar": "زبيب سندرخاني — الصورة قريبًا"
+   }
+  },
+  {
+   "id": "peanuts-inshell",
+   "name_en": "Roasted Peanuts, In Shell (Mungphali)",
+   "name_ur": "بھنی مونگ پھلی (چھلکے والی)",
+   "name_ar": "فول سوداني محمّص بقشره",
+   "desc_en": "Nothing says winter evening in Pakistan like a paper cone of warm mungphali: cracking shells, talking, losing track of time. It is the most democratic of dry fruits, loved in every home and shared without counting.",
+   "desc_ur": "پاکستان میں سردی کی شام کی سب سے بڑی پہچان گرم مونگ پھلی ہے: چھلکے توڑنا، باتیں کرنا اور وقت کا پتا نہ چلنا۔ یہ سب سے عوامی خشک میوہ ہے، ہر گھر کا پسندیدہ اور بغیر گنے بانٹا جانے والا۔",
+   "desc_ar": "لا شيء يعبّر عن مساء الشتاء في باكستان مثل قرطاس من الفول السوداني الدافئ: كسر القشور والحديث ونسيان الوقت. هو أكثر المكسرات شعبية، محبوب في كل بيت ويُتقاسم بلا حساب.",
+   "recipe_en": "Crack and eat, ideally with gur or rewari and hot chai. Warm briefly in a dry pan to refresh the crunch.",
+   "recipe_ur": "توڑ کر کھائیں، بہتر ہے گڑ یا ریوڑی اور گرم چائے کے ساتھ۔ خستگی تازہ کرنے کے لیے خشک پین میں ذرا گرم کر لیں۔",
+   "recipe_ar": "اكسره وكُله، ويفضَّل مع الجاجري أو الريوري والشاي الساخن. سخّنه قليلًا في مقلاة جافة ليستعيد قرمشته.",
+   "sourcingDetails_en": "Peanuts are grown in the Potohar region of Punjab and in Khyber Pakhtunkhwa and roasted in Pakistan; the grower region of the current batch is not stated. Exact batch source and grade are confirmed on request; individual farm traceability is not stated.",
+   "sourcingDetails_ur": "مونگ پھلی پنجاب کے پوٹھوہار اور خیبر پختونخوا میں اگتی ہے اور پاکستان میں بھونی جاتی ہے؛ موجودہ کھیپ کے کاشت کے علاقے کا ذکر نہیں کیا جاتا۔ موجودہ کھیپ کا درست ماخذ اور درجہ درخواست پر بتایا جاتا ہے؛ کسی خاص فارم کا سراغ نہیں بتایا جاتا۔",
+   "sourcingDetails_ar": "يُزرع الفول السوداني في منطقة بوتوهار بالبنجاب وفي خيبر بختونخوا ويُحمَّص في باكستان؛ ولا تُذكر منطقة زراعة الدفعة الحالية. يُؤكَّد المصدر الدقيق ودرجة الدفعة عند الطلب؛ ولا تُذكر مزرعة بعينها.",
+   "origin_en": "Hand-Packed in Pakistan",
+   "origin_ur": "پاکستان میں ہاتھ سے پیک شدہ",
+   "origin_ar": "معبأ يدويًا في باكستان",
+   "careKind": "snacks",
+   "category": "snacks-seeds",
+   "collections": [
+    "snack-seeds"
+   ],
+   "keywords": [
+    "mungphali",
+    "moongphali",
+    "peanut in shell",
+    "groundnut",
+    "Roasted Peanuts, In Shell (Mungphali)",
+    "بھنی مونگ پھلی (چھلکے والی)"
+   ],
+   "image": "/images/product-placeholder.svg",
+   "imageName": "/images/product-placeholder.svg",
+   "galleryImages": [],
+   "prices": {},
+   "variants": [],
+   "wholesale": 0,
+   "quoteOnly": false,
+   "orderMode": "standard",
+   "status": "draft",
+   "active": false,
+   "allowCustomWeight": false,
+   "pricePer100g": 80,
+   "claimsVerification": {
+    "status": "unverified"
+   },
+   "commerce": {
+    "version": 1,
+    "kind": "food",
+    "pricingMode": "calculated",
+    "quantityMode": "fixed",
+    "baseQuantity": 1,
+    "baseUnit": "kg",
+    "basePrice": 800,
+    "options": [
+     {
+      "label": "250g",
+      "quantity": 250,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "500g",
+      "quantity": 500,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "1kg",
+      "quantity": 1,
+      "unit": "kg",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     }
+    ],
+    "custom": null
+   },
+   "importBatch": "owner-intake-20261113",
+   "seo": {
+    "title_en": "Roasted Peanuts, In Shell (Mungphali) | AllBarka",
+    "title_ur": "بھنی مونگ پھلی (چھلکے والی) | البرکہ",
+    "title_ar": "فول سوداني محمّص بقشره | البركة",
+    "imageAlt_en": "Roasted Peanuts, In Shell (Mungphali) — product image coming soon",
+    "imageAlt_ur": "بھنی مونگ پھلی (چھلکے والی) — تصویر جلد آ رہی ہے",
+    "imageAlt_ar": "فول سوداني محمّص بقشره — الصورة قريبًا"
+   }
+  },
+  {
+   "id": "roasted-chana-skinless",
+   "name_en": "Roasted Chana, Skinless",
+   "name_ur": "بھنے چنے (بغیر چھلکے)",
+   "name_ar": "حمص محمّص منزوع القشر",
+   "desc_en": "Golden, crisp and light, skinless roasted chana is the honest snack: filling, inexpensive and good with a handful of kishmish. It lives in office drawers, school bags and travel pouches all over the country.",
+   "desc_ur": "سنہرے، خستہ اور ہلکے بغیر چھلکے بھنے چنے ایک سچا سنیک ہیں: پیٹ بھرنے والے، سستے اور مٹھی بھر کشمش کے ساتھ مزیدار۔ یہ ملک بھر میں دفتر کی درازوں، اسکول بیگ اور سفر کی تھیلیوں میں رہتے ہیں۔",
+   "desc_ar": "الحمص المحمّص منزوع القشر ذهبي مقرمش خفيف، وجبة خفيفة صادقة: مشبعة واقتصادية ولذيذة مع حفنة زبيب. تسكن أدراج المكاتب وحقائب المدرسة وأكياس السفر في أنحاء البلاد.",
+   "recipe_en": "Eat by the handful, mix with raisins and peanuts for a trail mix, or grind into sattu-style drinks and chutneys.",
+   "recipe_ur": "مٹھی بھر کر کھائیں، کشمش اور مونگ پھلی کے ساتھ ملا کر مکس بنائیں، یا ستو جیسے مشروب اور چٹنی کے لیے پیس لیں۔",
+   "recipe_ar": "كُله بالحفنة، أو اخلطه بالزبيب والفول السوداني، أو اطحنه لمشروبات شبيهة بالسَتّو والصلصات.",
+   "sourcingDetails_en": "Made from desi chickpeas grown in Punjab and Sindh and roasted in Pakistan; the grower region of the current batch is not stated. Exact batch source and grade are confirmed on request; individual farm traceability is not stated.",
+   "sourcingDetails_ur": "پنجاب اور سندھ میں اگنے والے دیسی چنوں سے بنتے ہیں اور پاکستان میں بھونے جاتے ہیں؛ موجودہ کھیپ کے کاشت کے علاقے کا ذکر نہیں کیا جاتا۔ موجودہ کھیپ کا درست ماخذ اور درجہ درخواست پر بتایا جاتا ہے؛ کسی خاص فارم کا سراغ نہیں بتایا جاتا۔",
+   "sourcingDetails_ar": "يُصنع من حمص بلدي يُزرع في البنجاب والسند ويُحمَّص في باكستان؛ ولا تُذكر منطقة زراعة الدفعة الحالية. يُؤكَّد المصدر الدقيق ودرجة الدفعة عند الطلب؛ ولا تُذكر مزرعة بعينها.",
+   "origin_en": "Hand-Packed in Pakistan",
+   "origin_ur": "پاکستان میں ہاتھ سے پیک شدہ",
+   "origin_ar": "معبأ يدويًا في باكستان",
+   "careKind": "snacks",
+   "category": "snacks-seeds",
+   "collections": [
+    "snack-seeds"
+   ],
+   "keywords": [
+    "bhunay chanay",
+    "roasted chickpeas",
+    "chana without shell",
+    "Roasted Chana, Skinless",
+    "بھنے چنے (بغیر چھلکے)"
+   ],
+   "image": "/images/product-placeholder.svg",
+   "imageName": "/images/product-placeholder.svg",
+   "galleryImages": [],
+   "prices": {},
+   "variants": [],
+   "wholesale": 0,
+   "quoteOnly": false,
+   "orderMode": "standard",
+   "status": "draft",
+   "active": false,
+   "allowCustomWeight": false,
+   "pricePer100g": 80,
+   "claimsVerification": {
+    "status": "unverified"
+   },
+   "commerce": {
+    "version": 1,
+    "kind": "food",
+    "pricingMode": "calculated",
+    "quantityMode": "fixed",
+    "baseQuantity": 1,
+    "baseUnit": "kg",
+    "basePrice": 800,
+    "options": [
+     {
+      "label": "250g",
+      "quantity": 250,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "500g",
+      "quantity": 500,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "1kg",
+      "quantity": 1,
+      "unit": "kg",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     }
+    ],
+    "custom": null
+   },
+   "importBatch": "owner-intake-20261113",
+   "seo": {
+    "title_en": "Roasted Chana, Skinless | AllBarka",
+    "title_ur": "بھنے چنے (بغیر چھلکے) | البرکہ",
+    "title_ar": "حمص محمّص منزوع القشر | البركة",
+    "imageAlt_en": "Roasted Chana, Skinless — product image coming soon",
+    "imageAlt_ur": "بھنے چنے (بغیر چھلکے) — تصویر جلد آ رہی ہے",
+    "imageAlt_ar": "حمص محمّص منزوع القشر — الصورة قريبًا"
+   }
+  },
+  {
+   "id": "dried-figs-medium",
+   "name_en": "Dried Figs, Medium (Anjeer)",
+   "name_ur": "انجیر (درمیانہ سائز)",
+   "name_ar": "تين مجفف (حجم متوسط)",
+   "desc_en": "Soft, seedy and gently sweet, anjeer is the fruit mentioned in the Quran and treasured in winter. The medium size gives the same taste as the large fig at a kinder price, which makes it the practical choice for daily eating and for milk.",
+   "desc_ur": "نرم، دانے دار اور ہلکی میٹھی انجیر وہ پھل ہے جس کا ذکر قرآن میں ہے اور جو سردیوں میں عزیز رکھا جاتا ہے۔ درمیانہ سائز بڑی انجیر جیسا ذائقہ بہتر قیمت پر دیتا ہے، اس لیے روزانہ کھانے اور دودھ کے لیے عملی انتخاب ہے۔",
+   "desc_ar": "التين المجفف طري كثير البذور حلو بلطف، وهو الثمرة المذكورة في القرآن والعزيزة في الشتاء. الحجم المتوسط يمنح طعم التين الكبير بسعر ألطف، فهو الخيار العملي للأكل اليومي ومع الحليب.",
+   "recipe_en": "Soak two or three in water or milk overnight and eat in the morning, or chop into oats, halwa and baking.",
+   "recipe_ur": "دو تین انجیر رات بھر پانی یا دودھ میں بھگو کر صبح کھائیں، یا دلیے، حلوے اور بیکنگ میں کتر کر ڈالیں۔",
+   "recipe_ar": "انقع حبتين أو ثلاثًا في الماء أو الحليب ليلة وكُلها صباحًا، أو قطّعها في الشوفان والحلواء والخَبز.",
+   "sourcingDetails_en": "Dried figs in Pakistani markets come mainly from Afghanistan, Iran and Turkey; the origin of the current batch is confirmed on request. Exact batch source and grade are confirmed on request; individual farm traceability is not stated.",
+   "sourcingDetails_ur": "پاکستانی منڈیوں میں خشک انجیر زیادہ تر افغانستان، ایران اور ترکی سے آتی ہے؛ موجودہ کھیپ کا ماخذ درخواست پر بتایا جاتا ہے۔ موجودہ کھیپ کا درست ماخذ اور درجہ درخواست پر بتایا جاتا ہے؛ کسی خاص فارم کا سراغ نہیں بتایا جاتا۔",
+   "sourcingDetails_ar": "يأتي التين المجفف في الأسواق الباكستانية غالبًا من أفغانستان وإيران وتركيا؛ ويُؤكَّد مصدر الدفعة الحالية عند الطلب. يُؤكَّد المصدر الدقيق ودرجة الدفعة عند الطلب؛ ولا تُذكر مزرعة بعينها.",
+   "origin_en": "Hand-Packed in Pakistan",
+   "origin_ur": "پاکستان میں ہاتھ سے پیک شدہ",
+   "origin_ar": "معبأ يدويًا في باكستان",
+   "careKind": "fruit",
+   "category": "nuts",
+   "collections": [
+    "dried-fruits"
+   ],
+   "keywords": [
+    "anjeer",
+    "dried fig",
+    "injeer",
+    "Dried Figs, Medium (Anjeer)",
+    "انجیر (درمیانہ سائز)"
+   ],
+   "image": "/images/product-placeholder.svg",
+   "imageName": "/images/product-placeholder.svg",
+   "galleryImages": [],
+   "prices": {},
+   "variants": [],
+   "wholesale": 0,
+   "quoteOnly": false,
+   "orderMode": "standard",
+   "status": "draft",
+   "active": false,
+   "allowCustomWeight": false,
+   "pricePer100g": 320,
+   "claimsVerification": {
+    "status": "unverified"
+   },
+   "commerce": {
+    "version": 1,
+    "kind": "food",
+    "pricingMode": "calculated",
+    "quantityMode": "fixed",
+    "baseQuantity": 1,
+    "baseUnit": "kg",
+    "basePrice": 3200,
+    "options": [
+     {
+      "label": "250g",
+      "quantity": 250,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "500g",
+      "quantity": 500,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "1kg",
+      "quantity": 1,
+      "unit": "kg",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     }
+    ],
+    "custom": null
+   },
+   "importBatch": "owner-intake-20261113",
+   "seo": {
+    "title_en": "Dried Figs, Medium (Anjeer) | AllBarka",
+    "title_ur": "انجیر (درمیانہ سائز) | البرکہ",
+    "title_ar": "تين مجفف (حجم متوسط) | البركة",
+    "imageAlt_en": "Dried Figs, Medium (Anjeer) — product image coming soon",
+    "imageAlt_ur": "انجیر (درمیانہ سائز) — تصویر جلد آ رہی ہے",
+    "imageAlt_ar": "تين مجفف (حجم متوسط) — الصورة قريبًا"
+   }
+  },
+  {
+   "id": "desiccated-coconut",
+   "name_en": "Desiccated Coconut (Khopra Burada)",
+   "name_ur": "کھوپرے کا برادہ",
+   "name_ar": "جوز هند مبشور مجفف",
+   "desc_en": "Fine, snowy coconut that saves the work of grating: ready for barfi, laddoo, cakes and the coating on gulab jamun and chum chum. A kitchen staple before Eid, weddings and every occasion that calls for homemade sweets.",
+   "desc_ur": "باریک، برف جیسا ناریل جو کدوکش کرنے کی محنت بچاتا ہے: برفی، لڈو، کیک اور گلاب جامن و چم چم کی تہہ کے لیے تیار۔ عید، شادی اور گھر کی مٹھائی والے ہر موقع سے پہلے باورچی خانے کی ضرورت۔",
+   "desc_ar": "جوز هند ناعم كالثلج يوفّر عناء البشر: جاهز للبرفي واللدّو والكيك وتغطية الحلويات. من أساسيات المطبخ قبل العيد والأعراس وكل مناسبة تستدعي حلوى منزلية.",
+   "recipe_en": "Fold into barfi, laddoo and cake batter, roll sweets in it for a coating, or toast lightly to sprinkle over desserts.",
+   "recipe_ur": "برفی، لڈو اور کیک کے آمیزے میں ملائیں، مٹھائی کو اس میں لپیٹیں، یا ہلکا بھون کر میٹھوں پر چھڑکیں۔",
+   "recipe_ar": "أضفه إلى البرفي واللدّو وعجينة الكيك، أو دحرج الحلوى فيه، أو حمّصه قليلًا لرشّه على الحلويات.",
+   "sourcingDetails_en": "Desiccated coconut is produced in tropical countries such as Sri Lanka, Indonesia and the Philippines; it is imported and packed in Pakistan. Exact batch source and grade are confirmed on request; individual farm traceability is not stated.",
+   "sourcingDetails_ur": "ناریل کا برادہ سری لنکا، انڈونیشیا اور فلپائن جیسے استوائی ممالک میں تیار ہوتا ہے؛ درآمد کر کے پاکستان میں پیک کیا جاتا ہے۔ موجودہ کھیپ کا درست ماخذ اور درجہ درخواست پر بتایا جاتا ہے؛ کسی خاص فارم کا سراغ نہیں بتایا جاتا۔",
+   "sourcingDetails_ar": "يُنتج جوز الهند المبشور في بلدان استوائية كسريلانكا وإندونيسيا والفلبين؛ ويُستورد ويُعبأ في باكستان. يُؤكَّد المصدر الدقيق ودرجة الدفعة عند الطلب؛ ولا تُذكر مزرعة بعينها.",
+   "origin_en": "Hand-Packed in Pakistan",
+   "origin_ur": "پاکستان میں ہاتھ سے پیک شدہ",
+   "origin_ar": "معبأ يدويًا في باكستان",
+   "careKind": "nuts",
+   "category": "nuts",
+   "collections": [
+    "kernels-and-nuts"
+   ],
+   "keywords": [
+    "khopra burada",
+    "coconut powder",
+    "nariyal burada",
+    "Desiccated Coconut (Khopra Burada)",
+    "کھوپرے کا برادہ"
+   ],
+   "image": "/images/product-placeholder.svg",
+   "imageName": "/images/product-placeholder.svg",
+   "galleryImages": [],
+   "prices": {},
+   "variants": [],
+   "wholesale": 0,
+   "quoteOnly": false,
+   "orderMode": "standard",
+   "status": "draft",
+   "active": false,
+   "allowCustomWeight": false,
+   "pricePer100g": 180,
+   "claimsVerification": {
+    "status": "unverified"
+   },
+   "commerce": {
+    "version": 1,
+    "kind": "food",
+    "pricingMode": "calculated",
+    "quantityMode": "fixed",
+    "baseQuantity": 1,
+    "baseUnit": "kg",
+    "basePrice": 1800,
+    "options": [
+     {
+      "label": "100g",
+      "quantity": 100,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "250g",
+      "quantity": 250,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "500g",
+      "quantity": 500,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "1kg",
+      "quantity": 1,
+      "unit": "kg",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     }
+    ],
+    "custom": null
+   },
+   "importBatch": "owner-intake-20261113",
+   "seo": {
+    "title_en": "Desiccated Coconut (Khopra Burada) | AllBarka",
+    "title_ur": "کھوپرے کا برادہ | البرکہ",
+    "title_ar": "جوز هند مبشور مجفف | البركة",
+    "imageAlt_en": "Desiccated Coconut (Khopra Burada) — product image coming soon",
+    "imageAlt_ur": "کھوپرے کا برادہ — تصویر جلد آ رہی ہے",
+    "imageAlt_ar": "جوز هند مبشور مجفف — الصورة قريبًا"
+   }
   }
  ],
  "reuseExistingIds": [],
@@ -5401,6 +6245,42 @@
   },
   "tulsi-tea": {
    "pkrPerkg": 1600,
+   "basis": "AllBarka estimate from market range; no direct reference found"
+  },
+  "american-almonds": {
+   "pkrPerkg": 3800,
+   "basis": "akbarionline.pk 'From' price scaled to the smallest listed pack (assumed 250 g, 500 g for Mazafati); indicative only"
+  },
+  "kagzi-almonds-inshell": {
+   "pkrPerkg": 1900,
+   "basis": "Press-reported Pakistani retail rate (Express Tribune, Oct 2024); indicative only"
+  },
+  "mamra-almonds": {
+   "pkrPerkg": 6500,
+   "basis": "AllBarka estimate from market range; no direct reference found"
+  },
+  "chilgoza-inshell": {
+   "pkrPerkg": 7000,
+   "basis": "Rate stated by the owner, 13 Nov 2026"
+  },
+  "sundarkhani-raisins": {
+   "pkrPerkg": 1650,
+   "basis": "Press-reported Pakistani retail rate (Express Tribune, Oct 2024); indicative only"
+  },
+  "peanuts-inshell": {
+   "pkrPerkg": 800,
+   "basis": "Press-reported Pakistani retail rate (Express Tribune, Oct 2024); indicative only"
+  },
+  "roasted-chana-skinless": {
+   "pkrPerkg": 800,
+   "basis": "akbarionline.pk 'From' price scaled to the smallest listed pack (assumed 250 g, 500 g for Mazafati); indicative only"
+  },
+  "dried-figs-medium": {
+   "pkrPerkg": 3200,
+   "basis": "akbarionline.pk 'From' price scaled to the smallest listed pack (assumed 250 g, 500 g for Mazafati); indicative only"
+  },
+  "desiccated-coconut": {
+   "pkrPerkg": 1800,
    "basis": "AllBarka estimate from market range; no direct reference found"
   }
  },

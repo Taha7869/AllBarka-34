@@ -35,9 +35,9 @@ Largest gaps to review first: **Afghan figs, Ajwa dates, Fennel, Flax, Sunflower
 
 ## What batch 20261113 contains
 
-56 products: 38 pantry items, 7 murabba and 11 teas. Each has a placeholder image, a reference rate, and full copy in EN/UR/AR: what it is and why it matters, how to use it, sourcing (general facts only; exact batch confirmed on request), storage, packing, and allergen note. All are `draft` and `active: false`. Claims about traditional-use items carry “not a medicine” wording and `claimsVerification: unverified`. Arabic needs native review.
+65 products: 47 pantry items (including nine more dry fruits added on the owner's request), 7 murabba and 11 teas. Each has a placeholder image, a reference rate, and full copy in EN/UR/AR: what it is and why it matters, how to use it, sourcing (general facts only; exact batch confirmed on request), storage, packing, and allergen note. All are `draft` and `active: false`. Claims about traditional-use items carry “not a medicine” wording and `claimsVerification: unverified`. Arabic needs native review.
 
-Rates are **per kg for solids and per litre for oils**; pack prices are computed exactly (for example Hazelnuts 250 g = PKR 650, Amla Oil 250 ml = PKR 1,125). **Basis A** = akbarionline.pk “From” price scaled to the smallest pack (assumed 250 g, or 500 g for Mazafati); **basis E** = AllBarka estimate where no direct reference was found. All rates must be reviewed before publishing; replace each in the admin.
+Rates are **per kg for solids and per litre for oils**; pack prices are computed exactly (for example Hazelnuts 250 g = PKR 650, Amla Oil 250 ml = PKR 1,125). **Basis A** = akbarionline.pk “From” price scaled to the smallest pack (assumed 250 g, or 500 g for Mazafati); **basis E** = AllBarka estimate where no direct reference was found; **basis P** = press-reported retail rate (Express Tribune, Oct 2024); **basis O** = rate stated by the owner. All rates must be reviewed before publishing; replace each in the admin.
 
 | Product | Category / sub-collection | Reference rate (PKR) | Basis |
 |---|---|---|---|
@@ -97,8 +97,25 @@ Rates are **per kg for solids and per litre for oils**; pack prices are computed
 | Chamomile Tea (Babuna) | herbs-spices / herbal-teas | 6,000 per kg | E |
 | Jasmine Green Tea (Chinese Tea) | herbs-spices / herbal-teas | 3,200 per kg | E |
 | Tulsi Tea (Holy Basil) | herbs-spices / herbal-teas | 1,600 per kg | E |
+| California Almonds (American Badam) | nuts / kernels-and-nuts | 3,800 per kg | A |
+| Paper-Shell Almonds (Kagzi Badam) | nuts / kernels-and-nuts | 1,900 per kg | P |
+| Mamra Almonds | nuts / kernels-and-nuts | 6,500 per kg | E |
+| Chilgoza Pine Nuts, In Shell | nuts / kernels-and-nuts | 7,000 per kg | O |
+| Sundarkhani Raisins | nuts / dried-fruits | 1,650 per kg | P |
+| Roasted Peanuts, In Shell (Mungphali) | snacks-seeds / snack-seeds | 800 per kg | P |
+| Roasted Chana, Skinless | snacks-seeds / snack-seeds | 800 per kg | A |
+| Dried Figs, Medium (Anjeer) | nuts / dried-fruits | 3,200 per kg | A |
+| Desiccated Coconut (Khopra Burada) | nuts / kernels-and-nuts | 1,800 per kg | E |
 
 Cross-check with press reports: Pakistani retail dry-fruit rates reported in Oct 2025 were walnuts PKR 1,500–2,900/kg, raisins 950–1,350, dried apricots 1,500–2,500 and figs 1,800–3,000, and in Oct 2024 plain cashews PKR 3,400 and pistachios 3,400 per kg. Our existing rates and the new references are in the same broad ranges; they are not a substitute for today’s market check.
+
+## Chilgoza: needs an owner decision
+
+The owner's rate of PKR 7,000 per kg is entered on the new draft **Chilgoza Pine Nuts, In Shell**. The existing live listing `pine-nuts` (kernels) is PKR 4,500 per 100 g and 11,000 per 250 g in the compiled catalogue, which is PKR 45,000 per kg. It was **not changed**. If 7,000 per kg was meant for that listing, change it in the admin; press reports from Oct 2024 put in-shell chilgoza at PKR 16,000–20,000 per kg, so 7,000 should be re-checked against the current market.
+
+## Batch 20261110 (ChatGPT's 17 drafts) completed
+
+Those 17 drafts had descriptions but no usage, sourcing, storage, packing or allergen copy, and 12 had no rate. `src/data/catalogIntake20261110Overlay.json` now supplies all of it at import time (EN/UR/AR) and a reference rate per 100 g or 100 ml for the 12 (estimates; gachak and rewari follow press rates). The original manifest is untouched. If these 17 already exist in Firestore, the importer skips them and the copy must be pasted in through the admin.
 
 ## Units (backend rules, verified by tests)
 
