@@ -60,7 +60,7 @@ test('1. Two-level header taxonomy: Main row and Compact food row match the appr
 
   // Compact food row verification: exactly 6 food categories
   const foodIds = COMPACT_FOOD_NAV_ITEMS.map((item) => item.id);
-  assert.deepEqual(foodIds, ['dry-fruits', 'dates', 'seeds-snacks', 'oils', 'essentials', 'herbs-spices']);
+  assert.deepEqual(foodIds, ['dry-fruits', 'dates', 'seeds-snacks', 'oils', 'essentials', 'herbs-spices', 'murabba-jaat']);
 
   // Corporate & Bulk belongs under Gifting
   const giftingItem = MAIN_NAV_ITEMS.find((item) => item.id === 'gifting');

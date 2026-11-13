@@ -49,7 +49,7 @@ export const DEFAULT_MERCHANDISING: MerchandisingSettings = {
     },
   ],
   featuredProductIds: ['pista', 'kaju', 'badam', 'khajoor', 'khubani', 'pumpkin_seeds', 'bundle-tasting-flight', 'bundle-daily-grind'],
-  categoryOrder: ['dry-fruits', 'dates', 'seeds-snacks', 'oils', 'essentials', 'herbs-spices', 'combos', 'celebration-boxes', 'deals', 'personalized-treats'],
+  categoryOrder: ['dry-fruits', 'dates', 'seeds-snacks', 'oils', 'essentials', 'herbs-spices', 'murabba-jaat', 'combos', 'celebration-boxes', 'deals', 'personalized-treats'],
   categoryVisibility: {
     'dry-fruits': true,
     dates: true,
@@ -57,6 +57,7 @@ export const DEFAULT_MERCHANDISING: MerchandisingSettings = {
     oils: true,
     essentials: true,
     'herbs-spices': true,
+    'murabba-jaat': true,
     combos: true,
     'celebration-boxes': true,
     deals: true,

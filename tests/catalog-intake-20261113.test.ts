@@ -8,14 +8,16 @@ import { isProductPubliclyVisible } from '../src/lib/catalogSchema';
 import { convertMeasurement, calculatedUnitPrice } from '../src/lib/productCommerce';
 import { memoryFirestore } from './helpers/memoryFirestore';
 
-test('batch 2 validates as drafts, with placeholders, no prices and no collisions', () => {
+test('batch 2 validates as drafts with placeholders, reference rates, full content and no collisions', () => {
   const before = structuredClone(PRODUCTS);
   const intake = intakeProducts20261113();
   assert.equal(intake.length, manifest.newProducts.length);
   for (const p of intake) {
     assert.ok(!PRODUCTS.some(e => e.id === p.id), String(p.id));
-    assert.equal(p.status, 'draft'); assert.equal(p.active, false); assert.equal(p.quoteOnly, true);
-    assert.deepEqual(p.prices, {}); assert.equal((p as any).commerce.basePrice, null);
+    assert.equal(p.status, 'draft'); assert.equal(p.active, false);
+    const base = (p as any).commerce.basePrice;
+    assert.ok(Number.isSafeInteger(base) && base > 0, `${p.id} needs a reference rate`);
+    for (const l of ['en', 'ur', 'ar']) for (const f of ['recipe', 'sourcingDetails', 'storageTips', 'packagingDetails', 'allergenWarning']) assert.ok(String(p[`${f}_${l}`]).length > 30, `${p.id} ${f}_${l}`);
     assert.ok(fs.existsSync(`public${p.image}`));
     for (const l of ['en', 'ur', 'ar']) { assert.ok(String(p[`name_${l}`]).length > 1); assert.ok(String(p[`desc_${l}`]).length > 30); }
     assert.equal(isProductPubliclyVisible(p as any), false);
@@ -59,4 +61,17 @@ test('create-only import is idempotent and never overwrites', async () => {
   const second = await importIntake20261113({ db, actorUid: 'fixture-admin', execute: true });
   assert.ok(second.items.every(i => i.action === 'SKIP_EXISTING'));
   await assert.rejects(importIntake20261113({ db, execute: true }), /INTAKE_AUTHORITY_REQUIRED/);
+});
+
+import { productMatchesCategory, CANONICAL_CATEGORIES, CUSTOMER_FACING_CATEGORIES } from '../src/config/categories';
+
+test('Murabba Jaat is its own category and chai is a sub-category of Herbs & Spices', () => {
+  assert.ok(CANONICAL_CATEGORIES['murabba-jaat'] && CANONICAL_CATEGORIES['herbal-teas']);
+  assert.ok((CUSTOMER_FACING_CATEGORIES as readonly string[]).includes('murabba-jaat'));
+  const murabba = manifest.newProducts.filter(p => p.category === 'murabba-jaat');
+  assert.equal(murabba.length, 7);
+  for (const p of murabba) assert.ok(productMatchesCategory(p as any, 'murabba-jaat') && !productMatchesCategory(p as any, 'herbs-spices'));
+  const teas = manifest.newProducts.filter(p => p.collections.includes('herbal-teas'));
+  assert.equal(teas.length, 11);
+  for (const p of teas) assert.ok(p.category === 'herbs-spices' && productMatchesCategory(p as any, 'herbs-spices') && productMatchesCategory(p as any, 'herbal-teas'));
 });

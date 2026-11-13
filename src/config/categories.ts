@@ -62,6 +62,22 @@ export const FOOD_CATEGORIES: Record<string, CategoryMeta> = {
     bannerTitle: 'The AllBarka Herbs & Spices Collection',
     provenance: 'Selected Pantry Ingredients',
   },
+  'murabba-jaat': {
+    id: 'murabba-jaat',
+    name: 'Murabba Jaat',
+    shortName: 'Murabba Jaat',
+    description: 'Traditional fruit and vegetable preserves slow-cooked in sugar syrup: amla, apple, quince, carrot and gulkand, made the way families have for generations.',
+    bannerTitle: 'Murabba Jaat — Traditional Preserves',
+    provenance: 'Traditional Pansar Preserves',
+  },
+  'herbal-teas': {
+    id: 'herbal-teas',
+    name: 'Chai & Herbal Teas',
+    shortName: 'Chai & Teas',
+    description: 'Kadak chai patti, green tea, Peshawari and Kashmiri kahwa, noon chai and soothing herbal infusions loved across Pakistan.',
+    bannerTitle: 'Chai, Kahwa & Herbal Teas',
+    provenance: 'Selected Pantry Ingredients',
+  },
 };
 
 export const COMMERCIAL_COLLECTIONS: Record<string, CategoryMeta> = {
@@ -146,6 +162,8 @@ export const CANONICAL_CATEGORIES: Record<string, CategoryMeta> = {
   'celebration-boxes': COMMERCIAL_COLLECTIONS['celebration-boxes'],
   deals: COMMERCIAL_COLLECTIONS['deals'],
   'herbs-spices': FOOD_CATEGORIES['herbs-spices'],
+  'murabba-jaat': FOOD_CATEGORIES['murabba-jaat'],
+  'herbal-teas': FOOD_CATEGORIES['herbal-teas'],
   bundles: {
     id: 'bundles',
     name: 'Bundles',
@@ -169,6 +187,7 @@ export const CUSTOMER_FACING_CATEGORIES = [
   'oils',
   'essentials',
   'herbs-spices',
+  'murabba-jaat',
   'celebration-boxes',
   'deals',
   'gift-boxes',
@@ -232,6 +251,12 @@ export const CATEGORY_ALIASES: Record<string, string> = {
   herbs: 'herbs-spices',
   spices: 'herbs-spices',
   'herbs-and-spices': 'herbs-spices',
+  murabba: 'murabba-jaat',
+  murabbajaat: 'murabba-jaat',
+  preserves: 'murabba-jaat',
+  tea: 'herbal-teas',
+  teas: 'herbal-teas',
+  chai: 'herbal-teas',
 };
 
 /**

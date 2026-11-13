@@ -48,6 +48,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
       { id: 'cold-pressed-oils', labelKey: 'nav.oils', defaultLabel: 'Oils', path: '/shop/oils' },
       { id: 'desi-essentials', labelKey: 'nav.essentials', defaultLabel: 'Desi Essentials', path: '/shop/essentials' },
       { id: 'herbs-spices', labelKey: 'nav.herbsSpices', defaultLabel: 'Herbs & Spices', path: '/shop/herbs-spices' },
+      { id: 'murabba-jaat', labelKey: 'nav.murabbaJaat', defaultLabel: 'Murabba Jaat', path: '/shop/murabba-jaat' },
       { id: 'gifting', labelKey: 'nav.gifting', defaultLabel: 'Gifts & Hampers', path: '/gifting' },
     ],
   },
@@ -108,7 +109,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
 
 /**
  * Compact Food Row Navigation:
- * Dry Fruits & Nuts | Dates | Seeds & Snacks | Oils | Desi Essentials | Herbs & Spices
+ * Dry Fruits & Nuts | Dates | Seeds & Snacks | Oils | Desi Essentials | Herbs & Spices | Murabba Jaat
  */
 export const COMPACT_FOOD_NAV_ITEMS: FoodCategoryItem[] = [
   { id: 'dry-fruits', labelKey: 'nav.dryFruits', defaultLabel: 'Dry Fruits & Nuts', path: '/shop/dry-fruits', slug: 'dry-fruits' },
@@ -117,4 +118,5 @@ export const COMPACT_FOOD_NAV_ITEMS: FoodCategoryItem[] = [
   { id: 'oils', labelKey: 'nav.oils', defaultLabel: 'Oils', path: '/shop/oils', slug: 'oils' },
   { id: 'essentials', labelKey: 'nav.essentials', defaultLabel: 'Desi Essentials', path: '/shop/essentials', slug: 'essentials' },
   { id: 'herbs-spices', labelKey: 'nav.herbsSpices', defaultLabel: 'Herbs & Spices', path: '/shop/herbs-spices', slug: 'herbs-spices' },
+  { id: 'murabba-jaat', labelKey: 'nav.murabbaJaat', defaultLabel: 'Murabba Jaat', path: '/shop/murabba-jaat', slug: 'murabba-jaat' },
 ];

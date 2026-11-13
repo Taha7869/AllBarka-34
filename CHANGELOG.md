@@ -1,6 +1,7 @@
 ## 13 November 2026 — Catalogue batch 2 and occasion stories
 
-- Add a create-only draft intake of 38 products (hazelnut, gurbandi almonds, dates, spices, herbs, seeds, oils, honey, gur) with a placeholder image, no price and quote-only mode; importer `scripts/import-catalog-intake-20261113.ts`, tests in `tests/catalog-intake-20261113.test.ts` including exact mg/g/kg and ml/L arithmetic. No existing price or product was changed.
+- Add a create-only draft intake of 56 products (38 pantry items, 7 murabba, 11 Pakistani teas) with a placeholder image, reference rates (per kg or per litre, to be replaced from Firestore), and full EN/UR/AR copy on meaning, use, sourcing, storage, packing and allergens; importer `scripts/import-catalog-intake-20261113.ts`, tests in `tests/catalog-intake-20261113.test.ts` including exact mg/g/kg and ml/L arithmetic. No existing price or product was changed.
+- Add a Murabba Jaat category and a Chai & Herbal Teas sub-category inside Herbs & Spices, with menu entries and EN/UR/AR labels.
 - Add [the akbarionline.pk reference check](docs/CATALOG_REFERENCE_AKBARI_2026-11-13.md): coverage, an indicative price comparison and its limits, and categories that need an owner decision.
 - Add a short story to each of the 56 occasions and a use note to each of the 22 packaging formats in EN, UR and AR (Arabic needs native review); shown on occasion, design and format pages.
 
