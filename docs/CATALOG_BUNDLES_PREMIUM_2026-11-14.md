@@ -1,6 +1,6 @@
 # Bundles, deals, ready-made occasion boxes and premium items — 14 November 2026
 
-Batch `owner-intake-20261114`: **41 create-only drafts** (34 bundles, deals and boxes; 7 premium pantry items). File: `src/data/catalogIntake20261114.json`. Importer: `scripts/import-catalog-intake-20261114.ts` (same flags and safety as the earlier batches). Tests: `tests/catalog-intake-20261114.test.ts`.
+Batch `owner-intake-20261114`: **59 create-only drafts** (52 bundles, deals and boxes; 7 premium pantry items). File: `src/data/catalogIntake20261114.json`. Importer: `scripts/import-catalog-intake-20261114.ts` (same flags and safety as the earlier batches). Tests: `tests/catalog-intake-20261114.test.ts`.
 
 Every product is `status: draft`, `active: false`, with a placeholder image, full EN/UR/AR copy and `claimsVerification: unverified`. Nothing is published, and no existing product or price was changed.
 
@@ -100,3 +100,14 @@ Each of the five occasions the storefront filters on has ready-made boxes: Ramad
 ## Rates noted on live seeds (not changed)
 
 Several live oil seeds carry the same price for different bottle sizes (for example `oil-sesame` is 700 for both 100 ml and 250 ml, and many oils are 700 per 100 ml). These look like placeholders. The hair-oil and oil-discovery sets use the smallest bottle price, so they will need a re-price once the oil rates are set.
+
+
+## Update 14 November (later): descriptive names and the visit range
+
+- Every bundle name now lists what is inside and its weight (for example "Almond, Cashew & Walnut Trio, 750 g").
+- Each bundle description has three parts: a summary, **What's inside** (each item, its quantity and its everyday role) and **Why this set**. All three languages. No health claims.
+- 18 new drafts for visiting and hosting, collection `visit-gifts`: hospital and get-well baskets (five sizes from PKR 1,000 to about 5,300), small, classic and premium host gifts, a mithai box, a dawat host gift, a rishta visit box, new home, thank-you, teacher, Eid visit, visiting parents, condolence visit and a 2.1 kg family hamper.
+- Get-well boxes carry a care note: ask the family about any diet the patient has been given before choosing items.
+- The condolence box is the most sensitive item in the range. Keep it, rename it or drop it as you decide.
+- The product page now shows a **What's inside** list with a photo, a link and the exact quantity for each component.
+- Earlier seed bundles are not changed here; see [the copy upgrade proposal](BUNDLE_COPY_UPGRADE_PROPOSAL_2026-11-14.md).

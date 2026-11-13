@@ -440,9 +440,9 @@ const entries = [
   ],
   [
     "supplierName",
-    "Supplier name",
-    "سپلائر کا نام",
-    "اسم المورد"
+    "Vendor / supplier name (private)",
+    "وینڈر / سپلائر کا نام (نجی)",
+    "اسم البائع / المورد (خاص)"
   ],
   [
     "supplierCost",

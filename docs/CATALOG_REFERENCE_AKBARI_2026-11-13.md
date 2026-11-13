@@ -100,7 +100,7 @@ Rates are **per kg for solids and per litre for oils**; pack prices are computed
 | California Almonds (American Badam) | nuts / kernels-and-nuts | 3,800 per kg | A |
 | Paper-Shell Almonds (Kagzi Badam) | nuts / kernels-and-nuts | 1,900 per kg | P |
 | Mamra Almonds | nuts / kernels-and-nuts | 6,500 per kg | E |
-| Chilgoza Pine Nuts, In Shell | nuts / kernels-and-nuts | 10,000 per kg | O |
+| Chilgoza (Pine Nuts), In Shell | nuts / kernels-and-nuts | 10,000 per kg | O |
 | Sundarkhani Raisins | nuts / dried-fruits | 1,650 per kg | P |
 | Roasted Peanuts, In Shell (Mungphali) | snacks-seeds / snack-seeds | 800 per kg | P |
 | Roasted Chana, Skinless | snacks-seeds / snack-seeds | 800 per kg | A |
@@ -111,7 +111,7 @@ Cross-check with press reports: Pakistani retail dry-fruit rates reported in Oct
 
 ## Chilgoza: needs an owner decision
 
-The owner's rate, updated on 13 Nov 2026 from 7,000 to PKR 10,000 per kg, is entered on the new draft **Chilgoza Pine Nuts, In Shell**. The existing live listing `pine-nuts` (kernels) is PKR 4,500 per 100 g and 11,000 per 250 g in the compiled catalogue, which is PKR 45,000 per kg. It was **not changed**. If 10,000 per kg was meant for that listing, change it in the admin; press reports from Oct 2024 put in-shell chilgoza at PKR 16,000–20,000 per kg, so 10,000 is still below that range and should be re-checked against the current market.
+The owner's rate, updated on 13 Nov 2026 from 7,000 to PKR 10,000 per kg, is entered on the new draft **Chilgoza (Pine Nuts), In Shell**. The existing live listing `pine-nuts` (kernels) is PKR 4,500 per 100 g and 11,000 per 250 g in the compiled catalogue, which is PKR 45,000 per kg. It was **not changed**. If 10,000 per kg was meant for that listing, change it in the admin; press reports from Oct 2024 put in-shell chilgoza at PKR 16,000–20,000 per kg, so 10,000 is still below that range and should be re-checked against the current market.
 
 ## Batch 20261110 (ChatGPT's 17 drafts) completed
 

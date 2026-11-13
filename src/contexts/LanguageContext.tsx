@@ -62,7 +62,7 @@ const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     heroHeadlinePart2: 'Pure Elegance',
     heroSubtitle: 'Experience the rich taste of handpicked Iranian pistachios, Chilean walnuts, and roasted cashews. Delivered fresh across Lahore.',
     heroSearchLabel: 'Search luxury dry fruits catalogue',
-    searchPlaceholder1: 'Search Iranian Pistachios, Pine Nuts (Chilgoza)...',
+    searchPlaceholder1: 'Search Iranian Pistachios, Chilgoza (Pine Nuts)...',
     searchPlaceholder2: 'Search Chilean Walnuts & Royal Almonds...',
     searchPlaceholder3: 'Search Bespoke Gift Boxes & Deals...',
     searchPlaceholder4: 'Search Kashmiri Saffron & Panjgur Amber Dates...',

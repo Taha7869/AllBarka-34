@@ -5,7 +5,7 @@ Read this first, then `docs/celebrations/BACKEND_SPEC.md` (its section 0 rules a
 ## State
 
 - Branch `claude/celebrations-foundation-20261112` (latest commit on origin). No pull request exists, hosted CI has never run on it, nothing is deployed. `launch` and `main` are both at `5e63490` (22 October).
-- Compiled catalogue: 97 products. Drafts in the repository: **123** in three create-only batches (`20261110`: 17, `20261113`: 65, `20261114`: 41). Live Firestore count: **unmeasured**.
+- Compiled catalogue: 97 products. Drafts in the repository: **141** in three create-only batches (`20261110`: 17, `20261113`: 65, `20261114`: 59). Live Firestore count: **unmeasured**.
 - Local gates passed on the last run: `tsc --noEmit`, `npm run lint:hooks`, `npm run build` (with the privacy audit), `node scripts/run-all-tests.mjs` (113 test files, 36 production checks). Restore evidence afterwards: `git checkout -- docs/evidence/error-surfaces`.
 - Tooling: Node 24 (`/opt/node24/bin` in the cloud workspace), run TypeScript with `node --import tsx --test <file>`.
 

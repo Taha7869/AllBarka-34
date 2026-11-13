@@ -1584,7 +1584,7 @@
   {
     "product_id": "pine-nuts-100g",
     "base_product_id": "pine-nuts",
-    "name": "Pine Nuts (Chilgoza) (100g)",
+    "name": "Chilgoza (Pine Nuts) (100g)",
     "name_ur": "چلغوزہ",
     "category": "nuts",
     "unit": "weight",
@@ -1592,13 +1592,13 @@
     "price": 4500,
     "wholesale_per_kg": 0,
     "stock_qty": 100,
-    "aliases": "pine-nuts, Pine Nuts (Chilgoza), چلغوزہ, حبوب الصنوبر, nuts",
+    "aliases": "pine-nuts, Chilgoza (Pine Nuts), چلغوزہ, حبوب الصنوبر, nuts",
     "active": true
   },
   {
     "product_id": "pine-nuts-250g",
     "base_product_id": "pine-nuts",
-    "name": "Pine Nuts (Chilgoza) (250g)",
+    "name": "Chilgoza (Pine Nuts) (250g)",
     "name_ur": "چلغوزہ",
     "category": "nuts",
     "unit": "weight",
@@ -1606,7 +1606,7 @@
     "price": 11000,
     "wholesale_per_kg": 0,
     "stock_qty": 100,
-    "aliases": "pine-nuts, Pine Nuts (Chilgoza), چلغوزہ, حبوب الصنوبر, nuts",
+    "aliases": "pine-nuts, Chilgoza (Pine Nuts), چلغوزہ, حبوب الصنوبر, nuts",
     "active": true
   },
   {

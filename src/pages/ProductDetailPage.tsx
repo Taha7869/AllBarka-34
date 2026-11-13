@@ -1,4 +1,5 @@
 import BundleContentsSummary from '../components/BundleContentsSummary';
+import BundleInsideList from '../components/BundleInsideList';
 import { readBundleFormat } from '../lib/merchandisingPresentation';
 import CartAddButton from '../components/CartAddButton';
 import { readProductDetailHandoff } from '../lib/productDetailHandoff';
@@ -446,7 +447,7 @@ export default function ProductDetailPage() {
               <h1 dir="auto" className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold text-[var(--color-primary,#042821)] dark:text-[var(--color-text-primary,#F6F1EA)] leading-tight mb-2">
                 {getLocalized(product, 'name', language)}
               </h1>
-              <p dir="auto" className="text-sm text-[var(--color-text-secondary,#635B52)] dark:text-[var(--color-text-secondary,#B4C0BC)] font-normal leading-relaxed">
+              <p dir="auto" className="whitespace-pre-line text-sm text-[var(--color-text-secondary,#635B52)] dark:text-[var(--color-text-secondary,#B4C0BC)] font-normal leading-relaxed">
                 {getLocalized(product, 'desc', language)}
               </p>
 
@@ -460,6 +461,7 @@ export default function ProductDetailPage() {
               )}
 
               <BundleContentsSummary product={product} />
+              <BundleInsideList product={product} />
               {!readBundleFormat(product) && getLocalized(product, 'contents', language) && (
                 <div className="mt-2.5 p-3 rounded-xl bg-[var(--color-surface,#FFFCF7)] dark:bg-[#1A201E] border border-[var(--color-accent,#C7982F)]/25 text-xs text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)]">
                   <span className="font-bold text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] uppercase tracking-wider text-[10px] block mb-0.5">

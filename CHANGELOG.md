@@ -1,9 +1,15 @@
 ## 14 November 2026 — Bundles, deals, occasion boxes and premium items
 
+- Name every bundle after what is inside and add "What's inside" and "Why this set" to each description (EN, UR, AR).
+- Add 18 visit, host-gift and get-well drafts (collection `visit-gifts`), bringing batch 20261114 to 59 drafts.
+- Add a "What's inside" list (photo, link, quantity) to the product page for bundles and boxes, and keep line breaks in the description.
+- Relabel the private supplier field "Vendor / supplier name (private)" so the owner can record the vendor of each item.
+- Rename "pine nuts" to "Chilgoza (Pine Nuts)" in the seeds, footer and search placeholder.
+- Add a proposal for upgrading the earlier seed bundles ([copy upgrade proposal](docs/BUNDLE_COPY_UPGRADE_PROPOSAL_2026-11-14.md)).
 - Add a create-only draft intake of 41 products (batch 20261114): 9 deals, 12 themed sets and 13 ready-made boxes for Ramadan and Eid, Nikkah and wedding, Umrah, birth and Aqeeqah, and corporate gifting, plus 7 premium items (Afghan and Spanish saffron, Gilgit shilajit, Korean red ginseng, mulethi, Safawi and Sukkari dates). Bundle prices are computed from the component reference rates and can be reproduced by `src/lib/bundleReferencePricing.ts`; a deal always costs less than its parts and its badge states the real saving. See [the bundles document](docs/CATALOG_BUNDLES_PREMIUM_2026-11-14.md).
 - Keep `componentIds` when a dynamic product is validated (it was silently dropped), so stored bundles can link to their components.
 - Set in-shell chilgoza to the owner's PKR 10,000/kg.
-- Extend the master intake register to 123 rows with the draft components each bundle needs published first.
+- Extend the master intake register to 141 rows with the draft components each bundle needs published first.
 - Record the parked items (pulses and others) in [the next-batch roadmap](docs/ROADMAP_NEXT_BATCH.md).
 
 ## 13 November 2026 — Catalogue batch 2 and occasion stories

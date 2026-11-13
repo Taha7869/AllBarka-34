@@ -137,3 +137,32 @@ test('component ids are kept for stored bundles and bad ids are rejected', async
     assert.throws(() => validateDynamicProduct({ ...source, componentIds: bad }), /INVALID_COMPONENT_IDS/);
   }
 });
+
+test('every bundle name and description explains what is inside and why, in all three languages', () => {
+  const catalog = new Map<string, any>();
+  for (const p of [...PRODUCTS, ...batchOne.newProducts, ...batchTwo.newProducts, ...manifest.newProducts] as any[]) catalog.set(p.id, p);
+  for (const b of bundles() as any[]) {
+    assert.ok(b.name_en.length >= 18 && b.name_en.length <= 90, `${b.id} name length ${b.name_en.length}`);
+    for (const l of ['en', 'ur', 'ar']) {
+      const d: string = b[`desc_${l}`];
+      assert.ok(d.includes('\n\n'), `${b.id} desc_${l} has paragraphs`);
+      const inside = d.split('\n\n').length;
+      assert.ok(inside >= 3, `${b.id} desc_${l} needs summary, inside and why`);
+      for (const c of b.components as any[]) assert.ok(catalog.has(c.productId), `${b.id} -> ${c.productId}`);
+    }
+    // the English description names every component's quantity so the list is checkable against the price build
+    const e = pricing[b.id].components;
+    for (const line of e) assert.ok(b.desc_en.includes(`${line.quantity} ${line.unit}`), `${b.id} desc mentions ${line.quantity} ${line.unit}`);
+  }
+});
+
+test('visit, host and get-well range covers visits, sick visits, new home, thanks and condolence with an elders-safe care note', () => {
+  const visit = (bundles() as any[]).filter(b => b.collections.includes('visit-gifts'));
+  assert.ok(visit.length >= 15, `visit range has ${visit.length}`);
+  const ids = new Set(visit.map(b => b.id));
+  for (const id of ['gift-visit-small', 'gift-visit-classic', 'gift-visit-premium-host', 'gift-ayadat-basket', 'gift-visit-hospital-light', 'gift-ayadat-premium-hamper', 'gift-rishta-visit', 'gift-new-home-blessing', 'gift-thank-you-tea', 'gift-condolence-visit', 'gift-eid-visit', 'gift-parents-visit']) assert.ok(ids.has(id), id);
+  const spread = visit.map(b => pricing[b.id].pricePKR).sort((a, b) => a - b);
+  assert.ok(spread[0] <= 1000 && spread[spread.length - 1] >= 5000, `price spread ${spread[0]}-${spread[spread.length - 1]}`);
+  for (const b of visit.filter(v => v.id.startsWith('gift-ayadat') || v.id === 'gift-visit-hospital-light')) assert.match(b.recipe_en, /diet/i, b.id);
+  for (const b of visit) assert.ok(b.keywords.includes('visit gift'), b.id);
+});

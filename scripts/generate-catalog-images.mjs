@@ -1,4 +1,4 @@
-/** Editorial SVG placeholders for catalog additions. Run with: node --import tsx scripts/generate-catalog-images.mjs herbs-spices */
+/** Editorial SVG placeholders for catalog additions. Run with: node --import tsx scripts/generate-catalog-images.mjs herbs-spices [--only=id1,id2] */
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { chromium } from 'playwright-core';
@@ -16,7 +16,9 @@ const fonts = {
 };
 const out = resolve('public/images/products');
 mkdirSync(out, { recursive: true });
-const products = PRODUCTS.filter(p => p.category === category && (p.image === null || (refreshGenerated && p.image === `/images/products/${p.id}.svg`)));
+const only = (process.argv.find(arg => arg.startsWith('--only=')) || '').slice(7).split(',').filter(Boolean);
+// --only=<id,id> redraws just those labels (for example after a rename) and merges them into the existing report.
+const products = PRODUCTS.filter(p => p.category === category && (only.length ? only.includes(p.id) : (p.image === null || (refreshGenerated && p.image === `/images/products/${p.id}.svg`))));
 const browser = await chromium.launch({ executablePath: chrome, headless: true, args: ['--no-sandbox'] });
 const page = await browser.newPage();
 await page.goto('about:blank');
@@ -102,7 +104,7 @@ try {
     const file = resolve(`public${path}`);
     const svg = catalogImageScene(product, label.uri);
     const bounds = [...label.boxes, ...await checkSvgText(svg)];
-    if (!existsSync(file) || refreshGenerated) writeFileSync(file, svg, 'utf8');
+    if (!existsSync(file) || refreshGenerated || only.includes(product.id)) writeFileSync(file, svg, 'utf8');
     checks.push({ id: product.id, variant: 'primary', boxes: bounds.length, bounds, safe: true, fontReady: label.fontReady, path });
     const configured = manifest[product.id];
     manifest[product.id] = { images: [path], videoUrl: configured?.videoUrl || '',

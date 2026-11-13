@@ -48,7 +48,7 @@ const defaultSections: FooterSection[] = [
       { name: "Wild Skardu Walnuts", href: "/shop/walnuts" },
       { name: "California Jumbo Almonds", href: "/shop/almonds" },
       { name: "Pure Hunza Apricots", href: "/shop/apricots", badge: "Seasonal" },
-      { name: "Royal Pine Nuts (Chilgoza)", href: "/shop/pine-nuts" },
+      { name: "Royal Chilgoza (Pine Nuts)", href: "/shop/pine-nuts" },
     ],
   },
   {

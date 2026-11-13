@@ -167,7 +167,7 @@ export interface Product {
   packagingSubcategory?: 'tin' | 'tabarruk' | 'wedding' | 'baby' | 'acrylic' | string | null;
   recipeIngredients?: RecipeIngredient[];
   filledRecipes?: Record<string, RecipeIngredient[]>;
-  components?: Array<string | { productId: string; quantity?: number; unitWeightG?: number }>;
+  components?: Array<string | { productId: string; quantity?: number; unitWeightG?: number; unitVolumeMl?: number }>;
   componentIds?: string[];
   contents?: string[];
   badge?: string;
