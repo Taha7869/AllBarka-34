@@ -75,3 +75,20 @@ test('Murabba Jaat is its own category and chai is a sub-category of Herbs & Spi
   assert.equal(teas.length, 11);
   for (const p of teas) assert.ok(p.category === 'herbs-spices' && productMatchesCategory(p as any, 'herbs-spices') && productMatchesCategory(p as any, 'herbal-teas'));
 });
+
+import { countLiveCatalog } from '../src/lib/liveCatalogCount';
+
+test('live catalogue census is read-only and reports products the repository does not know', async () => {
+  const { db, records } = memoryFirestore({
+    'products/pista': { category: 'nuts', name_en: 'Pista', active: true },
+    'products/owner-added-box': { category: 'celebration-boxes', name_en: 'Owner box', active: true },
+    'products/owner-draft': { category: 'oils', name_en: 'Draft', status: 'draft' },
+  });
+  const before = structuredClone([...records]);
+  const report = await countLiveCatalog(db);
+  assert.equal(report.total, 3);
+  assert.deepEqual(report.byState, { published: 2, draft: 1, archived: 0, inactive: 0 });
+  assert.deepEqual(report.notInRepo.map(p => p.id).sort(), ['owner-added-box', 'owner-draft']);
+  assert.ok(report.repoItemsNotLive > 90);
+  assert.deepEqual([...records], before);
+});

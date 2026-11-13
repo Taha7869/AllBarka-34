@@ -4,6 +4,7 @@
 - Add a Murabba Jaat category and a Chai & Herbal Teas sub-category inside Herbs & Spices, with menu entries and EN/UR/AR labels.
 - Add [the akbarionline.pk reference check](docs/CATALOG_REFERENCE_AKBARI_2026-11-13.md): coverage, an indicative price comparison and its limits, and categories that need an owner decision.
 - Add a short story to each of the 56 occasions and a use note to each of the 22 packaging formats in EN, UR and AR (Arabic needs native review); shown on occasion, design and format pages.
+- Add a read-only live catalogue census (`scripts/count-live-catalog.ts`) that counts the Firestore `products` collection by state and category and lists products the repository does not know about, to reconcile the live count with the repository.
 
 ## 12 November 2026 — CEL-WEB1b design page, all-occasion briefs and backend specification
 
