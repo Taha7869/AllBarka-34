@@ -2,6 +2,7 @@ import { writeFileSync } from 'node:fs';
 import { intakeProducts20261110 } from '../src/lib/catalogIntake20261110';
 import { intakeProducts20261113 } from '../src/lib/catalogIntake20261113';
 import { intakeProducts20261114 } from '../src/lib/catalogIntake20261114';
+import { intakeProducts20261115 } from '../src/lib/catalogIntake20261115';
 import { PRODUCTS } from '../src/data/products';
 
 // Offline, read-only: one row per draft product so none is left without a price, photo or decision.
@@ -18,7 +19,7 @@ const action: Record<string, string> = {
   'dates-safawi': 'Confirm origin and crop year from the supplier', 'dates-sukkari': 'Confirm origin and crop year from the supplier',
   'mulethi-licorice-root': 'Confirm origin from the supplier',
 };
-for (const [batch, list] of [['20261110', intakeProducts20261110()], ['20261113', intakeProducts20261113()], ['20261114', intakeProducts20261114()]] as const) {
+for (const [batch, list] of [['20261110', intakeProducts20261110()], ['20261113', intakeProducts20261113()], ['20261114', intakeProducts20261114()], ['20261115', intakeProducts20261115()]] as const) {
   for (const p of list as any[]) {
     const c = p.commerce;
     const bundle = p.isBundle === true;

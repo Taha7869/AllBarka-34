@@ -1,0 +1,1592 @@
+{
+ "batch": "owner-intake-20261115",
+ "purpose": "Create-only draft import of the items on the owner's supplier list that the catalogue did not have: spices (including white pepper), Kandahari dried plums, Mission figs, dried blueberries and kiwi, macadamia, brazil nuts, pecans and almond slices. Every product stays a draft until the owner publishes it.",
+ "newProducts": [
+  {
+   "id": "lal-mirch-powder",
+   "name_en": "Red Chilli Powder (Lal Mirch)",
+   "name_ur": "لال مرچ پاؤڈر",
+   "name_ar": "مسحوق الفلفل الأحمر",
+   "desc_en": "Finely ground dried red chilli, the everyday heat of the Pakistani kitchen. It gives colour and a clean, sharp heat to salans, kebabs, marinades and chaat, and is sold in packs sized for a household that cooks daily.",
+   "desc_ur": "باریک پسی ہوئی خشک لال مرچ، پاکستانی باورچی خانے کی روزمرہ تیزی۔ یہ سالن، کباب، میرینیڈ اور چاٹ کو رنگ اور صاف تیز ذائقہ دیتی ہے، اور روز پکانے والے گھر کے حساب سے پیکوں میں ملتی ہے۔",
+   "desc_ar": "فلفل أحمر جاف مطحون ناعمًا، حرارة المطبخ الباكستاني اليومية. يمنح المرق والكباب والتتبيلات والشاط لونًا وحرارة نظيفة، ويُباع بعبوات تناسب بيتًا يطبخ يوميًا.",
+   "recipe_en": "Add half to one teaspoon to a pot of salan at the start of cooking, or mix into a marinade with yoghurt and salt. Start small: the heat differs from batch to batch.",
+   "recipe_ur": "سالن کی ہانڈی میں پکانے کے آغاز میں آدھا سے ایک چائے کا چمچ ڈالیں، یا دہی اور نمک کے ساتھ میرینیڈ میں ملائیں۔ کم سے شروع کریں کیونکہ تیزی ہر کھیپ میں مختلف ہوتی ہے۔",
+   "recipe_ar": "أضف نصف إلى ملعقة صغيرة إلى قدر المرق في بداية الطبخ، أو اخلطها في تتبيلة مع اللبن والملح. ابدأ بالقليل فالحرارة تختلف من دفعة إلى أخرى.",
+   "sourcingDetails_en": "Ground from whole dried red chillies. The chilli variety and heat level of the current lot are confirmed on request. Exact batch source and grade are confirmed on request; individual farm traceability is not stated.",
+   "sourcingDetails_ur": "پوری خشک لال مرچ سے پیسی گئی۔ موجودہ کھیپ کی مرچ کی قسم اور تیزی کا درجہ درخواست پر بتایا جاتا ہے۔ موجودہ کھیپ کا درست ماخذ اور درجہ درخواست پر بتایا جاتا ہے؛ کسی خاص فارم کا سراغ نہیں بتایا جاتا۔",
+   "sourcingDetails_ar": "مطحونة من فلفل أحمر جاف كامل. يُؤكَّد نوع الفلفل ودرجة الحرارة للدفعة الحالية عند الطلب. يُؤكَّد المصدر الدقيق ودرجة الدفعة عند الطلب؛ ولا تُذكر مزرعة بعينها.",
+   "origin_en": "Hand-Packed in Pakistan",
+   "origin_ur": "پاکستان میں ہاتھ سے پیک شدہ",
+   "origin_ar": "معبأ يدويًا في باكستان",
+   "careKind": "groundSpice",
+   "category": "herbs-spices",
+   "collections": [
+    "ground-spices"
+   ],
+   "keywords": [
+    "lal mirch",
+    "red chilli powder",
+    "chilli powder",
+    "mirch",
+    "spice",
+    "Red Chilli Powder (Lal Mirch)",
+    "لال مرچ پاؤڈر"
+   ],
+   "image": "/images/product-placeholder.svg",
+   "imageName": "/images/product-placeholder.svg",
+   "galleryImages": [],
+   "prices": {},
+   "variants": [],
+   "wholesale": 0,
+   "quoteOnly": false,
+   "orderMode": "standard",
+   "status": "draft",
+   "active": false,
+   "allowCustomWeight": false,
+   "pricePer100g": 140,
+   "claimsVerification": {
+    "status": "unverified"
+   },
+   "commerce": {
+    "version": 1,
+    "kind": "food",
+    "pricingMode": "calculated",
+    "quantityMode": "fixed",
+    "baseQuantity": 1,
+    "baseUnit": "kg",
+    "basePrice": 1400,
+    "options": [
+     {
+      "label": "100g",
+      "quantity": 100,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "250g",
+      "quantity": 250,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "500g",
+      "quantity": 500,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "1kg",
+      "quantity": 1,
+      "unit": "kg",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     }
+    ],
+    "custom": null
+   },
+   "importBatch": "owner-intake-20261115",
+   "seo": {
+    "title_en": "Red Chilli Powder (Lal Mirch) | AllBarka",
+    "title_ur": "لال مرچ پاؤڈر | البرکہ",
+    "title_ar": "مسحوق الفلفل الأحمر | البركة",
+    "imageAlt_en": "Red Chilli Powder (Lal Mirch) — product image coming soon",
+    "imageAlt_ur": "لال مرچ پاؤڈر — تصویر جلد آ رہی ہے",
+    "imageAlt_ar": "مسحوق الفلفل الأحمر — الصورة قريبًا"
+   }
+  },
+  {
+   "id": "dadar-mirch-dry-red-chilli",
+   "name_en": "Dry Red Chillies, Whole (Dadar Mirch)",
+   "name_ur": "ثابت لال مرچ (دادر مرچ)",
+   "name_ar": "فلفل أحمر جاف كامل",
+   "desc_en": "Whole dried red chillies with the stems on. Fry them in hot oil for a smoky tarka, crush them into pickles and chutneys, or grind them at home when you want chilli powder with no filler.",
+   "desc_ur": "ڈنڈی سمیت ثابت خشک لال مرچیں۔ انہیں گرم تیل میں تل کر دھواں دار تڑکا بنائیں، اچار اور چٹنی میں کوٹ کر ڈالیں، یا گھر پر پیس کر بغیر ملاوٹ لال مرچ پاؤڈر بنائیں۔",
+   "desc_ar": "فلفل أحمر جاف كامل بعيدانه. قلّه في زيت ساخن لتتبيلة مدخنة، أو اهرسه للمخللات والصلصات، أو اطحنه في البيت لتحصل على فلفل مطحون دون إضافات.",
+   "recipe_en": "Drop two or three whole chillies into hot oil for a few seconds before adding cumin and onions. Break them open if you want more heat in the pot.",
+   "recipe_ur": "گرم تیل میں زیرہ اور پیاز ڈالنے سے پہلے دو تین ثابت مرچیں چند سیکنڈ کے لیے ڈالیں۔ ہانڈی میں زیادہ تیزی چاہیے تو انہیں توڑ لیں۔",
+   "recipe_ar": "ضع حبتين أو ثلاثًا في زيت ساخن لثوانٍ قبل إضافة الكمون والبصل. اكسرها إن أردت حرارة أكثر في القدر.",
+   "sourcingDetails_en": "Sold as whole dried red chillies. The variety and heat level of the current lot are confirmed on request. Exact batch source and grade are confirmed on request; individual farm traceability is not stated.",
+   "sourcingDetails_ur": "ثابت خشک لال مرچ کے طور پر فروخت۔ موجودہ کھیپ کی قسم اور تیزی کا درجہ درخواست پر بتایا جاتا ہے۔ موجودہ کھیپ کا درست ماخذ اور درجہ درخواست پر بتایا جاتا ہے؛ کسی خاص فارم کا سراغ نہیں بتایا جاتا۔",
+   "sourcingDetails_ar": "تُباع كفلفل أحمر جاف كامل. يُؤكَّد النوع ودرجة الحرارة للدفعة الحالية عند الطلب. يُؤكَّد المصدر الدقيق ودرجة الدفعة عند الطلب؛ ولا تُذكر مزرعة بعينها.",
+   "origin_en": "Hand-Packed in Pakistan",
+   "origin_ur": "پاکستان میں ہاتھ سے پیک شدہ",
+   "origin_ar": "معبأ يدويًا في باكستان",
+   "careKind": "wholeSpice",
+   "category": "herbs-spices",
+   "collections": [
+    "whole-spices"
+   ],
+   "keywords": [
+    "dadar mirch",
+    "dry red chilli",
+    "sabut lal mirch",
+    "whole chilli",
+    "tarka",
+    "Dry Red Chillies, Whole (Dadar Mirch)",
+    "ثابت لال مرچ (دادر مرچ)"
+   ],
+   "image": "/images/product-placeholder.svg",
+   "imageName": "/images/product-placeholder.svg",
+   "galleryImages": [],
+   "prices": {},
+   "variants": [],
+   "wholesale": 0,
+   "quoteOnly": false,
+   "orderMode": "standard",
+   "status": "draft",
+   "active": false,
+   "allowCustomWeight": false,
+   "pricePer100g": 150,
+   "claimsVerification": {
+    "status": "unverified"
+   },
+   "commerce": {
+    "version": 1,
+    "kind": "food",
+    "pricingMode": "calculated",
+    "quantityMode": "fixed",
+    "baseQuantity": 1,
+    "baseUnit": "kg",
+    "basePrice": 1500,
+    "options": [
+     {
+      "label": "100g",
+      "quantity": 100,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "250g",
+      "quantity": 250,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "500g",
+      "quantity": 500,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "1kg",
+      "quantity": 1,
+      "unit": "kg",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     }
+    ],
+    "custom": null
+   },
+   "importBatch": "owner-intake-20261115",
+   "seo": {
+    "title_en": "Dry Red Chillies, Whole (Dadar Mirch) | AllBarka",
+    "title_ur": "ثابت لال مرچ (دادر مرچ) | البرکہ",
+    "title_ar": "فلفل أحمر جاف كامل | البركة",
+    "imageAlt_en": "Dry Red Chillies, Whole (Dadar Mirch) — product image coming soon",
+    "imageAlt_ur": "ثابت لال مرچ (دادر مرچ) — تصویر جلد آ رہی ہے",
+    "imageAlt_ar": "فلفل أحمر جاف كامل — الصورة قريبًا"
+   }
+  },
+  {
+   "id": "coriander-seeds-whole",
+   "name_en": "Coriander Seeds, Whole (Dhaniya Sabut)",
+   "name_ur": "ثابت دھنیا",
+   "name_ar": "كزبرة كاملة",
+   "desc_en": "Whole dried coriander seeds with a warm, citrusy aroma. Toast and crush them for fresh dhaniya powder, add them whole to pickles and stews, or use them in garam masala blends.",
+   "desc_ur": "گرم، لیموں جیسی خوشبو والا ثابت خشک دھنیا۔ بھون کر کوٹیں تو تازہ دھنیا پاؤڈر بنتا ہے، اچار اور سالن میں ثابت ڈالیں، یا گرم مصالحے کے آمیزوں میں استعمال کریں۔",
+   "desc_ar": "بذور كزبرة جافة كاملة بعطر دافئ وحمضي. حمّصها واهرسها لمسحوق كزبرة طازج، أو أضفها كاملة للمخللات والأطباق، أو استخدمها في خلطات التوابل.",
+   "recipe_en": "Dry-roast in a pan for one to two minutes until fragrant, cool, then crush in a mortar. Use whole seeds in pickles, or a teaspoon in the tarka.",
+   "recipe_ur": "کڑاہی میں ایک دو منٹ خشک بھونیں جب تک خوشبو آئے، ٹھنڈا کریں، پھر کھرل میں کوٹیں۔ اچار میں ثابت دانے ڈالیں، یا تڑکے میں ایک چائے کا چمچ۔",
+   "recipe_ar": "حمّصها جافة في مقلاة دقيقة أو دقيقتين حتى تفوح رائحتها، بردها ثم اهرسها في هاون. استخدم الحبوب كاملة في المخللات أو ملعقة صغيرة في التتبيلة.",
+   "sourcingDetails_en": "Sold as whole dried coriander seed. The origin and crop of the current lot are confirmed on request. Exact batch source and grade are confirmed on request; individual farm traceability is not stated.",
+   "sourcingDetails_ur": "ثابت خشک دھنیے کے دانوں کے طور پر فروخت۔ موجودہ کھیپ کا ماخذ اور فصل درخواست پر بتائی جاتی ہے۔ موجودہ کھیپ کا درست ماخذ اور درجہ درخواست پر بتایا جاتا ہے؛ کسی خاص فارم کا سراغ نہیں بتایا جاتا۔",
+   "sourcingDetails_ar": "تُباع كبذور كزبرة جافة كاملة. يُؤكَّد منشأ ومحصول الدفعة الحالية عند الطلب. يُؤكَّد المصدر الدقيق ودرجة الدفعة عند الطلب؛ ولا تُذكر مزرعة بعينها.",
+   "origin_en": "Hand-Packed in Pakistan",
+   "origin_ur": "پاکستان میں ہاتھ سے پیک شدہ",
+   "origin_ar": "معبأ يدويًا في باكستان",
+   "careKind": "wholeSpice",
+   "category": "herbs-spices",
+   "collections": [
+    "whole-spices"
+   ],
+   "keywords": [
+    "dhaniya",
+    "coriander",
+    "dhania sabut",
+    "coriander seeds",
+    "spice",
+    "Coriander Seeds, Whole (Dhaniya Sabut)",
+    "ثابت دھنیا"
+   ],
+   "image": "/images/product-placeholder.svg",
+   "imageName": "/images/product-placeholder.svg",
+   "galleryImages": [],
+   "prices": {},
+   "variants": [],
+   "wholesale": 0,
+   "quoteOnly": false,
+   "orderMode": "standard",
+   "status": "draft",
+   "active": false,
+   "allowCustomWeight": false,
+   "pricePer100g": 90,
+   "claimsVerification": {
+    "status": "unverified"
+   },
+   "commerce": {
+    "version": 1,
+    "kind": "food",
+    "pricingMode": "calculated",
+    "quantityMode": "fixed",
+    "baseQuantity": 1,
+    "baseUnit": "kg",
+    "basePrice": 900,
+    "options": [
+     {
+      "label": "100g",
+      "quantity": 100,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "250g",
+      "quantity": 250,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "500g",
+      "quantity": 500,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "1kg",
+      "quantity": 1,
+      "unit": "kg",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     }
+    ],
+    "custom": null
+   },
+   "importBatch": "owner-intake-20261115",
+   "seo": {
+    "title_en": "Coriander Seeds, Whole (Dhaniya Sabut) | AllBarka",
+    "title_ur": "ثابت دھنیا | البرکہ",
+    "title_ar": "كزبرة كاملة | البركة",
+    "imageAlt_en": "Coriander Seeds, Whole (Dhaniya Sabut) — product image coming soon",
+    "imageAlt_ur": "ثابت دھنیا — تصویر جلد آ رہی ہے",
+    "imageAlt_ar": "كزبرة كاملة — الصورة قريبًا"
+   }
+  },
+  {
+   "id": "coriander-powder",
+   "name_en": "Coriander Powder (Dhaniya Powder)",
+   "name_ur": "دھنیا پاؤڈر",
+   "name_ar": "مسحوق الكزبرة",
+   "desc_en": "Ground coriander seed, mild and slightly sweet. It is the base that thickens and rounds out salans, daals and curries, and balances the heat of chilli.",
+   "desc_ur": "پسا ہوا دھنیا، ہلکا اور ذرا میٹھا۔ یہ سالن، دال اور کری کو گاڑھا اور متوازن کرنے والی بنیاد ہے اور مرچ کی تیزی کو سنبھالتی ہے۔",
+   "desc_ar": "كزبرة مطحونة، خفيفة وحلوة قليلًا. هي الأساس الذي يُكثّف المرق والعدس والكاري ويوازن حرارة الفلفل.",
+   "recipe_en": "Add one to two teaspoons per serving after the onions have browned, and fry for a minute with a splash of water so it does not catch.",
+   "recipe_ur": "پیاز بھوری ہونے کے بعد فی کس ایک سے دو چائے کے چمچ ڈالیں اور تھوڑے پانی کے چھینٹے کے ساتھ ایک منٹ بھونیں تاکہ نہ جلے۔",
+   "recipe_ar": "أضف ملعقة إلى ملعقتين صغيرتين للفرد بعد أن يحمرّ البصل، وقلّبها دقيقة مع رشة ماء حتى لا تحترق.",
+   "sourcingDetails_en": "Ground from whole coriander seed. The origin of the current lot is confirmed on request. Exact batch source and grade are confirmed on request; individual farm traceability is not stated.",
+   "sourcingDetails_ur": "ثابت دھنیے کے دانوں سے پسا ہوا۔ موجودہ کھیپ کا ماخذ درخواست پر بتایا جاتا ہے۔ موجودہ کھیپ کا درست ماخذ اور درجہ درخواست پر بتایا جاتا ہے؛ کسی خاص فارم کا سراغ نہیں بتایا جاتا۔",
+   "sourcingDetails_ar": "مطحونة من بذور كزبرة كاملة. يُؤكَّد منشأ الدفعة الحالية عند الطلب. يُؤكَّد المصدر الدقيق ودرجة الدفعة عند الطلب؛ ولا تُذكر مزرعة بعينها.",
+   "origin_en": "Hand-Packed in Pakistan",
+   "origin_ur": "پاکستان میں ہاتھ سے پیک شدہ",
+   "origin_ar": "معبأ يدويًا في باكستان",
+   "careKind": "groundSpice",
+   "category": "herbs-spices",
+   "collections": [
+    "ground-spices"
+   ],
+   "keywords": [
+    "dhaniya powder",
+    "coriander powder",
+    "dhania",
+    "ground coriander",
+    "spice",
+    "Coriander Powder (Dhaniya Powder)",
+    "دھنیا پاؤڈر"
+   ],
+   "image": "/images/product-placeholder.svg",
+   "imageName": "/images/product-placeholder.svg",
+   "galleryImages": [],
+   "prices": {},
+   "variants": [],
+   "wholesale": 0,
+   "quoteOnly": false,
+   "orderMode": "standard",
+   "status": "draft",
+   "active": false,
+   "allowCustomWeight": false,
+   "pricePer100g": 100,
+   "claimsVerification": {
+    "status": "unverified"
+   },
+   "commerce": {
+    "version": 1,
+    "kind": "food",
+    "pricingMode": "calculated",
+    "quantityMode": "fixed",
+    "baseQuantity": 1,
+    "baseUnit": "kg",
+    "basePrice": 1000,
+    "options": [
+     {
+      "label": "100g",
+      "quantity": 100,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "250g",
+      "quantity": 250,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "500g",
+      "quantity": 500,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "1kg",
+      "quantity": 1,
+      "unit": "kg",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     }
+    ],
+    "custom": null
+   },
+   "importBatch": "owner-intake-20261115",
+   "seo": {
+    "title_en": "Coriander Powder (Dhaniya Powder) | AllBarka",
+    "title_ur": "دھنیا پاؤڈر | البرکہ",
+    "title_ar": "مسحوق الكزبرة | البركة",
+    "imageAlt_en": "Coriander Powder (Dhaniya Powder) — product image coming soon",
+    "imageAlt_ur": "دھنیا پاؤڈر — تصویر جلد آ رہی ہے",
+    "imageAlt_ar": "مسحوق الكزبرة — الصورة قريبًا"
+   }
+  },
+  {
+   "id": "white-pepper-whole",
+   "name_en": "White Pepper, Whole (Safaid Mirch)",
+   "name_ur": "ثابت سفید مرچ",
+   "name_ar": "فلفل أبيض كامل",
+   "desc_en": "Whole white peppercorns, which are black pepper with the dark skin removed. They have a sharper, cleaner heat than black pepper and leave no dark flecks, so they suit creamy soups, white sauces, cream-based dishes and light-coloured marinades.",
+   "desc_ur": "ثابت سفید کالی مرچ، یعنی وہ کالی مرچ جس کا گہرا چھلکا اتار دیا گیا ہو۔ اس کی تیزی کالی مرچ سے زیادہ تیز اور صاف ہوتی ہے اور کالے ذرات نہیں چھوڑتی، اس لیے کریمی سوپ، سفید چٹنی، کریم والے پکوان اور ہلکے رنگ کے میرینیڈ کے لیے موزوں ہے۔",
+   "desc_ar": "حبوب فلفل أبيض كاملة، وهي الفلفل الأسود بعد إزالة القشرة الداكنة. حرارتها أحدّ وأنظف من الأسود ولا تترك نقاطًا داكنة، فتناسب الشوربات الكريمية والصلصات البيضاء والأطباق بالكريمة والتتبيلات الفاتحة.",
+   "recipe_en": "Grind fresh in a pepper mill just before serving, or crush a few peppercorns into a marinade of yoghurt and cream. A little goes a long way.",
+   "recipe_ur": "پیش کرنے سے ذرا پہلے پیپر مل میں تازہ پیسیں، یا چند دانے دہی اور کریم کے میرینیڈ میں کوٹ کر ڈالیں۔ تھوڑی مقدار بہت ہوتی ہے۔",
+   "recipe_ar": "اطحنها طازجة في مطحنة الفلفل قبل التقديم بقليل، أو اهرس بضع حبات في تتبيلة اللبن والكريمة. القليل منها يكفي.",
+   "sourcingDetails_en": "Sold as whole white peppercorns. The origin of the current lot is confirmed on request. Exact batch source and grade are confirmed on request; individual farm traceability is not stated.",
+   "sourcingDetails_ur": "ثابت سفید کالی مرچ کے دانوں کے طور پر فروخت۔ موجودہ کھیپ کا ماخذ درخواست پر بتایا جاتا ہے۔ موجودہ کھیپ کا درست ماخذ اور درجہ درخواست پر بتایا جاتا ہے؛ کسی خاص فارم کا سراغ نہیں بتایا جاتا۔",
+   "sourcingDetails_ar": "تُباع كحبوب فلفل أبيض كاملة. يُؤكَّد منشأ الدفعة الحالية عند الطلب. يُؤكَّد المصدر الدقيق ودرجة الدفعة عند الطلب؛ ولا تُذكر مزرعة بعينها.",
+   "origin_en": "Hand-Packed in Pakistan",
+   "origin_ur": "پاکستان میں ہاتھ سے پیک شدہ",
+   "origin_ar": "معبأ يدويًا في باكستان",
+   "careKind": "wholeSpice",
+   "category": "herbs-spices",
+   "collections": [
+    "whole-spices"
+   ],
+   "keywords": [
+    "safaid mirch",
+    "white pepper",
+    "safed mirch",
+    "peppercorns",
+    "spice",
+    "White Pepper, Whole (Safaid Mirch)",
+    "ثابت سفید مرچ"
+   ],
+   "image": "/images/product-placeholder.svg",
+   "imageName": "/images/product-placeholder.svg",
+   "galleryImages": [],
+   "prices": {},
+   "variants": [],
+   "wholesale": 0,
+   "quoteOnly": false,
+   "orderMode": "standard",
+   "status": "draft",
+   "active": false,
+   "allowCustomWeight": false,
+   "pricePer100g": 450,
+   "claimsVerification": {
+    "status": "unverified"
+   },
+   "commerce": {
+    "version": 1,
+    "kind": "food",
+    "pricingMode": "calculated",
+    "quantityMode": "fixed",
+    "baseQuantity": 1,
+    "baseUnit": "kg",
+    "basePrice": 4500,
+    "options": [
+     {
+      "label": "50g",
+      "quantity": 50,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "100g",
+      "quantity": 100,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "250g",
+      "quantity": 250,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "500g",
+      "quantity": 500,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     }
+    ],
+    "custom": null
+   },
+   "importBatch": "owner-intake-20261115",
+   "seo": {
+    "title_en": "White Pepper, Whole (Safaid Mirch) | AllBarka",
+    "title_ur": "ثابت سفید مرچ | البرکہ",
+    "title_ar": "فلفل أبيض كامل | البركة",
+    "imageAlt_en": "White Pepper, Whole (Safaid Mirch) — product image coming soon",
+    "imageAlt_ur": "ثابت سفید مرچ — تصویر جلد آ رہی ہے",
+    "imageAlt_ar": "فلفل أبيض كامل — الصورة قريبًا"
+   }
+  },
+  {
+   "id": "kamarkas",
+   "name_en": "Kamarkas (Butea Gum)",
+   "name_ur": "کمرکس",
+   "name_ar": "كمركس (صمغ البوتيا)",
+   "desc_en": "Kamarkas is the dried gum of the dhak tree, sold as small amber crystals. Traditionally it is soaked and added to winter sweets such as laddoos, panjeeri and halwa for its texture and as a thickener.",
+   "desc_ur": "کمرکس ڈھاک کے درخت کا خشک گوند ہے، جو چھوٹے عنبری قلموں کی شکل میں بکتا ہے۔ روایتی طور پر اسے بھگو کر لڈو، پنجیری اور حلوے جیسی سردیوں کی مٹھائیوں میں ساخت اور گاڑھا پن لانے کے لیے ڈالا جاتا ہے۔",
+   "desc_ar": "الكمركس صمغ مجفف من شجرة الدهاك يُباع بلورات عنبرية صغيرة. يُنقع تقليديًا ويُضاف إلى حلويات الشتاء كاللدّو والبنجيري والحلوى لقوامه وللتكثيف.",
+   "recipe_en": "Fry a small amount in hot ghee until it puffs up, then crush and fold into laddoo mixture or halwa. Use sparingly because it swells.",
+   "recipe_ur": "تھوڑی مقدار گرم گھی میں پھولنے تک تلیں، پھر کوٹ کر لڈو کے آمیزے یا حلوے میں ملائیں۔ کم استعمال کریں کیونکہ یہ پھولتا ہے۔",
+   "recipe_ar": "قلِّ كمية صغيرة في سمن ساخن حتى تنتفخ، ثم اهرسها وأضفها إلى خليط اللدّو أو الحلوى. استخدمها بحذر لأنها تنتفخ.",
+   "sourcingDetails_en": "Sold as dried gum crystals. The batch and its origin are confirmed on request. Exact batch source and grade are confirmed on request; individual farm traceability is not stated.",
+   "sourcingDetails_ur": "خشک گوند کے قلموں کے طور پر فروخت۔ کھیپ اور اس کا ماخذ درخواست پر بتایا جاتا ہے۔ موجودہ کھیپ کا درست ماخذ اور درجہ درخواست پر بتایا جاتا ہے؛ کسی خاص فارم کا سراغ نہیں بتایا جاتا۔",
+   "sourcingDetails_ar": "تُباع كبلورات صمغ مجففة. تُؤكَّد الدفعة ومنشؤها عند الطلب. يُؤكَّد المصدر الدقيق ودرجة الدفعة عند الطلب؛ ولا تُذكر مزرعة بعينها.",
+   "origin_en": "Hand-Packed in Pakistan",
+   "origin_ur": "پاکستان میں ہاتھ سے پیک شدہ",
+   "origin_ar": "معبأ يدويًا في باكستان",
+   "careKind": "gum",
+   "category": "herbs-spices",
+   "collections": [
+    "gums-and-resins"
+   ],
+   "keywords": [
+    "kamarkas",
+    "kamarkas gond",
+    "butea gum",
+    "dhak gum",
+    "winter sweets",
+    "Kamarkas (Butea Gum)",
+    "کمرکس"
+   ],
+   "image": "/images/product-placeholder.svg",
+   "imageName": "/images/product-placeholder.svg",
+   "galleryImages": [],
+   "prices": {},
+   "variants": [],
+   "wholesale": 0,
+   "quoteOnly": false,
+   "orderMode": "standard",
+   "status": "draft",
+   "active": false,
+   "allowCustomWeight": false,
+   "pricePer100g": 300,
+   "claimsVerification": {
+    "status": "unverified"
+   },
+   "commerce": {
+    "version": 1,
+    "kind": "food",
+    "pricingMode": "calculated",
+    "quantityMode": "fixed",
+    "baseQuantity": 1,
+    "baseUnit": "kg",
+    "basePrice": 3000,
+    "options": [
+     {
+      "label": "50g",
+      "quantity": 50,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "100g",
+      "quantity": 100,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "250g",
+      "quantity": 250,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "500g",
+      "quantity": 500,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     }
+    ],
+    "custom": null
+   },
+   "importBatch": "owner-intake-20261115",
+   "seo": {
+    "title_en": "Kamarkas (Butea Gum) | AllBarka",
+    "title_ur": "کمرکس | البرکہ",
+    "title_ar": "كمركس (صمغ البوتيا) | البركة",
+    "imageAlt_en": "Kamarkas (Butea Gum) — product image coming soon",
+    "imageAlt_ur": "کمرکس — تصویر جلد آ رہی ہے",
+    "imageAlt_ar": "كمركس (صمغ البوتيا) — الصورة قريبًا"
+   }
+  },
+  {
+   "id": "imli-tamarind",
+   "name_en": "Tamarind (Imli)",
+   "name_ur": "املی",
+   "name_ar": "تمر هندي",
+   "desc_en": "Sun-dried tamarind pulp with its natural sweet-and-sour taste. It is the sour in imli chutney, chaat, dal, haleem and nihari, and it makes a cooling summer drink.",
+   "desc_ur": "دھوپ میں سکھایا ہوا املی کا گودا جس میں قدرتی کھٹا میٹھا ذائقہ ہے۔ یہ املی کی چٹنی، چاٹ، دال، حلیم اور نہاری کی کھٹاس ہے اور گرمیوں کا ٹھنڈا مشروب بھی بناتی ہے۔",
+   "desc_ar": "لب تمر هندي مجفف بالشمس بطعمه الطبيعي الحلو الحامض. هو الحموضة في صلصة التمر الهندي والشاط والعدس والهريس والنهاري، ويُصنع منه مشروب صيفي منعش.",
+   "recipe_en": "Soak a lime-sized ball in warm water for 20 minutes, rub it free of seeds and fibre, and strain. Use the liquid in chutney, dal or as a drink with sugar and roasted cumin.",
+   "recipe_ur": "لیموں کے برابر گولا گرم پانی میں 20 منٹ بھگوئیں، ہاتھ سے مسل کر بیج اور ریشے الگ کریں اور چھان لیں۔ پانی کو چٹنی، دال میں ڈالیں یا چینی اور بھنے زیرے کے ساتھ مشروب بنائیں۔",
+   "recipe_ar": "انقع كرة بحجم ليمونة في ماء دافئ 20 دقيقة، افركها لإزالة البذور والألياف وصفِّها. استخدم السائل في الصلصة أو العدس أو كمشروب مع السكر والكمون المحمص.",
+   "sourcingDetails_en": "Sold as dried tamarind. Check pods and pulp for stray seeds or fibres; the origin of the current lot is confirmed on request. Exact batch source and grade are confirmed on request; individual farm traceability is not stated.",
+   "sourcingDetails_ur": "خشک املی کے طور پر فروخت۔ گودے میں بیج اور ریشے ہو سکتے ہیں؛ موجودہ کھیپ کا ماخذ درخواست پر بتایا جاتا ہے۔ موجودہ کھیپ کا درست ماخذ اور درجہ درخواست پر بتایا جاتا ہے؛ کسی خاص فارم کا سراغ نہیں بتایا جاتا۔",
+   "sourcingDetails_ar": "تُباع كتمر هندي مجفف. قد تحتوي على بذور وألياف؛ يُؤكَّد منشأ الدفعة الحالية عند الطلب. يُؤكَّد المصدر الدقيق ودرجة الدفعة عند الطلب؛ ولا تُذكر مزرعة بعينها.",
+   "origin_en": "Hand-Packed in Pakistan",
+   "origin_ur": "پاکستان میں ہاتھ سے پیک شدہ",
+   "origin_ar": "معبأ يدويًا في باكستان",
+   "careKind": "fruit",
+   "category": "herbs-spices",
+   "collections": [
+    "whole-spices"
+   ],
+   "keywords": [
+    "imli",
+    "tamarind",
+    "imli chutney",
+    "sour",
+    "chaat",
+    "Tamarind (Imli)",
+    "املی"
+   ],
+   "image": "/images/product-placeholder.svg",
+   "imageName": "/images/product-placeholder.svg",
+   "galleryImages": [],
+   "prices": {},
+   "variants": [],
+   "wholesale": 0,
+   "quoteOnly": false,
+   "orderMode": "standard",
+   "status": "draft",
+   "active": false,
+   "allowCustomWeight": false,
+   "pricePer100g": 70,
+   "claimsVerification": {
+    "status": "unverified"
+   },
+   "commerce": {
+    "version": 1,
+    "kind": "food",
+    "pricingMode": "calculated",
+    "quantityMode": "fixed",
+    "baseQuantity": 1,
+    "baseUnit": "kg",
+    "basePrice": 700,
+    "options": [
+     {
+      "label": "250g",
+      "quantity": 250,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "500g",
+      "quantity": 500,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "1kg",
+      "quantity": 1,
+      "unit": "kg",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     }
+    ],
+    "custom": null
+   },
+   "importBatch": "owner-intake-20261115",
+   "seo": {
+    "title_en": "Tamarind (Imli) | AllBarka",
+    "title_ur": "املی | البرکہ",
+    "title_ar": "تمر هندي | البركة",
+    "imageAlt_en": "Tamarind (Imli) — product image coming soon",
+    "imageAlt_ur": "املی — تصویر جلد آ رہی ہے",
+    "imageAlt_ar": "تمر هندي — الصورة قريبًا"
+   }
+  },
+  {
+   "id": "garam-masala-whole",
+   "name_en": "Garam Masala, Whole (Sabut Garam Masala)",
+   "name_ur": "ثابت گرم مصالحہ",
+   "name_ar": "جارام ماسالا كاملة",
+   "desc_en": "A whole-spice mix for biryani, pulao and slow-cooked meat: cardamom, cloves, cinnamon, black pepper and bay leaf. Buy it whole and it keeps its aroma far longer than a ground blend.",
+   "desc_ur": "بریانی، پلاؤ اور دھیمی آنچ کے گوشت کے لیے ثابت مصالحوں کا آمیزہ: الائچی، لونگ، دارچینی، کالی مرچ اور تیز پتہ۔ ثابت لیں تو اس کی خوشبو پسے ہوئے آمیزے سے کہیں زیادہ دیر قائم رہتی ہے۔",
+   "desc_ar": "خلطة بهارات كاملة للبرياني والبلاو واللحم المطبوخ ببطء: هيل وقرنفل وقرفة وفلفل أسود وورق الغار. اشترِها كاملة فتحتفظ بعطرها أطول بكثير من الخلطة المطحونة.",
+   "recipe_en": "Fry two teaspoons in hot oil for 30 seconds before adding onions, or tie in a muslin cloth and drop in the pot. Remove the larger pieces before serving.",
+   "recipe_ur": "پیاز ڈالنے سے پہلے دو چائے کے چمچ گرم تیل میں 30 سیکنڈ بھونیں، یا ململ کی پوٹلی میں باندھ کر ہانڈی میں ڈالیں۔ پیش کرنے سے پہلے بڑے ٹکڑے نکال لیں۔",
+   "recipe_ar": "قلّ ملعقتين صغيرتين في زيت ساخن 30 ثانية قبل إضافة البصل، أو اربطها في قطعة شاش وضعها في القدر. أخرج القطع الكبيرة قبل التقديم.",
+   "sourcingDetails_en": "A mix of whole spices packed by AllBarka. The exact contents and the origin of each spice are confirmed on request. Exact batch source and grade are confirmed on request; individual farm traceability is not stated.",
+   "sourcingDetails_ur": "AllBarka کے پیک کیے ہوئے ثابت مصالحوں کا آمیزہ۔ ہر مصالحے کے اجزا اور ماخذ درخواست پر بتائے جاتے ہیں۔ موجودہ کھیپ کا درست ماخذ اور درجہ درخواست پر بتایا جاتا ہے؛ کسی خاص فارم کا سراغ نہیں بتایا جاتا۔",
+   "sourcingDetails_ar": "خلطة بهارات كاملة تعبئها AllBarka. تُؤكَّد المكونات الدقيقة ومنشأ كل بهار عند الطلب. يُؤكَّد المصدر الدقيق ودرجة الدفعة عند الطلب؛ ولا تُذكر مزرعة بعينها.",
+   "origin_en": "Hand-Packed in Pakistan",
+   "origin_ur": "پاکستان میں ہاتھ سے پیک شدہ",
+   "origin_ar": "معبأ يدويًا في باكستان",
+   "careKind": "wholeSpice",
+   "category": "herbs-spices",
+   "collections": [
+    "whole-spices"
+   ],
+   "keywords": [
+    "garam masala",
+    "sabut garam masala",
+    "whole garam masala",
+    "biryani masala",
+    "spice mix",
+    "Garam Masala, Whole (Sabut Garam Masala)",
+    "ثابت گرم مصالحہ"
+   ],
+   "image": "/images/product-placeholder.svg",
+   "imageName": "/images/product-placeholder.svg",
+   "galleryImages": [],
+   "prices": {},
+   "variants": [],
+   "wholesale": 0,
+   "quoteOnly": false,
+   "orderMode": "standard",
+   "status": "draft",
+   "active": false,
+   "allowCustomWeight": false,
+   "pricePer100g": 280,
+   "claimsVerification": {
+    "status": "unverified"
+   },
+   "commerce": {
+    "version": 1,
+    "kind": "food",
+    "pricingMode": "calculated",
+    "quantityMode": "fixed",
+    "baseQuantity": 1,
+    "baseUnit": "kg",
+    "basePrice": 2800,
+    "options": [
+     {
+      "label": "100g",
+      "quantity": 100,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "250g",
+      "quantity": 250,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "500g",
+      "quantity": 500,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     }
+    ],
+    "custom": null
+   },
+   "importBatch": "owner-intake-20261115",
+   "seo": {
+    "title_en": "Garam Masala, Whole (Sabut Garam Masala) | AllBarka",
+    "title_ur": "ثابت گرم مصالحہ | البرکہ",
+    "title_ar": "جارام ماسالا كاملة | البركة",
+    "imageAlt_en": "Garam Masala, Whole (Sabut Garam Masala) — product image coming soon",
+    "imageAlt_ur": "ثابت گرم مصالحہ — تصویر جلد آ رہی ہے",
+    "imageAlt_ar": "جارام ماسالا كاملة — الصورة قريبًا"
+   }
+  },
+  {
+   "id": "aloobukhara-qandhari",
+   "name_en": "Dried Plums, Kandahari (Qandhari Aloobukhara)",
+   "name_ur": "قندھاری آلو بخارا",
+   "name_ar": "برقوق قندهاري",
+   "desc_en": "Sun-dried plums from the Kandahar style of drying, sweet-sour with a deep dark skin. They go into biryani and pulao, qorma, chutney and the cooling summer drink, and are eaten straight from the pack.",
+   "desc_ur": "قندھار طرز پر دھوپ میں سکھائے ہوئے آلو بخارے، کھٹے میٹھے اور گہرے گہرے رنگ کے۔ یہ بریانی، پلاؤ، قورمہ اور چٹنی میں پڑتے ہیں، گرمیوں کا ٹھنڈا مشروب بنتے ہیں، اور سیدھے پیکٹ سے بھی کھائے جاتے ہیں۔",
+   "desc_ar": "برقوق مجفف بالشمس على طريقة قندهار، حلو حامض بقشرة داكنة. يدخل في البرياني والبلاو والقورمة والصلصات ومشروب الصيف المنعش، ويؤكل من العبوة مباشرة.",
+   "recipe_en": "Soak four or five plums in warm water for 15 minutes before adding them to biryani or qorma. For a summer drink, simmer with sugar, cool and strain.",
+   "recipe_ur": "بریانی یا قورمے میں ڈالنے سے پہلے چار پانچ آلو بخارے گرم پانی میں 15 منٹ بھگوئیں۔ گرمیوں کے مشروب کے لیے چینی کے ساتھ ابالیں، ٹھنڈا کر کے چھانیں۔",
+   "recipe_ar": "انقع أربع أو خمس حبات في ماء دافئ 15 دقيقة قبل إضافتها إلى البرياني أو القورمة. لمشروب الصيف اطبخها مع السكر ثم بردها وصفِّها.",
+   "sourcingDetails_en": "Sold as dried plums. They may contain stones; check the pack label for added sulphites. Origin is confirmed on request. Exact batch source and grade are confirmed on request; individual farm traceability is not stated.",
+   "sourcingDetails_ur": "خشک آلو بخارے کے طور پر فروخت۔ ان میں گٹھلی ہو سکتی ہے؛ سلفائٹ کے لیے پیک کا لیبل دیکھیں۔ ماخذ درخواست پر بتایا جاتا ہے۔ موجودہ کھیپ کا درست ماخذ اور درجہ درخواست پر بتایا جاتا ہے؛ کسی خاص فارم کا سراغ نہیں بتایا جاتا۔",
+   "sourcingDetails_ar": "تُباع كبرقوق مجفف. قد تحتوي على نوى؛ راجع الملصق للكبريتيت. يُؤكَّد المنشأ عند الطلب. يُؤكَّد المصدر الدقيق ودرجة الدفعة عند الطلب؛ ولا تُذكر مزرعة بعينها.",
+   "origin_en": "Hand-Packed in Pakistan",
+   "origin_ur": "پاکستان میں ہاتھ سے پیک شدہ",
+   "origin_ar": "معبأ يدويًا في باكستان",
+   "careKind": "fruit",
+   "category": "dry-fruits",
+   "collections": [
+    "dried-fruits"
+   ],
+   "keywords": [
+    "aloobukhara",
+    "qandhari aloobukhara",
+    "kandahari",
+    "dried plum",
+    "prunes",
+    "Dried Plums, Kandahari (Qandhari Aloobukhara)",
+    "قندھاری آلو بخارا"
+   ],
+   "image": "/images/product-placeholder.svg",
+   "imageName": "/images/product-placeholder.svg",
+   "galleryImages": [],
+   "prices": {},
+   "variants": [],
+   "wholesale": 0,
+   "quoteOnly": false,
+   "orderMode": "standard",
+   "status": "draft",
+   "active": false,
+   "allowCustomWeight": false,
+   "pricePer100g": 180,
+   "claimsVerification": {
+    "status": "unverified"
+   },
+   "commerce": {
+    "version": 1,
+    "kind": "food",
+    "pricingMode": "calculated",
+    "quantityMode": "fixed",
+    "baseQuantity": 1,
+    "baseUnit": "kg",
+    "basePrice": 1800,
+    "options": [
+     {
+      "label": "250g",
+      "quantity": 250,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "500g",
+      "quantity": 500,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "1kg",
+      "quantity": 1,
+      "unit": "kg",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     }
+    ],
+    "custom": null
+   },
+   "importBatch": "owner-intake-20261115",
+   "seo": {
+    "title_en": "Dried Plums, Kandahari (Qandhari Aloobukhara) | AllBarka",
+    "title_ur": "قندھاری آلو بخارا | البرکہ",
+    "title_ar": "برقوق قندهاري | البركة",
+    "imageAlt_en": "Dried Plums, Kandahari (Qandhari Aloobukhara) — product image coming soon",
+    "imageAlt_ur": "قندھاری آلو بخارا — تصویر جلد آ رہی ہے",
+    "imageAlt_ar": "برقوق قندهاري — الصورة قريبًا"
+   }
+  },
+  {
+   "id": "mission-figs-dried",
+   "name_en": "Mission Figs, Dried (Mission Anjeer)",
+   "name_ur": "مشن انجیر",
+   "name_ar": "تين ميشن مجفف",
+   "desc_en": "Mission figs are a dark purple-black fig with a deep, jammy sweetness and a soft, chewy flesh full of tiny crunchy seeds. They are richer and darker in taste than the pale figs, and are good eaten whole, chopped into oats, or served with cheese and nuts.",
+   "desc_ur": "مشن انجیر گہرے جامنی کالے رنگ کی انجیر ہے جس کی مٹھاس جام جیسی گہری اور گودا نرم و چبانے والا ہے جس میں چھوٹے کرارے بیج ہوتے ہیں۔ اس کا ذائقہ ہلکے رنگ کی انجیر سے زیادہ بھرپور ہے، اور یہ ثابت کھانے، اوٹس میں کاٹ کر ڈالنے یا پنیر اور میووں کے ساتھ پیش کرنے کے لیے اچھی ہے۔",
+   "desc_ar": "تين ميشن تين داكن بنفسجي يميل للسواد بحلاوة عميقة كالمربى ولب طري مطاطي فيه بذور صغيرة مقرمشة. طعمه أغنى وأغمق من التين الفاتح، ويصلح للأكل كاملًا أو مقطعًا في الشوفان أو مع الجبن والمكسرات.",
+   "recipe_en": "Eat two or three as a snack, chop into oats or yoghurt, or soak for ten minutes in warm water to soften before baking.",
+   "recipe_ur": "دو تین اسنیک کے طور پر کھائیں، اوٹس یا دہی میں کاٹ کر ڈالیں، یا بیکنگ سے پہلے گرم پانی میں دس منٹ بھگو کر نرم کریں۔",
+   "recipe_ar": "كل اثنتين أو ثلاثًا كوجبة خفيفة، أو قطّعها في الشوفان أو اللبن، أو انقعها عشر دقائق في ماء دافئ لتلين قبل الخبز.",
+   "sourcingDetails_en": "Sold as dried Mission-type figs. The origin of the current lot is confirmed on request; check the label for added sulphites. Exact batch source and grade are confirmed on request; individual farm traceability is not stated.",
+   "sourcingDetails_ur": "خشک مشن قسم کی انجیر کے طور پر فروخت۔ موجودہ کھیپ کا ماخذ درخواست پر بتایا جاتا ہے؛ سلفائٹ کے لیے لیبل دیکھیں۔ موجودہ کھیپ کا درست ماخذ اور درجہ درخواست پر بتایا جاتا ہے؛ کسی خاص فارم کا سراغ نہیں بتایا جاتا۔",
+   "sourcingDetails_ar": "يُباع كتين مجفف من نوع ميشن. يُؤكَّد منشأ الدفعة الحالية عند الطلب؛ راجع الملصق للكبريتيت. يُؤكَّد المصدر الدقيق ودرجة الدفعة عند الطلب؛ ولا تُذكر مزرعة بعينها.",
+   "origin_en": "Hand-Packed in Pakistan",
+   "origin_ur": "پاکستان میں ہاتھ سے پیک شدہ",
+   "origin_ar": "معبأ يدويًا في باكستان",
+   "careKind": "fruit",
+   "category": "dry-fruits",
+   "collections": [
+    "dried-fruits"
+   ],
+   "keywords": [
+    "mission anjeer",
+    "mission figs",
+    "black figs",
+    "anjeer",
+    "dried figs",
+    "Mission Figs, Dried (Mission Anjeer)",
+    "مشن انجیر"
+   ],
+   "image": "/images/product-placeholder.svg",
+   "imageName": "/images/product-placeholder.svg",
+   "galleryImages": [],
+   "prices": {},
+   "variants": [],
+   "wholesale": 0,
+   "quoteOnly": false,
+   "orderMode": "standard",
+   "status": "draft",
+   "active": false,
+   "allowCustomWeight": false,
+   "pricePer100g": 260,
+   "claimsVerification": {
+    "status": "unverified"
+   },
+   "commerce": {
+    "version": 1,
+    "kind": "food",
+    "pricingMode": "calculated",
+    "quantityMode": "fixed",
+    "baseQuantity": 1,
+    "baseUnit": "kg",
+    "basePrice": 2600,
+    "options": [
+     {
+      "label": "250g",
+      "quantity": 250,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "500g",
+      "quantity": 500,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "1kg",
+      "quantity": 1,
+      "unit": "kg",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     }
+    ],
+    "custom": null
+   },
+   "importBatch": "owner-intake-20261115",
+   "seo": {
+    "title_en": "Mission Figs, Dried (Mission Anjeer) | AllBarka",
+    "title_ur": "مشن انجیر | البرکہ",
+    "title_ar": "تين ميشن مجفف | البركة",
+    "imageAlt_en": "Mission Figs, Dried (Mission Anjeer) — product image coming soon",
+    "imageAlt_ur": "مشن انجیر — تصویر جلد آ رہی ہے",
+    "imageAlt_ar": "تين ميشن مجفف — الصورة قريبًا"
+   }
+  },
+  {
+   "id": "dried-blueberries",
+   "name_en": "Dried Blueberries",
+   "name_ur": "خشک بلیو بیری",
+   "name_ar": "توت أزرق مجفف",
+   "desc_en": "Plump dried blueberries with a sweet-tart taste. They are good in oats, granola, muffins and trail mixes, and in a bowl of yoghurt for breakfast.",
+   "desc_ur": "میٹھے کھٹے ذائقے والی موٹی خشک بلیو بیریز۔ یہ اوٹس، گرینولا، مفن اور ٹریل مکس میں اور ناشتے میں دہی کے پیالے کے ساتھ اچھی لگتی ہیں۔",
+   "desc_ar": "توت أزرق مجفف ممتلئ بطعم حلو حامض. جيد في الشوفان والجرانولا والمافن وخلطات المكسرات وفي وعاء اللبن في الفطور.",
+   "recipe_en": "Stir a handful into oats or batter, scatter over yoghurt, or mix with almonds and walnuts for a snack jar.",
+   "recipe_ur": "ایک مٹھی اوٹس یا بیٹر میں ہلائیں، دہی پر چھڑکیں، یا بادام اور اخروٹ کے ساتھ ملا کر اسنیک جار میں رکھیں۔",
+   "recipe_ar": "حرّك حفنة في الشوفان أو العجين، أو انثرها على اللبن، أو اخلطها مع اللوز والجوز في برطمان الوجبات.",
+   "sourcingDetails_en": "Sold as dried blueberries. They may contain added sugar and sulphites; check the pack label. Origin is confirmed on request. Exact batch source and grade are confirmed on request; individual farm traceability is not stated.",
+   "sourcingDetails_ur": "خشک بلیو بیریز کے طور پر فروخت۔ ان میں چینی اور سلفائٹ شامل ہو سکتے ہیں؛ پیک کا لیبل دیکھیں۔ ماخذ درخواست پر بتایا جاتا ہے۔ موجودہ کھیپ کا درست ماخذ اور درجہ درخواست پر بتایا جاتا ہے؛ کسی خاص فارم کا سراغ نہیں بتایا جاتا۔",
+   "sourcingDetails_ar": "تُباع كتوت أزرق مجفف. قد تحتوي على سكر مضاف وكبريتيت؛ راجع الملصق. يُؤكَّد المنشأ عند الطلب. يُؤكَّد المصدر الدقيق ودرجة الدفعة عند الطلب؛ ولا تُذكر مزرعة بعينها.",
+   "origin_en": "Hand-Packed in Pakistan",
+   "origin_ur": "پاکستان میں ہاتھ سے پیک شدہ",
+   "origin_ar": "معبأ يدويًا في باكستان",
+   "careKind": "fruit",
+   "category": "dry-fruits",
+   "collections": [
+    "dried-fruits"
+   ],
+   "keywords": [
+    "blueberries",
+    "dried blueberries",
+    "granola",
+    "baking",
+    "trail mix",
+    "Dried Blueberries",
+    "خشک بلیو بیری"
+   ],
+   "image": "/images/product-placeholder.svg",
+   "imageName": "/images/product-placeholder.svg",
+   "galleryImages": [],
+   "prices": {},
+   "variants": [],
+   "wholesale": 0,
+   "quoteOnly": false,
+   "orderMode": "standard",
+   "status": "draft",
+   "active": false,
+   "allowCustomWeight": false,
+   "pricePer100g": 550,
+   "claimsVerification": {
+    "status": "unverified"
+   },
+   "commerce": {
+    "version": 1,
+    "kind": "food",
+    "pricingMode": "calculated",
+    "quantityMode": "fixed",
+    "baseQuantity": 1,
+    "baseUnit": "kg",
+    "basePrice": 5500,
+    "options": [
+     {
+      "label": "100g",
+      "quantity": 100,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "250g",
+      "quantity": 250,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "500g",
+      "quantity": 500,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     }
+    ],
+    "custom": null
+   },
+   "importBatch": "owner-intake-20261115",
+   "seo": {
+    "title_en": "Dried Blueberries | AllBarka",
+    "title_ur": "خشک بلیو بیری | البرکہ",
+    "title_ar": "توت أزرق مجفف | البركة",
+    "imageAlt_en": "Dried Blueberries — product image coming soon",
+    "imageAlt_ur": "خشک بلیو بیری — تصویر جلد آ رہی ہے",
+    "imageAlt_ar": "توت أزرق مجفف — الصورة قريبًا"
+   }
+  },
+  {
+   "id": "dried-kiwi",
+   "name_en": "Dried Kiwi",
+   "name_ur": "خشک کیوی",
+   "name_ar": "كيوي مجفف",
+   "desc_en": "Soft, chewy slices of dried kiwi with a bright, tangy-sweet taste and tiny dark seeds. They are a colourful addition to fruit mixes, cakes, salads and gift boxes.",
+   "desc_ur": "نرم، چبانے والے خشک کیوی کے ٹکڑے، چمکدار کھٹے میٹھے ذائقے اور چھوٹے کالے بیجوں کے ساتھ۔ یہ فروٹ مکس، کیک، سلاد اور گفٹ باکس میں رنگین اضافہ ہیں۔",
+   "desc_ar": "شرائح كيوي مجففة طرية مطاطية بطعم زاهٍ حلو حامض وبذور صغيرة داكنة. إضافة ملونة لخلطات الفاكهة والكعك والسلطات وصناديق الهدايا.",
+   "recipe_en": "Eat straight from the pack, chop into salads and cakes, or arrange on a dry-fruit platter next to nuts.",
+   "recipe_ur": "سیدھے پیکٹ سے کھائیں، سلاد اور کیک میں کاٹ کر ڈالیں، یا میووں کی ٹرے میں گریوں کے ساتھ سجائیں۔",
+   "recipe_ar": "كلها من العبوة مباشرة، أو قطّعها في السلطات والكعك، أو رتّبها على صينية المكسرات.",
+   "sourcingDetails_en": "Sold as dried kiwi slices. They may contain added sugar and sulphites; check the pack label. Origin is confirmed on request. Exact batch source and grade are confirmed on request; individual farm traceability is not stated.",
+   "sourcingDetails_ur": "خشک کیوی کے ٹکڑوں کے طور پر فروخت۔ ان میں چینی اور سلفائٹ شامل ہو سکتے ہیں؛ پیک کا لیبل دیکھیں۔ ماخذ درخواست پر بتایا جاتا ہے۔ موجودہ کھیپ کا درست ماخذ اور درجہ درخواست پر بتایا جاتا ہے؛ کسی خاص فارم کا سراغ نہیں بتایا جاتا۔",
+   "sourcingDetails_ar": "تُباع كشرائح كيوي مجففة. قد تحتوي على سكر مضاف وكبريتيت؛ راجع الملصق. يُؤكَّد المنشأ عند الطلب. يُؤكَّد المصدر الدقيق ودرجة الدفعة عند الطلب؛ ولا تُذكر مزرعة بعينها.",
+   "origin_en": "Hand-Packed in Pakistan",
+   "origin_ur": "پاکستان میں ہاتھ سے پیک شدہ",
+   "origin_ar": "معبأ يدويًا في باكستان",
+   "careKind": "fruit",
+   "category": "dry-fruits",
+   "collections": [
+    "dried-fruits"
+   ],
+   "keywords": [
+    "kiwi",
+    "dried kiwi",
+    "fruit mix",
+    "gift box",
+    "dried fruit",
+    "Dried Kiwi",
+    "خشک کیوی"
+   ],
+   "image": "/images/product-placeholder.svg",
+   "imageName": "/images/product-placeholder.svg",
+   "galleryImages": [],
+   "prices": {},
+   "variants": [],
+   "wholesale": 0,
+   "quoteOnly": false,
+   "orderMode": "standard",
+   "status": "draft",
+   "active": false,
+   "allowCustomWeight": false,
+   "pricePer100g": 450,
+   "claimsVerification": {
+    "status": "unverified"
+   },
+   "commerce": {
+    "version": 1,
+    "kind": "food",
+    "pricingMode": "calculated",
+    "quantityMode": "fixed",
+    "baseQuantity": 1,
+    "baseUnit": "kg",
+    "basePrice": 4500,
+    "options": [
+     {
+      "label": "100g",
+      "quantity": 100,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "250g",
+      "quantity": 250,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "500g",
+      "quantity": 500,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     }
+    ],
+    "custom": null
+   },
+   "importBatch": "owner-intake-20261115",
+   "seo": {
+    "title_en": "Dried Kiwi | AllBarka",
+    "title_ur": "خشک کیوی | البرکہ",
+    "title_ar": "كيوي مجفف | البركة",
+    "imageAlt_en": "Dried Kiwi — product image coming soon",
+    "imageAlt_ur": "خشک کیوی — تصویر جلد آ رہی ہے",
+    "imageAlt_ar": "كيوي مجفف — الصورة قريبًا"
+   }
+  },
+  {
+   "id": "macadamia-nuts",
+   "name_en": "Macadamia Nuts",
+   "name_ur": "میکاڈیمیا نٹس",
+   "name_ar": "جوز المكاديميا",
+   "desc_en": "Creamy, buttery macadamia kernels with a rich, mild sweetness, among the most luxurious nuts on the shelf. They are good eaten on their own, chopped into baking, or served on a premium nut platter.",
+   "desc_ur": "کریمی، مکھن جیسی میکاڈیمیا گریاں جن کی مٹھاس بھرپور اور ہلکی ہے، شیلف کے سب سے پرتعیش میووں میں سے ایک۔ یہ اکیلی کھانے، بیکنگ میں کاٹ کر ڈالنے یا پریمیم نٹ ٹرے میں رکھنے کے لیے اچھی ہیں۔",
+   "desc_ar": "حبات مكاديميا كريمية زبدية بحلاوة غنية خفيفة، من أفخر المكسرات. جيدة للأكل وحدها أو المفرومة في الخبز أو على صينية مكسرات فاخرة.",
+   "recipe_en": "Eat a few as a snack, chop into cookies and banana bread, or lightly toast in a dry pan for a minute to bring out the aroma.",
+   "recipe_ur": "چند اسنیک کے طور پر کھائیں، کوکیز اور بنانا بریڈ میں کاٹ کر ڈالیں، یا ایک منٹ خشک کڑاہی میں ہلکا بھون کر خوشبو نکالیں۔",
+   "recipe_ar": "كل بضع حبات كوجبة خفيفة، أو قطّعها في الكوكيز وخبز الموز، أو حمّصها دقيقة في مقلاة جافة لتفوح رائحتها.",
+   "sourcingDetails_en": "Sold as shelled macadamia kernels. Origin and crop of the current lot are confirmed on request. Exact batch source and grade are confirmed on request; individual farm traceability is not stated.",
+   "sourcingDetails_ur": "چھلی ہوئی میکاڈیمیا گریوں کے طور پر فروخت۔ موجودہ کھیپ کا ماخذ اور فصل درخواست پر بتائی جاتی ہے۔ موجودہ کھیپ کا درست ماخذ اور درجہ درخواست پر بتایا جاتا ہے؛ کسی خاص فارم کا سراغ نہیں بتایا جاتا۔",
+   "sourcingDetails_ar": "تُباع كحبات مكاديميا مقشرة. يُؤكَّد منشأ ومحصول الدفعة الحالية عند الطلب. يُؤكَّد المصدر الدقيق ودرجة الدفعة عند الطلب؛ ولا تُذكر مزرعة بعينها.",
+   "origin_en": "Hand-Packed in Pakistan",
+   "origin_ur": "پاکستان میں ہاتھ سے پیک شدہ",
+   "origin_ar": "معبأ يدويًا في باكستان",
+   "careKind": "nuts",
+   "category": "nuts",
+   "collections": [
+    "kernels-and-nuts"
+   ],
+   "keywords": [
+    "macadamia",
+    "macadamia nuts",
+    "premium nuts",
+    "gift nuts",
+    "baking",
+    "Macadamia Nuts",
+    "میکاڈیمیا نٹس"
+   ],
+   "image": "/images/product-placeholder.svg",
+   "imageName": "/images/product-placeholder.svg",
+   "galleryImages": [],
+   "prices": {},
+   "variants": [],
+   "wholesale": 0,
+   "quoteOnly": false,
+   "orderMode": "standard",
+   "status": "draft",
+   "active": false,
+   "allowCustomWeight": false,
+   "pricePer100g": 900,
+   "claimsVerification": {
+    "status": "unverified"
+   },
+   "commerce": {
+    "version": 1,
+    "kind": "food",
+    "pricingMode": "calculated",
+    "quantityMode": "fixed",
+    "baseQuantity": 1,
+    "baseUnit": "kg",
+    "basePrice": 9000,
+    "options": [
+     {
+      "label": "100g",
+      "quantity": 100,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "250g",
+      "quantity": 250,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "500g",
+      "quantity": 500,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     }
+    ],
+    "custom": null
+   },
+   "importBatch": "owner-intake-20261115",
+   "seo": {
+    "title_en": "Macadamia Nuts | AllBarka",
+    "title_ur": "میکاڈیمیا نٹس | البرکہ",
+    "title_ar": "جوز المكاديميا | البركة",
+    "imageAlt_en": "Macadamia Nuts — product image coming soon",
+    "imageAlt_ur": "میکاڈیمیا نٹس — تصویر جلد آ رہی ہے",
+    "imageAlt_ar": "جوز المكاديميا — الصورة قريبًا"
+   }
+  },
+  {
+   "id": "brazil-nuts",
+   "name_en": "Brazil Nuts",
+   "name_ur": "برازیل نٹس",
+   "name_ar": "جوز البرازيل",
+   "desc_en": "Large, creamy brazil nuts with a rich, earthy flavour and a satisfying chew. They are good alone, chopped into granola and desserts, or mixed with dates and almonds.",
+   "desc_ur": "بڑے، کریمی برازیل نٹس جن کا ذائقہ بھرپور اور مٹی جیسا ہے اور چبانے میں تسلی بخش۔ یہ اکیلے، گرینولا اور میٹھوں میں کاٹ کر، یا کھجور اور بادام کے ساتھ ملا کر اچھے لگتے ہیں۔",
+   "desc_ar": "حبات جوز البرازيل كبيرة كريمية بنكهة غنية ترابية وقوام مُرضٍ. جيدة وحدها أو مفرومة في الجرانولا والحلويات أو مخلوطة مع التمر واللوز.",
+   "recipe_en": "Eat two or three as a snack, chop into granola or dessert, or pair with dates on a dry-fruit tray.",
+   "recipe_ur": "دو تین اسنیک کے طور پر کھائیں، گرینولا یا میٹھے میں کاٹ کر ڈالیں، یا میووں کی ٹرے میں کھجور کے ساتھ رکھیں۔",
+   "recipe_ar": "كل اثنتين أو ثلاثًا كوجبة خفيفة، أو قطّعها في الجرانولا أو الحلوى، أو قدّمها مع التمر على صينية المكسرات.",
+   "sourcingDetails_en": "Sold as shelled brazil nuts. Origin and crop of the current lot are confirmed on request. Exact batch source and grade are confirmed on request; individual farm traceability is not stated.",
+   "sourcingDetails_ur": "چھلے ہوئے برازیل نٹس کے طور پر فروخت۔ موجودہ کھیپ کا ماخذ اور فصل درخواست پر بتائی جاتی ہے۔ موجودہ کھیپ کا درست ماخذ اور درجہ درخواست پر بتایا جاتا ہے؛ کسی خاص فارم کا سراغ نہیں بتایا جاتا۔",
+   "sourcingDetails_ar": "تُباع كجوز برازيل مقشر. يُؤكَّد منشأ ومحصول الدفعة الحالية عند الطلب. يُؤكَّد المصدر الدقيق ودرجة الدفعة عند الطلب؛ ولا تُذكر مزرعة بعينها.",
+   "origin_en": "Hand-Packed in Pakistan",
+   "origin_ur": "پاکستان میں ہاتھ سے پیک شدہ",
+   "origin_ar": "معبأ يدويًا في باكستان",
+   "careKind": "nuts",
+   "category": "nuts",
+   "collections": [
+    "kernels-and-nuts"
+   ],
+   "keywords": [
+    "brazil nuts",
+    "brazil nut",
+    "premium nuts",
+    "gift nuts",
+    "Brazil Nuts",
+    "برازیل نٹس"
+   ],
+   "image": "/images/product-placeholder.svg",
+   "imageName": "/images/product-placeholder.svg",
+   "galleryImages": [],
+   "prices": {},
+   "variants": [],
+   "wholesale": 0,
+   "quoteOnly": false,
+   "orderMode": "standard",
+   "status": "draft",
+   "active": false,
+   "allowCustomWeight": false,
+   "pricePer100g": 750,
+   "claimsVerification": {
+    "status": "unverified"
+   },
+   "commerce": {
+    "version": 1,
+    "kind": "food",
+    "pricingMode": "calculated",
+    "quantityMode": "fixed",
+    "baseQuantity": 1,
+    "baseUnit": "kg",
+    "basePrice": 7500,
+    "options": [
+     {
+      "label": "100g",
+      "quantity": 100,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "250g",
+      "quantity": 250,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "500g",
+      "quantity": 500,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     }
+    ],
+    "custom": null
+   },
+   "importBatch": "owner-intake-20261115",
+   "seo": {
+    "title_en": "Brazil Nuts | AllBarka",
+    "title_ur": "برازیل نٹس | البرکہ",
+    "title_ar": "جوز البرازيل | البركة",
+    "imageAlt_en": "Brazil Nuts — product image coming soon",
+    "imageAlt_ur": "برازیل نٹس — تصویر جلد آ رہی ہے",
+    "imageAlt_ar": "جوز البرازيل — الصورة قريبًا"
+   }
+  },
+  {
+   "id": "pecans",
+   "name_en": "Pecans",
+   "name_ur": "پیکن نٹس",
+   "name_ar": "جوز البقان",
+   "desc_en": "Sweet, buttery pecan halves with a mild maple-like flavour. They are good in cakes, brownies and pies, sprinkled over oats, or eaten as a rich snack.",
+   "desc_ur": "میٹھے، مکھن جیسے پیکن کے ٹکڑے جن کا ذائقہ ہلکا میپل جیسا ہے۔ یہ کیک، براؤنی اور پائی میں، اوٹس پر چھڑکنے کے لیے، یا بھرپور اسنیک کے طور پر اچھے لگتے ہیں۔",
+   "desc_ar": "أنصاف بقان حلوة زبدية بنكهة خفيفة تشبه القيقب. جيدة في الكعك والبراوني والفطائر وعلى الشوفان أو كوجبة خفيفة غنية.",
+   "recipe_en": "Toast lightly in a dry pan for two minutes, cool, and fold into cakes and brownies, or scatter over oats and ice cream.",
+   "recipe_ur": "دو منٹ خشک کڑاہی میں ہلکا بھونیں، ٹھنڈا کریں، اور کیک اور براؤنی میں ملائیں، یا اوٹس اور آئس کریم پر چھڑکیں۔",
+   "recipe_ar": "حمّصها قليلًا في مقلاة جافة دقيقتين، بردها وأضفها إلى الكعك والبراوني، أو انثرها على الشوفان والآيس كريم.",
+   "sourcingDetails_en": "Sold as shelled pecan halves. Origin and crop of the current lot are confirmed on request. Exact batch source and grade are confirmed on request; individual farm traceability is not stated.",
+   "sourcingDetails_ur": "چھلے ہوئے پیکن کے ٹکڑوں کے طور پر فروخت۔ موجودہ کھیپ کا ماخذ اور فصل درخواست پر بتائی جاتی ہے۔ موجودہ کھیپ کا درست ماخذ اور درجہ درخواست پر بتایا جاتا ہے؛ کسی خاص فارم کا سراغ نہیں بتایا جاتا۔",
+   "sourcingDetails_ar": "تُباع كأنصاف بقان مقشرة. يُؤكَّد منشأ ومحصول الدفعة الحالية عند الطلب. يُؤكَّد المصدر الدقيق ودرجة الدفعة عند الطلب؛ ولا تُذكر مزرعة بعينها.",
+   "origin_en": "Hand-Packed in Pakistan",
+   "origin_ur": "پاکستان میں ہاتھ سے پیک شدہ",
+   "origin_ar": "معبأ يدويًا في باكستان",
+   "careKind": "nuts",
+   "category": "nuts",
+   "collections": [
+    "kernels-and-nuts"
+   ],
+   "keywords": [
+    "pecans",
+    "pecan nuts",
+    "baking nuts",
+    "premium nuts",
+    "Pecans",
+    "پیکن نٹس"
+   ],
+   "image": "/images/product-placeholder.svg",
+   "imageName": "/images/product-placeholder.svg",
+   "galleryImages": [],
+   "prices": {},
+   "variants": [],
+   "wholesale": 0,
+   "quoteOnly": false,
+   "orderMode": "standard",
+   "status": "draft",
+   "active": false,
+   "allowCustomWeight": false,
+   "pricePer100g": 650,
+   "claimsVerification": {
+    "status": "unverified"
+   },
+   "commerce": {
+    "version": 1,
+    "kind": "food",
+    "pricingMode": "calculated",
+    "quantityMode": "fixed",
+    "baseQuantity": 1,
+    "baseUnit": "kg",
+    "basePrice": 6500,
+    "options": [
+     {
+      "label": "100g",
+      "quantity": 100,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "250g",
+      "quantity": 250,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "500g",
+      "quantity": 500,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     }
+    ],
+    "custom": null
+   },
+   "importBatch": "owner-intake-20261115",
+   "seo": {
+    "title_en": "Pecans | AllBarka",
+    "title_ur": "پیکن نٹس | البرکہ",
+    "title_ar": "جوز البقان | البركة",
+    "imageAlt_en": "Pecans — product image coming soon",
+    "imageAlt_ur": "پیکن نٹس — تصویر جلد آ رہی ہے",
+    "imageAlt_ar": "جوز البقان — الصورة قريبًا"
+   }
+  },
+  {
+   "id": "almond-slices",
+   "name_en": "Almond Slices (Flaked Almonds)",
+   "name_ur": "بادام کے قتلے",
+   "name_ar": "شرائح اللوز",
+   "desc_en": "Thin slices of blanched almond, light and quick to use. They are the topping for kheer, phirni, halwa and cakes, and add a delicate crunch to salads and breakfast bowls.",
+   "desc_ur": "بلانچ کیے ہوئے بادام کے باریک قتلے، ہلکے اور جلد استعمال ہونے والے۔ یہ کھیر، فیرنی، حلوے اور کیک کی سجاوٹ ہیں اور سلاد اور ناشتے کے پیالوں میں نرم کرارا پن دیتے ہیں۔",
+   "desc_ar": "شرائح لوز مبيّض رقيقة، خفيفة وسريعة الاستخدام. هي زينة الكير والفيرني والحلوى والكعك، وتضيف قرمشة رقيقة للسلطات وأوعية الفطور.",
+   "recipe_en": "Scatter straight over kheer, phirni or halwa, or toast in a dry pan for a minute until pale gold for cakes and salads.",
+   "recipe_ur": "سیدھے کھیر، فیرنی یا حلوے پر چھڑکیں، یا کیک اور سلاد کے لیے ایک منٹ خشک کڑاہی میں ہلکا سنہرا بھونیں۔",
+   "recipe_ar": "انثرها مباشرة على الكير أو الفيرني أو الحلوى، أو حمّصها دقيقة في مقلاة جافة حتى يصفرّ لونها للكعك والسلطات.",
+   "sourcingDetails_en": "Sold as sliced blanched almonds. Origin and crop of the current lot are confirmed on request. Exact batch source and grade are confirmed on request; individual farm traceability is not stated.",
+   "sourcingDetails_ur": "کٹے ہوئے بلانچ بادام کے طور پر فروخت۔ موجودہ کھیپ کا ماخذ اور فصل درخواست پر بتائی جاتی ہے۔ موجودہ کھیپ کا درست ماخذ اور درجہ درخواست پر بتایا جاتا ہے؛ کسی خاص فارم کا سراغ نہیں بتایا جاتا۔",
+   "sourcingDetails_ar": "تُباع كلوز مبيّض مقطع شرائح. يُؤكَّد منشأ ومحصول الدفعة الحالية عند الطلب. يُؤكَّد المصدر الدقيق ودرجة الدفعة عند الطلب؛ ولا تُذكر مزرعة بعينها.",
+   "origin_en": "Hand-Packed in Pakistan",
+   "origin_ur": "پاکستان میں ہاتھ سے پیک شدہ",
+   "origin_ar": "معبأ يدويًا في باكستان",
+   "careKind": "nuts",
+   "category": "nuts",
+   "collections": [
+    "kernels-and-nuts"
+   ],
+   "keywords": [
+    "almond slices",
+    "flaked almonds",
+    "badam qatlay",
+    "kheer topping",
+    "baking",
+    "Almond Slices (Flaked Almonds)",
+    "بادام کے قتلے"
+   ],
+   "image": "/images/product-placeholder.svg",
+   "imageName": "/images/product-placeholder.svg",
+   "galleryImages": [],
+   "prices": {},
+   "variants": [],
+   "wholesale": 0,
+   "quoteOnly": false,
+   "orderMode": "standard",
+   "status": "draft",
+   "active": false,
+   "allowCustomWeight": false,
+   "pricePer100g": 320,
+   "claimsVerification": {
+    "status": "unverified"
+   },
+   "commerce": {
+    "version": 1,
+    "kind": "food",
+    "pricingMode": "calculated",
+    "quantityMode": "fixed",
+    "baseQuantity": 1,
+    "baseUnit": "kg",
+    "basePrice": 3200,
+    "options": [
+     {
+      "label": "100g",
+      "quantity": 100,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "250g",
+      "quantity": 250,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
+     {
+      "label": "500g",
+      "quantity": 500,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     }
+    ],
+    "custom": null
+   },
+   "importBatch": "owner-intake-20261115",
+   "seo": {
+    "title_en": "Almond Slices (Flaked Almonds) | AllBarka",
+    "title_ur": "بادام کے قتلے | البرکہ",
+    "title_ar": "شرائح اللوز | البركة",
+    "imageAlt_en": "Almond Slices (Flaked Almonds) — product image coming soon",
+    "imageAlt_ur": "بادام کے قتلے — تصویر جلد آ رہی ہے",
+    "imageAlt_ar": "شرائح اللوز — الصورة قريبًا"
+   }
+  }
+ ],
+ "reuseExistingIds": [],
+ "pricePolicy": "Every rate here is a placeholder estimate so the draft validates and shows pack sizes; the owner replaces each price from the Firestore admin before publishing.",
+ "referenceRates": {
+  "lal-mirch-powder": {
+   "pkrPerkg": 1400,
+   "basis": "AllBarka placeholder estimate from the general market range; no verified reference. Owner sets the real price before publishing"
+  },
+  "dadar-mirch-dry-red-chilli": {
+   "pkrPerkg": 1500,
+   "basis": "AllBarka placeholder estimate from the general market range; no verified reference. Owner sets the real price before publishing"
+  },
+  "coriander-seeds-whole": {
+   "pkrPerkg": 900,
+   "basis": "AllBarka placeholder estimate from the general market range; no verified reference. Owner sets the real price before publishing"
+  },
+  "coriander-powder": {
+   "pkrPerkg": 1000,
+   "basis": "AllBarka placeholder estimate from the general market range; no verified reference. Owner sets the real price before publishing"
+  },
+  "white-pepper-whole": {
+   "pkrPerkg": 4500,
+   "basis": "AllBarka placeholder estimate from the general market range; no verified reference. Owner sets the real price before publishing"
+  },
+  "kamarkas": {
+   "pkrPerkg": 3000,
+   "basis": "AllBarka placeholder estimate from the general market range; no verified reference. Owner sets the real price before publishing"
+  },
+  "imli-tamarind": {
+   "pkrPerkg": 700,
+   "basis": "AllBarka placeholder estimate from the general market range; no verified reference. Owner sets the real price before publishing"
+  },
+  "garam-masala-whole": {
+   "pkrPerkg": 2800,
+   "basis": "AllBarka placeholder estimate from the general market range; no verified reference. Owner sets the real price before publishing"
+  },
+  "aloobukhara-qandhari": {
+   "pkrPerkg": 1800,
+   "basis": "AllBarka placeholder estimate from the general market range; no verified reference. Owner sets the real price before publishing"
+  },
+  "mission-figs-dried": {
+   "pkrPerkg": 2600,
+   "basis": "AllBarka placeholder estimate from the general market range; no verified reference. Owner sets the real price before publishing"
+  },
+  "dried-blueberries": {
+   "pkrPerkg": 5500,
+   "basis": "AllBarka placeholder estimate from the general market range; no verified reference. Owner sets the real price before publishing"
+  },
+  "dried-kiwi": {
+   "pkrPerkg": 4500,
+   "basis": "AllBarka placeholder estimate from the general market range; no verified reference. Owner sets the real price before publishing"
+  },
+  "macadamia-nuts": {
+   "pkrPerkg": 9000,
+   "basis": "AllBarka placeholder estimate from the general market range; no verified reference. Owner sets the real price before publishing"
+  },
+  "brazil-nuts": {
+   "pkrPerkg": 7500,
+   "basis": "AllBarka placeholder estimate from the general market range; no verified reference. Owner sets the real price before publishing"
+  },
+  "pecans": {
+   "pkrPerkg": 6500,
+   "basis": "AllBarka placeholder estimate from the general market range; no verified reference. Owner sets the real price before publishing"
+  },
+  "almond-slices": {
+   "pkrPerkg": 3200,
+   "basis": "AllBarka placeholder estimate from the general market range; no verified reference. Owner sets the real price before publishing"
+  }
+ }
+}

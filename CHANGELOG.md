@@ -1,3 +1,9 @@
+## 15 November 2026 — Supplier-list gaps
+
+- Add a create-only draft batch of 16 products from the owner's supplier list: eight spices (with white pepper), Kandahari dried plums, Mission figs, dried blueberries and kiwi, macadamia, brazil nuts, pecans and almond slices ([details](docs/CATALOG_SUPPLIER_GAPS_2026-11-15.md)).
+- Add `docs/catalog/MASTER_PRODUCT_LIST.csv`: all 254 products the repository knows, by section and status.
+- Extend the intake register to 157 rows.
+
 ## 14 November 2026 — Bundles, deals, occasion boxes and premium items
 
 - Name every bundle after what is inside and add "What's inside" and "Why this set" to each description (EN, UR, AR).
