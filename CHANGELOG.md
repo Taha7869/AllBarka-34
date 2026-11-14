@@ -1,3 +1,9 @@
+## 15 November 2026 — Product page details
+
+- Phone-only sticky buy bar on the product page (name, pack, total, Add to Bag) once the main button scrolls away; it takes the cart bar's place and lifts the chat and back-to-top buttons.
+- Product page shows how much more unlocks free Lahore delivery, using the Rs. 3,000 threshold.
+- Weighed bundles show net weight and price per 100 g under "What's inside".
+
 ## 15 November 2026 — Website chat fix and hardening
 
 - Fix the website AI chat failing on the second message: the prompt now lists only the 24 products relevant to the message (about 10,000 instead of 18,800 characters, constant as the catalogue grows), so it fits Groq's per-minute token limit.

@@ -16,6 +16,7 @@ import CartDrawer from '../components/CartDrawer';
 import BackToTop from '../components/BackToTop';
 import ToastManager from '../components/ToastManager';
 import StickyCartBottomBar from '../components/StickyCartBottomBar';
+import { usePdpBuyBarVisible } from '../lib/pdpBuyBarSignal';
 import ThemeToggle from '../components/ThemeToggle';
 import type { InfoPageTab } from '../components/InfoPagesModal';
 import type { PolicyTab } from '../components/PolicyPagesModal';
@@ -207,6 +208,8 @@ export default function RootLayout() {
   }, []);
 
   // Check if any modal or drawer is active:
+  // The product page's sticky buy bar takes the cart bar's place at the bottom of a phone screen.
+  const pdpBuyBarVisible = usePdpBuyBarVisible();
   const isAnyModalOrDrawerOpen = 
     isCartOpen || 
     authModalOpen || 
@@ -454,10 +457,10 @@ export default function RootLayout() {
       </main>
 
       {!isAdminRoute && <Footer />}
-      <BackToTop hide={isAdminRoute || isAnyModalOrDrawerOpen} hasCartBar={totalItemsCount > 0 && location.pathname !== '/checkout' && location.pathname !== '/cart'} />
+      <BackToTop hide={isAdminRoute || isAnyModalOrDrawerOpen} hasCartBar={pdpBuyBarVisible || (totalItemsCount > 0 && location.pathname !== '/checkout' && location.pathname !== '/cart')} />
       
       <StickyCartBottomBar 
-        hide={isAdminRoute || isAnyModalOrDrawerOpen}
+        hide={isAdminRoute || isAnyModalOrDrawerOpen || pdpBuyBarVisible}
       />
       
       {/* Drawer & Modals */}
@@ -475,7 +478,7 @@ export default function RootLayout() {
       {(updatesOpen || loadedOverlays.updates) && <StoreUpdatesDialog isOpen={updatesOpen} onClose={() => setUpdatesOpen(false)} onSignIn={() => { setUpdatesOpen(false); setAuthInitialMode('signin'); setAuthModalOpen(true); }} />}
       {(infoModalOpen || loadedOverlays.info) && <InfoPagesModal isOpen={infoModalOpen} initialTab={infoModalTab} onClose={() => setInfoModalOpen(false)} />}
       {(policyModalOpen || loadedOverlays.policy) && <PolicyPagesModal isOpen={policyModalOpen} initialTab={policyModalTab} onClose={() => setPolicyModalOpen(false)} />}
-      {!isAdminRoute && <AIConcierge hide={isAnyModalOrDrawerOpen && !aiConciergeOpen} hasCartBar={totalItemsCount > 0 && location.pathname !== '/checkout' && location.pathname !== '/cart'} onOpenChange={setAiConciergeOpen} />}
+      {!isAdminRoute && <AIConcierge hide={isAnyModalOrDrawerOpen && !aiConciergeOpen} hasCartBar={pdpBuyBarVisible || (totalItemsCount > 0 && location.pathname !== '/checkout' && location.pathname !== '/cart')} onOpenChange={setAiConciergeOpen} />}
       <CustomQuoteModal />
       <MehmaanTablePlannerModal isOpen={mehmaanModalOpen} onClose={() => setMehmaanModalOpen(false)} />
       <OccasionInquiryModal isOpen={occasionModalOpen} defaultOccasion={defaultOccasion} prefill={occasionPrefill} onClose={() => setOccasionModalOpen(false)} />

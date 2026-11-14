@@ -1,5 +1,6 @@
 import BundleContentsSummary from '../components/BundleContentsSummary';
 import BundleInsideList from '../components/BundleInsideList';
+import PdpStickyBuyBar from '../components/PdpStickyBuyBar';
 import { readBundleFormat } from '../lib/merchandisingPresentation';
 import CartAddButton from '../components/CartAddButton';
 import { readProductDetailHandoff } from '../lib/productDetailHandoff';
@@ -21,7 +22,7 @@ import ProductDetailAccordion from '../components/ProductDetailAccordion';
 import VarietyComparisonModal from '../components/VarietyComparisonModal';
 import SEO from '../components/SEO';
 import { ShieldCheck, Sparkles, ArrowRight, Truck, Award, AlertCircle, Info, Share2, Maximize2, MessageSquareQuote, Package, Gift } from 'lucide-react';
-import { useCart } from '../contexts/CartContext';
+import { useCart, FREE_SHIPPING_THRESHOLD } from '../contexts/CartContext';
 import TrustBadges from '../components/TrustBadges';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getLocalized } from '../utils/localize';
@@ -42,7 +43,8 @@ export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { addToCart } = useCart();
+  const { addToCart, subtotal: cartSubtotal } = useCart();
+  const purchaseRef = useRef<HTMLDivElement>(null);
   const { t, language } = useLanguage();
   
   const product = PRODUCTS.find((p) => p.id === id && p.active !== false);
@@ -692,9 +694,16 @@ export default function ProductDetailPage() {
               <div><dt>{t('pdp.quantity')}</dt><dd><bdi>{quantity}</bdi></dd></div>
               <div><dt>{t('pdp.selectionTotal')}</dt><dd aria-live="polite"><bdi dir="ltr">{displayProductPrice(priceToUse, quantity)}</bdi></dd></div>
             </dl>}
+            {!isQuoteOnly && priceToUse && (() => {
+              // Estimated delivery on the product page: what this pack adds to the bag against the free-delivery threshold.
+              const remaining = Math.max(0, FREE_SHIPPING_THRESHOLD - (cartSubtotal + priceToUse * quantity));
+              return <p data-pdp-delivery-hint className="-mt-1 mb-4 text-xs text-[var(--color-text-secondary)]" aria-live="polite">
+                {remaining === 0 ? t('freeShippingUnlocked') : t('freeShippingHint').replace('{amount}', remaining.toLocaleString())}
+              </p>;
+            })()}
 
             {/* Quantity & Add to Cart (minimum 44px tap targets) */}
-            <div className="flex flex-col gap-3 mb-8">
+            <div ref={purchaseRef} className="flex flex-col gap-3 mb-8">
               {requiresInquiry ? <button type="button" onClick={() => openCustomQuoteModal({ productId: product.id, variantLabel: selectedWeight, mode: selectedWeight?.startsWith('Empty') ? 'empty' : 'filled', quantity: quantity })} className="focus-ring flex min-h-12 items-center justify-center rounded-xl border border-[#c7982f]/40 bg-[#1e3a2b] px-5 text-sm font-semibold text-[#fff8e9]">{t('catalog.requestQuote')}</button> : <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex items-center justify-center bg-white dark:bg-[#1C2422] border border-[var(--color-accent,#C7982F)]/35 rounded-xl h-12 px-2 shrink-0">
                   <button 
@@ -884,6 +893,7 @@ export default function ProductDetailPage() {
           onClose={() => setShowVarietyComparison(false)}
         />
       )}
+      {!isQuoteOnly && !requiresInquiry && <PdpStickyBuyBar targetRef={purchaseRef} name={getLocalized(product, 'name', language)} portion={selectedWeight} totalText={displayProductPrice(priceToUse, quantity)} disabled={!priceToUse || !selectedWeight} onAdd={handleAddToCart} />}
     </div>
   );
 }

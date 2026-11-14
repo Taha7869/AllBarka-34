@@ -30,3 +30,14 @@ test('a bundle with fewer than two resolvable components renders nothing', () =>
   const bundle = { ...PRODUCTS.find(p => p.id === 'bundle-silver-hamper')! } as Product;
   assert.equal(render(bundle), '');
 });
+
+test('a weighed bundle shows its net weight and price per 100 g; a bundle with a bottle does not', async () => {
+  const { bundlePerHundredGrams } = await import('../src/components/BundleInsideList');
+  const base = { ...PRODUCTS.find(p => p.id === 'bundle-daily-grind')!, prices: { Bundle: 2000 } } as Product;
+  assert.deepEqual(bundlePerHundredGrams(base, [{ unitWeightG: 250 }, { unitWeightG: 250 }, { unitWeightG: 250 }]), { grams: 750, per100: 267 });
+  assert.equal(bundlePerHundredGrams(base, [{ unitWeightG: 250 }, { unitVolumeMl: 100 }]), null);
+  const html = render({ ...base, id: 'x-net', componentIds: undefined, components: [{ productId: 'badam', unitWeightG: 250 }, { productId: 'kaju', unitWeightG: 250 }, { productId: 'akhroot', unitWeightG: 250 }] } as Product);
+  assert.match(html, /data-bundle-per100/);
+  assert.match(html, /Net weight 750 g/);
+  assert.match(html, /Rs\. 267 per 100 g/);
+});
