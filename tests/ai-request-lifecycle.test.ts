@@ -56,7 +56,7 @@ test('AI deadline cancels an in-flight consultant and diagnostics contain no cus
     assert.equal(f.events.length, 1);
     assert.equal(f.events[0].requestId, response.headers.get('x-allbarka-request-id'));
     assert.match(f.events[0].requestId, /^[a-f0-9-]{36}$/);
-    assert.deepEqual(Object.keys(f.events[0]).sort(), ['catalogMs', 'outcome', 'providerMs', 'requestId', 'status', 'totalMs']);
+    assert.deepEqual(Object.keys(f.events[0]).sort(), ['catalogMs', 'code', 'outcome', 'providerMs', 'requestId', 'status', 'totalMs']);
     assert.equal(JSON.stringify(f.events).includes('PRIVATE_'), false);
   } finally { await f.close(); }
 });

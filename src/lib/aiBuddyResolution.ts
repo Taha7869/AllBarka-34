@@ -95,7 +95,7 @@ const tokens = (text: string) => text.toLowerCase().normalize('NFKC').split(/[^\
  * provider's per-minute token limit as the catalogue grows. Matching products come first; the rest
  * of the slots go to a spread across categories so general questions still get real choices.
  */
-export function selectRelevantCatalog(visible: Product[], query: string, limit = 24): Product[] {
+export function selectRelevantCatalog(visible: Product[], query: string, limit = 16): Product[] {
   if (visible.length <= limit) return visible;
   const words = tokens(query);
   const scored = visible.map((product, index) => {

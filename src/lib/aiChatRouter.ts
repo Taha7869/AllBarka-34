@@ -21,6 +21,8 @@ export interface AiChatDiagnostic {
   requestId: string;
   status: number;
   outcome: 'completed' | 'timeout' | 'cancelled';
+  /** Error code sent to the browser (e.g. AI_RATE_LIMITED from the provider, AI_GUEST_TRIAL_EXHAUSTED), or null on success. */
+  code: string | null;
   totalMs: number;
   catalogMs: number | null;
   providerMs: number | null;
@@ -52,11 +54,14 @@ export function createAiChatRouter(options: AiChatRouterOptions) {
     let catalogMs: number | null = null;
     let providerMs: number | null = null;
     let recorded = false;
+    let responseCode: string | null = null;
+    const sendJson = res.json.bind(res);
+    res.json = (body: any) => { if (body && typeof body.code === 'string') responseCode = body.code; return sendJson(body); };
     const record = () => {
       if (recorded) return;
       recorded = true;
       const event: AiChatDiagnostic = {
-        requestId, status: res.statusCode, outcome,
+        requestId, status: res.statusCode, outcome, code: responseCode,
         totalMs: Date.now() - requestStartTime, catalogMs, providerMs,
       };
       // Fixed metadata allowlist: never log prompts, history, identities, provider payloads or secrets.

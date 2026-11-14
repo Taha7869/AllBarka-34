@@ -11,12 +11,12 @@ test('the AI prompt lists only relevant products and stays small as the catalogu
   assert.ok(Math.abs(big - small) < 1500, `${small} vs ${big}`);
   const context = buildBuddyCatalogContext(PRODUCTS as any, { query: 'ajwa dates price' });
   assert.match(context.contextText.split('\n')[0], /ajwa-dates/);
-  assert.match(context.contextText, /\[SHOWN: 24 of \d+ products/);
+  assert.match(context.contextText, /\[SHOWN: 16 of \d+ products/);
 });
 
 test('a general greeting still gets a spread of categories, and no query keeps the full list', () => {
-  const picked = selectRelevantCatalog(PRODUCTS as any, 'kesa ho', 24);
-  assert.equal(picked.length, 24);
+  const picked = selectRelevantCatalog(PRODUCTS as any, 'kesa ho', 16);
+  assert.equal(picked.length, 16);
   assert.ok(new Set(picked.map(p => p.category)).size >= 4);
   assert.equal(buildBuddyCatalogContext(PRODUCTS as any).visibleCount, buildBuddyCatalogContext(PRODUCTS as any).visibleCount);
   assert.ok(!buildBuddyCatalogContext(PRODUCTS as any).contextText.includes('[SHOWN:'));
