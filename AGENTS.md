@@ -1,5 +1,11 @@
 # AllBarka — repository entry for AI agents
 
+> **Current state, 15 November 2026 (read this first; everything dated earlier below is history).**
+> - Work branch: `claude/celebrations-foundation-20261112`. Railway service `allbarka-fullstack` deploys it to **allbarka.com on every push** — a push is a production release. Run `/verify` first.
+> - Always-on rules: `.agents/rules/` (truth first, token economy, security baseline). Skills: `.agents/skills/` (verification, security hardening, anti-clone, catalogue intake, catalogue pricing, design and i18n, inquiries and AI buddy). Workflows: `/verify`, `/security-audit`, `/catalog-count`.
+> - Product list: `docs/catalog/MASTER_PRODUCT_LIST.csv` (97 website seeds + 157 drafts in four batches). Open tasks: `docs/PENDING_WORK.md`.
+> - Older branch names in this file (`codex/admin-catalog-foundation-20261023`, `feat/renovation-v2`, `launch` offline) are **out of date**; do not switch to them.
+
 Start each handoff with [Pending work](docs/PENDING_WORK.md). Update its open items alongside the relevant tracker or handoff whenever work changes status.
 
 10 November 2026 — **SEC02 / premium storefront planning checkpoint.** Owner-selected branch for this work is `codex/premium-table-kit-20261108`, draft PR #17; inspected source `3b1a1ef`. This overrides the historical branch pointer below for this workstream. Read [CAUTION.md](CAUTION.md) and the [confirmed design/AI plan](docs/SMART_STOREFRONT_AND_AI_PLAN_2026-11-10.md). Preserve OG animated/bordered cards, distinct Quick View and sticky-photo PDP. Security inventory is source/read-only hosting evidence; new role routing/design/uploads/maps remain TODO. Railway production uses `launch`, is OFFLINE and has one configured replica; do not equate this branch with deployment. [Exact verification](docs/evidence/security-20261110/verification.json).

@@ -47,9 +47,9 @@ Before committing or declaring any task complete, run and pass the following che
   3. Verify desktop (`1440x900`) and mobile (`390x844`) viewports, light/dark themes, and LTR/RTL (`en`, `ur`, `ar`) rendering with zero console/page errors.
 
 ## 3. Strict Production & Branch Safety Rules
-- **Active Development Branch**: Work on `feat/renovation-v2` unless explicitly instructed otherwise.
+- **Active Development Branch** (15 Nov 2026): `claude/celebrations-foundation-20261112`. Railway deploys this branch to allbarka.com on every push, so every push is a production release: run the gates first.
 - **No Unapproved Production Mutations**:
   - Do **NOT** merge into `launch` or `main` without explicit owner instruction.
-  - Do **NOT** deploy to Railway/Netlify or publish `firestore.rules` to live Firestore during renovation stages unless explicitly requested.
+  - Do **NOT** change Railway settings or variables, or publish `firestore.rules` to live Firestore, unless explicitly requested.
   - Do **NOT** write draft catalog items or test inquiries into production Firestore (`allbarka-live`) or mutate live n8n workflows.
   - Never hardcode secrets or commit `.env` / service account JSON files.
