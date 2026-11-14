@@ -264,6 +264,12 @@ app.use(helmet({
   }
 }));
 
+// Browser features the store never uses stay off; the microphone is kept for the voice concierge on this origin.
+app.use((_req, res, next) => {
+  res.setHeader('Permissions-Policy', 'camera=(), geolocation=(), payment=(), usb=(), microphone=(self), interest-cohort=()');
+  next();
+});
+
 app.use('/api', commerceCors(process.env.FRONTEND_ORIGINS));
 
 // Live n8n wa_products Single Source of Truth Sync Endpoint (Mounted before n8nCommerceRouter catch-all)

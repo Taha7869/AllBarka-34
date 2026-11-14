@@ -1,3 +1,11 @@
+## 15 November 2026 — Website chat fix and hardening
+
+- Fix the website AI chat failing on the second message: the prompt now lists only the 24 products relevant to the message (about 10,000 instead of 18,800 characters, constant as the catalogue grows), so it fits Groq's per-minute token limit.
+- Change the "busy" chat message so it no longer blames the customer (EN, UR, AR).
+- Add a `Permissions-Policy` header (camera, location and payment off; microphone kept for voice).
+- n8n: patched website-chat and WhatsApp workflows with a fallback model on HTTP 429, and the fix for the order-update 401 (`n8n/fixed-2026-11-15/`).
+- Owner guide for Cloudflare in front of allbarka.com (`docs/CLOUDFLARE_SETUP.md`).
+
 ## 15 November 2026 — Supplier-list gaps
 
 - Add a create-only draft batch of 16 products from the owner's supplier list: eight spices (with white pepper), Kandahari dried plums, Mission figs, dried blueberries and kiwi, macadamia, brazil nuts, pecans and almond slices ([details](docs/CATALOG_SUPPLIER_GAPS_2026-11-15.md)).

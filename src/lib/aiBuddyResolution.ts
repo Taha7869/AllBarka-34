@@ -87,12 +87,47 @@ export function getCustomerVisibleCatalog(catalog: Product[]): Product[] {
  * Contains only public final selling prices, units, and packaging MOQ.
  * Handles quote-only and unpriced products individually without throwing.
  */
-export function buildBuddyCatalogContext(catalog: Product[]): {
+const STOP_WORDS = new Set(['the', 'and', 'for', 'with', 'what', 'have', 'you', 'your', 'kya', 'hai', 'hain', 'aur', 'mujhe', 'chahiye', 'please', 'kesa', 'kaise', 'ho', 'me', 'mein', 'ka', 'ki', 'ke', 'ko', 'se', 'koi', 'bhi']);
+const tokens = (text: string) => text.toLowerCase().normalize('NFKC').split(/[^\p{L}\p{N}]+/u).filter(word => word.length > 2 && !STOP_WORDS.has(word));
+
+/**
+ * Picks the products a customer message is about, so the AI prompt stays small enough for the
+ * provider's per-minute token limit as the catalogue grows. Matching products come first; the rest
+ * of the slots go to a spread across categories so general questions still get real choices.
+ */
+export function selectRelevantCatalog(visible: Product[], query: string, limit = 24): Product[] {
+  if (visible.length <= limit) return visible;
+  const words = tokens(query);
+  const scored = visible.map((product, index) => {
+    const p = product as any;
+    const haystack = [p.name_en, p.name_ur, p.name, p.category, ...(p.keywords || []), ...(p.collections || []), ...(p.occasions || []), p.badge]
+      .filter(Boolean).join(' ').toLowerCase();
+    let score = 0;
+    for (const word of words) if (haystack.includes(word)) score += String(p.name_en || '').toLowerCase().includes(word) ? 3 : 1;
+    if (/\b(box|boxes|bid|favou?r|wedding|nikkah|shadi|mehndi|walima|baby|umrah|hajj|corporate|gift|hamper|tabarruk)\b/i.test(query) && isPackagingProduct(product)) score += 2;
+    return { product, score, index };
+  });
+  const chosen = scored.filter(row => row.score > 0).sort((a, b) => b.score - a.score || a.index - b.index).slice(0, limit).map(row => row.product);
+  if (chosen.length < limit) {
+    const byCategory = new Map<string, Product[]>();
+    for (const product of visible) if (!chosen.includes(product)) {
+      const list = byCategory.get(product.category) || [];
+      list.push(product); byCategory.set(product.category, list);
+    }
+    const queues = [...byCategory.values()];
+    for (let round = 0; chosen.length < limit && queues.some(queue => queue.length > round); round++)
+      for (const queue of queues) if (queue[round] && chosen.length < limit) chosen.push(queue[round]);
+  }
+  return chosen;
+}
+
+export function buildBuddyCatalogContext(catalog: Product[], options: { query?: string; limit?: number } = {}): {
   contextText: string;
   visibleCount: number;
   isUnpricedFallback: boolean;
 } {
-  const visible = getCustomerVisibleCatalog(catalog);
+  const allVisible = getCustomerVisibleCatalog(catalog);
+  const visible = options.query === undefined ? allVisible : selectRelevantCatalog(allVisible, options.query, options.limit);
   if (visible.length === 0) {
     return {
       contextText: `[CATALOG STATUS: Authoritative database currently unreachable. Real-time product prices and stock cannot be committed. Provide general consultative guidance only and direct patrons to our Lahore team on WhatsApp (+92 316 0666083) for live prices and stock availability.]`,
@@ -139,6 +174,11 @@ export function buildBuddyCatalogContext(catalog: Product[]): {
     lines.push(`- ${tag} ${p.name_en} (ID: ${p.id})${moqText}: ${priceList}`);
   }
 
+  if (visible.length < allVisible.length) {
+    const counts = new Map<string, number>();
+    for (const product of allVisible) if (!visible.includes(product)) counts.set(product.category, (counts.get(product.category) || 0) + 1);
+    lines.push(`[SHOWN: ${visible.length} of ${allVisible.length} products most relevant to this message. Not listed but available: ${[...counts].map(([category, count]) => `${category} (${count})`).join(', ')}. If the customer wants one of these, say we stock that range and point to the shop page or ask which item; never guess its price.]`);
+  }
   return {
     contextText: lines.join('\n'),
     visibleCount: visible.length,
@@ -153,14 +193,16 @@ export function buildBuddySystemInstruction(params: {
   catalog: Product[];
   language: 'en' | 'ur' | 'ar';
   isCatalogFailure?: boolean;
+  /** Customer message (plus recent turns). When given, only the relevant products are listed. */
+  query?: string;
 }): string {
-  const { catalog, language, isCatalogFailure } = params;
+  const { catalog, language, isCatalogFailure, query } = params;
   const { contextText, isUnpricedFallback } = isCatalogFailure
     ? {
         contextText: `[CATALOG UNAVAILABLE: Live catalog pricing is currently offline. Offer general guidance and invite customer to connect on WhatsApp.]`,
         isUnpricedFallback: true,
       }
-    : buildBuddyCatalogContext(catalog);
+    : buildBuddyCatalogContext(catalog, { query });
 
   const langInstruction =
     language === 'ar'

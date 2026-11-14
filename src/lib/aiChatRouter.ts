@@ -169,6 +169,8 @@ export function createAiChatRouter(options: AiChatRouterOptions) {
         catalog: publicCatalog,
         language,
         isCatalogFailure,
+        // Keeps the prompt within the AI provider's per-minute token budget (a full catalogue does not fit).
+        query: [userText, ...(Array.isArray(messages) ? messages.slice(-2).map((m: any) => String(m?.text ?? m?.content ?? '')) : [])].join(' '),
       });
 
       const sanitizedMessage = sanitizeBuddyPrompt(userText);
