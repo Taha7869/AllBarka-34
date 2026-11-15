@@ -60,8 +60,9 @@ export function routeMetadata(pathname: string, origin: string, products: Produc
     metadata.image = seo.image || DEFAULT_IMAGE;
     metadata.keywords=seo.keywords;
     const prices = Object.values(product.prices).filter(price => Number.isSafeInteger(price) && price > 0);
-    metadata.structuredData = {
-      '@context': 'https://schema.org', '@type': 'Product', name: product.name_en,
+    const productUrl = new URL(route, origin).href;
+    const productData = {
+      '@type': 'Product', name: product.name_en,
       description, sku: product.id, url: new URL(route, origin).href,
       image: new URL(metadata.image, origin).href, brand: { '@type': 'Brand', name: 'AllBarka' },
       ...(prices.length && !product.quoteOnly ? { offers: {
@@ -69,6 +70,15 @@ export function routeMetadata(pathname: string, origin: string, products: Produc
         offerCount: prices.length, url: new URL(route, origin).href,
         ...(product.active === false ? { availability: 'https://schema.org/OutOfStock' } : {}),
       } } : {}),
+    };
+    const categoryId = resolveCategorySlug(product.category);
+    const category = categoryId ? CANONICAL_CATEGORIES[categoryId] : undefined;
+    // Breadcrumbs let search results show Home > Category > Product instead of a bare URL.
+    const crumbs = [{ name: 'Home', item: new URL('/', origin).href }, { name: 'Shop', item: new URL('/shop', origin).href },
+      ...(category ? [{ name: category.name, item: new URL(`/shop/${categoryId}`, origin).href }] : []), { name: product.name_en, item: productUrl }];
+    metadata.structuredData = {
+      '@context': 'https://schema.org',
+      '@graph': [productData, { '@type': 'BreadcrumbList', itemListElement: crumbs.map((crumb, index) => ({ '@type': 'ListItem', position: index + 1, name: crumb.name, item: crumb.item })) }],
     };
     return metadata;
   }

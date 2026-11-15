@@ -6,7 +6,7 @@ import type { Product } from '../types';
 import { PRODUCTS } from '../data/products';
 import { loadAuthoritativeCatalog, mergeAuthoritativeCatalog } from './catalogStore';
 import { askN8nConsultant, getN8nAiConfig } from '../services/n8nAIConsultant';
-import { reserveGuestAiMessage, GuestTrialLimitError } from './aiGuestTrial';
+import { reserveGuestAiMessage, releaseGuestAiMessage, GuestTrialLimitError } from './aiGuestTrial';
 import {
   buildBuddySystemInstruction,
   validateAiRecommendations,
@@ -33,6 +33,7 @@ export interface AiChatRouterOptions {
   getCatalog?: () => Product[] | Promise<Product[]>;
   askConsultant?: (params: { message: string; history?: unknown; system: string; signal?: AbortSignal }) => Promise<any>;
   reserveGuestTrial?: (ip: string, userAgent: string) => Promise<number | null>;
+  releaseGuestTrial?: (ip: string, userAgent: string) => Promise<void>;
   authenticateOptionalUser?: RequestHandler;
   patronChatLimiter?: RequestHandler;
   timeoutMs?: number;
@@ -102,6 +103,17 @@ export function createAiChatRouter(options: AiChatRouterOptions) {
       }
     }, timeoutMs);
 
+    let guestReserved = false;
+    const clientIp = req.ip || req.socket?.remoteAddress || '';
+    const clientAgent = String(req.headers['user-agent'] || '');
+    const releaseGuest = async () => {
+      if (!guestReserved) return;
+      guestReserved = false;
+      try {
+        if (options.releaseGuestTrial) await options.releaseGuestTrial(clientIp, clientAgent);
+        else if (!options.reserveGuestTrial) await releaseGuestAiMessage(options.getDb(), clientIp, clientAgent, process.env.AI_GUEST_HASH_SECRET || '');
+      } catch { /* A failed refund must not change the customer's error response. */ }
+    };
     try {
       const isGooglePatron = (req as any).user?.firebase?.sign_in_provider === 'google.com';
       let guestMessagesRemaining: number | null = null;
@@ -122,6 +134,7 @@ export function createAiChatRouter(options: AiChatRouterOptions) {
               process.env.AI_GUEST_HASH_SECRET || ''
             );
           }
+          guestReserved = true;
         } catch (error) {
           if (res.headersSent) return;
           if (error instanceof GuestTrialLimitError) {
@@ -190,6 +203,7 @@ export function createAiChatRouter(options: AiChatRouterOptions) {
 
       if (res.headersSent || controller.signal.aborted) return;
       if (!answer) {
+        await releaseGuest();
         return res.status(503).json({ error: 'AI_UNAVAILABLE', code: 'AI_UNAVAILABLE', available: false });
       }
 
@@ -231,6 +245,7 @@ export function createAiChatRouter(options: AiChatRouterOptions) {
       });
     } catch (error) {
       if (res.headersSent || controller.signal.aborted) return;
+      await releaseGuest();
       const code =
         error instanceof Error && error.message === 'AI_RATE_LIMITED'
           ? 'AI_RATE_LIMITED'

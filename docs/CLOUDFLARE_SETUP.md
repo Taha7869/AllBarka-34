@@ -14,3 +14,24 @@ Free plan is enough. Nothing in the code has to change; the site stays on Railwa
 10. Firebase Authentication → Authorized domains: no change (same domain).
 
 Check afterwards: open the site, place a test order, send two chat messages, log in with Google.
+
+
+## Keep it invisible to customers
+
+Customers should never see a "checking your browser" page or a puzzle. Use only these settings:
+
+| Setting | Value | Why |
+| --- | --- | --- |
+| Bot Fight Mode | On | Works in the background against known bad bots |
+| Security level | Medium (not High) | High challenges too many mobile networks in Pakistan |
+| "I'm Under Attack" mode | Off, only during a real attack | It shows a 5-second page to every visitor |
+| Browser Integrity Check | On | Invisible header check |
+| Challenge Passage | 30 minutes or more | A visitor who passed once is not asked again |
+| WAF rate limit on `/api/` | Block only above 100 requests in 10 seconds | A real shopper never gets close |
+| Turnstile (later, optional) | "Invisible" widget on chat and checkout only | Proves a real person without a puzzle |
+
+## Cloudflare and the AI chat limit
+
+The chat stopping after 2 messages is **not** caused by our own limits. Railway logs show the AI provider (Groq, free tier, about 8,000 tokens a minute per model) answering "busy" through n8n. Cloudflare cannot raise Groq's limit. What fixes it: the n8n fallback model (`n8n/fixed-2026-11-15/`) and, for real traffic, Groq's paid tier.
+
+What Cloudflare does allow: once bots are filtered at the edge, our own guest limit can be raised safely. Set the Railway variable `AI_GUEST_DAILY_LIMIT` (default 5, allowed 1 to 200), for example to 20. Google sign-in users have no daily limit. A message the AI failed to answer is no longer counted against the guest.

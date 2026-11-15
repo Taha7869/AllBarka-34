@@ -17,6 +17,8 @@ import BackToTop from '../components/BackToTop';
 import ToastManager from '../components/ToastManager';
 import StickyCartBottomBar from '../components/StickyCartBottomBar';
 import { usePdpBuyBarVisible } from '../lib/pdpBuyBarSignal';
+import PullToRefresh from '../components/PullToRefresh';
+import CookieNotice from '../components/CookieNotice';
 import ThemeToggle from '../components/ThemeToggle';
 import type { InfoPageTab } from '../components/InfoPagesModal';
 import type { PolicyTab } from '../components/PolicyPagesModal';
@@ -462,6 +464,8 @@ export default function RootLayout() {
       <StickyCartBottomBar 
         hide={isAdminRoute || isAnyModalOrDrawerOpen || pdpBuyBarVisible}
       />
+      <PullToRefresh disabled={isAdminRoute || isAnyModalOrDrawerOpen || location.pathname === '/checkout'} />
+      <CookieNotice hidden={isAdminRoute || isAnyModalOrDrawerOpen || location.pathname === '/checkout' || pdpBuyBarVisible || totalItemsCount > 0} />
       
       {/* Drawer & Modals */}
       <CartDrawer

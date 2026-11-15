@@ -1,3 +1,13 @@
+## 15 November 2026 — Almond loader, 404, SEO, storage notice, lessons loop
+
+- Branded almond loader for page loading, and phone pull-to-refresh with the almond in place of the browser's grey circle (top of page only, off in drawers and checkout, still under reduced motion).
+- 404 page: search box, popular sections, WhatsApp help, almond mark.
+- SEO: home page schema now has the store and a site search action, with the Unsplash image and the unconfirmed street address removed; product pages add Home > Shop > Category > Product breadcrumbs.
+- One-time storage notice (essential storage only, no tracking), placed clear of the chat button and bottom bars.
+- AI chat: a guest message the AI failed to answer is given back; the guest daily limit is now `AI_GUEST_DAILY_LIMIT` on Railway (default 5).
+- Agents: `allbarka-lessons-learned` skill, `/retro` workflow and `docs/LESSONS.md`.
+- Cloudflare guide: settings that stay invisible to customers.
+
 ## 15 November 2026 — Product page details
 
 - Phone-only sticky buy bar on the product page (name, pack, total, Add to Bag) once the main button scrolls away; it takes the cart bar's place and lifts the chat and back-to-top buttons.

@@ -20,11 +20,12 @@ import PoliciesPage, { type PolicyTab } from './pages/PoliciesPage';
 import AdminOrdersPage from './pages/AdminOrdersPage';
 import GiftRevealPage from './pages/GiftRevealPage';
 import NotFoundPage from './pages/NotFoundPage';
+import AlmondLoader from './components/AlmondLoader';
 import { OccasionsIndexRoute, OccasionRoute, PackagingHubPage, PackagingFormatPage, DesignPage } from './pages/CelebrationsPages';
 
 const PageLoadingFallback = () => (
   <div className="w-full min-h-[50vh] flex flex-col items-center justify-center py-24" aria-busy="true">
-    <div className="w-9 h-9 rounded-full border-2 border-[#D4AF6A]/25 border-t-[#D4AF6A] animate-spin" />
+    <AlmondLoader size={40} />
     <span className="mt-4 font-serif text-[11px] uppercase tracking-[0.25em] text-[#8C6B1B]/90 font-medium">
       AllBarka Luxury Dry Fruits
     </span>

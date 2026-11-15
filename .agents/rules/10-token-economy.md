@@ -11,3 +11,4 @@ trigger: always_on
 6. **Answer short.** Lead with the result, then what the owner must do. No recap of steps already shown.
 7. **One plan, then act.** Do not rewrite a plan the owner already approved; do not ask permission for routine, reversible steps.
 8. **Stop on a loop.** If the same command fails twice for the same reason, stop and report the error instead of retrying variations.
+9. **Learn once.** At the start of a task grep `docs/LESSONS.md` for its topic; at the end, add a lesson if something surprised you (`allbarka-lessons-learned` skill).

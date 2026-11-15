@@ -41,3 +41,27 @@ test('catalog content cannot inject HTML or executable JSON into the document', 
   assert.doesNotMatch(html, /<img src=x|<script>alert/);
   assert.ok(html.includes('\\u003cimg'));
 });
+
+test('product HTML carries breadcrumbs Home > Shop > Category > Product for search results', () => {
+  const product = PRODUCTS.find(item => item.id === 'pista')!;
+  const metadata = routeMetadata('/product/pista', origin, [product]);
+  const graph = (metadata.structuredData as any)['@graph'];
+  assert.equal(graph[0]['@type'], 'Product');
+  const crumbs = graph[1].itemListElement;
+  assert.equal(graph[1]['@type'], 'BreadcrumbList');
+  assert.deepEqual(crumbs.map((c: any) => c.position), crumbs.map((_: any, i: number) => i + 1));
+  assert.equal(crumbs[0].item, `${origin}/`);
+  assert.equal(crumbs.at(-1).item, `${origin}/product/pista`);
+  assert.ok(crumbs.length >= 3);
+});
+
+test('the home page schema names the store and its site search without an unconfirmed street address', () => {
+  const html = readFileSync('index.html', 'utf8');
+  const json = JSON.parse(html.split('<script type="application/ld+json">')[1].split('</script>')[0]);
+  const store = json['@graph'].find((n: any) => n['@type'] === 'Store');
+  const site = json['@graph'].find((n: any) => n['@type'] === 'WebSite');
+  assert.equal(store.address.addressLocality, 'Lahore');
+  assert.equal(store.address.streetAddress, undefined);
+  assert.doesNotMatch(store.image, /unsplash/);
+  assert.match(site.potentialAction.target.urlTemplate, /\/shop\?search=\{search_term_string\}$/);
+});

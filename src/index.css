@@ -643,3 +643,11 @@ html[dir="rtl"] [dir="auto"]:dir(ltr) { --localized-body-font:var(--font-sans); 
 html[lang="ur"] [dir="auto"]:dir(rtl) { --localized-body-font:var(--font-urdu),var(--font-sans); --localized-heading-font:var(--font-urdu),var(--font-serif); font-family:var(--localized-body-font); }
 html[lang="ar"] [dir="auto"]:dir(rtl) { --localized-body-font:var(--font-arabic),var(--font-sans); --localized-heading-font:var(--font-arabic),var(--font-serif); font-family:var(--localized-body-font); }
 html[dir="rtl"] :is(h1,h2,h3,h4,h5,h6)[dir="auto"] { font-family:var(--localized-heading-font,var(--font-serif)); }
+
+
+/* Branded loading almond and pull-to-refresh (AlmondLoader, PullToRefresh). */
+@keyframes almond-loader-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.almond-loader-spin { animation: almond-loader-spin 1.1s cubic-bezier(.45,.05,.55,.95) infinite; transform-origin: 50% 50%; }
+@media (prefers-reduced-motion: reduce) { .almond-loader-spin { animation: none; } }
+/* On touch screens our almond replaces the browser's own pull-to-refresh circle, so the two never show together. */
+@media (pointer: coarse) { html, body { overscroll-behavior-y: contain; } }
