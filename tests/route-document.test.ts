@@ -55,13 +55,14 @@ test('product HTML carries breadcrumbs Home > Shop > Category > Product for sear
   assert.ok(crumbs.length >= 3);
 });
 
-test('the home page schema names the store and its site search without an unconfirmed street address', () => {
+test('the home page schema names the store, its area only, and its site search', () => {
   const html = readFileSync('index.html', 'utf8');
   const json = JSON.parse(html.split('<script type="application/ld+json">')[1].split('</script>')[0]);
   const store = json['@graph'].find((n: any) => n['@type'] === 'Store');
   const site = json['@graph'].find((n: any) => n['@type'] === 'WebSite');
   assert.equal(store.address.addressLocality, 'Lahore');
-  assert.equal(store.address.streetAddress, undefined);
+  assert.equal(store.address.streetAddress, 'Allama Iqbal Town');
+  assert.equal(store.geo, undefined);
   assert.doesNotMatch(store.image, /unsplash/);
   assert.match(site.potentialAction.target.urlTemplate, /\/shop\?search=\{search_term_string\}$/);
 });

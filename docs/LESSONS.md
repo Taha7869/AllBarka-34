@@ -2,6 +2,12 @@
 
 Newest first. Shape and rules: `.agents/skills/allbarka-lessons-learned/SKILL.md`.
 
+### 2026-11-15 · n8n · A 401 can hide a second fault
+- What happened: the sheet-to-website workflow got 401 every minute; reading its body showed it also posted to `/order-update` with fields the website rejects.
+- Root cause: the workflow was built against an older contract; the sheet route is `/order-status` (`src/lib/sheetStatusCommand.ts`).
+- Do: when fixing an integration auth error, also check the request body against the server's validator before saying it is fixed.
+- Check: `tests/n8n-sheet-status-payload.test.ts`.
+
 ### 2026-11-15 · tests · Stage 5A controlled-clock test can fail under full-suite load
 - What happened: `tests/stage5a-controlled-clock.test.mjs` step 10 failed once with "Execution context was destroyed" during the full run; it passed 3 times alone.
 - Root cause: not confirmed; the step had no touch input, so the new pull-to-refresh cannot have reloaded it. Most likely timing under load.

@@ -250,7 +250,7 @@ export const Footer7 = ({
             <div className="pt-2 flex flex-col gap-2 text-xs text-[#A8B2AF]">
               <div className="flex items-center gap-2">
                 <MapPin className="h-3.5 w-3.5 text-[#D4AF37] shrink-0" />
-                <span>Gulberg III / DHA Phase 5, Lahore, Pakistan</span>
+                <span>Allama Iqbal Town, Lahore, Pakistan</span>
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="h-3.5 w-3.5 text-[#D4AF37] shrink-0" />

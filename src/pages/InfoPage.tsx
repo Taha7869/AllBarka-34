@@ -197,7 +197,7 @@ const PAGES: Record<InfoPageTab, PageData> = {
     content: "For corporate gifting, custom hampers, or immediate assistance, our dedicated concierge is ready to assist you. Visit our boutique in Lahore or connect with us directly on WhatsApp.",
     icon: MessageCircle,
     highlights: [
-      "Neelum Block, Allama Iqbal Town, Lahore",
+      "Allama Iqbal Town, Lahore",
       "Open Daily: 9:00 AM – 9:00 PM",
       "WhatsApp: 0316-0666083"
     ],

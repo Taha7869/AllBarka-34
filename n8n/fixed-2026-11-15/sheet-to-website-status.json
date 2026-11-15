@@ -1,0 +1,444 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "8e1e82ed-105b-4d63-8ac0-4412bebbd8b5",
+      "name": "Every 1 Minute",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1584,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1tJvUTc1psziNFvmVjnq1THFh7uPPuaqrqElBsoPXzFI",
+          "mode": "list",
+          "cachedResultName": "AllBarka Orders"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Order_Control",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "4ad082c2-21eb-4081-87e8-341bb1993ef8",
+      "name": "Read All Rows",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -1360,
+        128
+      ],
+      "credentials": {
+        "googleApi": {
+          "id": "ziiSg69obUP21WbV",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// v2: IN_PROGRESS claim skip (stale claim 10 min baad retry)\nconst rows = $input.all().map(i => i.json).filter(r => r && (r.order_id || '').toString().trim());\nconst CLAIM_MAX_MS = 10 * 60 * 1000;\nconst now = Date.now();\nconst pending = rows.filter(r => {\n  const reqId = (r.request_id || '').toString().trim();\n  if (!reqId) return false;\n  const applied = (r.last_applied_request_id || '').toString().trim();\n  if (reqId === applied) return false;\n  const se = (r.sync_error || '').toString().trim();\n  if (se.indexOf('WF1: IN_PROGRESS') === 0) {\n    const m = se.match(/@(\\S+)/);\n    const claimed = m ? Date.parse(m[1]) : NaN;\n    if (!Number.isFinite(claimed) || (now - claimed) < CLAIM_MAX_MS) return false;\n  }\n  const hasStatus = (r.requested_status || '').toString().trim();\n  const hasTracking = (r.requested_tracking_number || '').toString().trim();\n  const hasEta = (r.requested_estimated_delivery || '').toString().trim();\n  const hasReason = (r.request_reason || '').toString().trim();\n  return !!hasStatus;\n});\nif (!pending.length) return [];\nreturn pending.map(r => ({ json: r }));"
+      },
+      "id": "38d7c38c-99ac-4096-bb23-05e3a15a78e9",
+      "name": "Pending Requests?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1136,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1tJvUTc1psziNFvmVjnq1THFh7uPPuaqrqElBsoPXzFI",
+          "mode": "list",
+          "cachedResultName": "AllBarka Orders"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Order_Control",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $json.row_number }}",
+            "sync_error": "={{ 'WF1: IN_PROGRESS @' + $now.toISO() }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sync_error",
+              "displayName": "sync_error",
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "a6791904-6c79-4b08-aca0-ff6ddf86a440",
+      "name": "Claim Request",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -912,
+        128
+      ],
+      "credentials": {
+        "googleApi": {
+          "id": "ziiSg69obUP21WbV",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://allbarka.com/api/integrations/n8n/order-status",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ source: 'google_sheet', eventId: 'sheet:' + (String($json.order_id || '') + '-' + String($json.request_id || '')).replace(/[^A-Za-z0-9_-]/g, '-').padEnd(8, '0').slice(0, 100), orderId: String($json.order_id || '').trim(), status: String($json.requested_status || '').trim().toUpperCase().replace(/[\\s-]+/g, '_'), expectedStatus: String($json.status || '').trim().toUpperCase().replace(/[\\s-]+/g, '_'), expectedUpdatedAt: String($json.canonical_status_updated_at || '').trim(), reason: (String($json.request_reason || '').trim() || 'Status updated from the Google Sheet').slice(0, 500) }) }}",
+        "options": {}
+      },
+      "id": "c28388b6-30ce-4744-80db-7540d8a85af9",
+      "name": "Send To Backend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -688,
+        128
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "yJICGZrzjzt0QJNm",
+          "name": "Header Auth account 2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Backend 200 lekin ok:false de to bhi fail samjho\nconst item = $input.first().json || {};\nconst body = (item.body !== undefined) ? item.body : item;\nconst bad = body && typeof body === 'object' && body.ok === false;\nconst errMsg = bad ? (body.error || body.message || 'backend returned ok:false') : '';\nreturn [{ json: { backendOk: !bad, errMsg: String(errMsg) } }];"
+      },
+      "id": "abf05f54-4ec2-4ac1-99ca-b13d2b49717e",
+      "name": "Check Backend Ok",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -464,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "ok1",
+              "leftValue": "={{ $json.backendOk }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "name": "filter.operator.isTrue"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f3e0820a-f0c7-48b7-bae2-1adccef8017e",
+      "name": "Backend Ok?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -240,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1tJvUTc1psziNFvmVjnq1THFh7uPPuaqrqElBsoPXzFI",
+          "mode": "list",
+          "cachedResultName": "AllBarka Orders"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Order_Control",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('Pending Requests?').item.json.row_number }}",
+            "last_applied_request_id": "={{ $('Pending Requests?').item.json.request_id }}",
+            "sync_error": ""
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_applied_request_id",
+              "displayName": "last_applied_request_id",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sync_error",
+              "displayName": "sync_error",
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "11055ea6-aa05-43ed-aae1-5d7480d96afd",
+      "name": "Mark Applied",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -16,
+        0
+      ],
+      "credentials": {
+        "googleApi": {
+          "id": "ziiSg69obUP21WbV",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const src = $('Pending Requests?').item.json;\nconst e = $input.first().json || {};\nlet msg = '';\nif (e.errMsg) {\n  msg = e.errMsg;\n} else if (e.error) {\n  msg = e.error.message || e.error.description || (typeof e.error === 'string' ? e.error : JSON.stringify(e.error));\n} else if (e.message) {\n  msg = e.message;\n} else {\n  msg = JSON.stringify(e).slice(0, 200);\n}\nreturn [{ json: { row_number: src.row_number, sync_error: ('WF1: ' + msg).slice(0, 500) } }];"
+      },
+      "id": "5397ac34-907f-4ed5-8a78-9c3d07ee673a",
+      "name": "Build Error Note",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -16,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1tJvUTc1psziNFvmVjnq1THFh7uPPuaqrqElBsoPXzFI",
+          "mode": "list",
+          "cachedResultName": "AllBarka Orders"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Order_Control",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $json.row_number }}",
+            "sync_error": "={{ $json.sync_error }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sync_error",
+              "displayName": "sync_error",
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "1c0a6b19-220d-4fb3-94dd-a10ae3c0aac4",
+      "name": "Log Sync Error",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        208,
+        224
+      ],
+      "credentials": {
+        "googleApi": {
+          "id": "ziiSg69obUP21WbV",
+          "name": "Google Service Account account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every 1 Minute": {
+      "main": [
+        [
+          {
+            "node": "Read All Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read All Rows": {
+      "main": [
+        [
+          {
+            "node": "Pending Requests?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pending Requests?": {
+      "main": [
+        [
+          {
+            "node": "Claim Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claim Request": {
+      "main": [
+        [
+          {
+            "node": "Send To Backend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send To Backend": {
+      "main": [
+        [
+          {
+            "node": "Check Backend Ok",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Error Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Backend Ok": {
+      "main": [
+        [
+          {
+            "node": "Backend Ok?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Backend Ok?": {
+      "main": [
+        [
+          {
+            "node": "Mark Applied",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Error Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Error Note": {
+      "main": [
+        [
+          {
+            "node": "Log Sync Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "472b02a4b70656345f8898c9b0604d48c1817947af919930f0d2f248c61404a6"
+  }
+}

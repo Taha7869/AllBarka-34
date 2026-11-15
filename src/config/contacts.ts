@@ -19,7 +19,7 @@ export const CONTACT_CONFIG = {
   customerEmail: 'allbarkalahore@gmail.com',
 
   // Store Physical Location Details
-  boutiqueAddress: 'DHA Phase 6 & Gulberg III, Lahore, Pakistan',
+  boutiqueAddress: 'Allama Iqbal Town, Lahore, Pakistan',
 };
 
 /**

@@ -94,6 +94,8 @@ test('concierge uses actual multilingual product prices and current shipping con
 });
 test('concierge cannot invent location coordinates or personal medical treatment', () => {
   assert.deepEqual(conciergeFallback('location', 'ar').groundingSources, []);
-  assert.doesNotMatch(conciergeFallback('location', 'en').reply, /Iqbal Town|31\./);
+  // Owner decision 15 Nov 2026: show the area (Allama Iqbal Town), never a block, street or coordinates.
+  assert.match(conciergeFallback('location', 'en').reply, /Allama Iqbal Town, Lahore/);
+  assert.doesNotMatch(conciergeFallback('location', 'en').reply, /Block|31\./);
   assert.match(conciergeFallback('diabetes treatment', 'en').reply, /qualified clinician/);
 });

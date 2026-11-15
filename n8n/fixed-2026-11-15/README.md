@@ -1,5 +1,7 @@
 # n8n fixes, 15 November 2026
 
+Step-by-step session plan (when, order, tests, rollback): [docs/N8N_RUNBOOK.md](../../docs/N8N_RUNBOOK.md).
+
 ## 1. Website chat fails on the second message ("You have sent several messages quickly")
 
 **Cause (confirmed from Railway logs and code).** The website asks n8n, n8n asks Groq `openai/gpt-oss-120b`. Groq's free plan allows about 8,000 tokens a minute per model. Each chat sent the full catalogue (about 5,200 tokens) plus 1,200 reserved reply tokens, so one message used almost the whole minute and the next got HTTP 429. Railway logs: `POST /api/concierge/chat → 200` then `→ 429` four seconds later, with `providerMs: null`. With all 254 products published, even the first message would have failed.
@@ -15,14 +17,12 @@
 
 For real traffic later: Groq's paid Developer tier raises these limits many times. That is a billing decision for the owner.
 
-## 2. `POST /api/integrations/n8n/order-update → 401` every minute
+## 2. `POST /api/integrations/n8n/order-update → 401` every minute, and a second fault behind it
 
-The "sheet → website" workflow (Every 1 Minute → Send To Backend) calls the website, which rejects it because the header is wrong or missing. The website expects:
+The "sheet → website" workflow (Every 1 Minute → Send To Backend) has two faults:
 
-- Header name: `X-AllBarka-Integration-Secret`
-- Header value: exactly the Railway variable `N8N_INTEGRATION_SECRET`
-
-In n8n: Credentials → **Header Auth account 2** → set Name to `X-AllBarka-Integration-Secret` and Value to the same secret as Railway. Optionally change the node URL to `https://allbarka.com/api/integrations/n8n/order-update`. Do not paste the secret in any chat.
+1. **Wrong header** (the 401): the website expects header `X-AllBarka-Integration-Secret` with exactly the Railway value `N8N_INTEGRATION_SECRET`. Fix it in n8n Credentials → **Header Auth account 2**. Do not paste the secret in any chat.
+2. **Wrong route and body**: it posts to `/order-update` with `requestId`, `requestCreatedAt`, `reason`, `source` and no `updatedAt`. The website rejects that body (`INVALID_INTEGRATION_PAYLOAD`) even with the right secret. Sheet status changes belong to `/order-status`. `sheet-to-website-status.json` in this folder sends the accepted body: `source`, `eventId` (`sheet:` + order and request id), `orderId`, `status` and `expectedStatus` in upper case, `expectedUpdatedAt`, `reason`. `tests/n8n-sheet-status-payload.test.ts` checks it against the website's own validator.
 
 ## 3. Checked and fine
 - Order mirror workflow (`allbarka-orders`): header auth, creation and revision guards, stub rows. No change needed.

@@ -46,6 +46,6 @@ node --import tsx --test tests/static-config.test.mjs
 - Do not publish `firestore.rules` or change Railway variables without the owner's yes.
 
 ## 5. Known open item (Nov 2026)
-Railway HTTP logs show `POST /api/integrations/n8n/order-update → 401` every minute: the n8n credential must send header `X-AllBarka-Integration-Secret` with the value of `N8N_INTEGRATION_SECRET` (see `n8n/fixed-2026-11-15/README.md`). The fix is on the n8n side; do not loosen the check.
+Railway HTTP logs show `POST /api/integrations/n8n/order-update → 401` every minute: the n8n credential must send header `X-AllBarka-Integration-Secret` with the value of `N8N_INTEGRATION_SECRET` (see `n8n/fixed-2026-11-15/README.md`). Behind the 401 the workflow also posted to the wrong route: sheet status changes go to `/order-status` (`sheet-to-website-status.json`). The fix is on the n8n side; do not loosen the check.
 
 AI prompt budget: Groq free tier is about 8,000 tokens a minute per model. Keep `buildBuddySystemInstruction` called with `query` so only relevant products are listed; never send the full catalogue.

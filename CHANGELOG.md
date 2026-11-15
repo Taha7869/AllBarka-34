@@ -1,3 +1,9 @@
+## 15 November 2026 — Store location and n8n runbook
+
+- Store location is now the area only, Allama Iqbal Town, Lahore, everywhere (footer, contact, info page, AI fallback, search schema); no block, street or coordinates.
+- n8n: the sheet-to-website status workflow posted a body the website rejects; `sheet-to-website-status.json` posts the accepted `/order-status` body (tested against the site's validator).
+- `docs/N8N_RUNBOOK.md`: one 65-minute session plan for the n8n fixes, with timing, checks, an end-to-end order test and rollback.
+
 ## 15 November 2026 — Almond loader, 404, SEO, storage notice, lessons loop
 
 - Branded almond loader for page loading, and phone pull-to-refresh with the almond in place of the browser's grey circle (top of page only, off in drawers and checkout, still under reduced motion).

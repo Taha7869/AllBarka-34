@@ -144,7 +144,7 @@ export default function BoutiqueContactForm() {
             AllBarka Boutique
           </span>
           <h4 className="font-serif font-bold text-sm text-[var(--color-ink,#1A1A1A)]">
-            DHA Phase 6 & Gulberg III
+            Allama Iqbal Town
           </h4>
           <p className="text-xs text-[var(--color-ink-muted,#5A5A5A)] mt-1 font-medium leading-relaxed">
             Lahore, Punjab, Pakistan
