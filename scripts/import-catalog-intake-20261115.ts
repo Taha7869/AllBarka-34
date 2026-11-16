@@ -7,7 +7,8 @@ import { importIntake20261115 } from '../src/lib/catalogIntake20261115';
 // No dotenv auto-load, no implicit project, no price reset and no publish step.
 const args = process.argv.slice(2);
 const execute = args.includes('--execute');
-const readOnly = args.includes('--read-only');
+const dryRun = args.includes('--dry-run');
+const readOnly = args.includes('--read-only') || dryRun;
 const value = (name: string) => args.find(arg => arg.startsWith(`--${name}=`))?.slice(name.length + 3);
 async function main() {
   if (execute && readOnly) throw new Error('CHOOSE_READ_ONLY_OR_EXECUTE');
@@ -24,6 +25,7 @@ async function main() {
     : applicationDefault();
   const app = initializeApp({ projectId, credential });
   const db = getFirestore(app, databaseId);
+  db.settings({ ignoreUndefinedProperties: true });
   const actorUid = value('actor-uid');
   if (execute) {
     if (!actorUid) throw new Error('CURRENT_ADMIN_UID_REQUIRED');

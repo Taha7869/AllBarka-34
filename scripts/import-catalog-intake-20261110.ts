@@ -27,6 +27,7 @@ async function main() {
     : applicationDefault();
   const app = initializeApp({ projectId, credential });
   const db = getFirestore(app, databaseId);
+  db.settings({ ignoreUndefinedProperties: true });
   const actorUid = value('actor-uid');
   if (execute) {
     if (!actorUid) throw new Error('CURRENT_ADMIN_UID_REQUIRED');
