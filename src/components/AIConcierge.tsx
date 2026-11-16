@@ -431,7 +431,7 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
                   <div className="bg-[var(--color-surface,#FFFFFF)] border border-red-200 p-3.5 rounded-2xl rounded-bl-none shadow-sm flex flex-col gap-3">
                     <p className="text-[13px] text-red-800 dark:text-red-200 flex items-start gap-2">
                       <AlertCircle size={16} className="shrink-0 mt-0.5 text-red-600" />
-                      <span dir="auto">{t(failureCode === 'AI_GUEST_TRIAL_EXHAUSTED' ? 'concierge.trialEnded' : failureCode === 'AI_RATE_LIMITED' ? 'concierge.rateLimited' : failureCode === 'AI_TIMEOUT' ? 'concierge.timeout' : failureCode === 'UNAUTHORIZED' || failureCode === 'AUTH_SERVICE_UNAVAILABLE' ? 'concierge.signInAgain' : 'concierge.unavailable')}</span>
+                      <span dir="auto">{t(failureCode === 'AI_GUEST_TRIAL_EXHAUSTED' ? 'concierge.trialEnded' : failureCode === 'AI_RATE_LIMITED' ? 'concierge.rateLimited' : failureCode === 'AI_VISITOR_LIMIT' ? 'concierge.visitorLimit' : failureCode === 'AI_TIMEOUT' ? 'concierge.timeout' : failureCode === 'UNAUTHORIZED' || failureCode === 'AUTH_SERVICE_UNAVAILABLE' ? 'concierge.signInAgain' : 'concierge.unavailable')}</span>
                     </p>
                     <div className="flex items-center gap-2">
                        <a

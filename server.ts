@@ -352,12 +352,17 @@ app.post('/api/auth/sessionLogout', (req, res) => {
 
 const apiRateLimitResponse = { error: "Too many requests, please try again shortly" };
 const aiRateLimitResponse = { error: 'AI_RATE_LIMITED', code: 'AI_RATE_LIMITED', available: false };
+// Owner rule (16 Nov): each visitor gets 5 AI chat messages a minute; the window resets after 60 seconds.
+const AI_MESSAGES_PER_MINUTE = 5;
+const aiVisitorLimitResponse = { error: 'AI_VISITOR_LIMIT', code: 'AI_VISITOR_LIMIT', available: false, retryAfterSeconds: 60 };
+const aiMessageLimiter = rateLimit({ windowMs: 60 * 1000, max: AI_MESSAGES_PER_MINUTE, message: aiVisitorLimitResponse, standardHeaders: true, legacyHeaders: false });
 const chatLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, message: aiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
-const patronChatLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, skip: req => !(req as any).user?.uid, keyGenerator: req => (req as any).user?.uid || 'guest', message: aiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
+const patronChatLimiter = rateLimit({ windowMs: 60 * 1000, max: AI_MESSAGES_PER_MINUTE, skip: req => !(req as any).user?.uid, keyGenerator: req => (req as any).user?.uid || 'guest', message: aiVisitorLimitResponse, standardHeaders: true, legacyHeaders: false });
 const contactLimiter = rateLimit({ windowMs: 60 * 1000, max: 5, message: apiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
 const ordersLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, message: apiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
 
-app.use('/api/chat', chatLimiter);
+app.use('/api/chat', aiMessageLimiter);
+app.use('/api/concierge/chat', aiMessageLimiter);
 app.use('/api/concierge', chatLimiter);
 app.use('/api/ai', chatLimiter);
 app.use(createInquiriesRouter({

@@ -41,5 +41,5 @@ One sitting fixes the website chat limit, the WhatsApp AI, and the order-status 
 ## After the session
 
 - Claude adds a line to `docs/LESSONS.md` and ticks phase 1 in the plan doc.
-- `AI_GUEST_DAILY_LIMIT` stays 5 until Cloudflare is active; then raise it to 20.
+- Chat limit is 5 messages a minute per visitor, reset every minute (website side, not n8n). `AI_GUEST_DAILY_LIMIT` stays unset (default 60) unless bots drain the Groq quota.
 - If chat still stops at busy hours: Groq paid Developer tier (owner billing decision).

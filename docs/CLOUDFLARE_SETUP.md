@@ -34,4 +34,4 @@ Customers should never see a "checking your browser" page or a puzzle. Use only 
 
 The chat stopping after 2 messages is **not** caused by our own limits. Railway logs show the AI provider (Groq, free tier, about 8,000 tokens a minute per model) answering "busy" through n8n. Cloudflare cannot raise Groq's limit. What fixes it: the n8n fallback model (`n8n/fixed-2026-11-15/`) and, for real traffic, Groq's paid tier.
 
-What Cloudflare does allow: once bots are filtered at the edge, our own guest limit can be raised safely. Set the Railway variable `AI_GUEST_DAILY_LIMIT` (default 5, allowed 1 to 200), for example to 20. Google sign-in users have no daily limit. A message the AI failed to answer is no longer counted against the guest.
+Chat limits since 16 Nov: every visitor gets 5 AI messages a minute, and the window resets after 60 seconds (`server.ts`). Guests also have a daily abuse ceiling, `AI_GUEST_DAILY_LIMIT` (default 60, allowed 1 to 200); leave it unset unless bots drain the quota. Google sign-in users have no daily limit. A message the AI failed to answer is no longer counted against the guest.

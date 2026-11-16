@@ -13,10 +13,15 @@ export class GuestTrialLimitError extends Error {
  * TRUST_PROXY_HOPS only when the API is behind that many controlled proxies.
  * A hashed network and browser fingerprint avoids persisting raw IP addresses.
  */
-/** Daily guest messages; the owner can raise it on Railway with AI_GUEST_DAILY_LIMIT (1 to 200, default 5). */
+/**
+ * Daily abuse ceiling for guests. The everyday limit customers feel is 5 messages a minute
+ * (server.ts); this only stops a script from draining the AI quota. Railway can override it
+ * with AI_GUEST_DAILY_LIMIT (1 to 200, default 60).
+ */
+export const DEFAULT_GUEST_DAILY_LIMIT = 60;
 export function guestDailyLimit(value = process.env.AI_GUEST_DAILY_LIMIT): number {
   const limit = Number(value);
-  return Number.isInteger(limit) && limit >= 1 && limit <= 200 ? limit : 5;
+  return Number.isInteger(limit) && limit >= 1 && limit <= 200 ? limit : DEFAULT_GUEST_DAILY_LIMIT;
 }
 
 const trialKey = (ip: string, userAgent: string, secret: string) => crypto.createHmac('sha256', secret)

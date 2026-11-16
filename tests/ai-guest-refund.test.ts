@@ -37,9 +37,9 @@ test('an exhausted trial is not refunded, and the daily limit comes from AI_GUES
   const result = await post({ askConsultant: async () => ({ action: 'answer', reply: 'x' }), reserveGuestTrial: async () => { throw new GuestTrialLimitError(); }, releaseGuestTrial: async () => { releases++; } });
   assert.equal(result.body.code, 'AI_GUEST_TRIAL_EXHAUSTED');
   assert.equal(releases, 0);
-  assert.equal(guestDailyLimit(undefined), 5);
+  assert.equal(guestDailyLimit(undefined), 60);
   assert.equal(guestDailyLimit('20'), 20);
-  for (const bad of ['0', '201', '2.5', 'many']) assert.equal(guestDailyLimit(bad), 5, bad);
+  for (const bad of ['0', '201', '2.5', 'many']) assert.equal(guestDailyLimit(bad), 60, bad);
 });
 
 test('release gives back exactly one message and never goes below zero', async () => {
