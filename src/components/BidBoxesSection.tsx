@@ -7,6 +7,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { Product } from '../types';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { openCustomQuoteModal } from './CustomQuoteModal';
+import IndicativePriceNotice from './IndicativePriceNotice';
 import { isFilledPackagingVariant, calculateFilledGiftEstimate, resolveFilledRecipe } from '../lib/filledGiftPricing';
 
 interface BidBoxesSectionProps {
@@ -150,6 +151,7 @@ export default function BidBoxesSection({ onQuickView, compact = false }: BidBox
           </div>
         </div>
 
+        <IndicativePriceNotice className="mb-6" />
         {/* All 8 Bid Boxes Grid (4-col desktop / 2-col tablet / 1-col mobile) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {bidBoxes.map(product => {

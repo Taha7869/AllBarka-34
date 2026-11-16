@@ -34,6 +34,7 @@ import { displayProductPrice } from '../lib/productSelection';
 import { openCustomQuoteModal } from '../components/CustomQuoteModal';
 import ProductPhotoViewer from '../components/ProductPhotoViewer';
 import { isPackagingProduct, getPackagingMoqDisplay } from '../lib/packagingMoq';
+import IndicativePriceNotice from '../components/IndicativePriceNotice';
 import { isFilledPackagingVariant } from '../lib/filledGiftPricing';
 import { resolveBidBoxConfig } from '../lib/bidBoxPricing';
 import { recordFunnelEvent } from '../lib/funnelTelemetry';
@@ -701,6 +702,7 @@ export default function ProductDetailPage() {
                 {remaining === 0 ? t('freeShippingUnlocked') : t('freeShippingHint').replace('{amount}', remaining.toLocaleString())}
               </p>;
             })()}
+            {product.isBidBox && <IndicativePriceNotice className="mb-4" />}
 
             {/* Quantity & Add to Cart (minimum 44px tap targets) */}
             <div ref={purchaseRef} className="flex flex-col gap-3 mb-8">
