@@ -13,6 +13,7 @@ import { calculateOrderSummary, isLahoreCity } from '../lib/pricing';
 import { readCheckoutDraft } from '../lib/checkoutPreferences';
 import { resolveHamper, hamperCartKey, type HamperConfiguration } from '../lib/hamperCatalog';
 import { recordFunnelEvent } from '../lib/funnelTelemetry';
+import { flyItemToCart } from '../utils/cartFlyAnimation';
 
 const CART_STORAGE_KEY = 'allbarka_cart_v1';
 const DELIVERY_CITY_KEY = 'allbarka_delivery_city';
@@ -95,7 +96,13 @@ export interface CartContextValue {
     weight?: string,
     quantity?: number,
     customUnitPrice?: number,
-    options?: { silent?: boolean; openCart?: boolean }
+    options?: {
+      silent?: boolean;
+      openCart?: boolean;
+      sourceRect?: DOMRect;
+      sourceElement?: HTMLElement | null;
+      image?: string;
+    }
   ) => AddToCartResult | void;
   removeFromCart: (cartItemId: string) => void;
   updateQuantity: (cartItemId: string, newQty: number) => void;
@@ -234,7 +241,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       weight?: string,
       quantity?: number,
       customUnitPrice?: number,
-      options?: { silent?: boolean; openCart?: boolean }
+      options?: {
+        silent?: boolean;
+        openCart?: boolean;
+        sourceRect?: DOMRect;
+        sourceElement?: HTMLElement | null;
+        image?: string;
+      }
     ): AddToCartResult => {
       const identity = resolveCartIdentity(productOrItem, PRODUCTS);
       if (!identity) {
@@ -361,6 +374,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       cartItemsRef.current = updatedCart;
       setCartItems(updatedCart);
+
+      // Add-to-bag micro-animation (flying thumbnail to cart bag icon; disabled when reduced motion is preferred)
+      if (options?.sourceElement || options?.sourceRect) {
+        const rect = options.sourceElement ? options.sourceElement.getBoundingClientRect() : options.sourceRect;
+        flyItemToCart({ startRect: rect, imageSrc: options.image || imageSrc });
+      }
 
       recordFunnelEvent('add_to_cart', { productId: rawProdId, quantity: acceptedQty });
 

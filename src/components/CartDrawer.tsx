@@ -301,19 +301,19 @@ export default function CartDrawer({
             {/* ── 2. Scrollable Middle Area ── */}
             <div className="purchase-drawer-scroll flex-1 overflow-y-auto min-h-0 p-3.5 sm:p-4 space-y-4 [scrollbar-width:thin] overscroll-contain">
             {/* ── Free Delivery Status Bar ── */}
-            {cartItems.length > 0 && shippingCity === 'Lahore' && (
-              <div className="bg-[#FFFCF7]/90 dark:bg-[#1A201E]/90 border-b border-[#29231D]/10 dark:border-[#F6F1EA]/10 px-4 sm:px-5 py-3 shrink-0">
+            {cartItems.length > 0 && (
+              <div data-testid="cart-free-shipping-bar" className="bg-[#FFFCF7]/90 dark:bg-[#1A201E]/90 border border-[#C7982F]/20 rounded-2xl px-4 py-3 shrink-0 shadow-xs mb-3">
                 <div className="flex items-center justify-between text-xs font-medium text-[#29231D] dark:text-[#F6F1EA] mb-2">
                   <span className="flex items-center gap-1.5 font-semibold text-[11px] sm:text-xs">
                     <Truck size={14} className="text-[#C7982F] shrink-0" />
-                    {isFreeUnlocked ? (
+                    {subtotal >= FREE_SHIPPING_THRESHOLD ? (
                       <span className="text-[#042821] dark:text-[#E4C783] font-bold flex items-center gap-1">
                         <Sparkles size={12} className="text-[#C7982F]" />
-                        {t('freeShippingUnlocked')}
+                        {t('freeShippingUnlocked', 'Free delivery unlocked!')}
                       </span>
                     ) : (
                       <span>
-                        {t('freeShippingHint').replace('{amount}', remainingForFree.toLocaleString())}
+                        {t('freeShippingHint', 'Add Rs. {amount} more for free delivery').replace('{amount}', remainingForFree.toLocaleString())}
                       </span>
                     )}
                   </span>
