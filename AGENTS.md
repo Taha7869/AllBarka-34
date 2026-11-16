@@ -3,7 +3,7 @@
 > **Current state, 16 November 2026 (read this first; everything dated earlier below is history).**
 > - Deploy branch: `claude/celebrations-foundation-20261112`. Railway service `allbarka-fullstack` deploys it to **allbarka.com on every push**. Claude works there; **Antigravity works on `ag/<date>-<task>` branches and never pushes to it** (rule `30-two-agents`). Start every task with `/start`, end with `/handoff`. Owner setup: `docs/ANTIGRAVITY_SETUP.md`.
 > - Always-on rules: `.agents/rules/` (truth first, token economy, security baseline, two agents). Skills: `.agents/skills/` (verification, security hardening, anti-clone, catalogue intake, catalogue pricing, design and i18n, inquiries and AI buddy). Workflows: `/start`, `/handoff`, `/census`, `/verify`, `/security-audit`, `/catalog-count`, `/retro`. MCP servers: `.agents/mcp_config.json` (firebase, context7). Lessons learned: `docs/LESSONS.md` (read the matching ones first, add one when something surprises you).
-> - Product list: `docs/catalog/MASTER_PRODUCT_LIST.csv` (97 website seeds + 157 drafts in four batches). Open tasks: `docs/PENDING_WORK.md`.
+> - Product list: `docs/catalog/MASTER_PRODUCT_LIST.csv` (97 website seeds + 155 drafts in four batches; owner decisions of 16 Nov in `docs/handoffs/20261116-claude-owner-decisions.md`). Open tasks: `docs/PENDING_WORK.md`.
 > - Older branch names in this file (`codex/admin-catalog-foundation-20261023`, `feat/renovation-v2`, `launch` offline) are **out of date**; do not switch to them.
 
 Start each handoff with [Pending work](docs/PENDING_WORK.md). Update its open items alongside the relevant tracker or handoff whenever work changes status.

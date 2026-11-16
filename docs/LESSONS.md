@@ -2,6 +2,18 @@
 
 Newest first. Shape and rules: `.agents/skills/allbarka-lessons-learned/SKILL.md`.
 
+### 2026-11-16 · tests · Browser tests fail on any unexpected request
+- What happened: adding the demand tracker made four browser acceptance tests fail with `HTTP 404 /api/events` from the static preview.
+- Root cause: those tests treat every console error and failed request as a failure, and the preview has no API.
+- Do: anything that calls the network on page load must skip `localhost`/`127.*`, or the test harness must stub the route.
+- Check: `npm run build` first (the browser tests use `dist`), then the full suite.
+
+### 2026-11-16 · catalogue · Supplier photos carry real tags; named varieties may be placeholders
+- What happened: the four "generic" date drafts looked like duplicates, but they came from the owner's supplier photos with real price tags; the named varieties came from web reference rates.
+- Root cause: dedupe by name alone ignores where the data came from.
+- Do: read `referenceTags` / `referenceRates.basis` before deleting a draft; keep the tagged supplier item and rename it if the variety is known.
+- Check: `grep -n referenceTags src/data/catalogIntake*.json`.
+
 ### 2026-11-15 · n8n · A 401 can hide a second fault
 - What happened: the sheet-to-website workflow got 401 every minute; reading its body showed it also posted to `/order-update` with fields the website rejects.
 - Root cause: the workflow was built against an older contract; the sheet route is `/order-status` (`src/lib/sheetStatusCommand.ts`).

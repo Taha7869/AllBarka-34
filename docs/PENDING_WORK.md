@@ -6,6 +6,8 @@ Start here when resuming AllBarka. The table shows open work across the project.
 
 | ID | Open work | Status | Next action and dependency | Detail |
 | --- | --- | --- | --- | --- |
+| LIVE-1116 | Publish the 8 bid boxes and rename the 9 older bundles in live Firestore | TODO | Antigravity runs the two read-only plans, the owner says yes, then `--execute` (see handoff). | [Handoff](handoffs/20261116-claude-owner-decisions.md) |
+| ADDON-PAID | Price the paid gift add-ons (printed card, Eidi envelope, name sleeve, jar or tray upgrade) | BLOCKED | Owner sets prices and supplier; free card style, ribbon and gift receipt are live in checkout. | [Plan doc](https://claude.ai/artifact/HBUXhRhvQwnJapBY1sKYpz) |
 | CEL-IMG1 | Generate the Batch 1 celebration images | TODO | Owner generates IMG-0001 and IMG-0004 in Gemini from the prompt pack for a look check, then the other eight. Names, Style Bible and briefs were approved on 12 November. | [Prompt pack](celebrations/GEMINI_PROMPT_PACK.md) · [manifest](celebrations/IMAGE_MANIFEST.md) |
 | CEL-WEB1 | Review and integrate the celebrations storefront foundation | TODO | Review branch `claude/celebrations-foundation-20261112`, then merge it into the working storefront branch. Follow-on items CEL-WEB2 to CEL-ADMIN1 are in the roadmap. | [Roadmap](celebrations/WEBSITE_ROADMAP.md) |
 | CAT-INT2 | Review rates, add photographs and publish the 65 batch-2 drafts and 17 batch-1 drafts | TODO | Reference rates are already filled in (basis in the reference doc); the owner reviews each in the admin, uploads a photo and publishes. Run the importer with `--execute` after Antigravity finishes phase B1. | [Reference check](CATALOG_REFERENCE_AKBARI_2026-11-13.md) |
