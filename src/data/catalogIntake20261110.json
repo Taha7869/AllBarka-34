@@ -799,18 +799,23 @@
     },
     {
       "id": "dates-dark-long",
-      "name_en": "Dark Elongated Dates",
-      "name_ur": "لمبی گہری رنگت کی کھجوریں",
-      "name_ar": "تمور داكنة طويلة",
-      "desc_en": "Elongated dark-brown dates with a naturally wrinkled surface. Choose this longer-shaped selection for serving or gift assortments; confirm current availability with our team.",
-      "desc_ur": "قدرتی جھری دار سطح اور لمبی شکل والی گہری بھوری کھجوریں۔ پیش کرنے اور تحفے کے انتخاب کے لیے؛ موجودہ دستیابی ٹیم سے معلوم کریں۔",
-      "desc_ar": "تمور بنية داكنة طويلة الشكل بسطح مجعّد طبيعي. للتقديم وتشكيلات الهدايا؛ أكّد التوافر الحالي مع فريقنا.",
+      "name_en": "Kalmi Dates (Qalmi Khajoor)",
+      "name_ur": "قلمی کھجور",
+      "name_ar": "تمر قلمي",
+      "desc_en": "Kalmi, from qalam (pen), is the long, slim, dark-brown date sold across Pakistan, named for its pen-like shape. The skin is naturally wrinkled and the flesh soft and mildly sweet, a dependable everyday date for iftar, serving and gift assortments. Confirm current availability with our team.",
+      "desc_ur": "قلمی کھجور اپنی قلم جیسی لمبی اور پتلی شکل کی وجہ سے یہ نام رکھتی ہے، اور پورے پاکستان میں بکتی ہے۔ گہری بھوری، قدرتی جھری دار جلد اور نرم، ہلکی میٹھی گودا؛ افطار، مہمان داری اور تحفے کے انتخاب کے لیے روزمرہ کی قابلِ اعتماد کھجور۔ موجودہ دستیابی ٹیم سے معلوم کریں۔",
+      "desc_ar": "القلمي، من القلم، تمر طويل نحيف بني داكن يُباع في أنحاء باكستان وسُمّي بشكله الشبيه بالقلم. قشرته مجعدة طبيعيًا ولبه طري معتدل الحلاوة، تمر يومي موثوق للإفطار والضيافة وتشكيلات الهدايا. أكّد التوافر الحالي مع فريقنا.",
       "category": "dates",
       "collections": [],
       "keywords": [
         "khajoor",
         "dates",
-        "dark elongated dates"
+        "kalmi",
+        "kalmi dates",
+        "qalmi khajoor",
+        "kalmi khajoor",
+        "dark elongated dates",
+        "قلمی کھجور"
       ],
       "image": "/images/catalog-intake-20261110/dates-dark-long.webp",
       "imageName": "/images/catalog-intake-20261110/dates-dark-long.webp",
@@ -858,12 +863,12 @@
       },
       "importBatch": "owner-intake-20261110",
       "seo": {
-        "title_en": "Dark Elongated Dates | AllBarka",
-        "title_ur": "لمبی گہری رنگت کی کھجوریں | البرکہ",
-        "title_ar": "تمور داكنة طويلة | البركة",
-        "imageAlt_en": "Dark Elongated Dates — AI-styled product illustration",
-        "imageAlt_ur": "لمبی گہری رنگت کی کھجوریں — تمثیلی تصویر",
-        "imageAlt_ar": "تمور داكنة طويلة — صورة توضيحية"
+        "title_en": "Kalmi Dates (Qalmi Khajoor) | AllBarka",
+        "title_ur": "قلمی کھجور | البرکہ",
+        "title_ar": "تمر قلمي | البركة",
+        "imageAlt_en": "Kalmi Dates (Qalmi Khajoor) — AI-styled product illustration",
+        "imageAlt_ur": "قلمی کھجور — تمثیلی تصویر",
+        "imageAlt_ar": "تمر قلمي — صورة توضيحية"
       }
     },
     {

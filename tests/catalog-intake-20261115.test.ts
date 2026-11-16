@@ -24,8 +24,8 @@ test('batch 4 adds the supplier-list gaps as hidden drafts with full content in 
     for (const o of p.commerce.options) assert.equal(o.label, `${o.quantity}${o.unit}`);
   }
   const ids = new Set(intake.map(p => p.id));
-  for (const id of ['white-pepper-whole', 'lal-mirch-powder', 'coriander-powder', 'coriander-seeds-whole', 'dadar-mirch-dry-red-chilli', 'kamarkas', 'imli-tamarind', 'garam-masala-whole', 'aloobukhara-qandhari', 'mission-figs-dried', 'dried-blueberries', 'dried-kiwi', 'macadamia-nuts', 'brazil-nuts', 'pecans', 'almond-slices']) assert.ok(ids.has(id), id);
-  assert.equal(intake.filter(p => p.category === 'herbs-spices').length, 8);
+  for (const id of ['white-pepper-whole', 'lal-mirch-powder', 'coriander-powder', 'coriander-seeds-whole', 'dadar-mirch-dry-red-chilli', 'kamarkas', 'imli-tamarind', 'garam-masala-whole', 'turmeric-root-whole', 'mission-figs-dried', 'dried-blueberries', 'dried-kiwi', 'macadamia-nuts', 'brazil-nuts', 'pecans', 'almond-slices']) assert.ok(ids.has(id), id);
+  assert.equal(intake.filter(p => p.category === 'herbs-spices').length, 9);
 });
 
 test('nut drafts carry the tree-nut warning and no copy makes a medical claim', () => {
@@ -46,4 +46,11 @@ test('create-only import of batch 4 is idempotent and never overwrites', async (
   const second = await importIntake20261115({ db, actorUid: 'fixture-admin', execute: true });
   assert.equal(second.items.filter(i => i.action === 'SKIP_EXISTING').length, manifest.newProducts.length);
   await assert.rejects(importIntake20261115({ db: null, execute: true }), /INTAKE_AUTHORITY_REQUIRED/);
+});
+
+test('owner dedupe 16 Nov: merged drafts stay out and their bundles point at the kept product', () => {
+  const all = JSON.stringify([manifest, batchTwo, batchThree]);
+  for (const gone of ['aloobukhara-qandhari', 'plain-cashews', 'dried-figs-medium']) assert.ok(!all.includes(`"${gone}"`), gone);
+  const kept = new Set(PRODUCTS.map(p => p.id));
+  for (const id of ['alubukhara', 'kaju', 'afghan-figs', 'black-raisins']) assert.ok(kept.has(id), id);
 });

@@ -2673,7 +2673,7 @@
      "unitWeightG": 250
     },
     {
-     "productId": "plain-cashews",
+     "productId": "kaju",
      "quantity": 1,
      "unitWeightG": 250
     }
@@ -2682,7 +2682,7 @@
     "mamra-almonds",
     "pistachio-kernels",
     "hazelnuts",
-    "plain-cashews"
+    "kaju"
    ],
    "claimsVerification": {
     "status": "unverified"
@@ -3248,7 +3248,7 @@
    "imageName": "/images/product-placeholder.svg",
    "galleryImages": [],
    "prices": {
-    "Bundle": 4250
+    "Bundle": 4900
    },
    "variants": [],
    "wholesale": 0,
@@ -3273,7 +3273,7 @@
      "unitWeightG": 250
     },
     {
-     "productId": "dried-figs-medium",
+     "productId": "afghan-figs",
      "quantity": 1,
      "unitWeightG": 250
     },
@@ -3291,7 +3291,7 @@
    "componentIds": [
     "dates-mazafati",
     "dates-mabroom",
-    "dried-figs-medium",
+    "afghan-figs",
     "badam",
     "kaju"
    ],
@@ -3505,7 +3505,7 @@
    "imageName": "/images/product-placeholder.svg",
    "galleryImages": [],
    "prices": {
-    "Bundle": 6800
+    "Bundle": 7450
    },
    "variants": [],
    "wholesale": 0,
@@ -3550,7 +3550,7 @@
      "unitWeightG": 250
     },
     {
-     "productId": "dried-figs-medium",
+     "productId": "afghan-figs",
      "quantity": 1,
      "unitWeightG": 250
     },
@@ -3567,7 +3567,7 @@
     "kaju",
     "pista",
     "kishmish",
-    "dried-figs-medium",
+    "afghan-figs",
     "khubani"
    ],
    "claimsVerification": {
@@ -5295,7 +5295,7 @@
    "imageName": "/images/product-placeholder.svg",
    "galleryImages": [],
    "prices": {
-    "Bundle": 2850
+    "Bundle": 3500
    },
    "variants": [],
    "wholesale": 0,
@@ -5315,7 +5315,7 @@
      "unitWeightG": 500
     },
     {
-     "productId": "dried-figs-medium",
+     "productId": "afghan-figs",
      "quantity": 1,
      "unitWeightG": 250
     },
@@ -5337,7 +5337,7 @@
    ],
    "componentIds": [
     "dates-mazafati",
-    "dried-figs-medium",
+    "afghan-figs",
     "kishmish",
     "khubani",
     "badam"
@@ -5805,7 +5805,7 @@
      "unitWeightG": 150
     },
     {
-     "productId": "plain-cashews",
+     "productId": "kaju",
      "quantity": 1,
      "unitWeightG": 250
     }
@@ -5814,7 +5814,7 @@
     "ajwa-dates",
     "mamra-almonds",
     "pistachio-kernels",
-    "plain-cashews"
+    "kaju"
    ],
    "claimsVerification": {
     "status": "unverified"
@@ -7144,7 +7144,7 @@
  "bundlePricing": {
   "deal-nut-trio": {
    "tier": "deal",
-   "componentValuePKR": 2175.0,
+   "componentValuePKR": 2175,
    "discountPct": 10,
    "packagingFeePKR": 50,
    "rounding": 50,
@@ -7156,27 +7156,27 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 950.0
+     "lineValuePKR": 950
     },
     {
      "id": "kaju",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 950.0
+     "lineValuePKR": 950
     },
     {
      "id": "akhroot",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 1.1,
-     "lineValuePKR": 275.0
+     "lineValuePKR": 275
     }
    ]
   },
   "deal-date-almond": {
    "tier": "deal",
-   "componentValuePKR": 1500.0,
+   "componentValuePKR": 1500,
    "discountPct": 10,
    "packagingFeePKR": 50,
    "rounding": 50,
@@ -7188,20 +7188,20 @@
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 1.1,
-     "lineValuePKR": 550.0
+     "lineValuePKR": 550
     },
     {
      "id": "badam",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 950.0
+     "lineValuePKR": 950
     }
    ]
   },
   "deal-chai-time": {
    "tier": "deal",
-   "componentValuePKR": 1015.0,
+   "componentValuePKR": 1015,
    "discountPct": 10,
    "packagingFeePKR": 50,
    "rounding": 50,
@@ -7213,28 +7213,28 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 1.8,
-     "lineValuePKR": 450.0
+     "lineValuePKR": 450
     },
     {
      "id": "elaichi-chai",
      "quantity": 100,
      "unit": "g",
      "ratePerUnit": 2.4,
-     "lineValuePKR": 240.0
+     "lineValuePKR": 240
     },
     {
      "id": "nimko",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 0.7,
-     "lineValuePKR": 175.0
+     "lineValuePKR": 175
     },
     {
      "id": "chanay",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 0.6,
-     "lineValuePKR": 150.0
+     "lineValuePKR": 150
     }
    ]
   },
@@ -7252,14 +7252,14 @@
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 1900.0
+     "lineValuePKR": 1900
     },
     {
      "id": "kaju",
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 1900.0
+     "lineValuePKR": 1900
     },
     {
      "id": "pista",
@@ -7280,13 +7280,13 @@
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 1.1,
-     "lineValuePKR": 550.0
+     "lineValuePKR": 550
     }
    ]
   },
   "deal-evening-snack": {
    "tier": "deal",
-   "componentValuePKR": 1775.0,
+   "componentValuePKR": 1775,
    "discountPct": 10,
    "packagingFeePKR": 50,
    "rounding": 50,
@@ -7298,34 +7298,34 @@
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 1.6,
-     "lineValuePKR": 800.0
+     "lineValuePKR": 800
     },
     {
      "id": "roasted-chana-skinless",
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 0.8,
-     "lineValuePKR": 400.0
+     "lineValuePKR": 400
     },
     {
      "id": "peanuts-inshell",
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 0.8,
-     "lineValuePKR": 400.0
+     "lineValuePKR": 400
     },
     {
      "id": "nimko",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 0.7,
-     "lineValuePKR": 175.0
+     "lineValuePKR": 175
     }
    ]
   },
   "deal-honey-duo": {
    "tier": "deal",
-   "componentValuePKR": 1950.0,
+   "componentValuePKR": 1950,
    "discountPct": 8,
    "packagingFeePKR": 50,
    "rounding": 50,
@@ -7337,20 +7337,20 @@
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 1.5,
-     "lineValuePKR": 750.0
+     "lineValuePKR": 750
     },
     {
      "id": "honey-phulai",
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 2.4,
-     "lineValuePKR": 1200.0
+     "lineValuePKR": 1200
     }
    ]
   },
   "deal-murabba-duo": {
    "tier": "deal",
-   "componentValuePKR": 750.0,
+   "componentValuePKR": 750,
    "discountPct": 10,
    "packagingFeePKR": 50,
    "rounding": 50,
@@ -7362,20 +7362,20 @@
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 0.8,
-     "lineValuePKR": 400.0
+     "lineValuePKR": 400
     },
     {
      "id": "murabba-saib",
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 0.7,
-     "lineValuePKR": 350.0
+     "lineValuePKR": 350
     }
    ]
   },
   "deal-whole-spice-kit": {
    "tier": "deal",
-   "componentValuePKR": 2450.0,
+   "componentValuePKR": 2450,
    "discountPct": 8,
    "packagingFeePKR": 50,
    "rounding": 50,
@@ -7387,28 +7387,28 @@
      "quantity": 50,
      "unit": "g",
      "ratePerUnit": 16.8,
-     "lineValuePKR": 840.0
+     "lineValuePKR": 840
     },
     {
      "id": "black-cardamom",
      "quantity": 50,
      "unit": "g",
      "ratePerUnit": 5.6,
-     "lineValuePKR": 280.0
+     "lineValuePKR": 280
     },
     {
      "id": "whole-cloves",
      "quantity": 50,
      "unit": "g",
      "ratePerUnit": 3.2,
-     "lineValuePKR": 160.0
+     "lineValuePKR": 160
     },
     {
      "id": "ceylon-cinnamon",
      "quantity": 50,
      "unit": "g",
      "ratePerUnit": 2.2,
-     "lineValuePKR": 110.0
+     "lineValuePKR": 110
     },
     {
      "id": "black-peppercorns",
@@ -7422,7 +7422,7 @@
      "quantity": 100,
      "unit": "g",
      "ratePerUnit": 4.6,
-     "lineValuePKR": 460.0
+     "lineValuePKR": 460
     },
     {
      "id": "star-anise",
@@ -7435,7 +7435,7 @@
   },
   "deal-hair-oil-set": {
    "tier": "deal",
-   "componentValuePKR": 2550.0,
+   "componentValuePKR": 2550,
    "discountPct": 8,
    "packagingFeePKR": 50,
    "rounding": 50,
@@ -7461,7 +7461,7 @@
      "quantity": 100,
      "unit": "ml",
      "ratePerUnit": 4.5,
-     "lineValuePKR": 450.0
+     "lineValuePKR": 450
     },
     {
      "id": "oil-coconut",
@@ -7474,7 +7474,7 @@
   },
   "bundle-sardi-special": {
    "tier": "bundle",
-   "componentValuePKR": 3810.0,
+   "componentValuePKR": 3810,
    "discountPct": 6,
    "packagingFeePKR": 100,
    "rounding": 50,
@@ -7493,14 +7493,14 @@
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 0.8,
-     "lineValuePKR": 400.0
+     "lineValuePKR": 400
     },
     {
      "id": "desi-gur",
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 0.32,
-     "lineValuePKR": 160.0
+     "lineValuePKR": 160
     },
     {
      "id": "kagzi-walnut-inshell",
@@ -7520,7 +7520,7 @@
   },
   "bundle-chai-journey": {
    "tier": "bundle",
-   "componentValuePKR": 1060.0,
+   "componentValuePKR": 1060,
    "discountPct": 10,
    "packagingFeePKR": 150,
    "rounding": 50,
@@ -7532,41 +7532,41 @@
      "quantity": 100,
      "unit": "g",
      "ratePerUnit": 1.2,
-     "lineValuePKR": 120.0
+     "lineValuePKR": 120
     },
     {
      "id": "kashmiri-kahwa",
      "quantity": 50,
      "unit": "g",
      "ratePerUnit": 3.6,
-     "lineValuePKR": 180.0
+     "lineValuePKR": 180
     },
     {
      "id": "noon-chai",
      "quantity": 100,
      "unit": "g",
      "ratePerUnit": 2.4,
-     "lineValuePKR": 240.0
+     "lineValuePKR": 240
     },
     {
      "id": "chai-masala-blend",
      "quantity": 100,
      "unit": "g",
      "ratePerUnit": 2.8,
-     "lineValuePKR": 280.0
+     "lineValuePKR": 280
     },
     {
      "id": "elaichi-chai",
      "quantity": 100,
      "unit": "g",
      "ratePerUnit": 2.4,
-     "lineValuePKR": 240.0
+     "lineValuePKR": 240
     }
    ]
   },
   "bundle-herbal-tea-garden": {
    "tier": "bundle",
-   "componentValuePKR": 920.0,
+   "componentValuePKR": 920,
    "discountPct": 10,
    "packagingFeePKR": 150,
    "rounding": 50,
@@ -7592,14 +7592,14 @@
      "quantity": 100,
      "unit": "g",
      "ratePerUnit": 1.6,
-     "lineValuePKR": 160.0
+     "lineValuePKR": 160
     },
     {
      "id": "jasmine-green-tea",
      "quantity": 50,
      "unit": "g",
      "ratePerUnit": 3.2,
-     "lineValuePKR": 160.0
+     "lineValuePKR": 160
     },
     {
      "id": "green-tea-sabz-chai",
@@ -7612,7 +7612,7 @@
   },
   "bundle-murabba-tasting": {
    "tier": "bundle",
-   "componentValuePKR": 950.0,
+   "componentValuePKR": 950,
    "discountPct": 10,
    "packagingFeePKR": 150,
    "rounding": 50,
@@ -7624,21 +7624,21 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 0.8,
-     "lineValuePKR": 200.0
+     "lineValuePKR": 200
     },
     {
      "id": "murabba-gajar",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 0.5,
-     "lineValuePKR": 125.0
+     "lineValuePKR": 125
     },
     {
      "id": "murabba-saib",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 0.7,
-     "lineValuePKR": 175.0
+     "lineValuePKR": 175
     },
     {
      "id": "murabba-behi",
@@ -7652,13 +7652,13 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 0.8,
-     "lineValuePKR": 200.0
+     "lineValuePKR": 200
     }
    ]
   },
   "bundle-honey-trio": {
    "tier": "bundle",
-   "componentValuePKR": 3375.0,
+   "componentValuePKR": 3375,
    "discountPct": 6,
    "packagingFeePKR": 150,
    "rounding": 50,
@@ -7670,27 +7670,27 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 1.5,
-     "lineValuePKR": 375.0
+     "lineValuePKR": 375
     },
     {
      "id": "honey-phulai",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 2.4,
-     "lineValuePKR": 600.0
+     "lineValuePKR": 600
     },
     {
      "id": "honey-beri",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 9.6,
-     "lineValuePKR": 2400.0
+     "lineValuePKR": 2400
     }
    ]
   },
   "bundle-khajoor-journey": {
    "tier": "bundle",
-   "componentValuePKR": 2600.0,
+   "componentValuePKR": 2600,
    "discountPct": 6,
    "packagingFeePKR": 150,
    "rounding": 50,
@@ -7702,14 +7702,14 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 1.1,
-     "lineValuePKR": 275.0
+     "lineValuePKR": 275
     },
     {
      "id": "dates-piarom",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 1.4,
-     "lineValuePKR": 350.0
+     "lineValuePKR": 350
     },
     {
      "id": "dates-rubai",
@@ -7723,20 +7723,20 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 4.5,
-     "lineValuePKR": 1125.0
+     "lineValuePKR": 1125
     },
     {
      "id": "dates-safawi",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 2.4,
-     "lineValuePKR": 600.0
+     "lineValuePKR": 600
     }
    ]
   },
   "bundle-dawat-mukhwas": {
    "tier": "bundle",
-   "componentValuePKR": 800.0,
+   "componentValuePKR": 800,
    "discountPct": 6,
    "packagingFeePKR": 150,
    "rounding": 50,
@@ -7748,34 +7748,34 @@
      "quantity": 200,
      "unit": "g",
      "ratePerUnit": 1.6,
-     "lineValuePKR": 320.0
+     "lineValuePKR": 320
     },
     {
      "id": "sugar-coated-saunf",
      "quantity": 200,
      "unit": "g",
      "ratePerUnit": 1.2,
-     "lineValuePKR": 240.0
+     "lineValuePKR": 240
     },
     {
      "id": "sweet-makhana-large",
      "quantity": 150,
      "unit": "g",
      "ratePerUnit": 0.8,
-     "lineValuePKR": 120.0
+     "lineValuePKR": 120
     },
     {
      "id": "nakul-dana-small",
      "quantity": 150,
      "unit": "g",
      "ratePerUnit": 0.8,
-     "lineValuePKR": 120.0
+     "lineValuePKR": 120
     }
    ]
   },
   "bundle-gourmet-nut-reserve": {
    "tier": "gift",
-   "componentValuePKR": 4475.0,
+   "componentValuePKR": 4475,
    "discountPct": 4,
    "packagingFeePKR": 400,
    "rounding": 50,
@@ -7787,7 +7787,7 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 6.5,
-     "lineValuePKR": 1625.0
+     "lineValuePKR": 1625
     },
     {
      "id": "pistachio-kernels",
@@ -7801,20 +7801,20 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 2.6,
-     "lineValuePKR": 650.0
+     "lineValuePKR": 650
     },
     {
-     "id": "plain-cashews",
+     "id": "kaju",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 950.0
+     "lineValuePKR": 950
     }
    ]
   },
   "bundle-chilgoza-heirloom": {
    "tier": "gift",
-   "componentValuePKR": 12900.0,
+   "componentValuePKR": 12900,
    "discountPct": 0,
    "packagingFeePKR": 600,
    "rounding": 50,
@@ -7840,13 +7840,13 @@
      "quantity": 30,
      "unit": "ml",
      "ratePerUnit": 116.666667,
-     "lineValuePKR": 3500.0
+     "lineValuePKR": 3500
     }
    ]
   },
   "bundle-zafran-royal": {
    "tier": "gift",
-   "componentValuePKR": 7675.0,
+   "componentValuePKR": 7675,
    "discountPct": 0,
    "packagingFeePKR": 600,
    "rounding": 50,
@@ -7857,8 +7857,8 @@
      "id": "saffron-afghan-negin",
      "quantity": 2,
      "unit": "g",
-     "ratePerUnit": 1200.0,
-     "lineValuePKR": 2400.0
+     "ratePerUnit": 1200,
+     "lineValuePKR": 2400
     },
     {
      "id": "pistachio-kernels",
@@ -7872,20 +7872,20 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 6.5,
-     "lineValuePKR": 1625.0
+     "lineValuePKR": 1625
     },
     {
      "id": "honey-beri",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 9.6,
-     "lineValuePKR": 2400.0
+     "lineValuePKR": 2400
     }
    ]
   },
   "bundle-office-desk": {
    "tier": "bundle",
-   "componentValuePKR": 3550.0,
+   "componentValuePKR": 3550,
    "discountPct": 6,
    "packagingFeePKR": 150,
    "rounding": 50,
@@ -7897,14 +7897,14 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 4.4,
-     "lineValuePKR": 1100.0
+     "lineValuePKR": 1100
     },
     {
      "id": "roasted-cashews",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 4.2,
-     "lineValuePKR": 1050.0
+     "lineValuePKR": 1050
     },
     {
      "id": "fox-nuts",
@@ -7918,13 +7918,13 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 3.6,
-     "lineValuePKR": 900.0
+     "lineValuePKR": 900
     }
    ]
   },
   "bundle-pure-oil-discovery": {
    "tier": "bundle",
-   "componentValuePKR": 2800.0,
+   "componentValuePKR": 2800,
    "discountPct": 6,
    "packagingFeePKR": 150,
    "rounding": 50,
@@ -7936,14 +7936,14 @@
      "quantity": 60,
      "unit": "ml",
      "ratePerUnit": 12.5,
-     "lineValuePKR": 750.0
+     "lineValuePKR": 750
     },
     {
      "id": "oil-blackseed",
      "quantity": 60,
      "unit": "ml",
      "ratePerUnit": 10.833333,
-     "lineValuePKR": 650.0
+     "lineValuePKR": 650
     },
     {
      "id": "oil-coconut",
@@ -7963,11 +7963,11 @@
   },
   "bundle-iftar-table": {
    "tier": "bundle",
-   "componentValuePKR": 4375.0,
+   "componentValuePKR": 5075,
    "discountPct": 6,
    "packagingFeePKR": 150,
    "rounding": 50,
-   "pricePKR": 4250,
+   "pricePKR": 4900,
    "packagedWeightG": 1950,
    "components": [
     {
@@ -7975,41 +7975,41 @@
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 1.1,
-     "lineValuePKR": 550.0
+     "lineValuePKR": 550
     },
     {
      "id": "dates-mabroom",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 4.5,
-     "lineValuePKR": 1125.0
+     "lineValuePKR": 1125
     },
     {
-     "id": "dried-figs-medium",
+     "id": "afghan-figs",
      "quantity": 250,
      "unit": "g",
-     "ratePerUnit": 3.2,
-     "lineValuePKR": 800.0
+     "ratePerUnit": 6,
+     "lineValuePKR": 1500
     },
     {
      "id": "badam",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 950.0
+     "lineValuePKR": 950
     },
     {
      "id": "kaju",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 950.0
+     "lineValuePKR": 950
     }
    ]
   },
   "bundle-suhoor-table": {
    "tier": "bundle",
-   "componentValuePKR": 2235.0,
+   "componentValuePKR": 2235,
    "discountPct": 6,
    "packagingFeePKR": 150,
    "rounding": 50,
@@ -8021,14 +8021,14 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 1.1,
-     "lineValuePKR": 275.0
+     "lineValuePKR": 275
     },
     {
      "id": "badam",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 950.0
+     "lineValuePKR": 950
     },
     {
      "id": "kagzi-walnut-inshell",
@@ -8042,24 +8042,24 @@
      "quantity": 100,
      "unit": "g",
      "ratePerUnit": 1.6,
-     "lineValuePKR": 160.0
+     "lineValuePKR": 160
     },
     {
      "id": "honey-phulai",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 2.4,
-     "lineValuePKR": 600.0
+     "lineValuePKR": 600
     }
    ]
   },
   "bundle-ramadan-family-reserve": {
    "tier": "bundle",
-   "componentValuePKR": 7237.5,
+   "componentValuePKR": 7937.5,
    "discountPct": 8,
    "packagingFeePKR": 150,
    "rounding": 50,
-   "pricePKR": 6800,
+   "pricePKR": 7450,
    "packagedWeightG": 4450,
    "components": [
     {
@@ -8067,28 +8067,28 @@
      "quantity": 1000,
      "unit": "g",
      "ratePerUnit": 0.6,
-     "lineValuePKR": 600.0
+     "lineValuePKR": 600
     },
     {
      "id": "dates-mazafati",
      "quantity": 1000,
      "unit": "g",
      "ratePerUnit": 1.1,
-     "lineValuePKR": 1100.0
+     "lineValuePKR": 1100
     },
     {
      "id": "badam",
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 1900.0
+     "lineValuePKR": 1900
     },
     {
      "id": "kaju",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 950.0
+     "lineValuePKR": 950
     },
     {
      "id": "pista",
@@ -8105,18 +8105,18 @@
      "lineValuePKR": 362.5
     },
     {
-     "id": "dried-figs-medium",
+     "id": "afghan-figs",
      "quantity": 250,
      "unit": "g",
-     "ratePerUnit": 3.2,
-     "lineValuePKR": 800.0
+     "ratePerUnit": 6,
+     "lineValuePKR": 1500
     },
     {
      "id": "khubani",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 1.1,
-     "lineValuePKR": 275.0
+     "lineValuePKR": 275
     }
    ]
   },
@@ -8148,21 +8148,21 @@
      "quantity": 150,
      "unit": "g",
      "ratePerUnit": 0.8,
-     "lineValuePKR": 120.0
+     "lineValuePKR": 120
     },
     {
      "id": "sweet-makhana-large",
      "quantity": 100,
      "unit": "g",
      "ratePerUnit": 0.8,
-     "lineValuePKR": 80.0
+     "lineValuePKR": 80
     },
     {
      "id": "sugar-coated-saunf",
      "quantity": 100,
      "unit": "g",
      "ratePerUnit": 1.2,
-     "lineValuePKR": 120.0
+     "lineValuePKR": 120
     }
    ]
   },
@@ -8180,28 +8180,28 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 2.4,
-     "lineValuePKR": 600.0
+     "lineValuePKR": 600
     },
     {
      "id": "ajwa-dates",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 6.8,
-     "lineValuePKR": 1700.0
+     "lineValuePKR": 1700
     },
     {
      "id": "dates-sukkari",
      "quantity": 250,
      "unit": "g",
-     "ratePerUnit": 2.0,
-     "lineValuePKR": 500.0
+     "ratePerUnit": 2,
+     "lineValuePKR": 500
     },
     {
      "id": "badam",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 950.0
+     "lineValuePKR": 950
     },
     {
      "id": "kishmish",
@@ -8214,7 +8214,7 @@
   },
   "bundle-nikkah-chuhara": {
    "tier": "gift",
-   "componentValuePKR": 4550.0,
+   "componentValuePKR": 4550,
    "discountPct": 4,
    "packagingFeePKR": 450,
    "rounding": 50,
@@ -8233,14 +8233,14 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 950.0
+     "lineValuePKR": 950
     },
     {
      "id": "kaju",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 950.0
+     "lineValuePKR": 950
     },
     {
      "id": "pista",
@@ -8254,13 +8254,13 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 1.6,
-     "lineValuePKR": 400.0
+     "lineValuePKR": 400
     }
    ]
   },
   "bundle-mehndi-snack-night": {
    "tier": "bundle",
-   "componentValuePKR": 3920.0,
+   "componentValuePKR": 3920,
    "discountPct": 6,
    "packagingFeePKR": 150,
    "rounding": 50,
@@ -8272,48 +8272,48 @@
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 0.7,
-     "lineValuePKR": 350.0
+     "lineValuePKR": 350
     },
     {
      "id": "chanay",
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 0.6,
-     "lineValuePKR": 300.0
+     "lineValuePKR": 300
     },
     {
      "id": "salted-peanuts",
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 1.6,
-     "lineValuePKR": 800.0
+     "lineValuePKR": 800
     },
     {
      "id": "masala-almonds",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 4.4,
-     "lineValuePKR": 1100.0
+     "lineValuePKR": 1100
     },
     {
      "id": "roasted-cashews",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 4.2,
-     "lineValuePKR": 1050.0
+     "lineValuePKR": 1050
     },
     {
      "id": "mixed-mukhwas",
      "quantity": 200,
      "unit": "g",
      "ratePerUnit": 1.6,
-     "lineValuePKR": 320.0
+     "lineValuePKR": 320
     }
    ]
   },
   "bundle-walima-favour": {
    "tier": "gift",
-   "componentValuePKR": 1405.0,
+   "componentValuePKR": 1405,
    "discountPct": 0,
    "packagingFeePKR": 250,
    "rounding": 50,
@@ -8325,14 +8325,14 @@
      "quantity": 100,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 380.0
+     "lineValuePKR": 380
     },
     {
      "id": "kaju",
      "quantity": 100,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 380.0
+     "lineValuePKR": 380
     },
     {
      "id": "pista",
@@ -8346,13 +8346,13 @@
      "quantity": 100,
      "unit": "g",
      "ratePerUnit": 1.45,
-     "lineValuePKR": 145.0
+     "lineValuePKR": 145
     }
    ]
   },
   "bundle-welcome-baby": {
    "tier": "gift",
-   "componentValuePKR": 4970.0,
+   "componentValuePKR": 4970,
    "discountPct": 4,
    "packagingFeePKR": 350,
    "rounding": 50,
@@ -8364,28 +8364,28 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 6.8,
-     "lineValuePKR": 1700.0
+     "lineValuePKR": 1700
     },
     {
      "id": "badam",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 950.0
+     "lineValuePKR": 950
     },
     {
      "id": "kaju",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 950.0
+     "lineValuePKR": 950
     },
     {
      "id": "sweet-fruit-balls",
      "quantity": 150,
      "unit": "g",
      "ratePerUnit": 0.8,
-     "lineValuePKR": 120.0
+     "lineValuePKR": 120
     },
     {
      "id": "pista",
@@ -8398,7 +8398,7 @@
   },
   "bundle-post-birth-pantry": {
    "tier": "bundle",
-   "componentValuePKR": 3290.0,
+   "componentValuePKR": 3290,
    "discountPct": 6,
    "packagingFeePKR": 150,
    "rounding": 50,
@@ -8410,14 +8410,14 @@
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 4.5,
-     "lineValuePKR": 2250.0
+     "lineValuePKR": 2250
     },
     {
      "id": "edible-gond",
      "quantity": 100,
      "unit": "g",
      "ratePerUnit": 4.6,
-     "lineValuePKR": 460.0
+     "lineValuePKR": 460
     },
     {
      "id": "chohara",
@@ -8431,7 +8431,7 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 0.32,
-     "lineValuePKR": 80.0
+     "lineValuePKR": 80
     }
    ]
   },
@@ -8449,14 +8449,14 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 950.0
+     "lineValuePKR": 950
     },
     {
      "id": "kaju",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 950.0
+     "lineValuePKR": 950
     },
     {
      "id": "pista",
@@ -8476,7 +8476,7 @@
   },
   "bundle-executive-crate": {
    "tier": "gift",
-   "componentValuePKR": 18025.0,
+   "componentValuePKR": 18025,
    "discountPct": 4,
    "packagingFeePKR": 900,
    "rounding": 50,
@@ -8488,14 +8488,14 @@
      "quantity": 1000,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 3800.0
+     "lineValuePKR": 3800
     },
     {
      "id": "kaju",
      "quantity": 1000,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 3800.0
+     "lineValuePKR": 3800
     },
     {
      "id": "pista",
@@ -8509,34 +8509,34 @@
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 5.4,
-     "lineValuePKR": 2700.0
+     "lineValuePKR": 2700
     },
     {
      "id": "ajwa-dates",
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 6.8,
-     "lineValuePKR": 3400.0
+     "lineValuePKR": 3400
     },
     {
      "id": "dates-mazafati",
      "quantity": 1000,
      "unit": "g",
      "ratePerUnit": 1.1,
-     "lineValuePKR": 1100.0
+     "lineValuePKR": 1100
     },
     {
      "id": "kishmish",
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 1.45,
-     "lineValuePKR": 725.0
+     "lineValuePKR": 725
     }
    ]
   },
   "bundle-monthly-pantry": {
    "tier": "deal",
-   "componentValuePKR": 3170.0,
+   "componentValuePKR": 3170,
    "discountPct": 8,
    "packagingFeePKR": 100,
    "rounding": 50,
@@ -8548,48 +8548,48 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 950.0
+     "lineValuePKR": 950
     },
     {
      "id": "akhroot",
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 1.1,
-     "lineValuePKR": 550.0
+     "lineValuePKR": 550
     },
     {
      "id": "dates-irani",
      "quantity": 1000,
      "unit": "g",
      "ratePerUnit": 0.6,
-     "lineValuePKR": 600.0
+     "lineValuePKR": 600
     },
     {
      "id": "org-honey",
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 1.5,
-     "lineValuePKR": 750.0
+     "lineValuePKR": 750
     },
     {
      "id": "desi-gur",
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 0.32,
-     "lineValuePKR": 160.0
+     "lineValuePKR": 160
     },
     {
      "id": "chia_seeds",
      "quantity": 100,
      "unit": "g",
      "ratePerUnit": 1.6,
-     "lineValuePKR": 160.0
+     "lineValuePKR": 160
     }
    ]
   },
   "gift-visit-hospital-light": {
    "tier": "bundle",
-   "componentValuePKR": 955.0,
+   "componentValuePKR": 955,
    "discountPct": 8,
    "packagingFeePKR": 100,
    "rounding": 50,
@@ -8601,14 +8601,14 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 1.1,
-     "lineValuePKR": 275.0
+     "lineValuePKR": 275
     },
     {
      "id": "badam",
      "quantity": 100,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 380.0
+     "lineValuePKR": 380
     },
     {
      "id": "chamomile-tea",
@@ -8621,7 +8621,7 @@
   },
   "gift-ayadat-basket": {
    "tier": "bundle",
-   "componentValuePKR": 1875.0,
+   "componentValuePKR": 1875,
    "discountPct": 8,
    "packagingFeePKR": 150,
    "rounding": 50,
@@ -8633,27 +8633,27 @@
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 1.1,
-     "lineValuePKR": 550.0
+     "lineValuePKR": 550
     },
     {
      "id": "badam",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 950.0
+     "lineValuePKR": 950
     },
     {
      "id": "org-honey",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 1.5,
-     "lineValuePKR": 375.0
+     "lineValuePKR": 375
     }
    ]
   },
   "gift-ayadat-tea-comfort": {
    "tier": "bundle",
-   "componentValuePKR": 1050.0,
+   "componentValuePKR": 1050,
    "discountPct": 8,
    "packagingFeePKR": 150,
    "rounding": 50,
@@ -8679,24 +8679,24 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 1.5,
-     "lineValuePKR": 375.0
+     "lineValuePKR": 375
     },
     {
      "id": "dates-mazafati",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 1.1,
-     "lineValuePKR": 275.0
+     "lineValuePKR": 275
     }
    ]
   },
   "gift-ayadat-dry-fruit-large": {
    "tier": "bundle",
-   "componentValuePKR": 2937.5,
+   "componentValuePKR": 3637.5,
    "discountPct": 8,
    "packagingFeePKR": 150,
    "rounding": 50,
-   "pricePKR": 2850,
+   "pricePKR": 3500,
    "packagedWeightG": 1750,
    "components": [
     {
@@ -8704,14 +8704,14 @@
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 1.1,
-     "lineValuePKR": 550.0
+     "lineValuePKR": 550
     },
     {
-     "id": "dried-figs-medium",
+     "id": "afghan-figs",
      "quantity": 250,
      "unit": "g",
-     "ratePerUnit": 3.2,
-     "lineValuePKR": 800.0
+     "ratePerUnit": 6,
+     "lineValuePKR": 1500
     },
     {
      "id": "kishmish",
@@ -8725,20 +8725,20 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 1.1,
-     "lineValuePKR": 275.0
+     "lineValuePKR": 275
     },
     {
      "id": "badam",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 950.0
+     "lineValuePKR": 950
     }
    ]
   },
   "gift-ayadat-premium-hamper": {
    "tier": "gift",
-   "componentValuePKR": 5030.0,
+   "componentValuePKR": 5030,
    "discountPct": 0,
    "packagingFeePKR": 250,
    "rounding": 50,
@@ -8750,7 +8750,7 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 6.8,
-     "lineValuePKR": 1700.0
+     "lineValuePKR": 1700
     },
     {
      "id": "pistachio-kernels",
@@ -8764,20 +8764,20 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 9.6,
-     "lineValuePKR": 2400.0
+     "lineValuePKR": 2400
     },
     {
      "id": "kashmiri-kahwa",
      "quantity": 50,
      "unit": "g",
      "ratePerUnit": 3.6,
-     "lineValuePKR": 180.0
+     "lineValuePKR": 180
     }
    ]
   },
   "gift-visit-small": {
    "tier": "bundle",
-   "componentValuePKR": 655.0,
+   "componentValuePKR": 655,
    "discountPct": 8,
    "packagingFeePKR": 100,
    "rounding": 50,
@@ -8789,20 +8789,20 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 1.1,
-     "lineValuePKR": 275.0
+     "lineValuePKR": 275
     },
     {
      "id": "badam",
      "quantity": 100,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 380.0
+     "lineValuePKR": 380
     }
    ]
   },
   "gift-visit-classic": {
    "tier": "gift",
-   "componentValuePKR": 1490.0,
+   "componentValuePKR": 1490,
    "discountPct": 0,
    "packagingFeePKR": 150,
    "rounding": 50,
@@ -8814,14 +8814,14 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 1.1,
-     "lineValuePKR": 275.0
+     "lineValuePKR": 275
     },
     {
      "id": "badam",
      "quantity": 150,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 570.0
+     "lineValuePKR": 570
     },
     {
      "id": "pista",
@@ -8835,13 +8835,13 @@
      "quantity": 100,
      "unit": "g",
      "ratePerUnit": 1.45,
-     "lineValuePKR": 145.0
+     "lineValuePKR": 145
     }
    ]
   },
   "gift-visit-premium-host": {
    "tier": "gift",
-   "componentValuePKR": 5025.0,
+   "componentValuePKR": 5025,
    "discountPct": 0,
    "packagingFeePKR": 250,
    "rounding": 50,
@@ -8853,14 +8853,14 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 6.8,
-     "lineValuePKR": 1700.0
+     "lineValuePKR": 1700
     },
     {
      "id": "mamra-almonds",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 6.5,
-     "lineValuePKR": 1625.0
+     "lineValuePKR": 1625
     },
     {
      "id": "pistachio-kernels",
@@ -8870,11 +8870,11 @@
      "lineValuePKR": 750
     },
     {
-     "id": "plain-cashews",
+     "id": "kaju",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 950.0
+     "lineValuePKR": 950
     }
    ]
   },
@@ -8906,20 +8906,20 @@
      "quantity": 100,
      "unit": "g",
      "ratePerUnit": 1.2,
-     "lineValuePKR": 120.0
+     "lineValuePKR": 120
     },
     {
      "id": "sweet-makhana-large",
      "quantity": 100,
      "unit": "g",
      "ratePerUnit": 0.8,
-     "lineValuePKR": 80.0
+     "lineValuePKR": 80
     }
    ]
   },
   "gift-dawat-host": {
    "tier": "bundle",
-   "componentValuePKR": 1885.0,
+   "componentValuePKR": 1885,
    "discountPct": 8,
    "packagingFeePKR": 150,
    "rounding": 50,
@@ -8938,27 +8938,27 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 1.1,
-     "lineValuePKR": 275.0
+     "lineValuePKR": 275
     },
     {
      "id": "sugar-coated-saunf",
      "quantity": 100,
      "unit": "g",
      "ratePerUnit": 1.2,
-     "lineValuePKR": 120.0
+     "lineValuePKR": 120
     },
     {
      "id": "elaichi-chai",
      "quantity": 100,
      "unit": "g",
      "ratePerUnit": 2.4,
-     "lineValuePKR": 240.0
+     "lineValuePKR": 240
     }
    ]
   },
   "gift-rishta-visit": {
    "tier": "gift",
-   "componentValuePKR": 2820.0,
+   "componentValuePKR": 2820,
    "discountPct": 0,
    "packagingFeePKR": 200,
    "rounding": 50,
@@ -8970,21 +8970,21 @@
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 1.1,
-     "lineValuePKR": 550.0
+     "lineValuePKR": 550
     },
     {
      "id": "badam",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 950.0
+     "lineValuePKR": 950
     },
     {
      "id": "kaju",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 950.0
+     "lineValuePKR": 950
     },
     {
      "id": "sesame-rewari",
@@ -8998,13 +8998,13 @@
      "quantity": 100,
      "unit": "g",
      "ratePerUnit": 1.2,
-     "lineValuePKR": 120.0
+     "lineValuePKR": 120
     }
    ]
   },
   "gift-new-home-blessing": {
    "tier": "bundle",
-   "componentValuePKR": 1700.0,
+   "componentValuePKR": 1700,
    "discountPct": 8,
    "packagingFeePKR": 150,
    "rounding": 50,
@@ -9016,14 +9016,14 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 1.1,
-     "lineValuePKR": 275.0
+     "lineValuePKR": 275
     },
     {
      "id": "desi-gur",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 0.32,
-     "lineValuePKR": 80.0
+     "lineValuePKR": 80
     },
     {
      "id": "sesame-rewari",
@@ -9037,20 +9037,20 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 950.0
+     "lineValuePKR": 950
     },
     {
      "id": "kishmish",
      "quantity": 100,
      "unit": "g",
      "ratePerUnit": 1.45,
-     "lineValuePKR": 145.0
+     "lineValuePKR": 145
     }
    ]
   },
   "gift-thank-you-tea": {
    "tier": "bundle",
-   "componentValuePKR": 1840.0,
+   "componentValuePKR": 1840,
    "discountPct": 8,
    "packagingFeePKR": 100,
    "rounding": 50,
@@ -9062,34 +9062,34 @@
      "quantity": 100,
      "unit": "g",
      "ratePerUnit": 2.4,
-     "lineValuePKR": 240.0
+     "lineValuePKR": 240
     },
     {
      "id": "org-honey",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 1.5,
-     "lineValuePKR": 375.0
+     "lineValuePKR": 375
     },
     {
      "id": "badam",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 950.0
+     "lineValuePKR": 950
     },
     {
      "id": "dates-mazafati",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 1.1,
-     "lineValuePKR": 275.0
+     "lineValuePKR": 275
     }
    ]
   },
   "gift-teacher-mentor": {
    "tier": "gift",
-   "componentValuePKR": 2430.0,
+   "componentValuePKR": 2430,
    "discountPct": 0,
    "packagingFeePKR": 150,
    "rounding": 50,
@@ -9101,28 +9101,28 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 950.0
+     "lineValuePKR": 950
     },
     {
      "id": "kaju",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 950.0
+     "lineValuePKR": 950
     },
     {
      "id": "dates-piarom",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 1.4,
-     "lineValuePKR": 350.0
+     "lineValuePKR": 350
     },
     {
      "id": "kashmiri-kahwa",
      "quantity": 50,
      "unit": "g",
      "ratePerUnit": 3.6,
-     "lineValuePKR": 180.0
+     "lineValuePKR": 180
     }
    ]
   },
@@ -9140,7 +9140,7 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 1.1,
-     "lineValuePKR": 275.0
+     "lineValuePKR": 275
     },
     {
      "id": "peanut-jaggery-gachak",
@@ -9154,14 +9154,14 @@
      "quantity": 150,
      "unit": "g",
      "ratePerUnit": 0.8,
-     "lineValuePKR": 120.0
+     "lineValuePKR": 120
     },
     {
      "id": "sugar-coated-saunf",
      "quantity": 100,
      "unit": "g",
      "ratePerUnit": 1.2,
-     "lineValuePKR": 120.0
+     "lineValuePKR": 120
     },
     {
      "id": "pista",
@@ -9174,7 +9174,7 @@
   },
   "gift-parents-visit": {
    "tier": "bundle",
-   "componentValuePKR": 1795.0,
+   "componentValuePKR": 1795,
    "discountPct": 8,
    "packagingFeePKR": 150,
    "rounding": 50,
@@ -9193,34 +9193,34 @@
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 1.1,
-     "lineValuePKR": 275.0
+     "lineValuePKR": 275
     },
     {
      "id": "badam",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 950.0
+     "lineValuePKR": 950
     },
     {
      "id": "desi-gur",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 0.32,
-     "lineValuePKR": 80.0
+     "lineValuePKR": 80
     },
     {
      "id": "elaichi-chai",
      "quantity": 100,
      "unit": "g",
      "ratePerUnit": 2.4,
-     "lineValuePKR": 240.0
+     "lineValuePKR": 240
     }
    ]
   },
   "gift-condolence-visit": {
    "tier": "bundle",
-   "componentValuePKR": 1950.0,
+   "componentValuePKR": 1950,
    "discountPct": 8,
    "packagingFeePKR": 100,
    "rounding": 50,
@@ -9232,21 +9232,21 @@
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 1.1,
-     "lineValuePKR": 550.0
+     "lineValuePKR": 550
     },
     {
      "id": "chai-patti-ctc",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 1.8,
-     "lineValuePKR": 450.0
+     "lineValuePKR": 450
     },
     {
      "id": "badam",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 950.0
+     "lineValuePKR": 950
     }
    ]
   },
@@ -9264,14 +9264,14 @@
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 1900.0
+     "lineValuePKR": 1900
     },
     {
      "id": "kaju",
      "quantity": 250,
      "unit": "g",
      "ratePerUnit": 3.8,
-     "lineValuePKR": 950.0
+     "lineValuePKR": 950
     },
     {
      "id": "pista",
@@ -9285,7 +9285,7 @@
      "quantity": 500,
      "unit": "g",
      "ratePerUnit": 1.1,
-     "lineValuePKR": 550.0
+     "lineValuePKR": 550
     },
     {
      "id": "kishmish",
@@ -9306,7 +9306,7 @@
      "quantity": 100,
      "unit": "g",
      "ratePerUnit": 2.4,
-     "lineValuePKR": 240.0
+     "lineValuePKR": 240
     }
    ]
   }

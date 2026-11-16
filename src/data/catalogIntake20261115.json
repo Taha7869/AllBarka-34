@@ -1,6 +1,6 @@
 {
  "batch": "owner-intake-20261115",
- "purpose": "Create-only draft import of the items on the owner's supplier list that the catalogue did not have: spices (including white pepper), Kandahari dried plums, Mission figs, dried blueberries and kiwi, macadamia, brazil nuts, pecans and almond slices. Every product stays a draft until the owner publishes it.",
+ "purpose": "Create-only draft import of the items on the owner's supplier list that the catalogue did not have: spices (including white pepper and whole turmeric root, zard chob), Kandahari dried plums, Mission figs, dried blueberries and kiwi, macadamia, brazil nuts, pecans and almond slices. Every product stays a draft until the owner publishes it.",
  "newProducts": [
   {
    "id": "lal-mirch-powder",
@@ -787,35 +787,38 @@
    }
   },
   {
-   "id": "aloobukhara-qandhari",
-   "name_en": "Dried Plums, Kandahari (Qandhari Aloobukhara)",
-   "name_ur": "قندھاری آلو بخارا",
-   "name_ar": "برقوق قندهاري",
-   "desc_en": "Sun-dried plums from the Kandahar style of drying, sweet-sour with a deep dark skin. They go into biryani and pulao, qorma, chutney and the cooling summer drink, and are eaten straight from the pack.",
-   "desc_ur": "قندھار طرز پر دھوپ میں سکھائے ہوئے آلو بخارے، کھٹے میٹھے اور گہرے گہرے رنگ کے۔ یہ بریانی، پلاؤ، قورمہ اور چٹنی میں پڑتے ہیں، گرمیوں کا ٹھنڈا مشروب بنتے ہیں، اور سیدھے پیکٹ سے بھی کھائے جاتے ہیں۔",
-   "desc_ar": "برقوق مجفف بالشمس على طريقة قندهار، حلو حامض بقشرة داكنة. يدخل في البرياني والبلاو والقورمة والصلصات ومشروب الصيف المنعش، ويؤكل من العبوة مباشرة.",
-   "recipe_en": "Soak four or five plums in warm water for 15 minutes before adding them to biryani or qorma. For a summer drink, simmer with sugar, cool and strain.",
-   "recipe_ur": "بریانی یا قورمے میں ڈالنے سے پہلے چار پانچ آلو بخارے گرم پانی میں 15 منٹ بھگوئیں۔ گرمیوں کے مشروب کے لیے چینی کے ساتھ ابالیں، ٹھنڈا کر کے چھانیں۔",
-   "recipe_ar": "انقع أربع أو خمس حبات في ماء دافئ 15 دقيقة قبل إضافتها إلى البرياني أو القورمة. لمشروب الصيف اطبخها مع السكر ثم بردها وصفِّها.",
-   "sourcingDetails_en": "Sold as dried plums. They may contain stones; check the pack label for added sulphites. Origin is confirmed on request. Exact batch source and grade are confirmed on request; individual farm traceability is not stated.",
-   "sourcingDetails_ur": "خشک آلو بخارے کے طور پر فروخت۔ ان میں گٹھلی ہو سکتی ہے؛ سلفائٹ کے لیے پیک کا لیبل دیکھیں۔ ماخذ درخواست پر بتایا جاتا ہے۔ موجودہ کھیپ کا درست ماخذ اور درجہ درخواست پر بتایا جاتا ہے؛ کسی خاص فارم کا سراغ نہیں بتایا جاتا۔",
-   "sourcingDetails_ar": "تُباع كبرقوق مجفف. قد تحتوي على نوى؛ راجع الملصق للكبريتيت. يُؤكَّد المنشأ عند الطلب. يُؤكَّد المصدر الدقيق ودرجة الدفعة عند الطلب؛ ولا تُذكر مزرعة بعينها.",
+   "id": "turmeric-root-whole",
+   "name_en": "Whole Turmeric Root (Zard Chob / Haldi Gaanth)",
+   "name_ur": "ثابت ہلدی (زرد چوب / ہلدی کی گانٹھ)",
+   "name_ar": "جذور الكركم الكاملة (زرد چوب)",
+   "desc_en": "Whole dried turmeric root, the hard yellow knobs that haldi powder is ground from. In Urdu and Persian it is called zard chob, literally 'yellow wood'. Buying it whole lets you grind small amounts at home, so the colour and earthy aroma stay fresher than in powder bought months ahead.",
+   "desc_ur": "ثابت خشک ہلدی کی سخت پیلی گانٹھیں، جن سے ہلدی پاؤڈر پیسا جاتا ہے۔ اردو اور فارسی میں اسے زرد چوب کہتے ہیں، یعنی 'پیلی لکڑی'۔ ثابت ہلدی لینے سے آپ گھر پر تھوڑی تھوڑی پیس سکتے ہیں، اس لیے رنگ اور مہک مہینوں پہلے خریدے گئے پاؤڈر سے زیادہ تازہ رہتی ہے۔",
+   "desc_ar": "جذور كركم مجففة كاملة، وهي العُقد الصفراء الصلبة التي يُطحن منها مسحوق الكركم. تُسمى بالأردية والفارسية زرد چوب أي 'الخشب الأصفر'. شراؤها كاملة يتيح طحن كميات صغيرة في البيت فيبقى اللون والرائحة الترابية أطزج من المسحوق المشترى قبل أشهر.",
+   "recipe_en": "Break a root into pieces and grind it in a strong spice grinder, then sieve; use the fresh powder in salan and daal as you would shop-bought haldi. A whole piece can also go into mixed pickle (achar) while it matures.",
+   "recipe_ur": "گانٹھ کو ٹکڑوں میں توڑ کر مضبوط مصالحہ گرائنڈر میں پیسیں اور چھان لیں؛ تازہ پاؤڈر سالن اور دال میں بازاری ہلدی کی طرح استعمال کریں۔ پوری گانٹھ ملے جلے اچار میں بھی ڈالی جا سکتی ہے۔",
+   "recipe_ar": "اكسر الجذر قطعًا واطحنه في مطحنة توابل قوية ثم انخله، واستخدم المسحوق الطازج في المرق والعدس كما تستخدم الكركم الجاهز. ويمكن وضع قطعة كاملة في المخلل المشكل أثناء نضجه.",
+   "sourcingDetails_en": "Dried whole rhizomes of Curcuma longa, sorted by hand. Exact batch source and grade are confirmed on request; individual farm traceability is not stated.",
+   "sourcingDetails_ur": "کرکوما لونگا کی خشک ثابت جڑیں، ہاتھ سے چھانٹی ہوئی۔ موجودہ کھیپ کا درست ماخذ اور درجہ درخواست پر بتایا جاتا ہے؛ کسی خاص فارم کا سراغ نہیں بتایا جاتا۔",
+   "sourcingDetails_ar": "جذور كركم لونغا مجففة كاملة مفروزة يدويًا. يُؤكَّد المصدر الدقيق ودرجة الدفعة عند الطلب؛ ولا تُذكر مزرعة بعينها.",
    "origin_en": "Hand-Packed in Pakistan",
    "origin_ur": "پاکستان میں ہاتھ سے پیک شدہ",
    "origin_ar": "معبأ يدويًا في باكستان",
-   "careKind": "fruit",
-   "category": "dry-fruits",
+   "careKind": "wholeSpice",
+   "category": "herbs-spices",
    "collections": [
-    "dried-fruits"
+    "whole-spices"
    ],
    "keywords": [
-    "aloobukhara",
-    "qandhari aloobukhara",
-    "kandahari",
-    "dried plum",
-    "prunes",
-    "Dried Plums, Kandahari (Qandhari Aloobukhara)",
-    "قندھاری آلو بخارا"
+    "zard chob",
+    "zard chobi",
+    "haldi gaanth",
+    "whole haldi",
+    "turmeric root",
+    "whole turmeric",
+    "haldi",
+    "spice",
+    "Whole Turmeric Root (Zard Chob / Haldi Gaanth)",
+    "ثابت ہلدی (زرد چوب / ہلدی کی گانٹھ)"
    ],
    "image": "/images/product-placeholder.svg",
    "imageName": "/images/product-placeholder.svg",
@@ -828,7 +831,7 @@
    "status": "draft",
    "active": false,
    "allowCustomWeight": false,
-   "pricePer100g": 180,
+   "pricePer100g": 100,
    "claimsVerification": {
     "status": "unverified"
    },
@@ -839,8 +842,16 @@
     "quantityMode": "fixed",
     "baseQuantity": 1,
     "baseUnit": "kg",
-    "basePrice": 1800,
+    "basePrice": 1000,
     "options": [
+     {
+      "label": "100g",
+      "quantity": 100,
+      "unit": "g",
+      "override": false,
+      "available": true,
+      "shippingWeightG": null
+     },
      {
       "label": "250g",
       "quantity": 250,
@@ -870,12 +881,12 @@
    },
    "importBatch": "owner-intake-20261115",
    "seo": {
-    "title_en": "Dried Plums, Kandahari (Qandhari Aloobukhara) | AllBarka",
-    "title_ur": "قندھاری آلو بخارا | البرکہ",
-    "title_ar": "برقوق قندهاري | البركة",
-    "imageAlt_en": "Dried Plums, Kandahari (Qandhari Aloobukhara) — product image coming soon",
-    "imageAlt_ur": "قندھاری آلو بخارا — تصویر جلد آ رہی ہے",
-    "imageAlt_ar": "برقوق قندهاري — الصورة قريبًا"
+    "title_en": "Whole Turmeric Root (Zard Chob / Haldi Gaanth) | AllBarka",
+    "title_ur": "ثابت ہلدی (زرد چوب / ہلدی کی گانٹھ) | البرکہ",
+    "title_ar": "جذور الكركم الكاملة (زرد چوب) | البركة",
+    "imageAlt_en": "Whole Turmeric Root (Zard Chob / Haldi Gaanth) — product image coming soon",
+    "imageAlt_ur": "ثابت ہلدی (زرد چوب / ہلدی کی گانٹھ) — تصویر جلد آ رہی ہے",
+    "imageAlt_ar": "جذور الكركم الكاملة (زرد چوب) — الصورة قريبًا"
    }
   },
   {
@@ -1556,10 +1567,6 @@
    "pkrPerkg": 2800,
    "basis": "AllBarka placeholder estimate from the general market range; no verified reference. Owner sets the real price before publishing"
   },
-  "aloobukhara-qandhari": {
-   "pkrPerkg": 1800,
-   "basis": "AllBarka placeholder estimate from the general market range; no verified reference. Owner sets the real price before publishing"
-  },
   "mission-figs-dried": {
    "pkrPerkg": 2600,
    "basis": "AllBarka placeholder estimate from the general market range; no verified reference. Owner sets the real price before publishing"
@@ -1586,6 +1593,10 @@
   },
   "almond-slices": {
    "pkrPerkg": 3200,
+   "basis": "AllBarka placeholder estimate from the general market range; no verified reference. Owner sets the real price before publishing"
+  },
+  "turmeric-root-whole": {
+   "pkrPerkg": 1000,
    "basis": "AllBarka placeholder estimate from the general market range; no verified reference. Owner sets the real price before publishing"
   }
  }

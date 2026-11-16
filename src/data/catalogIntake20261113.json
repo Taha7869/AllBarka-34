@@ -480,105 +480,6 @@
    }
   },
   {
-   "id": "plain-cashews",
-   "name_en": "Plain Cashews (Sada Kaju)",
-   "name_ur": "سادہ کاجو",
-   "name_ar": "كاجو طبيعي",
-   "desc_en": "Unsalted, unroasted cashews are soft, sweet and endlessly versatile: the base of rich gravies and kheer, the centrepiece of a mithai box, and a gift that is almost always welcome. Choose plain when you want to cook with them or control the salt yourself.",
-   "desc_ur": "بغیر نمک اور بغیر بھنے کاجو نرم، میٹھے اور ہر کام آنے والے ہیں: بھرپور گریوی اور کھیر کی بنیاد، مٹھائی کے ڈبے کا مرکز، اور ایسا تحفہ جو تقریباً ہمیشہ پسند کیا جاتا ہے۔ جب پکانا ہو یا نمک خود طے کرنا ہو تو سادہ کاجو چنیں۔",
-   "desc_ar": "الكاجو بلا ملح أو تحميص ناعم حلو ومتعدد الاستخدامات: أساس المرق الغني والمهلبية، ومحور علبة الحلوى، وهدية مرحّب بها دائمًا. اختر الطبيعي حين تريد الطبخ به أو التحكم بالملح بنفسك.",
-   "recipe_en": "Soak for ten minutes and blend into creamy gravies, add to kheer and sweets, or toast lightly for snacking.",
-   "recipe_ur": "دس منٹ بھگو کر کریمی گریوی میں بلینڈ کریں، کھیر اور مٹھائی میں ڈالیں، یا ہلکا بھون کر سنیک کے طور پر کھائیں۔",
-   "recipe_ar": "انقعه عشر دقائق واخلطه في مرق كريمي، أو أضفه إلى المهلبية والحلويات، أو حمّصه قليلًا للتسالي.",
-   "sourcingDetails_en": "Cashews are grown in tropical regions such as India, Vietnam and West Africa and processed there; the kernels are imported and packed in Pakistan. Exact batch source and grade are confirmed on request; individual farm traceability is not stated.",
-   "sourcingDetails_ur": "کاجو بھارت، ویتنام اور مغربی افریقہ جیسے استوائی علاقوں میں اگتے اور وہیں پروسیس ہوتے ہیں؛ گری درآمد شدہ ہے اور پاکستان میں پیک ہوتی ہے۔ موجودہ کھیپ کا درست ماخذ اور درجہ درخواست پر بتایا جاتا ہے؛ کسی خاص فارم کا سراغ نہیں بتایا جاتا۔",
-   "sourcingDetails_ar": "يُزرع الكاجو في مناطق استوائية كالهند وفيتنام وغرب أفريقيا ويُعالَج هناك؛ واللب مستورد ومعبأ في باكستان. يُؤكَّد المصدر الدقيق ودرجة الدفعة عند الطلب؛ ولا تُذكر مزرعة بعينها.",
-   "origin_en": "Hand-Packed in Pakistan",
-   "origin_ur": "پاکستان میں ہاتھ سے پیک شدہ",
-   "origin_ar": "معبأ يدويًا في باكستان",
-   "careKind": "nuts",
-   "category": "nuts",
-   "collections": [
-    "kernels-and-nuts"
-   ],
-   "keywords": [
-    "kaju",
-    "plain kaju",
-    "raw cashew",
-    "sada kaju",
-    "Plain Cashews (Sada Kaju)",
-    "سادہ کاجو"
-   ],
-   "image": "/images/product-placeholder.svg",
-   "imageName": "/images/product-placeholder.svg",
-   "galleryImages": [],
-   "prices": {},
-   "variants": [],
-   "wholesale": 0,
-   "quoteOnly": false,
-   "orderMode": "standard",
-   "status": "draft",
-   "active": false,
-   "allowCustomWeight": false,
-   "pricePer100g": 380,
-   "claimsVerification": {
-    "status": "unverified"
-   },
-   "commerce": {
-    "version": 1,
-    "kind": "food",
-    "pricingMode": "calculated",
-    "quantityMode": "fixed",
-    "baseQuantity": 1,
-    "baseUnit": "kg",
-    "basePrice": 3800,
-    "options": [
-     {
-      "label": "100g",
-      "quantity": 100,
-      "unit": "g",
-      "override": false,
-      "available": true,
-      "shippingWeightG": null
-     },
-     {
-      "label": "250g",
-      "quantity": 250,
-      "unit": "g",
-      "override": false,
-      "available": true,
-      "shippingWeightG": null
-     },
-     {
-      "label": "500g",
-      "quantity": 500,
-      "unit": "g",
-      "override": false,
-      "available": true,
-      "shippingWeightG": null
-     },
-     {
-      "label": "1kg",
-      "quantity": 1,
-      "unit": "kg",
-      "override": false,
-      "available": true,
-      "shippingWeightG": null
-     }
-    ],
-    "custom": null
-   },
-   "importBatch": "owner-intake-20261113",
-   "seo": {
-    "title_en": "Plain Cashews (Sada Kaju) | AllBarka",
-    "title_ur": "سادہ کاجو | البرکہ",
-    "title_ar": "كاجو طبيعي | البركة",
-    "imageAlt_en": "Plain Cashews (Sada Kaju) — product image coming soon",
-    "imageAlt_ur": "سادہ کاجو — تصویر جلد آ رہی ہے",
-    "imageAlt_ar": "كاجو طبيعي — الصورة قريبًا"
-   }
-  },
-  {
    "id": "salted-peanuts",
    "name_en": "Salted Peanuts",
    "name_ur": "نمکین مونگ پھلی",
@@ -5832,96 +5733,6 @@
    }
   },
   {
-   "id": "dried-figs-medium",
-   "name_en": "Dried Figs, Medium (Anjeer)",
-   "name_ur": "انجیر (درمیانہ سائز)",
-   "name_ar": "تين مجفف (حجم متوسط)",
-   "desc_en": "Soft, seedy and gently sweet, anjeer is the fruit mentioned in the Quran and treasured in winter. The medium size gives the same taste as the large fig at a kinder price, which makes it the practical choice for daily eating and for milk.",
-   "desc_ur": "نرم، دانے دار اور ہلکی میٹھی انجیر وہ پھل ہے جس کا ذکر قرآن میں ہے اور جو سردیوں میں عزیز رکھا جاتا ہے۔ درمیانہ سائز بڑی انجیر جیسا ذائقہ بہتر قیمت پر دیتا ہے، اس لیے روزانہ کھانے اور دودھ کے لیے عملی انتخاب ہے۔",
-   "desc_ar": "التين المجفف طري كثير البذور حلو بلطف، وهو الثمرة المذكورة في القرآن والعزيزة في الشتاء. الحجم المتوسط يمنح طعم التين الكبير بسعر ألطف، فهو الخيار العملي للأكل اليومي ومع الحليب.",
-   "recipe_en": "Soak two or three in water or milk overnight and eat in the morning, or chop into oats, halwa and baking.",
-   "recipe_ur": "دو تین انجیر رات بھر پانی یا دودھ میں بھگو کر صبح کھائیں، یا دلیے، حلوے اور بیکنگ میں کتر کر ڈالیں۔",
-   "recipe_ar": "انقع حبتين أو ثلاثًا في الماء أو الحليب ليلة وكُلها صباحًا، أو قطّعها في الشوفان والحلواء والخَبز.",
-   "sourcingDetails_en": "Dried figs in Pakistani markets come mainly from Afghanistan, Iran and Turkey; the origin of the current batch is confirmed on request. Exact batch source and grade are confirmed on request; individual farm traceability is not stated.",
-   "sourcingDetails_ur": "پاکستانی منڈیوں میں خشک انجیر زیادہ تر افغانستان، ایران اور ترکی سے آتی ہے؛ موجودہ کھیپ کا ماخذ درخواست پر بتایا جاتا ہے۔ موجودہ کھیپ کا درست ماخذ اور درجہ درخواست پر بتایا جاتا ہے؛ کسی خاص فارم کا سراغ نہیں بتایا جاتا۔",
-   "sourcingDetails_ar": "يأتي التين المجفف في الأسواق الباكستانية غالبًا من أفغانستان وإيران وتركيا؛ ويُؤكَّد مصدر الدفعة الحالية عند الطلب. يُؤكَّد المصدر الدقيق ودرجة الدفعة عند الطلب؛ ولا تُذكر مزرعة بعينها.",
-   "origin_en": "Hand-Packed in Pakistan",
-   "origin_ur": "پاکستان میں ہاتھ سے پیک شدہ",
-   "origin_ar": "معبأ يدويًا في باكستان",
-   "careKind": "fruit",
-   "category": "nuts",
-   "collections": [
-    "dried-fruits"
-   ],
-   "keywords": [
-    "anjeer",
-    "dried fig",
-    "injeer",
-    "Dried Figs, Medium (Anjeer)",
-    "انجیر (درمیانہ سائز)"
-   ],
-   "image": "/images/product-placeholder.svg",
-   "imageName": "/images/product-placeholder.svg",
-   "galleryImages": [],
-   "prices": {},
-   "variants": [],
-   "wholesale": 0,
-   "quoteOnly": false,
-   "orderMode": "standard",
-   "status": "draft",
-   "active": false,
-   "allowCustomWeight": false,
-   "pricePer100g": 320,
-   "claimsVerification": {
-    "status": "unverified"
-   },
-   "commerce": {
-    "version": 1,
-    "kind": "food",
-    "pricingMode": "calculated",
-    "quantityMode": "fixed",
-    "baseQuantity": 1,
-    "baseUnit": "kg",
-    "basePrice": 3200,
-    "options": [
-     {
-      "label": "250g",
-      "quantity": 250,
-      "unit": "g",
-      "override": false,
-      "available": true,
-      "shippingWeightG": null
-     },
-     {
-      "label": "500g",
-      "quantity": 500,
-      "unit": "g",
-      "override": false,
-      "available": true,
-      "shippingWeightG": null
-     },
-     {
-      "label": "1kg",
-      "quantity": 1,
-      "unit": "kg",
-      "override": false,
-      "available": true,
-      "shippingWeightG": null
-     }
-    ],
-    "custom": null
-   },
-   "importBatch": "owner-intake-20261113",
-   "seo": {
-    "title_en": "Dried Figs, Medium (Anjeer) | AllBarka",
-    "title_ur": "انجیر (درمیانہ سائز) | البرکہ",
-    "title_ar": "تين مجفف (حجم متوسط) | البركة",
-    "imageAlt_en": "Dried Figs, Medium (Anjeer) — product image coming soon",
-    "imageAlt_ur": "انجیر (درمیانہ سائز) — تصویر جلد آ رہی ہے",
-    "imageAlt_ar": "تين مجفف (حجم متوسط) — الصورة قريبًا"
-   }
-  },
-  {
    "id": "desiccated-coconut",
    "name_en": "Desiccated Coconut (Khopra Burada)",
    "name_ur": "کھوپرے کا برادہ",
@@ -6041,10 +5852,6 @@
   },
   "dry-coconut-khopra": {
    "pkrPerkg": 1600,
-   "basis": "akbarionline.pk 'From' price scaled to the smallest listed pack (assumed 250 g, 500 g for Mazafati); indicative only"
-  },
-  "plain-cashews": {
-   "pkrPerkg": 3800,
    "basis": "akbarionline.pk 'From' price scaled to the smallest listed pack (assumed 250 g, 500 g for Mazafati); indicative only"
   },
   "salted-peanuts": {
@@ -6273,10 +6080,6 @@
   },
   "roasted-chana-skinless": {
    "pkrPerkg": 800,
-   "basis": "akbarionline.pk 'From' price scaled to the smallest listed pack (assumed 250 g, 500 g for Mazafati); indicative only"
-  },
-  "dried-figs-medium": {
-   "pkrPerkg": 3200,
    "basis": "akbarionline.pk 'From' price scaled to the smallest listed pack (assumed 250 g, 500 g for Mazafati); indicative only"
   },
   "desiccated-coconut": {
