@@ -3,6 +3,7 @@ import { useCatalogProducts } from '../contexts/CatalogContext';
 import { getLocalized } from '../utils/localize';
 import React, { useState, useEffect } from 'react';
 import { trackDemand } from '../lib/demandTracking';
+import { GIFT_CARD_STYLES, GIFT_RIBBONS, type GiftCardStyle, type GiftRibbon } from '../lib/giftOptions';
 import { calculateOrderSummary, GIFT_WRAP_FEE, type PricingSummary } from '../lib/pricing';
 import { readCheckoutDraft, CHECKOUT_DRAFT_KEY } from '../lib/checkoutPreferences';
 import { acceptedCheckoutReceipt, appliedPromotionMessage } from '../lib/checkoutReceipt';
@@ -133,6 +134,9 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
     deliverySlot: restoredDraft?.customer.deliverySlot || 'Fastest Dispatch',
     giftWrapping: restoredDraft?.customer.giftWrapping || false,
     giftMessage: restoredDraft?.customer.giftMessage || '',
+    giftCardStyle: 'celebration' as GiftCardStyle,
+    giftRibbon: 'gold' as GiftRibbon,
+    giftReceipt: false,
     instructions: restoredDraft?.customer.instructions || ''
   }));
 
@@ -465,6 +469,7 @@ const handleInputChange = (field: string, value: any) => {
         instructions: formData.instructions,
         giftWrapping: formData.giftWrapping,
         giftMessage: formData.giftMessage,
+        ...((formData.giftWrapping || verifiedQuote?.freeGiftWrap) ? { giftOptions: { receipt: formData.giftReceipt, cardStyle: formData.giftCardStyle, ribbon: formData.giftRibbon } } : {}),
         ...(isQuoteRequestMode ? {} : { paymentMethod: selectedPayment }),
         items: cartItems.map(item => ({
           ...item,
@@ -699,7 +704,7 @@ const handleInputChange = (field: string, value: any) => {
           onSubmit={handleSubmit}
           className="flex-1 overflow-y-auto min-h-0 px-4 sm:px-6 py-5 pb-10 space-y-4 [scrollbar-width:thin]"
         >
-          {draftNotice && <div role="status" className="rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] p-3 text-xs"><p>{t('checkout.draftRestored')}</p><button type="button" onClick={() => { setFormData({ name: '', phone: '', address: '', city: 'Lahore', deliverySlot: 'Fastest Dispatch', giftWrapping: false, giftMessage: '', instructions: '' }); setCouponCode(''); setAppliedCoupon(''); setIsQuoteRequestMode(false); setCouponSuccessMsg(null); setCouponErrorMsg(null); setDraftNotice(false); try { sessionStorage.removeItem(CHECKOUT_DRAFT_KEY); } catch { /* private mode */ } }} className="focus-ring mt-2 min-h-11 underline underline-offset-4">{t('checkout.clearDraft')}</button></div>}
+          {draftNotice && <div role="status" className="rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] p-3 text-xs"><p>{t('checkout.draftRestored')}</p><button type="button" onClick={() => { setFormData({ name: '', phone: '', address: '', city: 'Lahore', deliverySlot: 'Fastest Dispatch', giftWrapping: false, giftMessage: '', giftCardStyle: 'celebration', giftRibbon: 'gold', giftReceipt: false, instructions: '' }); setCouponCode(''); setAppliedCoupon(''); setIsQuoteRequestMode(false); setCouponSuccessMsg(null); setCouponErrorMsg(null); setDraftNotice(false); try { sessionStorage.removeItem(CHECKOUT_DRAFT_KEY); } catch { /* private mode */ } }} className="focus-ring mt-2 min-h-11 underline underline-offset-4">{t('checkout.clearDraft')}</button></div>}
           {!online && <p role="status" className="rounded-xl border border-[var(--color-border)] p-3 text-sm">{t('checkout.offline')}</p>}
           {(currentStep === 'details' || currentStep === 'shipping') && <AddressBook customer={formData} onSelect={value => setFormData(previous => ({ ...previous, ...value }))} />}
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] p-3 text-xs"><p role="status" aria-live="polite">{quoteLoading ? t('checkout.checkingQuote') : quoteError || (verifiedQuote ? t('checkout.quoteVerified') : t('checkout.waitQuote'))}</p><button type="button" disabled={!online || quoteLoading} onClick={() => setQuoteRefresh(value => value + 1)} className="focus-ring min-h-11 underline underline-offset-4 disabled:opacity-40">{t('checkout.refreshQuote')}</button>{quoteError && <a href={buildHumanSupportWhatsAppUrl()} target="_blank" rel="noreferrer" className="focus-ring ms-4 inline-flex min-h-11 items-center underline underline-offset-4">{t('footer.connect')}</a>}</div>
@@ -1149,6 +1154,39 @@ const handleInputChange = (field: string, value: any) => {
                           placeholder={t('checkout.giftPlaceholder')}
                           className="w-full bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/35 rounded-xl py-2.5 px-3 text-base sm:text-sm font-medium focus:outline-none focus:border-[var(--color-gold,#B8935F)] text-[var(--color-ink,#1F120F)] placeholder:text-[var(--color-ink,#1F120F)]/30"
                         />
+                        <fieldset className="mt-3 space-y-3" data-gift-options>
+                          <legend className="text-[9.5px] font-black text-[var(--color-ink,#1F120F)]/75 uppercase tracking-widest">{t('checkout.giftOptions')}</legend>
+                          <div>
+                            <p className="mb-1 text-[11px] font-semibold text-[var(--color-ink,#1F120F)]/80" id="gift-card-style-label">{t('checkout.giftCardStyle')}</p>
+                            <div role="radiogroup" aria-labelledby="gift-card-style-label" className="flex flex-wrap gap-2">
+                              {GIFT_CARD_STYLES.map(style => (
+                                <button key={style} type="button" role="radio" aria-checked={formData.giftCardStyle === style} onClick={() => handleInputChange('giftCardStyle', style)}
+                                  className={`focus-ring min-h-11 rounded-full border px-3 text-xs font-semibold transition-colors ${formData.giftCardStyle === style ? 'border-[var(--color-ink,#1F120F)] bg-[var(--color-ink,#1F120F)] text-white' : 'border-[var(--color-gold,#B8935F)]/40 text-[var(--color-ink,#1F120F)]'}`}>
+                                  {t(`checkout.giftCard.${style}`)}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <div>
+                            <p className="mb-1 text-[11px] font-semibold text-[var(--color-ink,#1F120F)]/80" id="gift-ribbon-label">{t('checkout.giftRibbon')}</p>
+                            <div role="radiogroup" aria-labelledby="gift-ribbon-label" className="flex flex-wrap gap-2">
+                              {GIFT_RIBBONS.map(ribbon => (
+                                <button key={ribbon} type="button" role="radio" aria-checked={formData.giftRibbon === ribbon} onClick={() => handleInputChange('giftRibbon', ribbon)}
+                                  className={`focus-ring inline-flex min-h-11 items-center gap-2 rounded-full border px-3 text-xs font-semibold ${formData.giftRibbon === ribbon ? 'border-[var(--color-ink,#1F120F)] ring-1 ring-[var(--color-ink,#1F120F)]' : 'border-[var(--color-gold,#B8935F)]/40'}`}>
+                                  <span aria-hidden="true" className="h-3.5 w-3.5 rounded-full border border-black/10" style={{ background: { gold: '#C7982F', emerald: '#0B5D46', maroon: '#6E1F2A', ivory: '#F4EBDD' }[ribbon] }} />
+                                  {t(`checkout.giftRibbon.${ribbon}`)}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <label className="flex cursor-pointer items-start gap-2">
+                            <input type="checkbox" checked={formData.giftReceipt} onChange={e => handleInputChange('giftReceipt', e.target.checked)} className="mt-0.5 h-4 w-4 accent-[var(--color-ink,#1F120F)]" />
+                            <span className="text-xs leading-5 text-[var(--color-ink,#1F120F)]">
+                              <span className="font-semibold">{t('checkout.giftReceipt')}</span>
+                              <span className="block text-[11px] text-[var(--color-ink,#1F120F)]/65">{t('checkout.giftReceiptHint')}</span>
+                            </span>
+                          </label>
+                        </fieldset>
                       </div>
                     )}
                   </div>

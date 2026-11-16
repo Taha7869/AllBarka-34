@@ -1,3 +1,4 @@
+import { normalizeGiftOptions, type GiftOptions } from './giftOptions';
 import { PRODUCTS } from '../data/products';
 import { calculateOrderSummary, PricingSummary } from './pricing';
 import { ShippingMethodId } from '../types.ts';
@@ -51,6 +52,8 @@ export interface CustomerInput {
   deliverySlot?: string;
   giftWrapping?: boolean;
   giftMessage?: string;
+  /** Input may be any shape; the validated result is GiftOptions or null. */
+  giftOptions?: GiftOptions | null;
   instructions?: string;
 }
 
@@ -136,6 +139,7 @@ export function validateCustomerDetails(input: Partial<CustomerInput>, isQuoteRe
     deliverySlot: typeof input.deliverySlot === 'string' ? input.deliverySlot.slice(0, 80) : 'Fastest Dispatch',
     giftWrapping: Boolean(input.giftWrapping),
     giftMessage,
+    giftOptions: normalizeGiftOptions((input as { giftOptions?: unknown }).giftOptions),
     instructions
   };
 }

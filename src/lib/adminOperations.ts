@@ -122,7 +122,7 @@ export function sanitizeOrderForAdmin(order: CanonicalOrder): AdminOrder {
     uid: order.uid, claimedAt: order.claimedAt,
     customer: { name: customer.name, phone: customer.phone, address: customer.address,
       city: customer.city, deliverySlot: customer.deliverySlot, instructions: customer.instructions },
-    gifting: { giftWrapping: gifting.giftWrapping, giftMessage: gifting.giftMessage, giftWrapFee: gifting.giftWrapFee },
+    gifting: { giftWrapping: gifting.giftWrapping, giftMessage: gifting.giftMessage, giftWrapFee: gifting.giftWrapFee, ...(gifting.giftOptions ? { giftOptions: gifting.giftOptions } : {}) },
     deliverySchedule: order.deliverySchedule,
     items: (Array.isArray(order.items) ? order.items : []).map(item => {
       const hamper = item.productId === 'custom-hamper' ? resolveHamper(item.hamperConfiguration) : null;

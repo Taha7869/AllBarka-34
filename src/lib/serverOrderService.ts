@@ -1,3 +1,4 @@
+import { giftOptionLines, normalizeGiftOptions, type GiftOptions } from './giftOptions';
 import crypto from 'crypto';
 import type { Firestore, Transaction, DocumentSnapshot } from 'firebase-admin/firestore';
 import { validateAndPriceOrder, validateCustomerDetails, ValidationError, ValidatedOrderItem } from './orderValidation';
@@ -38,6 +39,7 @@ export interface CanonicalGiftingSnapshot {
   giftWrapping: boolean;
   giftMessage?: string;
   giftWrapFee: number;
+  giftOptions?: GiftOptions;
 }
 
 import { DeliveryScheduleResult } from './deliveryCalendar';
@@ -185,6 +187,7 @@ export function sanitizeOrderForCustomer(order: CanonicalOrder, whatsappMessage?
       giftWrapping: order.gifting.giftWrapping,
       giftMessage: order.gifting.giftMessage,
       giftWrapFee: order.gifting.giftWrapFee,
+      ...(order.gifting.giftOptions ? { giftOptions: order.gifting.giftOptions } : {}),
     },
     deliverySchedule: order.deliverySchedule,
     items: order.items,
@@ -248,6 +251,7 @@ export function generateAuthoritativeWhatsAppMessage(order: CanonicalOrder): str
       lines.push(`  Gift Card Inscription: "${order.gifting.giftMessage}"`);
     }
   }
+  lines.push(...giftOptionLines(order.gifting.giftOptions));
 
   lines.push(``);
   lines.push(`*FINANCIAL SUMMARY:*`);
@@ -290,6 +294,7 @@ function hashCheckoutPayload(payload: any, includeDeliveryPricingIntent: boolean
     rewardId: payload.rewardId ? String(payload.rewardId).trim() : null,
     giftWrapping: Boolean(payload.giftWrapping),
     giftMessage: payload.giftMessage?.trim() || '',
+    ...(normalizeGiftOptions(payload.giftOptions) ? { giftOptions: normalizeGiftOptions(payload.giftOptions) } : {}),
     instructions: payload.instructions?.trim() || '',
     items: (payload.items || []).map((it: any) => ({
       id: String(it.productId || it.id || '').trim(),

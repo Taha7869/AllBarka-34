@@ -260,6 +260,7 @@ export async function createDurableOrder({
         giftWrapping: Boolean(customer.giftWrapping || validated.summary.freeGiftWrap),
         giftMessage: customer.giftMessage,
         giftWrapFee: validated.summary.giftWrapFee,
+        ...(customer.giftOptions ? { giftOptions: customer.giftOptions } : {}),
       },
       ...(deliverySchedule ? { deliverySchedule } : {}),
       items: validated.items,

@@ -11,6 +11,7 @@ export interface OrderPayload {
   instructions?: string;
   giftWrapping?: boolean;
   giftMessage?: string;
+  giftOptions?: import('./giftOptions').GiftOptions | null;
   paymentMethod?: string;
   items: CartItem[];
   shippingMethodId: string;
