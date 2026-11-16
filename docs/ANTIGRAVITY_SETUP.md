@@ -2,16 +2,26 @@
 
 After this, Antigravity on your PC and Claude in the cloud work side by side: Antigravity does the jobs that need your PC and logins, Claude builds and deploys code, and neither overwrites the other.
 
-## 1. Get the latest repository
+## 1. A fresh folder (two commands)
 
-In Antigravity, open the project folder where `git status` said "On branch work" (File → Open Folder). Then in its terminal:
+Work in a **new folder**, not the old one, so old files and old branches cannot get mixed in. Use **D:** (NVMe, 206 GB free): installing packages and running tests touches tens of thousands of small files, which is several times faster on NVMe than on the E:/F: hard disks. C: is nearly full, so not C:. (If you still prefer a hard disk, replace `D:\AllBarka` with `F:\AllBarka` in both commands.)
+
+Open **Windows Terminal (PowerShell)** and paste:
 
 ```
-git pull
-npm ci
+git clone -c core.autocrlf=false -b claude/celebrations-foundation-20261112 https://github.com/Taha7869/AllBarka-34.git D:\AllBarka\AllBarka-34
+powershell -ExecutionPolicy Bypass -File D:\AllBarka\AllBarka-34\scripts\windows\setup-antigravity-workspace.ps1
 ```
 
-`git pull` brings the rules, skills, workflows and MCP config. `npm ci` installs packages (first time, or when `package-lock.json` changed).
+The script (`scripts/windows/setup-antigravity-workspace.ps1`):
+
+1. checks Git, Node 22.12 to 24 and npm 11 (prints the `winget` command if one is missing);
+2. sets this clone to keep line endings exactly as committed;
+3. finds your old AllBarka folder on E:, F: or D: and asks which one has the working `.env`, then copies the `.env` files only (contents never shown; the old folder is not touched);
+4. runs `npm ci` and a type check;
+5. prints the next steps.
+
+Keep the old folder for a week as a backup; nothing reads it after this.
 
 ## 2. Check that Antigravity sees the AllBarka setup
 
