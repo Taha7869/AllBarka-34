@@ -70,6 +70,7 @@ import {
 import { createInquiriesRouter } from './src/lib/inquiriesRouter';
 import { createDemandAnalyticsRouter, createDemandBuffer } from './src/lib/demandAnalytics';
 import { createGiftRevealRouter } from './src/lib/giftRevealRouter';
+import { sanitizeOrderForTracking, verifyPhoneLast4 } from './src/lib/orderTrackingService';
 
 // Load environment variables
 if (process.env.ALLBARKA_SKIP_LOCAL_ENV !== 'true') {
@@ -361,6 +362,7 @@ const chatLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, message: aiRateLim
 const patronChatLimiter = rateLimit({ windowMs: 60 * 1000, max: AI_MESSAGES_PER_MINUTE, skip: req => !(req as any).user?.uid, keyGenerator: req => (req as any).user?.uid || 'guest', message: aiVisitorLimitResponse, standardHeaders: true, legacyHeaders: false });
 const contactLimiter = rateLimit({ windowMs: 60 * 1000, max: 5, message: apiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
 const ordersLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, message: apiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
+const orderTrackLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, message: apiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
 
 app.use('/api/chat', aiMessageLimiter);
 app.use('/api/concierge/chat', aiMessageLimiter);
@@ -604,6 +606,43 @@ app.get('/api/orders/:orderId', authenticateOptionalUser, async (req, res) => {
     });
   } catch (error: any) {
     res.status(500).json({ error: 'Server error retrieving order.', code: 'SERVER_ERROR' });
+  }
+});
+
+// 1.7b API: Public Order Tracking (Order ID + Phone Last 4 Digits)
+app.post('/api/orders/track', orderTrackLimiter, async (req, res) => {
+  try {
+    const { orderId, phoneLast4 } = req.body || {};
+    if (!orderId || typeof orderId !== 'string' || !phoneLast4 || typeof phoneLast4 !== 'string') {
+      return res.status(400).json({ error: 'INVALID_INPUT', code: 'INVALID_INPUT' });
+    }
+
+    const trimmedOrderId = orderId.trim();
+    const trimmedPhoneLast4 = phoneLast4.trim();
+
+    if (!trimmedOrderId || !/^\d{4}$/.test(trimmedPhoneLast4)) {
+      return res.status(400).json({ error: 'INVALID_INPUT', code: 'INVALID_INPUT' });
+    }
+
+    if (!db) {
+      return res.status(404).json({ error: 'ORDER_NOT_FOUND', code: 'ORDER_NOT_FOUND' });
+    }
+
+    const doc = await db.collection('orders').doc(trimmedOrderId).get();
+    if (!doc.exists) {
+      return res.status(404).json({ error: 'ORDER_NOT_FOUND', code: 'ORDER_NOT_FOUND' });
+    }
+
+    const order = doc.data() as any;
+    const phone = String(order.customer?.phone || order.phone || order.shippingAddress?.phone || '');
+    if (!verifyPhoneLast4(phone, trimmedPhoneLast4)) {
+      return res.status(404).json({ error: 'ORDER_NOT_FOUND', code: 'ORDER_NOT_FOUND' });
+    }
+
+    res.setHeader('Cache-Control', 'no-store');
+    return res.json(sanitizeOrderForTracking(order, trimmedOrderId));
+  } catch (error: any) {
+    res.status(500).json({ error: 'SERVER_ERROR', code: 'SERVER_ERROR' });
   }
 });
 
