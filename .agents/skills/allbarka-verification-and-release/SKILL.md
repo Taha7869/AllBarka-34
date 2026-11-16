@@ -47,7 +47,7 @@ Before committing or declaring any task complete, run and pass the following che
   3. Verify desktop (`1440x900`) and mobile (`390x844`) viewports, light/dark themes, and LTR/RTL (`en`, `ur`, `ar`) rendering with zero console/page errors.
 
 ## 3. Strict Production & Branch Safety Rules
-- **Active Development Branch** (15 Nov 2026): `claude/celebrations-foundation-20261112`. Railway deploys this branch to allbarka.com on every push, so every push is a production release: run the gates first.
+- **Active Development Branch** (16 Nov 2026): Claude uses `claude/celebrations-foundation-20261112`, which Railway deploys to allbarka.com on every push. Antigravity uses `ag/<date>-<task>` branches and never pushes to the deploy branch (rule `30-two-agents`).
 - **No Unapproved Production Mutations**:
   - Do **NOT** merge into `launch` or `main` without explicit owner instruction.
   - Do **NOT** change Railway settings or variables, or publish `firestore.rules` to live Firestore, unless explicitly requested.

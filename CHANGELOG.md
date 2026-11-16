@@ -1,3 +1,10 @@
+## 16 November 2026 — Antigravity on the owner's PC
+
+- `.agents/mcp_config.json`: Firebase (owner's own login) and Context7 docs MCP servers for Antigravity; no keys in the repo.
+- Rule `30-two-agents`: Antigravity works on `ag/*` branches and never pushes to the deploy branch; Claude reviews and merges.
+- Workflows `/start`, `/handoff`, `/census`; handoff notes in `docs/handoffs/`.
+- `docs/ANTIGRAVITY_SETUP.md`: one-time setup, safety settings, daily routine, first tasks.
+
 ## 15 November 2026 — Store location and n8n runbook
 
 - Store location is now the area only, Allama Iqbal Town, Lahore, everywhere (footer, contact, info page, AI fallback, search schema); no block, street or coordinates.
