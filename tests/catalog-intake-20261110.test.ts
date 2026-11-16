@@ -81,3 +81,7 @@ test('CLI script supports --dry-run for offline verification', () => {
   assert.equal(parsed.mode, 'OFFLINE_PLAN_UNVERIFIED');
   assert.equal(parsed.items.length, 17);
 });
+
+test('CLI script refuses --dry-run together with --execute', () => {
+  assert.throws(() => execFileSync(process.execPath, ['--import', 'tsx', 'scripts/import-catalog-intake-20261110.ts', '--dry-run', '--execute'], { encoding: 'utf8', stdio: 'pipe' }));
+});
