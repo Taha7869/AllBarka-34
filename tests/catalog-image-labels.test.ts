@@ -2,6 +2,14 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { PRODUCTS, NEW_PRODUCT_IDS } from '../src/data/products';
+import { BUNDLE_COPY_20261116 } from '../src/data/bundleCopy20261116';
+
+// The SVG previews are archived (covers are WebP photos without text). Bundles renamed on
+// 16 Nov 2026 keep their earlier names inside the archived preview.
+const archivedNames = (product: { id: string; name?: string; nameUr?: string; nameAr?: string }) => {
+  const previous = BUNDLE_COPY_20261116[product.id]?.previousNames;
+  return previous ? { name: previous[0], nameUr: previous[1], nameAr: previous[2] } : { name: product.name, nameUr: product.nameUr, nameAr: product.nameAr };
+};
 
 const categories = ['herbs-spices', 'nuts', 'snacks-seeds', 'oils', 'bundles'] as const;
 
@@ -25,8 +33,8 @@ test('active WebP covers are valid, and archived SVG previews retain the approve
     assert.ok(svg.includes('data-catalog-style="editorial-v2"'), product.id);
     assert.ok(svg.includes('data-variant="primary"'), product.id);
     assert.ok(!existsSync(`public/images/products/${product.id}-secondary.svg`), product.id);
-    assert.ok(svg.includes(product.nameUr!), `${product.id}: Urdu name`);
-    assert.ok(svg.includes(product.nameAr!), `${product.id}: Arabic name`);
+    assert.ok(svg.includes(archivedNames(product).nameUr!), `${product.id}: Urdu name`);
+    assert.ok(svg.includes(archivedNames(product).nameAr!), `${product.id}: Arabic name`);
   }
   assert.deepEqual(readdirSync('public/images/products').filter(file => file.endsWith('.svg')).sort(), additions.map(product => `${product.id}.svg`).sort());
 });
@@ -51,7 +59,8 @@ test('every new image has a successful rendered text safe-area report', () => {
       assert.equal(check.boxes, check.bounds.length, check.id);
       const product = expected.find(product => product.id === check.id)!;
       assert.equal(check.path, `/images/products/${product.id}.svg`);
-      for (const [kind, name] of [['name_en', product.name], ['name_ur', product.nameUr], ['name_ar', product.nameAr]]) {
+      const archived = archivedNames(product);
+      for (const [kind, name] of [['name_en', archived.name], ['name_ur', archived.nameUr], ['name_ar', archived.nameAr]]) {
         const lines = check.bounds.filter(box => box.kind === kind);
         assert.ok(lines.length >= 1 && lines.length <= 2, `${check.id}:${kind}`);
         assert.equal(lines.map(line => line.text).join(' '), name, `${check.id}:${kind}`);

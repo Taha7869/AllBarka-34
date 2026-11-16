@@ -294,6 +294,8 @@ export function productMatchesCategory(
   // Dates category: matches products with category 'dates' or date-specific products
   if (target === 'dates') {
     if (prodCat === 'dates') return true;
+    // Bundles that name dates in their title ("Ajwa & Medjool Dates, Figs…") stay on the bundles shelf.
+    if (prodCat === 'bundles' || prodCat === 'gift-boxes' || prodCat === 'celebration-boxes') return false;
     const id = product.id.toLowerCase();
     const name = (product.name_en || '').toLowerCase();
     return id.includes('date') || id === 'khajoor' || id === 'chohara' || name.includes('date') || name.includes('khajoor') || name.includes('chohara');

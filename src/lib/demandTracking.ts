@@ -9,6 +9,8 @@ export type ClientDemandEvent = 'product_view' | 'add_to_cart' | 'checkout_start
  */
 export function trackDemand(type: ClientDemandEvent, productId?: string): void {
   if (typeof window === 'undefined' || typeof fetch !== 'function') return;
+  // Local development and test previews are not customer demand.
+  if (/^(localhost|127\.|\[::1\]|0\.0\.0\.0)/.test(window.location.hostname)) return;
   try {
     const nav = navigator as Navigator & { globalPrivacyControl?: boolean };
     if (nav.doNotTrack === '1' || nav.globalPrivacyControl === true) return;
