@@ -2,6 +2,8 @@ import type { Firestore } from 'firebase-admin/firestore';
 import { PRODUCTS } from '../data/products';
 import intake1110 from '../data/catalogIntake20261110.json';
 import intake1113 from '../data/catalogIntake20261113.json';
+import intake1114 from '../data/catalogIntake20261114.json';
+import intake1115 from '../data/catalogIntake20261115.json';
 
 /** Read-only census of the live `products` collection against what the repository knows about. */
 export async function countLiveCatalog(db: Firestore) {
@@ -10,6 +12,8 @@ export async function countLiveCatalog(db: Firestore) {
   for (const p of PRODUCTS) known.set(p.id, 'compiled seed');
   for (const p of intake1110.newProducts) known.set(p.id, 'intake 20261110');
   for (const p of intake1113.newProducts) known.set(p.id, 'intake 20261113');
+  for (const p of (intake1114 as any).newProducts || []) known.set(p.id, 'intake 20261114');
+  for (const p of (intake1115 as any).newProducts || []) known.set(p.id, 'intake 20261115');
   const byCategory: Record<string, number> = {};
   const byState = { published: 0, draft: 0, archived: 0, inactive: 0 };
   const notInRepo: Array<{ id: string; category: string; name: string; status: string }> = [];
