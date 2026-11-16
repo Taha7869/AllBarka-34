@@ -298,12 +298,14 @@ createRoot(document.getElementById('root')!).render(
     assert.equal(resultUnavailable.reason, 'portion_unavailable');
 
     // Case 6: Mounted planner with high serving demand displays truthful capping feedback
-    await page.evaluate(() => {
+    // Planner v2 picks items by budget band, so fill every priced food portion to the 50-unit cap.
+    const cappable = PRODUCTS.filter(p => !p.isBidBox && !p.isBundle && Object.keys(p.prices || {}).length)
+      .map(p => ({ id: p.id, name_en: p.name, prices: p.prices }));
+    await page.evaluate((items) => {
       const fix = (window as any).fixture;
       fix.clearCart();
-      const p = { id: 'pista', name_en: 'Pistachios', prices: { '250g': 1200, '500g': 2400 } };
-      fix.addToCart(p, '500g', 50, undefined, { silent: true, openCart: false });
-    });
+      for (const p of items) for (const portion of Object.keys(p.prices)) fix.addToCart(p, portion, 50, undefined, { silent: true, openCart: false });
+    }, cappable);
     await page.waitForTimeout(100);
 
     await mehmaanTrigger.click();
