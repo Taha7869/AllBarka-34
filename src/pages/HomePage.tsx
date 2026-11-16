@@ -7,6 +7,7 @@ import Hero from '../components/Hero';
 import CategoryCarousel from '../components/CategoryCarousel';
 import BoutiqueSelections from '../components/BoutiqueSelections';
 import FindGiftOccasionSection from '../components/FindGiftOccasionSection';
+import GiftFinder from '../components/GiftFinder';
 import CollectionLogoLoop from '../components/CollectionLogoLoop';
 import AllBarkaMovingReviews from '../components/AllBarkaMovingReviews';
 import FAQSection from '../components/FAQSection';
@@ -63,6 +64,9 @@ export default function HomePage() {
     'occasions': (<>
       {/* ── 4. Find a Gift for Your Occasion (Compact destination links) ─── */}
       <ScrollReveal className="w-full" index={0}>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mb-8">
+          <GiftFinder onProductView={setSelectedQuickViewProduct} />
+        </div>
         <FindGiftOccasionSection settings={merchandisingSettings} />
       </ScrollReveal>
 
