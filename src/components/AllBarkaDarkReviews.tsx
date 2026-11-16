@@ -111,7 +111,7 @@ const allBarkaCustomerStories = [
         &quot;Packaging buhat pyari thi! Airtight jar ki wajah se dry fruits ki freshness bilkul barqarar rahi. Work-day fuel pack office snacking ke liye absolute best hai.&quot;
       </p>
     ),
-    purchaseInfo: "Purchased: The Classics Combo",
+    purchaseInfo: "Purchased: Walnut & Pistachio Duo",
     image: "https://images.unsplash.com/photo-1574577457861-1e9a263c9b11?w=800&q=80",
   },
 ];

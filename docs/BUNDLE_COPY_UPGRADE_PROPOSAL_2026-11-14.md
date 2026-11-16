@@ -1,6 +1,8 @@
 # Earlier bundles and boxes: copy upgrade proposal (14 Nov 2026)
 
-Status: **proposal, nothing changed yet.** These 14 bundles and 8 `bid-box-*` items already exist in the compiled seeds, and Firestore `products` is the live authority. Renaming or rewriting them changes live names that customers and past orders already see, and several tests and translation scripts reference the current names, so the owner approves first.
+Status: **approved by the owner on 16 Nov 2026 and applied in code** (`src/data/bundleCopy20261116.ts`). Live Firestore is updated with `scripts/apply-bundle-copy-20261116.ts` (read-only plan first, then `--execute` with the owner present). Final names differ slightly from the table below: Immunity Shield and Ramadan Ready use Ajwa (and Medjool), the dates their `componentIds` already link and their prices already reflect; Royal Feast names Medjool instead of Panjgur for the same reason.
+
+Original proposal: These 14 bundles and 8 `bid-box-*` items already exist in the compiled seeds, and Firestore `products` is the live authority. Renaming or rewriting them changes live names that customers and past orders already see, and several tests and translation scripts reference the current names, so the owner approves first.
 
 ## What the audit found
 

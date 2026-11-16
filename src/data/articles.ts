@@ -294,8 +294,8 @@ export const JOURNAL_ARTICLES: JournalArticle[] = [
       {
         heading: '2. Pairing Principles: The Contrast of Texture and Tone',
         content: [
-          'An exceptional curation balances texture, color, and culinary utility. Our signature duo "The Classics" pairs the extra-light golden curves of Chilean walnuts with the vibrant emerald tips of roasted Iranian pistachios.',
-          'For executive and corporate recipients, "Work-Day Fuel" pairs hearty California Giri almonds with creamy W240 cashews, offering practical, high-value nutrition for busy desks.'
+          'An exceptional curation balances texture, color, and culinary utility. Our Walnut & Pistachio Duo pairs the extra-light golden curves of Chilean walnuts with the vibrant emerald tips of roasted Iranian pistachios.',
+          'For executive and corporate recipients, the Almond & Cashew Duo pairs hearty almonds with creamy cashews, an easy, practical gift for busy desks.'
         ],
         callout: {
           title: 'AllBarka Presentation Standard',
