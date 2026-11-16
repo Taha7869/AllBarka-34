@@ -608,7 +608,7 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
     desc_en,
     desc_ur,
     desc_ar,
-    catalogRevision: typeof value.catalogRevision === 'string' ? value.catalogRevision : undefined,
+    ...(typeof value.catalogRevision === 'string' ? { catalogRevision: value.catalogRevision } : {}),
   };
 
   if (value.commerce !== undefined && value.commerce !== null) {

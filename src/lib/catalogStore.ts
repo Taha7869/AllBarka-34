@@ -714,6 +714,7 @@ export async function updateAdminProduct(input: { db: Firestore | null; productI
     if (body.cropMode === null || body.cropMode === '') {
       delete updatedData.cropMode;
     }
+    delete updatedData.catalogRevision;
 
     // Re-verification Safety:
     // If existing claims was verified, and passport facts/certifications were modified
