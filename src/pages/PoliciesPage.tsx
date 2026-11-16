@@ -355,6 +355,9 @@ export function PolicyPagesModal({
                   <p className="text-sm sm:text-base text-[var(--color-ink,#29231D)] font-normal leading-relaxed">
                     We treat our patrons&apos; personal details with the highest degree of discretion. Information collected during checkout (including names, contact numbers, and delivery addresses) is used strictly and exclusively for order verification, express courier fulfillment, and customer support.
                   </p>
+                  <p className="text-sm sm:text-base text-[var(--color-ink,#29231D)] font-normal leading-relaxed">
+                    To understand demand, our own server keeps anonymous daily totals of product views, items added to the bag, quote requests and orders. These counts set no cookie, store no IP address or visitor identifier, and are never shared. Browsers with Do Not Track or Global Privacy Control switched on send nothing.
+                  </p>
                 </div>
 
                 <hr className="border-t border-[var(--color-gold,#C7982F)]/30" />

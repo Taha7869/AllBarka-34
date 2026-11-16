@@ -1,13 +1,14 @@
 import { useMemo, useSyncExternalStore } from 'react';
 import { PRODUCTS } from '../data/products';
 import { catalogIds, recordView, COMPARE_KEY, RECENT_KEY } from '../lib/catalogActivity';
+import { trackDemand } from '../lib/demandTracking';
 const listeners = new Set<() => void>();
 const memory: Record<string, string> = {};
 const read = (key: string) => { try { return localStorage.getItem(key) || memory[key] || '[]'; } catch { return memory[key] || '[]'; } };
 const write = (key: string, ids: string[]) => { memory[key] = JSON.stringify(ids); try { localStorage.setItem(key, memory[key]); } catch { /* memory remains usable */ } listeners.forEach(listener => listener()); };
 const subscribe = (listener: () => void) => { listeners.add(listener); window.addEventListener('storage', listener); return () => { listeners.delete(listener); window.removeEventListener('storage', listener); }; };
 const parse = (raw: string, max: number) => { try { return catalogIds(JSON.parse(raw), PRODUCTS, max); } catch { return []; } };
-const trackView = (id: string) => write(RECENT_KEY, recordView(parse(read(RECENT_KEY), 8), id, PRODUCTS));
+const trackView = (id: string) => { write(RECENT_KEY, recordView(parse(read(RECENT_KEY), 8), id, PRODUCTS)); trackDemand('product_view', id); };
 export function useCatalogActivity() {
   const compared = useSyncExternalStore(subscribe, () => read(COMPARE_KEY), () => '[]');
   const recent = useSyncExternalStore(subscribe, () => read(RECENT_KEY), () => '[]');

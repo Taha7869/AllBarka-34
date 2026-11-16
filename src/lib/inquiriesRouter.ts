@@ -32,6 +32,8 @@ export interface InquiriesRouterOptions {
   requireAdmin?: RequestHandler;
   inMemoryStore?: Map<string, InquiryRecord>;
   inquiryLimiter?: RequestHandler;
+  /** Anonymous demand counter (src/lib/demandAnalytics.ts); called once per new inquiry. */
+  recordDemand?: (type: 'quote_request', productId: string) => void;
 }
 
 
@@ -489,6 +491,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         netFillingGrams: effectiveNetFilling,
       });
       inMemory.set(result.inquiry.id, result.inquiry);
+      if (!result.isDuplicate) options.recordDemand?.('quote_request', String(result.inquiry.productId || 'general').toLowerCase());
 
       return res.json({
         ok: true,
@@ -758,6 +761,7 @@ export function createInquiriesRouter(options: InquiriesRouterOptions) {
         netFillingGrams: effectiveNetFilling,
       });
       inMemory.set(result.inquiry.id, result.inquiry);
+      if (!result.isDuplicate) options.recordDemand?.('quote_request', String(result.inquiry.productId || 'general').toLowerCase());
 
       return res.json({
         ok: true,

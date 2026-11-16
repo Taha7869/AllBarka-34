@@ -1,4 +1,5 @@
 import { useCatalogProducts } from '../contexts/CatalogContext';
+import { trackDemand } from '../lib/demandTracking';
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { CartItem, Product } from '../types';
 import { PRODUCTS, getProductImage } from '../data/products';
@@ -376,6 +377,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsCartOpen(true);
       }
 
+      trackDemand('add_to_cart', rawProdId);
       return {
         accepted: true,
         productId: rawProdId,

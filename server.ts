@@ -68,6 +68,7 @@ import {
   addAdminOrderNote, updateAdminOrderPayment,
 } from './src/lib/adminOperations';
 import { createInquiriesRouter } from './src/lib/inquiriesRouter';
+import { createDemandAnalyticsRouter, createDemandBuffer } from './src/lib/demandAnalytics';
 import { createGiftRevealRouter } from './src/lib/giftRevealRouter';
 
 // Load environment variables
@@ -365,11 +366,19 @@ app.use('/api/chat', aiMessageLimiter);
 app.use('/api/concierge/chat', aiMessageLimiter);
 app.use('/api/concierge', chatLimiter);
 app.use('/api/ai', chatLimiter);
+// First-party demand analytics: anonymous daily counts, flushed to Firestore once a minute.
+const demandBuffer = createDemandBuffer({ getDb: () => db });
+const countedDemandOrders = new Set<string>(); // an idempotent checkout replay must not count twice
+const demandFlushTimer = setInterval(() => { void demandBuffer.flush(); }, 60 * 1000);
+demandFlushTimer.unref();
 app.use(createInquiriesRouter({
   getDb: () => db,
   requireAdmin,
   inquiryLimiter: contactLimiter,
+  recordDemand: (type, productId) => demandBuffer.record(type, /^[a-z0-9][a-z0-9_-]{1,79}$/.test(productId) ? productId : null),
 }));
+const eventLimiter = rateLimit({ windowMs: 60 * 1000, max: 60, message: apiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
+app.use(createDemandAnalyticsRouter({ getDb: () => db, requireAdmin, eventLimiter, buffer: demandBuffer }));
 app.post('/api/newsletter/subscribe', contactLimiter);
 app.post('/api/orders', ordersLimiter);
 
@@ -492,6 +501,11 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
       expectedFinalTotal
     });
     savedOrderVerifiedThisProcess = true;
+    if (!countedDemandOrders.has(result.orderId)) {
+      if (countedDemandOrders.size > 5000) countedDemandOrders.clear();
+      countedDemandOrders.add(result.orderId);
+      demandBuffer.record('order_placed', null);
+    }
 
     res.json({
       success: true,
@@ -867,6 +881,7 @@ app.use(createAiChatRouter({
   getDb: () => db,
   authenticateOptionalUser,
   patronChatLimiter,
+  onReply: () => demandBuffer.record('ai_chat', null),
 }));
 
 // Vite Middleware & Static Asset pipeline integration
@@ -974,6 +989,7 @@ async function startServer() {
     const timer = setTimeout(() => process.exit(1), 40000);
     timer.unref();
     await worker.stop();
+    await demandBuffer.flush().catch(() => 0);
     await closeDevelopmentServer?.();
     server.close(() => { clearTimeout(timer); process.exitCode = 0; });
     server.closeIdleConnections();

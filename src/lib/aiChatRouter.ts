@@ -36,6 +36,8 @@ export interface AiChatRouterOptions {
   releaseGuestTrial?: (ip: string, userAgent: string) => Promise<void>;
   authenticateOptionalUser?: RequestHandler;
   patronChatLimiter?: RequestHandler;
+  /** Anonymous demand counter; called once per answered chat message. */
+  onReply?: () => void;
   timeoutMs?: number;
   recordDiagnostic?: (event: AiChatDiagnostic) => void;
 }
@@ -229,6 +231,7 @@ export function createAiChatRouter(options: AiChatRouterOptions) {
 
       const totalElapsedMs = Date.now() - requestStartTime;
 
+      options.onReply?.();
       return res.json({
         ...answer,
         reply: deterministicReply,

@@ -2,6 +2,7 @@ import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefers
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import { getLocalized } from '../utils/localize';
 import React, { useState, useEffect } from 'react';
+import { trackDemand } from '../lib/demandTracking';
 import { calculateOrderSummary, GIFT_WRAP_FEE, type PricingSummary } from '../lib/pricing';
 import { readCheckoutDraft, CHECKOUT_DRAFT_KEY } from '../lib/checkoutPreferences';
 import { acceptedCheckoutReceipt, appliedPromotionMessage } from '../lib/checkoutReceipt';
@@ -77,6 +78,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   const PRODUCTS = useCatalogProducts();
   const navigate = useNavigate();
   const { cartItems, clearCart, shippingCity, setShippingCity } = useCart();
+  useEffect(() => { if (isOpen !== false && cartItems.length) trackDemand('checkout_start'); }, [isOpen, cartItems.length > 0]);
   const { patronProfile, currentUser, loading: authLoading } = useAuth();
   const onOpenAuth = propsOnOpenAuth || (() => {});
   const { language, t: storefrontTranslation } = useLanguage();
