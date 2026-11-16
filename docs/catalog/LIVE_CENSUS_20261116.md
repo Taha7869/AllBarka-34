@@ -55,7 +55,7 @@ These 8 products exist in `src/data/products.ts` under category `celebration-box
 - **Batch 20261114**: 59 items (`catalogIntake20261114.json`)
 - **Batch 20261115**: 16 items (`catalogIntake20261115.json`)
 
-All 157 draft products are documented in [MASTER_PRODUCT_LIST.csv](file:///d:/AllBarka/AllBarka-34/docs/catalog/MASTER_PRODUCT_LIST.csv) and require merchant price review and publication before importing to Firestore.
+All 157 draft products are documented in [MASTER_PRODUCT_LIST.csv](MASTER_PRODUCT_LIST.csv) and require merchant price review and publication before importing to Firestore.
 
 ---
 

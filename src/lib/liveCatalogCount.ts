@@ -12,8 +12,8 @@ export async function countLiveCatalog(db: Firestore) {
   for (const p of PRODUCTS) known.set(p.id, 'compiled seed');
   for (const p of intake1110.newProducts) known.set(p.id, 'intake 20261110');
   for (const p of intake1113.newProducts) known.set(p.id, 'intake 20261113');
-  for (const p of (intake1114 as any).newProducts || []) known.set(p.id, 'intake 20261114');
-  for (const p of (intake1115 as any).newProducts || []) known.set(p.id, 'intake 20261115');
+  for (const p of intake1114.newProducts) known.set(p.id, 'intake 20261114');
+  for (const p of intake1115.newProducts) known.set(p.id, 'intake 20261115');
   const byCategory: Record<string, number> = {};
   const byState = { published: 0, draft: 0, archived: 0, inactive: 0 };
   const notInRepo: Array<{ id: string; category: string; name: string; status: string }> = [];
