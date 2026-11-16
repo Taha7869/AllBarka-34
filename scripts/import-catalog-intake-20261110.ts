@@ -7,16 +7,19 @@ import { importIntake20261110 } from '../src/lib/catalogIntake20261110';
 // No dotenv auto-load, no implicit project, no price reset and no publish step.
 const args = process.argv.slice(2);
 const execute = args.includes('--execute');
-const readOnly = args.includes('--read-only');
+const dryRun = args.includes('--dry-run');
+const readOnly = args.includes('--read-only') || dryRun;
 const value = (name: string) => args.find(arg => arg.startsWith(`--${name}=`))?.slice(name.length + 3);
 async function main() {
   if (execute && readOnly) throw new Error('CHOOSE_READ_ONLY_OR_EXECUTE');
-  if (!execute && !readOnly) {
-    console.log(JSON.stringify(await importIntake20261110({ db: null }), null, 2));
-    return;
-  }
   const projectId = value('project');
   const databaseId = value('database');
+  if (!execute && (!readOnly || !projectId)) {
+    if (!projectId) {
+      console.log(JSON.stringify(await importIntake20261110({ db: null }), null, 2));
+      return;
+    }
+  }
   if (!projectId || !databaseId) throw new Error('EXPLICIT_PROJECT_AND_DATABASE_REQUIRED');
   if (execute && value('confirm-project') !== projectId) throw new Error('TARGET_PROJECT_CONFIRMATION_REQUIRED');
   const credential = process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY

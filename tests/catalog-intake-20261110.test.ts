@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import fs from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import manifest from '../src/data/catalogIntake20261110.json';
 import { PRODUCTS } from '../src/data/products';
 import { intakeProducts20261110, importIntake20261110 } from '../src/lib/catalogIntake20261110';
@@ -71,4 +72,12 @@ test('batch 1 is completed at import time without touching the manifest', () => 
     assert.equal(p.status, 'draft');
   }
   assert.equal(manifest.newProducts.find(p => p.id === 'oil-neem')!.commerce.basePrice, null);
+});
+
+test('CLI script supports --dry-run for offline verification', () => {
+  const output = execFileSync(process.execPath, ['--import', 'tsx', 'scripts/import-catalog-intake-20261110.ts', '--dry-run'], { encoding: 'utf8' });
+  const parsed = JSON.parse(output);
+  assert.equal(parsed.batch, 'owner-intake-20261110');
+  assert.equal(parsed.mode, 'OFFLINE_PLAN_UNVERIFIED');
+  assert.equal(parsed.items.length, 17);
 });
