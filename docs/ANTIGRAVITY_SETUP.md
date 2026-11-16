@@ -70,3 +70,17 @@ If an `npx` server fails to start on Windows, change its `"command": "npx"` to `
 | 3 | n8n session support (follow `docs/N8N_RUNBOOK.md`) | Do it at the time the runbook says, with Claude watching the logs |
 
 Meanwhile Claude keeps building the website features from the plan (animation, order tracking page, checkout address check, gift add-ons) on the deploy branch.
+
+## 7. Which model and intensity
+
+The model menu under the chat box; the arrow next to a model sets its intensity (Low, Medium, High). Stronger models use the plan's quota faster, so use them where they pay off.
+
+| Task | Model | Intensity |
+| --- | --- | --- |
+| Census, running a script, reading logs, small text or doc edits | Gemini 3.8 Flash | High |
+| New feature, change across several files, bug fixing | Gemini 4 Argon | Medium (High for a hard bug) |
+| Security audit, reviewing a plan, tricky logic (pricing, checkout, rules) | Claude Opus 5.5 | High |
+| Normal coding when Argon's quota is used up | Claude Sonnet 5.5 | Medium |
+| Avoid for now | Orchestrator (runs several agents at once and can clash with the one-branch flow); GPT-OSS 120B | |
+
+One conversation, one model: pick it before the first message and keep it for that task.
