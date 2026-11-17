@@ -10,14 +10,15 @@ export async function quoteOrderForCustomer(db: Firestore | null, payload: any, 
   const { items, city, shippingMethodId, discountCode, rewardId, giftWrapping, isWholesale, isMultiRecipient, recipients } = payload || {};
   const promoContext = await firstOrderPromoContext(db, user?.uid || null, discountCode);
   const catalog = await loadAuthoritativeCatalog(db, { fresh: true });
-  const validated = validateAndPriceOrder({ items, city: city || 'Lahore', shippingMethodId, discountCode,
+  const destinationCity = isMultiRecipient ? (recipients?.[0]?.city || 'Lahore') : city;
+  const validated = validateAndPriceOrder({ items, city: destinationCity, shippingMethodId, discountCode,
     giftWrapping: Boolean(giftWrapping), isWholesale: Boolean(isWholesale && user?.wholesaleEligible), promoContext,
     products: catalog.products, hamperBoxes: catalog.hamperBoxes, allowInquiryItems: true });
   if (rewardId) {
     if (!user?.uid) throw new ValidationError('Please sign in to use a patron reward.', 'REWARD_REQUIRES_AUTH');
     const snapshot = await db!.collection('users').doc(user.uid).collection('activeRewards').doc(validateRewardInstanceId(rewardId)).get();
     if (!snapshot.exists) throw new ValidationError('Selected reward does not exist for this patron.', 'REWARD_NOT_FOUND');
-    validated.summary = applyPatronReward({ reward: snapshot.data() as any, summary: validated.summary, city: city || 'Lahore', shippingMethodId }).summary;
+    validated.summary = applyPatronReward({ reward: snapshot.data() as any, summary: validated.summary, city: destinationCity, shippingMethodId }).summary;
   }
 
   if (isMultiRecipient) {
