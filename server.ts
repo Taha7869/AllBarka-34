@@ -70,7 +70,7 @@ import {
 import { createInquiriesRouter } from './src/lib/inquiriesRouter';
 import { createDemandAnalyticsRouter, createDemandBuffer } from './src/lib/demandAnalytics';
 import { createGiftRevealRouter } from './src/lib/giftRevealRouter';
-import { sanitizeOrderForTracking, verifyPhoneLast4 } from './src/lib/orderTrackingService';
+import { sanitizeOrderForTracking, sanitizeOrderForReorder, verifyPhoneLast4 } from './src/lib/orderTrackingService';
 
 // Load environment variables
 if (process.env.ALLBARKA_SKIP_LOCAL_ENV !== 'true') {
@@ -642,6 +642,56 @@ app.post('/api/orders/track', orderTrackLimiter, async (req, res) => {
 
     res.setHeader('Cache-Control', 'no-store');
     return res.json(sanitizeOrderForTracking(order, trimmedOrderId));
+  } catch (error: any) {
+    res.status(500).json({ error: 'SERVER_ERROR', code: 'SERVER_ERROR' });
+  }
+});
+
+// 1.7c API: Public Order Reorder Verification (Order ID + Phone Last 4 Digits)
+// Validates identity without disclosing any customer PII.
+// Evaluates items against the live authoritative catalog to return current prices and availability notices.
+app.post('/api/orders/reorder-items', orderTrackLimiter, async (req, res) => {
+  try {
+    const { orderId, phoneLast4 } = req.body || {};
+    if (!orderId || typeof orderId !== 'string' || !phoneLast4 || typeof phoneLast4 !== 'string') {
+      return res.status(400).json({ error: 'INVALID_INPUT', code: 'INVALID_INPUT' });
+    }
+
+    const trimmedOrderId = orderId.trim().toUpperCase();
+    const trimmedPhoneLast4 = phoneLast4.trim();
+
+    if (!/^AB-\d{8}-[0-9A-F]{6}$/.test(trimmedOrderId) || !/^\d{4}$/.test(trimmedPhoneLast4)) {
+      return res.status(400).json({ error: 'INVALID_INPUT', code: 'INVALID_INPUT' });
+    }
+
+    if (!db) {
+      return res.status(404).json({ error: 'ORDER_NOT_FOUND', code: 'ORDER_NOT_FOUND' });
+    }
+
+    const doc = await db.collection('orders').doc(trimmedOrderId).get();
+    if (!doc.exists) {
+      return res.status(404).json({ error: 'ORDER_NOT_FOUND', code: 'ORDER_NOT_FOUND' });
+    }
+
+    const order = doc.data() as any;
+    const phone = String(order.customer?.phone || order.phone || order.shippingAddress?.phone || '');
+    if (!verifyPhoneLast4(phone, trimmedPhoneLast4)) {
+      return res.status(404).json({ error: 'ORDER_NOT_FOUND', code: 'ORDER_NOT_FOUND' });
+    }
+
+    let liveProducts = PRODUCTS;
+    try {
+      const snapshot = await loadAuthoritativeCatalog(db);
+      liveProducts = mergeAuthoritativeCatalog(PRODUCTS, snapshot.products);
+    } catch {
+      liveProducts = PRODUCTS;
+    }
+
+    const pastItems = Array.isArray(order.items) ? order.items : [];
+    const reorderData = sanitizeOrderForReorder(pastItems, liveProducts, trimmedOrderId);
+
+    res.setHeader('Cache-Control', 'no-store');
+    return res.json(reorderData);
   } catch (error: any) {
     res.status(500).json({ error: 'SERVER_ERROR', code: 'SERVER_ERROR' });
   }

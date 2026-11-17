@@ -12,11 +12,16 @@ import {
   ArrowRight,
   XCircle,
   Sparkles,
+  RotateCcw,
+  ShoppingBag,
 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useCart } from '../contexts/CartContext';
+import { PRODUCTS } from '../data/products';
 import SEO from '../components/SEO';
 import {
   fetchOrderTracking,
+  fetchReorderItems,
   type PublicOrderTrackingResult,
 } from '../lib/orderTrackingService';
 
@@ -31,6 +36,78 @@ export default function OrderTrackingPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [trackingResult, setTrackingResult] = useState<PublicOrderTrackingResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { addToCart, setIsCartOpen } = useCart();
+  const [isReordering, setIsReordering] = useState(false);
+  const [reorderFeedback, setReorderFeedback] = useState<{
+    type: 'success' | 'warning' | 'error';
+    message: string;
+    unavailableNames?: string[];
+  } | null>(null);
+
+  const handleReorder = async () => {
+    const cleanOrderId = orderId.trim();
+    const cleanPhone = phoneLast4.trim();
+    if (!cleanOrderId || !/^\d{4}$/.test(cleanPhone)) return;
+
+    setIsReordering(true);
+    setReorderFeedback(null);
+    try {
+      const res = await fetchReorderItems(cleanOrderId, cleanPhone);
+      if (!res || !res.success) {
+        setReorderFeedback({
+          type: 'error',
+          message: t('track.error', 'Unable to retrieve order details for reorder.'),
+        });
+        return;
+      }
+
+      let addedCount = 0;
+      for (const item of res.items) {
+        const catalogProduct = PRODUCTS.find(p => p.id === item.productId);
+        const payload = catalogProduct || {
+          id: item.productId,
+          name: item.name,
+          image: item.image,
+          prices: { [item.weight]: item.currentUnitPrice },
+        };
+        addToCart(payload, item.weight, item.quantity, item.currentUnitPrice, {
+          silent: true,
+          openCart: false,
+        });
+        addedCount += item.quantity;
+      }
+
+      if (addedCount > 0) {
+        setIsCartOpen(true);
+      }
+
+      if (res.items.length === 0 && res.unavailableItems.length > 0) {
+        setReorderFeedback({
+          type: 'error',
+          message: t('track.reorderAllUnavailable', 'None of the items from this order are currently available in the catalog.'),
+          unavailableNames: res.unavailableItems.map(u => u.name),
+        });
+      } else if (res.unavailableItems.length > 0) {
+        setReorderFeedback({
+          type: 'warning',
+          message: t('track.reorderPartialNotice', 'Note: Some items are no longer available in the boutique catalog and were skipped.'),
+          unavailableNames: res.unavailableItems.map(u => u.name),
+        });
+      } else if (res.items.length > 0) {
+        setReorderFeedback({
+          type: 'success',
+          message: t('track.reorderSuccess', 'Items added to your bag at current prices.'),
+        });
+      }
+    } catch {
+      setReorderFeedback({
+        type: 'error',
+        message: t('track.error', 'Unable to reorder items. Please try again.'),
+      });
+    } finally {
+      setIsReordering(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -290,6 +367,55 @@ export default function OrderTrackingPage() {
                 </ol>
               </div>
             )}
+
+            {/* Reorder Card ("Dobara mangwayein") */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-[#042821]/5 dark:bg-emerald-950/30 border border-[#D4AF37]/30 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <RotateCcw size={16} className="text-[#C7982F]" />
+                    <h4 className="text-sm font-bold text-[#042821] dark:text-[#FAF9F5]">
+                      {t('track.reorder', 'Dobara Mangwayein')}
+                    </h4>
+                  </div>
+                  <p className="text-xs text-neutral-600 dark:text-neutral-300">
+                    {t('track.reorderSubtitle', 'Add these items to your bag at current boutique prices')}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleReorder}
+                  disabled={isReordering}
+                  className="focus-ring inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-[#042821] hover:bg-[#073d32] dark:bg-[#C7982F] dark:hover:bg-[#d8a83d] text-[#FAF9F5] dark:text-[#042821] text-xs font-bold transition-all disabled:opacity-50 min-h-11 shrink-0"
+                >
+                  <ShoppingBag size={14} />
+                  <span>{isReordering ? t('track.reordering', 'Adding to Bag...') : t('track.reorder', 'Dobara Mangwayein')}</span>
+                </button>
+              </div>
+
+              {/* Reorder feedback message */}
+              {reorderFeedback && (
+                <div
+                  className={`p-3 rounded-xl text-xs space-y-1 ${
+                    reorderFeedback.type === 'success'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-800'
+                      : reorderFeedback.type === 'warning'
+                      ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800'
+                      : 'bg-red-50 dark:bg-red-950/50 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800'
+                  }`}
+                  role="status"
+                >
+                  <p className="font-semibold">{reorderFeedback.message}</p>
+                  {reorderFeedback.unavailableNames && reorderFeedback.unavailableNames.length > 0 && (
+                    <ul className="list-disc list-inside ps-2 opacity-90">
+                      {reorderFeedback.unavailableNames.map((name, i) => (
+                        <li key={i}>{name}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Quick Actions Footer */}
             <div className="pt-4 border-t border-[#D4AF37]/20 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">

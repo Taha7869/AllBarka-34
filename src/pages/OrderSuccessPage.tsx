@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { CheckCircle, ShoppingBag, MessageCircle, ArrowRight, Package, MapPin, Clock } from 'lucide-react';
+import { CheckCircle, ShoppingBag, MessageCircle, ArrowRight, Package, MapPin, Clock, RotateCcw } from 'lucide-react';
 import { STORE_CONFIG } from '../config/store';
 import { buildHumanSupportWhatsAppUrl, buildOrderTrackingWhatsAppUrl } from '../config/contacts';
 import { formatPKR } from '../lib/pricing';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useCart } from '../contexts/CartContext';
+import { PRODUCTS } from '../data/products';
+import { fetchReorderItems } from '../lib/orderTrackingService';
 import { getCheckoutAuthToken } from '../lib/checkoutAttempt';
 import { recoverOrderSuccessReceipt, refreshOrderSuccessReceipt, type ConfirmedSuccessReceipt } from '../lib/orderSuccessRecovery';
 import { TRACKING_POLL_MS, TRACKING_STEPS, trackingProgress } from '../lib/orderPresentation';
@@ -24,6 +27,79 @@ export default function OrderSuccessPage() {
   const [recoveryRevision, setRecoveryRevision] = useState(0);
   const [trackingRevision, setTrackingRevision] = useState(0);
   const [trackingState, setTrackingState] = useState<'checking' | 'live' | 'unavailable'>('checking');
+  const { addToCart, setIsCartOpen } = useCart();
+  const [isReordering, setIsReordering] = useState(false);
+  const [reorderFeedback, setReorderFeedback] = useState<{
+    type: 'success' | 'warning' | 'error';
+    message: string;
+    unavailableNames?: string[];
+  } | null>(null);
+
+  const handleReorder = async () => {
+    if (!order?.orderId || !order?.phone) return;
+    const phoneDigits = order.phone.replace(/\D/g, '');
+    const phoneLast4 = phoneDigits.slice(-4);
+    if (!/^\d{4}$/.test(phoneLast4)) return;
+
+    setIsReordering(true);
+    setReorderFeedback(null);
+    try {
+      const res = await fetchReorderItems(order.orderId, phoneLast4);
+      if (!res || !res.success) {
+        setReorderFeedback({
+          type: 'error',
+          message: t('track.error', 'Unable to retrieve order details for reorder.'),
+        });
+        return;
+      }
+
+      let addedCount = 0;
+      for (const item of res.items) {
+        const catalogProduct = PRODUCTS.find(p => p.id === item.productId);
+        const payload = catalogProduct || {
+          id: item.productId,
+          name: item.name,
+          image: item.image,
+          prices: { [item.weight]: item.currentUnitPrice },
+        };
+        addToCart(payload, item.weight, item.quantity, item.currentUnitPrice, {
+          silent: true,
+          openCart: false,
+        });
+        addedCount += item.quantity;
+      }
+
+      if (addedCount > 0) {
+        setIsCartOpen(true);
+      }
+
+      if (res.items.length === 0 && res.unavailableItems.length > 0) {
+        setReorderFeedback({
+          type: 'error',
+          message: t('track.reorderAllUnavailable', 'None of the items from this order are currently available in the catalog.'),
+          unavailableNames: res.unavailableItems.map(u => u.name),
+        });
+      } else if (res.unavailableItems.length > 0) {
+        setReorderFeedback({
+          type: 'warning',
+          message: t('track.reorderPartialNotice', 'Note: Some items are no longer available in the boutique catalog and were skipped.'),
+          unavailableNames: res.unavailableItems.map(u => u.name),
+        });
+      } else if (res.items.length > 0) {
+        setReorderFeedback({
+          type: 'success',
+          message: t('track.reorderSuccess', 'Items added to your bag at current prices.'),
+        });
+      }
+    } catch {
+      setReorderFeedback({
+        type: 'error',
+        message: t('track.error', 'Unable to reorder items. Please try again.'),
+      });
+    } finally {
+      setIsReordering(false);
+    }
+  };
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -294,6 +370,44 @@ export default function OrderSuccessPage() {
             Continue Shopping
           </button>
         </div>
+
+        {/* Feature A: Reorder ("Dobara Mangwayein") */}
+        {!isQuoteRequest && (
+          <div className="mt-4 pt-4 border-t border-[var(--color-gold,#C7982F)]/20">
+            <button
+              type="button"
+              onClick={handleReorder}
+              disabled={isReordering}
+              className="focus-ring w-full py-3.5 px-6 rounded-full bg-[var(--color-emerald-dark,#042821)] hover:bg-[#073d32] dark:bg-[var(--color-gold,#C7982F)] dark:hover:bg-[#d8a83d] text-white dark:text-[#042821] font-bold text-xs uppercase tracking-wider text-center flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50 min-h-11"
+            >
+              <RotateCcw size={16} />
+              <span>{isReordering ? t('track.reordering', 'Adding to Bag...') : t('track.reorder', 'Dobara Mangwayein')}</span>
+            </button>
+
+            {reorderFeedback && (
+              <div
+                className={`mt-3 p-3 rounded-xl text-xs space-y-1 ${
+                  reorderFeedback.type === 'success'
+                    ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-800'
+                    : reorderFeedback.type === 'warning'
+                    ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800'
+                    : 'bg-red-50 dark:bg-red-950/50 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800'
+                }`}
+                role="status"
+              >
+                <p className="font-semibold">{reorderFeedback.message}</p>
+                {reorderFeedback.unavailableNames && reorderFeedback.unavailableNames.length > 0 && (
+                  <ul className="list-disc list-inside ps-2 opacity-90">
+                    {reorderFeedback.unavailableNames.map((name, i) => (
+                      <li key={i}>{name}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         <p className="mt-3 text-xs leading-relaxed text-[var(--color-ink-muted)]">{t('checkout.trackingSendNotice')}</p>
       </div>
     </div>
