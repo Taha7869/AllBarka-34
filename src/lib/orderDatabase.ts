@@ -26,7 +26,7 @@ import { getN8nOrderDispatchConfig } from '../services/n8nOrderNotification';
 import { getN8nStatusDispatchConfig } from '../services/n8nStatusNotification';
 import { calculateLoyaltyPoints } from './loyaltyPoints';
 import { storedOrderStatus } from './orderStatuses';
-import { validateBulkRecipient, calculateBulkTotals, MAX_BULK_RECIPIENTS, type BulkRecipient, type BulkChildShipment } from './bulkGifting';
+import { calculateBulkTotals, scaleItemsForRecipients, validateRecipientList, type BulkRecipient, type BulkChildShipment } from './bulkGifting';
 import { validateOrderUpdate, orderUpdateHash, canonicalIntegrationStatus, integrationStatus,
   type OrderUpdateCommand, type OrderUpdateResult } from './orderUpdateCommand';
 import { buildWhatsAppPhoneIndex, buildWhatsAppStatusNotification } from './whatsappCommerce';
@@ -184,8 +184,11 @@ export async function createDurableOrder({
     const storedCount = historySnap?.data()?.orderCount;
     const orderCount = Number.isSafeInteger(storedCount) && storedCount >= 0 ? storedCount : 0;
     const promoContext = await firstOrderPromoContext(db, uid, couponCode, reference => transaction.get(reference), orderCount);
+    // Multi-address orders are priced once as items x recipients (caps, stock, coupons apply once).
+    const bulkRecipients: BulkRecipient[] | null = payload.isMultiRecipient ? validateRecipientList(payload.recipients) : null;
+    if (bulkRecipients && rewardRef) throw new ValidationError('Patron rewards apply to single-address orders only.', 'REWARD_NOT_FOR_MULTI_ADDRESS');
     const validated = validateAndPriceOrder({
-      items: payload.items,
+      items: bulkRecipients ? scaleItemsForRecipients(payload.items, bulkRecipients.length) : payload.items,
       shippingMethodId: payload.shippingMethodId,
       discountCode: payload.discountCode,
       giftWrapping: payload.giftWrapping,
@@ -219,16 +222,10 @@ export async function createDurableOrder({
     let validatedRecipients: BulkRecipient[] | undefined = undefined;
     let childShipments: BulkChildShipment[] | undefined = undefined;
 
-    if (payload.isMultiRecipient) {
-      if (!Array.isArray(payload.recipients) || payload.recipients.length === 0) {
-        throw new ValidationError('Multi-address order must contain at least 1 recipient.', 'RECIPIENTS_REQUIRED');
-      }
-      if (payload.recipients.length > MAX_BULK_RECIPIENTS) {
-        throw new ValidationError(`Maximum ${MAX_BULK_RECIPIENTS} recipients allowed per order.`, 'MAX_RECIPIENTS_EXCEEDED');
-      }
-      validatedRecipients = payload.recipients.map((r: any, i: number) => validateBulkRecipient(r, i));
+    if (bulkRecipients) {
+      validatedRecipients = bulkRecipients;
       const bulkResult = calculateBulkTotals({
-        singleSummary: validated.summary,
+        scaledSummary: validated.summary,
         recipients: validatedRecipients,
         shippingMethodId: (payload.shippingMethodId as any) || 'standard',
         orderId,

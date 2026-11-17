@@ -110,14 +110,15 @@ test('Bulk Gifting - parseBulkRecipientsCsv enforces 50 max recipient limit', ()
 });
 
 test('Bulk Gifting - calculateBulkTotals computes per-recipient shipping and child shipments', () => {
-  const singleSummary: PricingSummary = {
-    subtotal: 5000,
-    discount: 500,
-    discountedSubtotal: 4500,
+  // Canonical pricing of the scaled order: 2 recipients x a Rs. 5,000 box, one Rs. 1,000 discount.
+  const scaledSummary: PricingSummary = {
+    subtotal: 10000,
+    discount: 1000,
+    discountedSubtotal: 9000,
     shipping: 0,
     giftWrapFee: 0,
-    total: 4500,
-    shippingWeightGrams: 1000,
+    total: 9000,
+    shippingWeightGrams: 2000,
     shippingRegion: 'lahore',
   };
 
@@ -141,7 +142,7 @@ test('Bulk Gifting - calculateBulkTotals computes per-recipient shipping and chi
   ];
 
   const { totals, shipments } = calculateBulkTotals({
-    singleSummary,
+    scaledSummary,
     recipients,
     shippingMethodId: 'standard',
     orderId: 'AB-20261119-TEST',
@@ -167,4 +168,16 @@ test('Bulk Gifting - calculateBulkTotals computes per-recipient shipping and chi
 
 test('Bulk Gifting - CORPORATE_QUOTE_THRESHOLD is 20', () => {
   assert.equal(CORPORATE_QUOTE_THRESHOLD, 20);
+});
+
+test('Bulk Gifting - items scale by recipients so coupons, rewards and caps apply once', async () => {
+  const { scaleItemsForRecipients } = await import('../src/lib/bulkGifting');
+  assert.deepEqual(scaleItemsForRecipients([{ productId: 'badam', quantity: 2 }], 3), [{ productId: 'badam', quantity: 6 }]);
+  assert.throws(() => scaleItemsForRecipients([{ quantity: 1 }], 51), /Maximum 50/);
+  const fs = await import('node:fs');
+  for (const file of ['src/lib/orderQuote.ts', 'src/lib/orderDatabase.ts']) {
+    const src = fs.readFileSync(file, 'utf8');
+    assert.match(src, /scaleItemsForRecipients\(/, file);
+    assert.match(src, /REWARD_NOT_FOR_MULTI_ADDRESS/, file);
+  }
 });

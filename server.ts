@@ -62,7 +62,7 @@ import { quoteOrderForCustomer } from './src/lib/orderQuote';
 import { createStoreUpdatesRouter } from './src/lib/storeUpdatesRouter';
 import { createN8nCommerceRouter } from './src/lib/n8nCommerceRouter';
 import { requireN8nIntegration } from './src/lib/integrationAuthentication';
-import { validateBulkRecipient, calculateBulkTotals } from './src/lib/bulkGifting';
+import { calculateBulkTotals, scaleItemsForRecipients, validateRecipientList } from './src/lib/bulkGifting';
 import {
   AdminOperationError, validateAdminOrderId, validateAdminStatusInput,
   parseAdminOrderFilters, listAdminOrders, getAdminOrder, sanitizeOrderForAdmin,
@@ -462,8 +462,9 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
     if (!db) {
       const promoContext = await firstOrderPromoContext(null, verifiedUid, req.body.discountCode);
       const customer = validateCustomerDetails(req.body, getPromo(req.body.discountCode)?.type === 'quote');
+      const offlineRecipients = req.body.isMultiRecipient ? validateRecipientList(req.body.recipients) : null;
       const validatedOrder = validateAndPriceOrder({
-        items: req.body.items,
+        items: offlineRecipients ? scaleItemsForRecipients(req.body.items, offlineRecipients.length) : req.body.items,
         city: customer.city,
         shippingMethodId: req.body.shippingMethodId,
         discountCode: req.body.discountCode,
@@ -473,11 +474,10 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
       });
 
       let totals = validatedOrder.summary;
-      if (req.body.isMultiRecipient && Array.isArray(req.body.recipients) && req.body.recipients.length > 0) {
-        const validatedRecipients = req.body.recipients.map((r: any, i: number) => validateBulkRecipient(r, i));
+      if (offlineRecipients) {
         totals = calculateBulkTotals({
-          singleSummary: validatedOrder.summary,
-          recipients: validatedRecipients,
+          scaledSummary: validatedOrder.summary,
+          recipients: offlineRecipients,
           shippingMethodId: req.body.shippingMethodId,
           giftWrapping: Boolean(req.body.giftWrapping),
         }).totals;
@@ -875,15 +875,28 @@ app.post('/api/me/occasions', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Valid occasion date is required', code: 'INVALID_INPUT' });
     }
 
+    // Hardening: known enums, real dates, safe ids, and a per-customer cap.
+    const OCCASIONS = ['birthday', 'wedding_anniversary', 'eid', 'other'];
+    const RELATIONS = ['parents', 'spouse', 'sibling', 'child', 'friend', 'relative', 'colleague', 'other'];
+    if (!/^\d{4}-\d{2}-\d{2}$|^\d{2}-\d{2}$/.test(date.trim())) {
+      return res.status(400).json({ error: 'Use a date like 2026-12-25', code: 'INVALID_INPUT' });
+    }
+    if (id !== undefined && (typeof id !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(id.trim()))) {
+      return res.status(400).json({ error: 'Invalid reminder id', code: 'INVALID_INPUT' });
+    }
     const docId = id && typeof id === 'string' && id.trim() ? id.trim() : crypto.randomUUID();
+    if (!id) {
+      const existing = await db.collection('users').doc(uid).collection('occasions').count().get();
+      if (existing.data().count >= 50) return res.status(400).json({ error: 'You can save up to 50 dates.', code: 'OCCASION_LIMIT' });
+    }
     const now = Date.now();
 
     const record: OccasionReminder = {
       id: docId,
       uid,
       recipientName: recipientName.trim().slice(0, 120),
-      relationship: (relationship || 'other') as any,
-      occasionType: (occasionType || 'birthday') as any,
+      relationship: (RELATIONS.includes(relationship) ? relationship : 'other') as any,
+      occasionType: (OCCASIONS.includes(occasionType) ? occasionType : 'other') as any,
       ...(customOccasion ? { customOccasion: String(customOccasion).trim().slice(0, 120) } : {}),
       date: date.trim(),
       ...(notes ? { notes: String(notes).trim().slice(0, 500) } : {}),

@@ -3,15 +3,18 @@ import { firstOrderPromoContext } from '../server/promoEligibility';
 import { loadAuthoritativeCatalog } from './catalogStore';
 import { validateAndPriceOrder, ValidationError } from './orderValidation';
 import { applyPatronReward, validateRewardInstanceId } from './rewardPolicy';
-import { validateBulkRecipient, calculateBulkTotals, MAX_BULK_RECIPIENTS, type BulkRecipient } from './bulkGifting';
+import { calculateBulkTotals, scaleItemsForRecipients, validateRecipientList } from './bulkGifting';
 
 /** The HTTP quote and final order transaction share canonical pricing and reward policy. */
 export async function quoteOrderForCustomer(db: Firestore | null, payload: any, user?: { uid?: string; wholesaleEligible?: boolean }) {
   const { items, city, shippingMethodId, discountCode, rewardId, giftWrapping, isWholesale, isMultiRecipient, recipients } = payload || {};
   const promoContext = await firstOrderPromoContext(db, user?.uid || null, discountCode);
   const catalog = await loadAuthoritativeCatalog(db, { fresh: true });
-  const destinationCity = isMultiRecipient ? (recipients?.[0]?.city || 'Lahore') : city;
-  const validated = validateAndPriceOrder({ items, city: destinationCity, shippingMethodId, discountCode,
+  const bulkRecipients = isMultiRecipient ? validateRecipientList(recipients) : null;
+  if (bulkRecipients && rewardId) throw new ValidationError('Patron rewards apply to single-address orders only.', 'REWARD_NOT_FOR_MULTI_ADDRESS');
+  const destinationCity = bulkRecipients ? bulkRecipients[0].city : city;
+  const pricedItems = bulkRecipients ? scaleItemsForRecipients(items, bulkRecipients.length) : items;
+  const validated = validateAndPriceOrder({ items: pricedItems, city: destinationCity, shippingMethodId, discountCode,
     giftWrapping: Boolean(giftWrapping), isWholesale: Boolean(isWholesale && user?.wholesaleEligible), promoContext,
     products: catalog.products, hamperBoxes: catalog.hamperBoxes, allowInquiryItems: true });
   if (rewardId) {
@@ -21,16 +24,10 @@ export async function quoteOrderForCustomer(db: Firestore | null, payload: any, 
     validated.summary = applyPatronReward({ reward: snapshot.data() as any, summary: validated.summary, city: destinationCity, shippingMethodId }).summary;
   }
 
-  if (isMultiRecipient) {
-    if (!Array.isArray(recipients) || recipients.length === 0) {
-      throw new ValidationError('Multi-address order must contain at least 1 recipient.', 'RECIPIENTS_REQUIRED');
-    }
-    if (recipients.length > MAX_BULK_RECIPIENTS) {
-      throw new ValidationError(`Maximum ${MAX_BULK_RECIPIENTS} recipients allowed per order.`, 'MAX_RECIPIENTS_EXCEEDED');
-    }
-    const validatedRecipients: BulkRecipient[] = recipients.map((r, i) => validateBulkRecipient(r, i));
+  if (bulkRecipients) {
+    const validatedRecipients = bulkRecipients;
     const { totals: bulkTotals, shipments } = calculateBulkTotals({
-      singleSummary: validated.summary,
+      scaledSummary: validated.summary,
       recipients: validatedRecipients,
       shippingMethodId,
       giftWrapping: Boolean(giftWrapping),
@@ -43,7 +40,7 @@ export async function quoteOrderForCustomer(db: Firestore | null, payload: any, 
       shipments,
       isMultiRecipient: true,
       recipientCount: validatedRecipients.length,
-      earnedPoints: (validated.earnedPoints || 0) * validatedRecipients.length,
+      earnedPoints: validated.earnedPoints,
       catalogVersion: catalog.version,
       generatedAt: Date.now(),
     };

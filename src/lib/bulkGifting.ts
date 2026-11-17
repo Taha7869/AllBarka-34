@@ -178,8 +178,36 @@ export function generateSampleBulkCsv(): string {
 /**
  * Calculates per-recipient shipping and multi-address order totals.
  */
+/**
+ * Multi-address orders are priced as ONE order of every item x recipient count, so quantity
+ * caps, stock, MOQ, wholesale tiers and coupons apply to the real total exactly once.
+ */
+export function scaleItemsForRecipients<T extends { quantity?: unknown }>(items: T[], recipientCount: number): T[] {
+  if (!Array.isArray(items)) return items;
+  if (!Number.isSafeInteger(recipientCount) || recipientCount < 1 || recipientCount > MAX_BULK_RECIPIENTS) {
+    throw new ValidationError(`Maximum ${MAX_BULK_RECIPIENTS} recipients allowed per order.`, 'MAX_RECIPIENTS_EXCEEDED');
+  }
+  return items.map(item => ({ ...item, quantity: Number(item.quantity) * recipientCount }));
+}
+
+/** Validates the recipient list shape shared by the quote and the order transaction. */
+export function validateRecipientList(recipients: unknown): BulkRecipient[] {
+  if (!Array.isArray(recipients) || recipients.length === 0) {
+    throw new ValidationError('Multi-address order must contain at least 1 recipient.', 'RECIPIENTS_REQUIRED');
+  }
+  if (recipients.length > MAX_BULK_RECIPIENTS) {
+    throw new ValidationError(`Maximum ${MAX_BULK_RECIPIENTS} recipients allowed per order.`, 'MAX_RECIPIENTS_EXCEEDED');
+  }
+  return recipients.map((r, i) => validateBulkRecipient(r, i));
+}
+
+/**
+ * `scaledSummary` is the canonical pricing of the scaled order (items x recipients).
+ * Subtotal and discount are kept as priced; gift wrap is one fee per box; shipping is charged
+ * per address on that address's equal share of the order.
+ */
 export function calculateBulkTotals(params: {
-  singleSummary: PricingSummary;
+  scaledSummary: PricingSummary;
   recipients: BulkRecipient[];
   shippingMethodId?: string;
   orderId?: string;
@@ -188,30 +216,20 @@ export function calculateBulkTotals(params: {
   totals: PricingSummary;
   shipments: BulkChildShipment[];
 } {
-  const { singleSummary, recipients, shippingMethodId = 'standard', orderId = 'ORD', giftWrapping = false } = params;
+  const { scaledSummary, recipients, shippingMethodId = 'standard', orderId = 'ORD', giftWrapping = false } = params;
   const count = recipients.length;
   if (count === 0) {
-    return { totals: singleSummary, shipments: [] };
+    return { totals: scaledSummary, shipments: [] };
   }
-
-  const subtotal = singleSummary.subtotal * count;
-  const discount = (singleSummary.discount || 0) * count;
-  const discountedSubtotal = Math.max(0, subtotal - discount);
-  const giftWrapFee = giftWrapping ? (singleSummary.giftWrapFee || 0) * count : 0;
+  const perBoxWrap = giftWrapping ? (scaledSummary.giftWrapFee || 0) : 0;
+  const giftWrapFee = perBoxWrap * count;
+  const shareSubtotal = Math.round(scaledSummary.discountedSubtotal / count);
+  const shareWeight = scaledSummary.shippingWeightGrams ? Math.ceil(scaledSummary.shippingWeightGrams / count) : scaledSummary.shippingWeightGrams;
 
   const shipments: BulkChildShipment[] = [];
   let totalShipping = 0;
-
   recipients.forEach((rec, idx) => {
-    // Shipping is calculated individually per recipient address based on city
-    const fee = calculateShipping(
-      singleSummary.discountedSubtotal,
-      shippingMethodId as any,
-      giftWrapping ? singleSummary.giftWrapFee : 0,
-      rec.city,
-      singleSummary.shippingWeightGrams
-    );
-
+    const fee = calculateShipping(shareSubtotal, shippingMethodId as any, perBoxWrap, rec.city, shareWeight);
     totalShipping += fee;
     shipments.push({
       shipmentId: `${orderId}-S${String(idx + 1).padStart(2, '0')}`,
@@ -225,20 +243,13 @@ export function calculateBulkTotals(params: {
     });
   });
 
-  const total = discountedSubtotal + totalShipping + giftWrapFee;
-
   const totals: PricingSummary = {
-    ...singleSummary,
-    subtotal,
-    discount,
-    discountedSubtotal,
+    ...scaledSummary,
     shipping: totalShipping,
     giftWrapFee,
-    total,
-    shippingRegion: 'nationwide', // Multi-address orders typically span multiple destinations
-    shippingWeightGrams: singleSummary.shippingWeightGrams ? singleSummary.shippingWeightGrams * count : null,
+    total: scaledSummary.discountedSubtotal + totalShipping + giftWrapFee,
+    shippingRegion: 'nationwide',
   };
-
   return { totals, shipments };
 }
 
