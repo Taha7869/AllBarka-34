@@ -120,7 +120,9 @@ export function sanitizeOrderForAdmin(order: CanonicalOrder): AdminOrder {
     freeShipping: order.freeShipping === true, freeGiftWrap: order.freeGiftWrap === true,
     freeGift: order.freeGift === true, isQuoteRequest: order.isQuoteRequest === true,
     uid: order.uid, claimedAt: order.claimedAt,
-    customer: { name: customer.name, phone: customer.phone, address: customer.address,
+    customer: { name: customer.name, phone: customer.phone,
+      ...(typeof customer.deliveryPhone === 'string' && customer.deliveryPhone ? { deliveryPhone: customer.deliveryPhone } : {}),
+      address: customer.address,
       city: customer.city, deliverySlot: customer.deliverySlot, instructions: customer.instructions },
     gifting: { giftWrapping: gifting.giftWrapping, giftMessage: gifting.giftMessage, giftWrapFee: gifting.giftWrapFee, ...(gifting.giftOptions ? { giftOptions: gifting.giftOptions } : {}) },
     deliverySchedule: order.deliverySchedule,
@@ -173,10 +175,11 @@ export function filterAdminOrders(orders: CanonicalOrder[], filters: AdminOrderF
     if (filters.paymentMethod !== 'ALL' && order.paymentMethod !== filters.paymentMethod) return false;
     if (filters.range !== 'all' && (orderTime(order) < start || orderTime(order) > now)) return false;
     if (!search) return true;
-    const text = [order.orderId, order.customer?.name, order.customer?.phone, order.customer?.city,
+    const text = [order.orderId, order.customer?.name, order.customer?.phone, order.customer?.deliveryPhone, order.customer?.city,
       order.customer?.address, ...(order.items || []).map(item => item.name)].filter(Boolean).join(' ').toLocaleLowerCase();
     return text.includes(search) || (phoneSearch.length >= 3 && /^\+?[\d\s()-]+$/.test(search) &&
-      (order.customer?.phone || '').replace(/[^\d]/g, '').includes(phoneSearch));
+      ((order.customer?.phone || '').replace(/[^\d]/g, '').includes(phoneSearch)
+        || (order.customer?.deliveryPhone || '').replace(/[^\d]/g, '').includes(phoneSearch)));
   }).sort((a, b) => orderTime(b) - orderTime(a) || b.orderId.localeCompare(a.orderId));
 }
 

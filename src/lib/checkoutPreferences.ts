@@ -1,5 +1,5 @@
 export interface CheckoutCustomer {
-  name: string; phone: string; address: string; city: string; deliverySlot: string;
+  name: string; phone: string; deliveryPhone?: string; address: string; city: string; deliverySlot: string;
   giftWrapping: boolean; giftMessage: string; instructions: string;
 }
 export interface CheckoutDraft { customer: CheckoutCustomer; shipping: 'standard' | 'express'; coupon: string; payment: 'cod' | 'bank'; updatedAt: number; }
@@ -12,7 +12,7 @@ export function normalizeDraft(value: unknown, now = Date.now()): CheckoutDraft 
   const raw = value as Partial<CheckoutDraft>;
   if (!raw.customer || !Number.isFinite(raw.updatedAt) || now - Number(raw.updatedAt) > 7 * 86400000 || Number(raw.updatedAt) > now + 60000) return null;
   const customer = raw.customer;
-  return { customer: { name: text(customer.name, 80), phone: text(customer.phone, 30), address: text(customer.address, 300), city: text(customer.city, 60) || 'Lahore', deliverySlot: text(customer.deliverySlot, 80) || 'Fastest Dispatch', giftWrapping: customer.giftWrapping === true, giftMessage: text(customer.giftMessage, 300), instructions: text(customer.instructions, 300) }, shipping: raw.shipping === 'express' ? 'express' : 'standard', coupon: text(raw.coupon, 60), payment: raw.payment === 'bank' ? 'bank' : 'cod', updatedAt: Number(raw.updatedAt) };
+  return { customer: { name: text(customer.name, 80), phone: text(customer.phone, 30), ...(text(customer.deliveryPhone, 30) ? { deliveryPhone: text(customer.deliveryPhone, 30) } : {}), address: text(customer.address, 300), city: text(customer.city, 60) || 'Lahore', deliverySlot: text(customer.deliverySlot, 80) || 'Fastest Dispatch', giftWrapping: customer.giftWrapping === true, giftMessage: text(customer.giftMessage, 300), instructions: text(customer.instructions, 300) }, shipping: raw.shipping === 'express' ? 'express' : 'standard', coupon: text(raw.coupon, 60), payment: raw.payment === 'bank' ? 'bank' : 'cod', updatedAt: Number(raw.updatedAt) };
 }
 export function readCheckoutDraft(): CheckoutDraft | null {
   try { return normalizeDraft(JSON.parse(sessionStorage.getItem(CHECKOUT_DRAFT_KEY) || 'null')); } catch { return null; }

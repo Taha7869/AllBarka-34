@@ -101,6 +101,7 @@ const entries: readonly (readonly [string, string, string, string])[] = [
   ['admin.detail.paymentRecording', 'Record payment status', 'ادائیگی کی حالت درج کریں', 'تسجيل حالة الدفع'],
   ['admin.detail.name', 'Name', 'نام', 'الاسم'],
   ['admin.detail.phone', 'Phone', 'فون', 'الهاتف'],
+  ['admin.detail.deliveryPhone', 'Delivery phone (Pakistan)', 'ڈیلیوری کا پاکستانی نمبر', 'هاتف التوصيل (باكستان)'],
   ['admin.detail.address', 'Address', 'پتہ', 'العنوان'],
   ['admin.detail.city', 'City', 'شہر', 'المدينة'],
   ['admin.detail.slot', 'Requested delivery', 'منتخب ڈیلیوری وقت', 'موعد التوصيل المطلوب'],

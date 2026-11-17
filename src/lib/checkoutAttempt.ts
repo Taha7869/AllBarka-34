@@ -14,7 +14,9 @@ export interface CheckoutAttempt {
 export async function checkoutFingerprint(payload: OrderPayload, customerUid: string | null = null): Promise<string> {
   const serialized = JSON.stringify({
     customerUid,
-    name: payload.name.trim(), phone: payload.phone.trim(), address: payload.address.trim(), city: payload.city.trim(),
+    name: payload.name.trim(), phone: payload.phone.trim(),
+    ...(payload.deliveryPhone?.trim() ? { deliveryPhone: payload.deliveryPhone.trim() } : {}),
+    address: payload.address.trim(), city: payload.city.trim(),
     deliverySlot: payload.deliverySlot?.trim() || 'Fastest Dispatch', instructions: payload.instructions?.trim() || '',
     giftWrapping: !!payload.giftWrapping, giftMessage: payload.giftMessage?.trim() || '', paymentMethod: payload.paymentMethod,
     shippingMethodId: payload.shippingMethodId, discountCode: payload.discountCode?.trim().toUpperCase() || null,

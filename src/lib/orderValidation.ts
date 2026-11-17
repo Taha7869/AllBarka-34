@@ -4,6 +4,7 @@ import { calculateOrderSummary, PricingSummary } from './pricing';
 import { ShippingMethodId } from '../types.ts';
 import { isLahoreCity, validateShippingCity } from './shippingPolicy';
 import { ValidationError } from './validationError';
+import { resolveCheckoutPhones } from './phoneRules';
 export { ValidationError } from './validationError';
 import { CUSTOM_HAMPER_PRODUCT_ID, hamperCartKey, resolveHamper, type HamperConfiguration, type HamperBox } from './hamperCatalog';
 import { evaluatePromo, getPromo, NO_PROMO } from './couponEngine';
@@ -46,6 +47,8 @@ export interface ValidatedOrder {
 export interface CustomerInput {
   name: string;
   phone: string;
+  /** Pakistani mobile for the courier; required when `phone` is not Pakistani. */
+  deliveryPhone?: string;
   address: string;
   city: string;
   paymentMethod: string;
@@ -94,7 +97,7 @@ export function normalizeAndValidatePkPhone(rawPhone: unknown): { valid: boolean
  * Validates customer details and payment method.
  * Throws ValidationError on any failing constraint.
  */
-export function validateCustomerDetails(input: Partial<CustomerInput>, isQuoteRequest = false): CustomerInput & { phone: string } {
+export function validateCustomerDetails(input: Partial<CustomerInput>, isQuoteRequest = false): CustomerInput & { phone: string; deliveryPhone: string } {
   const name = typeof input.name === 'string' ? input.name.trim() : '';
   if (!name || name.length < 3) {
     throw new ValidationError('Recipient name must be at least 3 characters long.', 'INVALID_NAME');
@@ -103,10 +106,17 @@ export function validateCustomerDetails(input: Partial<CustomerInput>, isQuoteRe
     throw new ValidationError('Recipient name exceeds maximum allowed length (80 characters).', 'NAME_TOO_LONG');
   }
 
-  const phoneRes = normalizeAndValidatePkPhone(input.phone);
-  if (!phoneRes.valid) {
-    throw new ValidationError(phoneRes.error || 'Invalid Pakistani phone number.', 'INVALID_PHONE');
+  const phones = resolveCheckoutPhones(input.phone, input.deliveryPhone);
+  if (!phones.ok) {
+    const messages: Record<string, string> = {
+      PHONE_REQUIRED: 'Phone number is required.',
+      INVALID_PHONE: 'Enter a Pakistani mobile (03XXXXXXXXX) or an international number with its country code (+ and 8–15 digits).',
+      DELIVERY_PHONE_REQUIRED: 'A Pakistani delivery number (03XXXXXXXXX) is required when your contact number is outside Pakistan.',
+      INVALID_DELIVERY_PHONE: 'The delivery number must be a Pakistani mobile (03XXXXXXXXX).',
+    };
+    throw new ValidationError(messages[phones.error], phones.error === 'PHONE_REQUIRED' ? 'INVALID_PHONE' : phones.error);
   }
+  const phoneRes = { normalized: phones.value.phone };
 
   const address = typeof input.address === 'string' ? input.address.trim() : '';
   if (!address || address.length < 10) {
@@ -133,6 +143,7 @@ export function validateCustomerDetails(input: Partial<CustomerInput>, isQuoteRe
   return {
     name,
     phone: phoneRes.normalized,
+    deliveryPhone: phones.value.deliveryPhone,
     address,
     city,
     paymentMethod,

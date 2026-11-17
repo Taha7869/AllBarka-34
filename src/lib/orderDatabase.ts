@@ -273,6 +273,7 @@ export async function createDurableOrder({
       customer: {
         name: customer.name,
         phone: customer.phone,
+        deliveryPhone: customer.deliveryPhone,
         address: customer.address,
         city: customer.city,
         deliverySlot: customer.deliverySlot,
@@ -386,6 +387,7 @@ export async function createDurableOrder({
         uid,
         customerName: customer.name,
         customerPhone: customer.phone,
+        deliveryPhone: customer.deliveryPhone,
         items: validated.items.map(item => ({ name: item.name, qty: item.quantity, price: item.price })),
         paymentMethod: canonicalOrder.paymentMethod,
         createdAt: nowIso,

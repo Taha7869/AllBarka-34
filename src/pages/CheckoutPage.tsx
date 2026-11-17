@@ -63,6 +63,7 @@ import { PRODUCTS } from '../data/products';
 import { fetchLoyaltyProfile } from '../lib/loyaltyClient';
 import type { IssuedPatronReward } from '../lib/rewardPolicy';
 import { recordFunnelEvent } from '../lib/funnelTelemetry';
+import { needsPakistaniDeliveryPhone, normalizeContactPhone, normalizePakistaniMobile, resolveCheckoutPhones, PHONE_ERROR_KEYS } from '../lib/phoneRules';
 
 // Popular Lahore Neighborhoods for Rapid Delivery Pinning
 
@@ -133,6 +134,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   const [formData, setFormData] = useState(() => ({
     name: restoredDraft?.customer.name || patronProfile?.name || '',
     phone: restoredDraft?.customer.phone || patronProfile?.phone || '',
+    deliveryPhone: restoredDraft?.customer.deliveryPhone || '',
     address: restoredDraft?.customer.address || '',
     city: isPlaceholderCity(shippingCity) ? '' : shippingCity,
     deliverySlot: restoredDraft?.customer.deliverySlot || 'Fastest Dispatch',
@@ -311,10 +313,13 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
       if (!formData.name.trim() || formData.name.trim().length < 3) err = 'checkout.nameError';
     }
     if (field === 'phone') {
-      const cleanPhone = formData.phone.replace(/[\s-]/g, '');
-      const pkPhoneRegex = /^(03\d{9}|\+923\d{9})$/;
-      if (!cleanPhone) err = 'checkout.phoneRequired';
-      else if (!pkPhoneRegex.test(cleanPhone)) err = 'checkout.phoneError';
+      const contact = normalizeContactPhone(formData.phone);
+      if (!contact.valid) err = contact.reason === 'REQUIRED' ? 'checkout.phoneRequired' : 'checkout.phoneError';
+    }
+    if (field === 'deliveryPhone') {
+      const trimmed = (formData.deliveryPhone || '').trim();
+      if (needsPakistaniDeliveryPhone(formData.phone) && !trimmed) err = 'checkout.deliveryPhoneRequired';
+      else if (trimmed && !normalizePakistaniMobile(trimmed)) err = 'checkout.deliveryPhoneError';
     }
     if (field === 'address') {
       if (!formData.address.trim() || formData.address.trim().length < 10) err = 'checkout.addressError';
@@ -343,14 +348,15 @@ const handleInputChange = (field: string, value: any) => {
       errs.name = 'checkout.nameError';
       if (!firstErrorId) firstErrorId = 'checkout-field-name';
     }
-    const cleanPhone = formData.phone.replace(/[\s-]/g, '');
-    const isPkPhone = /^(03\d{9}|\+923\d{9})$/.test(cleanPhone);
-    if (!cleanPhone) {
-      errs.phone = 'checkout.phoneRequired';
-      if (!firstErrorId) firstErrorId = 'checkout-field-phone';
-    } else if (!isPkPhone) {
-      errs.phone = 'checkout.phoneError';
-      if (!firstErrorId) firstErrorId = 'checkout-field-phone';
+    const phoneCheck = resolveCheckoutPhones(formData.phone, formData.deliveryPhone);
+    if (!phoneCheck.ok) {
+      if (phoneCheck.field === 'phone') {
+        errs.phone = PHONE_ERROR_KEYS[phoneCheck.error];
+        if (!firstErrorId) firstErrorId = 'checkout-field-phone';
+      } else {
+        errs.deliveryPhone = PHONE_ERROR_KEYS[phoneCheck.error];
+        if (!firstErrorId) firstErrorId = 'checkout-field-delivery-phone';
+      }
     }
 
     setErrors(errs);
@@ -461,7 +467,11 @@ const handleInputChange = (field: string, value: any) => {
 
     if (!validateStep1(false)) {
       setCurrentStep('details');
-      const firstErr = (!formData.name.trim() || formData.name.trim().length < 3) ? 'checkout-field-name' : 'checkout-field-phone';
+      const firstErr = (!formData.name.trim() || formData.name.trim().length < 3)
+        ? 'checkout-field-name'
+        : !normalizeContactPhone(formData.phone).valid
+          ? 'checkout-field-phone'
+          : 'checkout-field-delivery-phone';
       scrollToErrorField(firstErr);
       return;
     }
@@ -502,6 +512,7 @@ const handleInputChange = (field: string, value: any) => {
       const orderPayload: OrderPayload = {
         name: formData.name,
         phone: formData.phone,
+        ...(formData.deliveryPhone?.trim() ? { deliveryPhone: formData.deliveryPhone.trim() } : {}),
         address: isMultiRecipient ? (recipients[0]?.address || 'Bulk Gifting (Multiple Addresses)') : formData.address,
         city: isMultiRecipient ? (recipients[0]?.city || 'Lahore') : formData.city,
         deliverySlot: formData.deliverySlot,
@@ -569,7 +580,9 @@ const handleInputChange = (field: string, value: any) => {
         freeGift: orderResult.totals?.freeGift === true,
         paymentMethod: isAcceptedQuote ? 'quote' : selectedPayment,
         items: receipt.items, totals: receipt.totals, whatsappMessage: orderResult.whatsappMessage,
-        customer: { name: formData.name, phone: formData.phone, address: formData.address, city: formData.city,
+        customer: { name: formData.name, phone: formData.phone,
+          ...(formData.deliveryPhone?.trim() ? { deliveryPhone: formData.deliveryPhone.trim() } : {}),
+          address: formData.address, city: formData.city,
           paymentMethod: isAcceptedQuote ? 'quote' : selectedPayment },
       };
       // Save order confirmation snapshot in session storage for resilient recovery
@@ -760,7 +773,7 @@ const handleInputChange = (field: string, value: any) => {
           onSubmit={handleSubmit}
           className="flex-1 overflow-y-auto min-h-0 px-4 sm:px-6 py-5 pb-10 space-y-4 [scrollbar-width:thin]"
         >
-          {draftNotice && <div role="status" className="rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] p-3 text-xs"><p>{t('checkout.draftRestored')}</p><button type="button" onClick={() => { setFormData({ name: '', phone: '', address: '', city: 'Lahore', deliverySlot: 'Fastest Dispatch', giftWrapping: false, giftMessage: '', giftCardStyle: 'celebration', giftRibbon: 'gold', giftReceipt: false, instructions: '' }); setCouponCode(''); setAppliedCoupon(''); setIsQuoteRequestMode(false); setCouponSuccessMsg(null); setCouponErrorMsg(null); setDraftNotice(false); try { sessionStorage.removeItem(CHECKOUT_DRAFT_KEY); } catch { /* private mode */ } }} className="focus-ring mt-2 min-h-11 underline underline-offset-4">{t('checkout.clearDraft')}</button></div>}
+          {draftNotice && <div role="status" className="rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] p-3 text-xs"><p>{t('checkout.draftRestored')}</p><button type="button" onClick={() => { setFormData({ name: '', phone: '', deliveryPhone: '', address: '', city: 'Lahore', deliverySlot: 'Fastest Dispatch', giftWrapping: false, giftMessage: '', giftCardStyle: 'celebration', giftRibbon: 'gold', giftReceipt: false, instructions: '' }); setCouponCode(''); setAppliedCoupon(''); setIsQuoteRequestMode(false); setCouponSuccessMsg(null); setCouponErrorMsg(null); setDraftNotice(false); try { sessionStorage.removeItem(CHECKOUT_DRAFT_KEY); } catch { /* private mode */ } }} className="focus-ring mt-2 min-h-11 underline underline-offset-4">{t('checkout.clearDraft')}</button></div>}
           {!online && <p role="status" className="rounded-xl border border-[var(--color-border)] p-3 text-sm">{t('checkout.offline')}</p>}
           {(currentStep === 'details' || currentStep === 'shipping') && <AddressBook customer={formData} onSelect={value => setFormData(previous => ({ ...previous, ...value }))} />}
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] p-3 text-xs"><p role="status" aria-live="polite">{quoteLoading ? t('checkout.checkingQuote') : quoteError || (verifiedQuote ? t('checkout.quoteVerified') : t('checkout.waitQuote'))}</p><button type="button" disabled={!online || quoteLoading} onClick={() => setQuoteRefresh(value => value + 1)} className="focus-ring min-h-11 underline underline-offset-4 disabled:opacity-40">{t('checkout.refreshQuote')}</button>{quoteError && <a href={buildHumanSupportWhatsAppUrl()} target="_blank" rel="noreferrer" className="focus-ring ms-4 inline-flex min-h-11 items-center underline underline-offset-4">{t('footer.connect')}</a>}</div>
@@ -977,6 +990,47 @@ const handleInputChange = (field: string, value: any) => {
                       </p>
                     )}
                   </div>
+
+                  {/* Pakistani Delivery Phone (Required when contact number is outside Pakistan) */}
+                  {(needsPakistaniDeliveryPhone(formData.phone) || Boolean(formData.deliveryPhone?.trim()) || Boolean(errors.deliveryPhone)) && (
+                    <div className="space-y-1.5" data-testid="checkout-delivery-phone-group">
+                      <label htmlFor="checkout-field-delivery-phone" className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)]/80">
+                        {t('checkout.deliveryPhoneLabel')} *
+                      </label>
+                      <div className="relative">
+                        <Phone className="absolute start-3.5 top-3 text-[var(--color-gold,#B8935F)]" size={16} />
+                        <input
+                          id="checkout-field-delivery-phone"
+                          name="deliveryPhone"
+                          autoComplete="tel-national"
+                          required
+                          aria-invalid={!!errors.deliveryPhone}
+                          aria-describedby={errors.deliveryPhone ? 'checkout-delivery-phone-error' : 'checkout-delivery-phone-hint'}
+                          type="tel"
+                          dir="ltr"
+                          value={formData.deliveryPhone || ''}
+                          onChange={(e) => handleInputChange('deliveryPhone', e.target.value)}
+                          onBlur={() => handleBlur('deliveryPhone')}
+                          placeholder={t('checkout.deliveryPhonePlaceholder')}
+                          className={`w-full bg-[var(--color-surface,#FDFBF7)] border rounded-xl py-3 ps-10 pe-3.5 text-base sm:text-sm font-semibold text-[var(--color-ink,#1F120F)] placeholder:text-[var(--color-ink,#1F120F)]/30 focus:outline-none transition-all ${
+                            errors.deliveryPhone
+                              ? 'border-rose-500 ring-2 ring-rose-400/40 bg-rose-50/30 shadow-xs'
+                              : 'border-[var(--color-gold,#B8935F)]/30 focus:border-[var(--color-gold,#B8935F)] focus:ring-1 focus:ring-[var(--color-gold,#B8935F)]'
+                          }`}
+                        />
+                      </div>
+                      {errors.deliveryPhone ? (
+                        <p id="checkout-delivery-phone-error" role="alert" className="text-[10px] text-rose-700 dark:text-rose-300 font-semibold flex items-center gap-1 mt-1">
+                          <AlertCircle size={12} className="shrink-0" />
+                          <span>{t(errors.deliveryPhone)}</span>
+                        </p>
+                      ) : (
+                        <p id="checkout-delivery-phone-hint" className="text-[10px] text-[var(--color-ink,#1F120F)]/60 mt-1">
+                          {t('checkout.deliveryPhoneHint')}
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                   {/* Special Delivery Notes */}
                   <div className="space-y-1.5">
@@ -1462,6 +1516,7 @@ const handleInputChange = (field: string, value: any) => {
                       </button>
                     </p>
                     <p className="truncate">{t('checkout.address')}: {formData.address || t('checkout.addressPending')}, {formData.city}</p>
+                    {formData.deliveryPhone?.trim() && <p>{t('checkout.deliveryPhoneLabel')}: <bdi>{formData.deliveryPhone}</bdi></p>}
                     <p>{t('checkout.windowLabel')}: {t(({ 'Fastest Dispatch': 'checkout.slotFastest', 'Morning (10 AM - 2 PM)': 'checkout.slotMorning', 'Evening (3 PM - 7 PM)': 'checkout.slotEvening', 'Night (7 PM - 10 PM)': 'checkout.slotNight' } as Record<string, string>)[formData.deliverySlot] || '', formData.deliverySlot)}</p>
                   </div>
 

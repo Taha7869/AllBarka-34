@@ -5,7 +5,7 @@ import { getLocalized } from '../utils/localize';
 import type { LanguageCode } from '../contexts/LanguageContext';
 
 export interface ConfirmedSuccessReceipt {
-  orderId: string; name: string; phone: string; address: string; city: string; deliverySlot?: string;
+  orderId: string; name: string; phone: string; deliveryPhone?: string; address: string; city: string; deliverySlot?: string;
   items: Array<{ name: string; name_en?: string; name_ur?: string; name_ar?: string; productId?: string; selectedWeight?: string; quantity: number; price: number }>;
   subtotal: number; discount: number; shipping: number; giftWrapFee: number; totalAmount: number;
   paymentMethod: string; whatsappMessage?: string; timestamp?: string;
@@ -47,7 +47,9 @@ function normalizeReceipt(raw: any, language: LanguageCode, customerUid: string 
       : Math.abs(items.reduce((sum, item) => sum + item.price * item.quantity, 0) - subtotal) > 1)) return null;
   const paymentMethod = raw.paymentMethod || customer.paymentMethod;
   if (!(isQuoteRequest ? paymentMethod === 'quote' : ['cod', 'bank'].includes(paymentMethod))) return null;
-  return { orderId: raw.orderId, name: customer.name, phone: customer.phone, address: customer.address, city: customer.city,
+  return { orderId: raw.orderId, name: customer.name, phone: customer.phone,
+    ...(typeof customer.deliveryPhone === 'string' && customer.deliveryPhone.trim() ? { deliveryPhone: customer.deliveryPhone.trim() } : {}),
+    address: customer.address, city: customer.city,
     deliverySlot: customer.deliverySlot || raw.deliverySlot, items, subtotal, discount, shipping, giftWrapFee, totalAmount,
     paymentMethod, whatsappMessage: typeof raw.whatsappMessage === 'string' ? raw.whatsappMessage : undefined,
     timestamp: raw.createdAt || raw.timestamp, durablePersistenceReady: true, customerUid,

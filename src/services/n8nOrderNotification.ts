@@ -6,6 +6,7 @@ import type { AppliedPromo } from '../types/promo';
 import { outboxErrorDetails } from './outboxDiagnostics';
 import { storedOrderStatus } from '../lib/orderStatuses';
 import { isKnownLegacyPackagingLabel } from '../lib/catalogSchema';
+import { orderDeliveryPhone } from '../lib/phoneRules';
 
 export interface N8nNotificationResult {
   sent: boolean;
@@ -56,7 +57,7 @@ export interface N8nOrderData extends Partial<AppliedPromo> {
   paymentStatus?: CanonicalOrder['paymentStatus'];
   orderId: string;
   customerUid?: string | null;
-  customer: { name: string; phone: string; address: string; city: string; deliverySlot?: string };
+  customer: { name: string; phone: string; address: string; city: string; deliverySlot?: string; contactPhone?: string };
   delivery?: N8nOrderDelivery | null;
   totals: { subtotal: number; discount: number; shipping: number; total: number };
   items: Array<{
@@ -111,7 +112,11 @@ export function projectCanonicalOrderForN8n(order: CanonicalOrder): N8nOrderData
   if (!customer || !totals || !Array.isArray(order.items) || order.items.length < 1 || order.items.length > 100) {
     throw new Error('CANONICAL_ORDER_INVALID');
   }
-  if (!/^03\d{9}$/.test(customer.phone)) throw new Error('CANONICAL_ORDER_INVALID');
+  // The receiver's `phone` stays the Pakistani courier number (03XXXXXXXXX). An international
+  // customer contact travels separately as `contactPhone`, only when it differs.
+  const deliveryPhone = orderDeliveryPhone(customer);
+  if (!/^03\d{9}$/.test(deliveryPhone)) throw new Error('CANONICAL_ORDER_INVALID');
+  if (customer.phone !== deliveryPhone && !/^(03\d{9}|\+[1-9]\d{7,14})$/.test(customer.phone)) throw new Error('CANONICAL_ORDER_INVALID');
   const wireOrder: N8nOrderData = {
     source: 'website', orderType: isQuote ? 'QUOTE_REQUEST' : 'ORDER', paymentStatus: order.paymentStatus,
     // Historical receipts keep their saved discount and code, regardless of today's caps.
@@ -124,7 +129,8 @@ export function projectCanonicalOrderForN8n(order: CanonicalOrder): N8nOrderData
     orderId: order.orderId,
     customerUid: order.uid == null ? null : requiredText(order.uid, 128),
     customer: {
-      name: requiredText(customer.name, 120), phone: customer.phone,
+      name: requiredText(customer.name, 120), phone: deliveryPhone,
+      ...(customer.phone !== deliveryPhone ? { contactPhone: customer.phone } : {}),
       address: requiredText(customer.address, 500), city: requiredText(customer.city, 80),
       ...(customer.deliverySlot ? { deliverySlot: requiredText(customer.deliverySlot, 120) } : {}),
     },
@@ -212,6 +218,7 @@ export async function sendOrderToN8n(orderData: N8nOrderData, options: SendOrder
       orderId: orderData.orderId, customerUid: orderData.customerUid ?? null,
       customer: {
         name: orderData.customer.name, phone: orderData.customer.phone,
+        ...(orderData.customer.contactPhone ? { contactPhone: orderData.customer.contactPhone } : {}),
         address: orderData.customer.address, city: orderData.customer.city,
         ...(orderData.customer.deliverySlot ? { deliverySlot: orderData.customer.deliverySlot } : {}),
       },

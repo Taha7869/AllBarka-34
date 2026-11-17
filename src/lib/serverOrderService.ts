@@ -10,6 +10,7 @@ import { REWARDS } from '../data/rewards';
 import { CUSTOM_HAMPER_PRODUCT_ID, resolveHamper } from './hamperCatalog';
 import { PRODUCTS } from '../data/products';
 import { storedOrderStatus, type StoredOrderStatus } from './orderStatuses';
+import { orderDeliveryPhone } from './phoneRules';
 
 export const SCHEMA_VERSION = '2.0.0';
 
@@ -29,6 +30,8 @@ export interface AdminNoteEntry {
 export interface CanonicalCustomerSnapshot {
   name: string;
   phone: string;
+  /** Pakistani courier number (03XXXXXXXXX). Older orders omit it; use orderDeliveryPhone(). */
+  deliveryPhone?: string;
   address: string;
   city: string;
   deliverySlot?: string;
@@ -187,6 +190,7 @@ export function sanitizeOrderForCustomer(order: CanonicalOrder, whatsappMessage?
     customer: {
       name: order.customer.name,
       phone: order.customer.phone,
+      ...(order.customer.deliveryPhone ? { deliveryPhone: order.customer.deliveryPhone } : {}),
       address: order.customer.address,
       city: order.customer.city,
       deliverySlot: order.customer.deliverySlot,
@@ -243,6 +247,7 @@ export function generateAuthoritativeWhatsAppMessage(order: CanonicalOrder): str
     `Date: ${dateStr}`,
     `Customer: ${order.customer.name}`,
     `Contact: ${order.customer.phone}`,
+    `Delivery Phone (Pakistan): ${orderDeliveryPhone(order.customer) || order.customer.phone}`,
     `Destination: ${order.customer.address}, ${order.customer.city}`,
     `Delivery Slot: ${order.customer.deliverySlot || 'Fastest Dispatch'}`,
     ``,
@@ -308,6 +313,7 @@ function hashCheckoutPayload(payload: any, includeDeliveryPricingIntent: boolean
   const normalized = {
     name: payload.name?.trim(),
     phone: payload.phone?.trim(),
+    ...(typeof payload.deliveryPhone === 'string' && payload.deliveryPhone.trim() ? { deliveryPhone: payload.deliveryPhone.trim() } : {}),
     address: payload.address?.trim(),
     city: payload.city?.trim(),
     paymentMethod: payload.paymentMethod?.trim(),

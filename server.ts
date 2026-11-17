@@ -501,10 +501,11 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
         itemsStr += `\n${index + 1}. *${item.name}* (${item.selectedWeight}) x ${item.quantity}${totals.isQuoteRequest ? '' : ` -> ${currencyFormat(item.price * item.quantity)}`}`;
       });
 
-      const standardReceiptMessage = `👑 *ALLBARKA LUXURY BOUTIQUE ORDER* 👑\n\n*Customer:* ${customer.name}\n*Phone:* ${customer.phone}\n*Delivery Address:* ${customer.address}, ${customer.city}\n*Delivery Slot:* ${customer.deliverySlot}\n\n*Selected Items:*${itemsStr}\n\n*Subtotal:* ${currencyFormat(totals.subtotal)}${totals.discount > 0 ? `\n*Discount Applied:* -${currencyFormat(totals.discount)}` : ''}${customer.giftWrapping ? `\n*Gift Wrapping:* +${currencyFormat(totals.giftWrapFee)}` : ''}\n*Shipping:* ${totals.shipping === 0 ? 'FREE' : currencyFormat(totals.shipping)}\n*Total Due:* *${currencyFormat(totals.total)}*\n*Payment Method:* ${customer.paymentMethod === 'bank' ? 'Bank Transfer' : 'Cash on Delivery'}`;
+      const deliveryPhoneLine = `\n*Delivery Phone (Pakistan):* ${customer.deliveryPhone}`;
+      const standardReceiptMessage = `👑 *ALLBARKA LUXURY BOUTIQUE ORDER* 👑\n\n*Customer:* ${customer.name}\n*Phone:* ${customer.phone}${deliveryPhoneLine}\n*Delivery Address:* ${customer.address}, ${customer.city}\n*Delivery Slot:* ${customer.deliverySlot}\n\n*Selected Items:*${itemsStr}\n\n*Subtotal:* ${currencyFormat(totals.subtotal)}${totals.discount > 0 ? `\n*Discount Applied:* -${currencyFormat(totals.discount)}` : ''}${customer.giftWrapping ? `\n*Gift Wrapping:* +${currencyFormat(totals.giftWrapFee)}` : ''}\n*Shipping:* ${totals.shipping === 0 ? 'FREE' : currencyFormat(totals.shipping)}\n*Total Due:* *${currencyFormat(totals.total)}*\n*Payment Method:* ${customer.paymentMethod === 'bank' ? 'Bank Transfer' : 'Cash on Delivery'}`;
 
       const receiptMessage = totals.isQuoteRequest
-        ? `*ALLBARKA QUOTE ENQUIRY*\n\n*Customer:* ${customer.name}\n*Phone:* ${customer.phone}\n*Delivery Address:* ${customer.address}, ${customer.city}\n\n*Selected Items:*${itemsStr}\n\nPROMO:CANCER: quote request\nOur team will contact you with your personalized rate.`
+        ? `*ALLBARKA QUOTE ENQUIRY*\n\n*Customer:* ${customer.name}\n*Phone:* ${customer.phone}${deliveryPhoneLine}\n*Delivery Address:* ${customer.address}, ${customer.city}\n\n*Selected Items:*${itemsStr}\n\nPROMO:CANCER: quote request\nOur team will contact you with your personalized rate.`
         : standardReceiptMessage;
 
       return res.status(503).json({
@@ -663,7 +664,8 @@ app.post('/api/orders/track', orderTrackLimiter, async (req, res) => {
 
     const order = doc.data() as any;
     const phone = String(order.customer?.phone || order.phone || order.shippingAddress?.phone || '');
-    if (!verifyPhoneLast4(phone, trimmedPhoneLast4)) {
+    const deliveryPhone = String(order.customer?.deliveryPhone || '');
+    if (!verifyPhoneLast4(phone, trimmedPhoneLast4) && !verifyPhoneLast4(deliveryPhone, trimmedPhoneLast4)) {
       return res.status(404).json({ error: 'ORDER_NOT_FOUND', code: 'ORDER_NOT_FOUND' });
     }
 
@@ -702,7 +704,8 @@ app.post('/api/orders/reorder-items', orderTrackLimiter, async (req, res) => {
 
     const order = doc.data() as any;
     const phone = String(order.customer?.phone || order.phone || order.shippingAddress?.phone || '');
-    if (!verifyPhoneLast4(phone, trimmedPhoneLast4)) {
+    const deliveryPhone = String(order.customer?.deliveryPhone || '');
+    if (!verifyPhoneLast4(phone, trimmedPhoneLast4) && !verifyPhoneLast4(deliveryPhone, trimmedPhoneLast4)) {
       return res.status(404).json({ error: 'ORDER_NOT_FOUND', code: 'ORDER_NOT_FOUND' });
     }
 

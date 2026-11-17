@@ -14,7 +14,7 @@ export interface StaffOrder {
   paymentStatus: string;
   paymentMethod: string;
   isQuoteRequest: boolean;
-  customer: { name: string; phone: string; city: string; address: string; deliverySlot: string; instructions: string };
+  customer: { name: string; phone: string; deliveryPhone?: string; city: string; address: string; deliverySlot: string; instructions: string };
   items: { productId: string; name: string; selectedWeight: string; quantity: number; price: number;
     hamper: null | { boxId: string; selections: string[]; recipientName: string; giftMessage: string } }[];
   totals: { subtotal: number; discount: number; shipping: number; giftWrapFee: number; total: number };

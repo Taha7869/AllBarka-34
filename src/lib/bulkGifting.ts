@@ -3,6 +3,7 @@ import type { OrderStatus } from './serverOrderService';
 import type { PricingSummary } from './pricing';
 import type { ValidatedOrderItem } from './orderValidation';
 import { ValidationError } from './validationError';
+import { normalizePakistaniMobile } from './phoneRules';
 
 export const MAX_BULK_RECIPIENTS = 50;
 export const CORPORATE_QUOTE_THRESHOLD = 20;
@@ -45,10 +46,10 @@ export function validateBulkRecipient(input: any, index: number): BulkRecipient 
   }
 
   const rawPhone = String(input.phone || input.mobile || '').trim();
-  const digitsOnly = rawPhone.replace(/\D/g, '');
-  if (digitsOnly.length < 10 || digitsOnly.length > 15) {
+  const normalizedPhone = normalizePakistaniMobile(rawPhone);
+  if (!normalizedPhone) {
     throw new ValidationError(
-      `Row ${index + 1} (${recipientName}): Valid phone number required (e.g. 0300 1234567).`,
+      `Row ${index + 1} (${recipientName}): Valid phone number required (Pakistani mobile 03XXXXXXXXX or +923XXXXXXXXX).`,
       'INVALID_PHONE'
     );
   }
@@ -81,7 +82,7 @@ export function validateBulkRecipient(input: any, index: number): BulkRecipient 
   return {
     id,
     recipientName,
-    phone: rawPhone,
+    phone: normalizedPhone,
     address,
     city,
     giftMessage,

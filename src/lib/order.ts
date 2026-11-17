@@ -5,6 +5,7 @@ import type { CartItem } from '../types';
 export interface OrderPayload {
   name: string;
   phone: string;
+  deliveryPhone?: string;
   address: string;
   city: string;
   deliverySlot?: string;
@@ -83,11 +84,16 @@ export async function placeOrder(payload: OrderPayload, options: { signal?: Abor
         method: 'POST', signal,
         headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'Idempotency-Key': idempotencyKey,
           ...(payload.authToken ? { Authorization: `Bearer ${payload.authToken}` } : {}) },
-        body: JSON.stringify({ idempotencyKey, name: payload.name, phone: payload.phone, address: payload.address,
+        body: JSON.stringify({ idempotencyKey, name: payload.name, phone: payload.phone,
+          ...(payload.deliveryPhone ? { deliveryPhone: payload.deliveryPhone } : {}),
+          address: payload.address,
           city: payload.city, deliverySlot: payload.deliverySlot || 'Fastest Dispatch', instructions: payload.instructions || '',
-          giftWrapping: !!payload.giftWrapping, giftMessage: payload.giftMessage || '', paymentMethod: payload.paymentMethod,
+          giftWrapping: !!payload.giftWrapping, giftMessage: payload.giftMessage || '',
+          ...(payload.giftOptions ? { giftOptions: payload.giftOptions } : {}),
+          paymentMethod: payload.paymentMethod,
           items: requestItems(payload.items), shippingMethodId: payload.shippingMethodId, discountCode: payload.discountCode || null,
-          rewardId: payload.rewardId || null, isWholesale: !!payload.isWholesale, expectedFinalTotal: payload.expectedFinalTotal }),
+          rewardId: payload.rewardId || null, isWholesale: !!payload.isWholesale, expectedFinalTotal: payload.expectedFinalTotal,
+          ...(payload.isMultiRecipient ? { isMultiRecipient: true, recipients: payload.recipients } : {}) }),
       });
       if (!response.headers.get('content-type')?.toLowerCase().includes('application/json')) {
         return { success: false, code: 'INVALID_RESPONSE', error: 'The order service returned an unexpected response. Your bag is preserved; retry or contact concierge.' };
