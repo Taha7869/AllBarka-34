@@ -54,6 +54,19 @@ service cloud.firestore {
         allow read, delete: if isOwner(userId);
         allow create, update: if false;
       }
+
+      // Feature A: Occasion reminders ("Meri tareekhain")
+      // Owner only: read, create, update, delete
+      match /occasions/{occasionId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId)
+          && request.resource.data.keys().hasOnly(['id', 'uid', 'recipientName', 'relationship', 'occasionType', 'customOccasion', 'date', 'notes', 'createdAt', 'updatedAt'])
+          && request.resource.data.recipientName is string
+          && request.resource.data.recipientName.size() >= 1
+          && request.resource.data.recipientName.size() <= 120
+          && request.resource.data.date is string
+          && request.resource.data.date.size() >= 4;
+      }
     }
     
     // Canonical orders contain private staff notes, identifiers and claim credentials.

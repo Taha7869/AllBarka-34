@@ -16,6 +16,7 @@ import { acquireScrollLock } from '../utils/scrollLock';
 import { apiUrl } from '../lib/apiUrl';
 import { withApiDeadline } from '../lib/apiDeadline';
 import { fetchLoyaltyProfile, redeemLoyaltyReward } from '../lib/loyaltyClient';
+import OccasionRemindersSection from './OccasionRemindersSection';
 
 interface PatronLoungeModalProps {
   isOpen: boolean;
@@ -761,6 +762,11 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                   })}
                 </div>
               )}
+
+              {/* Occasion Reminders ("Meri tareekhain") */}
+              <div className="mt-8 pt-6 border-t border-[var(--color-gold,#B8935F)]/20">
+                <OccasionRemindersSection />
+              </div>
             </div>
 
           </div>

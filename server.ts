@@ -71,6 +71,7 @@ import { createInquiriesRouter } from './src/lib/inquiriesRouter';
 import { createDemandAnalyticsRouter, createDemandBuffer } from './src/lib/demandAnalytics';
 import { createGiftRevealRouter } from './src/lib/giftRevealRouter';
 import { sanitizeOrderForTracking, sanitizeOrderForReorder, verifyPhoneLast4 } from './src/lib/orderTrackingService';
+import { calculateDaysRemaining, generateOccasionWhatsAppLink, type OccasionReminder, type UpcomingReminderAdminRow } from './src/lib/occasionReminders';
 
 // Load environment variables
 if (process.env.ALLBARKA_SKIP_LOCAL_ENV !== 'true') {
@@ -827,6 +828,155 @@ app.post('/api/admin/orders/:orderId/payment', requireAdmin, async (req, res) =>
       actorUid: user.uid, actorEmail: user.email });
     res.json({ success: true, order });
   } catch (error) { adminOperationFailure(res, error); }
+});
+
+// --- Feature A: Occasion Reminders ("Meri Tareekhain") ---
+
+// 1. Customer: List user's occasion reminders
+app.get('/api/me/occasions', requireAuth, async (req, res) => {
+  try {
+    const uid = (req as any).user.uid;
+    if (!db) {
+      return res.status(503).json({ error: 'Database unavailable', code: 'DATABASE_UNAVAILABLE' });
+    }
+    const snap = await db.collection('users').doc(uid).collection('occasions').get();
+    const occasions = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    res.json({ success: true, occasions });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Server error retrieving occasions', code: 'SERVER_ERROR' });
+  }
+});
+
+// 2. Customer: Create or update an occasion reminder
+app.post('/api/me/occasions', requireAuth, async (req, res) => {
+  try {
+    const uid = (req as any).user.uid;
+    if (!db) {
+      return res.status(503).json({ error: 'Database unavailable', code: 'DATABASE_UNAVAILABLE' });
+    }
+    const { id, recipientName, relationship, occasionType, customOccasion, date, notes } = req.body || {};
+
+    if (!recipientName || typeof recipientName !== 'string' || !recipientName.trim()) {
+      return res.status(400).json({ error: 'Recipient name is required', code: 'INVALID_INPUT' });
+    }
+    if (!date || typeof date !== 'string' || date.trim().length < 4) {
+      return res.status(400).json({ error: 'Valid occasion date is required', code: 'INVALID_INPUT' });
+    }
+
+    const docId = id && typeof id === 'string' && id.trim() ? id.trim() : crypto.randomUUID();
+    const now = Date.now();
+
+    const record: OccasionReminder = {
+      id: docId,
+      uid,
+      recipientName: recipientName.trim().slice(0, 120),
+      relationship: (relationship || 'other') as any,
+      occasionType: (occasionType || 'birthday') as any,
+      ...(customOccasion ? { customOccasion: String(customOccasion).trim().slice(0, 120) } : {}),
+      date: date.trim(),
+      ...(notes ? { notes: String(notes).trim().slice(0, 500) } : {}),
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    await db.collection('users').doc(uid).collection('occasions').doc(docId).set(record, { merge: true });
+    res.json({ success: true, occasion: record });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Server error saving occasion', code: 'SERVER_ERROR' });
+  }
+});
+
+// 3. Customer: Delete an occasion reminder
+app.delete('/api/me/occasions/:id', requireAuth, async (req, res) => {
+  try {
+    const uid = (req as any).user.uid;
+    const { id } = req.params;
+    if (!id || typeof id !== 'string') {
+      return res.status(400).json({ error: 'ID is required', code: 'INVALID_INPUT' });
+    }
+    if (!db) {
+      return res.status(503).json({ error: 'Database unavailable', code: 'DATABASE_UNAVAILABLE' });
+    }
+
+    await db.collection('users').doc(uid).collection('occasions').doc(id).delete();
+    res.json({ success: true, id });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Server error deleting occasion', code: 'SERVER_ERROR' });
+  }
+});
+
+// 4. Admin: Get upcoming reminders this week (within 7 days) with prefilled WhatsApp concierge links
+app.get('/api/admin/reminders/upcoming', requireAdmin, async (req, res) => {
+  try {
+    if (!db) {
+      return res.status(503).json({ error: 'Database unavailable', code: 'DATABASE_UNAVAILABLE' });
+    }
+
+    const publicOrigin = (process.env.PUBLIC_ORIGIN || 'https://allbarka.com').replace(/\/+$/, '');
+    const snap = await db.collectionGroup('occasions').get();
+    const rows: UpcomingReminderAdminRow[] = [];
+
+    // Cache user profiles by uid to avoid redundant reads
+    const userCache = new Map<string, { name: string; phone: string }>();
+
+    for (const doc of snap.docs) {
+      const data = doc.data() as OccasionReminder;
+      const { daysRemaining, targetDateFormatted, isThisWeek } = calculateDaysRemaining(data.date);
+
+      if (isThisWeek) {
+        let userMeta = userCache.get(data.uid);
+        if (!userMeta) {
+          try {
+            const userDoc = await db.collection('users').doc(data.uid).get();
+            const userData = userDoc.data() || {};
+            userMeta = {
+              name: String(userData.name || 'Patron'),
+              phone: String(userData.phone || ''),
+            };
+          } catch {
+            userMeta = { name: 'Patron', phone: '' };
+          }
+          userCache.set(data.uid, userMeta);
+        }
+
+        const { waUrl, message, suggestions } = generateOccasionWhatsAppLink(
+          userMeta.name,
+          userMeta.phone,
+          data.recipientName,
+          data.relationship,
+          data.occasionType,
+          daysRemaining,
+          targetDateFormatted,
+          publicOrigin
+        );
+
+        rows.push({
+          reminderId: doc.id,
+          uid: data.uid,
+          customerName: userMeta.name,
+          customerPhone: userMeta.phone,
+          recipientName: data.recipientName,
+          relationship: data.relationship,
+          occasionType: data.occasionType,
+          customOccasion: data.customOccasion,
+          rawDate: data.date,
+          daysRemaining,
+          targetDateFormatted,
+          notes: data.notes,
+          whatsAppUrl: waUrl,
+          prefilledMessage: message,
+          suggestions,
+        });
+      }
+    }
+
+    // Sort by soonest first
+    rows.sort((a, b) => a.daysRemaining - b.daysRemaining);
+
+    res.json({ success: true, count: rows.length, reminders: rows });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Server error retrieving upcoming reminders', code: 'SERVER_ERROR' });
+  }
 });
 
 // Authenticated customer loyalty profile
