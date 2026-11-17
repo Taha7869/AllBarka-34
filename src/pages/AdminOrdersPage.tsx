@@ -55,7 +55,52 @@ function PackingPreview({ orders, onClose }: { orders: AdminOrderSummary[]; onCl
   const { t, language } = useAdminLanguage();
   return <AdminDialog title={t('admin.packingTitle')} onClose={onClose} packing>
     <div className="admin-print-actions"><p dir="auto">{t('admin.printHint')}</p><button type="button" className="admin-button admin-button-primary" onClick={() => window.print()}><Printer size={16} />{t('admin.printSelected')}</button></div>
-    <div className="admin-print-packet">{orders.map(order => <article className="admin-packing-sheet" key={order.orderId}>
+    <div className="admin-print-packet">{orders.flatMap(order => {
+      if (order.isMultiRecipient && order.shipments && order.shipments.length > 0) {
+        return order.shipments.map((shipment, sIdx) => (
+          <article className="admin-packing-sheet" key={`${order.orderId}-${shipment.shipmentId || sIdx}`}>
+            <header>
+              <div>
+                <p className="admin-eyebrow">AllBarka · {t('admin.packing')} · Multi-Address ({sIdx + 1}/{order.shipments!.length})</p>
+                <h3>{shipment.shipmentId || `${order.orderId}-S${sIdx + 1}`}</h3>
+                <small>Parent Order: {order.orderId}</small>
+                <p>{formatAdminDate(order.createdAt, language)}</p>
+              </div>
+              <OrderBadge value={shipment.status || order.status} />
+            </header>
+            <div className="admin-packing-customer">
+              <h4 dir="auto">{shipment.recipientName}</h4>
+              <p><bdi>{shipment.phone}</bdi></p>
+              <p dir="auto">{shipment.address}, {shipment.city}</p>
+              <p dir="auto">Sender: {order.customer.name} ({order.customer.phone})</p>
+            </div>
+            <table>
+              <thead>
+                <tr><th>{t('admin.table.items')}</th><th>{t('selectWeight')}</th><th>{t('quantity')}</th></tr>
+              </thead>
+              <tbody>
+                {order.items.map((item, index) => (
+                  <tr key={`${item.id}-${index}`}>
+                    <td dir="auto">{item.name}{hamperPackingDetails(item, language, t)}</td>
+                    <td><bdi>{item.selectedWeight}</bdi></td>
+                    <td>□ {item.quantity}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {shipment.giftMessage && (
+              <p className="admin-packing-note" dir="auto">
+                <strong>{t('admin.detail.message')}: </strong>"{shipment.giftMessage}"
+              </p>
+            )}
+            <footer>
+              <span dir="auto">Delivery: Rs. {shipment.shippingFee?.toLocaleString('en-PK')} ({shipment.city})</span>
+              <strong><bdi>{order.paymentMethod === 'cod' ? 'COD' : 'PAID / BANK'}</bdi></strong>
+            </footer>
+          </article>
+        ));
+      }
+      return [<article className="admin-packing-sheet" key={order.orderId}>
       <header><div><p className="admin-eyebrow">AllBarka · {t('admin.packing')}</p><h3>{order.orderId}</h3><p>{formatAdminDate(order.createdAt, language)}</p></div><OrderBadge value={order.status} /></header>
       <div className="admin-packing-customer"><h4 dir="auto">{order.customer.name}</h4><p><bdi>{order.customer.phone}</bdi></p><p dir="auto">{order.customer.address}, {order.customer.city}</p><p dir="auto">{t('admin.detail.deliverySlot')}: {order.customer.deliverySlot || '—'}</p>{order.deliverySchedule?.scheduledDeliveryDate && <p>{t('admin.detail.deliveryDate')}: <bdi>{order.deliverySchedule.scheduledDeliveryDate}</bdi></p>}</div>
       {isAdminQuoteRequest(order) && <p className="admin-packing-note" dir="auto">{t('admin.quote.notice')}</p>}{adminPromoNotes(order, t).map((text, index) => <p className="admin-packing-note" dir="auto" key={`promo-${index}`}>{text}</p>)}<table><thead><tr><th>{t('admin.table.items')}</th><th>{t('selectWeight')}</th><th>{t('quantity')}</th><th>{t('admin.table.total')}</th></tr></thead><tbody>{order.items.map((item, index) => <tr key={`${item.id}-${index}`}><td dir="auto">{item.name}{hamperPackingDetails(item, language, t)}</td><td><bdi>{item.selectedWeight}</bdi></td><td>□ {item.quantity}</td><td><bdi>{isAdminQuoteRequest(order) ? '—' : formatAdminCurrency(item.price * item.quantity)}</bdi></td></tr>)}</tbody></table>
@@ -65,7 +110,7 @@ function PackingPreview({ orders, onClose }: { orders: AdminOrderSummary[]; onCl
       {order.gifting?.giftMessage && <p className="admin-packing-note" dir="auto"><strong>{t('admin.detail.message')}: </strong>{order.gifting.giftMessage}</p>}
       {giftOptionLines((order.gifting as { giftOptions?: GiftOptions } | undefined)?.giftOptions).map(line => <p className="admin-packing-note" key={line}>{line.trim()}</p>)}
       <footer><span dir="auto">{t(`admin.method.${order.paymentMethod}`)} · {t(`admin.payment.${order.paymentStatus}`)}</span><strong><bdi>{formatAdminOrderTotal(order, t)}</bdi></strong></footer>
-    </article>)}</div>
+    </article>]; })}</div>
   </AdminDialog>;
 }
 
@@ -349,6 +394,23 @@ export default function AdminOrdersPage() {
           <div className="admin-detail-toolbar"><div><OrderBadge value={currentOrder.status} /><OrderBadge payment value={currentOrder.paymentStatus} /></div><div><button type="button" className="admin-button" onClick={copyOrder}><Copy size={15} />{t('admin.copy')}</button><button type="button" className="admin-button" disabled={busy} onClick={() => { setPackingOrders([currentOrder]); setSelectedId(null); }}><Printer size={15} />{t('admin.packing')}</button></div></div>
           {isAdminQuoteRequest(currentOrder) && <p className="admin-notice" dir="auto">{t('admin.quote.notice')}</p>}{!!currentOrder.promoCode && <section className="admin-detail-card"><h3 dir="auto">{t('admin.detail.promo')}</h3>{adminPromoNotes(currentOrder, t).map((text, index) => <p key={index} dir="auto">{text}</p>)}</section>}<div className="admin-detail-grid"><section className="admin-detail-card"><h3 dir="auto">{t('admin.detail.customer')}</h3><strong dir="auto">{currentOrder.customer.name}</strong>{adminPhoneHref(currentOrder.customer.phone) ? <a className="admin-phone" href={adminPhoneHref(currentOrder.customer.phone)!}><bdi>{currentOrder.customer.phone}</bdi><ArrowUpRight size={14} /></a> : <p><bdi>{currentOrder.customer.phone}</bdi></p>}<p dir="auto">{currentOrder.customer.address}</p><p dir="auto">{currentOrder.customer.city}</p></section><section className="admin-detail-card"><h3 dir="auto">{t('admin.detail.delivery')}</h3><p><span dir="auto">{t('admin.detail.deliveryDate')}</span><strong><bdi>{currentOrder.deliverySchedule?.scheduledDeliveryDate || '—'}</bdi></strong></p><p dir="auto">{currentOrder.customer.deliverySlot || '—'}</p>{currentOrder.customer.instructions && <div className="admin-detail-note" dir="auto">{currentOrder.customer.instructions}</div>}</section></div>
           <section className="admin-detail-card"><h3 dir="auto">{t('admin.table.items')}</h3><div className="admin-detail-items">{currentOrder.items.map((item, index) => <div key={`${item.id}-${index}`}><div><strong dir="auto">{item.name}</strong><span><bdi>{item.selectedWeight} × {item.quantity}</bdi></span>{hamperPackingDetails(item, language, t)}</div><bdi>{isAdminQuoteRequest(currentOrder) ? '—' : formatAdminCurrency(item.price * item.quantity)}</bdi></div>)}</div>{!isAdminQuoteRequest(currentOrder) && <dl className="admin-total-breakdown">{(['subtotal', 'discount', 'shipping', 'giftWrapFee'] as const).map(key => <div key={key}><dt dir="auto">{t(`admin.detail.${key === 'giftWrapFee' ? 'giftFee' : key}`)}</dt><dd><bdi>{key === 'discount' ? '− ' : ''}{formatAdminCurrency(currentOrder.totals[key])}</bdi></dd></div>)}{typeof currentOrder.totals.shippingWeightGrams === 'number' && <div><dt dir="auto">{t('admin.detail.shippingWeight')}</dt><dd><bdi>{currentOrder.totals.shippingWeightGrams / 1000}kg</bdi></dd></div>}{currentOrder.totals.shippingRegion && <div><dt dir="auto">{t('admin.detail.shippingRegion')}</dt><dd dir="auto">{t(`admin.shippingRegion.${currentOrder.totals.shippingRegion}`)}</dd></div>}<div className="admin-total-final"><dt dir="auto">{t('admin.table.total')}</dt><dd><bdi>{formatAdminOrderTotal(currentOrder, t)}</bdi></dd></div></dl>}</section>
+          {currentOrder.isMultiRecipient && (
+            <section className="admin-detail-card">
+              <h3 dir="auto">Bulk Gifting Shipments ({currentOrder.recipientCount || currentOrder.shipments?.length || 0} Addresses)</h3>
+              <div className="space-y-2 mt-2">
+                {currentOrder.shipments?.map((s, idx) => (
+                  <div key={idx} className="p-2.5 rounded border border-[var(--color-border,#e5e7eb)] text-xs flex flex-wrap justify-between items-start gap-2 bg-[#FDFBF7] dark:bg-black/20">
+                    <div>
+                      <strong>{idx + 1}. {s.recipientName}</strong> <span className="opacity-70">({s.phone})</span>
+                      <p className="mt-0.5">{s.address}, <strong>{s.city}</strong></p>
+                      {s.giftMessage && <p className="italic mt-0.5 opacity-80">Gift Card: "{s.giftMessage}"</p>}
+                    </div>
+                    <span className="font-bold text-[var(--color-gold,#B8935F)]">Delivery: Rs. {s.shippingFee?.toLocaleString('en-PK')}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
           {currentOrder.gifting?.giftWrapping && <section className="admin-detail-card"><h3 dir="auto">{t('admin.detail.gifting')}</h3><p dir="auto">{t('admin.detail.giftWrap')}</p>{currentOrder.gifting.giftMessage && <blockquote dir="auto">{currentOrder.gifting.giftMessage}</blockquote>}{giftOptionLines((currentOrder.gifting as { giftOptions?: GiftOptions }).giftOptions).map(line => <p key={line}>{line.trim()}</p>)}</section>}
           <section className="admin-detail-card">
             <h3 dir="auto" className="flex items-center gap-1.5"><Gift size={16} />{t('admin.detail.giftReveal', 'Private Gift Reveal Link')}</h3>

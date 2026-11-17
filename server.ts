@@ -62,6 +62,7 @@ import { quoteOrderForCustomer } from './src/lib/orderQuote';
 import { createStoreUpdatesRouter } from './src/lib/storeUpdatesRouter';
 import { createN8nCommerceRouter } from './src/lib/n8nCommerceRouter';
 import { requireN8nIntegration } from './src/lib/integrationAuthentication';
+import { validateBulkRecipient, calculateBulkTotals } from './src/lib/bulkGifting';
 import {
   AdminOperationError, validateAdminOrderId, validateAdminStatusInput,
   parseAdminOrderFilters, listAdminOrders, getAdminOrder, sanitizeOrderForAdmin,
@@ -471,15 +472,26 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
         promoContext,
       });
 
+      let totals = validatedOrder.summary;
+      if (req.body.isMultiRecipient && Array.isArray(req.body.recipients) && req.body.recipients.length > 0) {
+        const validatedRecipients = req.body.recipients.map((r: any, i: number) => validateBulkRecipient(r, i));
+        totals = calculateBulkTotals({
+          singleSummary: validatedOrder.summary,
+          recipients: validatedRecipients,
+          shippingMethodId: req.body.shippingMethodId,
+          giftWrapping: Boolean(req.body.giftWrapping),
+        }).totals;
+      }
+
       const currencyFormat = (num: number) => `Rs. ${num.toLocaleString()}`;
       let itemsStr = '';
       validatedOrder.items.forEach((item, index) => {
-        itemsStr += `\n${index + 1}. *${item.name}* (${item.selectedWeight}) x ${item.quantity}${validatedOrder.summary.isQuoteRequest ? '' : ` -> ${currencyFormat(item.price * item.quantity)}`}`;
+        itemsStr += `\n${index + 1}. *${item.name}* (${item.selectedWeight}) x ${item.quantity}${totals.isQuoteRequest ? '' : ` -> ${currencyFormat(item.price * item.quantity)}`}`;
       });
 
-      const standardReceiptMessage = `👑 *ALLBARKA LUXURY BOUTIQUE ORDER* 👑\n\n*Customer:* ${customer.name}\n*Phone:* ${customer.phone}\n*Delivery Address:* ${customer.address}, ${customer.city}\n*Delivery Slot:* ${customer.deliverySlot}\n\n*Selected Items:*${itemsStr}\n\n*Subtotal:* ${currencyFormat(validatedOrder.summary.subtotal)}${validatedOrder.summary.discount > 0 ? `\n*Discount Applied:* -${currencyFormat(validatedOrder.summary.discount)}` : ''}${customer.giftWrapping ? `\n*Gift Wrapping:* +${currencyFormat(validatedOrder.summary.giftWrapFee)}` : ''}\n*Shipping:* ${validatedOrder.summary.shipping === 0 ? 'FREE' : currencyFormat(validatedOrder.summary.shipping)}\n*Total Due:* *${currencyFormat(validatedOrder.summary.total)}*\n*Payment Method:* ${customer.paymentMethod === 'bank' ? 'Bank Transfer' : 'Cash on Delivery'}`;
+      const standardReceiptMessage = `👑 *ALLBARKA LUXURY BOUTIQUE ORDER* 👑\n\n*Customer:* ${customer.name}\n*Phone:* ${customer.phone}\n*Delivery Address:* ${customer.address}, ${customer.city}\n*Delivery Slot:* ${customer.deliverySlot}\n\n*Selected Items:*${itemsStr}\n\n*Subtotal:* ${currencyFormat(totals.subtotal)}${totals.discount > 0 ? `\n*Discount Applied:* -${currencyFormat(totals.discount)}` : ''}${customer.giftWrapping ? `\n*Gift Wrapping:* +${currencyFormat(totals.giftWrapFee)}` : ''}\n*Shipping:* ${totals.shipping === 0 ? 'FREE' : currencyFormat(totals.shipping)}\n*Total Due:* *${currencyFormat(totals.total)}*\n*Payment Method:* ${customer.paymentMethod === 'bank' ? 'Bank Transfer' : 'Cash on Delivery'}`;
 
-      const receiptMessage = validatedOrder.summary.isQuoteRequest
+      const receiptMessage = totals.isQuoteRequest
         ? `*ALLBARKA QUOTE ENQUIRY*\n\n*Customer:* ${customer.name}\n*Phone:* ${customer.phone}\n*Delivery Address:* ${customer.address}, ${customer.city}\n\n*Selected Items:*${itemsStr}\n\nPROMO:CANCER: quote request\nOur team will contact you with your personalized rate.`
         : standardReceiptMessage;
 
@@ -493,7 +505,7 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
           label: 'Place Order via WhatsApp Concierge',
           whatsappUrl: buildAutomatedOrderWhatsAppUrl(receiptMessage)
         },
-        totals: validatedOrder.summary,
+        totals,
         items: validatedOrder.items
       });
     }

@@ -26,6 +26,7 @@ import { getN8nOrderDispatchConfig } from '../services/n8nOrderNotification';
 import { getN8nStatusDispatchConfig } from '../services/n8nStatusNotification';
 import { calculateLoyaltyPoints } from './loyaltyPoints';
 import { storedOrderStatus } from './orderStatuses';
+import { validateBulkRecipient, calculateBulkTotals, MAX_BULK_RECIPIENTS, type BulkRecipient, type BulkChildShipment } from './bulkGifting';
 import { validateOrderUpdate, orderUpdateHash, canonicalIntegrationStatus, integrationStatus,
   type OrderUpdateCommand, type OrderUpdateResult } from './orderUpdateCommand';
 import { buildWhatsAppPhoneIndex, buildWhatsAppStatusNotification } from './whatsappCommerce';
@@ -213,10 +214,34 @@ export async function createDurableOrder({
       validated.summary = applied.summary;
       rewardDiscount = applied.rewardDiscount;
     }
-    if (expectedFinalTotal !== undefined && expectedFinalTotal !== null && Math.abs(expectedFinalTotal - validated.summary.total) > 1) {
+
+    let finalTotals = validated.summary;
+    let validatedRecipients: BulkRecipient[] | undefined = undefined;
+    let childShipments: BulkChildShipment[] | undefined = undefined;
+
+    if (payload.isMultiRecipient) {
+      if (!Array.isArray(payload.recipients) || payload.recipients.length === 0) {
+        throw new ValidationError('Multi-address order must contain at least 1 recipient.', 'RECIPIENTS_REQUIRED');
+      }
+      if (payload.recipients.length > MAX_BULK_RECIPIENTS) {
+        throw new ValidationError(`Maximum ${MAX_BULK_RECIPIENTS} recipients allowed per order.`, 'MAX_RECIPIENTS_EXCEEDED');
+      }
+      validatedRecipients = payload.recipients.map((r: any, i: number) => validateBulkRecipient(r, i));
+      const bulkResult = calculateBulkTotals({
+        singleSummary: validated.summary,
+        recipients: validatedRecipients,
+        shippingMethodId: (payload.shippingMethodId as any) || 'standard',
+        orderId,
+        giftWrapping: Boolean(payload.giftWrapping),
+      });
+      finalTotals = bulkResult.totals;
+      childShipments = bulkResult.shipments;
+    }
+
+    if (expectedFinalTotal !== undefined && expectedFinalTotal !== null && Math.abs(expectedFinalTotal - finalTotals.total) > 1) {
       throw new QuoteChangedError(
-        `Prices or delivery rates have been refreshed. New total is Rs. ${validated.summary.total.toLocaleString('en-PK')}. Please reconfirm your order.`,
-        validated.summary, validated.items,
+        `Prices or delivery rates have been refreshed. New total is Rs. ${finalTotals.total.toLocaleString('en-PK')}. Please reconfirm your order.`,
+        finalTotals, validated.items,
       );
     }
 
@@ -264,7 +289,7 @@ export async function createDurableOrder({
       },
       ...(deliverySchedule ? { deliverySchedule } : {}),
       items: validated.items,
-      totals: validated.summary,
+      totals: finalTotals,
       couponCode: couponCode || null,
       couponDiscount: validated.summary.discount,
       promoCode: validated.summary.promoCode ?? null,
@@ -277,8 +302,14 @@ export async function createDurableOrder({
       isQuoteRequest,
       rewardId: rewardId || null,
       rewardDiscount,
-      earnedPoints: calculateLoyaltyPoints(validated.summary.total, payload.isWholesale === true, validated.summary.isQuoteRequest === true),
+      earnedPoints: calculateLoyaltyPoints(finalTotals.total, payload.isWholesale === true, validated.summary.isQuoteRequest === true),
       pointsAwarded: false,
+      ...(payload.isMultiRecipient ? {
+        isMultiRecipient: true,
+        recipientCount: validatedRecipients?.length || 0,
+        recipients: validatedRecipients,
+        shipments: childShipments,
+      } : {}),
     };
 
     const whatsappMessage = generateAuthoritativeWhatsAppMessage(canonicalOrder);

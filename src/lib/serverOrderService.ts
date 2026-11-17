@@ -43,6 +43,7 @@ export interface CanonicalGiftingSnapshot {
 }
 
 import { DeliveryScheduleResult } from './deliveryCalendar';
+import type { BulkRecipient, BulkChildShipment } from './bulkGifting';
 
 export interface CanonicalOrder extends Partial<AppliedPromo> {
   orderType?: 'ORDER' | 'QUOTE_REQUEST';
@@ -82,6 +83,10 @@ export interface CanonicalOrder extends Partial<AppliedPromo> {
   integrationNotes?: string;
   adminNotes?: string[];
   adminNoteEntries?: AdminNoteEntry[];
+  isMultiRecipient?: boolean;
+  recipientCount?: number;
+  recipients?: BulkRecipient[];
+  shipments?: BulkChildShipment[];
 }
 
 export interface SanitizedCustomerOrder extends Partial<AppliedPromo> {
@@ -111,6 +116,10 @@ export interface SanitizedCustomerOrder extends Partial<AppliedPromo> {
   estimatedDelivery?: string | null;
   loyaltyPointsEarned?: number;
   loyaltyPointsTotal?: number;
+  isMultiRecipient?: boolean;
+  recipientCount?: number;
+  recipients?: BulkRecipient[];
+  shipments?: BulkChildShipment[];
 }
 
 export interface OutboxOrderEvent {
@@ -204,6 +213,12 @@ export function sanitizeOrderForCustomer(order: CanonicalOrder, whatsappMessage?
     loyaltyPointsEarned: order.pointsAwarded ? order.earnedPoints || 0 : 0,
     claimedAt: order.claimedAt || null,
     whatsappMessage,
+    ...(order.isMultiRecipient ? {
+      isMultiRecipient: true,
+      recipientCount: order.recipientCount || order.recipients?.length || 0,
+      recipients: order.recipients,
+      shipments: order.shipments,
+    } : {}),
   });
 }
 
@@ -269,6 +284,15 @@ export function generateAuthoritativeWhatsAppMessage(order: CanonicalOrder): str
   if (order.customer.instructions) {
     lines.push(``);
     lines.push(`Special Dispatch Note: ${order.customer.instructions}`);
+  }
+
+  if (order.isMultiRecipient && order.shipments && order.shipments.length > 0) {
+    lines.push(``);
+    lines.push(`*BULK GIFTING SHIPMENTS (${order.shipments.length} ADDRESSES):*`);
+    order.shipments.forEach((s, i) => {
+      lines.push(`${i + 1}. ${s.recipientName} (${s.phone}) — ${s.city}`);
+      if (s.giftMessage) lines.push(`   Card: "${s.giftMessage}"`);
+    });
   }
 
   lines.push(``);

@@ -21,6 +21,15 @@ export interface OrderPayload {
   expectedFinalTotal?: number;
   authToken?: string | null;
   idempotencyKey?: string | null;
+  isMultiRecipient?: boolean;
+  recipients?: Array<{
+    id?: string;
+    recipientName: string;
+    phone: string;
+    address: string;
+    city: string;
+    giftMessage?: string;
+  }>;
 }
 
 export interface SupportAction {
@@ -119,20 +128,22 @@ export async function placeOrder(payload: OrderPayload, options: { signal?: Abor
 export async function getOrderQuote(params: {
   items: CartItem[]; city: string; shippingMethodId: string; discountCode?: string | null; rewardId?: string | null;
   giftWrapping?: boolean; isWholesale?: boolean; authToken?: string | null; signal?: AbortSignal;
-}): Promise<{ success: boolean; totals?: any; items?: any[]; earnedPoints?: number; error?: string; code?: string }> {
+  isMultiRecipient?: boolean; recipients?: any[];
+}): Promise<{ success: boolean; totals?: any; items?: any[]; shipments?: any[]; isMultiRecipient?: boolean; recipientCount?: number; earnedPoints?: number; error?: string; code?: string }> {
   try {
     return await withApiDeadline(async signal => {
       const response = await fetch(apiUrl('/api/orders/quote'), {
         method: 'POST', signal,
         headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(params.authToken ? { Authorization: `Bearer ${params.authToken}` } : {}) },
         body: JSON.stringify({ items: requestItems(params.items), city: params.city, shippingMethodId: params.shippingMethodId,
-          discountCode: params.discountCode || null, rewardId: params.rewardId || null, giftWrapping: !!params.giftWrapping, isWholesale: !!params.isWholesale }),
+          discountCode: params.discountCode || null, rewardId: params.rewardId || null, giftWrapping: !!params.giftWrapping, isWholesale: !!params.isWholesale,
+          isMultiRecipient: !!params.isMultiRecipient, recipients: params.recipients || null }),
       });
       const data = await response.json();
       if (!data || typeof data !== 'object' || Array.isArray(data)) return { success: false, code: 'INVALID_QUOTE', error: 'The price check returned an invalid response. Please retry.' };
       if (!response.ok) return { success: false, code: data.code || `HTTP_${response.status}`, error: data.error || 'Failed to calculate quote' };
       if (data.success !== true || !validTotals(data.totals)) return { success: false, code: 'INVALID_QUOTE', error: 'The price check returned inconsistent totals. Please retry.' };
-      return { success: true, totals: data.totals, items: data.items, earnedPoints: data.earnedPoints };
+      return { success: true, totals: data.totals, items: data.items, shipments: data.shipments, isMultiRecipient: data.isMultiRecipient, recipientCount: data.recipientCount, earnedPoints: data.earnedPoints };
     }, 12000, params.signal);
   } catch (error: any) {
     return error?.name === 'AbortError' ? { success: false, code: 'TIMEOUT', error: 'The price check timed out. Please retry.' }

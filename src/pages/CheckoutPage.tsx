@@ -54,6 +54,8 @@ import { useCart, parsePrice, formatPrice } from '../contexts/CartContext';
 import { STORE_CONFIG } from '../config/store';
 import { buildOrderTrackingWhatsAppUrl, buildHumanSupportWhatsAppUrl } from '../config/contacts';
 import { placeOrder, getOrderQuote, type OrderPayload } from '../lib/order';
+import MultiRecipientSection from '../components/MultiRecipientSection';
+import { type BulkRecipient, validateBulkRecipient, calculateBulkTotals, MAX_BULK_RECIPIENTS } from '../lib/bulkGifting';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
@@ -153,8 +155,13 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   const [couponErrorMsg, setCouponErrorMsg] = useState<string | null>(null);
   const [isQuoteRequestMode, setIsQuoteRequestMode] = useState(false);
   const [activeRewards, setActiveRewards] = useState<IssuedPatronReward[]>([]);
+  const [isMultiRecipient, setIsMultiRecipient] = useState(false);
+  const [recipients, setRecipients] = useState<BulkRecipient[]>([]);
 
-  const quoteKey = checkoutQuoteKey({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping, discountCode: appliedCoupon, rewardId: selectedRewardId, isWholesale }, currentUser?.uid || null);
+  const baseQuoteKey = checkoutQuoteKey({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping, discountCode: appliedCoupon, rewardId: selectedRewardId, isWholesale }, currentUser?.uid || null);
+  const quoteKey = isMultiRecipient
+    ? `${baseQuoteKey}:multi:${recipients.length}:${recipients.map(r => `${r.city}:${r.recipientName}`).join(';')}`
+    : baseQuoteKey;
   const pricingKeyRef = React.useRef(quoteKey);
   pricingKeyRef.current = quoteKey;
   const quoteStatusRef = React.useRef({ quote, loading: quoteLoading });
@@ -165,7 +172,8 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
     setQuote(null);
     setQuoteError('');
     if (!online || !cartItems.length || authLoading) { setQuoteLoading(false); return; }
-    if (formData.city.trim().length < 2 || isPlaceholderCity(formData.city)) { setQuoteLoading(false); setQuoteError(t('shipping.enterCity')); return; }
+    if (!isMultiRecipient && (formData.city.trim().length < 2 || isPlaceholderCity(formData.city))) { setQuoteLoading(false); setQuoteError(t('shipping.enterCity')); return; }
+    if (isMultiRecipient && !recipients.length) { setQuoteLoading(false); return; }
     let active = true;
     const controller = new AbortController();
     setQuoteLoading(true); setQuoteError('');
@@ -173,7 +181,19 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
       try {
         const authToken = await getCheckoutAuthToken(currentUser, controller.signal);
         if (!active || controller.signal.aborted) return;
-        const result = await getOrderQuote({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping, discountCode: appliedCoupon, rewardId: selectedRewardId, isWholesale, authToken, signal: controller.signal });
+        const result = await getOrderQuote({
+          items: cartItems,
+          city: isMultiRecipient ? (recipients[0]?.city || 'Lahore') : formData.city,
+          shippingMethodId: activeShippingMethod,
+          giftWrapping: formData.giftWrapping,
+          discountCode: appliedCoupon,
+          rewardId: selectedRewardId,
+          isWholesale,
+          authToken,
+          signal: controller.signal,
+          isMultiRecipient,
+          recipients: isMultiRecipient ? recipients : undefined,
+        });
         if (!active) return;
         if (result.success && result.totals) {
           setQuote({ key: quoteKey, totals: result.totals, items: result.items }); setIsQuoteRequestMode(result.totals.isQuoteRequest === true);
@@ -189,7 +209,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
       } finally { if (active) setQuoteLoading(false); }
     }, 250);
     return () => { active = false; clearTimeout(timer); controller.abort(); };
-  }, [quoteKey, quoteRefresh, online, authLoading, currentUser, activeShippingMethod, appliedCoupon, cartItems, formData.giftWrapping, formData.city, selectedRewardId, isWholesale, t, PRODUCTS]);
+  }, [quoteKey, quoteRefresh, online, authLoading, currentUser, activeShippingMethod, appliedCoupon, cartItems, formData.giftWrapping, formData.city, selectedRewardId, isWholesale, isMultiRecipient, recipients, t, PRODUCTS]);
   useEffect(() => {
     if (currentStep === 'success' || orderSuccessResult) return;
     if (!formData.name && !formData.phone && !formData.address && !formData.giftMessage && !formData.instructions) return;
@@ -347,13 +367,30 @@ const handleInputChange = (field: string, value: any) => {
     const errs: Record<string, string> = {};
     let firstErrorId = '';
 
-    if (!formData.address.trim() || formData.address.trim().length < 8) {
-      errs.address = 'checkout.addressError';
-      firstErrorId = 'checkout-field-address';
-    }
-    if (formData.city.trim().length < 2 || isPlaceholderCity(formData.city)) {
-      errs.city = 'shipping.enterCity';
-      if (!firstErrorId) firstErrorId = 'checkout-field-city';
+    if (!isMultiRecipient) {
+      if (!formData.address.trim() || formData.address.trim().length < 8) {
+        errs.address = 'checkout.addressError';
+        firstErrorId = 'checkout-field-address';
+      }
+      if (formData.city.trim().length < 2 || isPlaceholderCity(formData.city)) {
+        errs.city = 'shipping.enterCity';
+        if (!firstErrorId) firstErrorId = 'checkout-field-city';
+      }
+    } else {
+      if (!recipients.length) {
+        errs.multiRecipient = 'Kam az kam aik recipient ka pata shaamil karein.';
+        firstErrorId = 'checkout-multi-recipient';
+      } else {
+        for (let i = 0; i < recipients.length; i++) {
+          try {
+            validateBulkRecipient(recipients[i], i);
+          } catch (e: any) {
+            errs.multiRecipient = e.message;
+            firstErrorId = 'checkout-multi-recipient';
+            break;
+          }
+        }
+      }
     }
     setErrors(errs);
 
@@ -465,8 +502,8 @@ const handleInputChange = (field: string, value: any) => {
       const orderPayload: OrderPayload = {
         name: formData.name,
         phone: formData.phone,
-        address: formData.address,
-        city: formData.city,
+        address: isMultiRecipient ? (recipients[0]?.address || 'Bulk Gifting (Multiple Addresses)') : formData.address,
+        city: isMultiRecipient ? (recipients[0]?.city || 'Lahore') : formData.city,
         deliverySlot: formData.deliverySlot,
         instructions: formData.instructions,
         giftWrapping: formData.giftWrapping,
@@ -482,7 +519,11 @@ const handleInputChange = (field: string, value: any) => {
         rewardId: selectedRewardId,
         isWholesale,
         expectedFinalTotal: finalPayable,
-        authToken
+        authToken,
+        ...(isMultiRecipient ? {
+          isMultiRecipient: true,
+          recipients: recipients.map((r, i) => validateBulkRecipient(r, i)),
+        } : {}),
       };
       const fingerprint = await checkoutFingerprint(orderPayload, submittedUid);
       // Digest creation is asynchronous: changed account/cart details invalidate the pending submission too.
@@ -998,80 +1039,120 @@ const handleInputChange = (field: string, value: any) => {
                   transition={{ duration: reduceMotion ? 0 : 0.3, ease: [0.16, 1, 0.3, 1] }}
                   className="space-y-4"
                 >
-                  {/* Shipping Address with Locate on Map */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <label htmlFor="checkout-field-address" className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)]/80">
-                        {t('checkout.deliveryAddressLabel')} *
-                      </label>
-                    </div>
-                    <div className="relative">
-                      <MapPin className="absolute start-3.5 top-3 text-[var(--color-gold,#B8935F)]" size={16} />
-                      <input
-                        id="checkout-field-address"
-                        name="address"
-                        autoComplete="shipping street-address"
-                        required
-                        aria-invalid={!!errors.address}
-                        aria-describedby={errors.address ? 'checkout-address-error' : undefined}
-                        type="text"
-                        value={formData.address || ''}
-                        onChange={(e) => handleInputChange('address', e.target.value)}
-                        onBlur={() => handleBlur('address')}
-                        placeholder={t('checkout.addressPlaceholder')}
-                        className={`w-full bg-[var(--color-surface,#FDFBF7)] border rounded-xl py-3 ps-10 pe-3.5 text-base sm:text-sm font-semibold text-[var(--color-ink,#1F120F)] placeholder:text-[var(--color-ink,#1F120F)]/30 focus:outline-none transition-all ${
-                          errors.address
-                            ? 'border-rose-500 ring-2 ring-rose-400/40 bg-rose-50/30 shadow-xs'
-                            : 'border-[var(--color-gold,#B8935F)]/30 focus:border-[var(--color-gold,#B8935F)] focus:ring-1 focus:ring-[var(--color-gold,#B8935F)]'
-                        }`}
-                      />
-                    </div>
-                    {errors.address && (
-                      <p id="checkout-address-error" role="alert" className="text-[10px] text-rose-700 dark:text-rose-300 font-semibold flex items-center gap-1 mt-1">
-                        <AlertCircle size={12} className="shrink-0" />
-                        <span>{t(errors.address)}</span>
-                      </p>
-                    )}
-                    {formData.address.includes('http') && (
-                      <p className="text-[10px] text-[var(--color-gold,#B8935F)] font-bold mt-1 flex items-center gap-1">
-                        <CheckCircle size={12} className="text-[var(--color-gold,#B8935F)]" />
-                        {t('checkout.addressLink')}
-                      </p>
-                    )}
-                  </div>
+                  {/* Multi-Recipient Bulk Gifting Atelier */}
+                  <MultiRecipientSection
+                    isMultiRecipient={isMultiRecipient}
+                    onToggle={(enabled) => {
+                      setIsMultiRecipient(enabled);
+                      if (enabled && recipients.length === 0) {
+                        setRecipients([
+                          {
+                            id: `rec-1-${Date.now().toString(36)}`,
+                            recipientName: formData.name || '',
+                            phone: formData.phone || '',
+                            address: formData.address || '',
+                            city: formData.city || 'Lahore',
+                            giftMessage: formData.giftMessage || '',
+                          },
+                        ]);
+                      }
+                    }}
+                    recipients={recipients}
+                    onChangeRecipients={setRecipients}
+                  />
 
-                  {/* Destination City */}
-                  <div className="space-y-1.5">
-                    <label htmlFor="checkout-field-city" className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)]/80">
-                      {t('shipping.destination')}
-                    </label>
-                    <select
-                      id="checkout-field-city"
-                      name="destinationCity"
-                      autoComplete="shipping address-level2"
-                      required
-                      aria-invalid={!!errors.city}
-                      aria-describedby={errors.city ? 'checkout-city-error' : undefined}
-                      value={DELIVERY_CITIES.includes(formData.city) ? formData.city : 'Other City'}
-                      onChange={(e) => { if (e.target.value === 'Other City') { setShippingCity('Other City'); handleInputChange('city', ''); } else handleInputChange('city', e.target.value); }}
-                      className="w-full bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/30 rounded-xl py-3 px-3.5 text-base sm:text-sm min-h-[44px] font-bold text-[var(--color-ink,#1F120F)] focus:outline-none focus:border-[var(--color-gold,#B8935F)] shadow-2xs cursor-pointer"
-                    >
-                      <option value="Lahore">{t('shipping.lahore')}</option>
-                      <option value="Karachi">{t('city.Karachi')}</option>
-                      <option value="Islamabad">{t('city.Islamabad')}</option>
-                      <option value="Rawalpindi">{t('city.Rawalpindi')}</option>
-                      <option value="Faisalabad">{t('city.Faisalabad')}</option>
-                      <option value="Peshawar">{t('city.Peshawar')}</option>
-                      <option value="Multan">{t('city.Multan')}</option>
-                      <option value="Other City">{t('shipping.outside')}</option>
-                    </select>
-                    {!DELIVERY_CITIES.includes(formData.city) && <label className="block space-y-2 pt-2 text-xs font-semibold">
-                      <span>{t('shipping.actualCity')}</span>
-                      <input id="checkout-actual-city" type="text" name="city" autoComplete="shipping address-level2" required aria-invalid={!!errors.city} aria-describedby={errors.city ? 'checkout-city-error' : undefined} maxLength={60} value={formData.city} onChange={event => handleInputChange('city', event.target.value)} className="focus-ring min-h-11 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-base" />
-                    </label>}
-                    {errors.city && <p id="checkout-city-error" role="alert" className="text-xs text-rose-600">{t(errors.city)}</p>}
-                    {!isQuoteRequestMode && <p className="text-xs leading-relaxed">{t(formData.city === 'Lahore' ? 'shipping.lahoreRule' : 'shipping.nationwideRule')}</p>}
-                  </div>
+                  {errors.multiRecipient && (
+                    <div id="checkout-multi-recipient" role="alert" className="p-3 rounded-xl border border-rose-500/30 bg-rose-50 dark:bg-rose-950/30 text-rose-800 dark:text-rose-200 text-xs font-semibold flex items-center gap-2">
+                      <AlertCircle size={15} className="shrink-0" />
+                      <span>{errors.multiRecipient}</span>
+                    </div>
+                  )}
+
+                  {!isMultiRecipient ? (
+                    <>
+                      {/* Shipping Address with Locate on Map */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <label htmlFor="checkout-field-address" className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)]/80">
+                            {t('checkout.deliveryAddressLabel')} *
+                          </label>
+                        </div>
+                        <div className="relative">
+                          <MapPin className="absolute start-3.5 top-3 text-[var(--color-gold,#B8935F)]" size={16} />
+                          <input
+                            id="checkout-field-address"
+                            name="address"
+                            autoComplete="shipping street-address"
+                            required
+                            aria-invalid={!!errors.address}
+                            aria-describedby={errors.address ? 'checkout-address-error' : undefined}
+                            type="text"
+                            value={formData.address || ''}
+                            onChange={(e) => handleInputChange('address', e.target.value)}
+                            onBlur={() => handleBlur('address')}
+                            placeholder={t('checkout.addressPlaceholder')}
+                            className={`w-full bg-[var(--color-surface,#FDFBF7)] border rounded-xl py-3 ps-10 pe-3.5 text-base sm:text-sm font-semibold text-[var(--color-ink,#1F120F)] placeholder:text-[var(--color-ink,#1F120F)]/30 focus:outline-none transition-all ${
+                              errors.address
+                                ? 'border-rose-500 ring-2 ring-rose-400/40 bg-rose-50/30 shadow-xs'
+                                : 'border-[var(--color-gold,#B8935F)]/30 focus:border-[var(--color-gold,#B8935F)] focus:ring-1 focus:ring-[var(--color-gold,#B8935F)]'
+                            }`}
+                          />
+                        </div>
+                        {errors.address && (
+                          <p id="checkout-address-error" role="alert" className="text-[10px] text-rose-700 dark:text-rose-300 font-semibold flex items-center gap-1 mt-1">
+                            <AlertCircle size={12} className="shrink-0" />
+                            <span>{t(errors.address)}</span>
+                          </p>
+                        )}
+                        {formData.address.includes('http') && (
+                          <p className="text-[10px] text-[var(--color-gold,#B8935F)] font-bold mt-1 flex items-center gap-1">
+                            <CheckCircle size={12} className="text-[var(--color-gold,#B8935F)]" />
+                            {t('checkout.addressLink')}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Destination City */}
+                      <div className="space-y-1.5">
+                        <label htmlFor="checkout-field-city" className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)]/80">
+                          {t('shipping.destination')}
+                        </label>
+                        <select
+                          id="checkout-field-city"
+                          name="destinationCity"
+                          autoComplete="shipping address-level2"
+                          required
+                          aria-invalid={!!errors.city}
+                          aria-describedby={errors.city ? 'checkout-city-error' : undefined}
+                          value={DELIVERY_CITIES.includes(formData.city) ? formData.city : 'Other City'}
+                          onChange={(e) => { if (e.target.value === 'Other City') { setShippingCity('Other City'); handleInputChange('city', ''); } else handleInputChange('city', e.target.value); }}
+                          className="w-full bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#B8935F)]/30 rounded-xl py-3 px-3.5 text-base sm:text-sm min-h-[44px] font-bold text-[var(--color-ink,#1F120F)] focus:outline-none focus:border-[var(--color-gold,#B8935F)] shadow-2xs cursor-pointer"
+                        >
+                          <option value="Lahore">{t('shipping.lahore')}</option>
+                          <option value="Karachi">{t('city.Karachi')}</option>
+                          <option value="Islamabad">{t('city.Islamabad')}</option>
+                          <option value="Rawalpindi">{t('city.Rawalpindi')}</option>
+                          <option value="Faisalabad">{t('city.Faisalabad')}</option>
+                          <option value="Peshawar">{t('city.Peshawar')}</option>
+                          <option value="Multan">{t('city.Multan')}</option>
+                          <option value="Other City">{t('shipping.outside')}</option>
+                        </select>
+                        {!DELIVERY_CITIES.includes(formData.city) && <label className="block space-y-2 pt-2 text-xs font-semibold">
+                          <span>{t('shipping.actualCity')}</span>
+                          <input id="checkout-actual-city" type="text" name="city" autoComplete="shipping address-level2" required aria-invalid={!!errors.city} aria-describedby={errors.city ? 'checkout-city-error' : undefined} maxLength={60} value={formData.city} onChange={event => handleInputChange('city', event.target.value)} className="focus-ring min-h-11 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-base" />
+                        </label>}
+                        {errors.city && <p id="checkout-city-error" role="alert" className="text-xs text-rose-600">{t(errors.city)}</p>}
+                        {!isQuoteRequestMode && <p className="text-xs leading-relaxed">{t(formData.city === 'Lahore' ? 'shipping.lahoreRule' : 'shipping.nationwideRule')}</p>}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="p-3.5 rounded-xl border border-[var(--color-gold,#B8935F)]/25 bg-[#FDFBF7] dark:bg-black/20 text-xs text-[var(--color-ink,#1F120F)]/80 dark:text-[#FDFBF7]/80 flex items-center gap-2">
+                      <Sparkles size={16} className="text-[var(--color-gold,#B8935F)] shrink-0" />
+                      <span>
+                        Multi-Address Mode fa'al hai. Har pate ke liye delivery fee unke shehar ke hisaab se shumar ho rahi hai.
+                      </span>
+                    </div>
+                  )}
 
                   {/* Luxury Shipping Method Selector */}
                   <div className="pt-1">
@@ -1322,7 +1403,7 @@ const handleInputChange = (field: string, value: any) => {
                             {t('checkout.breakdown')}
                           </span>
                           <span className="text-[10px] font-serif font-bold text-[var(--color-gold,#B8935F)]">
-                            {cartItems.length} {t('checkout.items')}
+                            {isMultiRecipient ? `${recipients.length} addresses (${cartItems.length} items each)` : `${cartItems.length} ${t('checkout.items')}`}
                           </span>
                         </div>
 
@@ -1334,7 +1415,7 @@ const handleInputChange = (field: string, value: any) => {
                         </div>
 
                         <div className="flex justify-between text-[11px] text-[var(--color-ink,#1F120F)]/80 dark:text-[#FDFBF7]/80">
-                          <span>{t('checkout.shippingLabel')} ({t(activeShippingMethod === 'standard' ? 'shipping.standard' : 'shipping.express')})</span>
+                          <span>{t('checkout.shippingLabel')} {isMultiRecipient ? `(${recipients.length} destinations)` : `(${t(activeShippingMethod === 'standard' ? 'shipping.standard' : 'shipping.express')})`}</span>
                           <span className={`font-bold ${currentShippingFee === 0 ? 'text-[var(--color-gold,#B8935F)] font-black' : 'text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]'}`}>
                             {!hasEstimate ? t('shipping.pending') : currentShippingFee === 0 ? t('shipping.free') : `Rs. ${currentShippingFee?.toLocaleString()}`}
                           </span>
