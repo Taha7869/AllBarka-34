@@ -69,7 +69,7 @@ test('Bulk Gifting - validateBulkRecipient validates required fields and formats
         },
         3
       ),
-    /Delivery address must be at least 5 characters/
+    /Delivery address must be at least 10 characters/
   );
 });
 

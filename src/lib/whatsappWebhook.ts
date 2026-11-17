@@ -114,7 +114,8 @@ export function createWhatsAppWebhookRouter(options: WhatsAppWebhookOptions = {}
       : (process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || process.env.WHATSAPP_VERIFY_TOKEN);
 
     if (mode === 'subscribe' && verifyToken && token === verifyToken) {
-      return res.status(200).send(challenge);
+      // Plain text only: the challenge is echoed back and must never be rendered as HTML.
+      return res.status(200).type('text/plain').send(String(challenge ?? '').slice(0, 200));
     }
     return res.status(403).json({ ok: false, code: 'FORBIDDEN', error: 'Webhook verification token mismatch.' });
   });
