@@ -617,10 +617,11 @@ app.post('/api/orders/track', orderTrackLimiter, async (req, res) => {
       return res.status(400).json({ error: 'INVALID_INPUT', code: 'INVALID_INPUT' });
     }
 
-    const trimmedOrderId = orderId.trim();
+    const trimmedOrderId = orderId.trim().toUpperCase();
     const trimmedPhoneLast4 = phoneLast4.trim();
 
-    if (!trimmedOrderId || !/^\d{4}$/.test(trimmedPhoneLast4)) {
+    // Only real order ids (AB-YYYYMMDD-XXXXXX) reach Firestore; a '/' or junk id would otherwise throw.
+    if (!/^AB-\d{8}-[0-9A-F]{6}$/.test(trimmedOrderId) || !/^\d{4}$/.test(trimmedPhoneLast4)) {
       return res.status(400).json({ error: 'INVALID_INPUT', code: 'INVALID_INPUT' });
     }
 
