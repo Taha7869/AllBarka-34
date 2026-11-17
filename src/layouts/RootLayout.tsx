@@ -20,6 +20,7 @@ import { usePdpBuyBarVisible } from '../lib/pdpBuyBarSignal';
 import PullToRefresh from '../components/PullToRefresh';
 import CookieNotice from '../components/CookieNotice';
 import PwaInstallBanner from '../components/PwaInstallBanner';
+import CurrencySelector from '../components/CurrencySelector';
 import ThemeToggle from '../components/ThemeToggle';
 import type { InfoPageTab } from '../components/InfoPagesModal';
 import type { PolicyTab } from '../components/PolicyPagesModal';
@@ -337,6 +338,9 @@ export default function RootLayout() {
                 </select>
                 <ChevronDown size={13} className="absolute end-2.5 text-[#C7982F] pointer-events-none" aria-hidden="true" />
               </div>
+
+              {/* Currency selector (Desktop only; mobile uses MobileMenu) */}
+              <CurrencySelector variant="desktop" />
 
               {/* Theme Toggle (Mobile & Desktop) */}
               <ThemeToggle className="min-w-[42px] min-h-[42px] border-[#29231D]/10 dark:border-[#C7982F]/25 bg-[#F6F1EA]/60 dark:bg-[#1A201E]/60 hover:bg-[#C7982F]/15 text-[#042821] dark:text-[#FFFCF7]" />

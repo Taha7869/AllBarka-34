@@ -26,6 +26,7 @@ import { useCart, parsePrice, formatPrice, FREE_SHIPPING_THRESHOLD } from '../co
 import { buildAutomatedOrderWhatsAppUrl } from '../config/contacts';
 import { acquireScrollLock } from '../utils/scrollLock';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 const PREFERRED_PAYMENT_KEY = 'allbarka_preferred_payment';
 
@@ -91,6 +92,7 @@ export default function CartDrawer({
   const PRODUCTS = useCatalogProducts();
   const navigate = useNavigate();
   const { t, isRtl , language } = useLanguage();
+  const { isForeign, formatPrice: formatCurrencyPrice, disclaimer } = useCurrency();
   const mediaCover = useProductMediaCover();
   const context = useCart();
   const reduceMotion = useReducedMotion();
@@ -575,7 +577,21 @@ export default function CartDrawer({
                       <bdi dir="ltr">{estimatedShipping === null ? t('shipping.pending') : formatPrice(subtotal + estimatedShipping)}</bdi>
                     </span>
                   </div>
+                  {isForeign && (
+                    <div className="flex justify-between items-center text-xs text-neutral-500 dark:text-neutral-400">
+                      <span>{t('currency.approximate', 'Approximate')}</span>
+                      <span className="font-mono font-medium">
+                        <bdi dir="ltr">{formatCurrencyPrice(subtotal + (estimatedShipping || 0))}</bdi>
+                      </span>
+                    </div>
+                  )}
                 </div>
+
+                {isForeign && (
+                  <p className="text-[11px] text-center text-neutral-500 dark:text-neutral-400 leading-tight">
+                    ≈ {disclaimer}
+                  </p>
+                )}
 
                 {/* Primary Checkout CTA */}
                 <button

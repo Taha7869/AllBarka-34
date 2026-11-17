@@ -21,6 +21,7 @@ import { ProductMediaProvider } from './contexts/ProductMediaContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { LanguageProvider } from './contexts/LanguageContext';
+import { CurrencyProvider } from './contexts/CurrencyContext';
 import { CartProvider } from './contexts/CartContext';
 import { CatalogProvider } from './contexts/CatalogContext';
 import { MerchandisingProvider } from './contexts/MerchandisingContext';
@@ -53,11 +54,13 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider>
       <LanguageProvider>
-        <AuthProvider>
-          <CatalogProvider><MerchandisingProvider><ProductMediaProvider><CartProvider>
-            <StorefrontContentProvider><App /></StorefrontContentProvider>
-          </CartProvider></ProductMediaProvider></MerchandisingProvider></CatalogProvider>
-        </AuthProvider>
+        <CurrencyProvider>
+          <AuthProvider>
+            <CatalogProvider><MerchandisingProvider><ProductMediaProvider><CartProvider>
+              <StorefrontContentProvider><App /></StorefrontContentProvider>
+            </CartProvider></ProductMediaProvider></MerchandisingProvider></CatalogProvider>
+          </AuthProvider>
+        </CurrencyProvider>
       </LanguageProvider>
     </ThemeProvider>
   </StrictMode>,

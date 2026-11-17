@@ -1,3 +1,4 @@
+import CurrencySelector from './CurrencySelector';
 import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import {useStorefrontContent} from '../contexts/StorefrontContentContext';
 import {contentNavigation} from '../lib/contentPresentation';
@@ -366,6 +367,11 @@ export default function MobileMenu({
                     );
                   })}
                 </div>
+              </div>
+
+              {/* 3b. Currency selector: PKR, GBP, USD, AED */}
+              <div className="border-t border-[#29231D]/8 dark:border-[#F6F1EA]/8 pt-4">
+                <CurrencySelector variant="mobile" />
               </div>
 
               {/* 4. Theme selector: Light, Dark, Auto */}

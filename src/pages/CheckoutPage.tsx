@@ -55,6 +55,7 @@ import { STORE_CONFIG } from '../config/store';
 import { buildOrderTrackingWhatsAppUrl, buildHumanSupportWhatsAppUrl } from '../config/contacts';
 import { placeOrder, getOrderQuote, type OrderPayload } from '../lib/order';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useCurrency } from '../contexts/CurrencyContext';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { PRODUCTS } from '../data/products';
 import { fetchLoyaltyProfile } from '../lib/loyaltyClient';
@@ -83,6 +84,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   const { patronProfile, currentUser, loading: authLoading } = useAuth();
   const onOpenAuth = propsOnOpenAuth || (() => {});
   const { language, t: storefrontTranslation } = useLanguage();
+  const { isForeign, formatPrice: formatCurrencyPrice, disclaimer: currencyDisclaimer } = useCurrency();
   const t = React.useCallback((key: string, fallback = '') => checkoutReliabilityTranslations[language][key] || storefrontTranslation(key, fallback), [language, storefrontTranslation]);
   const mediaCover = useProductMediaCover();
   const [summaryExpanded, setSummaryExpanded] = useState(() => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(min-width:1024px)').matches);
@@ -595,6 +597,19 @@ const handleInputChange = (field: string, value: any) => {
           {discountAmt > 0 && <div><dt>{t('boutique.discount')}</dt><dd>− Rs. {discountAmt.toLocaleString()}</dd></div>}
           {giftFeeTotal > 0 && <div><dt>{t('boutique.wrapping')}</dt><dd>Rs. {giftFeeTotal.toLocaleString()}</dd></div>}
           <div className="boutique-order-total"><dt>{t('total', 'Total')}</dt><dd>{hasEstimate ? `Rs. ${finalPayable.toLocaleString()}` : t('shipping.pending')}</dd></div>
+          {isForeign && (
+            <div className="mt-2 pt-2 border-t border-[var(--color-border)] text-xs text-[var(--color-text-secondary)] space-y-1">
+              <div className="flex justify-between items-center">
+                <span>{t('currency.approximate', 'Approximate')}</span>
+                <span className="font-mono font-bold text-[var(--color-accent-text,#806326)]">
+                  <bdi dir="ltr">{formatCurrencyPrice(finalPayable)}</bdi>
+                </span>
+              </div>
+              <p className="text-[11px] leading-tight text-[var(--color-text-muted)] italic">
+                ≈ {currencyDisclaimer}
+              </p>
+            </div>
+          )}
         </dl>}
         <p>{t('boutique.orderNote')}</p>
       </aside>}
