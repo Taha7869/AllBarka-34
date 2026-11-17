@@ -19,6 +19,7 @@ import StickyCartBottomBar from '../components/StickyCartBottomBar';
 import { usePdpBuyBarVisible } from '../lib/pdpBuyBarSignal';
 import PullToRefresh from '../components/PullToRefresh';
 import CookieNotice from '../components/CookieNotice';
+import PwaInstallBanner from '../components/PwaInstallBanner';
 import ThemeToggle from '../components/ThemeToggle';
 import type { InfoPageTab } from '../components/InfoPagesModal';
 import type { PolicyTab } from '../components/PolicyPagesModal';
@@ -466,6 +467,7 @@ export default function RootLayout() {
       />
       <PullToRefresh disabled={isAdminRoute || isAnyModalOrDrawerOpen || location.pathname === '/checkout'} />
       <CookieNotice hidden={isAdminRoute || isAnyModalOrDrawerOpen || location.pathname === '/checkout' || pdpBuyBarVisible || totalItemsCount > 0} />
+      <PwaInstallBanner hidden={isAdminRoute || isAnyModalOrDrawerOpen || location.pathname === '/checkout' || pdpBuyBarVisible} />
       
       {/* Drawer & Modals */}
       <CartDrawer

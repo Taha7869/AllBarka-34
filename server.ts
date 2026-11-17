@@ -262,6 +262,8 @@ app.use(helmet({
       connectSrc: ["'self'", "https://*.firebaseio.com", "https://*.googleapis.com", "https://*.cloudfunctions.net", "https://*.firebaseapp.com"],
       imgSrc: ["'self'", "data:", "https:*"],
       mediaSrc: ["'self'", "https:"],
+      manifestSrc: ["'self'"],
+      workerSrc: ["'self'"],
     }
   }
 }));
@@ -1041,8 +1043,16 @@ async function startServer() {
     app.use(express.static(distPath, {
       index: false,
       setHeaders(res, filePath) {
-        res.setHeader('Cache-Control', filePath.startsWith(path.join(distPath, 'assets') + path.sep)
-          ? 'public, max-age=31536000, immutable' : 'public, max-age=3600');
+        if (filePath.endsWith('sw.js')) {
+          res.setHeader('Service-Worker-Allowed', '/');
+          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        } else if (filePath.endsWith('.webmanifest')) {
+          res.setHeader('Content-Type', 'application/manifest+json; charset=utf-8');
+          res.setHeader('Cache-Control', 'public, max-age=86400');
+        } else {
+          res.setHeader('Cache-Control', filePath.startsWith(path.join(distPath, 'assets') + path.sep)
+            ? 'public, max-age=31536000, immutable' : 'public, max-age=3600');
+        }
       },
     }));
     // Assets that do not exist on disk must immediately return 404, never falling through to SPA index.html

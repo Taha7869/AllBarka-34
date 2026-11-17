@@ -38,6 +38,15 @@ if (typeof window !== 'undefined') {
       window.location.reload();
     }
   });
+
+  // Register lightweight PWA Service Worker for static asset caching
+  if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {
+        // Safe offline fallback
+      });
+    });
+  }
 }
 
 createRoot(document.getElementById('root')!).render(
