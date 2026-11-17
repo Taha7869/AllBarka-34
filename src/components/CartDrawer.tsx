@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import CartItemPersonalization from './CartItemPersonalization';
 import CartAddButton from './CartAddButton';
+import PaidAddonsSelector from './PaidAddonsSelector';
 import type { CartItem } from '../types';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { useCart, parsePrice, formatPrice, FREE_SHIPPING_THRESHOLD } from '../contexts/CartContext';
@@ -536,6 +537,9 @@ export default function CartDrawer({
                     </button>
                   </div>
                 </div>
+
+                {/* Paid Add-ons Selector (Dynamic, up to 4 most relevant) */}
+                <PaidAddonsSelector compact />
 
                 {/* Loyalty / Auth Catch */}
                 <div className="flex items-center justify-between bg-[#F6F1EA] dark:bg-[#222A28] border border-[#C7982F]/30 p-2.5 rounded-xl">

@@ -144,10 +144,10 @@ test('Order views, WhatsApp message, and n8n projection surface deliveryPhone di
   assert.equal(staffOrder.customer.phone, '+447911123456');
   assert.equal(staffOrder.customer.deliveryPhone, '03009876543');
 
-  const foundByUk = filterAdminOrders([sampleOrder], { queue: 'all', status: 'ALL', paymentStatus: 'ALL', paymentMethod: 'ALL', range: 'all', search: '7911123456', page: 1, limit: 20 });
+  const foundByUk = filterAdminOrders([sampleOrder], { queue: 'all', status: 'ALL', paymentStatus: 'ALL', paymentMethod: 'ALL', range: 'all', search: '7911123456', page: 1, limit: 20, cursor: null });
   assert.equal(foundByUk.length, 1);
 
-  const foundByPk = filterAdminOrders([sampleOrder], { queue: 'all', status: 'ALL', paymentStatus: 'ALL', paymentMethod: 'ALL', range: 'all', search: '03009876543', page: 1, limit: 20 });
+  const foundByPk = filterAdminOrders([sampleOrder], { queue: 'all', status: 'ALL', paymentStatus: 'ALL', paymentMethod: 'ALL', range: 'all', search: '03009876543', page: 1, limit: 20, cursor: null });
   assert.equal(foundByPk.length, 1);
 
   // n8n projection uses Pakistani deliveryPhone for courier `phone` and passes `contactPhone`

@@ -5,6 +5,7 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
+    envDir: process.env.ALLBARKA_SKIP_LOCAL_ENV === 'true' ? false : undefined,
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {

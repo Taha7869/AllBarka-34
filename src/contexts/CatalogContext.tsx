@@ -6,12 +6,14 @@ import { pricingFromLegacy, productFromPricing } from '../lib/catalogSchema';
 import type { Product } from '../types';
 import { HAMPER_BOXES, type HamperBox } from '../lib/hamperCatalog';
 import { HAMPER_BOX_SEEDS, boxFromPricing, validateHamperBoxPricing } from '../lib/hamperBoxSchema';
+import { STARTER_ADDONS, type AddonDefinition } from '../lib/addonsCatalog';
 
 const seeds = PRODUCTS.map(product => ({ ...product }));
-const CatalogContext = createContext({ products: PRODUCTS, hamperBoxes: HAMPER_BOXES, taxonomy: [] as TaxonomyEntry[], hiddenTaxonomy: [] as string[], refresh: async (_options?: { force?: boolean }) => {} });
+const CatalogContext = createContext({ products: PRODUCTS, hamperBoxes: HAMPER_BOXES, addons: STARTER_ADDONS as AddonDefinition[], taxonomy: [] as TaxonomyEntry[], hiddenTaxonomy: [] as string[], refresh: async (_options?: { force?: boolean }) => {} });
 export function CatalogProvider({ children, initialProducts, initialTaxonomy }: { children: ReactNode; initialProducts?: Product[]; initialTaxonomy?: TaxonomyEntry[] }) {
   const [products, setProducts] = useState<Product[]>(() => initialProducts || PRODUCTS);
   const [hamperBoxes, setHamperBoxes] = useState<HamperBox[]>(() => [...HAMPER_BOXES]);
+  const [addons, setAddons] = useState<AddonDefinition[]>(() => [...STARTER_ADDONS]);
   const [taxonomy,setTaxonomy]=useState<TaxonomyEntry[]>(initialTaxonomy||[]);
   const [hiddenTaxonomy,setHiddenTaxonomy]=useState<string[]>([]);
   const taxonomyFlight=useRef<AbortController|null>(null);
@@ -81,7 +83,7 @@ export function CatalogProvider({ children, initialProducts, initialTaxonomy }: 
       HAMPER_BOXES.splice(0, HAMPER_BOXES.length, ...boxes);
       version.current = data.version;
       setProducts(next);
-      setHamperBoxes(boxes);
+      setHamperBoxes(boxes); if (Array.isArray(data.addons)) setAddons(data.addons);
     } catch { /* A saved bag remains intact; server quotes fail closed if the authoritative store is unavailable. */ }
     finally { clearTimeout(timer); if (inFlight.current === controller) inFlight.current = null; }
   }, []);
@@ -93,10 +95,11 @@ export function CatalogProvider({ children, initialProducts, initialTaxonomy }: 
     window.addEventListener('focus', onFocus);
     return () => { active.current = false; inFlight.current?.abort(); taxonomyFlight.current?.abort(); clearInterval(timer); window.removeEventListener('focus', onFocus); };
   }, [refresh]);
-  return <CatalogContext.Provider value={{ products, hamperBoxes, taxonomy, hiddenTaxonomy, refresh }}>{children}</CatalogContext.Provider>;
+  return <CatalogContext.Provider value={{ products, hamperBoxes, addons, taxonomy, hiddenTaxonomy, refresh }}>{children}</CatalogContext.Provider>;
 }
 export const useCatalogProducts = () => useContext(CatalogContext).products;
 export const useCatalogHamperBoxes = () => useContext(CatalogContext).hamperBoxes || HAMPER_BOXES;
+export const useCatalogAddons = () => useContext(CatalogContext).addons || STARTER_ADDONS;
 export const useCatalogRefresh = () => useContext(CatalogContext).refresh;
 
 export const useCatalogTaxonomy = () => useContext(CatalogContext).taxonomy;

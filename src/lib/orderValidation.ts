@@ -21,6 +21,7 @@ import {
 } from './packagingMoq';
 import { isFilledPackagingVariant, packagingVariantRequiresInquiry, classifyPackagingVariant, calculateFilledGiftEstimate, resolveFilledRecipe } from './filledGiftPricing';
 export { isFilledPackagingVariant, packagingVariantRequiresInquiry };
+import { validateAndPriceAddons, type AddonDefinition, type ValidatedOrderAddon } from './addonsCatalog';
 
 export interface ValidatedOrderItem {
   id: string; // composite cart item id, e.g. "pista-250g"
@@ -42,6 +43,7 @@ export interface ValidatedOrder {
   items: ValidatedOrderItem[];
   summary: PricingSummary;
   earnedPoints: number;
+  addons?: ValidatedOrderAddon[];
 }
 
 export interface CustomerInput {
@@ -171,6 +173,8 @@ export function validateAndPriceOrder({
   hamperBoxes,
   allowInquiryItems = false,
   allowPackagingQuote = false,
+  selectedAddons,
+  addonsCatalog,
 }: {
   items: any[];
   shippingMethodId: string;
@@ -183,6 +187,8 @@ export function validateAndPriceOrder({
   hamperBoxes?: HamperBox[];
   allowInquiryItems?: boolean;
   allowPackagingQuote?: boolean;
+  selectedAddons?: unknown;
+  addonsCatalog?: AddonDefinition[];
 }): ValidatedOrder {
   const permitInquiry = Boolean(allowInquiryItems || allowPackagingQuote);
   if (!Array.isArray(items) || items.length === 0) {
@@ -384,6 +390,13 @@ export function validateAndPriceOrder({
   });
 
   const subtotal = validatedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const addonResult = validateAndPriceAddons({
+    selectedAddons,
+    items: validatedItems,
+    subtotal,
+    ...(addonsCatalog ? { addonsCatalog } : {}),
+    products,
+  });
   const promo = getPromo(discountCode);
   const applied = promo ? evaluatePromo(promo, subtotal, promoContext) : { ...NO_PROMO };
   const discounted = calculateOrderSummary({
@@ -394,16 +407,20 @@ export function validateAndPriceOrder({
     products,
   });
   if (applied.freeShipping) discounted.shipping = 0;
-  discounted.total = discounted.discountedSubtotal + discounted.shipping + discounted.giftWrapFee;
+  if (!applied.isQuoteRequest && addonResult.addonsFee > 0) {
+    discounted.addonsFee = addonResult.addonsFee;
+  }
+  discounted.total = discounted.discountedSubtotal + discounted.shipping + discounted.giftWrapFee + (!applied.isQuoteRequest ? addonResult.addonsFee : 0);
   Object.assign(discounted, applied);
   if (applied.isQuoteRequest) {
     Object.assign(discounted, { subtotal: 0, discount: 0, discountedSubtotal: 0, shipping: 0,
-      giftWrapFee: 0, total: 0, shippingWeightGrams: 0, shippingRegion: isLahoreCity(destination) ? 'lahore' : 'nationwide' });
+      giftWrapFee: 0, ...(discounted.addonsFee !== undefined ? { addonsFee: 0 } : {}), total: 0, shippingWeightGrams: 0, shippingRegion: isLahoreCity(destination) ? 'lahore' : 'nationwide' });
   }
 
   return {
     items: validatedItems,
     summary: discounted,
     earnedPoints: calculateLoyaltyPoints(discounted.total, isWholesale, applied.isQuoteRequest),
+    ...(addonResult.addons.length > 0 ? { addons: addonResult.addons } : {}),
   };
 }

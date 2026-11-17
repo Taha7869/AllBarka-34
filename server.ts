@@ -74,6 +74,8 @@ import { createGiftRevealRouter } from './src/lib/giftRevealRouter';
 import { sanitizeOrderForTracking, sanitizeOrderForReorder, verifyPhoneLast4 } from './src/lib/orderTrackingService';
 import { calculateDaysRemaining, generateOccasionWhatsAppLink, type OccasionReminder, type UpcomingReminderAdminRow } from './src/lib/occasionReminders';
 import { createWhatsAppWebhookRouter } from './src/lib/whatsappWebhook';
+import { createAddonsRouter } from './src/lib/addonsRouter';
+import { addonReceiptLines } from './src/lib/addonsCatalog';
 
 // Load environment variables
 if (process.env.ALLBARKA_SKIP_LOCAL_ENV !== 'true') {
@@ -331,6 +333,7 @@ app.use(express.json({
 app.use(createWhatsAppWebhookRouter());
 app.use(createProductMediaRouter({ getDb: () => db, requireAdmin }));
 app.use(createCatalogConfigurationRouter({ getDb: () => db, requireAdmin }));
+app.use(createAddonsRouter({ getDb: () => db, requireAdmin }));
 app.use(createCatalogRouter({ getDb: () => db, requireAdmin }));
 app.use(createStaffRouter({ getDb: () => db, getAuth: () => adminAuth, requireAuth, requireAdmin }));
 app.use(createStorefrontContentRouter({getDb:()=>db,requireAdmin}));
@@ -483,6 +486,7 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
         giftWrapping: Boolean(req.body.giftWrapping),
         isWholesale: Boolean(req.body.isWholesale && authenticatedUser?.wholesaleEligible),
         promoContext,
+        selectedAddons: req.body.selectedAddons,
       });
 
       let totals = validatedOrder.summary;
@@ -501,8 +505,9 @@ app.post('/api/orders', authenticateOptionalUser, async (req, res) => {
         itemsStr += `\n${index + 1}. *${item.name}* (${item.selectedWeight}) x ${item.quantity}${totals.isQuoteRequest ? '' : ` -> ${currencyFormat(item.price * item.quantity)}`}`;
       });
 
+      const addonsLines = addonReceiptLines(validatedOrder.addons).map(l => `\n${l}`).join('');
       const deliveryPhoneLine = `\n*Delivery Phone (Pakistan):* ${customer.deliveryPhone}`;
-      const standardReceiptMessage = `👑 *ALLBARKA LUXURY BOUTIQUE ORDER* 👑\n\n*Customer:* ${customer.name}\n*Phone:* ${customer.phone}${deliveryPhoneLine}\n*Delivery Address:* ${customer.address}, ${customer.city}\n*Delivery Slot:* ${customer.deliverySlot}\n\n*Selected Items:*${itemsStr}\n\n*Subtotal:* ${currencyFormat(totals.subtotal)}${totals.discount > 0 ? `\n*Discount Applied:* -${currencyFormat(totals.discount)}` : ''}${customer.giftWrapping ? `\n*Gift Wrapping:* +${currencyFormat(totals.giftWrapFee)}` : ''}\n*Shipping:* ${totals.shipping === 0 ? 'FREE' : currencyFormat(totals.shipping)}\n*Total Due:* *${currencyFormat(totals.total)}*\n*Payment Method:* ${customer.paymentMethod === 'bank' ? 'Bank Transfer' : 'Cash on Delivery'}`;
+      const standardReceiptMessage = `👑 *ALLBARKA LUXURY BOUTIQUE ORDER* 👑\n\n*Customer:* ${customer.name}\n*Phone:* ${customer.phone}${deliveryPhoneLine}\n*Delivery Address:* ${customer.address}, ${customer.city}\n*Delivery Slot:* ${customer.deliverySlot}\n\n*Selected Items:*${itemsStr}${addonsLines}\n\n*Subtotal:* ${currencyFormat(totals.subtotal)}${totals.discount > 0 ? `\n*Discount Applied:* -${currencyFormat(totals.discount)}` : ''}${customer.giftWrapping ? `\n*Gift Wrapping:* +${currencyFormat(totals.giftWrapFee)}` : ''}${totals.addonsFee ? `\n*Paid Add-ons:* +${currencyFormat(totals.addonsFee)}` : ''}\n*Shipping:* ${totals.shipping === 0 ? 'FREE' : currencyFormat(totals.shipping)}\n*Total Due:* *${currencyFormat(totals.total)}*\n*Payment Method:* ${customer.paymentMethod === 'bank' ? 'Bank Transfer' : 'Cash on Delivery'}`;
 
       const receiptMessage = totals.isQuoteRequest
         ? `*ALLBARKA QUOTE ENQUIRY*\n\n*Customer:* ${customer.name}\n*Phone:* ${customer.phone}${deliveryPhoneLine}\n*Delivery Address:* ${customer.address}, ${customer.city}\n\n*Selected Items:*${itemsStr}\n\nPROMO:CANCER: quote request\nOur team will contact you with your personalized rate.`

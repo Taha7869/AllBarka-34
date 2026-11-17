@@ -9,6 +9,7 @@ import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import CartTools from '../components/CartTools';
 import SEO from '../components/SEO';
 import CartItemPersonalization from '../components/CartItemPersonalization';
+import PaidAddonsSelector from '../components/PaidAddonsSelector';
 import TrustBadges from '../components/TrustBadges';
 import { buildAutomatedOrderWhatsAppUrl } from '../config/contacts';
 import { hamperPackingLines } from '../lib/hamperCatalog';
@@ -82,6 +83,7 @@ if (!cartItems.length) return <div className="purchase-cart purchase-empty" dir=
           </div><div className="purchase-line-total"><small>{t('purchase.lineTotal')}</small><bdi>{formatPrice(unit*item.quantity)}</bdi></div>
         </article>;
       })}
+      <PaidAddonsSelector />
       <Link className="purchase-continue" to="/shop"><ArrowRight size={16}/>{t('continueShopping')}</Link>
     </section><aside className="purchase-cart-summary" aria-label={t('purchase.summary')}>
       <div className="purchase-summary-heading"><p className="purchase-eyebrow">{t('purchase.estimate')}</p><h2>{t('purchase.summary')}</h2></div>

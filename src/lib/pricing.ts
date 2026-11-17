@@ -24,6 +24,7 @@ export interface PricingSummary extends Partial<AppliedPromo> {
   discountedSubtotal: number;
   shipping: number;
   giftWrapFee: number;
+  addonsFee?: number;
   total: number;
   shippingWeightGrams?: number | null;
   shippingRegion?: 'lahore' | 'nationwide';

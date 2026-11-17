@@ -1,7 +1,8 @@
 import AdminContentPanel from '../components/AdminContentPanel';
 import AdminDialog from '../components/AdminWorkspaceDialog';
 import AdminStaffPanel from '../components/AdminStaffPanel';
-import AdminRemindersPanel from '../components/AdminRemindersPanel';
+import AdminRemindersPanel from '../components/AdminRemindersPanel';
+import AdminAddonsPanel from '../components/AdminAddonsPanel';
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowDownToLine, ArrowUpRight, BarChart3, Bell, CalendarHeart, Check, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Copy, CreditCard, Eye, Gift, LayoutDashboard, Link2, LockKeyhole, MessageSquareQuote, Package, Printer, RefreshCw, Search, ShieldCheck, Truck, X } from 'lucide-react';
@@ -20,7 +21,8 @@ import type { CanonicalOrder, OrderStatus, PaymentStatus } from '../lib/serverOr
 import { PRODUCTS } from '../data/products';
 import { getLocalized } from '../utils/localize';
 import { resolveHamper } from '../lib/hamperCatalog';
-import { orderDeliveryPhone } from '../lib/phoneRules';
+import { orderDeliveryPhone } from '../lib/phoneRules';
+import { addonReceiptLines } from '../lib/addonsCatalog';
 import '../styles/admin.css';
 
 const STATUSES: OrderStatus[] = ['ORDER_RECEIVED', 'CONFIRMED', 'PREPARING', 'DISPATCHED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED', 'QUOTE_REQUESTED'];
@@ -32,7 +34,7 @@ type Ledger = {
   orders: AdminOrderSummary[]; page: number; totalCount: number; totalPages: number; asOf: string; scannedCount: number; truncated: boolean;
   metrics: { count: number; activeCount: number; deliveredCount: number; cancelledCount: number; orderValue: number; paidValue: number; unpaidValue: number; bankPendingCount: number; statusCounts: Partial<Record<OrderStatus, number>> };
 };
-type Tab = 'overview' | 'orders' | 'catalogue' | 'updates' | 'inquiries' | 'reminders' | 'demand' | 'team' | 'content';
+type Tab = 'overview' | 'orders' | 'catalogue' | 'addons' | 'updates' | 'inquiries' | 'reminders' | 'demand' | 'team' | 'content';
 type Mutation = { type: 'status' | 'payment'; target: string };
 
 function hamperPackingDetails(item: CanonicalOrder['items'][number], language: LanguageCode, t: (key: string) => string) {
@@ -109,7 +111,7 @@ function PackingPreview({ orders, onClose }: { orders: AdminOrderSummary[]; onCl
       {order.customer.instructions && <p className="admin-packing-note" dir="auto"><strong>{t('admin.detail.instructions')}: </strong>{order.customer.instructions}</p>}
       <p dir="auto">{order.gifting?.giftWrapping ? t('admin.detail.giftWrap') : t('admin.detail.noGiftWrap')}</p>
       {order.gifting?.giftMessage && <p className="admin-packing-note" dir="auto"><strong>{t('admin.detail.message')}: </strong>{order.gifting.giftMessage}</p>}
-      {giftOptionLines((order.gifting as { giftOptions?: GiftOptions } | undefined)?.giftOptions).map(line => <p className="admin-packing-note" key={line}>{line.trim()}</p>)}
+      {giftOptionLines((order.gifting as { giftOptions?: GiftOptions } | undefined)?.giftOptions).map(line => <p className="admin-packing-note" key={line}>{line.trim()}</p>)}{addonReceiptLines(order.addons).map(line => <p className="admin-packing-note" key={line} dir="auto">{line}</p>)}
       <footer><span dir="auto">{t(`admin.method.${order.paymentMethod}`)} · {t(`admin.payment.${order.paymentStatus}`)}</span><strong><bdi>{formatAdminOrderTotal(order, t)}</bdi></strong></footer>
     </article>]; })}</div>
   </AdminDialog>;
@@ -120,7 +122,7 @@ export default function AdminOrdersPage() {
   const { t, language, setLanguage } = useAdminLanguage();
   const { t: updateT } = useLanguage();
   const [params, setParams] = useSearchParams();
-  const tab: Tab = ['catalogue', 'orders', 'updates', 'inquiries', 'demand', 'team', 'content'].includes(params.get('view') || '') ? params.get('view') as Tab : 'overview';
+  const tab: Tab = ['catalogue', 'addons', 'orders', 'updates', 'inquiries', 'reminders', 'demand', 'team', 'content'].includes(params.get('view') || '') ? params.get('view') as Tab : 'overview';
   const status = STATUSES.includes(params.get('status') as OrderStatus) ? params.get('status')! : 'ALL';
   const payment = PAYMENTS.includes(params.get('paymentStatus') as PaymentStatus) ? params.get('paymentStatus')! : 'ALL';
   const method = ['cod', 'bank', 'quote'].includes(params.get('paymentMethod') || '') ? params.get('paymentMethod')! : 'ALL';
@@ -349,12 +351,12 @@ export default function AdminOrdersPage() {
 
   return <div className="admin-workspace" dir="ltr">
     <aside className="admin-sidebar"><div className="admin-sidebar-brand"><AllBarkaCrestVector className="w-9 h-12" /><div><strong>AllBarka</strong><p dir="auto">{t('admin.operations')}</p></div></div>
-      <nav aria-label={t('admin.workspace')}>{([{ key: 'overview', icon: LayoutDashboard }, { key: 'orders', icon: ClipboardList }, { key: 'inquiries', icon: MessageSquareQuote }, { key: 'reminders', icon: CalendarHeart }, { key: 'demand', icon: BarChart3 }, { key: 'catalogue', icon: Package }, { key: 'updates', icon: Bell }, { key: 'team', icon: ShieldCheck }, { key: 'content', icon: Eye }] as const).map(({ key, icon: Icon }) => <button type="button" key={key} aria-current={tab === key ? 'page' : undefined} className={tab === key ? 'active' : ''} onClick={() => changeFilters({ view: key })}><Icon size={18} /><span dir="auto">{key === 'content' ? t('content.title') : key === 'team' ? t('staff.team') : key === 'updates' ? updateT('updates.adminTitle') : key === 'inquiries' ? 'Bargain Desk & Quotes' : key === 'reminders' ? 'Reminders & WhatsApp' : key === 'demand' ? 'Customer demand' : t(`admin.${key}`)}</span>{key === 'orders' && metrics && <span className="admin-nav-count">{metrics.count}</span>}</button>)}</nav>
+      <nav aria-label={t('admin.workspace')}>{([{ key: 'overview', icon: LayoutDashboard }, { key: 'orders', icon: ClipboardList }, { key: 'inquiries', icon: MessageSquareQuote }, { key: 'reminders', icon: CalendarHeart }, { key: 'demand', icon: BarChart3 }, { key: 'catalogue', icon: Package }, { key: 'addons', icon: Gift }, { key: 'updates', icon: Bell }, { key: 'team', icon: ShieldCheck }, { key: 'content', icon: Eye }] as const).map(({ key, icon: Icon }) => <button type="button" key={key} aria-current={tab === key ? 'page' : undefined} className={tab === key ? 'active' : ''} onClick={() => changeFilters({ view: key })}><Icon size={18} /><span dir="auto">{key === 'content' ? t('content.title') : key === 'team' ? t('staff.team') : key === 'updates' ? updateT('updates.adminTitle') : key === 'inquiries' ? 'Bargain Desk & Quotes' : key === 'reminders' ? 'Reminders & WhatsApp' : key === 'demand' ? 'Customer demand' : key === 'addons' ? t('admin.tab.addons') : t(`admin.${key}`)}</span>{key === 'orders' && metrics && <span className="admin-nav-count">{metrics.count}</span>}</button>)}</nav>
       <div className="admin-sidebar-bottom"><ShieldCheck size={21} /><strong dir="auto">{t('admin.security')}</strong><p dir="auto">{t('admin.privacy')}</p><bdi>{currentUser.email || currentUser.phoneNumber}</bdi><Link to="/" className="admin-store-link"><span dir="auto">{t('admin.returnStore')}</span><ArrowUpRight size={16} /></Link></div>
     </aside>
     <div className="admin-main">
       <header className="admin-page-heading"><div><p className="admin-eyebrow" dir="auto">{t('admin.workspace')}</p><h1 dir="auto">{tab === 'content' ? t('content.title') : tab === 'team' ? t('staff.team') : tab === 'updates' ? updateT('updates.adminTitle') : tab === 'inquiries' ? 'Inquiries & Custom Quotes (Bargain Desk)' : tab === 'reminders' ? 'Is Hafte Ke Reminders (WhatsApp Concierge)' : tab === 'demand' ? 'Customer demand' : t(`admin.${tab}`)}</h1><p dir="auto">{tab === 'content' ? t('content.hint') : tab === 'team' ? t('staff.teamHint') : tab === 'updates' ? updateT('updates.adminHint') : tab === 'reminders' ? 'Patrons ke aane wale mauqe (7 dinon mein) aur unke liye tayar kiye gaye WhatsApp greetings.' : tab === 'demand' ? 'What customers view, add to the bag, ask quotes for and order, so you can stock and price by real demand.' : tab === 'inquiries' ? 'Review customer bargain offers for Bid Boxes, wholesale requests, custom hampers, and pitch rates directly on WhatsApp.' : t(tab === 'catalogue' ? 'admin.catalog.hint' : tab === 'orders' ? 'admin.ordersHint' : 'admin.overviewHint')}</p></div><div className="admin-heading-actions">{languageSelect}{tab !== 'catalogue' && tab !== 'updates' && tab !== 'inquiries' && tab !== 'reminders' && tab !== 'demand' && tab !== 'team' && tab !== 'content' && <button type="button" className="admin-button" disabled={loading} onClick={() => setRefresh(value => value + 1)}><RefreshCw size={16} className={loading ? 'admin-loading-spin' : ''} /><span dir="auto">{t('admin.refresh')}</span></button>}</div></header>
-      {tab === 'content' ? <AdminContentPanel onDirtyChange={setContentDirty} /> : tab === 'team' ? <AdminStaffPanel /> : tab === 'catalogue' ? <AdminCatalogPanel /> : tab === 'updates' ? <AdminUpdatesPanel /> : tab === 'inquiries' ? <AdminInquiriesPanel /> : tab === 'reminders' ? <AdminRemindersPanel /> : tab === 'demand' ? <AdminDemandPanel /> : <>
+      {tab === 'content' ? <AdminContentPanel onDirtyChange={setContentDirty} /> : tab === 'team' ? <AdminStaffPanel /> : tab === 'catalogue' ? <AdminCatalogPanel /> : tab === 'addons' ? <AdminAddonsPanel /> : tab === 'updates' ? <AdminUpdatesPanel /> : tab === 'inquiries' ? <AdminInquiriesPanel /> : tab === 'reminders' ? <AdminRemindersPanel /> : tab === 'demand' ? <AdminDemandPanel /> : <>
         {filters}
         <div className="admin-sync-line"><span dir="auto">{t('admin.filteredScope')}</span><span dir="auto">{ledger?.asOf ? t('admin.lastSynced').replace('{time}', formatAdminDate(ledger.asOf, language)) : '—'}</span></div>
         {queue !== 'all' && <div className="admin-queue-filter"><span dir="auto">{t(`admin.queue.${queue === 'bank-pending' ? 'payments' : queue}`)}</span><button type="button" className="admin-icon-button" aria-label={t('admin.clearQueue')} onClick={() => changeFilters({ queue: 'all' })}><X size={15} /></button></div>}
@@ -412,7 +414,7 @@ export default function AdminOrdersPage() {
               </div>
             </section>
           )}
-          {currentOrder.gifting?.giftWrapping && <section className="admin-detail-card"><h3 dir="auto">{t('admin.detail.gifting')}</h3><p dir="auto">{t('admin.detail.giftWrap')}</p>{currentOrder.gifting.giftMessage && <blockquote dir="auto">{currentOrder.gifting.giftMessage}</blockquote>}{giftOptionLines((currentOrder.gifting as { giftOptions?: GiftOptions }).giftOptions).map(line => <p key={line}>{line.trim()}</p>)}</section>}
+          {(currentOrder.gifting?.giftWrapping || (currentOrder.addons && currentOrder.addons.length > 0)) && <section className="admin-detail-card"><h3 dir="auto">{t('admin.detail.gifting')}</h3>{currentOrder.gifting?.giftWrapping && <p dir="auto">{t('admin.detail.giftWrap')}</p>}{currentOrder.gifting?.giftMessage && <blockquote dir="auto">{currentOrder.gifting.giftMessage}</blockquote>}{giftOptionLines((currentOrder.gifting as { giftOptions?: GiftOptions } | undefined)?.giftOptions).map(line => <p key={line}>{line.trim()}</p>)}{addonReceiptLines(currentOrder.addons).map(line => <p key={line} dir="auto">{line}</p>)}</section>}
           <section className="admin-detail-card">
             <h3 dir="auto" className="flex items-center gap-1.5"><Gift size={16} />{t('admin.detail.giftReveal', 'Private Gift Reveal Link')}</h3>
             <p className="admin-bookkeeping-hint" dir="auto">{t('admin.detail.giftRevealHint', 'Generate a secure, price-free reveal link for the gift recipient to unbox items digitally. Zero prices, billing, or purchaser PII are exposed.')}</p>

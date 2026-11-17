@@ -248,7 +248,7 @@ export function calculateBulkTotals(params: {
     ...scaledSummary,
     shipping: totalShipping,
     giftWrapFee,
-    total: scaledSummary.discountedSubtotal + totalShipping + giftWrapFee,
+    total: scaledSummary.discountedSubtotal + totalShipping + giftWrapFee + (scaledSummary.addonsFee || 0),
     shippingRegion: 'nationwide',
   };
   return { totals, shipments };

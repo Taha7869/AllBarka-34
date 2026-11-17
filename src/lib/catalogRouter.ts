@@ -21,6 +21,7 @@ import {
   publishAdminMerchandising,
   getPublicMerchandising
 } from './catalogStore';
+import { createAddonsRouter, loadAuthoritativeAddons } from './addonsRouter';
 
 export function createCatalogRouter(options: { getDb: () => Firestore | null; requireAdmin: RequestHandler }) {
   const router = Router();
@@ -34,11 +35,13 @@ export function createCatalogRouter(options: { getDb: () => Firestore | null; re
       const publicProducts = snapshot.products
         .filter(isProductPubliclyVisible)
         .map(stripPrivateProductFields);
+      const addonsDoc = await loadAuthoritativeAddons(options.getDb());
+      const activeAddons = addonsDoc.addons.filter(a => a.active && a.price >= 0);
       const etag = `"${snapshot.version}"`;
       response.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
       response.setHeader('ETag', etag);
       if (request.headers['if-none-match'] === etag) return response.status(304).end();
-      return response.json({ products: publicProducts, hamperBoxes: snapshot.hamperBoxes, version: snapshot.version });
+      return response.json({ products: publicProducts, hamperBoxes: snapshot.hamperBoxes, ...(activeAddons.length > 0 ? { addons: activeAddons } : {}), version: snapshot.version });
     } catch (error) {
       response.setHeader('Cache-Control', 'no-store');
       return fail(error, response);
@@ -252,5 +255,6 @@ export function createCatalogRouter(options: { getDb: () => Firestore | null; re
     catch (error) { return fail(error, response); }
   });
 
+  router.use(createAddonsRouter(options));
   return router;
 }

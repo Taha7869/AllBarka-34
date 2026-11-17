@@ -7,8 +7,8 @@
  */
 
 export type ContactPhoneResult =
-  | { valid: true; normalized: string; isPakistani: boolean }
-  | { valid: false; reason: 'REQUIRED' | 'INVALID' };
+  | { valid: true; normalized: string; isPakistani: boolean; reason?: undefined }
+  | { valid: false; reason: 'REQUIRED' | 'INVALID'; normalized?: undefined; isPakistani?: undefined };
 
 const strip = (value: string) => value.replace(/[\s\-().]/g, '');
 
@@ -53,7 +53,8 @@ export type CheckoutPhoneError =
 
 /** Shared decision used by both CheckoutPage and validateCustomerDetails. */
 export function resolveCheckoutPhones(rawPhone: unknown, rawDeliveryPhone: unknown):
-  { ok: true; value: CheckoutPhones } | { ok: false; error: CheckoutPhoneError; field: 'phone' | 'deliveryPhone' } {
+  | { ok: true; value: CheckoutPhones; error?: undefined; field?: undefined }
+  | { ok: false; error: CheckoutPhoneError; field: 'phone' | 'deliveryPhone'; value?: undefined } {
   const contact = normalizeContactPhone(rawPhone);
   if (!contact.valid) return { ok: false, error: contact.reason === 'REQUIRED' ? 'PHONE_REQUIRED' : 'INVALID_PHONE', field: 'phone' };
   const deliveryText = typeof rawDeliveryPhone === 'string' ? rawDeliveryPhone.trim() : '';

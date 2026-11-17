@@ -132,8 +132,11 @@ export function sanitizeOrderForAdmin(order: CanonicalOrder): AdminOrder {
         quantity: item.quantity, price: item.price, earnedPoints: item.earnedPoints,
         ...(hamper ? { hamperConfiguration: hamper.configuration } : {}) };
     }),
+    ...(Array.isArray(order.addons) && order.addons.length ? { addons: order.addons } : {}),
     totals: { subtotal: totals.subtotal, discount: totals.discount, discountedSubtotal: totals.discountedSubtotal,
-      shipping: totals.shipping, giftWrapFee: totals.giftWrapFee, total: totals.total,
+      shipping: totals.shipping, giftWrapFee: totals.giftWrapFee,
+      ...(typeof totals.addonsFee === 'number' && Number.isFinite(totals.addonsFee) && totals.addonsFee > 0 ? { addonsFee: totals.addonsFee } : {}),
+      total: totals.total,
       ...(typeof totals.shippingWeightGrams === 'number' && Number.isSafeInteger(totals.shippingWeightGrams) && totals.shippingWeightGrams >= 0 ? { shippingWeightGrams: totals.shippingWeightGrams } : {}),
       ...(totals.shippingRegion === 'lahore' || totals.shippingRegion === 'nationwide' ? { shippingRegion: totals.shippingRegion } : {}) },
     couponCode: order.couponCode, couponDiscount: order.couponDiscount,

@@ -22,6 +22,7 @@ import { firstOrderPromoContext } from '../server/promoEligibility';
 import { PricingSummary } from './pricing';
 import { applyPatronReward, validateRewardInstanceId } from './rewardPolicy';
 import { loadCatalogForTransaction } from './catalogStore';
+import { loadAddonsForTransaction } from './addonsRouter';
 import { getN8nOrderDispatchConfig } from '../services/n8nOrderNotification';
 import { getN8nStatusDispatchConfig } from '../services/n8nStatusNotification';
 import { calculateLoyaltyPoints } from './loyaltyPoints';
@@ -180,6 +181,9 @@ export async function createDurableOrder({
     // including when the catalog or a previously expected quote has changed after persistence.
     // Serializes first-order eligibility against any competing checkout for this account.
     const catalog = await loadCatalogForTransaction(db, transaction, payload.items);
+    const addonsCatalog = Array.isArray(payload.selectedAddons) && payload.selectedAddons.length > 0
+      ? await loadAddonsForTransaction(db, transaction)
+      : undefined;
     const historySnap = historyRef ? await transaction.get(historyRef) : null;
     const storedCount = historySnap?.data()?.orderCount;
     const orderCount = Number.isSafeInteger(storedCount) && storedCount >= 0 ? storedCount : 0;
@@ -197,7 +201,8 @@ export async function createDurableOrder({
       promoContext,
       products: catalog.products,
       hamperBoxes: catalog.hamperBoxes,
-
+      selectedAddons: payload.selectedAddons,
+      ...(addonsCatalog ? { addonsCatalog } : {}),
     });
     // Persist usage counters only. Firestore never overrides server promotion definitions.
     const couponSnap = couponRef ? await transaction.get(couponRef) : null;
@@ -287,6 +292,7 @@ export async function createDurableOrder({
       },
       ...(deliverySchedule ? { deliverySchedule } : {}),
       items: validated.items,
+      ...(validated.addons?.length ? { addons: validated.addons } : {}),
       totals: finalTotals,
       couponCode: couponCode || null,
       couponDiscount: validated.summary.discount,

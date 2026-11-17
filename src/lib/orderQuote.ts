@@ -4,19 +4,22 @@ import { loadAuthoritativeCatalog } from './catalogStore';
 import { validateAndPriceOrder, ValidationError } from './orderValidation';
 import { applyPatronReward, validateRewardInstanceId } from './rewardPolicy';
 import { calculateBulkTotals, scaleItemsForRecipients, validateRecipientList } from './bulkGifting';
+import { loadAuthoritativeAddons } from './addonsRouter';
 
 /** The HTTP quote and final order transaction share canonical pricing and reward policy. */
 export async function quoteOrderForCustomer(db: Firestore | null, payload: any, user?: { uid?: string; wholesaleEligible?: boolean }) {
-  const { items, city, shippingMethodId, discountCode, rewardId, giftWrapping, isWholesale, isMultiRecipient, recipients } = payload || {};
+  const { items, city, shippingMethodId, discountCode, rewardId, giftWrapping, isWholesale, isMultiRecipient, recipients, selectedAddons } = payload || {};
   const promoContext = await firstOrderPromoContext(db, user?.uid || null, discountCode);
   const catalog = await loadAuthoritativeCatalog(db, { fresh: true });
+  const addonsDoc = Array.isArray(selectedAddons) && selectedAddons.length > 0 ? await loadAuthoritativeAddons(db) : null;
   const bulkRecipients = isMultiRecipient ? validateRecipientList(recipients) : null;
   if (bulkRecipients && rewardId) throw new ValidationError('Patron rewards apply to single-address orders only.', 'REWARD_NOT_FOR_MULTI_ADDRESS');
   const destinationCity = bulkRecipients ? bulkRecipients[0].city : city;
   const pricedItems = bulkRecipients ? scaleItemsForRecipients(items, bulkRecipients.length) : items;
   const validated = validateAndPriceOrder({ items: pricedItems, city: destinationCity, shippingMethodId, discountCode,
     giftWrapping: Boolean(giftWrapping), isWholesale: Boolean(isWholesale && user?.wholesaleEligible), promoContext,
-    products: catalog.products, hamperBoxes: catalog.hamperBoxes, allowInquiryItems: true });
+    products: catalog.products, hamperBoxes: catalog.hamperBoxes, allowInquiryItems: true,
+    selectedAddons, ...(addonsDoc ? { addonsCatalog: addonsDoc.addons } : {}) });
   if (rewardId) {
     if (!user?.uid) throw new ValidationError('Please sign in to use a patron reward.', 'REWARD_REQUIRES_AUTH');
     const snapshot = await db!.collection('users').doc(user.uid).collection('activeRewards').doc(validateRewardInstanceId(rewardId)).get();
@@ -41,11 +44,13 @@ export async function quoteOrderForCustomer(db: Firestore | null, payload: any, 
       isMultiRecipient: true,
       recipientCount: validatedRecipients.length,
       earnedPoints: validated.earnedPoints,
+      ...(validated.addons ? { addons: validated.addons } : {}),
       catalogVersion: catalog.version,
       generatedAt: Date.now(),
     };
   }
 
   return { success: true, totals: validated.summary, items: validated.items, earnedPoints: validated.earnedPoints,
+    ...(validated.addons ? { addons: validated.addons } : {}),
     catalogVersion: catalog.version, generatedAt: Date.now() };
 }

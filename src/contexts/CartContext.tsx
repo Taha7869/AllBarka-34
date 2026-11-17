@@ -1,4 +1,4 @@
-import { useCatalogProducts } from '../contexts/CatalogContext';
+import { useCatalogProducts, useCatalogAddons } from '../contexts/CatalogContext';
 import { trackDemand } from '../lib/demandTracking';
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { CartItem, Product } from '../types';
@@ -14,8 +14,11 @@ import { readCheckoutDraft } from '../lib/checkoutPreferences';
 import { resolveHamper, hamperCartKey, type HamperConfiguration } from '../lib/hamperCatalog';
 import { recordFunnelEvent } from '../lib/funnelTelemetry';
 import { flyItemToCart } from '../utils/cartFlyAnimation';
+import { STARTER_ADDONS, MAX_VISIBLE_ADDONS, type AddonDefinition } from '../lib/addonsCatalog';
+import { apiUrl } from '../lib/apiUrl';
 
 const CART_STORAGE_KEY = 'allbarka_cart_v1';
+const ADDONS_STORAGE_KEY = 'allbarka_selected_addons_v1';
 const DELIVERY_CITY_KEY = 'allbarka_delivery_city';
 export const FREE_SHIPPING_THRESHOLD = STORE_CONFIG.shipping.freeThreshold;
 
@@ -107,6 +110,11 @@ export interface CartContextValue {
   removeFromCart: (cartItemId: string) => void;
   updateQuantity: (cartItemId: string, newQty: number) => void;
   clearCart: () => void;
+  selectedAddons: string[];
+  toggleAddon: (addonId: string) => void;
+  setSelectedAddons: React.Dispatch<React.SetStateAction<string[]>>;
+  addonsCatalog: AddonDefinition[];
+  setAddonsCatalog: React.Dispatch<React.SetStateAction<AddonDefinition[]>>;
   // Legacy alias compatibility
   setCartItems: React.Dispatch<React.SetStateAction<CartItem[]>>;
 }
@@ -115,10 +123,41 @@ const CartContext = createContext<CartContextValue | null>(null);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const PRODUCTS = useCatalogProducts();
+  const catalogAddons = useCatalogAddons();
   const { addToast } = useToast();
   const { t, language } = useLanguage();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCartPulsing, setIsCartPulsing] = useState(false);
+  const [addonsCatalog, setAddonsCatalog] = useState<AddonDefinition[]>(() => catalogAddons || STARTER_ADDONS);
+  useEffect(() => {
+    if (Array.isArray(catalogAddons)) setAddonsCatalog(catalogAddons);
+  }, [catalogAddons]);
+  const [selectedAddons, setSelectedAddons] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const raw = JSON.parse(localStorage.getItem(ADDONS_STORAGE_KEY) || '[]');
+      return Array.isArray(raw) ? raw.filter((x): x is string => typeof x === 'string' && x.trim().length > 0).slice(0, MAX_VISIBLE_ADDONS) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(ADDONS_STORAGE_KEY, JSON.stringify(selectedAddons));
+    } catch { /* private mode */ }
+  }, [selectedAddons]);
+
+  const toggleAddon = useCallback((addonId: string) => {
+    const clean = addonId.trim().toLowerCase();
+    if (!clean) return;
+    setSelectedAddons(prev => {
+      if (prev.includes(clean)) return prev.filter(id => id !== clean);
+      if (prev.length >= MAX_VISIBLE_ADDONS) return prev;
+      return [...prev, clean];
+    });
+  }, []);
   const [shippingCity, updateShippingCity] = useState(() => {
     try { return localStorage.getItem(DELIVERY_CITY_KEY) || readCheckoutDraft()?.customer.city || 'Lahore'; } catch { return readCheckoutDraft()?.customer.city || 'Lahore'; }
   });
@@ -458,8 +497,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const clearCart = useCallback(() => {
     cartItemsRef.current = [];
     setCartItems([]);
+    setSelectedAddons([]);
     try {
       localStorage.removeItem(CART_STORAGE_KEY);
+      localStorage.removeItem(ADDONS_STORAGE_KEY);
     } catch (e) {
       console.warn('Failed to clear cart in localStorage:', e);
     }
@@ -486,6 +527,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     removeFromCart,
     updateQuantity,
     clearCart,
+    selectedAddons,
+    toggleAddon,
+    setSelectedAddons,
+    addonsCatalog,
+    setAddonsCatalog,
     setCartItems,
   }), [
     cartItems,
@@ -505,6 +551,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     removeFromCart,
     updateQuantity,
     clearCart,
+    selectedAddons,
+    toggleAddon,
+    addonsCatalog,
   ]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

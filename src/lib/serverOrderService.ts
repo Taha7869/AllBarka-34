@@ -11,6 +11,7 @@ import { CUSTOM_HAMPER_PRODUCT_ID, resolveHamper } from './hamperCatalog';
 import { PRODUCTS } from '../data/products';
 import { storedOrderStatus, type StoredOrderStatus } from './orderStatuses';
 import { orderDeliveryPhone } from './phoneRules';
+import { addonReceiptLines, type ValidatedOrderAddon } from './addonsCatalog';
 
 export const SCHEMA_VERSION = '2.0.0';
 
@@ -72,6 +73,7 @@ export interface CanonicalOrder extends Partial<AppliedPromo> {
   gifting: CanonicalGiftingSnapshot;
   deliverySchedule?: DeliveryScheduleResult;
   items: ValidatedOrderItem[];
+  addons?: ValidatedOrderAddon[];
   totals: PricingSummary;
   couponCode?: string | null;
   couponDiscount?: number;
@@ -105,6 +107,7 @@ export interface SanitizedCustomerOrder extends Partial<AppliedPromo> {
   gifting: CanonicalGiftingSnapshot;
   deliverySchedule?: DeliveryScheduleResult;
   items: ValidatedOrderItem[];
+  addons?: ValidatedOrderAddon[];
   totals: PricingSummary;
   couponCode?: string | null;
   couponDiscount?: number;
@@ -204,6 +207,7 @@ export function sanitizeOrderForCustomer(order: CanonicalOrder, whatsappMessage?
     },
     deliverySchedule: order.deliverySchedule,
     items: order.items,
+    ...(Array.isArray(order.addons) && order.addons.length ? { addons: order.addons } : {}),
     totals: order.totals,
     couponCode: order.couponCode || null,
     couponDiscount: order.couponDiscount || 0,
@@ -272,12 +276,16 @@ export function generateAuthoritativeWhatsAppMessage(order: CanonicalOrder): str
     }
   }
   lines.push(...giftOptionLines(order.gifting.giftOptions));
+  lines.push(...addonReceiptLines(order.addons));
 
   lines.push(``);
   lines.push(`*FINANCIAL SUMMARY:*`);
   lines.push(`Merchandise Subtotal: Rs. ${order.totals.subtotal.toLocaleString('en-PK')}`);
   if (order.totals.discount > 0) {
     lines.push(`Discount Applied: -Rs. ${order.totals.discount.toLocaleString('en-PK')}`);
+  }
+  if (order.totals.addonsFee && order.totals.addonsFee > 0) {
+    lines.push(`Paid Add-ons: Rs. ${order.totals.addonsFee.toLocaleString('en-PK')}`);
   }
   lines.push(`Delivery Fee: Rs. ${order.totals.shipping.toLocaleString('en-PK')}${order.totals.shipping === 0 ? ' (Complimentary Threshold Waived)' : ''}`);
   lines.push(`*Total Payable: Rs. ${order.totals.total.toLocaleString('en-PK')}*`);
@@ -325,6 +333,9 @@ function hashCheckoutPayload(payload: any, includeDeliveryPricingIntent: boolean
     giftWrapping: Boolean(payload.giftWrapping),
     giftMessage: payload.giftMessage?.trim() || '',
     ...(normalizeGiftOptions(payload.giftOptions) ? { giftOptions: normalizeGiftOptions(payload.giftOptions) } : {}),
+    ...(Array.isArray(payload.selectedAddons) && payload.selectedAddons.length
+      ? { selectedAddons: payload.selectedAddons.map((x: any) => String(typeof x === 'string' ? x : x?.id || x?.addonId || '').trim().toLowerCase()).filter(Boolean).sort() }
+      : {}),
     instructions: payload.instructions?.trim() || '',
     items: (payload.items || []).map((it: any) => ({
       id: String(it.productId || it.id || '').trim(),

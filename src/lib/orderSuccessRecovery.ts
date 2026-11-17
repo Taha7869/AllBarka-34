@@ -37,12 +37,13 @@ function normalizeReceipt(raw: any, language: LanguageCode, customerUid: string 
   const discount = raw.discount ?? raw.totals?.discount ?? raw.totals?.discountAmt;
   const shipping = raw.shipping ?? raw.totals?.shipping ?? raw.totals?.shippingFee;
   const giftWrapFee = raw.giftWrapFee ?? raw.totals?.giftWrapFee ?? raw.totals?.giftFee ?? 0;
+  const addonsFee = raw.addonsFee ?? raw.totals?.addonsFee ?? 0;
   const totalAmount = raw.totalAmount ?? raw.totals?.total ?? raw.totals?.finalPayable;
   const isQuoteRequest = raw.orderType === 'QUOTE_REQUEST';
   const promoCode = raw.promoCode ?? raw.totals?.promoCode ?? null;
   const promoType = raw.promoType ?? raw.totals?.promoType ?? null;
-  if ([subtotal, discount, shipping, giftWrapFee, totalAmount].some(value => typeof value !== 'number' || !Number.isFinite(value) || value < 0)
-    || discount > subtotal || Math.abs(subtotal - discount + shipping + giftWrapFee - totalAmount) > 1
+  if ([subtotal, discount, shipping, giftWrapFee, addonsFee, totalAmount].some(value => typeof value !== 'number' || !Number.isFinite(value) || value < 0)
+    || discount > subtotal || Math.abs(subtotal - discount + shipping + giftWrapFee + addonsFee - totalAmount) > 1
     || (isQuoteRequest ? promoCode !== 'CANCER' || promoType !== 'quote' || [subtotal, discount, shipping, giftWrapFee, totalAmount].some(value => value !== 0)
       : Math.abs(items.reduce((sum, item) => sum + item.price * item.quantity, 0) - subtotal) > 1)) return null;
   const paymentMethod = raw.paymentMethod || customer.paymentMethod;

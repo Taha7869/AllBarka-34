@@ -21,6 +21,7 @@ export async function checkoutFingerprint(payload: OrderPayload, customerUid: st
     giftWrapping: !!payload.giftWrapping, giftMessage: payload.giftMessage?.trim() || '', paymentMethod: payload.paymentMethod,
     shippingMethodId: payload.shippingMethodId, discountCode: payload.discountCode?.trim().toUpperCase() || null,
     rewardId: payload.rewardId || null, isWholesale: !!payload.isWholesale,
+    ...(Array.isArray(payload.selectedAddons) && payload.selectedAddons.length ? { selectedAddons: [...payload.selectedAddons].sort() } : {}),
     items: payload.items.map(item => ({ id: item.productId || item.id, portion: item.selectedWeight, quantity: item.quantity, hamperConfiguration: item.hamperConfiguration })),
   });
   try {
@@ -34,12 +35,13 @@ export async function checkoutFingerprint(payload: OrderPayload, customerUid: st
 }
 
 /** Quote validity follows the complete pricing request and the verified account identity. */
-export function checkoutQuoteKey(payload: Pick<OrderPayload, 'items' | 'city' | 'shippingMethodId' | 'giftWrapping' | 'discountCode' | 'rewardId' | 'isWholesale'>, customerUid: string | null): string {
+export function checkoutQuoteKey(payload: Pick<OrderPayload, 'items' | 'city' | 'shippingMethodId' | 'giftWrapping' | 'discountCode' | 'rewardId' | 'isWholesale' | 'selectedAddons'>, customerUid: string | null): string {
   return JSON.stringify({
     items: payload.items.map(item => [item.productId, item.selectedWeight, item.quantity, item.unitPrice, item.hamperConfiguration]),
     city: payload.city.trim(), shipping: payload.shippingMethodId, wrapping: !!payload.giftWrapping,
     coupon: payload.discountCode?.trim().toUpperCase() || null, reward: payload.rewardId || null,
     wholesale: !!payload.isWholesale, customerUid,
+    ...(Array.isArray(payload.selectedAddons) && payload.selectedAddons.length ? { addons: [...payload.selectedAddons].sort() } : {}),
   });
 }
 

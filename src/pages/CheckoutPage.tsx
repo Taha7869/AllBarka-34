@@ -64,6 +64,8 @@ import { fetchLoyaltyProfile } from '../lib/loyaltyClient';
 import type { IssuedPatronReward } from '../lib/rewardPolicy';
 import { recordFunnelEvent } from '../lib/funnelTelemetry';
 import { needsPakistaniDeliveryPhone, normalizeContactPhone, normalizePakistaniMobile, resolveCheckoutPhones, PHONE_ERROR_KEYS } from '../lib/phoneRules';
+import PaidAddonsSelector from '../components/PaidAddonsSelector';
+import { validateAndPriceAddons } from '../lib/addonsCatalog';
 
 // Popular Lahore Neighborhoods for Rapid Delivery Pinning
 
@@ -82,7 +84,7 @@ interface CheckoutPageProps {
 export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth: propsOnOpenAuth }: CheckoutPageProps = {}) {
   const PRODUCTS = useCatalogProducts();
   const navigate = useNavigate();
-  const { cartItems, clearCart, shippingCity, setShippingCity } = useCart();
+  const { cartItems, clearCart, shippingCity, setShippingCity, selectedAddons, addonsCatalog } = useCart();
   useEffect(() => { if (isOpen !== false && cartItems.length) trackDemand('checkout_start'); }, [isOpen, cartItems.length > 0]);
   const { patronProfile, currentUser, loading: authLoading } = useAuth();
   const onOpenAuth = propsOnOpenAuth || (() => {});
@@ -160,7 +162,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   const [isMultiRecipient, setIsMultiRecipient] = useState(false);
   const [recipients, setRecipients] = useState<BulkRecipient[]>([]);
 
-  const baseQuoteKey = checkoutQuoteKey({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping, discountCode: appliedCoupon, rewardId: selectedRewardId, isWholesale }, currentUser?.uid || null);
+  const baseQuoteKey = checkoutQuoteKey({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping, discountCode: appliedCoupon, rewardId: selectedRewardId, isWholesale, ...(selectedAddons?.length ? { selectedAddons } : {}) }, currentUser?.uid || null);
   const quoteKey = isMultiRecipient
     ? `${baseQuoteKey}:multi:${recipients.length}:${recipients.map(r => `${r.city}:${r.recipientName}`).join(';')}`
     : baseQuoteKey;
@@ -195,6 +197,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
           signal: controller.signal,
           isMultiRecipient,
           recipients: isMultiRecipient ? recipients : undefined,
+          ...(selectedAddons?.length ? { selectedAddons } : {}),
         });
         if (!active) return;
         if (result.success && result.totals) {
@@ -211,7 +214,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
       } finally { if (active) setQuoteLoading(false); }
     }, 250);
     return () => { active = false; clearTimeout(timer); controller.abort(); };
-  }, [quoteKey, quoteRefresh, online, authLoading, currentUser, activeShippingMethod, appliedCoupon, cartItems, formData.giftWrapping, formData.city, selectedRewardId, isWholesale, isMultiRecipient, recipients, t, PRODUCTS]);
+  }, [quoteKey, quoteRefresh, online, authLoading, currentUser, activeShippingMethod, appliedCoupon, cartItems, formData.giftWrapping, formData.city, selectedRewardId, isWholesale, isMultiRecipient, recipients, selectedAddons, t, PRODUCTS]);
   useEffect(() => {
     if (currentStep === 'success' || orderSuccessResult) return;
     if (!formData.name && !formData.phone && !formData.address && !formData.giftMessage && !formData.instructions) return;
@@ -447,7 +450,17 @@ const handleInputChange = (field: string, value: any) => {
   };
 
   const localSummary = (() => {
-    try { return calculateOrderSummary({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping }); }
+    try {
+      const base = calculateOrderSummary({ items: cartItems, city: formData.city, shippingMethodId: activeShippingMethod, giftWrapping: formData.giftWrapping });
+      if (selectedAddons?.length) {
+        const addonEval = validateAndPriceAddons({ selectedAddons, items: cartItems, subtotal: base.subtotal, addonsCatalog, products: PRODUCTS });
+        if (addonEval.addonsFee > 0) {
+          base.addonsFee = addonEval.addonsFee;
+          base.total += addonEval.addonsFee;
+        }
+      }
+      return base;
+    }
     catch { return null; }
   })();
   const verifiedQuote = quote?.key === quoteKey ? quote.totals : null;
@@ -458,6 +471,7 @@ const handleInputChange = (field: string, value: any) => {
   const currentShippingFee = summary.shipping;
   const selectedMethodObj = SHIPPING_METHODS.find(method => method.id === activeShippingMethod) || SHIPPING_METHODS[0];
   const giftFeeTotal = summary.giftWrapFee;
+  const addonsFeeTotal = summary.addonsFee || 0;
   const finalPayable = summary.total;
   const displayItems = verifiedQuote ? acceptedCheckoutReceipt(cartItems, { subtotal, finalPayable, shippingFee: currentShippingFee, discountAmt, giftFee: giftFeeTotal }, { items: quote?.items }).items : cartItems;
   const appliedPromoMessage = appliedPromotionMessage(verifiedQuote, t) || couponSuccessMsg;
@@ -531,6 +545,7 @@ const handleInputChange = (field: string, value: any) => {
         isWholesale,
         expectedFinalTotal: finalPayable,
         authToken,
+        ...(selectedAddons?.length ? { selectedAddons } : {}),
         ...(isMultiRecipient ? {
           isMultiRecipient: true,
           recipients: recipients.map((r, i) => validateBulkRecipient(r, i)),
@@ -1345,6 +1360,14 @@ const handleInputChange = (field: string, value: any) => {
                     )}
                   </div>
 
+                  {/* Dynamic Paid Add-ons (Matched to bag items, occasion & order value, max 4) */}
+                  <PaidAddonsSelector
+                    occasionContext={{
+                      isGift: formData.giftWrapping,
+                      giftCardStyle: formData.giftCardStyle,
+                    }}
+                  />
+
                   {/* Step 2 Actions */}
                   <div className="flex items-center gap-3 pt-1">
                     <button
@@ -1483,6 +1506,13 @@ const handleInputChange = (field: string, value: any) => {
                           <div className="flex justify-between text-[11px] text-[var(--color-gold,#B8935F)] font-bold">
                             <span>{t('checkout.giftLabel')}</span>
                             <span>{giftFeeTotal === 0 ? t('shipping.free') : `+Rs. ${GIFT_WRAP_FEE}`}</span>
+                          </div>
+                        )}
+
+                        {addonsFeeTotal > 0 && (
+                          <div className="flex justify-between text-[11px] text-[var(--color-gold,#B8935F)] font-bold" data-testid="checkout-addons-fee-row">
+                            <span>{t('checkout.addonsFeeLabel')}</span>
+                            <span>+Rs. {addonsFeeTotal.toLocaleString()}</span>
                           </div>
                         )}
 

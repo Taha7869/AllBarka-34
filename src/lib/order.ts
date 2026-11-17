@@ -31,6 +31,7 @@ export interface OrderPayload {
     city: string;
     giftMessage?: string;
   }>;
+  selectedAddons?: string[];
 }
 
 export interface SupportAction {
@@ -59,9 +60,10 @@ let isOrderInFlight = false;
 
 function validTotals(totals: any): boolean {
   const moneyFields = ['subtotal', 'discount', 'discountedSubtotal', 'shipping', 'giftWrapFee', 'total'];
+  const addonsFee = typeof totals?.addonsFee === 'number' && Number.isFinite(totals.addonsFee) && totals.addonsFee >= 0 ? totals.addonsFee : 0;
   return !!totals && moneyFields.every(key => typeof totals[key] === 'number' && Number.isFinite(totals[key]) && totals[key] >= 0)
     && totals.discount <= totals.subtotal && Math.abs(totals.subtotal - totals.discount - totals.discountedSubtotal) <= 1
-    && Math.abs(totals.discountedSubtotal + totals.shipping + totals.giftWrapFee - totals.total) <= 1
+    && Math.abs(totals.discountedSubtotal + totals.shipping + totals.giftWrapFee + addonsFee - totals.total) <= 1
     && (totals.isQuoteRequest !== true || (totals.promoCode === 'CANCER' && totals.promoType === 'quote'
       && moneyFields.every(key => totals[key] === 0)))
     && (totals.discountAmount === undefined || totals.discountAmount === totals.discount);
@@ -93,6 +95,7 @@ export async function placeOrder(payload: OrderPayload, options: { signal?: Abor
           paymentMethod: payload.paymentMethod,
           items: requestItems(payload.items), shippingMethodId: payload.shippingMethodId, discountCode: payload.discountCode || null,
           rewardId: payload.rewardId || null, isWholesale: !!payload.isWholesale, expectedFinalTotal: payload.expectedFinalTotal,
+          ...(Array.isArray(payload.selectedAddons) && payload.selectedAddons.length ? { selectedAddons: payload.selectedAddons } : {}),
           ...(payload.isMultiRecipient ? { isMultiRecipient: true, recipients: payload.recipients } : {}) }),
       });
       if (!response.headers.get('content-type')?.toLowerCase().includes('application/json')) {
@@ -134,8 +137,8 @@ export async function placeOrder(payload: OrderPayload, options: { signal?: Abor
 export async function getOrderQuote(params: {
   items: CartItem[]; city: string; shippingMethodId: string; discountCode?: string | null; rewardId?: string | null;
   giftWrapping?: boolean; isWholesale?: boolean; authToken?: string | null; signal?: AbortSignal;
-  isMultiRecipient?: boolean; recipients?: any[];
-}): Promise<{ success: boolean; totals?: any; items?: any[]; shipments?: any[]; isMultiRecipient?: boolean; recipientCount?: number; earnedPoints?: number; error?: string; code?: string }> {
+  isMultiRecipient?: boolean; recipients?: any[]; selectedAddons?: string[];
+}): Promise<{ success: boolean; totals?: any; items?: any[]; addons?: any[]; shipments?: any[]; isMultiRecipient?: boolean; recipientCount?: number; earnedPoints?: number; error?: string; code?: string }> {
   try {
     return await withApiDeadline(async signal => {
       const response = await fetch(apiUrl('/api/orders/quote'), {
@@ -143,13 +146,14 @@ export async function getOrderQuote(params: {
         headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(params.authToken ? { Authorization: `Bearer ${params.authToken}` } : {}) },
         body: JSON.stringify({ items: requestItems(params.items), city: params.city, shippingMethodId: params.shippingMethodId,
           discountCode: params.discountCode || null, rewardId: params.rewardId || null, giftWrapping: !!params.giftWrapping, isWholesale: !!params.isWholesale,
-          isMultiRecipient: !!params.isMultiRecipient, recipients: params.recipients || null }),
+          isMultiRecipient: !!params.isMultiRecipient, recipients: params.recipients || null,
+          ...(Array.isArray(params.selectedAddons) && params.selectedAddons.length ? { selectedAddons: params.selectedAddons } : {}) }),
       });
       const data = await response.json();
       if (!data || typeof data !== 'object' || Array.isArray(data)) return { success: false, code: 'INVALID_QUOTE', error: 'The price check returned an invalid response. Please retry.' };
       if (!response.ok) return { success: false, code: data.code || `HTTP_${response.status}`, error: data.error || 'Failed to calculate quote' };
       if (data.success !== true || !validTotals(data.totals)) return { success: false, code: 'INVALID_QUOTE', error: 'The price check returned inconsistent totals. Please retry.' };
-      return { success: true, totals: data.totals, items: data.items, shipments: data.shipments, isMultiRecipient: data.isMultiRecipient, recipientCount: data.recipientCount, earnedPoints: data.earnedPoints };
+      return { success: true, totals: data.totals, items: data.items, addons: data.addons, shipments: data.shipments, isMultiRecipient: data.isMultiRecipient, recipientCount: data.recipientCount, earnedPoints: data.earnedPoints };
     }, 12000, params.signal);
   } catch (error: any) {
     return error?.name === 'AbortError' ? { success: false, code: 'TIMEOUT', error: 'The price check timed out. Please retry.' }
