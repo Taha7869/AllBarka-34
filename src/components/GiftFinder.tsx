@@ -227,6 +227,10 @@ export default function GiftFinder({
                         <img
                           src={mediaCover(product)}
                           alt={getLocalized(product, 'name', language)}
+                          width={300}
+                          height={300}
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                           onError={(e) => {
                             (e.target as HTMLImageElement).src = '/images/product-placeholder.svg';

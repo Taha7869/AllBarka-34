@@ -54,9 +54,9 @@ export function validateBulkRecipient(input: any, index: number): BulkRecipient 
   }
 
   const address = String(input.address || input.street || '').trim();
-  if (address.length < 5) {
+  if (address.length < 10) {
     throw new ValidationError(
-      `Row ${index + 1} (${recipientName}): Delivery address must be at least 5 characters.`,
+      `Row ${index + 1} (${recipientName}): Delivery address must be at least 10 characters.`,
       'INVALID_ADDRESS'
     );
   }

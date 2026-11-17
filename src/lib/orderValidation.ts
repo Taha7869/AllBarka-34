@@ -109,8 +109,8 @@ export function validateCustomerDetails(input: Partial<CustomerInput>, isQuoteRe
   }
 
   const address = typeof input.address === 'string' ? input.address.trim() : '';
-  if (!address || address.length < 8) {
-    throw new ValidationError('Please enter a complete delivery address (minimum 8 characters).', 'INVALID_ADDRESS');
+  if (!address || address.length < 10) {
+    throw new ValidationError('Please enter a complete delivery address (minimum 10 characters).', 'INVALID_ADDRESS');
   }
   if (address.length > 300) {
     throw new ValidationError('Delivery address exceeds maximum allowed length (300 characters).', 'ADDRESS_TOO_LONG');

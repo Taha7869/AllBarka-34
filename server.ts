@@ -73,6 +73,7 @@ import { createDemandAnalyticsRouter, createDemandBuffer } from './src/lib/deman
 import { createGiftRevealRouter } from './src/lib/giftRevealRouter';
 import { sanitizeOrderForTracking, sanitizeOrderForReorder, verifyPhoneLast4 } from './src/lib/orderTrackingService';
 import { calculateDaysRemaining, generateOccasionWhatsAppLink, type OccasionReminder, type UpcomingReminderAdminRow } from './src/lib/occasionReminders';
+import { createWhatsAppWebhookRouter } from './src/lib/whatsappWebhook';
 
 // Load environment variables
 if (process.env.ALLBARKA_SKIP_LOCAL_ENV !== 'true') {
@@ -321,7 +322,13 @@ app.use(createProductUploadRouter({
     return getStorage().bucket(bucketName);
   }
 }));
-app.use(express.json({ limit: '128kb' }));
+app.use(express.json({
+  limit: '128kb',
+  verify: (req: any, _res, buf) => {
+    req.rawBody = buf;
+  }
+}));
+app.use(createWhatsAppWebhookRouter());
 app.use(createProductMediaRouter({ getDb: () => db, requireAdmin }));
 app.use(createCatalogConfigurationRouter({ getDb: () => db, requireAdmin }));
 app.use(createCatalogRouter({ getDb: () => db, requireAdmin }));
@@ -330,11 +337,25 @@ app.use(createStorefrontContentRouter({getDb:()=>db,requireAdmin}));
 app.use(createStoreUpdatesRouter({ getDb: () => db, requireAuth, requireAdmin }));
 app.use(createGiftRevealRouter({ getDb: () => db, getAuth: () => adminAuth, requireAuth, requireAdmin }));
 
+const apiRateLimitResponse = { error: "Too many requests, please try again shortly" };
+const aiRateLimitResponse = { error: 'AI_RATE_LIMITED', code: 'AI_RATE_LIMITED', available: false };
+// Owner rule (16 Nov): each visitor gets 5 AI chat messages a minute; the window resets after 60 seconds.
+const AI_MESSAGES_PER_MINUTE = 5;
+const aiVisitorLimitResponse = { error: 'AI_VISITOR_LIMIT', code: 'AI_VISITOR_LIMIT', available: false, retryAfterSeconds: 60 };
+const aiMessageLimiter = rateLimit({ windowMs: 60 * 1000, max: AI_MESSAGES_PER_MINUTE, message: aiVisitorLimitResponse, standardHeaders: true, legacyHeaders: false });
+const chatLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, message: aiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
+const patronChatLimiter = rateLimit({ windowMs: 60 * 1000, max: AI_MESSAGES_PER_MINUTE, skip: req => !(req as any).user?.uid, keyGenerator: req => (req as any).user?.uid || 'guest', message: aiVisitorLimitResponse, standardHeaders: true, legacyHeaders: false });
+const contactLimiter = rateLimit({ windowMs: 60 * 1000, max: 5, message: apiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
+const ordersLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, message: apiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
+const orderTrackLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, message: apiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
+const authLimiter = rateLimit({ windowMs: 60 * 1000, max: 15, message: apiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
+const couponLimiter = rateLimit({ windowMs: 60 * 1000, max: 20, message: apiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
+
 // Auth & Session Endpoints
-app.post('/api/auth/sessionLogin', async (req, res) => {
+app.post('/api/auth/sessionLogin', authLimiter, async (req, res) => {
   try {
-    const { idToken } = req.body;
-    if (!idToken || !adminAuth) {
+    const { idToken } = req.body || {};
+    if (!idToken || typeof idToken !== 'string' || idToken.length < 10 || idToken.length > 4096 || !adminAuth) {
       return res.status(401).send('UNAUTHORIZED_REQUEST');
     }
 
@@ -351,22 +372,10 @@ app.post('/api/auth/sessionLogin', async (req, res) => {
   }
 });
 
-app.post('/api/auth/sessionLogout', (req, res) => {
+app.post('/api/auth/sessionLogout', authLimiter, (req, res) => {
   res.clearCookie('__session');
   res.json({ status: 'success' });
 });
-
-const apiRateLimitResponse = { error: "Too many requests, please try again shortly" };
-const aiRateLimitResponse = { error: 'AI_RATE_LIMITED', code: 'AI_RATE_LIMITED', available: false };
-// Owner rule (16 Nov): each visitor gets 5 AI chat messages a minute; the window resets after 60 seconds.
-const AI_MESSAGES_PER_MINUTE = 5;
-const aiVisitorLimitResponse = { error: 'AI_VISITOR_LIMIT', code: 'AI_VISITOR_LIMIT', available: false, retryAfterSeconds: 60 };
-const aiMessageLimiter = rateLimit({ windowMs: 60 * 1000, max: AI_MESSAGES_PER_MINUTE, message: aiVisitorLimitResponse, standardHeaders: true, legacyHeaders: false });
-const chatLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, message: aiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
-const patronChatLimiter = rateLimit({ windowMs: 60 * 1000, max: AI_MESSAGES_PER_MINUTE, skip: req => !(req as any).user?.uid, keyGenerator: req => (req as any).user?.uid || 'guest', message: aiVisitorLimitResponse, standardHeaders: true, legacyHeaders: false });
-const contactLimiter = rateLimit({ windowMs: 60 * 1000, max: 5, message: apiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
-const ordersLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, message: apiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
-const orderTrackLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, message: apiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
 
 app.use('/api/chat', aiMessageLimiter);
 app.use('/api/concierge/chat', aiMessageLimiter);
@@ -429,8 +438,11 @@ app.get('/api/commerce/readiness', async (_req, res) => {
 });
 
 // 1.3 API: Authoritative Order Quote Calculation
-app.post('/api/orders/quote', authenticateOptionalUser, async (req, res) => {
+app.post('/api/orders/quote', ordersLimiter, authenticateOptionalUser, async (req, res) => {
   try {
+    if (!req.body || typeof req.body !== 'object') {
+      return res.status(400).json({ error: 'Request body must be a JSON object.', code: 'INVALID_PAYLOAD' });
+    }
     res.set('Cache-Control', 'no-store').json(await quoteOrderForCustomer(db, req.body, (req as any).user));
   } catch (error: any) {
     if (error instanceof CatalogError) return res.status(error.httpStatus).json({ error: 'Current product pricing is temporarily unavailable.', code: error.code });
@@ -713,13 +725,14 @@ app.post('/api/orders/reorder-items', orderTrackLimiter, async (req, res) => {
 });
 
 // 1.8 API: Coupon Preview Endpoint (Rate-Limited, Non-Consuming)
-app.post('/api/coupons/preview', authenticateOptionalUser, async (req, res) => {
+app.post('/api/coupons/preview', couponLimiter, authenticateOptionalUser, async (req, res) => {
   try {
-    const { code, items, city = 'Lahore', shippingMethodId = 'standard', giftWrapping, isWholesale } = req.body;
-    if (!code) {
+    const { code, items, city = 'Lahore', shippingMethodId = 'standard', giftWrapping, isWholesale } = req.body || {};
+    if (!code || typeof code !== 'string') {
       return res.status(400).json({ valid: false, error: 'Coupon code is required.' });
     }
-    const promo = getPromo(code);
+    const cleanCode = code.trim().slice(0, 32);
+    const promo = getPromo(cleanCode);
     if (!promo) throw new ValidationError('Promo code is required.', 'PROMO_REQUIRED');
     const user = (req as any).user;
     const promoContext = await firstOrderPromoContext(db, user?.uid || null, promo.code);

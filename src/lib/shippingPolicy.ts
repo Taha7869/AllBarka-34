@@ -29,6 +29,9 @@ export function validateShippingCity(value: unknown, allowEstimate = false): str
     .includes(city.toLowerCase().replace(/\s+/g, ' '))) {
     throw new ValidationError('Please enter your actual delivery city before requesting a quote.', 'INVALID_CITY');
   }
+  if (!allowEstimate && !/[a-zA-Z\u0600-\u06FF]/.test(city)) {
+    throw new ValidationError('Please enter a valid delivery city containing letters.', 'INVALID_CITY');
+  }
   return city;
 }
 

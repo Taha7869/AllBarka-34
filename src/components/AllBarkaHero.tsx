@@ -184,7 +184,7 @@ export function AllBarkaHero({ onSearch, onSelectCategory }: AllBarkaHeroProps =
                   onMouseDown={event => event.preventDefault()}
                   onClick={() => setSearchOpen(false)}
                 >
-                  <img src={mediaCover(product)} alt="" loading="lazy" />
+                  <img src={mediaCover(product)} alt="" loading="lazy" decoding="async" width={40} height={40} />
                   <span><strong>{getLocalized(product, 'name', language)}</strong><small>{getLocalized(product, 'category', language)}</small></span>
                   {product.quoteOnly ? <span>{t('catalog.requestQuote')}</span> : <bdi dir="ltr">Rs. {startingPrice(product).toLocaleString()}</bdi>}
                 </Link>

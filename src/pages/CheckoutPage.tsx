@@ -67,7 +67,7 @@ import { recordFunnelEvent } from '../lib/funnelTelemetry';
 // Popular Lahore Neighborhoods for Rapid Delivery Pinning
 
 const PREFERRED_PAYMENT_KEY = 'allbarka_preferred_payment';
-const DELIVERY_CITIES = ['Lahore', 'Karachi', 'Islamabad', 'Rawalpindi', 'Faisalabad', 'Peshawar', 'Multan'];
+const DELIVERY_CITIES = ['Lahore', 'Karachi', 'Islamabad', 'Rawalpindi', 'Faisalabad', 'Peshawar', 'Multan', 'Quetta', 'Sialkot', 'Gujranwala', 'Hyderabad'];
 const isPlaceholderCity = (city: string) => /^(other city|outside lahore|nationwide)$/i.test(city.trim());
 
 export type CheckoutStep = 'details' | 'shipping' | 'payment' | 'review' | 'success';
@@ -317,7 +317,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
       else if (!pkPhoneRegex.test(cleanPhone)) err = 'checkout.phoneError';
     }
     if (field === 'address') {
-      if (!formData.address.trim() || formData.address.trim().length < 8) err = 'checkout.addressError';
+      if (!formData.address.trim() || formData.address.trim().length < 10) err = 'checkout.addressError';
     }
     if (err) {
       setErrors(prev => ({ ...prev, [field]: err }));
@@ -368,11 +368,11 @@ const handleInputChange = (field: string, value: any) => {
     let firstErrorId = '';
 
     if (!isMultiRecipient) {
-      if (!formData.address.trim() || formData.address.trim().length < 8) {
+      if (!formData.address.trim() || formData.address.trim().length < 10) {
         errs.address = 'checkout.addressError';
         firstErrorId = 'checkout-field-address';
       }
-      if (formData.city.trim().length < 2 || isPlaceholderCity(formData.city)) {
+      if (formData.city.trim().length < 2 || isPlaceholderCity(formData.city) || !/[a-zA-Z\u0600-\u06FF]/.test(formData.city.trim())) {
         errs.city = 'shipping.enterCity';
         if (!firstErrorId) firstErrorId = 'checkout-field-city';
       }
@@ -1135,6 +1135,10 @@ const handleInputChange = (field: string, value: any) => {
                           <option value="Faisalabad">{t('city.Faisalabad')}</option>
                           <option value="Peshawar">{t('city.Peshawar')}</option>
                           <option value="Multan">{t('city.Multan')}</option>
+                          <option value="Quetta">{t('city.Quetta')}</option>
+                          <option value="Sialkot">{t('city.Sialkot')}</option>
+                          <option value="Gujranwala">{t('city.Gujranwala')}</option>
+                          <option value="Hyderabad">{t('city.Hyderabad')}</option>
                           <option value="Other City">{t('shipping.outside')}</option>
                         </select>
                         {!DELIVERY_CITIES.includes(formData.city) && <label className="block space-y-2 pt-2 text-xs font-semibold">

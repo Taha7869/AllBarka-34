@@ -370,6 +370,7 @@ export default function CategoryCarousel({ settings: propSettings }: CategoryCar
                     className="editorial-category group relative block w-full overflow-hidden border border-[var(--color-border-accent)] bg-[var(--color-surface)] focus-ring hover:border-[#C7982F]/60 pointer-events-auto select-none">
                     <div className="pantry-tile-media absolute inset-0">
                     {category.image ? <img src={category.image} alt={category.title || t(category.altKey, category.name)} draggable={false}
+                      width={400} height={500}
                       onError={({ currentTarget }) => {
                         if (currentTarget.getAttribute('src') !== COLLECTION_IMAGE_PLACEHOLDER) {
                           currentTarget.src = COLLECTION_IMAGE_PLACEHOLDER;

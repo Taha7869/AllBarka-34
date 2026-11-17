@@ -6,6 +6,7 @@ Start here when resuming AllBarka. The table shows open work across the project.
 
 | ID | Open work | Status | Next action and dependency | Detail |
 | --- | --- | --- | --- | --- |
+| SEC-1119 | Pre-launch security hardening: npm audit, WhatsApp webhook timing-safe HMAC, public POST route audit, checkout validation parity, Lighthouse image/chunk optimization | COMPLETE | Branch ag/20261119-prelaunch-hardening ready for Claude review and merge. | [Handoff](handoffs/20261119-prelaunch-hardening.md) |
 | FEAT-1119 | Occasion reminders ('Meri tareekhain') + Multi-address bulk gifting with CSV upload | COMPLETE | Branch ag/20261119-reminders-multiaddress ready for Claude review and merge. | [Handoff](handoffs/20261119-reminders-multiaddress.md) |
 | FEAT-1118 | Reorder button on /track & /success, PWA offline static worker, and multi-currency header chooser | COMPLETE | Branch ag/20261118-reorder-pwa-currency ready for Claude review and merge. | [Handoff](handoffs/20261118-reorder-pwa-currency.md) |
 | LIVE-1116 | Publish the 8 bid boxes and rename the 9 older bundles in live Firestore | TODO | Antigravity runs the two read-only plans, the owner says yes, then `--execute` (see handoff). | [Handoff](handoffs/20261116-claude-owner-decisions.md) |
