@@ -10,15 +10,23 @@ import { intakeProducts20261115 } from '../src/lib/catalogIntake20261115';
 const all: any[] = [...intakeProducts20261110(), ...intakeProducts20261113(), ...intakeProducts20261114(), ...intakeProducts20261115()];
 const byId = new Map(all.map(p => [String(p.id), p]));
 const held = fs.readFileSync('docs/catalog/IMAGE_HOLD_20261119.txt', 'utf8').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-const done = held.filter(id => fs.existsSync(`public/images/held-ai-20261120/${id}.webp`));
+const aiDir = 'public/images/held-ai-20261120';
+const aiIds = fs.existsSync(aiDir)
+  ? fs.readdirSync(aiDir).filter(f => f.endsWith('.webp')).map(f => f.slice(0, -5)).sort()
+  : [];
+const tracked = Array.from(new Set([...aiIds, ...held]));
+const done = tracked.filter(id => fs.existsSync(`${aiDir}/${id}.webp`));
 const pending = held.filter(id => !done.includes(id));
 
 const card = (id: string) => {
   const p = byId.get(id)!;
-  const kb = Math.round(fs.statSync(`public/images/held-ai-20261120/${id}.webp`).size / 1024);
+  const kb = Math.round(fs.statSync(`${aiDir}/${id}.webp`).size / 1024);
+  const oldImg = fs.existsSync(`public/images/drafts-20261118/${id}.webp`)
+    ? `../../public/images/drafts-20261118/${id}.webp`
+    : `../../public${p.image}`;
   const comps = p.isBundle ? `<div class="comps"><strong>Components:</strong> ${(p.componentIds || []).join(', ')}</div>` : '';
   return `      <div class="card" id="ai-${id}">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px"><img src="../../public/images/held-ai-20261120/${id}.webp" alt="${p.name_en} (new AI)" /><img src="../../public${p.image}" alt="old" style="opacity:.55" /></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px"><img src="../../${aiDir}/${id}.webp" alt="${p.name_en} (new AI)" /><img src="${oldImg}" alt="old" style="opacity:.55" /></div>
         <div class="info"><div class="name-en">${p.name_en}</div><div class="name-ur">${p.name_ur || ''}</div>
         <div><span class="id-badge">${id}</span> <span style="font-size:11px;color:#777">NEW AI left, OLD right • ${kb}KB</span></div>${comps}</div>
       </div>`;
@@ -26,7 +34,7 @@ const card = (id: string) => {
 
 const block = `<!--HELD_AI_START-->
   <section id="held-ai">
-    <h2>HOLD items: new AI-generated images (${done.length} of ${held.length})</h2>
+    <h2>HOLD items: new AI-generated images (${done.length} of ${tracked.length})</h2>
     <div class="meta" style="margin-bottom:10px">Left = new AI photo, right (faded) = previous composed image. Still draft; publish waits for owner "haan". Pending: ${pending.length ? pending.join(', ') : 'none'}</div>
     <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(380px,1fr))">
 ${done.map(card).join('\n')}

@@ -126,7 +126,7 @@ test('publish readiness holds back incomplete drafts and executes cleanly on rea
   assert.equal(second.summary.readyToPublish, 0);
 });
 
-test('IMAGE_HOLD_20261119.txt holds back exactly 33 items leaving 122 ready to publish', async () => {
+test('IMAGE_HOLD_20261119.txt holds back the remaining 20 items leaving 135 ready to publish', async () => {
   const holdPath = 'docs/catalog/IMAGE_HOLD_20261119.txt';
   assert.ok(fs.existsSync(holdPath), 'IMAGE_HOLD_20261119.txt must exist');
   const holdIds = new Set(
@@ -136,16 +136,26 @@ test('IMAGE_HOLD_20261119.txt holds back exactly 33 items leaving 122 ready to p
       .map(s => s.trim())
       .filter(s => Boolean(s) && !s.startsWith('#'))
   );
-  assert.equal(holdIds.size, 33, 'IMAGE_HOLD_20261119.txt must contain exactly 33 IDs');
+  assert.equal(holdIds.size, 20, 'IMAGE_HOLD_20261119.txt must contain exactly 20 remaining IDs');
 
+  const ready13 = [
+    'pecans', 'murabba-amla', 'gulkand', 'mulethi-licorice-root', 'saffron-spanish-coupe',
+    'almond-slices', 'ashwagandha', 'dried-shikakai', 'korean-red-ginseng-root',
+    'murabba-bael', 'murabba-behi', 'gift-visit-small', 'gift-visit-hospital-light',
+  ];
   const readiness = evaluateDraftsReadiness(undefined, { excludeIds: holdIds });
   assert.equal(readiness.length, 155);
+  for (const id of ready13) {
+    const entry = readiness.find(r => r.id === id);
+    assert.ok(entry?.ready, `${id} should now be ready`);
+    assert.equal(entry?.image, `/images/held-ai-20261120/${id}.webp`);
+  }
 
   const heldItems = readiness.filter(r => !r.ready);
   const readyItems = readiness.filter(r => r.ready);
 
-  assert.equal(heldItems.length, 33, `Expected exactly 33 held items, got ${heldItems.length}`);
-  assert.equal(readyItems.length, 122, `Expected exactly 122 ready items, got ${readyItems.length}`);
+  assert.equal(heldItems.length, 20, `Expected exactly 20 held items, got ${heldItems.length}`);
+  assert.equal(readyItems.length, 135, `Expected exactly 135 ready items, got ${readyItems.length}`);
 
   for (const item of heldItems) {
     assert.ok(holdIds.has(item.id), `Unexpected held item: ${item.id}`);
@@ -161,6 +171,6 @@ test('IMAGE_HOLD_20261119.txt holds back exactly 33 items leaving 122 ready to p
 
   const dry = await runPublishReadyDrafts20261118({ db, execute: false, excludeIds: holdIds });
   assert.equal(dry.summary.totalDrafts, 155);
-  assert.equal(dry.summary.readyToPublish, 122);
-  assert.equal(dry.summary.heldBack, 33);
+  assert.equal(dry.summary.readyToPublish, 135);
+  assert.equal(dry.summary.heldBack, 20);
 });
