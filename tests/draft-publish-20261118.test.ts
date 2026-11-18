@@ -125,3 +125,42 @@ test('publish readiness holds back incomplete drafts and executes cleanly on rea
   assert.equal(second.summary.alreadyPublished, 155);
   assert.equal(second.summary.readyToPublish, 0);
 });
+
+test('IMAGE_HOLD_20261119.txt holds back exactly 33 items leaving 122 ready to publish', async () => {
+  const holdPath = 'docs/catalog/IMAGE_HOLD_20261119.txt';
+  assert.ok(fs.existsSync(holdPath), 'IMAGE_HOLD_20261119.txt must exist');
+  const holdIds = new Set(
+    fs
+      .readFileSync(holdPath, 'utf8')
+      .split(/\r?\n/)
+      .map(s => s.trim())
+      .filter(s => Boolean(s) && !s.startsWith('#'))
+  );
+  assert.equal(holdIds.size, 33, 'IMAGE_HOLD_20261119.txt must contain exactly 33 IDs');
+
+  const readiness = evaluateDraftsReadiness(undefined, { excludeIds: holdIds });
+  assert.equal(readiness.length, 155);
+
+  const heldItems = readiness.filter(r => !r.ready);
+  const readyItems = readiness.filter(r => r.ready);
+
+  assert.equal(heldItems.length, 33, `Expected exactly 33 held items, got ${heldItems.length}`);
+  assert.equal(readyItems.length, 122, `Expected exactly 122 ready items, got ${readyItems.length}`);
+
+  for (const item of heldItems) {
+    assert.ok(holdIds.has(item.id), `Unexpected held item: ${item.id}`);
+    assert.equal(item.skipReason, 'HOLD_IMAGE_OR_ORIGIN_REVIEW');
+  }
+
+  // Test dry-run in memoryFirestore with excludeIds
+  const { db } = memoryFirestore();
+  await importIntake20261110({ db, actorUid: 'admin-test', execute: true });
+  await importIntake20261113({ db, actorUid: 'admin-test', execute: true });
+  await importIntake20261115({ db, actorUid: 'admin-test', execute: true });
+  await importIntake20261114({ db, actorUid: 'admin-test', execute: true });
+
+  const dry = await runPublishReadyDrafts20261118({ db, execute: false, excludeIds: holdIds });
+  assert.equal(dry.summary.totalDrafts, 155);
+  assert.equal(dry.summary.readyToPublish, 122);
+  assert.equal(dry.summary.heldBack, 33);
+});

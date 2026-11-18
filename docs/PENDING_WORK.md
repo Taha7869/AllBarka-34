@@ -6,6 +6,7 @@ Start here when resuming AllBarka. The table shows open work across the project.
 
 | ID | Open work | Status | Next action and dependency | Detail |
 | --- | --- | --- | --- | --- |
+| DRAFT-IMG-PRICES-1118 | Studio images & reference prices for 155 drafts; published 122 reviewed items live in Firestore, 33 on hold | COMPLETE | Branch `ag/20261118-draft-images-prices` ready for Claude review and merge. Live census: 219 published, 33 drafts. | [Handoff](handoffs/20261119-draft-images-prices.md) · [Census](catalog/LIVE_CENSUS_20261119.md) |
 | FEAT-1118B | International checkout phone (+ Pakistan delivery number) & Dynamic Paid Add-ons (5 starter drafts + Admin panel) | COMPLETE | Branch ag/20261118-phone-addons ready for Claude review and merge. | [Handoff](handoffs/20261118-phone-addons.md) |
 | SEC-1119 | Pre-launch security hardening: npm audit, WhatsApp webhook timing-safe HMAC, public POST route audit, checkout validation parity, Lighthouse image/chunk optimization | COMPLETE | Branch ag/20261119-prelaunch-hardening ready for Claude review and merge. | [Handoff](handoffs/20261119-prelaunch-hardening.md) |
 | FEAT-1119 | Occasion reminders ('Meri tareekhain') + Multi-address bulk gifting with CSV upload | COMPLETE | Branch ag/20261119-reminders-multiaddress ready for Claude review and merge. | [Handoff](handoffs/20261119-reminders-multiaddress.md) |

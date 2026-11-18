@@ -1,0 +1,1562 @@
+{
+  "mode": "EXECUTE_PUBLISH",
+  "summary": {
+    "totalDrafts": 155,
+    "readyToPublish": 122,
+    "alreadyPublished": 0,
+    "heldBack": 33,
+    "missingInFirestore": 0
+  },
+  "items": [
+    {
+      "id": "sweet-fruit-balls",
+      "batch": "20261110",
+      "name_en": "Sweet Fruit Balls",
+      "isBundle": false,
+      "image": "/images/catalog-intake-20261110/sweet-fruit-balls.webp",
+      "priceSummary": "80 PKR / 100g",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "mixed-mukhwas",
+      "batch": "20261110",
+      "name_en": "Mixed Saunf Mukhwas",
+      "isBundle": false,
+      "image": "/images/catalog-intake-20261110/mixed-mukhwas.webp",
+      "priceSummary": "160 PKR / 100g",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "sweet-makhana-large",
+      "batch": "20261110",
+      "name_en": "Sweet Makhana — Large Sugar Clusters",
+      "isBundle": false,
+      "image": "/images/catalog-intake-20261110/sweet-makhana-large.webp",
+      "priceSummary": "80 PKR / 100g",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "nakul-dana-small",
+      "batch": "20261110",
+      "name_en": "Nakul Dana — Small Sugar Clusters",
+      "isBundle": false,
+      "image": "/images/catalog-intake-20261110/nakul-dana-small.webp",
+      "priceSummary": "80 PKR / 100g",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "sugar-coated-saunf",
+      "batch": "20261110",
+      "name_en": "Sugar-Coated Saunf",
+      "isBundle": false,
+      "image": "/images/catalog-intake-20261110/sugar-coated-saunf.webp",
+      "priceSummary": "120 PKR / 100g",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "peanut-jaggery-gachak",
+      "batch": "20261110",
+      "name_en": "Peanut & Jaggery Gachak",
+      "isBundle": false,
+      "image": "/images/catalog-intake-20261110/peanut-jaggery-gachak.webp",
+      "priceSummary": "95 PKR / 100g",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "sesame-rewari",
+      "batch": "20261110",
+      "name_en": "Sesame Rewari",
+      "isBundle": false,
+      "image": "/images/catalog-intake-20261110/sesame-rewari.webp",
+      "priceSummary": "100 PKR / 100g",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "brown-raisins",
+      "batch": "20261110",
+      "name_en": "Brown Raisins (Kishmish)",
+      "isBundle": false,
+      "image": "/images/catalog-intake-20261110/brown-raisins.webp",
+      "priceSummary": "1000 PKR / 1000g",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "dates-soft-brown",
+      "batch": "20261110",
+      "name_en": "Soft Brown Dates",
+      "isBundle": false,
+      "image": "/images/catalog-intake-20261110/dates-soft-brown.webp",
+      "priceSummary": "300 PKR / 1000g",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "dates-dark-round",
+      "batch": "20261110",
+      "name_en": "Dark Round Dates",
+      "isBundle": false,
+      "image": "/images/catalog-intake-20261110/dates-dark-round.webp",
+      "priceSummary": "500 PKR / 1000g",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "dates-dark-long",
+      "batch": "20261110",
+      "name_en": "Kalmi Dates (Qalmi Khajoor)",
+      "isBundle": false,
+      "image": "/images/catalog-intake-20261110/dates-dark-long.webp",
+      "priceSummary": "900 PKR / 1000g",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "dates-golden-brown",
+      "batch": "20261110",
+      "name_en": "Golden-Brown Dates",
+      "isBundle": false,
+      "image": "/images/catalog-intake-20261110/dates-golden-brown.webp",
+      "priceSummary": "350 PKR / 1000g",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "oil-peanut",
+      "batch": "20261110",
+      "name_en": "Peanut Oil",
+      "isBundle": false,
+      "image": "/images/catalog-intake-20261110/oil-peanut.webp",
+      "priceSummary": "180 PKR / 100ml",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "oil-sunflower",
+      "batch": "20261110",
+      "name_en": "Sunflower Oil",
+      "isBundle": false,
+      "image": "/images/catalog-intake-20261110/oil-sunflower.webp",
+      "priceSummary": "90 PKR / 100ml",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "oil-neem",
+      "batch": "20261110",
+      "name_en": "Neem Oil",
+      "isBundle": false,
+      "image": "/images/catalog-intake-20261110/oil-neem.webp",
+      "priceSummary": "240 PKR / 100ml",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "oil-taramira",
+      "batch": "20261110",
+      "name_en": "Taramira Oil",
+      "isBundle": false,
+      "image": "/images/catalog-intake-20261110/oil-taramira.webp",
+      "priceSummary": "160 PKR / 100ml",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "oil-soybean",
+      "batch": "20261110",
+      "name_en": "Soybean Oil",
+      "isBundle": false,
+      "image": "/images/catalog-intake-20261110/oil-soybean.webp",
+      "priceSummary": "80 PKR / 100ml",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "hazelnuts",
+      "batch": "20261113",
+      "name_en": "Hazelnuts (Filbert)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/hazelnuts.webp",
+      "priceSummary": "2600 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "gurbandi-almonds-shelled",
+      "batch": "20261113",
+      "name_en": "Gurbandi Almonds, Shelled",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/gurbandi-almonds-shelled.webp",
+      "priceSummary": "3600 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "gurbandi-almonds-inshell",
+      "batch": "20261113",
+      "name_en": "Gurbandi Almonds, In Shell",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/gurbandi-almonds-inshell.webp",
+      "priceSummary": "1000 PKR / 1kg",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "kagzi-walnut-inshell",
+      "batch": "20261113",
+      "name_en": "Paper-Shell Walnuts (Kagzi Akhroot)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/kagzi-walnut-inshell.webp",
+      "priceSummary": "1000 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "dry-coconut-khopra",
+      "batch": "20261113",
+      "name_en": "Dry Coconut (Ghari Khopra)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/dry-coconut-khopra.webp",
+      "priceSummary": "1600 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "salted-peanuts",
+      "batch": "20261113",
+      "name_en": "Salted Peanuts",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/salted-peanuts.webp",
+      "priceSummary": "1600 PKR / 1kg",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "pistachio-kernels",
+      "batch": "20261113",
+      "name_en": "Plain Pistachio Kernels (Pista Giri)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/pistachio-kernels.webp",
+      "priceSummary": "5000 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "seedless-apricots",
+      "batch": "20261113",
+      "name_en": "Seedless Dried Apricots",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/seedless-apricots.webp",
+      "priceSummary": "1600 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "apricots-kishta",
+      "batch": "20261113",
+      "name_en": "Dried Apricots, Kishta",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/apricots-kishta.webp",
+      "priceSummary": "800 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "dates-mabroom",
+      "batch": "20261113",
+      "name_en": "Mabroom Dates",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/dates-mabroom.webp",
+      "priceSummary": "4500 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "dates-mazafati",
+      "batch": "20261113",
+      "name_en": "Mazafati Dates",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/dates-mazafati.webp",
+      "priceSummary": "1100 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "dates-piarom",
+      "batch": "20261113",
+      "name_en": "Piarom Dates",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/dates-piarom.webp",
+      "priceSummary": "1400 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "dates-rubai",
+      "batch": "20261113",
+      "name_en": "Rubai Dates",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/dates-rubai.webp",
+      "priceSummary": "1000 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "dates-irani",
+      "batch": "20261113",
+      "name_en": "Iranian Dates (Irani Khajoor)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/dates-irani.webp",
+      "priceSummary": "600 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "anar-dana",
+      "batch": "20261113",
+      "name_en": "Dried Pomegranate Seeds (Anar Dana)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/anar-dana.webp",
+      "priceSummary": "760 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "fenugreek-seeds-methi-dana",
+      "batch": "20261113",
+      "name_en": "Fenugreek Seeds (Methi Dana)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/fenugreek-seeds-methi-dana.webp",
+      "priceSummary": "1200 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "kalonji-nigella-seeds",
+      "batch": "20261113",
+      "name_en": "Kalonji (Nigella Seeds)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/kalonji-nigella-seeds.webp",
+      "priceSummary": "1000 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "sunflower-kernels",
+      "batch": "20261113",
+      "name_en": "Sunflower Kernels (Hulled)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/sunflower-kernels.webp",
+      "priceSummary": "1400 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "oil-amla",
+      "batch": "20261113",
+      "name_en": "Amla Oil",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/oil-amla.webp",
+      "priceSummary": "4500 PKR / 1L",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "oil-coriander",
+      "batch": "20261113",
+      "name_en": "Coriander Seed Oil",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/oil-coriander.webp",
+      "priceSummary": "4500 PKR / 1L",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "desi-gur",
+      "batch": "20261113",
+      "name_en": "Desi Gur (Jaggery)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/desi-gur.webp",
+      "priceSummary": "320 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "honey-phulai",
+      "batch": "20261113",
+      "name_en": "Phulai Honey (Wild Acacia)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/honey-phulai.webp",
+      "priceSummary": "2400 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "honey-beri",
+      "batch": "20261113",
+      "name_en": "Beri (Sidr) Honey",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/honey-beri.webp",
+      "priceSummary": "9600 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "turmeric-powder",
+      "batch": "20261113",
+      "name_en": "Turmeric Powder (Haldi)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/turmeric-powder.webp",
+      "priceSummary": "850 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "black-pepper-powder",
+      "batch": "20261113",
+      "name_en": "Black Pepper Powder (Kali Mirch)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/black-pepper-powder.webp",
+      "priceSummary": "2600 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "long-pepper-dara-mirch",
+      "batch": "20261113",
+      "name_en": "Long Pepper (Dara Mirch)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/long-pepper-dara-mirch.webp",
+      "priceSummary": "950 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "curry-leaves",
+      "batch": "20261113",
+      "name_en": "Curry Leaves (Kari Patta)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/curry-leaves.webp",
+      "priceSummary": "400 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "dried-oregano",
+      "batch": "20261113",
+      "name_en": "Dried Oregano",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/dried-oregano.webp",
+      "priceSummary": "360 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "desi-dalchini",
+      "batch": "20261113",
+      "name_en": "Desi Dalchini (Cassia Bark)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/desi-dalchini.webp",
+      "priceSummary": "280 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "isabgol-husk",
+      "batch": "20261113",
+      "name_en": "Isabgol Husk",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/isabgol-husk.webp",
+      "priceSummary": "2100 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "dried-amla",
+      "batch": "20261113",
+      "name_en": "Dried Amla",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/dried-amla.webp",
+      "priceSummary": "1000 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "dried-shikakai",
+      "batch": "20261113",
+      "name_en": "Dried Shikakai",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/dried-shikakai.webp",
+      "priceSummary": "800 PKR / 1kg",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "looban",
+      "batch": "20261113",
+      "name_en": "Looban (Frankincense)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/looban.webp",
+      "priceSummary": "1000 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "gum-arabic-char-gond",
+      "batch": "20261113",
+      "name_en": "Char Gond (Gum Arabic)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/gum-arabic-char-gond.webp",
+      "priceSummary": "1100 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "salab-misri",
+      "batch": "20261113",
+      "name_en": "Salab Misri (Salep)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/salab-misri.webp",
+      "priceSummary": "38000 PKR / 1kg",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "ashwagandha",
+      "batch": "20261113",
+      "name_en": "Ashwagandha (Asghand Nagori)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/ashwagandha.webp",
+      "priceSummary": "1800 PKR / 1kg",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "black-myrobalan",
+      "batch": "20261113",
+      "name_en": "Black Myrobalan (Kali Harar)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/black-myrobalan.webp",
+      "priceSummary": "1400 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "murabba-amla",
+      "batch": "20261113",
+      "name_en": "Murabba Amla",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/murabba-amla.webp",
+      "priceSummary": "800 PKR / 1kg",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "murabba-gajar",
+      "batch": "20261113",
+      "name_en": "Murabba Gajar (Carrot)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/murabba-gajar.webp",
+      "priceSummary": "500 PKR / 1kg",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "murabba-saib",
+      "batch": "20261113",
+      "name_en": "Murabba Saib (Apple)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/murabba-saib.webp",
+      "priceSummary": "700 PKR / 1kg",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "murabba-behi",
+      "batch": "20261113",
+      "name_en": "Murabba Behi (Quince)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/murabba-behi.webp",
+      "priceSummary": "1000 PKR / 1kg",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "murabba-bael",
+      "batch": "20261113",
+      "name_en": "Murabba Bael",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/murabba-bael.webp",
+      "priceSummary": "900 PKR / 1kg",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "gulkand",
+      "batch": "20261113",
+      "name_en": "Gulkand (Rose Petal Preserve)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/gulkand.webp",
+      "priceSummary": "800 PKR / 1kg",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "murabba-harad",
+      "batch": "20261113",
+      "name_en": "Murabba Harad (Myrobalan)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/murabba-harad.webp",
+      "priceSummary": "1000 PKR / 1kg",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "chai-patti-ctc",
+      "batch": "20261113",
+      "name_en": "Kadak CTC Chai Patti",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/chai-patti-ctc.webp",
+      "priceSummary": "1800 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "green-tea-sabz-chai",
+      "batch": "20261113",
+      "name_en": "Green Tea (Sabz Chai)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/green-tea-sabz-chai.webp",
+      "priceSummary": "2000 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "peshawari-qehwa",
+      "batch": "20261113",
+      "name_en": "Peshawari Qehwa (Kahwa)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/peshawari-qehwa.webp",
+      "priceSummary": "1200 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "kashmiri-kahwa",
+      "batch": "20261113",
+      "name_en": "Kashmiri Kahwa",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/kashmiri-kahwa.webp",
+      "priceSummary": "3600 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "noon-chai",
+      "batch": "20261113",
+      "name_en": "Kashmiri Noon Chai (Pink Tea)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/noon-chai.webp",
+      "priceSummary": "2400 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "chai-masala-blend",
+      "batch": "20261113",
+      "name_en": "Chai Masala (Spiced Tea Blend)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/chai-masala-blend.webp",
+      "priceSummary": "2800 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "elaichi-chai",
+      "batch": "20261113",
+      "name_en": "Elaichi Chai (Cardamom Tea)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/elaichi-chai.webp",
+      "priceSummary": "2400 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "lemongrass-tea",
+      "batch": "20261113",
+      "name_en": "Lemongrass (Lemon Grass Tea)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/lemongrass-tea.webp",
+      "priceSummary": "1000 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "chamomile-tea",
+      "batch": "20261113",
+      "name_en": "Chamomile Tea (Babuna)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/chamomile-tea.webp",
+      "priceSummary": "6000 PKR / 1kg",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "jasmine-green-tea",
+      "batch": "20261113",
+      "name_en": "Jasmine Green Tea (Chinese Tea)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/jasmine-green-tea.webp",
+      "priceSummary": "3200 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "tulsi-tea",
+      "batch": "20261113",
+      "name_en": "Tulsi Tea (Holy Basil)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/tulsi-tea.webp",
+      "priceSummary": "1600 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "american-almonds",
+      "batch": "20261113",
+      "name_en": "California Almonds (American Badam)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/american-almonds.webp",
+      "priceSummary": "3800 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "kagzi-almonds-inshell",
+      "batch": "20261113",
+      "name_en": "Paper-Shell Almonds (Kagzi Badam)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/kagzi-almonds-inshell.webp",
+      "priceSummary": "1900 PKR / 1kg",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "mamra-almonds",
+      "batch": "20261113",
+      "name_en": "Mamra Almonds",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/mamra-almonds.webp",
+      "priceSummary": "6500 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "chilgoza-inshell",
+      "batch": "20261113",
+      "name_en": "Chilgoza (Pine Nuts), In Shell",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/chilgoza-inshell.webp",
+      "priceSummary": "10000 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "sundarkhani-raisins",
+      "batch": "20261113",
+      "name_en": "Sundarkhani Raisins",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/sundarkhani-raisins.webp",
+      "priceSummary": "1650 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "peanuts-inshell",
+      "batch": "20261113",
+      "name_en": "Roasted Peanuts, In Shell (Mungphali)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/peanuts-inshell.webp",
+      "priceSummary": "800 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "roasted-chana-skinless",
+      "batch": "20261113",
+      "name_en": "Roasted Chana, Skinless",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/roasted-chana-skinless.webp",
+      "priceSummary": "800 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "desiccated-coconut",
+      "batch": "20261113",
+      "name_en": "Desiccated Coconut (Khopra Burada)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/desiccated-coconut.webp",
+      "priceSummary": "1800 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "saffron-afghan-negin",
+      "batch": "20261114",
+      "name_en": "Afghan Saffron, Negin Grade (Zafran)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/saffron-afghan-negin.webp",
+      "priceSummary": "1200000 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "saffron-spanish-coupe",
+      "batch": "20261114",
+      "name_en": "Spanish Saffron, Coupe Grade (Zafran)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/saffron-spanish-coupe.webp",
+      "priceSummary": "1800000 PKR / 1kg",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "shilajit-gilgit-resin",
+      "batch": "20261114",
+      "name_en": "Gilgit-Baltistan Shilajit Resin (Salajeet)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/shilajit-gilgit-resin.webp",
+      "priceSummary": "100000 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "korean-red-ginseng-root",
+      "batch": "20261114",
+      "name_en": "Korean Red Ginseng Roots (Panax Ginseng)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/korean-red-ginseng-root.webp",
+      "priceSummary": "45000 PKR / 1kg",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "mulethi-licorice-root",
+      "batch": "20261114",
+      "name_en": "Mulethi, Licorice Root Sticks",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/mulethi-licorice-root.webp",
+      "priceSummary": "1000 PKR / 1kg",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "dates-safawi",
+      "batch": "20261114",
+      "name_en": "Safawi Dates, Madinah (Safawi Khajoor)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/dates-safawi.webp",
+      "priceSummary": "2400 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "dates-sukkari",
+      "batch": "20261114",
+      "name_en": "Sukkari Dates, Al-Qassim (Sukkari Khajoor)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/dates-sukkari.webp",
+      "priceSummary": "2000 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "lal-mirch-powder",
+      "batch": "20261115",
+      "name_en": "Red Chilli Powder (Lal Mirch)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/lal-mirch-powder.webp",
+      "priceSummary": "1400 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "dadar-mirch-dry-red-chilli",
+      "batch": "20261115",
+      "name_en": "Dry Red Chillies, Whole (Dadar Mirch)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/dadar-mirch-dry-red-chilli.webp",
+      "priceSummary": "1500 PKR / 1kg",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "coriander-seeds-whole",
+      "batch": "20261115",
+      "name_en": "Coriander Seeds, Whole (Dhaniya Sabut)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/coriander-seeds-whole.webp",
+      "priceSummary": "900 PKR / 1kg",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "coriander-powder",
+      "batch": "20261115",
+      "name_en": "Coriander Powder (Dhaniya Powder)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/coriander-powder.webp",
+      "priceSummary": "1000 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "white-pepper-whole",
+      "batch": "20261115",
+      "name_en": "White Pepper, Whole (Safaid Mirch)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/white-pepper-whole.webp",
+      "priceSummary": "4500 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "kamarkas",
+      "batch": "20261115",
+      "name_en": "Kamarkas (Butea Gum)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/kamarkas.webp",
+      "priceSummary": "3000 PKR / 1kg",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "imli-tamarind",
+      "batch": "20261115",
+      "name_en": "Tamarind (Imli)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/imli-tamarind.webp",
+      "priceSummary": "700 PKR / 1kg",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "garam-masala-whole",
+      "batch": "20261115",
+      "name_en": "Garam Masala, Whole (Sabut Garam Masala)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/garam-masala-whole.webp",
+      "priceSummary": "2800 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "turmeric-root-whole",
+      "batch": "20261115",
+      "name_en": "Whole Turmeric Root (Zard Chob / Haldi Gaanth)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/turmeric-root-whole.webp",
+      "priceSummary": "1000 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "mission-figs-dried",
+      "batch": "20261115",
+      "name_en": "Mission Figs, Dried (Mission Anjeer)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/mission-figs-dried.webp",
+      "priceSummary": "2600 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "dried-blueberries",
+      "batch": "20261115",
+      "name_en": "Dried Blueberries",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/dried-blueberries.webp",
+      "priceSummary": "5500 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "dried-kiwi",
+      "batch": "20261115",
+      "name_en": "Dried Kiwi",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/dried-kiwi.webp",
+      "priceSummary": "4500 PKR / 1kg",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "macadamia-nuts",
+      "batch": "20261115",
+      "name_en": "Macadamia Nuts",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/macadamia-nuts.webp",
+      "priceSummary": "9000 PKR / 1kg",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "brazil-nuts",
+      "batch": "20261115",
+      "name_en": "Brazil Nuts",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/brazil-nuts.webp",
+      "priceSummary": "7500 PKR / 1kg",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "pecans",
+      "batch": "20261115",
+      "name_en": "Pecans",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/pecans.webp",
+      "priceSummary": "6500 PKR / 1kg",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "almond-slices",
+      "batch": "20261115",
+      "name_en": "Almond Slices (Flaked Almonds)",
+      "isBundle": false,
+      "image": "/images/drafts-20261118/almond-slices.webp",
+      "priceSummary": "3200 PKR / 1kg",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "deal-nut-trio",
+      "batch": "20261114",
+      "name_en": "Almond, Cashew & Walnut Trio, 750 g",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/deal-nut-trio.webp",
+      "priceSummary": "2000 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "deal-date-almond",
+      "batch": "20261114",
+      "name_en": "Mazafati Dates & Almonds Pair, 750 g",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/deal-date-almond.webp",
+      "priceSummary": "1400 PKR (Bundle)",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "deal-chai-time",
+      "batch": "20261114",
+      "name_en": "Chai Time Deal: Kadak & Elaichi Tea with Nimko & Chanay",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/deal-chai-time.webp",
+      "priceSummary": "950 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "deal-family-2kg",
+      "batch": "20261114",
+      "name_en": "Family Dry Fruit Saver, 2 kg: Nuts, Raisins & Dates",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/deal-family-2kg.webp",
+      "priceSummary": "5450 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "deal-evening-snack",
+      "batch": "20261114",
+      "name_en": "Evening Snack Saver: Peanuts, Chana & Nimko",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/deal-evening-snack.webp",
+      "priceSummary": "1600 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "deal-honey-duo",
+      "batch": "20261114",
+      "name_en": "Wild & Phulai Honey Duo, 1 kg",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/deal-honey-duo.webp",
+      "priceSummary": "1800 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "deal-murabba-duo",
+      "batch": "20261114",
+      "name_en": "Amla & Apple Murabba Duo, 1 kg",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/deal-murabba-duo.webp",
+      "priceSummary": "700 PKR (Bundle)",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "deal-whole-spice-kit",
+      "batch": "20261114",
+      "name_en": "Whole Spice Kitchen Kit: 7 Essential Spices",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/deal-whole-spice-kit.webp",
+      "priceSummary": "2300 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "deal-hair-oil-set",
+      "batch": "20261114",
+      "name_en": "Hair Oil Ritual Set: Blend, Castor, Amla & Coconut",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/deal-hair-oil-set.webp",
+      "priceSummary": "2350 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "bundle-sardi-special",
+      "batch": "20261114",
+      "name_en": "Sardi Special Winter Box: Chilgoza, Walnuts, Gur & Sesame",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/bundle-sardi-special.webp",
+      "priceSummary": "3700 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "bundle-chai-journey",
+      "batch": "20261114",
+      "name_en": "Pakistani Chai Journey: Qehwa, Kahwa, Noon Chai & Masala",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/bundle-chai-journey.webp",
+      "priceSummary": "1100 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "bundle-herbal-tea-garden",
+      "batch": "20261114",
+      "name_en": "Herbal Tea Garden: Chamomile, Lemongrass, Tulsi & Jasmine",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/bundle-herbal-tea-garden.webp",
+      "priceSummary": "1000 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "bundle-murabba-tasting",
+      "batch": "20261114",
+      "name_en": "Murabba Tasting Collection: Amla, Apple, Carrot, Quince & Gulkand",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/bundle-murabba-tasting.webp",
+      "priceSummary": "1000 PKR (Bundle)",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "bundle-honey-trio",
+      "batch": "20261114",
+      "name_en": "Honey Connoisseur Trio: Wild, Phulai & Beri",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/bundle-honey-trio.webp",
+      "priceSummary": "3300 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "bundle-khajoor-journey",
+      "batch": "20261114",
+      "name_en": "Khajoor Journey: Five Date Varieties Tasting Box",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/bundle-khajoor-journey.webp",
+      "priceSummary": "2600 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "bundle-dawat-mukhwas",
+      "batch": "20261114",
+      "name_en": "Dawat Mukhwas Set: Saunf, Makhana & Sugar Sweets",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/bundle-dawat-mukhwas.webp",
+      "priceSummary": "900 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "bundle-gourmet-nut-reserve",
+      "batch": "20261114",
+      "name_en": "Gourmet Nut Reserve: Mamra, Pistachio, Hazelnut & Cashew",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/bundle-gourmet-nut-reserve.webp",
+      "priceSummary": "4700 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "bundle-chilgoza-heirloom",
+      "batch": "20261114",
+      "name_en": "Chilgoza Heirloom Box: In-Shell, Peeled & Oil",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/bundle-chilgoza-heirloom.webp",
+      "priceSummary": "13500 PKR (Bundle)",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "bundle-zafran-royal",
+      "batch": "20261114",
+      "name_en": "Zafran & Royal Kernels Box: Saffron, Pistachio, Mamra & Beri Honey",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/bundle-zafran-royal.webp",
+      "priceSummary": "8300 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "bundle-office-desk",
+      "batch": "20261114",
+      "name_en": "Office Desk Snack Box: Masala Almonds, Cashews, Makhana & Cranberries",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/bundle-office-desk.webp",
+      "priceSummary": "3500 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "bundle-pure-oil-discovery",
+      "batch": "20261114",
+      "name_en": "Pure Oil Discovery Set: Almond, Black Seed, Coconut & Olive",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/bundle-pure-oil-discovery.webp",
+      "priceSummary": "2800 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "bundle-iftar-table",
+      "batch": "20261114",
+      "name_en": "Iftar Table Box: Dates, Figs, Almonds & Cashews",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/bundle-iftar-table.webp",
+      "priceSummary": "4900 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "bundle-suhoor-table",
+      "batch": "20261114",
+      "name_en": "Suhoor Table Box: Dates, Walnuts, Almonds, Chia & Honey",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/bundle-suhoor-table.webp",
+      "priceSummary": "2250 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "bundle-ramadan-family-reserve",
+      "batch": "20261114",
+      "name_en": "Ramadan Family Reserve: Dates, Nuts, Figs & Apricots",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/bundle-ramadan-family-reserve.webp",
+      "priceSummary": "7450 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "bundle-eid-munh-meetha",
+      "batch": "20261114",
+      "name_en": "Eid Munh Meetha Box: Rewari, Gachak, Makhana & Saunf",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/bundle-eid-munh-meetha.webp",
+      "priceSummary": "900 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "bundle-umrah-tabarruk-ready",
+      "batch": "20261114",
+      "name_en": "Returning Pilgrim Tabarruk Box: Madinah Dates, Almonds & Raisins",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/bundle-umrah-tabarruk-ready.webp",
+      "priceSummary": "4350 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "bundle-nikkah-chuhara",
+      "batch": "20261114",
+      "name_en": "Nikkah Chuhara & Nuts Box: Chohara, Nuts & Khopra",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/bundle-nikkah-chuhara.webp",
+      "priceSummary": "4800 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "bundle-mehndi-snack-night",
+      "batch": "20261114",
+      "name_en": "Mehndi & Dholki Snack Box: Nimko, Chana, Peanuts & Nuts",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/bundle-mehndi-snack-night.webp",
+      "priceSummary": "3850 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "bundle-walima-favour",
+      "batch": "20261114",
+      "name_en": "Walima Thank-You Favour Box: Four Nuts, 4 × 100 g",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/bundle-walima-favour.webp",
+      "priceSummary": "1650 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "bundle-welcome-baby",
+      "batch": "20261114",
+      "name_en": "Welcome Baby Box: Ajwa, Nuts & Sweet Fruit Balls",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/bundle-welcome-baby.webp",
+      "priceSummary": "5100 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "bundle-post-birth-pantry",
+      "batch": "20261114",
+      "name_en": "Traditional Post-Birth Pantry: Panjeeri, Gond, Chohara & Gur",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/bundle-post-birth-pantry.webp",
+      "priceSummary": "3250 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "bundle-corporate-appreciation",
+      "batch": "20261114",
+      "name_en": "Corporate Appreciation Box: Almonds, Cashews, Pistachios & Raisins",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/bundle-corporate-appreciation.webp",
+      "priceSummary": "3800 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "bundle-executive-crate",
+      "batch": "20261114",
+      "name_en": "Executive Dry Fruit Crate, 5 kg: Nuts, Walnuts & Dates",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/bundle-executive-crate.webp",
+      "priceSummary": "18200 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "bundle-monthly-pantry",
+      "batch": "20261114",
+      "name_en": "Monthly Family Pantry Box: Nuts, Dates, Honey & Gur",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/bundle-monthly-pantry.webp",
+      "priceSummary": "3000 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "gift-visit-hospital-light",
+      "batch": "20261114",
+      "name_en": "Hospital Visit Light Pack: Dates, Almonds & Chamomile",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/gift-visit-hospital-light.webp",
+      "priceSummary": "1000 PKR (Bundle)",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "gift-ayadat-basket",
+      "batch": "20261114",
+      "name_en": "Ayadat Basket: Soft Dates, Almonds & Honey",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/gift-ayadat-basket.webp",
+      "priceSummary": "1900 PKR (Bundle)",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "gift-ayadat-tea-comfort",
+      "batch": "20261114",
+      "name_en": "Get-Well Tea & Comfort Box: Chamomile, Lemongrass, Honey & Dates",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/gift-ayadat-tea-comfort.webp",
+      "priceSummary": "1100 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "gift-ayadat-dry-fruit-large",
+      "batch": "20261114",
+      "name_en": "Get-Well Dry Fruit Basket, Large: Dates, Figs, Raisins, Apricots & Almonds",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/gift-ayadat-dry-fruit-large.webp",
+      "priceSummary": "3500 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "gift-ayadat-premium-hamper",
+      "batch": "20261114",
+      "name_en": "Get-Well Premium Hamper: Ajwa, Pistachio Kernels, Beri Honey & Kahwa",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/gift-ayadat-premium-hamper.webp",
+      "priceSummary": "5300 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "gift-visit-small",
+      "batch": "20261114",
+      "name_en": "Small Visit Gift: Dates & Almonds, 350 g",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/gift-visit-small.webp",
+      "priceSummary": "700 PKR (Bundle)",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "gift-visit-classic",
+      "batch": "20261114",
+      "name_en": "Classic Visit Gift Box: Dates, Almonds & Pistachios, 600 g",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/gift-visit-classic.webp",
+      "priceSummary": "1650 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "gift-visit-premium-host",
+      "batch": "20261114",
+      "name_en": "Premium Host Gift: Ajwa, Mamra Almonds, Pistachio Kernels & Cashews",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/gift-visit-premium-host.webp",
+      "priceSummary": "5300 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "gift-visit-mithai-tray",
+      "batch": "20261114",
+      "name_en": "Guest Visit Mithai & Mukhwas Box: Rewari, Gachak, Makhana & Saunf",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/gift-visit-mithai-tray.webp",
+      "priceSummary": "750 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "gift-dawat-host",
+      "batch": "20261114",
+      "name_en": "Dawat Host Gift: Pistachios, Dates, Mukhwas & Cardamom Tea",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/gift-dawat-host.webp",
+      "priceSummary": "1900 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "gift-rishta-visit",
+      "batch": "20261114",
+      "name_en": "Rishta & Baat Pakki Visit Box: Dates, Almonds, Cashews & Rewari",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/gift-rishta-visit.webp",
+      "priceSummary": "3000 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "gift-new-home-blessing",
+      "batch": "20261114",
+      "name_en": "New Home Blessing Box: Dates, Gur, Rewari, Almonds & Raisins",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/gift-new-home-blessing.webp",
+      "priceSummary": "1700 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "gift-thank-you-tea",
+      "batch": "20261114",
+      "name_en": "Thank-You Tea Box: Cardamom Tea, Honey, Almonds & Dates",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/gift-thank-you-tea.webp",
+      "priceSummary": "1800 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "gift-teacher-mentor",
+      "batch": "20261114",
+      "name_en": "Teacher & Mentor Gift Box: Almonds, Cashews, Piarom Dates & Kahwa",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/gift-teacher-mentor.webp",
+      "priceSummary": "2600 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "gift-eid-visit",
+      "batch": "20261114",
+      "name_en": "Eid Visit Box: Dates, Gachak, Fruit Balls, Saunf & Pistachios",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/gift-eid-visit.webp",
+      "priceSummary": "1250 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "gift-parents-visit",
+      "batch": "20261114",
+      "name_en": "Visit Parents Box: Walnuts, Dates, Almonds, Gur & Elaichi Tea",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/gift-parents-visit.webp",
+      "priceSummary": "1800 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    },
+    {
+      "id": "gift-condolence-visit",
+      "batch": "20261114",
+      "name_en": "Condolence Visit Box: Dates, Tea & Almonds",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/gift-condolence-visit.webp",
+      "priceSummary": "1900 PKR (Bundle)",
+      "action": "SKIP_NOT_READY",
+      "reason": "HOLD_IMAGE_OR_ORIGIN_REVIEW"
+    },
+    {
+      "id": "gift-family-visit-hamper",
+      "batch": "20261114",
+      "name_en": "Family Visit Hamper, 2.1 kg: Nuts, Dates, Mithai & Tea",
+      "isBundle": true,
+      "image": "/images/drafts-20261118/gift-family-visit-hamper.webp",
+      "priceSummary": "5750 PKR (Bundle)",
+      "action": "UPDATED_AND_PUBLISHED",
+      "revision": 3
+    }
+  ]
+}

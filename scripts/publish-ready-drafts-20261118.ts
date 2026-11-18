@@ -23,8 +23,12 @@ export interface DraftReadinessItem {
 }
 
 export function evaluateDraftsReadiness(
-  customDrafts?: Array<{ batch: string; product: Record<string, any> }>
+  customDrafts?: Array<{ batch: string; product: Record<string, any> }>,
+  options?: {
+    excludeIds?: Set<string> | string[];
+  }
 ): DraftReadinessItem[] {
+  const excludeSet = new Set(options?.excludeIds ? Array.from(options.excludeIds) : []);
   const allDrafts: Array<{ batch: string; product: Record<string, any> }> = customDrafts ?? [
     ...intakeProducts20261110().map(product => ({ batch: '20261110', product: product as Record<string, any> })),
     ...intakeProducts20261113().map(product => ({ batch: '20261113', product: product as Record<string, any> })),
@@ -33,6 +37,7 @@ export function evaluateDraftsReadiness(
   ];
 
   const liveSeedIds = new Set(PRODUCTS.map(p => p.id));
+  const validSingleIds = new Set<string>();
   const readySingleIds = new Set<string>();
   const singleResults: DraftReadinessItem[] = [];
 
@@ -55,10 +60,20 @@ export function evaluateDraftsReadiness(
         String(product[`allergenWarning_${lang}`] || '').trim().length > 15
     );
 
+    if (hasImage && hasPrice && hasCopy) {
+      validSingleIds.add(id);
+    }
+
     let skipReason: string | undefined;
-    if (!hasImage) skipReason = 'MISSING_REAL_PRODUCT_IMAGE';
-    else if (!hasPrice) skipReason = 'MISSING_VALID_PRICE';
-    else if (!hasCopy) skipReason = 'INCOMPLETE_TRILINGUAL_COPY';
+    if (excludeSet.has(id)) {
+      skipReason = 'HOLD_IMAGE_OR_ORIGIN_REVIEW';
+    } else if (!hasImage) {
+      skipReason = 'MISSING_REAL_PRODUCT_IMAGE';
+    } else if (!hasPrice) {
+      skipReason = 'MISSING_VALID_PRICE';
+    } else if (!hasCopy) {
+      skipReason = 'INCOMPLETE_TRILINGUAL_COPY';
+    }
 
     const ready = !skipReason;
     if (ready) readySingleIds.add(id);
@@ -77,7 +92,7 @@ export function evaluateDraftsReadiness(
     });
   }
 
-  // Pass 2: evaluate bundles (after knowing which single items are ready)
+  // Pass 2: evaluate bundles (after knowing which single items are valid and ready)
   const bundleResults: DraftReadinessItem[] = [];
   for (const { batch, product } of allDrafts) {
     if (!product.isBundle) continue;
@@ -97,10 +112,12 @@ export function evaluateDraftsReadiness(
         String(product[`allergenWarning_${lang}`] || '').trim().length > 15
     );
     const componentIds: string[] = Array.isArray(product.componentIds) ? product.componentIds : [];
-    const blockedComponents = componentIds.filter(cid => !liveSeedIds.has(cid) && !readySingleIds.has(cid));
+    const blockedComponents = componentIds.filter(cid => !liveSeedIds.has(cid) && !validSingleIds.has(cid));
 
     let skipReason: string | undefined;
-    if (blockedComponents.length > 0) {
+    if (excludeSet.has(id)) {
+      skipReason = 'HOLD_IMAGE_OR_ORIGIN_REVIEW';
+    } else if (blockedComponents.length > 0) {
       skipReason = `HOLD_COMPONENT_NOT_PUBLISHED:${blockedComponents.join(',')}`;
     } else if (!hasImage) {
       skipReason = 'MISSING_REAL_PRODUCT_IMAGE';
@@ -131,6 +148,7 @@ export async function runPublishReadyDrafts20261118(options: {
   db: Firestore | null;
   actorUid?: string;
   execute?: boolean;
+  excludeIds?: Set<string> | string[];
 }) {
   if (options.execute && (!options.db || !options.actorUid)) {
     throw new Error('PUBLISH_AUTHORITY_REQUIRED');
@@ -146,7 +164,7 @@ export async function runPublishReadyDrafts20261118(options: {
     allDraftMap.set(String(p.id), p as Record<string, any>);
   }
 
-  const readiness = evaluateDraftsReadiness();
+  const readiness = evaluateDraftsReadiness(undefined, { excludeIds: options.excludeIds });
   const items: Array<{
     id: string;
     batch: string;
@@ -266,6 +284,10 @@ export async function runPublishReadyDrafts20261118(options: {
       actorUid: options.actorUid!,
     });
 
+    if (options.execute) {
+      console.log(`[${items.length + 1}/${readiness.length}] Published: ${entry.id} (rev ${published.revision})`);
+    }
+
     items.push({
       id: entry.id,
       batch: entry.batch,
@@ -330,6 +352,7 @@ async function main() {
     if (clientEmail && privateKey) {
       const app = getApps()[0] ?? initializeApp({ credential: cert({ projectId: project, clientEmail, privateKey }), projectId: project });
       db = databaseId === '(default)' ? getFirestore(app) : getFirestore(app, databaseId);
+      db.settings({ ignoreUndefinedProperties: true });
     }
   }
 
@@ -342,7 +365,25 @@ async function main() {
     }
   }
 
-  const report = await runPublishReadyDrafts20261118({ db, actorUid, execute });
+  const excludeSet = new Set<string>();
+  const excludeFile =
+    argVal('--exclude-file') ||
+    (fs.existsSync('docs/catalog/IMAGE_HOLD_20261119.txt') ? 'docs/catalog/IMAGE_HOLD_20261119.txt' : undefined);
+  if (excludeFile && fs.existsSync(excludeFile)) {
+    for (const line of fs.readFileSync(excludeFile, 'utf8').split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith('#')) excludeSet.add(trimmed);
+    }
+  }
+  const excludeArg = argVal('--exclude');
+  if (excludeArg) {
+    for (const id of excludeArg.split(',')) {
+      const trimmed = id.trim();
+      if (trimmed) excludeSet.add(trimmed);
+    }
+  }
+
+  const report = await runPublishReadyDrafts20261118({ db, actorUid, execute, excludeIds: excludeSet });
   const outFile = argVal('--out');
   if (outFile) {
     fs.writeFileSync(outFile, JSON.stringify(report, null, 2) + '\n', 'utf8');
@@ -351,7 +392,7 @@ async function main() {
   }
 }
 
-if (import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}` || process.argv[1]?.endsWith('publish-ready-drafts-20261118.ts')) {
+if (process.argv[1] && (import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}` || process.argv[1].endsWith('publish-ready-drafts-20261118.ts'))) {
   main().catch(err => {
     console.error(err instanceof Error ? err.message : String(err));
     process.exit(1);
