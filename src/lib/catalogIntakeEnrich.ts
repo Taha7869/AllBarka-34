@@ -25,7 +25,7 @@ export function enrichIntakeProduct(source: Record<string, any>) {
   const box = liquid ? container.liquid : careKind === 'preserve' ? container.preserve : container.food;
   const store = careStorage(careKind as StorageKind);
   const allergen = /peanut/.test(String(source.id)) ? allergens.peanut : careKind === 'nuts' ? allergens.nuts : careKind === 'honey' ? allergens.honey : allergens.none;
-  const out: Record<string, any> = { ...rest };
+  const out: Record<string, any> = { ...rest, priceIndicative: source.priceIndicative ?? true };
   (['en', 'ur', 'ar'] as const).forEach((lang, i) => {
     // Bundles carry their own computed allergen and packing lines; everything else uses the shared copy.
     out[`storageTips_${lang}`] = store[i];

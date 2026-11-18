@@ -163,6 +163,8 @@ export interface Product {
   fragile?: boolean;
   quoteOnly?: boolean;
   isBidBox?: boolean;
+  /** True when the product rate is an indicative market/reference rate confirmed by the team after ordering. */
+  priceIndicative?: boolean;
   bidBoxConfig?: BidBoxConfig;
   packagingSubcategory?: 'tin' | 'tabarruk' | 'wedding' | 'baby' | 'acrylic' | string | null;
   recipeIngredients?: RecipeIngredient[];

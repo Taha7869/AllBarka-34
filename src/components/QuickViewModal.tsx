@@ -88,7 +88,7 @@ export default function QuickViewModal({ isOpen, onClose, product, onAddToCart }
         <p className="mt-3 text-sm leading-7 text-[var(--color-text-secondary)]" dir="auto">{getLocalized(product, 'desc', language)}</p>
         {getLocalized(product, 'tasteProfile', language) && <div className="mt-4 rounded-xl border border-[var(--color-border)] p-3 text-xs leading-6"><strong className="block text-[var(--color-accent-text)]">{t('tasteProfile')}</strong><span dir="auto">{getLocalized(product, 'tasteProfile', language)}</span></div>}
         {getLocalized(product, 'contents', language) && <div className="mt-3 rounded-xl border border-[var(--color-border)] p-3 text-xs leading-6"><strong className="block text-[var(--color-accent-text)]">{t('packContents')}</strong><span dir="auto">{getLocalized(product, 'contents', language)}</span></div>}
-        {product.isBidBox && <IndicativePriceNotice className="mt-3" />}
+        {(product.isBidBox || product.priceIndicative) && <IndicativePriceNotice className="mt-3" />}
         {product.isBidBox && product.bidBoxConfig && (
           <div className="mt-3 space-y-2 rounded-xl border border-[#C7982F]/35 bg-[#FAF6EE] p-3 text-xs leading-5 text-[#29231D]">
             {product.bidBoxConfig.dimensionsAndCapacity && (

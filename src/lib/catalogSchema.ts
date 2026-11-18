@@ -280,6 +280,7 @@ export const PUBLIC_PRODUCT_FIELDS = [
   'inStock',
   'stockQty',
   'isBidBox',
+  'priceIndicative',
   'bidBoxConfig',
   'allowCustomWeight',
   'minCustomWeightG',
@@ -750,10 +751,14 @@ export function validateDynamicProduct(value: unknown, existingId?: string): Pro
     product.stockQty = value.stockQty as number;
   }
 
-  // Bid Box / packaging
+  // Bid Box / packaging & indicative price flag
   if (value.isBidBox !== undefined) {
     if (typeof value.isBidBox !== 'boolean') throw new CatalogError('INVALID_BID_BOX_FLAG', 400);
     product.isBidBox = value.isBidBox;
+  }
+  if (value.priceIndicative !== undefined) {
+    if (typeof value.priceIndicative !== 'boolean') throw new CatalogError('INVALID_PRICE_INDICATIVE_FLAG', 400);
+    product.priceIndicative = value.priceIndicative;
   }
   if (value.bidBoxConfig !== undefined) {
     if (!object(value.bidBoxConfig)) throw new CatalogError('INVALID_BID_BOX_CONFIG', 400);

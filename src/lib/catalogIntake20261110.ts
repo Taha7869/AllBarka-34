@@ -14,6 +14,8 @@ function withOverlay(source: Record<string, any>) {
   const merged: Record<string, any> = { ...source, ...copy, origin_en: 'Hand-Packed in Pakistan', origin_ur: 'پاکستان میں ہاتھ سے پیک شدہ', origin_ar: 'معبأ يدويًا في باكستان' };
   if (referenceRatePerBase && merged.commerce.basePrice === null) {
     merged.commerce = { ...merged.commerce, basePrice: referenceRatePerBase };
+  }
+  if (merged.commerce?.basePrice > 0) {
     merged.quoteOnly = false; merged.orderMode = 'standard';
   }
   return enrichIntakeProduct(merged);

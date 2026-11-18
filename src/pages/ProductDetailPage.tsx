@@ -702,7 +702,7 @@ export default function ProductDetailPage() {
                 {remaining === 0 ? t('freeShippingUnlocked') : t('freeShippingHint').replace('{amount}', remaining.toLocaleString())}
               </p>;
             })()}
-            {product.isBidBox && <IndicativePriceNotice className="mb-4" />}
+            {(product.isBidBox || product.priceIndicative) && <IndicativePriceNotice className="mb-4" />}
 
             {/* Quantity & Add to Cart (minimum 44px tap targets) */}
             <div ref={purchaseRef} className="flex flex-col gap-3 mb-8">
