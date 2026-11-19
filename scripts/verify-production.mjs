@@ -226,7 +226,8 @@ try {
       const response = await request('/api/chat', post({ message: 'Local rate limit fixture' }));
       if (response.status === 429) { blocked = await response.json(); break; }
     }
-    assert.equal(blocked?.code, 'AI_RATE_LIMITED');
+    // Since 16 Nov each visitor gets 5 chat messages a minute (AI_VISITOR_LIMIT).
+    assert.equal(blocked?.code, 'AI_VISITOR_LIMIT');
     assert.equal(blocked?.available, false);
   });
   console.log(`Production checks: ${passed} passed.`);
