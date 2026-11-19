@@ -50,6 +50,7 @@ Every public and integration POST endpoint in the AllBarka stack was inventoried
 | 20 | `POST /api/loyalty/redeem` | User session limiter | Reward ID allowlist, patron points balance check | `requireAuth` | **Hardened**; server validates point balance before reward claim. |
 | 21 | `POST /api/orders/claim` | User session limiter | Order ID, claim token verification | `requireAuth` | **Hardened**; binds guest orders to authenticated user. |
 | 22 | `POST /api/coupons/welcome/claim` | User session limiter | User UID check, first-order eligibility check | `requireAuth` | **Hardened**; deterministic welcome voucher claim. |
+| 23 | `POST /api/consent` | `consentLimiter` (20/min) | `validateConsentLogPayload` (random `anonymousId`, boolean categories, `policyVersion`, ISO timestamp, `gpc`) | Public | **Hardened**; stores zero PII (no IP, UA, cookies, email, phone, or UID); writes to default-denied `consentLogs` collection. |
 
 ---
 

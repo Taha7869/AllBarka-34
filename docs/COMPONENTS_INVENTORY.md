@@ -193,6 +193,12 @@ Existing AllBarkaHero owns the signature composition and separate discovery stat
 | `lib/catalogLinks.ts` | Catalogue sharing | Utility | Catalogue/cart tools |
 | `lib/checkoutPreferences.ts` | Draft/address validation | Utility | CheckoutPage, AddressBook |
 | `lib/conciergeFallback.ts` | Multilingual catalogue responses | Utility | server |
+| `lib/consent.ts` | Consent policy version, GPC helper, payload validator, `STORAGE_INVENTORY` | Utility | ConsentContext, ConsentRouter, CookiePolicySection, demandTracking |
+| `lib/consentRouter.ts` | Rate-limited `POST /api/consent` anonymous audit logger | Router | server.ts |
+| `contexts/ConsentContext.tsx` | `ConsentProvider` & `useConsent()` hook | Context | main.tsx, RootLayout, CookieNotice, ConsentGate, Footer, CookiePolicySection |
+| `components/ConsentGate.tsx` | `ConsentGate` & `loadConsentScriptOnce` script gate | Component | Optional analytics/marketing integrations |
+| `components/CookieNotice.tsx` | Full trilingual Consent Manager (banner + preference modal) | Component | RootLayout |
+| `components/CookiePolicySection.tsx` | Code-derived storage/cookie inventory table for `/policies/cookies` | Component | PoliciesPage |
 
 GradientText is now used by AllBarkaHero. SquishSwitch is used by CategoryPLP.
 

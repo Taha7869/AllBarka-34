@@ -1,11 +1,12 @@
 import { apiUrl } from './apiUrl';
+import { readStoredConsent } from './consent';
 
 export type ClientDemandEvent = 'product_view' | 'add_to_cart' | 'checkout_start';
 
 /**
  * Sends one anonymous count to /api/events. No cookie, id or personal data is sent, and
- * browsers that ask not to be tracked (Do Not Track or Global Privacy Control) send nothing.
- * A product view counts once per product per browser session.
+ * browsers that ask not to be tracked (Do Not Track, Global Privacy Control, or declined
+ * analytics consent) send nothing. A product view counts once per product per browser session.
  */
 export function trackDemand(type: ClientDemandEvent, productId?: string): void {
   if (typeof window === 'undefined' || typeof fetch !== 'function') return;
@@ -14,6 +15,8 @@ export function trackDemand(type: ClientDemandEvent, productId?: string): void {
   try {
     const nav = navigator as Navigator & { globalPrivacyControl?: boolean };
     if (nav.doNotTrack === '1' || nav.globalPrivacyControl === true) return;
+    const storedConsent = readStoredConsent();
+    if (storedConsent && !storedConsent.categories.analytics) return;
     if (type === 'product_view' || type === 'checkout_start') {
       const key = `allbarka_seen:${type}:${productId || ''}`;
       if (sessionStorage.getItem(key)) return;

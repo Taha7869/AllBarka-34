@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { MapPin, MessageCircle, Instagram, ShieldCheck, Truck, Sparkles, ArrowRight, Bell } from 'lucide-react';
 import { FaFacebookF } from 'react-icons/fa';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useConsent } from '../contexts/ConsentContext';
 import { AllBarkaCrestVector } from './AllBarkaLogo';
 import { STORE_CONFIG } from '../config/store';
 import { CONTACT_CONFIG, buildHumanSupportWhatsAppUrl } from '../config/contacts';
@@ -11,6 +12,7 @@ import { CANONICAL_CATEGORIES, CUSTOMER_FACING_CATEGORIES, getCategoryMeta } fro
 
 export default function Footer() {
   const { t } = useLanguage();
+  const { openPreferences } = useConsent();
   const collections = [
     ['footer.allProducts', '/shop'],
     ...CUSTOMER_FACING_CATEGORIES.map(id => [`shop.${id}`, id === 'gift-boxes' ? '/gifting' : `/shop/${id}`]),
@@ -21,7 +23,7 @@ export default function Footer() {
   ];
   const support = [
     ['footer.faq', '/faq'], ['footer.shipping', '/policies/shipping'], ['footer.contact', '/contact'],
-    ['footer.returns', '/policies/refund'], ['footer.privacy', '/policies/privacy'], ['footer.terms', '/policies/terms'],
+    ['footer.returns', '/policies/refund'], ['footer.privacy', '/policies/privacy'], ['footer.cookies', '/policies/cookies'], ['footer.terms', '/policies/terms'],
   ];
   const column = (title: string, links: string[][]) => <div className="footer-links-col" key={title}>
     <h3>{t(title)}</h3><ul>{links.map(([key, href]) => <li key={key}><Link to={href}>{t(key, key.startsWith('shop.') ? getCategoryMeta(key.slice(5))?.name : undefined)}</Link></li>)}</ul>
@@ -51,7 +53,7 @@ export default function Footer() {
         {column('footer.journalTitle', journal)}
         <div>{column('footer.support', support)}<div className="site-footer-concierge"><strong>{t('footer.concierge')}</strong><p>{t('footer.conciergeCopy')}</p><Link to="/contact">{t('footer.connect')} <ArrowRight size={15}/></Link></div></div>
       </div>
-      <div className="site-footer-bottom"><span>© {new Date().getFullYear()} AllBarka Dry Fruits & Confections. {t('allRightsReserved')}</span><div><Link to="/policies/privacy">{t('footer.privacy')}</Link><Link to="/policies/terms">{t('footer.terms')}</Link><Link to="/policies/shipping">{t('footer.shipping')}</Link></div></div>
+      <div className="site-footer-bottom"><span>© {new Date().getFullYear()} AllBarka Dry Fruits & Confections. {t('allRightsReserved')}</span><div><Link to="/policies/privacy">{t('footer.privacy')}</Link><Link to="/policies/cookies">{t('footer.cookies')}</Link><button type="button" data-footer-cookie-settings onClick={openPreferences} className="cursor-pointer bg-transparent border-0 p-0 text-inherit font-inherit underline-offset-4 hover:underline focus-ring">{t('footer.cookieSettings')}</button><Link to="/policies/terms">{t('footer.terms')}</Link><Link to="/policies/shipping">{t('footer.shipping')}</Link></div></div>
     </div>
   </footer>;
 }

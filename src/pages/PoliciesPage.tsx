@@ -13,14 +13,16 @@ import {
   ArrowRight,
   FileText,
   Scale,
-  PhoneCall
+  PhoneCall,
+  Cookie
 } from 'lucide-react';
 import { acquireScrollLock } from '../utils/scrollLock';
 import SEO from '../components/SEO';
+import CookiePolicySection from '../components/CookiePolicySection';
 import { useLanguage } from '../contexts/LanguageContext';
 import { CONTACT_CONFIG, buildHumanSupportWhatsAppUrl, buildCustomerEmailUrl } from '../config/contacts';
 
-export type PolicyTab = 'shipping' | 'refund' | 'privacy' | 'terms';
+export type PolicyTab = 'shipping' | 'refund' | 'privacy' | 'terms' | 'cookies';
 
 export const normalizePolicyTab = (slug?: string): PolicyTab | 'unknown' => {
   if (!slug) return 'shipping';
@@ -28,6 +30,7 @@ export const normalizePolicyTab = (slug?: string): PolicyTab | 'unknown' => {
   if (s === 'shipping' || s === 'delivery' || s === 'dispatch') return 'shipping';
   if (s === 'refund' || s === 'refunds' || s === 'returns' || s === 'return') return 'refund';
   if (s === 'privacy' || s === 'security') return 'privacy';
+  if (s === 'cookies' || s === 'cookie' || s === 'cookie-policy' || s === 'storage') return 'cookies';
   if (s === 'terms' || s === 'terms-of-service' || s === 'conditions' || s === 'tos') return 'terms';
   return 'unknown';
 };
@@ -97,6 +100,10 @@ export function PolicyPagesModal({
     privacy: {
       title: 'Client Privacy & Data Security',
       desc: 'AllBarka client confidentiality: zero data sharing with third parties, secure encrypted storage, and patron right to record deletion.'
+    },
+    cookies: {
+      title: 'Cookies & Browser Storage Policy',
+      desc: 'Transparent code-derived list of every cookie, localStorage and sessionStorage key used by AllBarka, with duration and consent controls.'
     },
     terms: {
       title: 'Terms of Service & Boutique Conditions',
@@ -182,6 +189,19 @@ export function PolicyPagesModal({
             >
               <ShieldCheck size={14} />
               <span>Privacy Policy</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('cookies')}
+              className={`px-4 sm:px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                activeTab === 'cookies'
+                  ? 'bg-[var(--color-emerald,#042821)] text-[var(--color-gold,#C7982F)] shadow-xs border border-[var(--color-emerald,#042821)]'
+                  : 'bg-[var(--color-surface,#FFFCF7)] text-[var(--color-ink,#29231D)] hover:bg-[var(--color-base,#F6F1EA)] border border-[var(--color-gold,#C7982F)]/20'
+              }`}
+            >
+              <Cookie size={14} />
+              <span>Cookies & Storage</span>
             </button>
 
             <button
@@ -454,6 +474,12 @@ export function PolicyPagesModal({
               </motion.div>
             )}
 
+            {activeTab === 'cookies' && (
+              <div key="tab-cookies" className="max-w-4xl">
+                <CookiePolicySection />
+              </div>
+            )}
+
             {activeTab === 'unknown' && (
               <div className="py-8 text-center max-w-md mx-auto space-y-4">
                 <div className="w-14 h-14 rounded-full bg-[var(--color-gold,#C7982F)]/10 border border-[var(--color-gold,#C7982F)]/30 flex items-center justify-center mx-auto text-[var(--color-gold,#C7982F)]">
@@ -486,6 +512,13 @@ export function PolicyPagesModal({
                     className="px-4 py-2 rounded-full text-xs font-bold bg-[var(--color-base,#F6F1EA)] hover:bg-[var(--color-gold,#C7982F)] text-[var(--color-ink,#29231D)] hover:text-white border border-[var(--color-gold,#C7982F)]/30 transition-colors"
                   >
                     Privacy Policy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('cookies')}
+                    className="px-4 py-2 rounded-full text-xs font-bold bg-[var(--color-base,#F6F1EA)] hover:bg-[var(--color-gold,#C7982F)] text-[var(--color-ink,#29231D)] hover:text-white border border-[var(--color-gold,#C7982F)]/30 transition-colors"
+                  >
+                    Cookies Policy
                   </button>
                   <button
                     type="button"
@@ -606,6 +639,19 @@ export function PolicyPagesModal({
 
           <button
             type="button"
+            onClick={() => setActiveTab('cookies')}
+            className={`px-4 sm:px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+              activeTab === 'cookies'
+                ? 'bg-[var(--color-emerald,#042821)] text-[var(--color-gold,#C7982F)] shadow-xs border border-[var(--color-emerald,#042821)]'
+                : 'bg-[var(--color-surface,#FFFCF7)] text-[var(--color-ink,#29231D)] hover:bg-[var(--color-base,#F6F1EA)] border border-[var(--color-gold,#C7982F)]/20'
+            }`}
+          >
+            <Cookie size={14} />
+            <span>Cookies</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setActiveTab('terms')}
             className={`px-4 sm:px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
               activeTab === 'terms'
@@ -707,6 +753,12 @@ export function PolicyPagesModal({
                 </p>
               </div>
             </motion.div>
+          )}
+
+          {activeTab === 'cookies' && (
+            <div key="tab-cookies-modal" className="max-w-3xl">
+              <CookiePolicySection />
+            </div>
           )}
 
           {activeTab === 'terms' && (

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { useLanguage, type LanguageCode } from '../contexts/LanguageContext';
+import { useConsent } from '../contexts/ConsentContext';
 import { CartItem, Product } from '../types';
 
 import ScrollProgressBar from '../components/ScrollProgressBar';
@@ -62,6 +63,7 @@ export default function RootLayout() {
   const isAdminRoute = location.pathname.startsWith('/admin/');
   const { currentUser, patronProfile, logout } = useAuth();
   const { language, setLanguage, isRtl, t } = useLanguage();
+  const { needsPrompt: consentNeedsPrompt, isPreferencesOpen: consentPreferencesOpen } = useConsent();
   
   const mobileMenuTriggerRef = React.useRef<HTMLButtonElement>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -226,6 +228,9 @@ export default function RootLayout() {
     galleryModalOpen ||
     hamperModalOpen ||
     aiConciergeOpen;
+  const consentUiActive =
+    consentPreferencesOpen ||
+    (consentNeedsPrompt && !isAdminRoute && !isAnyModalOrDrawerOpen && location.pathname !== '/checkout' && !pdpBuyBarVisible && totalItemsCount === 0);
   useEffect(() => {
     if (!isAnyModalOrDrawerOpen) return;
     const releaseLock = acquireScrollLock();
@@ -471,7 +476,7 @@ export default function RootLayout() {
       />
       <PullToRefresh disabled={isAdminRoute || isAnyModalOrDrawerOpen || location.pathname === '/checkout'} />
       <CookieNotice hidden={isAdminRoute || isAnyModalOrDrawerOpen || location.pathname === '/checkout' || pdpBuyBarVisible || totalItemsCount > 0} />
-      <PwaInstallBanner hidden={isAdminRoute || isAnyModalOrDrawerOpen || location.pathname === '/checkout' || pdpBuyBarVisible} />
+      <PwaInstallBanner hidden={isAdminRoute || isAnyModalOrDrawerOpen || location.pathname === '/checkout' || pdpBuyBarVisible || consentUiActive} />
       
       {/* Drawer & Modals */}
       <CartDrawer

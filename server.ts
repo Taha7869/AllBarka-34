@@ -70,6 +70,7 @@ import {
 } from './src/lib/adminOperations';
 import { createInquiriesRouter } from './src/lib/inquiriesRouter';
 import { createDemandAnalyticsRouter, createDemandBuffer } from './src/lib/demandAnalytics';
+import { createConsentRouter } from './src/lib/consentRouter';
 import { createGiftRevealRouter } from './src/lib/giftRevealRouter';
 import { sanitizeOrderForTracking, sanitizeOrderForReorder, verifyPhoneLast4 } from './src/lib/orderTrackingService';
 import { calculateDaysRemaining, generateOccasionWhatsAppLink, type OccasionReminder, type UpcomingReminderAdminRow } from './src/lib/occasionReminders';
@@ -397,6 +398,8 @@ app.use(createInquiriesRouter({
 }));
 const eventLimiter = rateLimit({ windowMs: 60 * 1000, max: 60, message: apiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
 app.use(createDemandAnalyticsRouter({ getDb: () => db, requireAdmin, eventLimiter, buffer: demandBuffer }));
+const consentLimiter = rateLimit({ windowMs: 60 * 1000, max: 20, message: apiRateLimitResponse, standardHeaders: true, legacyHeaders: false });
+app.use(createConsentRouter({ getDb: () => db, consentLimiter }));
 app.post('/api/newsletter/subscribe', contactLimiter);
 app.post('/api/orders', ordersLimiter);
 
