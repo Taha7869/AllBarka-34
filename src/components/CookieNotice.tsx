@@ -120,6 +120,8 @@ const COPY: Record<LanguageCode, ConsentCopy> = {
 export interface CookieNoticeProps {
   /** Hides the unsolicited bottom banner while checkout, cart bar, or other drawers are active. Never hides the user-opened preferences modal. */
   hidden?: boolean;
+  /** Shifts the banner higher when the standalone PWA bottom tab bar is active. */
+  hasTabBar?: boolean;
 }
 
 /**
@@ -128,7 +130,7 @@ export interface CookieNoticeProps {
  * - Trilingual (EN / UR / AR) preference panel with Essential (locked), Analytics, and Marketing
  * - Respects GPC defaults, policy-version re-consent, reduced motion, dark mode, and mobile safe clearances
  */
-export default function CookieNotice({ hidden = false }: CookieNoticeProps) {
+export default function CookieNotice({ hidden = false, hasTabBar = false }: CookieNoticeProps) {
   const { language, isRtl } = useLanguage();
   const prefersReducedMotion = useReducedMotion();
   const {
@@ -188,7 +190,11 @@ export default function CookieNotice({ hidden = false }: CookieNoticeProps) {
           initial={prefersReducedMotion ? false : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: prefersReducedMotion ? 0 : 0.22 }}
-          className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] inset-x-3 z-40 sm:inset-x-auto sm:bottom-5 sm:left-5 sm:right-auto sm:w-[29rem] max-w-[calc(100vw-1.5rem)] rounded-2xl border border-[#C7982F]/40 bg-[var(--color-surface,#FFFCF7)] p-4 text-start shadow-[0_14px_40px_rgba(4,40,33,0.18)] dark:bg-[#161D1B] dark:border-[#C7982F]/35"
+          className={`fixed inset-x-3 z-40 sm:inset-x-auto sm:left-5 sm:right-auto sm:w-[29rem] max-w-[calc(100vw-1.5rem)] rounded-2xl border border-[#C7982F]/40 bg-[var(--color-surface,#FFFCF7)] p-4 text-start shadow-[0_14px_40px_rgba(4,40,33,0.18)] dark:bg-[#161D1B] dark:border-[#C7982F]/35 ${
+            hasTabBar
+              ? 'bottom-[calc(9.25rem+env(safe-area-inset-bottom))] sm:bottom-20'
+              : 'bottom-[calc(5.25rem+env(safe-area-inset-bottom))] sm:bottom-5'
+          }`}
         >
           <div className="flex items-start gap-2.5">
             <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1E3A2B]/10 text-[#1E3A2B] dark:bg-[#C7982F]/15 dark:text-[#D8B25C]" aria-hidden="true">

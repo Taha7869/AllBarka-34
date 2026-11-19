@@ -20,6 +20,7 @@ import PoliciesPage, { type PolicyTab } from './pages/PoliciesPage';
 import AdminOrdersPage from './pages/AdminOrdersPage';
 import GiftRevealPage from './pages/GiftRevealPage';
 import OrderTrackingPage from './pages/OrderTrackingPage';
+import OfflinePage from './pages/OfflinePage';
 import NotFoundPage from './pages/NotFoundPage';
 import AlmondLoader from './components/AlmondLoader';
 import { OccasionsIndexRoute, OccasionRoute, PackagingHubPage, PackagingFormatPage, DesignPage } from './pages/CelebrationsPages';
@@ -91,6 +92,7 @@ export default function App() {
               <Route path="staff/orders" element={<StaffOrdersWorkspace />} />
               <Route path="reveal/:token" element={<GiftRevealPage />} />
               <Route path="track" element={<OrderTrackingPage />} />
+              <Route path="offline" element={<OfflinePage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Route>
           </Routes>

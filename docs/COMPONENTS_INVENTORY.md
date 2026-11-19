@@ -199,6 +199,11 @@ Existing AllBarkaHero owns the signature composition and separate discovery stat
 | `components/ConsentGate.tsx` | `ConsentGate` & `loadConsentScriptOnce` script gate | Component | Optional analytics/marketing integrations |
 | `components/CookieNotice.tsx` | Full trilingual Consent Manager (banner + preference modal) | Component | RootLayout |
 | `components/CookiePolicySection.tsx` | Code-derived storage/cookie inventory table for `/policies/cookies` | Component | PoliciesPage |
+| `hooks/useCarouselAutoSlide.ts` | Shared auto-slide controller (hover/touch pause, 4s auto-resume, visibility pause, reduced-motion disable) | Hook | CircularCarousel, CategoryCarousel, InfiniteMovingCards, Carousel |
+| `lib/pwa.ts` | Standalone display-mode detector, iOS Safari detector, `shareProductLink` Web Share + copy fallback | Utility | PwaInstallBanner, StandaloneTabBar, ProductDetailPage |
+| `pages/OfflinePage.tsx` | Offline page showing trilingual offline notice & previously viewed products | Page | App (`/offline`) |
+| `components/OfflineStatusBar.tsx` | Slim offline connection banner linking to `/offline` | Component | RootLayout |
+| `components/StandaloneTabBar.tsx` | Installed PWA standalone bottom tab bar (Home, Shop, Gifting, Bag, Account) | Component | RootLayout |
 
 GradientText is now used by AllBarkaHero. SquishSwitch is used by CategoryPLP.
 

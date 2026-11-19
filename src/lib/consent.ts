@@ -377,13 +377,13 @@ export const STORAGE_INVENTORY: readonly StorageInventoryEntry[] = [
     },
   },
   {
-    key: 'allbarka_pwa_dismissed',
+    key: 'allbarka_pwa_dismissed & allbarka_ios_a2hs_dismissed',
     storageType: 'localStorage',
     category: 'necessary',
     purpose: {
-      en: 'Remembers if you dismissed the one-time "Install to Home Screen" prompt.',
-      ur: 'یاد رکھتی ہے کہ آپ نے ہوم اسکرین انسٹال بینر بند کر دیا تھا۔',
-      ar: 'يتذكر ما إذا كنت قد أغلقت إشعار التثبيت على الشاشة الرئيسية.',
+      en: 'Remembers if you dismissed the one-time "Install to Home Screen" banner or iOS Safari guide.',
+      ur: 'یاد رکھتی ہے کہ آپ نے ہوم اسکرین انسٹال بینر یا iOS سفاری رہنمائی بند کر دی تھی۔',
+      ar: 'يتذكر ما إذا كنت قد أغلقت إشعار التثبيت على الشاشة الرئيسية أو دليل سفاري على iOS.',
     },
     duration: {
       en: 'Persistent until cleared',

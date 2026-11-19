@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#042821" />
+  <title>Offline — AllBarka Luxury Boutique</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #F6F1EA;
+      --surface: #FFFCF7;
+      --ink: #29231D;
+      --muted: #5C554C;
+      --emerald: #1E3A2B;
+      --gold: #C7982F;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #111816;
+        --surface: #18211E;
+        --ink: #FAF9F5;
+        --muted: #CFC8BC;
+        --emerald: #D8B25C;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main {
+      width: 100%;
+      max-width: 480px;
+      background: var(--surface);
+      border: 1px solid rgba(199, 152, 47, 0.38);
+      border-radius: 24px;
+      padding: 32px 28px;
+      text-align: center;
+      box-shadow: 0 18px 44px rgba(4, 40, 33, 0.14);
+    }
+    .seal {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      border: 1px solid rgba(199, 152, 47, 0.4);
+      margin-bottom: 16px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 24px;
+      color: var(--emerald);
+    }
+    p {
+      margin: 0 0 12px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+    .rtl { direction: rtl; font-size: 15px; }
+    .actions {
+      margin-top: 22px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+    a.btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 22px;
+      border-radius: 999px;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+      background: #1E3A2B;
+      color: #FAF9F5;
+      border: 1px solid #1E3A2B;
+    }
+    a.btn-secondary {
+      background: transparent;
+      color: var(--ink);
+      border-color: rgba(199, 152, 47, 0.55);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <img class="seal" src="/icon-192.png" alt="AllBarka" width="56" height="56" />
+    <h1>You are offline</h1>
+    <p>Please check your internet connection and try again. Your bag and previously viewed products stay saved on this device.</p>
+    <p class="rtl">انٹرنیٹ دستیاب نہیں ہے۔ براہِ کرم کنکشن چیک کر کے دوبارہ کوشش کریں — آپ کا بیگ اور حال ہی میں دیکھی گئی مصنوعات محفوظ ہیں۔</p>
+    <p class="rtl">لا يوجد اتصال بالإنترنت حاليًا. يرجى التحقق من الاتصال والمحاولة مرة أخرى — سلتك ومنتجاتك المشاهدة مؤخرًا محفوظة.</p>
+    <div class="actions">
+      <a class="btn" href="/">Try again / دوبارہ کوشش</a>
+      <a class="btn btn-secondary" href="/offline">Previously viewed</a>
+    </div>
+  </main>
+</body>
+</html>

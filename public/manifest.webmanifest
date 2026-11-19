@@ -9,6 +9,36 @@
   "background_color": "#F6F1EA",
   "theme_color": "#042821",
   "categories": ["shopping", "food", "lifestyle"],
+  "shortcuts": [
+    {
+      "name": "Shop",
+      "short_name": "Shop",
+      "description": "Browse AllBarka dry fruits, dates, oils, and hampers",
+      "url": "/shop",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Gifting",
+      "short_name": "Gifting",
+      "description": "Explore celebration gift boxes and bespoke hampers",
+      "url": "/gifting",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Track order",
+      "short_name": "Track",
+      "description": "Check live dispatch status for your AllBarka order",
+      "url": "/track",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Bag",
+      "short_name": "Bag",
+      "description": "Open your shopping bag and review items",
+      "url": "/cart",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ],
   "icons": [
     {
       "src": "/icon-192.png",

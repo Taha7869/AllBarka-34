@@ -8,7 +8,8 @@ import { productSeo } from '../lib/productSeo';
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import { useCatalogActivity } from '../hooks/useCatalogActivity';
 import { unitPrice } from '../lib/catalogActivity';
-import { useSavedProducts } from '../hooks/useSavedProducts';
+import { useSavedProducts } from '../hooks/useSavedProducts';
+import { shareProductLink } from '../lib/pwa';
 import React, { lazy, Suspense, useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
@@ -105,21 +106,19 @@ export default function ProductDetailPage() {
 
   const handleSave = (next: boolean) => { if (id) setSaved(id, next); };
 
-  const handleShare = async () => {
-    if (!product) return;
-    const url = window.location.href;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: getLocalized(product, 'name', language), url });
-        setShareStatus('idle');
-      } else {
-        await navigator.clipboard.writeText(url);
-        setShareStatus('copied');
-      }
-    } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') return;
-      setShareStatus('failed');
-    }
+  const handleShare = async () => {
+    if (!product) return;
+    const url = window.location.href;
+    const title = getLocalized(product, 'name', language);
+    const result = await shareProductLink({ title, text: `${title} — AllBarka`, url });
+    if (result === 'copied') {
+      setShareStatus('copied');
+      window.setTimeout(() => setShareStatus((prev) => (prev === 'copied' ? 'idle' : prev)), 3000);
+    } else if (result === 'shared' || result === 'cancelled') {
+      setShareStatus('idle');
+    } else {
+      setShareStatus('failed');
+    }
   };
 
   // Related selections from the current catalogue
@@ -763,8 +762,8 @@ export default function ProductDetailPage() {
                 <PulseHeart liked={isSaved} onChange={handleSave} label={t('wishlist', 'Wishlist')} savedLabel={t('savedProduct', 'Saved')} className="flex-1" />
                 <button 
                   type="button" 
-                  onClick={handleShare}
-                  className="flex-1 h-11 flex items-center justify-center gap-2 rounded-xl border border-[#29231D]/20 dark:border-[#F6F1EA]/20 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#635B52] dark:text-[#A8A199] hover:text-[#1E3A2B] dark:hover:text-[#FDFBF7] hover:border-[#1E3A2B] dark:hover:border-[#FDFBF7] transition-colors shadow-sm focus-ring cursor-pointer"
+                  data-pdp-share-btn onClick={handleShare}
+                  className="flex-1 min-h-[44px] h-11 flex items-center justify-center gap-2 rounded-xl border border-[#29231D]/20 dark:border-[#F6F1EA]/20 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#635B52] dark:text-[#A8A199] hover:text-[#1E3A2B] dark:hover:text-[#FDFBF7] hover:border-[#1E3A2B] dark:hover:border-[#FDFBF7] transition-colors shadow-sm focus-ring cursor-pointer"
                 >
                   <Share2 size={15} />
                   <span>{shareStatus === 'copied' ? t('shareCopied', 'Link copied') : shareStatus === 'failed' ? t('shareFailed', 'Could not share') : t('shareItem', 'Share Item')}</span>

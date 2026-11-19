@@ -32,11 +32,19 @@ test('Feature B: Web App Manifest verification', () => {
   const icon512 = manifest.icons.find((i: any) => i.sizes === '512x512');
   assert.ok(icon512, '512x512 icon must be specified');
   assert.ok(fs.existsSync(path.join(ROOT_DIR, 'public', icon512.src)), `Icon file ${icon512.src} must exist`);
+
+  // Verify PWA app shortcuts (Shop, Gifting, Track order, Bag)
+  assert.ok(Array.isArray(manifest.shortcuts), 'shortcuts must be an array');
+  const shortcutUrls = manifest.shortcuts.map((s: any) => s.url);
+  for (const expectedUrl of ['/shop', '/gifting', '/track', '/cart']) {
+    assert.ok(shortcutUrls.includes(expectedUrl), `manifest shortcuts must include ${expectedUrl}`);
+  }
 });
 
 test('Feature B: Service Worker static-only safety rules verification', () => {
   const swPath = path.join(ROOT_DIR, 'public', 'sw.js');
   assert.ok(fs.existsSync(swPath), 'sw.js must exist in public directory');
+  assert.ok(fs.existsSync(path.join(ROOT_DIR, 'public', 'offline.html')), 'offline.html must exist in public directory');
 
   const swContent = fs.readFileSync(swPath, 'utf-8');
 
@@ -46,6 +54,7 @@ test('Feature B: Service Worker static-only safety rules verification', () => {
   assert.ok(swContent.includes("pathname.startsWith('/admin')"), 'sw.js must strictly bypass /admin routes');
   assert.ok(swContent.includes("pathname.startsWith('/staff')"), 'sw.js must strictly bypass /staff routes');
   assert.ok(swContent.includes("request.method !== 'GET'"), 'sw.js must strictly bypass non-GET requests');
+  assert.ok(swContent.includes("'/offline.html'"), 'sw.js must precache /offline.html fallback');
 });
 
 test('Feature B: HTML and Helmet CSP PWA headers verification', () => {

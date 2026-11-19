@@ -21,6 +21,8 @@ import { usePdpBuyBarVisible } from '../lib/pdpBuyBarSignal';
 import PullToRefresh from '../components/PullToRefresh';
 import CookieNotice from '../components/CookieNotice';
 import PwaInstallBanner from '../components/PwaInstallBanner';
+import OfflineStatusBar from '../components/OfflineStatusBar';
+import StandaloneTabBar, { useStandaloneMode } from '../components/StandaloneTabBar';
 import CurrencySelector from '../components/CurrencySelector';
 import ThemeToggle from '../components/ThemeToggle';
 import type { InfoPageTab } from '../components/InfoPagesModal';
@@ -64,6 +66,7 @@ export default function RootLayout() {
   const { currentUser, patronProfile, logout } = useAuth();
   const { language, setLanguage, isRtl, t } = useLanguage();
   const { needsPrompt: consentNeedsPrompt, isPreferencesOpen: consentPreferencesOpen } = useConsent();
+  const isStandalone = useStandaloneMode();
   
   const mobileMenuTriggerRef = React.useRef<HTMLButtonElement>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -231,6 +234,17 @@ export default function RootLayout() {
   const consentUiActive =
     consentPreferencesOpen ||
     (consentNeedsPrompt && !isAdminRoute && !isAnyModalOrDrawerOpen && location.pathname !== '/checkout' && !pdpBuyBarVisible && totalItemsCount === 0);
+  const standaloneTabBarVisible =
+    isStandalone &&
+    !isAdminRoute &&
+    !location.pathname.startsWith('/staff') &&
+    location.pathname !== '/checkout' &&
+    !isAnyModalOrDrawerOpen &&
+    !pdpBuyBarVisible;
+  const hasBottomObstruction =
+    pdpBuyBarVisible ||
+    standaloneTabBarVisible ||
+    (totalItemsCount > 0 && location.pathname !== '/checkout' && location.pathname !== '/cart');
   useEffect(() => {
     if (!isAnyModalOrDrawerOpen) return;
     const releaseLock = acquireScrollLock();
@@ -430,6 +444,7 @@ export default function RootLayout() {
       />
 
       <main className="flex-1 w-full relative z-10 flex flex-col items-center">
+        <OfflineStatusBar />
         {/* Shared Breadcrumb Navigation for all subpages (hidden on homepage) */}
         {!isAdminRoute && <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <Breadcrumbs />
@@ -469,14 +484,25 @@ export default function RootLayout() {
       </main>
 
       {!isAdminRoute && <Footer />}
-      <BackToTop hide={isAdminRoute || isAnyModalOrDrawerOpen} hasCartBar={pdpBuyBarVisible || (totalItemsCount > 0 && location.pathname !== '/checkout' && location.pathname !== '/cart')} />
+      {standaloneTabBarVisible && <div aria-hidden="true" className="h-[calc(4.5rem+env(safe-area-inset-bottom))] w-full shrink-0" />}
+      <BackToTop hide={isAdminRoute || isAnyModalOrDrawerOpen} hasCartBar={hasBottomObstruction} />
       
       <StickyCartBottomBar 
-        hide={isAdminRoute || isAnyModalOrDrawerOpen || pdpBuyBarVisible}
+        hide={isAdminRoute || isAnyModalOrDrawerOpen || pdpBuyBarVisible || standaloneTabBarVisible}
+      />
+      <StandaloneTabBar
+        visible={standaloneTabBarVisible}
+        onOpenAccount={() => {
+          if (currentUser) setPatronLoungeOpen(true);
+          else {
+            setAuthInitialMode('signin');
+            setAuthModalOpen(true);
+          }
+        }}
       />
       <PullToRefresh disabled={isAdminRoute || isAnyModalOrDrawerOpen || location.pathname === '/checkout'} />
-      <CookieNotice hidden={isAdminRoute || isAnyModalOrDrawerOpen || location.pathname === '/checkout' || pdpBuyBarVisible || totalItemsCount > 0} />
-      <PwaInstallBanner hidden={isAdminRoute || isAnyModalOrDrawerOpen || location.pathname === '/checkout' || pdpBuyBarVisible || consentUiActive} />
+      <CookieNotice hidden={isAdminRoute || isAnyModalOrDrawerOpen || location.pathname === '/checkout' || pdpBuyBarVisible || totalItemsCount > 0} hasTabBar={standaloneTabBarVisible} />
+      <PwaInstallBanner hidden={isAdminRoute || isAnyModalOrDrawerOpen || location.pathname === '/checkout' || pdpBuyBarVisible || consentUiActive || standaloneTabBarVisible} />
       
       {/* Drawer & Modals */}
       <CartDrawer
@@ -493,7 +519,7 @@ export default function RootLayout() {
       {(updatesOpen || loadedOverlays.updates) && <StoreUpdatesDialog isOpen={updatesOpen} onClose={() => setUpdatesOpen(false)} onSignIn={() => { setUpdatesOpen(false); setAuthInitialMode('signin'); setAuthModalOpen(true); }} />}
       {(infoModalOpen || loadedOverlays.info) && <InfoPagesModal isOpen={infoModalOpen} initialTab={infoModalTab} onClose={() => setInfoModalOpen(false)} />}
       {(policyModalOpen || loadedOverlays.policy) && <PolicyPagesModal isOpen={policyModalOpen} initialTab={policyModalTab} onClose={() => setPolicyModalOpen(false)} />}
-      {!isAdminRoute && <AIConcierge hide={isAnyModalOrDrawerOpen && !aiConciergeOpen} hasCartBar={pdpBuyBarVisible || (totalItemsCount > 0 && location.pathname !== '/checkout' && location.pathname !== '/cart')} onOpenChange={setAiConciergeOpen} />}
+      {!isAdminRoute && <AIConcierge hide={isAnyModalOrDrawerOpen && !aiConciergeOpen} hasCartBar={hasBottomObstruction} onOpenChange={setAiConciergeOpen} />}
       <CustomQuoteModal />
       <MehmaanTablePlannerModal isOpen={mehmaanModalOpen} onClose={() => setMehmaanModalOpen(false)} />
       <OccasionInquiryModal isOpen={occasionModalOpen} defaultOccasion={defaultOccasion} prefill={occasionPrefill} onClose={() => setOccasionModalOpen(false)} />

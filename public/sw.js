@@ -1,11 +1,12 @@
 // AllBarka Lightweight Static Service Worker
 // STRICT SAFETY RULE: NEVER cache API, checkout, or admin routes.
 
-const CACHE_NAME = 'allbarka-static-v1';
+const CACHE_NAME = 'allbarka-static-v2';
 
 // Static precache list for core UI offline resilience
 const PRECACHE_ASSETS = [
   '/',
+  '/offline.html',
   '/favicon.svg',
   '/manifest.webmanifest',
   '/icon-192.png',
@@ -119,11 +120,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 4. HTML navigations: Network-first with cache fallback (excluding bypassed routes)
+  // 4. HTML navigations: Network-first with cached SPA shell -> static offline.html fallback (excluding bypassed routes)
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request).catch(() => {
-        return caches.match('/').then((fallback) => fallback || Response.error());
+        return caches
+          .match('/')
+          .then((shell) => shell || caches.match('/offline.html'))
+          .then((fallback) => fallback || Response.error());
       })
     );
   }
