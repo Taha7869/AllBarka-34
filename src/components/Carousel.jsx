@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from 'motion/react';
 import { ChevronLeft, ChevronRight, CheckCircle2, Package, Award, Truck } from 'lucide-react';
 import './Carousel.css';
+import { useCarouselAutoSlide } from '../hooks/useCarouselAutoSlide';
 
 const DEFAULT_ALLBARKA_DISTINCTIONS = [
   {
@@ -42,9 +43,15 @@ export default function Carousel({
 }) {
   const effectiveItems = items && items.length > 0 ? items : DEFAULT_ALLBARKA_DISTINCTIONS;
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
   const [dynamicWidth, setDynamicWidth] = useState(baseWidth);
   const containerRef = useRef(null);
+  const totalItems = effectiveItems.length;
+  const { isRunning, pauseTemporarily, containerProps } = useCarouselAutoSlide({
+    enabled: autoplay,
+    itemCount: totalItems,
+    pauseOnHover,
+    observeRef: containerRef,
+  });
 
   // Responsive dynamic width calculation to prevent horizontal overflow on mobile
   useEffect(() => {
@@ -66,8 +73,6 @@ export default function Carousel({
     return () => window.removeEventListener('resize', handleResize);
   }, [baseWidth]);
 
-  const totalItems = effectiveItems.length;
-
   const handleNext = useCallback(() => {
     if (totalItems === 0) return;
     setCurrentIndex((prev) => (prev + 1) % totalItems);
@@ -78,22 +83,23 @@ export default function Carousel({
     setCurrentIndex((prev) => (prev - 1 + totalItems) % totalItems);
   }, [totalItems]);
 
-  // Autoplay functionality with pause-on-hover
+  // Autoplay controlled by shared useCarouselAutoSlide (hover/touch pause, 4s resume, hidden tab pause, reduced motion off)
   useEffect(() => {
-    if (!autoplay || (pauseOnHover && isHovered) || totalItems <= 1) return;
+    if (!isRunning) return;
 
     const timer = setInterval(() => {
       handleNext();
     }, autoplayDelay);
 
     return () => clearInterval(timer);
-  }, [autoplay, autoplayDelay, pauseOnHover, isHovered, totalItems, handleNext]);
+  }, [isRunning, autoplayDelay, handleNext]);
 
   // Drag Gesture Handling using Motion
   const x = useMotionValue(0);
   const springX = useSpring(x, { stiffness: 300, damping: 30 });
 
   const handleDragEnd = (event, info) => {
+    pauseTemporarily();
     const threshold = 50;
     if (info.offset.x < -threshold) {
       handleNext();
@@ -107,9 +113,9 @@ export default function Carousel({
   return (
     <div
       ref={containerRef}
+      data-auto-sliding={isRunning}
       className={`carousel-container ${className}`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      {...containerProps}
     >
       {/* Track Wrapper */}
       <div className="carousel-track-wrapper">
@@ -176,7 +182,7 @@ export default function Carousel({
       <div className="carousel-controls">
         <button
           type="button"
-          onClick={handlePrev}
+          onClick={() => { pauseTemporarily(); handlePrev(); }}
           className="carousel-nav-btn"
           aria-label="Previous Feature"
         >
@@ -189,7 +195,7 @@ export default function Carousel({
             <button
               key={index}
               type="button"
-              onClick={() => setCurrentIndex(index)}
+              onClick={() => { pauseTemporarily(); setCurrentIndex(index); }}
               className={`carousel-dot ${index === currentIndex ? 'active' : ''}`}
               aria-label={`Go to slide ${index + 1}`}
             />
@@ -198,7 +204,7 @@ export default function Carousel({
 
         <button
           type="button"
-          onClick={handleNext}
+          onClick={() => { pauseTemporarily(); handleNext(); }}
           className="carousel-nav-btn"
           aria-label="Next Feature"
         >

@@ -1,10 +1,10 @@
-import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import useEmblaCarousel from 'embla-carousel-react';
 
+import { useCarouselAutoSlide } from '../hooks/useCarouselAutoSlide';
 import { canRotatePantry, pantryCardProjection, pantryRotationDistance } from '../lib/pantryMotion';
 import { visibleCardFraction } from '../lib/circularCatalogue';
 import { CANONICAL_CATEGORIES, canonicalCollectionKey, getEquivalentCollectionIds } from '../config/categories';
@@ -203,10 +203,25 @@ export default function CategoryCarousel({ settings: propSettings }: CategoryCar
       return posA - posB;
     });
   }, [activeSettings, hasCustomSettings, language]);
-  const reducedMotion = Boolean(useReducedMotion());
   const sectionRef = useRef<HTMLElement>(null);
-  const interactionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const visibleIndicesRef = useRef<number[]>([0]);
+  const {
+    reducedMotion,
+    inView,
+    pageVisible,
+    hovered,
+    pointerDown,
+    interacting,
+    focusWithin,
+    beginInteraction,
+    endInteraction,
+    pauseTemporarily,
+    containerProps,
+  } = useCarouselAutoSlide({
+    observeRef: sectionRef,
+    itemCount: categories.length,
+    intersectionThreshold: 0.15,
+  });
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: 'center', loop: true, containScroll: false, dragFree: true,
     duration: reducedMotion ? 0 : 32,
@@ -215,42 +230,25 @@ export default function CategoryCarousel({ settings: propSettings }: CategoryCar
   const [canScrollNext, setCanScrollNext] = useState(false);
   const [visibleIndices, setVisibleIndices] = useState([0]);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [inView, setInView] = useState(false);
-  const [interacting, setInteracting] = useState(false);
-  const [hovered, setHovered] = useState(false);
-  const [focusWithin, setFocusWithin] = useState(false);
-  const [pageVisible, setPageVisible] = useState(() => typeof document === 'undefined' || !document.hidden);
-  const rotating = canRotatePantry({ reducedMotion, inView, interacting, hovered, focusWithin, pageVisible });
+  const rotating = canRotatePantry({ reducedMotion, inView, interacting: interacting || pointerDown, hovered, focusWithin, pageVisible });
 
-  const takeControl = useCallback(() => {
-    setInteracting(true);
-    if (interactionTimerRef.current) clearTimeout(interactionTimerRef.current);
-    // Reading after a swipe is temporary; there is no hidden permanent pause state.
-    interactionTimerRef.current = setTimeout(() => setInteracting(false), 8000);
-  }, []);
+  const takeControl = pauseTemporarily;
   const scrollPrev = useCallback(() => { takeControl(); emblaApi?.scrollPrev(reducedMotion); }, [emblaApi, reducedMotion, takeControl]);
   const scrollNext = useCallback(() => { takeControl(); emblaApi?.scrollNext(reducedMotion); }, [emblaApi, reducedMotion, takeControl]);
-
-  useEffect(() => () => { if (interactionTimerRef.current) clearTimeout(interactionTimerRef.current); }, []);
-
-  useEffect(() => {
-    if (!emblaApi) return;
-    if (typeof IntersectionObserver === 'undefined') { setInView(true); return; }
-    const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting && entry.intersectionRatio >= .15), { threshold: .15 });
-    observer.observe(emblaApi.rootNode());
-    return () => observer.disconnect();
-  }, [emblaApi]);
 
   useEffect(() => {
     if (emblaApi) emblaApi.reInit();
   }, [emblaApi, categories]);
 
   useEffect(() => {
-    const sync = () => setPageVisible(!document.hidden);
-    document.addEventListener('visibilitychange', sync);
-    sync();
-    return () => document.removeEventListener('visibilitychange', sync);
-  }, []);
+    if (!emblaApi) return;
+    emblaApi.on('pointerDown', beginInteraction);
+    emblaApi.on('pointerUp', endInteraction);
+    return () => {
+      emblaApi.off('pointerDown', beginInteraction);
+      emblaApi.off('pointerUp', endInteraction);
+    };
+  }, [emblaApi, beginInteraction, endInteraction]);
 
   useEffect(() => {
     if (!emblaApi) return;
@@ -341,9 +339,8 @@ export default function CategoryCarousel({ settings: propSettings }: CategoryCar
 
   return (
     <section id="allbarka-pantry" ref={sectionRef} dir="ltr" data-rotating={rotating}
-      onFocusCapture={event => setFocusWithin(event.target.matches(':focus-visible'))}
-      onKeyDownCapture={() => setFocusWithin(true)}
-      onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocusWithin(false); }}
+      onFocusCapture={containerProps.onFocusCapture}
+      onBlurCapture={containerProps.onBlurCapture}
       className="editorial-pantry w-full border-b border-[var(--color-border)] bg-[var(--color-base)] py-12 sm:py-16 select-none">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-5 flex items-end justify-between gap-5 sm:mb-7 text-left">
@@ -358,9 +355,14 @@ export default function CategoryCarousel({ settings: propSettings }: CategoryCar
         </div>
 
         <div className="editorial-pantry-stage"
-          onPointerEnter={event => { if (event.pointerType === 'mouse') setHovered(true); }}
-          onPointerLeave={event => { if (event.pointerType === 'mouse') setHovered(false); }}
-          onPointerDownCapture={takeControl} onPointerUpCapture={takeControl} onPointerCancelCapture={takeControl}>
+          onPointerEnter={containerProps.onPointerEnter}
+          onPointerLeave={containerProps.onPointerLeave}
+          onPointerDownCapture={containerProps.onPointerDownCapture}
+          onPointerUpCapture={containerProps.onPointerUpCapture}
+          onPointerCancelCapture={containerProps.onPointerCancelCapture}
+          onTouchStart={containerProps.onTouchStart}
+          onTouchEnd={containerProps.onTouchEnd}
+          onTouchCancel={containerProps.onTouchCancel}>
           <div className="editorial-pantry-viewport focus-ring cursor-grab active:cursor-grabbing"
             ref={emblaRef} tabIndex={0} onKeyDown={handleKeyDown} role="region" aria-label={t('pantry.region')}>
             <div className="editorial-pantry-track">

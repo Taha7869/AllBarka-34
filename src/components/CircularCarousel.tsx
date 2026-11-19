@@ -1,4 +1,3 @@
-import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
@@ -8,6 +7,7 @@ import type { Product } from '../types';
 import ProductCard from './ProductCard';
 import { getLocalized } from '../utils/localize';
 import { useCircularCarouselLanguage } from '../hooks/useCircularCarouselLanguage';
+import { useCarouselAutoSlide } from '../hooks/useCarouselAutoSlide';
 import { circularCardProjection, shouldRotateCatalogue, visibleCardFraction } from '../lib/circularCatalogue';
 
 interface CircularCarouselProps {
@@ -23,20 +23,34 @@ interface CircularCarouselProps {
  */
 export default function CircularCarousel({ products, onAddToCart, onQuickView }: CircularCarouselProps) {
   const { t, language } = useCircularCarouselLanguage();
-  const reducedMotion = Boolean(useReducedMotion());
   const rootRef = useRef<HTMLDivElement>(null);
-  const interactionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const visibleIndicesRef = useRef<number[]>([0]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [visibleIndices, setVisibleIndices] = useState<number[]>([0]);
-  const [interacting, setInteracting] = useState(false);
-  const [hovered, setHovered] = useState(false);
-  const [focusWithin, setFocusWithin] = useState(false);
-  const [inView, setInView] = useState(false);
-  const [pageVisible, setPageVisible] = useState(() => typeof document === 'undefined' || !document.hidden);
   const [playing, setPlaying] = useState(false);
+
+  const {
+    reducedMotion,
+    inView,
+    pageVisible,
+    hovered,
+    pointerDown,
+    interacting,
+    focusWithin,
+    beginInteraction,
+    endInteraction,
+    pauseTemporarily,
+    containerProps,
+  } = useCarouselAutoSlide({
+    observeRef: rootRef,
+    itemCount: products.length,
+    intersectionThreshold: 0.1,
+  });
+
+  // stopOnInteraction MUST stay false so Embla never permanently kills autoplay on click/touch;
+  // useCarouselAutoSlide owns pause + 4-second auto-resume cleanly.
   const player = useMemo(() => Autoplay({
-    delay: 7000, playOnInit: false, stopOnInteraction: true,
+    delay: 7000, playOnInit: false, stopOnInteraction: false,
     stopOnMouseEnter: false, stopOnFocusIn: false, stopOnLastSnap: false,
   }), []);
   const plugins = useMemo(() => [player], [player]);
@@ -47,37 +61,31 @@ export default function CircularCarousel({ products, onAddToCart, onQuickView }:
     watchDrag: (_api, event) => !(event.target instanceof Element && event.target.closest('.product-gallery,button,input,select,textarea,a')),
   }, plugins);
 
-  useEffect(() => {
-    const node = rootRef.current;
-    if (!node) return;
-    if (typeof IntersectionObserver === 'undefined') { setInView(true); return; }
-    const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting && entry.intersectionRatio >= .1), { threshold: .1 });
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const sync = () => setPageVisible(!document.hidden);
-    document.addEventListener('visibilitychange', sync);
-    sync();
-    return () => document.removeEventListener('visibilitychange', sync);
-  }, []);
-
   const canRotate = shouldRotateCatalogue({
-    reducedMotion, inView, pageVisible, hovered, focusWithin, interacting, count: products.length,
+    reducedMotion, inView, pageVisible, hovered, focusWithin, interacting: interacting || pointerDown, count: products.length,
   });
   useEffect(() => {
     const autoplay = emblaApi?.plugins().autoplay;
     if (!autoplay || !emblaApi) return;
     const syncPlayback = () => {
-      if (canRotate) { if (!autoplay.isPlaying()) autoplay.play(); }
-      else autoplay.stop();
+      if (canRotate) {
+        if (!autoplay.isPlaying()) autoplay.play();
+      } else if (autoplay.isPlaying()) {
+        autoplay.stop();
+      }
+      setPlaying(autoplay.isPlaying());
     };
     syncPlayback();
     // Resizing recreates Embla's plugin; retain the current reading safeguards.
     emblaApi.on('reInit', syncPlayback);
-    return () => { emblaApi.off('reInit', syncPlayback); };
-  }, [emblaApi, canRotate]);
+    emblaApi.on('pointerDown', beginInteraction);
+    emblaApi.on('pointerUp', endInteraction);
+    return () => {
+      emblaApi.off('reInit', syncPlayback);
+      emblaApi.off('pointerDown', beginInteraction);
+      emblaApi.off('pointerUp', endInteraction);
+    };
+  }, [emblaApi, canRotate, beginInteraction, endInteraction]);
 
   useEffect(() => {
     if (!emblaApi) return;
@@ -132,12 +140,8 @@ export default function CircularCarousel({ products, onAddToCart, onQuickView }:
 
   const takeControl = useCallback(() => {
     player.stop();
-    setInteracting(true);
-    if (interactionTimerRef.current) clearTimeout(interactionTimerRef.current);
-    // Resume after a reading interval instead of requiring a removed play button.
-    interactionTimerRef.current = setTimeout(() => setInteracting(false), 10000);
-  }, [player]);
-  useEffect(() => () => { if (interactionTimerRef.current) clearTimeout(interactionTimerRef.current); }, []);
+    pauseTemporarily();
+  }, [player, pauseTemporarily]);
   const move = (step: -1 | 1) => { takeControl(); if (step < 0) emblaApi?.scrollPrev(); else emblaApi?.scrollNext(); };
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.target !== event.currentTarget) return;
@@ -154,15 +158,19 @@ export default function CircularCarousel({ products, onAddToCart, onQuickView }:
 
   if (!products.length) return null;
   return (
-    <div ref={rootRef} className="circular-boutique" dir="ltr" data-playing={playing} data-interacting={interacting}
-      onFocusCapture={event => setFocusWithin(event.target.matches(':focus-visible'))}
-      onKeyDownCapture={() => setFocusWithin(true)}
-      onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocusWithin(false); }}>
+    <div ref={rootRef} className="circular-boutique" dir="ltr" data-playing={playing} data-interacting={interacting || pointerDown}
+      onFocusCapture={containerProps.onFocusCapture}
+      onBlurCapture={containerProps.onBlurCapture}>
       <div className="circular-boutique-viewport focus-ring" ref={emblaRef} tabIndex={0} role="region"
         aria-roledescription={t('circular.type')} aria-label={t('slider.carousel')} onKeyDown={handleKeyDown}
-        onPointerEnter={event => { if (event.pointerType === 'mouse') setHovered(true); }}
-        onPointerLeave={event => { if (event.pointerType === 'mouse') setHovered(false); }}
-        onPointerDownCapture={takeControl} onPointerUpCapture={takeControl} onPointerCancelCapture={takeControl}>
+        onPointerEnter={containerProps.onPointerEnter}
+        onPointerLeave={containerProps.onPointerLeave}
+        onPointerDownCapture={containerProps.onPointerDownCapture}
+        onPointerUpCapture={containerProps.onPointerUpCapture}
+        onPointerCancelCapture={containerProps.onPointerCancelCapture}
+        onTouchStart={containerProps.onTouchStart}
+        onTouchEnd={containerProps.onTouchEnd}
+        onTouchCancel={containerProps.onTouchCancel}>
         <div className="circular-boutique-track">
           {products.map((product, index) => (
             <div key={product.id} className="circular-boutique-slide" role="group" data-active={index === selectedIndex}

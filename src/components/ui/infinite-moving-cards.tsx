@@ -1,5 +1,6 @@
 "use client";
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useCarouselAutoSlide } from '../../hooks/useCarouselAutoSlide';
 import React, { useEffect, useState } from "react";
 import { 
   MapPin, 
@@ -54,11 +55,23 @@ export const InfiniteMovingCards = ({
 
   const [start, setStart] = useState(false);
   const [selectedReview, setSelectedReview] = useState<MovingReviewItem | null>(null);
+  const clonedRef = React.useRef(false);
+
+  const { isRunning, reducedMotion, containerProps } = useCarouselAutoSlide({
+    observeRef: containerRef,
+    itemCount: items.length,
+    pauseOnHover,
+    modalOpen: Boolean(selectedReview),
+  });
 
   useEffect(() => {
+    if (reducedMotion) {
+      setStart(false);
+      return;
+    }
     addAnimation();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [reducedMotion]);
 
   // Keyboard escape listener to close modal
   useEffect(() => {
@@ -75,14 +88,17 @@ export const InfiniteMovingCards = ({
 
   function addAnimation() {
     if (containerRef.current && scrollerRef.current) {
-      const scrollerContent = Array.from(scrollerRef.current.children) as HTMLElement[];
+      if (!clonedRef.current) {
+        const scrollerContent = Array.from(scrollerRef.current.children) as HTMLElement[];
 
-      scrollerContent.forEach((item) => {
-        const duplicatedItem = item.cloneNode(true);
-        if (scrollerRef.current) {
-          scrollerRef.current.appendChild(duplicatedItem);
-        }
-      });
+        scrollerContent.forEach((item) => {
+          const duplicatedItem = item.cloneNode(true);
+          if (scrollerRef.current) {
+            scrollerRef.current.appendChild(duplicatedItem);
+          }
+        });
+        clonedRef.current = true;
+      }
 
       getDirection();
       getSpeed();
@@ -138,18 +154,21 @@ export const InfiniteMovingCards = ({
       <div
         ref={containerRef}
         dir="ltr"
+        data-auto-sliding={isRunning}
+        {...containerProps}
         className={cn(
-          "scroller relative z-20 w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent,white_8%,white_92%,transparent)]",
+          "scroller relative z-20 w-full [mask-image:linear-gradient(to_right,transparent,white_8%,white_92%,transparent)]",
+          reducedMotion ? "overflow-x-auto" : "overflow-hidden",
           className
         )}
       >
         <div
           ref={scrollerRef}
           onClick={handleScrollerClick}
+          style={!reducedMotion && start ? { animationPlayState: isRunning ? 'running' : 'paused' } : undefined}
           className={cn(
             "flex min-w-full shrink-0 gap-6 py-6 w-max flex-nowrap",
-            start && "animate-scroll",
-            pauseOnHover && "hover:[animation-play-state:paused]"
+            !reducedMotion && start && "animate-scroll"
           )}
         >
           {items.map((item, idx) => {
