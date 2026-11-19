@@ -2,7 +2,7 @@ import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePrefersReducedMotion } from './usePrefersReducedMotion';
 
-export const DEFAULT_CAROUSEL_RESUME_MS = 4000;
+export const DEFAULT_CAROUSEL_RESUME_MS = 2000; // owner 19 Nov: resume 2 seconds after a tap
 
 export interface CarouselAutoSlideState {
   enabled: boolean;
@@ -57,7 +57,7 @@ export interface CarouselAutoSlideHandle {
   pointerDown: boolean;
   interacting: boolean;
   focusWithin: boolean;
-  /** Pauses immediately while pointer/touch is held down, then resumes resumeDelayMs (default 4s) after release. */
+  /** Pauses immediately while pointer/touch is held down, then resumes resumeDelayMs (default 2s) after release. */
   beginInteraction: () => void;
   /** Marks interaction released and starts the 4s auto-resume timer. */
   endInteraction: () => void;

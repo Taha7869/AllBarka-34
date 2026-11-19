@@ -22,7 +22,7 @@ import OfflinePage from '../src/pages/OfflinePage';
 import StandaloneTabBar from '../src/components/StandaloneTabBar';
 
 test('Feature A: shared useCarouselAutoSlide state machine enforces hover/touch pause, 4s resume, hidden-tab pause, and reduced-motion off', () => {
-  assert.equal(DEFAULT_CAROUSEL_RESUME_MS, 4000);
+  assert.equal(DEFAULT_CAROUSEL_RESUME_MS, 2000);
 
   const runningState: CarouselAutoSlideState = {
     enabled: true,
