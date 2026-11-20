@@ -234,7 +234,7 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
               <div className="w-full h-full rounded-full bg-[var(--color-surface,#FFFFFF)] flex items-center justify-center relative overflow-hidden shadow-sm">
                 <div className="absolute inset-[2px] rounded-full border border-[var(--color-gold,#B8935F)]/40 pointer-events-none" />
                 <div className="relative z-10 flex flex-col items-center justify-center">
-                  <span className="font-serif font-black text-xs sm:text-sm tracking-tight text-[var(--color-gold,#B8935F)] leading-none motion-safe:group-hover:scale-105 transition-transform">
+                  <span className="font-serif font-black text-xs sm:text-sm tracking-tight text-[var(--color-accent-text,#806326)] leading-none motion-safe:group-hover:scale-105 transition-transform">
                     AB
                   </span>
                   <span className="text-[6.5px] font-black uppercase tracking-widest text-[var(--color-ink,#1A1A1A)] leading-none mt-0.5 opacity-90 flex items-center gap-0.5">

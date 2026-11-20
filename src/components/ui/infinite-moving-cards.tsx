@@ -205,9 +205,9 @@ export const InfiniteMovingCards = ({
 
                   {/* Headline if available */}
                   {item.headline && (
-                    <h4 className="text-sm md:text-base font-serif font-black text-[#2B1B17] tracking-wide mb-2.5 group-hover:text-[#8C6B1B] transition-colors">
+                    <h3 className="text-sm md:text-base font-serif font-black text-[#2B1B17] tracking-wide mb-2.5 group-hover:text-[#8C6B1B] transition-colors">
                       &quot;{item.headline}&quot;
-                    </h4>
+                    </h3>
                   )}
 
                   {/* Quote text in frosted off-white box */}

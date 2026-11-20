@@ -141,6 +141,7 @@ export default function GiftFinder({
             <button
               type="submit"
               disabled={isLoading || !query.trim()}
+              aria-label={isLoading ? t('giftFinder.searching', 'Searching...') : t('giftFinder.findButton', 'Find Gifts')}
               className="inline-flex items-center justify-center gap-1.5 px-4 sm:px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-[#042821] text-[#FAF9F5] hover:bg-[#074b39] transition-colors focus-ring min-h-[44px] cursor-pointer disabled:opacity-50"
             >
               <Sparkles size={14} className="text-[#D4AF37]" />

@@ -322,6 +322,8 @@ export default function ProductDetailPage() {
                   width={960}
                   height={960}
                   referrerPolicy="no-referrer"
+                  loading="eager"
+                  fetchPriority="high"
                   decoding="async"
                   onError={() => setImageError(true)}
                   style={product.mediaFocalPoint ? { objectPosition: `${product.mediaFocalPoint.x * 100}% ${product.mediaFocalPoint.y * 100}%` } : undefined}
@@ -803,9 +805,9 @@ export default function ProductDetailPage() {
             <div className="pdp-guarantee mt-8 border-t border-[var(--color-accent,#C7982F)]/20 pt-8" hidden={isPackaging}>
               <div className="flex items-center gap-2 mb-4">
                 <ShieldCheck size={20} className="text-[#C5A059]" />
-                <h3 className="font-serif font-bold text-lg text-[var(--color-ink,#29231D)] dark:text-[#FFFCF7]">
+                <h2 className="font-serif font-bold text-lg text-[var(--color-ink,#29231D)] dark:text-[#FFFCF7]">
                   {t('freshGuarantee', 'The AllBarka Guarantee')}
-                </h3>
+                </h2>
               </div>
               <TrustBadges />
             </div>
@@ -874,7 +876,7 @@ export default function ProductDetailPage() {
                       <span className="text-xs font-bold text-[var(--color-emerald,#042821)]">
                         {rel.quoteOnly || rel.orderMode === 'inquiry_quote' || !price ? t('catalog.requestQuote') : `Rs. ${price?.toLocaleString()}`}
                       </span>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-gold,#C7982F)] group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent-text,#806326)] group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
                         {t('viewDetails')}
                         <ArrowRight size={11} />
                       </span>

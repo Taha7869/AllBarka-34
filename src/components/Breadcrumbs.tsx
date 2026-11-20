@@ -264,7 +264,7 @@ export default function Breadcrumbs({ items: customItems, className = '' }: Brea
       aria-label="Breadcrumbs"
       className={`w-full py-2.5 sm:py-3 mb-2 sm:mb-4 select-none ${className}`}
     >
-      <ol className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-[#635B52] dark:text-[#A8A199]">
+      <ol className="flex flex-nowrap items-center gap-1.5 sm:gap-2 overflow-x-auto whitespace-nowrap scrollbar-none text-[11px] sm:text-xs text-[#635B52] dark:text-[#A8A199]">
         {items.map((item, index) => {
           const isLast = index === items.length - 1 || item.isCurrent;
 

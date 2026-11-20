@@ -628,6 +628,13 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode; initialLang
     document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
     if (isRtl) {
       document.documentElement.classList.add('rtl');
+      if (!document.getElementById('allbarka-rtl-fonts')) {
+        const link = document.createElement('link');
+        link.id = 'allbarka-rtl-fonts';
+        link.rel = 'stylesheet';
+        link.href = 'https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Noto+Nastaliq+Urdu:wght@400;700&display=swap';
+        document.head.appendChild(link);
+      }
     } else {
       document.documentElement.classList.remove('rtl');
     }

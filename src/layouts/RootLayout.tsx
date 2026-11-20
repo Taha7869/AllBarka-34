@@ -28,20 +28,22 @@ import ThemeToggle from '../components/ThemeToggle';
 import type { InfoPageTab } from '../components/InfoPagesModal';
 import type { PolicyTab } from '../components/PolicyPagesModal';
 import type { CustomHamperCartInput } from '../components/CustomHamperBuilderModal';
-import CustomQuoteModal from '../components/CustomQuoteModal';
-import QuickViewModal from '../components/QuickViewModal';
-import AuthModal from '../components/AuthModal';
-import CheckoutAuthChoiceModal from '../components/CheckoutAuthChoiceModal';
-import PatronLoungeModal from '../components/PatronLoungeModal';
-import InfoPagesModal from '../components/InfoPagesModal';
-import PolicyPagesModal from '../components/PolicyPagesModal';
-import AIConcierge from '../components/AIConcierge';
-import CustomHamperBuilderModal from '../components/CustomHamperBuilderModal';
-import StoreUpdatesDialog from '../components/StoreUpdatesDialog';
-import MehmaanTablePlannerModal from '../components/MehmaanTablePlannerModal';
-import OccasionInquiryModal, { type OccasionInquiryPrefill } from '../components/OccasionInquiryModal';
-import ShopTheTableModal from '../components/ShopTheTableModal';
+import type { OccasionInquiryPrefill } from '../components/OccasionInquiryModal';
 import type { EventType } from '../lib/occasionPlanning';
+import CustomQuoteModal from '../components/CustomQuoteModal';
+import AIConcierge from '../components/AIConcierge';
+
+const QuickViewModal = React.lazy(() => import('../components/QuickViewModal'));
+const AuthModal = React.lazy(() => import('../components/AuthModal'));
+const CheckoutAuthChoiceModal = React.lazy(() => import('../components/CheckoutAuthChoiceModal'));
+const PatronLoungeModal = React.lazy(() => import('../components/PatronLoungeModal'));
+const InfoPagesModal = React.lazy(() => import('../components/InfoPagesModal'));
+const PolicyPagesModal = React.lazy(() => import('../components/PolicyPagesModal'));
+const CustomHamperBuilderModal = React.lazy(() => import('../components/CustomHamperBuilderModal'));
+const StoreUpdatesDialog = React.lazy(() => import('../components/StoreUpdatesDialog'));
+const MehmaanTablePlannerModal = React.lazy(() => import('../components/MehmaanTablePlannerModal'));
+const OccasionInquiryModal = React.lazy(() => import('../components/OccasionInquiryModal'));
+const ShopTheTableModal = React.lazy(() => import('../components/ShopTheTableModal'));
 
 import LahoreExpressTimer from '../components/LahoreExpressTimer';
 import { Menu, X, ShoppingBag, User, Gift, Languages, ChevronDown, Search } from 'lucide-react';
@@ -62,6 +64,8 @@ export default function RootLayout() {
   const location = useLocation();
   const navigationType = useNavigationType();
   const previousScrollRoute = useRef<string | null>(null);
+  const hasMountedRef = useRef(false);
+  useEffect(() => { hasMountedRef.current = true; }, []);
   const isAdminRoute = location.pathname.startsWith('/admin/');
   const { currentUser, patronProfile, logout } = useAuth();
   const { language, setLanguage, isRtl, t } = useLanguage();
@@ -453,7 +457,7 @@ export default function RootLayout() {
         <ErrorBoundary>
           <React.Suspense
             fallback={
-              <div className="min-h-[50vh] flex flex-col items-center justify-center p-8" aria-busy="true">
+              <div className="min-h-screen flex flex-col items-center justify-center p-8" aria-busy="true">
                 <div className="w-10 h-10 rounded-full border-2 border-[var(--color-gold,#C7982F)]/30 border-t-[var(--color-gold,#C7982F)] animate-spin mb-4" />
                 <span className="text-xs uppercase tracking-[0.2em] font-bold text-[var(--color-gold,#C7982F)]">
                   Loading AllBarka...
@@ -470,7 +474,7 @@ export default function RootLayout() {
                   <motion.div
                     key={location.pathname}
                     variants={pageTransitionVariants}
-                    initial="initial"
+                    initial={hasMountedRef.current ? 'initial' : false}
                     animate="enter"
                     className="w-full flex-col flex items-center origin-top bg-[var(--color-base)]"
                   >
@@ -510,20 +514,22 @@ export default function RootLayout() {
         onClose={() => setIsCartOpen(false)}
         onCheckout={handleInitiateCheckout}
       />
-      {/* Modals & Overlays (Direct static rendering) */}
-      {(authModalOpen || loadedOverlays.auth) && <AuthModal isOpen={authModalOpen} initialMode={authInitialMode} onClose={() => setAuthModalOpen(false)} />}
-      {(!!selectedQuickViewProduct || loadedOverlays.quick) && <QuickViewModal product={selectedQuickViewProduct ? PRODUCTS.find(product => product.id === selectedQuickViewProduct.id) || null : null} isOpen={!!selectedQuickViewProduct} onClose={() => setSelectedQuickViewProduct(null)} onAddToCart={handleAddToCart} />}
-      {(hamperModalOpen || loadedOverlays.hamper) && <CustomHamperBuilderModal isOpen={hamperModalOpen} onClose={() => setHamperModalOpen(false)} onAddToCart={handleAddCustomHamper} />}
-      {(authChoiceModalOpen || loadedOverlays.checkout) && <CheckoutAuthChoiceModal isOpen={authChoiceModalOpen} onClose={() => setAuthChoiceModalOpen(false)} onSignIn={() => { setAuthChoiceModalOpen(false); setAuthModalOpen(true); }} onContinueAsGuest={() => { setAuthChoiceModalOpen(false); navigate('/checkout'); }} />}
-      {(patronLoungeOpen || loadedOverlays.patron) && <PatronLoungeModal isOpen={patronLoungeOpen} onClose={() => setPatronLoungeOpen(false)} />}
-      {(updatesOpen || loadedOverlays.updates) && <StoreUpdatesDialog isOpen={updatesOpen} onClose={() => setUpdatesOpen(false)} onSignIn={() => { setUpdatesOpen(false); setAuthInitialMode('signin'); setAuthModalOpen(true); }} />}
-      {(infoModalOpen || loadedOverlays.info) && <InfoPagesModal isOpen={infoModalOpen} initialTab={infoModalTab} onClose={() => setInfoModalOpen(false)} />}
-      {(policyModalOpen || loadedOverlays.policy) && <PolicyPagesModal isOpen={policyModalOpen} initialTab={policyModalTab} onClose={() => setPolicyModalOpen(false)} />}
+      {/* Modals & Overlays (Lazy-loaded on first open to keep initial JS lean) */}
+      <React.Suspense fallback={null}>
+        {(authModalOpen || loadedOverlays.auth) && <AuthModal isOpen={authModalOpen} initialMode={authInitialMode} onClose={() => setAuthModalOpen(false)} />}
+        {(!!selectedQuickViewProduct || loadedOverlays.quick) && <QuickViewModal product={selectedQuickViewProduct ? PRODUCTS.find(product => product.id === selectedQuickViewProduct.id) || null : null} isOpen={!!selectedQuickViewProduct} onClose={() => setSelectedQuickViewProduct(null)} onAddToCart={handleAddToCart} />}
+        {(hamperModalOpen || loadedOverlays.hamper) && <CustomHamperBuilderModal isOpen={hamperModalOpen} onClose={() => setHamperModalOpen(false)} onAddToCart={handleAddCustomHamper} />}
+        {(authChoiceModalOpen || loadedOverlays.checkout) && <CheckoutAuthChoiceModal isOpen={authChoiceModalOpen} onClose={() => setAuthChoiceModalOpen(false)} onSignIn={() => { setAuthChoiceModalOpen(false); setAuthModalOpen(true); }} onContinueAsGuest={() => { setAuthChoiceModalOpen(false); navigate('/checkout'); }} />}
+        {(patronLoungeOpen || loadedOverlays.patron) && <PatronLoungeModal isOpen={patronLoungeOpen} onClose={() => setPatronLoungeOpen(false)} />}
+        {(updatesOpen || loadedOverlays.updates) && <StoreUpdatesDialog isOpen={updatesOpen} onClose={() => setUpdatesOpen(false)} onSignIn={() => { setUpdatesOpen(false); setAuthInitialMode('signin'); setAuthModalOpen(true); }} />}
+        {(infoModalOpen || loadedOverlays.info) && <InfoPagesModal isOpen={infoModalOpen} initialTab={infoModalTab} onClose={() => setInfoModalOpen(false)} />}
+        {(policyModalOpen || loadedOverlays.policy) && <PolicyPagesModal isOpen={policyModalOpen} initialTab={policyModalTab} onClose={() => setPolicyModalOpen(false)} />}
+        {mehmaanModalOpen && <MehmaanTablePlannerModal isOpen={mehmaanModalOpen} onClose={() => setMehmaanModalOpen(false)} />}
+        {occasionModalOpen && <OccasionInquiryModal isOpen={occasionModalOpen} defaultOccasion={defaultOccasion} prefill={occasionPrefill} onClose={() => setOccasionModalOpen(false)} />}
+        {shopTheTableOpen && <ShopTheTableModal isOpen={shopTheTableOpen} onClose={() => setShopTheTableOpen(false)} />}
+      </React.Suspense>
       {!isAdminRoute && <AIConcierge hide={isAnyModalOrDrawerOpen && !aiConciergeOpen} hasCartBar={hasBottomObstruction} onOpenChange={setAiConciergeOpen} />}
       <CustomQuoteModal />
-      <MehmaanTablePlannerModal isOpen={mehmaanModalOpen} onClose={() => setMehmaanModalOpen(false)} />
-      <OccasionInquiryModal isOpen={occasionModalOpen} defaultOccasion={defaultOccasion} prefill={occasionPrefill} onClose={() => setOccasionModalOpen(false)} />
-      <ShopTheTableModal isOpen={shopTheTableOpen} onClose={() => setShopTheTableOpen(false)} />
     </div>
   );
 }

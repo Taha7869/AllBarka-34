@@ -291,7 +291,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
           <div className="w-20 h-20 bg-[var(--color-cream,#FAF9F5)] rounded-full flex items-center justify-center mx-auto mb-6">
             <ShoppingBag size={32} className="text-[var(--color-gold,#B8935F)]" />
           </div>
-          <h2 className="text-2xl font-serif font-black text-[var(--color-ink,#1F120F)] mb-3">{t('checkout.emptyTitle')}</h2>
+          <h1 className="text-2xl font-serif font-black text-[var(--color-ink,#1F120F)] mb-3">{t('checkout.emptyTitle')}</h1>
           <p className="text-[13px] text-[var(--color-ink,#1F120F)]/70 mb-8 leading-relaxed">
             {t('checkout.emptyCopy')}
           </p>

@@ -30,7 +30,9 @@ const pages: Record<string, [string, string]> = {
   '/contact': ['Contact AllBarka', 'Contact AllBarka for product questions, order support and gifting enquiries.'],
   '/story': ['Our Story', 'Learn about AllBarka and our collection of dry fruits, pantry ingredients and gifts.'],
   '/pages': ['About AllBarka', 'Learn about AllBarka, our products and customer support.'],
-  '/policies': ['Store Policies', 'Read AllBarka delivery, returns, privacy and store policies.'],
+  '/policies': ['Store Policies', 'Read AllBarka delivery, returns, privacy, cookie and store policies.'],
+  '/track': ['Track Your Order', 'Check live fulfillment and delivery status for your AllBarka order.'],
+  '/offline': ['Offline', 'View recently browsed AllBarka products while offline.'],
   '/cart': ['Your Cart', 'Review your AllBarka selections and current checkout quote.'],
   '/checkout': ['Checkout', 'Confirm your AllBarka order and delivery details.'],
   '/success': ['Order Confirmation', 'View your saved AllBarka order confirmation.'],
@@ -42,7 +44,7 @@ function text(value: string) { return value.replace(/<[^>]*>/g, '').replace(/\s+
 function branded(title: string) { return title.includes('AllBarka') ? title : `${title} — AllBarka`; }
 function basic(route: string, title: string, description: string): RouteMetadata {
   return { status: 200, path: route, title: branded(title), description, type: 'website', image: DEFAULT_IMAGE,
-    ...((['/cart', '/checkout', '/success'].includes(route) || route.startsWith('/admin') || route.startsWith('/staff')) ? { noindex: true } : {}) };
+    ...((['/cart', '/checkout', '/success', '/offline'].includes(route) || route.startsWith('/admin') || route.startsWith('/staff') || route.startsWith('/reveal/')) ? { noindex: true } : {}) };
 }
 
 export function routeMetadata(pathname: string, origin: string, products: Product[], taxonomy: TaxonomyEntry[] = [], content?:StorefrontContent): RouteMetadata {
@@ -114,9 +116,21 @@ export function routeMetadata(pathname: string, origin: string, products: Produc
   const article = (content?contentJournal(content,'en'):JOURNAL_ARTICLES).find(item => item.slug === articleSlug);
   if (article) return { ...basic(route, article.title, article.excerpt), type: 'article', image: article.image };
   const infoSlug = /^\/pages\/(our-story|sourcing-policy|orchard-provenance|lahore-boutique|blog-nutrition|hand-sorting|vacuum-sealing|freshness-guarantee|shipping|contact)$/.exec(route)?.[1];
-  const policySlug = /^\/policies\/(shipping|refund|privacy|terms)$/.exec(route)?.[1];
-  if (infoSlug || policySlug) return basic(route, (infoSlug || policySlug)!.replaceAll('-', ' '),
-    policySlug ? 'Read the AllBarka store policy and contact us for help with your order.' : 'Learn about AllBarka products and customer support.');
+  const policySlug = /^\/policies\/(shipping|refund|privacy|terms|cookies)$/.exec(route)?.[1];
+  if (infoSlug || policySlug) {
+    const label = policySlug === 'cookies'
+      ? 'Cookie Policy'
+      : (infoSlug || policySlug)!.replaceAll('-', ' ');
+    const desc = policySlug === 'cookies'
+      ? 'Inspect every storage key and cookie AllBarka uses, its purpose, retention, and manage your privacy preferences.'
+      : policySlug
+        ? 'Read the AllBarka store policy and contact us for help with your order.'
+        : 'Learn about AllBarka products and customer support.';
+    return basic(route, label, desc);
+  }
+  if (/^\/reveal\/[^/]+$/.test(route)) {
+    return basic(route, 'Gift Reveal', 'Open your personal gift message from AllBarka.');
+  }
   return { ...basic(route, 'Page Not Found', 'This page could not be found. Explore the AllBarka collection or contact us for help.'), status: 404, noindex: true };
 }
 
@@ -141,6 +155,12 @@ export function renderRouteDocument(template: string, metadata: RouteMetadata, o
   for (const [key, value] of Object.entries({ card: 'summary_large_image', title: metadata.title,
     description: metadata.description, image: new URL(metadata.image, origin).href })) setMeta('name', `twitter:${key}`, value);
   if (metadata.noindex) setMeta('name', 'robots', 'noindex, nofollow');
+  // Preload the primary LCP hero image in the initial HTML document for faster mobile LCP.
+  if (metadata.path === '/') {
+    html = html.replace('</head>', () => `<link rel="preload" as="image" href="/images/living-gallery-final/hero-mobile.webp" media="(max-width: 767px)" fetchpriority="high">\n<link rel="preload" as="image" href="/images/living-gallery-final/hero-desktop.webp" media="(min-width: 768px)" fetchpriority="high">\n</head>`);
+  } else if (metadata.type === 'product' && metadata.image && metadata.image !== DEFAULT_IMAGE) {
+    html = html.replace('</head>', () => `<link rel="preload" as="image" href="${escapeHtml(metadata.image)}" fetchpriority="high">\n</head>`);
+  }
   if (metadata.structuredData) {
     const json = JSON.stringify(metadata.structuredData).replaceAll('<', '\\u003c').replaceAll('>', '\\u003e').replaceAll('&', '\\u0026');
     html = html.replace('</head>', () => `<script type="application/ld+json" id="route-structured-data">${json}</script>\n</head>`);

@@ -32,7 +32,6 @@ export default defineConfig(() => {
             }
             if (id.includes('src/data/products')) return 'catalog-products';
             if (id.includes('src/data/catalogIntake')) return 'catalog-intake';
-            if (id.includes('src/pages/CelebrationsPages')) return 'celebrations-bundle';
           },
         },
       },

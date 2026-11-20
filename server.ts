@@ -1229,8 +1229,13 @@ async function startServer() {
     app.get('/sitemap.xml', async (_req, res) => {
       const products = await pageCatalog();
       const publishedContent=await pageContent();
-      const routes = [...(publishedContent?contentJournal(publishedContent,'en').map(x=>`/journal/${x.slug}`):[]), ...(await pageTaxonomy()).filter(x=>x.type!=='occasion').map(x=>`/shop/${x.id}`), '/', '/shop', '/gifting', '/wholesale', '/journal', '/faq', '/contact',
-        ...products.filter(product => product.active !== false).map(product => `/product/${encodeURIComponent(product.id)}`)];
+      const routes = [...new Set([
+        ...(publishedContent?contentJournal(publishedContent,'en').map(x=>`/journal/${x.slug}`):[]),
+        ...(await pageTaxonomy()).filter(x=>x.type!=='occasion').map(x=>`/shop/${x.id}`),
+        '/', '/shop', '/gifting', '/wholesale', '/occasions', '/packaging', '/journal', '/faq', '/story', '/contact',
+        '/policies', '/policies/shipping', '/policies/refund', '/policies/privacy', '/policies/terms', '/policies/cookies',
+        ...products.filter(product => product.active !== false).map(product => `/product/${encodeURIComponent(product.id)}`),
+      ])];
       res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${routes.map(route => `<url><loc>${publicOrigin}${route}</loc></url>`).join('')}</urlset>`);
     });
     app.get('/index.html', async (_req, res) => {

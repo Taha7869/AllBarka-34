@@ -66,9 +66,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
     let isMounted = true;
+    let started = false;
+    let idleHandle: ReturnType<typeof setTimeout> | undefined;
     active.current = true;
 
     async function initAuth() {
+      if (started || !isMounted) return;
+      started = true;
       try {
         const [{ onAuthStateChanged }, { auth }] = await Promise.all([
           import('firebase/auth'),
@@ -109,11 +113,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    initAuth();
+    const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+    const isAuthPriorityRoute = /^\/(admin|staff|checkout|success|cart)(\/|$)/.test(pathname);
+    const triggerAuth = () => {
+      if (idleHandle) { clearTimeout(idleHandle); idleHandle = undefined; }
+      void initAuth();
+    };
+
+    if (isAuthPriorityRoute || typeof window === 'undefined') {
+      void initAuth();
+    } else {
+      // Defer heavy Firebase Auth SDK + auth iframe on public storefront routes so LCP/TBT stay fast.
+      setLoading(false);
+      window.addEventListener('open-auth-modal', triggerAuth, { once: true });
+      window.addEventListener('open-patron-lounge', triggerAuth, { once: true });
+      window.addEventListener('open-updates-dialog', triggerAuth, { once: true });
+      idleHandle = setTimeout(triggerAuth, 4500);
+    }
 
     return () => {
       isMounted = false;
       active.current = false;
+      if (idleHandle) clearTimeout(idleHandle);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('open-auth-modal', triggerAuth);
+        window.removeEventListener('open-patron-lounge', triggerAuth);
+        window.removeEventListener('open-updates-dialog', triggerAuth);
+      }
       invalidateProfileRequests();
       if (unsubscribe) unsubscribe();
     };

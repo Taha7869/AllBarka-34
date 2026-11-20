@@ -1,29 +1,35 @@
-import StaffOrdersWorkspace from './components/StaffOrdersWorkspace';
 import React from 'react';
 import { BrowserRouter, Routes, Route, useParams } from 'react-router-dom';
 
 // Layout & Shared UI
 import RootLayout from './layouts/RootLayout';
 import ErrorBoundary from './components/ErrorBoundary';
-
-// Direct Static Route Page Imports (Zero dynamic chunk loading errors)
-import HomePage from './pages/HomePage';
-import ShopPage from './pages/ShopPage';
-import ProductDetailPage from './pages/ProductDetailPage';
-import CheckoutPage from './pages/CheckoutPage';
-import OrderSuccessPage from './pages/OrderSuccessPage';
-import InfoPage, { type InfoPageTab } from './pages/InfoPage';
-import FAQPage from './pages/FAQPage';
-import JournalPage from './pages/JournalPage';
-import CartPage from './pages/CartPage';
-import PoliciesPage, { type PolicyTab } from './pages/PoliciesPage';
-import AdminOrdersPage from './pages/AdminOrdersPage';
-import GiftRevealPage from './pages/GiftRevealPage';
-import OrderTrackingPage from './pages/OrderTrackingPage';
-import OfflinePage from './pages/OfflinePage';
-import NotFoundPage from './pages/NotFoundPage';
+import type { InfoPageTab } from './pages/InfoPage';
+import type { PolicyTab } from './pages/PoliciesPage';
 import AlmondLoader from './components/AlmondLoader';
-import { OccasionsIndexRoute, OccasionRoute, PackagingHubPage, PackagingFormatPage, DesignPage } from './pages/CelebrationsPages';
+import HomePage from './pages/HomePage';
+import ProductDetailPage from './pages/ProductDetailPage';
+
+// Route-level code splitting for secondary routes so Home and Product pages never eagerly download Admin, Staff, Checkout, or Celebrations bundles — while keeping Home & PDP eager for zero CLS and instant LCP.
+const ShopPage = React.lazy(() => import('./pages/ShopPage'));
+const CheckoutPage = React.lazy(() => import('./pages/CheckoutPage'));
+const OrderSuccessPage = React.lazy(() => import('./pages/OrderSuccessPage'));
+const InfoPage = React.lazy(() => import('./pages/InfoPage'));
+const FAQPage = React.lazy(() => import('./pages/FAQPage'));
+const JournalPage = React.lazy(() => import('./pages/JournalPage'));
+const CartPage = React.lazy(() => import('./pages/CartPage'));
+const PoliciesPage = React.lazy(() => import('./pages/PoliciesPage'));
+const AdminOrdersPage = React.lazy(() => import('./pages/AdminOrdersPage'));
+const StaffOrdersWorkspace = React.lazy(() => import('./components/StaffOrdersWorkspace'));
+const GiftRevealPage = React.lazy(() => import('./pages/GiftRevealPage'));
+const OrderTrackingPage = React.lazy(() => import('./pages/OrderTrackingPage'));
+const OfflinePage = React.lazy(() => import('./pages/OfflinePage'));
+const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
+const OccasionsIndexRoute = React.lazy(() => import('./pages/CelebrationsPages').then(m => ({ default: m.OccasionsIndexRoute })));
+const OccasionRoute = React.lazy(() => import('./pages/CelebrationsPages').then(m => ({ default: m.OccasionRoute })));
+const PackagingHubPage = React.lazy(() => import('./pages/CelebrationsPages').then(m => ({ default: m.PackagingHubPage })));
+const PackagingFormatPage = React.lazy(() => import('./pages/CelebrationsPages').then(m => ({ default: m.PackagingFormatPage })));
+const DesignPage = React.lazy(() => import('./pages/CelebrationsPages').then(m => ({ default: m.DesignPage })));
 
 const PageLoadingFallback = () => (
   <div className="w-full min-h-[50vh] flex flex-col items-center justify-center py-24" aria-busy="true">

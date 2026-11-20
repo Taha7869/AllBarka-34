@@ -38,9 +38,9 @@ export default function TrustBadges() {
               <div className="w-14 h-14 rounded-full bg-[var(--color-base)] border border-[var(--color-accent)]/30 text-[var(--color-accent)] flex items-center justify-center mb-4 shadow-[var(--shadow-card)]">
                 <badge.icon size={24} />
               </div>
-              <h4 className="font-serif font-bold text-sm text-[var(--color-ink)] tracking-wide mb-1.5">
+              <h3 className="font-serif font-bold text-sm text-[var(--color-ink)] tracking-wide mb-1.5">
                 {badge.title}
-              </h4>
+              </h3>
               <p className="text-xs text-[var(--color-ink)]/70 max-w-[200px] leading-relaxed">
                 {badge.desc}
               </p>

@@ -66,3 +66,29 @@ test('the home page schema names the store, its area only, and its site search',
   assert.doesNotMatch(store.image, /unsplash/);
   assert.match(site.potentialAction.target.urlTemplate, /\/shop\?search=\{search_term_string\}$/);
 });
+
+test('track, cookie policy, offline, reveal routes return 200 with proper indexability and LCP image preloads', () => {
+  const cookiesMeta = routeMetadata('/policies/cookies', origin, PRODUCTS);
+  assert.equal(cookiesMeta.status, 200);
+  assert.equal(cookiesMeta.noindex, undefined);
+  assert.match(cookiesMeta.title, /Cookie Policy/);
+
+  const trackMeta = routeMetadata('/track', origin, PRODUCTS);
+  assert.equal(trackMeta.status, 200);
+  assert.equal(trackMeta.noindex, undefined);
+
+  const offlineMeta = routeMetadata('/offline', origin, PRODUCTS);
+  assert.equal(offlineMeta.status, 200);
+  assert.equal(offlineMeta.noindex, true);
+
+  const revealMeta = routeMetadata('/reveal/demo-token', origin, PRODUCTS);
+  assert.equal(revealMeta.status, 200);
+  assert.equal(revealMeta.noindex, true);
+
+  const homeHtml = renderRouteDocument(template, routeMetadata('/', origin, PRODUCTS), origin, 'nonce-1');
+  assert.match(homeHtml, /rel="preload" as="image" href="\/images\/living-gallery-final\/hero-mobile\.webp"[^>]*fetchpriority="high"/);
+
+  const pista = PRODUCTS.find(item => item.id === 'pista')!;
+  const pdpHtml = renderRouteDocument(template, routeMetadata('/product/pista', origin, [pista]), origin, 'nonce-1');
+  assert.match(pdpHtml, /rel="preload" as="image" href="\/images\/[^"]+" fetchpriority="high"/);
+});

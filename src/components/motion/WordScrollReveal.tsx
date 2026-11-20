@@ -13,7 +13,8 @@ export default function WordScrollReveal({ text }: WordScrollRevealProps) {
   const words = text.split(/\s+/);
 
   return (
-    <span ref={ref} aria-label={text}>
+    <span ref={ref}>
+      <span className="sr-only">{text}</span>
       {words.map((word, index) => (
         <motion.span
           key={`${word}-${index}`}
