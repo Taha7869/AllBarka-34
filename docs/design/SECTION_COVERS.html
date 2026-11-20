@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AllBarka — Section Cover Images Review (Current vs New)</title>
+  <style>
+    :root { --bg: #faf7f0; --card: #fff; --ink: #16261f; --muted: #5a665f; --border: #e4dccb; --green: #143d2d; --gold: #c7982f; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 24px; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, sans-serif; }
+    .wrap { max-width: 1200px; margin: 0 auto; }
+    h1 { margin: 0 0 8px; font-family: Georgia, serif; color: var(--green); }
+    .summary { margin: 0 0 24px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+    .pills { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+    .pill { background: var(--card); border: 1px solid var(--border); border-radius: 999px; padding: 6px 14px; font-size: 13px; font-weight: 600; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 18px; }
+    .card.ready { border-color: #2f7d57; }
+    .card-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+    .num { display: inline-block; min-width: 28px; color: var(--gold); font-weight: 700; }
+    code { background: #f2ede2; padding: 2px 6px; border-radius: 5px; font-size: 12px; }
+    .aliases { margin-left: 8px; font-size: 12px; color: var(--muted); }
+    .badge { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; letter-spacing: 0.04em; }
+    .badge.ok { background: #e3f5ec; color: #0f5a38; }
+    .badge.wait { background: #f8eed8; color: #7c560b; }
+    .meta { margin: 0 0 12px; font-size: 13px; color: var(--muted); }
+    .compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    @media (max-width: 720px) { .compare { grid-template-columns: 1fr; } }
+    figure { margin: 0; }
+    figcaption { font-size: 12px; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
+    img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 10px; border: 1px solid var(--border); background: #efe9dc; display: block; }
+    .empty-slot { width: 100%; aspect-ratio: 1 / 1; border-radius: 10px; border: 1px dashed #c8beaa; background: #f4efe4; color: var(--muted); display: flex; align-items: center; justify-content: center; text-align: center; padding: 20px; font-size: 13px; }
+    .pending-slot { background: #fbf5e7; border-color: #d6b66f; color: #7c560b; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>AllBarka Section Covers — Current vs New (1600px WebP)</h1>
+    <p class="summary">Staged for Claude &amp; owner review in <code>public/images/section-covers-20261120/</code>. Live storefront paths in <code>CategoryCarousel.tsx</code> are untouched until explicit approval (&ldquo;haan&rdquo;). Shared studio style: cream travertine, dark forest-green linen, natural side light, zero text/labels.</p>
+    <div class="pills">
+      <span class="pill">Total sections: 13</span>
+      <span class="pill">New 1600px covers ready: 3</span>
+      <span class="pill">Pending quota reset: 10</span>
+    </div>
+    
+    <article class="card pending">
+      <header class="card-head">
+        <div>
+          <span class="num">#1</span>
+          <strong>All Items</strong>
+          <code>all</code>
+          
+        </div>
+        <span class="badge wait">PENDING QUOTA</span>
+      </header>
+      <p class="meta"><strong>Route:</strong> <code>/shop</code> &middot; <strong>Depicts:</strong> Curated AllBarka pantry assortment (nuts, dates, saffron, honey, murabba)</p>
+      <div class="compare">
+        <figure>
+          <figcaption>CURRENT (/assets/categories/all_items.png &middot; 73 KB)</figcaption>
+          <img src="../../public/assets/categories/all_items.png" alt="Current All Items" loading="lazy" />
+        </figure>
+        <figure>
+          <figcaption>NEW STUDIO COVER (queued for next quota reset)</figcaption>
+          <div class="empty-slot pending-slot">Pending image-model quota reset</div>
+        </figure>
+      </div>
+    </article>
+
+    <article class="card pending">
+      <header class="card-head">
+        <div>
+          <span class="num">#2</span>
+          <strong>Dry Fruits &amp; Nuts</strong>
+          <code>nuts</code>
+          <span class="aliases">aliases: dry-fruits</span>
+        </div>
+        <span class="badge wait">PENDING QUOTA</span>
+      </header>
+      <p class="meta"><strong>Route:</strong> <code>/shop/nuts</code> &middot; <strong>Depicts:</strong> Whole almonds, pistachios, walnuts, cashews, apricots &amp; figs</p>
+      <div class="compare">
+        <figure>
+          <figcaption>CURRENT (/assets/categories/dry_fruits.png &middot; 94 KB)</figcaption>
+          <img src="../../public/assets/categories/dry_fruits.png" alt="Current Dry Fruits &amp; Nuts" loading="lazy" />
+        </figure>
+        <figure>
+          <figcaption>NEW STUDIO COVER (queued for next quota reset)</figcaption>
+          <div class="empty-slot pending-slot">Pending image-model quota reset</div>
+        </figure>
+      </div>
+    </article>
+
+    <article class="card ready">
+      <header class="card-head">
+        <div>
+          <span class="num">#3</span>
+          <strong>Dates</strong>
+          <code>dates</code>
+          
+        </div>
+        <span class="badge ok">NEW 1600px READY</span>
+      </header>
+      <p class="meta"><strong>Route:</strong> <code>/shop/dates</code> &middot; <strong>Depicts:</strong> Mazafati, Ajwa, Panjgur Amber &amp; Medjool dates</p>
+      <div class="compare">
+        <figure>
+          <figcaption>CURRENT (/images/generated/dark-dates-catalog-v1.webp &middot; 108 KB)</figcaption>
+          <img src="../../public/images/generated/dark-dates-catalog-v1.webp" alt="Current Dates" loading="lazy" />
+        </figure>
+        <figure>
+          <figcaption>NEW STUDIO COVER (/images/section-covers-20261120/dates.webp &middot; 1600×1600 WebP &middot; 175 KB)</figcaption>
+          <img src="../../public/images/section-covers-20261120/dates.webp" alt="New Dates" loading="lazy" />
+        </figure>
+      </div>
+    </article>
+
+    <article class="card ready">
+      <header class="card-head">
+        <div>
+          <span class="num">#4</span>
+          <strong>Herbs &amp; Spices</strong>
+          <code>herbs-spices</code>
+          
+        </div>
+        <span class="badge ok">NEW 1600px READY</span>
+      </header>
+      <p class="meta"><strong>Route:</strong> <code>/shop/herbs-spices</code> &middot; <strong>Depicts:</strong> Ceylon cinnamon, green cardamom, star anise, cloves, pepper, coriander, dry red chilli &amp; saffron</p>
+      <div class="compare">
+        <figure>
+          <figcaption>CURRENT (/images/products/ceylon-cinnamon-1.webp &middot; 90 KB)</figcaption>
+          <img src="../../public/images/products/ceylon-cinnamon-1.webp" alt="Current Herbs &amp; Spices" loading="lazy" />
+        </figure>
+        <figure>
+          <figcaption>NEW STUDIO COVER (/images/section-covers-20261120/herbs-spices.webp &middot; 1600×1600 WebP &middot; 269 KB)</figcaption>
+          <img src="../../public/images/section-covers-20261120/herbs-spices.webp" alt="New Herbs &amp; Spices" loading="lazy" />
+        </figure>
+      </div>
+    </article>
+
+    <article class="card pending">
+      <header class="card-head">
+        <div>
+          <span class="num">#5</span>
+          <strong>Cold-Pressed Oils</strong>
+          <code>oils</code>
+          
+        </div>
+        <span class="badge wait">PENDING QUOTA</span>
+      </header>
+      <p class="meta"><strong>Route:</strong> <code>/shop/oils</code> &middot; <strong>Depicts:</strong> Cold-pressed almond, mustard &amp; kalonji oils in plain glass bottles</p>
+      <div class="compare">
+        <figure>
+          <figcaption>CURRENT (/images/generated/category-oils-tile-v1.webp &middot; 72 KB)</figcaption>
+          <img src="../../public/images/generated/category-oils-tile-v1.webp" alt="Current Cold-Pressed Oils" loading="lazy" />
+        </figure>
+        <figure>
+          <figcaption>NEW STUDIO COVER (queued for next quota reset)</figcaption>
+          <div class="empty-slot pending-slot">Pending image-model quota reset</div>
+        </figure>
+      </div>
+    </article>
+
+    <article class="card pending">
+      <header class="card-head">
+        <div>
+          <span class="num">#6</span>
+          <strong>Desi Essentials</strong>
+          <code>essentials</code>
+          
+        </div>
+        <span class="badge wait">PENDING QUOTA</span>
+      </header>
+      <p class="meta"><strong>Route:</strong> <code>/shop/essentials</code> &middot; <strong>Depicts:</strong> Desi ghee, raw honey, unrefined desi shakkar &amp; saffron</p>
+      <div class="compare">
+        <figure>
+          <figcaption>CURRENT (/images/generated/category-essentials-tile-v1.webp &middot; 70 KB)</figcaption>
+          <img src="../../public/images/generated/category-essentials-tile-v1.webp" alt="Current Desi Essentials" loading="lazy" />
+        </figure>
+        <figure>
+          <figcaption>NEW STUDIO COVER (queued for next quota reset)</figcaption>
+          <div class="empty-slot pending-slot">Pending image-model quota reset</div>
+        </figure>
+      </div>
+    </article>
+
+    <article class="card pending">
+      <header class="card-head">
+        <div>
+          <span class="num">#7</span>
+          <strong>Snacks &amp; Seeds</strong>
+          <code>snacks-seeds</code>
+          <span class="aliases">aliases: seeds-snacks</span>
+        </div>
+        <span class="badge wait">PENDING QUOTA</span>
+      </header>
+      <p class="meta"><strong>Route:</strong> <code>/shop/snacks-seeds</code> &middot; <strong>Depicts:</strong> Pumpkin seeds, roasted chana, sunflower seeds, flaxseeds &amp; makhana</p>
+      <div class="compare">
+        <figure>
+          <figcaption>CURRENT (/assets/categories/snacks.png &middot; 81 KB)</figcaption>
+          <img src="../../public/assets/categories/snacks.png" alt="Current Snacks &amp; Seeds" loading="lazy" />
+        </figure>
+        <figure>
+          <figcaption>NEW STUDIO COVER (queued for next quota reset)</figcaption>
+          <div class="empty-slot pending-slot">Pending image-model quota reset</div>
+        </figure>
+      </div>
+    </article>
+
+    <article class="card pending">
+      <header class="card-head">
+        <div>
+          <span class="num">#8</span>
+          <strong>Saunf &amp; Mouth Fresheners</strong>
+          <code>saunf</code>
+          
+        </div>
+        <span class="badge wait">PENDING QUOTA</span>
+      </header>
+      <p class="meta"><strong>Route:</strong> <code>/shop/saunf</code> &middot; <strong>Depicts:</strong> Plain green fennel seeds, sugar-coated colourful saunf &amp; cardamom</p>
+      <div class="compare">
+        <figure>
+          <figcaption>CURRENT (/images/generated/category-saunf-tile-v1.webp &middot; 61 KB)</figcaption>
+          <img src="../../public/images/generated/category-saunf-tile-v1.webp" alt="Current Saunf &amp; Mouth Fresheners" loading="lazy" />
+        </figure>
+        <figure>
+          <figcaption>NEW STUDIO COVER (queued for next quota reset)</figcaption>
+          <div class="empty-slot pending-slot">Pending image-model quota reset</div>
+        </figure>
+      </div>
+    </article>
+
+    <article class="card pending">
+      <header class="card-head">
+        <div>
+          <span class="num">#9</span>
+          <strong>Murabba Jaat</strong>
+          <code>murabba-jaat</code>
+          
+        </div>
+        <span class="badge wait">PENDING QUOTA</span>
+      </header>
+      <p class="meta"><strong>Route:</strong> <code>/shop/murabba-jaat</code> &middot; <strong>Depicts:</strong> Traditional fruit preserves in syrup: amla, gajar, saib, behi &amp; gulkand</p>
+      <div class="compare">
+        <figure>
+          <figcaption>CURRENT (placeholder / empty &middot; none)</figcaption>
+          <div class="empty-slot">AllBarka text placeholder (no cover image currently set)</div>
+        </figure>
+        <figure>
+          <figcaption>NEW STUDIO COVER (queued for next quota reset)</figcaption>
+          <div class="empty-slot pending-slot">Pending image-model quota reset</div>
+        </figure>
+      </div>
+    </article>
+
+    <article class="card ready">
+      <header class="card-head">
+        <div>
+          <span class="num">#10</span>
+          <strong>Chai &amp; Herbal Teas</strong>
+          <code>herbal-teas</code>
+          
+        </div>
+        <span class="badge ok">NEW 1600px READY</span>
+      </header>
+      <p class="meta"><strong>Route:</strong> <code>/shop/herbal-teas</code> &middot; <strong>Depicts:</strong> CTC chai patti, green tea with cardamom, chamomile blossoms, rose buds &amp; kahwa</p>
+      <div class="compare">
+        <figure>
+          <figcaption>CURRENT (placeholder / empty &middot; none)</figcaption>
+          <div class="empty-slot">AllBarka text placeholder (no cover image currently set)</div>
+        </figure>
+        <figure>
+          <figcaption>NEW STUDIO COVER (/images/section-covers-20261120/herbal-teas.webp &middot; 1600×1600 WebP &middot; 233 KB)</figcaption>
+          <img src="../../public/images/section-covers-20261120/herbal-teas.webp" alt="New Chai &amp; Herbal Teas" loading="lazy" />
+        </figure>
+      </div>
+    </article>
+
+    <article class="card pending">
+      <header class="card-head">
+        <div>
+          <span class="num">#11</span>
+          <strong>Gift Boxes</strong>
+          <code>gift-boxes</code>
+          <span class="aliases">aliases: gifts, combos</span>
+        </div>
+        <span class="badge wait">PENDING QUOTA</span>
+      </header>
+      <p class="meta"><strong>Route:</strong> <code>/gifting</code> &middot; <strong>Depicts:</strong> Luxury bespoke rigid gift hampers filled with dates, nuts &amp; honey</p>
+      <div class="compare">
+        <figure>
+          <figcaption>CURRENT (/assets/categories/gifts.png &middot; 83 KB)</figcaption>
+          <img src="../../public/assets/categories/gifts.png" alt="Current Gift Boxes" loading="lazy" />
+        </figure>
+        <figure>
+          <figcaption>NEW STUDIO COVER (queued for next quota reset)</figcaption>
+          <div class="empty-slot pending-slot">Pending image-model quota reset</div>
+        </figure>
+      </div>
+    </article>
+
+    <article class="card pending">
+      <header class="card-head">
+        <div>
+          <span class="num">#12</span>
+          <strong>Celebration Boxes</strong>
+          <code>celebration-boxes</code>
+          
+        </div>
+        <span class="badge wait">PENDING QUOTA</span>
+      </header>
+      <p class="meta"><strong>Route:</strong> <code>/shop/celebration-boxes</code> &middot; <strong>Depicts:</strong> Wedding, Nikkah, Umrah Tabarruk &amp; Aqeeqah favor and bid boxes</p>
+      <div class="compare">
+        <figure>
+          <figcaption>CURRENT (/images/products/bid-box-umrah-tabarruk-1.webp &middot; 163 KB)</figcaption>
+          <img src="../../public/images/products/bid-box-umrah-tabarruk-1.webp" alt="Current Celebration Boxes" loading="lazy" />
+        </figure>
+        <figure>
+          <figcaption>NEW STUDIO COVER (queued for next quota reset)</figcaption>
+          <div class="empty-slot pending-slot">Pending image-model quota reset</div>
+        </figure>
+      </div>
+    </article>
+
+    <article class="card pending">
+      <header class="card-head">
+        <div>
+          <span class="num">#13</span>
+          <strong>Bundles &amp; Deals</strong>
+          <code>bundles</code>
+          <span class="aliases">aliases: deals</span>
+        </div>
+        <span class="badge wait">PENDING QUOTA</span>
+      </header>
+      <p class="meta"><strong>Route:</strong> <code>/shop/bundles</code> &middot; <strong>Depicts:</strong> Curated multi-item pantry pairings and value bundles</p>
+      <div class="compare">
+        <figure>
+          <figcaption>CURRENT (/assets/categories/deals.png &middot; 67 KB)</figcaption>
+          <img src="../../public/assets/categories/deals.png" alt="Current Bundles &amp; Deals" loading="lazy" />
+        </figure>
+        <figure>
+          <figcaption>NEW STUDIO COVER (queued for next quota reset)</figcaption>
+          <div class="empty-slot pending-slot">Pending image-model quota reset</div>
+        </figure>
+      </div>
+    </article>
+  </div>
+</body>
+</html>
