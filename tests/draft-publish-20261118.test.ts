@@ -126,7 +126,7 @@ test('publish readiness holds back incomplete drafts and executes cleanly on rea
   assert.equal(second.summary.readyToPublish, 0);
 });
 
-test('IMAGE_HOLD_20261119.txt holds back the remaining 7 items leaving 148 ready to publish', async () => {
+test('IMAGE_HOLD_20261119.txt is cleared and all 155 drafts (including all 33 held-AI items) are ready to publish', async () => {
   const holdPath = 'docs/catalog/IMAGE_HOLD_20261119.txt';
   assert.ok(fs.existsSync(holdPath), 'IMAGE_HOLD_20261119.txt must exist');
   const holdIds = new Set(
@@ -136,9 +136,9 @@ test('IMAGE_HOLD_20261119.txt holds back the remaining 7 items leaving 148 ready
       .map(s => s.trim())
       .filter(s => Boolean(s) && !s.startsWith('#'))
   );
-  assert.equal(holdIds.size, 7, 'IMAGE_HOLD_20261119.txt must contain exactly 7 remaining IDs');
+  assert.equal(holdIds.size, 0, 'IMAGE_HOLD_20261119.txt must be cleared (0 remaining hold IDs)');
 
-  const ready26 = [
+  const ready33 = [
     'pecans', 'murabba-amla', 'gulkand', 'mulethi-licorice-root', 'saffron-spanish-coupe',
     'almond-slices', 'ashwagandha', 'dried-shikakai', 'korean-red-ginseng-root',
     'murabba-bael', 'murabba-behi', 'gift-visit-small', 'gift-visit-hospital-light',
@@ -146,10 +146,13 @@ test('IMAGE_HOLD_20261119.txt holds back the remaining 7 items leaving 148 ready
     'kagzi-almonds-inshell', 'macadamia-nuts', 'salab-misri', 'salted-peanuts',
     'murabba-gajar', 'murabba-harad', 'kamarkas', 'imli-tamarind',
     'chamomile-tea', 'coriander-seeds-whole',
+    'murabba-saib', 'deal-date-almond', 'deal-murabba-duo',
+    'bundle-murabba-tasting', 'bundle-chilgoza-heirloom',
+    'gift-ayadat-basket', 'gift-condolence-visit',
   ];
   const readiness = evaluateDraftsReadiness(undefined, { excludeIds: holdIds });
   assert.equal(readiness.length, 155);
-  for (const id of ready26) {
+  for (const id of ready33) {
     const entry = readiness.find(r => r.id === id);
     assert.ok(entry?.ready, `${id} should now be ready`);
     assert.equal(entry?.image, `/images/held-ai-20261120/${id}.webp`);
@@ -158,15 +161,10 @@ test('IMAGE_HOLD_20261119.txt holds back the remaining 7 items leaving 148 ready
   const heldItems = readiness.filter(r => !r.ready);
   const readyItems = readiness.filter(r => r.ready);
 
-  assert.equal(heldItems.length, 7, `Expected exactly 7 held items, got ${heldItems.length}`);
-  assert.equal(readyItems.length, 148, `Expected exactly 148 ready items, got ${readyItems.length}`);
+  assert.equal(heldItems.length, 0, `Expected 0 held items, got ${heldItems.length}`);
+  assert.equal(readyItems.length, 155, `Expected all 155 ready items, got ${readyItems.length}`);
 
-  for (const item of heldItems) {
-    assert.ok(holdIds.has(item.id), `Unexpected held item: ${item.id}`);
-    assert.equal(item.skipReason, 'HOLD_IMAGE_OR_ORIGIN_REVIEW');
-  }
-
-  // Test dry-run in memoryFirestore with excludeIds
+  // Test dry-run in memoryFirestore with cleared excludeIds
   const { db } = memoryFirestore();
   await importIntake20261110({ db, actorUid: 'admin-test', execute: true });
   await importIntake20261113({ db, actorUid: 'admin-test', execute: true });
@@ -175,6 +173,6 @@ test('IMAGE_HOLD_20261119.txt holds back the remaining 7 items leaving 148 ready
 
   const dry = await runPublishReadyDrafts20261118({ db, execute: false, excludeIds: holdIds });
   assert.equal(dry.summary.totalDrafts, 155);
-  assert.equal(dry.summary.readyToPublish, 148);
-  assert.equal(dry.summary.heldBack, 7);
+  assert.equal(dry.summary.readyToPublish, 155);
+  assert.equal(dry.summary.heldBack, 0);
 });
