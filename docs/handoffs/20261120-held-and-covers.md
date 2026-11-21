@@ -28,13 +28,12 @@
 ### 3. Live Firestore Census (`docs/catalog/LIVE_CENSUS_20261120_FINAL.md`)
 - `total: 252`, `published: 252`, `draft: 0`, `archived: 0`, `inactive: 0`, `repoKnown: 252`, `notInRepoCount: 0`, `repoItemsNotLive: 0`.
 
-### 4. Section Cover Images — 3/13 Generated, Verified & Approved by Claude
-- Staged in `public/images/section-covers-20261120/` (`1600×1600` WebP; **live storefront paths untouched**):
-  - `dates.webp` (175 KB)
-  - `herbs-spices.webp` (269 KB)
-  - `herbal-teas.webp` (233 KB)
-- Built side-by-side review page `docs/design/SECTION_COVERS.html` via `scripts/build-section-covers-sheet.ts` (`3 ready, 10 pending`).
-- Remaining 10 section covers (`all`, `nuts`, `oils`, `essentials`, `snacks-seeds`, `saunf`, `murabba-jaat`, `gift-boxes`, `celebration-boxes`, `bundles`) hit built-in image quota (`429 QUOTA_EXHAUSTED`, resets ~04:08 AM PKT on 21 Nov) and are scheduled to generate automatically after reset, then push & stop for Claude's review before wiring into `CategoryCarousel.tsx`.
+### 4. Section Cover Images — 12/13 Generated & Visually Verified (`1600×1600` WebP)
+- Staged in `public/images/section-covers-20261120/` (**live storefront paths in `CategoryCarousel.tsx` untouched until Claude's review & owner's `"haan"`**):
+  - **Approved by Claude (3):** `dates.webp` (175 KB), `herbs-spices.webp` (269 KB), `herbal-teas.webp` (233 KB).
+  - **Newly generated & visually verified for Claude review (9):** `all.webp` (215 KB), `nuts.webp` (157 KB), `oils.webp` (132 KB), `essentials.webp` (150 KB), `snacks-seeds.webp` (253 KB), `saunf.webp` (224 KB), `murabba-jaat.webp` (151 KB), `gift-boxes.webp` (187 KB), `celebration-boxes.webp` (231 KB).
+- Rebuilt side-by-side review page `docs/design/SECTION_COVERS.html` via `scripts/build-section-covers-sheet.ts` (**`12 ready, 1 pending`**).
+- Only **1 cover (`bundles`)** remains — hit built-in image quota (`429 QUOTA_EXHAUSTED`, resets ~09:09 AM PKT, 21 Nov). Will generate once quota resets, verify, update `SECTION_COVERS.html`, and push.
 
 ---
 
