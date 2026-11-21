@@ -118,7 +118,8 @@ function PackingPreview({ orders, onClose }: { orders: AdminOrderSummary[]; onCl
 }
 
 export default function AdminOrdersPage() {
-  const { currentUser, loading: authLoading } = useAuth();
+  const { currentUser, loading: authLoading, requireAuth } = useAuth();
+  useEffect(() => { requireAuth(); }, [requireAuth]);
   const { t, language, setLanguage } = useAdminLanguage();
   const { t: updateT } = useLanguage();
   const [params, setParams] = useSearchParams();
