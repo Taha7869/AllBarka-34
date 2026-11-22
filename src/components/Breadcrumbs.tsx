@@ -32,8 +32,8 @@ export default function Breadcrumbs({ items: customItems, className = '' }: Brea
     const searchParams = new URLSearchParams(location.search);
     const categoryParam = searchParams.get('category');
 
-    // On home page without custom breadcrumbs, return empty array
-    if (path === '/') {
+    // On home page (and isolated home preview) without custom breadcrumbs, return empty array
+    if (path === '/' || path === '/preview/premium-home') {
       return [];
     }
 

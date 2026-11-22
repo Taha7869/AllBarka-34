@@ -24,6 +24,7 @@ const StaffOrdersWorkspace = React.lazy(() => import('./components/StaffOrdersWo
 const GiftRevealPage = React.lazy(() => import('./pages/GiftRevealPage'));
 const OrderTrackingPage = React.lazy(() => import('./pages/OrderTrackingPage'));
 const OfflinePage = React.lazy(() => import('./pages/OfflinePage'));
+const PremiumHomePreviewPage = React.lazy(() => import('./pages/PremiumHomePreviewPage'));
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
 const OccasionsIndexRoute = React.lazy(() => import('./pages/CelebrationsPages').then(m => ({ default: m.OccasionsIndexRoute })));
 const OccasionRoute = React.lazy(() => import('./pages/CelebrationsPages').then(m => ({ default: m.OccasionRoute })));
@@ -94,6 +95,7 @@ export default function App() {
               <Route path="reveal/:token" element={<GiftRevealPage />} />
               <Route path="track" element={<OrderTrackingPage />} />
               <Route path="offline" element={<OfflinePage />} />
+              <Route path="preview/premium-home" element={<PremiumHomePreviewPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Route>
           </Routes>
