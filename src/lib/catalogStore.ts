@@ -29,7 +29,12 @@ import { readFilledRecipes, readRecipeIngredients } from './filledGiftPricing';
 import { HAMPER_BOX_SEEDS, validateHamperBoxPricing, boxFromPricing, type HamperBoxRecord } from './hamperBoxSchema';
 import { applyReferenceImportPricing, type ReferencePricingResult } from './pricingImport';
 
-export const CATALOG_CACHE_MS = 15_000;
+/**
+ * Firestore Spark allows 50k reads a day and one catalogue load reads every product (~260 docs).
+ * Public display uses a 5-minute cache (admin writes in this process invalidate it at once).
+ * Quotes and inquiries still read fresh prices every time.
+ */
+export const CATALOG_CACHE_MS = 5 * 60_000;
 export const CATALOG_COLLECTION = 'products';
 export const MERCHANDISING_COLLECTION = 'merchandising';
 const seeds = new Map(PRODUCTS.map(product => [product.id, product]));
@@ -297,21 +302,29 @@ export async function loadAuthoritativeCatalog(db: Firestore | null, options: { 
 
   let snapshots: DocumentSnapshot[];
   try {
+    // One collection read already returns every product document, seeds included, so seed
+    // products are only fetched one by one when the collection query is unavailable.
+    let dynamicSnapshots: DocumentSnapshot[] = [];
+    let collectionRead = false;
+    if (typeof (db.collection(CATALOG_COLLECTION) as any).get === 'function') {
+      const col = await db.collection(CATALOG_COLLECTION).get();
+      if (col && Array.isArray((col as any).docs)) {
+        dynamicSnapshots = (col as any).docs;
+        collectionRead = true;
+      }
+    }
     const references = [
-      ...[...seeds.keys()].map(id => db.collection(CATALOG_COLLECTION).doc(id)),
+      ...(collectionRead ? [] : [...seeds.keys()].map(id => db.collection(CATALOG_COLLECTION).doc(id))),
       ...HAMPER_BOX_SEEDS.map(box => db.collection('hamperBoxes').doc(box.id))
     ];
     const baseSnapshots = typeof (db as any).getAll === 'function'
       ? await (db as any).getAll(...references)
       : await Promise.all(references.map((ref: any) => ref.get()));
-
-    // Also read any dynamic Firestore products absent from compiled seeds
-    let dynamicSnapshots: DocumentSnapshot[] = [];
-    if (typeof (db.collection(CATALOG_COLLECTION) as any).get === 'function') {
-      const col = await db.collection(CATALOG_COLLECTION).get();
-      if (col && Array.isArray((col as any).docs)) {
-        dynamicSnapshots = (col as any).docs;
-      }
+    if (collectionRead) {
+      // Seeds missing from Firestore still need a snapshot (exists=false) for the merge below.
+      const present = new Set(dynamicSnapshots.map(snap => snap.id));
+      const missing = [...seeds.keys()].filter(id => !present.has(id)).map(id => db.collection(CATALOG_COLLECTION).doc(id));
+      if (missing.length) baseSnapshots.push(...(typeof (db as any).getAll === 'function' ? await (db as any).getAll(...missing) : await Promise.all(missing.map((ref: any) => ref.get()))));
     }
 
     const snapshotMap = new Map<string, DocumentSnapshot>();
@@ -320,6 +333,8 @@ export async function loadAuthoritativeCatalog(db: Firestore | null, options: { 
 
     snapshots = [...snapshotMap.values()];
   } catch (error) {
+    // Quota or network trouble: keep serving the last good catalogue for display rather than failing.
+    if (!options.fresh && cache?.db === db) return cache.snapshot;
     throw new CatalogError('CATALOG_STORE_UNAVAILABLE', 503);
   }
   const snapshot = snapshotFromDocuments(snapshots, now);

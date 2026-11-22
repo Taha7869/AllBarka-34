@@ -170,7 +170,7 @@ export function createAiChatRouter(options: AiChatRouterOptions) {
           if (!db) {
             throw new Error('DATABASE_OFFLINE');
           }
-          const snapshot = await loadAuthoritativeCatalog(db, { fresh: true });
+          const snapshot = await loadAuthoritativeCatalog(db); // display only: cached catalogue saves ~260 reads per chat message
           mergedProducts = mergeAuthoritativeCatalog(PRODUCTS, snapshot.products);
         }
         catalogMs = Date.now() - catalogStarted;
