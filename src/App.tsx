@@ -6,7 +6,7 @@ import RootLayout from './layouts/RootLayout';
 import ErrorBoundary from './components/ErrorBoundary';
 import type { InfoPageTab } from './pages/InfoPage';
 import type { PolicyTab } from './pages/PoliciesPage';
-import AlmondLoader from './components/AlmondLoader';
+import { RouteLoadingSkeleton } from './components/StorefrontSkeletons';
 import HomePage from './pages/HomePage';
 import ProductDetailPage from './pages/ProductDetailPage';
 
@@ -32,12 +32,7 @@ const PackagingFormatPage = React.lazy(() => import('./pages/CelebrationsPages')
 const DesignPage = React.lazy(() => import('./pages/CelebrationsPages').then(m => ({ default: m.DesignPage })));
 
 const PageLoadingFallback = () => (
-  <div className="w-full min-h-[50vh] flex flex-col items-center justify-center py-24" aria-busy="true">
-    <AlmondLoader size={40} />
-    <span className="mt-4 font-serif text-[11px] uppercase tracking-[0.25em] text-[#8C6B1B]/90 font-medium">
-      AllBarka Luxury Dry Fruits
-    </span>
-  </div>
+  <RouteLoadingSkeleton pathname={typeof window !== 'undefined' ? window.location.pathname : '/'} />
 );
 
 function InfoPageRoute() {

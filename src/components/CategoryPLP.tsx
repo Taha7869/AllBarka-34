@@ -3,7 +3,8 @@ import BundleContentsSummary from './BundleContentsSummary';
 import { initialCardPortion, readBundleFormat } from '../lib/merchandisingPresentation';
 import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import CartAddButton from './CartAddButton';
-import { useCatalogProducts, useCatalogTaxonomy, useCatalogHiddenTaxonomy } from '../contexts/CatalogContext';
+import { useCatalogProducts, useCatalogTaxonomy, useCatalogHiddenTaxonomy, useCatalogLoading } from '../contexts/CatalogContext';
+import { ShopCategorySkeleton } from './StorefrontSkeletons';
 import React, { useEffect, useId, useMemo, useState, useRef } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams, useNavigationType } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
@@ -40,10 +41,11 @@ export interface CategoryPLPProps {
 const browsingPositions = new Map<string, { y: number; count: number }>();
 export type SortOption = CatalogSort;
 export function CategoryPLPSkeleton() {
-  return <div className="grid grid-cols-2 gap-4 lg:grid-cols-4" aria-busy="true">{Array.from({ length: 8 }, (_, i) => <div key={i} className="aspect-[3/5] rounded-2xl bg-[var(--color-border)] motion-safe:animate-pulse" />)}</div>;
+  return <ShopCategorySkeleton gridOnly />;
 }
 export default function CategoryPLP({ searchFilter: initialSearch, initialCategory = 'all', onAddToCart, onQuickView, isWholesale = false, isModal = false, onClose }: CategoryPLPProps) {
   const PRODUCTS = useCatalogProducts();
+  const catalogLoading = useCatalogLoading();
   const taxonomy=useCatalogTaxonomy();const hiddenTaxonomy=useCatalogHiddenTaxonomy();
   const { t, language } = useCatalogFilterLanguage();
   const categoryLabel = (id: string) => {
@@ -309,7 +311,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
     </div>
     <CatalogTools mode="compare" />
     {compareMessage && <p role="status" className="mb-4 text-xs">{compareMessage}</p>}
-    {products.length ? <div id="plp-products-grid" className={listView ? 'grid grid-cols-1 gap-4 md:grid-cols-2' : 'grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:gap-6'}>{products.slice(0, visibleCount).map((product, index) => {
+    {catalogLoading && products.length === 0 && !filters.query ? <ShopCategorySkeleton gridOnly count={8} /> : products.length ? <div id="plp-products-grid" className={listView ? 'grid grid-cols-1 gap-4 md:grid-cols-2' : 'grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:gap-6'}>{products.slice(0, visibleCount).map((product, index) => {
       const disabled = new Set(product.variants?.filter(variant => variant.available === false).map(variant => variant.label) || []);
       const weights = Object.keys(product.prices).filter(weight => !disabled.has(weight) && Number.isFinite(product.prices[weight]) && product.prices[weight] > 0);
       const weight = weights.includes(sizes[product.id]) ? sizes[product.id] : initialCardPortion(product, weights);

@@ -5,7 +5,8 @@ import { readBundleFormat } from '../lib/merchandisingPresentation';
 import CartAddButton from '../components/CartAddButton';
 import { readProductDetailHandoff } from '../lib/productDetailHandoff';
 import { productSeo } from '../lib/productSeo';
-import { useCatalogProducts } from '../contexts/CatalogContext';
+import { useCatalogProducts, useCatalogLoading } from '../contexts/CatalogContext';
+import { ProductDetailSkeleton } from '../components/StorefrontSkeletons';
 import { useCatalogActivity } from '../hooks/useCatalogActivity';
 import { unitPrice } from '../lib/catalogActivity';
 import { useSavedProducts } from '../hooks/useSavedProducts';
@@ -42,6 +43,7 @@ import { recordFunnelEvent } from '../lib/funnelTelemetry';
 
 export default function ProductDetailPage() {
   const PRODUCTS = useCatalogProducts();
+  const catalogLoading = useCatalogLoading();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -207,6 +209,10 @@ export default function ProductDetailPage() {
       if (catalogChanged) setSelectionReviewRequired(true);
     }
   }, [product, handoffRouteKey, navigationHandoff, weights, selectedWeightLabel, customWeightSelected, minUnits, maxUnits, quantity]);
+
+  if (!product && catalogLoading) {
+    return <ProductDetailSkeleton />;
+  }
 
   if (!product) {
     return (

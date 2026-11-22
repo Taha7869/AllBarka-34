@@ -9,13 +9,14 @@ import { HAMPER_BOX_SEEDS, boxFromPricing, validateHamperBoxPricing } from '../l
 import { STARTER_ADDONS, type AddonDefinition } from '../lib/addonsCatalog';
 
 const seeds = PRODUCTS.map(product => ({ ...product }));
-const CatalogContext = createContext({ products: PRODUCTS, hamperBoxes: HAMPER_BOXES, addons: STARTER_ADDONS as AddonDefinition[], taxonomy: [] as TaxonomyEntry[], hiddenTaxonomy: [] as string[], refresh: async (_options?: { force?: boolean }) => {} });
+const CatalogContext = createContext({ products: PRODUCTS, hamperBoxes: HAMPER_BOXES, addons: STARTER_ADDONS as AddonDefinition[], taxonomy: [] as TaxonomyEntry[], hiddenTaxonomy: [] as string[], loading: false, refresh: async (_options?: { force?: boolean }) => {} });
 export function CatalogProvider({ children, initialProducts, initialTaxonomy }: { children: ReactNode; initialProducts?: Product[]; initialTaxonomy?: TaxonomyEntry[] }) {
   const [products, setProducts] = useState<Product[]>(() => initialProducts || PRODUCTS);
   const [hamperBoxes, setHamperBoxes] = useState<HamperBox[]>(() => [...HAMPER_BOXES]);
   const [addons, setAddons] = useState<AddonDefinition[]>(() => [...STARTER_ADDONS]);
   const [taxonomy,setTaxonomy]=useState<TaxonomyEntry[]>(initialTaxonomy||[]);
   const [hiddenTaxonomy,setHiddenTaxonomy]=useState<string[]>([]);
+  const [loading, setLoading] = useState<boolean>(() => !initialProducts);
   const taxonomyFlight=useRef<AbortController|null>(null);
   const active = useRef(false);
   const inFlight = useRef<AbortController | null>(null);
@@ -85,7 +86,7 @@ export function CatalogProvider({ children, initialProducts, initialTaxonomy }: 
       setProducts(next);
       setHamperBoxes(boxes); if (Array.isArray(data.addons)) setAddons(data.addons);
     } catch { /* A saved bag remains intact; server quotes fail closed if the authoritative store is unavailable. */ }
-    finally { clearTimeout(timer); if (inFlight.current === controller) inFlight.current = null; }
+    finally { clearTimeout(timer); if (inFlight.current === controller) inFlight.current = null; if (active.current) setLoading(false); }
   }, []);
   useEffect(() => {
     active.current = true;
@@ -95,12 +96,13 @@ export function CatalogProvider({ children, initialProducts, initialTaxonomy }: 
     window.addEventListener('focus', onFocus);
     return () => { active.current = false; inFlight.current?.abort(); taxonomyFlight.current?.abort(); clearInterval(timer); window.removeEventListener('focus', onFocus); };
   }, [refresh]);
-  return <CatalogContext.Provider value={{ products, hamperBoxes, addons, taxonomy, hiddenTaxonomy, refresh }}>{children}</CatalogContext.Provider>;
+  return <CatalogContext.Provider value={{ products, hamperBoxes, addons, taxonomy, hiddenTaxonomy, loading, refresh }}>{children}</CatalogContext.Provider>;
 }
 export const useCatalogProducts = () => useContext(CatalogContext).products;
 export const useCatalogHamperBoxes = () => useContext(CatalogContext).hamperBoxes || HAMPER_BOXES;
 export const useCatalogAddons = () => useContext(CatalogContext).addons || STARTER_ADDONS;
 export const useCatalogRefresh = () => useContext(CatalogContext).refresh;
+export const useCatalogLoading = () => useContext(CatalogContext).loading;
 
 export const useCatalogTaxonomy = () => useContext(CatalogContext).taxonomy;
 

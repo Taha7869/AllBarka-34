@@ -53,6 +53,7 @@ import Breadcrumbs from '../components/Breadcrumbs';
 import { PRODUCTS, getProductImage } from '../data/products';
 import { acquireScrollLock } from '../utils/scrollLock';
 import ErrorBoundary from '../components/ErrorBoundary';
+import { RouteLoadingSkeleton } from '../components/StorefrontSkeletons';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 
 
@@ -455,16 +456,7 @@ export default function RootLayout() {
         </div>}
         
         <ErrorBoundary>
-          <React.Suspense
-            fallback={
-              <div className="min-h-screen flex flex-col items-center justify-center p-8" aria-busy="true">
-                <div className="w-10 h-10 rounded-full border-2 border-[var(--color-gold,#C7982F)]/30 border-t-[var(--color-gold,#C7982F)] animate-spin mb-4" />
-                <span className="text-xs uppercase tracking-[0.2em] font-bold text-[var(--color-gold,#C7982F)]">
-                  Loading AllBarka...
-                </span>
-              </div>
-            }
-          >
+          <React.Suspense fallback={<RouteLoadingSkeleton pathname={location.pathname} />}>
             <div className="w-full flex justify-center">
                 {prefersReducedMotion || location.pathname === '/checkout' || location.pathname === '/cart' ? (
                   <div key={location.pathname} className="w-full flex-col flex items-center">
