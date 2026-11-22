@@ -1,5 +1,6 @@
 import type { Product } from '../types';
 import { parseAllergenParam } from './allergenFilter';
+import { expandRomanUrduAliases } from './searchAliases';
 
 export const CATALOG_SORTS = ['featured', 'price-asc', 'price-desc', 'name-asc'] as const;
 export type CatalogSort = typeof CATALOG_SORTS[number];
@@ -71,6 +72,7 @@ export function productSearchScore(product: Product, query: string): number {
     product.id,
     product.passport?.variety || '',
     CATALOG_ALIASES[product.id] || '',
+    expandRomanUrduAliases(product),
   ].filter(Boolean).join(' '));
 
   const details = normalizeSearch([
