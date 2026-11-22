@@ -24,6 +24,24 @@ const collectionPresentation = [
   { id: 'essentials', name: 'Desi Essentials', image: SECTION_COVERS.essentials.src, altKey: SECTION_COVERS.essentials.altKey, link: '/shop/essentials' },
   { id: 'saunf', name: CANONICAL_CATEGORIES.saunf.name, image: SECTION_COVERS.saunf.src, altKey: SECTION_COVERS.saunf.altKey, link: '/shop/saunf' },
 ];
+// Collections without an admin image (or with an unknown id such as 'chai') fall back to the matching studio cover.
+const STUDIO_KEYWORDS: Array<[RegExp, string]> = [
+  [/chai|tea|kahwa|qehwa/, 'herbal-teas'], [/murabba|preserve/, 'murabba-jaat'], [/date|khajoor/, 'dates'],
+  [/saunf|mukhwas|fresh/, 'saunf'], [/oil/, 'oils'], [/spice|masala|herb/, 'herbs-spices'],
+  [/celebration|bid/, 'celebration-boxes'], [/gift|hamper/, 'gift-boxes'], [/bundle|deal|combo/, 'bundles'],
+  [/seed|snack/, 'snacks-seeds'], [/nut|dry|fruit/, 'nuts'], [/essential|pantry|desi/, 'essentials'],
+];
+function studioCoverFor(...ids: Array<string | undefined | null>): string {
+  for (const raw of ids) {
+    if (!raw) continue;
+    const id = raw.trim().toLowerCase();
+    const direct = getSectionCover(id)?.src;
+    if (direct) return direct;
+    const hit = STUDIO_KEYWORDS.find(([pattern]) => pattern.test(id));
+    if (hit) return SECTION_COVERS[hit[1] as keyof typeof SECTION_COVERS].src;
+  }
+  return '';
+}
 const COLLECTION_IMAGE_PLACEHOLDER = '/images/product-placeholder.svg';
 export const PANTRY_CATEGORIES: CarouselSlideItem[] = [
   ...collectionPresentation,
@@ -166,7 +184,7 @@ export default function CategoryCarousel({ settings: propSettings }: CategoryCar
         id: col?.collectionId || cat.id,
         name: colTitle || cat.name,
         title: colTitle,
-        image: col?.image || cat.image || DEFAULT_COLLECTION_IMAGES[cKey] || DEFAULT_COLLECTION_IMAGES[cat.id] || '',
+        image: col?.image || cat.image || DEFAULT_COLLECTION_IMAGES[cKey] || DEFAULT_COLLECTION_IMAGES[cat.id] || studioCoverFor(cKey, cat.id, col?.collectionId, col?.slug) || '',
         link: col?.slug || defaultLink,
         altKey: cat.altKey,
         badge: col?.badge,
@@ -190,7 +208,7 @@ export default function CategoryCarousel({ settings: propSettings }: CategoryCar
         id: colEntry.collectionId,
         name: colTitle || colEntry.collectionId,
         title: colTitle,
-        image: colEntry.image || DEFAULT_COLLECTION_IMAGES[cKey] || DEFAULT_COLLECTION_IMAGES[colEntry.collectionId] || '',
+        image: colEntry.image || DEFAULT_COLLECTION_IMAGES[cKey] || DEFAULT_COLLECTION_IMAGES[colEntry.collectionId] || studioCoverFor(cKey, colEntry.collectionId, colEntry.slug, colEntry.title_en) || '',
         link: colEntry.slug || `/shop/${colEntry.collectionId}`,
         altKey: getSectionCover(colEntry.collectionId)?.altKey || `catalog.alt.${colEntry.collectionId}`,
         badge: colEntry.badge,
