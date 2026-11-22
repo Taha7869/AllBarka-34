@@ -9,6 +9,7 @@ import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import CartTools from '../components/CartTools';
 import SEO from '../components/SEO';
 import CartItemPersonalization from '../components/CartItemPersonalization';
+import CompleteTheBoxSuggestions from '../components/CompleteTheBoxSuggestions';
 import PaidAddonsSelector from '../components/PaidAddonsSelector';
 import TrustBadges from '../components/TrustBadges';
 import { buildAutomatedOrderWhatsAppUrl } from '../config/contacts';
@@ -28,6 +29,7 @@ export default function CartPage() {
     freeShippingProgress,
     updateQuantity,
     removeFromCart,
+    addToCart,
     clearCart,
     shippingCity,
     setShippingCity,
@@ -84,6 +86,15 @@ if (!cartItems.length) return <div className="purchase-cart purchase-empty" dir=
         </article>;
       })}
       <PaidAddonsSelector />
+      <CompleteTheBoxSuggestions
+        cartItems={cartItems}
+        products={PRODUCTS}
+        subtotal={subtotal}
+        onAdd={(productId, portion) => {
+          const prod = PRODUCTS.find((p) => p.id === productId);
+          if (prod) addToCart(prod, portion, 1);
+        }}
+      />
       <Link className="purchase-continue" to="/shop"><ArrowRight size={16}/>{t('continueShopping')}</Link>
     </section><aside className="purchase-cart-summary" aria-label={t('purchase.summary')}>
       <div className="purchase-summary-heading"><p className="purchase-eyebrow">{t('purchase.estimate')}</p><h2>{t('purchase.summary')}</h2></div>

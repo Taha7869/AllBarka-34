@@ -19,7 +19,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import CartItemPersonalization from './CartItemPersonalization';
-import CartAddButton from './CartAddButton';
+import CompleteTheBoxSuggestions from './CompleteTheBoxSuggestions';
 import PaidAddonsSelector from './PaidAddonsSelector';
 import type { CartItem } from '../types';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
@@ -201,11 +201,6 @@ export default function CartDrawer({
       if (prod) context.addToCart(prod, weight, 1);
     }
   };
-
-  // Recommendations: up to 3 catalog items not in cart
-  const recommendations = PRODUCTS.filter(
-    (prod) => prod.active !== false && !prod.quoteOnly && prod.orderMode !== 'inquiry_quote' && prod.status !== 'draft' && prod.status !== 'archived' && Object.keys(prod.prices).some(label => prod.prices[label] > 0 && !prod.variants?.some(variant => variant.label === label && variant.available === false)) && !cartItems.some((item) => item.productId === prod.id || item.id.startsWith(prod.id))
-  ).slice(0, 3);
 
   // 1-Click WhatsApp Quick Checkout — encodes full cart summary for guest checkout
   const handleWhatsAppCheckout = () => {
@@ -447,56 +442,16 @@ export default function CartDrawer({
                 </div>
               )}
 
-              {/* Cross-Sell Recommendations */}
-              {recommendations.length > 0 && cartItems.length > 0 && (
-                <div className="pt-3 border-t border-[#29231D]/10 dark:border-[#F6F1EA]/12 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-serif font-bold text-[#29231D] dark:text-[#F6F1EA] text-sm flex items-center gap-1.5">
-                      <Sparkles size={13} className="text-[#C7982F]" />
-                      {t('purchase.recommendations')}
-                    </h3>
-                    <span className="text-[10px] font-semibold text-[#806326] dark:text-[#E4C783] uppercase tracking-wider">
-                      {t('purchase.eyebrow')}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    {recommendations.map((prod) => {
-                      const firstWeight = Object.keys(prod.prices).find(label => prod.prices[label] > 0 && !prod.variants?.some(variant => variant.label === label && variant.available === false))!;
-                      const initialPrice = parsePrice(prod.prices[firstWeight] || prod.wholesale);
-
-                      return (
-                        <div
-                          key={prod.id}
-                          className="p-2.5 rounded-xl bg-[#FFFCF7] dark:bg-[#1A201E] border border-[#29231D]/10 dark:border-[#F6F1EA]/12 flex flex-col justify-between items-start gap-1.5 hover:shadow-xs hover:border-[#C7982F]/60 transition-all group text-left"
-                        >
-                          <div className="w-full relative aspect-4/3 rounded-lg overflow-hidden bg-[#F6F1EA] dark:bg-[#222A28] shrink-0 border border-[#29231D]/8 dark:border-[#F6F1EA]/8">
-                            <SafeCartImage
-                              src={mediaCover(prod)}
-                              alt={t(`imageAlt.${prod.id}`, getLocalized(prod, 'name', language))}
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                              fallbackText={getLocalized(prod, 'name', language)}
-                            />
-                          </div>
-                          <div className="w-full min-w-0">
-                            <h4 className="font-serif font-bold text-[#29231D] dark:text-[#F6F1EA] text-xs truncate leading-tight">
-                              {getLocalized(prod, 'name', language)}
-                            </h4>
-                            <p className="text-[9px] text-[#806326] dark:text-[#E4C783] uppercase tracking-wider font-semibold">
-                              {firstWeight}
-                            </p>
-                          </div>
-                          <div className="w-full flex items-center justify-between mt-0.5">
-                            <span className="text-xs font-serif font-bold text-[#29231D] dark:text-[#F6F1EA]">
-                              {formatPrice(initialPrice)}
-                            </span>
-                            <CartAddButton productId={prod.id} portion={firstWeight} onAdd={() => handleAddRecommendation(prod.id, firstWeight)} className="min-h-11 inline-flex items-center justify-center gap-1 border border-[var(--color-border-accent)] px-3 text-xs">{t('purchase.add')}</CartAddButton>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+              {/* Complete the Box — 1-2 published complementary in-budget suggestions */}
+              {cartItems.length > 0 && (
+                <CompleteTheBoxSuggestions
+                  cartItems={cartItems}
+                  products={PRODUCTS}
+                  subtotal={subtotal}
+                  onAdd={handleAddRecommendation}
+                  onNavigate={closeDrawer}
+                  compact
+                />
               )}
               {cartItems.length > 0 && <div className="purchase-drawer-extras">            <button type="button" onClick={() => { closeDrawer(); navigate('/cart'); }} className="focus-ring min-h-11 shrink-0 border-t border-[var(--color-border)] px-5 py-2 text-sm font-semibold text-[var(--color-accent-text)] underline underline-offset-4">{t('cart.boxTools')}</button>                {/* Financial Summary */}
                 <label className="block space-y-2 text-xs font-semibold">
