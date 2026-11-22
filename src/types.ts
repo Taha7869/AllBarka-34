@@ -122,11 +122,14 @@ export interface MerchandisingAutoplayConfig {
   resumeDelayMs: number; // Rule D5 default: 3000
 }
 
+export type SeasonalMode = 'auto' | 'default' | 'ramadan' | 'eid' | 'shaadi' | 'sardi';
+
 export interface MerchandisingSettings {
   showcaseTabs: MerchandisingShowcaseTab[];
   featuredProductIds: string[];
   categoryOrder: string[];
   categoryVisibility: Record<string, boolean>;
+  seasonalMode?: SeasonalMode;
   autoplay: MerchandisingAutoplayConfig;
   autoplayDurationMs: number;
   autoplayResumeDelayMs: number;

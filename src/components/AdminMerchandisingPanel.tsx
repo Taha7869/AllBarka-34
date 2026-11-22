@@ -2,9 +2,10 @@ import { useEffect, useState, useCallback } from 'react';
 import { X, CheckCircle2, AlertCircle, Loader2, Sparkles, Send, RefreshCw, Layers } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { adminRequest } from '../lib/adminClient';
-import type { MerchandisingSettings } from '../types';
+import type { MerchandisingSettings, SeasonalMode } from '../types';
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import { DEFAULT_MERCHANDISING } from '../config/merchandising';
+import { resolveActiveSeason, SEASONAL_THEME_CONFIGS } from '../lib/seasonalHomepage';
 
 interface AdminMerchandisingPanelProps {
   isOpen: boolean;
@@ -34,6 +35,7 @@ export default function AdminMerchandisingPanel({ isOpen, onClose }: AdminMercha
       showcaseTabs: (s.showcaseTabs || []).map(t => ({ id: t.id, productIds: (t.productIds || []).join(',') })),
       autoplay: s.autoplay,
       categoryOrder: s.categoryOrder || [],
+      seasonalMode: s.seasonalMode || 'auto',
     });
   };
 
@@ -256,6 +258,52 @@ export default function AdminMerchandisingPanel({ isOpen, onClose }: AdminMercha
           </div>
         ) : (
           <div className="mt-5 space-y-5 max-h-[70vh] overflow-y-auto pr-1">
+            {/* Seasonal Homepage Theme (Auto by calendar or explicit admin override) */}
+            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-base)]/50 p-4 space-y-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-accent-text)]">
+                  Seasonal Homepage Theme (Hero &amp; Collection Order)
+                </span>
+                <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 py-0.5 text-[10px] font-semibold text-[var(--color-text-secondary)]">
+                  Auto today: {(() => {
+                    const detected = resolveActiveSeason('auto');
+                    return detected ? SEASONAL_THEME_CONFIGS[detected].label.en : 'Standard Default';
+                  })()}
+                </span>
+              </div>
+              <p className="text-[11px] text-[var(--color-text-secondary)]">
+                Choose Automatic to switch hero copy and collection priority by Islamic &amp; Pakistan calendar dates, or lock a specific season manually.
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2" role="radiogroup" aria-label="Seasonal Homepage Theme">
+                {([
+                  ['auto', 'Automatic (By Date)'],
+                  ['default', 'Standard Default'],
+                  ['ramadan', 'Ramadan'],
+                  ['eid', 'Eid'],
+                  ['shaadi', 'Shaadi Season'],
+                  ['sardi', 'Sardi (Winter)'],
+                ] as Array<[SeasonalMode, string]>).map(([mode, label]) => {
+                  const selected = (settings.seasonalMode || 'auto') === mode;
+                  return (
+                    <button
+                      key={mode}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      onClick={() => setSettings(prev => ({ ...prev, seasonalMode: mode }))}
+                      className={`min-h-11 rounded-lg border px-3 py-2 text-left text-xs font-semibold transition-colors focus-ring ${
+                        selected
+                          ? 'border-[#1e3a2b] bg-[#1e3a2b] text-[#fff8e9] dark:border-[#c7982f] dark:bg-[#c7982f]/20 dark:text-[#fff8e9]'
+                          : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-primary)] hover:border-[#c7982f]/60'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Showcase Tabs (3 admin-selected items per tab) */}
             <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-base)]/50 p-4 space-y-3">
               <div className="flex items-center gap-2">

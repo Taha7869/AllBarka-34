@@ -1013,6 +1013,7 @@ export function validateMerchandisingSettings(value: unknown): {
   featuredProductIds: string[];
   categoryOrder: string[];
   categoryVisibility: Record<string, boolean>;
+  seasonalMode: 'auto' | 'default' | 'ramadan' | 'eid' | 'shaadi' | 'sardi';
   autoplay: { enabled: boolean; intervalMs: number; resumeDelayMs: number };
   autoplayDurationMs: number;
   autoplayResumeDelayMs: number;
@@ -1141,11 +1142,21 @@ export function validateMerchandisingSettings(value: unknown): {
   const updatedAt = typeof value.updatedAt === 'string' ? value.updatedAt : new Date().toISOString();
   const updatedBy = typeof value.updatedBy === 'string' ? value.updatedBy : undefined;
 
+  const ALLOWED_SEASONAL_MODES = ['auto', 'default', 'ramadan', 'eid', 'shaadi', 'sardi'] as const;
+  let seasonalMode: 'auto' | 'default' | 'ramadan' | 'eid' | 'shaadi' | 'sardi' = 'auto';
+  if (value.seasonalMode !== undefined && value.seasonalMode !== null && value.seasonalMode !== '') {
+    if (typeof value.seasonalMode !== 'string' || !(ALLOWED_SEASONAL_MODES as readonly string[]).includes(value.seasonalMode.trim().toLowerCase())) {
+      throw new CatalogError('INVALID_SEASONAL_MODE', 400);
+    }
+    seasonalMode = value.seasonalMode.trim().toLowerCase() as typeof seasonalMode;
+  }
+
   return {
     showcaseTabs,
     featuredProductIds,
     categoryOrder,
     categoryVisibility,
+    seasonalMode,
     autoplay,
     autoplayDurationMs,
     autoplayResumeDelayMs,

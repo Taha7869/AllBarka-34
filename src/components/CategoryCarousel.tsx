@@ -12,6 +12,7 @@ import { SECTION_COVERS, getSectionCover, sectionCoverSrcSet } from '../config/s
 import { PRODUCTS, getProductImage } from '../data/products';
 import { useMerchandisingSettings } from '../contexts/MerchandisingContext';
 import { DEFAULT_MERCHANDISING } from '../config/merchandising';
+import { getSeasonalTheme } from '../lib/seasonalHomepage';
 import type { MerchandisingSettings } from '../types';
 
 const collectionPresentation = [
@@ -79,6 +80,7 @@ const DEFAULT_COLLECTION_IMAGES: Record<string, string> = {
 
 export interface CategoryCarouselProps {
   settings?: MerchandisingSettings;
+  seasonalDate?: Date;
 }
 
 export interface CarouselSlideItem {
@@ -91,15 +93,25 @@ export interface CarouselSlideItem {
   badge?: string;
 }
 
-export default function CategoryCarousel({ settings: propSettings }: CategoryCarouselProps = {}) {
+export default function CategoryCarousel({ settings: propSettings, seasonalDate }: CategoryCarouselProps = {}) {
   const { t, language } = useLanguage();
   const contextSettings = useMerchandisingSettings();
   const hasCustomSettings = Boolean(propSettings || (contextSettings && contextSettings !== DEFAULT_MERCHANDISING));
   const activeSettings = propSettings || contextSettings;
+  const seasonalTheme = React.useMemo(
+    () => getSeasonalTheme(activeSettings?.seasonalMode, seasonalDate),
+    [activeSettings?.seasonalMode, seasonalDate],
+  );
 
   const categories = React.useMemo<CarouselSlideItem[]>(() => {
     if (!hasCustomSettings || !activeSettings) {
-      return PANTRY_CATEGORIES;
+      if (!seasonalTheme) return PANTRY_CATEGORIES;
+      const normalizedSeasonal = seasonalTheme.categoryOrder.map(id => canonicalCollectionKey(id));
+      const posOf = (id: string) => {
+        const idx = normalizedSeasonal.indexOf(canonicalCollectionKey(id));
+        return idx !== -1 ? idx : 999;
+      };
+      return [...PANTRY_CATEGORIES].sort((a, b) => posOf(a.id) - posOf(b.id));
     }
     const visibility = activeSettings.categoryVisibility || {};
     const order = activeSettings.categoryOrder || [];
@@ -215,10 +227,28 @@ export default function CategoryCarousel({ settings: propSettings }: CategoryCar
       });
     }
 
-    // 3. Deterministic Ordering: normalize ordering IDs
-    if (!order.length) return slideCandidates;
+    // 3. Deterministic Ordering: respect explicit custom merchant categoryOrder unless admin forced a seasonal override;
+    // otherwise apply seasonal collection priority (from explicit season or auto calendar date).
+    const defaultOrderSig = DEFAULT_MERCHANDISING.categoryOrder.map(id => canonicalCollectionKey(id)).join(',');
+    const activeOrderSig = order.map(id => canonicalCollectionKey(id)).join(',');
+    const hasCustomOrder = order.length > 0 && activeOrderSig !== defaultOrderSig;
+    const isForcedSeason = Boolean(
+      activeSettings.seasonalMode &&
+      activeSettings.seasonalMode !== 'auto' &&
+      activeSettings.seasonalMode !== 'default',
+    );
+    const effectiveOrder =
+      isForcedSeason && seasonalTheme
+        ? seasonalTheme.categoryOrder
+        : hasCustomOrder
+          ? order
+          : seasonalTheme
+            ? seasonalTheme.categoryOrder
+            : order;
 
-    const normalizedOrder = order.map(id => canonicalCollectionKey(id));
+    if (!effectiveOrder.length) return slideCandidates;
+
+    const normalizedOrder = effectiveOrder.map(id => canonicalCollectionKey(id));
     const getOrderPos = (id: string) => {
       const cKey = canonicalCollectionKey(id);
       const idx = normalizedOrder.indexOf(cKey);
@@ -230,7 +260,7 @@ export default function CategoryCarousel({ settings: propSettings }: CategoryCar
       const posB = getOrderPos(b.id);
       return posA - posB;
     });
-  }, [activeSettings, hasCustomSettings, language]);
+  }, [activeSettings, hasCustomSettings, language, seasonalTheme]);
   const sectionRef = useRef<HTMLElement>(null);
   const visibleIndicesRef = useRef<number[]>([0]);
   const {

@@ -63,6 +63,7 @@ export const DEFAULT_MERCHANDISING: MerchandisingSettings = {
     deals: true,
     'personalized-treats': true,
   },
+  seasonalMode: 'auto',
   autoplay: {
     enabled: true,
     intervalMs: 6000,
