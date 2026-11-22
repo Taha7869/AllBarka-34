@@ -20,8 +20,7 @@ export default function OrderSuccessPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { t, isRtl, language } = useLanguage();
-  const { currentUser, loading: authLoading, requireAuth } = useAuth();
-  useEffect(() => { requireAuth(); }, [requireAuth]);
+  const { currentUser, loading: authLoading } = useAuth();
   const [confirmedReceipt, setOrder] = useState<OrderSuccessSnapshot | null>(null);
   const order = confirmedReceipt?.customerUid === (currentUser?.uid || null) ? confirmedReceipt : null;
   const [isLoaded, setIsLoaded] = useState(false);

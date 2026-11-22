@@ -86,8 +86,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
   const navigate = useNavigate();
   const { cartItems, clearCart, shippingCity, setShippingCity, selectedAddons, addonsCatalog } = useCart();
   useEffect(() => { if (isOpen !== false && cartItems.length) trackDemand('checkout_start'); }, [isOpen, cartItems.length > 0]);
-  const { patronProfile, currentUser, loading: authLoading, requireAuth } = useAuth();
-  useEffect(() => { requireAuth(); }, [requireAuth]);
+  const { patronProfile, currentUser, loading: authLoading } = useAuth();
   const onOpenAuth = propsOnOpenAuth || (() => {});
   const { language, t: storefrontTranslation } = useLanguage();
   const { isForeign, formatPrice: formatCurrencyPrice, disclaimer: currencyDisclaimer } = useCurrency();

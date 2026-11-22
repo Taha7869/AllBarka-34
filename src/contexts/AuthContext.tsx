@@ -20,8 +20,6 @@ interface AuthContextType {
   loading: boolean;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
-  /** Pages that depend on the signed-in user (admin, staff, checkout, success) call this on mount so a deferred auth start begins at once and `loading` stays true until it resolves. */
-  requireAuth: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -30,7 +28,6 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   logout: async () => {},
   refreshProfile: async () => {},
-  requireAuth: () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -40,8 +37,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [patronProfile, setPatronProfile] = useState<PatronProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const active = useRef(true);
-  const requireAuthRef = useRef<() => void>(() => {});
-  const requireAuth = useCallback(() => requireAuthRef.current(), []);
   const authVersion = useRef(0);
   const invalidateProfileRequests = useCallback(() => { authVersion.current++; }, []);
 
@@ -135,12 +130,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       window.addEventListener('open-updates-dialog', triggerAuth, { once: true });
       idleHandle = setTimeout(triggerAuth, 4500);
     }
-    // A client-side visit to an auth-dependent page starts auth now and reports loading until it resolves.
-    requireAuthRef.current = () => {
-      if (started) return;
-      setLoading(true);
-      triggerAuth();
-    };
 
     return () => {
       isMounted = false;
@@ -176,7 +165,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ currentUser, patronProfile, loading, logout, refreshProfile, requireAuth }}>
+    <AuthContext.Provider value={{ currentUser, patronProfile, loading, logout, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

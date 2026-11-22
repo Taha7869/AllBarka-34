@@ -15,7 +15,7 @@ import '../styles/staff.css';
 const statuses=['ORDER_RECEIVED','CONFIRMED','PREPARING','DISPATCHED','OUT_FOR_DELIVERY','DELIVERED','CANCELLED','QUOTE_REQUESTED'];
 
 export default function StaffOrdersWorkspace() {
-  const {currentUser,loading:authLoading,requireAuth}=useAuth();useEffect(()=>{requireAuth();},[requireAuth]);const {t,language,setLanguage,isRtl}=useAdminLanguage();
+  const {currentUser,loading:authLoading}=useAuth();const {t,language,setLanguage,isRtl}=useAdminLanguage();
   const [ledger,setLedger]=useState<{owner:string;data:StaffLedger}|null>(null);const [detail,setDetail]=useState<{owner:string;data:StaffOrder}|null>(null);
   const [selected,setSelected]=useState<string|null>(null);const [status,setStatus]=useState('ALL');const [range,setRange]=useState('30d');
   const [searchDraft,setSearchDraft]=useState('');const [search,setSearch]=useState('');const [page,setPage]=useState(1);
