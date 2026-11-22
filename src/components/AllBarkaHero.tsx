@@ -33,6 +33,12 @@ export function AllBarkaHero({ onSearch, onSelectCategory, seasonalDate }: AllBa
   const {hero}=useStorefrontContent();
   const merchandising = useMerchandisingSettings();
   const { t, language, isRtl } = useLanguage();
+  const isForcedSeason = Boolean(
+    !hero.enabled &&
+    merchandising.seasonalMode &&
+    merchandising.seasonalMode !== 'auto' &&
+    merchandising.seasonalMode !== 'default',
+  );
   const seasonal = useMemo(
     () => (hero.enabled ? null : getSeasonalTheme(merchandising.seasonalMode, seasonalDate)),
     [hero.enabled, merchandising.seasonalMode, seasonalDate],
@@ -106,15 +112,27 @@ export function AllBarkaHero({ onSearch, onSelectCategory, seasonalDate }: AllBa
         </h1>
         <p className="heritage-hero-description" dir="auto">{hero.enabled ? contentText(hero.description, language) : seasonal ? pickLocalizedSeasonal(seasonal.description, language) : t('table.description')}</p>
         <div className="table-hero-actions">
-          <Link to={hero.enabled ? hero.primaryPath : seasonal ? seasonal.primaryCtaPath : '/shop/dry-fruits'} className="table-hero-primary focus-ring">
-            {hero.enabled ? contentText(hero.primaryLabel, language) : seasonal ? pickLocalizedSeasonal(seasonal.primaryCtaLabel, language) : t('hero.shopDryFruits')}
+          <Link to={hero.enabled ? hero.primaryPath : isForcedSeason && seasonal ? seasonal.primaryCtaPath : '/shop/dry-fruits'} className="table-hero-primary focus-ring">
+            {hero.enabled ? contentText(hero.primaryLabel, language) : isForcedSeason && seasonal ? pickLocalizedSeasonal(seasonal.primaryCtaLabel, language) : t('hero.shopDryFruits')}
             <ArrowRight size={16} className="rtl-flip" aria-hidden="true" />
           </Link>
-          <Link to={hero.enabled ? hero.secondaryPath : seasonal ? seasonal.secondaryCtaPath : '/gifting'} className="table-hero-secondary focus-ring">
-            {hero.enabled ? contentText(hero.secondaryLabel, language) : seasonal ? pickLocalizedSeasonal(seasonal.secondaryCtaLabel, language) : t('hero.exploreGifts')}
+          <Link to={hero.enabled ? hero.secondaryPath : isForcedSeason && seasonal ? seasonal.secondaryCtaPath : '/gifting'} className="table-hero-secondary focus-ring">
+            {hero.enabled ? contentText(hero.secondaryLabel, language) : isForcedSeason && seasonal ? pickLocalizedSeasonal(seasonal.secondaryCtaLabel, language) : t('hero.exploreGifts')}
             <ArrowRight size={16} className="rtl-flip" aria-hidden="true" />
           </Link>
         </div>
+        {!hero.enabled && !isForcedSeason && seasonal && (
+          <p className="mt-2">
+            <Link
+              to={seasonal.primaryCtaPath}
+              data-testid="seasonal-hero-cta"
+              className="focus-ring inline-flex min-h-11 max-w-full flex-wrap items-center gap-1.5 text-xs font-semibold text-[var(--color-accent-text)] underline underline-offset-4 hover:opacity-85"
+            >
+              <span>{pickLocalizedSeasonal(seasonal.primaryCtaLabel, language)}</span>
+              <ArrowRight size={14} className="rtl-flip shrink-0" aria-hidden="true" />
+            </Link>
+          </p>
+        )}
         <p className="table-hero-note">{t('table.note')}</p>
       </div>
       <div className={`table-hero-art${hero.enabled ? ' table-hero-art-custom' : ''}`}>

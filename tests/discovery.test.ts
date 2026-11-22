@@ -22,7 +22,8 @@ test('starting price uses smallest available portion price', () => {
 });
 test('catalogue filter URLs survive a reload and reject invalid values', () => {
   const state = readCatalogFilters(new URLSearchParams('search=badam&budget=2000&origin=Pakistan&saved=1&sort=price-asc'));
-  assert.deepEqual(state, { query: 'badam', budget: 2000, origin: 'Pakistan', saved: true, sort: 'price-asc', special: false });
+  assert.deepEqual(state, { query: 'badam', budget: 2000, origin: 'Pakistan', saved: true, sort: 'price-asc', special: false, excludeAllergens: [] });
+  assert.deepEqual(readCatalogFilters(new URLSearchParams('avoid=tree-nuts,bogus,peanuts')).excludeAllergens, ['tree-nuts', 'peanuts']);
   assert.equal(readCatalogFilters(new URLSearchParams('budget=bad&sort=garbage')).budget, 10000);
   assert.equal(readCatalogFilters(new URLSearchParams('budget=-1')).budget, 300);
   assert.equal(readCatalogFilters(new URLSearchParams('sort=garbage')).sort, 'featured');

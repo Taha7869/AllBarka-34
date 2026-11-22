@@ -283,7 +283,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
                   type="button"
                   aria-pressed={active}
                   onClick={() => toggleAllergen(key)}
-                  className={`focus-ring min-h-[44px] rounded-full border px-4 text-xs font-semibold transition-colors ${
+                  className={`focus-ring min-h-[44px] min-w-[44px] rounded-full border px-4 text-xs font-semibold transition-colors ${
                     active
                       ? 'border-[#1e3a2b] bg-[#1e3a2b] text-[#fff8e9] dark:border-[#c7982f] dark:bg-[#c7982f] dark:text-[#042821]'
                       : 'border-[var(--color-border)] bg-[var(--color-base)] text-[var(--color-text-primary)] hover:border-[#c7982f]'
