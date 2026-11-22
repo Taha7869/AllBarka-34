@@ -10,6 +10,7 @@ import { acceptedCheckoutReceipt, appliedPromotionMessage } from '../lib/checkou
 import { checkoutFingerprint, checkoutQuoteKey, getCheckoutAuthToken, CheckoutAuthenticationError, clearCheckoutAttempt, persistCheckoutAttempt, readCheckoutAttempt, resolveCheckoutAttempt, writeCheckoutSession, type CheckoutAttempt } from '../lib/checkoutAttempt';
 import { checkoutReliabilityTranslations } from '../contexts/checkoutReliabilityTranslations';
 import CartItemPersonalization from '../components/CartItemPersonalization';
+import GiftMessageCardPreview from '../components/GiftMessageCardPreview';
 import AddressBook from '../components/AddressBook';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { useNavigate } from 'react-router-dom';
@@ -1356,6 +1357,13 @@ const handleInputChange = (field: string, value: any) => {
                             </span>
                           </label>
                         </fieldset>
+                        <GiftMessageCardPreview
+                          message={formData.giftMessage || ''}
+                          cardStyle={formData.giftCardStyle}
+                          ribbon={formData.giftRibbon}
+                          maxLength={300}
+                          placeholder={t('checkout.giftPlaceholder')}
+                        />
                       </div>
                     )}
                   </div>
