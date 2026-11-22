@@ -7,6 +7,7 @@ import { readProductDetailHandoff } from '../lib/productDetailHandoff';
 import { productSeo } from '../lib/productSeo';
 import { useCatalogProducts, useCatalogLoading } from '../contexts/CatalogContext';
 import { ProductDetailSkeleton } from '../components/StorefrontSkeletons';
+import BoxLidReveal from '../components/BoxLidReveal';
 import { useCatalogActivity } from '../hooks/useCatalogActivity';
 import { unitPrice } from '../lib/catalogActivity';
 import { useSavedProducts } from '../hooks/useSavedProducts';
@@ -313,6 +314,7 @@ export default function ProductDetailPage() {
           {/* Left: Product Visual Showcase */}
           <div className="pdp-gallery flex flex-col gap-3 lg:sticky lg:top-28">
             <div className="pdp-main-photo relative aspect-square rounded-3xl overflow-hidden bg-[var(--color-surface,#FFFCF7)] border border-[var(--color-gold,#C7982F)]/30 shadow-sm flex items-center justify-center p-6 group">
+              <BoxLidReveal key={product.id} product={product} />
               {imageError || (product.image === null && productMedia.images.length === 0) ? (
                 <div className="pdp-photo-fallback w-full h-full flex flex-col items-center justify-center p-8 text-center">
                   <div className="w-16 h-16 rounded-2xl bg-[var(--color-gold,#C7982F)]/20 border border-[var(--color-gold,#C7982F)]/40 flex items-center justify-center text-[var(--color-gold,#C7982F)] mb-4">
