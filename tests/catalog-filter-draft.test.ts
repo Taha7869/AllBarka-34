@@ -22,9 +22,9 @@ test('editing or cancelling a filter draft leaves the active URL untouched', () 
 test('Apply commits every draft filter while preserving unrelated catalogue state', () => {
   const params = new URLSearchParams('view=list&category=nuts&campaign=gift&search=old&budget=1500');
   const original = params.toString();
-  const next = applyCatalogFilterDraft(params, { query: 'badam', budget: 2500, origin: 'Iran', sort: 'price-desc', saved: true, special: true, shared: 'pista,badam' });
+  const next = applyCatalogFilterDraft(params, { query: 'badam', budget: 2500, origin: 'Iran', sort: 'price-desc', saved: true, special: true, excludeAllergens: [], shared: 'pista,badam' });
   assert.equal(params.toString(), original);
-  assert.deepEqual(beginCatalogFilterDraft(next), { query: 'badam', budget: 2500, origin: 'Iran', sort: 'price-desc', saved: true, special: true, shared: 'pista,badam' });
+  assert.deepEqual(beginCatalogFilterDraft(next), { query: 'badam', budget: 2500, origin: 'Iran', sort: 'price-desc', saved: true, special: true, excludeAllergens: [], shared: 'pista,badam' });
   for (const key of ['view', 'category', 'campaign']) assert.equal(next.get(key), params.get(key));
 });
 

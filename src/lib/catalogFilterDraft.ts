@@ -1,8 +1,13 @@
 import type { Product } from '../types';
 import { readCatalogFilters, searchCatalog, startingPrice } from './catalogDiscovery';
+import { productMatchesAllergenExclusions, type AllergenFilterKey } from './allergenFilter';
 import { productMatchesCategory, productMatchesOccasion } from '../config/categories';
 
-export type CatalogFilterDraft = ReturnType<typeof readCatalogFilters> & { shared: string | null; occasion?: string | null };
+export type CatalogFilterDraft = Omit<ReturnType<typeof readCatalogFilters>, 'excludeAllergens'> & {
+  excludeAllergens?: AllergenFilterKey[];
+  shared: string | null;
+  occasion?: string | null;
+};
 
 /** Drafts are detached values: editing or discarding one never touches the URL. */
 export function beginCatalogFilterDraft(params: URLSearchParams): CatalogFilterDraft {
@@ -26,6 +31,7 @@ export function applyCatalogFilterDraft(params: URLSearchParams, draft: CatalogF
     origin: draft.origin === 'all' ? null : draft.origin,
     special: draft.special ? '1' : null,
     saved: draft.saved ? '1' : null,
+    avoid: draft.excludeAllergens?.length ? draft.excludeAllergens.join(',') : null,
     shared: draft.shared,
     occasion: !draft.occasion || draft.occasion === 'all' ? null : draft.occasion,
   };
@@ -39,9 +45,11 @@ export function applyCatalogFilterDraft(params: URLSearchParams, draft: CatalogF
 
 export function filterCatalogSelection(
   products: Product[],
-  filters: ReturnType<typeof readCatalogFilters> & { occasion?: string | null },
+  filters: Omit<ReturnType<typeof readCatalogFilters>, 'excludeAllergens'> & { excludeAllergens?: readonly AllergenFilterKey[]; occasion?: string | null },
   context: { category: string; isWholesale: boolean; savedIds: readonly string[]; sharedIds: readonly string[] | null },
 ): Product[] {
+  const excludeAllergens = filters.excludeAllergens || [];
+  const productLookup = excludeAllergens.length ? new Map(products.map(p => [p.id, p])) : undefined;
   return searchCatalog(products, filters.query).filter(product =>
     productMatchesCategory(product, context.category) &&
     productMatchesOccasion(product, filters.occasion) &&
@@ -50,5 +58,6 @@ export function filterCatalogSelection(
     (!context.isWholesale || product.wholesale > 0) &&
     (!filters.special || !!product.tag_en) &&
     (!filters.saved || context.savedIds.includes(product.id)) &&
+    productMatchesAllergenExclusions(product, excludeAllergens, productLookup) &&
     (filters.budget === 10000 || (!product.quoteOnly && startingPrice(product) <= filters.budget)));
 }

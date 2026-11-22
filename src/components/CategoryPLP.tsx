@@ -26,6 +26,7 @@ import { getLocalized } from '../utils/localize';
 import { CANONICAL_CATEGORIES, CUSTOMER_FACING_CATEGORIES, resolveCategorySlug, OCCASION_TAGS, getCategoryMeta } from '../config/categories';
 import { getSectionCover } from '../config/sectionCovers';
 import { CATALOG_SORTS, readCatalogFilters, searchCatalog, startingPrice, type CatalogSort } from '../lib/catalogDiscovery';
+import { ALLERGEN_FILTER_KEYS, type AllergenFilterKey } from '../lib/allergenFilter';
 import { applyCatalogFilterDraft, beginCatalogFilterDraft, filterCatalogSelection, type CatalogFilterDraft } from '../lib/catalogFilterDraft';
 import { openCustomQuoteModal } from './CustomQuoteModal';
 
@@ -135,7 +136,13 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
     const next = new URLSearchParams(params); next.delete('category');
     navigate({ pathname: id === 'all' ? '/shop' : `/shop/${id}`, search: next.toString() }, { preventScrollReset: true });
   };
-  const clear = () => update({ search: null, budget: null, origin: null, special: null, saved: null, sort: null, shared: null, occasion: null });
+  const clear = () => update({ search: null, budget: null, origin: null, special: null, saved: null, sort: null, shared: null, occasion: null, avoid: null });
+  const toggleAllergen = (key: AllergenFilterKey) => {
+    const next = filters.excludeAllergens.includes(key)
+      ? filters.excludeAllergens.filter(item => item !== key)
+      : [...filters.excludeAllergens, key];
+    update({ avoid: next.length ? next.join(',') : null });
+  };
   const openFilters = () => {
     setSearchOpen(false);
     if (window.matchMedia('(max-width: 1023px)').matches) setFilterDraft(beginCatalogFilterDraft(activeParams));
@@ -149,7 +156,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
   };
   const origins = useMemo(() => [...new Map(PRODUCTS.filter(p => p.active !== false && p.origin_en).map(p => [p.origin_en, getLocalized(p, 'origin', language)])).entries()], [language, PRODUCTS]);
   const products = useMemo(() => {
-    const found = filterCatalogSelection(PRODUCTS, { query: filters.query, origin: filters.origin, budget: filters.budget, special: filters.special, saved: filters.saved, sort: filters.sort, occasion }, { category, isWholesale, savedIds, sharedIds });
+    const found = filterCatalogSelection(PRODUCTS, { query: filters.query, origin: filters.origin, budget: filters.budget, special: filters.special, saved: filters.saved, excludeAllergens: filters.excludeAllergens, sort: filters.sort, occasion }, { category, isWholesale, savedIds, sharedIds });
     if (category === 'all' && filters.sort === 'featured') {
       const order = Object.keys(CANONICAL_CATEGORIES);
       return found.sort((a, b) => order.indexOf(a.category) - order.indexOf(b.category));
@@ -158,11 +165,11 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
       : filters.sort === 'price-asc' ? startingPrice(a) - startingPrice(b)
       : filters.sort === 'price-desc' ? startingPrice(b) - startingPrice(a)
       : filters.sort === 'name-asc' ? getLocalized(a, 'name', language).localeCompare(getLocalized(b, 'name', language), language) : 0);
-  }, [category, filters.query, filters.origin, filters.special, filters.saved, filters.budget, filters.sort, occasion, isWholesale, savedIds, language, sharedIds, PRODUCTS]);
+  }, [category, filters.query, filters.origin, filters.special, filters.saved, filters.excludeAllergens, filters.budget, filters.sort, occasion, isWholesale, savedIds, language, sharedIds, PRODUCTS]);
   const previewCount = (draft: CatalogFilterDraft) => filterCatalogSelection(PRODUCTS, draft, { category, isWholesale, savedIds, sharedIds: readSharedSelections(draft.shared, PRODUCTS) }).length;
   const draftOrigins = filterDraft ? [['all', t('shop.anyOrigin')], ...origins].map(([id, label]) => ({ id, label, count: previewCount({ ...filterDraft, origin: id }) })) : [];
   const occasionTitle = OCCASION_TAGS.find(o => o.id === occasion)?.name || occasion;
-  const chips = [
+  const chips: Array<{ key: string; label: string; onRemove?: () => void }> = [
     ...(sharedIds !== null ? [{ key: 'shared', label: t('shop.sharedSelections') }] : []),
     ...(filters.query ? [{ key: 'search', label: filters.query }] : []),
     ...(occasion && occasion !== 'all' ? [{ key: 'occasion', label: `${t('nav.occasions', 'Occasion')}: ${occasionTitle}` }] : []),
@@ -170,6 +177,11 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
     ...(filters.budget < 10000 ? [{ key: 'budget', label: `≤ Rs. ${filters.budget.toLocaleString()}` }] : []),
     ...(filters.special ? [{ key: 'special', label: t('shop.special') }] : []),
     ...(filters.saved ? [{ key: 'saved', label: t('shop.saved') }] : []),
+    ...filters.excludeAllergens.map(allergen => ({
+      key: `avoid:${allergen}`,
+      label: t('filters.avoidChip').replace('{label}', t(`allergen.${allergen}`)),
+      onRemove: () => toggleAllergen(allergen),
+    })),
     ...(filters.sort !== 'featured' ? [{ key: 'sort', label: t(`shop.${filters.sort}`) }] : []),
   ];
   return <section id="category-plp-container" className="w-full pb-12 text-[var(--color-text-primary)]" style={{ '--catalog-header-clearance': `${headerClearance}px` } as React.CSSProperties}>
@@ -258,9 +270,33 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
         <label className="space-y-3 text-xs font-semibold"><span className="flex justify-between gap-2">{t('shop.budget')}<bdi>Rs. {filters.budget.toLocaleString()}{filters.budget === 10000 ? '+' : ''}</bdi></span><input type="range" min={300} max={10000} step={100} value={filters.budget} onChange={e => update({ budget: e.target.value === '10000' ? null : e.target.value })} className="h-11 w-full accent-[#c7982f]" /></label>
         <label className="space-y-3 text-xs font-semibold"><span className="block">{t('shop.origin')}</span><select value={filters.origin} onChange={e => update({ origin: e.target.value === 'all' ? null : e.target.value })} className="min-h-11 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-base sm:text-xs"><option value="all">{t('shop.anyOrigin')}</option>{origins.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label>
         <div className="flex flex-col justify-center gap-3"><label className="flex min-h-11 items-center gap-3 text-xs font-semibold"><input type="checkbox" checked={filters.special} onChange={e => update({ special: e.target.checked ? '1' : null })} className="h-5 w-5 accent-[#c7982f]" />{t('shop.special')}</label><button type="button" onClick={() => setShowFilters(false)} className="min-h-11 rounded-xl bg-[#1e3a2b] px-4 text-xs font-semibold text-white">{t('shop.apply')} ({products.length})</button></div>
+        <fieldset className="col-span-full border-t border-[var(--color-border)] pt-4">
+          <legend className="mb-2.5 text-xs font-semibold text-[var(--color-text-primary)]" dir="auto">{t('filters.avoidAllergens')}</legend>
+          <div className="flex flex-wrap gap-2">
+            {ALLERGEN_FILTER_KEYS.map(key => {
+              const active = filters.excludeAllergens.includes(key);
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => toggleAllergen(key)}
+                  className={`focus-ring min-h-[44px] rounded-full border px-4 text-xs font-semibold transition-colors ${
+                    active
+                      ? 'border-[#1e3a2b] bg-[#1e3a2b] text-[#fff8e9] dark:border-[#c7982f] dark:bg-[#c7982f] dark:text-[#042821]'
+                      : 'border-[var(--color-border)] bg-[var(--color-base)] text-[var(--color-text-primary)] hover:border-[#c7982f]'
+                  }`}
+                >
+                  <span dir="auto">{t(`allergen.${key}`)}</span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-2 text-[11px] leading-relaxed text-[var(--color-text-secondary)]" dir="auto">{t('filters.allergenNote')}</p>
+        </fieldset>
       </div>
     </motion.div>}</AnimatePresence>
-    {chips.length > 0 && <div className="mb-5 flex flex-wrap items-center gap-2">{chips.map(chip => <button key={chip.key} type="button" onClick={() => update({ [chip.key]: null })} aria-label={`${t('shop.remove')}: ${chip.label}`} className="inline-flex min-h-11 max-w-full items-center gap-2 rounded-full border border-[var(--color-border)] px-3 text-xs"><span className="truncate" dir="auto">{chip.label}</span><X size={13} className="shrink-0" /></button>)}<button type="button" onClick={clear} className="min-h-11 px-3 text-xs underline underline-offset-4">{t('shop.clear')}</button></div>}
+    {chips.length > 0 && <div className="mb-5 flex flex-wrap items-center gap-2">{chips.map(chip => <button key={chip.key} type="button" onClick={() => chip.onRemove ? chip.onRemove() : update({ [chip.key]: null })} aria-label={`${t('shop.remove')}: ${chip.label}`} className="inline-flex min-h-11 max-w-full items-center gap-2 rounded-full border border-[var(--color-border)] px-3 text-xs"><span className="truncate" dir="auto">{chip.label}</span><X size={13} className="shrink-0" /></button>)}<button type="button" onClick={clear} className="min-h-11 px-3 text-xs underline underline-offset-4">{t('shop.clear')}</button></div>}
     <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
       <div className="flex flex-wrap gap-2"><button type="button" onClick={() => void share()} className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--color-border)] px-4 text-xs"><Share2 size={15} />{t('shop.shareCollection')}</button><button type="button" disabled={!savedIds.length} onClick={() => void share(true)} className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--color-border)] px-4 text-xs disabled:opacity-40"><Heart size={15} />{t('shop.shareSaved')}</button></div>
       <SquishSwitch checked={listView} onChange={checked => update({ view: checked ? 'list' : null })} label={t('shop.list')} />

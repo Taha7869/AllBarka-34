@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Heart, SlidersHorizontal, X } from 'lucide-react';
 import { useCatalogFilterLanguage } from '../hooks/useCatalogFilterLanguage';
 import { CATALOG_SORTS, type CatalogSort } from '../lib/catalogDiscovery';
+import { ALLERGEN_FILTER_KEYS, type AllergenFilterKey } from '../lib/allergenFilter';
 import { resetCatalogFilterDraft, type CatalogFilterDraft } from '../lib/catalogFilterDraft';
 import { acquireScrollLock } from '../utils/scrollLock';
 
@@ -109,6 +110,34 @@ export default function CatalogFilterSheet({ id, draft, categoryLabel, results, 
         <fieldset className="catalog-filter-group">
           <legend dir="auto">{t('shop.sort')}</legend>
           <label><span className="sr-only">{t('shop.sort')}</span><select value={draft.sort} dir="auto" onChange={event => patch({ sort: event.target.value as CatalogSort })}>{CATALOG_SORTS.map(sort => <option value={sort} key={sort}>{t(`shop.${sort}`)}</option>)}</select></label>
+        </fieldset>
+        <fieldset className="catalog-filter-group">
+          <legend dir="auto">{t('filters.avoidAllergens')}</legend>
+          <div className="flex flex-wrap gap-2 py-1">
+            {ALLERGEN_FILTER_KEYS.map((key: AllergenFilterKey) => {
+              const active = (draft.excludeAllergens || []).includes(key);
+              const toggle = () => {
+                const current = draft.excludeAllergens || [];
+                patch({ excludeAllergens: active ? current.filter(item => item !== key) : [...current, key] });
+              };
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={toggle}
+                  className={`focus-ring min-h-[44px] rounded-full border px-3.5 text-xs font-semibold transition-colors ${
+                    active
+                      ? 'border-[#1e3a2b] bg-[#1e3a2b] text-[#fff8e9] dark:border-[#c7982f] dark:bg-[#c7982f] dark:text-[#042821]'
+                      : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-primary)] hover:border-[#c7982f]'
+                  }`}
+                >
+                  <span dir="auto">{t(`allergen.${key}`)}</span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="catalog-filter-copy" dir="auto">{t('filters.allergenNote')}</p>
         </fieldset>
         <div className="catalog-filter-toggles">
           <label><input type="checkbox" checked={draft.special} onChange={event => patch({ special: event.target.checked })} /><span dir="auto">{t('shop.special')}</span></label>

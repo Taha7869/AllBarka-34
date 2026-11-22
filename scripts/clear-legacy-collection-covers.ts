@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
-import type { MerchandisingSettings, PublishedCollectionEntry } from '../src/types';
+import type { MerchandisingSettings, MerchandisingCollectionEntry } from '../src/types';
 import { getSectionCover } from '../src/config/sectionCovers';
 import {
   getAdminMerchandisingBundle,
@@ -19,7 +19,7 @@ export interface LegacyCollectionCoverMatch {
 export interface ClearLegacyCoversPlan {
   affected: LegacyCollectionCoverMatch[];
   unchangedCount: number;
-  cleanedCollections: PublishedCollectionEntry[];
+  cleanedCollections: MerchandisingCollectionEntry[];
 }
 
 export function isLegacyCollectionCoverImage(collectionId: string, image?: string | null): boolean {
@@ -34,7 +34,7 @@ export function planClearLegacyCollectionCovers(settings: MerchandisingSettings)
   const affected: LegacyCollectionCoverMatch[] = [];
   let unchangedCount = 0;
 
-  const cleanedCollections: PublishedCollectionEntry[] = collections.map(col => {
+  const cleanedCollections: MerchandisingCollectionEntry[] = collections.map(col => {
     if (isLegacyCollectionCoverImage(col.collectionId, col.image)) {
       const studio = getSectionCover(col.collectionId)!;
       affected.push({

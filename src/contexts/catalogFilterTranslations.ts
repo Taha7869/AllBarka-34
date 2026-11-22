@@ -14,6 +14,15 @@ const entries: readonly (readonly [string, string, string, string])[] = [
   ['filters.savedHint', 'Only products in your wishlist', 'صرف آپ کی پسندیدہ مصنوعات', 'المنتجات في قائمة رغباتك فقط'],
   ['filters.resetGroup', 'Reset', 'صاف کریں', 'إعادة تعيين'],
   ['filters.applied', '{count} active filters', '{count} فلٹر فعال ہیں', '{count} مرشحات نشطة'],
+  ['filters.avoidAllergens', 'Exclude allergens', 'الرجی والی اشیاء ہٹائیں', 'استبعاد مسببات الحساسية'],
+  ['filters.avoidChip', 'Avoid: {label}', 'بغیر: {label}', 'بدون: {label}'],
+  ['filters.allergenNote', 'Hides products listing these as ingredients. All items are packed in a shared facility handling tree nuts, peanuts, and seeds.', 'ایسی مصنوعات چھپاتا ہے جن کے اجزاء میں یہ شامل ہوں۔ تمام اشیاء ایک ہی جگہ پیک ہوتی ہیں جہاں میوہ جات، مونگ پھلی اور بیج بھی سنبھالے جاتے ہیں۔', 'يُخفي المنتجات التي تدرج هذه كمكونات. تُعبأ جميع المنتجات في منشأة تتعامل أيضاً مع المكسرات والفول السوداني والبذور.'],
+  ['allergen.tree-nuts', 'Tree nuts', 'خشک میوہ جات (بادام/پستہ/اخروٹ)', 'المكسرات'],
+  ['allergen.peanuts', 'Peanuts', 'مونگ پھلی', 'الفول السوداني'],
+  ['allergen.sesame', 'Sesame', 'تل', 'السمسم'],
+  ['allergen.dairy', 'Dairy / Ghee', 'دودھ / دیسی گھی', 'الألبان / السمن'],
+  ['allergen.gluten', 'Wheat / Gluten', 'گندم / گلوٹن', 'القمح / الغلوتين'],
+  ['allergen.sulfites', 'Sulfites', 'سلفائٹس', 'الكبريتيت'],
 ];
 
 export const catalogFilterTranslations: Record<LanguageCode, Record<string, string>> = {

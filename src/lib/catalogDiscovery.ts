@@ -1,4 +1,5 @@
 import type { Product } from '../types';
+import { parseAllergenParam } from './allergenFilter';
 
 export const CATALOG_SORTS = ['featured', 'price-asc', 'price-desc', 'name-asc'] as const;
 export type CatalogSort = typeof CATALOG_SORTS[number];
@@ -121,6 +122,7 @@ export function readCatalogFilters(params: URLSearchParams) {
     origin: params.get('origin') || 'all',
     special: params.get('special') === '1',
     saved: params.get('saved') === '1',
+    excludeAllergens: parseAllergenParam(params.get('avoid')),
   };
 }
 

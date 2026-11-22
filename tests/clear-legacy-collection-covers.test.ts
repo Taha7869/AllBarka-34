@@ -18,10 +18,10 @@ test('planClearLegacyCollectionCovers flags legacy overrides while preserving st
   const settings = {
     ...DEFAULT_MERCHANDISING,
     collections: [
-      { collectionId: 'saunf', title_en: 'Saunf', slug: '/shop/saunf', visible: true, image: '/images/generated/category-saunf-tile-v1.webp' },
-      { collectionId: 'dry-fruits', title_en: 'Dry Fruits', slug: '/shop/dry-fruits', visible: true, image: '/assets/categories/dry_fruits.png' },
-      { collectionId: 'dates', title_en: 'Dates', slug: '/shop/dates', visible: true, image: '/images/section-covers-20261120/dates.webp' },
-      { collectionId: 'deals', title_en: 'Deals', slug: '/shop/deals', visible: true },
+      { collectionId: 'saunf', title_en: 'Saunf', title_ur: 'سونف', slug: '/shop/saunf', visible: true, image: '/images/generated/category-saunf-tile-v1.webp' },
+      { collectionId: 'dry-fruits', title_en: 'Dry Fruits', title_ur: 'خشک میوہ جات', slug: '/shop/dry-fruits', visible: true, image: '/assets/categories/dry_fruits.png' },
+      { collectionId: 'dates', title_en: 'Dates', title_ur: 'کھجوریں', slug: '/shop/dates', visible: true, image: '/images/section-covers-20261120/dates.webp' },
+      { collectionId: 'deals', title_en: 'Deals', title_ur: 'ڈیلز', slug: '/shop/deals', visible: true },
     ],
   };
 
@@ -40,8 +40,8 @@ test('runClearLegacyCollectionCovers dry-run does not mutate and execute clears 
     ...DEFAULT_MERCHANDISING,
     revision: 2,
     collections: [
-      { collectionId: 'saunf', title_en: 'Saunf', slug: '/shop/saunf', visible: true, image: '/images/generated/category-saunf-tile-v1.webp' },
-      { collectionId: 'dry-fruits', title_en: 'Dry Fruits', slug: '/shop/dry-fruits', visible: true, image: '/assets/categories/dry_fruits.png' },
+      { collectionId: 'saunf', title_en: 'Saunf', title_ur: 'سونف', slug: '/shop/saunf', visible: true, image: '/images/generated/category-saunf-tile-v1.webp' },
+      { collectionId: 'dry-fruits', title_en: 'Dry Fruits', title_ur: 'خشک میوہ جات', slug: '/shop/dry-fruits', visible: true, image: '/assets/categories/dry_fruits.png' },
     ],
   };
   await db.collection('merchandising').doc('preview').set(seeded);
