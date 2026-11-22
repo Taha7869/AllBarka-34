@@ -4,6 +4,7 @@ import { productSeo } from './productSeo';
 import type { TaxonomyEntry } from './catalogConfiguration';
 import type { Product } from '../types';
 import { CANONICAL_CATEGORIES, OCCASION_TAGS, normalizeOccasionSlug, resolveCategorySlug } from '../config/categories';
+import { getSectionCover } from '../config/sectionCovers';
 import { getDesign, getFormat, getOccasion, isFormatPublished, isOccasionPublished, resolveFormatSlug, resolveOccasionSlug } from '../config/celebrations';
 import { JOURNAL_ARTICLES } from '../data/articles';
 
@@ -51,7 +52,12 @@ export function routeMetadata(pathname: string, origin: string, products: Produc
   let route: string;
   try { route = decodeURIComponent(pathname).replace(/\/+$/, '') || '/'; }
   catch { route = '/invalid-route'; }
-  if (pages[route]) return basic(route, ...pages[route]);
+  if (pages[route]) {
+    const meta = basic(route, ...pages[route]);
+    if (route === '/shop') meta.image = getSectionCover('all')?.src || meta.image;
+    else if (route === '/gifting') meta.image = getSectionCover('gift-boxes')?.src || meta.image;
+    return meta;
+  }
   const productId = /^\/product\/([^/]+)$/.exec(route)?.[1];
   const product = productId ? products.find(item => item.id === productId) : undefined;
   if (product) {
@@ -88,7 +94,10 @@ export function routeMetadata(pathname: string, origin: string, products: Produc
   const categoryId = resolveCategorySlug(categorySlug);
   if (categorySlug && categoryId && CANONICAL_CATEGORIES[categoryId]) {
     const category = CANONICAL_CATEGORIES[categoryId];
-    return basic(`/shop/${categoryId}`, category.name, text(category.description));
+    const meta = basic(`/shop/${categoryId}`, category.name, text(category.description));
+    const cover = getSectionCover(categoryId);
+    if (cover) meta.image = cover.src;
+    return meta;
   }
   const extra=taxonomy.find(x=>x.visible&&x.type!=='occasion'&&x.id===categorySlug);
   if(extra) return basic(`/shop/${extra.id}`,extra.name_en,text(extra.description_en));

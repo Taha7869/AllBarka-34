@@ -124,6 +124,7 @@ export default function DealsDestination({ onQuickView }: DealsDestinationProps)
         title={t('dest.deals.title')}
         description={t('dest.deals.description')}
         badge="Curated Value Packages"
+        coverId="bundles"
         notices={notices}
       />
 

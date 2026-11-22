@@ -103,7 +103,13 @@ test('Saunf and Dates use localized collection names even with legacy taxonomy',
       const title = catalogTranslations[language][`pantry.${category}`].replaceAll('&', '&amp;');
       const link = pantry.match(new RegExp(`<a [^>]*href="${path}"[^>]*>[\\s\\S]*?<\\/a>`))?.[0] || '';
       assert.ok(link.includes(`aria-label="${title}"`), `${language} ${category} tile label`);
-      if (category === 'saunf') assert.match(link, /category-saunf-tile-v1\.webp/);
+      if (category === 'saunf') {
+        assert.match(link, /\/images\/section-covers-20261120\/saunf\.webp/);
+        assert.match(link, /\/images\/section-covers-20261120\/saunf-800\.webp 800w/);
+      }
+      if (category === 'dates') {
+        assert.match(link, /\/images\/section-covers-20261120\/dates\.webp/);
+      }
 
       const html = render(
         <CatalogProvider initialTaxonomy={DEFAULT_CATALOG_CONFIGURATION.taxonomy}>

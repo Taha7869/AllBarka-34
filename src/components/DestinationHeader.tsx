@@ -1,6 +1,7 @@
 import React from 'react';
 import { Sparkles, Clock, AlertCircle, ShieldCheck } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { getSectionCover } from '../config/sectionCovers';
 
 export interface DestinationNotice {
   id: string;
@@ -13,6 +14,7 @@ export interface DestinationHeaderProps {
   title: string;
   description: string;
   badge?: string;
+  coverId?: string;
   notices?: DestinationNotice[];
   children?: React.ReactNode;
 }
@@ -22,13 +24,31 @@ export default function DestinationHeader({
   title,
   description,
   badge,
+  coverId,
   notices = [],
   children,
 }: DestinationHeaderProps) {
-  const { isRtl } = useLanguage();
+  const { t } = useLanguage();
+  const cover = getSectionCover(coverId);
 
   return (
     <header className="relative w-full overflow-hidden rounded-3xl border border-[#c7982f]/30 bg-gradient-to-br from-[#0c382b] via-[#072a20] to-[#041913] p-6 text-[#f5efe2] shadow-xl sm:p-10 lg:p-12 mb-8">
+      {cover && (
+        <div className="pointer-events-none absolute inset-0">
+          <img
+            src={cover.src}
+            srcSet={cover.srcSet}
+            sizes="(max-width: 768px) 100vw, 48vw"
+            alt={t(cover.altKey, title)}
+            width={800}
+            height={800}
+            loading="eager"
+            decoding="async"
+            className="absolute inset-y-0 end-0 h-full w-full sm:w-3/5 lg:w-1/2 object-cover opacity-30 sm:opacity-45"
+          />
+          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-r from-[#072a20] via-[#072a20]/92 to-[#072a20]/45 rtl:bg-gradient-to-l" />
+        </div>
+      )}
       {/* Background ambient luxury glow */}
       <div
         aria-hidden="true"

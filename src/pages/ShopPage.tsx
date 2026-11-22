@@ -10,6 +10,7 @@ import OccasionsDestination from '../components/OccasionsDestination';
 import WholesaleDestination from '../components/WholesaleDestination';
 import SEO from '../components/SEO';
 import { resolveCategorySlug, getCategoryMeta } from '../config/categories';
+import { getSectionCover } from '../config/sectionCovers';
 import { Product } from '../types';
 
 export default function ShopPage() {
@@ -103,6 +104,15 @@ export default function ShopPage() {
   ]);
 
   const onQuickView = (p: Product) => setSelectedQuickViewProduct?.(p);
+  const seoCover = getSectionCover(
+    isCelebrationRoute
+      ? 'celebration-boxes'
+      : isGiftingDestination
+        ? 'gift-boxes'
+        : isDealsRoute
+          ? 'bundles'
+          : resolvedCategory
+  ) || getSectionCover('all');
 
   return (
     <div className="w-full bg-[var(--color-base,#F6F1EA)] pt-6 pb-20">
@@ -110,6 +120,7 @@ export default function ShopPage() {
         title={seoTitle}
         description={categoryDescription}
         canonicalPath={location.pathname}
+        image={seoCover?.src}
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
         {isCelebrationRoute ? (

@@ -176,6 +176,7 @@ export default function CelebrationBoxesDestination({
         title={t('dest.celebration.title')}
         description={t('dest.celebration.description')}
         badge={`${celebrationBoxes.length} Curated Styles`}
+        coverId="celebration-boxes"
         notices={notices}
       />
 

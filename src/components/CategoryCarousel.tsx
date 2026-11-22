@@ -8,45 +8,55 @@ import { useCarouselAutoSlide } from '../hooks/useCarouselAutoSlide';
 import { canRotatePantry, pantryCardProjection, pantryRotationDistance } from '../lib/pantryMotion';
 import { visibleCardFraction } from '../lib/circularCatalogue';
 import { CANONICAL_CATEGORIES, canonicalCollectionKey, getEquivalentCollectionIds } from '../config/categories';
+import { SECTION_COVERS, getSectionCover, sectionCoverSrcSet } from '../config/sectionCovers';
 import { PRODUCTS, getProductImage } from '../data/products';
 import { useMerchandisingSettings } from '../contexts/MerchandisingContext';
 import { DEFAULT_MERCHANDISING } from '../config/merchandising';
 import type { MerchandisingSettings } from '../types';
 
 const collectionPresentation = [
-  { id: 'all', name: 'All Items', image: '/assets/categories/all_items.png', altKey: 'imageAlt.hero', link: '/shop' },
-  { id: 'bundles', name: 'Bundles', image: '/assets/categories/deals.png', altKey: 'imageAlt.categoryDealBoxes', link: '/shop/bundles' },
-  { id: 'nuts', name: 'Dry Fruits & Nuts', image: '/assets/categories/dry_fruits.png', altKey: 'imageAlt.categoryDryFruits', link: '/shop/nuts' },
-  { id: 'snacks-seeds', name: 'Snacks & Seeds', image: '/assets/categories/snacks.png', altKey: 'imageAlt.categorySnacks', link: '/shop/snacks-seeds' },
-  { id: 'gift-boxes', name: 'Gift Boxes', image: '/assets/categories/gifts.png', altKey: 'imageAlt.categoryGifts', link: '/gifting' },
-  { id: 'oils', name: 'Cold-Pressed Oils', image: '/images/generated/category-oils-tile-v1.webp', altKey: 'imageAlt.categoryOils', link: '/shop/oils' },
-  { id: 'essentials', name: 'Desi Essentials', image: '/images/generated/category-essentials-tile-v1.webp', altKey: 'imageAlt.categoryEssentials', link: '/shop/essentials' },
-  { id: 'saunf', name: CANONICAL_CATEGORIES.saunf.name, image: '/images/generated/category-saunf-tile-v1.webp', altKey: 'catalog.alt.saunf', link: '/shop/saunf' },
+  { id: 'all', name: 'All Items', image: SECTION_COVERS.all.src, altKey: SECTION_COVERS.all.altKey, link: '/shop' },
+  { id: 'bundles', name: 'Bundles', image: SECTION_COVERS.bundles.src, altKey: SECTION_COVERS.bundles.altKey, link: '/shop/bundles' },
+  { id: 'nuts', name: 'Dry Fruits & Nuts', image: SECTION_COVERS.nuts.src, altKey: SECTION_COVERS.nuts.altKey, link: '/shop/nuts' },
+  { id: 'snacks-seeds', name: 'Snacks & Seeds', image: SECTION_COVERS['snacks-seeds'].src, altKey: SECTION_COVERS['snacks-seeds'].altKey, link: '/shop/snacks-seeds' },
+  { id: 'gift-boxes', name: 'Gift Boxes', image: SECTION_COVERS['gift-boxes'].src, altKey: SECTION_COVERS['gift-boxes'].altKey, link: '/gifting' },
+  { id: 'oils', name: 'Cold-Pressed Oils', image: SECTION_COVERS.oils.src, altKey: SECTION_COVERS.oils.altKey, link: '/shop/oils' },
+  { id: 'essentials', name: 'Desi Essentials', image: SECTION_COVERS.essentials.src, altKey: SECTION_COVERS.essentials.altKey, link: '/shop/essentials' },
+  { id: 'saunf', name: CANONICAL_CATEGORIES.saunf.name, image: SECTION_COVERS.saunf.src, altKey: SECTION_COVERS.saunf.altKey, link: '/shop/saunf' },
 ];
 const COLLECTION_IMAGE_PLACEHOLDER = '/images/product-placeholder.svg';
 export const PANTRY_CATEGORIES: CarouselSlideItem[] = [
   ...collectionPresentation,
   ...Object.values(CANONICAL_CATEGORIES).filter(category => !collectionPresentation.some(item => item.id === category.id)).map(category => {
+    const studioCover = getSectionCover(category.id);
+    if (studioCover) {
+      return { id: category.id, name: category.name, image: studioCover.src, altKey: studioCover.altKey, link: `/shop/${category.id}` };
+    }
     const cover = PRODUCTS.find(product => product.active !== false && product.category === category.id);
-    return { id: category.id, name: category.name, image: cover?.image === null ? '' : cover ? getProductImage(cover) : category.id === 'dates' ? '/images/generated/dark-dates-catalog-v1.webp' : '', altKey: `catalog.alt.${category.id}`, link: `/shop/${category.id}` };
+    return { id: category.id, name: category.name, image: cover?.image === null ? '' : cover ? getProductImage(cover) : '', altKey: `catalog.alt.${category.id}`, link: `/shop/${category.id}` };
   }),
 ];
 
 const DEFAULT_COLLECTION_IMAGES: Record<string, string> = {
-  all: '/assets/categories/all_items.png',
-  bundles: '/assets/categories/deals.png',
-  combos: '/assets/categories/deals.png',
-  nuts: '/assets/categories/dry_fruits.png',
-  'dry-fruits': '/assets/categories/dry_fruits.png',
-  'snacks-seeds': '/assets/categories/snacks.png',
-  'seeds-snacks': '/assets/categories/snacks.png',
-  'gift-boxes': '/assets/categories/gifts.png',
-  gifts: '/assets/categories/gifts.png',
-  oils: '/images/generated/category-oils-tile-v1.webp',
-  essentials: '/images/generated/category-essentials-tile-v1.webp',
-  'celebration-boxes': '/assets/categories/gifts.png',
-  deals: '/assets/categories/deals.png',
-  'personalized-treats': '/assets/categories/all_items.png',
+  all: SECTION_COVERS.all.src,
+  bundles: SECTION_COVERS.bundles.src,
+  combos: SECTION_COVERS['gift-boxes'].src,
+  nuts: SECTION_COVERS.nuts.src,
+  'dry-fruits': SECTION_COVERS.nuts.src,
+  dates: SECTION_COVERS.dates.src,
+  'herbs-spices': SECTION_COVERS['herbs-spices'].src,
+  'snacks-seeds': SECTION_COVERS['snacks-seeds'].src,
+  'seeds-snacks': SECTION_COVERS['snacks-seeds'].src,
+  saunf: SECTION_COVERS.saunf.src,
+  'murabba-jaat': SECTION_COVERS['murabba-jaat'].src,
+  'herbal-teas': SECTION_COVERS['herbal-teas'].src,
+  'gift-boxes': SECTION_COVERS['gift-boxes'].src,
+  gifts: SECTION_COVERS['gift-boxes'].src,
+  oils: SECTION_COVERS.oils.src,
+  essentials: SECTION_COVERS.essentials.src,
+  'celebration-boxes': SECTION_COVERS['celebration-boxes'].src,
+  deals: SECTION_COVERS.bundles.src,
+  'personalized-treats': SECTION_COVERS['celebration-boxes'].src,
 };
 
 export interface CategoryCarouselProps {
@@ -182,7 +192,7 @@ export default function CategoryCarousel({ settings: propSettings }: CategoryCar
         title: colTitle,
         image: colEntry.image || DEFAULT_COLLECTION_IMAGES[cKey] || DEFAULT_COLLECTION_IMAGES[colEntry.collectionId] || '',
         link: colEntry.slug || `/shop/${colEntry.collectionId}`,
-        altKey: `catalog.alt.${colEntry.collectionId}`,
+        altKey: getSectionCover(colEntry.collectionId)?.altKey || `catalog.alt.${colEntry.collectionId}`,
         badge: colEntry.badge,
       });
     }
@@ -371,10 +381,11 @@ export default function CategoryCarousel({ settings: propSettings }: CategoryCar
                   <Link to={category.link} draggable={false} aria-label={category.title || t(`pantry.${category.id}`, category.name)}
                     className="editorial-category group relative block w-full overflow-hidden border border-[var(--color-border-accent)] bg-[var(--color-surface)] focus-ring hover:border-[#C7982F]/60 pointer-events-auto select-none">
                     <div className="pantry-tile-media absolute inset-0">
-                    {category.image ? <img src={category.image} alt={category.title || t(category.altKey, category.name)} draggable={false}
-                      width={400} height={500}
+                    {category.image ? <img src={category.image} srcSet={sectionCoverSrcSet(category.image)} sizes="(max-width: 640px) 78vw, (max-width: 1024px) 42vw, 340px" alt={t(category.altKey, category.title || category.name)} draggable={false}
+                      width={800} height={800}
                       onError={({ currentTarget }) => {
                         if (currentTarget.getAttribute('src') !== COLLECTION_IMAGE_PLACEHOLDER) {
+                          currentTarget.removeAttribute('srcset');
                           currentTarget.src = COLLECTION_IMAGE_PLACEHOLDER;
                         }
                       }}

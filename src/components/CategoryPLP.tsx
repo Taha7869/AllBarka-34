@@ -24,6 +24,7 @@ import { useCart } from '../contexts/CartContext';
 import { useSavedProducts } from '../hooks/useSavedProducts';
 import { getLocalized } from '../utils/localize';
 import { CANONICAL_CATEGORIES, CUSTOMER_FACING_CATEGORIES, resolveCategorySlug, OCCASION_TAGS, getCategoryMeta } from '../config/categories';
+import { getSectionCover } from '../config/sectionCovers';
 import { CATALOG_SORTS, readCatalogFilters, searchCatalog, startingPrice, type CatalogSort } from '../lib/catalogDiscovery';
 import { applyCatalogFilterDraft, beginCatalogFilterDraft, filterCatalogSelection, type CatalogFilterDraft } from '../lib/catalogFilterDraft';
 import { openCustomQuoteModal } from './CustomQuoteModal';
@@ -81,6 +82,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
   const [manualLink, setManualLink] = useState('');
   const suggestions = useMemo(() => filters.query.trim() ? searchCatalog(PRODUCTS, filters.query).slice(0, 5) : [], [filters.query, PRODUCTS]);
   const category = resolveCategorySlug(isModal ? modalCategory : initialCategory) || (isModal ? modalCategory : initialCategory);
+  const sectionCover = getSectionCover(category) || getSectionCover('all');
   const filterSignature = activeParams.toString();
   useEffect(() => { setVisibleCount(!isModal && navigationType === 'POP' ? browsingPositions.get(location.key)?.count || 12 : 12); }, [category, filters.query, filters.origin, filters.budget, filters.sort, filters.saved, filters.special, occasion, isModal, location.key, navigationType]);
   // Browser navigation or a new collection cancels the draft instead of committing stale choices.
@@ -174,11 +176,27 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
     {filterDraft && <CatalogFilterSheet id={sheetFilterId} draft={filterDraft} categoryLabel={categoryLabel(category)} results={previewCount(filterDraft)} origins={draftOrigins} savedCount={savedIds.length} onChange={setFilterDraft} onApply={applyDraft} onCancel={() => setFilterDraft(null)} />}
     {isModal && <button type="button" onClick={onClose} aria-label={t('close')} className="ms-auto flex h-11 w-11 items-center justify-center rounded-full border border-[var(--color-border)]"><X size={20} /></button>}
     <header className="table-catalog-header relative mb-7 overflow-hidden rounded-[28px] border border-[#c7982f]/25 bg-[#092e23] px-6 py-9 text-[#fff8e9] sm:px-10 sm:py-14">
+      {sectionCover && (
+        <div className="pointer-events-none absolute inset-0">
+          <img
+            src={sectionCover.src}
+            srcSet={sectionCover.srcSet}
+            sizes="(max-width: 768px) 100vw, 48vw"
+            alt={t(sectionCover.altKey, category === 'all' ? t('shop.title') : categoryLabel(category))}
+            width={800}
+            height={800}
+            loading="eager"
+            decoding="async"
+            className="absolute inset-y-0 end-0 h-full w-full sm:w-3/5 lg:w-1/2 object-cover opacity-30 sm:opacity-45"
+          />
+          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-r from-[#092e23] via-[#092e23]/92 to-[#092e23]/45 rtl:bg-gradient-to-l" />
+        </div>
+      )}
       <div className="pointer-events-none absolute -end-12 -top-12 h-72 w-72 rounded-full border border-[#d5b876]/15" aria-hidden="true" />
       <div className="pointer-events-none absolute -bottom-36 end-6 h-80 w-80 rounded-full border border-[#d5b876]/15" aria-hidden="true" />
-      <p className="relative mb-4 text-[10px] font-semibold tracking-[.25em] text-[#e4c783]">{t('shop.eyebrow')}</p>
-      <h1 className="relative max-w-3xl font-serif text-4xl leading-[1.12] sm:text-6xl">{category === 'all' ? t('shop.title') : categoryLabel(category)}</h1>
-      <div className="relative mt-5 flex flex-wrap items-end justify-between gap-5"><p className="max-w-lg text-sm leading-7 text-[#d1ded5]">{t('shop.copy')}</p><span className="text-xs text-[#e4c783]">{PRODUCTS.length} / {t('shop.results')}</span></div>
+      <p className="relative z-10 mb-4 text-[10px] font-semibold tracking-[.25em] text-[#e4c783]">{t('shop.eyebrow')}</p>
+      <h1 className="relative z-10 max-w-3xl font-serif text-4xl leading-[1.12] sm:text-6xl">{category === 'all' ? t('shop.title') : categoryLabel(category)}</h1>
+      <div className="relative z-10 mt-5 flex flex-wrap items-end justify-between gap-5"><p className="max-w-lg text-sm leading-7 text-[#d1ded5]">{t('shop.copy')}</p><span className="text-xs text-[#e4c783]">{PRODUCTS.length} / {t('shop.results')}</span></div>
     </header>
     {isWholesale && <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--color-border)] p-4"><p className="max-w-lg text-sm leading-6">{t('shop.wholesaleCopy')}</p><a href={buildHumanSupportWhatsAppUrl('I would like to enquire about wholesale products.')} target="_blank" rel="noreferrer" className="focus-ring inline-flex min-h-11 items-center rounded-full bg-[#1e3a2b] px-5 text-xs text-[#fff8e9]">{t('shop.wholesaleEnquiry')}</a></div>}
     <nav aria-label={t('category')} className="catalog-category-nav mb-6 flex gap-2 overflow-x-auto pb-2">
