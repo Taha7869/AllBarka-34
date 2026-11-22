@@ -2,6 +2,18 @@
 
 Newest first. Shape and rules: `.agents/skills/allbarka-lessons-learned/SKILL.md`.
 
+### 2026-11-22 · a11y · Short Urdu pills can fail 44×44 touch-target checks without min-w
+- What happened: `tests/premium-browsing-browser.test.tsx` failed `44px targets 360x640/ur/light` after adding allergen filter pills.
+- Root cause: pill buttons had `min-h-[44px] px-3.5` but no `min-w-[44px]`, so the two-letter Urdu label `"تل"` (sesame) rendered narrower than 44px.
+- Do: always pair `min-h-[44px] min-w-[44px]` (or `min-h-11 min-w-11`) on every interactive pill/chip button across EN/UR/AR.
+- Check: `node --import tsx --test tests/premium-browsing-browser.test.tsx`.
+
+### 2026-11-22 · firestore · `getAdminMerchandising` silently falls back to defaults on quota errors
+- What happened: live Firestore returned `8 RESOURCE_EXHAUSTED` during a dry-run read, and `getAdminMerchandising()` caught the error and returned `DEFAULT_MERCHANDISING`, which would look like "0 legacy images found".
+- Root cause: the helper swallows read errors to keep public pages alive, which is unsafe for CLI audit/migration scripts.
+- Do: probe Firestore directly (`preview` + `settings` `.get()`) before calling fallback-swallowing helpers in CLI scripts so quota/auth failures fail loudly.
+- Check: `tests/clear-legacy-collection-covers.test.ts`.
+
 ### 2026-11-16 · tests · Browser tests fail on any unexpected request
 - What happened: adding the demand tracker made four browser acceptance tests fail with `HTTP 404 /api/events` from the static preview.
 - Root cause: those tests treat every console error and failed request as a failure, and the preview has no API.
