@@ -117,7 +117,7 @@ export default function Footer() {
               {t('footerStory')}
             </p>
 
-            <div className="space-y-1 sm:space-y-2 text-xs text-[#F2ECE2]/85">
+            <div className="flex flex-col gap-1 sm:gap-2 text-xs text-[#F2ECE2]/85">
               <div className="flex items-start gap-2.5 py-1">
                 <MapPin size={15} className="mt-0.5 shrink-0 text-[#C7982F]" aria-hidden="true" />
                 <span dir="ltr">{CONTACT_CONFIG.boutiqueAddress}</span>
