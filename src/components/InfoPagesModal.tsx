@@ -91,7 +91,7 @@ const PAGES: Record<InfoPageTab, PageData> = {
     navTitle: 'AllBarka Boutique',
     badge: 'Local Roots',
     headline: 'Rooted in the Heart of Lahore.',
-    content: `AllBarka was born out of Lahore’s timeless appreciation for hospitality, rich feasts, and meaningful gifting. We understand that in our city, sharing dry fruits is an act of warmth and tradition. Operating from our temperature-controlled facility in Lahore, we handle every batch with pristine precision before it reaches your home. Whether you're assembling a bespoke wedding gift tray in Gulberg or ordering daily vitality essentials in DHA, we bring world-class boutique service right to your doorstep.`,
+    content: `AllBarka was born out of Lahore’s timeless appreciation for hospitality, rich feasts, and meaningful gifting. We understand that in our city, sharing dry fruits is an act of warmth and tradition. Operating from our temperature-controlled facility in Lahore, we handle every batch with pristine precision before it reaches your home. Whether you're assembling a bespoke wedding gift tray in Gulberg or ordering everyday pantry staples in DHA, we bring world-class boutique service right to your doorstep.`,
     icon: MapPin,
     highlights: [
       'Same-day temperature-controlled dispatch across Lahore (DHA, Gulberg, Model Town, Cantt)',
@@ -104,17 +104,17 @@ const PAGES: Record<InfoPageTab, PageData> = {
     id: 'blog-nutrition',
     category: 'discover',
     categoryLabel: '✦ Discover AllBarka',
-    navTitle: 'Nutritional Journal',
-    badge: 'Wellness & Vitality',
-    headline: 'Fueling Life with Pure Superfoods.',
-    content: `Dry fruits are more than an indulgent snack—they are nature’s most concentrated sources of essential nutrients, heart-healthy fats, plant proteins, and potent antioxidants. Incorporating a handful of raw, premium nuts into your daily routine supports cardiovascular wellness, sharpens cognitive focus, and provides sustained natural energy without insulin spikes. At AllBarka, our products are non-GMO, raw, and unadulterated, preserving 100% of their bioavailable micronutrients for your everyday vitality.`,
+    navTitle: 'Grading & Serving Journal',
+    badge: 'Grade & Craft',
+    headline: 'Whole Kernels, Clean Flavor & Gift-Ready Care.',
+    content: `Dry fruits are at the center of Lahore’s hospitality — from afternoon chai platters and Ramadan iftar trays to formal celebration hampers. At AllBarka, every lot is hand-graded for size, crispness, and clean natural taste, then sealed in barrier pouches so almonds stay sweet, walnuts stay golden, and dates arrive plump and gift-ready.`,
     icon: BookOpen,
     highlights: [
-      'High in heart-healthy monounsaturated fats, Vitamin E, and dietary fibre',
-      'Rich in Omega-3 fatty acids for cognitive clarity and cellular repair',
-      'Completely raw, unbleached, and free from added sugars or synthetic preservatives'
+      'Hand-sorted whole kernels graded by size, natural color, and crisp texture',
+      'Unbleached, free from artificial glazes, and packed fresh to order in Lahore',
+      'Balanced flavor profiles curated for everyday pantry bowls and formal gifting'
     ],
-    quote: 'Nourish your mind and body with nature’s most potent vitality capsules.'
+    quote: 'Clean orchard flavor, honest grading, and gift-ready presentation in every box.'
   },
   'hand-sorting': {
     id: 'hand-sorting',

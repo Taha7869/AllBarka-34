@@ -86,7 +86,7 @@ test('track, cookie policy, offline, reveal routes return 200 with proper indexa
   assert.equal(revealMeta.noindex, true);
 
   const homeHtml = renderRouteDocument(template, routeMetadata('/', origin, PRODUCTS), origin, 'nonce-1');
-  assert.match(homeHtml, /rel="preload" as="image" href="\/images\/living-gallery-final\/hero-mobile\.webp"[^>]*fetchpriority="high"/);
+  assert.match(homeHtml, /rel="preload" as="image" href="\/images\/drafts-premium-20261122\/01-hero-gift-box-dates\.webp"[^>]*fetchpriority="high"/);
 
   const pista = PRODUCTS.find(item => item.id === 'pista')!;
   const pdpHtml = renderRouteDocument(template, routeMetadata('/product/pista', origin, [pista]), origin, 'nonce-1');

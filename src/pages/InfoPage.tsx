@@ -98,7 +98,7 @@ const PAGES: Record<InfoPageTab, PageData> = {
     navTitle: 'AllBarka Boutique',
     badge: 'Local Roots',
     headline: 'Rooted in the Heart of Lahore.',
-    content: `AllBarka was born out of Lahore’s timeless appreciation for hospitality, rich feasts, and meaningful gifting. We understand that in our city, sharing dry fruits is an act of warmth and tradition. Operating from our temperature-controlled facility in Lahore, we handle every batch with pristine precision before it reaches your home. Whether you're assembling a bespoke wedding gift tray in Gulberg or ordering daily vitality essentials in DHA, we bring world-class boutique service right to your doorstep.`,
+    content: `AllBarka was born out of Lahore’s timeless appreciation for hospitality, rich feasts, and meaningful gifting. We understand that in our city, sharing dry fruits is an act of warmth and tradition. Operating from our temperature-controlled facility in Lahore, we handle every batch with pristine precision before it reaches your home. Whether you're assembling a bespoke wedding gift tray in Gulberg or ordering everyday pantry staples in DHA, we bring world-class boutique service right to your doorstep.`,
     icon: MapPin,
     highlights: [
       'Same-day temperature-controlled dispatch across Lahore (DHA, Gulberg, Model Town, Cantt)',
@@ -111,17 +111,17 @@ const PAGES: Record<InfoPageTab, PageData> = {
     id: 'blog-nutrition',
     category: 'discover',
     categoryLabel: 'The Journal',
-    navTitle: 'Nutritional Guidelines',
-    badge: 'Wellness & Nutrition Profile',
-    headline: 'Essential Macronutrients & Dietary Benefits',
-    content: "AllBarka dry fruits are 100% raw, unbleached, and naturally preserved in nitrogen-flushed barrier pouches to retain their full micronutrient density:\n\n• Iranian Pistachios: 20g Protein / 100g, abundant in Vitamin B6, Potassium, and eye-healthy Lutein.\n• American Mountain Almonds: 21g Plant Protein, rich in Alpha-Tocopherol (Vitamin E) and dietary fiber for cardiovascular and skin health.\n• Chilean Walnuts: Supreme plant source of Omega-3 ALA (Alpha-Linolenic Acid) supporting brain health and lowering LDL cholesterol.\n• King Cashews (W240): Packed with Zinc, Iron, and Magnesium for muscle recovery and immune function.\n• Organic Chia & Pumpkin Seeds: High dietary fiber (34g/100g) and natural Tryptophan promoting restorative sleep and sustained satiety.\n• Sun-Dried Apricots & Plums: High in Potassium and natural Sorbitol aiding digestive health.",
+    navTitle: 'Grading & Serving Notes',
+    badge: 'Origin, Grade & Table Guide',
+    headline: 'How We Grade, Portion & Serve Each Harvest',
+    content: "AllBarka dry fruits are hand-sorted, unbleached, and sealed in barrier pouches to protect crisp texture and clean flavor:\n\n• Iranian Pistachios: Jumbo wood-roasted open-shell kernels with a clean savory finish for hosting platters.\n• American Mountain Almonds: Whole unbleached sweet kernels suited for soaking, snacking, and desserts.\n• Chilean Walnuts: Extra-light halves with sweet, mild flavor and no bitter skin aftertaste.\n• King Cashews (W240): Whole plump ivory kernels with naturally creamy crunch for gift trays and kheer.\n• Pantry Chia & Pumpkin Seeds: Clean, sifted whole seeds ready for porridge, smoothies, and salads.\n• Sun-Dried Apricots & Plums: Soft orchard fruit dried naturally with rich honeyed tartness.",
     icon: BookOpen,
     highlights: [
-      "Zero Added Sugar, Artificial Glazes, or Preservatives",
-      "Dense in Heart-Healthy Monounsaturated Fatty Acids",
-      "Recommended Daily Portion: 30g mixed handful (approx. 180 kcal)"
+      "Zero added sugar, artificial glazes, or synthetic bleaching",
+      "Graded by kernel size, natural color, and open-shell ratio",
+      "Sealed in food-grade barrier pouches for pantry freshness and gift-ready presentation"
     ],
-    quote: "Whole-food nutrition straight from orchard trees to your daily vitality routine."
+    quote: "Hand-sorted by grade, flavor, and texture — from orchard harvest to your table."
   },
   'hand-sorting': {
     id: 'hand-sorting',

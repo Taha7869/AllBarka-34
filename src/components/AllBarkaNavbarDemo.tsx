@@ -105,7 +105,7 @@ export function Navbar({
                 onClick={() => handleNav('category', 'seeds')} 
                 className="hover:text-[var(--color-gold,#B8935F)] transition-colors"
               >
-                Superfood Seeds & Wellness
+                Seeds & Pantry Essentials
               </HoveredLink>
               <HoveredLink 
                 href="/category/combos" 

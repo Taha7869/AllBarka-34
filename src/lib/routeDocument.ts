@@ -166,7 +166,9 @@ export function renderRouteDocument(template: string, metadata: RouteMetadata, o
   if (metadata.noindex) setMeta('name', 'robots', 'noindex, nofollow');
   // Preload the primary LCP hero image in the initial HTML document for faster mobile LCP.
   if (metadata.path === '/') {
-    html = html.replace('</head>', () => `<link rel="preload" as="image" href="/images/living-gallery-final/hero-mobile.webp" media="(max-width: 767px)" fetchpriority="high">\n<link rel="preload" as="image" href="/images/living-gallery-final/hero-desktop.webp" media="(min-width: 768px)" fetchpriority="high">\n</head>`);
+    if (!html.includes('/images/drafts-premium-20261122/01-hero-gift-box-dates.webp')) {
+      html = html.replace('</head>', () => `<link rel="preload" as="image" href="/images/drafts-premium-20261122/01-hero-gift-box-dates.webp" type="image/webp" fetchpriority="high">\n</head>`);
+    }
   } else if (metadata.type === 'product' && metadata.image && metadata.image !== DEFAULT_IMAGE) {
     html = html.replace('</head>', () => `<link rel="preload" as="image" href="${escapeHtml(metadata.image)}" fetchpriority="high">\n</head>`);
   }

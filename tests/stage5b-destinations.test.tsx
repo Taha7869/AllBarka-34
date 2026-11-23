@@ -604,9 +604,9 @@ test('Regression 9: Gifts & Hampers and Deals destinations consume URL params an
   const dealsDuosHtml = renderApp('/shop/deals?filter=duos&partner_id=corporate_club');
   assert.ok(dealsDuosHtml.includes('Tasting Duos &amp; Pairs') || dealsDuosHtml.includes('Tasting Duos & Pairs'));
 
-  // Deals with wellness filter
+  // Deals with wellness URL param renders neutral Pantry & Everyday Packs filter (no health-claim copy)
   const dealsWellnessHtml = renderApp('/shop/deals?filter=wellness');
-  assert.ok(dealsWellnessHtml.includes('Wellness &amp; Pantry Reserves') || dealsWellnessHtml.includes('Wellness & Pantry Reserves'));
+  assert.ok(dealsWellnessHtml.includes('Pantry &amp; Everyday Packs') || dealsWellnessHtml.includes('Pantry & Everyday Packs'));
 
   // Celebration Boxes with canonical occasion matching (?occasion=wedding)
   const celebrationOccasionHtml = renderApp('/shop/celebration-boxes?occasion=wedding');

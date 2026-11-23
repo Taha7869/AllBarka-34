@@ -46,7 +46,7 @@ export default function Breadcrumbs({ items: customItems, className = '' }: Brea
       const lower = cat.toLowerCase();
       if (lower === 'nuts' || lower === 'dry-fruits') return t('dryFruits', 'Royal Dry Fruits');
       if (lower === 'dried-fruits') return language === 'ur' ? 'خشک میوہ جات' : language === 'ar' ? 'الفواكه المجففة' : 'Artisanal Dried Fruits';
-      if (lower === 'seeds') return language === 'ur' ? 'بیج اور غذائیت' : language === 'ar' ? 'البذور النقية' : 'Superfood Seeds';
+      if (lower === 'seeds') return language === 'ur' ? 'بیج اور پینٹری' : language === 'ar' ? 'البذور المختارة' : 'Seeds & Pantry';
       if (lower === 'snacks') return language === 'ur' ? 'روایتی نمکو اور چنے' : language === 'ar' ? 'المقبلات التقليدية' : 'Traditional Snacks';
       if (lower === 'berries') return t('berries', 'Exotic Berries');
       if (lower === 'spices' || lower === 'saffron') return t('spices', 'Spices & Saffron');

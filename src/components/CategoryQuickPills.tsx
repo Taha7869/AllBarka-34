@@ -51,7 +51,7 @@ const FEATURED_CATEGORY_PILLS: CategoryPillItem[] = [
   },
   {
     id: 'seeds',
-    label: 'Superfood Seeds',
+    label: 'Seeds & Pantry',
     emoji: '🌱',
     categoryFilter: 'seeds',
     searchTerm: ''
