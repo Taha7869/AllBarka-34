@@ -36,8 +36,10 @@
 .boutique-request-spinner { animation: boutique-request 900ms linear infinite; }
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
   .boutique-action:not(:disabled):hover { box-shadow: 0 5px 19px -10px #80632680; }
-  .product-gallery-track img { transition: transform 450ms cubic-bezier(.2,.7,.2,1); }
-  .product-gallery:hover .product-gallery-track img { transform: scale(1.025); }
+  .product-gallery-track img { transition: transform 420ms cubic-bezier(.2,.7,.2,1); }
+  .boutique-product-card:hover .product-gallery-track img,
+  .table-catalog-card:hover .product-gallery-track img,
+  .product-gallery:hover .product-gallery-track img { transform: scale(1.03); }
   .boutique-experience a[aria-current="page"] { text-decoration-color: var(--color-accent); }
 }
 @media (prefers-reduced-motion: no-preference) {

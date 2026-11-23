@@ -105,16 +105,16 @@
 @media(min-width:1024px) { .editorial-home .editorial-pantry-viewport { --tile:21; --shelf-height:38px; --shelf-overlap:14px; } }
 @media(prefers-reduced-motion:reduce) { .editorial-home .pantry-tile-media { transform:scale(.88); transition:none; } }
 
-/* ── 4. Showcase cards: large photo, three distinct actions ───────────────── */
-.editorial-home .boutique-product-card { padding:0; overflow:hidden; }
-.editorial-home .boutique-product-card .product-gallery { margin-bottom:0; border:0; border-bottom:1px solid var(--color-border); border-radius:0; aspect-ratio:1; }
+/* ── 4. Showcase cards: unified calm radius, subtle shadow, image-only hover zoom ── */
+.editorial-home .boutique-product-card { padding:16px; border-radius:18px; overflow:hidden; box-shadow:0 4px 20px -8px rgba(4,40,33,0.08); }
+.editorial-home .boutique-product-card .product-gallery { margin-bottom:12px; border:1px solid var(--color-border); border-radius:12px; aspect-ratio:1; }
 .editorial-home .boutique-product-card .product-gallery-slide img,
 .editorial-home .boutique-product-card .product-gallery-preview { object-fit:cover; }
-.editorial-home .boutique-product-card .table-card-meta { margin:0; padding:10px 18px 0; }
-.editorial-home .boutique-product-card .table-card-details { padding:2px 18px 14px; }
+.editorial-home .boutique-product-card .table-card-meta { margin:0 0 6px; padding:0; }
+.editorial-home .boutique-product-card .table-card-details { padding:0 0 14px; }
 .editorial-home .boutique-product-card .table-card-details h3,
 .editorial-home .boutique-product-card .table-card-details>p { min-height:0; }
-.editorial-home .boutique-product-card .table-card-purchase { margin-inline:18px; padding-bottom:18px; }
+.editorial-home .boutique-product-card .table-card-purchase { margin-inline:0; padding-bottom:0; }
 .table-card-cta { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px 8px; }
 .table-card-cta-price,.table-card-cta-add { grid-column:1 / -1; }
 .table-card-action { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:46px; padding:8px 10px; border:1px solid var(--color-border); border-radius:3px; background:transparent; color:var(--color-text-primary); font-size:.7rem; font-weight:600; line-height:1.35; text-align:center; text-decoration:none; cursor:pointer; transition:border-color .2s,color .2s,background .2s; }

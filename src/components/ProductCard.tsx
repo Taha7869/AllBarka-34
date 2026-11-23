@@ -1,12 +1,10 @@
 import BundleContentsSummary from './BundleContentsSummary';
 import { initialCardPortion } from '../lib/merchandisingPresentation';
-import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import ProductImageGallery from './ProductImageGallery';
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, ShoppingBag, Heart, ArrowUpRight } from 'lucide-react';
 import { useSavedProducts } from '../hooks/useSavedProducts';
-import { motion } from 'motion/react';
 import { Product } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCart } from '../contexts/CartContext';
@@ -37,7 +35,6 @@ export default function ProductCard({
   const { savedIds, setSaved } = useSavedProducts();
   const saved = savedIds.includes(product.id);
   const navigate = useNavigate();
-  const shouldReduceMotion = useReducedMotion();
   const disabledLabels = new Set(
     Array.isArray(product.variants)
       ? product.variants.filter(v => v && v.available === false).map(v => v.label)
@@ -61,34 +58,15 @@ export default function ProductCard({
     ? (product.wholesale || firstAvailablePrice || 0)
     : ((selectedWeight ? product.prices?.[selectedWeight] : 0) || firstAvailablePrice || 0);
 
-  // ── Hover lift variants ─────────────────────────────────────────────────────
-  const cardVariants = {
-    rest: {
-      y: 0,
-      boxShadow: 'var(--shadow-card, 0 4px 20px -4px rgba(41,35,29,0.06))',
-    },
-    hover: shouldReduceMotion
-      ? {}
-      : {
-          y: -3,
-          boxShadow: 'var(--shadow-card-hover, 0 16px 36px -8px rgba(41,35,29,0.12))',
-        },
-  };
-
   return (
-    <motion.div
+    <div
       dir="ltr"
-      className="boutique-product-card group/card relative flex h-full cursor-pointer flex-col bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-border-accent)] rounded-3xl p-5 transition-colors duration-300 motion-reduce:transition-none"
+      className="boutique-product-card group/card relative flex h-full cursor-pointer flex-col bg-[var(--color-surface,#FFFCF7)] border border-[var(--color-border)] hover:border-[#C7982F]/55 rounded-[18px] p-4 sm:p-5 shadow-[0_4px_20px_-8px_rgba(4,40,33,0.08)] transition-colors duration-200 motion-reduce:transition-none"
       onClick={(event) => {
         if (!(event.target as HTMLElement).closest('a, button, input, select, textarea, [role="button"]')) {
           navigate(`/product/${product.id}`);
         }
       }}
-      variants={cardVariants}
-      initial="rest"
-      whileHover="hover"
-      transition={{ type: 'spring', stiffness: 340, damping: 28, mass: 0.6 }}
-
     >
       {/* Top Meta Line */}
       <div className="table-card-meta mb-1 flex min-h-11 items-center gap-2">
@@ -210,6 +188,6 @@ export default function ProductCard({
           )}
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
