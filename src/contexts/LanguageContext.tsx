@@ -185,7 +185,7 @@ const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     'directWhatsapp': 'Direct WhatsApp Dispatch',
     // CategoryPLP & ShopPage
     nuts: 'Dry Fruits & Nuts',
-    seeds: 'Seeds & Superfoods',
+    seeds: 'Seeds & Pantry',
     snacks: 'Premium Snacks',
     oils: 'Cold-Pressed Oils',
     organics: 'Pure Organic Essentials',

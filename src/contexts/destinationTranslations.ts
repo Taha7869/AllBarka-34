@@ -48,14 +48,14 @@ export const destinationTranslations: Record<string, Record<string, string>> = {
     // ── Deals & Value Packages ───────────────────────────────────────────
     'dest.deals.title': 'Value Packages & Curated Deals',
     'dest.deals.eyebrow': 'Farm-Direct Savings',
-    'dest.deals.description': 'Thoughtfully paired seasonal reserves and wellness pairings curated by our Lahore roastery. Sealed fresh in airtight barrier pouches.',
+    'dest.deals.description': 'Thoughtfully paired seasonal reserves and pantry assortments curated by our Lahore house. Sealed fresh in airtight barrier pouches.',
     'dest.deals.curatedNotice': 'Roastery Curated Assortments: Thoughtfully paired bundles and festive sets curated by our Lahore roastery. Direct pricing reflects packaged assortment value.',
     'dest.deals.verifiedNotice': 'Roastery Curated Assortments: Thoughtfully paired bundles and festive sets curated by our Lahore roastery. Direct pricing reflects packaged assortment value.',
     'dest.deals.bundleSavings': 'Bundle Value Savings',
     'dest.deals.filterAll': 'All Deals & Packages',
     'dest.deals.filterDuos': 'Tasting Duos & Pairs',
     'dest.deals.filterHampers': 'Festive Family Hampers',
-    'dest.deals.filterWellness': 'Wellness & Pantry Reserves',
+    'dest.deals.filterWellness': 'Pantry & Everyday Packs',
 
     // ── Occasions Destination ────────────────────────────────────────────
     'dest.occasions.title': 'Find a Gift for Your Occasion',
@@ -67,7 +67,7 @@ export const destinationTranslations: Record<string, Record<string, string>> = {
     'dest.occasions.umrah': 'Umrah & Hajj Tabarruk',
     'dest.occasions.umrahDesc': 'Blessed return sets with pearlescent boxes, gift bags, and Madina date compartments.',
     'dest.occasions.ramadan': 'Ramadan & Eid',
-    'dest.occasions.ramadanDesc': 'Iftar date gift packs, Suhoor wellness bundles, and festive Eid sweet and dry fruit hampers.',
+    'dest.occasions.ramadanDesc': 'Iftar date gift packs, Suhoor pantry bundles, and festive Eid sweet and dry fruit hampers.',
     'dest.occasions.birth': 'Birth Announcement & Aqeeqah',
     'dest.occasions.birthDesc': 'Pastel keepsake boxes, newborn announcement packs, and heritage panjeeri favors.',
     'dest.occasions.corporate': 'Corporate & Executive',
@@ -145,14 +145,14 @@ export const destinationTranslations: Record<string, Record<string, string>> = {
     // ── Deals & Value Packages ───────────────────────────────────────────
     'dest.deals.title': 'خصوصی ڈیلز اور ویلیو بنڈلز',
     'dest.deals.eyebrow': 'باغات سے براہِ راست بچت',
-    'dest.deals.description': 'ہماری لاہور روسٹری کے تیار کردہ موسمی اور صحت بخش میوہ جات کے متوازن سیٹس۔ تازہ اور ایئر ٹائٹ پاؤچز میں محفوظ۔',
+    'dest.deals.description': 'ہماری لاہور روسٹری کے تیار کردہ موسمی اور پینٹری میوہ جات کے متوازن سیٹس۔ تازہ اور ایئر ٹائٹ پاؤچز میں محفوظ۔',
     'dest.deals.curatedNotice': 'لاہور روسٹری کے تیار کردہ سیٹس: ہماری لاہور روسٹری کے منتخب کردہ معیاری بنڈلز اور فیملی ہیمپرز۔ قیمتیں براہِ راست پیکجڈ قیمت کی عکاسی کرتی ہیں۔',
     'dest.deals.verifiedNotice': 'لاہور روسٹری کے تیار کردہ سیٹس: ہماری لاہور روسٹری کے منتخب کردہ معیاری بنڈلز اور فیملی ہیمپرز۔ قیمتیں براہِ راست پیکجڈ قیمت کی عکاسی کرتی ہیں۔',
     'dest.deals.bundleSavings': 'بنڈل پر بچت',
     'dest.deals.filterAll': 'تمام ڈیلز اور پیکس',
     'dest.deals.filterDuos': 'ٹیسٹنگ جوڑیاں',
     'dest.deals.filterHampers': 'خاندانی ہیمپرز',
-    'dest.deals.filterWellness': 'صحت و تندرستی کے پیکس',
+    'dest.deals.filterWellness': 'پینٹری اور روزمرہ پیکس',
 
     // ── Occasions Destination ────────────────────────────────────────────
     'dest.occasions.title': 'مناسبت کے لحاظ سے تحائف',
@@ -164,7 +164,7 @@ export const destinationTranslations: Record<string, Record<string, string>> = {
     'dest.occasions.umrah': 'عمرہ و حج تبرک',
     'dest.occasions.umrahDesc': 'سفید و سنہری تبرک سیٹس، مدینہ کی کھجوریں اور گفٹ بیگز۔',
     'dest.occasions.ramadan': 'رمضان و عید',
-    'dest.occasions.ramadanDesc': 'افطار کھجور پیکٹس، سحری سپر فوڈز اور عید کے میٹھے ہیمپرز۔',
+    'dest.occasions.ramadanDesc': 'افطار کھجور پیکٹس، سحری پینٹری سیٹس اور عید کے میٹھے ہیمپرز۔',
     'dest.occasions.birth': 'ولادت و عقیقہ',
     'dest.occasions.birthDesc': 'پیسٹل باکسز، بچے کے نام کے ٹیگز اور خالص دیسی گھی پنجیری۔',
     'dest.occasions.corporate': 'کارپوریٹ تقریبات',
@@ -249,7 +249,7 @@ export const destinationTranslations: Record<string, Record<string, string>> = {
     'dest.deals.filterAll': 'جميع الباقات',
     'dest.deals.filterDuos': 'ثنائيات التذوق',
     'dest.deals.filterHampers': 'سلال المناسبات العائلية',
-    'dest.deals.filterWellness': 'باقات الصحة الطبيعية',
+    'dest.deals.filterWellness': 'باقات المؤونة اليومية',
 
     // ── Occasions Destination ────────────────────────────────────────────
     'dest.occasions.title': 'اختر الهدية حسب المناسبة',

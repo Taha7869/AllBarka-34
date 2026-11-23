@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import test, { describe, before, after } from 'node:test';
 import http from 'node:http';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
+import { build } from 'esbuild';
 import { launchTestBrowser } from './helpers/browser.mjs';
 
 const PORT = 4589;
@@ -21,9 +23,26 @@ const mimeTypes = {
   '.woff2': 'font/woff2',
 };
 
-function createStaticServer() {
+function createStaticServer(fixtureJsPath) {
+  const builtHtml = fs.existsSync(path.join(distDir, 'index.html'))
+    ? fs.readFileSync(path.join(distDir, 'index.html'), 'utf8')
+    : '';
+  const cssLinks = [...builtHtml.matchAll(/<link\b[^>]*href="(\/assets\/[^"]+\.css)"[^>]*>/g)]
+    .map((m) => `<link rel="stylesheet" href="${m[1]}">`)
+    .join('');
+
   return http.createServer((req, res) => {
     let reqPath = req.url?.split('?')[0] || '/';
+    if (reqPath === '/__boutique-clock.js') {
+      res.writeHead(200, { 'Content-Type': 'application/javascript' });
+      res.end(fs.readFileSync(fixtureJsPath));
+      return;
+    }
+    if (reqPath === '/__boutique-clock') {
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+      res.end(`<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">${cssLinks}</head><body><div id="root"></div><script src="/__boutique-clock.js"></script></body></html>`);
+      return;
+    }
     if (reqPath === '/') reqPath = '/index.html';
     let filePath = path.join(distDir, reqPath);
 
@@ -51,7 +70,7 @@ async function openControlledPage(page) {
   const initialTime = new Date('2026-01-01T00:00:00Z');
   await page.clock.install({ time: initialTime });
   await page.clock.pauseAt(new Date(initialTime.getTime() + 1000));
-  await page.goto(`http://localhost:${PORT}/`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`http://localhost:${PORT}/__boutique-clock`, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('#boutique-selections');
   await page.evaluate(()=>document.fonts.ready);
 }
@@ -59,9 +78,55 @@ async function openControlledPage(page) {
 describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () => {
   let server;
   let browser;
+  let tempDir;
 
   before(async () => {
-    server = createStaticServer();
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'allbarka-clock-'));
+    const fixtureJs = path.join(tempDir, 'boutique-clock.js');
+    const entry = `
+      import React from 'react';
+      import { createRoot } from 'react-dom/client';
+      import { BrowserRouter, Routes, Route } from 'react-router-dom';
+      import { LanguageProvider } from './src/contexts/LanguageContext';
+      import { ThemeProvider } from './src/contexts/ThemeContext';
+      import { CatalogProvider } from './src/contexts/CatalogContext';
+      import { MerchandisingProvider } from './src/contexts/MerchandisingContext';
+      import { ProductMediaProvider } from './src/contexts/ProductMediaContext';
+      import { CartProvider } from './src/contexts/CartContext';
+      import BoutiqueSelections from './src/components/BoutiqueSelections';
+      import { PRODUCTS } from './src/data/products';
+      createRoot(document.getElementById('root')).render(
+        <BrowserRouter>
+          <ThemeProvider>
+            <LanguageProvider>
+              <CatalogProvider initialProducts={PRODUCTS}>
+                <MerchandisingProvider>
+                  <ProductMediaProvider>
+                    <CartProvider>
+                      <Routes>
+                        <Route path="/__boutique-clock" element={<><main><BoutiqueSelections /></main><footer style={{height:120}}>Footer</footer></>} />
+                        <Route path="*" element={<main className="editorial-page">Shop</main>} />
+                      </Routes>
+                    </CartProvider>
+                  </ProductMediaProvider>
+                </MerchandisingProvider>
+              </CatalogProvider>
+            </LanguageProvider>
+          </ThemeProvider>
+        </BrowserRouter>
+      );
+    `;
+    await build({
+      stdin: { contents: entry, loader: 'tsx', resolveDir: process.cwd(), sourcefile: 'boutique-clock.tsx' },
+      bundle: true,
+      format: 'iife',
+      platform: 'browser',
+      outfile: fixtureJs,
+      jsx: 'automatic',
+      define: { 'process.env.NODE_ENV': '"production"' },
+      logLevel: 'silent',
+    });
+    server = createStaticServer(fixtureJs);
     await new Promise((resolve) => server.listen(PORT, resolve));
     browser = await launchTestBrowser();
   });
@@ -69,6 +134,7 @@ describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () =
   after(async () => {
     if (browser) await browser.close();
     if (server) await new Promise((resolve) => server.close(resolve));
+    if (tempDir) fs.rmSync(tempDir, { recursive: true, force: true });
   });
 
   async function getActiveTabId(page) {
@@ -414,7 +480,10 @@ describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () =
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(json) });
     });
 
+    const merchDone = page.waitForResponse((res) => res.url().includes('/api/merchandising'));
     await openControlledPage(page);
+    await merchDone;
+    await page.waitForFunction(() => document.querySelector('#boutique-selections button[aria-label*="autoplay"]')?.getAttribute('aria-pressed') === 'false');
 
     assert.equal(await isAutoplayPlaying(page), false, 'Must remain paused when admin setting has enabled=false');
 
@@ -442,9 +511,12 @@ describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () =
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(json) });
     });
 
-    await page.goto(`http://localhost:${PORT}/`);
+    const merchDone = page.waitForResponse((res) => res.url().includes('/api/merchandising'));
+    await page.goto(`http://localhost:${PORT}/__boutique-clock`);
     await page.waitForSelector('#boutique-selections');
-  await page.evaluate(()=>document.fonts.ready);
+    await merchDone;
+    await page.waitForFunction(() => document.querySelectorAll('#boutique-selections [role="tab"]').length === 1);
+    await page.evaluate(()=>document.fonts.ready);
 
     const visibleTabs = await page.evaluate(() => {
       return Array.from(document.querySelectorAll('#boutique-selections [role="tab"]')).map(t => t.getAttribute('data-tab-id') || t.id.split('-').pop());
@@ -478,6 +550,33 @@ describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () =
     await page.clock.runFor(15000);
 
     assert.equal(errors.length, 0, 'No uncaught errors or timer leaks on unmount');
+
+    await context.close();
+  });
+
+  test('12. Live homepage House Selections stays strictly manual (3 tabs, zero auto-rotation)', async () => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    const initialTime = new Date('2026-01-01T00:00:00Z');
+    await page.clock.install({ time: initialTime });
+    await page.clock.pauseAt(new Date(initialTime.getTime() + 1000));
+    await page.goto(`http://localhost:${PORT}/`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('#boutique-selections[data-manual-tabs="true"]');
+
+    const tabs = await page.evaluate(() =>
+      Array.from(document.querySelectorAll('#boutique-selections [role="tab"]')).map((el) =>
+        el.getAttribute('data-tab-id')
+      )
+    );
+    assert.deepEqual(tabs, ['dry-fruits', 'gifts', 'celebration-boxes'], 'Live homepage must present 3 calm manual tabs');
+    assert.equal(await page.locator('#boutique-selections button[aria-label*="autoplay"]').count(), 0, 'No autoplay button on live homepage');
+    assert.equal(await getActiveTabId(page), 'dry-fruits');
+
+    await page.clock.runFor(18000);
+    assert.equal(await getActiveTabId(page), 'dry-fruits', 'Live homepage House Selections must NEVER auto-rotate');
+
+    await page.click('#boutique-selections [role="tab"][data-tab-id="gifts"]');
+    assert.equal(await getActiveTabId(page), 'gifts', 'Manual tab click switches selection cleanly');
 
     await context.close();
   });

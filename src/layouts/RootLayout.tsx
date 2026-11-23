@@ -50,6 +50,7 @@ import { Menu, X, ShoppingBag, User, Gift, Languages, ChevronDown, Search } from
 import { AllBarkaHeaderLogo } from '../components/AllBarkaLogo';
 import MobileHeaderBrand from '../components/MobileHeaderBrand';
 import Breadcrumbs from '../components/Breadcrumbs';
+import HeaderSearchPanel from '../components/HeaderSearchPanel';
 import { PRODUCTS, getProductImage } from '../data/products';
 import { acquireScrollLock } from '../utils/scrollLock';
 import ErrorBoundary from '../components/ErrorBoundary';
@@ -74,7 +75,9 @@ export default function RootLayout() {
   const isStandalone = useStandaloneMode();
   
   const mobileMenuTriggerRef = React.useRef<HTMLButtonElement>(null);
+  const headerSearchBtnRef = React.useRef<HTMLButtonElement>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [headerSearchOpen, setHeaderSearchOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isCartPulsing, setIsCartPulsing] = useState(false);
 
@@ -195,8 +198,14 @@ export default function RootLayout() {
     const focusSearch = (event: KeyboardEvent) => {
       if (event.key !== '/' || event.ctrlKey || event.altKey || event.metaKey) return;
       if ((event.target instanceof Element && event.target.closest('input,textarea,select,[contenteditable="true"]')) || document.querySelector('[aria-modal="true"]')) return;
-      const search = document.querySelector<HTMLInputElement>('#hero-search-input, #category-plp-container input[type="search"]');
-      if (search) { event.preventDefault(); search.focus(); search.scrollIntoView({ block: 'center', behavior: 'instant' }); }
+      const search = document.querySelector<HTMLInputElement>('#category-plp-container input[type="search"]');
+      event.preventDefault();
+      if (search) {
+        search.focus();
+        search.scrollIntoView({ block: 'center', behavior: 'instant' });
+      } else {
+        setHeaderSearchOpen(true);
+      }
     };
     window.addEventListener('keydown', focusSearch);
     return () => window.removeEventListener('keydown', focusSearch);
@@ -325,20 +334,14 @@ export default function RootLayout() {
 
             {/* Trailing Utility Controls */}
             <div className="boutique-header-tools flex items-center gap-1.5 sm:gap-2.5 justify-end shrink-0">
-              {/* Search button */}
+              {/* Search button (opens Header Search + Voice panel on any route) */}
               <button
+                ref={headerSearchBtnRef}
                 id="header-search-btn"
                 type="button"
-                onClick={() => {
-                  const search = document.querySelector<HTMLInputElement>('#hero-search-input, #category-plp-container input[type="search"]');
-                  if (search) {
-                    search.focus();
-                    search.scrollIntoView({ block: 'center', behavior: 'smooth' });
-                  } else {
-                    navigate('/shop');
-                  }
-                }}
-                className="min-w-[40px] min-h-[40px] rounded-xl flex items-center justify-center transition-all duration-200 border border-[#29231D]/10 dark:border-[#C7982F]/25 bg-[#F6F1EA]/60 dark:bg-[#1A201E]/60 hover:bg-[#C7982F]/15 text-[#042821] dark:text-[#FFFCF7] focus-ring cursor-pointer"
+                aria-expanded={headerSearchOpen}
+                onClick={() => setHeaderSearchOpen((open) => !open)}
+                className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center transition-all duration-200 border border-[#29231D]/10 dark:border-[#C7982F]/25 bg-[#F6F1EA]/60 dark:bg-[#1A201E]/60 hover:bg-[#C7982F]/15 text-[#042821] dark:text-[#FFFCF7] focus-ring cursor-pointer"
                 aria-label={t('nav.search', 'Search catalogue')}
                 title={t('nav.search', 'Search catalogue')}
               >
@@ -439,6 +442,12 @@ export default function RootLayout() {
           </div>
         </div>
       </header>
+
+      <HeaderSearchPanel
+        isOpen={headerSearchOpen}
+        onClose={() => setHeaderSearchOpen(false)}
+        restoreFocusTo={headerSearchBtnRef.current}
+      />
 
       <MobileMenu 
         isOpen={mobileMenuOpen} 

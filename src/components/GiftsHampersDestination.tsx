@@ -12,6 +12,7 @@ import { HAMPER_BOXES } from '../lib/hamperCatalog';
 import { getLocalized } from '../utils/localize';
 import { GIFT_RECIPIENTS, isGiftRecipient } from '../lib/giftRecipient';
 import GiftFinder from './GiftFinder';
+import GiftingPlanningToolsBar from './GiftingPlanningToolsBar';
 
 interface GiftsHampersDestinationProps { onQuickView?: (product: Product) => void }
 
@@ -51,6 +52,7 @@ export default function GiftsHampersDestination({ onQuickView }: GiftsHampersDes
       {!builderAvailable && <p role="status">{t('gift.builderUnavailable')}</p>}<p className="gift-opening-note">{t('gift.boxChoices')}</p><ul>{HAMPER_BOXES.map(box=><li key={box.id}>{getLocalized(box,'name',language)}</li>)}</ul>
     </div><figure><img src={SECTION_COVERS['gift-boxes'].src} srcSet={SECTION_COVERS['gift-boxes'].srcSet} sizes="(max-width: 768px) 100vw, 480px" width={800} height={800} alt={t(SECTION_COVERS['gift-boxes'].altKey, getLocalized(heroBox,'name',language))} onError={event=>{if(!event.currentTarget.src.endsWith('/images/product-placeholder.svg')){event.currentTarget.removeAttribute('srcset');event.currentTarget.src='/images/product-placeholder.svg';}}}/><figcaption>{t('gift.reference')}</figcaption></figure></header>
     <GiftFinder onProductView={onQuickView} className="my-8" />
+    <GiftingPlanningToolsBar />
     <section id="gift-selection" className="gift-discovery"><div className="gift-discovery-heading"><div><p className="gift-eyebrow">{t('gift.explore')}</p><h2>{t('gift.selectionTitle')}</h2></div><p role="status">{filtered.length} {t('shop.results')}</p></div>
       <div className="gift-recipient-guide">
         <div className="gift-recipient-field">

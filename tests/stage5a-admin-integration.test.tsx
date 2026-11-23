@@ -687,7 +687,7 @@ test('6. Service/SSR integrated flow: admin save -> preview isolation -> publish
     </MerchandisingProvider>
   );
 
-  assert.ok(initialHtml.includes('/shop/combos') || initialHtml.includes('/shop/bundles'), 'Initial live collection link rendered');
+  assert.ok(initialHtml.includes('/shop/dates') && initialHtml.includes('/shop/dry-fruits'), 'Initial live curated collection links rendered');
   assert.ok(initialHtml.includes('Wedding &amp; Nikkah') || initialHtml.includes('Wedding & Nikkah'), 'Initial live occasion title rendered');
 
   // Step 2: Admin saves draft via updateAdminMerchandising
@@ -978,11 +978,12 @@ test('7. Browser/client-mounted provider-fetch verification with real local HTTP
     const hiddenOccasionCount = await page.locator('#gift-for-occasion a[href*="occasion=umrah"]').count();
     assert.equal(hiddenOccasionCount, 0, 'Hidden occasion umrah must NOT be rendered in browser after refresh');
 
-    // I. Autoplay settings applied to DOM
-    const appliedInterval = await page.getAttribute('#boutique-selections', 'data-interval');
-    assert.equal(appliedInterval, '8888', 'Published autoplay intervalMs must be applied to DOM after refresh');
-    const appliedResumeDelay = await page.getAttribute('#boutique-selections', 'data-resume-delay');
-    assert.equal(appliedResumeDelay, '4444', 'Published autoplay resumeDelayMs must be applied to DOM after refresh');
+    // I. Published autoplay settings are served via GET /api/merchandising while live Home House Selections stays strictly manual
+    const liveApi = await (await fetch(`http://localhost:${port}/api/merchandising`)).json();
+    assert.equal(liveApi.settings?.autoplay?.intervalMs, 8888, 'Published autoplay intervalMs must be served by /api/merchandising');
+    assert.equal(liveApi.settings?.autoplay?.resumeDelayMs, 4444, 'Published autoplay resumeDelayMs must be served by /api/merchandising');
+    const isManualHomeTabs = await page.getAttribute('#boutique-selections', 'data-manual-tabs');
+    assert.equal(isManualHomeTabs, 'true', 'Live homepage House Selections must stay strictly manual (zero auto-rotate)');
   } finally {
     if (browser) await browser.close();
     server.close();

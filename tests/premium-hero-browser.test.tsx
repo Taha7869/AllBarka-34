@@ -63,9 +63,12 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
       const painted=await page.screenshot({type:'jpeg',quality:82,animations:'disabled'});
       assert.equal(await page.locator('h1').count(),1);assert.equal(await page.locator('.heritage-hero').getAttribute('dir'),language==='en'?'ltr':'rtl');
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`overflow ${width}/${language}/${theme}`);
-      const boxes=await page.evaluate(()=>Object.fromEntries(Object.entries({hero:'.heritage-hero',art:'.table-hero-art',tools:'.table-discovery',primary:'.table-hero-primary',submit:'.table-discovery button[type=submit]'}).map(([key,selector])=>{const r=document.querySelector(selector)!.getBoundingClientRect();return [key,{top:r.top,bottom:r.bottom,height:r.height,width:r.width}];})));
-      assert.ok(boxes.tools.top>=boxes.hero.bottom-1);assert.ok(boxes.primary.height>=44&&boxes.submit.height>=44&&boxes.submit.width>=44);
+      const boxes=await page.evaluate(()=>Object.fromEntries(Object.entries({hero:'.heritage-hero',art:'.table-hero-art',primary:'.table-hero-primary',secondary:'.table-hero-secondary',searchBtn:'#header-search-btn'}).map(([key,selector])=>{const r=document.querySelector(selector)!.getBoundingClientRect();return [key,{top:r.top,bottom:r.bottom,height:r.height,width:r.width}];})));
+      assert.ok(boxes.primary.height>=44&&boxes.secondary.height>=44&&boxes.searchBtn.height>=44&&boxes.searchBtn.width>=44);
       if(language==='en'&&width<768){assert.ok(boxes.primary.bottom<844,JSON.stringify({width,language,theme,boxes}));assert.ok(boxes.art.top<844);}
+      if(width<640){
+        assert.equal(await page.locator('.heritage-hero figcaption').isVisible(),false,`mobile caption must stay hidden at ${width}`);
+      }
       layouts.push({width,language,theme,...boxes});
       if(([390,1440].includes(width)&&language==='en'&&theme==='light')||(width===390&&language==='ur'&&theme==='dark')||(width===1440&&language==='ar'&&theme==='dark'))await fs.writeFile(path.join(shots,`after-${width}-${language}-${theme}.jpg`),painted);
     }
@@ -75,7 +78,7 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
       await page.locator('#allbarka-pantry').scrollIntoViewIfNeeded();
       await page.locator('#allbarka-pantry').screenshot({path:path.join(shots,`collections-${width}.jpg`),quality:82});
     }
-    assert.equal(await page.evaluate(()=>{const first=document.querySelector('[data-content-section]');const assurances=document.querySelector('.editorial-assurances');return !!first&&!!assurances&&!!(first.compareDocumentPosition(assurances)&Node.DOCUMENT_POSITION_FOLLOWING);}),true,'collections and products precede secondary assurances');
+    assert.equal(await page.evaluate(()=>{const first=document.querySelector('[data-content-section]');const care=document.querySelector('.editorial-care');return !!first&&!!care&&!!(first.compareDocumentPosition(care)&Node.DOCUMENT_POSITION_FOLLOWING);}),true,'collections and house selections precede the Lahore House Standard');
     assert.deepEqual(await page.locator('.editorial-care-link').evaluateAll(links => links.map(link => link.getAttribute('href'))), ['/shop','/gifting','/policies/shipping']);
     for (const language of ['en','ur','ar']) {
       await page.evaluate(language => (window as any).fixture.lang(language), language);
@@ -88,6 +91,7 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
       await page.evaluate(() => document.documentElement.style.fontSize = '');
     }
     assert.equal(await page.locator('.table-hero-film').count(),0,'reduced-motion loads no film');
+    assert.equal(await page.locator('[data-testid="premium-hero-lid"]').count(),0,'reduced-motion renders static hero without lid overlay');
     assert.equal(await page.locator('.table-gift-editorial').count(),1,'photographic gifting stays in published occasions section');
     // The preceding enlarged-care pass leaves a 360px mobile viewport. The
     // desktop brand is correctly hidden there and absent from the role tree.
@@ -99,20 +103,24 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     await desktopBrand.focus();
     assert.equal(await desktopBrand.evaluate(element=>element===document.activeElement),true,'desktop brand is keyboard focusable');
     await page.evaluate(()=>{(window as any).fixture.lang('en');(window as any).fixture.theme('light');});await page.setViewportSize({width:390,height:844});
-    const search=page.locator('#hero-search-input');await search.fill('pistachio');await page.locator('.boutique-suggestion').first().waitFor();
+    // Relocated discovery search + voice control lives in HeaderSearchPanel via #header-search-btn
+    await page.locator('#header-search-btn').click();
+    const search=page.locator('#header-search-input');await search.waitFor();await search.fill('pistachio');await page.locator('.boutique-suggestion').first().waitFor();
     await page.keyboard.press('ArrowDown');assert.equal(await page.locator('.boutique-suggestion').first().evaluate(e=>e===document.activeElement),true);
     await page.keyboard.press('Escape');assert.equal(await search.evaluate(e=>e===document.activeElement),true);assert.equal(await search.getAttribute('aria-expanded'),'false');
-    await page.keyboard.press('ArrowDown');await page.keyboard.press('ArrowUp');assert.equal(await page.locator('.boutique-suggestion').last().evaluate(e=>e===document.activeElement),true);
-    await page.keyboard.press('Escape');await page.keyboard.press('ArrowDown');await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');await page.waitForURL('**/product/pista');
-    await page.goto(origin);await search.fill('missing-xyz');await page.locator('.boutique-search-empty').waitFor();await page.keyboard.press('Escape');await search.fill('walnut');await page.keyboard.press('Enter');await page.waitForURL('**/shop?search=walnut');
-    await page.goto(origin);await page.locator('.table-category-pill').filter({hasText:'Pistachios'}).click();await page.waitForURL(/shop\/nuts.*pistachio/);
-    await page.goto(origin);await page.locator('.heritage-hero-guide').click();await page.getByRole('dialog').waitFor();await page.keyboard.press('Escape');await page.getByRole('dialog').waitFor({state:'hidden'});assert.equal(await page.locator('.heritage-hero-guide').evaluate(e=>e===document.activeElement),true);
-    // "Ask AllBarka" opens the existing AI Buddy panel; the floating launcher stays the same control.
-    await page.goto(origin);await page.locator('.table-ask-buddy').click();const buddy=page.getByRole('dialog',{name:'AllBarka Concierge'});await buddy.waitFor();
+    await page.keyboard.press('ArrowDown');await page.locator('.boutique-suggestion').last().waitFor();await page.keyboard.press('ArrowUp');assert.equal(await page.locator('.boutique-suggestion').last().evaluate(e=>e===document.activeElement),true);
+    await page.keyboard.press('Escape');await page.keyboard.press('ArrowDown');await page.waitForFunction(()=>document.activeElement?.classList.contains('boutique-suggestion'));await page.keyboard.press('Enter');await page.waitForURL('**/product/**');
+    await page.goto(origin);await page.locator('#header-search-btn').click();await search.fill('missing-xyz');await page.locator('.boutique-search-empty').waitFor();await page.keyboard.press('Escape');await search.fill('walnut');await page.keyboard.press('Enter');await page.waitForURL('**/shop?search=walnut');
+    // Relocated planning tools (SelectionGuide, Mehmaan Table, Shop Table Scene) live on /gifting
+    await page.goto(`${origin}/gifting`);await page.locator('.heritage-hero-guide').click();await page.getByRole('dialog').waitFor();await page.keyboard.press('Escape');await page.getByRole('dialog').waitFor({state:'hidden'});assert.equal(await page.locator('.heritage-hero-guide').evaluate(e=>e===document.activeElement),true);
+    for(const selector of ['.heritage-hero-mehmaan','.heritage-hero-table-scene','.heritage-hero-guide']){const box=await page.locator(selector).first().boundingBox();assert.ok(box&&box.height>=44&&box.width>=44,`${selector} touch size on /gifting`);}
+    // Floating AI Buddy launcher opens the existing AI Concierge dialog cleanly on mobile.
+    await page.goto(origin);await page.locator('#header-search-btn').click();
+    for(const selector of ['[data-testid="header-search-panel"] button[type=submit]','[data-testid="header-search-panel"] [data-voice-control] button']){const box=await page.locator(selector).first().boundingBox();assert.ok(box&&box.height>=44&&box.width>=44,`${selector} touch size`);}
+    await page.keyboard.press('Escape');
+    const buddyTrigger=page.getByRole('button',{name:/Open AllBarka AI Buddy|Open AllBarka concierge/i}).first();await buddyTrigger.click();const buddy=page.getByRole('dialog',{name:'AllBarka Concierge'});await buddy.waitFor();
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'buddy open on mobile');
     await page.keyboard.press('Escape');await buddy.waitFor({state:'hidden'});
-    for(const selector of ['.table-ask-buddy','.heritage-hero-guide','.table-discovery button[type=submit]','.table-discovery [data-voice-control]']){const box=await page.locator(selector).first().boundingBox();assert.ok(box&&box.height>=44&&box.width>=44,`${selector} touch size`);}
-    assert.equal(await page.evaluate(()=>{const r=[...document.querySelectorAll('.table-ask-buddy,.heritage-hero-guide,.table-discovery form,.table-discovery [data-voice-control]')].map(e=>e.getBoundingClientRect());return r.every((a,i)=>r.every((b,j)=>i>=j||a.right<=b.left+1||b.right<=a.left+1||a.bottom<=b.top+1||b.bottom<=a.top+1));}),true,'mobile discovery controls do not overlap');
     await page.locator('.table-hero-secondary').click();await page.waitForURL('**/gifting');await page.goto(origin);await page.locator('.table-hero-primary').click();await page.waitForURL('**/shop/dry-fruits');await page.goto(origin);
     // Enlarged root text includes the real header and existing homepage sections.
     for(const width of [360,1440]){
@@ -128,58 +136,20 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
     const before=await page.locator('.table-hero-art').boundingBox();custom.hero.mobileImage='/images/failed-hero.webp';await page.route('**/images/failed-*',r=>r.abort());await page.evaluate(()=>(window as any).fixture.refresh());await page.waitForFunction(()=>document.querySelector<HTMLImageElement>('.heritage-hero-background img')?.style.visibility==='hidden');assert.equal((await page.locator('.table-hero-art').boundingBox())!.height,before!.height);assert.equal(await page.locator('.table-hero-primary').isVisible(),true);
     await page.setViewportSize({width:1440,height:900});await page.waitForFunction(()=>{const i=document.querySelector<HTMLImageElement>('.heritage-hero-background img');return i?.naturalWidth&&getComputedStyle(i).visibility==='visible';});assert.equal(await page.locator('.heritage-hero-background img').evaluate(e=>getComputedStyle(e).animationName),'none');
     const touch=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce'});touch.setDefaultTimeout(10000);
-    await touch.route('**/*',r=>{const u=new URL(r.request().url());if(u.origin!==origin)return r.fulfill({status:200,body:''});if(u.pathname.startsWith('/fonts/')||u.pathname.includes('signature-film-')||u.pathname.includes('signature-table-')||u.pathname.includes('living-gallery-final/hero-'))return r.abort();return r.continue();});const mobile=await touch.newPage();mobile.on('pageerror',e=>errors.push(e.message));await mobile.goto(origin);await mobile.locator('.table-hero-primary').waitFor();await mobile.waitForFunction(()=>document.querySelector<HTMLImageElement>('.heritage-hero-background img')?.style.visibility==='hidden');assert.equal(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
-    await mobile.locator('.heritage-hero-guide').tap();await mobile.getByRole('dialog').waitFor();await mobile.getByRole('dialog').getByRole('button',{name:'Close',exact:true}).tap();await mobile.getByRole('dialog').waitFor({state:'hidden'});await mobile.locator('.table-hero-secondary').tap();await mobile.waitForURL('**/gifting');await touch.close();
-    // The owner-selected background film preserves immediate actions and has
-    // explicit pause/resume, responsive sources and live reduced-motion fallback.
+    await touch.route('**/*',r=>{const u=new URL(r.request().url());if(u.origin!==origin)return r.fulfill({status:200,body:''});if(u.pathname.startsWith('/fonts/')||u.pathname.includes('01-hero-gift-box-dates')||u.pathname.includes('signature-film-')||u.pathname.includes('signature-table-')||u.pathname.includes('living-gallery-final/hero-'))return r.abort();return r.continue();});const mobile=await touch.newPage();mobile.on('pageerror',e=>errors.push(e.message));await mobile.goto(origin);await mobile.locator('.table-hero-primary').waitFor();await mobile.waitForFunction(()=>document.querySelector<HTMLImageElement>('.heritage-hero-background img')?.style.visibility==='hidden');assert.equal(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    await mobile.locator('.table-hero-secondary').tap();await mobile.waitForURL('**/gifting');await mobile.locator('.heritage-hero-guide').tap();await mobile.getByRole('dialog').waitFor();await mobile.getByRole('dialog').getByRole('button',{name:'Close',exact:true}).tap();await mobile.getByRole('dialog').waitFor({state:'hidden'});await touch.close();
+    // Phase 2A signature motion: hero plays ONE orchestrated lid-lift reveal when motion is allowed, and stays static under reduced motion (zero video film).
     const animated=await browser.newContext({viewport:{width:1440,height:1000},reducedMotion:'no-preference'});animated.setDefaultTimeout(10000);
     await animated.route('**/*',r=>new URL(r.request().url()).origin===origin?r.continue():r.fulfill({status:200,body:''}));
     const motionPage=await animated.newPage();motionPage.on('pageerror',e=>errors.push(e.message));await motionPage.goto(origin);
-    const film=motionPage.locator('.table-hero-film');
-    const {HERO_SCENE}=await import('../src/lib/heroScene');
-    if(!HERO_SCENE.desktop.film||!HERO_SCENE.mobile.film){
-      // Still-art scene: no film is paired until matching motion assets exist, so
-      // there is no video, no pause control, and each breakpoint gets its own artwork.
-      await motionPage.waitForFunction(poster=>{const i=document.querySelector<HTMLImageElement>('.heritage-hero-background img');return !!i&&i.naturalWidth>0&&i.currentSrc.endsWith(poster);},HERO_SCENE.desktop.poster);
-      assert.equal(await film.count(),0,'no unrelated film plays over the still art');
-      assert.equal(await motionPage.locator('.table-scene-toggle').count(),0);
-      assert.equal(await motionPage.locator('.table-hero-primary').isVisible(),true);
-      assert.equal(await motionPage.locator('.table-hero-secondary').isVisible(),true);
-      await motionPage.setViewportSize({width:390,height:844});
-      await motionPage.waitForFunction(poster=>document.querySelector<HTMLImageElement>('.heritage-hero-background img')?.currentSrc.endsWith(poster),HERO_SCENE.mobile.poster);
-      assert.equal(await motionPage.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
-    }else{
-      await motionPage.waitForFunction(()=>{const v=document.querySelector<HTMLVideoElement>('.table-hero-film');return v&&v.readyState>=2&&!v.paused&&v.currentTime>0;});
-      assert.equal(await motionPage.locator('.table-hero-primary').isVisible(),true);
-      assert.equal(await film.evaluate((e:HTMLVideoElement)=>e.muted&&e.loop&&e.playsInline),true);
-      assert.equal(await film.getAttribute('src'),HERO_SCENE.desktop.film);
-      await motionPage.getByRole('button',{name:'Pause scene',exact:true}).click();
-      await motionPage.waitForFunction(()=>document.querySelector<HTMLVideoElement>('.table-hero-film')?.paused);
-      assert.equal(await motionPage.getByRole('button',{name:'Play scene',exact:true}).getAttribute('aria-pressed'),'false');
-      await motionPage.getByRole('button',{name:'Play scene',exact:true}).click();
-      await motionPage.waitForFunction(()=>document.querySelector<HTMLVideoElement>('.table-hero-film')?.paused===false);
-      await motionPage.locator('#gift-for-occasion').scrollIntoViewIfNeeded();
-      await motionPage.waitForFunction(()=>document.querySelector<HTMLVideoElement>('.table-hero-film')?.paused);
-      await motionPage.locator('.heritage-hero').scrollIntoViewIfNeeded();
-      await motionPage.waitForFunction(()=>document.querySelector<HTMLVideoElement>('.table-hero-film')?.paused===false);
-      await motionPage.setViewportSize({width:390,height:844});
-      await motionPage.waitForFunction(src=>document.querySelector<HTMLVideoElement>('.table-hero-film')?.currentSrc.endsWith(src),HERO_SCENE.mobile.film!);
-      await motionPage.waitForFunction(()=>document.querySelector<HTMLVideoElement>('.table-hero-film')?.paused===false);
-      await motionPage.locator('.table-scene-toggle').focus();
-      await motionPage.keyboard.press('Space');
-      await motionPage.waitForFunction(()=>document.querySelector<HTMLVideoElement>('.table-hero-film')?.paused);
-      await motionPage.emulateMedia({reducedMotion:'reduce'});
-      await film.waitFor({state:'detached'});
-      assert.equal(await motionPage.locator('.table-scene-toggle').count(),0);
-      assert.equal(await motionPage.locator('.table-hero-primary').isVisible(),true);
-      // A failed film leaves the real responsive poster, links and discovery usable.
-      await motionPage.route('**/videos/**',route=>route.abort());
-      await motionPage.reload();
-      await motionPage.emulateMedia({reducedMotion:'no-preference'});
-      await motionPage.waitForFunction(()=>!document.querySelector('.table-hero-film'));
-      assert.equal(await motionPage.locator('.table-hero-primary').isVisible(),true);
-      assert.equal(await motionPage.locator('.heritage-hero-background img').evaluate((e:HTMLImageElement)=>e.naturalWidth>0),true);
-    }
+    await motionPage.waitForFunction(()=>{const i=document.querySelector<HTMLImageElement>('.heritage-hero-background img');return !!i&&i.naturalWidth>0&&i.currentSrc.includes('01-hero-gift-box-dates.webp');});
+    assert.equal(await motionPage.locator('.table-hero-film').count(),0,'no unrelated film plays over the branded gift box photograph');
+    assert.equal(await motionPage.locator('.table-scene-toggle').count(),0);
+    assert.equal(await motionPage.locator('.table-hero-primary').isVisible(),true);
+    assert.equal(await motionPage.locator('.table-hero-secondary').isVisible(),true);
+    await motionPage.waitForFunction(()=>document.querySelector('[data-testid="premium-hero-prototype"]')?.getAttribute('data-reveal-phase')==='open');
+    await motionPage.setViewportSize({width:390,height:844});
+    assert.equal(await motionPage.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
     await animated.close();
     await fs.writeFile(path.join(shots,'layout-matrix.json'),JSON.stringify({source:'isolated real-route fixture; external resources blocked',layouts},null,2));assert.deepEqual(errors,[]);
   }finally{await browser.close();server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));await fs.rm(temporary,{recursive:true,force:true});}

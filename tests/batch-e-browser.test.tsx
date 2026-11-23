@@ -113,6 +113,7 @@ root.render(
                       <Route index element={<HomePage />} />
                       <Route path="shop" element={<ShopPage />} />
                       <Route path="shop/:category" element={<ShopPage />} />
+                      <Route path="gifting" element={<ShopPage />} />
                       <Route path="product/:id" element={<ProductDetailPage />} />
                       <Route path="reveal/:token" element={<GiftRevealPage />} />
                     </Route>
@@ -334,9 +335,9 @@ root.render(
     assert.equal(pageText.includes('PKR'), false, 'Gift reveal must never display currency to recipient');
 
     // ----------------------------------------------------
-    // TEST 2: M28 Shop the Table Scene Modal
+    // TEST 2: M28 Shop the Table Scene Modal (relocated to /gifting)
     // ----------------------------------------------------
-    await page.goto(`${origin}/`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${origin}/gifting`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.heritage-hero-table-scene', { timeout: 10000 });
 
     const openTableBtn = page.locator('.heritage-hero-table-scene');

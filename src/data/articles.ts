@@ -114,7 +114,7 @@ export const JOURNAL_ARTICLES: JournalArticle[] = [
       {
         heading: '2. Refrigeration: Why Walnuts Require Cold Storage',
         content: [
-          'Walnuts (Akhroot) possess the highest concentration of plant-based alpha-linolenic omega-3 fatty acids among all culinary nuts. These fragile double bonds oxidize rapidly above 21°C.',
+          'Walnuts (Akhroot) contain delicate natural nut oils that oxidize quickly above 21°C, losing their sweet, buttery taste.',
           'If you intend to keep walnuts longer than 14 days, transfer them to an airtight glass container and store them in the middle shelf of your refrigerator (3°C to 5°C). Cold storage halts oxidation completely, preserving sweet, buttery flavors for up to 6 months.'
         ]
       },
@@ -178,7 +178,7 @@ export const JOURNAL_ARTICLES: JournalArticle[] = [
   {
     slug: 'everyday-cooking-serving-ideas',
     title: 'Everyday Cooking & Serving Ideas: From Shahi Biryani to Morning Bowls',
-    subtitle: 'Simple, nutritious ways to incorporate whole raw nuts, dried plums, and seeds into daily meals.',
+    subtitle: 'Simple, flavourful ways to incorporate whole raw nuts, dried plums, and seeds into daily meals.',
     excerpt: 'Dry fruits are not just for winter snacking or formal occasions. Here are effortless ways to integrate them into daily breakfast, lunch, and dinner.',
     category: 'Culinary & Pairings',
     readTime: '5 min read',
@@ -204,10 +204,10 @@ export const JOURNAL_ARTICLES: JournalArticle[] = [
         }
       },
       {
-        heading: '2. The 10-Minute Morning Power Bowl',
+        heading: '2. The 10-Minute Morning Tasting Bowl',
         content: [
-          'Transform plain yogurt or warm porridge into a sustained-energy breakfast by stirring in one tablespoon of organic chia seeds and topping with raw pumpkin seeds and sliced Golden Giri almonds.',
-          'The combination provides 12g of clean plant protein, soluble prebiotic fiber, and essential minerals like magnesium and zinc without any refined sugar.'
+          'Elevate plain yogurt or warm porridge by stirring in one tablespoon of soaked chia seeds and topping with raw pumpkin seeds and sliced Golden Giri almonds.',
+          'The pairing brings crisp crunch, mild toasted aroma, and natural sweetness to the breakfast table without added syrups.'
         ]
       },
       {

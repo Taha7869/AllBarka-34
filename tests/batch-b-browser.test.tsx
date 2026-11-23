@@ -75,6 +75,7 @@ createRoot(document.getElementById('root')!).render(
                       <Route index element={<HomePage />} />
                       <Route path="shop" element={<ShopPage />} />
                       <Route path="shop/:category" element={<ShopPage />} />
+                      <Route path="gifting" element={<ShopPage />} />
                       <Route path="product/:id" element={<ProductDetailPage />} />
                     </Route>
                   </Routes>
@@ -166,9 +167,9 @@ createRoot(document.getElementById('root')!).render(
     const errors = collectBrowserDiagnostics(page, origin);
 
     // ─────────────────────────────────────────────────────────────
-    // 1. M10: "Find Your Taste" Attribute & Texture Finder
+    // 1. M10: "Find Your Taste" Attribute & Texture Finder (relocated to /gifting)
     // ─────────────────────────────────────────────────────────────
-    await page.goto(`${origin}/`);
+    await page.goto(`${origin}/gifting`);
     await page.locator('.heritage-hero-guide').waitFor();
     await page.locator('.heritage-hero-guide').click();
 

@@ -1,22 +1,16 @@
-import {useStorefrontContent} from '../contexts/StorefrontContentContext';
-import StorefrontBanner from '../components/StorefrontBanner';
 import React from 'react';
-import { Link, useNavigate, useOutletContext } from 'react-router-dom';
-import { Product } from '../types';
-import Hero from '../components/Hero';
-import CategoryCarousel from '../components/CategoryCarousel';
-import BoutiqueSelections from '../components/BoutiqueSelections';
-import FindGiftOccasionSection from '../components/FindGiftOccasionSection';
-import GiftFinder from '../components/GiftFinder';
-import CollectionLogoLoop from '../components/CollectionLogoLoop';
-import AllBarkaMovingReviews from '../components/AllBarkaMovingReviews';
-import FAQSection from '../components/FAQSection';
-import ScrollReveal from '../components/motion/ScrollReveal';
-import WordScrollReveal from '../components/motion/WordScrollReveal';
-import MagneticButton from '../components/motion/MagneticButton';
-import { useLanguage } from '../contexts/LanguageContext';
+import { Link, useOutletContext } from 'react-router-dom';
+import { ArrowUpRight, Gift, ListChecks, Truck } from 'lucide-react';
+import type { Product } from '../types';
+import { useStorefrontContent } from '../contexts/StorefrontContentContext';
 import { useMerchandisingSettings } from '../contexts/MerchandisingContext';
-import { ListChecks, Gift, Truck, ArrowUpRight, ShoppingBag } from 'lucide-react';
+import { useLanguage, type LanguageCode } from '../contexts/LanguageContext';
+import StorefrontBanner from '../components/StorefrontBanner';
+import PremiumHeroPrototype from '../components/PremiumHeroPrototype';
+import SignatureCollectionsSection from '../components/SignatureCollectionsSection';
+import HouseSelectionsSection from '../components/HouseSelectionsSection';
+import GiftingAtelierSection from '../components/GiftingAtelierSection';
+import PatronVoicesSection from '../components/PatronVoicesSection';
 
 interface OutletContextType {
   setCartOpen: (open: boolean) => void;
@@ -24,160 +18,233 @@ interface OutletContextType {
   handleAddToCart: (productId: string, weight: string) => void;
 }
 
-const servicePillars = [
-  { icon: ListChecks, number: '01', title: 'home.purity', copy: 'home.purityCopy', path: '/shop', action: 'footer.allProducts' },
-  { icon: Gift, number: '02', title: 'home.freshness', copy: 'home.freshnessCopy', path: '/gifting', action: 'gift.browse' },
-  { icon: Truck, number: '03', title: 'home.delivery', copy: 'home.deliveryCopy', path: '/policies/shipping', action: 'footer.shipping' },
-];
+const HOUSE_STANDARD_COPY: Record<
+  LanguageCode,
+  {
+    eyebrow: string;
+    heading: string;
+    lead: string;
+    faqLink: string;
+    pillars: Array<{
+      number: string;
+      icon: typeof ListChecks;
+      title: string;
+      copy: string;
+      path: string;
+      action: string;
+    }>;
+  }
+> = {
+  en: {
+    eyebrow: 'The Lahore house standard',
+    heading: 'Quiet standards behind every sealed box.',
+    lead: 'Prepared in Lahore for family tables and formal gifting across Pakistan — clear weights, honest origins and careful dispatch.',
+    faqLink: 'Shipping & Care FAQ',
+    pillars: [
+      {
+        number: '01',
+        icon: ListChecks,
+        title: 'Hand-Graded Harvests',
+        copy: 'Whole kernels, plump dates and Grade-A Sargol saffron sorted by size and lot before packing — listed clearly with weight and price.',
+        path: '/shop',
+        action: 'Browse all products',
+      },
+      {
+        number: '02',
+        icon: Gift,
+        title: 'Packed Fresh in Lahore',
+        copy: 'Sealed to order in barrier pouches and rigid presentation boxes, with ribbon choices and printed message cards ready for gifting.',
+        path: '/gifting',
+        action: 'Explore gift boxes',
+      },
+      {
+        number: '03',
+        icon: Truck,
+        title: 'Nationwide & Gifting Care',
+        copy: 'Scheduled dispatch across Lahore and nationwide delivery across Pakistan with transparent shipping shown at checkout.',
+        path: '/policies/shipping',
+        action: 'Shipping policy',
+      },
+    ],
+  },
+  ur: {
+    eyebrow: 'لاہور ہاؤس معیار',
+    heading: 'ہر بند باکس کے پیچھے ہمارا سادہ اور پختہ معیار۔',
+    lead: 'لاہور میں خاندانی دسترخوان اور باوقار تحائف کے لیے تازہ تیاری — واضح وزن، درست تفصیل اور احتیاط سے ترسیل۔',
+    faqLink: 'ترسیل اور سوالات',
+    pillars: [
+      {
+        number: '01',
+        icon: ListChecks,
+        title: 'ہاتھ سے منتخب فصل',
+        copy: 'ثابت میوہ جات، منتخب کھجوریں اور سرگول زعفران وزن اور معیار کے مطابق چھانٹ کر صاف قیمت کے ساتھ پیش کیے جاتے ہیں۔',
+        path: '/shop',
+        action: 'تمام مصنوعات دیکھیں',
+      },
+      {
+        number: '02',
+        icon: Gift,
+        title: 'لاہور میں تازہ پیکنگ',
+        copy: 'آرڈر پر ایئر ٹائٹ پاؤچز اور مضبوط گفٹ باکسز میں ربن اور پرنٹڈ گفٹ کارڈ کے ساتھ پیک۔',
+        path: '/gifting',
+        action: 'گفٹ باکسز دیکھیں',
+      },
+      {
+        number: '03',
+        icon: Truck,
+        title: 'ملک بھر میں باوقار ترسیل',
+        copy: 'لاہور اور پاکستان بھر میں محفوظ ترسیل، چیک آؤٹ پر واضح ڈلیوری چارجز کے ساتھ۔',
+        path: '/policies/shipping',
+        action: 'شپنگ پالیسی',
+      },
+    ],
+  },
+  ar: {
+    eyebrow: 'معيار دار لاهور',
+    heading: 'معايير هادئة وراء كل صندوق مختوم.',
+    lead: 'تُجهّز في لاهور لمائدة العائلة والهدايا الرسمية في أنحاء باكستان — أوزان واضحة ومصادر موثقة وتوصيل بعناية.',
+    faqLink: 'أسئلة الشحن والعناية',
+    pillars: [
+      {
+        number: '01',
+        icon: ListChecks,
+        title: 'محاصيل منتقاة يدوياً',
+        copy: 'مكسرات كاملة وتمور مختارة وزعفران سرغول فاخر تُفرز حسب الحجم والدرجة قبل التعبئة مع وضوح الوزن والسعر.',
+        path: '/shop',
+        action: 'تصفح جميع المنتجات',
+      },
+      {
+        number: '02',
+        icon: Gift,
+        title: 'تعبئة طازجة في لاهور',
+        copy: 'تُختم عند الطلب في عبوات محكمة وصناديق هدايا متينة مع شرائط وبطاقات إهداء مطبوعة.',
+        path: '/gifting',
+        action: 'استكشف صناديق الهدايا',
+      },
+      {
+        number: '03',
+        icon: Truck,
+        title: 'عناية التوصيل والهدايا',
+        copy: 'شحن منظم في لاهور وإلى مختلف مدن باكستان مع توضيح رسوم التوصيل بشفافية عند الدفع.',
+        path: '/policies/shipping',
+        action: 'سياسة الشحن',
+      },
+    ],
+  },
+};
 
 export default function HomePage() {
-  const navigate = useNavigate();
-  const { t, isRtl } = useLanguage();
+  const { language, isRtl } = useLanguage();
   const merchandisingSettings = useMerchandisingSettings();
-  const content=useStorefrontContent();
+  const content = useStorefrontContent();
   const outlet = useOutletContext<OutletContextType>() || ({} as Partial<OutletContextType>);
-  const setCartOpen = outlet.setCartOpen ?? (() => {});
   const setSelectedQuickViewProduct = outlet.setSelectedQuickViewProduct ?? (() => {});
   const handleAddToCart = outlet.handleAddToCart ?? (() => {});
+  const standard = HOUSE_STANDARD_COPY[language] || HOUSE_STANDARD_COPY.en;
 
-  const handleSearch = (query: string) => navigate(`/shop?search=${encodeURIComponent(query)}`);
-
-  const sections = {
-    'collections': (<>
-      {/* ── 2. Explore Our Collections (Compact destination cards) ───────── */}
-      <ScrollReveal className="w-full">
-        <CategoryCarousel settings={merchandisingSettings} />
-      </ScrollReveal>
-
-    </>),
-    'showcase': (<>
-      {/* ── 3. Boutique Selections (The SINGLE homepage product showcase) ─── */}
-      <ScrollReveal className="w-full" index={0}>
-        <BoutiqueSelections
-          settings={merchandisingSettings}
-          onAddToCart={handleAddToCart}
-          onQuickView={setSelectedQuickViewProduct}
-        />
-      </ScrollReveal>
-
-    </>),
-    'occasions': (<>
-      {/* ── 4. Find a Gift for Your Occasion (Compact destination links) ─── */}
-      <ScrollReveal className="w-full" index={0}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mb-8">
-          <GiftFinder onProductView={setSelectedQuickViewProduct} />
-        </div>
-        <FindGiftOccasionSection settings={merchandisingSettings} />
-      </ScrollReveal>
-
-    </>),
-    'care': (<>
-      {/* ── 5. Compact genuine feedback & essential service information/FAQ ─ */}
-      <section dir={isRtl ? 'rtl' : 'ltr'} className="editorial-care w-full overflow-hidden bg-[#042821] py-16 text-[#FFFCF7] sm:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="section-divider-on-emerald mb-10" aria-hidden="true" />
-
-          <div className="mb-10 grid gap-5 text-start lg:grid-cols-[1fr_auto] lg:items-end">
-            <ScrollReveal className="max-w-2xl" index={0}>
-              <span dir="auto" className="mb-3 block text-[10px] font-bold uppercase tracking-[0.3em] text-[#E4C783]">
-                {t('home.careEyebrow')}
-              </span>
-              <h2 dir="auto" className="font-serif text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl">
-                <WordScrollReveal text={t('home.careTitle')} />
-              </h2>
-              <p dir="auto" className="mt-4 max-w-xl text-sm leading-relaxed text-[#F6F1EA]/80">
-                {t('home.careCopy')}
+  const sectionRenderers: Partial<Record<string, React.ReactNode>> = {
+    collections: <SignatureCollectionsSection settings={merchandisingSettings} />,
+    showcase: (
+      <HouseSelectionsSection
+        settings={merchandisingSettings}
+        onAddToCart={handleAddToCart}
+        onQuickView={setSelectedQuickViewProduct}
+      />
+    ),
+    occasions: <GiftingAtelierSection settings={merchandisingSettings} />,
+    care: (
+      <section
+        dir={isRtl ? 'rtl' : 'ltr'}
+        aria-labelledby="lahore-house-standard-heading"
+        data-testid="lahore-house-standard"
+        className="editorial-care w-full bg-[#042821] py-14 sm:py-20 text-[#FDFBF7]"
+      >
+        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
+          <div className="mb-10 flex flex-col items-start justify-between gap-5 border-b border-[#C7982F]/25 pb-8 lg:flex-row lg:items-end">
+            <div className="max-w-2xl">
+              <p dir="auto" className="text-xs sm:text-[13px] font-medium text-[#E4C783]">
+                {standard.eyebrow}
               </p>
-            </ScrollReveal>
-
-            <ScrollReveal index={1}>
-              <MagneticButton
-                as="button"
-                onClick={() => navigate('/faq')}
-                className="focus-ring inline-flex min-h-11 w-fit items-center gap-2 rounded-full border border-[#C7982F]/55 px-5 text-xs font-bold uppercase tracking-[0.16em] text-[#FFFCF7] transition-colors hover:bg-[#C7982F] hover:text-[#042821]"
+              <h2
+                id="lahore-house-standard-heading"
+                lang={language}
+                dir="auto"
+                className={`mt-2 font-serif text-2xl sm:text-4xl font-semibold text-[#FDFBF7] ${
+                  language === 'ur' ? 'font-urdu leading-[1.9]' : language === 'ar' ? 'font-arabic leading-[1.5]' : 'leading-[1.15] tracking-[-0.015em]'
+                }`}
               >
-                {t('home.standards')} <ArrowUpRight size={15} aria-hidden="true" />
-              </MagneticButton>
-            </ScrollReveal>
+                {standard.heading}
+              </h2>
+              <p dir="auto" className="mt-3 max-w-xl text-sm leading-relaxed text-[#F2ECE2]/80">
+                {standard.lead}
+              </p>
+            </div>
+
+            <Link
+              to="/faq"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-[#C7982F]/55 px-5 py-2.5 text-xs font-semibold text-[#FDFBF7] transition-colors hover:bg-[#C7982F] hover:text-[#042821] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E4C783]"
+            >
+              <span dir="auto">{standard.faqLink}</span>
+              <ArrowUpRight size={15} aria-hidden="true" />
+            </Link>
           </div>
 
-          <div className="grid gap-3 text-start md:grid-cols-3 md:gap-4">
-            {servicePillars.map(({ icon: Icon, number, title, copy, path, action }, i) => (
-              <ScrollReveal key={number} index={i}>
-                <article className="editorial-care-pillar group p-5 transition-colors sm:p-6 h-full">
-                  <div className="mb-7 flex items-center justify-between">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#C7982F]/35 bg-[#C7982F]/10 text-[#E4C783]">
-                      <Icon size={21} aria-hidden="true" />
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            {standard.pillars.map(({ number, icon: Icon, title, copy, path, action }) => (
+              <article
+                key={number}
+                className="flex flex-col justify-between rounded-2xl border border-[#C7982F]/25 bg-[#1E3A2B]/40 p-6"
+              >
+                <div>
+                  <div className="mb-6 flex items-center justify-between">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#C7982F]/35 bg-[#C7982F]/10 text-[#E4C783]">
+                      <Icon size={20} aria-hidden="true" />
                     </span>
-                    <span className="font-serif text-sm text-[#E4C783]/70">{number}</span>
+                    <span className="font-serif text-sm text-[#E4C783]/75">{number}</span>
                   </div>
-                  <h3 dir="auto" className="font-serif text-xl font-semibold text-[#FFFCF7]">{t(title)}</h3>
-                  <p dir="auto" className="mt-3 text-xs leading-6 text-[#F6F1EA]/80 sm:text-sm">{t(copy)}</p>
-                  <Link to={path} className="editorial-care-link focus-ring">{t(action)} <ArrowUpRight size={16} aria-hidden="true" /></Link>
-                </article>
-              </ScrollReveal>
+                  <h3 dir="auto" className="font-serif text-xl font-semibold text-[#FDFBF7]">
+                    {title}
+                  </h3>
+                  <p dir="auto" className="mt-3 text-sm leading-relaxed text-[#F2ECE2]/80">
+                    {copy}
+                  </p>
+                </div>
+
+                <Link
+                  to={path}
+                  className="editorial-care-link mt-6 inline-flex min-h-[44px] w-fit items-center gap-1.5 text-xs font-semibold text-[#E4C783] underline underline-offset-4 hover:text-[#FDFBF7] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#E4C783]"
+                >
+                  <span dir="auto">{action}</span>
+                  <ArrowUpRight size={15} aria-hidden="true" />
+                </Link>
+              </article>
             ))}
           </div>
-
-          <div className="section-divider-on-emerald mt-10" aria-hidden="true" />
         </div>
       </section>
-
-    </>),
-    'reviews': (<>
-      {/* Genuine Customer Feedback */}
-      <ScrollReveal className="w-full" index={0}>
-        <AllBarkaMovingReviews />
-      </ScrollReveal>
-
-    </>),
-    'faq': (<>
-      {/* Essential Service Information & FAQ */}
-      <ScrollReveal className="w-full border-t border-[var(--color-border)] bg-[var(--color-surface)]" index={0}>
-        <FAQSection />
-      </ScrollReveal>
-
-    </>),
+    ),
+    reviews: <PatronVoicesSection />,
   };
+
+  // Exactly 6 serene sections on live Home: Hero (#1) + 5 calm below-the-fold sections (#2-#6).
+  // FAQ lives at /faq; GiftFinder & table planners live at /gifting & /occasions; search/voice live in Header.
+  const orderedBelowFold = content.sections.filter(
+    (entry) => entry.visible && entry.id !== 'faq' && Boolean(sectionRenderers[entry.id]),
+  );
+
   return (
-    <div className="editorial-home flex w-full flex-col items-center bg-[var(--color-base)] text-[var(--color-ink)]">
+    <div className="editorial-home flex w-full flex-col items-center bg-[var(--color-base,#FDFBF7)] text-[var(--color-text-primary,#29231D)]">
+      <StorefrontBanner />
 
-      <StorefrontBanner/>
-      {/* ── 1. Dry-fruit-led premium hero ─────────────────────────────────── */}
-      <Hero
-        onOpenCart={() => setCartOpen(true)}
-        onSearch={handleSearch}
-        onSelectCategory={(category, query) =>
-          navigate(
-            `${category === 'all' ? '/shop' : `/shop/${category}`}${
-              query ? `?search=${encodeURIComponent(query)}` : ''
-            }`
-          )
-        }
-      />
+      {/* Section 1 — Calm Hero with ONE signature presentation lid reveal */}
+      <PremiumHeroPrototype />
 
-      {content.sections.filter(entry=>entry.visible).map(entry=><div key={entry.id} data-content-section={entry.id} className="content-home-section w-full">{sections[entry.id]}</div>)}
-
-      {/* ── Delivery and packing assurances ───────────────────────────────── */}
-      <div className="editorial-assurances w-full border-y border-[var(--color-border)] bg-[var(--color-surface)]">
-        <div className="mx-auto grid max-w-7xl grid-cols-1 divide-y divide-[var(--color-border)] px-5 sm:grid-cols-3 sm:divide-x sm:divide-y-0 sm:px-8">
-          {[
-            { Icon: ListChecks, title: 'footer.pure', copy: 'footer.pureCopy' },
-            { Icon: Truck, title: 'boutique.delivery', copy: 'boutique.deliveryValue' },
-            { Icon: ShoppingBag, title: 'boutique.gifts', copy: 'boutique.giftsDetail' },
-          ].map(({ Icon, title, copy }) => (
-            <div key={title} className="flex items-center gap-4 px-3 py-5 sm:justify-center sm:py-7">
-              <Icon size={22} className="shrink-0 text-[var(--color-accent-text)]" />
-              <div>
-                <p className="font-serif text-base font-semibold">{t(title)}</p>
-                <p className="mt-1 text-xs text-[var(--color-text-secondary)]">{t(copy)}</p>
-              </div>
-            </div>
-          ))}
+      {/* Sections 2–6 — Signature Collections, House Selections, Gifting Atelier, House Standard, Patron Voices */}
+      {orderedBelowFold.map((entry) => (
+        <div key={entry.id} data-content-section={entry.id} className="content-home-section w-full">
+          {sectionRenderers[entry.id]}
         </div>
-        <CollectionLogoLoop />
-      </div>
-
+      ))}
     </div>
   );
 }

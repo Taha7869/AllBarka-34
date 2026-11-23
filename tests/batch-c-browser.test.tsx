@@ -79,6 +79,7 @@ createRoot(document.getElementById('root')!).render(
                       <Route index element={<HomePage />} />
                       <Route path="shop" element={<ShopPage />} />
                       <Route path="shop/:category" element={<ShopPage />} />
+                      <Route path="gifting" element={<ShopPage />} />
                       <Route path="product/:id" element={<ProductDetailPage />} />
                     </Route>
                   </Routes>
@@ -176,9 +177,9 @@ createRoot(document.getElementById('root')!).render(
     const errors = collectBrowserDiagnostics(page, origin);
 
     // ─────────────────────────────────────────────────────────────
-    // 1. M12: Mehmaan Table Planner Acceptance
+    // 1. M12: Mehmaan Table Planner Acceptance (relocated to /gifting)
     // ─────────────────────────────────────────────────────────────
-    await page.goto(`${origin}/`);
+    await page.goto(`${origin}/gifting`);
     const mehmaanTrigger = page.locator('.heritage-hero-mehmaan');
     await mehmaanTrigger.waitFor();
     await mehmaanTrigger.click();
@@ -416,8 +417,8 @@ createRoot(document.getElementById('root')!).render(
     await page.evaluate(() => (window as any).fixture.setLanguage('ur'));
     await page.waitForTimeout(400);
 
-    // Open Mehmaan modal in Urdu
-    await page.goto(`${origin}/`);
+    // Open Mehmaan modal in Urdu (relocated to /gifting)
+    await page.goto(`${origin}/gifting`);
     await page.locator('.heritage-hero-mehmaan').click();
     await mehmaanModal.waitFor();
 

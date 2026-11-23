@@ -6,11 +6,19 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { MemoryRouter } from 'react-router-dom';
 import { LanguageProvider } from '../src/contexts/LanguageContext';
+import { ThemeProvider } from '../src/contexts/ThemeContext';
+import { CatalogProvider } from '../src/contexts/CatalogContext';
+import { MerchandisingProvider } from '../src/contexts/MerchandisingContext';
+import { ProductMediaProvider } from '../src/contexts/ProductMediaContext';
+import { CartProvider } from '../src/contexts/CartContext';
+import { StorefrontContentProvider } from '../src/contexts/StorefrontContentContext';
 import PremiumHeroPrototype, {
   PREMIUM_HERO_COPY,
   PREMIUM_HERO_IMAGE,
 } from '../src/components/PremiumHeroPrototype';
 import PremiumHomePreviewPage from '../src/pages/PremiumHomePreviewPage';
+import HomePage from '../src/pages/HomePage';
+import { PRODUCTS } from '../src/data/products';
 
 test('PremiumHeroPrototype renders EN, UR (RTL), and AR (RTL) copy with zero health claims and valid links', () => {
   const forbiddenHealthClaims = /\b(cures?|heals?|prevents?|treats?|boosts?|immunity|diabetes|cancer)\b/i;
@@ -19,8 +27,7 @@ test('PremiumHeroPrototype renders EN, UR (RTL), and AR (RTL) copy with zero hea
     const copy = PREMIUM_HERO_COPY[lang];
     for (const text of [
       copy.eyebrow,
-      copy.headlineLead,
-      copy.headlineAccent,
+      copy.headline,
       copy.description,
       copy.primaryCta,
       copy.secondaryCta,
@@ -29,6 +36,7 @@ test('PremiumHeroPrototype renders EN, UR (RTL), and AR (RTL) copy with zero hea
     ]) {
       assert.ok(text.trim().length > 0, `${lang} hero copy must be non-empty`);
       assert.doesNotMatch(text, forbiddenHealthClaims, `${lang} copy must never make health claims`);
+      assert.doesNotMatch(text, /kashmiri\s+saffron/i, `${lang} copy must not claim Kashmiri saffron (catalog has Sargol saffron)`);
     }
 
     const html = renderToStaticMarkup(
@@ -88,5 +96,58 @@ test('PremiumHomePreviewPage renders isolated preview notice and all 6 branded s
   ];
   for (const rel of expectedSamples) {
     assert.ok(fs.existsSync(path.resolve(rel)), `Missing required Phase 1 deliverable: ${rel}`);
+  }
+});
+
+test('Phase 2A live HomePage renders 6 calm sections with zero marquees, zero auto-rotate, and clean catalog copy', () => {
+  const html = renderToStaticMarkup(
+    <MemoryRouter initialEntries={['/']}>
+      <ThemeProvider>
+        <LanguageProvider initialLanguage="en">
+          <CatalogProvider initialProducts={PRODUCTS}>
+            <MerchandisingProvider>
+              <ProductMediaProvider>
+                <CartProvider>
+                  <StorefrontContentProvider>
+                    <HomePage />
+                  </StorefrontContentProvider>
+                </CartProvider>
+              </ProductMediaProvider>
+            </MerchandisingProvider>
+          </CatalogProvider>
+        </LanguageProvider>
+      </ThemeProvider>
+    </MemoryRouter>,
+  );
+
+  assert.match(html, /data-testid="premium-hero-prototype"/, 'Live hero promoted');
+  assert.match(html, /id="allbarka-pantry"/, 'Signature Collections rendered');
+  assert.match(html, /id="boutique-selections"/, 'House Selections rendered');
+  assert.match(html, /data-manual-tabs="true"/, 'House Selections strictly manual');
+  assert.match(html, /id="gift-for-occasion"/, 'Gifting Atelier rendered');
+  assert.match(html, /editorial-care/, 'Lahore House Standard rendered');
+  assert.match(html, /data-testid="patron-voices-section"/, 'Static Patron Voices rendered');
+  assert.doesNotMatch(html, /animate-scroll|marquee/i, 'No scrolling marquee on live homepage');
+  assert.doesNotMatch(html, /Kashmiri saffron/i, 'No unverified Kashmiri saffron claim on homepage');
+
+  const bannedHealth = /\b(antimicrobial|antioxidant|anti-inflammatory|immunity|immun\w*|cures?|heals?|detox|medicinal|sugar\s*control|diabet\w*|cancer|boosts?\s+(?:energy|immunity|brain|health))\b/i;
+  for (const product of PRODUCTS) {
+    const visibleFields = [
+      product.desc_en,
+      product.desc_ur,
+      product.desc_ar,
+      product.health_en,
+      product.health_ur,
+      product.health_ar,
+      product.recipe_en,
+      product.recipe_ur,
+      product.recipe_ar,
+      product.tag_en,
+      product.tag_ur,
+      product.tag_ar,
+    ].filter(Boolean) as string[];
+    for (const val of visibleFields) {
+      assert.doesNotMatch(val, bannedHealth, `Health wording found in ${product.id}: ${val}`);
+    }
   }
 });

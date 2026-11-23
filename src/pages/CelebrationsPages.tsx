@@ -3,6 +3,8 @@ import { Link, Navigate, useLocation, useParams, useSearchParams } from 'react-r
 import { ArrowUpRight } from 'lucide-react';
 import SEO from '../components/SEO';
 import ShopPage from './ShopPage';
+import GiftFinder from '../components/GiftFinder';
+import GiftingPlanningToolsBar from '../components/GiftingPlanningToolsBar';
 import { useLanguage } from '../contexts/LanguageContext';
 import { openOccasionInquiryModal } from '../components/OccasionInquiryModal';
 import { normalizeOccasionSlug } from '../config/categories';
@@ -163,6 +165,11 @@ export function CelebrationsHubPage() {
       <SEO title={t('celeb.hubTitle')} description={t('celeb.hubLead')} canonicalPath="/occasions" />
       <PageHeader eyebrow={t('celeb.eyebrow')} title={<h1 className="celeb-title">{t('celeb.hubTitle')}</h1>} lead={t('celeb.hubLead')} />
       <ModeTabs active="occasion" />
+
+      <div className="my-6 space-y-4">
+        <GiftFinder compact />
+        <GiftingPlanningToolsBar />
+      </div>
 
       <section className="celeb-ready" aria-labelledby="celeb-ready-title">
         <div><h2 id="celeb-ready-title">{t('celeb.readyNow')}</h2><p>{t('celeb.readyNowLead')}</p></div>
