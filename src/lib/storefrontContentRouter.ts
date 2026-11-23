@@ -9,19 +9,27 @@ import {
 } from './storefrontContent';
 import { sanitizePublishedReviews, type PublishedPatronReview } from './publishedReviews';
 
+// Spark plan read quota: this runs on every storefront-content request, so keep it cached.
+export const PUBLISHED_REVIEWS_CACHE_MS = 5 * 60_000;
+let reviewsCache: { db: Firestore; at: number; value: PublishedPatronReview[] } | null = null;
+export function resetPublishedReviewsCache() { reviewsCache = null; }
+
 export async function readPublishedReviews(db: Firestore | null): Promise<PublishedPatronReview[]> {
   if (!db) return [];
+  if (reviewsCache && reviewsCache.db === db && Date.now() - reviewsCache.at < PUBLISHED_REVIEWS_CACHE_MS) return reviewsCache.value;
   try {
     const snap = await db.collection('reviews').where('published', '==', true).limit(12).get();
     const docs = Array.isArray(snap?.docs) ? snap.docs : [];
-    return sanitizePublishedReviews(
+    const value = sanitizePublishedReviews(
       docs.map((doc) => ({
         id: doc.id,
         ...(typeof doc.data === 'function' ? doc.data() : {}),
       })),
     );
+    reviewsCache = { db, at: Date.now(), value };
+    return value;
   } catch {
-    return [];
+    return reviewsCache?.db === db ? reviewsCache.value : [];
   }
 }
 

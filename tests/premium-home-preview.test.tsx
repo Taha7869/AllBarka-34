@@ -137,7 +137,7 @@ test('Phase 2A live HomePage renders 6 calm sections with zero marquees, zero au
   // Verify Patron Voices, TracingReviews & DarkReviews render ONLY admin-published real-order reviews
   const realOrderReview: PublishedPatronReview = {
     id: 'rev-order-ab-901',
-    orderId: 'AB-2026-0901',
+    verifiedOrder: true,
     name_en: 'Tariq Mahmood',
     name_ur: 'طارق محمود',
     name_ar: 'طارق محمود',

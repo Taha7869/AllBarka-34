@@ -1,6 +1,7 @@
 export interface PublishedPatronReview {
   id: string;
-  orderId: string;
+  /** Always true: the review was linked to a real order. The order id itself is never sent to browsers. */
+  verifiedOrder: true;
   name_en: string;
   name_ur: string;
   name_ar: string;
@@ -45,7 +46,8 @@ export function sanitizePublishedReviews(raw: unknown): PublishedPatronReview[] 
     if (!isPublished) continue;
 
     const orderId = cleanText(rec.orderId, 80);
-    if (!orderId || orderId.length < 2) continue;
+    const verifiedOrder = (orderId.length >= 2) || rec.verifiedOrder === true;
+    if (!verifiedOrder) continue;
 
     const reviewText = cleanText(rec.review ?? rec.comment ?? rec.quote, 1200);
     if (!reviewText) continue;
@@ -53,7 +55,7 @@ export function sanitizePublishedReviews(raw: unknown): PublishedPatronReview[] 
     const nameEn = cleanText(rec.name_en ?? rec.customerName ?? rec.name, 120);
     if (!nameEn) continue;
 
-    const id = cleanText(rec.id, 80) || `rev-${orderId}-${i + 1}`;
+    const id = cleanText(rec.id, 80) || `rev-${i + 1}`;
     if (seen.has(id)) continue;
     seen.add(id);
 
@@ -63,7 +65,7 @@ export function sanitizePublishedReviews(raw: unknown): PublishedPatronReview[] 
 
     out.push({
       id,
-      orderId,
+      verifiedOrder: true,
       name_en: nameEn,
       name_ur: cleanText(rec.name_ur, 120) || nameEn,
       name_ar: cleanText(rec.name_ar, 120) || nameEn,

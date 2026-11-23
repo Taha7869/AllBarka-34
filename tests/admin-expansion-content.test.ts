@@ -4,7 +4,7 @@ import express from 'express';
 import {once} from 'node:events';
 import {memoryFirestore} from './helpers/memoryFirestore';
 import {DEFAULT_STOREFRONT_CONTENT,validateStorefrontContent,validatePublicStorefrontContent,contentDestination,publicStorefrontContent} from '../src/lib/storefrontContent';
-import {createStorefrontContentRouter} from '../src/lib/storefrontContentRouter';
+import {createStorefrontContentRouter,resetPublishedReviewsCache} from '../src/lib/storefrontContentRouter';
 import {contentJournal,contentNavigation} from '../src/lib/contentPresentation';
 import {MAIN_NAV_ITEMS} from '../src/config/navigation';
 import {routeMetadata,renderRouteDocument} from '../src/lib/routeDocument';
@@ -43,7 +43,8 @@ test('real content API isolates drafts, validates publish, rejects stale/unautho
     await db.collection('reviews').doc('rev-published-1').set({published:true,orderId:'AB-2026-1001',name_en:'Bilal Ahmed',location:'DHA Phase 6, Lahore',purchasedItem:'Ajwa Dates',review:'Packed neatly and fresh.',rating:5,phone:'03001234567',email:'private@example.com'});
     await db.collection('reviews').doc('rev-draft-2').set({published:false,orderId:'AB-2026-1002',name_en:'Draft Hidden',location:'Lahore',review:'Unpublished draft.',rating:5});
     await db.collection('reviews').doc('rev-no-order-3').set({published:true,name_en:'No Order',location:'Lahore',review:'Missing orderId.',rating:5});
-    publicValue=await (await fetch(`${origin}/api/storefront-content`)).json();assert.equal(publicValue.publishedReviews.length,1);assert.equal(publicValue.publishedReviews[0].name_en,'Bilal Ahmed');assert.equal(publicValue.publishedReviews[0].phone,undefined);assert.equal(publicValue.publishedReviews[0].email,undefined);
+    resetPublishedReviewsCache();
+    publicValue=await (await fetch(`${origin}/api/storefront-content`)).json();assert.equal(publicValue.publishedReviews.length,1);assert.equal(publicValue.publishedReviews[0].orderId,undefined);assert.equal(publicValue.publishedReviews[0].verifiedOrder,true);assert.equal(publicValue.publishedReviews[0].name_en,'Bilal Ahmed');assert.equal(publicValue.publishedReviews[0].phone,undefined);assert.equal(publicValue.publishedReviews[0].email,undefined);
     assert.equal((await request('publish',{expectedRevision:1})).status,200);publicValue=await (await fetch(`${origin}/api/storefront-content`)).json();assert.equal(publicValue.content.banner.text.en,'Merchant announcement');assert.equal(publicValue.revision,2);assert.equal(publicValue.updatedBy,undefined);
     const incomplete=draft();incomplete.hero.enabled=true;assert.equal((await request('draft',{expectedRevision:2,content:incomplete})).status,200);assert.equal((await request('publish',{expectedRevision:3})).status,400);
     assert.equal((records.get('storefrontContent/main') as any).liveRevision,2);assert.equal([...records.keys()].filter(x=>x.startsWith('storefrontContentAudits/')).length,3);
