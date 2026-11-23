@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'motion/react';
 import { ArrowRight, RotateCcw } from 'lucide-react';
 import { useLanguage, type LanguageCode } from '../contexts/LanguageContext';
 import { useStorefrontContent } from '../contexts/StorefrontContentContext';
@@ -7,6 +8,7 @@ import { contentText } from '../lib/storefrontContent';
 import { useMerchandisingSettings } from '../contexts/MerchandisingContext';
 import { getSeasonalTheme, pickLocalizedSeasonal } from '../lib/seasonalHomepage';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
+import { MOTION_DURATION, MOTION_EASE, MOTION_EASE_CSS } from '../lib/motion';
 import { AllBarkaCrestVector } from './AllBarkaLogo';
 
 export const PREMIUM_HERO_IMAGE = '/images/drafts-premium-20261122/01-hero-gift-box-dates.webp';
@@ -102,6 +104,9 @@ export default function PremiumHeroPrototype({
   const [revealRun, setRevealRun] = useState(0);
   const [phase, setPhase] = useState<RevealPhase>(() => (reducedMotion ? 'open' : 'sealed'));
   const [imageHidden, setImageHidden] = useState(false);
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const parallaxImgRef = useRef<HTMLDivElement | null>(null);
+  const parallaxRafRef = useRef<number>(0);
 
   useEffect(() => {
     setImageHidden(false);
@@ -114,9 +119,9 @@ export default function PremiumHeroPrototype({
     }
 
     setPhase('sealed');
-    const t1 = window.setTimeout(() => setPhase('pressing'), 90);
-    const t2 = window.setTimeout(() => setPhase('opening'), 330);
-    const t3 = window.setTimeout(() => setPhase('open'), 1160);
+    const t1 = window.setTimeout(() => setPhase('pressing'), 80);
+    const t2 = window.setTimeout(() => setPhase('opening'), 280);
+    const t3 = window.setTimeout(() => setPhase('open'), 980);
 
     return () => {
       window.clearTimeout(t1);
@@ -124,6 +129,45 @@ export default function PremiumHeroPrototype({
       window.clearTimeout(t3);
     };
   }, [reducedMotion, customHero.enabled, revealRun]);
+
+  // Subtle desktop-only mouse parallax on the hero visual (max ±8px, transform only).
+  useEffect(() => {
+    if (reducedMotion || typeof window === 'undefined') return;
+    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+    const section = sectionRef.current;
+    const target = parallaxImgRef.current;
+    if (!section || !target) return;
+
+    const applyOffset = (x: number, y: number) => {
+      target.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0) scale(1.03)`;
+    };
+
+    const handleMove = (event: MouseEvent) => {
+      const rect = section.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const nx = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
+      const ny = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
+      const px = Math.max(-8, Math.min(8, nx * -8));
+      const py = Math.max(-8, Math.min(8, ny * -8));
+      cancelAnimationFrame(parallaxRafRef.current);
+      parallaxRafRef.current = requestAnimationFrame(() => applyOffset(px, py));
+    };
+
+    const handleLeave = () => {
+      cancelAnimationFrame(parallaxRafRef.current);
+      parallaxRafRef.current = requestAnimationFrame(() => {
+        target.style.transform = 'translate3d(0px, 0px, 0) scale(1)';
+      });
+    };
+
+    section.addEventListener('mousemove', handleMove, { passive: true });
+    section.addEventListener('mouseleave', handleLeave, { passive: true });
+    return () => {
+      cancelAnimationFrame(parallaxRafRef.current);
+      section.removeEventListener('mousemove', handleMove);
+      section.removeEventListener('mouseleave', handleLeave);
+    };
+  }, [reducedMotion]);
 
   const headingFontClass =
     language === 'ur'
@@ -188,6 +232,7 @@ export default function PremiumHeroPrototype({
 
   return (
     <section
+      ref={sectionRef}
       dir={isRtl ? 'rtl' : 'ltr'}
       aria-labelledby="premium-hero-heading"
       data-testid="premium-hero-prototype"
@@ -208,27 +253,36 @@ export default function PremiumHeroPrototype({
             <figure className="m-0">
               <div className="relative aspect-[16/10] w-full overflow-hidden rounded-[22px] border border-[#C7982F]/40 bg-[#0B2E26] shadow-[0_24px_60px_-20px_rgba(0,0,0,0.65)]">
                 {/* High-priority static photograph paints immediately at t=0 for optimal mobile LCP */}
-                <picture
-                  className="heritage-hero-background block h-full w-full"
-                  key={`${customHero.enabled}-${customHero.image}-${customHero.mobileImage}-${heroImageSrc}`}
+                <div
+                  ref={parallaxImgRef}
+                  data-hero-parallax="true"
+                  style={{
+                    transition: reducedMotion ? undefined : `transform ${MOTION_DURATION.base * 1000}ms ${MOTION_EASE_CSS}`,
+                  }}
+                  className="h-full w-full will-change-transform"
                 >
-                  {customHero.enabled && customHero.mobileImage && (
-                    <source media="(max-width: 767px)" srcSet={customHero.mobileImage} />
-                  )}
-                  <img
-                    src={customHero.enabled && customHero.image ? customHero.image : heroImageSrc}
-                    alt={copy.imageAlt}
-                    width={1440}
-                    height={900}
-                    loading="eager"
-                    fetchPriority="high"
-                    decoding="sync"
-                    style={{ visibility: imageHidden ? 'hidden' : 'visible' }}
-                    onLoad={() => setImageHidden(false)}
-                    onError={() => setImageHidden(true)}
-                    className="h-full w-full object-cover object-center"
-                  />
-                </picture>
+                  <picture
+                    className="heritage-hero-background block h-full w-full"
+                    key={`${customHero.enabled}-${customHero.image}-${customHero.mobileImage}-${heroImageSrc}`}
+                  >
+                    {customHero.enabled && customHero.mobileImage && (
+                      <source media="(max-width: 767px)" srcSet={customHero.mobileImage} />
+                    )}
+                    <img
+                      src={customHero.enabled && customHero.image ? customHero.image : heroImageSrc}
+                      alt={copy.imageAlt}
+                      width={1440}
+                      height={900}
+                      loading="eager"
+                      fetchPriority="high"
+                      decoding="sync"
+                      style={{ visibility: imageHidden ? 'hidden' : 'visible' }}
+                      onLoad={() => setImageHidden(false)}
+                      onError={() => setImageHidden(true)}
+                      className="h-full w-full object-cover object-center"
+                    />
+                  </picture>
+                </div>
 
                 {/* ONE signature orchestrated motion: translucent emerald lid veil + embossed crest seal press -> slides up once without ever occluding Frame-1 hero LCP */}
                 {!reducedMotion && !customHero.enabled && phase !== 'open' && (
@@ -283,9 +337,15 @@ export default function PremiumHeroPrototype({
             </figure>
           </div>
 
-          {/* Editorial Copy Stage: calm unified headline treatment, sentence-case eyebrow */}
+          {/* Editorial Copy Stage: calm unified headline treatment, gentle single stagger (< 1.2s total) */}
           <div className="heritage-hero-content order-2 flex flex-col items-start text-start lg:order-1 lg:col-span-5">
-            <div className="mb-3.5 flex items-center gap-3">
+            <motion.div
+              key={`eyebrow-${revealRun}`}
+              initial={reducedMotion || typeof window === 'undefined' ? false : { opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: MOTION_DURATION.base, delay: reducedMotion ? 0 : 0.14, ease: MOTION_EASE }}
+              className="mb-3.5 flex items-center gap-3"
+            >
               <span
                 aria-hidden="true"
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#C7982F]/45 bg-[#1E3A2B]/65 p-1.5"
@@ -295,29 +355,43 @@ export default function PremiumHeroPrototype({
               <p dir="auto" className="text-xs sm:text-[13px] font-medium text-[#E4C783]">
                 {eyebrowText}
               </p>
-            </div>
+            </motion.div>
 
-            <h1
+            <motion.h1
+              key={`headline-${revealRun}`}
               id="premium-hero-heading"
               lang={language}
               dir="auto"
+              initial={reducedMotion || typeof window === 'undefined' ? false : { opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: MOTION_DURATION.base, delay: reducedMotion ? 0 : 0.24, ease: MOTION_EASE }}
               className={`heritage-hero-title font-medium text-[#FDFBF7] ${headingFontClass}`}
             >
               {headlineText}
-            </h1>
+            </motion.h1>
 
-            <p
+            <motion.p
+              key={`desc-${revealRun}`}
               dir="auto"
+              initial={reducedMotion || typeof window === 'undefined' ? false : { opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: MOTION_DURATION.base, delay: reducedMotion ? 0 : 0.34, ease: MOTION_EASE }}
               className={`heritage-hero-description mt-4 sm:mt-5 max-w-lg text-[#F2ECE2]/85 ${bodyFontClass}`}
             >
               {descriptionText}
-            </p>
+            </motion.p>
 
             {/* Two decisive high-contrast CTAs (48px height, crisp keyboard focus ring) */}
-            <div className="mt-6 sm:mt-7 flex w-full flex-col gap-2.5 sm:gap-3 sm:w-auto sm:flex-row sm:items-center">
+            <motion.div
+              key={`ctas-${revealRun}`}
+              initial={reducedMotion || typeof window === 'undefined' ? false : { opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: MOTION_DURATION.base, delay: reducedMotion ? 0 : 0.44, ease: MOTION_EASE }}
+              className="mt-6 sm:mt-7 flex w-full flex-col gap-2.5 sm:gap-3 sm:w-auto sm:flex-row sm:items-center"
+            >
               <Link
                 to={primaryPath}
-                className="table-hero-primary inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-[#C7982F] px-7 py-3 text-sm font-semibold text-[#1A150B] transition-colors hover:bg-[#D7AA43] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FDFBF7]"
+                className="table-hero-primary inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-[#C7982F] px-7 py-3 text-sm font-semibold text-[#1A150B] transition-all duration-200 hover:bg-[#D7AA43] motion-safe:active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FDFBF7]"
               >
                 <span dir="auto">{primaryLabel}</span>
                 <ArrowRight size={16} className="rtl-flip shrink-0" aria-hidden="true" />
@@ -325,12 +399,12 @@ export default function PremiumHeroPrototype({
 
               <Link
                 to={secondaryPath}
-                className="table-hero-secondary inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-[#F2ECE2]/40 bg-transparent px-7 py-3 text-sm font-semibold text-[#FDFBF7] transition-colors hover:border-[#E4C783] hover:bg-[#FDFBF7]/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E4C783]"
+                className="table-hero-secondary inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-[#F2ECE2]/40 bg-transparent px-7 py-3 text-sm font-semibold text-[#FDFBF7] transition-all duration-200 hover:border-[#E4C783] hover:bg-[#FDFBF7]/10 motion-safe:active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E4C783]"
               >
                 <span dir="auto">{secondaryLabel}</span>
                 <ArrowRight size={16} className="rtl-flip shrink-0" aria-hidden="true" />
               </Link>
-            </div>
+            </motion.div>
 
             {/* Quiet Lahore House Provenance Strip (area-level only, zero health claims) */}
             <ul

@@ -30,6 +30,7 @@ import type { OccasionInquiryPrefill } from '../components/OccasionInquiryModal'
 import type { EventType } from '../lib/occasionPlanning';
 import { CUSTOM_QUOTE_MODAL_EVENT } from '../lib/customQuoteEvent';
 import { OPEN_AI_BUDDY_EVENT } from '../lib/heroScene';
+import { MOTION_DURATION, MOTION_EASE } from '../lib/motion';
 
 const MobileMenu = React.lazy(() => import('../components/MobileMenu'));
 const CartDrawer = React.lazy(() => import('../components/CartDrawer'));
@@ -306,20 +307,18 @@ export default function RootLayout() {
   }, [isAnyModalOrDrawerOpen]);
 
 
-  // We add AnimatePresence page transitions, but respect prefers-reduced-motion
+  // Calm 200ms content-only route fade (header & footer remain static; zero layout shift).
   const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   
   const pageTransitionVariants = {
-    initial: { opacity: 0, y: 10 },
+    initial: { opacity: 0 },
     enter: { 
       opacity: 1, 
-      y: 0, 
-      transition: { duration: 0.25, ease: 'easeOut' as const }
+      transition: { duration: MOTION_DURATION.fast, ease: MOTION_EASE }
     },
     exit: { 
       opacity: 0, 
-      y: -5,
-      transition: { duration: 0.15, ease: 'easeIn' as const }
+      transition: { duration: MOTION_DURATION.fast, ease: MOTION_EASE }
     }
   };
 
