@@ -173,7 +173,7 @@ export default function Footer() {
               const isOpen = openGroup === group.id;
               const panelId = `footer-accordion-panel-${group.id}`;
               return (
-                <nav key={group.id} aria-label={group.title} className="footer-links-col">
+                <nav key={group.id} aria-label={group.title} className="footer-accordion-group">
                   {/* Mobile Accordion Trigger (min 44px touch target) */}
                   <button
                     type="button"
@@ -200,6 +200,7 @@ export default function Footer() {
 
                   <ul
                     id={panelId}
+                    data-footer-panel={group.id}
                     className={`${isOpen ? 'block pb-2' : 'hidden'} sm:block sm:pb-0 space-y-0.5`}
                   >
                     {group.links.map(([label, href]) => (
