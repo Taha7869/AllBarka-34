@@ -4,6 +4,7 @@ import { ArrowRight } from 'lucide-react';
 import { useLanguage, type LanguageCode } from '../contexts/LanguageContext';
 import { usePublishedReviews } from '../contexts/StorefrontContentContext';
 import { sanitizePublishedReviews, type PublishedPatronReview } from '../lib/publishedReviews';
+import { MOTION_STAGGER, revealStyle, useRevealOnce } from '../lib/motion';
 
 const VOICES_COPY: Record<
   LanguageCode,
@@ -45,6 +46,7 @@ export interface PatronVoicesSectionProps {
 export default function PatronVoicesSection({ reviews: propReviews }: PatronVoicesSectionProps = {}) {
   const { language, isRtl } = useLanguage();
   const publishedReviews = usePublishedReviews();
+  const { ref: sectionRef, visible, reducedMotion } = useRevealOnce<HTMLElement>();
   const featuredReviews = sanitizePublishedReviews(propReviews ?? publishedReviews).slice(0, 3);
 
   // Never render hardcoded placeholder testimonials; omit section cleanly when no admin-published order reviews exist.
@@ -56,6 +58,7 @@ export default function PatronVoicesSection({ reviews: propReviews }: PatronVoic
 
   return (
     <section
+      ref={sectionRef}
       id="about"
       dir={isRtl ? 'rtl' : 'ltr'}
       aria-labelledby="patron-voices-heading"
@@ -63,7 +66,10 @@ export default function PatronVoicesSection({ reviews: propReviews }: PatronVoic
       className="w-full border-t border-[var(--color-border)] bg-[var(--color-base,#FDFBF7)] py-14 sm:py-20 text-[var(--color-text-primary,#29231D)]"
     >
       <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
-        <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:mb-10 sm:flex-row sm:items-end">
+        <div
+          style={revealStyle(visible, reducedMotion, 0)}
+          className="mb-8 flex flex-col items-start justify-between gap-4 sm:mb-10 sm:flex-row sm:items-end"
+        >
           <div>
             <p dir="auto" className="text-xs sm:text-[13px] font-medium text-[var(--color-accent-text,#806326)]">
               {copy.eyebrow}
@@ -102,12 +108,13 @@ export default function PatronVoicesSection({ reviews: propReviews }: PatronVoic
         </div>
 
         <div className="grid grid-cols-1 gap-5 md:grid-cols-3 sm:gap-6">
-          {featuredReviews.map((review) => {
+          {featuredReviews.map((review, idx) => {
             const displayName =
               language === 'ur' ? review.name_ur : language === 'ar' ? review.name_ar : review.name_en;
             return (
               <figure
                 key={review.id}
+                style={revealStyle(visible, reducedMotion, (idx + 1) * MOTION_STAGGER.cardsMs)}
                 className="flex flex-col justify-between rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface,#FFFCF7)] p-6"
               >
                 <blockquote dir="auto" className="font-serif text-base leading-relaxed text-[var(--color-text-primary,#29231D)]">

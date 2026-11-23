@@ -4,6 +4,7 @@ import { ArrowRight, ArrowUpRight } from 'lucide-react';
 import { useLanguage, type LanguageCode } from '../contexts/LanguageContext';
 import { useMerchandisingSettings } from '../contexts/MerchandisingContext';
 import { DEFAULT_MERCHANDISING } from '../config/merchandising';
+import { MOTION_EASE_CSS, revealStyle, useRevealOnce } from '../lib/motion';
 import type { MerchandisingSettings } from '../types';
 
 const ATELIER_IMAGE = '/images/drafts-premium-20261122/06-eid-gift-box-card-ribbon.webp';
@@ -87,6 +88,7 @@ export default function GiftingAtelierSection({
   const contextSettings = useMerchandisingSettings();
   const activeSettings = propSettings || contextSettings || DEFAULT_MERCHANDISING;
   const copy = ATELIER_COPY[language] || ATELIER_COPY.en;
+  const { ref: sectionRef, visible, reducedMotion } = useRevealOnce<HTMLElement>();
 
   const occasions = useMemo(() => {
     const raw =
@@ -116,6 +118,7 @@ export default function GiftingAtelierSection({
 
   return (
     <section
+      ref={sectionRef}
       id="gift-for-occasion"
       dir={isRtl ? 'rtl' : 'ltr'}
       aria-labelledby="gifting-atelier-heading"
@@ -125,7 +128,7 @@ export default function GiftingAtelierSection({
       <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
         <div className="table-gift-editorial atelier-editorial-split grid grid-cols-1 items-center gap-8 lg:grid-cols-12 lg:gap-12">
           {/* Editorial Gift Box Visual */}
-          <div className="lg:col-span-5">
+          <div style={revealStyle(visible, reducedMotion, 0)} className="lg:col-span-5">
             <div className="overflow-hidden rounded-[22px] border border-[#C7982F]/35 bg-[#F2ECE2] dark:bg-[#1E2523]">
               <img
                 src={ATELIER_IMAGE}
@@ -140,7 +143,7 @@ export default function GiftingAtelierSection({
           </div>
 
           {/* Calm Occasions Ledger */}
-          <div className="lg:col-span-7">
+          <div style={revealStyle(visible, reducedMotion, 60)} className="lg:col-span-7">
             <p dir="auto" className="text-xs sm:text-[13px] font-medium text-[var(--color-accent-text,#806326)]">
               {copy.eyebrow}
             </p>
@@ -163,7 +166,7 @@ export default function GiftingAtelierSection({
                 <li key={occ.id}>
                   <Link
                     to={occ.path}
-                    className="group flex min-h-[56px] items-center justify-between gap-4 py-3.5 transition-colors hover:text-[var(--color-accent-text,#806326)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C7982F]"
+                    className="group -mx-3 flex min-h-[56px] items-center justify-between gap-4 rounded-xl px-3 py-3.5 transition-colors duration-200 hover:bg-[#042821]/[0.05] dark:hover:bg-[#C7982F]/[0.08] focus-visible:bg-[#042821]/[0.05] hover:text-[var(--color-accent-text,#806326)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C7982F]"
                   >
                     <div className="flex min-w-0 items-baseline gap-3.5">
                       <span className="shrink-0 font-serif text-xs font-semibold text-[var(--color-accent-text,#806326)] tabular-nums">
@@ -187,7 +190,10 @@ export default function GiftingAtelierSection({
                     <ArrowUpRight
                       size={17}
                       aria-hidden="true"
-                      className="shrink-0 text-[var(--color-accent-text,#806326)] transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                      style={{
+                        transition: reducedMotion ? undefined : `transform 200ms ${MOTION_EASE_CSS}`,
+                      }}
+                      className="shrink-0 text-[var(--color-accent-text,#806326)] motion-safe:group-hover:translate-x-1.5 rtl:motion-safe:group-hover:-translate-x-1.5 motion-safe:group-hover:-translate-y-0.5 motion-safe:group-focus-visible:translate-x-1.5 rtl:motion-safe:group-focus-visible:-translate-x-1.5"
                     />
                   </Link>
                 </li>

@@ -1,10 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { motion, LayoutGroup } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import { useLanguage, type LanguageCode } from '../contexts/LanguageContext';
 import { useMerchandisingSettings } from '../contexts/MerchandisingContext';
 import { DEFAULT_MERCHANDISING } from '../config/merchandising';
+import { MOTION_DURATION, MOTION_EASE, MOTION_STAGGER, revealStyle, useRevealOnce } from '../lib/motion';
 import ProductCard from './ProductCard';
 import type { MerchandisingSettings, Product } from '../types';
 
@@ -94,6 +96,7 @@ export default function HouseSelectionsSection({
   const products = propProducts || catalogProducts;
   const activeSettings = propSettings || contextSettings || DEFAULT_MERCHANDISING;
   const copy = COPY[language] || COPY.en;
+  const { ref: sectionRef, visible, reducedMotion } = useRevealOnce<HTMLElement>();
 
   const [activeTabId, setActiveTabId] = useState<ManualTabId>('dry-fruits');
 
@@ -150,6 +153,7 @@ export default function HouseSelectionsSection({
 
   return (
     <section
+      ref={sectionRef}
       id="boutique-selections"
       dir={isRtl ? 'rtl' : 'ltr'}
       aria-labelledby="house-selections-heading"
@@ -158,7 +162,10 @@ export default function HouseSelectionsSection({
       className="w-full overflow-x-clip border-y border-[var(--color-border)] bg-[#F2ECE2] dark:bg-[#171D1B] py-14 sm:py-20 text-[var(--color-text-primary,#29231D)]"
     >
       <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
-        <div className="mb-8 flex flex-col items-start justify-between gap-5 lg:mb-10 lg:flex-row lg:items-end">
+        <div
+          style={revealStyle(visible, reducedMotion, 0)}
+          className="mb-8 flex flex-col items-start justify-between gap-5 lg:mb-10 lg:flex-row lg:items-end"
+        >
           <div>
             <p dir="auto" className="text-xs sm:text-[13px] font-medium text-[var(--color-accent-text,#806326)]">
               {copy.eyebrow}
@@ -175,47 +182,70 @@ export default function HouseSelectionsSection({
             </h2>
           </div>
 
-          {/* 3 Calm Manual Tabs — ZERO auto-rotation, ZERO timers */}
-          <div
-            role="tablist"
-            aria-label={copy.eyebrow}
-            className="flex flex-wrap gap-2"
-          >
-            {resolvedTabs.map((tab) => {
-              const selected = tab.id === currentTab.id;
-              return (
-                <button
-                  key={tab.id}
-                  id={`house-tab-${tab.id}`}
-                  data-tab-id={tab.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={selected}
-                  aria-controls={`house-panel-${tab.id}`}
-                  onClick={() => setActiveTabId(tab.id)}
-                  className={`min-h-[44px] min-w-[44px] rounded-full border px-5 py-2 text-xs sm:text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C7982F] cursor-pointer ${
-                    selected
-                      ? 'border-[#042821] bg-[#042821] text-[#FDFBF7] dark:border-[#C7982F] dark:bg-[#C7982F] dark:text-[#121615]'
-                      : 'border-[var(--color-border)] bg-[var(--color-surface,#FFFCF7)] text-[var(--color-text-primary,#29231D)] hover:border-[#C7982F]'
-                  }`}
-                >
-                  <span dir="auto">{tab.label[language] || tab.label.en}</span>
-                </button>
-              );
-            })}
-          </div>
+          {/* 3 Calm Manual Tabs — ZERO auto-rotation, ZERO timers; sliding gold indicator */}
+          <LayoutGroup id="house-selections-tabs">
+            <div
+              role="tablist"
+              aria-label={copy.eyebrow}
+              className="flex flex-wrap gap-2"
+            >
+              {resolvedTabs.map((tab) => {
+                const selected = tab.id === currentTab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    id={`house-tab-${tab.id}`}
+                    data-tab-id={tab.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={selected}
+                    aria-controls={`house-panel-${tab.id}`}
+                    onClick={() => setActiveTabId(tab.id)}
+                    className={`relative isolate min-h-[44px] min-w-[44px] rounded-full border px-5 py-2 text-xs sm:text-sm font-semibold transition-colors duration-200 motion-safe:active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C7982F] cursor-pointer ${
+                      selected
+                        ? 'border-[#C7982F]/80 text-[#FDFBF7] dark:text-[#121615]'
+                        : 'border-[var(--color-border)] bg-[var(--color-surface,#FFFCF7)] text-[var(--color-text-primary,#29231D)] hover:border-[#C7982F]'
+                    }`}
+                  >
+                    {selected && (
+                      <motion.span
+                        layoutId={reducedMotion ? undefined : 'house-tab-active-bg'}
+                        transition={reducedMotion ? { duration: 0 } : { duration: MOTION_DURATION.base, ease: MOTION_EASE }}
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-[#042821] dark:bg-[#C7982F]"
+                      />
+                    )}
+                    <span dir="auto" className="relative z-10">{tab.label[language] || tab.label.en}</span>
+                    {selected && (
+                      <motion.span
+                        layoutId={reducedMotion ? undefined : 'house-tab-gold-underline'}
+                        transition={reducedMotion ? { duration: 0 } : { duration: MOTION_DURATION.base, ease: MOTION_EASE }}
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-x-4 bottom-1.5 h-[2px] rounded-full bg-[#C7982F] dark:bg-[#042821]"
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </LayoutGroup>
         </div>
 
-        <div
+        <motion.div
+          key={currentTab.id}
           id={`house-panel-${currentTab.id}`}
           role="tabpanel"
           aria-labelledby={`house-tab-${currentTab.id}`}
           data-mobile-snap-row="true"
+          initial={reducedMotion || typeof window === 'undefined' ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: MOTION_DURATION.fast, ease: MOTION_EASE }}
           className="-mx-5 flex flex-nowrap gap-4 overflow-x-auto px-5 pb-2 scroll-px-5 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:px-0 md:pb-0"
         >
-          {currentTab.products.map((product) => (
+          {currentTab.products.map((product, idx) => (
             <div
               key={product.id}
+              style={revealStyle(visible, reducedMotion, (idx + 1) * MOTION_STAGGER.cardsMs)}
               className="w-[78vw] max-w-[330px] shrink-0 snap-start md:w-auto md:max-w-none md:min-w-0"
             >
               <ProductCard
@@ -226,7 +256,7 @@ export default function HouseSelectionsSection({
               />
             </div>
           ))}
-        </div>
+        </motion.div>
 
         <div className="mt-8 flex justify-start sm:justify-end">
           <Link

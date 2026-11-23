@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import { ArrowUpRight, Gift, ListChecks, Truck } from 'lucide-react';
 import type { Product } from '../types';
 import { usePublishedReviews, useStorefrontContent } from '../contexts/StorefrontContentContext';
 import { useMerchandisingSettings } from '../contexts/MerchandisingContext';
 import { useLanguage, type LanguageCode } from '../contexts/LanguageContext';
+import { MOTION_STAGGER, revealStyle, useRevealOnce } from '../lib/motion';
+import { AllBarkaCrestVector } from '../components/AllBarkaLogo';
 import StorefrontBanner from '../components/StorefrontBanner';
 import PremiumHeroPrototype from '../components/PremiumHeroPrototype';
 import SignatureCollectionsSection from '../components/SignatureCollectionsSection';
@@ -142,6 +144,35 @@ export default function HomePage() {
   const setSelectedQuickViewProduct = outlet.setSelectedQuickViewProduct ?? (() => {});
   const handleAddToCart = outlet.handleAddToCart ?? (() => {});
   const standard = HOUSE_STANDARD_COPY[language] || HOUSE_STANDARD_COPY.en;
+  const { ref: standardRef, visible: standardVisible, reducedMotion } = useRevealOnce<HTMLElement>();
+  const crestWatermarkRef = useRef<HTMLDivElement | null>(null);
+
+  // Subtle gold crest watermark scroll parallax (opacity 0.06, pure translate3d, static on reduced motion).
+  useEffect(() => {
+    if (reducedMotion || typeof window === 'undefined') return;
+    let rafId = 0;
+    const updateParallax = () => {
+      const section = standardRef.current;
+      const watermark = crestWatermarkRef.current;
+      if (!section || !watermark) return;
+      const rect = section.getBoundingClientRect();
+      const vh = window.innerHeight || 900;
+      const progress = (vh - rect.top) / (vh + rect.height);
+      const clamped = Math.max(0, Math.min(1, progress));
+      const offsetY = (clamped - 0.5) * -52;
+      watermark.style.transform = `translate3d(0, ${offsetY.toFixed(1)}px, 0)`;
+    };
+    const onScroll = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(updateParallax);
+    };
+    updateParallax();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener('scroll', onScroll);
+    };
+  }, [reducedMotion, standardRef]);
 
   const sectionRenderers: Partial<Record<string, React.ReactNode>> = {
     collections: <SignatureCollectionsSection settings={merchandisingSettings} />,
@@ -155,13 +186,27 @@ export default function HomePage() {
     occasions: <GiftingAtelierSection settings={merchandisingSettings} />,
     care: (
       <section
+        ref={standardRef}
         dir={isRtl ? 'rtl' : 'ltr'}
         aria-labelledby="lahore-house-standard-heading"
         data-testid="lahore-house-standard"
-        className="editorial-care w-full bg-[#042821] py-14 sm:py-20 text-[#FDFBF7]"
+        className="editorial-care relative w-full overflow-hidden bg-[#042821] py-14 sm:py-20 text-[#FDFBF7]"
       >
-        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
-          <div className="mb-10 flex flex-col items-start justify-between gap-5 border-b border-[#C7982F]/25 pb-8 lg:flex-row lg:items-end">
+        {/* Subtle gold crest watermark with gentle scroll parallax (opacity 0.06) */}
+        <div
+          ref={crestWatermarkRef}
+          aria-hidden="true"
+          data-testid="house-standard-watermark"
+          className="pointer-events-none select-none absolute -end-16 top-1/2 -mt-44 h-[340px] w-[340px] sm:-mt-56 sm:h-[440px] sm:w-[440px] opacity-[0.06] will-change-transform"
+        >
+          <AllBarkaCrestVector />
+        </div>
+
+        <div className="relative z-10 mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
+          <div
+            style={revealStyle(standardVisible, reducedMotion, 0)}
+            className="mb-10 flex flex-col items-start justify-between gap-5 border-b border-[#C7982F]/25 pb-8 lg:flex-row lg:items-end"
+          >
             <div className="max-w-2xl">
               <p dir="auto" className="text-xs sm:text-[13px] font-medium text-[#E4C783]">
                 {standard.eyebrow}
@@ -183,7 +228,7 @@ export default function HomePage() {
 
             <Link
               to="/faq"
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-[#C7982F]/55 px-5 py-2.5 text-xs font-semibold text-[#FDFBF7] transition-colors hover:bg-[#C7982F] hover:text-[#042821] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E4C783]"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-[#C7982F]/55 px-5 py-2.5 text-xs font-semibold text-[#FDFBF7] transition-all duration-200 hover:bg-[#C7982F] hover:text-[#042821] motion-safe:active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E4C783]"
             >
               <span dir="auto">{standard.faqLink}</span>
               <ArrowUpRight size={15} aria-hidden="true" />
@@ -191,9 +236,10 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            {standard.pillars.map(({ number, icon: Icon, title, copy, path, action }) => (
+            {standard.pillars.map(({ number, icon: Icon, title, copy, path, action }, idx) => (
               <article
                 key={number}
+                style={revealStyle(standardVisible, reducedMotion, (idx + 1) * MOTION_STAGGER.cardsMs)}
                 className="flex flex-col justify-between rounded-2xl border border-[#C7982F]/25 bg-[#1E3A2B]/40 p-6"
               >
                 <div>

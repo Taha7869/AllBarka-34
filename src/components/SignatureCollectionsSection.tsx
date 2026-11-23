@@ -7,6 +7,7 @@ import { DEFAULT_MERCHANDISING } from '../config/merchandising';
 import { canonicalCollectionKey, getEquivalentCollectionIds } from '../config/categories';
 import { SECTION_COVERS } from '../config/sectionCovers';
 import { getSeasonalTheme } from '../lib/seasonalHomepage';
+import { MOTION_EASE_CSS, MOTION_STAGGER, revealStyle, useRevealOnce } from '../lib/motion';
 import type { MerchandisingSettings } from '../types';
 
 interface CuratedTile {
@@ -133,6 +134,7 @@ export default function SignatureCollectionsSection({
   const contextSettings = useMerchandisingSettings();
   const activeSettings = propSettings || contextSettings || DEFAULT_MERCHANDISING;
   const copy = SECTION_COPY[language] || SECTION_COPY.en;
+  const { ref: sectionRef, visible, reducedMotion } = useRevealOnce<HTMLElement>();
 
   const tiles = useMemo(() => {
     const visibility = activeSettings.categoryVisibility || {};
@@ -253,6 +255,7 @@ export default function SignatureCollectionsSection({
 
   return (
     <section
+      ref={sectionRef}
       id="allbarka-pantry"
       dir={isRtl ? 'rtl' : 'ltr'}
       aria-labelledby="signature-collections-heading"
@@ -260,7 +263,10 @@ export default function SignatureCollectionsSection({
       className="w-full bg-[var(--color-base,#FDFBF7)] py-14 sm:py-20 text-[var(--color-text-primary,#29231D)]"
     >
       <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
-        <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:mb-10 sm:flex-row sm:items-end">
+        <div
+          style={revealStyle(visible, reducedMotion, 0)}
+          className="mb-8 flex flex-col items-start justify-between gap-4 sm:mb-10 sm:flex-row sm:items-end"
+        >
           <div className="max-w-xl">
             <p dir="auto" className="text-xs sm:text-[13px] font-medium text-[var(--color-accent-text,#806326)]">
               {copy.eyebrow}
@@ -287,56 +293,67 @@ export default function SignatureCollectionsSection({
         </div>
 
         <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3">
-          {tiles.map((tile) => (
-            <Link
-              key={tile.id}
-              to={tile.link}
-              className="group flex flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface,#FFFCF7)] transition-colors hover:border-[#C7982F]/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C7982F]"
-            >
-              <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#F2ECE2] dark:bg-[#1E2523]">
-                <img
-                  src={tile.image}
-                  alt={tile.alt}
-                  width={800}
-                  height={600}
-                  loading="lazy"
-                  decoding="async"
-                  onError={(event) => {
-                    if (!event.currentTarget.src.endsWith('/images/product-placeholder.svg')) {
-                      event.currentTarget.src = '/images/product-placeholder.svg';
-                    }
-                  }}
-                  className="h-full w-full object-cover transition-transform duration-500 motion-reduce:transition-none group-hover:scale-[1.03]"
-                />
-                {tile.badge && (
-                  <span className="absolute start-3 top-3 rounded-full bg-[#042821]/90 px-2.5 py-1 text-[10px] font-semibold text-[#E4C783]">
-                    {tile.badge}
-                  </span>
-                )}
-              </div>
-
-              <div className="flex flex-1 flex-col justify-between p-3.5 sm:p-5">
-                <div>
-                  <h3
-                    lang={language}
-                    dir="auto"
-                    className={`font-serif text-base sm:text-lg font-semibold text-[var(--color-text-primary,#29231D)] group-hover:text-[var(--color-accent-text,#806326)] transition-colors ${
-                      language === 'ur' ? 'font-urdu leading-[1.9]' : language === 'ar' ? 'font-arabic leading-[1.5]' : 'leading-snug'
-                    }`}
-                  >
-                    {tile.title}
-                  </h3>
-                  {tile.subtitle && (
-                    <p
-                      dir="auto"
-                      className="mt-1 hidden sm:block text-xs leading-relaxed text-[var(--color-text-secondary,#635B52)]"
-                    >
-                      {tile.subtitle}
-                    </p>
+          {tiles.map((tile, idx) => (
+            <div key={tile.id} style={revealStyle(visible, reducedMotion, (idx + 1) * MOTION_STAGGER.cardsMs)}>
+              <Link
+                to={tile.link}
+                className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface,#FFFCF7)] transition-colors duration-200 hover:border-[#C7982F]/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C7982F]"
+              >
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#F2ECE2] dark:bg-[#1E2523]">
+                  <img
+                    src={tile.image}
+                    alt={tile.alt}
+                    width={800}
+                    height={600}
+                    loading="lazy"
+                    decoding="async"
+                    onError={(event) => {
+                      if (!event.currentTarget.src.endsWith('/images/product-placeholder.svg')) {
+                        event.currentTarget.src = '/images/product-placeholder.svg';
+                      }
+                    }}
+                    style={{
+                      transition: reducedMotion ? undefined : `transform 700ms ${MOTION_EASE_CSS}`,
+                    }}
+                    className="h-full w-full object-cover motion-safe:group-hover:scale-[1.04]"
+                  />
+                  {tile.badge && (
+                    <span className="absolute start-3 top-3 rounded-full bg-[#042821]/90 px-2.5 py-1 text-[10px] font-semibold text-[#E4C783]">
+                      {tile.badge}
+                    </span>
                   )}
                 </div>
-              </div>
-            </Link>
+
+                <div className="flex flex-1 flex-col justify-between p-3.5 sm:p-5">
+                  <div>
+                    <h3
+                      lang={language}
+                      dir="auto"
+                      className={`inline-block font-serif text-base sm:text-lg font-semibold text-[var(--color-text-primary,#29231D)] group-hover:text-[var(--color-accent-text,#806326)] transition-colors duration-200 ${
+                        language === 'ur' ? 'font-urdu leading-[1.9]' : language === 'ar' ? 'font-arabic leading-[1.5]' : 'leading-snug'
+                      }`}
+                    >
+                      <span>{tile.title}</span>
+                      <span
+                        aria-hidden="true"
+                        style={{
+                          transition: reducedMotion ? undefined : `transform 400ms ${MOTION_EASE_CSS}`,
+                        }}
+                        className="mt-1 block h-[1.5px] w-full origin-left rtl:origin-right scale-x-0 bg-[#C7982F] group-hover:scale-x-100 group-focus-visible:scale-x-100"
+                      />
+                    </h3>
+                    {tile.subtitle && (
+                      <p
+                        dir="auto"
+                        className="mt-1 hidden sm:block text-xs leading-relaxed text-[var(--color-text-secondary,#635B52)]"
+                      >
+                        {tile.subtitle}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            </div>
           ))}
         </div>
       </div>
