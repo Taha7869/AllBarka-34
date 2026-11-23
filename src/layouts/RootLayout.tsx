@@ -296,11 +296,12 @@ export default function RootLayout() {
       {/* Header Navigation */}
       <header 
         id="main-navigation-header"
+        data-scrolled={isScrolled ? 'true' : 'false'}
         dir={isRtl ? 'rtl' : 'ltr'}
-        className={`sticky top-0 left-0 right-0 z-[100] w-full transition-all duration-300 ${
+        className={`sticky top-0 left-0 right-0 z-[100] w-full transition-all duration-300 motion-reduce:transition-none ${
           isScrolled 
-            ? 'py-2 bg-[var(--color-surface)]/90 dark:bg-[var(--color-base)]/90 backdrop-blur-xl shadow-[var(--shadow-card)] border-b border-[var(--color-border)]'
-            : 'py-2.5 sm:py-3 bg-[var(--color-base)]/95 dark:bg-[var(--color-base)]/95 backdrop-blur-md shadow-none border-b border-transparent'
+            ? 'py-1.5 sm:py-2 bg-[#FFFCF7] dark:bg-[#042821] shadow-[0_8px_24px_-12px_rgba(4,40,33,0.18)] border-b border-[#C7982F]/40'
+            : 'py-3 sm:py-3.5 bg-[#FDFBF7] dark:bg-[#0D1412] shadow-none border-b border-[#C7982F]/15'
         }`}
       >
         {!online && <div role="status" className="fixed inset-x-0 top-0 z-[20000] border-b border-[#c7982f] bg-[#092e23] px-4 py-2 text-center text-xs text-[#fff8e9]">{t('checkout.offline')}</div>}
@@ -313,7 +314,9 @@ export default function RootLayout() {
               <button
                 type="button"
                 onClick={() => { navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
-                className="hidden lg:block cursor-pointer focus-ring rounded-xl p-1 -m-1"
+                className={`hidden lg:block cursor-pointer focus-ring rounded-xl p-1 -m-1 transition-transform duration-300 origin-left rtl:origin-right motion-reduce:transition-none ${
+                  isScrolled ? 'scale-[0.94]' : 'scale-100'
+                }`}
                 aria-label="AllBarka — Home"
               >
                 <AllBarkaHeaderLogo />

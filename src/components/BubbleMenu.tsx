@@ -211,8 +211,8 @@ export default function BubbleMenu({
     onItemClick?.({ id: subItem.id, label: t(subItem.labelKey, subItem.defaultLabel), path: subItem.path });
   };
 
-  // Build items list (either from props or canonical configuration)
-  const mainNavItems: NavItem[] = items && items.length > 0
+  // Build items list (either from props or canonical configuration), capped to <= 5 top-level nav items
+  const mainNavItems: NavItem[] = (items && items.length > 0
     ? items.map((it) => ({
         id: it.id,
         labelKey: `nav.${it.id.toLowerCase()}`,
@@ -226,7 +226,7 @@ export default function BubbleMenu({
           path: drop.path,
         })),
       }))
-    : configuredNavigation;
+    : configuredNavigation).slice(0, 5);
 
   return (
     <nav
@@ -333,7 +333,7 @@ export default function BubbleMenu({
                     }
                   }}
                   style={{ maxHeight: 'min(420px, calc(100vh - 140px))' }}
-                  className="absolute left-1/2 top-full z-[150] mt-1.5 w-64 -translate-x-1/2 rounded-2xl border border-[#C7982F]/25 bg-[#FFFCF7] p-2 shadow-2xl backdrop-blur-xl dark:border-[#C7982F]/20 dark:bg-[#1A201E] overflow-y-auto overscroll-contain"
+                  className="absolute left-1/2 top-full z-[150] mt-2 w-64 -translate-x-1/2 rounded-2xl border border-[#C7982F]/35 bg-[#FFFCF7] p-2 shadow-[0_20px_50px_-16px_rgba(4,40,33,0.28)] dark:border-[#C7982F]/30 dark:bg-[#042821] overflow-y-auto overscroll-contain"
                 >
                   {/* Invisible pointer bridge connecting trigger and panel */}
                   <div
