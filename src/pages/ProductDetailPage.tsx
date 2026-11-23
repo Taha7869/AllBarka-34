@@ -40,7 +40,8 @@ import { isPackagingProduct, getPackagingMoqDisplay } from '../lib/packagingMoq'
 import IndicativePriceNotice from '../components/IndicativePriceNotice';
 import { isFilledPackagingVariant } from '../lib/filledGiftPricing';
 import { resolveBidBoxConfig } from '../lib/bidBoxPricing';
-import { recordFunnelEvent } from '../lib/funnelTelemetry';
+import { recordFunnelEvent } from '../lib/funnelTelemetry';
+import RollingNumber from '../components/RollingNumber';
 
 export default function ProductDetailPage() {
   const PRODUCTS = useCatalogProducts();
@@ -726,7 +727,7 @@ export default function ProductDetailPage() {
                     -
                   </button>
                   <span className="w-10 text-center text-sm font-bold text-[var(--color-text-primary,#29231D)] dark:text-white">
-                    {quantity}
+                    <RollingNumber value={quantity} />
                   </span>
                   <button 
                     type="button"

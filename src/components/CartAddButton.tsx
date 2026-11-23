@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Check, ShoppingBag } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { triggerFlyToCart } from '../lib/flyToCart';
 import MagneticButton from './motion/MagneticButton';
 
 interface CartAddButtonProps {
@@ -23,11 +24,13 @@ export default function CartAddButton({ productId, portion, onAdd, children, dis
   const [attempt, setAttempt] = useState<{ key: string; before: number } | null>(null);
   const [confirmed, setConfirmed] = useState('');
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const triggerElRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!attempt) return;
     if (attempt.key === key && quantity > attempt.before) {
       setConfirmed(key);
+      triggerFlyToCart(triggerElRef.current);
       timer.current = setTimeout(() => setConfirmed(''), 1400);
     }
     setAttempt(null);
@@ -47,6 +50,7 @@ export default function CartAddButton({ productId, portion, onAdd, children, dis
       event.stopPropagation();
       if (disabled) return;
       if (timer.current) clearTimeout(timer.current);
+      triggerElRef.current = event.currentTarget as HTMLElement;
       setConfirmed('');
       setAttempt({ key, before: quantity });
       onAdd();

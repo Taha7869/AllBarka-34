@@ -43,12 +43,47 @@
   .boutique-experience a[aria-current="page"] { text-decoration-color: var(--color-accent); }
 }
 @media (prefers-reduced-motion: no-preference) {
-  .boutique-action:not(:disabled):active { scale: .98; }
-  .boutique-experience :where(button[aria-pressed="true"]) > svg { transition: fill 180ms ease, color 180ms ease; }
-  .boutique-experience :where(button[aria-pressed="true"]) > svg.lucide-heart { animation: boutique-confirm 230ms ease-out both; }
+  .boutique-action:not(:disabled):active,
+  .boutique-experience button:not(:disabled):active {
+    transform: scale(0.98);
+    transition: transform 200ms cubic-bezier(0.22, 0.8, 0.2, 1);
+  }
+  .boutique-experience :where(button[aria-pressed="true"]) > svg { transition: fill 200ms cubic-bezier(0.22, 0.8, 0.2, 1), color 200ms cubic-bezier(0.22, 0.8, 0.2, 1); }
+  .boutique-experience :where(button[aria-pressed="true"]) > svg.lucide-heart { animation: wishlist-heart-pop 320ms cubic-bezier(0.22, 0.8, 0.2, 1) both; }
+}
+.gold-confetti-piece {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 2px;
+  pointer-events: none;
+  will-change: transform, opacity;
+  animation: gold-confetti-burst 1500ms cubic-bezier(0.22, 0.8, 0.2, 1) forwards;
+}
+@keyframes wishlist-heart-pop {
+  0% { transform: scale(0.84); }
+  55% { transform: scale(1.24); }
+  100% { transform: scale(1); }
+}
+@keyframes gold-confetti-burst {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(0.6);
+  }
+  12% {
+    opacity: 0.95;
+  }
+  65% {
+    opacity: 0.85;
+    transform: translate3d(var(--confetti-dx), var(--confetti-dy), 0) rotate(var(--confetti-rot)) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--confetti-dx), calc(var(--confetti-dy) + 52px), 0) rotate(calc(var(--confetti-rot) * 1.4)) scale(0.7);
+  }
 }
 @media (hover: none), (pointer: coarse) {
-  .product-gallery-preview { display: none; }
+  .product-gallery-preview, .gold-confetti-piece { display: none !important; }
   .boutique-action { -webkit-tap-highlight-color: #c7982f26; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -58,7 +93,7 @@
     scroll-behavior: auto !important;
     scale: none !important;
   }
-  .product-gallery-preview { display: none; }
+  .product-gallery-preview, .gold-confetti-piece { display: none !important; }
 }
 @keyframes boutique-confirm { from { opacity: .6; transform: scale(.85); } to { opacity: 1; transform: scale(1); } }
 @keyframes boutique-photo-preview { from { opacity: 0; transform: scale(1.015); } to { opacity: 1; transform: scale(1); } }

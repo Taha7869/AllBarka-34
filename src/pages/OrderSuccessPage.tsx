@@ -14,6 +14,7 @@ import { recoverOrderSuccessReceipt, refreshOrderSuccessReceipt, type ConfirmedS
 import { TRACKING_POLL_MS, TRACKING_STEPS, trackingProgress } from '../lib/orderPresentation';
 import { recordFunnelEvent } from '../lib/funnelTelemetry';
 import { AllBarkaCrestVector } from '../components/AllBarkaLogo';
+import GoldConfettiBurst from '../components/GoldConfettiBurst';
 
 export type OrderSuccessSnapshot = ConfirmedSuccessReceipt;
 
@@ -225,7 +226,8 @@ export default function OrderSuccessPage() {
   return (
     <div className="w-full min-h-[70vh] py-12 px-4 sm:px-6 flex justify-center items-start bg-[var(--color-base,#FDFBF7)]">
       <div className="max-w-2xl w-full bg-[var(--color-surface,#FFFCF7)] border border-[#C7982F]/35 rounded-[22px] p-6 sm:p-10 shadow-[0_12px_40px_-14px_rgba(4,40,33,0.12)] relative overflow-hidden">
-        {/* AllBarka Embossed Wax-Seal Stamp Moment (static under prefers-reduced-motion) */}
+        {/* AllBarka Embossed Wax-Seal Stamp Moment + 1.5s One-Time Gold Confetti (static under prefers-reduced-motion) */}
+        <GoldConfettiBurst />
         <div
           data-testid="order-seal-stamp"
           className="order-seal-stamp relative mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#042821] border-2 border-[#C7982F] shadow-[0_10px_28px_-8px_rgba(4,40,33,0.45)]"

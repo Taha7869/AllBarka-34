@@ -63,6 +63,7 @@ import { useCurrency } from '../contexts/CurrencyContext';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { PRODUCTS } from '../data/products';
 import { fetchLoyaltyProfile } from '../lib/loyaltyClient';
+import GoldConfettiBurst from '../components/GoldConfettiBurst';
 import type { IssuedPatronReward } from '../lib/rewardPolicy';
 import { recordFunnelEvent } from '../lib/funnelTelemetry';
 import { needsPakistaniDeliveryPhone, normalizeContactPhone, normalizePakistaniMobile, resolveCheckoutPhones, PHONE_ERROR_KEYS } from '../lib/phoneRules';
@@ -1611,8 +1612,9 @@ const handleInputChange = (field: string, value: any) => {
                   key="step-success"
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="space-y-5 text-center py-2"
+                  className="relative space-y-5 text-center py-2"
                 >
+                  <GoldConfettiBurst />
                   <div data-testid="order-seal-stamp" className="order-seal-stamp relative mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#042821] border-2 border-[#C7982F] shadow-[0_10px_28px_-8px_rgba(4,40,33,0.45)]">
                     <span aria-hidden="true" className="pointer-events-none absolute inset-1.5 rounded-full border border-[#E4C783]/45" />
                     <div className="h-11 w-11"><AllBarkaCrestVector /></div>

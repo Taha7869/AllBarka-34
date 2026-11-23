@@ -15,6 +15,7 @@ import TrustBadges from '../components/TrustBadges';
 import { buildAutomatedOrderWhatsAppUrl } from '../config/contacts';
 import { hamperPackingLines } from '../lib/hamperCatalog';
 import { AllBarkaCrestVector } from '../components/AllBarkaLogo';
+import RollingNumber from '../components/RollingNumber';
 
 export default function CartPage() {
   const PRODUCTS = useCatalogProducts();
@@ -82,7 +83,7 @@ if (!cartItems.length) return <div className="purchase-cart purchase-empty" dir=
           <div className="purchase-cart-photo"><img src={mediaCover(product, item.image || '')} alt={name} width={160} height={160} loading="lazy" decoding="async" onError={event => { if (!event.currentTarget.src.endsWith('/images/product-placeholder.svg')) event.currentTarget.src='/images/product-placeholder.svg'; }}/></div>
           <div className="purchase-cart-detail"><h2>{product ? <Link to={`/product/${product.id}`}>{name}</Link> : name}</h2><p className="purchase-portion" dir="auto">{item.selectedWeight}</p><p className="purchase-unit"><bdi>{formatPrice(unit)}</bdi> {t('purchase.each')}</p>
             <CartItemPersonalization configuration={item.hamperConfiguration} expanded />
-            <div className="purchase-line-actions"><div className="purchase-quantity" role="group" aria-label={`${t('quantity')}: ${name}`}><button type="button" onClick={() => updateQuantity(item.id,item.quantity-1)} aria-label={`${t(item.quantity===1?'purchase.remove':'purchase.decrease')}: ${name}`}><Minus size={15}/></button><span><bdi>{item.quantity}</bdi></span><button type="button" disabled={item.quantity>=50} onClick={() => updateQuantity(item.id,item.quantity+1)} aria-label={`${t('purchase.increase')}: ${name}`}><Plus size={15}/></button></div><button type="button" className="purchase-remove" onClick={() => removeFromCart(item.id)} aria-label={`${t('purchase.remove')}: ${name}`}><Trash2 size={16}/><span>{t('purchase.remove')}</span></button></div>
+            <div className="purchase-line-actions"><div className="purchase-quantity" role="group" aria-label={`${t('quantity')}: ${name}`}><button type="button" onClick={() => updateQuantity(item.id,item.quantity-1)} aria-label={`${t(item.quantity===1?'purchase.remove':'purchase.decrease')}: ${name}`}><Minus size={15}/></button><span><RollingNumber value={item.quantity} /></span><button type="button" disabled={item.quantity>=50} onClick={() => updateQuantity(item.id,item.quantity+1)} aria-label={`${t('purchase.increase')}: ${name}`}><Plus size={15}/></button></div><button type="button" className="purchase-remove" onClick={() => removeFromCart(item.id)} aria-label={`${t('purchase.remove')}: ${name}`}><Trash2 size={16}/><span>{t('purchase.remove')}</span></button></div>
           </div><div className="purchase-line-total"><small>{t('purchase.lineTotal')}</small><bdi>{formatPrice(unit*item.quantity)}</bdi></div>
         </article>;
       })}

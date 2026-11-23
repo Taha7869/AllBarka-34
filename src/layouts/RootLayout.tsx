@@ -30,6 +30,7 @@ import type { OccasionInquiryPrefill } from '../components/OccasionInquiryModal'
 import type { EventType } from '../lib/occasionPlanning';
 import { CUSTOM_QUOTE_MODAL_EVENT } from '../lib/customQuoteEvent';
 import { OPEN_AI_BUDDY_EVENT } from '../lib/heroScene';
+import { CART_POP_EVENT } from '../lib/flyToCart';
 import { MOTION_DURATION, MOTION_EASE } from '../lib/motion';
 
 const MobileMenu = React.lazy(() => import('../components/MobileMenu'));
@@ -95,6 +96,22 @@ export default function RootLayout() {
   const [headerSearchOpen, setHeaderSearchOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isCartPulsing, setIsCartPulsing] = useState(false);
+  const [cartPopTick, setCartPopTick] = useState(0);
+
+  useEffect(() => {
+    let pulseTimer: ReturnType<typeof setTimeout> | undefined;
+    const onCartPop = () => {
+      setCartPopTick((n) => n + 1);
+      setIsCartPulsing(true);
+      if (pulseTimer) clearTimeout(pulseTimer);
+      pulseTimer = setTimeout(() => setIsCartPulsing(false), 380);
+    };
+    window.addEventListener(CART_POP_EVENT, onCartPop);
+    return () => {
+      window.removeEventListener(CART_POP_EVENT, onCartPop);
+      if (pulseTimer) clearTimeout(pulseTimer);
+    };
+  }, []);
 
   const { cartItems, isCartOpen, setIsCartOpen, totalItemsCount, addToCart } = useCart();
 
@@ -454,10 +471,17 @@ export default function RootLayout() {
                 <AnimatePresence>
                   {totalItemsCount > 0 && (
                     <motion.div
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
+                      key={prefersReducedMotion ? 'static-badge' : `badge-${cartPopTick}`}
+                      initial={prefersReducedMotion ? false : { scale: 0.72, opacity: 0.7 }}
+                      animate={
+                        prefersReducedMotion
+                          ? { scale: 1, opacity: 1 }
+                          : { scale: cartPopTick > 0 ? [1, 1.28, 1] : 1, opacity: 1 }
+                      }
                       exit={{ scale: 0, opacity: 0 }}
-                      className="absolute -top-1 -right-1 min-w-[19px] h-[19px] flex items-center justify-center bg-[#C7982F] text-[#042821] text-[10px] font-bold rounded-full px-1 shadow-xs leading-none pointer-events-none"
+                      transition={{ duration: prefersReducedMotion ? 0 : 0.28, ease: MOTION_EASE }}
+                      data-testid="header-cart-badge"
+                      className="absolute -top-1 -right-1 min-w-[19px] h-[19px] flex items-center justify-center bg-[#C7982F] text-[#042821] text-[10px] font-bold rounded-full px-1 shadow-xs leading-none pointer-events-none tabular-nums"
                     >
                       {totalItemsCount}
                     </motion.div>
