@@ -67,3 +67,9 @@ Newest first. Shape and rules: `.agents/skills/allbarka-lessons-learned/SKILL.md
 - Root cause: counts were rebuilt from memory instead of one file.
 - Do: run `npx tsx scripts/export-master-list.ts` and quote its numbers; say "live Firestore not checked" only for Firestore.
 - Check: `/catalog-count` workflow.
+
+
+### 2026-11-24 — Windows Node 24 `execFileSync('npx.cmd')` EINVAL & Playwright `fullPage` smooth-scroll sticky header
+- **What happened:** (1) Calling `execFileSync('npx.cmd', ...)` directly on Windows Node 24 throws `EINVAL` without `shell: true`. (2) Capturing Playwright `fullPage: true` screenshots after scrolling down to trigger lazy images left the sticky `<header>` stitched mid-page because CSS smooth scrolling had not returned to `window.scrollY === 0`. (3) A static `<link rel="preload" as="image">` for the homepage hero inside `index.html` forced every PDP/Shop route to download the 83 KB Home hero unnecessarily even though `src/lib/routeDocument.ts` already injects route-specific preloads.
+- **Rule:** On Windows Node 24, invoke `.cmd` CLIs via `spawnSync(cmdString, { shell: true })`. In screenshot scripts, always reset scroll with `window.scrollTo({ top: 0, left: 0, behavior: 'instant' })` and `waitForFunction(() => window.scrollY === 0)` before `page.screenshot({ fullPage: true })`. Keep route-specific LCP image preloads strictly in `src/lib/routeDocument.ts`, never statically in `index.html`.
+- **Check:** `tests/route-document.test.ts` + visual check of `docs/design/*-2a-{desktop,mobile}.png`.
