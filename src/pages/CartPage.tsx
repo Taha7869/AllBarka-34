@@ -2,7 +2,7 @@ import { useCatalogProducts } from '../contexts/CatalogContext';
 import { getLocalized } from '../utils/localize';
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, MessageCircle, ShoppingCart } from 'lucide-react';
+import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, MessageCircle } from 'lucide-react';
 import { useCart, formatPrice, parsePrice } from '../contexts/CartContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
@@ -14,6 +14,7 @@ import PaidAddonsSelector from '../components/PaidAddonsSelector';
 import TrustBadges from '../components/TrustBadges';
 import { buildAutomatedOrderWhatsAppUrl } from '../config/contacts';
 import { hamperPackingLines } from '../lib/hamperCatalog';
+import { AllBarkaCrestVector } from '../components/AllBarkaLogo';
 
 export default function CartPage() {
   const PRODUCTS = useCatalogProducts();
@@ -65,7 +66,7 @@ export default function CartPage() {
 
 if (!cartItems.length) return <div className="purchase-cart purchase-empty" dir={isRtl ? 'rtl' : 'ltr'}>
     <SEO title={`${t('purchase.bag')} — AllBarka`} description={t('purchase.emptyCopy')} canonicalPath="/cart" />
-    <div className="purchase-empty-panel"><ShoppingCart size={36} aria-hidden="true"/><p className="purchase-eyebrow">AllBarka</p><h1>{t('cartEmpty')}</h1><p>{t('purchase.emptyCopy')}</p><Link className="purchase-primary" to="/shop">{t('purchase.browse')} <ArrowRight size={16}/></Link></div>
+    <div className="purchase-empty-panel"><div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border-2 border-[#C7982F] bg-[#042821] p-3.5 shadow-[0_10px_26px_-10px_rgba(4,40,33,0.45)]"><AllBarkaCrestVector /></div><p className="purchase-eyebrow">AllBarka</p><h1>{t('cartEmpty')}</h1><p>{t('purchase.emptyCopy')}</p><Link className="purchase-primary mx-auto max-w-xs" to="/shop">{t('purchase.browse')} <ArrowRight size={16} className="rtl-flip" /></Link></div>
     <CartTools />
   </div>;
 

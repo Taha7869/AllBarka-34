@@ -290,8 +290,8 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
     return (
       <div className="min-h-[60vh] bg-[var(--color-cream,#FDFBF7)] pt-16 pb-12 flex flex-col items-center justify-center p-4">
         <div className="max-w-md w-full bg-[var(--color-surface,#FDFBF7)] rounded-3xl p-8 shadow-sm border border-[var(--color-gold,#C7982F)]/20 text-center">
-          <div className="w-20 h-20 bg-[var(--color-cream,#FDFBF7)] rounded-full flex items-center justify-center mx-auto mb-6">
-            <ShoppingBag size={32} className="text-[var(--color-gold,#C7982F)]" />
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border-2 border-[#C7982F] bg-[#042821] p-3.5 shadow-[0_10px_26px_-10px_rgba(4,40,33,0.45)]">
+            <AllBarkaCrestVector />
           </div>
           <h1 className="text-2xl font-serif font-black text-[var(--color-ink,#29231D)] mb-3">{t('checkout.emptyTitle')}</h1>
           <p className="text-[13px] text-[var(--color-ink,#29231D)]/70 mb-8 leading-relaxed">

@@ -28,6 +28,7 @@ import { buildAutomatedOrderWhatsAppUrl } from '../config/contacts';
 import { acquireScrollLock } from '../utils/scrollLock';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCurrency } from '../contexts/CurrencyContext';
+import { AllBarkaCrestVector } from './AllBarkaLogo';
 
 const PREFERRED_PAYMENT_KEY = 'allbarka_preferred_payment';
 
@@ -330,26 +331,26 @@ export default function CartDrawer({
 
 
               {cartItems.length === 0 ? (
-                /* Empty State */
-                <div className="text-center py-16 px-4 flex flex-col items-center justify-center space-y-4">
-                  <div className="w-20 h-20 rounded-full bg-[#FFFCF7] dark:bg-[#1A201E] border border-[#C7982F]/40 flex items-center justify-center text-[#C7982F] shadow-sm">
-                    <ShoppingBag size={34} />
+                /* Branded Crest Empty State */
+                <div className="text-center py-16 px-5 flex flex-col items-center justify-center space-y-4">
+                  <div className="h-20 w-20 rounded-full bg-[#042821] border-2 border-[#C7982F] p-3.5 flex items-center justify-center shadow-[0_10px_26px_-10px_rgba(4,40,33,0.45)]">
+                    <AllBarkaCrestVector />
                   </div>
                   <div>
-                    <h3 className="font-serif font-bold text-xl text-[#29231D] dark:text-[#F6F1EA]">
+                    <h3 className="font-serif font-medium text-2xl text-[#042821] dark:text-[#FDFBF7]">
                       {t('cartEmpty')}
                     </h3>
-                    <p className="text-xs text-[#635B52] dark:text-[#A8A199] mt-1.5 max-w-[260px] mx-auto leading-relaxed">
+                    <p className="text-xs text-[#635B52] dark:text-[#A8A199] mt-2 max-w-[260px] mx-auto leading-relaxed">
                       {t('purchase.emptyCopy')}
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={handleBrowseCollections}
-                    className="mt-3 px-8 py-3.5 min-h-[44px] rounded-full bg-[#042821] dark:bg-[#0E4A3B] hover:bg-[#03201A] text-[#FFFCF7] text-xs font-bold uppercase tracking-widest transition-all shadow-md active:scale-95 cursor-pointer border border-[#C7982F]/40 flex items-center justify-center gap-2 focus-ring"
+                    className="mt-2 px-7 py-3 min-h-[46px] rounded-full bg-[#042821] hover:bg-[#08352B] text-[#FDFBF7] text-xs font-semibold transition-colors cursor-pointer border border-[#C7982F]/45 flex items-center justify-center gap-2 focus-ring"
                   >
-                    <ShoppingBag size={15} className="text-[#C7982F]" />
                     <span>{t('purchase.browse')}</span>
+                    <ArrowRight size={14} className="text-[#E4C783] rtl-flip" />
                   </button>
                 </div>
               ) : (
