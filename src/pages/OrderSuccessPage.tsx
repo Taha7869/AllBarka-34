@@ -13,6 +13,7 @@ import { getCheckoutAuthToken } from '../lib/checkoutAttempt';
 import { recoverOrderSuccessReceipt, refreshOrderSuccessReceipt, type ConfirmedSuccessReceipt } from '../lib/orderSuccessRecovery';
 import { TRACKING_POLL_MS, TRACKING_STEPS, trackingProgress } from '../lib/orderPresentation';
 import { recordFunnelEvent } from '../lib/funnelTelemetry';
+import { AllBarkaCrestVector } from '../components/AllBarkaLogo';
 
 export type OrderSuccessSnapshot = ConfirmedSuccessReceipt;
 
@@ -222,17 +223,30 @@ export default function OrderSuccessPage() {
   const isQuoteRequest = order.orderType === 'QUOTE_REQUEST';
 
   return (
-    <div className="w-full min-h-[70vh] py-12 px-4 sm:px-6 flex justify-center items-start">
-      <div className="max-w-2xl w-full bg-[var(--color-surface,#FFFCF7)] border border-[var(--color-gold,#C7982F)]/30 rounded-3xl p-6 sm:p-10 shadow-[0_20px_60px_rgba(4,40,33,0.08)] relative overflow-hidden">
-        <div className="w-16 h-16 rounded-full bg-[var(--color-gold,#C7982F)]/10 border border-[var(--color-gold,#C7982F)]/30 flex items-center justify-center mx-auto mb-6 text-[var(--color-gold,#C7982F)]">
-          <CheckCircle size={32} />
+    <div className="w-full min-h-[70vh] py-12 px-4 sm:px-6 flex justify-center items-start bg-[var(--color-base,#FDFBF7)]">
+      <div className="max-w-2xl w-full bg-[var(--color-surface,#FFFCF7)] border border-[#C7982F]/35 rounded-[22px] p-6 sm:p-10 shadow-[0_12px_40px_-14px_rgba(4,40,33,0.12)] relative overflow-hidden">
+        {/* AllBarka Embossed Wax-Seal Stamp Moment (static under prefers-reduced-motion) */}
+        <div
+          data-testid="order-seal-stamp"
+          className="order-seal-stamp relative mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#042821] border-2 border-[#C7982F] shadow-[0_10px_28px_-8px_rgba(4,40,33,0.45)]"
+        >
+          <span aria-hidden="true" className="pointer-events-none absolute inset-1.5 rounded-full border border-[#E4C783]/45" />
+          <div className="h-11 w-11">
+            <AllBarkaCrestVector />
+          </div>
+          <span
+            aria-hidden="true"
+            className="absolute -bottom-1 -end-1 flex h-6 w-6 items-center justify-center rounded-full bg-[#C7982F] text-[#042821] ring-2 ring-[#FFFCF7] dark:ring-[#171D1B]"
+          >
+            <CheckCircle size={14} strokeWidth={2.5} />
+          </span>
         </div>
 
         <div className="text-center mb-8">
-          <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--color-gold,#C7982F)] block mb-1">
+          <span className="text-xs font-medium text-[var(--color-accent-text,#806326)] dark:text-[#E4C783] block mb-1.5">
             {t(isQuoteRequest ? 'checkout.quoteReceived' : 'checkout.receiptReceived')}
           </span>
-          <h1 className="text-2xl sm:text-3xl font-serif font-bold text-[var(--color-ink,#29231D)]">
+          <h1 className="text-2xl sm:text-3xl font-serif font-medium text-[var(--color-primary,#042821)] dark:text-[#FDFBF7]">
             Thank You, {order.name.split(' ')[0]}
           </h1>
           <p className="text-xs sm:text-sm text-[var(--color-ink-muted,#635B52)] mt-2 max-w-md mx-auto">

@@ -261,13 +261,13 @@ export default function CartDrawer({
             dir={isRtl ? 'rtl' : 'ltr'}
             className={`purchase-drawer w-full sm:max-w-md bg-[#F6F1EA] dark:bg-[#121615] h-full relative z-10 shadow-[0_0_50px_rgba(0,0,0,0.35)] flex flex-col overflow-hidden text-[#29231D] dark:text-[#F6F1EA] ${isRtl ? 'border-r' : 'border-l'} border-[#C7982F]/25 pb-[env(safe-area-inset-bottom)]`}
           >
-            {/* ── 1. Top Fixed Header ── */}
-            <div className="purchase-drawer-header bg-[#FFFCF7] dark:bg-[#1A201E] border-b border-[#C7982F]/25 px-4 sm:px-5 py-4 flex items-center justify-between shrink-0 shadow-xs">
+            {/* ── 1. Top Fixed Header — Deep Matte Emerald & Champagne Gold ── */}
+            <div className="purchase-drawer-header bg-[#042821] text-[#FDFBF7] border-b border-[#C7982F]/35 px-4 sm:px-5 py-4 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-full bg-[#F6F1EA] dark:bg-[#222A28] border border-[#C7982F]/40 flex items-center justify-center text-[#C7982F] relative shadow-xs shrink-0">
-                  <ShoppingCart size={19} />
+                <div className="w-11 h-11 rounded-full bg-[#08352B] border border-[#C7982F]/50 flex items-center justify-center text-[#E4C783] relative shrink-0">
+                  <ShoppingCart size={18} />
                   {totalItemCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-[#C7982F] text-[#042821] text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#FFFCF7] dark:border-[#1A201E] shadow-xs">
+                    <span className="absolute -top-1 -right-1 bg-[#C7982F] text-[#042821] text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#042821]">
                       {totalItemCount}
                     </span>
                   )}
@@ -275,11 +275,11 @@ export default function CartDrawer({
                 <div>
                   <h2
                     id={drawerHeadingId}
-                    className="text-lg font-serif font-bold text-[#29231D] dark:text-[#F6F1EA] leading-tight"
+                    className="text-lg font-serif font-medium text-[#FDFBF7] leading-tight"
                   >
                     {t('purchase.bag')}
                   </h2>
-                  <p className="text-[10px] text-[#806326] dark:text-[#E4C783] font-semibold uppercase tracking-widest leading-none mt-1">
+                  <p className="text-[11px] text-[#E4C783] font-medium leading-none mt-1">
                     {totalItemCount} {t('shop.results')}
                   </p>
                 </div>
@@ -289,7 +289,7 @@ export default function CartDrawer({
               <button
                 type="button"
                 onClick={closeDrawer}
-                className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-[#F6F1EA] dark:bg-[#222A28] hover:bg-[#C7982F] text-[#29231D] dark:text-[#F6F1EA] hover:text-[#042821] flex items-center justify-center transition-all duration-200 cursor-pointer focus-ring shadow-xs border border-[#29231D]/10 dark:border-[#F6F1EA]/10"
+                className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-[#08352B] hover:bg-[#C7982F] text-[#FDFBF7] hover:text-[#042821] flex items-center justify-center transition-colors duration-200 cursor-pointer focus-ring border border-[#C7982F]/35"
                 aria-label={t('purchase.close')}
               >
                 <X size={18} />
@@ -556,11 +556,11 @@ export default function CartDrawer({
                 <button
                   type="button"
                   onClick={handleProceedToCheckout}
-                  className="w-full min-h-[48px] py-3.5 px-5 rounded-full bg-[#1E3A2B] hover:bg-[#14281E] text-[#FDFBF7] text-xs font-bold uppercase tracking-widest transition-all shadow-md active:scale-98 flex items-center justify-center gap-2.5 border border-[#C7982F]/40 cursor-pointer focus-ring"
+                  className="w-full min-h-[48px] py-3.5 px-5 rounded-full bg-[#042821] hover:bg-[#08352B] text-[#FDFBF7] text-xs font-semibold transition-colors flex items-center justify-center gap-2.5 border border-[#C7982F]/45 cursor-pointer focus-ring"
                 >
-                  <ShoppingBag size={16} className="text-[#C7982F]" />
+                  <ShoppingBag size={16} className="text-[#E4C783]" />
                   <span>{t('proceedToCheckout', 'Proceed to Checkout')}</span>
-                  <ArrowRight size={15} className="text-[#FDFBF7]" />
+                  <ArrowRight size={15} className="text-[#FDFBF7] rtl-flip" />
                 </button>
 
                 {/* Secondary WhatsApp Quick Order */}
