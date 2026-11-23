@@ -555,29 +555,45 @@ describe('Stage 5A BoutiqueSelections Controlled-Clock Lifecycle & Timing', () =
   });
 
   test('12. Live homepage House Selections stays strictly manual (3 tabs, zero auto-rotation)', async () => {
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    const initialTime = new Date('2026-01-01T00:00:00Z');
-    await page.clock.install({ time: initialTime });
-    await page.clock.pauseAt(new Date(initialTime.getTime() + 1000));
-    await page.goto(`http://localhost:${PORT}/`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('#boutique-selections[data-manual-tabs="true"]');
+    // The local test server sometimes triggers one same-URL reload while lazy chunks settle;
+    // retry the whole check once in a fresh context instead of failing on a destroyed page context.
+    const runCheck = async () => {
+      const context = await browser.newContext();
+      const page = await context.newPage();
+      const initialTime = new Date('2026-01-01T00:00:00Z');
+      await page.clock.install({ time: initialTime });
+      await page.clock.pauseAt(new Date(initialTime.getTime() + 1000));
+      await page.goto(`http://localhost:${PORT}/`, { waitUntil: 'domcontentloaded' });
+      // Let any same-URL reload from lazy-chunk recovery finish before reading state.
+      let settledNavs = -1; let navs = 0;
+      page.on('framenavigated', (frame) => { if (frame === page.mainFrame()) navs += 1; });
+      while (settledNavs !== navs) { settledNavs = navs; await page.waitForTimeout(1200); }
+      await page.waitForSelector('#boutique-selections[data-manual-tabs="true"]');
 
-    const tabs = await page.evaluate(() =>
-      Array.from(document.querySelectorAll('#boutique-selections [role="tab"]')).map((el) =>
-        el.getAttribute('data-tab-id')
-      )
-    );
-    assert.deepEqual(tabs, ['dry-fruits', 'gifts', 'celebration-boxes'], 'Live homepage must present 3 calm manual tabs');
-    assert.equal(await page.locator('#boutique-selections button[aria-label*="autoplay"]').count(), 0, 'No autoplay button on live homepage');
-    assert.equal(await getActiveTabId(page), 'dry-fruits');
+      const tabs = await page.evaluate(() =>
+        Array.from(document.querySelectorAll('#boutique-selections [role="tab"]')).map((el) =>
+          el.getAttribute('data-tab-id')
+        )
+      );
+      assert.deepEqual(tabs, ['dry-fruits', 'gifts', 'celebration-boxes'], 'Live homepage must present 3 calm manual tabs');
+      assert.equal(await page.locator('#boutique-selections button[aria-label*="autoplay"]').count(), 0, 'No autoplay button on live homepage');
+      assert.equal(await getActiveTabId(page), 'dry-fruits');
 
-    await page.clock.runFor(18000);
-    assert.equal(await getActiveTabId(page), 'dry-fruits', 'Live homepage House Selections must NEVER auto-rotate');
+      await page.clock.runFor(18000);
+      assert.equal(await getActiveTabId(page), 'dry-fruits', 'Live homepage House Selections must NEVER auto-rotate');
 
-    await page.click('#boutique-selections [role="tab"][data-tab-id="gifts"]');
-    assert.equal(await getActiveTabId(page), 'gifts', 'Manual tab click switches selection cleanly');
+      await page.click('#boutique-selections [role="tab"][data-tab-id="gifts"]');
+      assert.equal(await getActiveTabId(page), 'gifts', 'Manual tab click switches selection cleanly');
 
-    await context.close();
+      await context.close();
+  };
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        await runCheck();
+        return;
+      } catch (error) {
+        if (attempt === 2 || !String(error?.message).includes('Execution context was destroyed')) throw error;
+      }
+    }
   });
 });
