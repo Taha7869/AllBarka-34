@@ -55,7 +55,7 @@
 .dark .boutique-checkout .bg-white, .dark .boutique-checkout [class*="bg-white/"] { background:var(--color-surface-elevated); color:var(--color-text-primary); }
 @media(max-width:1023px) { .boutique-order-summary { position:static; } }
 
-.site-footer { position:relative; isolation:isolate; overflow:hidden; color:#f7f2e7; background:#08291f; border-top:1px solid #b8995c66; }
+.site-footer { position:relative; isolation:isolate; overflow:hidden; color:#FDFBF7; background:#042821; border-top:1px solid #C7982F59; }
 .site-footer::before { content:""; position:absolute; inset:0; z-index:-1; pointer-events:none; background:radial-gradient(circle at 12% 35%,#38654b24,transparent 38%),radial-gradient(circle at 89% 75%,#b4974520,transparent 30%); }
 .site-footer-promise { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); max-width:1280px; margin:auto; padding:0 32px; border-bottom:1px solid #d8b77338; }
 .site-footer-promise>div { display:flex; align-items:center; gap:17px; min-height:102px; padding:20px 28px; border-inline-end:1px solid #d8b7732e; }

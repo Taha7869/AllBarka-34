@@ -1,59 +1,248 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, MessageCircle, Instagram, ShieldCheck, Truck, Sparkles, ArrowRight, Bell } from 'lucide-react';
+import { MapPin, MessageCircle, Instagram, Bell } from 'lucide-react';
 import { FaFacebookF } from 'react-icons/fa';
-import { useLanguage } from '../contexts/LanguageContext';
+import { useLanguage, type LanguageCode } from '../contexts/LanguageContext';
 import { useConsent } from '../contexts/ConsentContext';
 import { AllBarkaCrestVector } from './AllBarkaLogo';
 import { STORE_CONFIG } from '../config/store';
 import { CONTACT_CONFIG, buildHumanSupportWhatsAppUrl } from '../config/contacts';
-import NewsletterCard from './NewsletterCard';
-import { CANONICAL_CATEGORIES, CUSTOMER_FACING_CATEGORIES, getCategoryMeta } from '../config/categories';
+
+const COLUMN_TITLES: Record<LanguageCode, { shop: string; help: string; house: string; track: string; occasions: string; wholesale: string; tag: string }> = {
+  en: {
+    shop: 'Shop',
+    help: 'Help',
+    house: 'House',
+    track: 'Track order',
+    occasions: 'Occasions',
+    wholesale: 'Corporate & wholesale',
+    tag: 'Lahore gifting house',
+  },
+  ur: {
+    shop: 'شاپ',
+    help: 'مدد و رہنمائی',
+    house: 'البرکہ ہاؤس',
+    track: 'آرڈر ٹریک کریں',
+    occasions: 'تقریبات',
+    wholesale: 'ہول سیل و کارپوریٹ',
+    tag: 'لاہور گفٹنگ ہاؤس',
+  },
+  ar: {
+    shop: 'المتجر',
+    help: 'المساعدة',
+    house: 'الدار',
+    track: 'تتبع الطلب',
+    occasions: 'المناسبات',
+    wholesale: 'الجملة والشركات',
+    tag: 'دار الهدايا في لاهور',
+  },
+};
 
 export default function Footer() {
-  const { t } = useLanguage();
+  const { t, language, isRtl } = useLanguage();
   const { openPreferences } = useConsent();
-  const collections = [
-    ['footer.allProducts', '/shop'],
-    ...CUSTOMER_FACING_CATEGORIES.map(id => [`shop.${id}`, id === 'gift-boxes' ? '/gifting' : `/shop/${id}`]),
+  const labels = COLUMN_TITLES[language] || COLUMN_TITLES.en;
+
+  const shopLinks: Array<[string, string]> = [
+    [t('footer.allProducts', 'All Products'), '/shop'],
+    [t('shop.dry-fruits', 'Dry Fruits & Nuts'), '/shop/dry-fruits'],
+    [t('shop.dates', 'Dates'), '/shop/dates'],
+    [t('nav.gifting', 'Gifts & Hampers'), '/gifting'],
+    [t('shop.celebration-boxes', 'Celebration Boxes'), '/shop/celebration-boxes'],
+    [t('shop.herbs-spices', 'Saffron & Spices'), '/shop/herbs-spices'],
+    [t('shop.oils', 'Cold-Pressed Oils'), '/shop/oils'],
   ];
-  const journal = [
-    ['footer.journal', '/journal'], ['footer.story', '/pages/our-story'], ['footer.sourcing', '/pages/our-story'],
-    ['footer.guide', '/journal'], ['footer.storage', '/journal'], ['footer.giftIdeas', '/gifting'],
+
+  const helpLinks: Array<[string, string]> = [
+    [t('footer.faq', 'Frequently Asked Questions'), '/faq'],
+    [labels.track, '/track'],
+    [t('footer.shipping', 'Shipping Policy'), '/policies/shipping'],
+    [t('footer.returns', 'Returns & Refunds'), '/policies/refund'],
+    [t('footer.contact', 'Contact Us'), '/contact'],
   ];
-  const support = [
-    ['footer.faq', '/faq'], ['footer.shipping', '/policies/shipping'], ['footer.contact', '/contact'],
-    ['footer.returns', '/policies/refund'], ['footer.privacy', '/policies/privacy'], ['footer.cookies', '/policies/cookies'], ['footer.terms', '/policies/terms'],
+
+  const houseLinks: Array<[string, string]> = [
+    [t('footer.story', 'Our Story'), '/story'],
+    [t('footer.journal', 'The Harvest Chronicle'), '/journal'],
+    [labels.occasions, '/occasions'],
+    [labels.wholesale, '/wholesale'],
   ];
-  const column = (title: string, links: string[][]) => <div className="footer-links-col" key={title}>
-    <h3>{t(title)}</h3><ul>{links.map(([key, href]) => <li key={key}><Link to={href}>{t(key, key.startsWith('shop.') ? getCategoryMeta(key.slice(5))?.name : undefined)}</Link></li>)}</ul>
-  </div>;
-  return <footer id="site-footer" className="site-footer">
-    <div className="site-footer-promise"><div><ShieldCheck size={21}/><span><strong>{t('footer.pure')}</strong><small>{t('footer.pureCopy')}</small></span></div><div><Truck size={21}/><span><strong>{t('footer.dispatch')}</strong><small>{t('footer.dispatchCopy')}</small></span></div><div><Sparkles size={21}/><span><strong>{t('footer.seal')}</strong><small>{t('footer.sealCopy')}</small></span></div></div>
-    <div className="site-footer-inner">
-      <div className="site-footer-editorial">
-        <div className="site-footer-editorial-copy">
-          <span className="site-footer-eyebrow"><span aria-hidden="true" />{t('footer.eyebrow')}</span>
-          <h2>{t('footer.statement')}</h2>
-          <p>{t('footer.statementCopy')}</p>
-          <Link to="/gifting" className="site-footer-editorial-link">{t('footer.gifts')} <ArrowRight size={17}/></Link>
+
+  return (
+    <footer
+      id="site-footer"
+      dir={isRtl ? 'rtl' : 'ltr'}
+      className="site-footer bg-[#042821] text-[#FDFBF7] border-t border-[#C7982F]/35"
+    >
+      <div className="mx-auto max-w-7xl px-5 py-14 sm:px-8 sm:py-16 lg:px-10">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-12 lg:gap-8">
+          {/* Brand Crest, Area-Level Location & WhatsApp */}
+          <div className="lg:col-span-4 space-y-5">
+            <Link
+              to="/"
+              className="focus-ring inline-flex items-center gap-3.5 rounded-xl"
+            >
+              <div className="h-11 w-11 shrink-0">
+                <AllBarkaCrestVector />
+              </div>
+              <div>
+                <strong className="block font-serif text-2xl font-semibold leading-none tracking-tight text-[#FDFBF7]">
+                  AllBarka
+                </strong>
+                <small className="mt-1 block text-[11px] font-medium text-[#E4C783]">
+                  {labels.tag}
+                </small>
+              </div>
+            </Link>
+
+            <p dir="auto" className="max-w-xs text-xs leading-relaxed text-[#F2ECE2]/75">
+              {t('footerStory')}
+            </p>
+
+            <div className="space-y-2.5 text-xs text-[#F2ECE2]/85">
+              <div className="flex items-start gap-2.5">
+                <MapPin size={15} className="mt-0.5 shrink-0 text-[#C7982F]" aria-hidden="true" />
+                <span dir="ltr">{CONTACT_CONFIG.boutiqueAddress}</span>
+              </div>
+              <a
+                href={buildHumanSupportWhatsAppUrl()}
+                target="_blank"
+                rel="noreferrer"
+                className="focus-ring inline-flex min-h-[44px] items-center gap-2.5 text-[#F2ECE2]/90 transition-colors hover:text-[#E4C783]"
+              >
+                <MessageCircle size={15} className="shrink-0 text-[#C7982F]" aria-hidden="true" />
+                <span dir="ltr">WhatsApp: {CONTACT_CONFIG.humanSupportWhatsApp.formatted}</span>
+              </a>
+            </div>
+
+            <div className="flex items-center gap-2.5 pt-1">
+              <a
+                href={buildHumanSupportWhatsAppUrl()}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="WhatsApp"
+                className="focus-ring grid h-11 w-11 place-items-center rounded-full border border-[#C7982F]/35 bg-[#08352B] text-[#FDFBF7] transition-colors hover:bg-[#C7982F] hover:text-[#042821]"
+              >
+                <MessageCircle size={16} />
+              </a>
+              <a
+                href={STORE_CONFIG.social.instagramUrl}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Instagram"
+                className="focus-ring grid h-11 w-11 place-items-center rounded-full border border-[#C7982F]/35 bg-[#08352B] text-[#FDFBF7] transition-colors hover:bg-[#C7982F] hover:text-[#042821]"
+              >
+                <Instagram size={16} />
+              </a>
+              <a
+                href={STORE_CONFIG.social.facebookUrl}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Facebook"
+                className="focus-ring grid h-11 w-11 place-items-center rounded-full border border-[#C7982F]/35 bg-[#08352B] text-[#FDFBF7] transition-colors hover:bg-[#C7982F] hover:text-[#042821]"
+              >
+                <FaFacebookF size={15} />
+              </a>
+            </div>
+          </div>
+
+          {/* 3 Calm Navigation Columns: Shop / Help / House (Zero Duplicate Links) */}
+          <div className="lg:col-span-8 grid grid-cols-1 gap-8 sm:grid-cols-3">
+            {/* Column 1: Shop */}
+            <nav aria-label={labels.shop} className="footer-links-col">
+              <h3 className="mb-4 border-b border-[#C7982F]/25 pb-3 font-serif text-sm font-semibold text-[#E4C783]">
+                {labels.shop}
+              </h3>
+              <ul className="space-y-0.5">
+                {shopLinks.map(([label, href]) => (
+                  <li key={href}>
+                    <Link
+                      to={href}
+                      className="focus-ring inline-flex min-h-[44px] items-center text-xs text-[#F2ECE2]/85 transition-colors hover:text-[#E4C783]"
+                    >
+                      <span dir="auto">{label}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+
+            {/* Column 2: Help */}
+            <nav aria-label={labels.help} className="footer-links-col">
+              <h3 className="mb-4 border-b border-[#C7982F]/25 pb-3 font-serif text-sm font-semibold text-[#E4C783]">
+                {labels.help}
+              </h3>
+              <ul className="space-y-0.5">
+                {helpLinks.map(([label, href]) => (
+                  <li key={href}>
+                    <Link
+                      to={href}
+                      className="focus-ring inline-flex min-h-[44px] items-center text-xs text-[#F2ECE2]/85 transition-colors hover:text-[#E4C783]"
+                    >
+                      <span dir="auto">{label}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+
+            {/* Column 3: House */}
+            <nav aria-label={labels.house} className="footer-links-col">
+              <h3 className="mb-4 border-b border-[#C7982F]/25 pb-3 font-serif text-sm font-semibold text-[#E4C783]">
+                {labels.house}
+              </h3>
+              <ul className="space-y-0.5">
+                {houseLinks.map(([label, href]) => (
+                  <li key={href}>
+                    <Link
+                      to={href}
+                      className="focus-ring inline-flex min-h-[44px] items-center text-xs text-[#F2ECE2]/85 transition-colors hover:text-[#E4C783]"
+                    >
+                      <span dir="auto">{label}</span>
+                    </Link>
+                  </li>
+                ))}
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => window.dispatchEvent(new CustomEvent('open-store-updates'))}
+                    className="focus-ring inline-flex min-h-[44px] items-center gap-2 text-xs text-[#E4C783] transition-colors hover:text-[#FDFBF7] cursor-pointer"
+                  >
+                    <Bell size={14} aria-hidden="true" />
+                    <span dir="auto">{t('updates.open', 'Store updates')}</span>
+                  </button>
+                </li>
+              </ul>
+            </nav>
+          </div>
         </div>
-        <div className="site-footer-newsletter"><NewsletterCard /><button type="button" className="footer-updates-entry focus-ring" onClick={() => window.dispatchEvent(new CustomEvent('open-store-updates'))}><Bell size={17}/><span dir="auto">{t('updates.open')}</span></button></div>
-      </div>
-      <div className="site-footer-rule" aria-hidden="true"><span>✦</span></div>
-      <div className="site-footer-grid">
-        <div className="site-footer-brand">
-          <Link to="/" className="site-footer-logo"><AllBarkaCrestVector /><span><strong>AllBarka</strong><small>LUXURY HARVESTS</small></span></Link>
-          <p>{t('footerStory')}</p>
-          <div className="site-footer-contact"><MapPin size={16}/><span dir="ltr">{CONTACT_CONFIG.boutiqueAddress}</span></div>
-          <a className="site-footer-contact" href={buildHumanSupportWhatsAppUrl()} target="_blank" rel="noreferrer"><MessageCircle size={16}/><span dir="ltr">WhatsApp: {CONTACT_CONFIG.humanSupportWhatsApp.formatted}</span></a>
-          <div className="site-footer-social"><a href={buildHumanSupportWhatsAppUrl()} target="_blank" rel="noreferrer" aria-label="WhatsApp"><MessageCircle size={17}/></a><a href={STORE_CONFIG.social.instagramUrl} target="_blank" rel="noreferrer" aria-label="Instagram"><Instagram size={17}/></a><a href={STORE_CONFIG.social.facebookUrl} target="_blank" rel="noreferrer" aria-label="Facebook"><FaFacebookF size={16}/></a></div>
+
+        {/* Bottom Legal & Consent Bar (Unique legal links only, zero duplication) */}
+        <div className="mt-12 flex flex-col items-start justify-between gap-4 border-t border-[#C7982F]/20 pt-6 text-[11px] text-[#F2ECE2]/70 sm:flex-row sm:items-center">
+          <span>
+            © {new Date().getFullYear()} AllBarka Dry Fruits &amp; Confections. {t('allRightsReserved')}
+          </span>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+            <Link to="/policies/privacy" className="focus-ring inline-flex min-h-[44px] items-center hover:text-[#E4C783]">
+              {t('footer.privacy', 'Privacy policy')}
+            </Link>
+            <Link to="/policies/cookies" className="focus-ring inline-flex min-h-[44px] items-center hover:text-[#E4C783]">
+              {t('footer.cookies', 'Cookie policy')}
+            </Link>
+            <button
+              type="button"
+              data-footer-cookie-settings
+              onClick={openPreferences}
+              className="focus-ring inline-flex min-h-[44px] items-center cursor-pointer bg-transparent border-0 p-0 text-inherit font-inherit underline-offset-4 hover:text-[#E4C783] hover:underline"
+            >
+              {t('footer.cookieSettings', 'Cookie settings')}
+            </button>
+            <Link to="/policies/terms" className="focus-ring inline-flex min-h-[44px] items-center hover:text-[#E4C783]">
+              {t('footer.terms', 'Terms of service')}
+            </Link>
+          </div>
         </div>
-        {column('footer.collections', collections)}
-        {column('footer.journalTitle', journal)}
-        <div>{column('footer.support', support)}<div className="site-footer-concierge"><strong>{t('footer.concierge')}</strong><p>{t('footer.conciergeCopy')}</p><Link to="/contact">{t('footer.connect')} <ArrowRight size={15}/></Link></div></div>
       </div>
-      <div className="site-footer-bottom"><span>© {new Date().getFullYear()} AllBarka Dry Fruits & Confections. {t('allRightsReserved')}</span><div><Link to="/policies/privacy">{t('footer.privacy')}</Link><Link to="/policies/cookies">{t('footer.cookies')}</Link><button type="button" data-footer-cookie-settings onClick={openPreferences} className="cursor-pointer bg-transparent border-0 p-0 text-inherit font-inherit underline-offset-4 hover:underline focus-ring">{t('footer.cookieSettings')}</button><Link to="/policies/terms">{t('footer.terms')}</Link><Link to="/policies/shipping">{t('footer.shipping')}</Link></div></div>
-    </div>
-  </footer>;
+    </footer>
+  );
 }
