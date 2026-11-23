@@ -155,7 +155,7 @@ export default function HouseSelectionsSection({
       aria-labelledby="house-selections-heading"
       data-testid="house-selections-section"
       data-manual-tabs="true"
-      className="w-full border-y border-[var(--color-border)] bg-[#F2ECE2] dark:bg-[#171D1B] py-14 sm:py-20 text-[var(--color-text-primary,#29231D)]"
+      className="w-full overflow-x-clip border-y border-[var(--color-border)] bg-[#F2ECE2] dark:bg-[#171D1B] py-14 sm:py-20 text-[var(--color-text-primary,#29231D)]"
     >
       <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
         <div className="mb-8 flex flex-col items-start justify-between gap-5 lg:mb-10 lg:flex-row lg:items-end">
@@ -210,16 +210,21 @@ export default function HouseSelectionsSection({
           id={`house-panel-${currentTab.id}`}
           role="tabpanel"
           aria-labelledby={`house-tab-${currentTab.id}`}
-          className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6"
+          data-mobile-snap-row="true"
+          className="-mx-5 flex flex-nowrap gap-4 overflow-x-auto px-5 pb-2 scroll-px-5 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:px-0 md:pb-0"
         >
           {currentTab.products.map((product) => (
-            <ProductCard
+            <div
               key={product.id}
-              product={product}
-              isWholesale={false}
-              onAddToCart={onAddToCart}
-              onQuickView={onQuickView}
-            />
+              className="w-[78vw] max-w-[330px] shrink-0 snap-start md:w-auto md:max-w-none md:min-w-0"
+            >
+              <ProductCard
+                product={product}
+                isWholesale={false}
+                onAddToCart={onAddToCart}
+                onQuickView={onQuickView}
+              />
+            </div>
           ))}
         </div>
 
