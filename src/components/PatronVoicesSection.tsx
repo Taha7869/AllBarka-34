@@ -1,8 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-import { REVIEWS } from '../data/products';
 import { useLanguage, type LanguageCode } from '../contexts/LanguageContext';
+import { usePublishedReviews } from '../contexts/StorefrontContentContext';
+import { sanitizePublishedReviews, type PublishedPatronReview } from '../lib/publishedReviews';
 
 const VOICES_COPY: Record<
   LanguageCode,
@@ -37,10 +38,21 @@ const VOICES_COPY: Record<
   },
 };
 
-export default function PatronVoicesSection() {
+export interface PatronVoicesSectionProps {
+  reviews?: PublishedPatronReview[];
+}
+
+export default function PatronVoicesSection({ reviews: propReviews }: PatronVoicesSectionProps = {}) {
   const { language, isRtl } = useLanguage();
+  const publishedReviews = usePublishedReviews();
+  const featuredReviews = sanitizePublishedReviews(propReviews ?? publishedReviews).slice(0, 3);
+
+  // Never render hardcoded placeholder testimonials; omit section cleanly when no admin-published order reviews exist.
+  if (featuredReviews.length === 0) {
+    return null;
+  }
+
   const copy = VOICES_COPY[language] || VOICES_COPY.en;
-  const featuredReviews = REVIEWS.slice(0, 3);
 
   return (
     <section
@@ -90,26 +102,33 @@ export default function PatronVoicesSection() {
         </div>
 
         <div className="grid grid-cols-1 gap-5 md:grid-cols-3 sm:gap-6">
-          {featuredReviews.map((review) => (
-            <figure
-              key={review.id}
-              className="flex flex-col justify-between rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface,#FFFCF7)] p-6"
-            >
-              <blockquote dir="auto" className="font-serif text-base leading-relaxed text-[var(--color-text-primary,#29231D)]">
-                “{review.review}”
-              </blockquote>
+          {featuredReviews.map((review) => {
+            const displayName =
+              language === 'ur' ? review.name_ur : language === 'ar' ? review.name_ar : review.name_en;
+            return (
+              <figure
+                key={review.id}
+                className="flex flex-col justify-between rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface,#FFFCF7)] p-6"
+              >
+                <blockquote dir="auto" className="font-serif text-base leading-relaxed text-[var(--color-text-primary,#29231D)]">
+                  “{review.review}”
+                </blockquote>
 
-              <figcaption className="mt-5 border-t border-[var(--color-border)] pt-4 text-xs">
-                <span className="block font-semibold text-[var(--color-text-primary,#29231D)]">
-                  {review.name_en}
-                </span>
-                <span className="mt-0.5 block text-[var(--color-text-secondary,#635B52)]">
-                  {review.location}
-                  {review.purchasedItem ? ` · ${review.purchasedItem}` : ''}
-                </span>
-              </figcaption>
-            </figure>
-          ))}
+                <figcaption className="mt-5 border-t border-[var(--color-border)] pt-4 text-xs">
+                  <span dir="auto" className="block font-semibold text-[var(--color-text-primary,#29231D)]">
+                    {displayName}
+                  </span>
+                  {(review.location || review.purchasedItem) && (
+                    <span dir="auto" className="mt-0.5 block text-[var(--color-text-secondary,#635B52)]">
+                      {review.location}
+                      {review.location && review.purchasedItem ? ' · ' : ''}
+                      {review.purchasedItem}
+                    </span>
+                  )}
+                </figcaption>
+              </figure>
+            );
+          })}
         </div>
       </div>
     </section>

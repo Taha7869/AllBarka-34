@@ -1,119 +1,87 @@
 "use client";
 import React from "react";
 import { TracingBeam } from "./ui/tracing-beam";
-import { Star, CheckCircle2, Package } from 'lucide-react';
+import { Star, Package } from "lucide-react";
+import { useLanguage } from "../contexts/LanguageContext";
+import { usePublishedReviews } from "../contexts/StorefrontContentContext";
+import { sanitizePublishedReviews, type PublishedPatronReview } from "../lib/publishedReviews";
 
-export function AllBarkaDarkReviews() {
+export interface AllBarkaDarkReviewsProps {
+  reviews?: PublishedPatronReview[];
+}
+
+export function AllBarkaDarkReviews({ reviews: propReviews }: AllBarkaDarkReviewsProps = {}) {
+  const { language, t, isRtl } = useLanguage();
+  const publishedReviews = usePublishedReviews();
+  const items = sanitizePublishedReviews(propReviews ?? publishedReviews);
+
+  if (items.length === 0) {
+    return null;
+  }
+
   return (
-    /* Section Wrapper - Whitish / Gold Palette */
-    <div className="bg-[var(--color-surface,#FFFFFF)] w-full rounded-3xl p-6 md:p-12 my-12 border-2 border-[var(--color-gold,#B8935F)]/35 shadow-lg text-left select-none">
-      
-      {/* Section Title */}
+    <div
+      dir={isRtl ? "rtl" : "ltr"}
+      data-testid="dark-reviews"
+      className="bg-[var(--color-surface,#FFFCF7)] w-full rounded-3xl p-6 md:p-12 my-12 border border-[var(--color-gold,#C7982F)]/35 shadow-sm text-start select-none"
+    >
       <div className="text-center mb-12">
-        <span className="bg-[var(--color-cream,#FAF9F5)] border border-[var(--color-gold,#B8935F)]/40 text-[var(--color-gold,#B8935F)] text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-xs inline-block">
-          Verified Patron Feedback
+        <span className="bg-[var(--color-cream,#F2ECE2)] dark:bg-[#1E2523] border border-[var(--color-gold,#C7982F)]/40 text-[var(--color-accent-text,#806326)] text-xs font-semibold px-4 py-1.5 rounded-full inline-block">
+          {t("verifiedReviews", "Store-published feedback")}
         </span>
-        <h2 className="text-2xl md:text-4xl font-bold text-[var(--color-ink,#1A1A1A)] mt-3 tracking-wide font-serif">
-          What Our Customers Say
+        <h2 className="text-2xl md:text-4xl font-semibold text-[var(--color-ink,#29231D)] mt-3 font-serif">
+          {t("whatCustomersSay", "Notes from households we serve")}
         </h2>
-        <p className="text-[var(--color-ink-muted,#5A5A5A)] text-sm mt-2">
-          Direct experiences from Lahore households and wholesale partners.
+        <p className="text-[var(--color-ink-muted,#635B52)] text-sm mt-2">
+          {t("reviewsDesc", "Store-published patron feedback from Lahore and nationwide orders.")}
         </p>
       </div>
 
       <TracingBeam className="px-4 md:px-6">
         <div className="max-w-3xl mx-auto antialiased pt-4 relative">
-          {allBarkaCustomerStories.map((item, index) => (
-            <div key={`story-${index}`} className="mb-14 last:mb-6">
-              
-              {/* Category Badges */}
-              <div className="flex flex-wrap items-center gap-2 mb-3">
-                <span className="bg-[var(--color-cream,#FAF9F5)] text-[var(--color-ink,#1A1A1A)] text-xs font-semibold px-3 py-1 rounded-full border border-[var(--color-gold,#B8935F)]/40 flex items-center gap-1">
-                  <Star size={12} className="text-[var(--color-gold,#B8935F)] fill-[var(--color-gold,#B8935F)]" />
-                  {item.topBadge}
-                </span>
-                <span className="bg-[var(--color-gold,#B8935F)]/10 text-[var(--color-gold,#B8935F)] text-xs font-bold px-3 py-1 rounded-full border border-[var(--color-gold,#B8935F)]/30">
-                  {item.subBadge}
-                </span>
-              </div>
+          {items.map((item) => {
+            const displayName =
+              language === "ur" ? item.name_ur : language === "ar" ? item.name_ar : item.name_en;
+            return (
+              <div key={item.id} className="mb-14 last:mb-6">
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  <span className="bg-[var(--color-cream,#F2ECE2)] dark:bg-[#1E2523] text-[var(--color-ink,#29231D)] text-xs font-semibold px-3 py-1 rounded-full border border-[var(--color-gold,#C7982F)]/40 flex items-center gap-1">
+                    <Star size={12} className="text-[#C7982F] fill-[#C7982F]" aria-hidden="true" />
+                    {item.rating.toFixed(1)} / 5.0
+                  </span>
+                </div>
 
-              {/* Review Card */}
-              <div className="p-6 md:p-8 rounded-2xl bg-[var(--color-base,#FDFCFA)] border border-[var(--color-gold,#B8935F)]/35 shadow-xs relative overflow-hidden">
-                
-                {/* Customer Title / Location */}
-                <h3 className="text-xl md:text-2xl font-bold text-[var(--color-ink,#1A1A1A)] mb-1 tracking-wide font-serif">
-                  {item.title}
-                </h3>
-                
-                <p className="text-xs font-semibold text-[var(--color-gold,#B8935F)] tracking-wider uppercase mb-4">
-                  {item.location}
-                </p>
+                <div className="p-6 md:p-8 rounded-2xl bg-[var(--color-base,#FDFBF7)] border border-[var(--color-gold,#C7982F)]/35 relative overflow-hidden">
+                  <h3 dir="auto" className="text-xl md:text-2xl font-semibold text-[var(--color-ink,#29231D)] mb-1 font-serif">
+                    {displayName}
+                  </h3>
 
-                {/* Optional Image */}
-                {item?.image && (
-                  <div className="mb-6 overflow-hidden rounded-xl border border-[var(--color-gold,#B8935F)]/25 shadow-inner">
-                    <img
-                      src={item.image}
-                      alt="Customer Delivery"
-                      referrerPolicy="no-referrer"
-                      className="w-full h-48 md:h-60 object-cover hover:scale-105 transition-transform duration-500"
-                    />
+                  {item.location && (
+                    <p dir="auto" className="text-xs font-medium text-[var(--color-accent-text,#806326)] mb-4">
+                      {item.location}
+                    </p>
+                  )}
+
+                  <div dir="auto" className="text-sm leading-relaxed text-[var(--color-ink,#29231D)] mb-6 bg-[var(--color-surface,#FFFCF7)] p-4 rounded-xl border border-[var(--color-gold,#C7982F)]/20">
+                    “{item.review}”
                   </div>
-                )}
 
-                {/* Review Description */}
-                <div className="text-sm leading-relaxed text-[var(--color-ink,#1A1A1A)] mb-6 bg-[var(--color-surface,#FFFFFF)] p-4 rounded-xl border border-[var(--color-gold,#B8935F)]/20 shadow-xs">
-                  {item.description}
+                  {item.purchasedItem && (
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-4 border-t border-[var(--color-gold,#C7982F)]/20 text-xs font-medium text-[var(--color-ink-muted,#635B52)]">
+                      <span className="flex items-center gap-1.5">
+                        <Package size={13} className="text-[#C7982F]" aria-hidden="true" />
+                        <span dir="auto">{item.purchasedItem}</span>
+                      </span>
+                    </div>
+                  )}
                 </div>
-
-                {/* Bottom Footer Info */}
-                <div className="flex flex-wrap items-center justify-between gap-2 pt-4 border-t border-[var(--color-gold,#B8935F)]/20 text-xs font-medium text-[var(--color-ink-muted,#5A5A5A)]">
-                  <span className="flex items-center gap-1.5">
-                    <Package size={13} className="text-[var(--color-gold,#B8935F)]" />
-                    {item.purchaseInfo}
-                  </span>
-                  <span className="text-[var(--color-gold,#B8935F)] font-bold flex items-center gap-1">
-                    <CheckCircle2 size={13} />
-                    Verified Lahore Dispatch
-                  </span>
-                </div>
-
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </TracingBeam>
     </div>
   );
 }
-
-const allBarkaCustomerStories = [
-  {
-    title: "Usman Tariq",
-    location: "DHA Phase 6, Lahore",
-    topBadge: "4.9 / 5.0 RATING",
-    subBadge: "WHATSAPP DIRECT ORDER",
-    description: (
-      <p>
-        &quot;Kaju ki quality buhat zabardast thi, bilkul fresh aur crispy. Delivery time Lahore mein kafi fast tha—ordered at 2 PM aur parcel 5 baje tak deliver ho gaya. Proper roasted crunch!&quot;
-      </p>
-    ),
-    purchaseInfo: "Purchased: Roasted Pistachios & Salted Kaju (500g)",
-    image: "https://images.unsplash.com/photo-1508061253366-f7da15bbf6e4?w=800&q=80",
-  },
-  {
-    title: "Zainab Malik",
-    location: "Gulberg III, Lahore",
-    topBadge: "5.0 / 5.0 RATING",
-    subBadge: "GIFT COMBO BUYER",
-    description: (
-      <p>
-        &quot;Packaging buhat pyari thi! Airtight jar ki wajah se dry fruits ki freshness bilkul barqarar rahi. Work-day fuel pack office snacking ke liye absolute best hai.&quot;
-      </p>
-    ),
-    purchaseInfo: "Purchased: Walnut & Pistachio Duo",
-    image: "https://images.unsplash.com/photo-1574577457861-1e9a263c9b11?w=800&q=80",
-  },
-];
 
 export default AllBarkaDarkReviews;

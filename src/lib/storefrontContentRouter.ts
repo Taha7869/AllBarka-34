@@ -7,6 +7,23 @@ import {
   publicStorefrontContent,
   ContentError,
 } from './storefrontContent';
+import { sanitizePublishedReviews, type PublishedPatronReview } from './publishedReviews';
+
+export async function readPublishedReviews(db: Firestore | null): Promise<PublishedPatronReview[]> {
+  if (!db) return [];
+  try {
+    const snap = await db.collection('reviews').where('published', '==', true).limit(12).get();
+    const docs = Array.isArray(snap?.docs) ? snap.docs : [];
+    return sanitizePublishedReviews(
+      docs.map((doc) => ({
+        id: doc.id,
+        ...(typeof doc.data === 'function' ? doc.data() : {}),
+      })),
+    );
+  } catch {
+    return [];
+  }
+}
 
 function bundle(raw: any) {
   if (!raw) {
@@ -58,14 +75,19 @@ export function createStorefrontContentRouter(options: {
             : 'CONTENT_STORE_UNAVAILABLE',
       });
 
-  // Public endpoint for published live content
+  // Public endpoint for published live content and admin-published order reviews
   router.get('/api/storefront-content', async (_req, res) => {
     res.setHeader('Cache-Control', 'no-store');
     try {
-      const value = await readStorefrontContent(options.getDb());
+      const db = options.getDb();
+      const [value, publishedReviews] = await Promise.all([
+        readStorefrontContent(db),
+        readPublishedReviews(db),
+      ]);
       return res.json({
         content: publicStorefrontContent(value.live),
         revision: value.liveRevision,
+        publishedReviews,
       });
     } catch (e) {
       return error(e, res);

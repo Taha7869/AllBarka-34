@@ -75,10 +75,12 @@ test('1. Six-part homepage structure: Hero, Collections, Boutique, Occasions, Fe
   // 4. Find a Gift for Your Occasion: Compact destination links
   assert.ok(html.includes('find-gift-occasion') || html.includes('id="gift-for-occasion"'), 'Find Gift for Occasion section must be present');
 
-  // 5. Genuine feedback and essential service information/FAQ
+  // 5. Service care pillars & FAQ destination link (Patron Voices stays hidden when zero real order reviews are published)
   assert.ok(html.includes('editorial-care'), 'Service care pillars must be present');
-  assert.ok(html.includes('What Our Customers Say') || html.includes('published reviews') || html.includes('id="about"'), 'Genuine feedback moving reviews must be present');
-  assert.ok(html.includes('Frequently Asked Questions') || html.includes('id="faq"'), 'Essential service FAQ section must be present');
+  assert.ok(!html.includes('data-testid="patron-voices-section"'), 'Hardcoded Patron Voices must not render when zero order reviews are published');
+  assert.ok(!html.includes('Usman Tariq') && !html.includes('Zainab Malik'), 'Hardcoded seed reviews must not appear on homepage');
+  assert.ok(!html.includes('Store-published patron feedback'), 'Store-published feedback disclaimer must not render without real published reviews');
+  assert.ok(html.includes('href="/faq"'), 'FAQ destination link must be present');
 
   // Verification: Old large BidBox and Deals product grids are REMOVED from HomePage
   assert.ok(!html.includes('bid-boxes-section'), 'Old large BidBoxesSection grid must not be present');

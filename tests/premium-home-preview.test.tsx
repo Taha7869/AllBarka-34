@@ -18,6 +18,9 @@ import PremiumHeroPrototype, {
 } from '../src/components/PremiumHeroPrototype';
 import PremiumHomePreviewPage from '../src/pages/PremiumHomePreviewPage';
 import HomePage from '../src/pages/HomePage';
+import { AllBarkaTracingReviews } from '../src/components/AllBarkaTracingReviews';
+import { AllBarkaDarkReviews } from '../src/components/AllBarkaDarkReviews';
+import type { PublishedPatronReview } from '../src/lib/publishedReviews';
 import { PRODUCTS } from '../src/data/products';
 
 test('PremiumHeroPrototype renders EN, UR (RTL), and AR (RTL) copy with zero health claims and valid links', () => {
@@ -126,9 +129,71 @@ test('Phase 2A live HomePage renders 6 calm sections with zero marquees, zero au
   assert.match(html, /data-manual-tabs="true"/, 'House Selections strictly manual');
   assert.match(html, /id="gift-for-occasion"/, 'Gifting Atelier rendered');
   assert.match(html, /editorial-care/, 'Lahore House Standard rendered');
-  assert.match(html, /data-testid="patron-voices-section"/, 'Static Patron Voices rendered');
+  assert.doesNotMatch(html, /data-testid="patron-voices-section"/, 'Patron Voices omitted when zero published order reviews exist');
+  assert.doesNotMatch(html, /Usman Tariq|Zainab Malik|Dr\. Faisal|Store-published patron feedback/i, 'Hardcoded reviews & disclaimer absent without real data');
   assert.doesNotMatch(html, /animate-scroll|marquee/i, 'No scrolling marquee on live homepage');
   assert.doesNotMatch(html, /Kashmiri saffron/i, 'No unverified Kashmiri saffron claim on homepage');
+
+  // Verify Patron Voices, TracingReviews & DarkReviews render ONLY admin-published real-order reviews
+  const realOrderReview: PublishedPatronReview = {
+    id: 'rev-order-ab-901',
+    orderId: 'AB-2026-0901',
+    name_en: 'Tariq Mahmood',
+    name_ur: 'طارق محمود',
+    name_ar: 'طارق محمود',
+    location: 'Model Town, Lahore',
+    purchasedItem: 'Medjool Dates (500g)',
+    headline: 'Fresh gift pack',
+    review: 'Neat presentation box and fresh dates.',
+    rating: 5,
+    avatarInitials: 'TM',
+    published: true,
+  };
+  const htmlWithRealReview = renderToStaticMarkup(
+    <MemoryRouter initialEntries={['/']}>
+      <ThemeProvider>
+        <LanguageProvider initialLanguage="en">
+          <CatalogProvider initialProducts={PRODUCTS}>
+            <MerchandisingProvider>
+              <ProductMediaProvider>
+                <CartProvider>
+                  <StorefrontContentProvider initialPublishedReviews={[realOrderReview]}>
+                    <HomePage />
+                  </StorefrontContentProvider>
+                </CartProvider>
+              </ProductMediaProvider>
+            </MerchandisingProvider>
+          </CatalogProvider>
+        </LanguageProvider>
+      </ThemeProvider>
+    </MemoryRouter>,
+  );
+  assert.match(htmlWithRealReview, /data-testid="patron-voices-section"/, 'Patron Voices renders when real published order reviews exist');
+  assert.match(htmlWithRealReview, /Store-published patron feedback/, 'Disclaimer renders alongside real published feedback');
+  assert.match(htmlWithRealReview, /Tariq Mahmood/, 'Real published patron review rendered');
+
+  const emptyLegacyHtml = renderToStaticMarkup(
+    <LanguageProvider initialLanguage="en">
+      <StorefrontContentProvider>
+        <AllBarkaTracingReviews />
+        <AllBarkaDarkReviews />
+      </StorefrontContentProvider>
+    </LanguageProvider>,
+  );
+  assert.equal(emptyLegacyHtml, '', 'AllBarkaTracingReviews and AllBarkaDarkReviews render nothing without real published reviews');
+
+  const populatedLegacyHtml = renderToStaticMarkup(
+    <LanguageProvider initialLanguage="en">
+      <StorefrontContentProvider initialPublishedReviews={[realOrderReview]}>
+        <AllBarkaTracingReviews />
+        <AllBarkaDarkReviews />
+      </StorefrontContentProvider>
+    </LanguageProvider>,
+  );
+  assert.match(populatedLegacyHtml, /data-testid="tracing-reviews"/, 'TracingReviews renders real published order reviews');
+  assert.match(populatedLegacyHtml, /data-testid="dark-reviews"/, 'DarkReviews renders real published order reviews');
+  assert.match(populatedLegacyHtml, /Tariq Mahmood/, 'Real order review author rendered in legacy review views');
+  assert.doesNotMatch(populatedLegacyHtml, /unsplash\.com|Usman Tariq|Zainab Malik/i, 'No hardcoded seed names or stock URLs');
 
   const bannedHealth = /\b(antimicrobial|antioxidant|anti-inflammatory|immunity|immun\w*|cures?|heals?|detox|medicinal|sugar\s*control|diabet\w*|cancer|boosts?\s+(?:energy|immunity|brain|health))\b/i;
   for (const product of PRODUCTS) {

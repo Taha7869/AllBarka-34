@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import { ArrowUpRight, Gift, ListChecks, Truck } from 'lucide-react';
 import type { Product } from '../types';
-import { useStorefrontContent } from '../contexts/StorefrontContentContext';
+import { usePublishedReviews, useStorefrontContent } from '../contexts/StorefrontContentContext';
 import { useMerchandisingSettings } from '../contexts/MerchandisingContext';
 import { useLanguage, type LanguageCode } from '../contexts/LanguageContext';
 import StorefrontBanner from '../components/StorefrontBanner';
@@ -137,6 +137,7 @@ export default function HomePage() {
   const { language, isRtl } = useLanguage();
   const merchandisingSettings = useMerchandisingSettings();
   const content = useStorefrontContent();
+  const publishedReviews = usePublishedReviews();
   const outlet = useOutletContext<OutletContextType>() || ({} as Partial<OutletContextType>);
   const setSelectedQuickViewProduct = outlet.setSelectedQuickViewProduct ?? (() => {});
   const handleAddToCart = outlet.handleAddToCart ?? (() => {});
@@ -223,10 +224,10 @@ export default function HomePage() {
         </div>
       </section>
     ),
-    reviews: <PatronVoicesSection />,
+    reviews: publishedReviews.length > 0 ? <PatronVoicesSection reviews={publishedReviews} /> : null,
   };
 
-  // Exactly 6 serene sections on live Home: Hero (#1) + 5 calm below-the-fold sections (#2-#6).
+  // Serene live Home sections: Hero (#1) + curated below-the-fold sections (Patron Voices renders ONLY with admin-published order reviews).
   // FAQ lives at /faq; GiftFinder & table planners live at /gifting & /occasions; search/voice live in Header.
   const orderedBelowFold = content.sections.filter(
     (entry) => entry.visible && entry.id !== 'faq' && Boolean(sectionRenderers[entry.id]),
