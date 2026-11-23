@@ -10,7 +10,7 @@ import { getLocalized } from '../utils/localize';
 import { acquireScrollLock } from '../utils/scrollLock';
 import { CUSTOM_HAMPER_PRODUCT_ID, HAMPER_BOXES, HAMPER_SELECTION_IDS, HAMPER_PORTION_GRAMS, hamperCartKey, hamperSelectionPrice, resolveHamper, type HamperConfiguration } from '../lib/hamperCatalog';
 import { calculateFilledGiftEstimate } from '../lib/filledGiftPricing';
-import { openCustomQuoteModal } from './CustomQuoteModal';
+import { openCustomQuoteModal } from '../lib/customQuoteEvent';
 
 export interface CustomHamperCartInput {
   id: string;

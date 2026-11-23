@@ -34,7 +34,7 @@ import { buildHumanSupportWhatsAppUrl } from '../config/contacts';
 import CustomWeightInput from '../components/CustomWeightInput';
 import { resolveCustomWeight, supportsCustomWeight } from '../lib/productVariants';
 import { displayProductPrice } from '../lib/productSelection';
-import { openCustomQuoteModal } from '../components/CustomQuoteModal';
+import { openCustomQuoteModal } from '../lib/customQuoteEvent';
 import ProductPhotoViewer from '../components/ProductPhotoViewer';
 import { isPackagingProduct, getPackagingMoqDisplay } from '../lib/packagingMoq';
 import IndicativePriceNotice from '../components/IndicativePriceNotice';

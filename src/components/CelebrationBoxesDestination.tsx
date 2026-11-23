@@ -24,7 +24,7 @@ import {
   CelebrationSubcategory,
   ResolvedCelebrationCardVariant,
 } from '../lib/packagingClassification';
-import { openCustomQuoteModal } from './CustomQuoteModal';
+import { openCustomQuoteModal } from '../lib/customQuoteEvent';
 import DestinationHeader, { DestinationNotice } from './DestinationHeader';
 import { productMatchesOccasion } from '../config/categories';
 

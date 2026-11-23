@@ -5,7 +5,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useMerchandisingSettings } from '../contexts/MerchandisingContext';
 import { DEFAULT_MERCHANDISING } from '../config/merchandising';
 import type { MerchandisingSettings } from '../types';
-import { openCustomQuoteModal } from './CustomQuoteModal';
+import { openCustomQuoteModal } from '../lib/customQuoteEvent';
 
 export interface OccasionDestination {
   id: string;

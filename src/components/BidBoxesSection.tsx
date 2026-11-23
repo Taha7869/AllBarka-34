@@ -6,7 +6,7 @@ import { useCart } from '../contexts/CartContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Product } from '../types';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
-import { openCustomQuoteModal } from './CustomQuoteModal';
+import { openCustomQuoteModal } from '../lib/customQuoteEvent';
 import IndicativePriceNotice from './IndicativePriceNotice';
 import { isFilledPackagingVariant, calculateFilledGiftEstimate, resolveFilledRecipe } from '../lib/filledGiftPricing';
 

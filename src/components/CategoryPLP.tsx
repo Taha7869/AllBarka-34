@@ -30,7 +30,7 @@ import { CATALOG_SORTS, readCatalogFilters, searchCatalog, startingPrice, type C
 import { ALLERGEN_FILTER_KEYS, type AllergenFilterKey } from '../lib/allergenFilter';
 import { AllBarkaCrestVector } from './AllBarkaLogo';
 import { applyCatalogFilterDraft, beginCatalogFilterDraft, filterCatalogSelection, type CatalogFilterDraft } from '../lib/catalogFilterDraft';
-import { openCustomQuoteModal } from './CustomQuoteModal';
+import { openCustomQuoteModal } from '../lib/customQuoteEvent';
 
 export interface CategoryPLPProps {
   searchFilter?: string; initialCategory?: string;

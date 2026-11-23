@@ -230,7 +230,7 @@ export default function PremiumHeroPrototype({
                   />
                 </picture>
 
-                {/* ONE signature orchestrated motion: embossed crest seal press -> rigid emerald lid lifts smoothly once */}
+                {/* ONE signature orchestrated motion: translucent emerald lid veil + embossed crest seal press -> slides up once without ever occluding Frame-1 hero LCP */}
                 {!reducedMotion && !customHero.enabled && phase !== 'open' && (
                   <div
                     aria-hidden="true"
@@ -240,9 +240,9 @@ export default function PremiumHeroPrototype({
                     <div
                       style={{
                         transition:
-                          'transform 800ms cubic-bezier(0.22, 1, 0.36, 1), opacity 680ms ease-out',
+                          'transform 700ms cubic-bezier(0.22, 0.8, 0.2, 1), opacity 620ms cubic-bezier(0.22, 0.8, 0.2, 1)',
                       }}
-                      className={`absolute inset-0 flex flex-col items-center justify-center bg-[#042821] border-b-2 border-[#C7982F] shadow-[0_18px_40px_rgba(0,0,0,0.55)] will-change-transform ${
+                      className={`absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-[#042821]/82 via-[#042821]/56 to-[#042821]/18 border-b-2 border-[#C7982F] shadow-[0_18px_40px_rgba(0,0,0,0.42)] will-change-transform ${
                         phase === 'opening'
                           ? '-translate-y-[106%] opacity-0'
                           : 'translate-y-0 opacity-100'

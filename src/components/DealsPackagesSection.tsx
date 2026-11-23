@@ -6,7 +6,7 @@ import { useCart } from '../contexts/CartContext';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Product } from '../types';
-import { openCustomQuoteModal } from './CustomQuoteModal';
+import { openCustomQuoteModal } from '../lib/customQuoteEvent';
 
 interface DealsPackagesSectionProps {
   limit?: number;

@@ -11,7 +11,7 @@ import { useCart } from '../contexts/CartContext';
 import { getLocalized } from '../utils/localize';
 import CartAddButton from './CartAddButton';
 import { isPackagingProduct, getPackagingMoqDisplay } from '../lib/packagingMoq';
-import { openCustomQuoteModal } from './CustomQuoteModal';
+import { openCustomQuoteModal } from '../lib/customQuoteEvent';
 
 interface ProductCardProps {
   product: Product;

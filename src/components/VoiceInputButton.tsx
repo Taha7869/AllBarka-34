@@ -2,7 +2,6 @@ import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from
 import { Mic, MicOff, Loader2, X, Check } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
-import { prepareVoiceAudio, transcribeVoiceInput } from '../services/voiceInput';
 import { VOICE_INPUT_MAX_CHARS, VOICE_MAX_CAPTURE_BYTES, VOICE_MAX_CAPTURE_SECONDS, VOICE_MAX_TRANSCRIPT_CHARS } from '../lib/voiceLimits';
 
 type Phase = 'idle' | 'permission' | 'recording' | 'processing' | 'review' | 'error';
@@ -121,6 +120,7 @@ export default function VoiceInputButton({ onTranscript, disabled = false, place
         // Preparation/token work has its own budget; upload gets a fresh deadline.
         deadline.current = setTimeout(() => fail('VOICE_TIMEOUT'), 15000);
         try {
+          const { prepareVoiceAudio, transcribeVoiceInput } = await import('../services/voiceInput');
           const prepared = await prepareVoiceAudio(new Blob(chunks, { type: capture.mimeType }), controller.signal);
           const token = await currentUser?.getIdToken();
           if (version !== generation.current || controller.signal.aborted) return;

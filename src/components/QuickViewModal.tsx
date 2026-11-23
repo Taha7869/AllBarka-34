@@ -14,7 +14,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { getLocalized } from '../utils/localize';
 import { useProductMedia } from '../contexts/ProductMediaContext';
 import ProductVideo from './ProductVideo';
-import { openCustomQuoteModal } from './CustomQuoteModal';
+import { openCustomQuoteModal } from '../lib/customQuoteEvent';
 import IndicativePriceNotice from './IndicativePriceNotice';
 import { buildProductDetailsPath } from '../lib/productDetailHandoff';
 

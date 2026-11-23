@@ -21,7 +21,7 @@ import {
   normalizeOccasionSlug,
 } from '../config/categories';
 import DestinationHeader from './DestinationHeader';
-import { openCustomQuoteModal } from './CustomQuoteModal';
+import { openCustomQuoteModal } from '../lib/customQuoteEvent';
 import { openMehmaanPlannerModal } from './MehmaanTablePlannerModal';
 import { openOccasionInquiryModal } from './OccasionInquiryModal';
 

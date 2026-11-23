@@ -20,7 +20,7 @@ import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { Product } from '../types';
 import { buildHumanSupportWhatsAppUrl } from '../config/contacts';
 import { resolveBidBoxConfig } from '../lib/bidBoxPricing';
-import { openCustomQuoteModal } from './CustomQuoteModal';
+import { openCustomQuoteModal } from '../lib/customQuoteEvent';
 import DestinationHeader, { DestinationNotice } from './DestinationHeader';
 
 interface WholesaleDestinationProps {

@@ -39,13 +39,14 @@ import {
 } from '../lib/inquiryWhatsApp';
 import { submitCustomQuoteInquiry } from '../lib/storefrontSubmissions';
 
-export type { CustomQuoteModalInit };
+import {
+  CUSTOM_QUOTE_MODAL_EVENT,
+  openCustomQuoteModal,
+  takePendingCustomQuoteRequest,
+} from '../lib/customQuoteEvent';
 
-export function openCustomQuoteModal(detail: CustomQuoteModalInit = {}): void {
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent<CustomQuoteModalInit>('open-custom-quote-modal', { detail }));
-  }
-}
+export type { CustomQuoteModalInit };
+export { openCustomQuoteModal };
 
 const EVENT_TYPES = Object.keys(quoteEventLabels);
 const FILLING_OPTIONS = ['dry_fruits', 'dates', 'chocolates', 'candies', 'other'] as const;
@@ -218,8 +219,12 @@ export default function CustomQuoteModal() {
       setIsOpen(true);
     };
 
-    window.addEventListener('open-custom-quote-modal', handleOpen);
-    return () => window.removeEventListener('open-custom-quote-modal', handleOpen);
+    window.addEventListener(CUSTOM_QUOTE_MODAL_EVENT, handleOpen);
+    const pending = takePendingCustomQuoteRequest();
+    if (pending) {
+      handleOpen(new CustomEvent<CustomQuoteModalInit>(CUSTOM_QUOTE_MODAL_EVENT, { detail: pending }));
+    }
+    return () => window.removeEventListener(CUSTOM_QUOTE_MODAL_EVENT, handleOpen);
   }, [eligibleProducts, products]);
 
   useEffect(() => {

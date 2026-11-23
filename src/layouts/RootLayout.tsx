@@ -11,9 +11,7 @@ import { CartItem, Product } from '../types';
 import ScrollProgressBar from '../components/ScrollProgressBar';
 import GradualBlur from '../components/GradualBlur';
 import BubbleMenu, { getPrimaryActiveSectionId } from '../components/BubbleMenu';
-import MobileMenu from '../components/MobileMenu';
 import Footer from '../components/Footer';
-import CartDrawer from '../components/CartDrawer';
 import BackToTop from '../components/BackToTop';
 import ToastManager from '../components/ToastManager';
 import StickyCartBottomBar from '../components/StickyCartBottomBar';
@@ -30,9 +28,14 @@ import type { PolicyTab } from '../components/PolicyPagesModal';
 import type { CustomHamperCartInput } from '../components/CustomHamperBuilderModal';
 import type { OccasionInquiryPrefill } from '../components/OccasionInquiryModal';
 import type { EventType } from '../lib/occasionPlanning';
-import CustomQuoteModal from '../components/CustomQuoteModal';
-import AIConcierge from '../components/AIConcierge';
+import { CUSTOM_QUOTE_MODAL_EVENT } from '../lib/customQuoteEvent';
+import { OPEN_AI_BUDDY_EVENT } from '../lib/heroScene';
 
+const MobileMenu = React.lazy(() => import('../components/MobileMenu'));
+const CartDrawer = React.lazy(() => import('../components/CartDrawer'));
+const HeaderSearchPanel = React.lazy(() => import('../components/HeaderSearchPanel'));
+const CustomQuoteModal = React.lazy(() => import('../components/CustomQuoteModal'));
+const AIConcierge = React.lazy(() => import('../components/AIConcierge'));
 const QuickViewModal = React.lazy(() => import('../components/QuickViewModal'));
 const AuthModal = React.lazy(() => import('../components/AuthModal'));
 const CheckoutAuthChoiceModal = React.lazy(() => import('../components/CheckoutAuthChoiceModal'));
@@ -46,11 +49,10 @@ const OccasionInquiryModal = React.lazy(() => import('../components/OccasionInqu
 const ShopTheTableModal = React.lazy(() => import('../components/ShopTheTableModal'));
 
 import LahoreExpressTimer from '../components/LahoreExpressTimer';
-import { Menu, X, ShoppingBag, User, Gift, Languages, ChevronDown, Search } from 'lucide-react';
+import { Menu, X, ShoppingBag, User, Gift, Languages, ChevronDown, Search, Sparkles } from 'lucide-react';
 import { AllBarkaHeaderLogo } from '../components/AllBarkaLogo';
 import MobileHeaderBrand from '../components/MobileHeaderBrand';
 import Breadcrumbs from '../components/Breadcrumbs';
-import HeaderSearchPanel from '../components/HeaderSearchPanel';
 import { PRODUCTS, getProductImage } from '../data/products';
 import { acquireScrollLock } from '../utils/scrollLock';
 import ErrorBoundary from '../components/ErrorBoundary';
@@ -69,8 +71,20 @@ export default function RootLayout() {
   const hasMountedRef = useRef(false);
   useEffect(() => { hasMountedRef.current = true; }, []);
   const isAdminRoute = location.pathname.startsWith('/admin/');
-  const { currentUser, patronProfile, logout } = useAuth();
+  const { currentUser, patronProfile, logout, ensureAuthReady } = useAuth();
   const { language, setLanguage, isRtl, t } = useLanguage();
+
+  // Lazily boot Firebase Auth when navigating to auth-backed routes or opening account overlays.
+  useEffect(() => {
+    if (
+      location.pathname.startsWith('/admin') ||
+      location.pathname.startsWith('/staff') ||
+      location.pathname.startsWith('/checkout') ||
+      location.pathname.startsWith('/track')
+    ) {
+      ensureAuthReady?.();
+    }
+  }, [location.pathname, ensureAuthReady]);
   const { needsPrompt: consentNeedsPrompt, isPreferencesOpen: consentPreferencesOpen } = useConsent();
   const isStandalone = useStandaloneMode();
   
@@ -150,18 +164,42 @@ export default function RootLayout() {
   const [policyModalTab, setPolicyModalTab] = useState<PolicyTab>('shipping');
   const [galleryModalOpen, setGalleryModalOpen] = useState(false);
   const [aiConciergeOpen, setAiConciergeOpen] = useState(false);
+  const [aiConciergeMounted, setAiConciergeMounted] = useState(false);
+  const [customQuoteLoaded, setCustomQuoteLoaded] = useState(false);
   const [hamperModalOpen, setHamperModalOpen] = useState(false);
+
+  // Lazily mount heavy chat & custom quote bundles only when triggered.
+  useEffect(() => {
+    const onOpenBuddy = () => {
+      setAiConciergeMounted(true);
+      setAiConciergeOpen(true);
+    };
+    const onOpenQuote = () => setCustomQuoteLoaded(true);
+    window.addEventListener(OPEN_AI_BUDDY_EVENT, onOpenBuddy);
+    window.addEventListener(CUSTOM_QUOTE_MODAL_EVENT, onOpenQuote);
+    return () => {
+      window.removeEventListener(OPEN_AI_BUDDY_EVENT, onOpenBuddy);
+      window.removeEventListener(CUSTOM_QUOTE_MODAL_EVENT, onOpenQuote);
+    };
+  }, []);
 
   // Defer each overlay until first use, then retain it so drafts survive closing.
   const [loadedOverlays, setLoadedOverlays] = useState<Record<string, boolean>>({});
   useEffect(() => {
-    const open = { quick: !!selectedQuickViewProduct, hamper: hamperModalOpen, auth: authModalOpen,
-      checkout: authChoiceModalOpen, patron: patronLoungeOpen, info: infoModalOpen, policy: policyModalOpen, updates: updatesOpen };
+    const open = {
+      quick: !!selectedQuickViewProduct, hamper: hamperModalOpen, auth: authModalOpen,
+      checkout: authChoiceModalOpen, patron: patronLoungeOpen, info: infoModalOpen,
+      policy: policyModalOpen, updates: updatesOpen,
+      search: headerSearchOpen, cart: isCartOpen, mobileMenu: mobileMenuOpen,
+    };
+    if (authModalOpen || patronLoungeOpen || updatesOpen || authChoiceModalOpen) {
+      ensureAuthReady?.();
+    }
     setLoadedOverlays(previous => {
       const newlyOpened = Object.keys(open).filter(key => open[key as keyof typeof open] && !previous[key]);
       return newlyOpened.length ? { ...previous, ...Object.fromEntries(newlyOpened.map(key => [key, true])) } : previous;
     });
-  }, [selectedQuickViewProduct, hamperModalOpen, authModalOpen, authChoiceModalOpen, patronLoungeOpen, infoModalOpen, policyModalOpen, updatesOpen]);
+  }, [selectedQuickViewProduct, hamperModalOpen, authModalOpen, authChoiceModalOpen, patronLoungeOpen, infoModalOpen, policyModalOpen, updatesOpen, headerSearchOpen, isCartOpen, mobileMenuOpen, ensureAuthReady]);
 
   const handleAddCustomHamper = (hamperItem: CustomHamperCartInput) => {
     addToCart(hamperItem);
@@ -446,19 +484,25 @@ export default function RootLayout() {
         </div>
       </header>
 
-      <HeaderSearchPanel
-        isOpen={headerSearchOpen}
-        onClose={() => setHeaderSearchOpen(false)}
-        restoreFocusTo={headerSearchBtnRef.current}
-      />
+      <React.Suspense fallback={null}>
+        {(headerSearchOpen || loadedOverlays.search) && (
+          <HeaderSearchPanel
+            isOpen={headerSearchOpen}
+            onClose={() => setHeaderSearchOpen(false)}
+            restoreFocusTo={headerSearchBtnRef.current}
+          />
+        )}
 
-      <MobileMenu 
-        isOpen={mobileMenuOpen} 
-        onClose={() => setMobileMenuOpen(false)} 
-        cartCount={totalItemsCount}
-        onOpenCart={() => setIsCartOpen(true)}
-        triggerRef={mobileMenuTriggerRef}
-      />
+        {(mobileMenuOpen || loadedOverlays.mobileMenu) && (
+          <MobileMenu 
+            isOpen={mobileMenuOpen} 
+            onClose={() => setMobileMenuOpen(false)} 
+            cartCount={totalItemsCount}
+            onOpenCart={() => setIsCartOpen(true)}
+            triggerRef={mobileMenuTriggerRef}
+          />
+        )}
+      </React.Suspense>
 
       <main className="flex-1 w-full relative z-10 flex flex-col items-center">
         <OfflineStatusBar />
@@ -512,14 +556,15 @@ export default function RootLayout() {
       <CookieNotice hidden={isAdminRoute || isAnyModalOrDrawerOpen || location.pathname === '/checkout' || pdpBuyBarVisible || totalItemsCount > 0} hasTabBar={standaloneTabBarVisible} />
       <PwaInstallBanner hidden={isAdminRoute || isAnyModalOrDrawerOpen || location.pathname === '/checkout' || pdpBuyBarVisible || consentUiActive || standaloneTabBarVisible} />
       
-      {/* Drawer & Modals */}
-      <CartDrawer
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-        onCheckout={handleInitiateCheckout}
-      />
-      {/* Modals & Overlays (Lazy-loaded on first open to keep initial JS lean) */}
+      {/* Drawer & Modals (Lazy-loaded on first use to keep initial JS lean) */}
       <React.Suspense fallback={null}>
+        {(isCartOpen || loadedOverlays.cart) && (
+          <CartDrawer
+            isOpen={isCartOpen}
+            onClose={() => setIsCartOpen(false)}
+            onCheckout={handleInitiateCheckout}
+          />
+        )}
         {(authModalOpen || loadedOverlays.auth) && <AuthModal isOpen={authModalOpen} initialMode={authInitialMode} onClose={() => setAuthModalOpen(false)} />}
         {(!!selectedQuickViewProduct || loadedOverlays.quick) && <QuickViewModal product={selectedQuickViewProduct ? PRODUCTS.find(product => product.id === selectedQuickViewProduct.id) || null : null} isOpen={!!selectedQuickViewProduct} onClose={() => setSelectedQuickViewProduct(null)} onAddToCart={handleAddToCart} />}
         {(hamperModalOpen || loadedOverlays.hamper) && <CustomHamperBuilderModal isOpen={hamperModalOpen} onClose={() => setHamperModalOpen(false)} onAddToCart={handleAddCustomHamper} />}
@@ -531,9 +576,47 @@ export default function RootLayout() {
         {mehmaanModalOpen && <MehmaanTablePlannerModal isOpen={mehmaanModalOpen} onClose={() => setMehmaanModalOpen(false)} />}
         {occasionModalOpen && <OccasionInquiryModal isOpen={occasionModalOpen} defaultOccasion={defaultOccasion} prefill={occasionPrefill} onClose={() => setOccasionModalOpen(false)} />}
         {shopTheTableOpen && <ShopTheTableModal isOpen={shopTheTableOpen} onClose={() => setShopTheTableOpen(false)} />}
+        {customQuoteLoaded && <CustomQuoteModal />}
+        {!isAdminRoute && aiConciergeMounted && (
+          <AIConcierge
+            initialOpen={true}
+            hide={isAnyModalOrDrawerOpen && !aiConciergeOpen}
+            hasCartBar={hasBottomObstruction}
+            onOpenChange={setAiConciergeOpen}
+          />
+        )}
       </React.Suspense>
-      {!isAdminRoute && <AIConcierge hide={isAnyModalOrDrawerOpen && !aiConciergeOpen} hasCartBar={hasBottomObstruction} onOpenChange={setAiConciergeOpen} />}
-      <CustomQuoteModal />
+      {!isAdminRoute && !aiConciergeMounted && !(isAnyModalOrDrawerOpen && !aiConciergeOpen) && (
+        <div
+          className={`fixed z-30 transition-all duration-200 pb-[env(safe-area-inset-bottom)] ${hasBottomObstruction ? 'bottom-24 sm:bottom-[90px] right-4 sm:right-6' : 'bottom-5 sm:bottom-6 right-4 sm:right-6'}`}
+        >
+          <button
+            type="button"
+            onClick={() => {
+              setAiConciergeMounted(true);
+              setAiConciergeOpen(true);
+            }}
+            className="relative w-[44px] h-[44px] sm:w-14 sm:h-14 rounded-full p-[1.5px] bg-gradient-to-br from-[#D4B483] via-[#C7982F] to-[#B8935F] shadow-lg hover:shadow-xl transition-transform duration-200 motion-safe:hover:scale-105 motion-safe:active:scale-95 cursor-pointer group select-none"
+            title={t('concierge.title')}
+            aria-label={t('concierge.open')}
+            aria-expanded={false}
+            aria-controls="allbarka-concierge-panel"
+          >
+            <div className="w-full h-full rounded-full bg-[var(--color-surface,#FFFCF7)] flex items-center justify-center relative overflow-hidden shadow-sm">
+              <div className="absolute inset-[2px] rounded-full border border-[#C7982F]/40 pointer-events-none" />
+              <div className="relative z-10 flex flex-col items-center justify-center">
+                <span className="font-serif font-black text-xs sm:text-sm tracking-tight text-[var(--color-accent-text,#806326)] leading-none">
+                  AB
+                </span>
+                <span className="text-[6.5px] font-black uppercase tracking-widest text-[var(--color-ink,#29231D)] leading-none mt-0.5 opacity-90 flex items-center gap-0.5">
+                  <Sparkles size={6} className="text-[#C7982F]" aria-hidden="true" />
+                  AI
+                </span>
+              </div>
+            </div>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

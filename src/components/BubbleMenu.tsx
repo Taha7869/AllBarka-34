@@ -5,7 +5,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { ChevronDown, Gift, MessageCircle, Sparkles } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { MAIN_NAV_ITEMS, COMPACT_FOOD_NAV_ITEMS, NavItem, NavSubItem, FoodCategoryItem } from '../config/navigation';
-import { openCustomQuoteModal } from './CustomQuoteModal';
+import { openCustomQuoteModal } from '../lib/customQuoteEvent';
 
 export interface BubbleMenuItem {
   id: string;

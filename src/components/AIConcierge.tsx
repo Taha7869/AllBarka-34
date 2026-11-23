@@ -18,7 +18,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useDragScroll } from '../hooks/useDragScroll';
 import { useLanguage } from '../contexts/LanguageContext';
 import { buildHumanSupportWhatsAppUrl } from '../config/contacts';
-import { openCustomQuoteModal } from './CustomQuoteModal';
+import { openCustomQuoteModal } from '../lib/customQuoteEvent';
 import type { ValidatedProductRecommendation, ValidatedInquiryPrefill } from '../lib/aiBuddyResolution';
 
 export interface BuddyMessage {
@@ -32,13 +32,14 @@ interface AIConciergeProps {
   hide?: boolean;
   onOpenChange?: (open: boolean) => void;
   hasCartBar?: boolean;
+  initialOpen?: boolean;
 }
 
-export default function AIConcierge({ hasCartBar = false, hide = false, onOpenChange }: AIConciergeProps) {
+export default function AIConcierge({ hasCartBar = false, hide = false, onOpenChange, initialOpen = false }: AIConciergeProps) {
   const { currentUser } = useAuth();
   const { t, language } = useLanguage();
   const reducedMotion = useReducedMotion();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(initialOpen);
   const [messages, setMessages] = useState<BuddyMessage[]>([]);
   const [greeting, setGreeting] = useState<'welcome' | 'reset'>('welcome');
   const [streamingText, setStreamingText] = useState('');

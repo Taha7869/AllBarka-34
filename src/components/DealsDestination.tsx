@@ -14,7 +14,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import { Product } from '../types';
 import DestinationHeader, { DestinationNotice } from './DestinationHeader';
-import { openCustomQuoteModal } from './CustomQuoteModal';
+import { openCustomQuoteModal } from '../lib/customQuoteEvent';
 
 interface DealsDestinationProps {
   onQuickView?: (product: Product) => void;

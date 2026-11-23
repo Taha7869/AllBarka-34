@@ -29,7 +29,7 @@ import { acquireScrollLock } from '../utils/scrollLock';
 import { buildHumanSupportWhatsAppUrl } from '../config/contacts';
 import { CANONICAL_CATEGORIES } from '../config/categories';
 import { MAIN_NAV_ITEMS, COMPACT_FOOD_NAV_ITEMS } from '../config/navigation';
-import { openCustomQuoteModal } from './CustomQuoteModal';
+import { openCustomQuoteModal } from '../lib/customQuoteEvent';
 import { catalogTranslations } from '../contexts/catalogTranslations';
 
 interface MobileMenuProps {

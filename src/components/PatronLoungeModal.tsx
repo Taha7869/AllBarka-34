@@ -9,7 +9,7 @@ import { useCart } from '../contexts/CartContext';
 import { useCatalogProducts, useCatalogRefresh } from '../contexts/CatalogContext';
 import { PRODUCTS as BASE_PRODUCTS } from '../data/products';
 import { resolveProductPrice } from '../lib/productVariants';
-import { openCustomQuoteModal } from './CustomQuoteModal';
+import { openCustomQuoteModal } from '../lib/customQuoteEvent';
 import { reviewReorderItems, revalidateReorderWithServerQuote, trackingProgress, TRACKING_STEPS, type ReorderAnalysis } from '../lib/orderPresentation';
 import { Link } from 'react-router-dom';
 import { acquireScrollLock } from '../utils/scrollLock';

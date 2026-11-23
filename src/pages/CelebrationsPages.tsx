@@ -3,8 +3,9 @@ import { Link, Navigate, useLocation, useParams, useSearchParams } from 'react-r
 import { ArrowUpRight } from 'lucide-react';
 import SEO from '../components/SEO';
 import ShopPage from './ShopPage';
-import GiftFinder from '../components/GiftFinder';
 import GiftingPlanningToolsBar from '../components/GiftingPlanningToolsBar';
+
+const GiftFinder = React.lazy(() => import('../components/GiftFinder'));
 import { useLanguage } from '../contexts/LanguageContext';
 import { openOccasionInquiryModal } from '../components/OccasionInquiryModal';
 import { normalizeOccasionSlug } from '../config/categories';
@@ -167,7 +168,9 @@ export function CelebrationsHubPage() {
       <ModeTabs active="occasion" />
 
       <div className="my-6 space-y-4">
-        <GiftFinder compact />
+        <React.Suspense fallback={null}>
+          <GiftFinder compact />
+        </React.Suspense>
         <GiftingPlanningToolsBar />
       </div>
 

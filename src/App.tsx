@@ -8,9 +8,9 @@ import type { InfoPageTab } from './pages/InfoPage';
 import type { PolicyTab } from './pages/PoliciesPage';
 import { RouteLoadingSkeleton } from './components/StorefrontSkeletons';
 import HomePage from './pages/HomePage';
-import ProductDetailPage from './pages/ProductDetailPage';
 
-// Route-level code splitting for secondary routes so Home and Product pages never eagerly download Admin, Staff, Checkout, or Celebrations bundles — while keeping Home & PDP eager for zero CLS and instant LCP.
+// Route-level code splitting for secondary routes so Home never eagerly downloads Admin, Staff, PDP, Checkout, or Celebrations bundles — while keeping Home eager for zero CLS and instant LCP.
+const ProductDetailPage = React.lazy(() => import('./pages/ProductDetailPage'));
 const ShopPage = React.lazy(() => import('./pages/ShopPage'));
 const CheckoutPage = React.lazy(() => import('./pages/CheckoutPage'));
 const OrderSuccessPage = React.lazy(() => import('./pages/OrderSuccessPage'));
