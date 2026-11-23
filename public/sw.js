@@ -1,7 +1,7 @@
 // AllBarka Lightweight Static Service Worker
 // STRICT SAFETY RULE: NEVER cache API, checkout, or admin routes.
 
-const CACHE_NAME = 'allbarka-static-v2';
+const CACHE_NAME = 'allbarka-static-v3';
 
 // Static precache list for core UI offline resilience
 const PRECACHE_ASSETS = [
@@ -11,6 +11,8 @@ const PRECACHE_ASSETS = [
   '/manifest.webmanifest',
   '/icon-192.png',
   '/icon-512.png',
+  '/icon-512-maskable.png',
+  '/apple-touch-icon.png',
 ];
 
 // Routes and paths that must NEVER be cached or intercepted by service worker

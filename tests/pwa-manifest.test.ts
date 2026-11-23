@@ -29,9 +29,15 @@ test('Feature B: Web App Manifest verification', () => {
   assert.ok(icon192, '192x192 icon must be specified');
   assert.ok(fs.existsSync(path.join(ROOT_DIR, 'public', icon192.src)), `Icon file ${icon192.src} must exist`);
 
-  const icon512 = manifest.icons.find((i: any) => i.sizes === '512x512');
-  assert.ok(icon512, '512x512 icon must be specified');
+  const icon512 = manifest.icons.find((i: any) => i.sizes === '512x512' && i.purpose === 'any');
+  assert.ok(icon512, '512x512 any icon must be specified');
   assert.ok(fs.existsSync(path.join(ROOT_DIR, 'public', icon512.src)), `Icon file ${icon512.src} must exist`);
+
+  const icon512Maskable = manifest.icons.find((i: any) => i.sizes === '512x512' && i.purpose === 'maskable');
+  assert.ok(icon512Maskable, '512x512 maskable icon must be specified');
+  assert.ok(fs.existsSync(path.join(ROOT_DIR, 'public', icon512Maskable.src)), `Maskable icon file ${icon512Maskable.src} must exist`);
+  assert.ok(fs.existsSync(path.join(ROOT_DIR, 'public', 'splash-screen.png')), 'Branded PWA splash-screen.png must exist');
+  assert.ok(fs.existsSync(path.join(ROOT_DIR, 'public', 'apple-touch-icon.png')), 'Branded apple-touch-icon.png must exist');
 
   // Verify PWA app shortcuts (Shop, Gifting, Track order, Bag)
   assert.ok(Array.isArray(manifest.shortcuts), 'shortcuts must be an array');
@@ -63,6 +69,9 @@ test('Feature B: HTML and Helmet CSP PWA headers verification', () => {
 
   assert.ok(htmlContent.includes('<link rel="manifest" href="/manifest.webmanifest">'), 'index.html must include manifest link');
   assert.ok(htmlContent.includes('<meta name="theme-color" content="#042821">'), 'index.html must specify theme-color');
+  assert.ok(htmlContent.includes('<meta property="og:image:width" content="1200">'), 'index.html OG width must be 1200');
+  assert.ok(htmlContent.includes('<meta property="og:image:height" content="630">'), 'index.html OG height must be 630');
+  assert.ok(htmlContent.includes('<link rel="apple-touch-startup-image" href="/splash-screen.png">'), 'index.html must link branded splash screen');
 
   const serverPath = path.join(ROOT_DIR, 'server.ts');
   const serverContent = fs.readFileSync(serverPath, 'utf-8');

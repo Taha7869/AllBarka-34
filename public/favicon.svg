@@ -1,38 +1,58 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" width="220" height="220">
   <defs>
-    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#E5C77A"/>
-      <stop offset="50%" stop-color="#C7982F"/>
-      <stop offset="100%" stop-color="#8C6B1B"/>
-    </linearGradient>
-    <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#073B30"/>
-      <stop offset="100%" stop-color="#042821"/>
+    <radialGradient id="bg" cx="50%" cy="42%" r="58%">
+      <stop offset="0%" stop-color="#0A3B30" />
+      <stop offset="100%" stop-color="#042821" />
     </radialGradient>
+    <linearGradient id="goldMain" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFDF2" />
+      <stop offset="22%" stop-color="#F9E28E" />
+      <stop offset="48%" stop-color="#D4AF37" />
+      <stop offset="76%" stop-color="#B38926" />
+      <stop offset="100%" stop-color="#876211" />
+    </linearGradient>
+    <linearGradient id="goldLight" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#C49B2C" />
+      <stop offset="35%" stop-color="#FEF3C7" />
+      <stop offset="70%" stop-color="#E2BD4E" />
+      <stop offset="100%" stop-color="#F5D87F" />
+    </linearGradient>
+    <linearGradient id="goldShimmer" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="40%" stop-color="#FDE68A" />
+      <stop offset="80%" stop-color="#D4AF37" />
+      <stop offset="100%" stop-color="#92400E" />
+    </linearGradient>
   </defs>
-  
-  <!-- Outer circle background -->
-  <circle cx="50" cy="50" r="48" fill="url(#bgGrad)" stroke="url(#goldGrad)" stroke-width="2.5"/>
-  
-  <!-- Decorative inner ring -->
-  <circle cx="50" cy="50" r="42" fill="none" stroke="url(#goldGrad)" stroke-width="0.75" stroke-dasharray="2, 2" opacity="0.65"/>
-  
-  <!-- Royal Crown / Lotus Crest Peak -->
-  <path d="M36 33 L50 22 L64 33 L58 37 L50 28 L42 37 Z" fill="url(#goldGrad)"/>
-  <circle cx="50" cy="19" r="2.5" fill="url(#goldGrad)"/>
-  
-  <!-- Monogram AB -->
-  <text x="50" y="65" 
-        font-family="'Playfair Display', Georgia, serif" 
-        font-size="34" 
-        font-weight="700" 
-        font-style="italic"
-        letter-spacing="-1"
-        fill="url(#goldGrad)" 
-        text-anchor="middle">
-    AB
-  </text>
-  
-  <!-- Small Star Beneath -->
-  <polygon points="50,73 52,78 57,78 53,81 55,86 50,83 45,86 47,81 43,78 48,78" fill="url(#goldGrad)" opacity="0.85"/>
+  <rect width="220" height="220" rx="44" fill="url(#bg)" />
+  <rect x="8" y="8" width="204" height="204" rx="38" fill="none" stroke="url(#goldMain)" stroke-width="3" opacity="0.7" />
+  <g transform="translate(15 14) scale(0.86)">
+    <path d="M110 16 C104 27 101 37 101 46 C105 52 115 52 119 46 C119 37 116 27 110 16 Z" fill="url(#goldMain)" />
+    <path d="M110 22 C107 29 105 37 105 44 C107 47 113 47 115 44 C115 37 113 29 110 22 Z" fill="url(#goldShimmer)" opacity="0.9" />
+    <path d="M99 26 C91 32 87 40 92 50 C99 49 103 42 101 31 Z" fill="url(#goldLight)" />
+    <path d="M121 26 C129 32 133 40 128 50 C121 49 117 42 119 31 Z" fill="url(#goldLight)" />
+    <path d="M86 48 C77 47 70 56 75 66 C84 64 88 55 86 48 Z" fill="url(#goldMain)" />
+    <path d="M72 70 C63 74 61 85 68 92 C75 88 78 78 72 70 Z" fill="url(#goldLight)" />
+    <path d="M94 65 C87 67 83 76 87 83 C94 81 97 73 94 65 Z" fill="url(#goldMain)" />
+    <path d="M134 48 C143 47 150 56 145 66 C136 64 132 55 134 48 Z" fill="url(#goldMain)" />
+    <path d="M148 70 C157 74 159 85 152 92 C145 88 142 78 148 70 Z" fill="url(#goldLight)" />
+    <path d="M126 65 C133 67 137 76 133 83 C126 81 123 73 126 65 Z" fill="url(#goldMain)" />
+    <path d="M74 135 C72 118 78 102 85 86 C88 80 94 72 101 62" stroke="url(#goldLight)" stroke-width="3" stroke-linecap="round" />
+    <path d="M76 112 C69 110 65 116 68 122 C74 121 77 116 76 112 Z" fill="url(#goldMain)" />
+    <path d="M74 140 L101 54 C103 49 109 49 111 54 L130 102" stroke="url(#goldMain)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M65 140 C72 136 86 140 91 140" stroke="url(#goldLight)" stroke-width="6" stroke-linecap="round" />
+    <path d="M84 112 L124 112" stroke="url(#goldShimmer)" stroke-width="5" stroke-linecap="round" />
+    <path d="M109 57 L109 135" stroke="url(#goldMain)" stroke-width="5.5" stroke-linecap="round" />
+    <path d="M109 58 C138 55 160 67 155 85 C151 98 135 102 118 102" stroke="url(#goldLight)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M118 102 C142 102 163 111 159 128 C154 144 131 144 107 144" stroke="url(#goldMain)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" />
+    <ellipse cx="110" cy="158" rx="20" ry="23" stroke="url(#goldMain)" stroke-width="4" fill="transparent" />
+    <path d="M110 139 C104 146 103 154 110 162 C110 170 105 177 110 181 M110 139 C116 146 117 154 110 162 C110 170 115 177 110 181" stroke="url(#goldLight)" stroke-width="2.8" stroke-linecap="round" />
+    <path d="M100 151 C97 157 99 166 103 169 M120 151 C123 157 121 166 117 169" stroke="url(#goldShimmer)" stroke-width="2.4" stroke-linecap="round" />
+    <path d="M88 168 C74 171 61 162 54 153 C61 150 76 155 83 162 Z" fill="url(#goldMain)" />
+    <path d="M90 178 C72 187 56 181 45 172 C56 169 74 173 85 173 Z" fill="url(#goldLight)" />
+    <path d="M97 188 C83 197 70 194 61 188 C72 185 85 186 92 184 Z" fill="url(#goldMain)" />
+    <path d="M132 168 C146 171 159 162 166 153 C159 150 144 155 137 162 Z" fill="url(#goldMain)" />
+    <path d="M130 178 C148 187 164 181 175 172 C164 169 146 173 135 173 Z" fill="url(#goldLight)" />
+    <path d="M123 188 C137 197 150 194 159 188 C148 185 135 186 128 184 Z" fill="url(#goldMain)" />
+  </g>
 </svg>
