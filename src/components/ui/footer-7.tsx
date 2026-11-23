@@ -117,7 +117,7 @@ export const Footer7 = ({
     subtitle: "Purveyors of Exceptional Harvests",
   },
   sections = defaultSections,
-  description = "Ethically procured single-origin dry fruits, nuts, and organic delicacies. Hand-graded for purity, vacuum-packed to lock in raw natural oils, and dispatched fresh daily across Lahore and nationwide.",
+  description = "Hand-graded and packed in Lahore — selected dry fruits, nuts, dates, and signature gift boxes dispatched across Lahore and nationwide.",
   socialLinks = defaultSocialLinks,
   copyright = "© 2026 AllBarka Dry Fruits & Confections. Lahore, Pakistan. All rights reserved.",
   legalLinks = defaultLegalLinks,

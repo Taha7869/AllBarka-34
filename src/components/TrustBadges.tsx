@@ -10,7 +10,7 @@ export default function TrustBadges() {
     {
       icon: ShieldCheck,
       title: t('trust.authentic', '100% Authentic'),
-      desc: t('trust.authenticDesc', 'Ethically sourced single-origin harvests')
+      desc: t('trust.authenticDesc', 'Hand-graded and packed in Lahore')
     },
     {
       icon: Lock,
