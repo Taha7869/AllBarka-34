@@ -189,9 +189,25 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
     ...(filters.sort !== 'featured' ? [{ key: 'sort', label: t(`shop.${filters.sort}`) }] : []),
   ];
   return <section id="category-plp-container" className="w-full pb-12 text-[var(--color-text-primary)]" style={{ '--catalog-header-clearance': `${headerClearance}px` } as React.CSSProperties}>
-    {filterDraft && <CatalogFilterSheet id={sheetFilterId} draft={filterDraft} categoryLabel={categoryLabel(category)} results={previewCount(filterDraft)} origins={draftOrigins} savedCount={savedIds.length} onChange={setFilterDraft} onApply={applyDraft} onCancel={() => setFilterDraft(null)} />}
+    {filterDraft && (
+      <CatalogFilterSheet
+        id={sheetFilterId}
+        draft={filterDraft}
+        categoryLabel={categoryLabel(category)}
+        results={previewCount(filterDraft)}
+        origins={draftOrigins}
+        savedCount={savedIds.length}
+        listView={listView}
+        onToggleListView={checked => update({ view: checked ? 'list' : null })}
+        onShareCollection={() => { setFilterDraft(null); void share(false); }}
+        onShareSaved={() => { setFilterDraft(null); void share(true); }}
+        onChange={setFilterDraft}
+        onApply={applyDraft}
+        onCancel={() => setFilterDraft(null)}
+      />
+    )}
     {isModal && <button type="button" onClick={onClose} aria-label={t('close')} className="ms-auto flex h-11 w-11 items-center justify-center rounded-full border border-[var(--color-border)]"><X size={20} /></button>}
-    <header className="table-catalog-header relative mb-7 overflow-hidden rounded-[22px] border border-[#C7982F]/35 bg-[#042821] px-6 py-9 text-[#FDFBF7] sm:px-10 sm:py-14">
+    <header className="table-catalog-header relative mb-3.5 sm:mb-7 overflow-hidden rounded-[18px] sm:rounded-[22px] border border-[#C7982F]/35 bg-[#042821] px-4 py-4 text-[#FDFBF7] sm:px-10 sm:py-12">
       {sectionCover && (
         <div className="pointer-events-none absolute inset-0">
           <img
@@ -208,12 +224,12 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
           <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-r from-[#042821] via-[#042821]/92 to-[#042821]/45 rtl:bg-gradient-to-l" />
         </div>
       )}
-      <p className="relative z-10 mb-3 text-xs sm:text-[13px] font-medium text-[#E4C783]">{t('shop.eyebrow')}</p>
-      <h1 className="relative z-10 max-w-3xl font-serif text-3xl sm:text-5xl font-medium leading-[1.12] tracking-[-0.02em] text-[#FDFBF7]">{category === 'all' ? t('shop.title') : categoryLabel(category)}</h1>
-      <div className="relative z-10 mt-5 flex flex-wrap items-end justify-between gap-5"><p className="max-w-lg text-sm leading-7 text-[#F2ECE2]/85">{t('shop.copy')}</p><span className="text-xs font-medium text-[#E4C783]">{PRODUCTS.length} / {t('shop.results')}</span></div>
+      <p className="relative z-10 mb-1 sm:mb-3 text-xs sm:text-[13px] font-medium text-[#E4C783]">{t('shop.eyebrow')}</p>
+      <h1 className="relative z-10 max-w-3xl font-serif text-2xl sm:text-5xl font-medium leading-[1.12] tracking-[-0.02em] text-[#FDFBF7]">{category === 'all' ? t('shop.title') : categoryLabel(category)}</h1>
+      <div className="relative z-10 mt-1.5 sm:mt-5 flex flex-wrap items-end justify-between gap-3 sm:gap-5"><p className="hidden sm:block max-w-lg text-sm leading-7 text-[#F2ECE2]/85">{t('shop.copy')}</p><span className="text-xs font-medium text-[#E4C783]">{PRODUCTS.length} / {t('shop.results')}</span></div>
     </header>
-    {isWholesale && <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--color-border)] p-4"><p className="max-w-lg text-sm leading-6">{t('shop.wholesaleCopy')}</p><a href={buildHumanSupportWhatsAppUrl('I would like to enquire about wholesale products.')} target="_blank" rel="noreferrer" className="focus-ring inline-flex min-h-11 items-center rounded-full bg-[#1e3a2b] px-5 text-xs text-[#fff8e9]">{t('shop.wholesaleEnquiry')}</a></div>}
-    <nav aria-label={t('category')} className="catalog-category-nav mb-6 flex gap-2 overflow-x-auto pb-2">
+    {isWholesale && <div className="mb-4 sm:mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--color-border)] p-4"><p className="max-w-lg text-sm leading-6">{t('shop.wholesaleCopy')}</p><a href={buildHumanSupportWhatsAppUrl('I would like to enquire about wholesale products.')} target="_blank" rel="noreferrer" className="focus-ring inline-flex min-h-11 items-center rounded-full bg-[#1e3a2b] px-5 text-xs text-[#fff8e9]">{t('shop.wholesaleEnquiry')}</a></div>}
+    <nav aria-label={t('category')} className="catalog-category-nav mb-3 sm:mb-6 flex gap-2 overflow-x-auto pb-1 sm:pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {['all', ...new Set([...CUSTOMER_FACING_CATEGORIES.filter(id=>!hiddenTaxonomy.includes(id)),...taxonomy.filter(x=>x.type!=='occasion').map(x=>x.id)])].map(id => {
         const isActive = category === id || (category === 'nuts' && id === 'dry-fruits') || (category === 'snacks-seeds' && id === 'seeds-snacks') || (category === 'combos' && id === 'gift-boxes');
         return (
@@ -231,8 +247,8 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
       <button type="button" onClick={() => openCustomQuoteModal({ mode: 'filled', quantity: 50 })} className="min-h-11 shrink-0 rounded-full border border-[#8C6B1B] bg-[#FAF6EE] px-5 text-xs font-bold text-[#8C6B1B] transition-colors hover:bg-[#8C6B1B] hover:text-white">Bid Boxes &amp; Custom Quote</button>
     </nav>
     {taxonomy.some(x=>x.type==='occasion')&&<nav className="catalog-category-nav mb-5 flex gap-2 overflow-x-auto" aria-label={t('item.occasions')}>{taxonomy.filter(x=>x.type==='occasion').map(x=><button key={x.id} type="button" className="min-h-11 shrink-0 rounded-full border border-[var(--color-border)] px-4 text-xs" aria-pressed={occasion===x.id} onClick={()=>update({occasion:occasion===x.id?null:x.id})}>{x[`name_${language}`]||x.name_en}</button>)}</nav>}
-    <div className={`catalog-quick-controls mb-5 flex flex-col gap-3 lg:flex-row ${isModal ? 'catalog-quick-controls-modal' : ''}`}>
-      <div className="relative flex-1" onFocusCapture={() => setSearchOpen(true)}
+    <div className={`catalog-quick-controls mb-3 sm:mb-5 flex flex-row items-center gap-2 lg:gap-3 ${isModal ? 'catalog-quick-controls-modal' : ''}`}>
+      <div className="relative min-w-0 flex-1" onFocusCapture={() => setSearchOpen(true)}
         onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setSearchOpen(false); }}
         onKeyDownCapture={event => {
           if ((event.target as HTMLElement).closest('[data-voice-control]')) return;
@@ -247,11 +263,11 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
           }
           if (event.key === 'Enter' && event.target instanceof HTMLInputElement) setSearchOpen(false);
         }}>
-      <div className="flex min-h-12 items-center gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 focus-within:border-[#c7982f] focus-within:ring-2 focus-within:ring-[#c7982f]/15 lg:min-h-14">
-        <Search size={19} className="shrink-0 text-[var(--color-accent-text)]" />
-        <input type="search" role="combobox" aria-autocomplete="list" aria-controls={suggestionId} aria-expanded={searchOpen && !!filters.query.trim()} dir="auto" aria-label={t('shop.search')} placeholder={t('shop.hint')} value={filters.query} onChange={e => { update({ search: e.target.value || null }); setSearchOpen(true); }} className="min-w-0 flex-1 bg-transparent py-3 text-base outline-none" />
+      <div className="flex min-h-11 sm:min-h-12 items-center gap-1.5 sm:gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 sm:px-4 focus-within:border-[#c7982f] focus-within:ring-2 focus-within:ring-[#c7982f]/15 lg:min-h-14">
+        <Search size={17} className="shrink-0 text-[var(--color-accent-text)]" />
+        <input type="search" role="combobox" aria-autocomplete="list" aria-controls={suggestionId} aria-expanded={searchOpen && !!filters.query.trim()} dir="auto" aria-label={t('shop.search')} placeholder={t('shop.hint')} value={filters.query} onChange={e => { update({ search: e.target.value || null }); setSearchOpen(true); }} className="min-w-0 flex-1 bg-transparent py-2.5 text-sm sm:text-base outline-none" />
         <VoiceInputButton onTranscript={text => { update({ search: text }); setSearchOpen(true); }} />
-        {filters.query && <button type="button" aria-label={t('shop.clear')} onClick={() => update({ search: null })} className="flex h-11 w-11 items-center justify-center"><X size={17} /></button>}
+        {filters.query && <button type="button" aria-label={t('shop.clear')} onClick={() => update({ search: null })} className="flex h-11 w-11 shrink-0 items-center justify-center"><X size={17} /></button>}
       </div>
       {searchOpen && filters.query.trim() && <div className="boutique-search-suggestions z-30">
         <div id={suggestionId} role="listbox" aria-label={t('boutique.suggestions')}>
@@ -262,9 +278,9 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
         <button type="button" className="boutique-search-all" onClick={() => setSearchOpen(false)}>{t('boutique.allResults')} <ArrowUpRight size={16} /></button>
       </div>}
       </div>
-      <div className="flex flex-wrap gap-2">
-        <button data-catalog-filter-trigger="" type="button" onClick={openFilters} aria-haspopup={mobileControls ? 'dialog' : undefined} aria-expanded={mobileControls ? !!filterDraft : showFilters} aria-controls={mobileControls ? sheetFilterId : desktopFilterId} className="focus-ring flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-xs font-semibold"><SlidersHorizontal size={17} aria-hidden="true" /><span dir="auto">{t(mobileControls ? 'filters.title' : 'shop.filters')}</span>{chips.length > 0 && <span aria-label={t('filters.applied').replace('{count}', String(chips.length))} className="rounded-full bg-[#c7982f]/15 px-2 py-1">{chips.length}</span>}</button>
-        <button type="button" aria-pressed={filters.saved} onClick={() => update({ saved: filters.saved ? null : '1' })} className={`flex min-h-12 min-w-0 flex-1 basis-40 items-center justify-center gap-2 rounded-2xl border px-4 text-xs font-semibold ${filters.saved ? 'border-[#c7982f] bg-[#c7982f]/10' : 'border-[var(--color-border)] bg-[var(--color-surface)]'}`}><Heart size={17} className="shrink-0" fill={filters.saved ? 'currentColor' : 'none'} /><span className="min-w-0 [overflow-wrap:anywhere]">{t('shop.saved')}</span><span className="shrink-0">{savedIds.length}</span></button>
+      <div className="flex shrink-0 items-center gap-2">
+        <button data-catalog-filter-trigger="" type="button" onClick={openFilters} aria-haspopup={mobileControls ? 'dialog' : undefined} aria-expanded={mobileControls ? !!filterDraft : showFilters} aria-controls={mobileControls ? sheetFilterId : desktopFilterId} className="focus-ring flex min-h-11 sm:min-h-12 shrink-0 items-center justify-center gap-1.5 sm:gap-2 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 sm:px-4 text-xs font-semibold whitespace-nowrap"><SlidersHorizontal size={16} aria-hidden="true" /><span dir="auto">{t(mobileControls ? 'filters.title' : 'shop.filters')}</span>{chips.length > 0 && <span aria-label={t('filters.applied').replace('{count}', String(chips.length))} className="rounded-full bg-[#c7982f]/15 px-1.5 py-0.5">{chips.length}</span>}</button>
+        <button type="button" aria-pressed={filters.saved} onClick={() => update({ saved: filters.saved ? null : '1' })} className={`hidden lg:flex min-h-12 min-w-0 items-center justify-center gap-2 rounded-2xl border px-4 text-xs font-semibold ${filters.saved ? 'border-[#c7982f] bg-[#c7982f]/10' : 'border-[var(--color-border)] bg-[var(--color-surface)]'}`}><Heart size={17} className="shrink-0" fill={filters.saved ? 'currentColor' : 'none'} /><span className="min-w-0 [overflow-wrap:anywhere]">{t('shop.saved')}</span><span className="shrink-0">{savedIds.length}</span></button>
       </div>
     </div>
     <AnimatePresence initial={false}>{showFilters && <motion.div id={desktopFilterId} initial={reduceMotion ? false : { opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={reduceMotion ? undefined : { opacity: 0, height: 0 }} transition={{ duration: reduceMotion ? 0 : .2 }} className="hidden overflow-hidden lg:block">
@@ -299,13 +315,13 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
       </div>
     </motion.div>}</AnimatePresence>
     {chips.length > 0 && <div className="mb-5 flex flex-wrap items-center gap-2">{chips.map(chip => <button key={chip.key} type="button" onClick={() => chip.onRemove ? chip.onRemove() : update({ [chip.key]: null })} aria-label={`${t('shop.remove')}: ${chip.label}`} className="inline-flex min-h-11 max-w-full items-center gap-2 rounded-full border border-[var(--color-border)] px-3 text-xs"><span className="truncate" dir="auto">{chip.label}</span><X size={13} className="shrink-0" /></button>)}<button type="button" onClick={clear} className="min-h-11 px-3 text-xs underline underline-offset-4">{t('shop.clear')}</button></div>}
-    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+    <div className="mb-3 hidden flex-wrap items-center justify-between gap-2 lg:flex">
       <div className="flex flex-wrap gap-2"><button type="button" onClick={() => void share()} className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--color-border)] px-4 text-xs"><Share2 size={15} />{t('shop.shareCollection')}</button><button type="button" disabled={!savedIds.length} onClick={() => void share(true)} className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--color-border)] px-4 text-xs disabled:opacity-40"><Heart size={15} />{t('shop.shareSaved')}</button></div>
       <SquishSwitch checked={listView} onChange={checked => update({ view: checked ? 'list' : null })} label={t('shop.list')} />
     </div>
-    {shareStatus && <p role="status" className="mb-4 text-xs text-[var(--color-accent-text)]">{shareStatus}</p>}
-    {manualLink && <label className="mb-4 block text-xs">{t('shop.copyLink')}<input readOnly value={manualLink} dir="ltr" onFocus={event => event.target.select()} className="mt-2 min-h-11 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-base sm:text-xs" /></label>}
-    <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-[var(--color-border)] pb-4">
+    {shareStatus && <p role="status" className="mb-3 text-xs text-[var(--color-accent-text)]">{shareStatus}</p>}
+    {manualLink && <label className="mb-3 block text-xs">{t('shop.copyLink')}<input readOnly value={manualLink} dir="ltr" onFocus={event => event.target.select()} className="mt-2 min-h-11 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-base sm:text-xs" /></label>}
+    <div className="mb-3 sm:mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-[var(--color-border)] pb-2.5 sm:pb-4">
       <p role="status" aria-live="polite" className="text-xs text-[var(--color-text-secondary)]"><strong className="text-[var(--color-text-primary)]">{products.length}</strong> {t('shop.results')}</p>
       <label className="hidden items-center gap-2 text-xs lg:flex"><span dir="auto">{t('shop.sort')}</span><select value={filters.sort} dir="auto" onChange={e => update({ sort: e.target.value === 'featured' ? null : e.target.value })} className="min-h-11 max-w-[190px] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-base sm:text-xs">{CATALOG_SORTS.map(sort => <option key={sort} value={sort}>{t(`shop.${sort}`)}</option>)}</select></label>
     </div>

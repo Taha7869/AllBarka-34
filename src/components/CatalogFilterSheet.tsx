@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Heart, SlidersHorizontal, X } from 'lucide-react';
+import { Heart, LayoutList, Share2, SlidersHorizontal, X } from 'lucide-react';
 import { useCatalogFilterLanguage } from '../hooks/useCatalogFilterLanguage';
 import { CATALOG_SORTS, type CatalogSort } from '../lib/catalogDiscovery';
 import { ALLERGEN_FILTER_KEYS, type AllergenFilterKey } from '../lib/allergenFilter';
@@ -14,13 +14,31 @@ interface CatalogFilterSheetProps {
   results: number;
   origins: { id: string; label: string; count: number }[];
   savedCount: number;
+  listView?: boolean;
+  onToggleListView?: (next: boolean) => void;
+  onShareCollection?: () => void;
+  onShareSaved?: () => void;
   onChange: (draft: CatalogFilterDraft) => void;
   onApply: () => void;
   onCancel: () => void;
 }
 
 /** A temporary editing layer; only its explicit Apply action changes the catalogue. */
-export default function CatalogFilterSheet({ id, draft, categoryLabel, results, origins, savedCount, onChange, onApply, onCancel }: CatalogFilterSheetProps) {
+export default function CatalogFilterSheet({
+  id,
+  draft,
+  categoryLabel,
+  results,
+  origins,
+  savedCount,
+  listView = false,
+  onToggleListView,
+  onShareCollection,
+  onShareSaved,
+  onChange,
+  onApply,
+  onCancel,
+}: CatalogFilterSheetProps) {
   const { t } = useCatalogFilterLanguage();
   const panel = useRef<HTMLDivElement>(null);
   const close = useRef<HTMLButtonElement>(null);
@@ -143,6 +161,59 @@ export default function CatalogFilterSheet({ id, draft, categoryLabel, results, 
           <label><input type="checkbox" checked={draft.special} onChange={event => patch({ special: event.target.checked })} /><span dir="auto">{t('shop.special')}</span></label>
           <label><input type="checkbox" checked={draft.saved} onChange={event => patch({ saved: event.target.checked })} /><span><span className="catalog-filter-saved-label" dir="auto"><Heart size={15} aria-hidden="true" /><span>{t('shop.saved')}</span> <bdi>({savedCount})</bdi></span><small dir="auto">{t('filters.savedHint')}</small></span></label>
         </div>
+        {(onToggleListView || onShareCollection || onShareSaved) && (
+          <div className="catalog-filter-group flex flex-col gap-2.5" data-testid="filter-sheet-utilities">
+            {onToggleListView && (
+              <button
+                type="button"
+                role="switch"
+                aria-checked={listView}
+                onClick={() => onToggleListView(!listView)}
+                className={`focus-ring flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border px-3.5 py-2 text-start text-xs font-semibold transition-colors ${
+                  listView
+                    ? 'border-[#1e3a2b] bg-[#1e3a2b] text-[#fff8e9] dark:border-[#c7982f] dark:bg-[#c7982f] dark:text-[#042821]'
+                    : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-primary)]'
+                }`}
+              >
+                <span className="flex min-w-0 items-center gap-2">
+                  <LayoutList size={15} className="shrink-0" aria-hidden="true" />
+                  <span dir="auto" className="min-w-0 [overflow-wrap:anywhere]">{t('shop.list')}</span>
+                </span>
+                <span
+                  aria-hidden="true"
+                  className={`inline-flex h-5 w-9 shrink-0 items-center rounded-full border p-0.5 transition-colors ${
+                    listView ? 'border-[#e4c783] bg-[#c7982f] justify-end dark:border-[#042821] dark:bg-[#042821]' : 'border-[var(--color-border)] bg-[var(--color-base)] justify-start'
+                  }`}
+                >
+                  <span className="h-3.5 w-3.5 rounded-full bg-[var(--color-surface)]" />
+                </span>
+              </button>
+            )}
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {onShareCollection && (
+                <button
+                  type="button"
+                  onClick={onShareCollection}
+                  className="focus-ring flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2 text-xs font-medium text-[var(--color-text-primary)]"
+                >
+                  <Share2 size={15} className="shrink-0" aria-hidden="true" />
+                  <span dir="auto" className="min-w-0 [overflow-wrap:anywhere]">{t('shop.shareCollection')}</span>
+                </button>
+              )}
+              {onShareSaved && (
+                <button
+                  type="button"
+                  disabled={!savedCount}
+                  onClick={onShareSaved}
+                  className="focus-ring flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2 text-xs font-medium text-[var(--color-text-primary)] disabled:opacity-40"
+                >
+                  <Heart size={15} className="shrink-0" aria-hidden="true" />
+                  <span dir="auto" className="min-w-0 [overflow-wrap:anywhere]">{t('shop.shareSaved')}</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
       <footer className="catalog-filter-actions">
         <p role="status" aria-live="polite" aria-atomic="true" dir="auto" className={results ? '' : 'catalog-filter-no-results'}>{t(results ? 'filters.previewCount' : 'filters.zero').replace('{count}', String(results))}</p>
