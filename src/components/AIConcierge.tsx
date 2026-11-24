@@ -249,7 +249,7 @@ export default function AIConcierge({ hasCartBar = false, hasCookieBar = false, 
                 <span className="w-full h-full rounded-full bg-[var(--color-surface,#FFFFFF)] flex items-center justify-center relative overflow-hidden shadow-sm">
                   <span className="absolute inset-[2px] rounded-full border border-[var(--color-gold,#B8935F)]/40 pointer-events-none" />
                   <span className="relative z-10 flex flex-col items-center justify-center">
-                    <span className={`font-serif font-black tracking-tight text-[var(--color-accent-text,#806326)] leading-none ${isCompactOnScroll ? 'text-[10px] sm:text-sm' : 'text-xs sm:text-sm'}`}>
+                    <span className={`font-serif font-black tracking-tight text-[var(--color-accent-text,#806326)] leading-none ${isCompactOnScroll ?'text-[10px] sm:text-sm':'text-xs sm:text-sm'}`}>
                       AB
                     </span>
                     {!isCompactOnScroll && (

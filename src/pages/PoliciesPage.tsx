@@ -130,7 +130,7 @@ export function PolicyPagesModal({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[var(--color-gold,#C7982F)]/25">
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] sm:text-xs font-black tracking-[0.25em] text-[var(--color-gold,#C7982F)]">
+                <span className="text-[10px] sm:text-xs font-black text-[var(--color-gold,#C7982F)]">
                   AllBarka Boutique Governance
                 </span>
               </div>
@@ -230,7 +230,7 @@ export function PolicyPagesModal({
               >
                 {/* Section 1: Dispatch Logistics */}
                 <div className="space-y-3">
-                  <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                  <span className="text-[11px] font-black text-[var(--color-gold,#C7982F)] block">
                     Logistics & Fulfillment
                   </span>
                   <h2 className="text-xl sm:text-2xl font-serif font-black text-[var(--color-emerald,#042821)]">
@@ -245,7 +245,7 @@ export function PolicyPagesModal({
 
                 {/* Section 2: Transit Windows */}
                 <div className="space-y-4">
-                  <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                  <span className="text-[11px] font-black text-[var(--color-gold,#C7982F)] block">
                     Standard Delivery Times
                   </span>
                   <h3 className="text-xl sm:text-2xl font-serif font-black text-[var(--color-emerald,#042821)]">
@@ -279,7 +279,7 @@ export function PolicyPagesModal({
 
                 {/* Section 3: Shipping Tariffs */}
                 <div className="space-y-4">
-                  <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                  <span className="text-[11px] font-black text-[var(--color-gold,#C7982F)] block">
                     Shipping Tariffs & Complimentary Policy
                   </span>
                   <h3 className="text-lg sm:text-xl font-serif font-bold text-[var(--color-emerald,#042821)]">
@@ -312,7 +312,7 @@ export function PolicyPagesModal({
                 className="max-w-3xl space-y-8"
               >
                 <div className="space-y-3">
-                  <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                  <span className="text-[11px] font-black text-[var(--color-gold,#C7982F)] block">
                     Purity Guarantee
                   </span>
                   <h2 className="text-xl sm:text-2xl font-serif font-black text-[var(--color-emerald,#042821)]">
@@ -326,7 +326,7 @@ export function PolicyPagesModal({
                 <hr className="border-t border-[var(--color-gold,#C7982F)]/30" />
 
                 <div className="space-y-3">
-                  <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                  <span className="text-[11px] font-black text-[var(--color-gold,#C7982F)] block">
                     Boutique Resolution Protocol
                   </span>
                   <h3 className="text-xl sm:text-2xl font-serif font-black text-[var(--color-emerald,#042821)]">
@@ -344,7 +344,7 @@ export function PolicyPagesModal({
                 <hr className="border-t border-[var(--color-gold,#C7982F)]/30" />
 
                 <div className="space-y-3">
-                  <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                  <span className="text-[11px] font-black text-[var(--color-gold,#C7982F)] block">
                     Transit & Seal Protection
                   </span>
                   <h3 className="text-lg sm:text-xl font-serif font-bold text-[var(--color-emerald,#042821)]">
@@ -366,7 +366,7 @@ export function PolicyPagesModal({
                 className="max-w-3xl space-y-8"
               >
                 <div className="space-y-3">
-                  <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                  <span className="text-[11px] font-black text-[var(--color-gold,#C7982F)] block">
                     Discretion & Confidentiality
                   </span>
                   <h2 className="text-xl sm:text-2xl font-serif font-black text-[var(--color-emerald,#042821)]">
@@ -383,7 +383,7 @@ export function PolicyPagesModal({
                 <hr className="border-t border-[var(--color-gold,#C7982F)]/30" />
 
                 <div className="space-y-3">
-                  <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                  <span className="text-[11px] font-black text-[var(--color-gold,#C7982F)] block">
                     Commercial Privacy Standard
                   </span>
                   <h3 className="text-xl sm:text-2xl font-serif font-black text-[var(--color-emerald,#042821)]">
@@ -397,7 +397,7 @@ export function PolicyPagesModal({
                 <hr className="border-t border-[var(--color-gold,#C7982F)]/30" />
 
                 <div className="space-y-3">
-                  <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                  <span className="text-[11px] font-black text-[var(--color-gold,#C7982F)] block">
                     Client Rights
                   </span>
                   <h3 className="text-lg sm:text-xl font-serif font-bold text-[var(--color-emerald,#042821)]">
@@ -419,7 +419,7 @@ export function PolicyPagesModal({
                 className="max-w-3xl space-y-8"
               >
                 <div className="space-y-3">
-                  <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                  <span className="text-[11px] font-black text-[var(--color-gold,#C7982F)] block">
                     Terms of Service
                   </span>
                   <h2 className="text-xl sm:text-2xl font-serif font-black text-[var(--color-emerald,#042821)]">
@@ -433,7 +433,7 @@ export function PolicyPagesModal({
                 <hr className="border-t border-[var(--color-gold,#C7982F)]/30" />
 
                 <div className="space-y-3">
-                  <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                  <span className="text-[11px] font-black text-[var(--color-gold,#C7982F)] block">
                     Pricing & Weight Accuracy
                   </span>
                   <h3 className="text-xl sm:text-2xl font-serif font-black text-[var(--color-emerald,#042821)]">
@@ -447,7 +447,7 @@ export function PolicyPagesModal({
                 <hr className="border-t border-[var(--color-gold,#C7982F)]/30" />
 
                 <div className="space-y-3">
-                  <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                  <span className="text-[11px] font-black text-[var(--color-gold,#C7982F)] block">
                     Order Cancellation & Amendments
                   </span>
                   <h3 className="text-lg sm:text-xl font-serif font-bold text-[var(--color-emerald,#042821)]">
@@ -461,7 +461,7 @@ export function PolicyPagesModal({
                 <hr className="border-t border-[var(--color-gold,#C7982F)]/30" />
 
                 <div className="space-y-3">
-                  <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                  <span className="text-[11px] font-black text-[var(--color-gold,#C7982F)] block">
                     Jurisdiction & Dispute Resolution
                   </span>
                   <h3 className="text-lg sm:text-xl font-serif font-bold text-[var(--color-emerald,#042821)]">
@@ -576,7 +576,7 @@ export function PolicyPagesModal({
         <div className="px-6 sm:px-10 pt-7 pb-4 border-b border-[var(--color-gold,#C7982F)]/25 bg-[var(--color-base,#F6F1EA)] flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] sm:text-xs font-black tracking-[0.25em] text-[var(--color-gold,#C7982F)]">
+              <span className="text-[10px] sm:text-xs font-black text-[var(--color-gold,#C7982F)]">
                 AllBarka Boutique Governance
               </span>
             </div>
@@ -675,7 +675,7 @@ export function PolicyPagesModal({
               className="max-w-3xl space-y-8"
             >
               <div className="space-y-3">
-                <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                <span className="text-[11px] font-black text-[var(--color-gold,#C7982F)] block">
                   Logistics & Fulfillment
                 </span>
                 <h3 className="text-xl sm:text-2xl font-serif font-black text-[var(--color-emerald,#042821)]">
@@ -720,7 +720,7 @@ export function PolicyPagesModal({
               className="max-w-3xl space-y-8"
             >
               <div className="space-y-3">
-                <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                <span className="text-[11px] font-black text-[var(--color-gold,#C7982F)] block">
                   Purity Guarantee
                 </span>
                 <h3 className="text-xl sm:text-2xl font-serif font-black text-[var(--color-emerald,#042821)]">
@@ -742,7 +742,7 @@ export function PolicyPagesModal({
               className="max-w-3xl space-y-8"
             >
               <div className="space-y-3">
-                <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                <span className="text-[11px] font-black text-[var(--color-gold,#C7982F)] block">
                   Discretion
                 </span>
                 <h3 className="text-xl sm:text-2xl font-serif font-black text-[var(--color-emerald,#042821)]">
@@ -770,7 +770,7 @@ export function PolicyPagesModal({
               className="max-w-3xl space-y-8"
             >
               <div className="space-y-3">
-                <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                <span className="text-[11px] font-black text-[var(--color-gold,#C7982F)] block">
                   Terms of Service
                 </span>
                 <h3 className="text-xl sm:text-2xl font-serif font-black text-[var(--color-emerald,#042821)]">

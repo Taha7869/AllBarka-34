@@ -226,7 +226,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
         </div>
       )}
       <p className="relative z-10 mb-1 sm:mb-3 text-xs sm:text-[13px] font-medium text-[#E4C783]">{t('shop.eyebrow')}</p>
-      <h1 className="relative z-10 max-w-3xl font-serif text-2xl sm:text-5xl font-medium leading-[1.12] tracking-[-0.02em] text-[#FDFBF7]">{category === 'all' ? t('shop.title') : categoryLabel(category)}</h1>
+      <h1 className="relative z-10 max-w-3xl font-serif text-2xl sm:text-5xl font-medium leading-[1.12] tracking-[-0.02em] text-[#FDFBF7]">{category ==='all'? t('shop.title') : categoryLabel(category)}</h1>
       <div className="relative z-10 mt-1.5 sm:mt-5 flex flex-wrap items-end justify-between gap-3 sm:gap-5"><p className="hidden sm:block max-w-lg text-sm leading-7 text-[#F2ECE2]/85">{t('shop.copy')}</p><span className="text-xs font-medium text-[#E4C783]">{PRODUCTS.length} / {t('shop.results')}</span></div>
     </header>
     {isWholesale && <div className="mb-4 sm:mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--color-border)] p-4"><p className="max-w-lg text-sm leading-6">{t('shop.wholesaleCopy')}</p><a href={buildHumanSupportWhatsAppUrl('I would like to enquire about wholesale products.')} target="_blank" rel="noreferrer" className="focus-ring inline-flex min-h-11 items-center rounded-full bg-[#1e3a2b] px-5 text-xs text-[#fff8e9]">{t('shop.wholesaleEnquiry')}</a></div>}

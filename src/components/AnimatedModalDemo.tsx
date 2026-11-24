@@ -90,7 +90,7 @@ export function AnimatedModalDemo({
         <LiquidMetalWrapper className="rounded-full">
           <ModalTrigger
             className={cn(
-              "px-6 sm:px-7 py-3 rounded-full bg-[var(--color-emerald)] text-[var(--color-base)] font-semibold text-xs sm:text-sm tracking-wide shadow-sm hover:bg-[var(--color-emerald-dark)] transition-all duration-300 hover:scale-105 active:scale-95 inline-flex items-center justify-center gap-2 group w-full h-full",
+              "px-6 sm:px-7 py-3 rounded-full bg-[var(--color-emerald)] text-[var(--color-base)] font-semibold text-xs sm:text-sm shadow-sm hover:bg-[var(--color-emerald-dark)] transition-all duration-300 hover:scale-105 active:scale-95 inline-flex items-center justify-center gap-2 group w-full h-full",
               className
             )}
           >

@@ -176,7 +176,7 @@ export const ScrollImageGallery: React.FC<ScrollImageGalleryProps> = ({
           <span className="w-2 h-2 rounded-full bg-[#D4AF6A] animate-pulse" />
           <span className="font-bold text-[#D4AF6A]">ALLBARKA</span>
           <span className="text-white/40">|</span>
-          <span className="tracking-wide">Harvest Chronicle</span>
+          <span className="">Harvest Chronicle</span>
         </div>
 
         {onClose && (

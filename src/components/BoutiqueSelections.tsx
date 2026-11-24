@@ -361,7 +361,7 @@ export default function BoutiqueSelections({
         {/* Header: Eyebrow, Title, Subtitle, and Autoplay Toggle */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between text-start">
           <div className="max-w-2xl">
-            <div className="mb-2.5 inline-flex items-center gap-2 text-[10px] font-semibold tracking-[0.25em] text-[var(--color-accent-text)]">
+            <div className="mb-2.5 inline-flex items-center gap-2 text-[10px] font-semibold text-[var(--color-accent-text)]">
               <Sparkles size={13} aria-hidden="true" />
               <span>{t('boutique.showcaseEyebrow', 'Single Sourced & Hand Picked')}</span>
             </div>
@@ -436,7 +436,7 @@ export default function BoutiqueSelections({
                 tabIndex={isActive ? 0 : -1}
                 type="button"
                 onClick={() => handleSelectTab(tab.id)}
-                className={`focus-ring min-h-11 shrink-0 rounded-full border px-5 text-xs font-semibold tracking-wide transition-all ${
+                className={`focus-ring min-h-11 shrink-0 rounded-full border px-5 text-xs font-semibold transition-all ${
                   isActive
                     ? 'border-[#092E23] bg-[#092E23] text-[#FFF8E9] shadow-sm dark:border-[#C7982F] dark:bg-[#C7982F] dark:text-[#042821]'
                     : 'border-[var(--color-border)] bg-[var(--color-base)] text-[var(--color-ink)] hover:border-[#C7982F]/70'

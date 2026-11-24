@@ -196,13 +196,13 @@ export default function OrderSuccessPage() {
         </p>
         <div className="flex flex-col sm:flex-row gap-3">
           <button type="button" onClick={() => setRecoveryRevision(value => value + 1)}
-            className="focus-ring min-h-11 px-8 py-3.5 rounded-full border border-[var(--color-gold,#C7982F)]/40 text-[var(--color-ink,#29231D)] font-bold text-xs tracking-[0.2em] hover:bg-[var(--color-gold,#C7982F)]/10">
+            className="focus-ring min-h-11 px-8 py-3.5 rounded-full border border-[var(--color-gold,#C7982F)]/40 text-[var(--color-ink,#29231D)] font-bold text-xs hover:bg-[var(--color-gold,#C7982F)]/10">
             {t('retry')}
           </button>
           <button
             type="button"
             onClick={() => navigate('/shop')}
-            className="px-8 py-3.5 rounded-full bg-[var(--color-ink,#29231D)] text-white dark:bg-[var(--color-gold,#C7982F)] dark:text-[var(--color-ink,#29231D)] font-bold text-xs tracking-[0.2em] hover:opacity-90 transition-all cursor-pointer"
+            className="px-8 py-3.5 rounded-full bg-[var(--color-ink,#29231D)] text-white dark:bg-[var(--color-gold,#C7982F)] dark:text-[var(--color-ink,#29231D)] font-bold text-xs hover:opacity-90 transition-all cursor-pointer"
           >
             Browse Collections
           </button>
@@ -210,7 +210,7 @@ export default function OrderSuccessPage() {
             href={buildHumanSupportWhatsAppUrl('Assalam-o-Alaikum, I would like to inquire about my AllBarka order status.')}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-8 py-3.5 rounded-full border border-[var(--color-gold,#C7982F)]/40 text-[var(--color-ink,#29231D)] font-bold text-xs tracking-[0.2em] hover:bg-[var(--color-gold,#C7982F)]/10 transition-all text-center flex items-center justify-center gap-2"
+            className="px-8 py-3.5 rounded-full border border-[var(--color-gold,#C7982F)]/40 text-[var(--color-ink,#29231D)] font-bold text-xs hover:bg-[var(--color-gold,#C7982F)]/10 transition-all text-center flex items-center justify-center gap-2"
           >
             <MessageCircle size={15} />
             Contact Concierge
@@ -347,8 +347,8 @@ export default function OrderSuccessPage() {
         </div>
 
         {/* Action Buttons */}
-        {!isQuoteRequest && <section aria-labelledby="order-tracking-title" className="mb-6 rounded-2xl border border-[var(--color-gold,#C7982F)]/25 p-5" dir={isRtl ? 'rtl' : 'ltr'}>
-          <h2 id="order-tracking-title" className="font-serif text-xl text-[var(--color-ink)] mb-4">{t('tracking.title')}</h2>
+        {!isQuoteRequest && <section aria-labelledby="order-tracking-title"className="mb-6 rounded-2xl border border-[var(--color-gold,#C7982F)]/25 p-5"dir={isRtl ?'rtl':'ltr'}>
+          <h2 id="order-tracking-title"className="font-serif text-xl text-[var(--color-ink)] mb-4">{t('tracking.title')}</h2>
           {order.status === 'CANCELLED' ? <p role="status"><span dir="ltr">CANCELLED</span> — {t('tracking.cancelled')}</p> : <ol aria-label={t('tracking.title')} className="grid grid-cols-3 sm:grid-cols-6 gap-x-2 gap-y-4 mb-5">
             {TRACKING_STEPS.map((step, index) => {
               const progress = trackingProgress(order.status || '');

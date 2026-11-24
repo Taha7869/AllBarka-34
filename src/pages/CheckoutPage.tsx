@@ -301,7 +301,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
           <button
             type="button"
             onClick={() => navigate('/shop')}
-            className="w-full py-3.5 rounded-full bg-[#042821] text-white font-bold text-xs tracking-[0.2em] hover:bg-[var(--color-gold,#C7982F)] transition-colors cursor-pointer"
+            className="w-full py-3.5 rounded-full bg-[#042821] text-white font-bold text-xs hover:bg-[var(--color-gold,#C7982F)] transition-colors cursor-pointer"
           >
             {t('checkout.browse')}
           </button>
@@ -890,7 +890,7 @@ const handleInputChange = (field: string, value: any) => {
                               {patronProfile.patronStatus || 'VIP Patron'}
                             </span>
                           </div>
-                          <p className="text-[9.5px] text-[var(--color-gold,#C7982F)] tracking-wide">
+                          <p className="text-[9.5px] text-[var(--color-gold,#C7982F)]">
                             {t('checkout.profilePrefilled')}
                           </p>
                         </div>
@@ -918,7 +918,7 @@ const handleInputChange = (field: string, value: any) => {
                       <button
                         type="button"
                         onClick={() => handleOpenAuth('signin')}
-                        className="min-h-11 px-2.5 py-1 rounded-lg bg-[var(--color-cream,#FDFBF7)] hover:bg-[#C7982F] text-[var(--color-ink,#29231D)] hover:text-white border border-[var(--color-gold,#C7982F)]/35 text-[10px] font-bold tracking-wider transition-colors shrink-0 cursor-pointer"
+                        className="min-h-11 px-2.5 py-1 rounded-lg bg-[var(--color-cream,#FDFBF7)] hover:bg-[#C7982F] text-[var(--color-ink,#29231D)] hover:text-white border border-[var(--color-gold,#C7982F)]/35 text-[10px] font-bold transition-colors shrink-0 cursor-pointer"
                       >
                         {t('checkout.signIn')}
                       </button>
@@ -1622,7 +1622,7 @@ const handleInputChange = (field: string, value: any) => {
                   </div>
 
                   <div>
-                    <span className="text-[10px] font-black tracking-[0.25em] text-[var(--color-gold,#C7982F)] block mb-1">
+                    <span className="text-[10px] font-black text-[var(--color-gold,#C7982F)] block mb-1">
                       {t('purchase.checkoutIntro')}
                     </span>
                     <h3 className="text-2xl font-serif font-black text-[var(--color-ink,#29231D)] mb-1">
@@ -1638,7 +1638,7 @@ const handleInputChange = (field: string, value: any) => {
                     <p className="text-[10px] font-bold text-[var(--color-ink,#29231D)]/60 mb-1">
                       {t('checkout.trackingId')}
                     </p>
-                    <p className="text-xl font-mono font-black text-[var(--color-ink,#29231D)] tracking-wider">
+                    <p className="text-xl font-mono font-black text-[var(--color-ink,#29231D)]">
                       {orderSuccessResult.orderId}
                     </p>
                   </div>

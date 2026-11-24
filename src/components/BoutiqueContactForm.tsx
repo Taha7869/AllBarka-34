@@ -159,7 +159,7 @@ export default function BoutiqueContactForm() {
       <div className="p-6 sm:p-8 rounded-3xl bg-[var(--color-base,#FDFCFA)] border border-[var(--color-gold,#B8935F)]/35 shadow-xs space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--color-gold,#B8935F)]/20 pb-4">
           <div>
-            <span className="text-[10px] font-black tracking-[0.2em] text-[var(--color-gold,#B8935F)] block">
+            <span className="text-[10px] font-black text-[var(--color-gold,#B8935F)] block">
               Direct Inquiry
             </span>
             <h3 className="text-lg sm:text-xl font-serif font-bold text-[var(--color-ink,#1A1A1A)]">

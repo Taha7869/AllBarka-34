@@ -200,7 +200,7 @@ export const Footer7 = ({
                 </div>
               )}
               <div>
-                <span className="text-2xl font-serif font-bold text-white tracking-wide block group-hover:text-[#E4C783] transition-colors">
+                <span className="text-2xl font-serif font-bold text-white block group-hover:text-[#E4C783] transition-colors">
                   {logo.title}
                 </span>
                 {logo.subtitle && (

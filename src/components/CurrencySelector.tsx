@@ -31,7 +31,7 @@ export default function CurrencySelector({ variant = 'desktop', className = '' }
     return (
       <div className={`space-y-2 ${className}`}>
         <div className="flex items-center justify-between px-1">
-          <span className="text-[10px] font-sans font-semibold uppercase tracking-[0.18em] text-[#E4C783]">
+          <span className="text-[10px] font-sans font-semibold uppercase text-[#E4C783]">
             {t('currencySelector', 'Currency / کرنسی / العملة')}
           </span>
           {isForeign && (

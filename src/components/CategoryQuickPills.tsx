@@ -125,7 +125,7 @@ export default function CategoryQuickPills({
                 }`}
               >
                 {!editorial && <span aria-hidden="true" className="text-sm sm:text-base leading-none drop-shadow-xs">{item.emoji}</span>}
-                <span className="tracking-wide">{t(`boutique.pill.${item.id}`, CANONICAL_CATEGORIES[item.id] ? t(`shop.${item.id}`, item.label) : item.label)}</span>
+                <span className="">{t(`boutique.pill.${item.id}`, CANONICAL_CATEGORIES[item.id] ? t(`shop.${item.id}`, item.label) : item.label)}</span>
               </motion.button>
             );
           })}

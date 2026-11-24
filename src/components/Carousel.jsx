@@ -162,7 +162,7 @@ export default function Carousel({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 mb-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-brand-gold animate-pulse shrink-0" />
-                        <h4 className="font-serif font-black text-brand-cream text-xs sm:text-sm tracking-wide">
+                        <h4 className="font-serif font-black text-brand-cream text-xs sm:text-sm">
                           {item.title}
                         </h4>
                       </div>

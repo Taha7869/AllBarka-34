@@ -66,7 +66,7 @@ export default function DealsPackagesSection({ limit, onQuickView }: DealsPackag
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#D4AF6A]/20 border border-[#D4AF6A]/40 px-3.5 py-1 text-[11px] font-bold tracking-[0.2em] text-[#E6C786] mb-3">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#D4AF6A]/20 border border-[#D4AF6A]/40 px-3.5 py-1 text-[11px] font-bold text-[#E6C786] mb-3">
               <Sparkles size={12} /> Curated Value &amp; Executive Hampers
             </div>
             <h2

@@ -79,7 +79,7 @@ export default function PatronVoicesSection({ reviews: propReviews }: PatronVoic
               lang={language}
               dir="auto"
               className={`mt-2 font-serif text-2xl sm:text-4xl font-semibold text-[var(--color-text-primary,#29231D)] ${
-                language === 'ur' ? 'font-urdu leading-[1.9]' : language === 'ar' ? 'font-arabic leading-[1.5]' : 'leading-[1.15] tracking-[-0.015em]'
+                language ==='ur'?'font-urdu leading-[1.9]': language ==='ar'?'font-arabic leading-[1.5]':'leading-[1.15] tracking-[-0.015em]'
               }`}
             >
               {copy.heading}

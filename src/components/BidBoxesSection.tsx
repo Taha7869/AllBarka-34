@@ -93,7 +93,7 @@ export default function BidBoxesSection({ onQuickView, compact = false }: BidBox
         {/* Section Header */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10">
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#072A20] px-3.5 py-1.5 text-[11px] font-bold tracking-[0.2em] text-[#E6C786] mb-3 shadow-sm">
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#072A20] px-3.5 py-1.5 text-[11px] font-bold text-[#E6C786] mb-3 shadow-sm">
               <Sparkles size={13} /> Shadi, Nikkah, Umrah & Celebration Favors
             </div>
             <h2

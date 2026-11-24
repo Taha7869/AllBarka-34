@@ -107,7 +107,7 @@ export default function GiftFinder({
         <div className="w-8 h-8 rounded-full bg-[#042821]/10 dark:bg-emerald-950/60 text-[#042821] dark:text-[#E4C783] flex items-center justify-center border border-[#D4AF37]/40">
           <Gift size={16} />
         </div>
-        <span className="text-[11px] font-bold tracking-[0.2em] text-[#042821] dark:text-[#E4C783]">
+        <span className="text-[11px] font-bold text-[#042821] dark:text-[#E4C783]">
           {t('giftFinder.eyebrow', 'AI Gift Concierge')}
         </span>
       </div>

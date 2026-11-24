@@ -212,7 +212,7 @@ export default function FindGiftOccasionSection({ settings: propSettings }: Find
         </div>
         {/* Section Header */}
         <div className="table-occasion-heading mb-8 max-w-2xl text-start">
-          <div className="mb-2.5 inline-flex items-center gap-2 text-[10px] font-semibold tracking-[0.25em] text-[var(--color-accent-text)]">
+          <div className="mb-2.5 inline-flex items-center gap-2 text-[10px] font-semibold text-[var(--color-accent-text)]">
             <Sparkles size={13} aria-hidden="true" />
             <span>{t('home.occasionEyebrow', 'Thoughtful Milestones')}</span>
           </div>

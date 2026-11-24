@@ -205,7 +205,7 @@ export const InfiniteMovingCards = ({
 
                   {/* Headline if available */}
                   {item.headline && (
-                    <h3 className="text-sm md:text-base font-serif font-black text-[#2B1B17] tracking-wide mb-2.5 group-hover:text-[#8C6B1B] transition-colors">
+                    <h3 className="text-sm md:text-base font-serif font-black text-[#2B1B17] mb-2.5 group-hover:text-[#8C6B1B] transition-colors">
                       &quot;{item.headline}&quot;
                     </h3>
                   )}
@@ -351,7 +351,7 @@ export const InfiniteMovingCards = ({
                 {/* Review Headline & Full Text */}
                 <div className="space-y-2.5">
                   {selectedReview.headline && (
-                    <h3 className="text-base sm:text-lg font-serif font-black text-[#2B1B17] tracking-wide">
+                    <h3 className="text-base sm:text-lg font-serif font-black text-[#2B1B17]">
                       &quot;{selectedReview.headline}&quot;
                     </h3>
                   )}

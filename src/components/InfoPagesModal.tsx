@@ -240,10 +240,10 @@ export default function InfoPagesModal({
               <AllBarkaCrestVector />
             </div>
             <div>
-              <span className="text-[10px] sm:text-[11px] font-black tracking-[0.25em] text-[var(--color-gold,#B8935F)] block leading-none">
+              <span className="text-[10px] sm:text-[11px] font-black text-[var(--color-gold,#B8935F)] block leading-none">
                 AllBarka Boutique Journal
               </span>
-              <h2 className="text-base sm:text-lg font-serif font-black text-[var(--color-ink,#1A1A1A)] tracking-wide mt-0.5">
+              <h2 className="text-base sm:text-lg font-serif font-black text-[var(--color-ink,#1A1A1A)] mt-0.5">
                 {current.categoryLabel}
               </h2>
             </div>
@@ -346,7 +346,7 @@ export default function InfoPagesModal({
 
               {/* Highlights & Pillars Grid */}
               <div className="space-y-3 text-left">
-                <h4 className="text-xs font-black tracking-[0.2em] text-[var(--color-ink,#1A1A1A)] flex items-center gap-1.5">
+                <h4 className="text-xs font-black text-[var(--color-ink,#1A1A1A)] flex items-center gap-1.5">
                   <Award size={14} className="text-[var(--color-gold,#B8935F)]" />
                   Core Quality Pillars
                 </h4>

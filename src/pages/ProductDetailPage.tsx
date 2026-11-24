@@ -234,7 +234,7 @@ export default function ProductDetailPage() {
           <div className="w-16 h-16 rounded-full bg-[var(--color-emerald,#042821)]/5 border border-[var(--color-gold,#C7982F)]/30 flex items-center justify-center mx-auto mb-4 text-[var(--color-gold,#C7982F)]">
             <Sparkles size={28} />
           </div>
-          <span className="text-[10px] font-bold tracking-[0.25em] text-[var(--color-gold,#C7982F)] block mb-2">
+          <span className="text-[10px] font-bold text-[var(--color-gold,#C7982F)] block mb-2">
             AllBarka Reserve
           </span>
           <h1 className="text-2xl sm:text-3xl font-serif font-bold text-[var(--color-ink,#29231D)] mb-3">
@@ -515,7 +515,7 @@ export default function ProductDetailPage() {
           {/* Right: Product Purchase Details */}
           <div className="pdp-purchase flex flex-col text-start">
             <div className="mb-4">
-              <span className="text-[10px] font-bold tracking-[0.25em] text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] block mb-1.5">
+              <span className="text-[10px] font-bold text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] block mb-1.5">
                 {t(isPackaging ? 'pdp.packagingEyebrow' : 'pdp.foodEyebrow')}
               </span>
               <h1 dir="auto" className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold text-[var(--color-primary,#042821)] dark:text-[var(--color-text-primary,#F6F1EA)] leading-tight mb-2">
@@ -890,7 +890,7 @@ export default function ProductDetailPage() {
           <section className="pdp-related mt-8 sm:mt-20 pt-6 sm:pt-12 border-t border-[var(--color-accent,#C7982F)]/25">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 sm:gap-4 mb-5 sm:mb-8 text-left">
               <div>
-                <span className="text-[10px] font-bold tracking-[0.25em] text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] block mb-1">
+                <span className="text-[10px] font-bold text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] block mb-1">
                   {t('pdp.relatedEyebrow')}
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[var(--color-primary,#042821)] dark:text-[var(--color-text-primary,#F6F1EA)]">

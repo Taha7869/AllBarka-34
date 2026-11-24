@@ -171,7 +171,7 @@ export default function PremiumHeroPrototype({
       ? 'font-urdu text-[1.95rem] sm:text-[2.75rem] lg:text-[3.25rem] leading-[1.85]'
       : language === 'ar'
         ? 'font-arabic text-[2.05rem] sm:text-[2.95rem] lg:text-[3.45rem] leading-[1.45]'
-        : 'font-serif text-[2rem] sm:text-[3.05rem] lg:text-[3.7rem] leading-[1.08] tracking-[-0.02em]';
+        :'font-serif text-[2rem] sm:text-[3.05rem] lg:text-[3.7rem] leading-[1.08] tracking-[-0.02em]';
 
   const bodyFontClass =
     language === 'ur'

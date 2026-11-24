@@ -537,7 +537,7 @@ export default function CustomQuoteModal() {
         {/* Luxury Emerald Header */}
         <div className="custom-quote-header bg-gradient-to-r from-[#072A20] via-[#0B3B2D] to-[#072A20] px-6 py-5 text-[#F7F1E3] border-b border-[#D4AF6A]/30 flex items-start justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#D4AF6A]/20 border border-[#D4AF6A]/40 px-3 py-1 text-[11px] font-semibold tracking-[0.18em] text-[#E6C786] mb-2">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#D4AF6A]/20 border border-[#D4AF6A]/40 px-3 py-1 text-[11px] font-semibold text-[#E6C786] mb-2">
               <Sparkles size={12} /> {q('eyebrow')}
             </div>
             <h2 id="custom-quote-modal-title" className="font-serif text-xl sm:text-2xl font-bold text-white">
@@ -566,7 +566,7 @@ export default function CustomQuoteModal() {
                 <CheckCircle2 size={30} className="text-[#127A4D]" />
               </div>
               <div className="space-y-1">
-                <span className="text-xs tracking-[0.2em] font-bold text-[var(--color-accent-text)]">
+                <span className="text-xs font-bold text-[var(--color-accent-text)]">
                   {q('savedRef', { id: submittedQuote.quoteId })}
                 </span>
                 <h3 className="font-serif text-2xl font-bold text-[var(--color-text-primary)]">

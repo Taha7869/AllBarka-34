@@ -269,7 +269,7 @@ export default function InfoPagesModal({
           <div className="w-16 h-16 rounded-full bg-[var(--color-emerald,#042821)]/5 border border-[var(--color-gold,#C7982F)]/30 flex items-center justify-center mx-auto mb-5 text-[var(--color-gold,#C7982F)]">
             <BookOpen size={28} />
           </div>
-          <span className="text-[10px] font-bold tracking-[0.25em] text-[var(--color-gold,#C7982F)] block mb-2">
+          <span className="text-[10px] font-bold text-[var(--color-gold,#C7982F)] block mb-2">
             AllBarka Archives
           </span>
           <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[var(--color-ink,#29231D)] mb-3">
@@ -338,7 +338,7 @@ export default function InfoPagesModal({
                 <AllBarkaCrestVector />
               </div>
               <div>
-                <span className="text-[10px] sm:text-[11px] font-black tracking-[0.25em] text-[var(--color-gold,#B8935F)] block leading-none">
+                <span className="text-[10px] sm:text-[11px] font-black text-[var(--color-gold,#B8935F)] block leading-none">
                   AllBarka Boutique Journal & Heritage
                 </span>
                 <h1 className="text-2xl sm:text-3xl font-serif font-black text-[var(--color-ink,#1A1A1A)] tracking-tight mt-1">
@@ -456,7 +456,7 @@ export default function InfoPagesModal({
                 {/* Highlights & Pillars Grid */}
                 {activeTab !== 'contact' && (
                   <div className="space-y-3 text-left">
-                    <h3 className="text-xs font-black tracking-[0.2em] text-[var(--color-ink,#1A1A1A)] flex items-center gap-1.5">
+                    <h3 className="text-xs font-black text-[var(--color-ink,#1A1A1A)] flex items-center gap-1.5">
                       <Award size={14} className="text-[var(--color-gold,#B8935F)]" />
                       Core Quality Pillars
                     </h3>
@@ -555,10 +555,10 @@ export default function InfoPagesModal({
               <AllBarkaCrestVector />
             </div>
             <div>
-              <span className="text-[10px] sm:text-[11px] font-black tracking-[0.25em] text-[var(--color-gold,#B8935F)] block leading-none">
+              <span className="text-[10px] sm:text-[11px] font-black text-[var(--color-gold,#B8935F)] block leading-none">
                 AllBarka Boutique Journal
               </span>
-              <h2 className="text-base sm:text-lg font-serif font-black text-[var(--color-ink,#1A1A1A)] tracking-wide mt-0.5">
+              <h2 className="text-base sm:text-lg font-serif font-black text-[var(--color-ink,#1A1A1A)] mt-0.5">
                 {current.categoryLabel}
               </h2>
             </div>
@@ -669,7 +669,7 @@ export default function InfoPagesModal({
               {/* Highlights & Pillars Grid */}
               {activeTab !== 'contact' && (
                 <div className="space-y-3 text-left">
-                  <h4 className="text-xs font-black tracking-[0.2em] text-[var(--color-ink,#1A1A1A)] flex items-center gap-1.5">
+                  <h4 className="text-xs font-black text-[var(--color-ink,#1A1A1A)] flex items-center gap-1.5">
                     <Award size={14} className="text-[var(--color-gold,#B8935F)]" />
                     Core Quality Pillars
                   </h4>

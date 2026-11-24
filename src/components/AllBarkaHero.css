@@ -112,7 +112,7 @@
 .heritage-hero:not(.premium-hero-stage) .table-hero-secondary { border:1px solid #fdfbf766; color:var(--table-ivory); }
 .heritage-hero:not(.premium-hero-stage) .table-hero-secondary:hover { background:#fdfbf714; }
 .heritage-hero:not(.premium-hero-stage) .table-hero-actions svg { flex:0 0 auto; }
-.table-hero-note { margin-top:32px; padding-top:20px; border-top:1px solid #e4c78340; max-width:34ch; color:var(--table-muted); font-size:.7rem; letter-spacing:.07em; line-height:1.8; }
+.table-hero-note { margin-top:32px; padding-top:20px; border-top:1px solid #e4c78340; max-width:34ch; color:var(--table-muted); font-size:.7rem; letter-spacing:0.01em; line-height:1.8; }
 .heritage-hero:not(.premium-hero-stage) .table-hero-art { position:relative; min-width:0; padding:0 12px 44px 60px; }
 [dir=rtl] .heritage-hero:not(.premium-hero-stage) .table-hero-art { padding:0 60px 44px 12px; }
 .table-pantry-figure { position:relative; margin:0; }

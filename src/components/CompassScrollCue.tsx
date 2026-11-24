@@ -27,7 +27,7 @@ export default function CompassScrollCue() {
         <div className="w-1 h-6 bg-gradient-to-b from-[var(--color-gold-light,#D4B483)] via-[var(--color-gold,#B8935F)] to-[var(--color-gold,#B8935F)]/20 rounded-full animate-bounce transition-transform duration-300 group-hover:scale-125" />
       </div>
 
-      <span className="text-[9px] tracking-[0.25em] text-[var(--color-gold,#B8935F)] group-hover:text-[var(--color-ink,#1A1A1A)] font-sans font-bold transition-colors">
+      <span className="text-[9px] text-[var(--color-gold,#B8935F)] group-hover:text-[var(--color-ink,#1A1A1A)] font-sans font-bold transition-colors">
         Scroll to Explore Dry Fruit Vault
       </span>
     </div>

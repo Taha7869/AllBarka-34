@@ -275,7 +275,7 @@ export default function BubbleMenu({
                     setOpenId((prev) => (prev === item.id ? null : item.id));
                   }}
                   onKeyDown={(e) => handleKeyDown(e, item.id)}
-                  className={`focus-ring group relative z-10 flex cursor-pointer items-center gap-1.5 whitespace-nowrap px-2 py-2 font-sans text-[12px] font-medium tracking-[0.04em] outline-none transition-colors duration-200 ${
+                  className={`focus-ring group relative z-10 flex cursor-pointer items-center gap-1.5 whitespace-nowrap px-2 py-2 font-sans text-[12px] font-medium outline-none transition-colors duration-200 ${
                     isActive
                       ? 'border-b-2 border-[#C7982F] font-semibold text-[#042821] dark:text-[#FFFCF7]'
                       : isOpen
@@ -306,7 +306,7 @@ export default function BubbleMenu({
                     setOpenId(null);
                     onItemClick?.({ id: item.id, label: t(item.labelKey, item.defaultLabel), path: item.path });
                   }}
-                  className={`focus-ring relative z-10 block cursor-pointer whitespace-nowrap px-2 py-2 font-sans text-[12px] font-medium tracking-[0.04em] outline-none transition-colors duration-200 ${
+                  className={`focus-ring relative z-10 block cursor-pointer whitespace-nowrap px-2 py-2 font-sans text-[12px] font-medium outline-none transition-colors duration-200 ${
                     isActive
                       ? 'border-b-2 border-[#C7982F] font-semibold text-[#042821] dark:text-[#FFFCF7]'
                       : 'text-[#29231D]/80 hover:text-[#042821] dark:text-[#F6F1EA]/80 dark:hover:text-[#FFFCF7]'
@@ -343,7 +343,7 @@ export default function BubbleMenu({
 
                   {/* Header / Eyebrow */}
                   <div className="px-3 py-1.5 border-b border-[#29231D]/10 dark:border-[#F6F1EA]/10 mb-1">
-                    <span className="block text-[9px] font-bold tracking-[0.22em] text-[#806326] dark:text-[#C7982F]">
+                    <span className="block text-[9px] font-bold text-[#806326] dark:text-[#C7982F]">
                       {t(item.labelKey, item.defaultLabel)}
                     </span>
                   </div>
@@ -390,7 +390,7 @@ export default function BubbleMenu({
         <div
           role="navigation"
           aria-label={t('nav.foodRow', 'Compact food categories')}
-          className="hidden lg:flex items-center gap-4 px-2 py-0.5 text-[11px] font-medium tracking-wide"
+          className="hidden lg:flex items-center gap-4 px-2 py-0.5 text-[11px] font-medium"
         >
           {COMPACT_FOOD_NAV_ITEMS.map((food, index) => {
             const isFoodActive = isFoodItemActive(food);

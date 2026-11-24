@@ -22,7 +22,7 @@ export function AllBarkaSpecialMeteorCard({ onClaimOffer }: AllBarkaSpecialMeteo
           </div>
 
           {/* Heading */}
-          <h2 className="relative z-50 mb-2 text-xl font-bold text-[var(--color-ink,#1A1A1A)] tracking-wide font-serif">
+          <h2 className="relative z-50 mb-2 text-xl font-bold text-[var(--color-ink,#1A1A1A)] font-serif">
             The Almond & Cashew Duo Deal
           </h2>
 

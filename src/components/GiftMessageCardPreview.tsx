@@ -136,7 +136,7 @@ export default function GiftMessageCardPreview({
 
         {/* Card header */}
         <div className="mt-1 flex flex-wrap items-center justify-between gap-2 border-b border-[#C7982F]/25 pb-2">
-          <p className="inline-flex items-center gap-1.5 text-[10px] font-bold tracking-[0.18em] text-[#806326] dark:text-[#E4C783]">
+          <p className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#806326] dark:text-[#E4C783]">
             {!isPlainDua && <Sparkles size={12} aria-hidden="true" />}
             <span>{copy.livePreview}</span>
           </p>
@@ -182,7 +182,7 @@ export default function GiftMessageCardPreview({
 
         {/* Footer with house signature & live character counter */}
         <div className="flex items-center justify-between gap-2 border-t border-[#C7982F]/20 pt-2 text-[10px] text-[#635B52] dark:text-[#A8A199]">
-          <span className="font-serif tracking-wider">{copy.fromHouse}</span>
+          <span className="font-serif">{copy.fromHouse}</span>
           <span dir="ltr" className="tabular-nums">
             {message.length} / {maxLength} {copy.charsLeft}
           </span>

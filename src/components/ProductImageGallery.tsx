@@ -59,7 +59,7 @@ export default function ProductImageGallery({ product, linkToDetails = true }: {
       <div className="flex flex-col items-center gap-3 text-center text-[#1e3a2b]">
         <span className="font-serif text-3xl tracking-tight">AllBarka</span>
         <span className="h-px w-20 bg-[#c7982f]/70" aria-hidden="true" />
-        <span className="text-[10px] font-semibold tracking-[.24em] text-[#94732e]">The collection</span>
+        <span className="text-[10px] font-semibold text-[#94732e]">The collection</span>
       </div>
     </div>;
   }

@@ -456,7 +456,7 @@ export default function RootLayout() {
                   <div className="bg-[#C7982F]/15 p-1 rounded-lg">
                     <User size={15} className="text-[#C7982F]" />
                   </div>
-                  <span className="text-xs font-semibold tracking-wide whitespace-nowrap">
+                  <span className="text-xs font-semibold whitespace-nowrap">
                     {currentUser ? (patronProfile?.name?.split(' ')[0] || t('patronLounge')) : t('nav.patron')}
                   </span>
                 </button>
@@ -468,7 +468,7 @@ export default function RootLayout() {
                     className="flex items-center gap-1.5 px-3 py-2 rounded-xl transition-all duration-200 border border-red-200 dark:border-red-900/30 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-700 dark:text-red-400 focus-ring cursor-pointer"
                     aria-label={t('nav.logout')}
                   >
-                    <span className="text-[11px] font-bold tracking-wide uppercase">{t('nav.logout')}</span>
+                    <span className="text-[11px] font-bold uppercase">{t('nav.logout')}</span>
                   </button>
                 )}
               </div>
@@ -649,7 +649,7 @@ export default function RootLayout() {
               <span className="w-full h-full rounded-full bg-[var(--color-surface,#FFFCF7)] flex items-center justify-center relative overflow-hidden shadow-sm">
                 <span className="absolute inset-[2px] rounded-full border border-[#C7982F]/40 pointer-events-none" />
                 <span className="relative z-10 flex flex-col items-center justify-center">
-                  <span className={`font-serif font-black tracking-tight text-[var(--color-accent-text,#806326)] leading-none ${launcherPlacement.isCompactOnScroll ? 'text-[10px] sm:text-sm' : 'text-xs sm:text-sm'}`}>
+                  <span className={`font-serif font-black tracking-tight text-[var(--color-accent-text,#806326)] leading-none ${launcherPlacement.isCompactOnScroll ?'text-[10px] sm:text-sm':'text-xs sm:text-sm'}`}>
                     AB
                   </span>
                   {!launcherPlacement.isCompactOnScroll && (

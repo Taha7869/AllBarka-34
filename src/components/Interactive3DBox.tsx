@@ -63,7 +63,7 @@ export default function Interactive3DBox({ onOrderNowClick }: Interactive3DBoxPr
         <div className="flex justify-between items-center mb-6 relative z-10">
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-[var(--color-gold,#B8935F)] animate-ping" />
-            <span className="text-[10px] font-black tracking-[0.25em] text-[var(--color-gold,#B8935F)] font-sans">
+            <span className="text-[10px] font-black text-[var(--color-gold,#B8935F)] font-sans">
               3D Spatial Casket
             </span>
           </div>
@@ -139,10 +139,10 @@ export default function Interactive3DBox({ onOrderNowClick }: Interactive3DBoxPr
                       </span>
                     </div>
 
-                    <span className="font-serif text-[var(--color-ink,#1A1A1A)] font-black text-base tracking-wider block relative z-10">
+                    <span className="font-serif text-[var(--color-ink,#1A1A1A)] font-black text-base block relative z-10">
                       ALLBARKA
                     </span>
-                    <span className="text-[8px] font-black tracking-[0.25em] text-[var(--color-gold,#B8935F)] block relative z-10 mt-0.5">
+                    <span className="text-[8px] font-black text-[var(--color-gold,#B8935F)] block relative z-10 mt-0.5">
                       Lahore Royal Casket
                     </span>
                   </div>
@@ -171,7 +171,7 @@ export default function Interactive3DBox({ onOrderNowClick }: Interactive3DBoxPr
               >
                 {/* Header title */}
                 <div className="text-center pb-2 border-b border-[var(--color-gold,#B8935F)]/20 flex justify-between items-center">
-                  <span className="text-[10px] font-black tracking-[0.2em] text-[var(--color-gold,#B8935F)] flex items-center gap-1.5">
+                  <span className="text-[10px] font-black text-[var(--color-gold,#B8935F)] flex items-center gap-1.5">
                     <Sparkles size={12} /> 4 Royal Compartments
                   </span>
                   <span className="text-[9px] text-[var(--color-gold,#B8935F)] font-bold flex items-center gap-1">
@@ -219,7 +219,7 @@ export default function Interactive3DBox({ onOrderNowClick }: Interactive3DBoxPr
                 </div>
 
                 {/* Weight & Authenticity Footnote */}
-                <div className="pt-2 border-t border-[var(--color-gold,#B8935F)]/20 flex justify-between items-center text-[9px] text-[var(--color-ink-muted,#5A5A5A)] font-mono uppercase tracking-wider">
+                <div className="pt-2 border-t border-[var(--color-gold,#B8935F)]/20 flex justify-between items-center text-[9px] text-[var(--color-ink-muted,#5A5A5A)] font-mono uppercase">
                   <span>Net Weight: 1.0 KG (1000g)</span>
                   <span className="text-[var(--color-gold,#B8935F)] font-bold">100% Hand-Sorted</span>
                 </div>
@@ -247,7 +247,7 @@ export default function Interactive3DBox({ onOrderNowClick }: Interactive3DBoxPr
           <div className="pt-3 flex gap-3">
             <button
               onClick={() => setIsUnboxed(!isUnboxed)}
-              className="flex-1 py-3.5 px-4 rounded-xl bg-[var(--color-cream,#FAF9F5)] border border-[var(--color-gold,#B8935F)]/40 hover:border-[var(--color-gold,#B8935F)] text-[var(--color-ink,#1A1A1A)] hover:text-[var(--color-gold,#B8935F)] font-sans font-extrabold text-[10px] tracking-[0.2em] transition-all duration-300 flex items-center justify-center gap-2 shadow-xs active:scale-95 cursor-pointer"
+              className="flex-1 py-3.5 px-4 rounded-xl bg-[var(--color-cream,#FAF9F5)] border border-[var(--color-gold,#B8935F)]/40 hover:border-[var(--color-gold,#B8935F)] text-[var(--color-ink,#1A1A1A)] hover:text-[var(--color-gold,#B8935F)] font-sans font-extrabold text-[10px] transition-all duration-300 flex items-center justify-center gap-2 shadow-xs active:scale-95 cursor-pointer"
             >
               <Eye size={14} className="text-[var(--color-gold,#B8935F)] animate-pulse" />
               {isUnboxed ? 'View Casket Exterior' : '3D Peek Interior'}
@@ -255,7 +255,7 @@ export default function Interactive3DBox({ onOrderNowClick }: Interactive3DBoxPr
 
             <button
               onClick={onOrderNowClick}
-              className="py-3.5 px-6 rounded-xl bg-[var(--color-gold,#B8935F)] hover:bg-[var(--color-gold-light,#D4B483)] text-white font-sans font-black text-[11px] tracking-[0.2em] shadow-sm hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer border border-[var(--color-gold,#B8935F)]"
+              className="py-3.5 px-6 rounded-xl bg-[var(--color-gold,#B8935F)] hover:bg-[var(--color-gold-light,#D4B483)] text-white font-sans font-black text-[11px] shadow-sm hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer border border-[var(--color-gold,#B8935F)]"
             >
               Order Now
             </button>

@@ -35,7 +35,7 @@ export function ErrorBoundaryFallback({ onReset }: FallbackViewProps) {
         <Sparkles size={28} />
       </div>
 
-      <span className="inline-block px-3.5 py-1 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/30 text-[10px] font-sans font-bold tracking-[0.2em] text-[#8C6B1B] dark:text-[#D4AF37] mb-3">
+      <span className="inline-block px-3.5 py-1 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/30 text-[10px] font-sans font-bold text-[#8C6B1B] dark:text-[#D4AF37] mb-3">
         {t('error.badge', 'AllBarka Boutique Care')}
       </span>
 

@@ -105,7 +105,7 @@ export default function GiftRevealPage() {
         {/* Brand Crest */}
         <div className="flex flex-col items-center mb-6">
           <AllBarkaCrestVector className="w-12 h-16 text-[#043327] dark:text-emerald-400 mb-2" />
-          <span className="text-[10px] font-bold tracking-[0.3em] text-[#043327] dark:text-emerald-400">
+          <span className="text-[10px] font-bold text-[#043327] dark:text-emerald-400">
             AllBarka Luxury Gifting
           </span>
         </div>

@@ -272,7 +272,7 @@ export default function CookieNotice({ hidden = false, hasTabBar = false }: Cook
             {/* Header */}
             <div className="flex items-start justify-between gap-3 border-b border-[#C7982F]/25 bg-[#F6F1EA] px-5 py-4 dark:bg-[#1A2220]">
               <div className="space-y-1">
-                <div className="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-[0.16em] text-[#806326] dark:text-[#D8B25C]">
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#806326] dark:text-[#D8B25C]">
                   <SlidersHorizontal size={13} aria-hidden="true" />
                   <span>AllBarka Privacy</span>
                 </div>

@@ -246,7 +246,7 @@ export default function MobileMenu({
                   <span className="text-base font-serif font-bold text-[#FDFBF7] leading-none">
                     AllBarka
                   </span>
-                  <span className="text-[7px] font-sans font-semibold tracking-[0.2em] text-[#E4C783] leading-none mt-1">
+                  <span className="text-[7px] font-sans font-semibold text-[#E4C783] leading-none mt-1">
                     LAHORE GIFTING HOUSE
                   </span>
                 </div>
@@ -268,7 +268,7 @@ export default function MobileMenu({
               
               {/* 1. Account / Login (or signed-in patron profile) */}
               <div>
-                <span className="text-[10px] font-sans font-semibold tracking-[0.18em] text-[#E4C783] block mb-2 px-1">
+                <span className="text-[10px] font-sans font-semibold text-[#E4C783] block mb-2 px-1">
                   {currentUser ? t('patronProfile', 'Patron Profile') : t('patronLounge', 'Patron Lounge')}
                 </span>
                 <button
@@ -310,7 +310,7 @@ export default function MobileMenu({
 
               {/* 2. Cart with live item count & working link */}
               <div>
-                <span className="text-[10px] font-sans font-semibold tracking-[0.18em] text-[#E4C783] block mb-2 px-1">
+                <span className="text-[10px] font-sans font-semibold text-[#E4C783] block mb-2 px-1">
                   {t('shoppingBag', 'Shopping Bag')}
                 </span>
                 <button
@@ -330,7 +330,7 @@ export default function MobileMenu({
 
               {/* 3. Language selector: English, اردو, العربية */}
               <div className="border-t border-[#C7982F]/20 pt-4">
-                <span className="text-[10px] font-sans font-semibold tracking-[0.18em] text-[#E4C783] block mb-2 px-1">
+                <span className="text-[10px] font-sans font-semibold text-[#E4C783] block mb-2 px-1">
                   {t('languageSelector', 'Language / زبان / اللغة')}
                 </span>
                 <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-[#031F1A] border border-[#C7982F]/25">
@@ -369,7 +369,7 @@ export default function MobileMenu({
 
               {/* 4. Theme selector: Light, Dark, Auto */}
               <div>
-                <span className="text-[10px] font-sans font-semibold tracking-[0.18em] text-[#E4C783] block mb-2 px-1">
+                <span className="text-[10px] font-sans font-semibold text-[#E4C783] block mb-2 px-1">
                   {t('appearanceMode', 'Appearance Mode')}
                 </span>
                 <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-[#031F1A] border border-[#C7982F]/25">
@@ -419,7 +419,7 @@ export default function MobileMenu({
 
               {/* 5. Navigation Accordion & Compact Food Row */}
               <div className="border-t border-[#C7982F]/20 pt-4">
-                <span className="text-[10px] font-sans font-semibold tracking-[0.18em] text-[#E4C783] block mb-2 px-1">
+                <span className="text-[10px] font-sans font-semibold text-[#E4C783] block mb-2 px-1">
                   {t('ourCollections', 'Our Collections')}
                 </span>
 
@@ -521,7 +521,7 @@ export default function MobileMenu({
 
                 {/* Compact Food Categories Quick Navigation */}
                 <div className="mt-4 pt-3 border-t border-[#C7982F]/20">
-                  <span className="text-[10px] font-sans font-semibold tracking-[0.18em] text-[#E4C783] block mb-2 px-1">
+                  <span className="text-[10px] font-sans font-semibold text-[#E4C783] block mb-2 px-1">
                     {t('nav.foodRow', 'Compact Food Categories')}
                   </span>
                   <div className="grid grid-cols-2 gap-1.5">
@@ -568,7 +568,7 @@ export default function MobileMenu({
 
               {/* 6. Social buttons: WhatsApp and Instagram */}
               <div className="border-t border-[#C7982F]/20 pt-4 pb-4">
-                <span className="text-[10px] font-sans font-semibold tracking-[0.18em] text-[#E4C783] block mb-2 px-1">
+                <span className="text-[10px] font-sans font-semibold text-[#E4C783] block mb-2 px-1">
                   {t('connectWithUs', 'Connect With Us')}
                 </span>
                 <div className="flex flex-wrap gap-2">
