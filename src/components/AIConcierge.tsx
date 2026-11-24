@@ -112,12 +112,14 @@ export default function AIConcierge({ hasCartBar = false, hasCookieBar = false, 
   useEffect(() => {
     if (!isOpen) return;
     const releaseLock = typeof window !== 'undefined' && window.innerWidth < 640 ? acquireScrollLock() : null;
-    const focusTimer = window.setTimeout(() => {
+    const focusPanel = () => {
       const panel = panelRef.current;
       if (!panel) return;
-      const firstInput = panel.querySelector<HTMLElement>('input:not(:disabled), textarea:not(:disabled), button:not(:disabled)');
-      (firstInput || panel).focus();
-    }, 30);
+      const firstEnabled = panel.querySelector<HTMLElement>('input:not(:disabled), textarea:not(:disabled), button[aria-label*="Close" i]:not(:disabled), button:not(:disabled)');
+      (firstEnabled || panel).focus();
+    };
+    const rafId = window.requestAnimationFrame(focusPanel);
+    const focusTimer = window.setTimeout(focusPanel, 120);
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
@@ -148,6 +150,7 @@ export default function AIConcierge({ hasCartBar = false, hasCookieBar = false, 
     };
     window.addEventListener('keydown', onKeyDown);
     return () => {
+      window.cancelAnimationFrame(rafId);
       window.clearTimeout(focusTimer);
       releaseLock?.();
       window.removeEventListener('keydown', onKeyDown);
