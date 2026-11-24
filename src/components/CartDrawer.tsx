@@ -29,6 +29,7 @@ import { acquireScrollLock } from '../utils/scrollLock';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { AllBarkaCrestVector } from './AllBarkaLogo';
+import { MOTION_DURATION, MOTION_EASE, MOTION_STAGGER } from '../lib/motion';
 
 const PREFERRED_PAYMENT_KEY = 'allbarka_preferred_payment';
 
@@ -243,7 +244,7 @@ export default function CartDrawer({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
+            transition={{ duration: reduceMotion ? 0 : MOTION_DURATION.fast, ease: MOTION_EASE }}
             onClick={closeDrawer}
             aria-hidden="true"
             className="fixed inset-0 bg-black/50 backdrop-blur-[2px] cursor-pointer"
@@ -255,7 +256,7 @@ export default function CartDrawer({
             initial={reduceMotion ? false : { x: isRtl ? '-100%' : '100%' }}
             animate={{ x: 0 }}
             exit={{ x: reduceMotion ? 0 : isRtl ? '-100%' : '100%' }}
-            transition={reduceMotion ? {duration:0} : { type: 'spring', damping: 30, stiffness: 280 }}
+            transition={reduceMotion ? { duration: 0 } : { duration: 0.36, ease: MOTION_EASE }}
             role="dialog"
             aria-modal="true"
             aria-labelledby={drawerHeadingId}
@@ -354,18 +355,29 @@ export default function CartDrawer({
                   </button>
                 </div>
               ) : (
-                /* Item Rows */
+                /* Item Rows — 40ms stagger slide-in (static under prefers-reduced-motion) */
                 <div className="space-y-3">
-                  {cartItems.map((item) => {
+                  {cartItems.map((item, itemIndex) => {
                     const itemUnitPrice = parsePrice(item.unitPrice || item.price);
                     const itemTotalPrice = itemUnitPrice * item.quantity;
                     const matchedProduct = PRODUCTS.find((p) => p.id === item.productId || p.id === item.id);
                     const imageSource = mediaCover(matchedProduct, item.image || '');
 
                     return (
-                      <div
+                      <motion.div
                         key={item.id}
-                        className="purchase-drawer-item flex gap-3 p-3 bg-[#FFFCF7] dark:bg-[#1A201E] rounded-2xl border border-[#29231D]/10 dark:border-[#F6F1EA]/12 items-center shadow-xs hover:border-[#C7982F]/60 transition-all"
+                        initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={
+                          reduceMotion
+                            ? { duration: 0 }
+                            : {
+                                duration: MOTION_DURATION.fast,
+                                delay: Math.min(itemIndex * (MOTION_STAGGER.drawerItemsMs / 1000), 0.28),
+                                ease: MOTION_EASE,
+                              }
+                        }
+                        className="purchase-drawer-item flex gap-3 p-3 bg-[#FFFCF7] dark:bg-[#1A201E] rounded-2xl border border-[#29231D]/10 dark:border-[#F6F1EA]/12 items-center shadow-xs hover:border-[#C7982F]/60 transition-colors"
                       >
                         <SafeCartImage
                           src={imageSource}
@@ -397,7 +409,7 @@ export default function CartDrawer({
                           <button
                             type="button"
                             onClick={() => handleQuantityDelta(item, -1)}
-                            className="w-11 h-11 min-w-[44px] min-h-[44px] bg-[#FFFCF7] dark:bg-[#1A201E] text-[#29231D] dark:text-[#F6F1EA] flex items-center justify-center rounded-lg hover:bg-[#C7982F] hover:text-[#042821] transition-all active:scale-95 shadow-xs cursor-pointer border border-[#29231D]/10 dark:border-[#F6F1EA]/10 focus-ring"
+                            className="w-11 h-11 min-w-[44px] min-h-[44px] bg-[#FFFCF7] dark:bg-[#1A201E] text-[#29231D] dark:text-[#F6F1EA] flex items-center justify-center rounded-lg hover:bg-[#C7982F] hover:text-[#042821] transition-all motion-safe:active:scale-[0.97] shadow-xs cursor-pointer border border-[#29231D]/10 dark:border-[#F6F1EA]/10 focus-ring"
                             aria-label={
                               item.quantity === 1
                                 ? `${t('purchase.remove')}: ${getLocalized(item, 'name', language)}`
@@ -421,7 +433,7 @@ export default function CartDrawer({
                             type="button"
                             onClick={() => handleQuantityDelta(item, 1)}
                             disabled={item.quantity >= 50}
-                            className="w-11 h-11 min-w-[44px] min-h-[44px] bg-[#FFFCF7] dark:bg-[#1A201E] text-[#29231D] dark:text-[#F6F1EA] flex items-center justify-center rounded-lg hover:bg-[#C7982F] hover:text-[#042821] transition-all active:scale-95 shadow-xs cursor-pointer border border-[#29231D]/10 dark:border-[#F6F1EA]/10 disabled:opacity-40 disabled:cursor-not-allowed focus-ring"
+                            className="w-11 h-11 min-w-[44px] min-h-[44px] bg-[#FFFCF7] dark:bg-[#1A201E] text-[#29231D] dark:text-[#F6F1EA] flex items-center justify-center rounded-lg hover:bg-[#C7982F] hover:text-[#042821] transition-all motion-safe:active:scale-[0.97] shadow-xs cursor-pointer border border-[#29231D]/10 dark:border-[#F6F1EA]/10 disabled:opacity-40 disabled:cursor-not-allowed focus-ring"
                             aria-label={`${t('purchase.increase')}: ${getLocalized(item, 'name', language)}`}
                           >
                             <Plus size={14} />
@@ -437,7 +449,7 @@ export default function CartDrawer({
                         >
                           <Trash2 size={16} />
                         </button>
-                      </div>
+                      </motion.div>
                     );
                   })}
                 </div>

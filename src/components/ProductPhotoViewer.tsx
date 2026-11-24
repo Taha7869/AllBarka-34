@@ -29,6 +29,8 @@ export default function ProductPhotoViewer({ images, productName, initialIndex =
   const closeButton = useRef<HTMLButtonElement>(null);
   const thumbButtons = useRef<(HTMLButtonElement | null)[]>([]);
   const touch = useRef<{ x: number; y: number; time: number } | null>(null);
+  const pinch = useRef<{ startDistance: number; startZoom: number; acted: boolean } | null>(null);
+  const lastTapRef = useRef<{ time: number; x: number; y: number } | null>(null);
   const pan = useRef<{ pointer: number; x: number; y: number; left: number; top: number } | null>(null);
   const closeRef = useRef(onClose);
   const changeRef = useRef(onIndexChange);
@@ -130,19 +132,64 @@ export default function ProductPhotoViewer({ images, productName, initialIndex =
     </header>
     <div className="photo-viewer-main">
       <div ref={stage} role="group" className={`photo-viewer-stage ${zoom > 1 ? 'is-zoomed' : ''} ${dragging ? 'is-dragging' : ''}`} style={{ touchAction: zoom > 1 ? 'pan-x pan-y pinch-zoom' : 'pan-y pinch-zoom' }} tabIndex={zoom > 1 ? 0 : undefined} aria-label={`${photoAlt} — ${zoomLabel}`}
-        onTouchStart={event => { touch.current = event.touches.length === 1 && zoom === 1 ? { x: event.touches[0].clientX, y: event.touches[0].clientY, time: performance.now() } : null; }}
+        onTouchStart={event => {
+          if (event.touches.length === 2 && !isFailed) {
+            touch.current = null;
+            const dx = event.touches[0].clientX - event.touches[1].clientX;
+            const dy = event.touches[0].clientY - event.touches[1].clientY;
+            pinch.current = { startDistance: Math.hypot(dx, dy), startZoom: zoom, acted: false };
+            return;
+          }
+          pinch.current = null;
+          touch.current = event.touches.length === 1 ? { x: event.touches[0].clientX, y: event.touches[0].clientY, time: performance.now() } : null;
+        }}
         onTouchMove={event => {
+          if (event.touches.length === 2 && pinch.current && !pinch.current.acted) {
+            const dx = event.touches[0].clientX - event.touches[1].clientX;
+            const dy = event.touches[0].clientY - event.touches[1].clientY;
+            const ratio = Math.hypot(dx, dy) / Math.max(1, pinch.current.startDistance);
+            if (ratio >= 1.24) {
+              pinch.current.acted = true;
+              setZoom(current => changePhotoZoom(current, 1));
+            } else if (ratio <= 0.78) {
+              pinch.current.acted = true;
+              setZoom(current => changePhotoZoom(current, -1));
+            }
+            return;
+          }
           if (!touch.current) return;
           if (event.touches.length !== 1) { touch.current = null; return; }
           const dx = event.touches[0].clientX - touch.current.x; const dy = event.touches[0].clientY - touch.current.y;
           if (Math.abs(dy) > 15 && Math.abs(dy) > Math.abs(dx)) touch.current = null;
         }}
         onTouchEnd={event => {
+          if (pinch.current) {
+            if (event.touches.length < 2) pinch.current = null;
+            touch.current = null;
+            return;
+          }
           const start = touch.current; touch.current = null;
           if (!start || event.touches.length || event.changedTouches.length !== 1) return;
-          const step = photoSwipeStep(start, { x: event.changedTouches[0].clientX, y: event.changedTouches[0].clientY, time: performance.now() }, 1, zoom);
-          if (step) move(step);
-        }} onTouchCancel={() => { touch.current = null; }}
+          const endX = event.changedTouches[0].clientX;
+          const endY = event.changedTouches[0].clientY;
+          const now = performance.now();
+          const moved = Math.hypot(endX - start.x, endY - start.y);
+          // Double-tap on mobile toggles zoom smoothly (100% -> 150% -> 100%)
+          if (!isFailed && moved < 16 && now - start.time < 260) {
+            const prev = lastTapRef.current;
+            if (prev && now - prev.time < 320 && Math.hypot(endX - prev.x, endY - prev.y) < 36) {
+              lastTapRef.current = null;
+              setZoom(current => (current > 1 ? 1 : changePhotoZoom(1, 1)));
+              return;
+            }
+            lastTapRef.current = { time: now, x: endX, y: endY };
+            return;
+          }
+          if (zoom === 1) {
+            const step = photoSwipeStep(start, { x: endX, y: endY, time: now }, 1, zoom);
+            if (step) move(step);
+          }
+        }} onTouchCancel={() => { touch.current = null; pinch.current = null; }}
         onPointerDown={event => {
           if (zoom <= 1 || event.pointerType !== 'mouse' || event.button !== 0 || isFailed) return;
           event.preventDefault();

@@ -31,7 +31,7 @@ export default function CartAddButton({ productId, portion, onAdd, children, dis
     if (attempt.key === key && quantity > attempt.before) {
       setConfirmed(key);
       triggerFlyToCart(triggerElRef.current);
-      timer.current = setTimeout(() => setConfirmed(''), 1400);
+      timer.current = setTimeout(() => setConfirmed(''), 1200);
     }
     setAttempt(null);
   }, [attempt, key, quantity]);
@@ -56,7 +56,11 @@ export default function CartAddButton({ productId, portion, onAdd, children, dis
       onAdd();
     }}
   >
-    {added ? <Check size={16} aria-hidden="true" /> : <ShoppingBag size={16} aria-hidden="true" />}
-    <span dir="auto">{added ? t('addedToCart') : children || t('addToCart')}</span>
+    <span key={added ? 'added-icon' : 'idle-icon'} className="boutique-add-morph inline-flex items-center justify-center shrink-0" aria-hidden="true">
+      {added ? <Check size={16} /> : <ShoppingBag size={16} />}
+    </span>
+    <span key={added ? 'added-label' : 'idle-label'} dir="auto" className="boutique-add-morph">
+      {added ? t('addedToCart') : children || t('addToCart')}
+    </span>
   </MagneticButton>;
 }

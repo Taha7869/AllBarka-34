@@ -75,7 +75,8 @@ export default function ProductDetailPage() {
   const [customGrams, setCustomGrams] = useState('100');
   const [quantity, setQuantity] = useState(() => navigationHandoff?.quantity || 1);
   const [imageError, setImageError] = useState(false);
-  const [activeGalleryIdx, setActiveGalleryIdx] = useState(0);
+  const [activeGalleryIdx, setActiveGalleryIdx] = useState(0);
+  const [gallerySwitched, setGallerySwitched] = useState(false);
 
   const isPackaging = Boolean(product && isPackagingProduct(product));
   const bidBoxConfig = useMemo(() => product ? resolveBidBoxConfig(product) : null, [product]);
@@ -117,7 +118,8 @@ export default function ProductDetailPage() {
       recordFunnelEvent('view_item', { productId: id, category: product?.category });
     }
     setImageError(false);
-    setActiveGalleryIdx(0);
+    setActiveGalleryIdx(0);
+    setGallerySwitched(false);
     setPhotoViewerOpen(false);
     setShareStatus('idle');
   }, [id, view, product?.category]);
@@ -345,7 +347,37 @@ export default function ProductDetailPage() {
           
           {/* Left: Product Visual Showcase */}
           <div className="pdp-gallery flex flex-col gap-3 lg:sticky lg:top-28">
-            <div className="pdp-main-photo relative aspect-square rounded-3xl overflow-hidden bg-[var(--color-surface,#FFFCF7)] border border-[var(--color-gold,#C7982F)]/30 shadow-sm flex items-center justify-center p-6 group">
+            <div
+              className="pdp-main-photo relative aspect-square rounded-3xl overflow-hidden bg-[var(--color-surface,#FFFCF7)] border border-[var(--color-gold,#C7982F)]/30 shadow-sm flex items-center justify-center p-6 group cursor-zoom-in"
+              data-hover-zoom="false"
+              onPointerEnter={(event) => {
+                if (event.pointerType === 'mouse' && !imageError) {
+                  event.currentTarget.dataset.hoverZoom = 'true';
+                }
+              }}
+              onPointerMove={(event) => {
+                if (event.pointerType !== 'mouse' || imageError || !mainPhotoRef.current) return;
+                const rect = event.currentTarget.getBoundingClientRect();
+                if (rect.width <= 0 || rect.height <= 0) return;
+                const x = Math.max(0, Math.min(100, ((event.clientX - rect.left) / rect.width) * 100));
+                const y = Math.max(0, Math.min(100, ((event.clientY - rect.top) / rect.height) * 100));
+                mainPhotoRef.current.style.setProperty('--zoom-x', `${x.toFixed(1)}%`);
+                mainPhotoRef.current.style.setProperty('--zoom-y', `${y.toFixed(1)}%`);
+                event.currentTarget.dataset.hoverZoom = 'true';
+              }}
+              onPointerLeave={(event) => {
+                event.currentTarget.dataset.hoverZoom = 'false';
+                if (mainPhotoRef.current) {
+                  mainPhotoRef.current.style.removeProperty('--zoom-x');
+                  mainPhotoRef.current.style.removeProperty('--zoom-y');
+                }
+              }}
+              onClick={() => {
+                if (!imageError && (product.image !== null || productMedia.images.length > 0)) {
+                  setPhotoViewerOpen(true);
+                }
+              }}
+            >
               <BoxLidReveal key={product.id} product={product} />
               {imageError || (product.image === null && productMedia.images.length === 0) ? (
                 <div className="pdp-photo-fallback w-full h-full flex flex-col items-center justify-center p-8 text-center">
@@ -357,6 +389,8 @@ export default function ProductDetailPage() {
                 </div>
               ) : (
                 <img
+                  key={gallerySwitched ? activeGalleryIndex : 'initial'}
+                  data-gallery-fade={gallerySwitched ? 'true' : undefined}
                   ref={mainPhotoRef}
                   src={galleryImages[activeGalleryIndex]?.src || productMedia.images[0]}
                   alt={galleryImages[activeGalleryIndex]?.alt || t(`imageAlt.${product.id}`, getLocalized(product, 'name', language))}
@@ -368,7 +402,7 @@ export default function ProductDetailPage() {
                   decoding="async"
                   onError={() => setImageError(true)}
                   style={product.mediaFocalPoint ? { objectPosition: `${product.mediaFocalPoint.x * 100}% ${product.mediaFocalPoint.y * 100}%` } : undefined}
-                  className={`w-full h-full ${product.cropMode === 'cover' ? 'object-cover' : 'object-contain'} rounded-2xl`}
+                  className={`pdp-hover-zoom-img w-full h-full ${product.cropMode === 'cover' ? 'object-cover' : 'object-contain'} rounded-2xl`}
                 />
               )}
             </div>
@@ -408,7 +442,7 @@ export default function ProductDetailPage() {
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => { setImageError(false); setActiveGalleryIdx(idx); }}
+                    onClick={() => { setImageError(false); setGallerySwitched(true); setActiveGalleryIdx(idx); }}
                     className={`shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
                       activeGalleryIndex === idx
                         ? 'border-[#C7982F] shadow-sm'
