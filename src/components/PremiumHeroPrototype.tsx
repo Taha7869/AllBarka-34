@@ -119,7 +119,9 @@ export default function PremiumHeroPrototype({
       const runway = runwayRef.current;
       if (!runway) return;
       const rect = runway.getBoundingClientRect();
-      const scrollable = Math.max(1, rect.height - window.innerHeight);
+      const scrollable = rect.height > window.innerHeight + 40
+        ? rect.height - window.innerHeight
+        : Math.max(240, rect.height * 0.7);
       const progress = Math.max(0, Math.min(1, -rect.top / scrollable));
 
       // (a) Hero image smoothly settles from 1.08 -> 1.00 + subtle warm vignette shift
@@ -230,7 +232,7 @@ export default function PremiumHeroPrototype({
       ref={runwayRef}
       data-editorial-scroll-hero="true"
       className={`relative w-full bg-[#042821] ${
-        reducedMotion ? 'min-h-0' : 'min-h-[118svh] lg:min-h-[140vh] motion-reduce:min-h-0'
+        reducedMotion ? 'min-h-0' : 'min-h-0 lg:min-h-[140vh] motion-reduce:min-h-0'
       }`}
     >
       <section
@@ -240,7 +242,7 @@ export default function PremiumHeroPrototype({
         data-reveal-phase="open"
         data-season={seasonal?.id || 'default'}
         className={`heritage-hero premium-hero-stage w-full overflow-hidden bg-[#042821] text-[#FDFBF7] flex flex-col justify-center ${
-          reducedMotion ? 'relative' : 'sticky top-[56px] md:top-[76px] min-h-[calc(100svh-88px)] z-0 motion-reduce:static motion-reduce:min-h-0'
+          reducedMotion ? 'relative' : 'relative lg:sticky lg:top-[76px] lg:min-h-[calc(100svh-88px)] z-0 motion-reduce:static motion-reduce:min-h-0'
         }`}
         style={{
           backgroundImage:
@@ -249,7 +251,7 @@ export default function PremiumHeroPrototype({
       >
         <div aria-hidden="true" className="h-px w-full bg-gradient-to-r from-transparent via-[#C7982F]/45 to-transparent" />
 
-        <div className="mx-auto max-w-7xl px-4 py-5 sm:px-8 sm:py-12 lg:px-10 lg:py-16">
+        <div className="mx-auto max-w-7xl px-4 pt-5 pb-10 sm:px-8 sm:pt-10 sm:pb-14 lg:px-10 lg:py-16">
           <div className="grid grid-cols-1 items-center gap-5 sm:gap-8 lg:grid-cols-12 lg:gap-12">
             {/* Visual Stage: immediate Frame-1 LCP photograph (scales 1.08 -> 1.0 on scroll) */}
             <div className="table-hero-art order-1 lg:order-2 lg:col-span-7">

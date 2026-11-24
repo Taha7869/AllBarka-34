@@ -287,7 +287,7 @@ export default function HomePage() {
       <PremiumHeroPrototype />
 
       {/* Sections 2+ slide seamlessly over the sticky editorial hero */}
-      <div className="relative z-10 flex w-full flex-col items-center rounded-t-[24px] sm:rounded-t-[28px] bg-[var(--color-base,#FDFBF7)] shadow-[0_-18px_48px_-20px_rgba(4,40,33,0.4)] overflow-x-clip">
+      <div className="relative z-10 -mt-4 lg:mt-0 flex w-full flex-col items-center rounded-t-[24px] sm:rounded-t-[28px] bg-[var(--color-base,#FDFBF7)] shadow-[0_-18px_48px_-20px_rgba(4,40,33,0.4)] overflow-x-clip">
         {orderedBelowFold.map((entry) => (
           <div key={entry.id} data-content-section={entry.id} className="content-home-section w-full">
             {sectionRenderers[entry.id]}
