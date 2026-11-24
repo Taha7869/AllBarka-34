@@ -102,6 +102,9 @@ export default function ProductImageGallery({ product, linkToDetails = true }: {
       {images.length > 1 && <>
         <button type="button" className="product-gallery-arrow product-gallery-prev focus-ring" onClick={() => goTo(active - 1)} aria-label={t('gallery.previous')}><ChevronLeft size={17} /></button>
         <button type="button" className="product-gallery-arrow product-gallery-next focus-ring" onClick={() => goTo(active + 1)} aria-label={t('gallery.next')}><ChevronRight size={17} /></button>
+        <span aria-hidden="true" className="product-gallery-swipe-indicators">
+          {images.map((_, index) => <i key={index} data-active={index === active ? 'true' : 'false'} />)}
+        </span>
         <span className="product-gallery-counter sr-only" dir="ltr" role="status" aria-live="off" aria-label={`${t('gallery.photo')} ${active + 1}/${images.length}`} />
       </>}
     </div>
