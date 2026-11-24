@@ -26,13 +26,18 @@ export default function PdpStickyBuyBar({ targetRef, name, portion, totalText, d
     const media = window.matchMedia(MOBILE);
     let passed = false;
     const update = () => setShow(media.matches && passed);
+    const syncPosition = () => {
+      passed = target.getBoundingClientRect().bottom <= 0;
+      update();
+    };
     const observer = new IntersectionObserver(([entry]) => {
       passed = !entry.isIntersecting && entry.boundingClientRect.top < 0;
       update();
     });
     observer.observe(target);
+    window.addEventListener('scroll', syncPosition, { passive: true });
     media.addEventListener?.('change', update);
-    return () => { observer.disconnect(); media.removeEventListener?.('change', update); setShow(false); };
+    return () => { observer.disconnect(); window.removeEventListener('scroll', syncPosition); media.removeEventListener?.('change', update); setShow(false); };
   }, [targetRef]);
 
   useEffect(() => { setPdpBuyBarVisible(show); }, [show]);

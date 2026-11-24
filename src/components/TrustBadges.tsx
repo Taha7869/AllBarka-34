@@ -30,21 +30,23 @@ export default function TrustBadges() {
   ];
 
   return (
-    <div className="w-full bg-[var(--color-surface)] py-5 sm:py-10 md:py-14 border-t border-[var(--color-border)] overflow-hidden">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 lg:gap-8">
+    <div className="w-full bg-[var(--color-surface)] py-3 sm:py-10 md:py-14 border-t border-[var(--color-border)] overflow-hidden">
+      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-6 lg:gap-8">
           {badges.map((badge, idx) => (
-            <ScrollReveal key={idx} index={idx} className="flex flex-col items-center text-center rounded-xl border border-[var(--color-border)]/70 sm:border-0 bg-[var(--color-base)]/40 sm:bg-transparent p-3 sm:p-0">
-              <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-[var(--color-base)] border border-[var(--color-accent)]/30 text-[var(--color-accent)] flex items-center justify-center mb-2 sm:mb-4 shadow-[var(--shadow-card)]">
-                <badge.icon size={18} className="sm:hidden" aria-hidden="true" />
+            <ScrollReveal key={idx} index={idx} className="flex flex-row sm:flex-col items-center gap-2 sm:gap-0 text-start sm:text-center rounded-xl border border-[var(--color-border)]/70 sm:border-0 bg-[var(--color-base)]/40 sm:bg-transparent p-2.5 sm:p-0">
+              <div className="w-8 h-8 sm:w-14 sm:h-14 shrink-0 rounded-full bg-[var(--color-base)] border border-[var(--color-accent)]/30 text-[var(--color-accent)] flex items-center justify-center sm:mb-4 shadow-[var(--shadow-card)]">
+                <badge.icon size={15} className="sm:hidden" aria-hidden="true" />
                 <badge.icon size={24} className="hidden sm:block" aria-hidden="true" />
               </div>
-              <h3 className="font-serif font-bold text-xs sm:text-sm text-[var(--color-ink)] mb-1 sm:mb-1.5">
-                {badge.title}
-              </h3>
-              <p className="text-[11px] sm:text-xs text-[var(--color-ink)]/70 max-w-[200px] leading-snug sm:leading-relaxed line-clamp-2 sm:line-clamp-none">
-                {badge.desc}
-              </p>
+              <div className="min-w-0">
+                <h3 className="font-serif font-bold text-xs sm:text-sm text-[var(--color-ink)] sm:mb-1.5 leading-tight">
+                  {badge.title}
+                </h3>
+                <p className="hidden sm:block text-xs text-[var(--color-ink)]/70 max-w-[200px] leading-relaxed">
+                  {badge.desc}
+                </p>
+              </div>
             </ScrollReveal>
           ))}
         </div>

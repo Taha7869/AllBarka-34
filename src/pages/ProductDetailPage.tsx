@@ -347,7 +347,7 @@ export default function ProductDetailPage() {
           {/* Left: Product Visual Showcase */}
           <div className="pdp-gallery flex flex-col gap-3 lg:sticky lg:top-28">
             <div
-              className="pdp-main-photo relative aspect-[4/3] sm:aspect-square rounded-3xl overflow-hidden bg-[var(--color-surface,#FFFCF7)] border border-[var(--color-gold,#C7982F)]/30 shadow-sm flex items-center justify-center p-4 sm:p-6 group cursor-zoom-in"
+              className="pdp-main-photo relative aspect-[4/3] max-h-[250px] sm:max-h-none sm:aspect-square rounded-3xl overflow-hidden bg-[var(--color-surface,#FFFCF7)] border border-[var(--color-gold,#C7982F)]/30 shadow-sm flex items-center justify-center p-3 sm:p-6 group cursor-zoom-in"
               data-hover-zoom="false"
               onPointerEnter={(event) => {
                 if (event.pointerType === 'mouse' && !imageError) {
@@ -834,7 +834,7 @@ export default function ProductDetailPage() {
               )}
               
               {/* Internal Actions: Wishlist & Share */}
-              <div className="flex flex-col min-[390px]:flex-row items-stretch gap-3">
+              <div className="grid grid-cols-2 items-stretch gap-2.5 sm:flex sm:flex-row sm:gap-3">
                 <PulseHeart liked={isSaved} onChange={handleSave} label={t('wishlist', 'Wishlist')} savedLabel={t('savedProduct', 'Saved')} className="flex-1" />
                 <button 
                   type="button" 
@@ -848,7 +848,7 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Quick Guarantees Strip */}
-            <div className="pdp-service-links grid grid-cols-2 gap-2 sm:gap-3 mb-5 sm:mb-8 p-2.5 sm:p-3.5 rounded-2xl bg-[var(--color-surface,#FFFCF7)] dark:bg-[#1A201E] border border-[var(--color-accent,#C7982F)]/25">
+            <div className="pdp-service-links hidden md:grid grid-cols-2 gap-3 mb-8 p-3.5 rounded-2xl bg-[var(--color-surface,#FFFCF7)] dark:bg-[#1A201E] border border-[var(--color-accent,#C7982F)]/25">
               <div className="flex items-center gap-2 text-xs font-medium text-[var(--color-text-secondary,#635B52)] dark:text-[var(--color-text-secondary,#B4C0BC)]">
                 <Truck size={15} className="text-[var(--color-accent,#C7982F)] shrink-0" />
                 <Link to="/policies" className="focus-ring">{t('pdp.deliveryDetails')}</Link>
@@ -876,7 +876,7 @@ export default function ProductDetailPage() {
               <ProductDetailAccordion product={product} defaultOpenKey={isPackaging ? 'packaging' : 'storage'} includeOverviewAndFaq isPackaging={isPackaging} />
             </div>
 
-            <div className="pdp-guarantee mt-5 sm:mt-8 border-t border-[var(--color-accent,#C7982F)]/20 pt-5 sm:pt-8" hidden={isPackaging}>
+            <div className="pdp-guarantee mt-4 sm:mt-8 border-t border-[var(--color-accent,#C7982F)]/20 pt-4 sm:pt-8" hidden={isPackaging}>
               <div className="flex items-center gap-2 mb-4">
                 <ShieldCheck size={20} className="text-[#C5A059]" />
                 <h2 className="font-serif font-bold text-lg text-[var(--color-ink,#29231D)] dark:text-[#FFFCF7]">
@@ -891,7 +891,7 @@ export default function ProductDetailPage() {
 
         {/* ── RELATED HARVESTS STRIP ({t('pdp.relatedEyebrow')}) ───────────────── */}
         {relatedProducts.length > 0 && (
-          <section className="pdp-related mt-10 sm:mt-20 pt-8 sm:pt-12 border-t border-[var(--color-accent,#C7982F)]/25">
+          <section className="pdp-related mt-8 sm:mt-20 pt-6 sm:pt-12 border-t border-[var(--color-accent,#C7982F)]/25">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 sm:gap-4 mb-5 sm:mb-8 text-left">
               <div>
                 <span className="text-[10px] font-bold tracking-[0.25em] text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] block mb-1">
@@ -910,7 +910,7 @@ export default function ProductDetailPage() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-6">
+            <div className="flex overflow-x-auto snap-x snap-mandatory gap-2.5 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-6 sm:overflow-visible sm:pb-0">
               {relatedProducts.map((rel) => {
                 const firstWeight = Object.keys(rel.prices).find(label => rel.prices[label] > 0 && !rel.variants?.some(variant => variant.label === label && variant.available === false)) || '';
                 const price = rel.prices[firstWeight];
@@ -925,7 +925,7 @@ export default function ProductDetailPage() {
                       event.preventDefault();
                       navigateToProductWithTransition(navigate, `/product/${rel.id}`, { productId: rel.id, sourceElement: img });
                     }}
-                    className="group bg-[var(--color-surface,#FFFCF7)] border border-[var(--color-gold,#C7982F)]/25 hover:border-[var(--color-gold,#C7982F)] rounded-2xl p-2.5 sm:p-4 flex flex-col justify-between transition-all duration-300 hover:shadow-md cursor-pointer text-left"
+                    className="group w-[162px] shrink-0 snap-start sm:w-auto bg-[var(--color-surface,#FFFCF7)] border border-[var(--color-gold,#C7982F)]/25 hover:border-[var(--color-gold,#C7982F)] rounded-2xl p-2.5 sm:p-4 flex flex-col justify-between transition-all duration-300 hover:shadow-md cursor-pointer text-left"
                   >
                     <div>
                       <div className="w-full aspect-[4/3] sm:aspect-square rounded-xl bg-[#FAF9F5] border border-[var(--color-gold,#C7982F)]/15 overflow-hidden flex items-center justify-center p-1.5 sm:p-3 mb-2 sm:mb-3 relative">

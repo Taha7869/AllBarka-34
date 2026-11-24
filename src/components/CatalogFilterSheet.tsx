@@ -169,7 +169,7 @@ export default function CatalogFilterSheet({
                 role="switch"
                 aria-checked={listView}
                 onClick={() => onToggleListView(!listView)}
-                className={`focus-ring flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border px-3.5 py-2 text-start text-xs font-semibold transition-colors ${
+                className={`focus-ring flex min-h-[46px] shrink-0 w-full items-center justify-between gap-3 rounded-xl border px-3.5 py-2 text-start text-xs font-semibold transition-colors ${
                   listView
                     ? 'border-[#1e3a2b] bg-[#1e3a2b] text-[#fff8e9] dark:border-[#c7982f] dark:bg-[#c7982f] dark:text-[#042821]'
                     : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-primary)]'
