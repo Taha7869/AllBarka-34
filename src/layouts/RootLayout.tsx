@@ -59,6 +59,7 @@ import { acquireScrollLock } from '../utils/scrollLock';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { RouteLoadingSkeleton } from '../components/StorefrontSkeletons';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
+import { useFloatingLauncherPlacement } from '../hooks/useFloatingLauncherPlacement';
 
 
 export default function RootLayout() {
@@ -325,6 +326,16 @@ export default function RootLayout() {
     pdpBuyBarVisible ||
     standaloneTabBarVisible ||
     (totalItemsCount > 0 && location.pathname !== '/checkout' && location.pathname !== '/cart');
+  const hideFloatingConcierge =
+    isAdminRoute ||
+    location.pathname === '/checkout' ||
+    location.pathname === '/cart' ||
+    (isAnyModalOrDrawerOpen && !aiConciergeOpen);
+  const launcherPlacement = useFloatingLauncherPlacement({
+    enabled: !hideFloatingConcierge && !aiConciergeMounted,
+    hasBottomBar: hasBottomObstruction,
+    hasCookieBar: consentUiActive,
+  });
   useEffect(() => {
     if (!isAnyModalOrDrawerOpen) return;
     const releaseLock = acquireScrollLock();
@@ -605,15 +616,22 @@ export default function RootLayout() {
         {!isAdminRoute && aiConciergeMounted && (
           <AIConcierge
             initialOpen={true}
-            hide={isAnyModalOrDrawerOpen && !aiConciergeOpen}
+            hide={hideFloatingConcierge}
             hasCartBar={hasBottomObstruction}
+            hasCookieBar={consentUiActive}
             onOpenChange={setAiConciergeOpen}
           />
         )}
       </React.Suspense>
-      {!isAdminRoute && !aiConciergeMounted && !(isAnyModalOrDrawerOpen && !aiConciergeOpen) && (
+      {!hideFloatingConcierge && !aiConciergeMounted && (
         <div
-          className={`fixed z-30 transition-all duration-200 pb-[env(safe-area-inset-bottom)] ${hasBottomObstruction ? 'bottom-24 sm:bottom-[90px] right-4 sm:right-6' : 'bottom-5 sm:bottom-6 right-4 sm:right-6'}`}
+          data-ai-buddy-launcher="true"
+          data-compact={launcherPlacement.isCompactOnScroll ? 'true' : 'false'}
+          style={{
+            bottom: `calc(env(safe-area-inset-bottom, 0px) + ${launcherPlacement.bottomPx}px)`,
+            ...(launcherPlacement.side === 'right' ? { right: '10px' } : { left: '10px' }),
+          }}
+          className="fixed z-30 sm:right-6 sm:left-auto transition-[bottom,opacity,transform] duration-200 motion-reduce:transition-none"
         >
           <button
             type="button"
@@ -621,24 +639,28 @@ export default function RootLayout() {
               setAiConciergeMounted(true);
               setAiConciergeOpen(true);
             }}
-            className="relative w-[44px] h-[44px] sm:w-14 sm:h-14 rounded-full p-[1.5px] bg-gradient-to-br from-[#D4B483] via-[#C7982F] to-[#B8935F] shadow-lg hover:shadow-xl transition-transform duration-200 motion-safe:hover:scale-105 motion-safe:active:scale-95 cursor-pointer group select-none"
+            className={`relative flex items-center justify-center w-[44px] h-[44px] sm:w-14 sm:h-14 rounded-full cursor-pointer group select-none focus-ring ${launcherPlacement.isCompactOnScroll ? 'opacity-85 hover:opacity-100' : 'opacity-100'}`}
             title={t('concierge.title')}
             aria-label={t('concierge.open')}
             aria-expanded={false}
             aria-controls="allbarka-concierge-panel"
           >
-            <div className="w-full h-full rounded-full bg-[var(--color-surface,#FFFCF7)] flex items-center justify-center relative overflow-hidden shadow-sm">
-              <div className="absolute inset-[2px] rounded-full border border-[#C7982F]/40 pointer-events-none" />
-              <div className="relative z-10 flex flex-col items-center justify-center">
-                <span className="font-serif font-black text-xs sm:text-sm tracking-tight text-[var(--color-accent-text,#806326)] leading-none">
-                  AB
+            <span className={`block rounded-full p-[1.5px] bg-gradient-to-br from-[#D4B483] via-[#C7982F] to-[#B8935F] shadow-lg hover:shadow-xl transition-all duration-200 motion-reduce:transition-none motion-safe:group-hover:scale-105 motion-safe:active:scale-95 ${launcherPlacement.isCompactOnScroll ? 'w-9 h-9 sm:w-14 sm:h-14' : 'w-[44px] h-[44px] sm:w-14 sm:h-14'}`}>
+              <span className="w-full h-full rounded-full bg-[var(--color-surface,#FFFCF7)] flex items-center justify-center relative overflow-hidden shadow-sm">
+                <span className="absolute inset-[2px] rounded-full border border-[#C7982F]/40 pointer-events-none" />
+                <span className="relative z-10 flex flex-col items-center justify-center">
+                  <span className={`font-serif font-black tracking-tight text-[var(--color-accent-text,#806326)] leading-none ${launcherPlacement.isCompactOnScroll ? 'text-[10px] sm:text-sm' : 'text-xs sm:text-sm'}`}>
+                    AB
+                  </span>
+                  {!launcherPlacement.isCompactOnScroll && (
+                    <span className="text-[6.5px] font-black text-[var(--color-ink,#29231D)] leading-none mt-0.5 opacity-90 flex items-center gap-0.5">
+                      <Sparkles size={6} className="text-[#C7982F]" aria-hidden="true" />
+                      AI
+                    </span>
+                  )}
                 </span>
-                <span className="text-[6.5px] font-black uppercase tracking-widest text-[var(--color-ink,#29231D)] leading-none mt-0.5 opacity-90 flex items-center gap-0.5">
-                  <Sparkles size={6} className="text-[#C7982F]" aria-hidden="true" />
-                  AI
-                </span>
-              </div>
-            </div>
+              </span>
+            </span>
           </button>
         </div>
       )}

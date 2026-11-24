@@ -17,6 +17,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useDragScroll } from '../hooks/useDragScroll';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useFloatingLauncherPlacement } from '../hooks/useFloatingLauncherPlacement';
 import { buildHumanSupportWhatsAppUrl } from '../config/contacts';
 import { openCustomQuoteModal } from '../lib/customQuoteEvent';
 import type { ValidatedProductRecommendation, ValidatedInquiryPrefill } from '../lib/aiBuddyResolution';
@@ -32,10 +33,11 @@ interface AIConciergeProps {
   hide?: boolean;
   onOpenChange?: (open: boolean) => void;
   hasCartBar?: boolean;
+  hasCookieBar?: boolean;
   initialOpen?: boolean;
 }
 
-export default function AIConcierge({ hasCartBar = false, hide = false, onOpenChange, initialOpen = false }: AIConciergeProps) {
+export default function AIConcierge({ hasCartBar = false, hasCookieBar = false, hide = false, onOpenChange, initialOpen = false }: AIConciergeProps) {
   const { currentUser } = useAuth();
   const { t, language } = useLanguage();
   const reducedMotion = useReducedMotion();
@@ -210,40 +212,55 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
     lastFailedTextRef.current = '';
   };
 
+  const { bottomPx, side, isCompactOnScroll } = useFloatingLauncherPlacement({
+    enabled: !hide && !isOpen,
+    hasBottomBar: hasCartBar,
+    hasCookieBar,
+  });
+
   return (
     <>
       <AnimatePresence>
         {(!hide && !isOpen) && (
           <motion.div
-            initial={reducedMotion ? false : { opacity: 0, scale: 0.8, y: 20 }}
+            data-ai-buddy-launcher="true"
+            data-compact={isCompactOnScroll ? 'true' : 'false'}
+            initial={reducedMotion ? false : { opacity: 0, scale: 0.85, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.8, y: 20 }}
-            transition={{ duration: reducedMotion ? 0 : 0.28, ease: [0.22, 1, 0.36, 1] }}
-            className={`fixed z-30 transition-all duration-300 pb-[env(safe-area-inset-bottom)] ${hasCartBar ? 'bottom-24 sm:bottom-[90px] right-4 sm:right-6' : 'bottom-5 sm:bottom-6 right-4 sm:right-6'}`}
+            exit={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.85, y: 12 }}
+            transition={{ duration: reducedMotion ? 0 : 0.22, ease: [0.22, 1, 0.36, 1] }}
+            style={{
+              bottom: `calc(env(safe-area-inset-bottom, 0px) + ${bottomPx}px)`,
+              ...(side === 'right' ? { right: '10px' } : { left: '10px' }),
+            }}
+            className="fixed z-30 sm:right-6 sm:left-auto transition-[bottom,opacity,transform] duration-200 motion-reduce:transition-none"
           >
-            <div className="absolute inset-0 rounded-full bg-[var(--color-gold,#B8935F)]/25 blur-md motion-safe:animate-ping pointer-events-none" style={{ animationDuration: '3s' }} />
             <button
               ref={launcherRef}
               type="button"
               onClick={() => setIsOpen(!isOpen)}
-              className="relative w-[44px] h-[44px] sm:w-14 sm:h-14 rounded-full p-[1.5px] bg-gradient-to-br from-[var(--color-gold-light,#D4B483)] via-[var(--color-gold,#B8935F)] to-[var(--color-gold,#B8935F)] shadow-lg hover:shadow-xl transition-all duration-300 motion-safe:hover:scale-110 motion-safe:active:scale-95 cursor-pointer group select-none"
+              className={`relative flex items-center justify-center w-[44px] h-[44px] sm:w-14 sm:h-14 rounded-full cursor-pointer group select-none focus-ring ${isCompactOnScroll ? 'opacity-85 hover:opacity-100' : 'opacity-100'}`}
               title={t('concierge.title')}
               aria-label={t('concierge.open')}
               aria-expanded={isOpen}
               aria-controls="allbarka-concierge-panel"
             >
-              <div className="w-full h-full rounded-full bg-[var(--color-surface,#FFFFFF)] flex items-center justify-center relative overflow-hidden shadow-sm">
-                <div className="absolute inset-[2px] rounded-full border border-[var(--color-gold,#B8935F)]/40 pointer-events-none" />
-                <div className="relative z-10 flex flex-col items-center justify-center">
-                  <span className="font-serif font-black text-xs sm:text-sm tracking-tight text-[var(--color-accent-text,#806326)] leading-none motion-safe:group-hover:scale-105 transition-transform">
-                    AB
+              <span className={`block rounded-full p-[1.5px] bg-gradient-to-br from-[var(--color-gold-light,#D4B483)] via-[var(--color-gold,#B8935F)] to-[var(--color-gold,#B8935F)] shadow-lg hover:shadow-xl transition-all duration-200 motion-reduce:transition-none motion-safe:group-hover:scale-105 motion-safe:active:scale-95 ${isCompactOnScroll ? 'w-9 h-9 sm:w-14 sm:h-14' : 'w-[44px] h-[44px] sm:w-14 sm:h-14'}`}>
+                <span className="w-full h-full rounded-full bg-[var(--color-surface,#FFFFFF)] flex items-center justify-center relative overflow-hidden shadow-sm">
+                  <span className="absolute inset-[2px] rounded-full border border-[var(--color-gold,#B8935F)]/40 pointer-events-none" />
+                  <span className="relative z-10 flex flex-col items-center justify-center">
+                    <span className={`font-serif font-black tracking-tight text-[var(--color-accent-text,#806326)] leading-none ${isCompactOnScroll ? 'text-[10px] sm:text-sm' : 'text-xs sm:text-sm'}`}>
+                      AB
+                    </span>
+                    {!isCompactOnScroll && (
+                      <span className="text-[6.5px] font-black text-[var(--color-ink,#1A1A1A)] leading-none mt-0.5 opacity-90 flex items-center gap-0.5">
+                        <Sparkles size={6} className="text-[var(--color-gold,#B8935F)]" aria-hidden="true" />
+                        AI
+                      </span>
+                    )}
                   </span>
-                  <span className="text-[6.5px] font-black text-[var(--color-ink,#1A1A1A)] leading-none mt-0.5 opacity-90 flex items-center gap-0.5">
-                    <Sparkles size={6} className="text-[var(--color-gold,#B8935F)]" />
-                    AI
-                  </span>
-                </div>
-              </div>
+                </span>
+              </span>
             </button>
           </motion.div>
         )}
