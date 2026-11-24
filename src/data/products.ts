@@ -786,7 +786,7 @@ const EXISTING_PRODUCTS: Product[] = [
     packagingDetails_en: 'Dark glass UV-protective bottle with tamper-proof seal.',
     packagingDetails_ur: 'Dark glass UV-protective bottle with tamper-proof seal.',
     packagingDetails_ar: 'Dark glass UV-protective bottle with tamper-proof seal.',
-    keywords: ['kalonji oil', 'black seed oil', 'nigella sativa', 'kalonji', 'immune oil', 'prophetic medicine']
+    keywords: ['kalonji oil', 'black seed oil', 'nigella sativa', 'kalonji', 'traditional oil', 'sunnah pantry']
   },
   {
     id: 'oil-coconut',
