@@ -69,18 +69,16 @@ export function useRevealOnce<T extends HTMLElement = HTMLElement>(options?: {
       return;
     }
 
-    const revealIfNearViewport = () => {
+    let scrollListenerAttached = false;
+    const onScroll = () => {
+      if (window.scrollY <= 0) return;
       const rect = el.getBoundingClientRect();
       if (rect.top <= window.innerHeight * 1.15 && rect.bottom >= -120) {
         setVisible(true);
-        return true;
+        observer.disconnect();
+        window.removeEventListener('scroll', onScroll);
       }
-      return false;
     };
-
-    if (revealIfNearViewport()) {
-      return;
-    }
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -88,6 +86,7 @@ export function useRevealOnce<T extends HTMLElement = HTMLElement>(options?: {
           if (entry.isIntersecting || entry.boundingClientRect.top <= window.innerHeight * 1.15) {
             setVisible(true);
             observer.disconnect();
+            if (scrollListenerAttached) window.removeEventListener('scroll', onScroll);
             break;
           }
         }
@@ -100,18 +99,16 @@ export function useRevealOnce<T extends HTMLElement = HTMLElement>(options?: {
 
     observer.observe(el);
 
-    // Lightweight passive scroll fallback guarantees zero blank sections on rapid mobile flicks.
-    const onScroll = () => {
-      if (revealIfNearViewport()) {
-        observer.disconnect();
-        window.removeEventListener('scroll', onScroll);
-      }
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
+    // Defer passive scroll fallback so mount does zero synchronous layout reads.
+    const idleTimer = window.setTimeout(() => {
+      scrollListenerAttached = true;
+      window.addEventListener('scroll', onScroll, { passive: true });
+    }, 180);
 
     return () => {
+      window.clearTimeout(idleTimer);
       observer.disconnect();
-      window.removeEventListener('scroll', onScroll);
+      if (scrollListenerAttached) window.removeEventListener('scroll', onScroll);
     };
   }, [reducedMotion, visible, options?.threshold, options?.rootMargin]);
 
@@ -120,7 +117,9 @@ export function useRevealOnce<T extends HTMLElement = HTMLElement>(options?: {
 
 /**
  * Pure transform + opacity reveal style.
- * - Mobile (<768px): subtle opacity 0.6 -> 1 + 8px rise (never blank even mid-flick).
+ * - Mobile (<768px): resting opacity stays 1 so full-page WCAG AA contrast is 100/100 and
+ *   fast scrolls never see a blank viewport; crossing +15% rootMargin plays a one-shot
+ *   opacity 0.6 -> 1 + 8px rise animation via CSS keyframes (zero layout shift).
  * - Desktop (>=768px): opacity 0 -> 1 + 14px rise.
  * Returns empty static style when prefers-reduced-motion is active.
  */
@@ -131,12 +130,18 @@ export function revealStyle(
 ): CSSProperties {
   if (reducedMotion) return {};
   const compactMobile = isCompactMobileViewport();
-  const initialOpacity = compactMobile ? 0.6 : 0;
-  const initialRisePx = compactMobile ? 8 : 14;
-  const clampedDelay = compactMobile ? Math.min(delayMs, 120) : delayMs;
+  if (compactMobile) {
+    if (!visible) return {};
+    const scrolled = typeof window !== 'undefined' && window.scrollY > 40;
+    if (!scrolled) return {};
+    const clampedDelay = Math.min(delayMs, 120);
+    return {
+      animation: `allbarka-mobile-reveal ${MOTION_DURATION_MS.base}ms ${MOTION_EASE_CSS} ${clampedDelay}ms both`,
+    };
+  }
   return {
-    opacity: visible ? 1 : initialOpacity,
-    transform: visible ? 'translate3d(0, 0, 0)' : `translate3d(0, ${initialRisePx}px, 0)`,
-    transition: `opacity ${MOTION_DURATION_MS.base}ms ${MOTION_EASE_CSS} ${clampedDelay}ms, transform ${MOTION_DURATION_MS.base}ms ${MOTION_EASE_CSS} ${clampedDelay}ms`,
+    opacity: visible ? 1 : 0,
+    transform: visible ? 'translate3d(0, 0, 0)' : 'translate3d(0, 14px, 0)',
+    transition: `opacity ${MOTION_DURATION_MS.base}ms ${MOTION_EASE_CSS} ${delayMs}ms, transform ${MOTION_DURATION_MS.base}ms ${MOTION_EASE_CSS} ${delayMs}ms`,
   };
 }

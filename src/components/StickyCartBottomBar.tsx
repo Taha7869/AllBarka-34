@@ -1,7 +1,7 @@
 import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
 import { ShoppingBag, ArrowRight, Sparkles } from 'lucide-react';
+import { MOTION_EASE_CSS } from '../lib/motion';
 import { useLocation } from 'react-router-dom';
 import type { CartItem } from '../types';
 import { useCart, parsePrice } from '../contexts/CartContext';
@@ -63,18 +63,15 @@ export const StickyCartBottomBar: React.FC<StickyCartBottomBarProps> = ({
     window.open(buildAutomatedOrderWhatsAppUrl(msg), '_blank', 'noopener,noreferrer');
   };
 
+  if (!isVisible) return null;
+
   return (
-    <AnimatePresence>
-      {isVisible && (
-        <motion.div
-          id="sticky-cart-bottom-bar"
-          dir="ltr"
-          initial={reduceMotion ? false : { y: 80, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: reduceMotion ? 0 : 80, opacity: 0 }}
-          transition={{ duration: reduceMotion ? 0 : 0.25, ease: 'easeOut' }}
-          className="fixed bottom-3 sm:bottom-5 inset-x-0 z-30 max-w-xl mx-auto px-3 sm:px-4 pointer-events-none pb-[env(safe-area-inset-bottom)]"
-        >
+    <div
+      id="sticky-cart-bottom-bar"
+      dir="ltr"
+      style={reduceMotion ? undefined : { animation: `allbarka-sheet-enter 250ms ${MOTION_EASE_CSS} both` }}
+      className="fixed bottom-3 sm:bottom-5 inset-x-0 z-30 max-w-xl mx-auto px-3 sm:px-4 pointer-events-none pb-[env(safe-area-inset-bottom)]"
+    >
           {/* Card Container in Whitish Cream Luxury Theme */}
           <div className="pointer-events-auto bg-[#FAF9F5]/98 backdrop-blur-xl border-2 border-[#D4AF6A] rounded-2xl sm:rounded-full p-2 sm:pl-5 shadow-[0_12px_40px_rgba(43,27,20,0.25),0_0_24px_rgba(212,175,106,0.3)] flex items-center justify-between gap-2 sm:gap-3 select-none text-left">
             {/* Left: Item count & total price */}
@@ -101,13 +98,11 @@ export const StickyCartBottomBar: React.FC<StickyCartBottomBarProps> = ({
             </button>
 
             {/* Right: Prominent Luxury Button */}
-            <motion.button
-              whileHover={reduceMotion ? undefined : { scale: 1.02 }}
-              whileTap={reduceMotion ? undefined : { scale: 0.97 }}
+            <button
               id="sticky-cart-checkout-btn"
               onClick={handleQuickWhatsAppOrder}
               type="button"
-              className="focus-ring group min-h-[44px] shrink-0 px-3 sm:px-6 py-2.5 rounded-xl sm:rounded-full bg-[#1E3A2B] hover:bg-[#14281E] text-[#FDFBF7] border border-[#D4AF6A]/70 font-black text-[10px] sm:text-xs uppercase tracking-wide sm:tracking-wider shadow-[0_4px_18px_rgba(43,27,20,0.3)] hover:shadow-[0_6px_22px_rgba(212,175,106,0.4)] transition-all duration-200 flex items-center gap-1.5 cursor-pointer"
+              className="focus-ring group min-h-[44px] shrink-0 px-3 sm:px-6 py-2.5 rounded-xl sm:rounded-full bg-[#1E3A2B] hover:bg-[#14281E] text-[#FDFBF7] border border-[#D4AF6A]/70 font-black text-[10px] sm:text-xs uppercase tracking-wide sm:tracking-wider shadow-[0_4px_18px_rgba(43,27,20,0.3)] hover:shadow-[0_6px_22px_rgba(212,175,106,0.4)] transition-all duration-200 motion-safe:hover:scale-[1.02] motion-safe:active:scale-[0.97] flex items-center gap-1.5 cursor-pointer"
             >
               <span dir={isRtl ? 'rtl' : 'ltr'} className="hidden min-[360px]:inline">{t('cart.orderWhatsApp')}</span>
               <span dir={isRtl ? 'rtl' : 'ltr'} className="min-[360px]:hidden">{t('cart.orderShort')}</span>
@@ -115,11 +110,9 @@ export const StickyCartBottomBar: React.FC<StickyCartBottomBarProps> = ({
                 size={14}
                 className="text-[#D4AF6A] group-hover:translate-x-0.5 transition-transform"
               />
-            </motion.button>
+            </button>
           </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        </div>
   );
 };
 

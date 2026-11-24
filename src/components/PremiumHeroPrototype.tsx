@@ -68,7 +68,7 @@ export interface PremiumHeroPrototypeProps {
   seasonalDate?: Date;
 }
 
-const PILL_PARALLAX_PX = [-6, -13, -20] as const;
+const PILL_PARALLAX_PX = [-3, -6, -9] as const;
 
 export default function PremiumHeroPrototype({
   reducedMotionOverride,
@@ -145,13 +145,22 @@ export default function PremiumHeroPrototype({
       rafRef.current = requestAnimationFrame(updateOnScroll);
     };
 
-    updateOnScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll, { passive: true });
+    let attached = false;
+    const attach = () => {
+      attached = true;
+      if (window.scrollY > 0) updateOnScroll();
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onScroll, { passive: true });
+    };
+    const idleTimer = window.setTimeout(attach, 150);
+
     return () => {
+      window.clearTimeout(idleTimer);
       cancelAnimationFrame(rafRef.current);
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
+      if (attached) {
+        window.removeEventListener('scroll', onScroll);
+        window.removeEventListener('resize', onScroll);
+      }
     };
   }, [reducedMotion]);
 
@@ -254,7 +263,7 @@ export default function PremiumHeroPrototype({
                       transformOrigin: 'center center',
                       transition: reducedMotion ? undefined : `transform 120ms ${MOTION_EASE_CSS}`,
                     }}
-                    className="h-full w-full will-change-transform"
+                    className="h-full w-full"
                   >
                     <picture
                       className="heritage-hero-background block h-full w-full"
@@ -362,7 +371,7 @@ export default function PremiumHeroPrototype({
                       pillRefs.current[idx] = el;
                     }}
                     data-hero-callout={idx + 1}
-                    className="inline-flex items-center rounded-full border border-[#C7982F]/35 bg-[#083329]/85 px-3 py-1.5 font-medium will-change-transform"
+                    className="inline-flex items-center rounded-full border border-[#C7982F]/35 bg-[#083329]/85 px-3 py-1.5 font-medium"
                   >
                     <span dir="auto">{pillar}</span>
                   </li>

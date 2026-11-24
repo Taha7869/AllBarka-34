@@ -1,12 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, LayoutGroup } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import { useLanguage, type LanguageCode } from '../contexts/LanguageContext';
 import { useMerchandisingSettings } from '../contexts/MerchandisingContext';
 import { DEFAULT_MERCHANDISING } from '../config/merchandising';
-import { MOTION_DURATION, MOTION_EASE, MOTION_STAGGER, revealStyle, useRevealOnce } from '../lib/motion';
+import { MOTION_EASE_CSS, MOTION_STAGGER, revealStyle, useRevealOnce } from '../lib/motion';
 import ProductCard from './ProductCard';
 import type { MerchandisingSettings, Product } from '../types';
 
@@ -99,6 +98,7 @@ export default function HouseSelectionsSection({
   const { ref: sectionRef, visible, reducedMotion } = useRevealOnce<HTMLElement>();
 
   const [activeTabId, setActiveTabId] = useState<ManualTabId>('dry-fruits');
+  const [hasSwitchedTab, setHasSwitchedTab] = useState(false);
 
   const resolvedTabs = useMemo(() => {
     const productById = new Map(products.map((p) => [p.id, p]));
@@ -182,64 +182,59 @@ export default function HouseSelectionsSection({
             </h2>
           </div>
 
-          {/* 3 Calm Manual Tabs — ZERO auto-rotation, ZERO timers; sliding gold indicator */}
-          <LayoutGroup id="house-selections-tabs">
-            <div
-              role="tablist"
-              aria-label={copy.eyebrow}
-              className="flex flex-wrap gap-2"
-            >
-              {resolvedTabs.map((tab) => {
-                const selected = tab.id === currentTab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    id={`house-tab-${tab.id}`}
-                    data-tab-id={tab.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={selected}
-                    aria-controls={`house-panel-${tab.id}`}
-                    onClick={() => setActiveTabId(tab.id)}
-                    className={`relative isolate min-h-[44px] min-w-[44px] rounded-full border px-5 py-2 text-xs sm:text-sm font-semibold transition-colors duration-200 motion-safe:active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C7982F] cursor-pointer ${
-                      selected
-                        ? 'border-[#C7982F]/80 text-[#FDFBF7] dark:text-[#121615]'
-                        : 'border-[var(--color-border)] bg-[var(--color-surface,#FFFCF7)] text-[var(--color-text-primary,#29231D)] hover:border-[#C7982F]'
-                    }`}
-                  >
-                    {selected && (
-                      <motion.span
-                        layoutId={reducedMotion ? undefined : 'house-tab-active-bg'}
-                        transition={reducedMotion ? { duration: 0 } : { duration: MOTION_DURATION.base, ease: MOTION_EASE }}
-                        aria-hidden="true"
-                        className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-[#042821] dark:bg-[#C7982F]"
-                      />
-                    )}
-                    <span dir="auto" className="relative z-10">{tab.label[language] || tab.label.en}</span>
-                    {selected && (
-                      <motion.span
-                        layoutId={reducedMotion ? undefined : 'house-tab-gold-underline'}
-                        transition={reducedMotion ? { duration: 0 } : { duration: MOTION_DURATION.base, ease: MOTION_EASE }}
-                        aria-hidden="true"
-                        className="pointer-events-none absolute inset-x-4 bottom-1.5 h-[2px] rounded-full bg-[#C7982F] dark:bg-[#042821]"
-                      />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </LayoutGroup>
+          {/* 3 Calm Manual Tabs — ZERO auto-rotation, ZERO timers; pure CSS gold indicator */}
+          <div
+            role="tablist"
+            aria-label={copy.eyebrow}
+            className="flex flex-wrap gap-2"
+          >
+            {resolvedTabs.map((tab) => {
+              const selected = tab.id === currentTab.id;
+              return (
+                <button
+                  key={tab.id}
+                  id={`house-tab-${tab.id}`}
+                  data-tab-id={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  aria-controls={`house-panel-${tab.id}`}
+                  onClick={() => {
+                    setHasSwitchedTab(true);
+                    setActiveTabId(tab.id);
+                  }}
+                  className={`relative isolate min-h-[44px] min-w-[44px] rounded-full border px-5 py-2 text-xs sm:text-sm font-semibold transition-colors duration-200 motion-safe:active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C7982F] cursor-pointer ${
+                    selected
+                      ? 'border-[#C7982F]/80 bg-[#042821] text-[#FDFBF7] dark:bg-[#C7982F] dark:text-[#121615]'
+                      : 'border-[var(--color-border)] bg-[var(--color-surface,#FFFCF7)] text-[var(--color-text-primary,#29231D)] hover:border-[#C7982F]'
+                  }`}
+                >
+                  <span dir="auto" className="relative z-10">{tab.label[language] || tab.label.en}</span>
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      transform: selected ? 'scaleX(1)' : 'scaleX(0)',
+                      transition: reducedMotion ? undefined : `transform 240ms ${MOTION_EASE_CSS}`,
+                    }}
+                    className="pointer-events-none absolute inset-x-4 bottom-1.5 h-[2px] origin-center rounded-full bg-[#C7982F] dark:bg-[#042821]"
+                  />
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <motion.div
+        <div
           key={currentTab.id}
           id={`house-panel-${currentTab.id}`}
           role="tabpanel"
           aria-labelledby={`house-tab-${currentTab.id}`}
           data-mobile-snap-row="true"
-          initial={reducedMotion || typeof window === 'undefined' ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: MOTION_DURATION.fast, ease: MOTION_EASE }}
+          style={
+            hasSwitchedTab && !reducedMotion
+              ? { animation: `pdp-gallery-crossfade 200ms ${MOTION_EASE_CSS} both` }
+              : undefined
+          }
           className="-mx-5 flex flex-nowrap gap-4 overflow-x-auto px-5 pb-2 scroll-px-5 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:px-0 md:pb-0"
         >
           {currentTab.products.map((product, idx) => (
@@ -256,7 +251,7 @@ export default function HouseSelectionsSection({
               />
             </div>
           ))}
-        </motion.div>
+        </div>
 
         <div className="mt-8 flex justify-start sm:justify-end">
           <Link

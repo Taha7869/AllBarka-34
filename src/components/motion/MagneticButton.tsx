@@ -1,6 +1,6 @@
-import { usePrefersReducedMotion as useReducedMotion } from '../../hooks/usePrefersReducedMotion';
 import React, { useRef } from 'react';
-import { motion, useMotionValue, useSpring } from 'motion/react';
+import { usePrefersReducedMotion as useReducedMotion } from '../../hooks/usePrefersReducedMotion';
+import { MOTION_EASE_CSS } from '../../lib/motion';
 
 interface MagneticButtonProps {
   children: React.ReactNode;
@@ -19,10 +19,8 @@ interface MagneticButtonProps {
 }
 
 /**
- * MagneticButton — wraps any element with a subtle magnetic cursor pull.
- * - Translates up to `strength` px toward the cursor on hover.
- * - Springs back on mouse-leave.
- * - Disabled on touch/coarse-pointer devices and prefers-reduced-motion.
+ * MagneticButton — lightweight pure-CSS magnetic cursor pull on pointer-fine desktops.
+ * Zero motion/react spring allocations on mount; completely static on touch & reduced motion.
  */
 const MagneticButton: React.FC<MagneticButtonProps> = ({
   children,
@@ -40,84 +38,81 @@ const MagneticButton: React.FC<MagneticButtonProps> = ({
   const ref = useRef<HTMLElement>(null);
   const shouldReduceMotion = useReducedMotion();
 
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
+  const isTouchDevice =
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(hover: none), (pointer: coarse)').matches;
 
-  const springConfig = { stiffness: 300, damping: 22, mass: 0.5 };
-  const sx = useSpring(x, springConfig);
-  const sy = useSpring(y, springConfig);
-
-  const isTouchDevice = typeof window !== 'undefined'
-    && typeof window.matchMedia === 'function'
-    && window.matchMedia('(hover: none), (pointer: coarse)').matches;
+  const active = !disabled && !shouldReduceMotion && !isTouchDevice;
 
   const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
-    if (disabled || shouldReduceMotion || isTouchDevice || !ref.current) return;
+    if (!active || !ref.current) return;
     const rect = ref.current.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    x.set((e.clientX - cx) / rect.width * strength * 2);
-    y.set((e.clientY - cy) / rect.height * strength * 2);
+    if (rect.width <= 0 || rect.height <= 0) return;
+    const dx = ((e.clientX - (rect.left + rect.width / 2)) / rect.width) * strength * 2;
+    const dy = ((e.clientY - (rect.top + rect.height / 2)) / rect.height) * strength * 2;
+    ref.current.style.transform = `translate3d(${dx.toFixed(1)}px, ${dy.toFixed(1)}px, 0)`;
   };
 
   const handleMouseLeave = () => {
-    x.set(0);
-    y.set(0);
+    if (!ref.current) return;
+    ref.current.style.transform = '';
   };
 
-  const motionProps = { style: shouldReduceMotion || isTouchDevice || disabled ? style : { x: sx, y: sy, ...style } };
+  const mergedStyle: React.CSSProperties | undefined = active
+    ? { transition: `transform 220ms ${MOTION_EASE_CSS}`, ...style }
+    : style;
 
-  // Render as motion.a for anchor, motion.button otherwise
   if (Tag === 'a') {
     return (
-      <motion.a
+      <a
         ref={ref as React.Ref<HTMLAnchorElement>}
         href={href}
         onClick={onClick}
         className={className}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
+        onMouseMove={active ? handleMouseMove : undefined}
+        onMouseLeave={active ? handleMouseLeave : undefined}
         id={id}
-        {...motionProps}
+        style={mergedStyle}
         {...rest}
       >
         {children}
-      </motion.a>
+      </a>
     );
   }
 
   if (Tag === 'div') {
     return (
-      <motion.div
+      <div
         ref={ref as React.Ref<HTMLDivElement>}
         className={className}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
+        onMouseMove={active ? handleMouseMove : undefined}
+        onMouseLeave={active ? handleMouseLeave : undefined}
         id={id}
         onClick={onClick}
-        style={motionProps.style}
+        style={mergedStyle}
         {...rest}
       >
         {children}
-      </motion.div>
+      </div>
     );
   }
 
   return (
-    <motion.button
+    <button
       ref={ref as React.Ref<HTMLButtonElement>}
       type={type}
       disabled={disabled}
       className={className}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
+      onMouseMove={active ? handleMouseMove : undefined}
+      onMouseLeave={active ? handleMouseLeave : undefined}
       onClick={onClick}
       id={id}
-      style={motionProps.style}
+      style={mergedStyle}
       {...rest}
     >
       {children}
-    </motion.button>
+    </button>
   );
 };
 

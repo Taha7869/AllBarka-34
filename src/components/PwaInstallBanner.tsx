@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Download, Share, PlusSquare, X } from 'lucide-react';
-import { useReducedMotion } from 'motion/react';
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { useLanguage, type LanguageCode } from '../contexts/LanguageContext';
 import {
   IOS_A2HS_DISMISSED_KEY,

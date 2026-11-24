@@ -1,7 +1,6 @@
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, useNavigationType, useLocation, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { useLanguage, type LanguageCode } from '../contexts/LanguageContext';
@@ -31,7 +30,7 @@ import type { EventType } from '../lib/occasionPlanning';
 import { CUSTOM_QUOTE_MODAL_EVENT } from '../lib/customQuoteEvent';
 import { OPEN_AI_BUDDY_EVENT } from '../lib/heroScene';
 import { CART_POP_EVENT } from '../lib/flyToCart';
-import { MOTION_DURATION, MOTION_EASE } from '../lib/motion';
+import { MOTION_EASE_CSS } from '../lib/motion';
 
 const MobileMenu = React.lazy(() => import('../components/MobileMenu'));
 const CartDrawer = React.lazy(() => import('../components/CartDrawer'));
@@ -337,18 +336,6 @@ export default function RootLayout() {
 
   // Calm 200ms content-only route fade (header & footer remain static; zero layout shift).
   const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  
-  const pageTransitionVariants = {
-    initial: { opacity: 0 },
-    enter: { 
-      opacity: 1, 
-      transition: { duration: MOTION_DURATION.fast, ease: MOTION_EASE }
-    },
-    exit: { 
-      opacity: 0, 
-      transition: { duration: MOTION_DURATION.fast, ease: MOTION_EASE }
-    }
-  };
 
   return (
     <div className="boutique-experience min-h-screen w-full max-w-full relative flex flex-col font-sans bg-[var(--color-base)] text-[var(--color-ink)] selection:bg-[var(--color-gold)]/30 selection:text-[var(--color-ink)]">
@@ -486,25 +473,20 @@ export default function RootLayout() {
                 aria-label={`${t('shoppingBag')}: ${totalItemsCount}`}
               >
                 <ShoppingBag size={19} strokeWidth={2.2} />
-                <AnimatePresence>
-                  {totalItemsCount > 0 && (
-                    <motion.div
-                      key={prefersReducedMotion ? 'static-badge' : `badge-${cartPopTick}`}
-                      initial={prefersReducedMotion ? false : { scale: 0.72, opacity: 0.7 }}
-                      animate={
-                        prefersReducedMotion
-                          ? { scale: 1, opacity: 1 }
-                          : { scale: cartPopTick > 0 ? [1, 1.28, 1] : 1, opacity: 1 }
-                      }
-                      exit={{ scale: 0, opacity: 0 }}
-                      transition={{ duration: prefersReducedMotion ? 0 : 0.28, ease: MOTION_EASE }}
-                      data-testid="header-cart-badge"
-                      className="absolute -top-1 -right-1 min-w-[19px] h-[19px] flex items-center justify-center bg-[#C7982F] text-[#042821] text-[10px] font-bold rounded-full px-1 shadow-xs leading-none pointer-events-none tabular-nums"
-                    >
-                      {totalItemsCount}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                {totalItemsCount > 0 && (
+                  <div
+                    key={prefersReducedMotion ? 'static-badge' : `badge-${cartPopTick}`}
+                    style={
+                      !prefersReducedMotion && cartPopTick > 0
+                        ? { animation: `allbarka-badge-pop 280ms ${MOTION_EASE_CSS} both` }
+                        : undefined
+                    }
+                    data-testid="header-cart-badge"
+                    className="absolute -top-1 -right-1 min-w-[19px] h-[19px] flex items-center justify-center bg-[#C7982F] text-[#042821] text-[10px] font-bold rounded-full px-1 shadow-xs leading-none pointer-events-none tabular-nums"
+                  >
+                    {totalItemsCount}
+                  </div>
+                )}
               </button>
               
               {/* Mobile Menu Trigger */}
@@ -560,15 +542,17 @@ export default function RootLayout() {
                     <Outlet context={{ cartItems, addToCart, handleAddToCart, setCartOpen: setIsCartOpen, setSelectedQuickViewProduct, setHamperModalOpen }} />
                   </div>
                 ) : (
-                  <motion.div
+                  <div
                     key={location.pathname}
-                    variants={pageTransitionVariants}
-                    initial={hasMountedRef.current ? 'initial' : false}
-                    animate="enter"
+                    style={
+                      hasMountedRef.current
+                        ? { animation: `allbarka-route-fade 200ms ${MOTION_EASE_CSS} both` }
+                        : undefined
+                    }
                     className="w-full flex-col flex items-center origin-top bg-[var(--color-base)]"
                   >
                     <Outlet context={{ cartItems, addToCart, handleAddToCart, setCartOpen: setIsCartOpen, setSelectedQuickViewProduct, setHamperModalOpen }} />
-                  </motion.div>
+                  </div>
                 )}
             </div>
           </React.Suspense>

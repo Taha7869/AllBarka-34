@@ -60,6 +60,27 @@
   from { opacity: 0.25; }
   to { opacity: 1; }
 }
+@keyframes allbarka-mobile-reveal {
+  from { opacity: 0.6; transform: translate3d(0, 8px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+@keyframes allbarka-route-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes allbarka-sheet-enter {
+  from { opacity: 0; transform: translate3d(0, 12px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+@keyframes allbarka-toast-enter {
+  from { opacity: 0; transform: translate3d(0, -8px, 0) scale(0.98); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+@keyframes allbarka-badge-pop {
+  0% { transform: scale(0.75); }
+  55% { transform: scale(1.24); }
+  100% { transform: scale(1); }
+}
 @media (prefers-reduced-motion: no-preference) {
   .boutique-action:not(:disabled):active,
   .boutique-experience button:not(:disabled):active {

@@ -13,8 +13,7 @@ import { unitPrice } from '../lib/catalogActivity';
 import { useSavedProducts } from '../hooks/useSavedProducts';
 import { shareProductLink } from '../lib/pwa';
 import React, { lazy, Suspense, useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
-import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'motion/react';
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { PRODUCTS, getProductImage } from '../data/products';
 import { isSingleImageCatalogProduct } from '../data/productImages';
 import { useProductMedia, useProductMediaCover } from '../contexts/ProductMediaContext';
@@ -22,7 +21,7 @@ import { clampPhotoIndex } from '../lib/productPhotoViewer';
 import ProductVideo from '../components/ProductVideo';
 import { Product, CartItem } from '../types';
 import ProductDetailAccordion from '../components/ProductDetailAccordion';
-import VarietyComparisonModal from '../components/VarietyComparisonModal';
+const VarietyComparisonModal = lazy(() => import('../components/VarietyComparisonModal'));
 import SEO from '../components/SEO';
 import { ShieldCheck, Sparkles, ArrowLeft, ArrowRight, Truck, Award, AlertCircle, Info, Share2, Maximize2, MessageSquareQuote, Package, Gift } from 'lucide-react';
 import { useCart, FREE_SHIPPING_THRESHOLD } from '../contexts/CartContext';
@@ -35,7 +34,7 @@ import CustomWeightInput from '../components/CustomWeightInput';
 import { resolveCustomWeight, supportsCustomWeight } from '../lib/productVariants';
 import { displayProductPrice } from '../lib/productSelection';
 import { openCustomQuoteModal } from '../lib/customQuoteEvent';
-import ProductPhotoViewer from '../components/ProductPhotoViewer';
+const ProductPhotoViewer = lazy(() => import('../components/ProductPhotoViewer'));
 import { isPackagingProduct, getPackagingMoqDisplay } from '../lib/packagingMoq';
 import IndicativePriceNotice from '../components/IndicativePriceNotice';
 import { isFilledPackagingVariant } from '../lib/filledGiftPricing';
@@ -972,11 +971,13 @@ export default function ProductDetailPage() {
 
       </div>
       {photoViewerOpen && <Suspense fallback={<span className="sr-only" role="status">{t('viewer.loading')}</span>}><ProductPhotoViewer key={product.id} images={galleryImages} productName={getLocalized(product, 'name', language)} hideSingleImageCounter={isSingleImageCatalogProduct(product)} initialIndex={activeGalleryIndex} restoreFocusTo={photoViewerOpener.current} onClose={() => setPhotoViewerOpen(false)} onIndexChange={index => { setActiveGalleryIdx(index); setImageError(false); }} /></Suspense>}
-      {showVarietyComparison && (
-        <VarietyComparisonModal
+      {showVarietyComparison && (
+        <Suspense fallback={null}>
+          <VarietyComparisonModal
           product={product}
-          onClose={() => setShowVarietyComparison(false)}
-        />
+          onClose={() => setShowVarietyComparison(false)}
+        />
+        </Suspense>
       )}
       {!isQuoteOnly && !requiresInquiry && <PdpStickyBuyBar targetRef={purchaseRef} name={getLocalized(product, 'name', language)} portion={selectedWeight} totalText={displayProductPrice(priceToUse, quantity)} disabled={!priceToUse || !selectedWeight} onAdd={handleAddToCart} />}
     </div>

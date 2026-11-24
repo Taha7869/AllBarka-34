@@ -1,6 +1,6 @@
+import React, { useEffect, useRef } from 'react';
 import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
-import React from 'react';
-import { motion, useScroll, useSpring } from 'motion/react';
+import { MOTION_EASE_CSS } from '../lib/motion';
 
 export interface ScrollProgressBarProps {
   className?: string;
@@ -9,23 +9,51 @@ export interface ScrollProgressBarProps {
 
 /**
  * ScrollProgressBar
- * Monitors document page scroll position and displays a thin, elegant
- * gold-leaf progress bar. Now positioned absolutely at the bottom 
- * of its container (usually the sticky header) for the navbar hairline effect.
+ * Monitors document page scroll position and displays a thin champagne-gold
+ * hairline progress indicator using pure GPU transform: scaleX(...) with
+ * zero Framer Motion scroll-measurement overhead on initial page load.
  */
 export const ScrollProgressBar: React.FC<ScrollProgressBarProps> = ({
   className = '',
   showGlow = true,
 }) => {
-  const { scrollYProgress } = useScroll();
   const shouldReduceMotion = useReducedMotion();
+  const barRef = useRef<HTMLDivElement | null>(null);
 
-  // Smooth luxury spring physics for buttery scroll interpolation
-  const scaleX = useSpring(scrollYProgress, {
-    stiffness: 120,
-    damping: 28,
-    restDelta: 0.001,
-  });
+  useEffect(() => {
+    if (shouldReduceMotion || typeof window === 'undefined') return;
+    let rafId = 0;
+    let attached = false;
+
+    const update = () => {
+      const bar = barRef.current;
+      if (!bar) return;
+      const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+      const progress = Math.max(0, Math.min(1, window.scrollY / maxScroll));
+      bar.style.transform = `scaleX(${progress.toFixed(4)})`;
+    };
+
+    const onScroll = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(update);
+    };
+
+    const timer = window.setTimeout(() => {
+      attached = true;
+      if (window.scrollY > 0) update();
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onScroll, { passive: true });
+    }, 180);
+
+    return () => {
+      window.clearTimeout(timer);
+      cancelAnimationFrame(rafId);
+      if (attached) {
+        window.removeEventListener('scroll', onScroll);
+        window.removeEventListener('resize', onScroll);
+      }
+    };
+  }, [shouldReduceMotion]);
 
   if (shouldReduceMotion) return null;
 
@@ -36,9 +64,13 @@ export const ScrollProgressBar: React.FC<ScrollProgressBarProps> = ({
       aria-hidden="true"
     >
       <div className="h-[1.5px] w-full bg-transparent overflow-hidden">
-        <motion.div
+        <div
+          ref={barRef}
           id="scroll-progress-bar"
-          style={{ scaleX }}
+          style={{
+            transform: 'scaleX(0)',
+            transition: `transform 140ms ${MOTION_EASE_CSS}`,
+          }}
           className={`h-full w-full origin-left bg-gradient-to-r from-[var(--color-gold-muted)] via-[var(--color-gold)] to-[#F3DFA2] ${
             showGlow ? 'shadow-[0_0_8px_rgba(212,175,55,0.5)]' : ''
           }`}

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, useReducedMotion } from 'motion/react';
+import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
+import { MOTION_EASE_CSS } from '../lib/motion';
 import { ShieldCheck, SlidersHorizontal, X, Lock, BarChart3, Megaphone } from 'lucide-react';
 import { useLanguage, type LanguageCode } from '../contexts/LanguageContext';
 import { useConsent } from '../contexts/ConsentContext';
@@ -181,15 +182,13 @@ export default function CookieNotice({ hidden = false, hasTabBar = false }: Cook
     <>
       {/* 1. Compact Consent Sheet (mobile <=30% screen height) & corner card (desktop) */}
       {showBanner && (
-        <motion.aside
+        <aside
           role="region"
           aria-label={words.bannerAria}
           data-consent-banner
           data-storage-notice
           dir={dir}
-          initial={prefersReducedMotion ? false : { opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: prefersReducedMotion ? 0 : 0.22, ease: [0.22, 1, 0.36, 1] }}
+          style={prefersReducedMotion ? undefined : { animation: `allbarka-sheet-enter 220ms ${MOTION_EASE_CSS} both` }}
           className={`fixed inset-x-3 z-40 sm:inset-x-auto sm:left-5 sm:right-auto sm:w-[22.5rem] max-w-[calc(100vw-1.5rem)] max-h-[30svh] overflow-y-auto rounded-2xl border border-[#C7982F]/35 bg-[var(--color-surface,#FFFCF7)] px-3.5 py-3 text-start shadow-[0_14px_38px_rgba(4,40,33,0.16)] dark:bg-[#161D1B] dark:border-[#C7982F]/30 ${
             hasTabBar
               ? 'bottom-[calc(9.25rem+env(safe-area-inset-bottom))] sm:bottom-20'
@@ -247,7 +246,7 @@ export default function CookieNotice({ hidden = false, hasTabBar = false }: Cook
               {words.cookiePolicy}
             </Link>
           </div>
-        </motion.aside>
+        </aside>
       )}
 
       {/* 2. Preference Panel Modal — openable from Banner, Footer "Cookie settings", or /policies/cookies */}
@@ -261,14 +260,12 @@ export default function CookieNotice({ hidden = false, hasTabBar = false }: Cook
             aria-hidden="true"
             className="fixed inset-0 bg-black/50 backdrop-blur-[2px]"
           />
-          <motion.div
+          <div
             role="dialog"
             aria-modal="true"
             aria-labelledby="consent-modal-title"
             data-consent-modal
-            initial={prefersReducedMotion ? false : { opacity: 0, y: 16, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
+            style={prefersReducedMotion ? undefined : { animation: `allbarka-sheet-enter 200ms ${MOTION_EASE_CSS} both` }}
             onClick={(e) => e.stopPropagation()}
             className="relative z-10 flex max-h-[88vh] w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-[#C7982F]/40 bg-[var(--color-surface,#FFFCF7)] text-start text-[#29231D] shadow-2xl dark:bg-[#141B19] dark:border-[#C7982F]/35 dark:text-[#FAF9F5]"
           >
@@ -463,7 +460,7 @@ export default function CookieNotice({ hidden = false, hasTabBar = false }: Cook
                 {words.acceptAll}
               </button>
             </div>
-          </motion.div>
+          </div>
         </div>
       )}
     </>
