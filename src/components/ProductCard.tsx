@@ -1,6 +1,7 @@
 import BundleContentsSummary from './BundleContentsSummary';
 import { initialCardPortion } from '../lib/merchandisingPresentation';
 import ProductImageGallery from './ProductImageGallery';
+import { navigateToProductWithTransition, shouldInterceptLinkClick, supportsViewTransitions } from '../lib/viewTransitions';
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, ShoppingBag, Heart, ArrowUpRight } from 'lucide-react';
@@ -64,7 +65,10 @@ export default function ProductCard({
       className="boutique-product-card group/card relative flex h-full cursor-pointer flex-col bg-[var(--color-surface,#FFFCF7)] border border-[var(--color-border)] hover:border-[#C7982F]/55 rounded-[16px] sm:rounded-[18px] p-3 sm:p-5 shadow-[0_4px_20px_-8px_rgba(4,40,33,0.08)] transition-colors duration-200 motion-reduce:transition-none"
       onClick={(event) => {
         if (!(event.target as HTMLElement).closest('a, button, input, select, textarea, [role="button"]')) {
-          navigate(`/product/${product.id}`);
+          navigateToProductWithTransition(navigate, `/product/${product.id}`, {
+            productId: product.id,
+            sourceElement: event.currentTarget.querySelector<HTMLElement>('.product-gallery img') || event.currentTarget,
+          });
         }
       }}
     >
@@ -86,7 +90,18 @@ export default function ProductCard({
 
       {/* Product Details */}
       <div dir={language === 'en' ? 'ltr' : 'rtl'} className="table-card-details min-w-0 flex-1 space-y-1.5 sm:space-y-2 pb-2.5 sm:pb-4 pt-1 text-start">
-        <Link to={`/product/${product.id}`} className="block max-w-full focus-ring rounded-sm w-fit">
+        <Link
+          to={`/product/${product.id}`}
+          className="block max-w-full focus-ring rounded-sm w-fit"
+          onClick={(event) => {
+            if (!shouldInterceptLinkClick(event) || !supportsViewTransitions()) return;
+            const card = event.currentTarget.closest('.boutique-product-card');
+            const img = card?.querySelector<HTMLElement>('.product-gallery img') || null;
+            if (!img) return;
+            event.preventDefault();
+            navigateToProductWithTransition(navigate, `/product/${product.id}`, { productId: product.id, sourceElement: img });
+          }}
+        >
           <h3 lang={language} className={`line-clamp-2 min-h-[2.6rem] sm:min-h-[3.5rem] whitespace-normal break-words [overflow-wrap:anywhere] font-medium text-[var(--color-text-primary)] transition-colors hover:text-[var(--color-accent-text)] ${language === 'en' ? 'font-serif text-[15px] sm:text-[21px] leading-[1.25]' : titleTypography}`}>
             {getLocalized(product, 'name', language)}
           </h3>

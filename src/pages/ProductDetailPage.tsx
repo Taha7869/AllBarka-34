@@ -12,7 +12,7 @@ import { useCatalogActivity } from '../hooks/useCatalogActivity';
 import { unitPrice } from '../lib/catalogActivity';
 import { useSavedProducts } from '../hooks/useSavedProducts';
 import { shareProductLink } from '../lib/pwa';
-import React, { lazy, Suspense, useState, useEffect, useMemo, useRef } from 'react';
+import React, { lazy, Suspense, useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { PRODUCTS, getProductImage } from '../data/products';
@@ -24,7 +24,7 @@ import { Product, CartItem } from '../types';
 import ProductDetailAccordion from '../components/ProductDetailAccordion';
 import VarietyComparisonModal from '../components/VarietyComparisonModal';
 import SEO from '../components/SEO';
-import { ShieldCheck, Sparkles, ArrowRight, Truck, Award, AlertCircle, Info, Share2, Maximize2, MessageSquareQuote, Package, Gift } from 'lucide-react';
+import { ShieldCheck, Sparkles, ArrowLeft, ArrowRight, Truck, Award, AlertCircle, Info, Share2, Maximize2, MessageSquareQuote, Package, Gift } from 'lucide-react';
 import { useCart, FREE_SHIPPING_THRESHOLD } from '../contexts/CartContext';
 import TrustBadges from '../components/TrustBadges';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -41,7 +41,16 @@ import IndicativePriceNotice from '../components/IndicativePriceNotice';
 import { isFilledPackagingVariant } from '../lib/filledGiftPricing';
 import { resolveBidBoxConfig } from '../lib/bidBoxPricing';
 import { recordFunnelEvent } from '../lib/funnelTelemetry';
-import RollingNumber from '../components/RollingNumber';
+import RollingNumber from '../components/RollingNumber';
+import {
+  claimProductTransitionTarget,
+  navigateBackFromProductWithTransition,
+  navigateToProductWithTransition,
+  shouldInterceptLinkClick,
+  supportsViewTransitions,
+} from '../lib/viewTransitions';
+
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 export default function ProductDetailPage() {
   const PRODUCTS = useCatalogProducts();
@@ -84,7 +93,8 @@ export default function ProductDetailPage() {
   const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
   const [showVarietyComparison, setShowVarietyComparison] = useState(false);
   const [presentationView, setPresentationView] = useState<'closed' | 'inside'>('closed');
-  const photoViewerOpener = useRef<HTMLButtonElement | null>(null);
+  const photoViewerOpener = useRef<HTMLButtonElement | null>(null);
+  const mainPhotoRef = useRef<HTMLImageElement | null>(null);
   const { savedIds, setSaved } = useSavedProducts();
   const { view } = useCatalogActivity();
   const isSaved = !!id && savedIds.includes(id);
@@ -96,7 +106,11 @@ export default function ProductDetailPage() {
   const activeGalleryIndex = clampPhotoIndex(activeGalleryIdx, galleryImages.length);
   useEffect(() => { setActiveGalleryIdx(current => clampPhotoIndex(current, productMedia.images.length)); setImageError(false); }, [galleryKey, productMedia.images.length]);
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
+    claimProductTransitionTarget(product?.id, mainPhotoRef.current);
+  }, [product?.id]);
+
+  useEffect(() => {
     window.scrollTo(0, 0);
     if (id) {
       view(id);
@@ -307,7 +321,24 @@ export default function ProductDetailPage() {
           } } : {})
         }}
       />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-4 flex items-center">
+          <button
+            type="button"
+            data-pdp-back-btn="true"
+            onClick={() => {
+              const target = typeof window !== 'undefined' && window.history.length > 1 ? -1 : `/shop/${product.category}`;
+              navigateBackFromProductWithTransition(navigate, target, {
+                productId: product.id,
+                sourceElement: mainPhotoRef.current,
+              });
+            }}
+            className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-xs font-medium text-[var(--color-text-secondary,#635B52)] transition-colors hover:text-[var(--color-accent-text,#806326)] cursor-pointer"
+          >
+            <ArrowLeft size={15} className="rtl-flip shrink-0" aria-hidden="true" />
+            <span dir="auto">{language === 'ur' ? 'واپس کلیکشن پر' : language === 'ar' ? 'العودة إلى المتجر' : 'Back to collection'}</span>
+          </button>
+        </div>
         
         {selectionReviewRequired && <p role="status" className="pdp-handoff-review mb-5 rounded-xl border border-[var(--color-border-accent)] bg-[var(--color-surface)] px-4 py-3 text-sm leading-6 text-[var(--color-text-primary)]">{t('pdp.handoffReview')}</p>}
         <div className="pdp-composition grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-start">
@@ -326,6 +357,7 @@ export default function ProductDetailPage() {
                 </div>
               ) : (
                 <img
+                  ref={mainPhotoRef}
                   src={galleryImages[activeGalleryIndex]?.src || productMedia.images[0]}
                   alt={galleryImages[activeGalleryIndex]?.alt || t(`imageAlt.${product.id}`, getLocalized(product, 'name', language))}
                   width={960}
@@ -852,7 +884,14 @@ export default function ProductDetailPage() {
                 return (
                   <Link
                     key={rel.id}
-                    to={`/product/${rel.id}`}
+                    to={`/product/${rel.id}`}
+                    onClick={(event) => {
+                      if (!shouldInterceptLinkClick(event) || !supportsViewTransitions()) return;
+                      const img = event.currentTarget.querySelector<HTMLElement>('img');
+                      if (!img) return;
+                      event.preventDefault();
+                      navigateToProductWithTransition(navigate, `/product/${rel.id}`, { productId: rel.id, sourceElement: img });
+                    }}
                     className="group bg-[var(--color-surface,#FFFCF7)] border border-[var(--color-gold,#C7982F)]/25 hover:border-[var(--color-gold,#C7982F)] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 hover:shadow-md cursor-pointer text-left"
                   >
                     <div>

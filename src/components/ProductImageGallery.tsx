@@ -1,7 +1,7 @@
 import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { productSeo } from '../lib/productSeo';
-import React, { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { Product } from '../types';
@@ -9,12 +9,22 @@ import { useProductMedia } from '../contexts/ProductMediaContext';
 import { clampPhotoIndex } from '../lib/productPhotoViewer';
 import { getLocalized } from '../utils/localize';
 import { useLanguage } from '../contexts/LanguageContext';
+import {
+  claimReturnCardTransitionTarget,
+  navigateToProductWithTransition,
+  shouldInterceptLinkClick,
+  supportsViewTransitions,
+} from '../lib/viewTransitions';
+
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 /** Native scrolling keeps image swipes independent of the surrounding product row. */
 export default function ProductImageGallery({ product, linkToDetails = true }: { product: Product; linkToDetails?: boolean }) {
   const { t, language } = useLanguage();
+  const navigate = useNavigate();
   const reduceMotion = useReducedMotion();
   const viewport = useRef<HTMLDivElement>(null);
+  const activeImgRef = useRef<HTMLImageElement | null>(null);
   const [selected, setSelected] = useState(0);
   const [previewing, setPreviewing] = useState(false);
   const [browsed, setBrowsed] = useState(false);
@@ -24,6 +34,10 @@ export default function ProductImageGallery({ product, linkToDetails = true }: {
   const activeIndex = useRef(active);
   activeIndex.current = active;
   const galleryKey = images.join('\u0000');
+
+  useIsomorphicLayoutEffect(() => {
+    claimReturnCardTransitionTarget(product.id, activeImgRef.current);
+  }, [product.id, active]);
   useEffect(() => {
     setPreviewing(false);
     setBrowsed(false);
@@ -67,11 +81,19 @@ export default function ProductImageGallery({ product, linkToDetails = true }: {
           setSelected(next);
         } }}>
         {images.map((src, index) => {
-          const photo = <img src={src} width={960} height={960} alt={`${product.seo?productSeo(product,language).imageAlt:t(`imageAlt.${product.id}`, getLocalized(product, 'name', language))} — ${index + 1}`}
+          const photo = <img ref={index === active ? activeImgRef : undefined} src={src} width={960} height={960} alt={`${product.seo?productSeo(product,language).imageAlt:t(`imageAlt.${product.id}`, getLocalized(product, 'name', language))} — ${index + 1}`}
               loading="lazy" decoding="async" draggable={false}
               style={{ objectPosition: product.mediaFocalPoint ? `${Math.round(product.mediaFocalPoint.x * 100)}% ${Math.round(product.mediaFocalPoint.y * 100)}%` : undefined, objectFit: product.cropMode === 'contain' ? 'contain' : 'cover' }} onError={event => { if (!event.currentTarget.src.endsWith('/images/product-placeholder.svg')) event.currentTarget.src = '/images/product-placeholder.svg'; }} />;
           return linkToDetails ? <Link key={src} to={`/product/${product.id}`} className="product-gallery-slide focus-ring" tabIndex={active === index ? 0 : -1}
-            aria-label={`${getLocalized(product, 'name', language)} — ${index + 1}/${images.length}`}>{photo}</Link>
+            aria-label={`${getLocalized(product, 'name', language)} — ${index + 1}/${images.length}`}
+            onClick={event => {
+              if (!shouldInterceptLinkClick(event) || !supportsViewTransitions()) return;
+              event.preventDefault();
+              navigateToProductWithTransition(navigate, `/product/${product.id}`, {
+                productId: product.id,
+                sourceElement: event.currentTarget,
+              });
+            }}>{photo}</Link>
             : <div key={src} className="product-gallery-slide">{photo}</div>;
         })}
       </div>

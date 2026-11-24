@@ -158,3 +158,24 @@
   .boutique-header-navigation { order: 3; flex: 0 0 100%; padding-top: 4px; }
   .boutique-header-tools { margin-inline-start: auto; }
 }
+
+/* Shared-element View Transitions (Card image -> PDP main image & reverse) */
+::view-transition-group(allbarka-product-hero) {
+  animation-duration: 380ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+::view-transition-old(allbarka-product-hero),
+::view-transition-new(allbarka-product-hero) {
+  animation-duration: 380ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  border-radius: 16px;
+  overflow: hidden;
+  object-fit: cover;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(allbarka-product-hero),
+  ::view-transition-old(allbarka-product-hero),
+  ::view-transition-new(allbarka-product-hero) {
+    animation: none !important;
+  }
+}
