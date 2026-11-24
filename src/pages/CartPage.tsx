@@ -97,13 +97,13 @@ if (!cartItems.length) return <div className="purchase-cart purchase-empty" dir=
           if (prod) addToCart(prod, portion, 1);
         }}
       />
-      <Link className="purchase-continue" to="/shop"><ArrowRight size={16}/>{t('continueShopping')}</Link>
+      <Link className="purchase-continue" to="/shop"><ArrowRight size={16} className="rtl-flip" aria-hidden="true"/>{t('continueShopping')}</Link>
     </section><aside className="purchase-cart-summary" aria-label={t('purchase.summary')}>
       <div className="purchase-summary-heading"><p className="purchase-eyebrow">{t('purchase.estimate')}</p><h2>{t('purchase.summary')}</h2></div>
       <div className="purchase-summary-body"><label htmlFor="cart-delivery-city">{t('shipping.destination')}</label><select id="cart-delivery-city" value={shippingCity==='Lahore'?'Lahore':'Other City'} onChange={event=>setShippingCity(event.target.value)}><option value="Lahore">{t('shipping.lahore')}</option><option value="Other City">{t('shipping.outside')}</option></select><p className="purchase-delivery-note">{t(shippingCity==='Lahore'?'shipping.lahoreRule':'shipping.nationwideRule')}</p>
       {shippingCity==='Lahore'&&!isFreeShippingUnlocked&&<div className="purchase-shipping-progress"><p>{t('freeShippingHint').replace('{amount}',remainingForFreeShipping.toLocaleString())}</p><progress value={freeShippingProgress} max={100} aria-label={t('freeShippingHint').replace('{amount}',remainingForFreeShipping.toLocaleString())}/></div>}
       <dl className="purchase-totals"><div><dt>{t('cartSubtotal')}</dt><dd><bdi>{formatPrice(subtotal)}</bdi></dd></div><div><dt>{t('shippingFee')}</dt><dd><bdi>{shippingCost===null?t('shipping.pending'):shippingCost===0?t('shipping.free'):formatPrice(shippingCost)}</bdi></dd></div><div className="purchase-total"><dt>{t('purchase.estimatedTotal')}</dt><dd><bdi>{estimatedTotal===null?t('shipping.pending'):formatPrice(estimatedTotal)}</bdi></dd></div></dl><p className="purchase-estimate-note">{t('purchase.estimateNote')}</p>
-      <button type="button" className="purchase-primary purchase-cart-checkout" onClick={()=>navigate('/checkout')}><ShoppingBag size={16}/>{t('proceedToCheckout')}<ArrowRight size={16}/></button><button type="button" className="purchase-secondary" onClick={handleWhatsAppCheckout}><MessageCircle size={16}/>{t('purchase.whatsapp')}</button></div>
+      <button type="button" className="purchase-primary purchase-cart-checkout" onClick={()=>navigate('/checkout')}><ShoppingBag size={16}/>{t('proceedToCheckout')}<ArrowRight size={16} className="rtl-flip" aria-hidden="true"/></button><button type="button" className="purchase-secondary" onClick={handleWhatsAppCheckout}><MessageCircle size={16}/>{t('purchase.whatsapp')}</button></div>
     </aside></div>
     <CartTools /><div className="purchase-trust"><TrustBadges /></div>
   </div>;

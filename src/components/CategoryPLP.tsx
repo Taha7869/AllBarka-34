@@ -266,7 +266,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
         }}>
       <div className="flex min-h-11 sm:min-h-12 items-center gap-1.5 sm:gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 sm:px-4 focus-within:border-[#c7982f] focus-within:ring-2 focus-within:ring-[#c7982f]/15 lg:min-h-14">
         <Search size={17} className="shrink-0 text-[var(--color-accent-text)]" />
-        <input type="search" role="combobox" aria-autocomplete="list" aria-controls={suggestionId} aria-expanded={searchOpen && !!filters.query.trim()} dir="auto" aria-label={t('shop.search')} placeholder={t('shop.hint')} value={filters.query} onChange={e => { update({ search: e.target.value || null }); setSearchOpen(true); }} className="min-w-0 flex-1 bg-transparent py-2.5 text-sm sm:text-base outline-none" />
+        <input type="search" role="combobox" aria-autocomplete="list" aria-controls={suggestionId} aria-expanded={searchOpen && !!filters.query.trim()} dir="auto" aria-label={t('shop.search')} placeholder={t(mobileControls ? 'shop.hintMobile' : 'shop.hint')} value={filters.query} onChange={e => { update({ search: e.target.value || null }); setSearchOpen(true); }} className="min-w-0 flex-1 bg-transparent py-2.5 text-sm sm:text-base outline-none" />
         <VoiceInputButton onTranscript={text => { update({ search: text }); setSearchOpen(true); }} />
         {filters.query && <button type="button" aria-label={t('shop.clear')} onClick={() => update({ search: null })} className="flex h-11 w-11 shrink-0 items-center justify-center"><X size={17} /></button>}
       </div>

@@ -8,7 +8,7 @@ export default function FAQPage({ preview = false }: { preview?: boolean } = {})
 
   return (
     <div className="w-full bg-[var(--color-base)] pt-10 pb-20">
-      <FAQSection />
+      <FAQSection headingLevel="h1" />
     </div>
   );
 }

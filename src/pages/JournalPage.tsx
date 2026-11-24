@@ -82,7 +82,7 @@ export default function JournalPage({ preview = false }: { preview?: boolean } =
       {!!related.length && <section className="journal-related"><p className="journal-eyebrow">{t('editorial.related')}</p><h2>{t('pdp.relatedTitle')}</h2>
         <div className="journal-grid">{related.map(product => <ProductCard key={product.id} product={product} isWholesale={false} />)}</div>
       </section>}
-      <div className="journal-end-links"><Link to="/journal">{t('editorial.back')} <ArrowLeft size={16} /></Link><Link to="/shop">{t('shop')} <ArrowRight size={16} /></Link></div>
+      <div className="journal-end-links"><Link to="/journal">{t('editorial.back')} <ArrowLeft size={16} className="rtl-flip" aria-hidden="true" /></Link><Link to="/shop">{t('shop')} <ArrowRight size={16} className="rtl-flip" aria-hidden="true" /></Link></div>
     </article>;
   }
   return <div className="editorial-journal journal-index" dir={direction}>
@@ -92,9 +92,9 @@ export default function JournalPage({ preview = false }: { preview?: boolean } =
       <label><Search size={18} aria-hidden="true" /><span className="sr-only">{t('content.searchArticles')}</span><input type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder={t('content.searchArticles')} /></label></div>
     {featured && <section className="journal-feature"><Link to={`/journal/${featured.slug}`} className="journal-feature-image"><img src={featured.image} alt={featured.title} width={1200} height={760} onError={imageFailure} /></Link>
       <div><p className="journal-eyebrow">{t('editorial.featured')} · {featured.readTime}</p><h2><Link to={`/journal/${featured.slug}`} dir="auto">{featured.title}</Link></h2><p dir="auto">{featured.excerpt}</p>
-        <Link to={`/journal/${featured.slug}`}>{t('editorial.read')} <ArrowRight size={16} /></Link></div></section>}
+        <Link to={`/journal/${featured.slug}`}>{t('editorial.read')} <ArrowRight size={16} className="rtl-flip" aria-hidden="true" /></Link></div></section>}
     <div className="journal-grid">{grid.map(entry => <article className="journal-card" key={entry.slug}><Link to={`/journal/${entry.slug}`} className="journal-card-image"><img src={entry.image} alt={entry.title} width={900} height={600} loading="lazy" decoding="async" onError={imageFailure} /></Link>
-      <div><p className="journal-eyebrow">{t(`content.category.${entry.category}`, entry.category)} <span>· {entry.readTime}</span></p><h2><Link to={`/journal/${entry.slug}`} dir="auto">{entry.title}</Link></h2><p dir="auto">{entry.excerpt}</p><Link to={`/journal/${entry.slug}`}>{t('editorial.read')} <ArrowRight size={15} /></Link></div>
+      <div><p className="journal-eyebrow">{t(`content.category.${entry.category}`, entry.category)} <span>· {entry.readTime}</span></p><h2><Link to={`/journal/${entry.slug}`} dir="auto">{entry.title}</Link></h2><p dir="auto">{entry.excerpt}</p><Link to={`/journal/${entry.slug}`}>{t('editorial.read')} <ArrowRight size={15} className="rtl-flip" aria-hidden="true" /></Link></div>
     </article>)}</div>
     {filtered.length === 0 && <section className="journal-empty"><BookOpen aria-hidden="true" /><h2>{t('editorial.noResults')}</h2><p>{t('editorial.noResultsCopy')}</p><button type="button" onClick={() => { setCategory('All'); setSearch(''); }}>{t('editorial.reset')}</button></section>}
   </div>;

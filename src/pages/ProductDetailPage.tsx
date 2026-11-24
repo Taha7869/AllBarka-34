@@ -902,7 +902,7 @@ export default function ProductDetailPage() {
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] hover:text-[var(--color-accent,#C7982F)] transition-colors"
               >
                 <span>{t('viewFullHarvest')}</span>
-                <ArrowRight size={14} />
+                <ArrowRight size={14} className="rtl-flip" aria-hidden="true" />
               </Link>
             </div>
 
@@ -955,7 +955,7 @@ export default function ProductDetailPage() {
                       </span>
                       <span className="hidden sm:flex text-[10px] font-bold text-[var(--color-accent-text,#806326)] group-hover:translate-x-0.5 transition-transform items-center gap-1">
                         {t('viewDetails')}
-                        <ArrowRight size={11} />
+                        <ArrowRight size={11} className="rtl-flip" aria-hidden="true" />
                       </span>
                     </div>
                   </Link>

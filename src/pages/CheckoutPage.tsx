@@ -985,6 +985,7 @@ const handleInputChange = (field: string, value: any) => {
                         aria-invalid={!!errors.phone}
                         aria-describedby={errors.phone ? 'checkout-phone-error' : 'checkout-phone-hint'}
                         type="tel"
+                        inputMode="tel"
                         dir="ltr"
                         value={formData.phone || ''}
                         onChange={(e) => handleInputChange('phone', e.target.value)}
@@ -1096,7 +1097,7 @@ const handleInputChange = (field: string, value: any) => {
                     className="purchase-primary w-full py-3.5 rounded-full bg-[#042821] text-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#C7982F)] text-xs font-black hover:bg-[var(--color-ink,#29231D)]/90 hover:shadow-[0_4px_20px_rgba(184,147,95,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                   >
                     <span>{t('checkout.continueDelivery')}</span>
-                    <ArrowRight size={14} className="text-[var(--color-gold,#C7982F)]" />
+                    <ArrowRight size={14} className="text-[var(--color-gold,#C7982F)] rtl-flip" aria-hidden="true" />
                   </button>
                 </motion.div>
               )}
@@ -1394,7 +1395,7 @@ const handleInputChange = (field: string, value: any) => {
                       className="purchase-checkout-submit flex-1 py-3.5 rounded-full bg-[#042821] text-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#C7982F)] text-xs font-black hover:bg-[var(--color-ink,#29231D)]/90 hover:shadow-[0_4px_20px_rgba(184,147,95,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                     >
                       <span>{isQuoteRequestMode ? t('checkout.reviewRequest') : t('checkout.proceedReview', 'Proceed to Payment & Review')}</span>
-                      <ArrowRight size={14} className="text-[var(--color-gold,#C7982F)]" />
+                      <ArrowRight size={14} className="text-[var(--color-gold,#C7982F)] rtl-flip" aria-hidden="true" />
                     </button>
                   </div>
                 </motion.div>

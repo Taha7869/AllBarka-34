@@ -62,7 +62,7 @@ export default function GiftsHampersDestination({ onQuickView }: GiftsHampersDes
   });
   return <div className="gift-destination" dir={language === 'en' ? 'ltr' : 'rtl'}>
     <header className="gift-opening"><div><p className="gift-eyebrow">{t('dest.gifting.eyebrow')}</p><h1>{t('gift.heroTitle')}</h1><p>{t('gift.heroCopy')}</p>
-      <div className="gift-opening-actions"><button type="button" className="gift-open-builder" disabled={!builderAvailable} onClick={launch}><Gift size={17}/>{t('dest.gifting.openBuilder')}</button><a href="#gift-selection">{t('gift.browse')} <ArrowRight size={16}/></a></div>
+      <div className="gift-opening-actions"><button type="button" className="gift-open-builder" disabled={!builderAvailable} onClick={launch}><Gift size={17}/>{t('dest.gifting.openBuilder')}</button><a href="#gift-selection">{t('gift.browse')} <ArrowRight size={16} className="rtl-flip" aria-hidden="true"/></a></div>
       {!builderAvailable && <p role="status">{t('gift.builderUnavailable')}</p>}
       <div className="gift-presentation-collapsible">
         <button
@@ -93,12 +93,12 @@ export default function GiftsHampersDestination({ onQuickView }: GiftsHampersDes
           </select>
           <p id="gift-recipient-note">{t('gift.recipientNote')}</p>
         </div>
-        <button type="button" className="gift-recipient-action" onClick={requestGuidance}>{t('gift.recipientAction')} <ArrowRight size={16} aria-hidden="true"/></button>
+        <button type="button" className="gift-recipient-action" onClick={requestGuidance}>{t('gift.recipientAction')} <ArrowRight size={16} className="rtl-flip" aria-hidden="true"/></button>
       </div>
       <nav className="gift-occasions" aria-label={t('gift.occasionLabel')}>{['all','wedding','umrah','ramadan','corporate'].map(value=><button key={value} type="button" aria-pressed={occasion===value} onClick={()=>change('occasion',value==='all'?'':value)}>{t(`dest.occasions.${value}`)}</button>)}</nav>
       <div className="gift-budget" role="group" aria-label={t('gift.budgetLabel')}>{[0,3000,6000].map(value=><button key={value} type="button" aria-pressed={budget===value} onClick={()=>change('budget',value?String(value):'')}>{value?<><span>{t('gift.upTo')}</span> <bdi>Rs. {value.toLocaleString()}</bdi></>:t('gift.anyBudget')}</button>)}</div><p className="gift-filter-note">{t('gift.budgetNote')}</p>
       {filtered.length ? <div className="gift-product-grid">{filtered.map(product=><ProductCard key={product.id} product={product} isWholesale={false} onQuickView={onQuickView}/>)}</div> : <div className="gift-empty"><Gift size={28}/><h3>{t('dest.occasions.emptyTitle')}</h3><p>{t('dest.occasions.emptyCopy')}</p><button type="button" onClick={reset}>{t('gift.clear')}</button></div>}
     </section>
-    <section className="gift-inquiry"><div><p className="gift-eyebrow">{t('dest.gifting.corporateTitle')}</p><h2>{t('gift.inquiryTitle')}</h2><p>{t('gift.inquiryCopy')}</p></div><div><button type="button" onClick={()=>openCustomQuoteModal({mode:'filled',eventType:'Corporate',quantity:25})}>{t('dest.gifting.requestCorporateQuote')} <ArrowRight size={16}/></button><Link to="/shop/celebration-boxes">{t('gift.celebration')} <ArrowRight size={16}/></Link></div></section>
+    <section className="gift-inquiry"><div><p className="gift-eyebrow">{t('dest.gifting.corporateTitle')}</p><h2>{t('gift.inquiryTitle')}</h2><p>{t('gift.inquiryCopy')}</p></div><div><button type="button" onClick={()=>openCustomQuoteModal({mode:'filled',eventType:'Corporate',quantity:25})}>{t('dest.gifting.requestCorporateQuote')} <ArrowRight size={16} className="rtl-flip" aria-hidden="true"/></button><Link to="/shop/celebration-boxes">{t('gift.celebration')} <ArrowRight size={16} className="rtl-flip" aria-hidden="true"/></Link></div></section>
   </div>;
 }

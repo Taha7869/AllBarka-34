@@ -424,7 +424,7 @@ export default function OrderTrackingPage() {
                 className="inline-flex items-center gap-1.5 text-[#042821] dark:text-[#E4C783] font-semibold hover:underline"
               >
                 <span>{t('continueShopping', 'Continue Shopping')}</span>
-                <ArrowRight size={14} />
+                <ArrowRight size={14} className="rtl-flip" aria-hidden="true" />
               </Link>
 
               <Link
