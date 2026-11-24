@@ -1,4 +1,4 @@
-import React, { useId, useMemo, useState } from 'react';
+import React, { useId, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowRight, ChevronDown, Gift } from 'lucide-react';
 import { useCatalogProducts } from '../contexts/CatalogContext';
@@ -37,8 +37,21 @@ export default function GiftsHampersDestination({ onQuickView }: GiftsHampersDes
     return category === 'gift-boxes' || category === 'combos' || (product as Product & {isGift?:boolean}).isGift === true || id.includes('hamper') || ['deal-1','deal-2','corporate-gifting','bundle-royal-feast'].includes(id);
   }), [products]);
   const filtered = giftProducts.filter(product => (occasion === 'all' || productMatchesOccasion(product, occasion)) && (!budget || (initialGiftPrice(product) !== null && initialGiftPrice(product)! <= budget)));
-  const change = (key: string, value: string) => setParams(prev => { const next = new URLSearchParams(prev); if (!value) next.delete(key); else next.set(key,value); return next; }, { replace: true, preventScrollReset: true });
-  const reset = () => setParams(prev => { const next = new URLSearchParams(prev); next.delete('occasion'); next.delete('budget'); return next; }, { replace: true, preventScrollReset: true });
+  const latestParamsRef = useRef(params);
+  latestParamsRef.current = params;
+  const change = (key: string, value: string) => {
+    const next = new URLSearchParams(latestParamsRef.current);
+    if (!value) next.delete(key); else next.set(key, value);
+    latestParamsRef.current = next;
+    setParams(next, { replace: true, preventScrollReset: true });
+  };
+  const reset = () => {
+    const next = new URLSearchParams(latestParamsRef.current);
+    next.delete('occasion');
+    next.delete('budget');
+    latestParamsRef.current = next;
+    setParams(next, { replace: true, preventScrollReset: true });
+  };
   const launch = () => window.dispatchEvent(new CustomEvent('open-hamper-builder'));
   const builderAvailable = HAMPER_BOXES.some(box => box.active !== false && box.price > 0);
   const heroBox = HAMPER_BOXES.find(box => box.id === 'box-velvet') || HAMPER_BOXES[0];
