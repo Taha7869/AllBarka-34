@@ -107,7 +107,8 @@
 
 /* ── 4. Showcase cards: unified calm radius, subtle shadow, image-only hover zoom ── */
 .editorial-home .boutique-product-card { padding:16px; border-radius:18px; overflow:hidden; box-shadow:0 4px 20px -8px rgba(4,40,33,0.08); }
-.editorial-home .boutique-product-card .product-gallery { margin-bottom:12px; border:1px solid var(--color-border); border-radius:12px; aspect-ratio:1; }
+.editorial-home .boutique-product-card .product-gallery { margin-bottom:10px; border:1px solid var(--color-border); border-radius:12px; aspect-ratio:1; }
+@media(max-width:767px) { .editorial-home .boutique-product-card .product-gallery { aspect-ratio:4 / 3; } }
 .editorial-home .boutique-product-card .product-gallery-slide img,
 .editorial-home .boutique-product-card .product-gallery-preview { object-fit:cover; }
 .editorial-home .boutique-product-card .table-card-meta { margin:0 0 6px; padding:0; }

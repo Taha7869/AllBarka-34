@@ -246,7 +246,7 @@ export default function HouseSelectionsSection({
             <div
               key={product.id}
               style={revealStyle(visible, reducedMotion, (idx + 1) * MOTION_STAGGER.cardsMs)}
-              className="w-[78vw] max-w-[330px] shrink-0 snap-start md:w-auto md:max-w-none md:min-w-0"
+              className="w-[70vw] max-w-[280px] shrink-0 snap-start md:w-auto md:max-w-none md:min-w-0"
             >
               <ProductCard
                 product={product}
