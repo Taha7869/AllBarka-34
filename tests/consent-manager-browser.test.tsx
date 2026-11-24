@@ -152,6 +152,7 @@ createRoot(document.getElementById('root')!).render(
       page.locator('[data-consent-action="choose-preferences"]').boundingBox(),
     ]);
     assert.ok(bBox && chatBox && acceptBox && rejectBox && chooseBox);
+    assert.ok(bBox.height <= 844 * 0.3, `Mobile consent sheet height (${Math.round(bBox.height)}px) must stay <= 30% of viewport`);
     assert.ok(bBox.y + bBox.height <= chatBox.y + 1, `Banner bottom (${bBox.y + bBox.height}) must clear mobile chat button top (${chatBox.y})`);
     assert.ok(acceptBox.height >= 44 && rejectBox.height >= 44 && chooseBox.height >= 44);
     assert.equal(Math.round(acceptBox.height), Math.round(rejectBox.height));

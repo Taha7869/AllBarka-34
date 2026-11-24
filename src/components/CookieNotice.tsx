@@ -35,11 +35,11 @@ const COPY: Record<LanguageCode, ConsentCopy> = {
     bannerAria: 'Cookie and privacy preferences',
     bannerTitle: 'Your privacy preferences',
     bannerBody:
-      'We use essential storage for your bag, language, theme, and checkout. Optional analytics and marketing scripts only load if you allow them.',
+      'Essential storage powers your bag & checkout. Optional analytics stay off unless allowed.',
     cookiePolicy: 'Cookie policy',
-    acceptAll: 'Accept all',
-    rejectAll: 'Reject all',
-    choosePreferences: 'Choose preferences',
+    acceptAll: 'Accept',
+    rejectAll: 'Reject',
+    choosePreferences: 'Preferences',
     savePreferences: 'Save choices',
     gpcBadge: 'GPC signal detected — optional tracking off',
     gpcModalNote:
@@ -63,11 +63,11 @@ const COPY: Record<LanguageCode, ConsentCopy> = {
     bannerAria: 'کوکی اور رازداری کی ترجیحات',
     bannerTitle: 'آپ کی رازداری کی ترجیحات',
     bannerBody:
-      'ہم آپ کے بیگ، زبان، تھیم اور چیک آؤٹ کے لیے ضروری اسٹوریج استعمال کرتے ہیں۔ اختیاری تجزیات اور مارکیٹنگ اسکرپٹس صرف آپ کی اجازت سے لوڈ ہوتے ہیں۔',
+      'بیگ اور چیک آؤٹ کے لیے ضروری اسٹوریج؛ اختیاری تجزیات صرف آپ کی اجازت سے۔',
     cookiePolicy: 'کوکی پالیسی',
-    acceptAll: 'سب قبول کریں',
-    rejectAll: 'سب رد کریں',
-    choosePreferences: 'پسند چنیں',
+    acceptAll: 'سب قبول',
+    rejectAll: 'سب رد',
+    choosePreferences: 'ترجیحات',
     savePreferences: 'پسند محفوظ کریں',
     gpcBadge: 'GPC سگنل فعال — اختیاری ٹریکنگ بند',
     gpcModalNote:
@@ -91,11 +91,11 @@ const COPY: Record<LanguageCode, ConsentCopy> = {
     bannerAria: 'تفضيلات ملفات الارتباط والخصوصية',
     bannerTitle: 'تفضيلات الخصوصية الخاصة بك',
     bannerBody:
-      'نستخدم التخزين الضروري لحقيبة التسوق واللغة والمظهر وإتمام الطلب. لا يتم تحميل نصوص التحليلات أو التسويق الاختيارية إلا بعد موافقتك.',
+      'تخزين ضروري للسلة والدفع؛ التحليلات الاختيارية متوقفة إلا بموافقتك.',
     cookiePolicy: 'سياسة ملفات الارتباط',
-    acceptAll: 'قبول الكل',
-    rejectAll: 'رفض الكل',
-    choosePreferences: 'تخصيص الخيارات',
+    acceptAll: 'قبول',
+    rejectAll: 'رفض',
+    choosePreferences: 'التفضيلات',
     savePreferences: 'حفظ التفضيلات',
     gpcBadge: 'تم رصد إشارة GPC — التتبع الاختياري متوقف',
     gpcModalNote:
@@ -179,7 +179,7 @@ export default function CookieNotice({ hidden = false, hasTabBar = false }: Cook
 
   return (
     <>
-      {/* 1. Compact Consent Banner — cleared above mobile AI chat button, opposite it on desktop */}
+      {/* 1. Compact Consent Sheet (mobile <=30% screen height) & corner card (desktop) */}
       {showBanner && (
         <motion.aside
           role="region"
@@ -189,49 +189,35 @@ export default function CookieNotice({ hidden = false, hasTabBar = false }: Cook
           dir={dir}
           initial={prefersReducedMotion ? false : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: prefersReducedMotion ? 0 : 0.22 }}
-          className={`fixed inset-x-3 z-40 sm:inset-x-auto sm:left-5 sm:right-auto sm:w-[29rem] max-w-[calc(100vw-1.5rem)] rounded-2xl border border-[#C7982F]/40 bg-[var(--color-surface,#FFFCF7)] p-4 text-start shadow-[0_14px_40px_rgba(4,40,33,0.18)] dark:bg-[#161D1B] dark:border-[#C7982F]/35 ${
+          transition={{ duration: prefersReducedMotion ? 0 : 0.22, ease: [0.22, 1, 0.36, 1] }}
+          className={`fixed inset-x-3 z-40 sm:inset-x-auto sm:left-5 sm:right-auto sm:w-[22.5rem] max-w-[calc(100vw-1.5rem)] max-h-[30svh] overflow-y-auto rounded-2xl border border-[#C7982F]/35 bg-[var(--color-surface,#FFFCF7)] px-3.5 py-3 text-start shadow-[0_14px_38px_rgba(4,40,33,0.16)] dark:bg-[#161D1B] dark:border-[#C7982F]/30 ${
             hasTabBar
               ? 'bottom-[calc(9.25rem+env(safe-area-inset-bottom))] sm:bottom-20'
               : 'bottom-[calc(5.25rem+env(safe-area-inset-bottom))] sm:bottom-5'
           }`}
         >
-          <div className="flex items-start gap-2.5">
-            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1E3A2B]/10 text-[#1E3A2B] dark:bg-[#C7982F]/15 dark:text-[#D8B25C]" aria-hidden="true">
-              <ShieldCheck size={17} />
-            </span>
-            <div className="min-w-0 flex-1 space-y-1.5">
-              <h2 className="font-serif text-sm font-bold text-[#1E3A2B] dark:text-[#FAF9F5]">
-                {words.bannerTitle}
-              </h2>
-              <p className="text-xs leading-5 text-[#29231D]/85 dark:text-[#E5E0D5]">
-                {words.bannerBody}{' '}
-                <Link
-                  to="/policies/cookies"
-                  className="font-semibold text-[#806326] underline underline-offset-2 hover:text-[#1E3A2B] dark:text-[#D8B25C] dark:hover:text-[#FAF9F5] focus-ring"
-                >
-                  {words.cookiePolicy}
-                </Link>
+          <div className="space-y-1">
+            <p className="text-xs leading-snug text-[#29231D]/90 dark:text-[#E5E0D5]">
+              {words.bannerBody}
+            </p>
+            {gpcEnabled && (
+              <p
+                data-gpc-indicator
+                className="inline-flex items-center gap-1 rounded-full border border-[#1E3A2B]/20 bg-[#1E3A2B]/8 px-2 py-0.5 text-[10px] font-medium text-[#1E3A2B] dark:border-[#D8B25C]/30 dark:bg-[#D8B25C]/10 dark:text-[#E6C97F]"
+              >
+                <ShieldCheck size={11} aria-hidden="true" />
+                <span>{words.gpcBadge}</span>
               </p>
-              {gpcEnabled && (
-                <p
-                  data-gpc-indicator
-                  className="inline-flex items-center gap-1.5 rounded-full border border-[#1E3A2B]/20 bg-[#1E3A2B]/8 px-2.5 py-0.5 text-[11px] font-medium text-[#1E3A2B] dark:border-[#D8B25C]/30 dark:bg-[#D8B25C]/10 dark:text-[#E6C97F]"
-                >
-                  <ShieldCheck size={12} aria-hidden="true" />
-                  <span>{words.gpcBadge}</span>
-                </p>
-              )}
-            </div>
+            )}
           </div>
 
-          {/* 3 Equal-Size Choice Buttons (Zero Dark Patterns, >=44px touch targets) */}
-          <div className="mt-3.5 grid grid-cols-1 gap-2 sm:grid-cols-3">
+          {/* Equal-size Accept & Reject buttons (>=44px), plus compact Preferences text link */}
+          <div className="mt-2.5 grid grid-cols-2 gap-2">
             <button
               type="button"
               data-consent-action="accept-all"
               onClick={acceptAll}
-              className="min-h-[44px] w-full rounded-xl border border-[#1E3A2B] bg-[#1E3A2B] px-3 py-2 text-xs font-semibold text-[#FAF9F5] transition-colors hover:bg-[#152B1F] dark:border-[#C7982F] dark:bg-[#C7982F] dark:text-[#111917] dark:hover:bg-[#D6A942] focus-ring cursor-pointer"
+              className="min-h-[44px] w-full rounded-xl border border-[#042821] bg-[#042821] px-3 py-2 text-xs font-semibold text-[#FDFBF7] transition-colors hover:bg-[#1E3A2B] dark:border-[#C7982F] dark:bg-[#C7982F] dark:text-[#111917] dark:hover:bg-[#D6A942] focus-ring cursor-pointer"
             >
               {words.acceptAll}
             </button>
@@ -239,18 +225,27 @@ export default function CookieNotice({ hidden = false, hasTabBar = false }: Cook
               type="button"
               data-consent-action="reject-all"
               onClick={rejectAll}
-              className="min-h-[44px] w-full rounded-xl border border-[#1E3A2B] bg-[var(--color-surface,#FFFCF7)] px-3 py-2 text-xs font-semibold text-[#1E3A2B] transition-colors hover:bg-[#F6F1EA] dark:border-[#C7982F]/60 dark:bg-[#1E2724] dark:text-[#FAF9F5] dark:hover:bg-[#27332F] focus-ring cursor-pointer"
+              className="min-h-[44px] w-full rounded-xl border border-[#042821]/35 bg-[var(--color-surface,#FFFCF7)] px-3 py-2 text-xs font-semibold text-[#042821] transition-colors hover:bg-[#F2ECE2] dark:border-[#C7982F]/55 dark:bg-[#1E2724] dark:text-[#FAF9F5] dark:hover:bg-[#27332F] focus-ring cursor-pointer"
             >
               {words.rejectAll}
             </button>
+          </div>
+
+          <div className="mt-0.5 flex items-center justify-between gap-3 text-[11px]">
             <button
               type="button"
               data-consent-action="choose-preferences"
               onClick={openPreferences}
-              className="min-h-[44px] w-full rounded-xl border border-[#1E3A2B]/40 bg-[#F6F1EA] px-3 py-2 text-xs font-semibold text-[#29231D] transition-colors hover:bg-[#ECE4D6] dark:border-[#C7982F]/40 dark:bg-[#222B28] dark:text-[#FAF9F5] dark:hover:bg-[#2D3834] focus-ring cursor-pointer"
+              className="inline-flex min-h-[44px] items-center bg-transparent border-0 p-0 text-[11px] font-medium text-[#635B52] underline underline-offset-4 transition-colors hover:text-[#042821] dark:text-[#C5BEB2] dark:hover:text-[#E4C783] focus-ring cursor-pointer"
             >
               {words.choosePreferences}
             </button>
+            <Link
+              to="/policies/cookies"
+              className="inline-flex min-h-[44px] items-center text-[11px] font-medium text-[#806326] underline underline-offset-4 hover:text-[#042821] dark:text-[#D8B25C] dark:hover:text-[#FAF9F5] focus-ring"
+            >
+              {words.cookiePolicy}
+            </Link>
           </div>
         </motion.aside>
       )}
