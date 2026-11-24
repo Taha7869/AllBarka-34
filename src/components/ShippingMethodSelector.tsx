@@ -71,7 +71,7 @@ export default function ShippingMethodSelector({ selected, onSelect, subtotal, c
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="font-black uppercase tracking-wider text-[10px] text-[var(--color-ink)]">{t(method.id === 'standard' ? 'shipping.standard' : 'shipping.express')}</span>
+                <span className="font-black text-[10px] text-[var(--color-ink)]">{t(method.id ==='standard'?'shipping.standard':'shipping.express')}</span>
                 <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isFree ? 'bg-green-100 text-green-700' : 'bg-[var(--color-gold)]/10 text-[var(--color-gold)]'}`}>
                   {displayPrice}
                 </span>

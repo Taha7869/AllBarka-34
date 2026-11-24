@@ -136,7 +136,7 @@ export default function GiftMessageCardPreview({
 
         {/* Card header */}
         <div className="mt-1 flex flex-wrap items-center justify-between gap-2 border-b border-[#C7982F]/25 pb-2">
-          <p className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#806326] dark:text-[#E4C783]">
+          <p className="inline-flex items-center gap-1.5 text-[10px] font-bold tracking-[0.18em] text-[#806326] dark:text-[#E4C783]">
             {!isPlainDua && <Sparkles size={12} aria-hidden="true" />}
             <span>{copy.livePreview}</span>
           </p>
@@ -160,7 +160,7 @@ export default function GiftMessageCardPreview({
             dir="auto"
             className="mt-3 font-serif text-base sm:text-lg font-semibold text-[#1E3A2B] dark:text-[#F6F1EA] break-words [overflow-wrap:anywhere]"
           >
-            <span className="text-xs font-sans font-medium uppercase tracking-wider text-[#806326] dark:text-[#E4C783] me-1.5">
+            <span className="text-xs font-sans font-medium text-[#806326] dark:text-[#E4C783] me-1.5">
               {copy.toLabel}:
             </span>
             {trimmedRecipient}

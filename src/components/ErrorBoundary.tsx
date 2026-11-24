@@ -35,7 +35,7 @@ export function ErrorBoundaryFallback({ onReset }: FallbackViewProps) {
         <Sparkles size={28} />
       </div>
 
-      <span className="inline-block px-3.5 py-1 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/30 text-[10px] font-sans font-bold uppercase tracking-[0.2em] text-[#8C6B1B] dark:text-[#D4AF37] mb-3">
+      <span className="inline-block px-3.5 py-1 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/30 text-[10px] font-sans font-bold tracking-[0.2em] text-[#8C6B1B] dark:text-[#D4AF37] mb-3">
         {t('error.badge', 'AllBarka Boutique Care')}
       </span>
 
@@ -54,7 +54,7 @@ export function ErrorBoundaryFallback({ onReset }: FallbackViewProps) {
         <button
           type="button"
           onClick={onReset}
-          className="px-6 py-3 min-h-[44px] rounded-full bg-[#043327] hover:bg-[#03251C] text-[#FAF9F5] text-xs font-bold uppercase tracking-wider border border-[#D4AF37]/40 hover:border-[#D4AF37] transition-all shadow-sm flex items-center gap-2 cursor-pointer focus-ring"
+          className="px-6 py-3 min-h-[44px] rounded-full bg-[#043327] hover:bg-[#03251C] text-[#FAF9F5] text-xs font-bold border border-[#D4AF37]/40 hover:border-[#D4AF37] transition-all shadow-sm flex items-center gap-2 cursor-pointer focus-ring"
         >
           <RefreshCcw size={14} className="text-[#D4AF37]" />
           <span>{t('error.refresh', 'Refresh Boutique')}</span>
@@ -62,7 +62,7 @@ export function ErrorBoundaryFallback({ onReset }: FallbackViewProps) {
 
         <a
           href="/"
-          className="px-6 py-3 min-h-[44px] rounded-full bg-white/80 dark:bg-black/30 hover:bg-white dark:hover:bg-black/50 text-[#120F17] dark:text-[#FAF9F5] text-xs font-medium uppercase tracking-wider border border-[#D4AF37]/25 hover:border-[#D4AF37]/60 transition-all flex items-center gap-2 focus-ring"
+          className="px-6 py-3 min-h-[44px] rounded-full bg-white/80 dark:bg-black/30 hover:bg-white dark:hover:bg-black/50 text-[#120F17] dark:text-[#FAF9F5] text-xs font-medium border border-[#D4AF37]/25 hover:border-[#D4AF37]/60 transition-all flex items-center gap-2 focus-ring"
         >
           <Home size={14} className="text-[#8C6B1B] dark:text-[#D4AF37]" />
           <span>{t('error.home', 'Return to Table')}</span>

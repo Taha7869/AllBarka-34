@@ -51,7 +51,7 @@ export default function CategoryMobileDropdown({
           <div className="w-6 h-6 rounded-lg bg-[#D4AF6A]/20 border border-[#D4AF6A]/40 flex items-center justify-center text-[#D4AF6A] shrink-0">
             <Filter size={12} className="text-[#D4AF6A]" />
           </div>
-          <span className="text-xs font-black uppercase tracking-wider text-[#D4AF6A] flex items-center truncate">
+          <span className="text-xs font-black text-[#D4AF6A] flex items-center truncate">
             Filter By: <span className="text-white font-serif normal-case font-bold text-sm ml-1.5 truncate">{activeCategory?.label}</span>
           </span>
         </div>
@@ -75,7 +75,7 @@ export default function CategoryMobileDropdown({
             className="absolute left-0 right-0 top-full mt-2 z-40 bg-[#F7F1E4] border border-[#D4AF6A]/45 rounded-2xl shadow-[0_16px_36px_rgba(184,147,95,0.25)] overflow-hidden p-1.5 space-y-1 backdrop-blur-md"
             id="mobile-category-dropdown-menu"
           >
-            <div className="px-3.5 py-2 text-[10px] font-black uppercase tracking-widest text-[#0F3524]/70 border-b border-[#D4AF6A]/25 flex items-center justify-between">
+            <div className="px-3.5 py-2 text-[10px] font-black text-[#0F3524]/70 border-b border-[#D4AF6A]/25 flex items-center justify-between">
               <span>Select Collection</span>
               <span className="text-[9px] font-bold text-[#ab841e]">{categories.length} Categories</span>
             </div>

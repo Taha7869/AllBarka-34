@@ -117,7 +117,7 @@ export default function MultiRecipientSection({
           <div>
             <label className="font-serif font-black text-sm text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7] cursor-pointer flex items-center gap-2">
               <span>Kai logon ko bhejna hai? (Bulk Gifting)</span>
-              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-[var(--color-gold,#B8935F)]/15 text-[var(--color-gold,#B8935F)]">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--color-gold,#B8935F)]/15 text-[var(--color-gold,#B8935F)]">
                 Multi-Address
               </span>
             </label>
@@ -211,7 +211,7 @@ export default function MultiRecipientSection({
                   <Building2 size={16} className="text-[var(--color-gold,#B8935F)]" />
                   <span>Corporate & Bulk Concierge Desk</span>
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--color-gold,#B8935F)] text-white">
+                <span className="text-[10px] font-black px-2 py-0.5 rounded bg-[var(--color-gold,#B8935F)] text-white">
                   20+ Addresses
                 </span>
               </div>
@@ -261,7 +261,7 @@ export default function MultiRecipientSection({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-[var(--color-ink,#1F120F)]/70 dark:text-[#FDFBF7]/70 mb-1">
+                    <label className="block text-[10px] font-black text-[var(--color-ink,#1F120F)]/70 dark:text-[#FDFBF7]/70 mb-1">
                       Recipient Name *
                     </label>
                     <input
@@ -275,7 +275,7 @@ export default function MultiRecipientSection({
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-[var(--color-ink,#1F120F)]/70 dark:text-[#FDFBF7]/70 mb-1">
+                    <label className="block text-[10px] font-black text-[var(--color-ink,#1F120F)]/70 dark:text-[#FDFBF7]/70 mb-1">
                       Phone Number *
                     </label>
                     <input
@@ -290,7 +290,7 @@ export default function MultiRecipientSection({
                   </div>
 
                   <div className="sm:col-span-2">
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-[var(--color-ink,#1F120F)]/70 dark:text-[#FDFBF7]/70 mb-1">
+                    <label className="block text-[10px] font-black text-[var(--color-ink,#1F120F)]/70 dark:text-[#FDFBF7]/70 mb-1">
                       Delivery Address *
                     </label>
                     <input
@@ -304,7 +304,7 @@ export default function MultiRecipientSection({
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-[var(--color-ink,#1F120F)]/70 dark:text-[#FDFBF7]/70 mb-1">
+                    <label className="block text-[10px] font-black text-[var(--color-ink,#1F120F)]/70 dark:text-[#FDFBF7]/70 mb-1">
                       City *
                     </label>
                     <input
@@ -324,7 +324,7 @@ export default function MultiRecipientSection({
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-[var(--color-ink,#1F120F)]/70 dark:text-[#FDFBF7]/70 mb-1">
+                    <label className="block text-[10px] font-black text-[var(--color-ink,#1F120F)]/70 dark:text-[#FDFBF7]/70 mb-1">
                       Gift Message (Optional)
                     </label>
                     <input

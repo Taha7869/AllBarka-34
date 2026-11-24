@@ -93,7 +93,7 @@ export default function BidBoxesSection({ onQuickView, compact = false }: BidBox
         {/* Section Header */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10">
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#072A20] px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-[#E6C786] mb-3 shadow-sm">
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#072A20] px-3.5 py-1.5 text-[11px] font-bold tracking-[0.2em] text-[#E6C786] mb-3 shadow-sm">
               <Sparkles size={13} /> Shadi, Nikkah, Umrah & Celebration Favors
             </div>
             <h2
@@ -143,7 +143,7 @@ export default function BidBoxesSection({ onQuickView, compact = false }: BidBox
             <button
               type="button"
               onClick={() => openCustomQuoteModal({ mode: globalMode, quantity: 100 })}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#8C6B1B] hover:bg-[#735613] text-white px-4 py-2.5 text-xs font-bold uppercase tracking-wider shadow-md transition-all"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#8C6B1B] hover:bg-[#735613] text-white px-4 py-2.5 text-xs font-bold shadow-md transition-all"
             >
               <MessageSquareQuote size={15} />
               Bargain Bulk Quote
@@ -222,7 +222,7 @@ export default function BidBoxesSection({ onQuickView, compact = false }: BidBox
                 <div className="flex-1 flex flex-col p-4 sm:p-5 space-y-3.5">
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="inline-flex items-center rounded-full bg-[#072A20]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#072A20]">
+                      <span className="inline-flex items-center rounded-full bg-[#072A20]/10 px-2.5 py-0.5 text-[10px] font-bold text-[#072A20]">
                         {cfg.occasionTag}
                       </span>
                       {onQuickView && (
@@ -414,7 +414,7 @@ export default function BidBoxesSection({ onQuickView, compact = false }: BidBox
                             quantity: 50,
                           });
                         }}
-                        className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#072A20] hover:bg-[#0D3F30] text-[#F7F1E3] py-2.5 px-3 text-xs font-bold uppercase tracking-wider transition-all shadow-sm cursor-pointer"
+                        className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#072A20] hover:bg-[#0D3F30] text-[#F7F1E3] py-2.5 px-3 text-xs font-bold transition-all shadow-sm cursor-pointer"
                       >
                         <MessageSquareQuote size={14} className="text-[#E6C786]" />
                         {t('catalog.requestQuote', 'Request Custom Quote')}
@@ -425,7 +425,7 @@ export default function BidBoxesSection({ onQuickView, compact = false }: BidBox
                           <button
                             type="button"
                             onClick={() => handleAddBidBox(product)}
-                            className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#072A20] hover:bg-[#0D3F30] text-[#F7F1E3] py-2.5 px-3 text-xs font-bold uppercase tracking-wider transition-all shadow-sm"
+                            className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#072A20] hover:bg-[#0D3F30] text-[#F7F1E3] py-2.5 px-3 text-xs font-bold transition-all shadow-sm"
                           >
                             {addedId === product.id ? (
                               <>
@@ -449,7 +449,7 @@ export default function BidBoxesSection({ onQuickView, compact = false }: BidBox
                                 quantity: selectedBoxes,
                               })
                             }
-                            className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#072A20] hover:bg-[#0D3F30] text-[#F7F1E3] py-2.5 px-3 text-xs font-bold uppercase tracking-wider transition-all shadow-sm cursor-pointer"
+                            className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#072A20] hover:bg-[#0D3F30] text-[#F7F1E3] py-2.5 px-3 text-xs font-bold transition-all shadow-sm cursor-pointer"
                           >
                             <MessageSquareQuote size={14} className="text-[#E6C786]" />
                             {t('catalog.requestQuote', 'Request Custom Quote')}{displayFilledPrice ? ` (Est. Rs. ${displayFilledPrice.toLocaleString()}/box)` : ''}
@@ -466,7 +466,7 @@ export default function BidBoxesSection({ onQuickView, compact = false }: BidBox
                               quantity: selectedBoxes,
                             })
                           }
-                          className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#8C6B1B]/50 bg-[#FAF6EE] hover:bg-[#8C6B1B] text-[#8C6B1B] hover:text-white py-2 px-3 text-[11px] font-bold uppercase tracking-wider transition-all"
+                          className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#8C6B1B]/50 bg-[#FAF6EE] hover:bg-[#8C6B1B] text-[#8C6B1B] hover:text-white py-2 px-3 text-[11px] font-bold transition-all"
                         >
                           <MessageSquareQuote size={13} />
                           Request Custom Quote / Offer Price

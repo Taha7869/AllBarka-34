@@ -254,7 +254,7 @@ export default function WholesaleDestination({ onQuickView }: WholesaleDestinati
 
                 {/* Tier / MOQ Badge */}
                 <div className="pointer-events-none absolute top-3 left-3 flex flex-wrap gap-1.5">
-                  <span className="rounded-full bg-[#072a20]/90 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#e6c786]">
+                  <span className="rounded-full bg-[#072a20]/90 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-[#e6c786]">
                     {isPackaging ? 'Tiered Wholesale' : 'MOQ = 1 Pack'}
                   </span>
                 </div>
@@ -317,7 +317,7 @@ export default function WholesaleDestination({ onQuickView }: WholesaleDestinati
                 {/* Packaging Volume Tiers preview or food pricing */}
                 {isPackaging && cfg && cfg.emptyTiers.length > 0 ? (
                   <div className="rounded-2xl border border-[var(--color-border)] p-3 bg-[var(--color-base)]/50 space-y-2">
-                    <span className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase">
+                    <span className="text-[11px] font-semibold text-[var(--color-text-muted)]">
                       Volume Tiers:
                     </span>
                     <div className="flex flex-wrap gap-1">

@@ -30,7 +30,7 @@ export const MenuItem = ({
       <motion.p
         transition={{ duration: 0.2 }}
         className={cn(
-          "text-xs font-bold uppercase tracking-wider transition-all duration-200 py-1.5 px-3.5 rounded-full select-none",
+          "text-xs font-bold transition-all duration-200 py-1.5 px-3.5 rounded-full select-none",
           active === item
             ? "text-[var(--color-ink)] bg-[var(--color-ink)]/10 shadow-xs border border-[#D4AF37]/40"
             : "text-[#D4AF37] hover:text-[var(--color-ink)] hover:bg-[var(--color-ink)]/5"

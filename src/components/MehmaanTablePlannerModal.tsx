@@ -265,7 +265,7 @@ export default function MehmaanTablePlannerModal({ isOpen, onClose }: MehmaanTab
               <Users size={20} />
             </div>
             <div>
-              <span className="text-[10px] font-semibold tracking-widest uppercase text-[#043327] dark:text-emerald-400">
+              <span className="text-[10px] font-semibold text-[#043327] dark:text-emerald-400">
                 {t('mehmaan.eyebrow', 'Hosting & Dastarkhwan Serving Guide')}
               </span>
               <h2 id={titleId} className="text-xl font-serif font-bold text-[#120F17] dark:text-[#FAF9F5]">
@@ -287,7 +287,7 @@ export default function MehmaanTablePlannerModal({ isOpen, onClose }: MehmaanTab
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
           {/* Guest Count Selector */}
           <section className="bg-white dark:bg-zinc-800/80 p-4 rounded-2xl border border-[#D4AF37]/20 shadow-xs">
-            <label htmlFor="mehmaan-guests-range" className="block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-2">
+            <label htmlFor="mehmaan-guests-range"className="block text-xs font-semibold text-neutral-600 dark:text-neutral-300 mb-2">
               {t('mehmaan.guestCount', 'Number of Guests')}: <span className="text-[#043327] dark:text-emerald-400 font-bold text-base">{guests}</span>
             </label>
             <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -320,7 +320,7 @@ export default function MehmaanTablePlannerModal({ isOpen, onClose }: MehmaanTab
 
           {/* Table Setting & Occasion Selector */}
           <section>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-2">
+            <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-300 mb-2">
               {t('mehmaan.setting', 'Table Occasion & Setting')}
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -363,7 +363,7 @@ export default function MehmaanTablePlannerModal({ isOpen, onClose }: MehmaanTab
           {/* Budget Band Selector (Kifayati, Standard, Premium) */}
           <section className="bg-white dark:bg-zinc-800/80 p-4 rounded-2xl border border-[#D4AF37]/20 shadow-xs">
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300">
+              <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-300">
                 {t('mehmaan.budget.title', 'Budget Tier')}
               </label>
             </div>
@@ -413,7 +413,7 @@ export default function MehmaanTablePlannerModal({ isOpen, onClose }: MehmaanTab
           <section className="bg-[#FAF9F5] dark:bg-zinc-800/40 border border-[#D4AF37]/30 rounded-2xl p-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 border-b border-[#D4AF37]/20 pb-2 gap-1">
               <div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-[#043327] dark:text-emerald-400 block">
+                <span className="text-xs font-semibold text-[#043327] dark:text-emerald-400 block">
                   {t('mehmaan.servingAssumptions', 'Recommended boutique guidelines (editable)')}
                 </span>
                 <span className="text-[10px] text-neutral-500 italic">
@@ -427,7 +427,7 @@ export default function MehmaanTablePlannerModal({ isOpen, onClose }: MehmaanTab
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
               {/* Nuts Serving & Variety */}
               <div className="bg-white dark:bg-zinc-800 p-3 rounded-xl border border-neutral-200 dark:border-zinc-700 space-y-2">
-                <span className="text-[10px] uppercase font-bold text-neutral-400 block">{t('nav.dryFruits', 'Roasted Nuts')}</span>
+                <span className="text-[10px] font-bold text-neutral-400 block">{t('nav.dryFruits','Roasted Nuts')}</span>
                 <span className="text-sm font-bold text-[#120F17] dark:text-[#FAF9F5] block">{plan.breakdown.nutsGrams}g</span>
                 <div className="flex items-center justify-center gap-1">
                   <input
@@ -465,7 +465,7 @@ export default function MehmaanTablePlannerModal({ isOpen, onClose }: MehmaanTab
 
               {/* Dates Serving & Variety */}
               <div className="bg-white dark:bg-zinc-800 p-3 rounded-xl border border-neutral-200 dark:border-zinc-700 space-y-2">
-                <span className="text-[10px] uppercase font-bold text-neutral-400 block">{t('nav.dates', 'Select Dates')}</span>
+                <span className="text-[10px] font-bold text-neutral-400 block">{t('nav.dates','Select Dates')}</span>
                 <span className="text-sm font-bold text-[#120F17] dark:text-[#FAF9F5] block">{plan.breakdown.datesGrams}g</span>
                 <div className="flex items-center justify-center gap-1">
                   <input
@@ -503,7 +503,7 @@ export default function MehmaanTablePlannerModal({ isOpen, onClose }: MehmaanTab
 
               {/* Dried Fruits Serving & Variety */}
               <div className="bg-white dark:bg-zinc-800 p-3 rounded-xl border border-neutral-200 dark:border-zinc-700 space-y-2">
-                <span className="text-[10px] uppercase font-bold text-neutral-400 block">{t('driedFruits', 'Dried Fruits')}</span>
+                <span className="text-[10px] font-bold text-neutral-400 block">{t('driedFruits','Dried Fruits')}</span>
                 <span className="text-sm font-bold text-[#120F17] dark:text-[#FAF9F5] block">{plan.breakdown.driedFruitsGrams}g</span>
                 <div className="flex items-center justify-center gap-1">
                   <input
@@ -544,7 +544,7 @@ export default function MehmaanTablePlannerModal({ isOpen, onClose }: MehmaanTab
           {/* Curated Recommendations List */}
           <section>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300">
+              <h3 className="text-xs font-semibold text-neutral-600 dark:text-neutral-300">
                 {t('mehmaan.recommendedItems', 'Curated Harvest Selections')}
               </h3>
               <span className="text-[11px] text-[#043327] dark:text-emerald-400 font-medium">
@@ -583,7 +583,7 @@ export default function MehmaanTablePlannerModal({ isOpen, onClose }: MehmaanTab
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] uppercase font-bold text-[#043327] dark:text-emerald-400 tracking-wider">
+                            <span className="text-[10px] font-bold text-[#043327] dark:text-emerald-400">
                               {item.category === 'nuts'
                                 ? t('nav.dryFruits', 'Nuts')
                                 : item.category === 'dates'
@@ -649,7 +649,7 @@ export default function MehmaanTablePlannerModal({ isOpen, onClose }: MehmaanTab
         {/* Footer with Subtotal & Add All CTA */}
         <footer className="p-4 sm:p-6 border-t border-[#D4AF37]/20 bg-white/60 dark:bg-zinc-800/60 backdrop-blur-md flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
-            <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-500 block">
+            <span className="text-[10px] font-bold text-neutral-500 block">
               {t('mehmaan.estimatedTotal', 'Estimated Table Total')}
             </span>
             <span className="text-xl font-serif font-bold text-[#043327] dark:text-emerald-400">

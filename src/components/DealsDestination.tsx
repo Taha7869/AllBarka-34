@@ -208,7 +208,7 @@ export default function DealsDestination({ onQuickView }: DealsDestinationProps)
                   {/* Authentic Tags & Badges only */}
                   <div className="pointer-events-none absolute top-3 left-3 flex flex-wrap gap-1.5">
                     {product.badge && (
-                      <span className="rounded-full bg-[#c7982f] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#072a20] shadow-sm">
+                      <span className="rounded-full bg-[#c7982f] px-2.5 py-1 text-[10px] font-bold text-[#072a20] shadow-sm">
                         {product.badge}
                       </span>
                     )}

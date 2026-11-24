@@ -361,7 +361,7 @@ export default function BoutiqueSelections({
         {/* Header: Eyebrow, Title, Subtitle, and Autoplay Toggle */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between text-start">
           <div className="max-w-2xl">
-            <div className="mb-2.5 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-[var(--color-accent-text)]">
+            <div className="mb-2.5 inline-flex items-center gap-2 text-[10px] font-semibold tracking-[0.25em] text-[var(--color-accent-text)]">
               <Sparkles size={13} aria-hidden="true" />
               <span>{t('boutique.showcaseEyebrow', 'Single Sourced & Hand Picked')}</span>
             </div>
@@ -407,7 +407,7 @@ export default function BoutiqueSelections({
 
             <Link
               to={currentTab.destination}
-              className="focus-ring inline-flex max-w-full min-h-11 items-center gap-2 rounded-full border border-transparent px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--color-accent-text)] transition-colors hover:text-[#092E23] dark:hover:text-[#F6F1EA]"
+              className="focus-ring inline-flex max-w-full min-h-11 items-center gap-2 rounded-full border border-transparent px-3 py-1.5 text-xs font-semibold text-[var(--color-accent-text)] transition-colors hover:text-[#092E23] dark:hover:text-[#F6F1EA]"
             >
               <span>{t('boutique.viewCollection', 'View collection')}</span>
               <ArrowRight size={13} className={isRtl ? 'rotate-180' : ''} aria-hidden="true" />

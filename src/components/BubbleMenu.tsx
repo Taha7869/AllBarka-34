@@ -343,7 +343,7 @@ export default function BubbleMenu({
 
                   {/* Header / Eyebrow */}
                   <div className="px-3 py-1.5 border-b border-[#29231D]/10 dark:border-[#F6F1EA]/10 mb-1">
-                    <span className="block text-[9px] font-bold uppercase tracking-[0.22em] text-[#806326] dark:text-[#C7982F]">
+                    <span className="block text-[9px] font-bold tracking-[0.22em] text-[#806326] dark:text-[#C7982F]">
                       {t(item.labelKey, item.defaultLabel)}
                     </span>
                   </div>

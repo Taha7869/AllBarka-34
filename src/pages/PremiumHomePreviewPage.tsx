@@ -47,7 +47,7 @@ export default function PremiumHomePreviewPage() {
       <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 lg:px-10">
         <div className="flex flex-col items-start justify-between gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface,#FFFCF7)] p-5 sm:flex-row sm:items-center">
           <div className="space-y-1">
-            <span className="inline-block rounded-full border border-[#C7982F]/45 bg-[#C7982F]/10 px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-[var(--color-accent-text,#806326)]">
+            <span className="inline-block rounded-full border border-[#C7982F]/45 bg-[#C7982F]/10 px-3 py-0.5 text-[10px] font-bold text-[var(--color-accent-text,#806326)]">
               {bar.badge}
             </span>
             <p dir="auto" className="text-xs sm:text-sm text-[var(--color-text-secondary,#635B52)]">

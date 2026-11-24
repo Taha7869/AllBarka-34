@@ -537,7 +537,7 @@ export default function CustomQuoteModal() {
         {/* Luxury Emerald Header */}
         <div className="custom-quote-header bg-gradient-to-r from-[#072A20] via-[#0B3B2D] to-[#072A20] px-6 py-5 text-[#F7F1E3] border-b border-[#D4AF6A]/30 flex items-start justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#D4AF6A]/20 border border-[#D4AF6A]/40 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#E6C786] mb-2">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#D4AF6A]/20 border border-[#D4AF6A]/40 px-3 py-1 text-[11px] font-semibold tracking-[0.18em] text-[#E6C786] mb-2">
               <Sparkles size={12} /> {q('eyebrow')}
             </div>
             <h2 id="custom-quote-modal-title" className="font-serif text-xl sm:text-2xl font-bold text-white">
@@ -566,7 +566,7 @@ export default function CustomQuoteModal() {
                 <CheckCircle2 size={30} className="text-[#127A4D]" />
               </div>
               <div className="space-y-1">
-                <span className="text-xs uppercase tracking-[0.2em] font-bold text-[var(--color-accent-text)]">
+                <span className="text-xs tracking-[0.2em] font-bold text-[var(--color-accent-text)]">
                   {q('savedRef', { id: submittedQuote.quoteId })}
                 </span>
                 <h3 className="font-serif text-2xl font-bold text-[var(--color-text-primary)]">
@@ -641,7 +641,7 @@ export default function CustomQuoteModal() {
                 <button
                   type="button"
                   onClick={() => setSubmittedQuote(null)}
-                  className="rounded-xl border border-[#072A20]/20 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-primary)] hover:bg-[#072A20]/5"
+                  className="rounded-xl border border-[#072A20]/20 px-4 py-3 text-xs font-semibold text-[var(--color-text-primary)] hover:bg-[#072A20]/5"
                 >
                   {q('edit')}
                 </button>
@@ -704,7 +704,7 @@ export default function CustomQuoteModal() {
                 <div className="rounded-2xl border border-[#D4AF6A]/60 bg-[var(--color-base)] p-3.5 text-xs text-[var(--color-text-primary)] flex items-start gap-2.5 shadow-xs">
                   <Info size={17} className="text-[var(--color-accent-text)] shrink-0 mt-0.5" />
                   <div>
-                    <strong className="block font-bold text-[var(--color-accent-text)] uppercase tracking-wider text-[11px]">
+                    <strong className="block font-bold text-[var(--color-accent-text)] text-[11px]">
                       {q('tabarrukTitle')}
                     </strong>
                     <span className="text-[12px] leading-relaxed text-[var(--color-text-secondary)]">
@@ -717,7 +717,7 @@ export default function CustomQuoteModal() {
               {/* 1. Product & Variant Selection */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="sm:col-span-2">
-                  <label htmlFor="quote-product-select" className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-primary)] mb-1.5">
+                  <label htmlFor="quote-product-select"className="block text-xs font-bold text-[var(--color-text-primary)] mb-1.5">
                     {q('product')}
                   </label>
                   <select
@@ -768,7 +768,7 @@ export default function CustomQuoteModal() {
                 </div>
 
                 <div>
-                  <label htmlFor="quote-variant-select" className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-primary)] mb-1.5">
+                  <label htmlFor="quote-variant-select"className="block text-xs font-bold text-[var(--color-text-primary)] mb-1.5">
                     {q('variant')}
                   </label>
                   <select
@@ -806,7 +806,7 @@ export default function CustomQuoteModal() {
 
               {/* 2. Packaging Mode Selection */}
               <div>
-                <span className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-primary)] mb-1.5">
+                <span className="block text-xs font-bold text-[var(--color-text-primary)] mb-1.5">
                   {q('packagingMode')}
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -870,7 +870,7 @@ export default function CustomQuoteModal() {
               {(mode === 'filled' || mode === 'custom') && (
                 <div className="rounded-2xl border border-[#D4AF6A]/40 bg-[var(--color-surface)]/80 dark:bg-[#192720]/80 p-4 space-y-3 shadow-xs">
                   <div className="flex items-center justify-between gap-2">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-primary)] dark:text-[#E6C786]">
+                    <label className="block text-xs font-bold text-[var(--color-text-primary)] dark:text-[#E6C786]">
                       {t('quote.netFillingWeight', 'Net Filling Weight per Box')}
                     </label>
                     <span className="text-[11px] text-[var(--color-text-secondary)] dark:text-[#a3b8af]">
@@ -967,7 +967,7 @@ export default function CustomQuoteModal() {
               {/* 3. Quantity & Authoritative MOQ */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="quote-quantity-input" className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-primary)] mb-1.5">
+                  <label htmlFor="quote-quantity-input"className="block text-xs font-bold text-[var(--color-text-primary)] mb-1.5">
                     <Layers size={13} className="inline mr-1 text-[var(--color-accent-text)]" />
                     {q('quantity', { unit: resolution.quantityUnit === 'packs' ? q('packUnit', { count: resolution.piecesPerPack }) : q(resolution.quantityUnit === 'sets' ? 'sets' : 'pieces') })}
                   </label>
@@ -1039,7 +1039,7 @@ export default function CustomQuoteModal() {
                 {/* 4. Event / Occasion Type & Target Event Date */}
                 <div className="space-y-3">
                   <div>
-                    <label htmlFor="quote-event-type" className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-primary)] mb-1.5">
+                    <label htmlFor="quote-event-type"className="block text-xs font-bold text-[var(--color-text-primary)] mb-1.5">
                       <Calendar size={13} className="inline mr-1 text-[var(--color-accent-text)]" />
                       {q('event')}
                     </label>
@@ -1059,7 +1059,7 @@ export default function CustomQuoteModal() {
                   </div>
 
                   <div>
-                    <label htmlFor="quote-event-date" className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-primary)] mb-1">
+                    <label htmlFor="quote-event-date"className="block text-xs font-bold text-[var(--color-text-primary)] mb-1">
                       <Clock size={13} className="inline mr-1 text-[var(--color-accent-text)]" />
                       {q('optionalDate')}
                     </label>
@@ -1105,7 +1105,7 @@ export default function CustomQuoteModal() {
               {/* 5. Preferred Fillings Selection (when mode !== 'empty') */}
               {mode !== 'empty' && (
                 <div className="rounded-2xl border border-[#D4AF6A]/50 bg-[var(--color-surface)] p-3.5 space-y-2.5">
-                  <span className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-primary)]">
+                  <span className="block text-xs font-bold text-[var(--color-text-primary)]">
                     {q('fillings')}
                   </span>
                   <div className="space-y-1.5">
@@ -1144,7 +1144,7 @@ export default function CustomQuoteModal() {
 
               {/* 6. Custom Branding, Monogram & Card Message */}
               <div className="rounded-2xl border border-[#D4AF6A]/50 bg-[var(--color-surface)] p-3.5 space-y-3">
-                <span className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-primary)]">
+                <span className="block text-xs font-bold text-[var(--color-text-primary)]">
                   {q('personalization')}
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1200,7 +1200,7 @@ export default function CustomQuoteModal() {
               {/* 7. Target Budget / Offer Price (Bargain Desk) */}
               <div className="rounded-2xl border border-[#D4AF6A]/60 bg-[var(--color-surface)] p-3.5 shadow-sm space-y-2">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="quote-target-budget" className="text-xs font-bold uppercase tracking-wider text-[var(--color-accent-text)]">
+                  <label htmlFor="quote-target-budget"className="text-xs font-bold text-[var(--color-accent-text)]">
                     <Tag size={13} className="inline mr-1" />
                     {q('targetBudget')}
                   </label>
@@ -1303,7 +1303,7 @@ export default function CustomQuoteModal() {
               {/* 8. Patron Contact Details */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label htmlFor="quote-customer-name" className="block text-[11px] font-bold uppercase tracking-wider text-[var(--color-text-primary)] mb-1">
+                  <label htmlFor="quote-customer-name"className="block text-[11px] font-bold text-[var(--color-text-primary)] mb-1">
                     {q('name')}
                   </label>
                   <input
@@ -1317,7 +1317,7 @@ export default function CustomQuoteModal() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="quote-customer-phone" className="block text-[11px] font-bold uppercase tracking-wider text-[var(--color-text-primary)] mb-1">
+                  <label htmlFor="quote-customer-phone"className="block text-[11px] font-bold text-[var(--color-text-primary)] mb-1">
                     {q('phone')}
                   </label>
                   <input
@@ -1331,7 +1331,7 @@ export default function CustomQuoteModal() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="quote-customer-city" className="block text-[11px] font-bold uppercase tracking-wider text-[var(--color-text-primary)] mb-1">
+                  <label htmlFor="quote-customer-city"className="block text-[11px] font-bold text-[var(--color-text-primary)] mb-1">
                     {q('city')}
                   </label>
                   <input

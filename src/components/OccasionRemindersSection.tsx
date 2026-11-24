@@ -147,7 +147,7 @@ export default function OccasionRemindersSection() {
             <CalendarHeart size={18} />
           </div>
           <div>
-            <h4 className="text-sm font-black uppercase tracking-wider text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">
+            <h4 className="text-sm font-black text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">
               {t('reminders.title', 'Meri Tareekhain (Occasion Reminders)')}
             </h4>
             <p className="text-[10px] text-neutral-500 dark:text-neutral-400">
@@ -172,7 +172,7 @@ export default function OccasionRemindersSection() {
       {showAddForm && (
         <form onSubmit={handleCreate} className="p-4 rounded-xl bg-[var(--color-cream,#FAF9F5)] dark:bg-[#222A28] border border-[var(--color-gold,#B8935F)]/30 space-y-3.5">
           <div className="flex items-center justify-between">
-            <h5 className="text-xs font-bold uppercase tracking-wider text-[#042821] dark:text-[#FAF9F5]">
+            <h5 className="text-xs font-bold text-[#042821] dark:text-[#FAF9F5]">
               {t('reminders.addNew', 'Add New Occasion')}
             </h5>
             <button

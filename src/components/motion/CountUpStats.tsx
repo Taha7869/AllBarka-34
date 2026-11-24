@@ -64,7 +64,7 @@ function StatItem({ stat, active }: { stat: StatConfig; active: boolean }) {
       >
         <bdi dir="ltr">{count.toLocaleString()}{stat.suffix}</bdi>
       </span>
-      <span className="text-xs sm:text-sm font-medium uppercase tracking-widest text-[var(--color-text-secondary)]">
+      <span className="text-xs sm:text-sm font-medium text-[var(--color-text-secondary)]">
         {t(stat.labelKey, stat.labelKey)}
       </span>
     </div>

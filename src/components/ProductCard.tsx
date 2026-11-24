@@ -74,11 +74,11 @@ export default function ProductCard({
     >
       {/* Top Meta Line */}
       <div className="table-card-meta mb-1 flex min-h-11 items-center gap-1.5 sm:gap-2">
-        <span dir="auto" className="min-w-0 flex-1 truncate text-[9px] font-sans font-medium uppercase tracking-[0.1em] text-[var(--color-accent-text)]">
+        <span dir="auto" className="min-w-0 flex-1 truncate text-[11px] font-sans font-medium text-[var(--color-accent-text)]">
           {getLocalized(product, 'origin', language)}
         </span>
         {getLocalized(product, 'tag', language) && (
-          <span dir="auto" className="hidden sm:inline-block max-w-[42%] truncate rounded-full border border-[var(--color-border-accent)] bg-[var(--color-base)] px-2.5 py-1 text-[8px] font-sans font-medium uppercase tracking-[0.08em] text-[var(--color-accent-text)]">
+          <span dir="auto" className="hidden sm:inline-block max-w-[42%] truncate rounded-full border border-[var(--color-border-accent)] bg-[var(--color-base)] px-2 py-0.5 text-[10px] font-sans font-medium text-[var(--color-accent-text)]">
             {getLocalized(product, 'tag', language) === 'Bestseller' && language !== 'en' ? t('slider.bestseller') : getLocalized(product, 'tag', language)}
           </span>
         )}
@@ -132,7 +132,7 @@ export default function ProductCard({
                 e.stopPropagation();
                 setSelectedWeight(w);
               }}
-              className={`focus-ring flex min-h-[44px] shrink-0 sm:flex-1 sm:min-w-[54px] cursor-pointer items-center justify-center rounded-lg border px-2.5 py-1 text-[10px] font-sans font-medium uppercase tracking-[0.04em] transition-colors duration-200 whitespace-nowrap ${
+              className={`focus-ring flex min-h-[44px] shrink-0 sm:flex-1 sm:min-w-[54px] cursor-pointer items-center justify-center rounded-lg border px-2.5 py-1 text-[11px] font-sans font-medium transition-colors duration-200 whitespace-nowrap ${
                 selectedWeight === w
                   ? 'border-[#1E3A2B] bg-[#1E3A2B] text-[#FFFCF7] dark:border-[#C7982F]/50'
                   : 'border-[var(--color-border)] bg-[var(--color-base)] text-[var(--color-text-primary)] hover:border-[var(--color-accent)]'
@@ -148,7 +148,7 @@ export default function ProductCard({
         <div className={separateActions ? 'table-card-cta' : 'flex items-center justify-between gap-2 sm:flex-col sm:items-stretch sm:gap-3'}>
           <div className="table-card-cta-price flex min-w-0 items-end justify-between gap-2">
             <div className="flex min-w-0 flex-col text-start">
-              <span dir="auto" className="hidden sm:block text-[9px] font-sans font-medium uppercase tracking-[0.12em] text-[var(--color-text-secondary)]">
+              <span dir="auto" className="hidden sm:block text-[11px] font-sans font-medium text-[var(--color-text-secondary)]">
                 {t('price', 'Price')}
               </span>
               <span className="table-card-price truncate font-serif text-lg sm:text-2xl font-medium leading-tight tracking-tight text-[var(--color-text-price)]">
@@ -187,7 +187,7 @@ export default function ProductCard({
                 if (onAddToCart) onAddToCart(product.id, selectedWeight);
                 else addToCart(product, selectedWeight, minUnits);
               }}
-              className="focus-ring flex min-h-[44px] min-w-[44px] sm:min-h-[46px] sm:w-full cursor-pointer items-center justify-center gap-1.5 sm:gap-2 rounded-xl border border-[#C7982F]/35 bg-[#1E3A2B] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.05em] text-[#FFFCF7] transition-colors duration-200 hover:border-[#C7982F]/70 hover:bg-[#14281E]"
+              className="focus-ring flex min-h-[44px] min-w-[44px] sm:min-h-[46px] sm:w-full cursor-pointer items-center justify-center gap-1.5 sm:gap-2 rounded-xl border border-[#C7982F]/35 bg-[#1E3A2B] px-3 py-2 text-xs font-semibold text-[#FFFCF7] transition-colors duration-200 hover:border-[#C7982F]/70 hover:bg-[#14281E]"
             >
               <span className="sm:hidden">{language === 'ur' ? 'شامل' : language === 'ar' ? 'أضف' : 'Add'}</span>
               <span className="hidden sm:inline">{t('addToCart')}</span>

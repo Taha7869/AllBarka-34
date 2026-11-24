@@ -100,7 +100,7 @@ export default function ShopTheTableModal({ isOpen, onClose }: { isOpen: boolean
         {/* Header */}
         <header className="flex items-center justify-between px-6 py-4 border-b border-[#D4AF37]/20 bg-white/50 dark:bg-zinc-800/50 backdrop-blur-md">
           <div>
-            <span className="text-[10px] font-semibold tracking-widest uppercase text-[#043327] dark:text-emerald-400">
+            <span className="text-[10px] font-semibold text-[#043327] dark:text-emerald-400">
               {t('table.eyebrow', 'The AllBarka Dastarkhwan')}
             </span>
             <h2 id={titleId} className="text-xl font-serif font-bold text-[#120F17] dark:text-[#FAF9F5]">
@@ -168,7 +168,7 @@ export default function ShopTheTableModal({ isOpen, onClose }: { isOpen: boolean
                       }}
                     />
                   </div>
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-[#043327] dark:text-emerald-400 block mb-1">
+                  <span className="text-[10px] font-bold text-[#043327] dark:text-emerald-400 block mb-1">
                     {getLocalized(activeProduct, 'origin', language) || '—'}
                   </span>
                   <h3 className="text-lg font-serif font-bold text-[#120F17] dark:text-[#FAF9F5]">
@@ -181,7 +181,7 @@ export default function ShopTheTableModal({ isOpen, onClose }: { isOpen: boolean
 
                 <div className="pt-4 mt-4 border-t border-[#D4AF37]/20 flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] uppercase font-semibold text-neutral-400 block">
+                    <span className="text-[10px] font-semibold text-neutral-400 block">
                       Starting price ({primaryWeight})
                     </span>
                     <span className="text-base font-bold text-[#043327] dark:text-emerald-400">
@@ -218,7 +218,7 @@ export default function ShopTheTableModal({ isOpen, onClose }: { isOpen: boolean
 
         {/* Accessible Caption / Item List */}
         <footer className="px-6 py-3 border-t border-[#D4AF37]/20 bg-neutral-50 dark:bg-zinc-800/50 flex flex-wrap items-center gap-2 text-xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+          <span className="text-[10px] font-bold text-neutral-500">
             {t('table.itemsOnTable', 'Featured on this Table')}:
           </span>
           {TABLE_HOTSPOTS.map((hotspot) => {

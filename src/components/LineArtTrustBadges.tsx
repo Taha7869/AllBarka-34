@@ -28,10 +28,10 @@ export default function LineArtTrustBadges() {
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" className="animate-pulse" />
           <path d="M12 8a4 4 0 0 0-4 4c0 3 4 5 4 5s4-2 4-5a4 4 0 0 0-4-4z" />
         </svg>
-        <span className="text-[9px] font-black uppercase tracking-[0.15em] text-brand-cream block text-center">
+        <span className="text-[9px] font-black tracking-[0.15em] text-brand-cream block text-center">
           100% Organic
         </span>
-        <span className="text-[8px] text-brand-gold/80 uppercase font-mono block mt-0.5 text-center">
+        <span className="text-[10px] text-brand-gold/80 block mt-0.5 text-center">
           Grade-A Sorted →
         </span>
       </button>
@@ -58,10 +58,10 @@ export default function LineArtTrustBadges() {
           <circle cx="5.5" cy="18.5" r="2.5" className="animate-ping" />
           <circle cx="18.5" cy="18.5" r="2.5" />
         </svg>
-        <span className="text-[9px] font-black uppercase tracking-[0.15em] text-brand-cream block text-center">
+        <span className="text-[9px] font-black tracking-[0.15em] text-brand-cream block text-center">
           Same-Day Lahore
         </span>
-        <span className="text-[8px] text-brand-gold/80 uppercase font-mono block mt-0.5 text-center">
+        <span className="text-[10px] text-brand-gold/80 block mt-0.5 text-center">
           Express Dispatch →
         </span>
       </button>
@@ -87,10 +87,10 @@ export default function LineArtTrustBadges() {
           <path d="m3.3 7 8.7 5 8.7-5" />
           <path d="M12 22V12" />
         </svg>
-        <span className="text-[9px] font-black uppercase tracking-[0.15em] text-brand-cream block text-center">
+        <span className="text-[9px] font-black tracking-[0.15em] text-brand-cream block text-center">
           Gold Casket
         </span>
-        <span className="text-[8px] text-brand-gold/80 uppercase font-mono block mt-0.5 text-center">
+        <span className="text-[10px] text-brand-gold/80 block mt-0.5 text-center">
           Thermal Sealed →
         </span>
       </button>

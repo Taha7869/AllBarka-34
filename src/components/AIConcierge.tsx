@@ -238,7 +238,7 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
                   <span className="font-serif font-black text-xs sm:text-sm tracking-tight text-[var(--color-accent-text,#806326)] leading-none motion-safe:group-hover:scale-105 transition-transform">
                     AB
                   </span>
-                  <span className="text-[6.5px] font-black uppercase tracking-widest text-[var(--color-ink,#1A1A1A)] leading-none mt-0.5 opacity-90 flex items-center gap-0.5">
+                  <span className="text-[6.5px] font-black text-[var(--color-ink,#1A1A1A)] leading-none mt-0.5 opacity-90 flex items-center gap-0.5">
                     <Sparkles size={6} className="text-[var(--color-gold,#B8935F)]" />
                     AI
                   </span>
@@ -319,7 +319,7 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
                     {/* Curated Product Recommendations */}
                     {msg.recommendations && msg.recommendations.length > 0 && (
                       <div className="mt-3 pt-3 border-t border-white/20 flex flex-col gap-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-gold-light,#D4B483)]">
+                        <span className="text-[10px] font-bold text-[var(--color-gold-light,#D4B483)]">
                           {t('concierge.recommendedProducts', 'Curated Selections')}
                         </span>
                         <div className="flex flex-col gap-2">
@@ -365,7 +365,7 @@ export default function AIConcierge({ hasCartBar = false, hide = false, onOpenCh
                       <div className="mt-3 pt-3 border-t border-white/20 flex flex-col gap-2">
                         <div className="p-3 rounded-xl bg-white/10 border border-[var(--color-gold-light,#D4B483)]/40 flex flex-col gap-1.5 text-white">
                           <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-gold-light,#D4B483)] flex items-center gap-1">
+                            <span className="text-[10px] font-bold text-[var(--color-gold-light,#D4B483)] flex items-center gap-1">
                               <Sparkles size={11} /> {t('concierge.inquiryDraft', 'Custom Quote Draft')}
                             </span>
                             {msg.inquiryPrefill.isUrgentEvent && (

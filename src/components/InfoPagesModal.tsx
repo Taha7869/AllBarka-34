@@ -240,7 +240,7 @@ export default function InfoPagesModal({
               <AllBarkaCrestVector />
             </div>
             <div>
-              <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.25em] text-[var(--color-gold,#B8935F)] block leading-none">
+              <span className="text-[10px] sm:text-[11px] font-black tracking-[0.25em] text-[var(--color-gold,#B8935F)] block leading-none">
                 AllBarka Boutique Journal
               </span>
               <h2 className="text-base sm:text-lg font-serif font-black text-[var(--color-ink,#1A1A1A)] tracking-wide mt-0.5">
@@ -261,7 +261,7 @@ export default function InfoPagesModal({
         {/* ── Navigation Tabs Bar ── */}
         <div className="px-4 sm:px-8 py-3 bg-[var(--color-cream,#FAF9F5)] border-b border-[var(--color-gold,#B8935F)]/20 flex items-center gap-2 overflow-x-auto no-scrollbar">
           <div className="flex items-center gap-1.5 shrink-0 pr-2 border-r border-[var(--color-gold,#B8935F)]/30">
-            <span className="text-[10px] font-black uppercase tracking-wider text-[var(--color-gold,#B8935F)] px-2 py-1 rounded-md bg-[var(--color-surface,#FFFFFF)] border border-[var(--color-gold,#B8935F)]/30">
+            <span className="text-[10px] font-black text-[var(--color-gold,#B8935F)] px-2 py-1 rounded-md bg-[var(--color-surface,#FFFFFF)] border border-[var(--color-gold,#B8935F)]/30">
               Discover:
             </span>
             {discoverTabs.map((tab) => {
@@ -283,7 +283,7 @@ export default function InfoPagesModal({
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0 pl-1">
-            <span className="text-[10px] font-black uppercase tracking-wider text-[var(--color-gold,#B8935F)] px-2 py-1 rounded-md bg-[var(--color-surface,#FFFFFF)] border border-[var(--color-gold,#B8935F)]/30">
+            <span className="text-[10px] font-black text-[var(--color-gold,#B8935F)] px-2 py-1 rounded-md bg-[var(--color-surface,#FFFFFF)] border border-[var(--color-gold,#B8935F)]/30">
               Information:
             </span>
             {infoTabs.map((tab) => {
@@ -321,7 +321,7 @@ export default function InfoPagesModal({
                 <div className="w-8 h-8 rounded-full bg-[var(--color-cream,#FAF9F5)] text-[var(--color-gold,#B8935F)] flex items-center justify-center shrink-0 border border-[var(--color-gold,#B8935F)]/40 shadow-xs">
                   <IconComponent size={16} />
                 </div>
-                <span className="px-3 py-1 rounded-full text-[10.5px] font-black uppercase tracking-widest bg-[var(--color-cream,#FAF9F5)] text-[var(--color-gold,#B8935F)] border border-[var(--color-gold,#B8935F)]/40 shadow-xs">
+                <span className="px-3 py-1 rounded-full text-[10.5px] font-black bg-[var(--color-cream,#FAF9F5)] text-[var(--color-gold,#B8935F)] border border-[var(--color-gold,#B8935F)]/40 shadow-xs">
                   {current.badge}
                 </span>
                 <span className="text-xs text-[var(--color-ink-muted,#5A5A5A)] font-semibold hidden sm:inline">
@@ -346,7 +346,7 @@ export default function InfoPagesModal({
 
               {/* Highlights & Pillars Grid */}
               <div className="space-y-3 text-left">
-                <h4 className="text-xs font-black uppercase tracking-[0.2em] text-[var(--color-ink,#1A1A1A)] flex items-center gap-1.5">
+                <h4 className="text-xs font-black tracking-[0.2em] text-[var(--color-ink,#1A1A1A)] flex items-center gap-1.5">
                   <Award size={14} className="text-[var(--color-gold,#B8935F)]" />
                   Core Quality Pillars
                 </h4>
@@ -371,7 +371,7 @@ export default function InfoPagesModal({
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-10 bg-[var(--color-gold,#B8935F)] rounded-full shrink-0" />
                     <div>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-[var(--color-gold,#B8935F)] block">
+                      <span className="text-[10px] font-black text-[var(--color-gold,#B8935F)] block">
                         The AllBarka Guarantee
                       </span>
                       <p className="font-serif italic font-bold text-sm sm:text-base text-[var(--color-ink,#1A1A1A)]">
@@ -397,7 +397,7 @@ export default function InfoPagesModal({
               href={buildHumanSupportWhatsAppUrl()}
               target="_blank"
               rel="noreferrer"
-              className="flex-1 sm:flex-none px-4 py-2.5 rounded-full border border-[var(--color-gold,#B8935F)]/40 bg-[var(--color-surface,#FFFFFF)] text-[var(--color-ink,#1A1A1A)] hover:bg-[var(--color-cream,#FAF9F5)] hover:text-[var(--color-gold,#B8935F)] text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer shadow-xs"
+              className="flex-1 sm:flex-none px-4 py-2.5 rounded-full border border-[var(--color-gold,#B8935F)]/40 bg-[var(--color-surface,#FFFFFF)] text-[var(--color-ink,#1A1A1A)] hover:bg-[var(--color-cream,#FAF9F5)] hover:text-[var(--color-gold,#B8935F)] text-xs font-bold flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer shadow-xs"
             >
               <MessageCircle size={15} className="text-[var(--color-gold,#B8935F)]" />
               WhatsApp Help
@@ -413,7 +413,7 @@ export default function InfoPagesModal({
                   el?.scrollIntoView({ behavior: 'smooth' });
                 }
               }}
-              className="flex-1 sm:flex-none px-5 py-2.5 rounded-full bg-[var(--color-gold,#B8935F)] text-white hover:bg-[var(--color-gold-light,#D4B483)] text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 border border-[var(--color-gold,#B8935F)] shadow-xs cursor-pointer"
+              className="flex-1 sm:flex-none px-5 py-2.5 rounded-full bg-[var(--color-gold,#B8935F)] text-white hover:bg-[var(--color-gold-light,#D4B483)] text-xs font-bold flex items-center justify-center gap-2 transition-all active:scale-95 border border-[var(--color-gold,#B8935F)] shadow-xs cursor-pointer"
             >
               <span>Explore Boutique</span>
               <ArrowRight size={14} />

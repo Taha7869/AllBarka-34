@@ -27,7 +27,7 @@ export default function SquishSwitch({ checked, onChange, label }: SquishSwitchP
           transition={reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 480, damping: 28 }}
         />
       </span>
-      <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-text-secondary,#635B52)] group-hover:text-[var(--color-accent-text,#806326)]">{label}</span>
+      <span className="text-xs font-medium text-[var(--color-text-secondary,#635B52)] group-hover:text-[var(--color-accent-text,#806326)]">{label}</span>
     </button>
   );
 }

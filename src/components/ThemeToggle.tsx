@@ -30,7 +30,7 @@ export default function ThemeToggle({ className = '', showLabel = false }: Theme
         )}
       </div>
       {showLabel && (
-        <span className="ml-2 text-xs font-semibold tracking-wider uppercase text-[var(--color-ink)]">
+        <span className="ml-2 text-xs font-semibold text-[var(--color-ink)]">
           {themeLabel}
         </span>
       )}

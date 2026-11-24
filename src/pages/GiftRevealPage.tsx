@@ -63,7 +63,7 @@ export default function GiftRevealPage() {
     return (
       <main className="w-full min-h-[75vh] flex flex-col items-center justify-center p-6 bg-[#FAF9F5] dark:bg-zinc-950" aria-busy="true">
         <div className="w-12 h-12 rounded-full border-2 border-[#D4AF37]/30 border-t-[#D4AF37] animate-spin motion-reduce:animate-none mb-4" />
-        <span className="text-xs uppercase tracking-widest font-bold text-[#043327] dark:text-emerald-400">
+        <span className="text-xs font-bold text-[#043327] dark:text-emerald-400">
           {t('reveal.loading', 'Preparing your private gift presentation…')}
         </span>
       </main>
@@ -105,7 +105,7 @@ export default function GiftRevealPage() {
         {/* Brand Crest */}
         <div className="flex flex-col items-center mb-6">
           <AllBarkaCrestVector className="w-12 h-16 text-[#043327] dark:text-emerald-400 mb-2" />
-          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#043327] dark:text-emerald-400">
+          <span className="text-[10px] font-bold tracking-[0.3em] text-[#043327] dark:text-emerald-400">
             AllBarka Luxury Gifting
           </span>
         </div>
@@ -114,7 +114,7 @@ export default function GiftRevealPage() {
         <div className="relative bg-white dark:bg-zinc-900 border border-[#D4AF37]/40 rounded-3xl p-6 sm:p-10 shadow-2xl overflow-hidden">
           {/* Header Eyebrow */}
           <div className="text-center mb-6">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#043327]/10 dark:bg-emerald-950/40 text-[#043327] dark:text-emerald-300 border border-[#D4AF37]/30 mb-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold bg-[#043327]/10 dark:bg-emerald-950/40 text-[#043327] dark:text-emerald-300 border border-[#D4AF37]/30 mb-2">
               <Sparkles size={12} />
               {t('reveal.badge', 'Special Delivery for You')}
             </span>
@@ -150,7 +150,7 @@ export default function GiftRevealPage() {
               {/* Calligraphy Gift Card */}
               {reveal.giftMessage && (
                 <div className="p-6 rounded-2xl bg-[#FAF9F5] dark:bg-zinc-800 border-2 border-[#D4AF37]/30 relative shadow-inner">
-                  <span className="text-[10px] uppercase font-bold tracking-widest text-[#043327] dark:text-emerald-400 block mb-2">
+                  <span className="text-[10px] font-bold text-[#043327] dark:text-emerald-400 block mb-2">
                     {t('reveal.messageHeading', 'Personal Greeting')}
                   </span>
                   <p className="text-base font-serif italic text-neutral-800 dark:text-neutral-100 leading-relaxed whitespace-pre-line">
@@ -164,7 +164,7 @@ export default function GiftRevealPage() {
 
               {/* Curated Contents (ZERO PRICES) */}
               <div>
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-3 flex items-center gap-2">
+                <h3 className="text-xs font-semibold text-neutral-600 dark:text-neutral-300 mb-3 flex items-center gap-2">
                   <Package size={14} className="text-[#043327] dark:text-emerald-400" />
                   <span>{t('reveal.contentsHeading', 'Handcrafted Selections Included in Your Hamper')}</span>
                 </h3>

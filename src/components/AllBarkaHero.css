@@ -100,7 +100,7 @@
 .dark .heritage-hero:not(.premium-hero-stage) { background:#042821; }
 .heritage-hero:not(.premium-hero-stage)::before { content:''; position:absolute; inset:18px; border:1px solid #e4c78324; pointer-events:none; z-index:-1; }
 .heritage-hero:not(.premium-hero-stage) .heritage-hero-content { position:relative; min-width:0; padding-block:18px; }
-.table-eyebrow { display:flex; align-items:center; gap:12px; margin-bottom:28px; color:var(--table-gold); font-size:.68rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; }
+.table-eyebrow { display:flex; align-items:center; gap:12px; margin-bottom:28px; color:var(--table-gold); font-size:.78rem; font-weight:500; letter-spacing:0; }
 .table-eyebrow>span { font-size:1.25rem; line-height:1; }
 .heritage-hero:not(.premium-hero-stage) .heritage-hero-title { font-family:var(--localized-heading-font,var(--font-serif)); font-size:clamp(3rem,5.5vw,5.3rem); line-height:1.06; font-weight:400; letter-spacing:-.045em; text-wrap:balance; }
 .heritage-hero:not(.premium-hero-stage) .heritage-hero-title em { display:block; color:var(--table-gold); font-weight:400; }

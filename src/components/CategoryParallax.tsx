@@ -102,7 +102,7 @@ export default function CategoryParallax() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-6">
           <h3 className="text-2xl font-serif font-bold text-white mb-1 group-hover:text-[var(--color-gold,#B8935F)] transition-colors">{cat.title}</h3>
           <div className="flex items-center justify-between">
-            <p className="text-[11px] text-white/80 uppercase tracking-widest font-bold">{cat.subtitle}</p>
+            <p className="text-[11px] text-white/80 font-bold">{cat.subtitle}</p>
             <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:bg-[var(--color-gold,#B8935F)] transition-colors">
               <ArrowRight size={14} className="text-white" />
             </div>
@@ -149,7 +149,7 @@ export default function CategoryParallax() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-6">
                   <h3 className="text-xl font-serif font-bold text-white mb-1">{cat.title}</h3>
                   <div className="flex items-center justify-between">
-                    <p className="text-[10px] text-white/80 uppercase tracking-widest font-bold">{cat.subtitle}</p>
+                    <p className="text-[10px] text-white/80 font-bold">{cat.subtitle}</p>
                     <ArrowRight size={14} className="text-white opacity-80" />
                   </div>
                 </div>
@@ -158,7 +158,7 @@ export default function CategoryParallax() {
           </div>
 
           <div className="mt-4 flex justify-center">
-             <button onClick={() => navigate('/shop')} className="px-8 py-3 bg-[var(--color-base,#FAF9F5)] text-[var(--color-emerald-dark,#043327)] border border-[var(--color-gold,#B8935F)]/30 font-bold uppercase tracking-widest text-[11px] rounded-full hover:bg-[var(--color-gold,#B8935F)] hover:text-white transition-all shadow-sm hover:shadow-md">
+             <button onClick={() => navigate('/shop')} className="px-8 py-3 bg-[var(--color-base,#FAF9F5)] text-[var(--color-emerald-dark,#043327)] border border-[var(--color-gold,#B8935F)]/30 font-bold text-[11px] rounded-full hover:bg-[var(--color-gold,#B8935F)] hover:text-white transition-all shadow-sm hover:shadow-md">
                  View All Items
              </button>
           </div>
@@ -187,7 +187,7 @@ export default function CategoryParallax() {
       
       {!isMobile && !prefersReducedMotion && (
         <div className="w-full flex justify-center pb-20">
-             <button onClick={() => navigate('/shop')} className="px-8 py-3 bg-[var(--color-base,#FAF9F5)] text-[var(--color-emerald-dark,#043327)] border border-[var(--color-gold,#B8935F)]/30 font-bold uppercase tracking-widest text-[11px] rounded-full hover:bg-[var(--color-gold,#B8935F)] hover:text-white transition-all shadow-sm hover:shadow-md cursor-pointer">
+             <button onClick={() => navigate('/shop')} className="px-8 py-3 bg-[var(--color-base,#FAF9F5)] text-[var(--color-emerald-dark,#043327)] border border-[var(--color-gold,#B8935F)]/30 font-bold text-[11px] rounded-full hover:bg-[var(--color-gold,#B8935F)] hover:text-white transition-all shadow-sm hover:shadow-md cursor-pointer">
                  View All Items
              </button>
         </div>

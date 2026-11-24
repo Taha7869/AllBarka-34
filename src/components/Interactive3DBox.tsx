@@ -63,7 +63,7 @@ export default function Interactive3DBox({ onOrderNowClick }: Interactive3DBoxPr
         <div className="flex justify-between items-center mb-6 relative z-10">
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-[var(--color-gold,#B8935F)] animate-ping" />
-            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--color-gold,#B8935F)] font-sans">
+            <span className="text-[10px] font-black tracking-[0.25em] text-[var(--color-gold,#B8935F)] font-sans">
               3D Spatial Casket
             </span>
           </div>
@@ -76,7 +76,7 @@ export default function Interactive3DBox({ onOrderNowClick }: Interactive3DBoxPr
             >
               <RefreshCw size={12} />
             </button>
-            <span className="px-3 py-1 rounded-full bg-[var(--color-cream,#FAF9F5)] border border-[var(--color-gold,#B8935F)]/30 text-[9px] font-bold text-[var(--color-ink,#1A1A1A)] uppercase tracking-wider">
+            <span className="px-3 py-1 rounded-full bg-[var(--color-cream,#FAF9F5)] border border-[var(--color-gold,#B8935F)]/30 text-[9px] font-bold text-[var(--color-ink,#1A1A1A)]">
               {isUnboxed ? 'Open Vault Mode' : 'Interactive 3D Box'}
             </span>
           </div>
@@ -95,7 +95,7 @@ export default function Interactive3DBox({ onOrderNowClick }: Interactive3DBoxPr
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-[var(--color-gold,#B8935F)]/10 rounded-full blur-3xl pointer-events-none" />
 
           {/* Drag instruction badge */}
-          <div className="absolute top-3 left-3 z-30 pointer-events-none flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-md border border-[var(--color-gold,#B8935F)]/30 text-[8px] font-black uppercase text-[var(--color-gold,#B8935F)] tracking-wider shadow-xs">
+          <div className="absolute top-3 left-3 z-30 pointer-events-none flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-md border border-[var(--color-gold,#B8935F)]/30 text-[8px] font-black text-[var(--color-gold,#B8935F)] shadow-xs">
             <Box size={10} />
             <span>Drag to rotate 3D view</span>
           </div>
@@ -142,7 +142,7 @@ export default function Interactive3DBox({ onOrderNowClick }: Interactive3DBoxPr
                     <span className="font-serif text-[var(--color-ink,#1A1A1A)] font-black text-base tracking-wider block relative z-10">
                       ALLBARKA
                     </span>
-                    <span className="text-[8px] font-black tracking-[0.25em] text-[var(--color-gold,#B8935F)] uppercase block relative z-10 mt-0.5">
+                    <span className="text-[8px] font-black tracking-[0.25em] text-[var(--color-gold,#B8935F)] block relative z-10 mt-0.5">
                       Lahore Royal Casket
                     </span>
                   </div>
@@ -171,10 +171,10 @@ export default function Interactive3DBox({ onOrderNowClick }: Interactive3DBoxPr
               >
                 {/* Header title */}
                 <div className="text-center pb-2 border-b border-[var(--color-gold,#B8935F)]/20 flex justify-between items-center">
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-gold,#B8935F)] flex items-center gap-1.5">
+                  <span className="text-[10px] font-black tracking-[0.2em] text-[var(--color-gold,#B8935F)] flex items-center gap-1.5">
                     <Sparkles size={12} /> 4 Royal Compartments
                   </span>
-                  <span className="text-[9px] text-[var(--color-gold,#B8935F)] font-bold uppercase tracking-widest flex items-center gap-1">
+                  <span className="text-[9px] text-[var(--color-gold,#B8935F)] font-bold flex items-center gap-1">
                     <CheckCircle2 size={12} /> Gold Sealed
                   </span>
                 </div>
@@ -239,7 +239,7 @@ export default function Interactive3DBox({ onOrderNowClick }: Interactive3DBoxPr
             </span>
           </div>
 
-          <p className="text-[10px] text-[var(--color-ink-muted,#5A5A5A)] uppercase tracking-widest font-sans font-medium">
+          <p className="text-[10px] text-[var(--color-ink-muted,#5A5A5A)] font-sans font-medium">
             4-Compartment Casket • Hand-embossed Gold Velvet Sleeve
           </p>
 
@@ -247,7 +247,7 @@ export default function Interactive3DBox({ onOrderNowClick }: Interactive3DBoxPr
           <div className="pt-3 flex gap-3">
             <button
               onClick={() => setIsUnboxed(!isUnboxed)}
-              className="flex-1 py-3.5 px-4 rounded-xl bg-[var(--color-cream,#FAF9F5)] border border-[var(--color-gold,#B8935F)]/40 hover:border-[var(--color-gold,#B8935F)] text-[var(--color-ink,#1A1A1A)] hover:text-[var(--color-gold,#B8935F)] font-sans font-extrabold text-[10px] uppercase tracking-[0.2em] transition-all duration-300 flex items-center justify-center gap-2 shadow-xs active:scale-95 cursor-pointer"
+              className="flex-1 py-3.5 px-4 rounded-xl bg-[var(--color-cream,#FAF9F5)] border border-[var(--color-gold,#B8935F)]/40 hover:border-[var(--color-gold,#B8935F)] text-[var(--color-ink,#1A1A1A)] hover:text-[var(--color-gold,#B8935F)] font-sans font-extrabold text-[10px] tracking-[0.2em] transition-all duration-300 flex items-center justify-center gap-2 shadow-xs active:scale-95 cursor-pointer"
             >
               <Eye size={14} className="text-[var(--color-gold,#B8935F)] animate-pulse" />
               {isUnboxed ? 'View Casket Exterior' : '3D Peek Interior'}
@@ -255,7 +255,7 @@ export default function Interactive3DBox({ onOrderNowClick }: Interactive3DBoxPr
 
             <button
               onClick={onOrderNowClick}
-              className="py-3.5 px-6 rounded-xl bg-[var(--color-gold,#B8935F)] hover:bg-[var(--color-gold-light,#D4B483)] text-white font-sans font-black text-[11px] uppercase tracking-[0.2em] shadow-sm hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer border border-[var(--color-gold,#B8935F)]"
+              className="py-3.5 px-6 rounded-xl bg-[var(--color-gold,#B8935F)] hover:bg-[var(--color-gold-light,#D4B483)] text-white font-sans font-black text-[11px] tracking-[0.2em] shadow-sm hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer border border-[var(--color-gold,#B8935F)]"
             >
               Order Now
             </button>

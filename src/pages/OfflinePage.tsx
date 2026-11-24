@@ -104,7 +104,7 @@ export default function OfflinePage({ recentOverrideIds }: OfflinePageProps) {
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#C7982F]/35 bg-[#1E3A2B]/10 text-[#1E3A2B] dark:bg-[#C7982F]/15 dark:text-[#D8B25C]">
             <WifiOff size={26} aria-hidden="true" />
           </div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#806326] dark:text-[#D8B25C]">
+          <p className="text-[11px] font-bold tracking-[0.22em] text-[#806326] dark:text-[#D8B25C]">
             {words.eyebrow}
           </p>
           <h1 className="mt-2 font-serif text-2xl font-bold text-[#1E3A2B] sm:text-3xl dark:text-[#FAF9F5]">

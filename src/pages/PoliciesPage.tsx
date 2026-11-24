@@ -130,7 +130,7 @@ export function PolicyPagesModal({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[var(--color-gold,#C7982F)]/25">
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-[var(--color-gold,#C7982F)]">
+                <span className="text-[10px] sm:text-xs font-black tracking-[0.25em] text-[var(--color-gold,#C7982F)]">
                   AllBarka Boutique Governance
                 </span>
               </div>
@@ -142,7 +142,7 @@ export function PolicyPagesModal({
             <div className="flex items-center gap-2.5">
               <Link
                 to="/shop"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider bg-[var(--color-surface,#FFFCF7)] hover:bg-[var(--color-gold,#C7982F)] text-[var(--color-ink,#29231D)] hover:text-white border border-[var(--color-gold,#C7982F)]/35 transition-all shadow-xs"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold bg-[var(--color-surface,#FFFCF7)] hover:bg-[var(--color-gold,#C7982F)] text-[var(--color-ink,#29231D)] hover:text-white border border-[var(--color-gold,#C7982F)]/35 transition-all shadow-xs"
               >
                 <span>Return to Shop</span>
                 <ArrowRight size={13} />
@@ -155,7 +155,7 @@ export function PolicyPagesModal({
             <button
               type="button"
               onClick={() => setActiveTab('shipping')}
-              className={`px-4 sm:px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+              className={`px-4 sm:px-5 py-2 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                 activeTab === 'shipping'
                   ? 'bg-[var(--color-emerald,#042821)] text-[var(--color-gold,#C7982F)] shadow-xs border border-[var(--color-emerald,#042821)]'
                   : 'bg-[var(--color-surface,#FFFCF7)] text-[var(--color-ink,#29231D)] hover:bg-[var(--color-base,#F6F1EA)] border border-[var(--color-gold,#C7982F)]/20'
@@ -168,7 +168,7 @@ export function PolicyPagesModal({
             <button
               type="button"
               onClick={() => setActiveTab('refund')}
-              className={`px-4 sm:px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+              className={`px-4 sm:px-5 py-2 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                 activeTab === 'refund'
                   ? 'bg-[var(--color-emerald,#042821)] text-[var(--color-gold,#C7982F)] shadow-xs border border-[var(--color-emerald,#042821)]'
                   : 'bg-[var(--color-surface,#FFFCF7)] text-[var(--color-ink,#29231D)] hover:bg-[var(--color-base,#F6F1EA)] border border-[var(--color-gold,#C7982F)]/20'
@@ -181,7 +181,7 @@ export function PolicyPagesModal({
             <button
               type="button"
               onClick={() => setActiveTab('privacy')}
-              className={`px-4 sm:px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+              className={`px-4 sm:px-5 py-2 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                 activeTab === 'privacy'
                   ? 'bg-[var(--color-emerald,#042821)] text-[var(--color-gold,#C7982F)] shadow-xs border border-[var(--color-emerald,#042821)]'
                   : 'bg-[var(--color-surface,#FFFCF7)] text-[var(--color-ink,#29231D)] hover:bg-[var(--color-base,#F6F1EA)] border border-[var(--color-gold,#C7982F)]/20'
@@ -194,7 +194,7 @@ export function PolicyPagesModal({
             <button
               type="button"
               onClick={() => setActiveTab('cookies')}
-              className={`px-4 sm:px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+              className={`px-4 sm:px-5 py-2 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                 activeTab === 'cookies'
                   ? 'bg-[var(--color-emerald,#042821)] text-[var(--color-gold,#C7982F)] shadow-xs border border-[var(--color-emerald,#042821)]'
                   : 'bg-[var(--color-surface,#FFFCF7)] text-[var(--color-ink,#29231D)] hover:bg-[var(--color-base,#F6F1EA)] border border-[var(--color-gold,#C7982F)]/20'
@@ -207,7 +207,7 @@ export function PolicyPagesModal({
             <button
               type="button"
               onClick={() => setActiveTab('terms')}
-              className={`px-4 sm:px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+              className={`px-4 sm:px-5 py-2 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                 activeTab === 'terms'
                   ? 'bg-[var(--color-emerald,#042821)] text-[var(--color-gold,#C7982F)] shadow-xs border border-[var(--color-emerald,#042821)]'
                   : 'bg-[var(--color-surface,#FFFCF7)] text-[var(--color-ink,#29231D)] hover:bg-[var(--color-base,#F6F1EA)] border border-[var(--color-gold,#C7982F)]/20'
@@ -230,7 +230,7 @@ export function PolicyPagesModal({
               >
                 {/* Section 1: Dispatch Logistics */}
                 <div className="space-y-3">
-                  <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                  <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
                     Logistics & Fulfillment
                   </span>
                   <h2 className="text-xl sm:text-2xl font-serif font-black text-[var(--color-emerald,#042821)]">
@@ -245,7 +245,7 @@ export function PolicyPagesModal({
 
                 {/* Section 2: Transit Windows */}
                 <div className="space-y-4">
-                  <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                  <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
                     Standard Delivery Times
                   </span>
                   <h3 className="text-xl sm:text-2xl font-serif font-black text-[var(--color-emerald,#042821)]">
@@ -254,7 +254,7 @@ export function PolicyPagesModal({
                   
                   <div className="grid sm:grid-cols-2 gap-4 pt-1">
                     <div className="p-4.5 rounded-2xl bg-[var(--color-base,#F6F1EA)] border border-[var(--color-gold,#C7982F)]/30 space-y-2 shadow-xs">
-                      <div className="flex items-center gap-2 text-xs font-black text-[var(--color-ink,#29231D)] uppercase tracking-wider">
+                      <div className="flex items-center gap-2 text-xs font-black text-[var(--color-ink,#29231D)]">
                         <Clock size={15} className="text-[var(--color-gold,#C7982F)]" />
                         <span>Lahore Metropolitan (Same-Day / 24h)</span>
                       </div>
@@ -264,7 +264,7 @@ export function PolicyPagesModal({
                     </div>
 
                     <div className="p-4.5 rounded-2xl bg-[var(--color-base,#F6F1EA)] border border-[var(--color-gold,#C7982F)]/30 space-y-2 shadow-xs">
-                      <div className="flex items-center gap-2 text-xs font-black text-[var(--color-ink,#29231D)] uppercase tracking-wider">
+                      <div className="flex items-center gap-2 text-xs font-black text-[var(--color-ink,#29231D)]">
                         <MapPin size={15} className="text-[var(--color-gold,#C7982F)]" />
                         <span>Nationwide Air & Express (24–48h)</span>
                       </div>
@@ -279,7 +279,7 @@ export function PolicyPagesModal({
 
                 {/* Section 3: Shipping Tariffs */}
                 <div className="space-y-4">
-                  <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                  <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
                     Shipping Tariffs & Complimentary Policy
                   </span>
                   <h3 className="text-lg sm:text-xl font-serif font-bold text-[var(--color-emerald,#042821)]">
@@ -288,13 +288,13 @@ export function PolicyPagesModal({
                   
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="p-4 rounded-2xl bg-[var(--color-base,#F6F1EA)] border border-[var(--color-gold,#C7982F)]/30 space-y-1.5">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-gold,#C7982F)]">{t('shipping.lahore')}</span>
+                      <span className="text-[11px] font-bold text-[var(--color-gold,#C7982F)]">{t('shipping.lahore')}</span>
                       <p className="text-sm leading-relaxed text-[var(--color-ink,#29231D)]">{t('shipping.lahoreRule')}</p>
                       <p className="text-xs text-[var(--color-ink,#29231D)]/70">Priority dispatch: Rs.350. Same-day availability is confirmed for your address.</p>
                     </div>
 
                     <div className="p-4 rounded-2xl bg-[var(--color-base,#F6F1EA)] border border-[var(--color-gold,#C7982F)]/30 space-y-1.5">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-gold,#C7982F)]">{t('shipping.outside')}</span>
+                      <span className="text-[11px] font-bold text-[var(--color-gold,#C7982F)]">{t('shipping.outside')}</span>
                       <p className="text-sm leading-relaxed text-[var(--color-ink,#29231D)]">{t('shipping.nationwideRule')}</p>
                       <p className="text-xs text-[var(--color-ink,#29231D)]/70">1.2kg = Rs.300; under 1kg = Rs.250. {t('shipping.days')}</p>
                     </div>
@@ -312,7 +312,7 @@ export function PolicyPagesModal({
                 className="max-w-3xl space-y-8"
               >
                 <div className="space-y-3">
-                  <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                  <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
                     Purity Guarantee
                   </span>
                   <h2 className="text-xl sm:text-2xl font-serif font-black text-[var(--color-emerald,#042821)]">
@@ -326,7 +326,7 @@ export function PolicyPagesModal({
                 <hr className="border-t border-[var(--color-gold,#C7982F)]/30" />
 
                 <div className="space-y-3">
-                  <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                  <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
                     Boutique Resolution Protocol
                   </span>
                   <h3 className="text-xl sm:text-2xl font-serif font-black text-[var(--color-emerald,#042821)]">
@@ -344,7 +344,7 @@ export function PolicyPagesModal({
                 <hr className="border-t border-[var(--color-gold,#C7982F)]/30" />
 
                 <div className="space-y-3">
-                  <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                  <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
                     Transit & Seal Protection
                   </span>
                   <h3 className="text-lg sm:text-xl font-serif font-bold text-[var(--color-emerald,#042821)]">
@@ -366,7 +366,7 @@ export function PolicyPagesModal({
                 className="max-w-3xl space-y-8"
               >
                 <div className="space-y-3">
-                  <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                  <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
                     Discretion & Confidentiality
                   </span>
                   <h2 className="text-xl sm:text-2xl font-serif font-black text-[var(--color-emerald,#042821)]">
@@ -383,7 +383,7 @@ export function PolicyPagesModal({
                 <hr className="border-t border-[var(--color-gold,#C7982F)]/30" />
 
                 <div className="space-y-3">
-                  <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                  <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
                     Commercial Privacy Standard
                   </span>
                   <h3 className="text-xl sm:text-2xl font-serif font-black text-[var(--color-emerald,#042821)]">
@@ -397,7 +397,7 @@ export function PolicyPagesModal({
                 <hr className="border-t border-[var(--color-gold,#C7982F)]/30" />
 
                 <div className="space-y-3">
-                  <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                  <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
                     Client Rights
                   </span>
                   <h3 className="text-lg sm:text-xl font-serif font-bold text-[var(--color-emerald,#042821)]">
@@ -419,7 +419,7 @@ export function PolicyPagesModal({
                 className="max-w-3xl space-y-8"
               >
                 <div className="space-y-3">
-                  <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                  <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
                     Terms of Service
                   </span>
                   <h2 className="text-xl sm:text-2xl font-serif font-black text-[var(--color-emerald,#042821)]">
@@ -433,7 +433,7 @@ export function PolicyPagesModal({
                 <hr className="border-t border-[var(--color-gold,#C7982F)]/30" />
 
                 <div className="space-y-3">
-                  <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                  <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
                     Pricing & Weight Accuracy
                   </span>
                   <h3 className="text-xl sm:text-2xl font-serif font-black text-[var(--color-emerald,#042821)]">
@@ -447,7 +447,7 @@ export function PolicyPagesModal({
                 <hr className="border-t border-[var(--color-gold,#C7982F)]/30" />
 
                 <div className="space-y-3">
-                  <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                  <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
                     Order Cancellation & Amendments
                   </span>
                   <h3 className="text-lg sm:text-xl font-serif font-bold text-[var(--color-emerald,#042821)]">
@@ -461,7 +461,7 @@ export function PolicyPagesModal({
                 <hr className="border-t border-[var(--color-gold,#C7982F)]/30" />
 
                 <div className="space-y-3">
-                  <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                  <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
                     Jurisdiction & Dispute Resolution
                   </span>
                   <h3 className="text-lg sm:text-xl font-serif font-bold text-[var(--color-emerald,#042821)]">
@@ -543,7 +543,7 @@ export function PolicyPagesModal({
               href={buildHumanSupportWhatsAppUrl()}
               target="_blank"
               rel="noreferrer"
-              className="px-4 py-2 rounded-full border border-[var(--color-gold,#C7982F)]/40 bg-[var(--color-surface,#FFFCF7)] text-[var(--color-ink,#29231D)] hover:bg-[var(--color-base,#F6F1EA)] hover:text-[var(--color-gold,#C7982F)] text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all shadow-xs"
+              className="px-4 py-2 rounded-full border border-[var(--color-gold,#C7982F)]/40 bg-[var(--color-surface,#FFFCF7)] text-[var(--color-ink,#29231D)] hover:bg-[var(--color-base,#F6F1EA)] hover:text-[var(--color-gold,#C7982F)] text-xs font-bold flex items-center gap-2 transition-all shadow-xs"
             >
               <PhoneCall size={13} />
               <span>WhatsApp Direct Support</span>
@@ -576,7 +576,7 @@ export function PolicyPagesModal({
         <div className="px-6 sm:px-10 pt-7 pb-4 border-b border-[var(--color-gold,#C7982F)]/25 bg-[var(--color-base,#F6F1EA)] flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-[var(--color-gold,#C7982F)]">
+              <span className="text-[10px] sm:text-xs font-black tracking-[0.25em] text-[var(--color-gold,#C7982F)]">
                 AllBarka Boutique Governance
               </span>
             </div>
@@ -601,7 +601,7 @@ export function PolicyPagesModal({
           <button
             type="button"
             onClick={() => setActiveTab('shipping')}
-            className={`px-4 sm:px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+            className={`px-4 sm:px-5 py-2 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
               activeTab === 'shipping'
                 ? 'bg-[var(--color-emerald,#042821)] text-[var(--color-gold,#C7982F)] shadow-xs border border-[var(--color-emerald,#042821)]'
                 : 'bg-[var(--color-surface,#FFFCF7)] text-[var(--color-ink,#29231D)] hover:bg-[var(--color-base,#F6F1EA)] border border-[var(--color-gold,#C7982F)]/20'
@@ -614,7 +614,7 @@ export function PolicyPagesModal({
           <button
             type="button"
             onClick={() => setActiveTab('refund')}
-            className={`px-4 sm:px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+            className={`px-4 sm:px-5 py-2 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
               activeTab === 'refund'
                 ? 'bg-[var(--color-emerald,#042821)] text-[var(--color-gold,#C7982F)] shadow-xs border border-[var(--color-emerald,#042821)]'
                 : 'bg-[var(--color-surface,#FFFCF7)] text-[var(--color-ink,#29231D)] hover:bg-[var(--color-base,#F6F1EA)] border border-[var(--color-gold,#C7982F)]/20'
@@ -627,7 +627,7 @@ export function PolicyPagesModal({
           <button
             type="button"
             onClick={() => setActiveTab('privacy')}
-            className={`px-4 sm:px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+            className={`px-4 sm:px-5 py-2 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
               activeTab === 'privacy'
                 ? 'bg-[var(--color-emerald,#042821)] text-[var(--color-gold,#C7982F)] shadow-xs border border-[var(--color-emerald,#042821)]'
                 : 'bg-[var(--color-surface,#FFFCF7)] text-[var(--color-ink,#29231D)] hover:bg-[var(--color-base,#F6F1EA)] border border-[var(--color-gold,#C7982F)]/20'
@@ -640,7 +640,7 @@ export function PolicyPagesModal({
           <button
             type="button"
             onClick={() => setActiveTab('cookies')}
-            className={`px-4 sm:px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+            className={`px-4 sm:px-5 py-2 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
               activeTab === 'cookies'
                 ? 'bg-[var(--color-emerald,#042821)] text-[var(--color-gold,#C7982F)] shadow-xs border border-[var(--color-emerald,#042821)]'
                 : 'bg-[var(--color-surface,#FFFCF7)] text-[var(--color-ink,#29231D)] hover:bg-[var(--color-base,#F6F1EA)] border border-[var(--color-gold,#C7982F)]/20'
@@ -653,7 +653,7 @@ export function PolicyPagesModal({
           <button
             type="button"
             onClick={() => setActiveTab('terms')}
-            className={`px-4 sm:px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+            className={`px-4 sm:px-5 py-2 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
               activeTab === 'terms'
                 ? 'bg-[var(--color-emerald,#042821)] text-[var(--color-gold,#C7982F)] shadow-xs border border-[var(--color-emerald,#042821)]'
                 : 'bg-[var(--color-surface,#FFFCF7)] text-[var(--color-ink,#29231D)] hover:bg-[var(--color-base,#F6F1EA)] border border-[var(--color-gold,#C7982F)]/20'
@@ -675,7 +675,7 @@ export function PolicyPagesModal({
               className="max-w-3xl space-y-8"
             >
               <div className="space-y-3">
-                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
                   Logistics & Fulfillment
                 </span>
                 <h3 className="text-xl sm:text-2xl font-serif font-black text-[var(--color-emerald,#042821)]">
@@ -690,12 +690,12 @@ export function PolicyPagesModal({
 
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="p-4 rounded-2xl bg-[var(--color-base,#F6F1EA)] border border-[var(--color-gold,#C7982F)]/30 space-y-1.5">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-gold,#C7982F)]">Lahore Same-Day / 24h</span>
+                  <span className="text-[11px] font-bold text-[var(--color-gold,#C7982F)]">Lahore Same-Day / 24h</span>
                   <p className="text-xs text-[var(--color-ink,#29231D)]/70">Orders before 9 PM dispatched same day across DHA, Gulberg, Model Town, Cantt & Bahria.</p>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-[var(--color-base,#F6F1EA)] border border-[var(--color-gold,#C7982F)]/30 space-y-1.5">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-gold,#C7982F)]">Nationwide Express</span>
+                  <span className="text-[11px] font-bold text-[var(--color-gold,#C7982F)]">Nationwide Express</span>
                   <p className="text-xs text-[var(--color-ink,#29231D)]/70">TCS / Leopards / Trax air express to Karachi, Islamabad, Peshawar, and 120+ cities.</p>
                 </div>
               </div>
@@ -720,7 +720,7 @@ export function PolicyPagesModal({
               className="max-w-3xl space-y-8"
             >
               <div className="space-y-3">
-                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
                   Purity Guarantee
                 </span>
                 <h3 className="text-xl sm:text-2xl font-serif font-black text-[var(--color-emerald,#042821)]">
@@ -742,7 +742,7 @@ export function PolicyPagesModal({
               className="max-w-3xl space-y-8"
             >
               <div className="space-y-3">
-                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
                   Discretion
                 </span>
                 <h3 className="text-xl sm:text-2xl font-serif font-black text-[var(--color-emerald,#042821)]">
@@ -770,7 +770,7 @@ export function PolicyPagesModal({
               className="max-w-3xl space-y-8"
             >
               <div className="space-y-3">
-                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
+                <span className="text-[11px] font-black tracking-[0.2em] text-[var(--color-gold,#C7982F)] block">
                   Terms of Service
                 </span>
                 <h3 className="text-xl sm:text-2xl font-serif font-black text-[var(--color-emerald,#042821)]">
@@ -794,7 +794,7 @@ export function PolicyPagesModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2 rounded-full bg-[var(--color-emerald,#042821)] text-[var(--color-gold,#C7982F)] hover:bg-[#03201A] text-xs font-black uppercase tracking-wider transition-colors cursor-pointer border border-[var(--color-emerald,#042821)] shadow-xs"
+            className="px-5 py-2 rounded-full bg-[var(--color-emerald,#042821)] text-[var(--color-gold,#C7982F)] hover:bg-[#03201A] text-xs font-black transition-colors cursor-pointer border border-[var(--color-emerald,#042821)] shadow-xs"
           >
             Done
           </button>

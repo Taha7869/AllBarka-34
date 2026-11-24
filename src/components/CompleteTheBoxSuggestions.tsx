@@ -130,7 +130,7 @@ export default function CompleteTheBoxSuggestions({
           <Sparkles size={14} className="text-[#C7982F] shrink-0" aria-hidden="true" />
           <span>{copy.title}</span>
         </h3>
-        <span className="text-[10px] font-semibold text-[#806326] dark:text-[#E4C783] uppercase tracking-wider">
+        <span className="text-[10px] font-semibold text-[#806326] dark:text-[#E4C783]">
           {copy.eyebrow}
         </span>
       </div>
@@ -170,7 +170,7 @@ export default function CompleteTheBoxSuggestions({
                   >
                     {name}
                   </Link>
-                  <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#635B52] dark:text-[#A8A199]">
+                  <p className="mt-0.5 text-[10px] font-semibold text-[#635B52] dark:text-[#A8A199]">
                     {portionLabel}
                   </p>
                 </div>

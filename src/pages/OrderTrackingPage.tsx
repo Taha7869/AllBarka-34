@@ -179,7 +179,7 @@ export default function OrderTrackingPage() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         {/* Page Header */}
         <header className="text-center space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#042821]/10 dark:bg-emerald-950/60 border border-[#D4AF37]/35 text-[#042821] dark:text-[#E4C783] text-xs font-bold uppercase tracking-widest">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#042821]/10 dark:bg-emerald-950/60 border border-[#D4AF37]/35 text-[#042821] dark:text-[#E4C783] text-xs font-bold">
             <Truck size={14} />
             <span>{t('track.eyebrow', 'Boutique Order Tracker')}</span>
           </div>
@@ -199,7 +199,7 @@ export default function OrderTrackingPage() {
               <div>
                 <label
                   htmlFor={orderIdInputId}
-                  className="block text-xs font-semibold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 mb-1.5"
+                  className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5"
                 >
                   {t('track.orderIdLabel', 'Order Number')}
                 </label>
@@ -219,7 +219,7 @@ export default function OrderTrackingPage() {
               <div>
                 <label
                   htmlFor={phoneInputId}
-                  className="block text-xs font-semibold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 mb-1.5"
+                  className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5"
                 >
                   {t('track.phoneLabel', 'Last 4 Digits of Phone Number')}
                 </label>
@@ -253,7 +253,7 @@ export default function OrderTrackingPage() {
             <button
               type="submit"
               disabled={isLoading || !orderId.trim() || phoneLast4.length !== 4}
-              className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl text-sm font-semibold uppercase tracking-wider bg-[#042821] hover:bg-[#074b39] text-[#FAF9F5] transition-all focus-ring min-h-[44px] shadow-md cursor-pointer disabled:opacity-50"
+              className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl text-sm font-semibold bg-[#042821] hover:bg-[#074b39] text-[#FAF9F5] transition-all focus-ring min-h-[44px] shadow-md cursor-pointer disabled:opacity-50"
             >
               <Search size={16} />
               <span>{isLoading ? t('track.searching', 'Retrieving status...') : t('track.submitButton', 'Track Order')}</span>
@@ -276,7 +276,7 @@ export default function OrderTrackingPage() {
             {/* Header with Order Status */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-[#D4AF37]/20 gap-3">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[#042821] dark:text-[#E4C783]">
+                <span className="text-[10px] font-bold text-[#042821] dark:text-[#E4C783]">
                   {t('track.orderNumber', 'Order Reference')}
                 </span>
                 <h2 className="text-xl sm:text-2xl font-mono font-bold text-[#120F17] dark:text-[#FAF9F5]">
@@ -296,12 +296,12 @@ export default function OrderTrackingPage() {
               {/* Status Badge */}
               <div className="shrink-0">
                 {trackingResult.isCancelled ? (
-                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 border border-red-300">
+                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 border border-red-300">
                     <XCircle size={14} />
                     {t('order.status.CANCELLED', 'Cancelled')}
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300">
+                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300">
                     <CheckCircle2 size={14} />
                     {t(`order.status.${trackingResult.status}`, String(trackingResult.status))}
                   </span>
@@ -317,7 +317,7 @@ export default function OrderTrackingPage() {
             ) : (
               /* Status Timeline Stepper */
               <div className="py-4">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-6">
+                <h3 className="text-xs font-bold text-neutral-500 mb-6">
                   {t('track.currentStatus', 'Fulfillment Timeline')}
                 </h3>
 

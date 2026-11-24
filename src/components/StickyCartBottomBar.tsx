@@ -81,11 +81,11 @@ export const StickyCartBottomBar: React.FC<StickyCartBottomBarProps> = ({
               </span>
               <span className="min-w-0 flex flex-col justify-center">
                 <span className="flex items-center gap-1.5 flex-wrap">
-                  <span dir={isRtl ? 'rtl' : 'ltr'} className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-[#8C6B1B]">
+                  <span dir={isRtl ?'rtl':'ltr'} className="text-[11px] sm:text-xs font-black text-[#8C6B1B]">
                     {totalCount} {t(totalCount === 1 ? 'cart.itemAdded' : 'cart.itemsAdded')}
                   </span>
                   {isFreeShippingUnlocked && (
-                    <span className="hidden xs:inline-flex items-center gap-0.5 text-[8.5px] font-bold text-[#2B1B17] bg-[#D4AF6A]/20 border border-[#D4AF6A]/50 px-1.5 py-0.2 rounded-full uppercase tracking-wider">
+                    <span className="hidden xs:inline-flex items-center gap-0.5 text-[8.5px] font-bold text-[#2B1B17] bg-[#D4AF6A]/20 border border-[#D4AF6A]/50 px-1.5 py-0.2 rounded-full">
                       <Sparkles size={8} className="text-[#D4AF6A]" />
                       {t('freeShippingUnlocked')}
                     </span>
@@ -102,7 +102,7 @@ export const StickyCartBottomBar: React.FC<StickyCartBottomBarProps> = ({
               id="sticky-cart-checkout-btn"
               onClick={handleQuickWhatsAppOrder}
               type="button"
-              className="focus-ring group min-h-[44px] shrink-0 px-3 sm:px-6 py-2.5 rounded-xl sm:rounded-full bg-[#1E3A2B] hover:bg-[#14281E] text-[#FDFBF7] border border-[#D4AF6A]/70 font-black text-[10px] sm:text-xs uppercase tracking-wide sm:tracking-wider shadow-[0_4px_18px_rgba(43,27,20,0.3)] hover:shadow-[0_6px_22px_rgba(212,175,106,0.4)] transition-all duration-200 motion-safe:hover:scale-[1.02] motion-safe:active:scale-[0.97] flex items-center gap-1.5 cursor-pointer"
+              className="focus-ring group min-h-[44px] shrink-0 px-3 sm:px-6 py-2.5 rounded-xl sm:rounded-full bg-[#1E3A2B] hover:bg-[#14281E] text-[#FDFBF7] border border-[#D4AF6A]/70 font-black text-[10px] sm:text-xs sm: shadow-[0_4px_18px_rgba(43,27,20,0.3)] hover:shadow-[0_6px_22px_rgba(212,175,106,0.4)] transition-all duration-200 motion-safe:hover:scale-[1.02] motion-safe:active:scale-[0.97] flex items-center gap-1.5 cursor-pointer"
             >
               <span dir={isRtl ? 'rtl' : 'ltr'} className="hidden min-[360px]:inline">{t('cart.orderWhatsApp')}</span>
               <span dir={isRtl ? 'rtl' : 'ltr'} className="min-[360px]:hidden">{t('cart.orderShort')}</span>

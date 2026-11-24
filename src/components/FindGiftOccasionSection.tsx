@@ -212,7 +212,7 @@ export default function FindGiftOccasionSection({ settings: propSettings }: Find
         </div>
         {/* Section Header */}
         <div className="table-occasion-heading mb-8 max-w-2xl text-start">
-          <div className="mb-2.5 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-[var(--color-accent-text)]">
+          <div className="mb-2.5 inline-flex items-center gap-2 text-[10px] font-semibold tracking-[0.25em] text-[var(--color-accent-text)]">
             <Sparkles size={13} aria-hidden="true" />
             <span>{t('home.occasionEyebrow', 'Thoughtful Milestones')}</span>
           </div>
@@ -243,7 +243,7 @@ export default function FindGiftOccasionSection({ settings: propSettings }: Find
                     <Icon size={19} aria-hidden="true" />
                   </span>
                   {badgeKey && (
-                    <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-base)] px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">
+                    <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-base)] px-2.5 py-0.5 text-[9px] font-bold text-[var(--color-text-secondary)]">
                       {t(badgeKey, defaultBadge)}
                     </span>
                   )}

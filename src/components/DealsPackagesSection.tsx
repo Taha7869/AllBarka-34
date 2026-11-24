@@ -66,7 +66,7 @@ export default function DealsPackagesSection({ limit, onQuickView }: DealsPackag
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#D4AF6A]/20 border border-[#D4AF6A]/40 px-3.5 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-[#E6C786] mb-3">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#D4AF6A]/20 border border-[#D4AF6A]/40 px-3.5 py-1 text-[11px] font-bold tracking-[0.2em] text-[#E6C786] mb-3">
               <Sparkles size={12} /> Curated Value &amp; Executive Hampers
             </div>
             <h2
@@ -92,7 +92,7 @@ export default function DealsPackagesSection({ limit, onQuickView }: DealsPackag
                 key={key}
                 type="button"
                 onClick={() => setFilterTab(key)}
-                className={`rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all ${
+                className={`rounded-full px-4 py-2 text-xs font-bold transition-all ${
                   filterTab === key
                     ? 'bg-[#D4AF6A] text-[#072A20] shadow-md'
                     : 'bg-white/10 text-[#F7F1E3] hover:bg-white/20'
@@ -151,11 +151,11 @@ export default function DealsPackagesSection({ limit, onQuickView }: DealsPackag
                   <div className="space-y-1">
                     <div className="flex items-center justify-between gap-2">
                       {product.badge ? (
-                        <span className="inline-flex items-center rounded-full bg-[#D4AF6A]/20 border border-[#D4AF6A]/45 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-[#E6C786]">
+                        <span className="inline-flex items-center rounded-full bg-[#D4AF6A]/20 border border-[#D4AF6A]/45 px-2.5 py-0.5 text-[10px] font-extrabold text-[#E6C786]">
                           {product.badge}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center rounded-full bg-white/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#E5DEC9]">
+                        <span className="inline-flex items-center rounded-full bg-white/10 px-2.5 py-0.5 text-[10px] font-bold text-[#E5DEC9]">
                           Value Package
                         </span>
                       )}
@@ -198,7 +198,7 @@ export default function DealsPackagesSection({ limit, onQuickView }: DealsPackag
                   </p>
 
                   <div className="flex items-baseline justify-between pt-2 border-t border-white/10">
-                    <span className="text-[11px] uppercase tracking-wider text-[#E5DEC9]/75">
+                    <span className="text-[11px] text-[#E5DEC9]/75">
                       {firstVariant || 'Custom Quote'}
                     </span>
                     <span className="font-serif text-lg font-bold text-[#E6C786]">
@@ -214,7 +214,7 @@ export default function DealsPackagesSection({ limit, onQuickView }: DealsPackag
                           e.stopPropagation();
                           handleAddBundle(product);
                         }}
-                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#D4AF6A] hover:bg-[#E6C786] text-[#072A20] py-2.5 px-3 text-xs font-extrabold uppercase tracking-wider transition-all"
+                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#D4AF6A] hover:bg-[#E6C786] text-[#072A20] py-2.5 px-3 text-xs font-extrabold transition-all"
                       >
                         {addedId === product.id ? (
                           <>
@@ -239,7 +239,7 @@ export default function DealsPackagesSection({ limit, onQuickView }: DealsPackag
                           targetUnitPrice: price ? price * 25 : undefined,
                         });
                       }}
-                      className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#D4AF6A]/45 bg-white/5 hover:bg-white/15 text-[#F7F1E3] py-2 px-3 text-[11px] font-bold uppercase tracking-wider transition-all"
+                      className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#D4AF6A]/45 bg-white/5 hover:bg-white/15 text-[#F7F1E3] py-2 px-3 text-[11px] font-bold transition-all"
                     >
                       <MessageSquareQuote size={13} className="text-[#E6C786]" />
                       Request Custom Quote / Bargain
@@ -258,13 +258,13 @@ export default function DealsPackagesSection({ limit, onQuickView }: DealsPackag
           <div className="flex items-center gap-3">
             <Link
               to="/shop/bundles"
-              className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#E6C786] hover:underline"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#E6C786] hover:underline"
             >
               View All Bundles <ArrowRight size={14} />
             </Link>
             <Link
               to="/gifting"
-              className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#E6C786] hover:underline"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#E6C786] hover:underline"
             >
               Explore Gift Boxes <ArrowRight size={14} />
             </Link>

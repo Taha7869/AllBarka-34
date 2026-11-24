@@ -72,7 +72,7 @@ export default function VarietyComparisonModal({ product, onClose }: VarietyComp
         {/* Header */}
         <header className="flex items-center justify-between px-6 py-4 border-b border-[#D4AF37]/20 bg-white/50 dark:bg-zinc-800/50 backdrop-blur-md">
           <div>
-            <span className="text-[10px] font-semibold tracking-widest uppercase text-[#043327] dark:text-emerald-400">
+            <span className="text-[10px] font-semibold text-[#043327] dark:text-emerald-400">
               {t('variety.eyebrow', 'Cultivar & Flavor Comparison')}
             </span>
             <h2 id={titleId} className="text-xl font-serif font-bold text-[#120F17] dark:text-[#FAF9F5]">
@@ -94,7 +94,7 @@ export default function VarietyComparisonModal({ product, onClose }: VarietyComp
           <table className="w-full text-left border-collapse min-w-[580px]">
             <thead>
               <tr className="border-b border-[#D4AF37]/20">
-                <th className="p-3 w-40 text-xs font-semibold text-neutral-500 uppercase tracking-wider bg-[#FAF9F5] dark:bg-zinc-900 sticky left-0 z-10">
+                <th className="p-3 w-40 text-xs font-semibold text-neutral-500 bg-[#FAF9F5] dark:bg-zinc-900 sticky left-0 z-10">
                   {t('variety.attribute', 'Attribute')}
                 </th>
                 {comparableProducts.map((p) => {
@@ -114,7 +114,7 @@ export default function VarietyComparisonModal({ product, onClose }: VarietyComp
                         </div>
                         <div className="text-center">
                           {isCurrent && (
-                            <span className="inline-block text-[9px] font-bold uppercase tracking-wider text-[#043327] dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/60 px-2 py-0.5 rounded-full mb-1">
+                            <span className="inline-block text-[9px] font-bold text-[#043327] dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/60 px-2 py-0.5 rounded-full mb-1">
                               {t('variety.viewing', 'Current')}
                             </span>
                           )}

@@ -391,7 +391,7 @@ export default function CartDrawer({
                             {getLocalized(item, 'name', language)}
                           </h4>
                           <div className="flex items-center gap-2 mt-1">
-                            <span className="inline-block px-2 py-0.5 rounded-md bg-[#F6F1EA] dark:bg-[#222A28] border border-[#29231D]/10 dark:border-[#F6F1EA]/10 text-[#635B52] dark:text-[#A8A199] text-[9.5px] font-semibold uppercase tracking-wider">
+                            <span className="inline-block px-2 py-0.5 rounded-md bg-[#F6F1EA] dark:bg-[#222A28] border border-[#29231D]/10 dark:border-[#F6F1EA]/10 text-[#635B52] dark:text-[#A8A199] text-[9.5px] font-semibold">
                               {item.selectedWeight}
                             </span>
                             <span className="text-[11px] font-semibold text-[#806326] dark:text-[#E4C783]">
@@ -477,14 +477,14 @@ export default function CartDrawer({
                 <p className="text-[11px] leading-relaxed text-[var(--color-text-secondary)]">{t(shippingCity === 'Lahore' ? 'shipping.lahoreRule' : 'shipping.nationwideRule')}</p>
                 {/* Payment Method Selector */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-semibold text-[#635B52] dark:text-[#A8A199] uppercase tracking-widest block">
+                  <label className="text-[10px] font-semibold text-[#635B52] dark:text-[#A8A199] block">
 {t('checkout.paymentLabel')}
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
                       onClick={() => handlePaymentChange('cod')}
-                      className={`min-h-[44px] py-2 px-3 rounded-xl text-[11px] font-bold tracking-wider uppercase transition-all border cursor-pointer focus-ring flex items-center justify-center ${
+                      className={`min-h-[44px] py-2 px-3 rounded-xl text-[11px] font-bold transition-all border cursor-pointer focus-ring flex items-center justify-center ${
                         selectedPayment === 'cod'
                           ? 'bg-[#042821] dark:bg-[#0E4A3B] text-[#FFFCF7] border-[#042821] dark:border-[#0E4A3B] shadow-xs'
                           : 'bg-[#F6F1EA] dark:bg-[#222A28] text-[#29231D] dark:text-[#F6F1EA] border-[#29231D]/10 dark:border-[#F6F1EA]/10 hover:border-[#C7982F]'
@@ -495,7 +495,7 @@ export default function CartDrawer({
                     <button
                       type="button"
                       onClick={() => handlePaymentChange('bank')}
-                      className={`min-h-[44px] py-2 px-3 rounded-xl text-[11px] font-bold tracking-wider uppercase transition-all border cursor-pointer focus-ring flex items-center justify-center ${
+                      className={`min-h-[44px] py-2 px-3 rounded-xl text-[11px] font-bold transition-all border cursor-pointer focus-ring flex items-center justify-center ${
                         selectedPayment === 'bank'
                           ? 'bg-[#042821] dark:bg-[#0E4A3B] text-[#FFFCF7] border-[#042821] dark:border-[#0E4A3B] shadow-xs'
                           : 'bg-[#F6F1EA] dark:bg-[#222A28] text-[#29231D] dark:text-[#F6F1EA] border-[#29231D]/10 dark:border-[#F6F1EA]/10 hover:border-[#C7982F]'
@@ -514,7 +514,7 @@ export default function CartDrawer({
                   <span className="text-[10px] text-[#635B52] dark:text-[#A8A199] font-medium leading-tight">
                     {t('purchase.loyalty')}
                   </span>
-                  <button type="button" onClick={() => window.dispatchEvent(new CustomEvent('open-auth-modal'))} className="text-[10px] uppercase font-bold text-[#806326] dark:text-[#E4C783] hover:underline whitespace-nowrap cursor-pointer">
+                  <button type="button"onClick={() => window.dispatchEvent(new CustomEvent('open-auth-modal'))} className="text-[10px] font-bold text-[#806326] dark:text-[#E4C783] hover:underline whitespace-nowrap cursor-pointer">
                     {t('purchase.signIn')}
                   </button>
                 </div>
@@ -580,7 +580,7 @@ export default function CartDrawer({
                 <button
                   type="button"
                   onClick={handleWhatsAppCheckout}
-                  className="w-full min-h-[44px] py-3 px-5 rounded-full bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#1E3A2B] dark:text-[#E4C783] text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2.5 border border-[#25D366]/40 cursor-pointer focus-ring"
+                  className="w-full min-h-[44px] py-3 px-5 rounded-full bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#1E3A2B] dark:text-[#E4C783] text-xs font-bold transition-all flex items-center justify-center gap-2.5 border border-[#25D366]/40 cursor-pointer focus-ring"
                 >
                   <MessageCircle size={15} className="text-[#25D366]" />
                   <span>{t('purchase.whatsapp')}</span>

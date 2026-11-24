@@ -185,7 +185,7 @@ export const InfiniteMovingCards = ({
               >
                 {/* Review of the Month Ribbon */}
                 {item.isReviewOfTheMonth && (
-                  <div className="absolute top-0 right-8 z-10 flex items-center gap-1 bg-gradient-to-r from-[#D4AF6A] via-[#F3DFA2] to-[#D4AF6A] text-[#2B1B17] text-[8.5px] font-black uppercase px-3 py-1 rounded-b-lg tracking-wider shadow-xs border-b border-x border-[#D4AF6A]/60">
+                  <div className="absolute top-0 right-8 z-10 flex items-center gap-1 bg-gradient-to-r from-[#D4AF6A] via-[#F3DFA2] to-[#D4AF6A] text-[#2B1B17] text-[8.5px] font-black px-3 py-1 rounded-b-lg shadow-xs border-b border-x border-[#D4AF6A]/60">
                     <Sparkles size={10} className="fill-[#2B1B17]" />
                     <span>{t('reviews.featured')}</span>
                   </div>
@@ -295,7 +295,7 @@ export const InfiniteMovingCards = ({
             >
               {/* Review of the Month Ribbon */}
               {selectedReview.isReviewOfTheMonth && (
-                <div className="absolute top-0 left-8 z-10 flex items-center gap-1.5 bg-gradient-to-r from-[#D4AF6A] via-[#F3DFA2] to-[#D4AF6A] text-[#2B1B17] text-[9.5px] font-black uppercase px-3.5 py-1.5 rounded-b-xl tracking-wider shadow-xs border-b border-x border-[#D4AF6A]">
+                <div className="absolute top-0 left-8 z-10 flex items-center gap-1.5 bg-gradient-to-r from-[#D4AF6A] via-[#F3DFA2] to-[#D4AF6A] text-[#2B1B17] text-[9.5px] font-black px-3.5 py-1.5 rounded-b-xl shadow-xs border-b border-x border-[#D4AF6A]">
                   <Sparkles size={11} className="fill-[#2B1B17]" />
                   <span>{t('reviews.featured')}</span>
                 </div>
@@ -371,7 +371,7 @@ export const InfiniteMovingCards = ({
                 {selectedReview.purchasedItem && (
                   <div className="p-4 rounded-2xl bg-white border border-[#D4AF6A]/30 space-y-2 text-xs shadow-xs">
                     <div className="flex items-center justify-between text-[#8C6B1B] font-bold pb-1.5 border-b border-[#D4AF6A]/20">
-                      <span className="flex items-center gap-1.5 uppercase tracking-wider text-[10px]">
+                      <span className="flex items-center gap-1.5 text-[10px]">
                         <ShoppingBag size={13} />
                         <span>{t('reviews.details')}</span>
                       </span>

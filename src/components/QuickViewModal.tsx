@@ -78,12 +78,12 @@ export default function QuickViewModal({ isOpen, onClose, product, onAddToCart }
       <button type="button" id="quickview-close-btn" onClick={onClose} aria-label={t('close')} className="focus-ring absolute right-3 top-3 z-30 flex h-11 w-11 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm"><X size={18} /></button>
       <div className="relative min-w-0 border-b border-[var(--color-border)] bg-[var(--color-base)] p-4 pt-16 md:border-b-0 md:border-r md:p-5 md:pt-8">
         <div className="mx-auto w-full max-w-[240px] md:sticky md:top-8 md:max-w-none"><ProductImageGallery key={product.id} product={product} linkToDetails={false} />
-          <p className="mt-4 text-center text-[10px] font-semibold uppercase tracking-wider text-[var(--color-accent-text)]" dir="auto">{getLocalized(product, 'origin', language)}</p>
+          <p className="mt-4 text-center text-xs font-medium text-[var(--color-accent-text)]" dir="auto">{getLocalized(product, 'origin', language)}</p>
           <ProductVideo videoUrl={productMedia.videoUrl} poster={productMedia.videoPoster || productMedia.images[0]} productName={getLocalized(product, 'name', language)} className="mt-4" />
         </div>
       </div>
       <div className="min-w-0 p-5 sm:p-7 md:pt-16" dir={isRtl ? 'rtl' : 'ltr'}>
-        <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-accent-text)]" dir="auto">{getLocalized(product, 'health', language)}</p>
+        <p className="mb-2 text-xs font-medium text-[var(--color-accent-text)]" dir="auto">{getLocalized(product, 'health', language)}</p>
         <h2 id="quickview-product-name" lang={language} className={`max-w-full whitespace-normal break-words [overflow-wrap:anywhere] ${language === 'ur' ? 'font-urdu text-[27px]' : language === 'ar' ? 'font-arabic text-3xl' : 'font-serif text-3xl leading-tight'}`} dir="auto">{getLocalized(product, 'name', language)}</h2>
         <p className="mt-3 text-sm leading-7 text-[var(--color-text-secondary)]" dir="auto">{getLocalized(product, 'desc', language)}</p>
         {getLocalized(product, 'tasteProfile', language) && <div className="mt-4 rounded-xl border border-[var(--color-border)] p-3 text-xs leading-6"><strong className="block text-[var(--color-accent-text)]">{t('tasteProfile')}</strong><span dir="auto">{getLocalized(product, 'tasteProfile', language)}</span></div>}
@@ -93,19 +93,19 @@ export default function QuickViewModal({ isOpen, onClose, product, onAddToCart }
           <div className="mt-3 space-y-2 rounded-xl border border-[#C7982F]/35 bg-[#FAF6EE] p-3 text-xs leading-5 text-[#29231D]">
             {product.bidBoxConfig.dimensionsAndCapacity && (
               <div>
-                <strong className="block text-[10px] uppercase tracking-wider text-[#8C6B1B]">Box Dimensions &amp; Capacity</strong>
+                <strong className="block text-[11px] font-semibold text-[#8C6B1B]">Box dimensions &amp; capacity</strong>
                 <span>{product.bidBoxConfig.dimensionsAndCapacity}</span>
               </div>
             )}
             {product.bidBoxConfig.emptyOptionDetails && (
               <div className="border-t border-[#C7982F]/20 pt-1.5">
-                <strong className="block text-[10px] uppercase tracking-wider text-[#8C6B1B]">Empty Box Option (Bulk Tiers)</strong>
+                <strong className="block text-[11px] font-semibold text-[#8C6B1B]">Empty box option (bulk tiers)</strong>
                 <span>{product.bidBoxConfig.emptyOptionDetails}</span>
               </div>
             )}
             {product.bidBoxConfig.filledOptionDetails && (
               <div className="border-t border-[#C7982F]/20 pt-1.5">
-                <strong className="block text-[10px] uppercase tracking-wider text-[#8C6B1B]">Filled with AllBarka Dry Fruits</strong>
+                <strong className="block text-[11px] font-semibold text-[#8C6B1B]">Filled with AllBarka dry fruits</strong>
                 <span>{product.bidBoxConfig.filledOptionDetails}</span>
               </div>
             )}
@@ -113,14 +113,14 @@ export default function QuickViewModal({ isOpen, onClose, product, onAddToCart }
         )}
         {product.quoteOnly ? <><p className="mt-5 text-sm leading-7 text-[var(--color-text-secondary)]">{t('catalog.quoteDescription')}</p><button type="button" onClick={() => { onClose(); openCustomQuoteModal({ productId: product.id, variantLabel: weight, mode: weight?.startsWith('Empty') ? 'empty' : 'filled', quantity: quantity > 0 ? quantity : 50 }); }} className="focus-ring mt-4 flex min-h-12 w-full items-center justify-center rounded-full bg-[#1e3a2b] px-4 text-sm font-semibold text-[#fff8e9]">{t('catalog.requestQuote')}</button></> : <>
         <div className="mt-5 flex items-center justify-between gap-3"><p className="font-serif text-3xl"><bdi>Rs. {price.toLocaleString()}</bdi></p><span className="rounded-full bg-[#0e7a53]/10 px-3 py-1.5 text-xs text-[#0e7a53] dark:text-[#8cd7b1]">{t('inStock')}</span></div>
-        <fieldset className="mt-5"><legend className="mb-3 text-xs font-semibold uppercase tracking-wider">{t('selectWeight')}</legend><div className="flex flex-wrap gap-2" dir="ltr">{weights.map(size => <button type="button" key={size} aria-pressed={weight === size} onClick={() => setSelectedWeight(size)} className={`focus-ring min-h-11 rounded-full border px-5 text-xs font-semibold ${weight === size ? 'border-[#1e3a2b] bg-[#1e3a2b] text-[#fff8e9]' : 'border-[var(--color-border)] hover:border-[#c7982f]'}`}>{size}</button>)}</div></fieldset>
+        <fieldset className="mt-5"><legend className="mb-3 text-xs font-semibold">{t('selectWeight')}</legend><div className="flex flex-wrap gap-2" dir="ltr">{weights.map(size => <button type="button" key={size} aria-pressed={weight === size} onClick={() => setSelectedWeight(size)} className={`focus-ring min-h-11 rounded-full border px-5 text-xs font-semibold ${weight === size ? 'border-[#1e3a2b] bg-[#1e3a2b] text-[#fff8e9]' : 'border-[var(--color-border)] hover:border-[#c7982f]'}`}>{size}</button>)}</div></fieldset>
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3"><div className="flex min-h-12 items-center rounded-full border border-[var(--color-border)]" dir="ltr">
           <button type="button" aria-label={t('cart.decrease')} disabled={quantity <= 1} onClick={() => setQuantity(q => Math.max(1, q - 1))} className="focus-ring flex h-11 w-11 items-center justify-center rounded-full disabled:opacity-30"><Minus size={16} /></button>
           <output aria-label={t('quantity')} className="min-w-8 text-center text-sm">{quantity}</output>
           <button type="button" aria-label={t('cart.increase')} disabled={quantity >= 50} onClick={() => setQuantity(q => Math.min(50, q + 1))} className="focus-ring flex h-11 w-11 items-center justify-center rounded-full disabled:opacity-30"><Plus size={16} /></button>
         </div><PulseHeart liked={savedIds.includes(product.id)} onChange={next => setSaved(product.id, next)} label={t('shop.save')} savedLabel={t('shop.unsave')} /></div>
         <button type="button" onClick={add} id="quickview-add-to-cart-btn" disabled={!price || !weight} className="focus-ring mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[#1e3a2b] px-4 text-sm font-semibold text-[#fff8e9] hover:bg-[#092e23] disabled:opacity-40"><ShoppingBag size={17} />{t('addToCart')}<bdi>— Rs. {(price * quantity).toLocaleString()}</bdi></button>
-        {supportsBargain && <button type="button" onClick={() => { onClose(); openCustomQuoteModal({ productId: product.id, variantLabel: weight, mode: weight?.startsWith('Empty') ? 'empty' : 'filled', quantity: quantity > 0 ? quantity : 50 }); }} className="focus-ring mt-2.5 flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-[#8C6B1B] bg-[#FAF6EE] px-4 text-xs font-bold uppercase tracking-wider text-[#8C6B1B] hover:bg-[#8C6B1B] hover:text-white">Request Custom Quote / Offer Your Price</button>}
+        {supportsBargain && <button type="button" onClick={() => { onClose(); openCustomQuoteModal({ productId: product.id, variantLabel: weight, mode: weight?.startsWith('Empty') ? 'empty' : 'filled', quantity: quantity > 0 ? quantity : 50 }); }} className="focus-ring mt-2.5 flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-[#8C6B1B] bg-[#FAF6EE] px-4 text-xs font-semibold text-[#8C6B1B] hover:bg-[#8C6B1B] hover:text-white">Request custom quote / Offer your price</button>}
         </>}
         <Link to={buildProductDetailsPath(product, { variant: weight || '', quantity })} onClick={onClose} className="focus-ring mt-2 flex min-h-11 items-center justify-center gap-2 rounded-full text-xs font-semibold text-[var(--color-accent-text)]">{t('viewFullDetails')}<ArrowUpRight size={16} /></Link>
         <div className="mt-5"><ProductDetailAccordion key={product.id} product={product} defaultOpenKey="" /></div>

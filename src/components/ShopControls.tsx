@@ -48,7 +48,7 @@ export default function ShopControls({
       
       {/* Left: Product Count / Status Tag */}
       <div className="flex items-center gap-2.5">
-        <span className="text-[11px] sm:text-xs font-black uppercase tracking-widest text-[var(--color-ink-muted,#5A5A5A)]">
+        <span className="text-[11px] sm:text-xs font-black text-[var(--color-ink-muted,#5A5A5A)]">
           Showing <span className="text-[var(--color-ink,#1A1A1A)] font-mono font-black">{totalProducts}</span> Gourmet Items
         </span>
         <span className="h-3.5 w-px bg-[var(--color-gold,#B8935F)]/40 hidden sm:block" />
@@ -75,7 +75,7 @@ export default function ShopControls({
           >
             <div className="flex items-center gap-2">
               <ArrowUpDown size={13} className="text-[var(--color-gold,#B8935F)]" />
-              <span className="text-[10px] uppercase tracking-wider text-[var(--color-ink-muted,#5A5A5A)] font-extrabold hidden sm:inline">Sort:</span>
+              <span className="text-[10px] text-[var(--color-ink-muted,#5A5A5A)] font-extrabold hidden sm:inline">Sort:</span>
               <span className="truncate max-w-[130px] sm:max-w-[160px] text-[11px] sm:text-xs">
                 {selectedOption.shortLabel}
               </span>
@@ -99,7 +99,7 @@ export default function ShopControls({
                 transition={{ duration: 0.18, ease: 'easeOut' }}
                 className="absolute right-0 top-full mt-1.5 z-40 w-56 sm:w-64 bg-[var(--color-surface,#FFFFFF)] border border-[var(--color-gold,#B8935F)]/45 rounded-2xl shadow-lg overflow-hidden p-1.5 space-y-1 backdrop-blur-md"
               >
-                <div className="px-3 py-1.5 text-[9.5px] font-black uppercase tracking-widest text-[var(--color-ink-muted,#5A5A5A)] border-b border-[var(--color-gold,#B8935F)]/20 flex items-center justify-between">
+                <div className="px-3 py-1.5 text-[9.5px] font-black text-[var(--color-ink-muted,#5A5A5A)] border-b border-[var(--color-gold,#B8935F)]/20 flex items-center justify-between">
                   <span>Sort Collection By</span>
                   <SlidersHorizontal size={10} className="text-[var(--color-gold,#B8935F)]" />
                 </div>

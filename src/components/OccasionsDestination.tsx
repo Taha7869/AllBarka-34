@@ -245,7 +245,7 @@ export default function OccasionsDestination({
       {/* Category Sub-Filters & Results Summary Bar */}
       <div className="mb-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
+          <span className="text-xs font-semibold text-[var(--color-text-muted)]">
             {t('dest.occasions.categoryFilter')}:
           </span>
           <div className="flex flex-wrap gap-1.5">
@@ -348,7 +348,7 @@ export default function OccasionsDestination({
                   {/* Occasion / Category Badges */}
                   <div className="pointer-events-none absolute top-3 left-3 flex flex-wrap gap-1.5">
                     {product.occasions && product.occasions.length > 0 && (
-                      <span className="rounded-full bg-[#072a20]/90 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#e6c786]">
+                      <span className="rounded-full bg-[#072a20]/90 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-[#e6c786]">
                         {product.occasions[0]}
                       </span>
                     )}

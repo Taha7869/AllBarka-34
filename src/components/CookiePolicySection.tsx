@@ -115,7 +115,7 @@ export default function CookiePolicySection() {
   return (
     <div dir={dir} data-cookies-policy-section className="space-y-6 text-start">
       <div className="space-y-3">
-        <span className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.2em] text-[#806326] dark:text-[#D8B25C]">
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-black tracking-[0.2em] text-[#806326] dark:text-[#D8B25C]">
           <Cookie size={14} aria-hidden="true" />
           <span>{words.eyebrow}</span>
         </span>

@@ -77,7 +77,7 @@ export default function BoutiqueContactForm() {
           <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center mb-2.5">
             <MessageCircle size={18} />
           </div>
-          <span className="text-[10px] font-black uppercase tracking-widest text-[var(--color-gold,#B8935F)] block">
+          <span className="text-[10px] font-black text-[var(--color-gold,#B8935F)] block">
             Instant Concierge
           </span>
           <h4 className="font-serif font-bold text-sm text-[var(--color-ink,#1A1A1A)] group-hover:text-[var(--color-gold,#B8935F)] transition-colors">
@@ -99,7 +99,7 @@ export default function BoutiqueContactForm() {
           <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center mb-2.5">
             <Phone size={18} />
           </div>
-          <span className="text-[10px] font-black uppercase tracking-widest text-[var(--color-gold,#B8935F)] block">
+          <span className="text-[10px] font-black text-[var(--color-gold,#B8935F)] block">
             Direct Line
           </span>
           <h4 className="font-serif font-bold text-sm text-[var(--color-ink,#1A1A1A)] group-hover:text-[var(--color-gold,#B8935F)] transition-colors">
@@ -121,7 +121,7 @@ export default function BoutiqueContactForm() {
           <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center mb-2.5">
             <Mail size={18} />
           </div>
-          <span className="text-[10px] font-black uppercase tracking-widest text-[var(--color-gold,#B8935F)] block">
+          <span className="text-[10px] font-black text-[var(--color-gold,#B8935F)] block">
             Corporate & Invoices
           </span>
           <h4 className="font-serif font-bold text-sm text-[var(--color-ink,#1A1A1A)] group-hover:text-[var(--color-gold,#B8935F)] transition-colors">
@@ -140,7 +140,7 @@ export default function BoutiqueContactForm() {
           <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-800 flex items-center justify-center mb-2.5">
             <MapPin size={18} />
           </div>
-          <span className="text-[10px] font-black uppercase tracking-widest text-[var(--color-gold,#B8935F)] block">
+          <span className="text-[10px] font-black text-[var(--color-gold,#B8935F)] block">
             AllBarka Boutique
           </span>
           <h4 className="font-serif font-bold text-sm text-[var(--color-ink,#1A1A1A)]">
@@ -159,7 +159,7 @@ export default function BoutiqueContactForm() {
       <div className="p-6 sm:p-8 rounded-3xl bg-[var(--color-base,#FDFCFA)] border border-[var(--color-gold,#B8935F)]/35 shadow-xs space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--color-gold,#B8935F)]/20 pb-4">
           <div>
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-gold,#B8935F)] block">
+            <span className="text-[10px] font-black tracking-[0.2em] text-[var(--color-gold,#B8935F)] block">
               Direct Inquiry
             </span>
             <h3 className="text-lg sm:text-xl font-serif font-bold text-[var(--color-ink,#1A1A1A)]">
@@ -191,7 +191,7 @@ export default function BoutiqueContactForm() {
                 href={buildHumanSupportWhatsAppUrl(`Assalam-o-Alaikum AllBarka, I just submitted inquiry ticket ${ticketId}.`)}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors"
               >
                 <MessageCircle size={14} />
                 <span>Open in WhatsApp for Faster Response</span>
@@ -209,7 +209,7 @@ export default function BoutiqueContactForm() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-ink,#1A1A1A)] mb-1.5">
+                <label className="block text-xs font-bold text-[var(--color-ink,#1A1A1A)] mb-1.5">
                   Your Full Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -223,7 +223,7 @@ export default function BoutiqueContactForm() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-ink,#1A1A1A)] mb-1.5">
+                <label className="block text-xs font-bold text-[var(--color-ink,#1A1A1A)] mb-1.5">
                   Mobile / WhatsApp or Email <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -238,7 +238,7 @@ export default function BoutiqueContactForm() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-ink,#1A1A1A)] mb-1.5">
+              <label className="block text-xs font-bold text-[var(--color-ink,#1A1A1A)] mb-1.5">
                 Inquiry Topic
               </label>
               <select
@@ -255,7 +255,7 @@ export default function BoutiqueContactForm() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-ink,#1A1A1A)] mb-1.5">
+              <label className="block text-xs font-bold text-[var(--color-ink,#1A1A1A)] mb-1.5">
                 Your Message / Specific Requirements <span className="text-red-500">*</span>
               </label>
               <textarea
@@ -283,7 +283,7 @@ export default function BoutiqueContactForm() {
               <button
                 type="submit"
                 disabled={status === 'submitting'}
-                className="w-full sm:w-auto px-7 py-3 rounded-full bg-[var(--color-gold,#B8935F)] hover:bg-[var(--color-gold-light,#D4B483)] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                className="w-full sm:w-auto px-7 py-3 rounded-full bg-[var(--color-gold,#B8935F)] hover:bg-[var(--color-gold-light,#D4B483)] text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer disabled:opacity-50"
               >
                 <Send size={14} />
                 <span>{status === 'submitting' ? 'Submitting...' : 'Submit Inquiry'}</span>

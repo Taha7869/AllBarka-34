@@ -222,7 +222,7 @@ export default function CelebrationBoxesDestination({
       {/* Mode Filter & Quick Controls Bar */}
       <div className="mb-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
+          <span className="text-xs font-semibold text-[var(--color-text-muted)]">
             Packaging Option:
           </span>
           <div className="inline-flex rounded-xl border border-[var(--color-border)] p-1 bg-[var(--color-base)]">
@@ -310,7 +310,7 @@ export default function CelebrationBoxesDestination({
                 {/* Subcategory & Occasion Badges */}
                 <div className="pointer-events-none absolute top-3 left-3 flex flex-wrap gap-1.5">
                   {subcat && (
-                    <span className="rounded-full bg-[#072a20]/90 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#e6c786]">
+                    <span className="rounded-full bg-[#072a20]/90 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-[#e6c786]">
                       {t(`dest.celebration.subcat.${subcat}`)}
                     </span>
                   )}
@@ -391,7 +391,7 @@ export default function CelebrationBoxesDestination({
                 {/* Packaging vs Filled Selector on the Card */}
                 <div className="rounded-2xl border border-[var(--color-border)] p-3 bg-[var(--color-base)]/50 space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase">
+                    <span className="text-[11px] font-semibold text-[var(--color-text-muted)]">
                       Select Mode:
                     </span>
                     <div className="inline-flex rounded-lg border border-[var(--color-border)] p-0.5 bg-[var(--color-surface)]">
@@ -597,7 +597,7 @@ export default function CelebrationBoxesDestination({
       <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 sm:p-8 flex flex-col justify-between space-y-4">
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#8C6B1B] dark:text-[#e6c786]">
+            <span className="text-[11px] font-bold text-[#8C6B1B] dark:text-[#e6c786]">
               Fresh Roastery Inclusions
             </span>
             <h4 className="font-serif text-xl font-bold text-[var(--color-text)] mt-1">
@@ -618,7 +618,7 @@ export default function CelebrationBoxesDestination({
 
         <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 sm:p-8 flex flex-col justify-between space-y-4">
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#8C6B1B] dark:text-[#e6c786]">
+            <span className="text-[11px] font-bold text-[#8C6B1B] dark:text-[#e6c786]">
               Family &amp; Executive Hampers
             </span>
             <h4 className="font-serif text-xl font-bold text-[var(--color-text)] mt-1">

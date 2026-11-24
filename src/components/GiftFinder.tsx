@@ -107,7 +107,7 @@ export default function GiftFinder({
         <div className="w-8 h-8 rounded-full bg-[#042821]/10 dark:bg-emerald-950/60 text-[#042821] dark:text-[#E4C783] flex items-center justify-center border border-[#D4AF37]/40">
           <Gift size={16} />
         </div>
-        <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#042821] dark:text-[#E4C783]">
+        <span className="text-[11px] font-bold tracking-[0.2em] text-[#042821] dark:text-[#E4C783]">
           {t('giftFinder.eyebrow', 'AI Gift Concierge')}
         </span>
       </div>
@@ -142,7 +142,7 @@ export default function GiftFinder({
               type="submit"
               disabled={isLoading || !query.trim()}
               aria-label={isLoading ? t('giftFinder.searching', 'Searching...') : t('giftFinder.findButton', 'Find Gifts')}
-              className="inline-flex items-center justify-center gap-1.5 px-4 sm:px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-[#042821] text-[#FAF9F5] hover:bg-[#074b39] transition-colors focus-ring min-h-[44px] cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-1.5 px-4 sm:px-5 py-2.5 rounded-xl text-xs font-bold bg-[#042821] text-[#FAF9F5] hover:bg-[#074b39] transition-colors focus-ring min-h-[44px] cursor-pointer disabled:opacity-50"
             >
               <Sparkles size={14} className="text-[#D4AF37]" />
               <span className="hidden sm:inline">{isLoading ? t('giftFinder.searching', 'Searching...') : t('giftFinder.findButton', 'Find Gifts')}</span>
@@ -152,7 +152,7 @@ export default function GiftFinder({
 
         {/* Quick Inspiration Preset Pills */}
         <div className="flex flex-wrap items-center gap-1.5 pt-1">
-          <span className="text-[10px] uppercase font-bold text-neutral-400 me-1">
+          <span className="text-[10px] font-bold text-neutral-400 me-1">
             {t('inspiration', 'Try')}:
           </span>
           {presets.map((preset) => (
@@ -186,7 +186,7 @@ export default function GiftFinder({
         <div className="mt-8 space-y-4 pt-4 border-t border-[#D4AF37]/20">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
             <div>
-              <h3 className="text-sm font-bold uppercase tracking-wider text-[#042821] dark:text-[#FAF9F5]">
+              <h3 className="text-sm font-bold text-[#042821] dark:text-[#FAF9F5]">
                 {t('giftFinder.resultsTitle', 'Top 3 Curated Gift Recommendations')}
               </h3>
               <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
@@ -237,7 +237,7 @@ export default function GiftFinder({
                             (e.target as HTMLImageElement).src = '/images/product-placeholder.svg';
                           }}
                         />
-                        <div className="absolute top-2 start-2 bg-[#042821]/80 backdrop-blur-xs text-[#FAF9F5] text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md">
+                        <div className="absolute top-2 start-2 bg-[#042821]/80 backdrop-blur-xs text-[#FAF9F5] text-[10px] font-bold px-2 py-0.5 rounded-md">
                           {product.category || 'Gifting'}
                         </div>
                       </div>

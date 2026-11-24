@@ -94,7 +94,7 @@ export default function HeroOrbit({ children, className = '' }: HeroOrbitProps) 
                         {item.label}
                       </span>
                       {item.sublabel && (
-                        <span className="text-[7px] sm:text-[8px] font-medium text-[#D4AF6A]/80 tracking-wider uppercase leading-none mt-0.5 hidden sm:block">
+                        <span className="text-[7px] sm:text-[8px] font-medium text-[#D4AF6A]/80 leading-none mt-0.5 hidden sm:block">
                           {item.sublabel}
                         </span>
                       )}
@@ -116,7 +116,7 @@ export default function HeroOrbit({ children, className = '' }: HeroOrbitProps) 
           text="★ ALLBARKA LUXURY ★ 100% ORGANIC & HAND-SORTED ★ LAHORE "
           spinDuration={25}
           onHover="slowDown"
-          className="text-[6.5px] xs:text-[7.5px] sm:text-[9.5px] md:text-[10.5px] font-black uppercase text-[#E5D0A1] tracking-[0.2em] drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] opacity-80 hover:opacity-100 transition-opacity"
+          className="text-[6.5px] xs:text-[7.5px] sm:text-[9.5px] md:text-[10.5px] font-black text-[#E5D0A1] tracking-[0.2em] drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] opacity-80 hover:opacity-100 transition-opacity"
         />
       </div>
 

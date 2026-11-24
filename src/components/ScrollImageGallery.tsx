@@ -99,7 +99,7 @@ const ScrollImageCard: React.FC<ScrollImageCardProps> = ({ item }) => {
         {/* Bottom Details */}
         <div className="absolute bottom-0 inset-x-0 p-5 sm:p-6 text-left z-10">
           {item.origin && (
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#1C1210]/80 border border-[#D4AF6A]/40 text-[#D4AF6A] text-[10px] font-black uppercase tracking-widest mb-1.5 backdrop-blur-md">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#1C1210]/80 border border-[#D4AF6A]/40 text-[#D4AF6A] text-[10px] font-black mb-1.5 backdrop-blur-md">
               <Sparkles size={10} />
               <span>{item.origin}</span>
             </div>
@@ -192,7 +192,7 @@ export const ScrollImageGallery: React.FC<ScrollImageGalleryProps> = ({
       </header>
 
       {/* ── Scroll Cue ────────────────────────────────────────────────────── */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 pointer-events-none flex flex-col items-center gap-1.5 text-[11px] font-sans font-bold uppercase tracking-widest text-[#D4AF6A]/80 bg-[#2B1B17]/70 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-[#D4AF6A]/30">
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 pointer-events-none flex flex-col items-center gap-1.5 text-[11px] font-sans font-bold text-[#D4AF6A]/80 bg-[#2B1B17]/70 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-[#D4AF6A]/30">
         <span>Scroll to Explore</span>
         <motion.div
           animate={{ y: [0, 4, 0] }}

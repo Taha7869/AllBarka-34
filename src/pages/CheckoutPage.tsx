@@ -301,7 +301,7 @@ export default function CheckoutPage({ isOpen, onClose: propsOnClose, onOpenAuth
           <button
             type="button"
             onClick={() => navigate('/shop')}
-            className="w-full py-3.5 rounded-full bg-[#042821] text-white font-bold text-xs uppercase tracking-[0.2em] hover:bg-[var(--color-gold,#C7982F)] transition-colors cursor-pointer"
+            className="w-full py-3.5 rounded-full bg-[#042821] text-white font-bold text-xs tracking-[0.2em] hover:bg-[var(--color-gold,#C7982F)] transition-colors cursor-pointer"
           >
             {t('checkout.browse')}
           </button>
@@ -705,7 +705,7 @@ const handleInputChange = (field: string, value: any) => {
             <div>
               <p className="purchase-eyebrow">{t('purchase.checkoutEyebrow')}</p>
               <h1 className="font-serif">{t('checkout.heading')}</h1>
-              <p className="text-[9.5px] text-[var(--color-gold,#C7982F)] font-bold uppercase tracking-widest leading-none mt-0.5">
+              <p className="text-[9.5px] text-[var(--color-gold,#C7982F)] font-bold leading-none mt-0.5">
                 {t('purchase.checkoutIntro')}
               </p>
             </div>
@@ -738,7 +738,7 @@ const handleInputChange = (field: string, value: any) => {
               }`}>
                 1
               </div>
-              <span className="text-[9.5px] sm:text-[10.5px] font-bold uppercase tracking-wider">{t('checkout.stepDetails')}</span>
+              <span className="text-[9.5px] sm:text-[10.5px] font-bold">{t('checkout.stepDetails')}</span>
             </button>
 
             {/* Step 2 */}
@@ -757,7 +757,7 @@ const handleInputChange = (field: string, value: any) => {
               }`}>
                 2
               </div>
-              <span className="text-[9.5px] sm:text-[10.5px] font-bold uppercase tracking-wider">{t('checkout.stepShipping')}</span>
+              <span className="text-[9.5px] sm:text-[10.5px] font-bold">{t('checkout.stepShipping')}</span>
             </button>
 
             {/* Step 3 */}
@@ -780,7 +780,7 @@ const handleInputChange = (field: string, value: any) => {
               }`}>
                 3
               </div>
-              <span className="text-[9.5px] sm:text-[10.5px] font-bold uppercase tracking-wider">{t('checkout.stepReview')}</span>
+              <span className="text-[9.5px] sm:text-[10.5px] font-bold">{t('checkout.stepReview')}</span>
             </button>
           </div>
         </div>
@@ -798,7 +798,7 @@ const handleInputChange = (field: string, value: any) => {
           {/* One server-validated promo, available before the payment step. */}
           {currentStep !== 'success' && (
                   <div className="space-y-1.5">
-                    <label htmlFor="checkout-promo-code" className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#29231D)]/80 flex items-center gap-1">
+                    <label htmlFor="checkout-promo-code" className="block text-xs font-semibold text-[var(--color-ink,#29231D)]/80 flex items-center gap-1">
                       <Tag size={12} className="text-[var(--color-gold,#C7982F)]" />
                       {t('checkout.promoLabel')}
                     </label>
@@ -819,13 +819,13 @@ const handleInputChange = (field: string, value: any) => {
                         autoComplete="off"
                         maxLength={60}
                         placeholder={t('checkout.promoPlaceholder')}
-                        className="flex-1 bg-[var(--color-surface,#FDFBF7)] dark:bg-[#1A201E] border border-[var(--color-gold,#C7982F)]/30 rounded-xl py-2.5 px-3.5 text-base sm:text-sm min-h-[44px] font-semibold focus:outline-none focus:border-[var(--color-gold,#C7982F)] text-[var(--color-ink,#29231D)] dark:text-[#FDFBF7] uppercase placeholder:normal-case placeholder:text-[var(--color-ink,#29231D)]/30 dark:placeholder:text-[#FDFBF7]/30"
+                        className="flex-1 bg-[var(--color-surface,#FDFBF7)] dark:bg-[#1A201E] border border-[var(--color-gold,#C7982F)]/30 rounded-xl py-2.5 px-3.5 text-base sm:text-sm min-h-[44px] font-semibold focus:outline-none focus:border-[var(--color-gold,#C7982F)] text-[var(--color-ink,#29231D)] dark:text-[#FDFBF7] placeholder:normal-case placeholder:text-[var(--color-ink,#29231D)]/30 dark:placeholder:text-[#FDFBF7]/30"
                       />
                       <button
                         type="button"
                         onClick={handleApplyCoupon}
                         disabled={isValidatingCoupon || isSubmittingOrder || !online || authLoading}
-                        className="bg-[#042821] text-[var(--color-gold,#C7982F)] border border-[var(--color-gold,#C7982F)]/50 px-4 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-[var(--color-ink,#29231D)]/80 transition-colors cursor-pointer shadow-xs active:scale-95 disabled:opacity-50"
+                        className="bg-[#042821] text-[var(--color-gold,#C7982F)] border border-[var(--color-gold,#C7982F)]/50 px-4 rounded-xl text-xs font-black hover:bg-[var(--color-ink,#29231D)]/80 transition-colors cursor-pointer shadow-xs active:scale-95 disabled:opacity-50"
                       >
                         {isValidatingCoupon ? t('checkout.promoChecking') : t('checkout.promoApply')}
                       </button>
@@ -836,7 +836,7 @@ const handleInputChange = (field: string, value: any) => {
                     )}
 
                     {appliedPromoMessage && (
-                      <p id="checkout-promo-effect" role="status" aria-live="polite" className="text-[10.5px] text-[var(--color-gold,#C7982F)] font-black uppercase tracking-wide flex items-center gap-1">
+                      <p id="checkout-promo-effect" role="status" aria-live="polite" className="text-xs text-[var(--color-gold,#C7982F)] font-semibold flex items-center gap-1">
                         <Sparkles size={12} className="text-[var(--color-gold,#C7982F)]" /> {appliedPromoMessage}
                       </p>
                     )}
@@ -856,7 +856,7 @@ const handleInputChange = (field: string, value: any) => {
               <div className="h-4 w-36 rounded luxury-skeleton" />
               <div className="h-8 w-full rounded-xl luxury-skeleton" />
               <div className="h-14 w-full rounded-xl luxury-skeleton" />
-              <p className="text-center text-[10px] uppercase font-bold tracking-widest text-[var(--color-gold,#C7982F)] animate-pulse pt-2">
+              <p className="text-center text-[10px] font-bold text-[var(--color-gold,#C7982F)] animate-pulse pt-2">
                 {t('checkout.preparing')}
               </p>
             </div>
@@ -886,7 +886,7 @@ const handleInputChange = (field: string, value: any) => {
                             <span className="text-[11px] font-serif font-bold text-white truncate">
                               {patronProfile.name}
                             </span>
-                            <span className="text-[8.5px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-[var(--color-gold,#C7982F)] text-[#1A1A1A]">
+                            <span className="text-[8.5px] font-black px-1.5 py-0.5 rounded-full bg-[var(--color-gold,#C7982F)] text-[#1A1A1A]">
                               {patronProfile.patronStatus || 'VIP Patron'}
                             </span>
                           </div>
@@ -932,13 +932,13 @@ const handleInputChange = (field: string, value: any) => {
                         <Sparkles size={14} className="text-[#D4AF37]" />
                         <span>{t('checkout.savedAddress')}</span>
                       </div>
-                      <span className="text-[10px] font-black uppercase text-[#D4AF37] bg-[var(--color-surface,#FDFBF7)] px-2 py-0.5 rounded-full border border-[#D4AF37]/30">{t('checkout.autoFilled')}</span>
+                      <span className="text-[10px] font-black text-[#D4AF37] bg-[var(--color-surface,#FDFBF7)] px-2 py-0.5 rounded-full border border-[#D4AF37]/30">{t('checkout.autoFilled')}</span>
                     </div>
                   )}
 
                   {/* Recipient Full Name */}
                   <div className="space-y-1.5">
-                    <label htmlFor="checkout-field-name" className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#29231D)]/80">
+                    <label htmlFor="checkout-field-name"className="block text-[10px] font-black text-[var(--color-ink,#29231D)]/80">
                       {t('checkout.nameLabel')} *
                     </label>
                     <div className="relative">
@@ -972,7 +972,7 @@ const handleInputChange = (field: string, value: any) => {
 
                   {/* Phone / WhatsApp */}
                   <div className="space-y-1.5">
-                    <label htmlFor="checkout-field-phone" className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#29231D)]/80">
+                    <label htmlFor="checkout-field-phone"className="block text-[10px] font-black text-[var(--color-ink,#29231D)]/80">
                       {t('checkout.phoneLabel')} *
                     </label>
                     <div className="relative">
@@ -1012,7 +1012,7 @@ const handleInputChange = (field: string, value: any) => {
                   {/* Pakistani Delivery Phone (Required when contact number is outside Pakistan) */}
                   {(needsPakistaniDeliveryPhone(formData.phone) || Boolean(formData.deliveryPhone?.trim()) || Boolean(errors.deliveryPhone)) && (
                     <div className="space-y-1.5" data-testid="checkout-delivery-phone-group">
-                      <label htmlFor="checkout-field-delivery-phone" className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#29231D)]/80">
+                      <label htmlFor="checkout-field-delivery-phone"className="block text-[10px] font-black text-[var(--color-ink,#29231D)]/80">
                         {t('checkout.deliveryPhoneLabel')} *
                       </label>
                       <div className="relative">
@@ -1052,7 +1052,7 @@ const handleInputChange = (field: string, value: any) => {
 
                   {/* Special Delivery Notes */}
                   <div className="space-y-1.5">
-                    <label htmlFor="checkout-instructions" className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#29231D)]/80">
+                    <label htmlFor="checkout-instructions"className="block text-[10px] font-black text-[var(--color-ink,#29231D)]/80">
                       {t('checkout.instructionsLabel')}
                     </label>
                     <textarea
@@ -1070,7 +1070,7 @@ const handleInputChange = (field: string, value: any) => {
                   {/* Order Overview Summary Card: 16px inner padding */}
                   <div className="p-4 rounded-2xl bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#C7982F)]/25 space-y-2 shadow-2xs">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-[var(--color-ink,#29231D)]/70">
+                      <span className="text-[10px] font-black text-[var(--color-ink,#29231D)]/70">
                         {t('checkout.items')}
                       </span>
                       <span className="text-[11px] font-serif font-bold text-[var(--color-gold,#C7982F)]">
@@ -1093,7 +1093,7 @@ const handleInputChange = (field: string, value: any) => {
                   <button
                     type="button"
                     onClick={handleProceedToStep2}
-                    className="purchase-primary w-full py-3.5 rounded-full bg-[#042821] text-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#C7982F)] text-xs font-black uppercase tracking-widest hover:bg-[var(--color-ink,#29231D)]/90 hover:shadow-[0_4px_20px_rgba(184,147,95,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                    className="purchase-primary w-full py-3.5 rounded-full bg-[#042821] text-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#C7982F)] text-xs font-black hover:bg-[var(--color-ink,#29231D)]/90 hover:shadow-[0_4px_20px_rgba(184,147,95,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                   >
                     <span>{t('checkout.continueDelivery')}</span>
                     <ArrowRight size={14} className="text-[var(--color-gold,#C7982F)]" />
@@ -1145,7 +1145,7 @@ const handleInputChange = (field: string, value: any) => {
                       {/* Shipping Address with Locate on Map */}
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <label htmlFor="checkout-field-address" className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#29231D)]/80">
+                          <label htmlFor="checkout-field-address"className="block text-[10px] font-black text-[var(--color-ink,#29231D)]/80">
                             {t('checkout.deliveryAddressLabel')} *
                           </label>
                         </div>
@@ -1186,7 +1186,7 @@ const handleInputChange = (field: string, value: any) => {
 
                       {/* Destination City */}
                       <div className="space-y-1.5">
-                        <label htmlFor="checkout-field-city" className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#29231D)]/80">
+                        <label htmlFor="checkout-field-city"className="block text-[10px] font-black text-[var(--color-ink,#29231D)]/80">
                           {t('shipping.destination')}
                         </label>
                         <select
@@ -1243,7 +1243,7 @@ const handleInputChange = (field: string, value: any) => {
 
                   {/* Preferred Delivery Time Slot */}
                   <div role="group" aria-labelledby="checkout-window-label" aria-describedby="checkout-window-hint" className="space-y-1.5">
-                    <p id="checkout-window-label" className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#29231D)]/80 flex items-center gap-1.5">
+                    <p id="checkout-window-label"className="block text-[10px] font-black text-[var(--color-ink,#29231D)]/80 flex items-center gap-1.5">
                       <Clock size={13} className="text-[var(--color-gold,#C7982F)]" />
                       {t('checkout.windowLabel')}
                     </p>
@@ -1311,7 +1311,7 @@ const handleInputChange = (field: string, value: any) => {
 
                     {(formData.giftWrapping || verifiedQuote?.freeGiftWrap) && (
                       <div className="mt-3 pt-3 border-t border-[var(--color-gold,#C7982F)]/20">
-                        <label htmlFor="checkout-gift-message" className="block text-[9.5px] font-black text-[var(--color-ink,#29231D)]/75 uppercase tracking-widest mb-1">
+                        <label htmlFor="checkout-gift-message"className="block text-[9.5px] font-black text-[var(--color-ink,#29231D)]/75 mb-1">
                           {t('checkout.giftMessageLabel')}
                         </label>
                     <div className="mb-2 flex flex-wrap gap-2">{['birthday', 'thanks', 'celebration'].map(key => <button type="button" key={key} onClick={() => handleInputChange('giftMessage', t(`gift.${key}Message`))} className="focus-ring min-h-11 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs">{t(`gift.${key}`)}</button>)}</div>
@@ -1327,7 +1327,7 @@ const handleInputChange = (field: string, value: any) => {
                           className="w-full bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#C7982F)]/35 rounded-xl py-2.5 px-3 text-base sm:text-sm font-medium focus:outline-none focus:border-[var(--color-gold,#C7982F)] text-[var(--color-ink,#29231D)] placeholder:text-[var(--color-ink,#29231D)]/30"
                         />
                         <fieldset className="mt-3 space-y-3" data-gift-options>
-                          <legend className="text-[9.5px] font-black text-[var(--color-ink,#29231D)]/75 uppercase tracking-widest">{t('checkout.giftOptions')}</legend>
+                          <legend className="text-[9.5px] font-black text-[var(--color-ink,#29231D)]/75">{t('checkout.giftOptions')}</legend>
                           <div>
                             <p className="mb-1 text-[11px] font-semibold text-[var(--color-ink,#29231D)]/80" id="gift-card-style-label">{t('checkout.giftCardStyle')}</p>
                             <div role="radiogroup" aria-labelledby="gift-card-style-label" className="flex flex-wrap gap-2">
@@ -1391,7 +1391,7 @@ const handleInputChange = (field: string, value: any) => {
                     <button
                       type="button"
                       onClick={handleProceedToStep3}
-                      className="purchase-checkout-submit flex-1 py-3.5 rounded-full bg-[#042821] text-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#C7982F)] text-xs font-black uppercase tracking-widest hover:bg-[var(--color-ink,#29231D)]/90 hover:shadow-[0_4px_20px_rgba(184,147,95,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                      className="purchase-checkout-submit flex-1 py-3.5 rounded-full bg-[#042821] text-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#C7982F)] text-xs font-black hover:bg-[var(--color-ink,#29231D)]/90 hover:shadow-[0_4px_20px_rgba(184,147,95,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                     >
                       <span>{isQuoteRequestMode ? t('checkout.reviewRequest') : t('checkout.proceedReview', 'Proceed to Payment & Review')}</span>
                       <ArrowRight size={14} className="text-[var(--color-gold,#C7982F)]" />
@@ -1412,7 +1412,7 @@ const handleInputChange = (field: string, value: any) => {
                 >
                   {/* Payment Protocol Selector */}
                   {!isQuoteRequestMode && <div role="group" aria-labelledby="checkout-payment-label" className="space-y-2">
-                    <p id="checkout-payment-label" className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-ink,#29231D)]/80">
+                    <p id="checkout-payment-label"className="block text-[10px] font-black text-[var(--color-ink,#29231D)]/80">
                       {t('checkout.paymentLabel')}
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -1431,7 +1431,7 @@ const handleInputChange = (field: string, value: any) => {
                       >
                         <div className="flex items-center gap-2 mb-1">
                           <CreditCard size={15} className="text-[var(--color-gold,#C7982F)]" />
-                          <span className="text-xs font-black uppercase tracking-wider">{t('checkout.cod')}</span>
+                          <span className="text-xs font-black">{t('checkout.cod')}</span>
                         </div>
                         <p className={`text-[10px] leading-snug ${selectedPayment === 'cod' ? 'text-[var(--color-surface,#FDFBF7)]/70' : 'text-[var(--color-ink,#29231D)]/60'}`}>
                           {t('checkout.codDescription')}
@@ -1453,7 +1453,7 @@ const handleInputChange = (field: string, value: any) => {
                       >
                         <div className="flex items-center gap-2 mb-1">
                           <Building2 size={15} className="text-[var(--color-gold,#C7982F)]" />
-                          <span className="text-xs font-black uppercase tracking-wider">{t('checkout.bank')}</span>
+                          <span className="text-xs font-black">{t('checkout.bank')}</span>
                         </div>
                         <p className={`text-[10px] leading-snug ${selectedPayment === 'bank' ? 'text-[var(--color-surface,#FDFBF7)]/70' : 'text-[var(--color-ink,#29231D)]/60'}`}>
                           {t('payment.bankDescription')}
@@ -1474,7 +1474,7 @@ const handleInputChange = (field: string, value: any) => {
                           <span className="block mt-2">{t('checkout.quoteNoPayment')}</span>
                         </p>
                         <div className="bg-[var(--color-emerald-dark,#042821)]/5 dark:bg-[#42f5bf]/10 p-3 rounded-xl border border-[var(--color-emerald-dark,#042821)]/10 text-start mt-3">
-                          <p className="text-[10px] font-black uppercase tracking-wider mb-2 opacity-80">{t('checkout.items')}</p>
+                          <p className="text-[10px] font-black mb-2 opacity-80">{t('checkout.items')}</p>
                           <div className="space-y-1.5">
                             {displayItems.map((item, idx) => (
                               <div key={idx} className="flex justify-between items-center text-[11px]">
@@ -1490,7 +1490,7 @@ const handleInputChange = (field: string, value: any) => {
                     ) : (
                       <>
                         <div className="flex justify-between items-center pb-2 border-b border-[var(--color-gold,#C7982F)]/20">
-                          <span className="text-[10px] font-black uppercase tracking-wider text-[var(--color-ink,#29231D)] dark:text-[#FDFBF7]">
+                          <span className="text-[10px] font-black text-[var(--color-ink,#29231D)] dark:text-[#FDFBF7]">
                             {t('checkout.breakdown')}
                           </span>
                           <span className="text-[10px] font-serif font-bold text-[var(--color-gold,#C7982F)]">
@@ -1598,7 +1598,7 @@ const handleInputChange = (field: string, value: any) => {
                         type="submit"
                         aria-busy={isSubmittingOrder || quoteLoading}
                         disabled={isSubmittingOrder || isValidatingCoupon || !online || authLoading || quoteLoading || !verifiedQuote}
-                        className="purchase-checkout-submit flex-1 py-3.5 rounded-full bg-[#042821] text-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#C7982F)] text-xs font-black uppercase tracking-widest hover:bg-[var(--color-ink,#29231D)]/90 hover:shadow-[0_4px_20px_rgba(184,147,95,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
+                        className="purchase-checkout-submit flex-1 py-3.5 rounded-full bg-[#042821] text-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#C7982F)] text-xs font-black hover:bg-[var(--color-ink,#29231D)]/90 hover:shadow-[0_4px_20px_rgba(184,147,95,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
                       >
                         {isSubmittingOrder || quoteLoading ? <LoaderCircle size={16} aria-hidden="true" className="boutique-request-spinner text-[var(--color-gold,#C7982F)]" /> : <CheckCircle size={16} aria-hidden="true" className="text-[var(--color-gold,#C7982F)]" />}
                         <span>{isQuoteRequestMode ? t(isSubmittingOrder ? 'checkout.quoteSubmitting' : 'checkout.quoteSubmit') : isSubmittingOrder ? t('checkout.placingOrder', 'Placing Order…') : t('checkout.confirmOrder', 'Confirm & Place Order')}</span>
@@ -1622,7 +1622,7 @@ const handleInputChange = (field: string, value: any) => {
                   </div>
 
                   <div>
-                    <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--color-gold,#C7982F)] block mb-1">
+                    <span className="text-[10px] font-black tracking-[0.25em] text-[var(--color-gold,#C7982F)] block mb-1">
                       {t('purchase.checkoutIntro')}
                     </span>
                     <h3 className="text-2xl font-serif font-black text-[var(--color-ink,#29231D)] mb-1">
@@ -1635,7 +1635,7 @@ const handleInputChange = (field: string, value: any) => {
 
                   {/* Official Order ID Badge */}
                   <div className="purchase-checkout-form bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#C7982F)]/35 rounded-2xl p-4 shadow-2xs">
-                    <p className="text-[10px] uppercase font-bold text-[var(--color-ink,#29231D)]/60 mb-1 tracking-wider">
+                    <p className="text-[10px] font-bold text-[var(--color-ink,#29231D)]/60 mb-1">
                       {t('checkout.trackingId')}
                     </p>
                     <p className="text-xl font-mono font-black text-[var(--color-ink,#29231D)] tracking-wider">
@@ -1647,7 +1647,7 @@ const handleInputChange = (field: string, value: any) => {
                   {orderItemsSnapshot.length > 0 && (
                     <div className="bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#C7982F)]/25 rounded-2xl p-4 text-start shadow-2xs space-y-2.5">
                       <div className="flex items-center justify-between border-b border-[var(--color-gold,#C7982F)]/15 pb-2">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-[var(--color-ink,#29231D)]/70">
+                        <span className="text-[10px] font-black text-[var(--color-ink,#29231D)]/70">
                           {t('checkout.orderedItems')} ({orderItemsSnapshot.length})
                         </span>
                         <span className="text-[10px] font-bold text-[var(--color-gold,#C7982F)]">
@@ -1681,7 +1681,7 @@ const handleInputChange = (field: string, value: any) => {
                   {/* Bank Transfer Details (if bank payment was chosen) */}
                   {selectedPayment === 'bank' && !orderSuccessResult.isQuoteRequest && (
                     <div className="bg-[#FDFBF7] border border-[#C7982F]/40 rounded-2xl p-4 text-start text-xs space-y-1.5 shadow-2xs">
-                      <div className="flex items-center gap-1.5 text-[var(--color-gold,#C7982F)] font-bold text-xs uppercase tracking-wider">
+                      <div className="flex items-center gap-1.5 text-[var(--color-gold,#C7982F)] font-bold text-xs">
                         <Building2 size={14} />
                         <span>{t('payment.transferDetails')}</span>
                       </div>
@@ -1713,14 +1713,14 @@ const handleInputChange = (field: string, value: any) => {
                         <button
                           type="button"
                           onClick={() => { onClose(); if(onOpenAuth) onOpenAuth(); }}
-                          className="flex-1 py-2.5 min-h-[44px] rounded-lg bg-[#042821] text-[var(--color-surface,#FDFBF7)] font-black text-[10px] uppercase tracking-widest text-center cursor-pointer"
+                          className="flex-1 py-2.5 min-h-[44px] rounded-lg bg-[#042821] text-[var(--color-surface,#FDFBF7)] font-black text-[10px] text-center cursor-pointer"
                         >
                           {t('checkout.createAccount')}
                         </button>
                         <button
                           type="button"
                           onClick={onClose}
-                          className="flex-1 py-2.5 min-h-[44px] rounded-lg bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#C7982F)]/30 text-[var(--color-ink,#29231D)] font-bold text-[10px] uppercase tracking-widest text-center cursor-pointer"
+                          className="flex-1 py-2.5 min-h-[44px] rounded-lg bg-[var(--color-surface,#FDFBF7)] border border-[var(--color-gold,#C7982F)]/30 text-[var(--color-ink,#29231D)] font-bold text-[10px] text-center cursor-pointer"
                         >
                           {t('checkout.later')}
                         </button>
@@ -1733,7 +1733,7 @@ const handleInputChange = (field: string, value: any) => {
                       href={orderSuccessResult.whatsappUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full py-3.5 min-h-[48px] rounded-full bg-[#25D366] text-white font-black uppercase tracking-widest hover:bg-[#1da851] hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 text-xs"
+                      className="w-full py-3.5 min-h-[48px] rounded-full bg-[#25D366] text-white font-black hover:bg-[#1da851] hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 text-xs"
                     >
                       <MessageCircle size={16} />
                       <span>{t('checkout.trackWhatsApp')}</span>
@@ -1742,7 +1742,7 @@ const handleInputChange = (field: string, value: any) => {
                     <button
                       type="button"
                       onClick={onClose}
-                      className="w-full py-3.5 min-h-[48px] rounded-full bg-[var(--color-surface,#FDFBF7)] text-[var(--color-ink,#29231D)] border border-[var(--color-gold,#C7982F)]/30 font-bold uppercase tracking-widest hover:bg-[var(--color-gold,#C7982F)]/10 transition-colors cursor-pointer"
+                      className="w-full py-3.5 min-h-[48px] rounded-full bg-[var(--color-surface,#FDFBF7)] text-[var(--color-ink,#29231D)] border border-[var(--color-gold,#C7982F)]/30 font-bold hover:bg-[var(--color-gold,#C7982F)]/10 transition-colors cursor-pointer"
                     >
                       {t('checkout.continueShopping')}
                     </button>

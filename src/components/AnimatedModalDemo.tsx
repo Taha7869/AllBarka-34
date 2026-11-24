@@ -101,7 +101,7 @@ export function AnimatedModalDemo({
       ) : triggerVariant === "header" ? (
         <ModalTrigger
           className={cn(
-            "px-2.5 py-1.5 sm:px-3.5 sm:py-2 bg-[var(--color-cream,#FAF9F5)] text-[var(--color-gold,#B8935F)] border border-[var(--color-gold,#B8935F)]/40 rounded-full font-bold text-[9px] sm:text-[10px] tracking-wider uppercase transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-1 sm:gap-1.5 shadow-xs hover:border-[var(--color-gold,#B8935F)] whitespace-nowrap shrink-0",
+            "px-2.5 py-1.5 sm:px-3.5 sm:py-2 bg-[var(--color-cream,#FAF9F5)] text-[var(--color-gold,#B8935F)] border border-[var(--color-gold,#B8935F)]/40 rounded-full font-bold text-[9px] sm:text-[10px] transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-1 sm:gap-1.5 shadow-xs hover:border-[var(--color-gold,#B8935F)] whitespace-nowrap shrink-0",
             className
           )}
         >
@@ -111,7 +111,7 @@ export function AnimatedModalDemo({
       ) : (
         <ModalTrigger
           className={cn(
-            "px-6 sm:px-8 py-3.5 rounded-full bg-[var(--color-gold,#B8935F)] text-white font-extrabold text-xs sm:text-sm tracking-wider uppercase shadow-sm hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2",
+            "px-6 sm:px-8 py-3.5 rounded-full bg-[var(--color-gold,#B8935F)] text-white font-extrabold text-xs sm:text-sm shadow-sm hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2",
             className
           )}
         >
@@ -125,7 +125,7 @@ export function AnimatedModalDemo({
         <ModalContent>
           {/* Header Banner */}
           <div className="text-center space-y-2 mb-6 select-none pr-8">
-            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[var(--color-cream,#FAF9F5)] border border-[var(--color-gold,#B8935F)]/40 text-[var(--color-gold,#B8935F)] text-[10.5px] font-black uppercase tracking-widest shadow-xs">
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[var(--color-cream,#FAF9F5)] border border-[var(--color-gold,#B8935F)]/40 text-[var(--color-gold,#B8935F)] text-[10.5px] font-black shadow-xs">
               <Sparkles size={12} />
               <span>AllBarka Patron Privileges</span>
             </div>
@@ -201,7 +201,7 @@ export function AnimatedModalDemo({
               <Clock size={14} className="text-[var(--color-gold,#B8935F)] shrink-0" />
               <span>Next Dispatch Wave: Today at 5:00 PM (Lahore Hub)</span>
             </div>
-            <div className="text-[10px] text-[var(--color-gold,#B8935F)] font-bold uppercase tracking-wider shrink-0 hidden sm:block">
+            <div className="text-[10px] text-[var(--color-gold,#B8935F)] font-bold shrink-0 hidden sm:block">
               Free Over Rs. 3,000
             </div>
           </div>

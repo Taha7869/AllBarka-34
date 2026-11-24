@@ -51,7 +51,7 @@ export default function PaidAddonsSelector({ occasionContext, compact = false }:
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
           <Sparkles size={14} className="text-[var(--color-gold,#B8935F)] shrink-0" />
-          <h4 className="text-xs font-black uppercase tracking-wider text-[var(--color-ink,#1F120F)]">
+          <h4 className="text-xs font-black text-[var(--color-ink,#1F120F)]">
             {t('addons.heading')}
           </h4>
         </div>

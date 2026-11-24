@@ -238,7 +238,7 @@ export default function ProductDetailPage() {
           <div className="w-16 h-16 rounded-full bg-[var(--color-emerald,#042821)]/5 border border-[var(--color-gold,#C7982F)]/30 flex items-center justify-center mx-auto mb-4 text-[var(--color-gold,#C7982F)]">
             <Sparkles size={28} />
           </div>
-          <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--color-gold,#C7982F)] block mb-2">
+          <span className="text-[10px] font-bold tracking-[0.25em] text-[var(--color-gold,#C7982F)] block mb-2">
             AllBarka Reserve
           </span>
           <h1 className="text-2xl sm:text-3xl font-serif font-bold text-[var(--color-ink,#29231D)] mb-3">
@@ -250,13 +250,13 @@ export default function ProductDetailPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <button
               onClick={() => navigate('/shop')}
-              className="w-full sm:w-auto px-6 py-3 rounded-full bg-[var(--color-emerald,#042821)] text-[var(--color-surface,#FFFCF7)] text-xs font-bold uppercase tracking-wider hover:bg-[#03201A] transition-colors border border-[var(--color-gold,#C7982F)]/40 shadow-sm"
+              className="w-full sm:w-auto px-6 py-3 rounded-full bg-[var(--color-emerald,#042821)] text-[var(--color-surface,#FFFCF7)] text-xs font-bold hover:bg-[#03201A] transition-colors border border-[var(--color-gold,#C7982F)]/40 shadow-sm"
             >
               {t('shop')}
             </button>
             <button
               onClick={() => navigate('/')}
-              className="w-full sm:w-auto px-6 py-3 rounded-full bg-white text-[var(--color-ink,#29231D)] text-xs font-bold uppercase tracking-wider border border-[var(--color-gold,#C7982F)]/30 hover:border-[var(--color-gold,#C7982F)] transition-colors"
+              className="w-full sm:w-auto px-6 py-3 rounded-full bg-white text-[var(--color-ink,#29231D)] text-xs font-bold border border-[var(--color-gold,#C7982F)]/30 hover:border-[var(--color-gold,#C7982F)] transition-colors"
             >
               {t('home')}
             </button>
@@ -383,7 +383,7 @@ export default function ProductDetailPage() {
                   <div className="w-16 h-16 rounded-2xl bg-[var(--color-gold,#C7982F)]/20 border border-[var(--color-gold,#C7982F)]/40 flex items-center justify-center text-[var(--color-gold,#C7982F)] mb-4">
                     <Sparkles size={28} />
                   </div>
-                  <span className="text-xs font-bold uppercase tracking-widest text-[var(--color-gold,#C7982F)]">AllBarka Reserve Lot</span>
+                  <span className="text-xs font-bold text-[var(--color-gold,#C7982F)]">AllBarka Reserve Lot</span>
                   <span className="text-lg font-serif font-bold text-[var(--color-ink,#29231D)] mt-1">{getLocalized(product, 'name', language)}</span>
                 </div>
               ) : (
@@ -410,17 +410,17 @@ export default function ProductDetailPage() {
             <div className="flex flex-wrap items-center justify-between gap-2 px-1">
               <div className="flex flex-wrap items-center gap-2">
                 {getLocalized(product, 'tag', language) && (
-                  <span className="px-3 py-1 rounded-full text-[10px] font-sans font-bold uppercase tracking-widest bg-[var(--color-primary,#042821)] text-[var(--color-text-on-emerald,#FFFCF7)] border border-[var(--color-accent,#C7982F)]/50 shadow-xs">
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-sans font-medium bg-[var(--color-primary,#042821)] text-[var(--color-text-on-emerald,#FFFCF7)] border border-[var(--color-accent,#C7982F)]/45">
                     {getLocalized(product, 'tag', language)}
                   </span>
                 )}
                 {product.badge && (
-                  <span className="px-3 py-1 rounded-full text-[10px] font-sans font-bold uppercase tracking-widest bg-[#C7982F]/20 text-[#806326] dark:text-[#E4C783] border border-[#C7982F]/40">
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-sans font-medium bg-[#C7982F]/18 text-[#806326] dark:text-[#E4C783] border border-[#C7982F]/35">
                     {product.badge}
                   </span>
                 )}
                 {getLocalized(product, 'origin', language) && (
-                  <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white dark:bg-[#1A201E] text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)] border border-[var(--color-accent,#C7982F)]/30">
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-white dark:bg-[#1A201E] text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)] border border-[var(--color-accent,#C7982F)]/30">
                     {getLocalized(product, 'origin', language)}
                   </span>
                 )}
@@ -469,7 +469,7 @@ export default function ProductDetailPage() {
             {hasVerifiedPackaging && (
               <div className="pdp-packaging-preview rounded-2xl bg-white dark:bg-[#1A201E] border border-[var(--color-accent,#C7982F)]/25 p-3.5 space-y-3 shadow-xs">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)]">
+                  <span className="text-[10px] font-bold text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)]">
                     {t('pdp.packagingMode', 'Packaging & Arrival View')}
                   </span>
                   <div className="flex items-center gap-1 p-0.5 rounded-lg bg-neutral-100 dark:bg-zinc-800 border border-neutral-200 dark:border-zinc-700 text-[11px]">
@@ -519,7 +519,7 @@ export default function ProductDetailPage() {
           {/* Right: Product Purchase Details */}
           <div className="pdp-purchase flex flex-col text-start">
             <div className="mb-4">
-              <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] block mb-1.5">
+              <span className="text-[10px] font-bold tracking-[0.25em] text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] block mb-1.5">
                 {t(isPackaging ? 'pdp.packagingEyebrow' : 'pdp.foodEyebrow')}
               </span>
               <h1 dir="auto" className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold text-[var(--color-primary,#042821)] dark:text-[var(--color-text-primary,#F6F1EA)] leading-tight mb-2">
@@ -531,7 +531,7 @@ export default function ProductDetailPage() {
 
               {!isPackaging && getLocalized(product, 'tasteProfile', language) && (
                 <div className="pdp-food-notes mt-3 p-3 rounded-xl bg-[var(--color-surface,#FFFCF7)] dark:bg-[#1A201E] border border-[var(--color-accent,#C7982F)]/25 text-xs text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)]">
-                  <span className="font-bold text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] uppercase tracking-wider text-[10px] block mb-0.5">
+                  <span className="font-bold text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] text-[10px] block mb-0.5">
                     {t('tasteProfile')}
                   </span>
                   <span dir="auto">{getLocalized(product, 'tasteProfile', language)}</span>
@@ -542,7 +542,7 @@ export default function ProductDetailPage() {
               <BundleInsideList product={product} />
               {!readBundleFormat(product) && getLocalized(product, 'contents', language) && (
                 <div className="mt-2.5 p-3 rounded-xl bg-[var(--color-surface,#FFFCF7)] dark:bg-[#1A201E] border border-[var(--color-accent,#C7982F)]/25 text-xs text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)]">
-                  <span className="font-bold text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] uppercase tracking-wider text-[10px] block mb-0.5">
+                  <span className="font-bold text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] text-[10px] block mb-0.5">
                     {t('packContents')}
                   </span>
                   <span dir="auto">{getLocalized(product, 'contents', language)}</span>
@@ -553,7 +553,7 @@ export default function ProductDetailPage() {
                 <div className="mt-3 grid grid-cols-1 gap-2.5 rounded-2xl bg-[#FAF6EE] dark:bg-[#1A201E] border border-[#C7982F]/35 p-3.5 text-xs text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)]">
                   {bidBoxConfig.dimensionsAndCapacity && (
                     <div>
-                      <strong className="uppercase tracking-wider text-[10px] text-[#8C6B1B] dark:text-[#E4C783] block">
+                      <strong className="text-[10px] text-[#8C6B1B] dark:text-[#E4C783] block">
                         {t('pdp.dimensions')}
                       </strong>
                       <span>{bidBoxConfig.dimensionsAndCapacity}</span>
@@ -561,7 +561,7 @@ export default function ProductDetailPage() {
                   )}
                   {bidBoxConfig.emptyOptionDetails && (
                     <div className="border-t border-[#C7982F]/20 pt-2">
-                      <strong className="uppercase tracking-wider text-[10px] text-[#8C6B1B] dark:text-[#E4C783] block">
+                      <strong className="text-[10px] text-[#8C6B1B] dark:text-[#E4C783] block">
                         {t('pdp.emptyOption')}
                       </strong>
                       <span>{bidBoxConfig.emptyOptionDetails}</span>
@@ -569,7 +569,7 @@ export default function ProductDetailPage() {
                   )}
                   {bidBoxConfig.filledOptionDetails && (
                     <div className="border-t border-[#C7982F]/20 pt-2">
-                      <strong className="uppercase tracking-wider text-[10px] text-[#8C6B1B] dark:text-[#E4C783] block">
+                      <strong className="text-[10px] text-[#8C6B1B] dark:text-[#E4C783] block">
                         {t('pdp.filledOption')}
                       </strong>
                       <span>{bidBoxConfig.filledOptionDetails}</span>
@@ -614,7 +614,7 @@ export default function ProductDetailPage() {
               return (
                 <div className="mb-6 rounded-2xl border border-[#C7982F]/40 bg-white dark:bg-[#1A201E] p-4 space-y-3 shadow-xs">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary,#042821)] dark:text-[#E4C783]">
+                    <span className="text-xs font-bold text-[var(--color-primary,#042821)] dark:text-[#E4C783]">
                       {hasEmptyOptions && hasFilledOptions
                         ? t('pdp.boxMode')
                         : t('pdp.savedPacks')}
@@ -735,7 +735,7 @@ export default function ProductDetailPage() {
             {/* Weight Selector */}
             <div className="mb-6">
               <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
-                <span className="text-xs font-bold text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)] uppercase tracking-widest">
+                <span className="text-xs font-bold text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)]">
                   {t('weightSelector', 'Select Weight / Portion')}
                 </span>
                 {product.wholesale > 0 && <a href={buildHumanSupportWhatsAppUrl(`Wholesale enquiry: ${product.name_en}`)} target="_blank" rel="noreferrer" className="focus-ring inline-flex min-h-11 items-center text-xs font-semibold text-[var(--color-accent-text)] underline underline-offset-4">{t('shop.wholesaleEnquiry')}</a>}
@@ -750,7 +750,7 @@ export default function ProductDetailPage() {
                       type="button"
                       aria-pressed={isSelected && !customWeightSelected}
                       onClick={() => { setSelectedWeightLabel(weights[idx]); setCustomWeightSelected(false); }}
-                      className={`min-h-[44px] min-w-[70px] px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer ${
+                      className={`min-h-[44px] min-w-[70px] px-5 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                         isSelected && !customWeightSelected
                           ? 'bg-[var(--color-primary,#042821)] border-[var(--color-primary,#042821)] text-[var(--color-text-on-emerald,#FFFCF7)] shadow-sm' 
                           : 'bg-white dark:bg-[#1C2422] border-[var(--color-accent,#C7982F)]/30 text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)] hover:border-[var(--color-accent,#C7982F)]'
@@ -809,7 +809,7 @@ export default function ProductDetailPage() {
                   portion={selectedWeight}
                   onAdd={handleAddToCart}
                   disabled={!priceToUse || !selectedWeight}
-                  className="focus-ring flex-1 min-h-[48px] rounded-xl flex items-center justify-center gap-2.5 text-xs font-bold uppercase tracking-widest cursor-pointer shadow-sm bg-[var(--color-primary,#042821)] text-[var(--color-text-on-emerald,#FFFCF7)] border border-[var(--color-accent,#C7982F)]/40 hover:border-[var(--color-accent,#C7982F)]"
+                  className="focus-ring flex-1 min-h-[48px] rounded-xl flex items-center justify-center gap-2.5 text-xs font-bold cursor-pointer shadow-sm bg-[var(--color-primary,#042821)] text-[var(--color-text-on-emerald,#FFFCF7)] border border-[var(--color-accent,#C7982F)]/40 hover:border-[var(--color-accent,#C7982F)]"
                 >
                   {t('addToCartPrice', 'Add to Cart')} — <bdi dir="ltr">{displayProductPrice(priceToUse, quantity)}</bdi>
                 </CartAddButton>
@@ -826,7 +826,7 @@ export default function ProductDetailPage() {
                       quantity: quantity,
                     })
                   }
-                  className="w-full min-h-[46px] rounded-xl border border-[#8C6B1B] bg-[#FAF6EE] hover:bg-[#8C6B1B] text-[#8C6B1B] hover:text-white flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider transition-all shadow-xs"
+                  className="w-full min-h-[46px] rounded-xl border border-[#8C6B1B] bg-[#FAF6EE] hover:bg-[#8C6B1B] text-[#8C6B1B] hover:text-white flex items-center justify-center gap-2 text-xs font-bold transition-all shadow-xs"
                 >
                   <MessageSquareQuote size={16} />
                   {t('pdp.quoteAction')}
@@ -839,7 +839,7 @@ export default function ProductDetailPage() {
                 <button 
                   type="button" 
                   data-pdp-share-btn onClick={handleShare}
-                  className="flex-1 min-h-[44px] h-11 flex items-center justify-center gap-2 rounded-xl border border-[#29231D]/20 dark:border-[#F6F1EA]/20 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#635B52] dark:text-[#A8A199] hover:text-[#1E3A2B] dark:hover:text-[#FDFBF7] hover:border-[#1E3A2B] dark:hover:border-[#FDFBF7] transition-colors shadow-sm focus-ring cursor-pointer"
+                  className="flex-1 min-h-[44px] h-11 flex items-center justify-center gap-2 rounded-xl border border-[#29231D]/20 dark:border-[#F6F1EA]/20 text-[10px] sm:text-xs font-bold text-[#635B52] dark:text-[#A8A199] hover:text-[#1E3A2B] dark:hover:text-[#FDFBF7] hover:border-[#1E3A2B] dark:hover:border-[#FDFBF7] transition-colors shadow-sm focus-ring cursor-pointer"
                 >
                   <Share2 size={15} />
                   <span>{shareStatus === 'copied' ? t('shareCopied', 'Link copied') : shareStatus === 'failed' ? t('shareFailed', 'Could not share') : t('shareItem', 'Share Item')}</span>
@@ -894,7 +894,7 @@ export default function ProductDetailPage() {
           <section className="pdp-related mt-20 pt-12 border-t border-[var(--color-accent,#C7982F)]/25">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 text-left">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] block mb-1">
+                <span className="text-[10px] font-bold tracking-[0.25em] text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] block mb-1">
                   {t('pdp.relatedEyebrow')}
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[var(--color-primary,#042821)] dark:text-[var(--color-text-primary,#F6F1EA)]">
@@ -903,7 +903,7 @@ export default function ProductDetailPage() {
               </div>
               <Link
                 to="/shop"
-                className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] hover:text-[var(--color-accent,#C7982F)] transition-colors"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] hover:text-[var(--color-accent,#C7982F)] transition-colors"
               >
                 <span>{t('viewFullHarvest')}</span>
                 <ArrowRight size={14} />
@@ -941,7 +941,7 @@ export default function ProductDetailPage() {
                         />
                       </div>
                       {getLocalized(rel, 'origin', language) && (
-                        <span className="inline-block mb-1 text-[9px] font-bold uppercase tracking-wider text-[var(--color-accent-text,#806326)]">
+                        <span className="inline-block mb-1 text-[9px] font-bold text-[var(--color-accent-text,#806326)]">
                           {getLocalized(rel, 'origin', language)}
                         </span>
                       )}
@@ -957,7 +957,7 @@ export default function ProductDetailPage() {
                       <span className="text-xs font-bold text-[var(--color-emerald,#042821)]">
                         {rel.quoteOnly || rel.orderMode === 'inquiry_quote' || !price ? t('catalog.requestQuote') : `Rs. ${price?.toLocaleString()}`}
                       </span>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent-text,#806326)] group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
+                      <span className="text-[10px] font-bold text-[var(--color-accent-text,#806326)] group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
                         {t('viewDetails')}
                         <ArrowRight size={11} />
                       </span>

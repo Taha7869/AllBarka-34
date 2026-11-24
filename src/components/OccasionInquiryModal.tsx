@@ -191,7 +191,7 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
               <HeartHandshake size={20} />
             </div>
             <div>
-              <span className="text-[10px] font-semibold tracking-widest uppercase text-[#043327] dark:text-emerald-400">
+              <span className="text-[10px] font-semibold text-[#043327] dark:text-emerald-400">
                 {t('occasion.eyebrow', 'Celebrations & Corporate Gifting')}
               </span>
               <h2 id={titleId} className="text-xl font-serif font-bold text-[#120F17] dark:text-[#FAF9F5]">
@@ -274,7 +274,7 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
             {/* Event Type & Destination */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="occasion-type" className="block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-1.5">
+                <label htmlFor="occasion-type"className="block text-xs font-semibold text-neutral-600 dark:text-neutral-300 mb-1.5">
                   {t('occasion.eventType', 'Occasion / Event Type')}
                 </label>
                 <select
@@ -292,7 +292,7 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
               </div>
 
               <div>
-                <label htmlFor="occasion-city" className="block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-1.5">
+                <label htmlFor="occasion-city"className="block text-xs font-semibold text-neutral-600 dark:text-neutral-300 mb-1.5">
                   {t('occasion.city', 'Delivery Destination')}
                 </label>
                 <select
@@ -312,7 +312,7 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
 
             {/* Target Event Date & Lead Time Notice */}
             <div>
-              <label htmlFor="occasion-date" className="block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-1.5">
+              <label htmlFor="occasion-date"className="block text-xs font-semibold text-neutral-600 dark:text-neutral-300 mb-1.5">
                 {t('occasion.date')}
               </label>
               <div className="relative">
@@ -359,7 +359,7 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
             {/* Packaging Style & Quantity */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="occasion-packaging" className="block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-1.5">
+                <label htmlFor="occasion-packaging"className="block text-xs font-semibold text-neutral-600 dark:text-neutral-300 mb-1.5">
                   {t('occasion.packaging', 'Favor & Packaging Style')}
                 </label>
                 <select
@@ -377,7 +377,7 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
               </div>
 
               <div>
-                <label htmlFor="occasion-quantity" className="block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-1.5">
+                <label htmlFor="occasion-quantity"className="block text-xs font-semibold text-neutral-600 dark:text-neutral-300 mb-1.5">
                   {t('occasion.quantity', 'Estimated Units / Favors')}
                 </label>
                 <input
@@ -409,7 +409,7 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
             {/* Contact Details */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="occasion-name" className="block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-1">
+                <label htmlFor="occasion-name"className="block text-xs font-semibold text-neutral-600 dark:text-neutral-300 mb-1">
                   {t('occasion.name', 'Your Full Name')} *
                 </label>
                 <input
@@ -427,7 +427,7 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
               </div>
 
               <div>
-                <label htmlFor="occasion-phone" className="block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-1">
+                <label htmlFor="occasion-phone"className="block text-xs font-semibold text-neutral-600 dark:text-neutral-300 mb-1">
                   {t('occasion.phone', 'WhatsApp Contact Number')} *
                 </label>
                 <input
@@ -445,7 +445,7 @@ export default function OccasionInquiryModal({ isOpen, onClose, defaultOccasion 
             </div>
 
             <div>
-              <label htmlFor="occasion-notes" className="block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300 mb-1">
+              <label htmlFor="occasion-notes"className="block text-xs font-semibold text-neutral-600 dark:text-neutral-300 mb-1">
                 {t('occasion.notes', 'Special Instructions or Color Theme')}
               </label>
               <textarea

@@ -39,15 +39,15 @@ export default function ProductDetailAccordion({ product, className = '', defaul
       key: 'storage', Icon: ThermometerSnowflake, title: t('care.storage', 'Use & storage'),
       content: <div className="space-y-4">
         <div>
-          <p dir="auto" className="mb-1 text-start text-[10px] font-semibold uppercase tracking-wider text-[var(--color-accent-text)]">{t('care.use', 'Suggested use')}</p>
+          <p dir="auto"className="mb-1 text-start text-[10px] font-semibold text-[var(--color-accent-text)]">{t('care.use','Suggested use')}</p>
           <p dir="auto" className="text-start">{suggestedUse}</p>
         </div>
         <div>
-          <p dir="auto" className="mb-1 text-start text-[10px] font-semibold uppercase tracking-wider text-[var(--color-accent-text)]">{t('care.storageLabel', 'Storage guidance')}</p>
+          <p dir="auto"className="mb-1 text-start text-[10px] font-semibold text-[var(--color-accent-text)]">{t('care.storageLabel','Storage guidance')}</p>
           <p dir="auto" className="text-start">{passport?.storageInstructions || storage}</p>
         </div>
         {passport?.bestBeforeDays !== undefined && <div>
-          <p dir="auto" className="mb-1 text-start text-[10px] font-semibold uppercase tracking-wider text-[var(--color-accent-text)]">{t('care.shelfLife', 'Best before / Shelf life')}</p>
+          <p dir="auto"className="mb-1 text-start text-[10px] font-semibold text-[var(--color-accent-text)]">{t('care.shelfLife','Best before / Shelf life')}</p>
           <p dir="auto" className="text-start leading-5">{passport.bestBeforeDays} {t('care.days', 'days from packaging')}</p>
         </div>}
       </div>,
@@ -58,23 +58,23 @@ export default function ProductDetailAccordion({ product, className = '', defaul
         <p dir="auto" className="text-start">{sourcing}</p>
         {(origin || harvest || passport?.variety || passport?.roastLevel || passport?.processingMethod) && <dl className="grid grid-cols-1 gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] p-3 sm:grid-cols-2">
           {passport?.variety && <div className="min-w-0">
-            <dt dir="auto" className="mb-1 text-start text-[10px] font-semibold uppercase tracking-wider text-[var(--color-accent-text)]">{t('item.variety', 'Variety')}</dt>
+            <dt dir="auto"className="mb-1 text-start text-[10px] font-semibold text-[var(--color-accent-text)]">{t('item.variety','Variety')}</dt>
             <dd dir="auto" className="text-start leading-5 text-[var(--color-text-primary)]">{passport.variety}</dd>
           </div>}
           {passport?.roastLevel && <div className="min-w-0">
-            <dt dir="auto" className="mb-1 text-start text-[10px] font-semibold uppercase tracking-wider text-[var(--color-accent-text)]">{t('item.roastLevel', 'Roast level')}</dt>
+            <dt dir="auto"className="mb-1 text-start text-[10px] font-semibold text-[var(--color-accent-text)]">{t('item.roastLevel','Roast level')}</dt>
             <dd dir="auto" className="text-start leading-5 text-[var(--color-text-primary)]">{t('item.roast.' + passport.roastLevel, passport.roastLevel.replace('_', ' '))}</dd>
           </div>}
           {passport?.processingMethod && <div className="min-w-0">
-            <dt dir="auto" className="mb-1 text-start text-[10px] font-semibold uppercase tracking-wider text-[var(--color-accent-text)]">{t('item.processingMethod', 'Processing')}</dt>
+            <dt dir="auto"className="mb-1 text-start text-[10px] font-semibold text-[var(--color-accent-text)]">{t('item.processingMethod','Processing')}</dt>
             <dd dir="auto" className="text-start leading-5 text-[var(--color-text-primary)]">{passport.processingMethod}</dd>
           </div>}
           {origin && <div className="min-w-0">
-            <dt dir="auto" className="mb-1 text-start text-[10px] font-semibold uppercase tracking-wider text-[var(--color-accent-text)]">{t('shop.origin')}</dt>
+            <dt dir="auto"className="mb-1 text-start text-[10px] font-semibold text-[var(--color-accent-text)]">{t('shop.origin')}</dt>
             <dd dir="auto" className="text-start leading-5 text-[var(--color-text-primary)]">{origin}</dd>
           </div>}
           {harvest && <div className="min-w-0">
-            <dt dir="auto" className="mb-1 text-start text-[10px] font-semibold uppercase tracking-wider text-[var(--color-accent-text)]">{t('care.harvest', 'Harvest information')}</dt>
+            <dt dir="auto"className="mb-1 text-start text-[10px] font-semibold text-[var(--color-accent-text)]">{t('care.harvest','Harvest information')}</dt>
             <dd dir="auto" className="text-start leading-5 text-[var(--color-text-primary)]">{harvest}</dd>
           </div>}
         </dl>}
@@ -84,11 +84,11 @@ export default function ProductDetailAccordion({ product, className = '', defaul
     { key: 'allergens', Icon: AlertCircle, title: t('care.allergens', 'Allergen information'), content: <div className="space-y-3">
   <p dir="auto" className="text-start">{allergens}</p>
   {!!passport?.allergens?.length && <div>
-    <p dir="auto" className="mb-1 text-start text-[10px] font-semibold uppercase tracking-wider text-[var(--color-accent-text)]">{t('care.containsAllergens', 'Contains / Advisory')}</p>
+    <p dir="auto"className="mb-1 text-start text-[10px] font-semibold text-[var(--color-accent-text)]">{t('care.containsAllergens','Contains / Advisory')}</p>
     <div className="flex flex-wrap gap-1.5">{passport.allergens.map((a, i) => <span key={i} className="rounded-md border border-[var(--color-border)] bg-[var(--color-base)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-text-primary)]">{a}</span>)}</div>
   </div>}
   {!!passport?.ingredients?.length && <div>
-    <p dir="auto" className="mb-1 text-start text-[10px] font-semibold uppercase tracking-wider text-[var(--color-accent-text)]">{t('item.ingredients', 'Ingredients')}</p>
+    <p dir="auto"className="mb-1 text-start text-[10px] font-semibold text-[var(--color-accent-text)]">{t('item.ingredients','Ingredients')}</p>
     <p dir="auto" className="text-start leading-5 text-[var(--color-text-primary)]">{passport.ingredients.join(', ')}</p>
   </div>}
 </div> },
@@ -102,7 +102,7 @@ export default function ProductDetailAccordion({ product, className = '', defaul
       {verifiedCertifications.length > 0 && <div className="flex flex-wrap gap-2 pt-1">
         {verifiedCertifications.map(cert => (
           <span key={cert} className="inline-flex items-center gap-1 rounded-full border border-[var(--color-border-accent)] bg-[var(--color-base)] px-3 py-1 text-[11px] font-medium text-[var(--color-accent-text)]">
-            <Award size={13} /> {t('item.cert.' + cert, cert.replace('_', ' ').toUpperCase())}
+            <Award size={13} /> {t('item.cert.' + cert, cert.replace('_', ' '))}
           </span>
         ))}
       </div>}
@@ -111,7 +111,7 @@ export default function ProductDetailAccordion({ product, className = '', defaul
   ];
 
   return <div dir="ltr" className={`w-full overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-xs ${className}`}>
-    <p dir="auto" className="border-b border-[var(--color-border)] bg-[var(--color-base)] px-4 py-3 text-start text-[10px] font-semibold uppercase tracking-wider text-[var(--color-accent-text)]">
+    <p dir="auto"className="border-b border-[var(--color-border)] bg-[var(--color-base)] px-4 py-3 text-start text-[10px] font-semibold text-[var(--color-accent-text)]">
       {t('care.title', 'Product care & details')}
     </p>
     <div className="divide-y divide-[var(--color-border)]">

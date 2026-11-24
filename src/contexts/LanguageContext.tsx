@@ -68,7 +68,7 @@ const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     searchPlaceholder4: 'Search Kashmiri Saffron & Panjgur Amber Dates...',
     search: 'Search',
     searchPrompt: 'Search dry fruits, saffron, gifts...',
-    allBarkaSubtitle: 'LUXURY HARVESTS',
+    allBarkaSubtitle: 'Luxury harvests',
     wholesale: 'Wholesale',
     gifting: 'Luxury Gifting',
     cartEmpty: 'Your Shopping Bag is Empty',

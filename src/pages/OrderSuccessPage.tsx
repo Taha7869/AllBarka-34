@@ -196,13 +196,13 @@ export default function OrderSuccessPage() {
         </p>
         <div className="flex flex-col sm:flex-row gap-3">
           <button type="button" onClick={() => setRecoveryRevision(value => value + 1)}
-            className="focus-ring min-h-11 px-8 py-3.5 rounded-full border border-[var(--color-gold,#C7982F)]/40 text-[var(--color-ink,#29231D)] font-bold text-xs uppercase tracking-[0.2em] hover:bg-[var(--color-gold,#C7982F)]/10">
+            className="focus-ring min-h-11 px-8 py-3.5 rounded-full border border-[var(--color-gold,#C7982F)]/40 text-[var(--color-ink,#29231D)] font-bold text-xs tracking-[0.2em] hover:bg-[var(--color-gold,#C7982F)]/10">
             {t('retry')}
           </button>
           <button
             type="button"
             onClick={() => navigate('/shop')}
-            className="px-8 py-3.5 rounded-full bg-[var(--color-ink,#29231D)] text-white dark:bg-[var(--color-gold,#C7982F)] dark:text-[var(--color-ink,#29231D)] font-bold text-xs uppercase tracking-[0.2em] hover:opacity-90 transition-all cursor-pointer"
+            className="px-8 py-3.5 rounded-full bg-[var(--color-ink,#29231D)] text-white dark:bg-[var(--color-gold,#C7982F)] dark:text-[var(--color-ink,#29231D)] font-bold text-xs tracking-[0.2em] hover:opacity-90 transition-all cursor-pointer"
           >
             Browse Collections
           </button>
@@ -210,7 +210,7 @@ export default function OrderSuccessPage() {
             href={buildHumanSupportWhatsAppUrl('Assalam-o-Alaikum, I would like to inquire about my AllBarka order status.')}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-8 py-3.5 rounded-full border border-[var(--color-gold,#C7982F)]/40 text-[var(--color-ink,#29231D)] font-bold text-xs uppercase tracking-[0.2em] hover:bg-[var(--color-gold,#C7982F)]/10 transition-all text-center flex items-center justify-center gap-2"
+            className="px-8 py-3.5 rounded-full border border-[var(--color-gold,#C7982F)]/40 text-[var(--color-ink,#29231D)] font-bold text-xs tracking-[0.2em] hover:bg-[var(--color-gold,#C7982F)]/10 transition-all text-center flex items-center justify-center gap-2"
           >
             <MessageCircle size={15} />
             Contact Concierge
@@ -260,7 +260,7 @@ export default function OrderSuccessPage() {
         <div className="bg-[var(--color-surface-elevated,#FFFFFF)] dark:bg-[var(--color-surface-elevated,#222A28)] border border-[var(--color-gold,#C7982F)]/20 rounded-2xl p-5 sm:p-6 mb-6">
           <div className="flex flex-wrap items-center justify-between pb-4 border-b border-[var(--color-gold,#C7982F)]/15 gap-2">
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted,#635B52)] block">
+              <span className="text-[10px] font-bold text-[var(--color-ink-muted,#635B52)] block">
                 Order Identifier
               </span>
               <span className="font-mono text-sm font-bold text-[var(--color-emerald-dark,#042821)] dark:text-[var(--color-gold,#C7982F)]">
@@ -268,7 +268,7 @@ export default function OrderSuccessPage() {
               </span>
             </div>
             {!isQuoteRequest && <div className="text-right">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted,#635B52)] block">
+              <span className="text-[10px] font-bold text-[var(--color-ink-muted,#635B52)] block">
                 Payment Method
               </span>
               <span className="text-xs font-bold text-[var(--color-ink,#29231D)]">
@@ -298,7 +298,7 @@ export default function OrderSuccessPage() {
           {/* Items Summary */}
           {Array.isArray(order.items) && order.items.length > 0 && (
             <div className="py-4 border-b border-[var(--color-gold,#C7982F)]/15">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted,#635B52)] block mb-2">
+              <span className="text-[10px] font-bold text-[var(--color-ink-muted,#635B52)] block mb-2">
                 Items ({order.items.reduce((acc, i) => acc + (i.quantity || 1), 0)})
               </span>
               <div className="space-y-2">
@@ -373,7 +373,7 @@ export default function OrderSuccessPage() {
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 py-3.5 px-6 rounded-full bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider text-center flex items-center justify-center gap-2 hover:bg-emerald-800 transition-colors shadow-xs"
+            className="flex-1 py-3.5 px-6 rounded-full bg-emerald-700 text-white font-bold text-xs text-center flex items-center justify-center gap-2 hover:bg-emerald-800 transition-colors shadow-xs"
           >
             <MessageCircle size={16} />
             {t('checkout.trackWhatsApp')}
@@ -381,7 +381,7 @@ export default function OrderSuccessPage() {
           <button
             type="button"
             onClick={() => navigate('/shop')}
-            className="flex-1 py-3.5 px-6 rounded-full bg-[var(--color-ink,#29231D)] text-white dark:bg-[var(--color-gold,#C7982F)] dark:text-[var(--color-ink,#29231D)] font-bold text-xs uppercase tracking-wider text-center hover:opacity-90 transition-colors cursor-pointer"
+            className="flex-1 py-3.5 px-6 rounded-full bg-[var(--color-ink,#29231D)] text-white dark:bg-[var(--color-gold,#C7982F)] dark:text-[var(--color-ink,#29231D)] font-bold text-xs text-center hover:opacity-90 transition-colors cursor-pointer"
           >
             Continue Shopping
           </button>
@@ -394,7 +394,7 @@ export default function OrderSuccessPage() {
               type="button"
               onClick={handleReorder}
               disabled={isReordering}
-              className="focus-ring w-full py-3.5 px-6 rounded-full bg-[var(--color-emerald-dark,#042821)] hover:bg-[#073d32] dark:bg-[var(--color-gold,#C7982F)] dark:hover:bg-[#d8a83d] text-white dark:text-[#042821] font-bold text-xs uppercase tracking-wider text-center flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50 min-h-11"
+              className="focus-ring w-full py-3.5 px-6 rounded-full bg-[var(--color-emerald-dark,#042821)] hover:bg-[#073d32] dark:bg-[var(--color-gold,#C7982F)] dark:hover:bg-[#d8a83d] text-white dark:text-[#042821] font-bold text-xs text-center flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50 min-h-11"
             >
               <RotateCcw size={16} />
               <span>{isReordering ? t('track.reordering', 'Adding to Bag...') : t('track.reorder', 'Dobara Mangwayein')}</span>

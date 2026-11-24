@@ -362,7 +362,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
               <h3 id="patron-title" className="font-serif font-bold text-lg text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7] leading-tight">
                 Patron Lounge
               </h3>
-              <p className="text-[9.5px] font-bold tracking-widest uppercase text-[var(--color-gold,#B8935F)] mt-0.5">
+              <p className="text-[9.5px] font-bold text-[var(--color-gold,#B8935F)] mt-0.5">
                 VIP Access Portal
               </p>
             </div>
@@ -388,7 +388,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                 <h4 className="text-xl font-serif font-black text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]">
                   {patronProfile?.name || 'Patron Member'}
                 </h4>
-                <p className="text-xs font-bold text-[var(--color-gold,#B8935F)] uppercase tracking-wider mb-4">
+                <p className="text-xs font-bold text-[var(--color-gold,#B8935F)] mb-4">
                   {patronProfile?.patronStatus || 'VIP Patron'}
                 </p>
 
@@ -411,7 +411,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                   {staffAccessUid===currentUser?.uid&&<Link to="/staff/orders" onClick={onClose} className="focus-ring mb-3 flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[var(--color-border-accent)] px-3 text-xs font-semibold"><ShieldCheck size={16}/>{t('staff.workspace')}</Link>}
                   <button
                     onClick={handleLogout}
-                    className="w-full py-2.5 rounded-xl border border-[var(--color-ink,#1F120F)]/20 text-[var(--color-ink,#1F120F)] hover:bg-[var(--color-ink,#1F120F)]/5 text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2"
+                    className="w-full py-2.5 rounded-xl border border-[var(--color-ink,#1F120F)]/20 text-[var(--color-ink,#1F120F)] hover:bg-[var(--color-ink,#1F120F)]/5 text-xs font-bold transition-colors flex items-center justify-center gap-2"
                   >
                     <LogOut size={14} />
                     Secure Sign Out
@@ -423,25 +423,25 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
 
               {/* Patron Rewards Section */}
               <div className="bg-white dark:bg-[#1A201E] border border-[var(--color-gold,#B8935F)]/30 rounded-2xl p-5 shadow-sm mt-4">
-                <h4 className="text-sm font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7] flex items-center gap-2 mb-4">
+                <h4 className="text-sm font-black text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7] flex items-center gap-2 mb-4">
                   <Crown size={16} className="text-[var(--color-gold,#B8935F)]" />
                   {t('rewards.title')}
                 </h4>
 
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   <div className="p-3 bg-[var(--color-cream,#FAF9F5)] dark:bg-[#222A28] rounded-xl border border-[var(--color-gold,#B8935F)]/25">
-                    <p className="text-[10px] text-[var(--color-ink,#1F120F)]/60 dark:text-[#FDFBF7]/60 font-bold uppercase tracking-wider mb-0.5">{t('rewards.available')}</p>
+                    <p className="text-[10px] text-[var(--color-ink,#1F120F)]/60 dark:text-[#FDFBF7]/60 font-bold mb-0.5">{t('rewards.available')}</p>
                     <p className="text-2xl font-serif font-black text-[var(--color-gold,#B8935F)]">{loyaltyData?.loyaltyPoints || 0}</p>
                   </div>
                   <div className="p-3 bg-[var(--color-cream,#FAF9F5)] dark:bg-[#222A28] rounded-xl border border-[var(--color-gold,#B8935F)]/25">
-                    <p className="text-[10px] text-[var(--color-ink,#1F120F)]/60 dark:text-[#FDFBF7]/60 font-bold uppercase tracking-wider mb-0.5">{t('rewards.pending')}</p>
+                    <p className="text-[10px] text-[var(--color-ink,#1F120F)]/60 dark:text-[#FDFBF7]/60 font-bold mb-0.5">{t('rewards.pending')}</p>
                     <p className="text-2xl font-serif font-black text-amber-700 dark:text-amber-500">+{pendingPoints}</p>
                   </div>
                 </div>
 
                 {loyaltyData?.activeRewards && loyaltyData.activeRewards.length > 0 && (
                   <div className="mb-6 p-3 bg-[var(--color-gold,#B8935F)]/10 border border-[var(--color-gold,#B8935F)]/20 rounded-xl">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7] mb-1">{t('rewards.active')}</p>
+                    <p className="text-[10px] font-bold text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7] mb-1">{t('rewards.active')}</p>
                     <p className="text-sm font-bold text-[var(--color-ink,#1F120F)]">
                       {t(`rewards.${loyaltyData.activeRewards[0].rewardId}.name`, rewards.find((r: any) => r.rewardId === loyaltyData.activeRewards[0].rewardId)?.name || t('rewards.active'))}
                     </p>
@@ -451,7 +451,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
 
                 <div className="space-y-3 mb-6">
                   {loyaltyMessage && <p role="alert" className="text-xs leading-relaxed text-[var(--color-text-secondary)]">{loyaltyMessage}</p>}
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-ink,#1F120F)]/70 dark:text-[#FDFBF7]/70">{t('rewards.options')}</p>
+                  <p className="text-[10px] font-bold text-[var(--color-ink,#1F120F)]/70 dark:text-[#FDFBF7]/70">{t('rewards.options')}</p>
                   {rewards.filter((r: any) => r.active).map((reward: any) => {
                     const canAfford = (loyaltyData?.loyaltyPoints || 0) >= reward.pointsCost;
                     const hasActive = loyaltyData?.activeRewards && loyaltyData.activeRewards.length > 0;
@@ -465,7 +465,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                         <button
                           onClick={() => handleRedeem(reward.rewardId)}
                           disabled={!canAfford || hasActive || !!redeeming || !loyaltyData}
-                          className="focus-ring min-h-11 w-full py-1.5 rounded-lg border border-[var(--color-gold,#B8935F)]/30 text-[9px] font-black uppercase tracking-widest transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[var(--color-gold,#B8935F)] hover:text-white text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]"
+                          className="focus-ring min-h-11 w-full py-1.5 rounded-lg border border-[var(--color-gold,#B8935F)]/30 text-[9px] font-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[var(--color-gold,#B8935F)] hover:text-white text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]"
                         >
                           {t(redeeming === reward.rewardId ? 'rewards.redeeming' : hasActive ? 'rewards.waiting' : canAfford ? 'rewards.redeem' : 'rewards.insufficient')}
                         </button>
@@ -476,7 +476,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
 
                 {loyaltyData?.transactions && loyaltyData.transactions.length > 0 && (
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-ink,#1F120F)]/70 dark:text-[#FDFBF7]/70 mb-2">{t('rewards.activity')}</p>
+                    <p className="text-[10px] font-bold text-[var(--color-ink,#1F120F)]/70 dark:text-[#FDFBF7]/70 mb-2">{t('rewards.activity')}</p>
                     <div className="space-y-2">
                       {loyaltyData.transactions.slice(0, 3).map((tx: any) => (
                         <div key={tx.transactionId} className="flex justify-between items-center text-[10px]">
@@ -492,7 +492,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
               </div>
 {/* Main Content: Orders */}
             <div className="lg:col-span-2 space-y-4">
-              <h4 className="text-sm font-black uppercase tracking-widest text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7] flex items-center gap-2 mb-2">
+              <h4 className="text-sm font-black text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7] flex items-center gap-2 mb-2">
                 <Package size={16} className="text-[var(--color-gold,#B8935F)]" />
                 {t('account.orders')}
               </h4>
@@ -534,22 +534,22 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                       <div key={order.orderId} className="bg-white dark:bg-[#1A201E] border border-[var(--color-gold,#B8935F)]/30 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                         <div className="px-5 py-4 border-b border-[var(--color-gold,#B8935F)]/20 bg-[#FDFBF7]/50 dark:bg-transparent flex flex-wrap items-center justify-between gap-4">
                           <div>
-                            <p className="text-[10px] uppercase font-bold text-[var(--color-ink,#1F120F)]/60 mb-0.5">Order ID</p>
+                            <p className="text-[10px] font-bold text-[var(--color-ink,#1F120F)]/60 mb-0.5">Order ID</p>
                             <p className="font-mono text-sm font-bold text-[var(--color-ink,#1F120F)] dark:text-[#FDFBF7]" dir="ltr">{order.orderId}</p>
                           </div>
                           <div>
-                            <p className="text-[10px] uppercase font-bold text-[var(--color-ink,#1F120F)]/60 mb-0.5">Placed On</p>
+                            <p className="text-[10px] font-bold text-[var(--color-ink,#1F120F)]/60 mb-0.5">Placed On</p>
                             <p className="text-sm font-medium text-[var(--color-ink,#1F120F)] flex items-center gap-1.5">
                               <Calendar size={13} className="text-[var(--color-gold,#B8935F)]" />
                               {getFormattedDate(order)}
                             </p>
                           </div>
                           <div>
-                            <p className="text-[10px] uppercase font-bold text-[var(--color-ink,#1F120F)]/60 mb-0.5">Total</p>
+                            <p className="text-[10px] font-bold text-[var(--color-ink,#1F120F)]/60 mb-0.5">Total</p>
                             <p className="font-serif font-black text-[var(--color-ink,#1F120F)]">Rs. {totalAmt.toLocaleString('en-PK')}</p>
                           </div>
                           <div>
-                            <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${getStatusColor(order.status)}`}>
+                            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${getStatusColor(order.status)}`}>
                               {order.status}
                             </span>
                           </div>
@@ -576,7 +576,7 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                               <div className="reorder-review-panel mt-3 p-4 rounded-xl bg-amber-50/60 dark:bg-zinc-800/80 border border-[var(--color-gold,#B8935F)]/30 space-y-3">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">
-                                    <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary,#042821)] dark:text-emerald-400">
+                                    <h4 className="text-xs font-bold text-[var(--color-primary,#042821)] dark:text-emerald-400">
                                       {t('account.reorderReviewTitle', 'Review Items Before Reorder')}
                                     </h4>
                                     {reorderValidating && (

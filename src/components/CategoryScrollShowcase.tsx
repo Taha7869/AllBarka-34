@@ -139,7 +139,7 @@ export default function CategoryScrollShowcase() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-6">
           <h3 className="text-2xl font-serif font-bold text-white mb-1 group-hover:text-[var(--color-gold,#B8935F)] transition-colors">{cat.title}</h3>
           <div className="flex items-center justify-between">
-            <p className="text-[11px] text-white/80 uppercase tracking-widest font-bold">{cat.subtitle}</p>
+            <p className="text-[11px] text-white/80 font-bold">{cat.subtitle}</p>
             <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:bg-[var(--color-gold,#B8935F)] transition-colors">
               <ArrowRight size={14} className="text-white" />
             </div>
@@ -172,7 +172,7 @@ export default function CategoryScrollShowcase() {
           </div>
 
           <div className="mt-4 flex justify-center">
-             <Link to="/shop" className="px-8 py-3 bg-[#FAF9F5] text-[#043327] border border-[#D4AF37]/30 font-bold uppercase tracking-widest text-[11px] rounded-full hover:bg-[#D4AF37] hover:text-white transition-all shadow-sm hover:shadow-md text-center">
+             <Link to="/shop"className="px-8 py-3 bg-[#FAF9F5] text-[#043327] border border-[#D4AF37]/30 font-bold text-[11px] rounded-full hover:bg-[#D4AF37] hover:text-white transition-all shadow-sm hover:shadow-md text-center">
                  View All Items
              </Link>
           </div>
@@ -195,7 +195,7 @@ export default function CategoryScrollShowcase() {
           </div>
 
           <div className="w-full flex justify-center mt-10">
-             <Link to="/shop" className="px-8 py-3 bg-[#FAF9F5] text-[#043327] border border-[#D4AF37]/30 font-bold uppercase tracking-widest text-[11px] rounded-full hover:bg-[#D4AF37] hover:text-white transition-all shadow-sm hover:shadow-md text-center">
+             <Link to="/shop"className="px-8 py-3 bg-[#FAF9F5] text-[#043327] border border-[#D4AF37]/30 font-bold text-[11px] rounded-full hover:bg-[#D4AF37] hover:text-white transition-all shadow-sm hover:shadow-md text-center">
                  View All Items
              </Link>
           </div>

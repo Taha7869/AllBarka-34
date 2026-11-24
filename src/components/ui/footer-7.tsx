@@ -204,7 +204,7 @@ export const Footer7 = ({
                   {logo.title}
                 </span>
                 {logo.subtitle && (
-                  <span className="text-[11px] uppercase tracking-widest text-[#D4AF37] block font-medium">
+                  <span className="text-[11px] text-[#D4AF37] block font-medium">
                     {logo.subtitle}
                   </span>
                 )}
@@ -217,7 +217,7 @@ export const Footer7 = ({
 
             {/* Newsletter Subscription */}
             <div className="pt-2">
-              <span className="block text-xs font-semibold uppercase tracking-wider text-[#E4C783] mb-2 font-serif">
+              <span className="block text-xs font-semibold text-[#E4C783] mb-2 font-serif">
                 Private Reserve Announcements
               </span>
               {subscribed ? (
@@ -281,7 +281,7 @@ export const Footer7 = ({
           <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-8 pt-2 text-left">
             {sections.map((section, sectionIdx) => (
               <div key={sectionIdx} className="space-y-4">
-                <h3 className="text-sm font-serif font-bold uppercase tracking-wider text-white border-b border-[#D4AF37]/20 pb-2.5">
+                <h3 className="text-sm font-serif font-bold text-white border-b border-[#D4AF37]/20 pb-2.5">
                   {section.title}
                 </h3>
                 <ul className="space-y-2.5 text-xs">
