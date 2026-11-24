@@ -17,7 +17,7 @@ const rows: [string, string, string, string][] = [
   ["gift.recipient.friend", "A friend", "دوست کے لیے", "صديق"],
   ["gift.recipient.colleagues", "Colleagues", "ساتھیوں کے لیے", "الزملاء"],
   ["gift.recipient.clients", "Clients", "کلائنٹس کے لیے", "العملاء"],
-  ["gift.recipientNote", "Your choice helps our team discuss your gift. Browse all gifts below; contents and suitability need your review.", "آپ کا انتخاب ہماری ٹیم کو رہنمائی میں مدد دے گا۔ نیچے تمام تحائف دیکھیں اور مشمولات و موزونیت کا جائزہ لیں۔", "يساعد اختيارك فريقنا في مناقشة الهدية. تصفح جميع الهدايا أدناه وراجع المحتويات ومدى ملاءمتها."],
+  ["gift.recipientNote", "Tell us who the gift is for and our Lahore team will suggest the right box and pairing — or browse ready-made gifts below.", "بتائیں کہ تحفہ کس کے لیے ہے تاکہ ہماری لاہور ٹیم بہترین باکس اور میوہ جات تجویز کرے — یا نیچے تیار تحائف دیکھیں۔", "أخبرنا لمن الهدية ليرشّح لك فريقنا في لاهور الصندوق والتنسيق الأنسب — أو تصفح الهدايا الجاهزة أدناه."],
   ["gift.recipientAction", "Ask for gift guidance", "تحفے کے انتخاب میں مدد لیں", "اطلب المساعدة في اختيار هدية"],
 
   ["purchase.bag", "Your shopping bag", "آپ کا شاپنگ بیگ", "حقيبة التسوق"],
@@ -61,7 +61,7 @@ const rows: [string, string, string, string][] = [
   ['gift.budgetLabel', 'Starting-pack budget', 'ابتدائی پیک کا بجٹ', 'ميزانية العبوة الأولى'],
   ['gift.upTo', 'Up to', 'زیادہ سے زیادہ', 'حتى'],
   ['gift.anyBudget', 'Any budget', 'ہر بجٹ', 'أي ميزانية'],
-  ['gift.budgetNote', 'Budget filters use the initial available pack on each card. Other portions may cost more. Clear the budget to include custom quotes.', 'بجٹ فلٹر ہر کارڈ کے ابتدائی دستیاب پیک پر ہے۔ دوسری مقدار کی قیمت زیادہ ہو سکتی ہے۔ خصوصی کوٹیشن دیکھنے کے لیے بجٹ ہٹائیں۔', 'يعتمد فلتر الميزانية على العبوة الأولى المتاحة في كل بطاقة. قد تزيد أسعار الحصص الأخرى. امسح الميزانية لإظهار عروض الأسعار المخصصة.'],
+  ['gift.budgetNote', 'Filter by starting price — choose Any budget to view bespoke gift quotes as well.', 'ابتدائی قیمت کے لحاظ سے منتخب کریں — خصوصی کوٹیشن والے تحائف دیکھنے کے لیے ہر بجٹ چنیں۔', 'صفّ الهدايا حسب السعر الابتدائي — اختر «أي ميزانية» لعرض عروض الهدايا المخصصة أيضًا.'],
   ['gift.clear', 'Clear gift filters', 'تحائف کے فلٹر ہٹائیں', 'مسح فلاتر الهدايا'],
   ['gift.inquiryTitle', 'Planning gifts for a group?', 'گروپ کے لیے تحائف کی تیاری؟', 'تخطط لهدايا لمجموعة؟'],
   ['gift.inquiryCopy', 'Share the occasion, city and quantity. Our team can confirm packaging options and preparation requirements.', 'موقع، شہر اور تعداد بتائیں۔ ہماری ٹیم پیکیجنگ اور تیاری کی ضروریات کی تصدیق کرے گی۔', 'أخبرنا بالمناسبة والمدينة والكمية. يؤكد فريقنا خيارات التغليف ومتطلبات التجهيز.'],

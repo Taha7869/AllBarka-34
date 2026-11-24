@@ -71,7 +71,7 @@ createRoot(document.getElementById('root')).render(<BrowserRouter><ThemeProvider
       await page.setViewportSize({width,height:1000});await page.evaluate(({language,theme})=>{(window as any).fixture.lang(language);(window as any).fixture.theme(theme);},{language,theme});
       await page.screenshot({animations:'disabled'});
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`${width}/${language}/${theme}`);
-      const geometry=await card.evaluate(e=>({width:e.getBoundingClientRect().width,overflow:e.scrollWidth>e.clientWidth+1,targets:[...e.querySelectorAll('button,select')].map(b=>b.getBoundingClientRect().height)}));
+      const geometry=await card.evaluate(e=>({width:e.getBoundingClientRect().width,overflow:e.scrollWidth>e.clientWidth+1,targets:[...e.querySelectorAll('button,select')].filter(b=>getComputedStyle(b).display!=='none').map(b=>b.getBoundingClientRect().height)}));
       assert.equal(geometry.overflow,false);assert.ok(geometry.targets.every(h=>h>=44));layouts.push({width,language,theme,...geometry});
       if((width===390||width===1440)&&language==='en'&&theme==='light')await page.screenshot({path:path.join(evidence,`shop-${width}.jpg`),quality:82,animations:'disabled'});
     }
