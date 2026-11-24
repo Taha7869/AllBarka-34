@@ -51,7 +51,7 @@ function measureFixedBottomClearance(hasBottomBar: boolean, hasCookieBar: boolea
     clearance = Math.max(clearance, isMobile ? 84 : 92);
   }
   if (hasCookieBar) {
-    const cookieDialog = document.querySelector<HTMLElement>('[data-cookie-notice], [aria-label*="Cookie"], [aria-label*="cookie"]');
+    const cookieDialog = document.querySelector<HTMLElement>('[data-consent-banner], [data-cookie-notice], [aria-label*="Cookie"], [aria-label*="cookie"]');
     if (cookieDialog) {
       const r = cookieDialog.getBoundingClientRect();
       if (r.height > 0 && r.bottom >= window.innerHeight - 40) {

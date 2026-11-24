@@ -191,8 +191,8 @@ export default function CookieNotice({ hidden = false, hasTabBar = false }: Cook
           style={prefersReducedMotion ? undefined : { animation: `allbarka-sheet-enter 220ms ${MOTION_EASE_CSS} both` }}
           className={`fixed inset-x-3 z-40 sm:inset-x-auto sm:left-5 sm:right-auto sm:w-[22.5rem] max-w-[calc(100vw-1.5rem)] max-h-[30svh] overflow-y-auto rounded-2xl border border-[#C7982F]/35 bg-[var(--color-surface,#FFFCF7)] px-3.5 py-3 text-start shadow-[0_14px_38px_rgba(4,40,33,0.16)] dark:bg-[#161D1B] dark:border-[#C7982F]/30 ${
             hasTabBar
-              ? 'bottom-[calc(9.25rem+env(safe-area-inset-bottom))] sm:bottom-20'
-              : 'bottom-[calc(5.25rem+env(safe-area-inset-bottom))] sm:bottom-5'
+              ? 'bottom-[calc(5rem+env(safe-area-inset-bottom))] sm:bottom-20'
+              : 'bottom-[calc(0.75rem+env(safe-area-inset-bottom))] sm:bottom-5'
           }`}
         >
           <div className="space-y-1">

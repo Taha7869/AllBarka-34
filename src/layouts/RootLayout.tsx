@@ -328,6 +328,7 @@ export default function RootLayout() {
     (totalItemsCount > 0 && location.pathname !== '/checkout' && location.pathname !== '/cart');
   const hideFloatingConcierge =
     isAdminRoute ||
+    consentUiActive ||
     location.pathname === '/checkout' ||
     location.pathname === '/cart' ||
     (isAnyModalOrDrawerOpen && !aiConciergeOpen);

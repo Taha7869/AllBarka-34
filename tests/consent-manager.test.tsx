@@ -248,7 +248,7 @@ test('CookieNotice, ConsentGate, Footer, and /policies/cookies render trilingual
   assert.match(bannerHtml, /data-gpc-indicator/);
   assert.match(bannerHtml, /\/policies\/cookies/);
   assert.match(bannerHtml, /min-h-\[44px\]/);
-  assert.match(bannerHtml, /bottom-\[calc\(5\.25rem\+env\(safe-area-inset-bottom\)\)\]/);
+  assert.match(bannerHtml, /bottom-\[calc\(0\.75rem\+env\(safe-area-inset-bottom\)\)\]/);
 
   // 3. ConsentGate allows necessary, blocks analytics & marketing before consent
   const gateHtml = renderToStaticMarkup(
