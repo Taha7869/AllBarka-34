@@ -95,6 +95,8 @@ export default function RootLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [headerSearchOpen, setHeaderSearchOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [dispatchHiddenOnScroll, setDispatchHiddenOnScroll] = useState(false);
+  const lastScrollYRef = useRef(0);
   const [isCartPulsing, setIsCartPulsing] = useState(false);
   const [cartPopTick, setCartPopTick] = useState(0);
 
@@ -280,7 +282,16 @@ export default function RootLayout() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 24);
+      const y = window.scrollY;
+      setIsScrolled(y > 24);
+      if (y <= 12) {
+        setDispatchHiddenOnScroll(false);
+      } else if (y > lastScrollYRef.current + 6 && y > 32) {
+        setDispatchHiddenOnScroll(true);
+      } else if (y < lastScrollYRef.current - 12) {
+        setDispatchHiddenOnScroll(false);
+      }
+      lastScrollYRef.current = y;
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
@@ -344,18 +355,23 @@ export default function RootLayout() {
       <ToastManager />
       {!isAdminRoute && <GradualBlur preset="header" strength={1.5} opacity={0.9} />}
       
-      {/* Lahore Same-Day Express Timer Bar */}
-      {!isAdminRoute && <LahoreExpressTimer onOpenSchedule={() => { setPolicyModalTab('shipping'); setPolicyModalOpen(true); }} />}
+      {/* Lahore Same-Day Express Timer Bar (32px on mobile; collapses cleanly on scroll down) */}
+      {!isAdminRoute && (
+        <LahoreExpressTimer
+          hiddenOnScroll={dispatchHiddenOnScroll}
+          onOpenSchedule={() => { setPolicyModalTab('shipping'); setPolicyModalOpen(true); }}
+        />
+      )}
 
-      {/* Header Navigation */}
+      {/* Header Navigation (56px compact on mobile with Search, Cart & Menu; ThemeToggle inside MobileMenu) */}
       <header 
         id="main-navigation-header"
         data-scrolled={isScrolled ? 'true' : 'false'}
         dir={isRtl ? 'rtl' : 'ltr'}
-        className={`sticky top-0 left-0 right-0 z-[100] w-full transition-all duration-300 motion-reduce:transition-none ${
+        className={`sticky top-0 left-0 right-0 z-[100] w-full min-h-[56px] h-[56px] md:h-auto transition-all duration-300 motion-reduce:transition-none flex items-center ${
           isScrolled 
-            ? 'py-1.5 sm:py-2 bg-[#FFFCF7] dark:bg-[#042821] shadow-[0_8px_24px_-12px_rgba(4,40,33,0.18)] border-b border-[#C7982F]/40'
-            : 'py-3 sm:py-3.5 bg-[#FDFBF7] dark:bg-[#0D1412] shadow-none border-b border-[#C7982F]/15'
+            ? 'md:py-2 bg-[#FFFCF7] dark:bg-[#042821] shadow-[0_8px_24px_-12px_rgba(4,40,33,0.18)] border-b border-[#C7982F]/40'
+            : 'md:py-3.5 bg-[#FDFBF7] dark:bg-[#0D1412] shadow-none border-b border-[#C7982F]/15'
         }`}
       >
         {!online && <div role="status" className="fixed inset-x-0 top-0 z-[20000] border-b border-[#c7982f] bg-[#092e23] px-4 py-2 text-center text-xs text-[#fff8e9]">{t('checkout.offline')}</div>}
@@ -426,8 +442,10 @@ export default function RootLayout() {
               {/* Currency selector (Desktop only; mobile uses MobileMenu) */}
               <CurrencySelector variant="desktop" />
 
-              {/* Theme Toggle (Mobile & Desktop) */}
-              <ThemeToggle className="min-w-[42px] min-h-[42px] border-[#29231D]/10 dark:border-[#C7982F]/25 bg-[#F6F1EA]/60 dark:bg-[#1A201E]/60 hover:bg-[#C7982F]/15 text-[#042821] dark:text-[#FFFCF7]" />
+              {/* Theme Toggle (Desktop only; mobile theme controls live inside MobileMenu) */}
+              <div className="hidden md:flex">
+                <ThemeToggle className="min-w-[42px] min-h-[42px] border-[#29231D]/10 dark:border-[#C7982F]/25 bg-[#F6F1EA]/60 dark:bg-[#1A201E]/60 hover:bg-[#C7982F]/15 text-[#042821] dark:text-[#FFFCF7]" />
+              </div>
 
               {/* Patron VIP Lounge / Login (Desktop only) */}
               <div className="hidden sm:flex items-center gap-1.5">
