@@ -22,7 +22,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { LanguageProvider, useLanguage } from './src/contexts/LanguageContext';
 import { ThemeProvider } from './src/contexts/ThemeContext';
-import { ConsentProvider } from './src/contexts/ConsentContext';
+import { ConsentProvider, useConsent } from './src/contexts/ConsentContext';
 import CookieNotice from './src/components/CookieNotice';
 import ConsentGate from './src/components/ConsentGate';
 import Footer from './src/components/Footer';
@@ -30,6 +30,7 @@ import PoliciesPage from './src/pages/PoliciesPage';
 
 function Harness() {
   const { setLanguage } = useLanguage();
+  const { needsPrompt } = useConsent();
   const [analyticsLoads, setAnalyticsLoads] = useState(0);
   const [marketingLoads, setMarketingLoads] = useState(0);
 
@@ -58,14 +59,16 @@ function Harness() {
         </Routes>
       </main>
       <Footer />
-      {/* Simulated bottom-right AI chat button matching AIConcierge.tsx position */}
-      <button
-        type="button"
-        data-mock-chat-button
-        style={{ position: 'fixed', bottom: '20px', right: '16px', width: '56px', height: '56px', zIndex: 30 }}
-      >
-        Chat
-      </button>
+      {/* Mirrors RootLayout: floating AB AI launcher stays hidden while CookieNotice banner is active */}
+      {!needsPrompt && (
+        <button
+          type="button"
+          data-mock-chat-button
+          style={{ position: 'fixed', bottom: '12px', right: '10px', width: '44px', height: '44px', zIndex: 30 }}
+        >
+          Chat
+        </button>
+      )}
       <CookieNotice />
     </div>
   );
@@ -110,7 +113,8 @@ createRoot(document.getElementById('root')!).render(
       <style>
         *{box-sizing:border-box}
         .fixed{position:fixed}.relative{position:relative}.inset-0{inset:0}.inset-x-3{left:12px;right:12px}
-        .bottom-\\[calc\\(5\\.25rem\\+env\\(safe-area-inset-bottom\\)\\)\\]{bottom:84px}
+        .bottom-\\[calc\\(0\\.75rem\\+env\\(safe-area-inset-bottom\\)\\)\\]{bottom:12px}
+        .max-h-\\[30svh\\]{max-height:30svh}
         .z-10{z-index:10}.z-40{z-index:40}.z-\\[12100\\]{z-index:12100}
         .flex{display:flex}.flex-col{flex-direction:column}.flex-1{flex:1 1 0%}
         .items-end{align-items:flex-end}.justify-center{justify-content:center}
@@ -137,23 +141,23 @@ createRoot(document.getElementById('root')!).render(
 
     await page.goto(baseUrl, { waitUntil: 'networkidle' });
 
-    // 1. Banner visible with GPC badge, equal-size buttons (>=44px), and no overlap with mobile chat button
+    // 1. Banner visible with GPC badge, equal-size buttons (>=44px), anchored to bottom safe-area, and chat launcher hidden during consent
     const banner = page.locator('[data-consent-banner]');
     await banner.waitFor({ state: 'visible' });
     assert.equal(await page.locator('[data-gpc-indicator]').isVisible(), true);
     assert.equal(await page.locator('[data-gate-mounted="analytics"]').count(), 0);
     assert.equal(await page.locator('[data-gate-mounted="marketing"]').count(), 0);
+    assert.equal(await page.locator('[data-mock-chat-button]').count(), 0, 'Floating chat launcher stays hidden while consent sheet is visible');
 
-    const [bBox, chatBox, acceptBox, rejectBox, chooseBox] = await Promise.all([
+    const [bBox, acceptBox, rejectBox, chooseBox] = await Promise.all([
       banner.boundingBox(),
-      page.locator('[data-mock-chat-button]').boundingBox(),
       page.locator('[data-consent-action="accept-all"]').boundingBox(),
       page.locator('[data-consent-action="reject-all"]').boundingBox(),
       page.locator('[data-consent-action="choose-preferences"]').boundingBox(),
     ]);
-    assert.ok(bBox && chatBox && acceptBox && rejectBox && chooseBox);
+    assert.ok(bBox && acceptBox && rejectBox && chooseBox);
     assert.ok(bBox.height <= 844 * 0.3, `Mobile consent sheet height (${Math.round(bBox.height)}px) must stay <= 30% of viewport`);
-    assert.ok(bBox.y + bBox.height <= chatBox.y + 1, `Banner bottom (${bBox.y + bBox.height}) must clear mobile chat button top (${chatBox.y})`);
+    assert.ok(bBox.y + bBox.height <= 844 && bBox.y + bBox.height >= 816, `Banner bottom (${bBox.y + bBox.height}) must anchor cleanly to bottom safe-area`);
     assert.ok(acceptBox.height >= 44 && rejectBox.height >= 44 && chooseBox.height >= 44);
     assert.equal(Math.round(acceptBox.height), Math.round(rejectBox.height));
     assert.equal(Math.round(rejectBox.height), Math.round(chooseBox.height));
