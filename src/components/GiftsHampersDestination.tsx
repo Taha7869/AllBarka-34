@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useId, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowRight, Gift } from 'lucide-react';
+import { ArrowRight, ChevronDown, Gift } from 'lucide-react';
 import { useCatalogProducts } from '../contexts/CatalogContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import type { Product } from '../types';
@@ -25,6 +25,8 @@ export default function GiftsHampersDestination({ onQuickView }: GiftsHampersDes
   const { t, language } = useLanguage();
   const products = useCatalogProducts();
   const [params, setParams] = useSearchParams();
+  const [presentationOpen, setPresentationOpen] = useState(false);
+  const presentationListId = useId();
   const occasion = (params.get('occasion') || 'all').trim().toLowerCase();
   const budget = ['3000','6000'].includes(params.get('budget') || '') ? Number(params.get('budget')) : 0;
   const recipientParam = params.get('recipient');
@@ -48,7 +50,24 @@ export default function GiftsHampersDestination({ onQuickView }: GiftsHampersDes
   return <div className="gift-destination" dir={language === 'en' ? 'ltr' : 'rtl'}>
     <header className="gift-opening"><div><p className="gift-eyebrow">{t('dest.gifting.eyebrow')}</p><h1>{t('gift.heroTitle')}</h1><p>{t('gift.heroCopy')}</p>
       <div className="gift-opening-actions"><button type="button" className="gift-open-builder" disabled={!builderAvailable} onClick={launch}><Gift size={17}/>{t('dest.gifting.openBuilder')}</button><a href="#gift-selection">{t('gift.browse')} <ArrowRight size={16}/></a></div>
-      {!builderAvailable && <p role="status">{t('gift.builderUnavailable')}</p>}<p className="gift-opening-note">{t('gift.boxChoices')}</p><ul>{HAMPER_BOXES.map(box=><li key={box.id}>{getLocalized(box,'name',language)}</li>)}</ul>
+      {!builderAvailable && <p role="status">{t('gift.builderUnavailable')}</p>}
+      <div className="gift-presentation-collapsible">
+        <button
+          type="button"
+          data-testid="gift-presentation-toggle"
+          aria-expanded={presentationOpen}
+          aria-controls={presentationListId}
+          onClick={() => setPresentationOpen(open => !open)}
+          className="md:hidden flex w-full min-h-[44px] items-center justify-between gap-3 border-t border-[#e4c783]/35 pt-3 text-start text-xs font-medium text-[#fdfbf7] cursor-pointer"
+        >
+          <span dir="auto" className="min-w-0 [overflow-wrap:anywhere]">{t('gift.boxChoices')}</span>
+          <ChevronDown size={16} aria-hidden="true" className={`shrink-0 text-[#e4c783] transition-transform duration-200 motion-reduce:transition-none ${presentationOpen ? 'rotate-180' : ''}`} />
+        </button>
+        <p className="gift-opening-note hidden md:block">{t('gift.boxChoices')}</p>
+        <ul id={presentationListId} data-collapsed={!presentationOpen ? 'true' : 'false'}>
+          {HAMPER_BOXES.map(box => <li key={box.id}>{getLocalized(box, 'name', language)}</li>)}
+        </ul>
+      </div>
     </div><figure><img src={SECTION_COVERS['gift-boxes'].src} srcSet={SECTION_COVERS['gift-boxes'].srcSet} sizes="(max-width: 768px) 100vw, 480px" width={800} height={800} alt={t(SECTION_COVERS['gift-boxes'].altKey, getLocalized(heroBox,'name',language))} onError={event=>{if(!event.currentTarget.src.endsWith('/images/product-placeholder.svg')){event.currentTarget.removeAttribute('srcset');event.currentTarget.src='/images/product-placeholder.svg';}}}/></figure></header>
     <GiftingPlanningToolsBar />
     <section id="gift-selection" className="gift-discovery"><div className="gift-discovery-heading"><div><p className="gift-eyebrow">{t('gift.explore')}</p><h2>{t('gift.selectionTitle')}</h2></div><p role="status">{filtered.length} {t('shop.results')}</p></div>

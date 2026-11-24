@@ -1,5 +1,5 @@
-import React, { lazy, Suspense, useRef, useState } from 'react';
-import { ArrowRight, Compass, Eye, Sparkles } from 'lucide-react';
+import React, { lazy, Suspense, useId, useRef, useState } from 'react';
+import { ArrowRight, ChevronDown, Compass, Eye, Sparkles } from 'lucide-react';
 import { useLanguage, type LanguageCode } from '../contexts/LanguageContext';
 import { openMehmaanPlannerModal } from './MehmaanTablePlannerModal';
 import { openShopTheTableModal } from './ShopTheTableModal';
@@ -43,6 +43,8 @@ export default function GiftingPlanningToolsBar({ className = '' }: { className?
   const { language, isRtl, t } = useLanguage();
   const copy = TOOLS_COPY[language] || TOOLS_COPY.en;
   const [guideOpen, setGuideOpen] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const toolsPanelId = useId();
   const guideTriggerRef = useRef<HTMLButtonElement>(null);
 
   return (
@@ -50,10 +52,35 @@ export default function GiftingPlanningToolsBar({ className = '' }: { className?
       dir={isRtl ? 'rtl' : 'ltr'}
       aria-label={copy.eyebrow}
       data-testid="gifting-planning-tools"
-      className={`my-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface,#FFFCF7)] p-5 sm:p-6 ${className}`.trim()}
+      className={`my-4 sm:my-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface,#FFFCF7)] p-4 sm:p-6 ${className}`.trim()}
     >
-      <div className="flex flex-col items-start justify-between gap-4 lg:flex-row lg:items-center">
-        <div>
+      <div className="flex flex-col items-stretch justify-between gap-3 md:gap-4 lg:flex-row lg:items-center">
+        {/* Mobile collapsible trigger (<768px) */}
+        <button
+          type="button"
+          data-testid="gifting-planning-tools-toggle"
+          aria-expanded={toolsOpen}
+          aria-controls={toolsPanelId}
+          onClick={() => setToolsOpen(open => !open)}
+          className="md:hidden flex w-full min-h-[44px] items-center justify-between gap-3 text-start cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C7982F] rounded-xl"
+        >
+          <span className="min-w-0 flex-1">
+            <span dir="auto" className="block text-xs font-medium text-[var(--color-accent-text,#806326)] [overflow-wrap:anywhere]">
+              {copy.eyebrow}
+            </span>
+            <span dir="auto" className="mt-0.5 block font-serif text-base font-semibold text-[var(--color-text-primary,#29231D)] [overflow-wrap:anywhere]">
+              {copy.heading}
+            </span>
+          </span>
+          <ChevronDown
+            size={18}
+            aria-hidden="true"
+            className={`shrink-0 text-[var(--color-accent-text,#806326)] transition-transform duration-200 motion-reduce:transition-none ${toolsOpen ? 'rotate-180' : ''}`}
+          />
+        </button>
+
+        {/* Desktop static heading (>=768px) */}
+        <div className="hidden md:block">
           <p dir="auto" className="text-xs font-medium text-[var(--color-accent-text,#806326)]">
             {copy.eyebrow}
           </p>
@@ -62,7 +89,7 @@ export default function GiftingPlanningToolsBar({ className = '' }: { className?
           </h3>
         </div>
 
-        <div className="flex flex-wrap gap-2.5">
+        <div id={toolsPanelId} className={`${toolsOpen ? 'flex' : 'hidden'} md:flex flex-wrap gap-2.5 pt-1 md:pt-0`}>
           <button
             type="button"
             onClick={() => openMehmaanPlannerModal()}

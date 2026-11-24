@@ -342,12 +342,12 @@ export default function ProductDetailPage() {
         </div>
         
         {selectionReviewRequired && <p role="status" className="pdp-handoff-review mb-5 rounded-xl border border-[var(--color-border-accent)] bg-[var(--color-surface)] px-4 py-3 text-sm leading-6 text-[var(--color-text-primary)]">{t('pdp.handoffReview')}</p>}
-        <div className="pdp-composition grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-start">
+        <div className="pdp-composition grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-10 lg:gap-14 items-start">
           
           {/* Left: Product Visual Showcase */}
           <div className="pdp-gallery flex flex-col gap-3 lg:sticky lg:top-28">
             <div
-              className="pdp-main-photo relative aspect-square rounded-3xl overflow-hidden bg-[var(--color-surface,#FFFCF7)] border border-[var(--color-gold,#C7982F)]/30 shadow-sm flex items-center justify-center p-6 group cursor-zoom-in"
+              className="pdp-main-photo relative aspect-[4/3] sm:aspect-square rounded-3xl overflow-hidden bg-[var(--color-surface,#FFFCF7)] border border-[var(--color-gold,#C7982F)]/30 shadow-sm flex items-center justify-center p-4 sm:p-6 group cursor-zoom-in"
               data-hover-zoom="false"
               onPointerEnter={(event) => {
                 if (event.pointerType === 'mouse' && !imageError) {
@@ -525,12 +525,12 @@ export default function ProductDetailPage() {
               <h1 dir="auto" className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold text-[var(--color-primary,#042821)] dark:text-[var(--color-text-primary,#F6F1EA)] leading-tight mb-2">
                 {getLocalized(product, 'name', language)}
               </h1>
-              <p dir="auto" className="whitespace-pre-line text-sm text-[var(--color-text-secondary,#635B52)] dark:text-[var(--color-text-secondary,#B4C0BC)] font-normal leading-relaxed">
+              <p dir="auto" className="hidden md:block whitespace-pre-line text-sm text-[var(--color-text-secondary,#635B52)] dark:text-[var(--color-text-secondary,#B4C0BC)] font-normal leading-relaxed">
                 {getLocalized(product, 'desc', language)}
               </p>
 
               {!isPackaging && getLocalized(product, 'tasteProfile', language) && (
-                <div className="pdp-food-notes mt-3 p-3 rounded-xl bg-[var(--color-surface,#FFFCF7)] dark:bg-[#1A201E] border border-[var(--color-accent,#C7982F)]/25 text-xs text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)]">
+                <div className="pdp-food-notes hidden md:block mt-3 p-3 rounded-xl bg-[var(--color-surface,#FFFCF7)] dark:bg-[#1A201E] border border-[var(--color-accent,#C7982F)]/25 text-xs text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)]">
                   <span className="font-bold text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] text-[10px] block mb-0.5">
                     {t('tasteProfile')}
                   </span>
@@ -541,7 +541,7 @@ export default function ProductDetailPage() {
               <BundleContentsSummary product={product} />
               <BundleInsideList product={product} />
               {!readBundleFormat(product) && getLocalized(product, 'contents', language) && (
-                <div className="mt-2.5 p-3 rounded-xl bg-[var(--color-surface,#FFFCF7)] dark:bg-[#1A201E] border border-[var(--color-accent,#C7982F)]/25 text-xs text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)]">
+                <div className="hidden md:block mt-2.5 p-3 rounded-xl bg-[var(--color-surface,#FFFCF7)] dark:bg-[#1A201E] border border-[var(--color-accent,#C7982F)]/25 text-xs text-[var(--color-text-primary,#29231D)] dark:text-[var(--color-text-primary,#F6F1EA)]">
                   <span className="font-bold text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] text-[10px] block mb-0.5">
                     {t('packContents')}
                   </span>
@@ -581,7 +581,7 @@ export default function ProductDetailPage() {
             
             {/* Price Row */}
             {isQuoteOnly ? <div className="my-5 rounded-xl border border-[var(--color-border-accent)] p-5 text-sm leading-7 text-[var(--color-text-secondary)]">{t('catalog.quoteDescription')}</div> : <>
-            <div className="pdp-price-row flex flex-wrap items-baseline gap-x-4 gap-y-2 py-4 border-y border-[var(--color-accent,#C7982F)]/25 mb-6">
+            <div className="pdp-price-row flex flex-wrap items-baseline gap-x-4 gap-y-2 py-3 sm:py-4 border-y border-[var(--color-accent,#C7982F)]/25 mb-4 sm:mb-6">
               <span className="text-3xl sm:text-4xl font-serif font-bold text-[var(--color-text-price,#29231D)] dark:text-[var(--color-text-price,#F6F1EA)]">
                 <bdi dir="ltr">{displayProductPrice(priceToUse)}</bdi>
               </span>
@@ -780,7 +780,7 @@ export default function ProductDetailPage() {
             {(product.isBidBox || product.priceIndicative) && <IndicativePriceNotice className="mb-4" />}
 
             {/* Quantity & Add to Cart (minimum 44px tap targets) */}
-            <div ref={purchaseRef} className="flex flex-col gap-3 mb-8">
+            <div ref={purchaseRef} className="flex flex-col gap-2.5 sm:gap-3 mb-5 sm:mb-8">
               {requiresInquiry ? <button type="button" onClick={() => openCustomQuoteModal({ productId: product.id, variantLabel: selectedWeight, mode: selectedWeight?.startsWith('Empty') ? 'empty' : 'filled', quantity: quantity })} className="focus-ring flex min-h-12 items-center justify-center rounded-xl border border-[#c7982f]/40 bg-[#1e3a2b] px-5 text-sm font-semibold text-[#fff8e9]">{t('catalog.requestQuote')}</button> : <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex items-center justify-center bg-white dark:bg-[#1C2422] border border-[var(--color-accent,#C7982F)]/35 rounded-xl h-12 px-2 shrink-0">
                   <button 
@@ -848,7 +848,7 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Quick Guarantees Strip */}
-            <div className="pdp-service-links grid grid-cols-2 gap-3 mb-8 p-3.5 rounded-2xl bg-[var(--color-surface,#FFFCF7)] dark:bg-[#1A201E] border border-[var(--color-accent,#C7982F)]/25">
+            <div className="pdp-service-links grid grid-cols-2 gap-2 sm:gap-3 mb-5 sm:mb-8 p-2.5 sm:p-3.5 rounded-2xl bg-[var(--color-surface,#FFFCF7)] dark:bg-[#1A201E] border border-[var(--color-accent,#C7982F)]/25">
               <div className="flex items-center gap-2 text-xs font-medium text-[var(--color-text-secondary,#635B52)] dark:text-[var(--color-text-secondary,#B4C0BC)]">
                 <Truck size={15} className="text-[var(--color-accent,#C7982F)] shrink-0" />
                 <Link to="/policies" className="focus-ring">{t('pdp.deliveryDetails')}</Link>
@@ -860,7 +860,7 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Accordions for Sourcing, Storage, and Packaging */}
-            <div id="pdp-product-details" className="mb-10">
+            <div id="pdp-product-details" className="mb-6 sm:mb-10">
               {!isPackaging && (
                 <div className="mb-3 flex justify-end">
                   <button
@@ -873,10 +873,10 @@ export default function ProductDetailPage() {
                   </button>
                 </div>
               )}
-              <ProductDetailAccordion product={product} defaultOpenKey={isPackaging ? 'packaging' : 'storage'} />
+              <ProductDetailAccordion product={product} defaultOpenKey={isPackaging ? 'packaging' : 'storage'} includeOverviewAndFaq isPackaging={isPackaging} />
             </div>
 
-            <div className="pdp-guarantee mt-8 border-t border-[var(--color-accent,#C7982F)]/20 pt-8" hidden={isPackaging}>
+            <div className="pdp-guarantee mt-5 sm:mt-8 border-t border-[var(--color-accent,#C7982F)]/20 pt-5 sm:pt-8" hidden={isPackaging}>
               <div className="flex items-center gap-2 mb-4">
                 <ShieldCheck size={20} className="text-[#C5A059]" />
                 <h2 className="font-serif font-bold text-lg text-[var(--color-ink,#29231D)] dark:text-[#FFFCF7]">
@@ -891,8 +891,8 @@ export default function ProductDetailPage() {
 
         {/* ── RELATED HARVESTS STRIP ({t('pdp.relatedEyebrow')}) ───────────────── */}
         {relatedProducts.length > 0 && (
-          <section className="pdp-related mt-20 pt-12 border-t border-[var(--color-accent,#C7982F)]/25">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 text-left">
+          <section className="pdp-related mt-10 sm:mt-20 pt-8 sm:pt-12 border-t border-[var(--color-accent,#C7982F)]/25">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 sm:gap-4 mb-5 sm:mb-8 text-left">
               <div>
                 <span className="text-[10px] font-bold tracking-[0.25em] text-[var(--color-accent-text,#806326)] dark:text-[var(--color-accent-text,#E4C783)] block mb-1">
                   {t('pdp.relatedEyebrow')}
@@ -910,7 +910,7 @@ export default function ProductDetailPage() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-6">
               {relatedProducts.map((rel) => {
                 const firstWeight = Object.keys(rel.prices).find(label => rel.prices[label] > 0 && !rel.variants?.some(variant => variant.label === label && variant.available === false)) || '';
                 const price = rel.prices[firstWeight];
@@ -925,10 +925,10 @@ export default function ProductDetailPage() {
                       event.preventDefault();
                       navigateToProductWithTransition(navigate, `/product/${rel.id}`, { productId: rel.id, sourceElement: img });
                     }}
-                    className="group bg-[var(--color-surface,#FFFCF7)] border border-[var(--color-gold,#C7982F)]/25 hover:border-[var(--color-gold,#C7982F)] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 hover:shadow-md cursor-pointer text-left"
+                    className="group bg-[var(--color-surface,#FFFCF7)] border border-[var(--color-gold,#C7982F)]/25 hover:border-[var(--color-gold,#C7982F)] rounded-2xl p-2.5 sm:p-4 flex flex-col justify-between transition-all duration-300 hover:shadow-md cursor-pointer text-left"
                   >
                     <div>
-                      <div className="w-full aspect-square rounded-xl bg-[#FAF9F5] border border-[var(--color-gold,#C7982F)]/15 overflow-hidden flex items-center justify-center p-3 mb-3 relative">
+                      <div className="w-full aspect-[4/3] sm:aspect-square rounded-xl bg-[#FAF9F5] border border-[var(--color-gold,#C7982F)]/15 overflow-hidden flex items-center justify-center p-1.5 sm:p-3 mb-2 sm:mb-3 relative">
                         <img
                           src={mediaCover(rel)}
                           alt={t(`imageAlt.${rel.id}`, getLocalized(rel, 'name', language))}
@@ -945,19 +945,19 @@ export default function ProductDetailPage() {
                           {getLocalized(rel, 'origin', language)}
                         </span>
                       )}
-                      <h3 dir="auto" className="text-sm font-serif font-bold text-[var(--color-text-primary)] transition-colors">
+                      <h3 dir="auto" className="mobile-card-title text-[13px] sm:text-sm font-serif font-bold text-[var(--color-text-primary)] transition-colors">
                         {getLocalized(rel, 'name', language)}
                       </h3>
-                      <p dir="auto" className="text-[11px] text-[var(--color-ink,#29231D)]/60 line-clamp-1 mt-0.5">
+                      <p dir="auto" className="hidden sm:block text-[11px] text-[var(--color-ink,#29231D)]/60 line-clamp-1 mt-0.5">
                         {getLocalized(rel, 'desc', language)}
                       </p>
                     </div>
 
-                    <div className="pt-3 mt-3 border-t border-[var(--color-gold,#C7982F)]/15 flex items-center justify-between">
+                    <div className="pt-2 mt-2 sm:pt-3 sm:mt-3 border-t border-[var(--color-gold,#C7982F)]/15 flex items-center justify-between gap-1">
                       <span className="text-xs font-bold text-[var(--color-emerald,#042821)]">
                         {rel.quoteOnly || rel.orderMode === 'inquiry_quote' || !price ? t('catalog.requestQuote') : `Rs. ${price?.toLocaleString()}`}
                       </span>
-                      <span className="text-[10px] font-bold text-[var(--color-accent-text,#806326)] group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
+                      <span className="hidden sm:flex text-[10px] font-bold text-[var(--color-accent-text,#806326)] group-hover:translate-x-0.5 transition-transform items-center gap-1">
                         {t('viewDetails')}
                         <ArrowRight size={11} />
                       </span>

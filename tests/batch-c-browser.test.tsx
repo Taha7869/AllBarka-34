@@ -436,6 +436,10 @@ createRoot(document.getElementById('root')!).render(
     // 4. Mobile Viewport Parity (390 x 844)
     // ─────────────────────────────────────────────────────────────
     await page.setViewportSize({ width: 390, height: 844 });
+    const mobileToolsToggle = page.locator('[data-testid="gifting-planning-tools-toggle"]');
+    if (await mobileToolsToggle.isVisible() && await mobileToolsToggle.getAttribute('aria-expanded') === 'false') {
+      await mobileToolsToggle.click();
+    }
     await page.locator('.heritage-hero-mehmaan').click();
     await mehmaanModal.waitFor();
     assert.ok(await mehmaanModal.isVisible(), 'Mehmaan modal must display cleanly on mobile viewport');
