@@ -108,7 +108,7 @@
 .table-catalog-header h1:dir(rtl) { line-height:1.7; }
 .catalog-category-nav button { border-radius:9999px; }
 .catalog-quick-controls>div>div:first-child,.catalog-quick-controls>div>button { border-radius:14px; }
-@media(max-width:639px) { .boutique-product-card,.table-catalog-card { padding:12px; }.table-card-details h3,.table-catalog-card>a[lang] { font-size:1.25rem; } }
+@media(max-width:639px) { .boutique-product-card,.table-catalog-card { padding:10px; }.table-card-details h3,.table-catalog-card>a[lang],.mobile-card-title { font-size:0.875rem; line-height:1.3; display:-webkit-box !important; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis; max-height:calc(1.3em * 2 + 2px); }.table-card-details:dir(rtl) h3,.table-catalog-card>a[lang]:dir(rtl),.mobile-card-title:dir(rtl),.table-catalog-card>a[lang=ur],.table-card-details h3[lang=ur],.mobile-card-title[lang=ur] { font-size:0.9375rem; line-height:1.65; max-height:calc(1.65em * 2 + 2px); }.table-catalog-card>a[lang=ar],.table-card-details h3[lang=ar],.mobile-card-title[lang=ar] { font-size:0.9375rem; line-height:1.45; max-height:calc(1.45em * 2 + 2px); }.table-card-details h3 { min-height:2.6em; } }
 
 /* V3 / A3: hero-token PDP framing and calm purchase card. */
 .pdp-editorial { color:var(--color-text-primary); }
