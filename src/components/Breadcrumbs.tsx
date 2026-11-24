@@ -267,9 +267,13 @@ export default function Breadcrumbs({ items: customItems, className = '' }: Brea
       <ol className="flex flex-nowrap items-center gap-1.5 sm:gap-2 overflow-x-auto whitespace-nowrap scrollbar-none text-[11px] sm:text-xs text-[#635B52] dark:text-[#A8A199]">
         {items.map((item, index) => {
           const isLast = index === items.length - 1 || item.isCurrent;
+          const hideCurrentOnMobile = isLast && items.length >= 4 && location.pathname.startsWith('/product/');
 
           return (
-            <li key={`${item.label}-${index}`} className="inline-flex items-center gap-1.5 sm:gap-2">
+            <li
+              key={`${item.label}-${index}`}
+              className={`${hideCurrentOnMobile ? 'hidden sm:inline-flex' : 'inline-flex'} items-center gap-1.5 sm:gap-2`}
+            >
               {index > 0 && (
                 <ChevronRight
                   size={12}
