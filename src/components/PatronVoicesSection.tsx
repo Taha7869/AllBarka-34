@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Star } from 'lucide-react';
 import { useLanguage, type LanguageCode } from '../contexts/LanguageContext';
 import { usePublishedReviews } from '../contexts/StorefrontContentContext';
 import { sanitizePublishedReviews, type PublishedPatronReview } from '../lib/publishedReviews';
@@ -14,6 +14,8 @@ const VOICES_COPY: Record<
     note: string;
     ourStory: string;
     faq: string;
+    replyLabel: string;
+    ratedOf5: string;
   }
 > = {
   en: {
@@ -22,6 +24,8 @@ const VOICES_COPY: Record<
     note: 'Store-published patron feedback from Lahore and nationwide orders.',
     ourStory: 'Our Story',
     faq: 'Frequently Asked Questions',
+    replyLabel: 'AllBarka reply',
+    ratedOf5: 'Rated {rating} out of 5',
   },
   ur: {
     eyebrow: 'صارفین کی آراء',
@@ -29,6 +33,8 @@ const VOICES_COPY: Record<
     note: 'لاہور اور ملک بھر کے آرڈرز سے منتخب تاثرات۔',
     ourStory: 'ہماری کہانی',
     faq: 'عمومی سوالات',
+    replyLabel: 'آل برکہ کا جواب',
+    ratedOf5: '۵ میں سے {rating} ستارے',
   },
   ar: {
     eyebrow: 'آراء العملاء',
@@ -36,6 +42,8 @@ const VOICES_COPY: Record<
     note: 'آراء مختارة من عملائنا في لاهور ومختلف مدن باكستان.',
     ourStory: 'قصتنا',
     faq: 'الأسئلة الشائعة',
+    replyLabel: 'رد ألبركة',
+    ratedOf5: 'تقييم {rating} من 5',
   },
 };
 
@@ -111,15 +119,56 @@ export default function PatronVoicesSection({ reviews: propReviews }: PatronVoic
           {featuredReviews.map((review, idx) => {
             const displayName =
               language === 'ur' ? review.name_ur : language === 'ar' ? review.name_ar : review.name_en;
+            const roundedStars = Math.min(5, Math.max(1, Math.round(review.rating || 5)));
             return (
               <figure
                 key={review.id}
                 style={revealStyle(visible, reducedMotion, (idx + 1) * MOTION_STAGGER.cardsMs)}
                 className="flex flex-col justify-between rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface,#FFFCF7)] p-6"
               >
-                <blockquote dir="auto" className="font-serif text-base leading-relaxed text-[var(--color-text-primary,#29231D)]">
-                  “{review.review}”
-                </blockquote>
+                <div className="space-y-3">
+                  <div
+                    className="flex items-center gap-0.5 text-[#C7982F]"
+                    aria-label={copy.ratedOf5.replace('{rating}', String(roundedStars))}
+                  >
+                    {Array.from({ length: 5 }).map((_, starIdx) => (
+                      <Star
+                        key={starIdx}
+                        size={14}
+                        aria-hidden="true"
+                        className={starIdx < roundedStars ? 'fill-[#C7982F] text-[#C7982F]' : 'text-[var(--color-border)]'}
+                      />
+                    ))}
+                  </div>
+
+                  {review.photoUrl && (
+                    <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-base)]">
+                      <img
+                        src={review.photoUrl}
+                        alt={review.purchasedItem || displayName}
+                        loading="lazy"
+                        decoding="async"
+                        className="aspect-[4/3] w-full object-cover"
+                      />
+                    </div>
+                  )}
+
+                  <blockquote dir="auto" className="font-serif text-base leading-relaxed text-[var(--color-text-primary,#29231D)]">
+                    “{review.review}”
+                  </blockquote>
+
+                  {review.reply && (
+                    <div
+                      dir="auto"
+                      className="rounded-xl border border-[#C7982F]/25 bg-[var(--color-base,#FDFBF7)] px-3.5 py-2.5 text-xs leading-relaxed text-[var(--color-text-secondary,#635B52)]"
+                    >
+                      <span className="block font-semibold text-[var(--color-accent-text,#806326)]">
+                        {copy.replyLabel}
+                      </span>
+                      <p className="mt-1">{review.reply}</p>
+                    </div>
+                  )}
+                </div>
 
                 <figcaption className="mt-5 border-t border-[var(--color-border)] pt-4 text-xs">
                   <span dir="auto" className="block font-semibold text-[var(--color-text-primary,#29231D)]">

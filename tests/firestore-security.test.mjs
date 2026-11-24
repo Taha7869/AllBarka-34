@@ -20,7 +20,7 @@ test('Firestore emulator: cached admin claims cannot bypass backend; own contact
   });
   const owner = token('owner'), stranger = token('stranger'), staleAdmin = token('demoted-admin', { admin: true, role: 'admin' });
   const seed = { privateValue: { stringValue: 'PRIVATE_FIXTURE' } };
-  for (const path of ['products/private-product', 'inquiries/private-inquiry', 'quotes/private-quote', 'orders/private-order', 'staffAccess/owner', 'storefrontContent/main']) {
+  for (const path of ['products/private-product', 'inquiries/private-inquiry', 'quotes/private-quote', 'orders/private-order', 'staffAccess/owner', 'storefrontContent/main', 'reviews/private-review', 'reviewAuditLogs/audit-1']) {
     assert.equal((await request(path, 'PATCH', 'owner', seed)).status, 200);
     for (const bearer of [undefined, owner, stranger, staleAdmin]) {
       assert.equal((await request(path, 'GET', bearer)).status, 403, `Private read denied: ${path}`);
@@ -28,7 +28,7 @@ test('Firestore emulator: cached admin claims cannot bypass backend; own contact
       assert.equal((await request(path, 'DELETE', bearer)).status, 403, `Private delete denied: ${path}`);
     }
   }
-  for (const collection of ['products', 'inquiries', 'quotes', 'orders', 'staffAccess', 'storefrontContent']) {
+  for (const collection of ['products', 'inquiries', 'quotes', 'orders', 'staffAccess', 'storefrontContent', 'reviews', 'reviewAuditLogs']) {
     assert.equal((await request(collection, 'GET', staleAdmin)).status, 403, `Private collection list denied: ${collection}`);
   }
   await request('users/owner', 'DELETE', 'owner');
@@ -50,8 +50,8 @@ test('Firestore emulator: cached admin claims cannot bypass backend; own contact
   assert.equal((await request('users/owner/favorites/legacy', 'PATCH', owner, seed)).status, 403);
   assert.equal((await request('users/owner/favorites/new', 'PATCH', owner, seed)).status, 403);
   assert.equal((await request('users/owner/favorites/legacy', 'DELETE', owner)).status, 200);
-  // Existing public read-only content and reviews remain compatible.
-  for (const path of ['reviews/public-review', 'content/public-info']) {
+  // Existing public read-only content remains compatible (reviews are API-only via /api/reviews).
+  for (const path of ['content/public-info']) {
     await request(path, 'PATCH', 'owner', { title: { stringValue: 'Public fixture' } });
     assert.equal((await request(path)).status, 200);
     assert.equal((await request(path, 'PATCH', staleAdmin, seed)).status, 403);

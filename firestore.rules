@@ -90,9 +90,15 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Reviews collection contains draft reviews, linked orderId, and moderation metadata.
+    // Public storefront consumes ONLY the sanitized published projection via /api/reviews
+    // and /api/storefront-content; direct client SDK reads/writes are denied.
     match /reviews/{reviewId} {
-      allow read: if true;
-      allow write: if false;
+      allow read, write: if false;
+    }
+
+    match /reviewAuditLogs/{auditId} {
+      allow read, write: if false;
     }
 
     match /content/{document=**} {

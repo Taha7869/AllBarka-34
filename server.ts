@@ -7,6 +7,7 @@ import { getStorage } from 'firebase-admin/storage';
 import firebaseAppletConfig from './firebase-applet-config.json';
 import { isPreviewEnvironment, validatePreviewServerConfig, resolveStorageBucket } from './src/lib/environmentConfig';
 import { createProductUploadRouter } from './src/lib/productUploadRouter';
+import { createReviewsRouter } from './src/lib/reviewsRouter';
 import { sanitizeFirestoreData } from './src/lib/firestoreData';
 import express from 'express';
 import cookieParser from 'cookie-parser';
@@ -324,6 +325,24 @@ app.use(createProductUploadRouter({
     if (!bucketName) return null;
     return getStorage().bucket(bucketName);
   }
+}));
+const reviewSubmitLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 8,
+  message: { error: 'Too many review submissions, please try again shortly.', code: 'RATE_LIMITED' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use(createReviewsRouter({
+  getDb: () => db,
+  getBucket: () => {
+    if (!adminAuth) return null;
+    const bucketName = resolveStorageBucket(process.env);
+    if (!bucketName) return null;
+    return getStorage().bucket(bucketName);
+  },
+  requireAdmin,
+  submitLimiter: reviewSubmitLimiter,
 }));
 app.use(express.json({
   limit: '128kb',

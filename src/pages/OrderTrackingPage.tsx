@@ -19,6 +19,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useCart } from '../contexts/CartContext';
 import { PRODUCTS } from '../data/products';
 import SEO from '../components/SEO';
+import OrderReviewForm from '../components/OrderReviewForm';
 import {
   fetchOrderTracking,
   fetchReorderItems,
@@ -416,6 +417,15 @@ export default function OrderTrackingPage() {
                 </div>
               )}
             </div>
+
+            {/* Delivered Order Verified Review Form (always saved as draft for admin approval) */}
+            {String(trackingResult.status || '').toUpperCase() === 'DELIVERED' && (
+              <OrderReviewForm
+                orderId={trackingResult.orderId}
+                phoneLast4={phoneLast4.trim()}
+                defaultArea={trackingResult.city || ''}
+              />
+            )}
 
             {/* Quick Actions Footer */}
             <div className="pt-4 border-t border-[#D4AF37]/20 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">

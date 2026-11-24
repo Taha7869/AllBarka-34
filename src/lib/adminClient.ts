@@ -11,7 +11,7 @@ export class AdminRequestError extends Error {
 async function workspaceRequest<T>(
   getToken: () => Promise<string>,
   path: string,
-  options: { signal?: AbortSignal; body?: Record<string, unknown>; timeoutMs?: number; method?: 'GET' | 'POST' | 'PATCH' | 'PUT' } = {},
+  options: { signal?: AbortSignal; body?: Record<string, unknown>; timeoutMs?: number; method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE' } = {},
   prefix = '/api/admin/',
 ): Promise<T> {
   if (!path.startsWith(prefix)) throw new AdminRequestError('INVALID_PATH');
