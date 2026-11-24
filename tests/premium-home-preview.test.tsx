@@ -58,11 +58,13 @@ test('PremiumHeroPrototype renders EN, UR (RTL), and AR (RTL) copy with zero hea
     assert.ok(html.includes('href="/gifting"'));
     assert.ok(html.includes(PREMIUM_HERO_IMAGE));
     assert.match(html, /fetchPriority="high"|fetchpriority="high"/i);
-    assert.match(html, /data-testid="premium-hero-lid"/, 'Signature lid overlay renders when motion is allowed');
+    assert.match(html, /data-editorial-scroll-hero="true"/, 'Sticky editorial scroll hero renders');
+    assert.match(html, /data-hero-callout="1"/, 'Factual callout pills render');
+    assert.doesNotMatch(html, /data-testid="premium-hero-lid"/, 'Fake CSS lid cutout removed');
   }
 });
 
-test('PremiumHeroPrototype renders static hero photograph without lid overlay under prefers-reduced-motion', () => {
+test('PremiumHeroPrototype renders static hero photograph without sticky runway under prefers-reduced-motion', () => {
   const html = renderToStaticMarkup(
     <MemoryRouter initialEntries={['/preview/premium-home']}>
       <LanguageProvider initialLanguage="en">
@@ -73,6 +75,7 @@ test('PremiumHeroPrototype renders static hero photograph without lid overlay un
 
   assert.match(html, /data-reveal-phase="open"/);
   assert.doesNotMatch(html, /data-testid="premium-hero-lid"/);
+  assert.doesNotMatch(html, /min-h-\[125svh\]/, 'Reduced motion disables sticky scroll runway');
   assert.ok(html.includes(PREMIUM_HERO_IMAGE));
 });
 

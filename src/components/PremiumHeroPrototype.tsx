@@ -1,14 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'motion/react';
-import { ArrowRight, RotateCcw } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useLanguage, type LanguageCode } from '../contexts/LanguageContext';
 import { useStorefrontContent } from '../contexts/StorefrontContentContext';
 import { contentText } from '../lib/storefrontContent';
 import { useMerchandisingSettings } from '../contexts/MerchandisingContext';
 import { getSeasonalTheme, pickLocalizedSeasonal } from '../lib/seasonalHomepage';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
-import { MOTION_DURATION, MOTION_EASE, MOTION_EASE_CSS } from '../lib/motion';
+import { MOTION_EASE_CSS } from '../lib/motion';
 import { AllBarkaCrestVector } from './AllBarkaLogo';
 
 export const PREMIUM_HERO_IMAGE = '/images/drafts-premium-20261122/01-hero-gift-box-dates.webp';
@@ -19,10 +18,9 @@ interface HeroCopy {
   description: string;
   primaryCta: string;
   secondaryCta: string;
-  imageAlt: string;
   caption: string;
-  replayLabel: string;
-  pillars: [string, string, string];
+  imageAlt: string;
+  pillars: readonly [string, string, string];
 }
 
 export const PREMIUM_HERO_COPY: Record<LanguageCode, HeroCopy> = {
@@ -33,50 +31,44 @@ export const PREMIUM_HERO_COPY: Record<LanguageCode, HeroCopy> = {
       'Selected dates, mountain nuts, Grade-A Sargol saffron and hand-ribboned hampers — graded and packed fresh to order in Lahore.',
     primaryCta: 'Explore Dry Fruits',
     secondaryCta: 'Shop Gift Boxes',
-    imageAlt:
-      'Open AllBarka deep-emerald presentation gift box embossed with the gold AllBarka crest, filled with Medjool dates, Ajwa dates, roasted almonds and pistachios on honed travertine stone',
     caption: 'Signature Emerald Presentation Chest · Dates & Dry Fruits',
-    replayLabel: 'Replay reveal',
-    pillars: ['Hand-Graded Harvests', 'Packed Fresh in Lahore', 'Nationwide Gifting Care'],
+    imageAlt:
+      'Open AllBarka matte emerald presentation gift box on warm travertine stone displaying dates, pistachios, almonds and walnuts',
+    pillars: ['Hand-graded', 'Packed fresh in Lahore', 'Ribbon-tied gift boxes'],
   },
   ur: {
     eyebrow: 'لاہور گفٹنگ ہاؤس',
-    headline: 'منتخب خشک میوہ جات اور شاندار گفٹ باکسز۔',
+    headline: 'خالص خشک میوہ جات اور نفیس گفٹ باکسز۔',
     description:
-      'منتخب کھجوریں، پہاڑی خشک میوہ جات، اعلیٰ درجہ سرگول زعفران اور نفیس ربن والے ہیمپرز — لاہور میں آرڈر پر تازہ پیک۔',
+      'منتخب کھجوریں، پہاڑی میوے، گریڈ اے سرگول زعفران اور ربن سے سجے ہیمپرز — لاہور میں تازہ چن کر پیک کیے جاتے ہیں۔',
     primaryCta: 'خشک میوہ جات دیکھیں',
     secondaryCta: 'گفٹ باکسز دیکھیں',
+    caption: 'سگنیچر ایمرالڈ گفٹ باکس · کھجوریں اور خشک میوہ جات',
     imageAlt:
-      'البرکہ کا کھلا ہوا زمردی گفٹ باکس جس پر سنہری مہر ثبت ہے اور اندر کھجوریں، بادام اور پستہ سجے ہیں',
-    caption: 'البرکہ خاص زمردی گفٹ باکس · کھجوریں اور خشک میوہ جات',
-    replayLabel: 'دوبارہ دیکھیں',
-    pillars: ['ہاتھ سے منتخب فصل', 'لاہور میں تازہ پیکنگ', 'ملک بھر میں باوقار ترسیل'],
+      'البرکہ کا گہرے سبز رنگ کا کھلا گفٹ باکس جس میں کھجوریں، پستے، بادام اور اخروٹ سجے ہیں',
+    pillars: ['ہاتھ سے منتخب', 'لاہور میں تازہ پیک', 'ربن بند گفٹ باکسز'],
   },
   ar: {
-    eyebrow: 'دار هدايا لاهور',
-    headline: 'أفخر الفواكه المجففة وصناديق الهدايا الراقية.',
+    eyebrow: 'دار الهدايا في لاهور',
+    headline: 'فواكه مجففة فاخرة وصناديق هدايا مميزة.',
     description:
-      'تمور مختارة ومكسرات جبلية وزعفران سرغول فاخر وسلال مزينة بالشرائط — تُفرز وتُعبّأ طازجة عند الطلب في لاهور.',
+      'تمور مختارة ومكسرات جبلية وزعفران سرغول درجة أولى وسلال هدايا مزينة بالشرائط — تُفرز وتُعبأ طازجة عند الطلب في لاهور.',
     primaryCta: 'تسوق الفواكه المجففة',
-    secondaryCta: 'تسوق صناديق الهدايا',
+    secondaryCta: 'تصفح صناديق الهدايا',
+    caption: 'صندوق الزمرد الفاخر · تمور ومكسرات مختارة',
     imageAlt:
-      'صندوق هدايا البركة الزمردي المفتوح والمختوم بالشعار الذهبي وبداخله تمور ولوز وفستق على رخام الترافرتين الدافئ',
-    caption: 'صندوق البركة الزمردي الفاخر · تمور ومكسرات مختارة',
-    replayLabel: 'إعادة العرض',
-    pillars: ['محاصيل منتقاة يدوياً', 'تعبئة طازجة في لاهور', 'عناية راقية بالهدايا والتوصيل'],
+      'صندوق هدايا البركة باللون الأخضر الزمردي مفتوح على حجر الترافرتين الدافئ ويعرض التمور والفستق واللوز والجوز',
+    pillars: ['مفروزة يدوياً', 'معبأة طازجة في لاهور', 'صناديق هدايا بشريط'],
   },
 };
 
-type RevealPhase = 'sealed' | 'pressing' | 'opening' | 'open';
-
 export interface PremiumHeroPrototypeProps {
-  /** Deterministic override for unit/SSR verification of prefers-reduced-motion. */
   reducedMotionOverride?: boolean;
-  /** Optional override for hero image src. */
   heroImageSrc?: string;
-  /** Optional deterministic date override for seasonal preview tests. */
   seasonalDate?: Date;
 }
+
+const PILL_PARALLAX_PX = [-6, -13, -20] as const;
 
 export default function PremiumHeroPrototype({
   reducedMotionOverride,
@@ -101,87 +93,81 @@ export default function PremiumHeroPrototype({
     [customHero.enabled, merchandising.seasonalMode, seasonalDate],
   );
 
-  const [revealRun, setRevealRun] = useState(0);
-  const [phase, setPhase] = useState<RevealPhase>(() => (reducedMotion ? 'open' : 'sealed'));
   const [imageHidden, setImageHidden] = useState(false);
-  const sectionRef = useRef<HTMLElement | null>(null);
-  const parallaxImgRef = useRef<HTMLDivElement | null>(null);
-  const parallaxRafRef = useRef<number>(0);
+  const runwayRef = useRef<HTMLDivElement | null>(null);
+  const imageLayerRef = useRef<HTMLDivElement | null>(null);
+  const vignetteRef = useRef<HTMLDivElement | null>(null);
+  const pillRefs = useRef<Array<HTMLLIElement | null>>([]);
+  const rafRef = useRef<number>(0);
 
   useEffect(() => {
     setImageHidden(false);
   }, [customHero.enabled, customHero.image, customHero.mobileImage, heroImageSrc]);
 
+  // Editorial scroll-driven choreography (pure transform + opacity via rAF, 60fps, static under reduced motion).
   useEffect(() => {
-    if (reducedMotion || customHero.enabled) {
-      setPhase('open');
+    if (reducedMotion || typeof window === 'undefined') {
+      if (imageLayerRef.current) imageLayerRef.current.style.transform = 'scale(1)';
+      if (vignetteRef.current) vignetteRef.current.style.opacity = '0.14';
+      pillRefs.current.forEach((pill) => {
+        if (pill) pill.style.transform = 'translate3d(0, 0, 0)';
+      });
       return;
     }
 
-    setPhase('sealed');
-    const t1 = window.setTimeout(() => setPhase('pressing'), 80);
-    const t2 = window.setTimeout(() => setPhase('opening'), 280);
-    const t3 = window.setTimeout(() => setPhase('open'), 980);
+    const updateOnScroll = () => {
+      const runway = runwayRef.current;
+      if (!runway) return;
+      const rect = runway.getBoundingClientRect();
+      const scrollable = Math.max(1, rect.height - window.innerHeight);
+      const progress = Math.max(0, Math.min(1, -rect.top / scrollable));
 
-    return () => {
-      window.clearTimeout(t1);
-      window.clearTimeout(t2);
-      window.clearTimeout(t3);
-    };
-  }, [reducedMotion, customHero.enabled, revealRun]);
+      // (a) Hero image smoothly settles from 1.08 -> 1.00 + subtle warm vignette shift
+      if (imageLayerRef.current) {
+        const scale = 1.08 - progress * 0.08;
+        imageLayerRef.current.style.transform = `scale(${scale.toFixed(4)})`;
+      }
+      if (vignetteRef.current) {
+        const vigOpacity = 0.14 + progress * 0.24;
+        vignetteRef.current.style.opacity = vigOpacity.toFixed(3);
+      }
 
-  // Subtle desktop-only mouse parallax on the hero visual (max ±8px, transform only).
-  useEffect(() => {
-    if (reducedMotion || typeof window === 'undefined') return;
-    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-    const section = sectionRef.current;
-    const target = parallaxImgRef.current;
-    if (!section || !target) return;
-
-    const applyOffset = (x: number, y: number) => {
-      target.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0) scale(1.03)`;
-    };
-
-    const handleMove = (event: MouseEvent) => {
-      const rect = section.getBoundingClientRect();
-      if (!rect.width || !rect.height) return;
-      const nx = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
-      const ny = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
-      const px = Math.max(-8, Math.min(8, nx * -8));
-      const py = Math.max(-8, Math.min(8, ny * -8));
-      cancelAnimationFrame(parallaxRafRef.current);
-      parallaxRafRef.current = requestAnimationFrame(() => applyOffset(px, py));
-    };
-
-    const handleLeave = () => {
-      cancelAnimationFrame(parallaxRafRef.current);
-      parallaxRafRef.current = requestAnimationFrame(() => {
-        target.style.transform = 'translate3d(0px, 0px, 0) scale(1)';
+      // (b) 3 factual callout pills float with staggered parallax
+      pillRefs.current.forEach((pill, idx) => {
+        if (!pill) return;
+        const dy = progress * (PILL_PARALLAX_PX[idx] ?? -10);
+        pill.style.transform = `translate3d(0, ${dy.toFixed(2)}px, 0)`;
       });
     };
 
-    section.addEventListener('mousemove', handleMove, { passive: true });
-    section.addEventListener('mouseleave', handleLeave, { passive: true });
+    const onScroll = () => {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(updateOnScroll);
+    };
+
+    updateOnScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
     return () => {
-      cancelAnimationFrame(parallaxRafRef.current);
-      section.removeEventListener('mousemove', handleMove);
-      section.removeEventListener('mouseleave', handleLeave);
+      cancelAnimationFrame(rafRef.current);
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
     };
   }, [reducedMotion]);
 
   const headingFontClass =
     language === 'ur'
-      ? 'font-urdu text-[2rem] sm:text-[2.75rem] lg:text-[3.25rem] leading-[1.85]'
+      ? 'font-urdu text-[1.95rem] sm:text-[2.75rem] lg:text-[3.25rem] leading-[1.85]'
       : language === 'ar'
-        ? 'font-arabic text-[2.1rem] sm:text-[2.95rem] lg:text-[3.45rem] leading-[1.45]'
-        : 'font-serif text-[2.05rem] sm:text-[3.05rem] lg:text-[3.7rem] leading-[1.09] tracking-[-0.02em]';
+        ? 'font-arabic text-[2.05rem] sm:text-[2.95rem] lg:text-[3.45rem] leading-[1.45]'
+        : 'font-serif text-[2rem] sm:text-[3.05rem] lg:text-[3.7rem] leading-[1.08] tracking-[-0.02em]';
 
   const bodyFontClass =
     language === 'ur'
-      ? 'font-urdu text-base leading-[2.1]'
+      ? 'font-urdu text-sm sm:text-base leading-[2.05]'
       : language === 'ar'
-        ? 'font-arabic text-base sm:text-lg leading-[1.85]'
-        : 'font-sans text-[0.95rem] sm:text-[1.04rem] leading-[1.68]';
+        ? 'font-arabic text-sm sm:text-lg leading-[1.85]'
+        : 'font-sans text-[0.94rem] sm:text-[1.04rem] leading-[1.65]';
 
   const eyebrowText = customHero.enabled
     ? copy.eyebrow
@@ -231,202 +217,163 @@ export default function PremiumHeroPrototype({
       : copy.secondaryCta;
 
   return (
-    <section
-      ref={sectionRef}
-      dir={isRtl ? 'rtl' : 'ltr'}
-      aria-labelledby="premium-hero-heading"
-      data-testid="premium-hero-prototype"
-      data-reveal-phase={phase}
-      data-season={seasonal?.id || 'default'}
-      className="heritage-hero premium-hero-stage relative w-full overflow-hidden bg-[#042821] text-[#FDFBF7]"
-      style={{
-        backgroundImage:
-          'radial-gradient(circle at 80% 35%, rgba(30, 58, 43, 0.72) 0%, rgba(4, 40, 33, 0.96) 58%, #031D18 100%)',
-      }}
+    <div
+      ref={runwayRef}
+      data-editorial-scroll-hero="true"
+      className={`relative w-full bg-[#042821] ${
+        reducedMotion ? 'min-h-0' : 'min-h-[125svh] lg:min-h-[140vh] motion-reduce:min-h-0'
+      }`}
     >
-      <div aria-hidden="true" className="h-px w-full bg-gradient-to-r from-transparent via-[#C7982F]/45 to-transparent" />
+      <section
+        dir={isRtl ? 'rtl' : 'ltr'}
+        aria-labelledby="premium-hero-heading"
+        data-testid="premium-hero-prototype"
+        data-reveal-phase="open"
+        data-season={seasonal?.id || 'default'}
+        className={`heritage-hero premium-hero-stage w-full overflow-hidden bg-[#042821] text-[#FDFBF7] ${
+          reducedMotion ? 'relative' : 'sticky top-[56px] md:top-[76px] z-0 motion-reduce:static'
+        }`}
+        style={{
+          backgroundImage:
+            'radial-gradient(circle at 80% 35%, rgba(30, 58, 43, 0.72) 0%, rgba(4, 40, 33, 0.96) 58%, #031D18 100%)',
+        }}
+      >
+        <div aria-hidden="true" className="h-px w-full bg-gradient-to-r from-transparent via-[#C7982F]/45 to-transparent" />
 
-      <div className="mx-auto max-w-7xl px-5 py-6 sm:px-8 sm:py-14 lg:px-10 lg:py-20">
-        <div className="grid grid-cols-1 items-center gap-6 lg:grid-cols-12 lg:gap-12">
-          {/* Visual Stage: first on mobile for < 2.5s LCP, right 7 columns on desktop */}
-          <div className="table-hero-art order-1 lg:order-2 lg:col-span-7">
-            <figure className="m-0">
-              <div className="relative aspect-[16/10] w-full overflow-hidden rounded-[22px] border border-[#C7982F]/40 bg-[#0B2E26] shadow-[0_24px_60px_-20px_rgba(0,0,0,0.65)]">
-                {/* High-priority static photograph paints immediately at t=0 for optimal mobile LCP */}
-                <div
-                  ref={parallaxImgRef}
-                  data-hero-parallax="true"
-                  style={{
-                    transition: reducedMotion ? undefined : `transform ${MOTION_DURATION.base * 1000}ms ${MOTION_EASE_CSS}`,
-                  }}
-                  className="h-full w-full will-change-transform"
-                >
-                  <picture
-                    className="heritage-hero-background block h-full w-full"
-                    key={`${customHero.enabled}-${customHero.image}-${customHero.mobileImage}-${heroImageSrc}`}
+        <div className="mx-auto max-w-7xl px-4 py-5 sm:px-8 sm:py-12 lg:px-10 lg:py-16">
+          <div className="grid grid-cols-1 items-center gap-5 sm:gap-8 lg:grid-cols-12 lg:gap-12">
+            {/* Visual Stage: immediate Frame-1 LCP photograph (scales 1.08 -> 1.0 on scroll) */}
+            <div className="table-hero-art order-1 lg:order-2 lg:col-span-7">
+              <figure className="m-0">
+                <div className="relative aspect-[16/10] w-full overflow-hidden rounded-[20px] sm:rounded-[22px] border border-[#C7982F]/40 bg-[#0B2E26] shadow-[0_24px_60px_-20px_rgba(0,0,0,0.65)]">
+                  <div
+                    ref={imageLayerRef}
+                    data-hero-scale-layer="true"
+                    style={{
+                      transform: reducedMotion ? 'scale(1)' : 'scale(1.08)',
+                      transformOrigin: 'center center',
+                      transition: reducedMotion ? undefined : `transform 120ms ${MOTION_EASE_CSS}`,
+                    }}
+                    className="h-full w-full will-change-transform"
                   >
-                    {customHero.enabled && customHero.mobileImage && (
-                      <source media="(max-width: 767px)" srcSet={customHero.mobileImage} />
-                    )}
-                    <img
-                      src={customHero.enabled && customHero.image ? customHero.image : heroImageSrc}
-                      alt={copy.imageAlt}
-                      width={1440}
-                      height={900}
-                      loading="eager"
-                      fetchPriority="high"
-                      decoding="sync"
-                      style={{ visibility: imageHidden ? 'hidden' : 'visible' }}
-                      onLoad={() => setImageHidden(false)}
-                      onError={() => setImageHidden(true)}
-                      className="h-full w-full object-cover object-center"
-                    />
-                  </picture>
+                    <picture
+                      className="heritage-hero-background block h-full w-full"
+                      key={`${customHero.enabled}-${customHero.image}-${customHero.mobileImage}-${heroImageSrc}`}
+                    >
+                      {customHero.enabled && customHero.mobileImage && (
+                        <source media="(max-width: 767px)" srcSet={customHero.mobileImage} />
+                      )}
+                      <img
+                        src={customHero.enabled && customHero.image ? customHero.image : heroImageSrc}
+                        alt={copy.imageAlt}
+                        width={1440}
+                        height={900}
+                        loading="eager"
+                        fetchPriority="high"
+                        decoding="sync"
+                        style={{ visibility: imageHidden ? 'hidden' : 'visible' }}
+                        onLoad={() => setImageHidden(false)}
+                        onError={() => setImageHidden(true)}
+                        className="h-full w-full object-cover object-center"
+                      />
+                    </picture>
+                  </div>
+
+                  {/* Subtle warm vignette layer shifting calmly on scroll (never occludes LCP) */}
+                  <div
+                    ref={vignetteRef}
+                    aria-hidden="true"
+                    data-hero-vignette="true"
+                    style={{
+                      opacity: 0.14,
+                      background:
+                        'radial-gradient(ellipse at 52% 45%, rgba(199,152,47,0.10) 0%, rgba(28,18,8,0.42) 68%, rgba(4,28,22,0.72) 100%)',
+                    }}
+                    className="pointer-events-none absolute inset-0 will-change-[opacity]"
+                  />
                 </div>
 
-                {/* ONE signature orchestrated motion: translucent emerald lid veil + embossed crest seal press -> slides up once without ever occluding Frame-1 hero LCP */}
-                {!reducedMotion && !customHero.enabled && phase !== 'open' && (
-                  <div
-                    aria-hidden="true"
-                    data-testid="premium-hero-lid"
-                    className="pointer-events-none absolute inset-0 z-10 overflow-hidden rounded-[22px] motion-reduce:hidden"
-                  >
-                    <div
-                      style={{
-                        transition:
-                          'transform 700ms cubic-bezier(0.22, 0.8, 0.2, 1), opacity 620ms cubic-bezier(0.22, 0.8, 0.2, 1)',
-                      }}
-                      className={`absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-[#042821]/82 via-[#042821]/56 to-[#042821]/18 border-b-2 border-[#C7982F] shadow-[0_18px_40px_rgba(0,0,0,0.42)] will-change-transform ${
-                        phase === 'opening'
-                          ? '-translate-y-[106%] opacity-0'
-                          : 'translate-y-0 opacity-100'
-                      }`}
-                    >
-                      <div className="pointer-events-none absolute inset-3 sm:inset-4 rounded-[16px] border border-[#C7982F]/40" />
-                      <div className="pointer-events-none absolute inset-5 sm:inset-6 rounded-[12px] border border-[#C7982F]/20" />
-                      <div
-                        style={{ transition: 'transform 220ms cubic-bezier(0.4, 0, 0.2, 1)' }}
-                        className={`flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-full border border-[#C7982F]/70 bg-[#07332A] p-3.5 shadow-[0_0_28px_rgba(199,152,47,0.22)] ${
-                          phase === 'pressing' ? 'scale-90' : 'scale-100'
-                        }`}
-                      >
-                        <AllBarkaCrestVector />
-                      </div>
-                    </div>
-                  </div>
+                {!customHero.enabled && (
+                  <figcaption className="mt-2.5 hidden sm:flex items-center justify-between gap-2 px-1 text-xs text-[#F2ECE2]/75">
+                    <span dir="auto">{copy.caption}</span>
+                  </figcaption>
                 )}
+              </figure>
+            </div>
+
+            {/* Editorial Copy Stage: headline + primary CTA immediately visible at scroll=0 */}
+            <div className="heritage-hero-content order-2 flex flex-col items-start text-start lg:order-1 lg:col-span-5">
+              <div className="mb-3 flex items-center gap-2.5 sm:gap-3">
+                <span
+                  aria-hidden="true"
+                  className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full border border-[#C7982F]/45 bg-[#1E3A2B]/65 p-1.5"
+                >
+                  <AllBarkaCrestVector />
+                </span>
+                <p dir="auto" className="text-xs sm:text-[13px] font-medium text-[#E4C783]">
+                  {eyebrowText}
+                </p>
               </div>
 
-              {/* Caption hidden on mobile (prevents truncation); quiet caption + replay on sm+ */}
-              {!customHero.enabled && (
-                <figcaption className="mt-2.5 hidden sm:flex items-center justify-between gap-2 px-1 text-xs text-[#F2ECE2]/75">
-                  <span dir="auto">{copy.caption}</span>
-                  {!reducedMotion && (
-                    <button
-                      type="button"
-                      onClick={() => setRevealRun((n) => n + 1)}
-                      aria-label={copy.replayLabel}
-                      className="inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center gap-1.5 rounded-full border border-[#C7982F]/35 px-3.5 text-xs font-medium text-[#E4C783] transition-colors hover:border-[#C7982F] hover:bg-[#C7982F]/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E4C783]"
-                    >
-                      <RotateCcw size={13} aria-hidden="true" />
-                      <span>{copy.replayLabel}</span>
-                    </button>
-                  )}
-                </figcaption>
-              )}
-            </figure>
-          </div>
-
-          {/* Editorial Copy Stage: calm unified headline treatment, gentle single stagger (< 1.2s total) */}
-          <div className="heritage-hero-content order-2 flex flex-col items-start text-start lg:order-1 lg:col-span-5">
-            <motion.div
-              key={`eyebrow-${revealRun}`}
-              initial={reducedMotion || typeof window === 'undefined' ? false : { opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: MOTION_DURATION.base, delay: reducedMotion ? 0 : 0.14, ease: MOTION_EASE }}
-              className="mb-3.5 flex items-center gap-3"
-            >
-              <span
-                aria-hidden="true"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#C7982F]/45 bg-[#1E3A2B]/65 p-1.5"
+              <h1
+                id="premium-hero-heading"
+                lang={language}
+                dir="auto"
+                className={`heritage-hero-title font-medium text-[#FDFBF7] ${headingFontClass}`}
               >
-                <AllBarkaCrestVector />
-              </span>
-              <p dir="auto" className="text-xs sm:text-[13px] font-medium text-[#E4C783]">
-                {eyebrowText}
+                {headlineText}
+              </h1>
+
+              <p
+                dir="auto"
+                className={`heritage-hero-description mt-3 sm:mt-5 max-w-lg text-[#F2ECE2]/85 ${bodyFontClass}`}
+              >
+                {descriptionText}
               </p>
-            </motion.div>
 
-            <motion.h1
-              key={`headline-${revealRun}`}
-              id="premium-hero-heading"
-              lang={language}
-              dir="auto"
-              initial={reducedMotion || typeof window === 'undefined' ? false : { opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: MOTION_DURATION.base, delay: reducedMotion ? 0 : 0.24, ease: MOTION_EASE }}
-              className={`heritage-hero-title font-medium text-[#FDFBF7] ${headingFontClass}`}
-            >
-              {headlineText}
-            </motion.h1>
+              {/* Two decisive high-contrast CTAs immediately visible at scroll=0 */}
+              <div className="mt-5 sm:mt-7 flex w-full flex-col gap-2.5 sm:gap-3 sm:w-auto sm:flex-row sm:items-center">
+                <Link
+                  to={primaryPath}
+                  className="table-hero-primary inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-[#C7982F] px-7 py-3 text-sm font-semibold text-[#1A150B] transition-all duration-200 hover:bg-[#D7AA43] motion-safe:active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FDFBF7]"
+                >
+                  <span dir="auto">{primaryLabel}</span>
+                  <ArrowRight size={16} className="rtl-flip shrink-0" aria-hidden="true" />
+                </Link>
 
-            <motion.p
-              key={`desc-${revealRun}`}
-              dir="auto"
-              initial={reducedMotion || typeof window === 'undefined' ? false : { opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: MOTION_DURATION.base, delay: reducedMotion ? 0 : 0.34, ease: MOTION_EASE }}
-              className={`heritage-hero-description mt-4 sm:mt-5 max-w-lg text-[#F2ECE2]/85 ${bodyFontClass}`}
-            >
-              {descriptionText}
-            </motion.p>
+                <Link
+                  to={secondaryPath}
+                  className="table-hero-secondary inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-[#F2ECE2]/40 bg-transparent px-7 py-3 text-sm font-semibold text-[#FDFBF7] transition-all duration-200 hover:border-[#E4C783] hover:bg-[#FDFBF7]/10 motion-safe:active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E4C783]"
+                >
+                  <span dir="auto">{secondaryLabel}</span>
+                  <ArrowRight size={16} className="rtl-flip shrink-0" aria-hidden="true" />
+                </Link>
+              </div>
 
-            {/* Two decisive high-contrast CTAs (48px height, crisp keyboard focus ring) */}
-            <motion.div
-              key={`ctas-${revealRun}`}
-              initial={reducedMotion || typeof window === 'undefined' ? false : { opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: MOTION_DURATION.base, delay: reducedMotion ? 0 : 0.44, ease: MOTION_EASE }}
-              className="mt-6 sm:mt-7 flex w-full flex-col gap-2.5 sm:gap-3 sm:w-auto sm:flex-row sm:items-center"
-            >
-              <Link
-                to={primaryPath}
-                className="table-hero-primary inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-[#C7982F] px-7 py-3 text-sm font-semibold text-[#1A150B] transition-all duration-200 hover:bg-[#D7AA43] motion-safe:active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FDFBF7]"
+              {/* 3 Factual Callout Pills with staggered scroll parallax (zero unverified claims) */}
+              <ul
+                aria-label="House provenance"
+                className="mt-5 sm:mt-8 flex w-full flex-wrap items-center gap-2 border-t border-[#C7982F]/25 pt-4 sm:pt-5 text-[11px] sm:text-xs text-[#F2ECE2]/90"
               >
-                <span dir="auto">{primaryLabel}</span>
-                <ArrowRight size={16} className="rtl-flip shrink-0" aria-hidden="true" />
-              </Link>
-
-              <Link
-                to={secondaryPath}
-                className="table-hero-secondary inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-[#F2ECE2]/40 bg-transparent px-7 py-3 text-sm font-semibold text-[#FDFBF7] transition-all duration-200 hover:border-[#E4C783] hover:bg-[#FDFBF7]/10 motion-safe:active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E4C783]"
-              >
-                <span dir="auto">{secondaryLabel}</span>
-                <ArrowRight size={16} className="rtl-flip shrink-0" aria-hidden="true" />
-              </Link>
-            </motion.div>
-
-            {/* Quiet Lahore House Provenance Strip (area-level only, zero health claims) */}
-            <ul
-              aria-label="House provenance"
-              className="mt-7 sm:mt-8 flex w-full flex-wrap items-center gap-x-5 gap-y-2 border-t border-[#C7982F]/25 pt-4 sm:pt-5 text-xs text-[#F2ECE2]/80"
-            >
-              {copy.pillars.map((pillar, idx) => (
-                <li key={pillar} className="inline-flex items-center gap-2">
-                  {idx > 0 && (
-                    <span aria-hidden="true" className="text-[#C7982F]/60">
-                      ·
-                    </span>
-                  )}
-                  <span dir="auto">{pillar}</span>
-                </li>
-              ))}
-            </ul>
+                {copy.pillars.map((pillar, idx) => (
+                  <li
+                    key={pillar}
+                    ref={(el) => {
+                      pillRefs.current[idx] = el;
+                    }}
+                    data-hero-callout={idx + 1}
+                    className="inline-flex items-center rounded-full border border-[#C7982F]/35 bg-[#083329]/85 px-3 py-1.5 font-medium will-change-transform"
+                  >
+                    <span dir="auto">{pillar}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div aria-hidden="true" className="h-px w-full bg-gradient-to-r from-transparent via-[#C7982F]/45 to-transparent" />
-    </section>
+        <div aria-hidden="true" className="h-px w-full bg-gradient-to-r from-transparent via-[#C7982F]/45 to-transparent" />
+      </section>
+    </div>
   );
 }

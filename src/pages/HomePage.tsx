@@ -283,15 +283,17 @@ export default function HomePage() {
     <div className="editorial-home flex w-full flex-col items-center bg-[var(--color-base,#FDFBF7)] text-[var(--color-text-primary,#29231D)]">
       <StorefrontBanner />
 
-      {/* Section 1 — Calm Hero with ONE signature presentation lid reveal */}
+      {/* Section 1 — Sticky Editorial Scroll Hero */}
       <PremiumHeroPrototype />
 
-      {/* Sections 2–6 — Signature Collections, House Selections, Gifting Atelier, House Standard, Patron Voices */}
-      {orderedBelowFold.map((entry) => (
-        <div key={entry.id} data-content-section={entry.id} className="content-home-section w-full">
-          {sectionRenderers[entry.id]}
-        </div>
-      ))}
+      {/* Sections 2+ slide seamlessly over the sticky editorial hero */}
+      <div className="relative z-10 flex w-full flex-col items-center rounded-t-[24px] sm:rounded-t-[28px] bg-[var(--color-base,#FDFBF7)] shadow-[0_-18px_48px_-20px_rgba(4,40,33,0.4)] overflow-x-clip">
+        {orderedBelowFold.map((entry) => (
+          <div key={entry.id} data-content-section={entry.id} className="content-home-section w-full">
+            {sectionRenderers[entry.id]}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
