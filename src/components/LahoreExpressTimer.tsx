@@ -37,10 +37,10 @@ export default function LahoreExpressTimer({ className = '', onOpenSchedule, hid
       dir={isRtl ? 'rtl' : 'ltr'}
       data-dispatch-bar="true"
       data-hidden-on-scroll={hiddenOnScroll ? 'true' : 'false'}
-      className={`w-full bg-[#042821] text-[#EDE8DE] text-[11px] sm:text-xs transition-[max-height,opacity] duration-200 motion-reduce:transition-none overflow-hidden ${
+      className={`w-full bg-[#042821] text-[#EDE8DE] text-[11px] sm:text-xs transition-[max-height,opacity] duration-200 motion-reduce:transition-none ${
         hiddenOnScroll
-          ? 'max-h-0 opacity-0 border-b-0 sm:max-h-14 sm:opacity-100 sm:border-b sm:border-[#D4AF37]/30'
-          : 'h-8 sm:h-auto max-h-12 sm:max-h-14 opacity-100 border-b border-[#D4AF37]/30'
+          ? 'overflow-hidden max-h-0 opacity-0 border-b-0 sm:max-h-14 sm:opacity-100 sm:border-b sm:border-[#D4AF37]/30'
+          : 'overflow-visible h-8 sm:h-auto max-h-12 sm:max-h-14 opacity-100 border-b border-[#D4AF37]/30'
       } ${className}`}
     >
       <div className="max-w-7xl mx-auto h-full px-3 sm:px-4 sm:py-1.5 flex items-center justify-between gap-x-2 sm:gap-x-3">
@@ -50,7 +50,7 @@ export default function LahoreExpressTimer({ className = '', onOpenSchedule, hid
           {state.eligible ? <span className="truncate">{t('deliveryBanner.orderWithin')} <span dir="ltr" className="inline-block font-mono font-bold text-[#E4C783] bg-white/10 px-1 py-0.5 rounded text-[10px] sm:text-xs">{hours}:{minutes}:{seconds}</span> {t('deliveryBanner.today')}</span> : <span className="truncate">{t('deliveryBanner.nextDispatch')} <time dateTime={state.dispatchDate}><span className="hidden sm:inline">{date}</span><span className="sm:hidden">{compactDate}</span></time></span>}
           <span className="hidden sm:inline text-white/75">{t('deliveryBanner.policy')}</span>
         </div>
-        {onOpenSchedule && <button type="button" onClick={onOpenSchedule} className="focus-ring inline-flex h-8 sm:min-h-9 shrink-0 items-center text-[11px] sm:text-xs text-[#E4C783] hover:text-white underline underline-offset-2 font-medium cursor-pointer whitespace-nowrap">{t('deliveryBanner.schedule')}</button>}
+        {onOpenSchedule && <button type="button" onClick={onOpenSchedule} className="focus-ring inline-flex min-h-[44px] -my-1.5 sm:my-0 shrink-0 items-center text-[11px] sm:text-xs text-[#E4C783] hover:text-white underline underline-offset-2 font-medium cursor-pointer whitespace-nowrap">{t('deliveryBanner.schedule')}</button>}
       </div>
     </div>
   );

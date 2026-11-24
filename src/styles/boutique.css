@@ -87,6 +87,12 @@
 @media(max-width:420px) { .site-footer-grid { grid-template-columns:1fr 1fr; }.footer-links-col a { font-size:11px; }.site-footer-newsletter>div>div { padding:26px 19px; } }
 @media(prefers-reduced-motion:reduce) { .site-footer-editorial-link,.site-footer-social a,.footer-links-col a { transition:none!important; } }
 
+@media(max-width:639px) {
+  .catalog-list-card { display:grid !important; grid-template-columns:92px minmax(0,1fr); column-gap:12px; row-gap:4px; align-items:start; }
+  .catalog-list-card .product-gallery { grid-column:1; grid-row:1 / span 4; width:92px; aspect-ratio:1; align-self:center; margin-bottom:0 !important; }
+  .catalog-list-card .product-gallery-arrow { display:none; }
+  .catalog-list-card > :not(.product-gallery) { grid-column:2; min-width:0; }
+}
 @media(min-width:640px) { .catalog-list-card .product-gallery { width:132px; align-self:flex-start; float:left; margin-inline-end:16px; } .catalog-list-card { display:block; min-height:300px; } .catalog-list-card>div:last-child { clear:both; display:grid; grid-template-columns:1fr 1fr; align-items:center; gap:8px; } .catalog-list-card>div:last-child p { margin-bottom:0; } .catalog-list-card>div:last-child select { margin-bottom:0; } }
 
 /* A restrained catalogue row with compact controls and no nested scrollbars. */

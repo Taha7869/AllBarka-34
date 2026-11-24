@@ -221,7 +221,7 @@ export default function PremiumHeroPrototype({
       ref={runwayRef}
       data-editorial-scroll-hero="true"
       className={`relative w-full bg-[#042821] ${
-        reducedMotion ? 'min-h-0' : 'min-h-[125svh] lg:min-h-[140vh] motion-reduce:min-h-0'
+        reducedMotion ? 'min-h-0' : 'min-h-[118svh] lg:min-h-[140vh] motion-reduce:min-h-0'
       }`}
     >
       <section
@@ -230,8 +230,8 @@ export default function PremiumHeroPrototype({
         data-testid="premium-hero-prototype"
         data-reveal-phase="open"
         data-season={seasonal?.id || 'default'}
-        className={`heritage-hero premium-hero-stage w-full overflow-hidden bg-[#042821] text-[#FDFBF7] ${
-          reducedMotion ? 'relative' : 'sticky top-[56px] md:top-[76px] z-0 motion-reduce:static'
+        className={`heritage-hero premium-hero-stage w-full overflow-hidden bg-[#042821] text-[#FDFBF7] flex flex-col justify-center ${
+          reducedMotion ? 'relative' : 'sticky top-[56px] md:top-[76px] min-h-[calc(100svh-88px)] z-0 motion-reduce:static motion-reduce:min-h-0'
         }`}
         style={{
           backgroundImage:
