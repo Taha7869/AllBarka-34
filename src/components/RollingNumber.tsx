@@ -6,23 +6,25 @@ import { MOTION_DURATION, MOTION_EASE } from '../lib/motion';
 interface RollingNumberProps {
   value: number;
   className?: string;
+  format?: (value: number) => string;
 }
 
 /**
- * Subtle directional number roll (200ms, transform + opacity only) for quantity steppers.
+ * Subtle directional number roll (200ms, transform + opacity only) for quantity steppers and live totals.
  * Renders statically under prefers-reduced-motion and SSR.
  */
-export default function RollingNumber({ value, className = '' }: RollingNumberProps) {
+export default function RollingNumber({ value, className = '', format }: RollingNumberProps) {
   const reducedMotion = usePrefersReducedMotion();
   const prevRef = useRef(value);
   const direction = value >= prevRef.current ? 1 : -1;
+  const formatted = format ? format(value) : String(value);
 
   useEffect(() => {
     prevRef.current = value;
   }, [value]);
 
   if (reducedMotion || typeof window === 'undefined') {
-    return <span className={`tabular-nums ${className}`}><bdi>{value}</bdi></span>;
+    return <span className={`tabular-nums ${className}`}><bdi>{formatted}</bdi></span>;
   }
 
   return (
@@ -36,7 +38,7 @@ export default function RollingNumber({ value, className = '' }: RollingNumberPr
           transition={{ duration: MOTION_DURATION.fast, ease: MOTION_EASE }}
           className="inline-block"
         >
-          <bdi>{value}</bdi>
+          <bdi>{formatted}</bdi>
         </motion.span>
       </AnimatePresence>
     </span>

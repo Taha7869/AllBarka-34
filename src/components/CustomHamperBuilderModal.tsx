@@ -2,15 +2,24 @@ import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefers
 import { useProductMediaCover } from '../contexts/ProductMediaContext';
 import GiftMessageCardPreview from './GiftMessageCardPreview';
 import { useCatalogProducts, useCatalogHamperBoxes } from '../contexts/CatalogContext';
-import React, { useEffect, useRef, useState } from 'react';
-import { motion } from 'motion/react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
 import { X, Gift, Check, ArrowRight, ShoppingBag } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getLocalized } from '../utils/localize';
 import { acquireScrollLock } from '../utils/scrollLock';
-import { CUSTOM_HAMPER_PRODUCT_ID, HAMPER_BOXES, HAMPER_SELECTION_IDS, HAMPER_PORTION_GRAMS, hamperCartKey, hamperSelectionPrice, resolveHamper, type HamperConfiguration } from '../lib/hamperCatalog';
+import { CUSTOM_HAMPER_PRODUCT_ID, HAMPER_BOXES, HAMPER_SELECTION_IDS, HAMPER_PORTION_GRAMS, hamperSelectionPrice, resolveHamper, type HamperConfiguration } from '../lib/hamperCatalog';
 import { calculateFilledGiftEstimate } from '../lib/filledGiftPricing';
 import { openCustomQuoteModal } from '../lib/customQuoteEvent';
+import { MOTION_DURATION, MOTION_EASE } from '../lib/motion';
+import RollingNumber from './RollingNumber';
+
+interface HamperSlotEntry {
+  instanceId: string;
+  productId: string;
+}
+
+const formatPkr = (value: number) => `Rs. ${value.toLocaleString()}`;
 
 export interface CustomHamperCartInput {
   id: string;
@@ -50,7 +59,12 @@ const copy = [
   ['packagingTitle', 'The presentation is yours to choose.', 'پیشکش کا انداز آپ منتخب کریں۔', 'اختر طريقة تقديم هديتك.'],
   ['packagingNote', 'The coffer price is included in your hamper total.', 'ڈبے کی قیمت ہیمپر کی مجموعی قیمت میں شامل ہے۔', 'سعر الصندوق مشمول في إجمالي الهدية.'],
   ['capacity', '{min}–{max} selections', '{min} تا {max} انتخاب', 'من {min} إلى {max} اختيارات'],
-  ['reference', 'Reference image; actual packaging may vary.', 'نمونہ تصویر؛ اصل پیکنگ میں معمولی فرق ہو سکتا ہے۔', 'صورة مرجعية؛ قد تختلف العبوة الفعلية.'],
+  ['reference', 'Packaging may vary slightly by batch.', 'بیچ کے مطابق پیکنگ میں معمولی فرق ہو سکتا ہے۔', 'قد يختلف التغليف قليلاً حسب الدفعة.'],
+  ['trayTitle', 'Your coffer compartments', 'آپ کے ڈبے کے خانے', 'أقسام صندوقك'],
+  ['slotsCount', '{count} / {max} filled', '{count} / {max} خانے بھرے', '{count} / {max} ممتلئ'],
+  ['slotEmpty', 'Open slot', 'خالی خانہ', 'خانة فارغة'],
+  ['slotRemove', 'Remove {name} from coffer', '{name} ڈبے سے ہٹائیں', 'إزالة {name} من الصندوق'],
+  ['boxSealed', 'Coffer complete · Ready', 'ڈبہ مکمل · تیار ہے', 'الصندوق مكتمل · جاهز'],
   ['selectionTitle', 'Choose your favourites.', 'اپنی پسند کے میوہ جات چنیں۔', 'اختر منتجاتك المفضلة.'],
   ['selectionNote', 'Each selection contains 200g of the named product.', 'ہر انتخاب میں منتخب مصنوعات کی 200 گرام مقدار شامل ہے۔', 'كل اختيار يحتوي على 200 غرام من المنتج المحدد.'],
   ['selected', '{count} selected', '{count} منتخب', '{count} مختار'],
@@ -86,7 +100,14 @@ export default function CustomHamperBuilderModal({ isOpen, onClose, onAddToCart 
   closeCallback.current = onClose;
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [boxId, setBoxId] = useState<HamperConfiguration['boxId']>('box-wood');
-  const [selectedItems, setSelectedItems] = useState<string[]>(['pista', 'kaju', 'badam', 'akhroot']);
+  const nextSlotSeq = useRef(10);
+  const [slots, setSlots] = useState<HamperSlotEntry[]>(() =>
+    ['pista', 'kaju', 'badam', 'akhroot'].map((productId, index) => ({
+      instanceId: `slot-init-${index}`,
+      productId,
+    })),
+  );
+  const selectedItems = useMemo(() => slots.map(entry => entry.productId), [slots]);
   const [recipientName, setRecipientName] = useState('');
   const [giftMessage, setGiftMessage] = useState('');
   const box = hamperBoxes.find(option => option.id === boxId) || hamperBoxes[0] || HAMPER_BOXES[0];
@@ -114,10 +135,9 @@ export default function CustomHamperBuilderModal({ isOpen, onClose, onAddToCart 
 
   const pricesKnown = boxAvailable && contentsEstimate.available;
   const selectionValid = pricesKnown && selectedItems.length >= box.minSelections && selectedItems.length <= box.maxSelections;
+  const isBoxFull = selectionValid && selectedItems.length >= box.maxSelections;
   const contentsSubtotal = pricesKnown ? (contentsEstimate.subtotal ?? 0) : null;
   const totalPrice = pricesKnown && contentsSubtotal !== null ? box.price + contentsSubtotal : null;
-
-
 
   const capacity = t('capacity').replace('{min}', String(box.minSelections)).replace('{max}', String(box.maxSelections));
   const invalidMessage = t('selectionInvalid').replace('{min}', String(box.minSelections)).replace('{max}', String(box.maxSelections));
@@ -142,7 +162,19 @@ export default function CustomHamperBuilderModal({ isOpen, onClose, onAddToCart 
   }, [isOpen]);
 
   if (!isOpen) return null;
-  const toggleItem = (id: string) => setSelectedItems(previous => previous.includes(id) ? previous.filter(value => value !== id) : previous.length < box.maxSelections ? [...previous, id] : previous);
+  const toggleItem = (id: string) =>
+    setSlots(previous => {
+      const existingIndex = previous.findIndex(entry => entry.productId === id);
+      if (existingIndex !== -1) {
+        return previous.filter((_, index) => index !== existingIndex);
+      }
+      if (previous.length >= box.maxSelections) return previous;
+      return [...previous, { instanceId: `slot-${nextSlotSeq.current++}`, productId: id }];
+    });
+  const removeSlotByInstance = (instanceId: string) =>
+    setSlots(previous => previous.filter(entry => entry.instanceId !== instanceId));
+  const compartmentCount = Math.max(box.maxSelections, slots.length);
+  const slotIndices = Array.from({ length: compartmentCount }, (_, idx) => idx);
   const finish = () => {
     if (!resolved) return;
     const boxName = getLocalized(box, 'name', language);
@@ -174,30 +206,141 @@ export default function CustomHamperBuilderModal({ isOpen, onClose, onAddToCart 
     onClose();
   };
 
+  const slotTransition = reducedMotion
+    ? { duration: 0 }
+    : { duration: MOTION_DURATION.base, ease: MOTION_EASE };
+
   return <div className="fixed inset-0 z-[10005] flex items-center justify-center p-3 sm:p-4" dir={isRtl ? 'rtl' : 'ltr'}>
-    <motion.div aria-hidden="true" initial={reducedMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reducedMotion ? 0 : .2 }} onClick={onClose} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+    <motion.div aria-hidden="true" initial={reducedMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reducedMotion ? 0 : MOTION_DURATION.fast, ease: MOTION_EASE }} onClick={onClose} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
     <motion.div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="hamper-builder-title" tabIndex={-1}
-      initial={reducedMotion ? false : { opacity: 0, scale: .97, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: reducedMotion ? 0 : .2 }}
+      initial={reducedMotion ? false : { opacity: 0, scale: 0.97, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: reducedMotion ? 0 : MOTION_DURATION.fast, ease: MOTION_EASE }}
       className="gift-builder-dialog relative z-10 flex max-h-[92svh] w-full max-w-6xl flex-col overflow-hidden rounded-[28px] border border-[var(--color-border-accent)] bg-[var(--color-surface)] text-[var(--color-text-primary)] shadow-2xl">
       <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--color-border)] bg-[var(--color-base)] px-5 py-4">
         <div className="flex min-w-0 items-center gap-3"><Gift size={22} className="shrink-0 text-[var(--color-accent-text)]"/><div dir="auto"><h3 id="hamper-builder-title" className="font-serif text-lg leading-snug">{t('title')}</h3><p className="mt-1 text-[11px] leading-5 text-[var(--color-text-secondary)]">{t('intro')}</p></div></div>
         <button type="button" onClick={onClose} aria-label={t('close')} className="focus-ring grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[var(--color-border)]"><X size={18}/></button>
       </div>
       <div className="gift-builder-steps grid shrink-0 grid-cols-3 border-b border-[var(--color-border)]">{([1, 2, 3] as const).map(value => <button type="button" key={value} aria-current={step === value ? 'step' : undefined} disabled={value === 3 && !selectionValid} onClick={() => setStep(value)} className={`focus-ring min-h-12 border-b-2 px-2 py-3 text-[11px] font-medium disabled:opacity-40 ${step === value ? 'border-[var(--color-gold)] bg-[#c7982f]/5 text-[var(--color-accent-text)]' : 'border-transparent text-[var(--color-text-secondary)]'}`}><span dir="auto">{value}. {t(value === 1 ? 'packaging' : value === 2 ? 'harvests' : 'card')}</span></button>)}</div>
-      <div className="gift-builder-scroll min-h-0 flex-1 overflow-y-auto p-5 sm:p-6"><div className="gift-builder-layout"><div className="gift-builder-work">
+      <div className="gift-builder-scroll min-h-0 flex-1 overflow-y-auto p-4 sm:p-6"><div className="gift-builder-layout" data-step={step}><div className="gift-builder-work">
         {step === 1 && <div><h4 dir="auto" className="font-serif text-xl">{t('packagingTitle')}</h4><p dir="auto" className="mb-5 mt-2 text-xs leading-6 text-[var(--color-text-secondary)]">{t('packagingNote')}</p><div className="grid gap-4 sm:grid-cols-3">{hamperBoxes.map(option => <button type="button" key={option.id} disabled={option.active === false || option.price <= 0} aria-pressed={boxId === option.id} onClick={() => setBoxId(option.id)} className={`focus-ring flex flex-col rounded-2xl border p-3.5 text-start transition-colors motion-reduce:transition-none ${boxId === option.id ? 'border-[var(--color-gold)] bg-[#c7982f]/10' : 'border-[var(--color-border)] hover:border-[var(--color-gold)]'}`}>
           <img src={option.image} alt={getLocalized(option, 'name', language)} width={640} height={360} loading="lazy" className="mb-3 aspect-video w-full rounded-xl object-cover"/><span dir="auto" className={`text-sm ${nameTypography}`}>{getLocalized(option, 'name', language)}</span><span dir="auto" className="mt-2 text-[10px] leading-5 text-[var(--color-text-secondary)]">{t('capacity').replace('{min}', String(option.minSelections)).replace('{max}', String(option.maxSelections))}</span><span className="mt-auto flex items-center justify-between gap-2 border-t border-[var(--color-border)] pt-3 text-sm text-[var(--color-accent-text)]"><bdi>{option.active===false||option.price<=0?t('boxUnavailable'):`Rs. ${option.price.toLocaleString()}`}</bdi>{boxId === option.id && <Check size={17}/>}</span>
         </button>)}</div><p dir="auto" className="mt-4 text-[10px] leading-5 text-[var(--color-text-secondary)]">{t('reference')}</p></div>}
-        {step === 2 && <div><div className="mb-5 flex flex-wrap items-start justify-between gap-3"><div dir="auto"><h4 className="font-serif text-xl">{t('selectionTitle')}</h4><p className="mt-2 text-xs leading-6 text-[var(--color-text-secondary)]">{t('selectionNote')}</p><p className="text-xs leading-6 text-[var(--color-accent-text)]">{capacity}</p></div><span dir="auto" className="rounded-full bg-[#1e3a2b] px-3 py-2 text-xs text-[#fff8e9]">{t('selected').replace('{count}', String(selectedItems.length))}</span></div><div className="grid gap-3 sm:grid-cols-2">{candidates.map(product => {
+        {step === 2 && <div><div className="mb-5 flex flex-wrap items-start justify-between gap-3"><div dir="auto"><h4 className="font-serif text-xl">{t('selectionTitle')}</h4><p className="mt-2 text-xs leading-6 text-[var(--color-text-secondary)]">{t('selectionNote')}</p><p className="text-xs leading-6 text-[var(--color-accent-text)]">{capacity}</p></div><span dir="auto" className="rounded-full bg-[#042821] px-3 py-2 text-xs text-[#fdfbf7] border border-[#c7982f]/40">{t('selected').replace('{count}', String(selectedItems.length))}</span></div><div className="grid gap-3 sm:grid-cols-2">{candidates.map(product => {
           const selected = selectedItems.includes(product.id);
-          return <button type="button" key={product.id} aria-pressed={selected} disabled={!selected && selectedItems.length >= box.maxSelections} onClick={() => toggleItem(product.id)} className={`focus-ring flex min-h-24 items-center gap-3 rounded-2xl border p-3 text-start disabled:opacity-40 ${selected ? 'border-[var(--color-gold)] bg-[#c7982f]/10' : 'border-[var(--color-border)]'}`}><img src={mediaCover(product)} alt="" width={64} height={64} loading="lazy" className="h-16 w-16 shrink-0 rounded-xl object-cover"/><span className="min-w-0 flex-1"><span dir="auto" className={`block whitespace-normal break-words text-sm ${nameTypography}`}>{getLocalized(product, 'name', language)}</span><span className="mt-1 block text-[11px] text-[var(--color-accent-text)]"><bdi>200g · Rs. {hamperSelectionPrice(product)?.toLocaleString()}</bdi></span></span><span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border ${selected ? 'border-[#1e3a2b] bg-[#1e3a2b] text-[#e4c783]' : 'border-[var(--color-border)]'}`}>{selected && <Check size={14}/>}</span></button>;
-        })}</div>{selectedItems.filter(id => !candidates.some(product => product.id === id)).map(id => <button key={id} type="button" onClick={() => toggleItem(id)} className="gift-remove-unavailable focus-ring mt-3 block min-h-11 border border-[var(--color-border)] px-3 py-2 text-start text-xs">{t('removeUnavailable')}: {getLocalized(PRODUCTS.find(product => product.id === id), 'name', language) || id}</button>)}{!selectionValid && <p role="status" dir="auto" className="mt-4 text-xs leading-6 text-[var(--color-accent-text)]">{invalidMessage}</p>}</div>}
-        {step === 3 && <div dir={isRtl ? 'rtl' : 'ltr'} className="space-y-5"><h4 className="font-serif text-xl">{t('cardTitle')}</h4><div><label htmlFor="hamper-recipient" className="mb-2 block text-xs font-medium">{t('recipient')}</label><input id="hamper-recipient" type="text" value={recipientName} maxLength={100} autoComplete="off" onChange={event => setRecipientName(event.target.value)} placeholder={t('recipientPlaceholder')} className="min-h-12 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] px-4 text-base focus-visible:outline-[var(--color-gold)]"/></div><div><label htmlFor="hamper-message" className="mb-2 block text-xs font-medium">{t('message')}</label><textarea id="hamper-message" value={giftMessage} maxLength={500} rows={3} onChange={event => setGiftMessage(event.target.value)} placeholder={t('messagePlaceholder')} className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] p-4 text-base focus-visible:outline-[var(--color-gold)]"/></div><GiftMessageCardPreview recipientName={recipientName} message={giftMessage} maxLength={500} placeholder={t('messagePlaceholder')} /><div className="rounded-2xl border border-[#c7982f]/40 bg-[#12382a] p-5 text-[#fff8e9]"><h5 className="font-serif text-lg text-[#e4c783]">{t('summary')}</h5><p className="mt-3 text-sm">{getLocalized(box, 'name', language)}</p><p className="mt-3 text-xs leading-6"><strong>{t('contents')}: </strong>{selectedItems.map(id => getLocalized(PRODUCTS.find(product => product.id === id), 'name', language)).join('، ')}</p><p className="mt-3 text-xs">{t('netWeight')}: <bdi>{selectedItems.length * HAMPER_PORTION_GRAMS}g</bdi></p></div></div>}
+          return <button type="button" key={product.id} aria-pressed={selected} disabled={!selected && selectedItems.length >= box.maxSelections} onClick={() => toggleItem(product.id)} className={`focus-ring flex min-h-24 items-center gap-3 rounded-2xl border p-3 text-start transition-colors motion-reduce:transition-none disabled:opacity-40 ${selected ? 'border-[var(--color-gold)] bg-[#c7982f]/10' : 'border-[var(--color-border)] hover:border-[var(--color-gold)]/60'}`}><img src={mediaCover(product)} alt="" width={64} height={64} loading="lazy" className="h-16 w-16 shrink-0 rounded-xl object-cover"/><span className="min-w-0 flex-1"><span dir="auto" className={`block whitespace-normal break-words text-sm ${nameTypography}`}>{getLocalized(product, 'name', language)}</span><span className="mt-1 block text-[11px] text-[var(--color-accent-text)]"><bdi>200g · Rs. {hamperSelectionPrice(product)?.toLocaleString()}</bdi></span></span><span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border transition-colors ${selected ? 'border-[#042821] bg-[#042821] text-[#e4c783]' : 'border-[var(--color-border)]'}`}>{selected && <Check size={14}/>}</span></button>;
+        })}</div>{slots.filter(entry => !candidates.some(product => product.id === entry.productId)).map(entry => <button key={entry.instanceId} type="button" onClick={() => removeSlotByInstance(entry.instanceId)} className="gift-remove-unavailable focus-ring mt-3 block min-h-11 border border-[var(--color-border)] px-3 py-2 text-start text-xs">{t('removeUnavailable')}: {getLocalized(PRODUCTS.find(product => product.id === entry.productId), 'name', language) || entry.productId}</button>)}{!selectionValid && <p role="status" dir="auto" className="mt-4 text-xs leading-6 text-[var(--color-accent-text)]">{invalidMessage}</p>}</div>}
+        {step === 3 && <div dir={isRtl ? 'rtl' : 'ltr'} className="space-y-5"><h4 className="font-serif text-xl">{t('cardTitle')}</h4><div><label htmlFor="hamper-recipient" className="mb-2 block text-xs font-medium">{t('recipient')}</label><input id="hamper-recipient" type="text" value={recipientName} maxLength={100} autoComplete="off" onChange={event => setRecipientName(event.target.value)} placeholder={t('recipientPlaceholder')} className="min-h-12 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] px-4 text-base focus-visible:outline-[var(--color-gold)]"/></div><div><label htmlFor="hamper-message" className="mb-2 block text-xs font-medium">{t('message')}</label><textarea id="hamper-message" value={giftMessage} maxLength={500} rows={3} onChange={event => setGiftMessage(event.target.value)} placeholder={t('messagePlaceholder')} className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-base)] p-4 text-base focus-visible:outline-[var(--color-gold)]"/></div><GiftMessageCardPreview recipientName={recipientName} message={giftMessage} maxLength={500} placeholder={t('messagePlaceholder')} /><div className="rounded-2xl border border-[#c7982f]/40 bg-[#042821] p-5 text-[#fdfbf7]"><h5 className="font-serif text-lg text-[#e4c783]">{t('summary')}</h5><p className="mt-3 text-sm">{getLocalized(box, 'name', language)}</p><p className="mt-3 text-xs leading-6"><strong>{t('contents')}: </strong>{selectedItems.map(id => getLocalized(PRODUCTS.find(product => product.id === id), 'name', language)).join('، ')}</p><p className="mt-3 text-xs">{t('netWeight')}: <bdi>{selectedItems.length * HAMPER_PORTION_GRAMS}g</bdi></p></div></div>}
       </div><aside className="gift-builder-preview" aria-label={t('summary')}><figure><img src={box.image} alt={getLocalized(box,'name',language)} width={640} height={360}/><figcaption>{t('reference')}</figcaption></figure><h4>{getLocalized(box,'name',language)}</h4><p>{t('selected').replace('{count}',String(selectedItems.length))} · <bdi>{selectedItems.length * HAMPER_PORTION_GRAMS}g</bdi></p>
-        <ul>{selectedItems.map(id=>{const product=candidates.find(item=>item.id===id);return <li key={id}>{product && <img src={mediaCover(product)} alt="" width={48} height={48}/>}<span dir="auto">{product?getLocalized(product,'name',language):t('unavailable')}<small>{HAMPER_PORTION_GRAMS}g</small></span><bdi>{product?`Rs. ${hamperSelectionPrice(product)?.toLocaleString()}`:'—'}</bdi></li>;})}</ul>
-        <dl><div><dt>{t('packagingCost')}</dt><dd><bdi>{boxAvailable?`Rs. ${box.price.toLocaleString()}`:t('boxUnavailable')}</bdi></dd></div><div><dt>{t('contents')}</dt><dd><bdi>{contentsSubtotal===null?'—':`Rs. ${contentsSubtotal.toLocaleString()}`}</bdi></dd></div><div><dt>{t('total')}</dt><dd aria-live="polite"><bdi>{totalPrice===null?'—':`Rs. ${totalPrice.toLocaleString()}`}</bdi></dd></div></dl>
+        {/* Interactive Coffer Compartment Tray: keyed strictly by unique compartment instanceId */}
+        <div
+          data-hamper-tray="true"
+          data-hamper-seal={isBoxFull ? 'sealed' : 'filling'}
+          className="hamper-compartment-tray mt-3 rounded-xl border border-[#C7982F]/40 bg-[#042821] p-3 text-[#FDFBF7]"
+        >
+          <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
+            <span dir="auto" className="text-[11px] font-medium text-[#E4C783]">
+              {t('trayTitle')}
+            </span>
+            {isBoxFull ? (
+              <motion.span
+                key="sealed-badge"
+                initial={reducedMotion ? false : { opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: reducedMotion ? 0 : MOTION_DURATION.fast, ease: MOTION_EASE }}
+                className="inline-flex items-center gap-1 rounded-full border border-[#E4C783]/70 bg-[#C7982F] px-2.5 py-0.5 text-[10px] font-semibold text-[#1A150B]"
+              >
+                <Check size={12} aria-hidden="true" />
+                <span dir="auto">{t('boxSealed')}</span>
+              </motion.span>
+            ) : (
+              <span dir="auto" className="text-[10px] tabular-nums text-[#F2ECE2]/80">
+                {t('slotsCount').replace('{count}', String(selectedItems.length)).replace('{max}', String(box.maxSelections))}
+              </span>
+            )}
+          </div>
+          <LayoutGroup id="hamper-compartment-tray">
+            <div className="grid grid-cols-2 gap-2">
+              {slotIndices.map(slotIndex => {
+                const entry = slots[slotIndex];
+                const product = entry ? candidates.find(item => item.id === entry.productId) : undefined;
+                const displayName = entry ? (product ? getLocalized(product, 'name', language) : t('unavailable')) : '';
+                return (
+                  <div
+                    key={`cell-${slotIndex}`}
+                    data-slot-index={slotIndex}
+                    data-slot-state={entry ? 'filled' : 'empty'}
+                    className="relative min-h-[60px] min-w-0 rounded-lg border border-dashed border-[#C7982F]/30 bg-[#063229]/70"
+                  >
+                    <AnimatePresence mode="popLayout" initial={false}>
+                      {entry ? (
+                        <motion.button
+                          key={entry.instanceId}
+                          type="button"
+                          layout={!reducedMotion}
+                          layoutId={reducedMotion ? undefined : `hamper-slot-${entry.instanceId}`}
+                          initial={reducedMotion ? false : { opacity: 0, scale: 0.86, y: 10 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.88, y: -6 }}
+                          transition={slotTransition}
+                          onClick={() => removeSlotByInstance(entry.instanceId)}
+                          aria-label={t('slotRemove').replace('{name}', displayName)}
+                          className="focus-ring relative flex h-full min-h-[60px] w-full min-w-0 items-center gap-2 rounded-lg bg-[#083B30] px-2 py-1.5 text-start text-[#FDFBF7] transition-colors hover:bg-[#0B473A]"
+                        >
+                          {/* 1px champagne-gold hairline border draw on compartment fill */}
+                          <svg
+                            aria-hidden="true"
+                            className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
+                            viewBox="0 0 100 100"
+                            preserveAspectRatio="none"
+                          >
+                            <motion.rect
+                              x="0.75"
+                              y="0.75"
+                              width="98.5"
+                              height="98.5"
+                              rx="8"
+                              ry="8"
+                              fill="none"
+                              stroke="#C7982F"
+                              strokeWidth="1.25"
+                              vectorEffect="non-scaling-stroke"
+                              initial={reducedMotion ? { pathLength: 1 } : { pathLength: 0 }}
+                              animate={{ pathLength: 1 }}
+                              transition={{ duration: reducedMotion ? 0 : MOTION_DURATION.base, ease: MOTION_EASE }}
+                            />
+                          </svg>
+                          {product && (
+                            <img
+                              src={mediaCover(product)}
+                              alt=""
+                              width={34}
+                              height={34}
+                              loading="lazy"
+                              className="h-8 w-8 shrink-0 rounded-md object-cover bg-[#FDFBF7]"
+                            />
+                          )}
+                          <span dir="auto" className="min-w-0 flex-1 line-clamp-2 break-words [overflow-wrap:anywhere] text-[10.5px] leading-snug font-medium text-[#FDFBF7]">
+                            {displayName}
+                          </span>
+                        </motion.button>
+                      ) : (
+                        <div
+                          key={`empty-${slotIndex}`}
+                          className="flex h-full min-h-[60px] items-center justify-center px-2 text-[10px] text-[#E4C783]/60"
+                        >
+                          <span dir="auto">{String(slotIndex + 1).padStart(2, '0')} · {t('slotEmpty')}</span>
+                        </div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              })}
+            </div>
+          </LayoutGroup>
+        </div>
+        <ul>{slots.map(entry=>{const product=candidates.find(item=>item.id===entry.productId);return <li key={entry.instanceId}>{product && <img src={mediaCover(product)} alt="" width={48} height={48}/>}<span dir="auto">{product?getLocalized(product,'name',language):t('unavailable')}<small>{HAMPER_PORTION_GRAMS}g</small></span><bdi>{product?`Rs. ${hamperSelectionPrice(product)?.toLocaleString()}`:'—'}</bdi></li>;})}</ul>
+        <dl><div><dt>{t('packagingCost')}</dt><dd><bdi>{boxAvailable?`Rs. ${box.price.toLocaleString()}`:t('boxUnavailable')}</bdi></dd></div><div><dt>{t('contents')}</dt><dd>{contentsSubtotal===null?<bdi>—</bdi>:<RollingNumber value={contentsSubtotal} format={formatPkr} />}</dd></div><div><dt>{t('total')}</dt><dd aria-live="polite">{totalPrice===null?<bdi>—</bdi>:<RollingNumber value={totalPrice} format={formatPkr} />}</dd></div></dl>
         {!selectionValid && step !== 2 && <p role="status">{!boxAvailable?t('boxUnavailable'):pricesKnown?invalidMessage:t('unavailable')}</p>}</aside></div></div>
-      <div className="gift-builder-footer flex shrink-0 flex-col gap-4 border-t border-[var(--color-border)] bg-[var(--color-base)] p-4 sm:flex-row sm:items-center sm:justify-between"><div dir="auto"><span className="block text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-secondary)]">{t('total')}</span><strong className="font-serif text-2xl text-[var(--color-accent-text)]"><bdi>{totalPrice===null?'—':`Rs. ${totalPrice.toLocaleString()}`}</bdi></strong></div><div className="flex gap-3">{step > 1 && <button type="button" onClick={() => setStep(step === 3 ? 2 : 1)} className="focus-ring min-h-12 rounded-full border border-[var(--color-border)] px-5 text-xs font-medium">{t('back')}</button>}<button type="button" disabled={step === 2 ? !selectionValid : step === 3 ? !resolved : false} onClick={step === 3 ? finish : () => setStep(step === 1 ? 2 : 3)} className="gift-builder-add focus-ring flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full border border-[#c7982f]/40 bg-[#1e3a2b] px-6 text-xs font-semibold text-[#fff8e9] disabled:opacity-40">{step === 3 ? <ShoppingBag size={16}/> : null}<span dir="auto">{t(step === 3 ? 'add' : 'continue')}</span>{step < 3 && <ArrowRight size={16} className="text-[#e4c783]"/>}</button></div></div>
+      <div className="gift-builder-footer flex shrink-0 flex-col gap-3 border-t border-[var(--color-border)] bg-[var(--color-base)] p-3.5 sm:flex-row sm:items-center sm:justify-between sm:p-4"><div dir="auto"><span className="block text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-secondary)]">{t('total')}</span><strong className="font-serif text-2xl text-[var(--color-accent-text)]">{totalPrice===null?<bdi>—</bdi>:<RollingNumber value={totalPrice} format={formatPkr} />}</strong></div><div className="flex gap-3">{step > 1 && <button type="button" onClick={() => setStep(step === 3 ? 2 : 1)} className="focus-ring min-h-12 rounded-full border border-[var(--color-border)] px-5 text-xs font-medium">{t('back')}</button>}<button type="button" data-box-ready={isBoxFull} disabled={step === 2 ? !selectionValid : step === 3 ? !resolved : false} onClick={step === 3 ? finish : () => setStep(step === 1 ? 2 : 3)} className={`gift-builder-add focus-ring flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full border px-6 text-xs font-semibold transition-colors motion-reduce:transition-none disabled:opacity-40 ${isBoxFull ? 'border-[#E4C783] bg-[#C7982F] text-[#1A150B] shadow-[0_8px_22px_-10px_rgba(199,152,47,0.75)]' : 'border-[#c7982f]/40 bg-[#042821] text-[#fdfbf7]'}`}>{step === 3 ? <ShoppingBag size={16}/> : isBoxFull ? <Check size={16}/> : null}<span dir="auto">{t(step === 3 ? 'add' : 'continue')}</span>{step < 3 && <ArrowRight size={16} className={isBoxFull ? 'text-[#1A150B]' : 'text-[#e4c783]'}/>}</button></div></div>
     </motion.div>
   </div>;
 }
