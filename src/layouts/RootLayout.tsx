@@ -351,6 +351,13 @@ export default function RootLayout() {
 
   return (
     <div className="boutique-experience min-h-screen w-full max-w-full relative flex flex-col font-sans bg-[var(--color-base)] text-[var(--color-ink)] selection:bg-[var(--color-gold)]/30 selection:text-[var(--color-ink)]">
+      <a
+        href="#main-content"
+        data-skip-link="true"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:start-2 focus:z-[25000] focus:rounded-xl focus:bg-[#042821] focus:px-4 focus:py-2.5 focus:text-xs focus:font-semibold focus:text-[#FDFBF7] focus:shadow-lg focus:outline-2 focus:outline-offset-2 focus:outline-[#C7982F]"
+      >
+        {t('nav.skipToContent', 'Skip to main content')}
+      </a>
       <ToastManager />
       {!isAdminRoute && <GradualBlur preset="header" strength={1.5} opacity={0.9} />}
       
@@ -539,7 +546,7 @@ export default function RootLayout() {
         )}
       </React.Suspense>
 
-      <main className="flex-1 w-full relative z-10 flex flex-col items-center">
+      <main id="main-content" tabIndex={-1} className="flex-1 w-full relative z-10 flex flex-col items-center focus:outline-none">
         <OfflineStatusBar />
         {/* Shared Breadcrumb Navigation for all subpages (hidden on homepage) */}
         {!isAdminRoute && <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

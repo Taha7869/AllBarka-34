@@ -18,6 +18,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useDragScroll } from '../hooks/useDragScroll';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useFloatingLauncherPlacement } from '../hooks/useFloatingLauncherPlacement';
+import { MOTION_EASE } from '../lib/motion';
+import { acquireScrollLock } from '../utils/scrollLock';
 import { buildHumanSupportWhatsAppUrl } from '../config/contacts';
 import { openCustomQuoteModal } from '../lib/customQuoteEvent';
 import type { ValidatedProductRecommendation, ValidatedInquiryPrefill } from '../lib/aiBuddyResolution';
@@ -57,6 +59,7 @@ export default function AIConcierge({ hasCartBar = false, hasCookieBar = false, 
   const lastFailedTextRef = useRef('');
   const previouslyOpenRef = useRef(false);
   const launcherRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const accountRef = useRef(currentUser?.uid ?? null);
   const chipsScrollRef = useDragScroll<HTMLDivElement>();
@@ -108,14 +111,47 @@ export default function AIConcierge({ hasCartBar = false, hasCookieBar = false, 
 
   useEffect(() => {
     if (!isOpen) return;
-    const closeOnEscape = (event: KeyboardEvent) => {
+    const releaseLock = typeof window !== 'undefined' && window.innerWidth < 640 ? acquireScrollLock() : null;
+    const focusTimer = window.setTimeout(() => {
+      const panel = panelRef.current;
+      if (!panel) return;
+      const firstInput = panel.querySelector<HTMLElement>('input:not(:disabled), textarea:not(:disabled), button:not(:disabled)');
+      (firstInput || panel).focus();
+    }, 30);
+    const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        event.preventDefault();
         setIsOpen(false);
         launcherRef.current?.focus();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const panel = panelRef.current;
+      if (!panel) return;
+      const focusable = Array.from(
+        panel.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), textarea:not(:disabled), a[href], [tabindex="0"]')
+      ).filter(el => el.getBoundingClientRect().height > 0);
+      if (!focusable.length) {
+        event.preventDefault();
+        panel.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && (document.activeElement === first || document.activeElement === panel)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !panel.contains(document.activeElement))) {
+        event.preventDefault();
+        first.focus();
       }
     };
-    window.addEventListener('keydown', closeOnEscape);
-    return () => window.removeEventListener('keydown', closeOnEscape);
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.clearTimeout(focusTimer);
+      releaseLock?.();
+      window.removeEventListener('keydown', onKeyDown);
+    };
   }, [isOpen]);
 
   // Keep the AI service out of the initial storefront bundle.
@@ -269,12 +305,15 @@ export default function AIConcierge({ hasCartBar = false, hasCookieBar = false, 
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={reducedMotion ? false : { opacity: 0, y: 30, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 30, scale: 0.95 }}
-            transition={reducedMotion ? { duration: 0 } : { type: 'spring', damping: 25, stiffness: 200 }}
+            ref={panelRef}
+            tabIndex={-1}
+            initial={reducedMotion ? false : { opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 16 }}
+            transition={reducedMotion ? { duration: 0 } : { duration: 0.18, ease: MOTION_EASE }}
             id="allbarka-concierge-panel"
             role="dialog"
+            aria-modal="true"
             aria-label={t('concierge.title')}
             dir="ltr"
             className={`fixed bottom-[80px] sm:bottom-[90px] right-4 sm:right-6 z-50 origin-bottom flex flex-col overflow-hidden text-[var(--color-ink,#1A1A1A)] bg-[var(--color-surface,#FFFFFF)] border-2 border-[var(--color-gold,#B8935F)]/35 rounded-[32px] sm:rounded-[28px] shadow-2xl
@@ -293,7 +332,7 @@ export default function AIConcierge({ hasCartBar = false, hasCookieBar = false, 
                     {t('concierge.title')} <Sparkles size={13} className="text-[var(--color-gold,#B8935F)]" />
                   </h3>
                   <p className="text-[10px] text-[var(--color-ink-muted,#5A5A5A)] font-bold flex items-center gap-1 mt-0.5">
-                    {!isOffline && <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-gold,#B8935F)] motion-safe:animate-ping inline-block" />}
+                    {!isOffline && <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-gold,#B8935F)] inline-block" />}
                     {isOffline ? t('concierge.offline') : t('concierge.assistant')}
                   </p>
                 </div>
