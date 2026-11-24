@@ -15,6 +15,7 @@ import CatalogFilterSheet from './CatalogFilterSheet';
 import { useCatalogFilterLanguage } from '../hooks/useCatalogFilterLanguage';
 import { useCatalogActivity } from '../hooks/useCatalogActivity';
 import { unitPrice } from '../lib/catalogActivity';
+import { sortAndDedupePortions } from '../lib/productSelection';
 import ProductImageGallery from './ProductImageGallery';
 import { navigateToProductWithTransition, shouldInterceptLinkClick, supportsViewTransitions } from '../lib/viewTransitions';
 import { PRODUCTS } from '../data/products';
@@ -329,7 +330,7 @@ export default function CategoryPLP({ searchFilter: initialSearch, initialCatego
     {compareMessage && <p role="status" className="mb-4 text-xs">{compareMessage}</p>}
     {catalogLoading && products.length === 0 && !filters.query ? <ShopCategorySkeleton gridOnly count={8} /> : products.length ? <div id="plp-products-grid" className={listView ? 'grid grid-cols-1 gap-4 md:grid-cols-2' : 'grid grid-cols-2 gap-2.5 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4'}>{products.slice(0, visibleCount).map((product, index) => {
       const disabled = new Set(product.variants?.filter(variant => variant.available === false).map(variant => variant.label) || []);
-      const weights = Object.keys(product.prices).filter(weight => !disabled.has(weight) && Number.isFinite(product.prices[weight]) && product.prices[weight] > 0);
+      const weights = sortAndDedupePortions(Object.keys(product.prices).filter(weight => !disabled.has(weight) && Number.isFinite(product.prices[weight]) && product.prices[weight] > 0));
       const weight = weights.includes(sizes[product.id]) ? sizes[product.id] : initialCardPortion(product, weights);
       const saved = savedIds.includes(product.id);
       const unit = product.quoteOnly ? null : unitPrice(product.prices[weight], weight || '');

@@ -32,7 +32,7 @@ import PulseHeart from '../components/PulseHeart';
 import { buildHumanSupportWhatsAppUrl } from '../config/contacts';
 import CustomWeightInput from '../components/CustomWeightInput';
 import { resolveCustomWeight, supportsCustomWeight } from '../lib/productVariants';
-import { displayProductPrice } from '../lib/productSelection';
+import { displayProductPrice, sortAndDedupePortions } from '../lib/productSelection';
 import { openCustomQuoteModal } from '../lib/customQuoteEvent';
 const ProductPhotoViewer = lazy(() => import('../components/ProductPhotoViewer'));
 import { isPackagingProduct, getPackagingMoqDisplay } from '../lib/packagingMoq';
@@ -160,11 +160,7 @@ export default function ProductDetailPage() {
 
   const weights = useMemo(
     () =>
-      product
-        ? Object.keys(product.prices || {}).filter(
-            w => !disabledLabels.has(w) && Number.isFinite(product.prices[w]) && product.prices[w] > 0
-          )
-        : [],
+      product ? sortAndDedupePortions(Object.keys(product.prices || {}).filter(w => !disabledLabels.has(w) && Number.isFinite(product.prices[w]) && product.prices[w] > 0)) : [],
     [product, disabledLabels]
   );
 
@@ -760,8 +756,8 @@ export default function ProductDetailPage() {
                     </button>
                   );
                 })}
+                              <CustomWeightInput product={product} selected={customWeightSelected} grams={customGrams} onSelect={() => setCustomWeightSelected(true)} onChange={setCustomGrams} />
               </div>
-              <CustomWeightInput product={product} selected={customWeightSelected} grams={customGrams} onSelect={() => setCustomWeightSelected(true)} onChange={setCustomGrams} />
             </div>
             </>}
 

@@ -17,6 +17,7 @@ import ProductVideo from './ProductVideo';
 import { openCustomQuoteModal } from '../lib/customQuoteEvent';
 import IndicativePriceNotice from './IndicativePriceNotice';
 import { buildProductDetailsPath } from '../lib/productDetailHandoff';
+import { sortAndDedupePortions } from '../lib/productSelection';
 
 interface QuickViewModalProps {
   isOpen: boolean;
@@ -59,7 +60,7 @@ export default function QuickViewModal({ isOpen, onClose, product, onAddToCart }
 
   if (!isOpen || !product || product.active === false) return null;
   const disabledLabels = new Set(product.variants?.filter(variant => variant.available === false).map(variant => variant.label) || []);
-  const weights = Object.keys(product.prices || {}).filter(label => !disabledLabels.has(label) && Number.isFinite(product.prices[label]) && product.prices[label] > 0);
+  const weights = sortAndDedupePortions(Object.keys(product.prices || {}).filter(label => !disabledLabels.has(label) && Number.isFinite(product.prices[label]) && product.prices[label] > 0));
   const weight = weights.includes(selectedWeight) ? selectedWeight : weights[0];
   const price = product.prices[weight] || 0;
   const supportsBargain = product.isBidBox || product.category === 'gift-boxes' || product.category === 'bundles' || product.isBundle;

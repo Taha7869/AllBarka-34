@@ -1,5 +1,6 @@
 import BundleContentsSummary from './BundleContentsSummary';
 import { initialCardPortion } from '../lib/merchandisingPresentation';
+import { sortAndDedupePortions } from '../lib/productSelection';
 import ProductImageGallery from './ProductImageGallery';
 import { navigateToProductWithTransition, shouldInterceptLinkClick, supportsViewTransitions } from '../lib/viewTransitions';
 import React, { useState } from 'react';
@@ -41,9 +42,9 @@ export default function ProductCard({
       ? product.variants.filter(v => v && v.available === false).map(v => v.label)
       : []
   );
-  const weights = Object.keys(product.prices || {}).filter(
+  const weights = sortAndDedupePortions(Object.keys(product.prices || {}).filter(
     weight => !disabledLabels.has(weight) && Number.isFinite(product.prices[weight]) && product.prices[weight] > 0
-  );
+  ));
   const [preferredWeight, setSelectedWeight] = useState(initialCardPortion(product, weights));
   const selectedWeight = weights.includes(preferredWeight) ? preferredWeight : initialCardPortion(product, weights);
   const titleTypography = language === 'ur' ? 'font-urdu text-[20px]' : language === 'ar' ? 'font-arabic text-[23px]' : 'font-serif text-[21px] leading-[1.25]';
