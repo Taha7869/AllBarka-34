@@ -35,8 +35,8 @@ export default function GiftsHampersDestination({ onQuickView }: GiftsHampersDes
     return category === 'gift-boxes' || category === 'combos' || (product as Product & {isGift?:boolean}).isGift === true || id.includes('hamper') || ['deal-1','deal-2','corporate-gifting','bundle-royal-feast'].includes(id);
   }), [products]);
   const filtered = giftProducts.filter(product => (occasion === 'all' || productMatchesOccasion(product, occasion)) && (!budget || (initialGiftPrice(product) !== null && initialGiftPrice(product)! <= budget)));
-  const change = (key: string, value: string) => { const next = new URLSearchParams(params); if (!value) next.delete(key); else next.set(key,value); setParams(next,{replace:true,preventScrollReset:true}); };
-  const reset = () => { const next = new URLSearchParams(params); next.delete('occasion'); next.delete('budget'); setParams(next,{replace:true,preventScrollReset:true}); };
+  const change = (key: string, value: string) => setParams(prev => { const next = new URLSearchParams(prev); if (!value) next.delete(key); else next.set(key,value); return next; }, { replace: true, preventScrollReset: true });
+  const reset = () => setParams(prev => { const next = new URLSearchParams(prev); next.delete('occasion'); next.delete('budget'); return next; }, { replace: true, preventScrollReset: true });
   const launch = () => window.dispatchEvent(new CustomEvent('open-hamper-builder'));
   const builderAvailable = HAMPER_BOXES.some(box => box.active !== false && box.price > 0);
   const heroBox = HAMPER_BOXES.find(box => box.id === 'box-velvet') || HAMPER_BOXES[0];

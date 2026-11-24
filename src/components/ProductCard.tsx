@@ -102,7 +102,7 @@ export default function ProductCard({
             navigateToProductWithTransition(navigate, `/product/${product.id}`, { productId: product.id, sourceElement: img });
           }}
         >
-          <h3 lang={language} className={`line-clamp-2 min-h-[2.6rem] sm:min-h-[3.5rem] whitespace-normal break-words [overflow-wrap:anywhere] font-medium text-[var(--color-text-primary)] transition-colors hover:text-[var(--color-accent-text)] ${language === 'en' ? 'font-serif text-[15px] sm:text-[21px] leading-[1.25]' : titleTypography}`}>
+          <h3 lang={language} className={`mobile-card-title min-h-[2.6rem] sm:min-h-[3.5rem] whitespace-normal break-words [overflow-wrap:anywhere] font-medium text-[var(--color-text-primary)] transition-colors hover:text-[var(--color-accent-text)] ${language === 'en' ? 'font-serif text-[15px] sm:text-[21px] leading-[1.25]' : titleTypography}`}>
             {getLocalized(product, 'name', language)}
           </h3>
         </Link>
