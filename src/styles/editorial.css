@@ -216,7 +216,7 @@
 /* V4: a dedicated gift entrance and an honest inventory/message preview. */
 .gift-destination { color:var(--color-text-primary); }
 .gift-opening { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,.9fr); gap:48px; align-items:center; padding:44px; background:#1e3a2b; color:#fdfbf7; }
-.gift-eyebrow { font-size:.68rem; line-height:1.8; letter-spacing:.13em; text-transform:uppercase; color:var(--color-accent-text); }
+.gift-eyebrow { font-size:.78rem; font-weight:500; line-height:1.6; letter-spacing:0; color:var(--color-accent-text); }
 .gift-opening .gift-eyebrow { color:#e4c783; }
 .gift-opening h1 { font:400 clamp(2.8rem,4.8vw,4.8rem)/1.12 var(--localized-heading-font,var(--font-serif)); margin-block:18px 24px; overflow-wrap:anywhere; }
 .gift-opening>div>p:not(.gift-eyebrow) { font-size:.9rem; line-height:1.9; color:#d4d8cd; }

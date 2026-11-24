@@ -32,7 +32,7 @@ export default function DestinationHeader({
   const cover = getSectionCover(coverId);
 
   return (
-    <header className="relative w-full overflow-hidden rounded-3xl border border-[#c7982f]/30 bg-gradient-to-br from-[#0c382b] via-[#072a20] to-[#041913] p-6 text-[#f5efe2] shadow-xl sm:p-10 lg:p-12 mb-8">
+    <header className="relative w-full overflow-hidden rounded-[22px] border border-[#C7982F]/35 bg-[#042821] p-5 text-[#FDFBF7] shadow-[0_20px_50px_-24px_rgba(4,40,33,0.65)] sm:p-10 lg:p-12 mb-8">
       {cover && (
         <div className="pointer-events-none absolute inset-0">
           <img
@@ -62,7 +62,7 @@ export default function DestinationHeader({
       <div className="relative z-10 max-w-4xl">
         {/* Eyebrow & Badge */}
         <div className="flex flex-wrap items-center gap-2 mb-4">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#c7982f]/40 bg-[#c7982f]/10 px-3 py-1 text-xs font-semibold tracking-wider text-[#e6c786] uppercase">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C7982F]/40 bg-[#C7982F]/10 px-3 py-1 text-xs font-medium text-[#E4C783]">
             <Sparkles size={12} className="text-[#e6c786]" />
             {eyebrow}
           </span>

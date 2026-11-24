@@ -215,7 +215,7 @@ export default function OccasionsDestination({
       {/* Occasion & Mehmaan Planning Banners */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-gradient-to-r from-[#043327]/10 via-[#FAF9F5] to-[#D4AF37]/10 dark:from-emerald-950/40 dark:via-zinc-900 dark:to-amber-950/30 border border-[#D4AF37]/30 shadow-xs">
         <div>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[#043327] dark:text-emerald-400">
+          <span className="text-xs font-medium text-[#042821] dark:text-[#E4C783]">
             {t('dest.occasions.eyebrow', 'Artisan Celebration Services')}
           </span>
           <h3 className="text-sm font-serif font-bold text-[#120F17] dark:text-[#FAF9F5]">

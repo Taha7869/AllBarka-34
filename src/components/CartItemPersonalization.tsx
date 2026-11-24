@@ -17,7 +17,6 @@ export default function CartItemPersonalization({ configuration, expanded = fals
 
   return <details className="purchase-personalization" open={expanded || undefined}>
     <summary>{t('purchase.giftDetails')}</summary>
-    <p className="purchase-reference">{t('gift.reference')}</p>
     <dl>
       <div><dt>{t('purchase.contents')}</dt><dd><ul>{selections.map(id => <li key={id} dir="auto">{getLocalized(products.find(product => product.id === id), 'name', language) || id} <bdi>({HAMPER_PORTION_GRAMS}g)</bdi></li>)}</ul></dd></div>
       {recipient && <div><dt>{t('purchase.recipient')}</dt><dd dir="auto">{recipient}</dd></div>}

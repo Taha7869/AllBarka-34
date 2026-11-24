@@ -13,8 +13,6 @@ import { getLocalized } from '../utils/localize';
 import { GIFT_RECIPIENTS, isGiftRecipient } from '../lib/giftRecipient';
 import GiftingPlanningToolsBar from './GiftingPlanningToolsBar';
 
-const GiftFinder = React.lazy(() => import('./GiftFinder'));
-
 interface GiftsHampersDestinationProps { onQuickView?: (product: Product) => void }
 
 // Presentation filter follows the shared card's initial enabled, priced portion.
@@ -51,10 +49,7 @@ export default function GiftsHampersDestination({ onQuickView }: GiftsHampersDes
     <header className="gift-opening"><div><p className="gift-eyebrow">{t('dest.gifting.eyebrow')}</p><h1>{t('gift.heroTitle')}</h1><p>{t('gift.heroCopy')}</p>
       <div className="gift-opening-actions"><button type="button" className="gift-open-builder" disabled={!builderAvailable} onClick={launch}><Gift size={17}/>{t('dest.gifting.openBuilder')}</button><a href="#gift-selection">{t('gift.browse')} <ArrowRight size={16}/></a></div>
       {!builderAvailable && <p role="status">{t('gift.builderUnavailable')}</p>}<p className="gift-opening-note">{t('gift.boxChoices')}</p><ul>{HAMPER_BOXES.map(box=><li key={box.id}>{getLocalized(box,'name',language)}</li>)}</ul>
-    </div><figure><img src={SECTION_COVERS['gift-boxes'].src} srcSet={SECTION_COVERS['gift-boxes'].srcSet} sizes="(max-width: 768px) 100vw, 480px" width={800} height={800} alt={t(SECTION_COVERS['gift-boxes'].altKey, getLocalized(heroBox,'name',language))} onError={event=>{if(!event.currentTarget.src.endsWith('/images/product-placeholder.svg')){event.currentTarget.removeAttribute('srcset');event.currentTarget.src='/images/product-placeholder.svg';}}}/><figcaption>{t('gift.reference')}</figcaption></figure></header>
-    <React.Suspense fallback={null}>
-      <GiftFinder onProductView={onQuickView} className="my-8" />
-    </React.Suspense>
+    </div><figure><img src={SECTION_COVERS['gift-boxes'].src} srcSet={SECTION_COVERS['gift-boxes'].srcSet} sizes="(max-width: 768px) 100vw, 480px" width={800} height={800} alt={t(SECTION_COVERS['gift-boxes'].altKey, getLocalized(heroBox,'name',language))} onError={event=>{if(!event.currentTarget.src.endsWith('/images/product-placeholder.svg')){event.currentTarget.removeAttribute('srcset');event.currentTarget.src='/images/product-placeholder.svg';}}}/></figure></header>
     <GiftingPlanningToolsBar />
     <section id="gift-selection" className="gift-discovery"><div className="gift-discovery-heading"><div><p className="gift-eyebrow">{t('gift.explore')}</p><h2>{t('gift.selectionTitle')}</h2></div><p role="status">{filtered.length} {t('shop.results')}</p></div>
       <div className="gift-recipient-guide">

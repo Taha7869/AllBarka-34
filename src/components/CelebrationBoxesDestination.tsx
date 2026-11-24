@@ -572,7 +572,7 @@ export default function CelebrationBoxesDestination({
       <section className="mt-14 rounded-3xl border border-[#c7982f]/30 bg-gradient-to-r from-[#072a20] via-[#0d3f31] to-[#072a20] p-8 sm:p-10 text-[#fff8e9] shadow-xl">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           <div className="max-w-2xl space-y-2">
-            <span className="text-xs font-bold uppercase tracking-widest text-[#e6c786]">
+            <span className="text-xs font-medium text-[#E4C783]">
               Concierge Wholesale &amp; Customization
             </span>
             <h3 className="font-serif text-2xl sm:text-3xl font-bold">

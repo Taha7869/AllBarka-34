@@ -4,8 +4,6 @@ import { ArrowUpRight } from 'lucide-react';
 import SEO from '../components/SEO';
 import ShopPage from './ShopPage';
 import GiftingPlanningToolsBar from '../components/GiftingPlanningToolsBar';
-
-const GiftFinder = React.lazy(() => import('../components/GiftFinder'));
 import { useLanguage } from '../contexts/LanguageContext';
 import { openOccasionInquiryModal } from '../components/OccasionInquiryModal';
 import { normalizeOccasionSlug } from '../config/categories';
@@ -167,10 +165,7 @@ export function CelebrationsHubPage() {
       <PageHeader eyebrow={t('celeb.eyebrow')} title={<h1 className="celeb-title">{t('celeb.hubTitle')}</h1>} lead={t('celeb.hubLead')} />
       <ModeTabs active="occasion" />
 
-      <div className="my-6 space-y-4">
-        <React.Suspense fallback={null}>
-          <GiftFinder compact />
-        </React.Suspense>
+      <div className="my-6">
         <GiftingPlanningToolsBar />
       </div>
 
