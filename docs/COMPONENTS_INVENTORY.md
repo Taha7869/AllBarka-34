@@ -318,3 +318,7 @@ JournalPage reuses existing public contentJournal/StorefrontContentProvider, SEO
 ## M20-NAV1 — mobile navigation lifecycle
 
 Reuse MobileMenu/RootLayout and existing CartDrawer. Menu owns one destination navigation; RootLayout no longer adds a competing mobile callback. Route and xl breakpoint effects clear modal state, brand uses a native button, and delayed focus yields to current menu focus. Existing social actions wrap for enlarged text. No new component. See [NAVIGATION_LIFECYCLE.md](NAVIGATION_LIFECYCLE.md).
+
+## Home Concierge Doorway — 25 November 2026
+
+`HomeConciergeSection` (`src/components/HomeConciergeSection.tsx`) adds the homepage "Barkat se poochiye" doorway directly after `PremiumHeroPrototype`, reusing `VoiceInputButton`, `LanguageContext`, and `lib/motion` with zero new dependencies. `src/lib/conciergeEvent.ts` shares the `'allbarka:open-concierge'` event contract (`{ message?, autoSend? }`) across `HomeConciergeSection`, lazy `RootLayout`, and `AIConcierge`. See [handoffs/20261125-home-concierge.md](handoffs/20261125-home-concierge.md).
