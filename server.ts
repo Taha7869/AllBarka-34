@@ -8,6 +8,7 @@ import firebaseAppletConfig from './firebase-applet-config.json';
 import { isPreviewEnvironment, validatePreviewServerConfig, resolveStorageBucket } from './src/lib/environmentConfig';
 import { createProductUploadRouter } from './src/lib/productUploadRouter';
 import { createReviewsRouter } from './src/lib/reviewsRouter';
+import { createPaymentDetailsRouter } from './src/lib/paymentDetailsRouter';
 import { sanitizeFirestoreData } from './src/lib/firestoreData';
 import express from 'express';
 import cookieParser from 'cookie-parser';
@@ -357,6 +358,7 @@ app.use(createAddonsRouter({ getDb: () => db, requireAdmin }));
 app.use(createCatalogRouter({ getDb: () => db, requireAdmin }));
 app.use(createStaffRouter({ getDb: () => db, getAuth: () => adminAuth, requireAuth, requireAdmin }));
 app.use(createStorefrontContentRouter({getDb:()=>db,requireAdmin}));
+app.use(createPaymentDetailsRouter({ getDb: () => db }));
 app.use(createStoreUpdatesRouter({ getDb: () => db, requireAuth, requireAdmin }));
 app.use(createGiftRevealRouter({ getDb: () => db, getAuth: () => adminAuth, requireAuth, requireAdmin }));
 

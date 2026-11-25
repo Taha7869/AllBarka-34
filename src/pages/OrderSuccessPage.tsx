@@ -15,6 +15,7 @@ import { TRACKING_POLL_MS, TRACKING_STEPS, trackingProgress } from '../lib/order
 import { recordFunnelEvent } from '../lib/funnelTelemetry';
 import { AllBarkaCrestVector } from '../components/AllBarkaLogo';
 import GoldConfettiBurst from '../components/GoldConfettiBurst';
+import BankTransferDetailsCard from '../components/BankTransferDetailsCard';
 
 export type OrderSuccessSnapshot = ConfirmedSuccessReceipt;
 
@@ -263,7 +264,7 @@ export default function OrderSuccessPage() {
               <span className="text-[10px] font-bold text-[var(--color-ink-muted,#635B52)] block">
                 Order Identifier
               </span>
-              <span className="font-mono text-sm font-bold text-[var(--color-emerald-dark,#042821)] dark:text-[var(--color-gold,#C7982F)]">
+              <span className="font-mono text-sm font-bold text-[#042821] dark:text-[#E8C97A]">
                 {order.orderId}
               </span>
             </div>
@@ -271,8 +272,8 @@ export default function OrderSuccessPage() {
               <span className="text-[10px] font-bold text-[var(--color-ink-muted,#635B52)] block">
                 Payment Method
               </span>
-              <span className="text-xs font-bold text-[var(--color-ink,#29231D)]">
-                {order.paymentMethod === 'bank' ? 'Direct Bank Transfer' : 'Cash on Delivery (COD)'}
+              <span className="text-xs font-bold text-[var(--color-ink,#29231D)] dark:text-[#F6F1EA]">
+                {order.paymentMethod === 'bank' ? t('checkout.bank') : t('checkout.cod')}
               </span>
             </div>}
           </div>
@@ -338,13 +339,18 @@ export default function OrderSuccessPage() {
               <span>Shipping</span>
               <span>{order.shipping === 0 ? 'FREE' : formatPKR(order.shipping)}</span>
             </div>
-            <div className="flex justify-between items-center pt-2 mt-2 border-t border-[var(--color-gold,#C7982F)]/20 font-bold text-sm text-[var(--color-emerald-dark,#042821)] dark:text-[var(--color-gold,#C7982F)]">
-              <span>Total Payable</span>
-              <span className="font-serif text-base">{formatPKR(order.totalAmount)}</span>
+            <div className="flex justify-between items-center pt-2 mt-2 border-t border-[var(--color-gold,#C7982F)]/20 font-bold text-sm text-[#042821] dark:text-[#E8C97A]">
+              <span>{t('checkout.totalLabel', 'Total Payable')}</span>
+              <span className="font-serif text-base text-[#042821] dark:text-[#E8C97A]">{formatPKR(order.totalAmount)}</span>
             </div>
           </div>}
           {!isQuoteRequest && order.promoCode && <p className="mt-3 text-xs text-[var(--color-ink,#29231D)]"><span dir="ltr">{order.promoCode}</span>: {order.freeGiftWrap ? t('checkout.promoFreeGiftWrap') : order.freeGift ? t('checkout.promoFreeGift') : order.freeShipping ? t('checkout.promoFreeShipping') : `${t('checkout.promoSaved')} ${formatPKR(order.discountAmount ?? order.discount)}`}</p>}
         </div>
+
+        {/* Bank / Wallet Transfer Details for BANK orders */}
+        {!isQuoteRequest && order.paymentMethod === 'bank' && (
+          <BankTransferDetailsCard orderId={order.orderId} className="mb-6" />
+        )}
 
         {/* Action Buttons */}
         {!isQuoteRequest && <section aria-labelledby="order-tracking-title"className="mb-6 rounded-2xl border border-[var(--color-gold,#C7982F)]/25 p-5"dir={isRtl ?'rtl':'ltr'}>
@@ -381,7 +387,7 @@ export default function OrderSuccessPage() {
           <button
             type="button"
             onClick={() => navigate('/shop')}
-            className="flex-1 py-3.5 px-6 rounded-full bg-[var(--color-ink,#29231D)] text-white dark:bg-[var(--color-gold,#C7982F)] dark:text-[var(--color-ink,#29231D)] font-bold text-xs text-center hover:opacity-90 transition-colors cursor-pointer"
+            className="flex-1 py-3.5 px-6 rounded-full bg-[#042821] text-[#FDFBF7] dark:bg-[#D4A843] dark:text-[#121615] font-bold text-xs text-center hover:opacity-90 transition-colors cursor-pointer"
           >
             Continue Shopping
           </button>

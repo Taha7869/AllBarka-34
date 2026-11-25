@@ -18,6 +18,7 @@ export interface PublicOrderTrackingResult {
   updatedAt: string | null;
   city?: string | null;
   isCancelled: boolean;
+  isBankTransfer?: boolean;
   timeline: TimelineStep[];
 }
 
@@ -82,6 +83,9 @@ export function buildStatusTimeline(currentStatus: unknown): { isCancelled: bool
 export function sanitizeOrderForTracking(order: any, orderId: string): PublicOrderTrackingResult {
   const currentStatus: StoredOrderStatus = order?.status || 'ORDER_RECEIVED';
   const { isCancelled, timeline } = buildStatusTimeline(currentStatus);
+  const isBankTransfer =
+    String(order?.paymentMethod || '').trim().toLowerCase() === 'bank' &&
+    order?.isQuoteRequest !== true;
 
   return {
     success: true,
@@ -91,6 +95,7 @@ export function sanitizeOrderForTracking(order: any, orderId: string): PublicOrd
     updatedAt: order?.updatedAt ? String(order.updatedAt) : null,
     city: order?.shippingAddress?.city || order?.city || null,
     isCancelled,
+    ...(isBankTransfer ? { isBankTransfer: true } : {}),
     timeline,
   };
 }

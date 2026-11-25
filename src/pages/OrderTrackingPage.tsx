@@ -20,6 +20,7 @@ import { useCart } from '../contexts/CartContext';
 import { PRODUCTS } from '../data/products';
 import SEO from '../components/SEO';
 import OrderReviewForm from '../components/OrderReviewForm';
+import BankTransferDetailsCard from '../components/BankTransferDetailsCard';
 import {
   fetchOrderTracking,
   fetchReorderItems,
@@ -367,6 +368,11 @@ export default function OrderTrackingPage() {
                   })}
                 </ol>
               </div>
+            )}
+
+            {/* Bank Transfer Details for BANK orders */}
+            {trackingResult.isBankTransfer && !trackingResult.isCancelled && (
+              <BankTransferDetailsCard orderId={trackingResult.orderId} />
             )}
 
             {/* Reorder Card ("Dobara mangwayein") */}
