@@ -1,0 +1,379 @@
+{
+  "name": "AllBarka — Sheet to Website Status v3",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "eea824ec-2a98-5193-b204-ba40a8aaae7f",
+      "name": "Every 1 Minute",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1584,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1tJvUTc1psziNFvmVjnq1THFh7uPPuaqrqElBsoPXzFI",
+          "mode": "list",
+          "cachedResultName": "AllBarka Orders"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Order_Control",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "f5454390-e0af-5e2a-955d-7373e956d914",
+      "name": "Read All Rows",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -1360,
+        128
+      ],
+      "credentials": {
+        "googleApi": {
+          "id": "ziiSg69obUP21WbV",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// v3 (25 Nov 2026). Team sirf `requested_status` chunti hai (dropdown). request_id khud banta hai.\n// Body yahin banti hai, taake \"Send To Backend\" Claim node ke output par depend na kare.\nconst ALLOWED = ['ORDER_RECEIVED', 'CONFIRMED', 'PREPARING', 'DISPATCHED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'];\nconst ALIAS = { RECEIVED: 'ORDER_RECEIVED', NEW: 'ORDER_RECEIVED', PACKED: 'PREPARING' };\nconst SENTINEL_REVISION = '1970-01-01T00:00:00.000Z'; // revision na ho to website 409 + asal revision lauta deti hai\nconst MAX_PER_RUN = 5;\nconst CLAIM_MAX_MS = 10 * 60 * 1000;\nconst s = v => (v === null || v === undefined ? '' : String(v)).trim();\nconst norm = v => { const k = s(v).toUpperCase().replace(/[\\s-]+/g, '_'); return ALIAS[k] || k; };\nconst isRevision = v => v.length <= 50 && /^\\d{4}-\\d{2}-\\d{2}T/.test(v) && Number.isFinite(Date.parse(v));\nconst now = Date.now();\nconst nowIso = new Date(now).toISOString();\nconst out = [];\nfor (const item of $input.all()) {\n  if (out.length >= MAX_PER_RUN) break;\n  const r = item.json || {};\n  const orderId = s(r.order_id);\n  const requested = s(r.requested_status);\n  if (!orderId || !requested || r.row_number === undefined || r.row_number === null || r.row_number === '') continue;\n  const requestIdCell = s(r.request_id);\n  if (requestIdCell && requestIdCell === s(r.last_applied_request_id)) continue;\n  const syncError = s(r.sync_error);\n  if (syncError.indexOf('WF1: IN_PROGRESS') === 0) {\n    const m = syncError.match(/@(\\S+)/);\n    const claimed = m ? Date.parse(m[1]) : NaN;\n    if (Number.isFinite(claimed) && now - claimed < CLAIM_MAX_MS) continue;\n  }\n  const requestId = requestIdCell || ('auto-' + r.row_number + '-' + now.toString(36));\n  const sheetStatus = norm(r.status);\n  const statusKnown = ALLOWED.includes(sheetStatus);\n  const revision = s(r.canonical_status_updated_at);\n  const revisionKnown = isRevision(revision);\n  const body = {\n    source: 'google_sheet',\n    eventId: 'sheet:' + (orderId + '-' + requestId).replace(/[^A-Za-z0-9_-]/g, '-').padEnd(8, '0').slice(0, 100),\n    orderId,\n    status: norm(requested),\n    expectedStatus: statusKnown ? sheetStatus : 'ORDER_RECEIVED',\n    expectedUpdatedAt: statusKnown && revisionKnown ? revision : SENTINEL_REVISION,\n    reason: (s(r.request_reason) || 'Status updated from the Google Sheet').slice(0, 500),\n  };\n  out.push({ json: {\n    row_number: r.row_number,\n    request_id: requestId,\n    request_created_at: s(r.request_created_at) || nowIso,\n    claim_note: 'WF1: IN_PROGRESS @' + nowIso,\n    body,\n    sheet_status: sheetStatus,\n    status_known: statusKnown,\n    bootstrap: !(statusKnown && revisionKnown),\n    prev_sync_error: syncError,\n    original: {\n      status: s(r.status), status_revision: s(r.status_revision), canonical_status_updated_at: revision,\n      requested_status: requested, request_reason: s(r.request_reason), last_applied_request_id: s(r.last_applied_request_id),\n    },\n  } });\n}\nreturn out;\n"
+      },
+      "id": "9ba813fa-0a44-59d5-a7cd-58ce49697c06",
+      "name": "Pending Requests?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1136,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1tJvUTc1psziNFvmVjnq1THFh7uPPuaqrqElBsoPXzFI",
+          "mode": "list",
+          "cachedResultName": "AllBarka Orders"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Order_Control",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $json.row_number }}",
+            "sync_error": "={{ $json.claim_note }}",
+            "request_id": "={{ $json.request_id }}",
+            "request_created_at": "={{ $json.request_created_at }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sync_error",
+              "displayName": "sync_error",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "request_id",
+              "displayName": "request_id",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "request_created_at",
+              "displayName": "request_created_at",
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "064e1666-f303-5ac4-8112-0a2ee8298d9f",
+      "name": "Claim Request",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -912,
+        128
+      ],
+      "credentials": {
+        "googleApi": {
+          "id": "ziiSg69obUP21WbV",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://allbarka.com/api/integrations/n8n/order-status",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($('Pending Requests?').item.json.body) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "de07acf8-df9d-5219-a08e-19cbc6f5b0d0",
+      "name": "Send To Backend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -688,
+        128
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "yJICGZrzjzt0QJNm",
+          "name": "Header Auth account 2"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// v3: website ke jawab se sheet ki row ka naya haal banata hai (Run Once for Each Item).\nconst p = $('Pending Requests?').item.json;\nconst res = $json || {};\nconst httpCode = Number(res.statusCode) || 0;\nlet body = res.body;\nif (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = {}; } }\nif (!body || typeof body !== 'object') body = {};\nconst ALLOWED = ['ORDER_RECEIVED', 'CONFIRMED', 'PREPARING', 'DISPATCHED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'];\nconst isRevision = v => typeof v === 'string' && v.length <= 50 && /^\\d{4}-\\d{2}-\\d{2}T/.test(v) && Number.isFinite(Date.parse(v));\nconst stamp = new Date().toISOString();\nconst o = p.original;\nconst row = {\n  row_number: p.row_number,\n  status: o.status, status_revision: o.status_revision, canonical_status_updated_at: o.canonical_status_updated_at,\n  requested_status: o.requested_status, request_reason: o.request_reason,\n  request_id: p.request_id, request_created_at: p.request_created_at,\n  sync_error: '', last_applied_request_id: o.last_applied_request_id,\n};\nconst finishRequest = () => { row.requested_status = ''; row.request_reason = ''; row.request_id = ''; row.request_created_at = ''; };\nconst takeCanonical = (status, updatedAt) => {\n  if (ALLOWED.includes(status)) row.status = status;\n  if (isRevision(updatedAt)) { row.canonical_status_updated_at = updatedAt; row.status_revision = updatedAt; }\n};\nconst FRIENDLY = {\n  ORDER_NOT_FOUND: 'Ye order website par nahi hai (shayad WhatsApp ka purana order). Website par kuch nahi badla.',\n  INVALID_STATUS: 'requested_status samajh nahi aaya. Dropdown se chunein.',\n  INVALID_ORDER_ID: 'order_id khaali ya ghalat hai.',\n  TERMINAL_STATUS_CONFLICT: 'Delivered/Cancelled order ka status nahi badla ja sakta.',\n  INTEGRATION_EVENT_CONFLICT: 'Ye request_id pehle kisi aur tabdeeli ke saath istemal ho chuka. requested_status dobara chunein.',\n  INTEGRATION_REVISION_CONFLICT: 'Ye request pehle mukhtalif data ke saath gayi thi. requested_status dobara chunein.',\n  QUOTE_REQUIRES_PRICING: 'Quote request ko pehle price karna zaroori hai.',\n  INVALID_QUOTE_TRANSITION: 'Order ko quote mein nahi badla ja sakta.',\n  INVALID_REASON: 'request_reason 3 se 500 huroof ka hona chahiye.',\n};\nconst code = typeof body.code === 'string' ? body.code : '';\nif (httpCode === 200 && body.ok === true) {\n  takeCanonical(body.status, body.updatedAt);\n  row.last_applied_request_id = p.request_id;\n  finishRequest();\n} else if (httpCode === 409 && body.canonical && ALLOWED.includes(body.canonical.status) && isRevision(body.canonical.updatedAt)) {\n  takeCanonical(body.canonical.status, body.canonical.updatedAt);\n  const sameStatus = p.status_known && p.sheet_status === body.canonical.status;\n  const alreadyRetried = String(p.prev_sync_error || '').indexOf('WF1: RETRY-REV') === 0;\n  if (sameStatus && !alreadyRetried) {\n    row.sync_error = 'WF1: RETRY-REV @' + stamp + ' website ki taaza revision likh di, agle minute khud dobara bhejega.';\n  } else {\n    finishRequest();\n    row.sync_error = 'WF1: Website par is order ka status ' + body.canonical.status + ' hai (sheet purani thi). Ab bhi badalna ho to requested_status dobara chunein. [ORDER_CONFLICT]';\n  }\n} else if ([400, 403, 404, 409, 413, 415].includes(httpCode)) {\n  finishRequest();\n  row.sync_error = 'WF1: ' + (FRIENDLY[code] || 'Website ne ye tabdeeli qubool nahi ki.') + ' [' + (code || httpCode) + ']';\n} else {\n  const why = httpCode === 401 ? 'secret match nahi hua (n8n credential \"Header Auth account 2\" check karein)'\n    : httpCode === 429 ? 'website ne thodi der rukne ko kaha'\n    : httpCode === 0 ? 'website tak pohanch nahi saka'\n    : 'website ka masla (' + httpCode + ')';\n  row.sync_error = 'WF1: RETRY @' + stamp + ' ' + why + ', agle minute dobara.';\n}\nrow.sync_error = String(row.sync_error).slice(0, 500);\nreturn { json: row };\n"
+      },
+      "id": "70a9d1c1-4f7f-5d39-b6dc-b183c9961e0e",
+      "name": "Decide Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -464,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1tJvUTc1psziNFvmVjnq1THFh7uPPuaqrqElBsoPXzFI",
+          "mode": "list",
+          "cachedResultName": "AllBarka Orders"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Order_Control",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $json.row_number }}",
+            "status": "={{ $json.status }}",
+            "status_revision": "={{ $json.status_revision }}",
+            "canonical_status_updated_at": "={{ $json.canonical_status_updated_at }}",
+            "requested_status": "={{ $json.requested_status }}",
+            "request_reason": "={{ $json.request_reason }}",
+            "request_id": "={{ $json.request_id }}",
+            "request_created_at": "={{ $json.request_created_at }}",
+            "sync_error": "={{ $json.sync_error }}",
+            "last_applied_request_id": "={{ $json.last_applied_request_id }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status_revision",
+              "displayName": "status_revision",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "canonical_status_updated_at",
+              "displayName": "canonical_status_updated_at",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "requested_status",
+              "displayName": "requested_status",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "request_reason",
+              "displayName": "request_reason",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "request_id",
+              "displayName": "request_id",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "request_created_at",
+              "displayName": "request_created_at",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sync_error",
+              "displayName": "sync_error",
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_applied_request_id",
+              "displayName": "last_applied_request_id",
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "ce5c9c13-ab39-5544-b2ac-cf908e78e571",
+      "name": "Write Result",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -240,
+        128
+      ],
+      "credentials": {
+        "googleApi": {
+          "id": "ziiSg69obUP21WbV",
+          "name": "Google Service Account account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every 1 Minute": {
+      "main": [
+        [
+          {
+            "node": "Read All Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read All Rows": {
+      "main": [
+        [
+          {
+            "node": "Pending Requests?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pending Requests?": {
+      "main": [
+        [
+          {
+            "node": "Claim Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claim Request": {
+      "main": [
+        [
+          {
+            "node": "Send To Backend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send To Backend": {
+      "main": [
+        [
+          {
+            "node": "Decide Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decide Result": {
+      "main": [
+        [
+          {
+            "node": "Write Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "instanceId": "472b02a4b70656345f8898c9b0604d48c1817947af919930f0d2f248c61404a6"
+  }
+}
