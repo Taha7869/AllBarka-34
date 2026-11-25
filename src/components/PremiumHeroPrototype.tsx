@@ -96,6 +96,11 @@ export default function PremiumHeroPrototype({
   const [imageHidden, setImageHidden] = useState(false);
   const runwayRef = useRef<HTMLDivElement | null>(null);
   const imageLayerRef = useRef<HTMLDivElement | null>(null);
+  const stageRef = useRef<HTMLElement | null>(null);
+  const frameRef = useRef<HTMLDivElement | null>(null);
+  const copyRef = useRef<HTMLDivElement | null>(null);
+  const captionRef = useRef<HTMLElement | null>(null);
+  const coverGeometryRef = useRef<{ dx: number; dy: number; sx: number; sy: number } | null>(null);
   const vignetteRef = useRef<HTMLDivElement | null>(null);
   const pillRefs = useRef<Array<HTMLLIElement | null>>([]);
   const rafRef = useRef<number>(0);
@@ -104,9 +109,30 @@ export default function PremiumHeroPrototype({
     setImageHidden(false);
   }, [customHero.enabled, customHero.image, customHero.mobileImage, heroImageSrc]);
 
-  // Editorial scroll-driven choreography (pure transform + opacity via rAF, 60fps, static under reduced motion).
+  // Editorial scroll-driven choreography (pure transform + opacity via rAF, static under reduced motion).
+  // Desktop (lg+): the framed photograph grows until it covers the whole green stage while the copy
+  // fades away; below lg the original gentle settle + parallax stays (no sticky runway on mobile).
   useEffect(() => {
+    const resetCover = () => {
+      const frame = frameRef.current;
+      if (frame) {
+        frame.style.transform = '';
+        frame.style.borderRadius = '';
+        frame.style.borderColor = '';
+        frame.style.willChange = '';
+      }
+      const copyEl = copyRef.current;
+      if (copyEl) {
+        copyEl.style.opacity = '';
+        copyEl.style.transform = '';
+        copyEl.style.pointerEvents = '';
+        copyEl.inert = false;
+      }
+      if (captionRef.current) captionRef.current.style.opacity = '';
+    };
+
     if (reducedMotion || typeof window === 'undefined') {
+      resetCover();
       if (imageLayerRef.current) imageLayerRef.current.style.transform = 'scale(1)';
       if (vignetteRef.current) vignetteRef.current.style.opacity = '0.14';
       pillRefs.current.forEach((pill) => {
@@ -114,6 +140,27 @@ export default function PremiumHeroPrototype({
       });
       return;
     }
+
+    const desktopQuery = window.matchMedia('(min-width: 1024px)');
+
+    // Distance/scale from the resting frame to the full stage, measured without our transform.
+    const measureCover = () => {
+      const frame = frameRef.current;
+      const stage = stageRef.current;
+      if (!frame || !stage) return null;
+      const previous = frame.style.transform;
+      frame.style.transform = 'none';
+      const f = frame.getBoundingClientRect();
+      const st = stage.getBoundingClientRect();
+      frame.style.transform = previous;
+      if (!f.width || !f.height || !st.width || !st.height) return null;
+      return {
+        dx: st.left + st.width / 2 - (f.left + f.width / 2),
+        dy: st.top + st.height / 2 - (f.top + f.height / 2),
+        sx: st.width / f.width,
+        sy: st.height / f.height,
+      };
+    };
 
     const updateOnScroll = () => {
       const runway = runwayRef.current;
@@ -124,11 +171,49 @@ export default function PremiumHeroPrototype({
         : Math.max(240, rect.height * 0.7);
       const progress = Math.max(0, Math.min(1, -rect.top / scrollable));
 
-      // (a) Hero image smoothly settles from 1.08 -> 1.00 + subtle warm vignette shift
-      if (imageLayerRef.current) {
-        const scale = 1.08 - progress * 0.08;
-        imageLayerRef.current.style.transform = `scale(${scale.toFixed(4)})`;
+      if (!desktopQuery.matches) {
+        resetCover();
+        // (a) Hero image smoothly settles from 1.08 -> 1.00 + subtle warm vignette shift
+        if (imageLayerRef.current) {
+          const scale = 1.08 - progress * 0.08;
+          imageLayerRef.current.style.transform = `scale(${scale.toFixed(4)})`;
+        }
+      } else {
+        // (a') Frame expands to cover the stage between ~4% and ~76% of the runway (ease in-out).
+        const t = Math.max(0, Math.min(1, (progress - 0.04) / 0.72));
+        const e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        const frame = frameRef.current;
+        if (e <= 0.0005 || !coverGeometryRef.current) coverGeometryRef.current = measureCover();
+        const g = coverGeometryRef.current;
+        if (frame && g) {
+          const sxe = 1 + (g.sx - 1) * e;
+          const sye = 1 + (g.sy - 1) * e;
+          frame.style.willChange = e > 0 ? 'transform' : '';
+          frame.style.transform = e > 0
+            ? `translate3d(${(g.dx * e).toFixed(2)}px, ${(g.dy * e).toFixed(2)}px, 0) scale(${sxe.toFixed(4)}, ${sye.toFixed(4)})`
+            : '';
+          frame.style.borderRadius = e > 0 ? `${(20 * (1 - e)).toFixed(2)}px` : '';
+          frame.style.borderColor = e > 0 ? `rgba(199, 152, 47, ${(0.4 * (1 - e)).toFixed(3)})` : '';
+          // Counter-scale the photo so it stays undistorted (uniform "cover") inside the stretched frame.
+          if (imageLayerRef.current) {
+            const cover = Math.max(sxe, sye);
+            const settle = 1.08 - 0.08 * e;
+            imageLayerRef.current.style.transform = `scale(${((cover / sxe) * settle).toFixed(4)}, ${((cover / sye) * settle).toFixed(4)})`;
+          }
+        }
+        const copyEl = copyRef.current;
+        if (copyEl) {
+          copyEl.style.opacity = Math.max(0, 1 - e * 1.8).toFixed(3);
+          copyEl.style.transform = e > 0 ? `translate3d(${((isRtl ? 48 : -48) * e).toFixed(2)}px, 0, 0)` : '';
+          const hidden = e > 0.5;
+          if (copyEl.inert !== hidden) {
+            copyEl.inert = hidden;
+            copyEl.style.pointerEvents = hidden ? 'none' : '';
+          }
+        }
+        if (captionRef.current) captionRef.current.style.opacity = Math.max(0, 1 - e * 2.5).toFixed(3);
       }
+
       if (vignetteRef.current) {
         const vigOpacity = 0.14 + progress * 0.24;
         vignetteRef.current.style.opacity = vigOpacity.toFixed(3);
@@ -146,13 +231,17 @@ export default function PremiumHeroPrototype({
       cancelAnimationFrame(rafRef.current);
       rafRef.current = requestAnimationFrame(updateOnScroll);
     };
+    const onResize = () => {
+      coverGeometryRef.current = null;
+      onScroll();
+    };
 
     let attached = false;
     const attach = () => {
       attached = true;
       if (window.scrollY > 0) updateOnScroll();
       window.addEventListener('scroll', onScroll, { passive: true });
-      window.addEventListener('resize', onScroll, { passive: true });
+      window.addEventListener('resize', onResize, { passive: true });
     };
     const idleTimer = window.setTimeout(attach, 150);
 
@@ -161,10 +250,11 @@ export default function PremiumHeroPrototype({
       cancelAnimationFrame(rafRef.current);
       if (attached) {
         window.removeEventListener('scroll', onScroll);
-        window.removeEventListener('resize', onScroll);
+        window.removeEventListener('resize', onResize);
       }
+      resetCover();
     };
-  }, [reducedMotion]);
+  }, [reducedMotion, isRtl]);
 
   const headingFontClass =
     language === 'ur'
@@ -232,10 +322,11 @@ export default function PremiumHeroPrototype({
       ref={runwayRef}
       data-editorial-scroll-hero="true"
       className={`relative w-full bg-[#042821] ${
-        reducedMotion ? 'min-h-0' : 'min-h-0 lg:min-h-[140vh] motion-reduce:min-h-0'
+        reducedMotion ? 'min-h-0' : 'min-h-0 lg:min-h-[175vh] motion-reduce:min-h-0'
       }`}
     >
       <section
+        ref={stageRef}
         dir={isRtl ? 'rtl' : 'ltr'}
         aria-labelledby="premium-hero-heading"
         data-testid="premium-hero-prototype"
@@ -254,9 +345,12 @@ export default function PremiumHeroPrototype({
         <div className="mx-auto max-w-7xl px-4 pt-5 pb-10 sm:px-8 sm:pt-10 sm:pb-14 lg:px-10 lg:py-16">
           <div className="grid grid-cols-1 items-center gap-5 sm:gap-8 lg:grid-cols-12 lg:gap-12">
             {/* Visual Stage: immediate Frame-1 LCP photograph (scales 1.08 -> 1.0 on scroll) */}
-            <div className="table-hero-art order-1 lg:order-2 lg:col-span-7">
+            <div className="table-hero-art order-1 lg:order-2 lg:col-span-7 lg:relative lg:z-10">
               <figure className="m-0">
-                <div className="relative aspect-[16/10] w-full overflow-hidden rounded-[20px] sm:rounded-[22px] border border-[#C7982F]/40 bg-[#0B2E26] shadow-[0_24px_60px_-20px_rgba(0,0,0,0.65)]">
+                <div
+                  ref={frameRef}
+                  data-hero-cover-frame="true"
+                  className="relative aspect-[16/10] w-full overflow-hidden rounded-[20px] sm:rounded-[22px] border border-[#C7982F]/40 bg-[#0B2E26] shadow-[0_24px_60px_-20px_rgba(0,0,0,0.65)]">
                   <div
                     ref={imageLayerRef}
                     data-hero-scale-layer="true"
@@ -305,7 +399,7 @@ export default function PremiumHeroPrototype({
                 </div>
 
                 {!customHero.enabled && (
-                  <figcaption className="mt-2.5 hidden sm:flex items-center justify-between gap-2 px-1 text-xs text-[#F2ECE2]/75">
+                  <figcaption ref={captionRef} className="mt-2.5 hidden sm:flex items-center justify-between gap-2 px-1 text-xs text-[#F2ECE2]/75">
                     <span dir="auto">{copy.caption}</span>
                   </figcaption>
                 )}
@@ -313,7 +407,7 @@ export default function PremiumHeroPrototype({
             </div>
 
             {/* Editorial Copy Stage: headline + primary CTA immediately visible at scroll=0 */}
-            <div className="heritage-hero-content order-2 flex flex-col items-start text-start lg:order-1 lg:col-span-5">
+            <div ref={copyRef} className="heritage-hero-content order-2 flex flex-col items-start text-start lg:order-1 lg:col-span-5">
               <div className="mb-3 flex items-center gap-2.5 sm:gap-3">
                 <span
                   aria-hidden="true"
