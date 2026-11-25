@@ -12,6 +12,7 @@ import { fetchReorderItems } from '../lib/orderTrackingService';
 import { getCheckoutAuthToken } from '../lib/checkoutAttempt';
 import { recoverOrderSuccessReceipt, refreshOrderSuccessReceipt, type ConfirmedSuccessReceipt } from '../lib/orderSuccessRecovery';
 import { TRACKING_POLL_MS, TRACKING_STEPS, trackingProgress } from '../lib/orderPresentation';
+import { formatOrderStatusLabel } from '../lib/orderStatuses';
 import { recordFunnelEvent } from '../lib/funnelTelemetry';
 import { AllBarkaCrestVector } from '../components/AllBarkaLogo';
 import GoldConfettiBurst from '../components/GoldConfettiBurst';
@@ -347,15 +348,18 @@ export default function OrderSuccessPage() {
           {!isQuoteRequest && order.promoCode && <p className="mt-3 text-xs text-[var(--color-ink,#29231D)]"><span dir="ltr">{order.promoCode}</span>: {order.freeGiftWrap ? t('checkout.promoFreeGiftWrap') : order.freeGift ? t('checkout.promoFreeGift') : order.freeShipping ? t('checkout.promoFreeShipping') : `${t('checkout.promoSaved')} ${formatPKR(order.discountAmount ?? order.discount)}`}</p>}
         </div>
 
-        {/* Bank / Wallet Transfer Details for BANK orders */}
-        {!isQuoteRequest && order.paymentMethod === 'bank' && (
-          <BankTransferDetailsCard orderId={order.orderId} className="mb-6" />
-        )}
+        {/* Bank / Wallet Transfer Details for active BANK orders */}
+        {!isQuoteRequest &&
+          order.paymentMethod === 'bank' &&
+          String(order.status || '').toUpperCase() !== 'DELIVERED' &&
+          String(order.status || '').toUpperCase() !== 'CANCELLED' && (
+            <BankTransferDetailsCard orderId={order.orderId} className="mb-6" />
+          )}
 
         {/* Action Buttons */}
         {!isQuoteRequest && <section aria-labelledby="order-tracking-title"className="mb-6 rounded-2xl border border-[var(--color-gold,#C7982F)]/25 p-5"dir={isRtl ?'rtl':'ltr'}>
           <h2 id="order-tracking-title"className="font-serif text-xl text-[var(--color-ink)] mb-4">{t('tracking.title')}</h2>
-          {order.status === 'CANCELLED' ? <p role="status"><span dir="ltr">CANCELLED</span> — {t('tracking.cancelled')}</p> : <ol aria-label={t('tracking.title')} className="grid grid-cols-3 sm:grid-cols-6 gap-x-2 gap-y-4 mb-5">
+          {order.status === 'CANCELLED' ? <p role="status"><span>{formatOrderStatusLabel('CANCELLED', t)}</span> — {t('tracking.cancelled')}</p> : <ol aria-label={t('tracking.title')} className="grid grid-cols-3 sm:grid-cols-6 gap-x-2 gap-y-4 mb-5">
             {TRACKING_STEPS.map((step, index) => {
               const progress = trackingProgress(order.status || '');
               return <li key={step} aria-current={progress === index ? 'step' : undefined} className="text-center min-w-0">

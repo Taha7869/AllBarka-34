@@ -26,6 +26,7 @@ import {
   fetchReorderItems,
   type PublicOrderTrackingResult,
 } from '../lib/orderTrackingService';
+import { formatOrderStatusLabel } from '../lib/orderStatuses';
 
 export default function OrderTrackingPage() {
   const { t, language, isRtl } = useLanguage();
@@ -298,14 +299,14 @@ export default function OrderTrackingPage() {
               {/* Status Badge */}
               <div className="shrink-0">
                 {trackingResult.isCancelled ? (
-                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 border border-red-300">
+                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-800">
                     <XCircle size={14} />
-                    {t('order.status.CANCELLED', 'Cancelled')}
+                    {formatOrderStatusLabel('CANCELLED', t)}
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300">
+                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
                     <CheckCircle2 size={14} />
-                    {t(`order.status.${trackingResult.status}`, String(trackingResult.status))}
+                    {formatOrderStatusLabel(trackingResult.status, t)}
                   </span>
                 )}
               </div>
@@ -354,7 +355,7 @@ export default function OrderTrackingPage() {
                                 : 'text-neutral-400 dark:text-neutral-500'
                             }`}
                           >
-                            {t(step.key, step.status.replace(/_/g, ' '))}
+                            {formatOrderStatusLabel(step.status, t)}
                           </h4>
 
                           {isCurrent && (
@@ -370,10 +371,12 @@ export default function OrderTrackingPage() {
               </div>
             )}
 
-            {/* Bank Transfer Details for BANK orders */}
-            {trackingResult.isBankTransfer && !trackingResult.isCancelled && (
-              <BankTransferDetailsCard orderId={trackingResult.orderId} />
-            )}
+            {/* Bank Transfer Details for active (non-cancelled, non-delivered) BANK orders */}
+            {trackingResult.isBankTransfer &&
+              !trackingResult.isCancelled &&
+              String(trackingResult.status || '').toUpperCase() !== 'DELIVERED' && (
+                <BankTransferDetailsCard orderId={trackingResult.orderId} />
+              )}
 
             {/* Reorder Card ("Dobara mangwayein") */}
             <div className="p-4 sm:p-5 rounded-2xl bg-[#042821]/5 dark:bg-emerald-950/30 border border-[#D4AF37]/30 space-y-3">

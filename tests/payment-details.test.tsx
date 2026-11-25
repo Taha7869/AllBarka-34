@@ -13,6 +13,10 @@ import {
 import { sanitizeOrderForTracking } from '../src/lib/orderTrackingService';
 import BankTransferDetailsCard from '../src/components/BankTransferDetailsCard';
 import { LanguageProvider } from '../src/contexts/LanguageContext';
+import { shippingTranslations } from '../src/contexts/shippingTranslations';
+import { trackingTranslations } from '../src/contexts/trackingTranslations';
+import { catalogTranslations } from '../src/contexts/catalogTranslations';
+import { formatOrderStatusLabel, ORDER_STATUSES } from '../src/lib/orderStatuses';
 
 const FAKE_FIRESTORE_PAYMENT_DOC = {
   bankName: '  Example Heritage Bank  ',
@@ -167,6 +171,8 @@ test('BankTransferDetailsCard renders trimmed values, copy buttons, order refere
   assert.match(populatedHtml, /Easypaisa/);
   assert.match(populatedHtml, /0300-0000001/);
   assert.doesNotMatch(populatedHtml, /Raast ID/, 'Empty raastId row must not render');
+  assert.doesNotMatch(populatedHtml, /aria-label="Copy Bank"/, 'Bank name row must not have a Copy button');
+  assert.match(populatedHtml, /aria-label="Copy Account title"/);
   assert.match(populatedHtml, /aria-label="Copy Account number"/);
   assert.match(populatedHtml, /aria-label="Copy IBAN"/);
   assert.match(populatedHtml, /aria-label="Copy Easypaisa"/);
@@ -206,4 +212,57 @@ test('CheckoutPage fixes dark-mode contrast and hides pre-order quote banner and
   // Ensure purchase.checkoutIntro only appears behind currentStep !== 'success'
   const introMatches = checkoutSrc.match(/purchase\.checkoutIntro/g) || [];
   assert.equal(introMatches.length, 1, 'purchase.checkoutIntro must not appear inside Step 4 success');
+
+  // Ensure "Order received" (checkout.receiptReceived) renders only ONCE on Step 4 success (no header+body duplicate)
+  const receivedMatches = checkoutSrc.match(/checkout\.receiptReceived/g) || [];
+  assert.equal(receivedMatches.length, 1, 'checkout.receiptReceived must appear only once in CheckoutPage');
+});
+
+test('Polish followups: bankDescription EN/UR/AR, human status labels with zero raw underscore codes, and /track hides bank details on DELIVERED', () => {
+  // 1. Updated payment.bankDescription across EN/UR/AR
+  for (const lang of ['en', 'ur', 'ar'] as const) {
+    const desc = shippingTranslations[lang]['payment.bankDescription'];
+    assert.ok(desc && desc.trim().length > 10, `Missing payment.bankDescription for ${lang}`);
+    assert.doesNotMatch(desc, /Confirm payment account details with our concierge/i);
+  }
+  assert.match(shippingTranslations.en['payment.bankDescription'], /below/i);
+  assert.match(shippingTranslations.en['payment.bankDescription'], /Order ID/i);
+
+  // 2. Human-readable order status labels across EN/UR/AR (trackingTranslations + catalogTranslations + formatOrderStatusLabel)
+  const allStatuses = [...ORDER_STATUSES, 'QUOTE_REQUESTED'] as const;
+  for (const lang of ['en', 'ur', 'ar'] as const) {
+    const tFn = (key: string, fallback = '') =>
+      trackingTranslations[lang]?.[key] || catalogTranslations[lang]?.[key] || fallback || key;
+
+    for (const status of allStatuses) {
+      const trackingLabel = trackingTranslations[lang][`tracking.${status}`];
+      assert.ok(trackingLabel && !trackingLabel.includes('_'), `tracking.${status} (${lang}) must be human-readable: ${trackingLabel}`);
+
+      const orderLabel = catalogTranslations[lang][`order.status.${status}`];
+      assert.ok(orderLabel && !orderLabel.includes('_'), `order.status.${status} (${lang}) must be human-readable: ${orderLabel}`);
+
+      const formatted = formatOrderStatusLabel(status, tFn);
+      assert.ok(formatted && !formatted.includes('_'), `formatOrderStatusLabel(${status}, ${lang}) must never contain underscores: ${formatted}`);
+    }
+  }
+
+  const enT = (key: string, fallback = '') => catalogTranslations.en[key] || fallback || key;
+  assert.equal(formatOrderStatusLabel('ORDER_RECEIVED', enT), 'Order received');
+  assert.equal(formatOrderStatusLabel('OUT_FOR_DELIVERY', enT), 'Out for delivery');
+  assert.equal(formatOrderStatusLabel('NEW', enT), 'Order received');
+  assert.equal(formatOrderStatusLabel('PACKED', enT), 'Preparing & packing');
+  assert.equal(formatOrderStatusLabel('CUSTOM_FUTURE_STAGE', enT), 'Custom future stage');
+
+  // 3. /track hides BankTransferDetailsCard when DELIVERED; PatronLounge & OrderSuccessPage never render raw status codes
+  const trackSrc = readFileSync('src/pages/OrderTrackingPage.tsx', 'utf8');
+  assert.match(trackSrc, /trackingResult\.status[\s\S]*!== 'DELIVERED'[\s\S]*<BankTransferDetailsCard/);
+  assert.doesNotMatch(trackSrc, /t\(`order\.status\.\$\{trackingResult\.status\}`,\s*String\(trackingResult\.status\)\)/);
+
+  const loungeSrc = readFileSync('src/components/PatronLoungeModal.tsx', 'utf8');
+  assert.match(loungeSrc, /formatOrderStatusLabel\(order\.status,\s*t\)/);
+  assert.doesNotMatch(loungeSrc, />\s*\{order\.status\}\s*</);
+
+  const successSrc = readFileSync('src/pages/OrderSuccessPage.tsx', 'utf8');
+  assert.doesNotMatch(successSrc, /<span dir="ltr">CANCELLED<\/span>/);
+  assert.match(successSrc, /!== 'DELIVERED'[\s\S]*<BankTransferDetailsCard/);
 });

@@ -107,6 +107,7 @@ interface CopyRow {
   label: string;
   value: string;
   mono?: boolean;
+  copyable?: boolean;
 }
 
 export default function BankTransferDetailsCard({
@@ -141,7 +142,7 @@ export default function BankTransferDetailsCard({
   const bankRows: CopyRow[] = [];
   if (details) {
     if (details.bankName) {
-      bankRows.push({ key: 'bankName', label: copy.bankName, value: details.bankName });
+      bankRows.push({ key: 'bankName', label: copy.bankName, value: details.bankName, copyable: false });
     }
     if (details.accountTitle) {
       bankRows.push({ key: 'accountTitle', label: copy.accountTitle, value: details.accountTitle });
@@ -198,15 +199,17 @@ export default function BankTransferDetailsCard({
                         <bdi dir={row.mono ? 'ltr' : 'auto'}>{row.value}</bdi>
                       </dd>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => void handleCopy(row.key, row.label, row.value)}
-                      aria-label={copy.copyAria.replace('{label}', row.label)}
-                      className="focus-ring inline-flex min-h-[44px] sm:min-h-[36px] min-w-[44px] shrink-0 items-center justify-center gap-1.5 rounded-lg border border-[#042821]/25 bg-[#042821] px-2.5 py-1.5 text-[11px] font-semibold text-[#FDFBF7] transition-colors hover:bg-[#0B3B31] dark:border-[#D4A843]/40 dark:bg-[#D4A843] dark:text-[#121615] dark:hover:bg-[#E2BA5A] cursor-pointer"
-                    >
-                      {isCopied ? <Check size={13} aria-hidden="true" /> : <Copy size={13} aria-hidden="true" />}
-                      <span>{isCopied ? copy.copied : copy.copy}</span>
-                    </button>
+                    {row.copyable !== false && (
+                      <button
+                        type="button"
+                        onClick={() => void handleCopy(row.key, row.label, row.value)}
+                        aria-label={copy.copyAria.replace('{label}', row.label)}
+                        className="focus-ring inline-flex min-h-[44px] sm:min-h-[36px] min-w-[44px] shrink-0 items-center justify-center gap-1.5 rounded-lg border border-[#042821]/25 bg-[#042821] px-2.5 py-1.5 text-[11px] font-semibold text-[#FDFBF7] transition-colors hover:bg-[#0B3B31] dark:border-[#D4A843]/40 dark:bg-[#D4A843] dark:text-[#121615] dark:hover:bg-[#E2BA5A] cursor-pointer"
+                      >
+                        {isCopied ? <Check size={13} aria-hidden="true" /> : <Copy size={13} aria-hidden="true" />}
+                        <span>{isCopied ? copy.copied : copy.copy}</span>
+                      </button>
+                    )}
                   </div>
                 );
               })}

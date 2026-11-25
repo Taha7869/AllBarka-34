@@ -11,6 +11,7 @@ import { PRODUCTS as BASE_PRODUCTS } from '../data/products';
 import { resolveProductPrice } from '../lib/productVariants';
 import { openCustomQuoteModal } from '../lib/customQuoteEvent';
 import { reviewReorderItems, revalidateReorderWithServerQuote, trackingProgress, TRACKING_STEPS, type ReorderAnalysis } from '../lib/orderPresentation';
+import { formatOrderStatusLabel, storedOrderStatus } from '../lib/orderStatuses';
 import { Link } from 'react-router-dom';
 import { acquireScrollLock } from '../utils/scrollLock';
 import { apiUrl } from '../lib/apiUrl';
@@ -307,15 +308,17 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'ORDER_RECEIVED': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'CONFIRMED': return 'bg-indigo-100 text-indigo-800 border-indigo-200';
-      case 'PREPARING': return 'bg-amber-100 text-amber-800 border-amber-200';
+    const normalized = storedOrderStatus(String(status || '').toUpperCase()) || String(status || '').toUpperCase();
+    switch (normalized) {
+      case 'ORDER_RECEIVED': return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950/60 dark:text-blue-200 dark:border-blue-800';
+      case 'CONFIRMED': return 'bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-200 dark:border-indigo-800';
+      case 'PREPARING': return 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/60 dark:text-amber-200 dark:border-amber-800';
       case 'OUT_FOR_DELIVERY':
-      case 'DISPATCHED': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'DELIVERED': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-      case 'CANCELLED': return 'bg-rose-100 text-rose-800 border-rose-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'DISPATCHED': return 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-950/60 dark:text-yellow-200 dark:border-yellow-800';
+      case 'DELIVERED': return 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-200 dark:border-emerald-800';
+      case 'CANCELLED': return 'bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-950/60 dark:text-rose-200 dark:border-rose-800';
+      case 'QUOTE_REQUESTED': return 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/60 dark:text-amber-200 dark:border-amber-800';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700';
     }
   };
 
@@ -549,8 +552,8 @@ export default function PatronLoungeModal({ isOpen, onClose }: PatronLoungeModal
                             <p className="font-serif font-black text-[var(--color-ink,#1F120F)]">Rs. {totalAmt.toLocaleString('en-PK')}</p>
                           </div>
                           <div>
-                            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${getStatusColor(order.status)}`}>
-                              {order.status}
+                            <span data-testid="patron-order-status" className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${getStatusColor(order.status)}`}>
+                              {formatOrderStatusLabel(order.status, t)}
                             </span>
                           </div>
                         </div>

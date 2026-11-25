@@ -6,7 +6,7 @@ const entries: readonly (readonly [string, string, string, string])[] = [
   ['shipping.enterCity', 'Enter the actual delivery city to confirm shipping.', 'ترسیل کی تصدیق کے لیے اصل شہر درج کریں۔', 'أدخل مدينة التوصيل الفعلية لتأكيد رسوم الشحن.'],
   ['payment.confirmInstructions', 'Confirm the bank / Raast account with AllBarka concierge before transferring payment.', 'رقم بھیجنے سے پہلے آل برکہ کی ٹیم سے بینک یا راست اکاؤنٹ کی تصدیق کریں۔', 'أكد الحساب البنكي أو حساب Raast مع فريق ألبركة قبل تحويل المبلغ.'],
   ['payment.transferDetails', 'Bank / Raast transfer', 'بینک یا راست سے ادائیگی', 'تحويل بنكي / Raast'],
-  ['payment.bankDescription', 'Confirm payment account details with our concierge after placing your order.', 'آرڈر دینے کے بعد ہماری ٹیم سے ادائیگی کے اکاؤنٹ کی تفصیلات کی تصدیق کریں۔', 'أكد بيانات حساب الدفع مع فريقنا بعد تقديم طلبك.'],
+  ['payment.bankDescription', 'Account details are shown below — transfer after placing your order and write your Order ID in the reference.', 'اکاؤنٹ کی تفصیلات نیچے موجود ہیں — آرڈر دینے کے بعد رقم منتقل کریں اور ریفرنس میں آرڈر آئی ڈی لکھیں۔', 'بيانات الحساب موضّحة أدناه — حوّل المبلغ بعد تقديم طلبك واكتب رقم الطلب في مرجع الدفع.'],
   ['payment.shareReceipt', 'After payment, share the receipt with our concierge on WhatsApp for verification.', 'ادائیگی کے بعد تصدیق کے لیے رسید ہماری ٹیم کو واٹس ایپ پر بھیجیں۔', 'بعد الدفع، أرسل الإيصال إلى فريقنا عبر واتساب للتحقق.'],
   ['shipping.lahore', 'Lahore', 'لاہور', 'لاهور'],
   ['shipping.outside', 'Outside Lahore', 'لاہور سے باہر', 'خارج لاهور'],

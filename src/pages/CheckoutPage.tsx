@@ -705,15 +705,15 @@ const handleInputChange = (field: string, value: any) => {
             </div>
             <div>
               <p className="purchase-eyebrow">{t('purchase.checkoutEyebrow')}</p>
-              <h1 className="font-serif">
-                {currentStep === 'success'
-                  ? t(orderSuccessResult?.isQuoteRequest ? 'checkout.quoteReceived' : 'checkout.receiptReceived')
-                  : t('checkout.heading')}
-              </h1>
               {currentStep !== 'success' && (
-                <p className="text-[9.5px] text-[var(--color-gold,#C7982F)] font-bold leading-none mt-0.5">
-                  {t('purchase.checkoutIntro')}
-                </p>
+                <>
+                  <h1 className="font-serif">
+                    {t('checkout.heading')}
+                  </h1>
+                  <p className="text-[9.5px] text-[var(--color-gold,#C7982F)] font-bold leading-none mt-0.5">
+                    {t('purchase.checkoutIntro')}
+                  </p>
+                </>
               )}
             </div>
           </div>
@@ -1641,9 +1641,9 @@ const handleInputChange = (field: string, value: any) => {
                   </div>
 
                   <div>
-                    <h3 className="text-2xl font-serif font-black text-[var(--color-ink,#29231D)] dark:text-[#F6F1EA] mb-1">
+                    <h1 data-testid="checkout-success-heading" className="text-2xl font-serif font-black text-[var(--color-ink,#29231D)] dark:text-[#F6F1EA] mb-1">
                       {t(orderSuccessResult.isQuoteRequest ? 'checkout.quoteReceived' : 'checkout.receiptReceived')}
-                    </h3>
+                    </h1>
                     <p className="text-xs text-[var(--color-ink-muted,#595148)] dark:text-[#C8D3CF]">
                       {t(orderSuccessResult.isQuoteRequest ? 'checkout.quoteRequestNotice' : 'checkout.receiptSaved')}
                     </p>

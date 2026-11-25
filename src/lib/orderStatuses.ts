@@ -10,3 +10,24 @@ export function storedOrderStatus(value: unknown): StoredOrderStatus | null {
   if (value === 'QUOTE_REQUESTED' || ORDER_STATUSES.includes(value as FulfillmentStatus)) return value as StoredOrderStatus;
   return null;
 }
+
+/**
+ * Formats any canonical or legacy order status into a localized, human-readable label.
+ * Never returns raw underscore-separated machine codes (e.g. ORDER_RECEIVED -> "Order received").
+ */
+export function formatOrderStatusLabel(
+  rawStatus: unknown,
+  t: (key: string, defaultText?: string) => string,
+): string {
+  const raw = String(rawStatus || '').trim();
+  if (!raw) return t('order.status.ORDER_RECEIVED', 'Order received');
+  const upper = raw.toUpperCase();
+  const normalized = storedOrderStatus(upper) || upper;
+  const key = `order.status.${normalized}`;
+  const translated = t(key, '');
+  if (translated && translated !== key && !translated.includes('_')) {
+    return translated;
+  }
+  const readable = normalized.replace(/_/g, ' ').toLowerCase();
+  return readable.charAt(0).toUpperCase() + readable.slice(1);
+}
