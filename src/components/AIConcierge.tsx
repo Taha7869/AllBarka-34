@@ -1,8 +1,16 @@
 import VoiceInputButton from './VoiceInputButton';
 import { OPEN_AI_BUDDY_EVENT } from '../lib/heroScene';
+import {
+  OPEN_CONCIERGE_EVENT,
+  normalizeOpenConciergeDetail,
+  registerConciergeListener,
+  unregisterConciergeListener,
+  type OpenConciergeDetail,
+  type PendingConciergeRequest,
+} from '../lib/conciergeEvent';
 import VoiceReadButton from './VoiceReadButton';
 import { usePrefersReducedMotion as useReducedMotion } from '../hooks/usePrefersReducedMotion';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, 
@@ -37,9 +45,19 @@ interface AIConciergeProps {
   hasCartBar?: boolean;
   hasCookieBar?: boolean;
   initialOpen?: boolean;
+  initialRequest?: PendingConciergeRequest | null;
+  onRequestHandled?: (requestId: number) => void;
 }
 
-export default function AIConcierge({ hasCartBar = false, hasCookieBar = false, hide = false, onOpenChange, initialOpen = false }: AIConciergeProps) {
+export default function AIConcierge({
+  hasCartBar = false,
+  hasCookieBar = false,
+  hide = false,
+  onOpenChange,
+  initialOpen = false,
+  initialRequest = null,
+  onRequestHandled,
+}: AIConciergeProps) {
   const { currentUser } = useAuth();
   const { t, language } = useLanguage();
   const reducedMotion = useReducedMotion();
@@ -57,6 +75,8 @@ export default function AIConcierge({ hasCartBar = false, hasCookieBar = false, 
   const requestRef = useRef<AbortController | null>(null);
   const sendingRef = useRef(false);
   const lastFailedTextRef = useRef('');
+  const handleSendMessageRef = useRef<(event?: React.FormEvent, customText?: string, retry?: boolean) => Promise<void> | void>(() => {});
+  const handledRequestIdRef = useRef<number | null>(null);
   const previouslyOpenRef = useRef(false);
   const launcherRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -102,12 +122,46 @@ export default function AIConcierge({ hasCartBar = false, hasCookieBar = false, 
     if (isOpen) messagesEndRef.current?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'nearest' });
   }, [messages, streamingText, isOpen, reducedMotion]);
 
-  // Other entries on the page (e.g. the homepage "Ask AllBarka" button) open this same panel.
-  useEffect(() => {
-    const open = () => setIsOpen(true);
-    window.addEventListener(OPEN_AI_BUDDY_EVENT, open);
-    return () => window.removeEventListener(OPEN_AI_BUDDY_EVENT, open);
+  const applyOpenRequest = useCallback((detail?: OpenConciergeDetail | null) => {
+    const normalized = normalizeOpenConciergeDetail(detail);
+    setIsOpen(true);
+    const trimmed = normalized.message?.trim();
+    if (!trimmed) return;
+    if (normalized.autoSend) {
+      if (sendingRef.current) {
+        setInputText(trimmed);
+        return;
+      }
+      setInputText('');
+      void handleSendMessageRef.current(undefined, trimmed);
+    } else {
+      setInputText(trimmed);
+    }
   }, []);
+
+  // Other entries on the page (e.g. "Barkat se poochiye" or "Ask AllBarka") open this same panel.
+  useEffect(() => {
+    registerConciergeListener();
+    const open = () => setIsOpen(true);
+    const openWithDetail = (event: Event) => {
+      const customEvent = event as CustomEvent<OpenConciergeDetail>;
+      applyOpenRequest(customEvent.detail);
+    };
+    window.addEventListener(OPEN_AI_BUDDY_EVENT, open);
+    window.addEventListener(OPEN_CONCIERGE_EVENT, openWithDetail);
+    return () => {
+      unregisterConciergeListener();
+      window.removeEventListener(OPEN_AI_BUDDY_EVENT, open);
+      window.removeEventListener(OPEN_CONCIERGE_EVENT, openWithDetail);
+    };
+  }, [applyOpenRequest]);
+
+  useEffect(() => {
+    if (!initialRequest || handledRequestIdRef.current === initialRequest.id) return;
+    handledRequestIdRef.current = initialRequest.id;
+    applyOpenRequest(initialRequest.detail);
+    onRequestHandled?.(initialRequest.id);
+  }, [initialRequest, applyOpenRequest, onRequestHandled]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -240,6 +294,7 @@ export default function AIConcierge({ hasCartBar = false, hasCookieBar = false, 
       }
     }
   };
+  handleSendMessageRef.current = handleSendMessage;
 
   const clearChat = () => {
     if (sendingRef.current) return;

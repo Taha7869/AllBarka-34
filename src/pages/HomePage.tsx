@@ -9,6 +9,7 @@ import { MOTION_STAGGER, revealStyle, useRevealOnce } from '../lib/motion';
 import { AllBarkaCrestVector } from '../components/AllBarkaLogo';
 import StorefrontBanner from '../components/StorefrontBanner';
 import PremiumHeroPrototype from '../components/PremiumHeroPrototype';
+import HomeConciergeSection from '../components/HomeConciergeSection';
 import SignatureCollectionsSection from '../components/SignatureCollectionsSection';
 import HouseSelectionsSection from '../components/HouseSelectionsSection';
 import GiftingAtelierSection from '../components/GiftingAtelierSection';
@@ -288,6 +289,7 @@ export default function HomePage() {
 
       {/* Sections 2+ slide seamlessly over the sticky editorial hero */}
       <div className="relative z-10 -mt-4 lg:mt-0 flex w-full flex-col items-center rounded-t-[24px] sm:rounded-t-[28px] bg-[var(--color-base,#FDFBF7)] shadow-[0_-18px_48px_-20px_rgba(4,40,33,0.4)] overflow-x-clip">
+        <HomeConciergeSection />
         {orderedBelowFold.map((entry) => (
           <div key={entry.id} data-content-section={entry.id} className="content-home-section w-full">
             {sectionRenderers[entry.id]}

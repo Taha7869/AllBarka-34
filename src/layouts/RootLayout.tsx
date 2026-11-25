@@ -29,6 +29,13 @@ import type { OccasionInquiryPrefill } from '../components/OccasionInquiryModal'
 import type { EventType } from '../lib/occasionPlanning';
 import { CUSTOM_QUOTE_MODAL_EVENT } from '../lib/customQuoteEvent';
 import { OPEN_AI_BUDDY_EVENT } from '../lib/heroScene';
+import {
+  OPEN_CONCIERGE_EVENT,
+  hasActiveConciergeListener,
+  normalizeOpenConciergeDetail,
+  type OpenConciergeDetail,
+  type PendingConciergeRequest,
+} from '../lib/conciergeEvent';
 import { CART_POP_EVENT } from '../lib/flyToCart';
 import { MOTION_EASE_CSS } from '../lib/motion';
 
@@ -185,6 +192,8 @@ export default function RootLayout() {
   const [galleryModalOpen, setGalleryModalOpen] = useState(false);
   const [aiConciergeOpen, setAiConciergeOpen] = useState(false);
   const [aiConciergeMounted, setAiConciergeMounted] = useState(false);
+  const conciergeRequestSeqRef = useRef(0);
+  const [pendingConciergeRequest, setPendingConciergeRequest] = useState<PendingConciergeRequest | null>(null);
   const [customQuoteLoaded, setCustomQuoteLoaded] = useState(false);
   const [hamperModalOpen, setHamperModalOpen] = useState(false);
 
@@ -194,11 +203,22 @@ export default function RootLayout() {
       setAiConciergeMounted(true);
       setAiConciergeOpen(true);
     };
+    const onOpenConcierge = (event: Event) => {
+      const detail = normalizeOpenConciergeDetail((event as CustomEvent<OpenConciergeDetail>).detail);
+      if (!hasActiveConciergeListener()) {
+        conciergeRequestSeqRef.current += 1;
+        setPendingConciergeRequest({ id: conciergeRequestSeqRef.current, detail });
+      }
+      setAiConciergeMounted(true);
+      setAiConciergeOpen(true);
+    };
     const onOpenQuote = () => setCustomQuoteLoaded(true);
     window.addEventListener(OPEN_AI_BUDDY_EVENT, onOpenBuddy);
+    window.addEventListener(OPEN_CONCIERGE_EVENT, onOpenConcierge);
     window.addEventListener(CUSTOM_QUOTE_MODAL_EVENT, onOpenQuote);
     return () => {
       window.removeEventListener(OPEN_AI_BUDDY_EVENT, onOpenBuddy);
+      window.removeEventListener(OPEN_CONCIERGE_EVENT, onOpenConcierge);
       window.removeEventListener(CUSTOM_QUOTE_MODAL_EVENT, onOpenQuote);
     };
   }, []);
@@ -624,6 +644,10 @@ export default function RootLayout() {
         {!isAdminRoute && aiConciergeMounted && (
           <AIConcierge
             initialOpen={true}
+            initialRequest={pendingConciergeRequest}
+            onRequestHandled={(id) =>
+              setPendingConciergeRequest((current) => (current?.id === id ? null : current))
+            }
             hide={hideFloatingConcierge}
             hasCartBar={hasBottomObstruction}
             hasCookieBar={consentUiActive}
